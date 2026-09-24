@@ -32,10 +32,23 @@
 #include "mvs/patch_match.h"
 
 #include <numeric>
-#include <unordered_set>
+#include <unordered_set>  // other call sites (problem config dedup); NOT the
+                          // source-list rebuild, which must stay on the
+                          // upstream boost container (see below)
+
+// Upstream parity (d3ccaf35): the source-list rebuild below iterates a
+// FlatHashSet (= boost::unordered_flat_set). The hash layout determines the
+// src_image_idxs ORDER, which feeds the layered cost accumulation of the
+// patch_match kernel — a different order chaotically diverges the stereo
+// result for identical inputs. Use the vendored boost 1.92 headers
+// (3rdparty/boost_unordered, via colmap_boost_unordered_headers) so the
+// iteration order matches upstream bit-for-bit. The fork-wide FlatHash*
+// aliases in util/hash_containers.h stay on the std backend.
+#include <boost/unordered/unordered_flat_set.hpp>
 
 #include "mvs/consistency_graph.h"
 #include "mvs/patch_match_cuda.h"
+
 #include "mvs/workspace.h"
 #include "math/math.h"
 #include "util/misc.h"
@@ -459,8 +472,11 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
 
   {
     // Collect all used images in current problem.
-    std::unordered_set<int> used_image_idxs(problem.src_image_idxs.begin(),
-                                            problem.src_image_idxs.end());
+    // Upstream container (boost::unordered_flat_set via FlatHashSet) — do NOT
+    // replace with std::unordered_set: the iteration order is part of the
+    // numerical contract with upstream (see the include comment above).
+    boost::unordered_flat_set<int> used_image_idxs(
+            problem.src_image_idxs.begin(), problem.src_image_idxs.end());
     used_image_idxs.insert(problem.ref_image_idx);
 
     patch_match_options.filter_min_num_consistent =

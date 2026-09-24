@@ -39,6 +39,7 @@
 #include "mvs/delaunay_meshing.h"
 #include "mvs/poisson_meshing.h"
 #include "mvs/texture_mapping.h"
+#include "mvs/textured_mesh_export.h"
 #include "mvs/patch_match.h"
 #include "util/misc.h"
 #include "controllers/option_manager.h"
@@ -189,6 +190,7 @@ int RunMeshTexturer(int argc, char** argv) {
     std::filesystem::path input_path;
     std::filesystem::path output_path;
     std::string output_type = "BIN";
+    bool export_obj = false;
 
     OptionManager options;
     options.AddRequiredOption(
@@ -205,6 +207,11 @@ int RunMeshTexturer(int argc, char** argv) {
             "Path to the output directory. The textured mesh PLY and texture "
             "atlas image will be written here");
     options.AddDefaultOption("output_type", &output_type, "{BIN, TXT}");
+    options.AddDefaultOption(
+            "export_obj",
+            &export_obj,
+            "Also export a standard OBJ + MTL pair through the canonical "
+            "ObjFilter IO chain (defaults to false)");
     options.AddMeshTextureMappingOptions();
     options.Parse(argc, argv);
 
@@ -259,6 +266,17 @@ int RunMeshTexturer(int argc, char** argv) {
         WriteBinaryPlyMesh(mesh_path, textured_mesh);
     } else {
         WriteTextPlyMesh(mesh_path, textured_mesh);
+    }
+
+    if (export_obj) {
+        LOG(INFO) << "Exporting OBJ model via the canonical ObjFilter IO "
+                     "chain...";
+        if (!mvs::ExportTexturedMeshAsObj(result, mesh,
+                                          output_path / "mesh.obj")) {
+            LOG(ERROR) << "Failed to export OBJ model to "
+                       << (output_path / "mesh.obj").string();
+            return EXIT_FAILURE;
+        }
     }
 
     LOG(INFO) << "Mesh texture mapping complete";

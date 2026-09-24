@@ -47,32 +47,14 @@ void AdjustGlobalBundle(const IncrementalMapperOptions& options,
 void IterativeLocalRefinement(const IncrementalMapperOptions& options,
                               const image_t image_id,
                               IncrementalMapper* mapper) {
-    auto ba_options = options.LocalBundleAdjustment();
-    for (int i = 0; i < options.ba_local_max_refinements; ++i) {
-        const auto report = mapper->AdjustLocalBundle(
-                options.Mapper(), ba_options, options.Triangulation(), image_id,
-                mapper->GetModifiedPoints3D());
-        std::cout << "  => Merged observations: "
-                  << report.num_merged_observations << std::endl;
-        std::cout << "  => Completed observations: "
-                  << report.num_completed_observations << std::endl;
-        std::cout << "  => Filtered observations: "
-                  << report.num_filtered_observations << std::endl;
-        const double changed =
-                (report.num_merged_observations +
-                 report.num_completed_observations +
-                 report.num_filtered_observations) /
-                static_cast<double>(report.num_adjusted_observations);
-        std::cout << StringPrintf("  => Changed observations: %.6f", changed)
-                  << std::endl;
-        if (changed < options.ba_local_max_refinement_change) {
-            break;
-        }
-        // Only use robust cost function for first iteration.
-        ba_options.loss_function_type =
-                BundleAdjustmentOptions::LossFunctionType::TRIVIAL;
-    }
-    mapper->ClearModifiedPoints3D();
+    // Upstream parity (d3ccaf35): the refinement loop lives in the mapper
+    // (stop-aware, zero-adjustment guard, VLOG diagnostics, robust-loss
+    // demotion after the first iteration).
+    mapper->IterativeLocalRefinement(
+            options.ba_local_max_refinements,
+            options.ba_local_max_refinement_change, options.Mapper(),
+            options.LocalBundleAdjustment(), options.Triangulation(),
+            image_id);
 }
 
 void IterativeGlobalRefinement(const IncrementalMapperOptions& options,
@@ -89,7 +71,7 @@ void IterativeGlobalRefinement(const IncrementalMapperOptions& options,
             options.ba_global_max_refinement_change,
             options.Mapper(), options.GlobalBundleAdjustment(),
             options.Triangulation());
-    FilterImages(options, mapper);
+    FilterFrames(options, mapper);
 }
 
 void ExtractColors(const std::string& image_path,
@@ -132,9 +114,9 @@ size_t FilterPoints(const IncrementalMapperOptions& options,
     return num_filtered_observations;
 }
 
-size_t FilterImages(const IncrementalMapperOptions& options,
+size_t FilterFrames(const IncrementalMapperOptions& options,
                     IncrementalMapper* mapper) {
-    const size_t num_filtered_images = mapper->FilterImages(options.Mapper());
+    const size_t num_filtered_images = mapper->FilterFrames(options.Mapper());
     std::cout << "  => Filtered images: " << num_filtered_images << std::endl;
     return num_filtered_images;
 }
@@ -396,13 +378,15 @@ void IncrementalMapperController::Reconstruct(
         if (reconstruction.NumRegImages() == 0) {
             image_t image_id1 = static_cast<image_t>(options_->init_image_id1);
             image_t image_id2 = static_cast<image_t>(options_->init_image_id2);
+            Rigid3d cam2_from_cam1;
 
             // Try to find good initial pair.
             if (options_->init_image_id1 == -1 ||
                 options_->init_image_id2 == -1) {
                 PrintHeading1("Finding good initial image pair");
                 const bool find_init_success = mapper.FindInitialImagePair(
-                        init_mapper_options, &image_id1, &image_id2);
+                        init_mapper_options, image_id1, image_id2,
+                        cam2_from_cam1);
                 if (!find_init_success) {
                     std::cout << "  => No good initial image pair found."
                               << std::endl;
@@ -422,13 +406,29 @@ void IncrementalMapperController::Reconstruct(
                     reconstruction_manager_->Delete(reconstruction_idx);
                     return;
                 }
+                // Upstream parity (d3ccaf35): a user-provided initial pair
+                // still needs its two-view geometry estimated and checked
+                // against the initialization thresholds.
+                const bool provided_init_success =
+                        mapper.EstimateInitialTwoViewGeometry(
+                                init_mapper_options, image_id1, image_id2,
+                                cam2_from_cam1);
+                if (!provided_init_success) {
+                    std::cout << "  => Provided pair is unsuitable for "
+                                 "initialization."
+                              << std::endl;
+                    mapper.EndReconstruction(kDiscardReconstruction);
+                    reconstruction_manager_->Delete(reconstruction_idx);
+                    return;
+                }
             }
 
             PrintHeading1(
                     StringPrintf("Initializing with image pair #%d and #%d",
                                  image_id1, image_id2));
             const bool reg_init_success = mapper.RegisterInitialImagePair(
-                    init_mapper_options, image_id1, image_id2);
+                    init_mapper_options, image_id1, image_id2,
+                    cam2_from_cam1);
             if (!reg_init_success) {
                 std::cout
                         << "  => Initialization failed - possible solutions:"
@@ -457,7 +457,7 @@ void IncrementalMapperController::Reconstruct(
             AdjustGlobalBundle(*options_, &mapper);
             reconstruction.Normalize();
             FilterPoints(*options_, &mapper);
-            FilterImages(*options_, &mapper);
+            FilterFrames(*options_, &mapper);
 
             // Initial image pair failed to register.
             if (reconstruction.NumRegImages() == 0 ||

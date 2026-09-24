@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "util/hash_containers.h"
 #include "ui/match_matrix_widget.h"
 
 namespace colmap {
@@ -58,7 +59,7 @@ void MatchMatrixWidget::Show() {
   match_matrix.Fill(BitmapColor<uint8_t>(255));
 
   // Map image identifiers to match matrix locations.
-  std::unordered_map<image_t, size_t> image_id_to_idx;
+  NodeHashMap<image_t, size_t> image_id_to_idx;
   for (size_t idx = 0; idx < images.size(); ++idx) {
     image_id_to_idx.emplace(images[idx].ImageId(), idx);
   }

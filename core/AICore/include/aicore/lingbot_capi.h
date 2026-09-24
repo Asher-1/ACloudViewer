@@ -62,6 +62,17 @@ AICORE_CAPI void aicore_lingbot_options_set_kv_profile(
  *  (0 = unknown; the engine then sizes from the first stream call). */
 AICORE_CAPI void aicore_lingbot_options_set_stream_capacity(
         aicore_lingbot_options* opts, int total_frames);
+/** Parity tooling: dump per-stage tensors to \p dir in the same format as
+ *  the upstream lingbot-map-cli --dump-stages, so a test probe can diff
+ *  stage-by-stage against the reference implementation. Empty (default)
+ *  disables dumping. */
+AICORE_CAPI void aicore_lingbot_options_set_dump_stages_dir(
+        aicore_lingbot_options* opts, const char* dir);
+/** Parity tooling: also dump the upstream --dump-internal tensor set
+ *  (per-op intermediates), optionally restricted to \p block (e.g. "0",
+ *  "camera"). Requires a dump-stages dir as the file prefix. */
+AICORE_CAPI void aicore_lingbot_options_set_dump_internal(
+        aicore_lingbot_options* opts, int enable, const char* block);
 /** Official long-stream keyframe policy (demo.py --keyframe_interval):
  *  every N-th streaming frame persists its KV; non-keyframes attend to
  *  [cache | own KV] and discard. Scale frames are always cached. Values
@@ -93,7 +104,19 @@ AICORE_CAPI void aicore_lingbot_free_buffer(void* p);
 typedef struct aicore_lingbot_result {
     const float* depth;      /**< [height * width], meters. */
     const float* depth_conf; /**< [height * width], confidence. */
-    const float* c2w;        /**< 4x4 row-major camera-to-world matrix. */
+    const float* c2w;        /**< 4x4 row-major pose matrix as emitted by
+                                  the engine: the w2c twin [R^T | -R^T t] of
+                                  pose_enc's camera-to-world decode [R|t]
+                                  (numerics == inv(decode(pose_enc)) == the
+                                  upstream CLI .post "c2w" field; NOTE the
+                                  upstream field naming is inverted — that
+                                  matrix is w2c, and the official ggml live
+                                  viewer misuses it as c2w, hidden by
+                                  per-frame rendering). Consumers that FUSE
+                                  frames must decode pose_enc instead (see
+                                  the qLingbotMap worker's decodePoseC2w;
+                                  cross-frame depth consistency: 0.0067
+                                  decode-as-c2w vs 0.0995 inverted). */
     const float* intrinsics; /**< [fx, fy, cx, cy] in pixels. */
     const float* pose_enc;   /**< 9 floats, raw pose encoding. */
     int32_t width;

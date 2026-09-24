@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "util/hash_containers.h"
 #include "scene/database.h"
 
 #include <fstream>
@@ -73,13 +74,13 @@ void Database::Merge(const Database& database1, const Database& database2,
                      Database* merged_database) {
   // Merge the cameras.
 
-  std::unordered_map<camera_t, camera_t> new_camera_ids1;
+  NodeHashMap<camera_t, camera_t> new_camera_ids1;
   for (const auto& camera : database1.ReadAllCameras()) {
     const camera_t new_camera_id = merged_database->WriteCamera(camera);
     new_camera_ids1.emplace(camera.CameraId(), new_camera_id);
   }
 
-  std::unordered_map<camera_t, camera_t> new_camera_ids2;
+  NodeHashMap<camera_t, camera_t> new_camera_ids2;
   for (const auto& camera : database2.ReadAllCameras()) {
     const camera_t new_camera_id = merged_database->WriteCamera(camera);
     new_camera_ids2.emplace(camera.CameraId(), new_camera_id);
@@ -87,7 +88,7 @@ void Database::Merge(const Database& database1, const Database& database2,
 
   // Merge the images.
 
-  std::unordered_map<image_t, image_t> new_image_ids1;
+  NodeHashMap<image_t, image_t> new_image_ids1;
   for (auto& image : database1.ReadAllImages()) {
     image.SetCameraId(new_camera_ids1.at(image.CameraId()));
     CHECK(!merged_database->ExistsImageWithName(image.Name()))
@@ -108,7 +109,7 @@ void Database::Merge(const Database& database1, const Database& database2,
     }
   }
 
-  std::unordered_map<image_t, image_t> new_image_ids2;
+  NodeHashMap<image_t, image_t> new_image_ids2;
   for (auto& image : database2.ReadAllImages()) {
     image.SetCameraId(new_camera_ids2.at(image.CameraId()));
     CHECK(!merged_database->ExistsImageWithName(image.Name()))

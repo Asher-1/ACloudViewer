@@ -44,18 +44,23 @@ std::vector<Eigen::Vector2d> FeatureKeypointsToPointsVector(
   return points;
 }
 
-Eigen::MatrixXf L2NormalizeFeatureDescriptors(
-    const Eigen::MatrixXf& descriptors) {
+FeatureDescriptorsFloat L2NormalizeFeatureDescriptors(
+    const FeatureDescriptorsFloat& descriptors) {
   return descriptors.rowwise().normalized();
 }
 
-Eigen::MatrixXf L1RootNormalizeFeatureDescriptors(
-    const Eigen::MatrixXf& descriptors) {
-  Eigen::MatrixXf descriptors_normalized(descriptors.rows(),
-                                         descriptors.cols());
-  for (Eigen::MatrixXf::Index r = 0; r < descriptors.rows(); ++r) {
+FeatureDescriptorsFloat L1RootNormalizeFeatureDescriptors(
+    const FeatureDescriptorsFloat& descriptors) {
+  FeatureDescriptorsFloat descriptors_normalized(descriptors.rows(),
+                                                 descriptors.cols());
+  for (Eigen::Index r = 0; r < descriptors.rows(); ++r) {
     const float norm = descriptors.row(r).lpNorm<1>();
-    descriptors_normalized.row(r) = descriptors.row(r) / norm;
+    // Upstream parity (d3ccaf35 feature/utils.cc): scale by the reciprocal of
+    // the norm (x * (1/n), two roundings) rather than dividing (x / n, one
+    // rounding) — the last-bit difference tipped a handful of uchar descriptor
+    // elements by ±1, which flipped nearest-neighbor matches, two-view
+    // geometry inlier sets and the mapper's registration order downstream.
+    descriptors_normalized.row(r) = descriptors.row(r) * (1 / norm);
     descriptors_normalized.row(r) =
         descriptors_normalized.row(r).array().sqrt();
   }
@@ -63,7 +68,7 @@ Eigen::MatrixXf L1RootNormalizeFeatureDescriptors(
 }
 
 FeatureDescriptors FeatureDescriptorsToUnsignedByte(
-    const Eigen::MatrixXf& descriptors) {
+    const FeatureDescriptorsFloat& descriptors) {
   FeatureDescriptors descriptors_unsigned_byte(descriptors.rows(),
                                                descriptors.cols());
   for (Eigen::MatrixXf::Index r = 0; r < descriptors.rows(); ++r) {

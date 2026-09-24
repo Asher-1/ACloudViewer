@@ -103,6 +103,13 @@ int main() {
     const int sized = aicore_lingbot_preprocess_image(&view, 28, nullptr, 0,
                                                       nullptr, nullptr);
     AICORE_CHECK(sized == 28 * 14 * 3);
+    // The SIZING call must report the same processed dimensions as the data
+    // call (callers resolve the stream geometry from it).
+    int32_t sized_w = 0, sized_h = 0;
+    AICORE_CHECK(aicore_lingbot_preprocess_image(&view, 28, nullptr, 0,
+                                                 &sized_w,
+                                                 &sized_h) == sized);
+    AICORE_CHECK(sized_w == 28 && sized_h == 14);
     AICORE_CHECK(aicore_lingbot_preprocess_image(&view, 0, nullptr, 0, nullptr,
                                                  nullptr) == -1);
     // Non-zero buffer with a too-small size fails; the full size succeeds

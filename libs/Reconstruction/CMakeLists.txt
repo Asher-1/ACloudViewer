@@ -7,6 +7,50 @@ endif()
 
 project(COLMAP)
 
+# Upstream parity (d3ccaf35): upstream compiles COLMAP with compiler-default
+# codegen. The fork-wide PCL-compatibility macro EIGEN_MAX_ALIGN_BYTES=0 and
+# the SIMD flags (-msse4.2 -mfpmath=sse -mno-avx512*) change Eigen's codegen
+# inside the COLMAP subtree: the shared-focal RANSAC residual evaluation
+# (RelativePoseSharedFocalEstimator::Residuals, estimators/solvers/*.cc)
+# flips best-model selection at threshold ties, which chaotically diverges
+# trial counts and two-view-geometry inlier sets (observed: TVG pair (4,5)
+# inlier sets differ by one match; SF focal 3296.79 vs 3293.38 px). Strip
+# both for this subproject so every COLMAP TU compiles like upstream. Eigen
+# objects in this subtree are function-local, so the codegen change cannot
+# leak across translation units (no ODR/layout exposure).
+get_directory_property(COLMAP_DIR_DEFS COMPILE_DEFINITIONS)
+list(REMOVE_ITEM COLMAP_DIR_DEFS "EIGEN_MAX_ALIGN_BYTES=0")
+set_property(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${COLMAP_DIR_DEFS}")
+string(REPLACE " -msse4.2" "" COLMAP_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE " -mfpmath=sse" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512f" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512cd" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vl" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bw" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512dq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512ifma" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512pf" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512er" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi2" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vnni" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bitalg" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vpopcntdq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+
+# Hash containers: the scene/SfM containers use the FlatHashMap/NodeHashMap
+# aliases from util/hash_containers.h on the default std backend. The boost
+# backend (COLMAP_HASH_BOOST) was evaluated for upstream iteration-order
+# parity but is reverted: the upstream mapper is itself non-deterministic
+# (parallel initial-pair race, see docs/E2E_ALIGNMENT_TODO.md round 37), the
+# fork's mapper behavior was verified identical with and without the boost
+# backend, and the boost 1.92 header closure cannot coexist in the same
+# translation units with the fork's CGAL dependency (which requires the
+# system Boost 1.74 container/move/mpl ecosystem). The only boost::unordered
+# consumer kept is mvs/patch_match.cc (see src/CMakeLists.txt), whose
+# flat_set rebuild of src_image_idxs is a verified numeric contract.
+
+
 # The COLMAP engine version this inlined fork is aligned with. It drives the
 # database schema version (see src/util/version.h) and is decoupled from the
 # CLOUDVIEWER package version on purpose.
@@ -91,17 +135,36 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-# Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
-if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
-    set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
-    if (TESTS_ENABLED)
-        list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
-    endif ()
-    find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
-    # find_package(Glog REQUIRED)
-    # find_package(Ceres REQUIRED)
-    # find_package(Metis REQUIRED)
+# Boost: the compiled Boost libraries (filesystem/program_options/graph/system)
+# stay on the system / ext_boost version — the Boost 1.92 library upgrade was
+# reverted because the fork's CGAL dependency requires boost/mpl/if_c.hpp and
+# the legacy boost::filesystem API, both removed in 1.92, and the compiled
+# libraries carry no numeric contract for the COLMAP subtree. Only the
+# header-only boost::unordered subset is vendored (see src/CMakeLists.txt).
+# Boost: unconditionally resolved through find_package on every platform —
+# Linux uses the distro packages (apt libboost-all-dev in CI/docker), macOS
+# and Windows use the conda boost (1.84). The former ext_boost source build
+# (1.73, AliceVision tarball) existed solely for -DGLIBCXX_USE_CXX11_ABI=OFF
+# builds, which no CI/docker/conda configuration uses (the option defaults to
+# ON); with an ABI=0 build the caller must supply a matching-ABI boost via
+# BOOST_ROOT. The compiled libraries carry no numeric contract for the
+# COLMAP subtree; the only header-only special case is the vendored
+# boost::unordered subset for patch_match.cc (see src/CMakeLists.txt).
+set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
+if (TESTS_ENABLED)
+    list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
 endif ()
+find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
+# NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
+# They keep the fork-wide from-source build shared with the rest of the
+# project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;
+# metis ships inside ext_suitesparse) and reach this subtree through the
+# imported 3rdparty_* targets of find_dependencies.cmake on all three
+# platforms. The find_package lines below are upstream COLMAP leftovers and
+# must stay commented out.
+# find_package(Glog REQUIRED)
+# find_package(Ceres REQUIRED)
+# find_package(Metis REQUIRED)
 
 if (NOT APPLE)
     if (WIN32)
@@ -113,9 +176,9 @@ if (NOT APPLE)
             add_compile_definitions(BOOST_LIBRARYDIR=${BOOST_ROOT})
         endif ()
     else ()
-        if (NOT ${GLIBCXX_USE_CXX11_ABI})
-            set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
-        endif()
+        # ABI=0 builds must point BOOST_ROOT at a matching-ABI boost install;
+        # there is no bundled source build anymore (see the find_package note
+        # above).
     endif ()
 
     message(STATUS "BOOST ROOT: ${BOOST_ROOT}")

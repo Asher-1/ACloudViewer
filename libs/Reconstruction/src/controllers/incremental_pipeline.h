@@ -170,7 +170,7 @@ private:
 // Globally filter points and images in mapper.
 size_t FilterPoints(const IncrementalMapperOptions& options,
                     IncrementalMapper* mapper);
-size_t FilterImages(const IncrementalMapperOptions& options,
+size_t FilterFrames(const IncrementalMapperOptions& options,
                     IncrementalMapper* mapper);
 
 // Globally complete and merge tracks in mapper.

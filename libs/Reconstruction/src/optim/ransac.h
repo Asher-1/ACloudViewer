@@ -189,20 +189,36 @@ size_t RANSAC<Estimator, SupportMeasurer, Sampler>::ComputeNumTrials(
         const size_t num_samples,
         const double confidence,
         const double num_trials_multiplier) {
-    const double inlier_ratio = num_inliers / static_cast<double>(num_samples);
-
-    const double nom = 1 - confidence;
-    if (nom <= 0) {
+    // Upstream parity (d3ccaf35): unbiased stopping criterion from
+    // "Fixing the RANSAC stopping criterion" (Schönberger, Larsson,
+    // Pollefeys, 2025) — the without-replacement probability replaces the
+    // biased pow(inlier_ratio, kMinNumSamples) approximation. The old
+    // formula returns a different trial count, which changes which RANSAC
+    // trial wins as best model and therefore the entire downstream chain.
+    const double prob_failure = 1 - confidence;
+    if (prob_failure <= 0) {
         return std::numeric_limits<size_t>::max();
     }
 
-    const double denom = 1 - std::pow(inlier_ratio, Estimator::kMinNumSamples);
-    if (denom <= 0) {
+    double prob_inlier = 1.0;
+    for (int i = 0; i < Estimator::kMinNumSamples; ++i) {
+        prob_inlier *= static_cast<double>(num_inliers - i) /
+                       static_cast<double>(num_samples - i);
+    }
+
+    const double prob_outlier = 1 - prob_inlier;
+    if (prob_outlier <= 0) {
         return 1;
     }
 
-    return static_cast<size_t>(
-            std::ceil(std::log(nom) / std::log(denom) * num_trials_multiplier));
+    // Prevent division by zero below.
+    if (prob_outlier == 1.0) {
+        return std::numeric_limits<size_t>::max();
+    }
+
+    return static_cast<size_t>(std::ceil(
+            std::log(prob_failure) / std::log(prob_outlier) *
+            num_trials_multiplier));
 }
 
 template <typename Estimator, typename SupportMeasurer, typename Sampler>
@@ -278,11 +294,16 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
                                          options_.dyn_num_trials_multiplier);
             }
 
-            if (report.num_trials >= dyn_max_num_trials &&
-                report.num_trials >= options_.min_num_trials) {
-                abort = true;
-                break;
-            }
+        }
+
+        if (report.num_trials >= dyn_max_num_trials &&
+            report.num_trials >= options_.min_num_trials) {
+            abort = true;
+            // Upstream parity (d3ccaf35): the trial counter also counts the
+            // aborted trial itself (trial_counter.load() after fetch_add),
+            // so the reported num_trials is one past the last executed one.
+            report.num_trials += 1;
+            break;
         }
     }
 

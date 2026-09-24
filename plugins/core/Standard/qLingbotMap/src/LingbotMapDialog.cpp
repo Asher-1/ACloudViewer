@@ -90,15 +90,15 @@ QString lingbotModelCacheDir() {
 }
 
 // First-run defaults keyed by the total memory of the best GPU on the
-// machine. Large cards get the upstream GUI default: the f16 GGUF
-// (full-alignment format, pose 1.72e-04 / depth 4.72e-04 vs the official
-// fp32 checkpoint over 286 frames) with the official release KV profile.
-// Smaller cards keep the official memory-saving q8 deployment format and
-// downscale the profile instead (q8 trades one order of magnitude of
-// accuracy for half the weight memory). 0 bytes (no accelerator or a
-// CPU-only run) follows the upstream default on host memory. Users can
-// override anything; the choice persists and the auto tier never fires
-// again.
+// machine. 24-GB-class cards follow the UPSTREAM CLI default (ggml_demo.py
+// --model: lingbot-map-q8) with the official release profile: q8 + 8/64
+// measures ~21 GiB at 518x294 (the 8-frame scale pass dominates the
+// workspace), leaving real headroom on a 24-GiB card that also runs the
+// Qt/VTK render context. f16 (+1.1 GiB of weights, same workspace) needs
+// a >=30-GiB card to stay off the OOM edge — measured: f16 + 8/64 on a
+// 24-GiB 4090 died on window 6/6 with "GGML backend graph allocation
+// failed" while windows 1-5 fit. Users can override anything; the choice
+// persists and the auto tier never fires again.
 struct LingbotKvTier {
     int minTotalGiB;
     int scale;
@@ -108,8 +108,10 @@ struct LingbotKvTier {
 constexpr LingbotKvTier kLingbotKvTiers[] = {
         // Thresholds sit below the nominal card size (a "12 GB" card reports
         // ~11.7 GiB, a "24 GB" card ~23.5 GiB) so nominal tiers land right.
-        {22, 8, 64, "lingbot-map-f16.gguf"},  // ≥22 GiB: official release
-                                              // profile + full-alignment model
+        {30, 8, 64, "lingbot-map-f16.gguf"},  // ≥30 GiB: full-alignment model
+                                              // + official release profile
+        {22, 8, 64, "lingbot-map-q8.gguf"},   // 24-GB class: UPSTREAM CLI
+                                              // default (q8) + release profile
         {10, 4, 32, "lingbot-map-q8.gguf"},   // 12-GB class: memory default
         {6, 2, 16, "lingbot-map-q8.gguf"},    // 8-GB class
         {0, 2, 16, "lingbot-map-q8.gguf"},    // smaller accelerators
@@ -147,12 +149,18 @@ void lingbotAutoKvProfile(uint64_t gpuTotalBytes,
 LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     : QDialog(parent, Qt::Window) {
     setWindowTitle(tr("LingBot-Map Streaming 3D Reconstruction"));
-    // Application-modal dialog mode: while open, the dialog stays above the
-    // main window and clicking elsewhere can no longer raise the main window
-    // over it (a plain modeless Qt::Window gets buried and appears hidden).
-    // Esc or the close button releases the modality; the streaming task
-    // itself keeps running in its worker thread.
-    setWindowModality(Qt::ApplicationModal);
+    // Modeless: the reconstruction runs on a worker thread, so the render
+    // window must stay fully mouse-interactive while the dialog is open
+    // (an application-modal dialog blocks every other window's input for
+    // the whole run). The dialog is raised on show() instead of pinning
+    // itself above everything with a modality flag.
+    setWindowModality(Qt::NonModal);
+    // Always-on-top (without modality): clicking the render window used to
+    // push the dialog below it, hiding progress for the whole multi-minute
+    // run. The hint only changes the stacking order — focus and mouse
+    // interaction stay untouched (NonModal), so the render window remains
+    // fully navigable while the dialog floats above it.
+    setWindowFlag(Qt::WindowStaysOnTopHint, true);
     resize(640, 780);
 
     auto* rootLayout = new QVBoxLayout(this);
@@ -475,6 +483,23 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                          QStringLiteral("streaming"));
     m_modeCombo->addItem(tr("Windowed (long sequences)"),
                          QStringLiteral("windowed"));
+    m_modeCombo->setItemData(
+            1,
+            tr("Official windowed pipeline: each window gets a fresh KV "
+               "cache and the windows are stitched with the official "
+               "pairwise similarity alignment. Every window boundary adds "
+               "a small scale/pose drift (inherent to the mode, upstream "
+               "included) that shows up as ghosting between windows — use "
+               "Streaming unless the sequence really cannot fit one "
+               "window."),
+            Qt::ToolTipRole);
+    // Official default: demo.py --mode STREAMING (single persistent KV
+    // cache) — the same mode the upstream pipeline runs every short scene
+    // with, and the only mode with zero cross-window drift. Windowed is a
+    // purely explicit choice (no automatic upgrades): it trades coherence
+    // for bounded KV memory (measured: 6-window courthouse edges show
+    // ghosting that the single-KV run does not have).
+    m_modeCombo->setCurrentIndex(0);
     form->addRow(tr("Mode"), m_modeCombo);
     m_windowSize = new QSpinBox(this);
     m_windowSize->setRange(8, 512);
@@ -672,10 +697,11 @@ void LingbotMapDialog::populateCatalogs() {
                "N>320): use a long-* model (long-f16 recommended) with "
                "the streaming auto keyframe policy.\n"
                "• Short demo streams (Courthouse, Oxford, University, "
-               "Loop): use a balanced model (f16 recommended, q8 for "
-               "smaller VRAM).\n"
-               "f16 is the upstream GUI default; q8 trades accuracy for "
-               "half the weight memory; f32 is the exact reference."));
+               "Loop): use a balanced model (q8 — the 24-GB-class default; "
+               "f16 needs ≥30 GiB).\n"
+               "q8 is the upstream CLI default; f16 trades +1.1 GiB of "
+               "weights for the full-alignment accuracy; f32 is the exact "
+               "reference."));
     m_modelCombo->setCurrentIndex(currentDefault);
     if (!previous.isEmpty()) {
         const int idx = m_modelCombo->findData(previous);
@@ -1109,11 +1135,13 @@ void LingbotMapDialog::loadSettings() {
     m_rotate90->setChecked(
             settings.value(QStringLiteral("rotateClockwise90"), false)
                     .toBool());
-    const QString mode =
-            settings.value(QStringLiteral("mode"), QStringLiteral("streaming"))
-                    .toString();
-    const int modeIdx = m_modeCombo->findData(mode);
-    if (modeIdx >= 0) m_modeCombo->setCurrentIndex(modeIdx);
+    // Mode is deliberately NOT persisted: the official demo.py has no
+    // cross-session state — every invocation starts from --mode streaming.
+    // A persisted "windowed" from an old session used to silently
+    // re-select the multi-window path on every launch, and its inherent
+    // cross-window scale/pose drift then looked like a reconstruction bug.
+    // The constructor default (streaming) is the official default; an
+    // explicit in-session choice stays in effect for the session.
     m_windowRow->setVisible(currentMode() ==
                             LingbotMapWorker::Settings::Mode::Windowed);
     m_windowSize->setValue(
@@ -1176,11 +1204,8 @@ void LingbotMapDialog::saveSettings() const {
     settings.setValue(QStringLiteral("frameStride"), m_frameStride->value());
     settings.setValue(QStringLiteral("rotateClockwise90"),
                       m_rotate90->isChecked());
-    settings.setValue(
-            QStringLiteral("mode"),
-            currentMode() == LingbotMapWorker::Settings::Mode::Windowed
-                    ? QStringLiteral("windowed")
-                    : QStringLiteral("streaming"));
+    // Mode intentionally not saved (see loadSettings: the official demo.py
+    // always starts from --mode streaming; no cross-session state).
     settings.setValue(QStringLiteral("windowSize"), m_windowSize->value());
     settings.setValue(QStringLiteral("overlap"), m_overlap->value());
     settings.setValue(QStringLiteral("playback"), m_playbackCheck->isChecked());
@@ -1288,8 +1313,9 @@ void LingbotMapDialog::populateTestDataScenes() {
     combo->addItem(tr("Custom (own image folder)"), QStringLiteral("Custom"));
     combo->setItemData(
             0,
-            tr("Official courthouse demo stream (~286 frames): use a "
-               "balanced model (f16 recommended / q8)."),
+            tr("Official courthouse demo stream (~286 frames): runs in "
+               "Streaming mode with the default q8 model (single KV, no "
+               "cross-window drift)."),
             Qt::ToolTipRole);
     combo->setItemData(
             1,
@@ -1327,6 +1353,9 @@ void LingbotMapDialog::applyTestSceneSelection() {
         return;
     }
     m_customDataSelected = false;
+    // Mode stays at the official default (streaming): the worker upgrades
+    // long streams to windowed automatically, and short scenes keep the
+    // zero-drift single-KV path.
     // Official long-model video datasets fill the VIDEO input (not the
     // image folder) once downloaded; sky masking is left untouched (the
     // upstream long_real campaign runs them unmasked).
@@ -1407,13 +1436,13 @@ void LingbotMapDialog::updateDatasetHint() {
     } else if (sceneName.startsWith(QStringLiteral("LingbotMap")) &&
                sceneName != QStringLiteral("LingbotMapLoop")) {
         hint =
-                tr("Short outdoor demo sequence: use a balanced model (f16 "
-                   "recommended, q8 for smaller VRAM) in Streaming mode. "
-                   "Outdoor scenes benefit from sky masking.");
+                tr("Short outdoor demo sequence: Streaming mode with the default q8 "
+                   "model (single KV, no cross-window drift; f16 needs "
+                   "≥30 GiB). Outdoor scenes benefit from sky masking.");
     } else if (sceneName == QStringLiteral("LingbotMapLoop")) {
         hint =
-                tr("Indoor loop-closure sequence: use a balanced model (f16 "
-                   "recommended). No sky masking needed.");
+                tr("Indoor loop-closure sequence: Streaming mode with the "
+                   "default q8 model. No sky masking needed.");
     } else if (sceneName == QStringLiteral("Custom")) {
         hint =
                 tr("Model guidance: sequences above ~320 frames are long runs "

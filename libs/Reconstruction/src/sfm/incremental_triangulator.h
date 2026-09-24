@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "util/hash_containers.h"
 #include "scene/database_cache.h"
 #include "scene/reconstruction.h"
 #include "util/alignment.h"
@@ -70,8 +71,14 @@ public:
     // Create new incremental triangulator. Note that both the correspondence
     // graph and the reconstruction objects must live as long as the
     // triangulator.
-    IncrementalTriangulator(const CorrespondenceGraph* correspondence_graph,
-                            Reconstruction* reconstruction);
+    // Upstream parity (d3ccaf35): the triangulator owns its point operations
+    // through the ObservationManager so that the visibility statistics and
+    // the reconstruction stay in sync (single source of truth). If no
+    // observation manager is provided, one is created internally.
+    IncrementalTriangulator(
+            const CorrespondenceGraph* correspondence_graph,
+            Reconstruction* reconstruction,
+            std::shared_ptr<class ObservationManager> obs_manager = nullptr);
 
     // Triangulate observations of image.
     //
@@ -93,7 +100,7 @@ public:
     // have failed to triangulate before due to inaccurate poses, etc.
     // Returns the number of completed observations.
     size_t CompleteTracks(const Options& options,
-                          const std::unordered_set<point3D_t>& point3D_ids);
+                          const NodeHashSet<point3D_t>& point3D_ids);
 
     // Complete tracks of all 3D points.
     // Returns the number of completed observations.
@@ -102,7 +109,7 @@ public:
     // Merge tracks of for specific 3D points.
     // Returns the number of merged observations.
     size_t MergeTracks(const Options& options,
-                       const std::unordered_set<point3D_t>& point3D_ids);
+                       const NodeHashSet<point3D_t>& point3D_ids);
 
     // Merge tracks of all 3D points.
     // Returns the number of merged observations.
@@ -120,7 +127,7 @@ public:
     void AddModifiedPoint3D(const point3D_t point3D_id);
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
-    const std::unordered_set<point3D_t>& GetModifiedPoints3D();
+    const NodeHashSet<point3D_t>& GetModifiedPoints3D();
 
     // Clear the collection of changed 3D points.
     void ClearModifiedPoints3D();
@@ -172,18 +179,21 @@ private:
     // Reconstruction of the model. Modified when triangulating new points.
     Reconstruction* reconstruction_;
 
+    // Upstream parity (d3ccaf35): shared observation statistics owner.
+    std::shared_ptr<class ObservationManager> obs_manager_;
+
     // Cache for cameras with bogus parameters.
-    std::unordered_map<camera_t, bool> camera_has_bogus_params_;
+    NodeHashMap<camera_t, bool> camera_has_bogus_params_;
 
     // Cache for tried track merges to avoid duplicate merge trials.
-    std::unordered_map<point3D_t, std::unordered_set<point3D_t>> merge_trials_;
+    NodeHashMap<point3D_t, NodeHashSet<point3D_t>> merge_trials_;
 
     // Number of trials to retriangulate image pair.
-    std::unordered_map<image_pair_t, int> re_num_trials_;
+    NodeHashMap<image_pair_t, int> re_num_trials_;
 
     // Changed 3D points, i.e. if a 3D point is modified (created, continued,
     // deleted, merged, etc.). Cleared once `ModifiedPoints3D` is called.
-    std::unordered_set<point3D_t> modified_point3D_ids_;
+    NodeHashSet<point3D_t> modified_point3D_ids_;
 };
 
 }  // namespace colmap

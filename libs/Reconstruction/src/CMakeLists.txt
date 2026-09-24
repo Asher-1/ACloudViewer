@@ -64,6 +64,59 @@ COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
 target_link_libraries(${COLMAP_LIB_NAME} PUBLIC 3rdparty_meshoptimizer)
 target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 
+# Vendored boost::unordered header subset (1.92, header-only), injected for
+# mvs/patch_match.cc ONLY (per-source INCLUDE_DIRECTORIES below):
+# patch_match.cc must reproduce upstream's boost::unordered_flat_set
+# iteration order when rebuilding each problem's src_image_idxs
+# (hash-layout-dependent order feeds the patch_match layered cost
+# accumulation; a different order chaotically diverges the stereo result for
+# identical inputs). The include path must stay scoped to this single TU:
+# the 1.92 header closure conflicts with the system Boost 1.74 headers that
+# the CGAL-based meshing TUs of this same target require (container/move/
+# mpl redefinitions, see ../CMakeLists.txt). The compiled Boost libraries
+# stay on the system/ext_boost version; the scene/SfM hash container aliases
+# run on the std backend (COLMAP_HASH_BOOST is NOT defined).
+set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/mvs/patch_match.cc
+        PROPERTIES INCLUDE_DIRECTORIES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/boost_unordered/include")
+
+
+# Upstream-parity host math: the Image constructor computes P_/inv_P_ through
+# Eigen's Matrix4f::inverse(), whose result is codegen-sensitive — with the
+# fork-wide EIGEN_MAX_ALIGN_BYTES=0 (PCL compatibility, root CMakeLists) it
+# produces last-bit-different inv_P values versus the upstream build. inv_P
+# feeds the patch_match poses texture (channels 31-42) and is consumed by
+# ComputeGeomConsistencyCost: a 1-ulp inv_P difference chaotically diverges
+# the geometric-consistency pass while the photometric pass (raw K/R/T
+# channels, no host arithmetic) stays bit-exact. Compile this TU with the
+# default Eigen alignment so inv_P is bit-identical to upstream. All Eigen
+# objects in this TU are function-local, so the alignment change cannot leak
+# across translation units (no ODR/layout exposure).
+# NOTE: must be set in THIS directory — source properties are scoped to the
+# directory where they are set, and ColmapLib is defined here.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/mvs/image.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/feature/utils.cc
+            # Two-view geometry / RANSAC host math: the TVG verifier
+            # (fundamental/homography/essential estimation, Sampson checks,
+            # LORANSAC) runs the same Eigen expression graphs on both sides;
+            # with the fork-wide EIGEN_MAX_ALIGN_BYTES=0 a handful of
+            # threshold decisions flip by 1-ulp (observed: TVG pair (4,5)
+            # inlier sets differ by exactly one match). Restore upstream
+            # default alignment on the estimator path. All Eigen objects
+            # involved are function-local (same ODR argument as image.cc).
+            ${CMAKE_CURRENT_SOURCE_DIR}/estimators/two_view_geometry.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/estimators/fundamental_matrix_degensac.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/geometry/essential_matrix.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/geometry/homography_matrix.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/geometry/normalization.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/geometry/pose.cc
+            ${CMAKE_CURRENT_SOURCE_DIR}/optim/support_measurement.cc
+            PROPERTIES COMPILE_OPTIONS "-UEIGEN_MAX_ALIGN_BYTES")
+endif()
+
 
 if (CUDA_ENABLED)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")

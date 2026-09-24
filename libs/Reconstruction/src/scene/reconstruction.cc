@@ -31,6 +31,8 @@
 
 #include "scene/reconstruction.h"
 
+#include "util/hash_containers.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -101,8 +103,8 @@ void Reconstruction::RewireObjectPointers() {
     }
 }
 
-std::unordered_set<point3D_t> Reconstruction::Point3DIds() const {
-    std::unordered_set<point3D_t> point3D_ids;
+NodeHashSet<point3D_t> Reconstruction::Point3DIds() const {
+    NodeHashSet<point3D_t> point3D_ids;
     point3D_ids.reserve(points3D_.size());
 
     for (const auto& point3D : points3D_) {
@@ -830,9 +832,9 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
 
     // Find common and missing images in the two reconstructions.
 
-    std::unordered_set<image_t> common_image_ids;
+    NodeHashSet<image_t> common_image_ids;
     common_image_ids.reserve(reconstruction.NumRegImages());
-    std::unordered_set<image_t> missing_image_ids;
+    NodeHashSet<image_t> missing_image_ids;
     missing_image_ids.reserve(reconstruction.NumRegImages());
 
     for (const auto& image_id : reconstruction.RegImageIds()) {
@@ -878,7 +880,7 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
     for (const auto& point3D : reconstruction.Points3D()) {
         Track new_track;
         Track old_track;
-        std::unordered_set<point3D_t> old_point3D_ids;
+        NodeHashSet<point3D_t> old_point3D_ids;
         for (const auto& track_el : point3D.second.Track().Elements()) {
             if (common_image_ids.count(track_el.image_id) > 0) {
                 const auto& point2D =
@@ -943,10 +945,10 @@ std::vector<std::pair<image_t, image_t>> Reconstruction::FindCommonRegImageIds(
 }
 
 void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
-    std::unordered_map<image_t, image_t> old_to_new_image_ids;
+    NodeHashMap<image_t, image_t> old_to_new_image_ids;
     old_to_new_image_ids.reserve(NumImages());
 
-    std::unordered_map<image_t, class Image> new_images;
+    NodeHashMap<image_t, class Image> new_images;
     new_images.reserve(NumImages());
 
     for (auto& image : images_) {
@@ -1003,7 +1005,7 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
 size_t Reconstruction::FilterPoints3D(
         const double max_reproj_error,
         const double min_tri_angle,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const NodeHashSet<point3D_t>& point3D_ids) {
     size_t num_filtered = 0;
     num_filtered += FilterPoints3DWithLargeReprojectionError(max_reproj_error,
                                                              point3D_ids);
@@ -1015,8 +1017,8 @@ size_t Reconstruction::FilterPoints3D(
 size_t Reconstruction::FilterPoints3DInImages(
         const double max_reproj_error,
         const double min_tri_angle,
-        const std::unordered_set<image_t>& image_ids) {
-    std::unordered_set<point3D_t> point3D_ids;
+        const NodeHashSet<image_t>& image_ids) {
+    NodeHashSet<point3D_t> point3D_ids;
     for (const image_t image_id : image_ids) {
         const class Image& image = Image(image_id);
         for (const Point2D& point2D : image.Points2D()) {
@@ -1033,7 +1035,7 @@ size_t Reconstruction::FilterAllPoints3D(const double max_reproj_error,
     // Important: First filter observations and points with large reprojection
     // error, so that observations with large reprojection error do not make
     // a point stable through a large triangulation angle.
-    const std::unordered_set<point3D_t>& point3D_ids = Point3DIds();
+    const NodeHashSet<point3D_t>& point3D_ids = Point3DIds();
     size_t num_filtered = 0;
     num_filtered += FilterPoints3DWithLargeReprojectionError(max_reproj_error,
                                                              point3D_ids);
@@ -1296,8 +1298,8 @@ bool Reconstruction::ExtractColorsForImage(const image_t image_id,
 
 void Reconstruction::ExtractColorsForAllImages(
         const std::filesystem::path& path) {
-    std::unordered_map<point3D_t, Eigen::Vector3d> color_sums;
-    std::unordered_map<point3D_t, size_t> color_counts;
+    NodeHashMap<point3D_t, Eigen::Vector3d> color_sums;
+    NodeHashMap<point3D_t, size_t> color_counts;
 
     for (size_t i = 0; i < reg_image_ids_.size(); ++i) {
         const class Image& image = Image(reg_image_ids_[i]);
@@ -1372,7 +1374,7 @@ void Reconstruction::CreateImageDirs(const std::filesystem::path& path) const {
 
 size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
         const double min_tri_angle,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const NodeHashSet<point3D_t>& point3D_ids) {
     // Number of filtered points.
     size_t num_filtered = 0;
 
@@ -1380,7 +1382,7 @@ size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
     const double min_tri_angle_rad = DegToRad(min_tri_angle);
 
     // Cache for image projection centers.
-    std::unordered_map<image_t, Eigen::Vector3d> proj_centers;
+    NodeHashMap<image_t, Eigen::Vector3d> proj_centers;
 
     for (const auto point3D_id : point3D_ids) {
         if (!ExistsPoint3D(point3D_id)) {
@@ -1434,7 +1436,7 @@ size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
 
 size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
         const double max_reproj_error,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const NodeHashSet<point3D_t>& point3D_ids) {
     const double max_squared_reproj_error = max_reproj_error * max_reproj_error;
 
     // Number of filtered points.
@@ -1573,7 +1575,7 @@ void Reconstruction::ResetTriObservations(const image_t image_id,
 }
 
 
-std::unordered_set<frame_t> Reconstruction::RegFrameIds() const {
+NodeHashSet<frame_t> Reconstruction::RegFrameIds() const {
   // Upstream d3ccaf35 semantics: registration is an explicit state held in
   // reg_frame_ids_; AddFrame registers frames that carry a pose, and
   // RegisterImage keeps the legacy image-level set in lockstep. The fork

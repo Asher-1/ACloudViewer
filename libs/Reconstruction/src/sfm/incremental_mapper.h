@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include "util/hash_containers.h"
 #include "estimators/bundle_adjustment.h"
 #include "estimators/generalized_pose.h"
+#include "geometry/pose.h"
 #include "scene/database.h"
 #include "scene/database_cache.h"
 #include "scene/reconstruction.h"
@@ -22,8 +24,11 @@ namespace colmap {
 //
 //  IncrementalMapper mapper(&database_cache);
 //  mapper.BeginReconstruction(&reconstruction);
-//  CHECK(mapper.FindInitialImagePair(options, image_id1, image_id2));
-//  CHECK(mapper.RegisterInitialImagePair(options, image_id1, image_id2));
+//  Rigid3d cam2_from_cam1;
+//  CHECK(mapper.FindInitialImagePair(options, image_id1, image_id2,
+//                                    cam2_from_cam1));
+//  mapper.RegisterInitialImagePair(options, image_id1, image_id2,
+//                                  cam2_from_cam1);
 //  while (...) {
 //    const auto next_image_ids = mapper.FindNextImages(options);
 //    for (const auto image_id : next_image_ids) {
@@ -96,6 +101,16 @@ public:
         // If reconstruction is provided as input, fix the existing image poses.
         bool fix_existing_images = false;
 
+        // List of rigs for which to fix the sensor_from_rig transformation,
+        // independent of ba_refine_sensor_from_rig (upstream d3ccaf35,
+        // named fix_existing_frames there).
+        NodeHashSet<rig_t> constant_rigs;
+
+        // List of cameras for which to fix the camera parameters independent
+        // of refine_focal_length, refine_principal_point, and
+        // refine_extra_params (upstream d3ccaf35 parity).
+        NodeHashSet<camera_t> constant_cameras;
+
         // If enabled, redundant 3D points are (temporally) excluded from the
         // global bundle adjustment and only used to compute their reprojection
         // error in the end. This is only done for reconstructions that have
@@ -158,12 +173,16 @@ public:
     // be updated accordingly.
     void EndReconstruction(const bool discard);
 
-    // Find initial image pair to seed the incremental reconstruction. The image
-    // pairs should be passed to `RegisterInitialImagePair`. This function
-    // automatically ignores image pairs that failed to register previously.
+    // Find initial image pair to seed the incremental reconstruction. The
+    // image pairs should be passed to `RegisterInitialImagePair`. This
+    // function automatically ignores image pairs that failed to register
+    // previously. On success, the intrinsics estimated for the chosen pair by
+    // two-view solvers (e.g. shared focal) have already been seeded into the
+    // reconstruction (upstream SeedEstimatedInitialCameras placement).
     bool FindInitialImagePair(const Options& options,
-                              image_t* image_id1,
-                              image_t* image_id2);
+                              image_t& image_id1,
+                              image_t& image_id2,
+                              Rigid3d& cam2_from_cam1);
 
     // Find best next image to register in the incremental reconstruction. The
     // images should be passed to `RegisterNextImage`. This function
@@ -172,10 +191,13 @@ public:
     std::vector<image_t> FindNextImages(const Options& options,
                                         bool structure_less = false);
 
-    // Attempt to seed the reconstruction from an image pair.
+    // Attempt to seed the reconstruction from an image pair. The relative
+    // pose comes from `FindInitialImagePair`; this function no longer
+    // re-estimates the two-view geometry (upstream d3ccaf35 form).
     bool RegisterInitialImagePair(const Options& options,
                                   const image_t image_id1,
-                                  const image_t image_id2);
+                                  const image_t image_id2,
+                                  const Rigid3d& cam2_from_cam1);
 
     // Attempt to register image to the existing model. This requires that
     // a previous call to `RegisterInitialImagePair` was successful.
@@ -225,19 +247,34 @@ public:
             const BundleAdjustmentOptions& ba_options,
             const IncrementalTriangulator::Options& tri_options,
             const image_t image_id,
-            const std::unordered_set<point3D_t>& point3D_ids);
+            const NodeHashSet<point3D_t>& point3D_ids);
 
     // Global bundle adjustment with the configured backend.
     bool AdjustGlobalBundle(const Options& options,
                             const BundleAdjustmentOptions& ba_options);
     // Filter images and point observations.
-    size_t FilterImages(const Options& options);
+    // Filter frames (and their images) whose pose or camera parameters are
+    // unreliable. Filtering and bookkeeping happen at frame granularity
+    // (upstream d3ccaf35 FilterFrames; the fork keeps the
+    // fix_existing_images option name for CLI compatibility).
+    size_t FilterFrames(const Options& options);
     size_t FilterPoints(const Options& options);
 
     // Complete and merge all tracks (upstream parity, d3ccaf35
     // incremental_mapper.h).
     size_t CompleteAndMergeTracks(
             const IncrementalTriangulator::Options& tri_options);
+
+    // Iterative local refinement: multiple rounds of local bundle adjustment
+    // until the changed-observation ratio converges (upstream d3ccaf35
+    // IncrementalMapper::IterativeLocalRefinement).
+    void IterativeLocalRefinement(
+            int max_num_refinements,
+            double max_refinement_change,
+            const Options& options,
+            const BundleAdjustmentOptions& ba_options,
+            const IncrementalTriangulator::Options& tri_options,
+            image_t image_id);
 
     // Iterative global refinement: complete/merge/retriangulate the tracks
     // and run global bundle adjustment until convergence (upstream parity,
@@ -252,6 +289,14 @@ public:
 
     const Reconstruction& GetReconstruction() const;
 
+    // Getter functions (upstream d3ccaf35 parity; the reconstruction getter
+    // keeps the fork's GetReconstruction name for API compatibility).
+    class ObservationManager& ObservationManager() const;
+    IncrementalTriangulator& Triangulator() const;
+    const NodeHashSet<frame_t>& FilteredFrames() const;
+    const NodeHashSet<frame_t>& ExistingFrameIds() const;
+    const NodeHashMap<camera_t, size_t>& NumRegImagesPerCamera() const;
+
     // Number of images that are registered in at least on reconstruction.
     size_t NumTotalRegImages() const;
 
@@ -260,49 +305,61 @@ public:
     size_t NumSharedRegImages() const;
 
     // Number of registered frames per rig (upstream parity, d3ccaf35).
-    const std::unordered_map<rig_t, size_t>& NumRegFramesPerRig() const;
+    const NodeHashMap<rig_t, size_t>& NumRegFramesPerRig() const;
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
-    const std::unordered_set<point3D_t>& GetModifiedPoints3D();
+    const NodeHashSet<point3D_t>& GetModifiedPoints3D();
 
     // Clear the collection of changed 3D points.
     void ClearModifiedPoints3D();
 
+    // Estimate two view geometry and checks if it is suitable for
+    // initialization (upstream d3ccaf35 form; used e.g. for a user-provided
+    // initial pair). On success, estimated intrinsics are seeded into the
+    // reconstruction cameras.
+    bool EstimateInitialTwoViewGeometry(const Options& options,
+                                        const image_t image_id1,
+                                        const image_t image_id2,
+                                        Rigid3d& cam2_from_cam1);
+
 private:
-    // Find seed images for incremental reconstruction. Suitable seed images
-    // have a large number of correspondences and have camera calibration
-    // priors. The returned list is ordered such that most suitable images are
-    // in the front.
-    std::vector<image_t> FindFirstInitialImage(const Options& options) const;
-
-    // For a given first seed image, find other images that are connected to the
-    // first image. Suitable second images have a large number of
-    // correspondences to the first image and have camera calibration priors.
-    // The returned list is ordered such that most suitable images are in the
-    // front.
-    std::vector<image_t> FindSecondInitialImage(const Options& options,
-                                                const image_t image_id1) const;
-
-    // Find local bundle for given image in the reconstruction. The local bundle
-    // is defined as the images that are most connected, i.e. maximum number of
-    // shared 3D points, to the given image.
-    std::vector<image_t> FindLocalBundle(const Options& options,
-                                         const image_t image_id) const;
-
-    // Register / De-register image in current reconstruction and update
-    // the number of shared images between all reconstructions.
-    void RegisterImageEvent(const image_t image_id);
-    void DeRegisterImageEvent(const image_t image_id);
-
-    // Upstream parity (d3ccaf35): frame-level registration bookkeeping -
-    // bumps the per-rig frame count and the per-image counters of every
-    // image in the frame.
+    // Register / De-register frame in current reconstruction and update
+    // the per-rig frame count plus the per-image counters of every image in
+    // the frame (upstream d3ccaf35 form: no standalone image-level events).
     void RegisterFrameEvent(frame_t frame_id);
     void DeRegisterFrameEvent(frame_t frame_id);
 
-    bool EstimateInitialTwoViewGeometry(const Options& options,
-                                        const image_t image_id1,
-                                        const image_t image_id2);
+    // Registration statistics shared across a reconstruction run (upstream
+    // d3ccaf35 form: bundled in a single struct instead of loose members).
+    struct RegistrationStatistics {
+        // Number of images that are registered in at least one
+        // reconstruction.
+        size_t num_total_reg_images = 0;
+
+        // Number of shared images between current reconstruction and all
+        // other previous reconstructions.
+        size_t num_shared_reg_images = 0;
+
+        // Images and image pairs that have been used for initialization.
+        // Each image and image pair is only tried once for initialization.
+        NodeHashMap<image_t, size_t> init_num_reg_trials;
+        NodeHashSet<image_pair_t> init_image_pairs;
+
+        // The number of registered frames/images per rig/camera. Used to
+        // avoid duplicate refinement of rig/camera parameters and degradation
+        // of already refined parameters in local bundle adjustment when
+        // multiple frames share rigs or images share intrinsics.
+        NodeHashMap<rig_t, size_t> num_reg_frames_per_rig;
+        NodeHashMap<camera_t, size_t> num_reg_images_per_camera;
+
+        // The number of reconstructions in which images are registered.
+        NodeHashMap<image_t, size_t> num_registrations;
+
+        // Number of trials to register image in current reconstruction. Used
+        // to set an upper bound to the number of trials to register an image.
+        NodeHashMap<image_t, size_t> num_reg_trials;
+        NodeHashMap<image_t, size_t> num_structure_less_reg_trials;
+    };
 
     // Class that holds all necessary data from database in memory.
     const DatabaseCache* database_cache_;
@@ -317,51 +374,16 @@ private:
     // bookkeeping shared with the triangulator.
     std::shared_ptr<class ObservationManager> obs_manager_;
 
-    // The number of registered frames per rig. Used to prefer a seed pair
-    // whose rigs are not yet registered.
-    std::unordered_map<rig_t, size_t> num_reg_frames_per_rig_;
+    // Registration statistics (see struct above).
+    RegistrationStatistics reg_stats_;
 
-    // Number of images that are registered in at least on reconstruction.
-    size_t num_total_reg_images_;
+    // Frames that have been filtered in current reconstruction.
+    NodeHashSet<frame_t> filtered_frames_;
 
-    // Number of shared images between current reconstruction and all other
-    // previous reconstructions.
-    size_t num_shared_reg_images_;
-
-    // Estimated two-view geometry of last call to `FindFirstInitialImage`,
-    // used as a cache for a subsequent call to `RegisterInitialImagePair`.
-    image_pair_t prev_init_image_pair_id_;
-    TwoViewGeometry prev_init_two_view_geometry_;
-
-    // Images and image pairs that have been used for initialization. Each image
-    // and image pair is only tried once for initialization.
-    std::unordered_map<image_t, size_t> init_num_reg_trials_;
-    std::unordered_set<image_pair_t> init_image_pairs_;
-
-    // The number of registered images per camera. This information is used
-    // to avoid duplicate refinement of camera parameters and degradation of
-    // already refined camera parameters in local bundle adjustment when
-    // multiple images share intrinsics.
-    std::unordered_map<camera_t, size_t> num_reg_images_per_camera_;
-
-    // The number of reconstructions in which images are registered.
-    std::unordered_map<image_t, size_t> num_registrations_;
-
-    // Images that have been filtered in current reconstruction.
-    std::unordered_set<image_t> filtered_images_;
-
-    // Number of trials to register image in current reconstruction. Used to set
-    // an upper bound to the number of trials to register an image.
-    std::unordered_map<image_t, size_t> num_reg_trials_;
-
-    // Number of trials to structure-less register an image in the current
-    // reconstruction (upstream parity, d3ccaf35).
-    std::unordered_map<image_t, size_t> num_structure_less_reg_trials_;
-
-    // Images that were registered before beginning the reconstruction.
-    // This image list will be non-empty, if the reconstruction is continued
+    // Frames that were registered before beginning the reconstruction.
+    // This frame list will be non-empty, if the reconstruction is continued
     // from an existing reconstruction.
-    std::unordered_set<image_t> existing_image_ids_;
+    NodeHashSet<frame_t> existing_frame_ids_;
 };
 
 }  // namespace colmap

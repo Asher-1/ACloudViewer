@@ -17,6 +17,10 @@
 struct aicore_lingbot_ctx;
 struct aicore_lingbot_result;
 
+namespace lingbot_stitch {
+struct WindowData; /**< official windowed math (LingbotWindowStitcher.h) */
+}
+
 /** Per-frame streaming reconstruction result (processed-resolution layout).
  *  All buffers are frame-owned copies taken inside the engine callback. */
 struct LingbotFrameResult {
@@ -49,6 +53,25 @@ struct LingbotFramePreview {
     QVector<float> points;     /**< [n * 3] world XYZ of kept points */
     QVector<uint8_t> colors;   /**< [n * 3] RGB of kept points */
     bool degenerate = false;   /**< non-finite depth/pose: frustum only */
+};
+
+/** Per-window ALIGNED live preview emitted when a window finishes: the
+ *  window's contribution frames (overlap de-duplicated) after the official
+ *  similarity warp, so every batch shares the first window's coordinate
+ *  frame. The main thread appends these into ONE persistent cloud and adds
+ *  one camera frustum per contributed frame (also aligned) — the live map
+ *  grows across window boundaries instead of being hidden when the next
+ *  window-local streaming preview would take over. */
+struct LingbotAlignedPreview {
+    int windowIndex = 0;
+    int width = 0;           /**< processed width (camera intrinsics) */
+    int height = 0;          /**< processed height */
+    QVector<float> points;   /**< [n * 3] world XYZ (aligned frame) */
+    QVector<uint8_t> colors; /**< [n * 3] RGB of kept points */
+    QVector<float> camC2w;   /**< [k * 16] aligned row-major c2w per
+                                  contributed frame */
+    QVector<float> camIntr;  /**< [k * 4] fx, fy, cx, cy per frame */
+    QVector<int> camFrames;  /**< k global frame indices */
 };
 
 /** Aggregated result handed back to the main thread. */
@@ -140,6 +163,9 @@ signals:
     void framesDecoded(int count);
     /** Live per-frame preview while the engine streams (main-thread slot). */
     void framePreviewReady(const LingbotFramePreview& preview);
+    /** ALIGNED per-window preview batch (main-thread slot): the persistent
+     *  cross-window map the transient per-window previews fold into. */
+    void alignedPreviewReady(const LingbotAlignedPreview& preview);
     void resultReady(const LingbotRunResult& result);
     void taskFinished(bool success);
 
@@ -158,6 +184,10 @@ private:
         int globalStart; /**< global index of local frame 0 */
         int windowIndex;
         int windowCount;
+        /** Windowed mode: numeric rows land directly in the stitcher's
+         *  WindowData (no intermediate O(depth-plane) copies); `frames`
+         *  then carries only the sky state + identity metadata. */
+        lingbot_stitch::WindowData* window = nullptr;
     };
     /** Shared streaming callback: result copy + live preview + progress. */
     static int streamCallbackEntry(void* user, const aicore_lingbot_result* r);
@@ -195,8 +225,21 @@ private:
     int m_delivered = 0;
     bool m_skyReady = false;
     QElapsedTimer m_elapsed;
+    /** Running point count of the transient online preview cloud for the
+     *  current window/stream; drives the adaptive preview stride that
+     *  keeps the main thread's throttled re-conversion bounded. */
+    size_t m_previewPointTotal = 0;
+    /** Running point count of the ALIGNED cross-window preview batches;
+     *  stretches their pixel stride once the persistent map cloud passes
+     *  the same point budget as the transient preview. */
+    size_t m_alignedPointTotal = 0;
+    /** Mode actually used for the current run: Streaming upgraded to
+     *  Windowed by the official long-sequence policy. Computed in run()
+     *  where the stream bound is known, consumed by runInference(). */
+    Settings::Mode m_effectiveMode = Settings::Mode::Streaming;
 };
 
 Q_DECLARE_METATYPE(LingbotFrameResult)
 Q_DECLARE_METATYPE(LingbotFramePreview)
+Q_DECLARE_METATYPE(LingbotAlignedPreview)
 Q_DECLARE_METATYPE(LingbotRunResult)

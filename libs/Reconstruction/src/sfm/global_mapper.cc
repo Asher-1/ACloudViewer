@@ -97,7 +97,7 @@ void DeleteObservations(Reconstruction& reconstruction,
 // would dangle it), and points that would keep fewer than 2 observations
 // are removed entirely. The remaining points carry the mean inlier error.
 size_t FilterTracksByAngularError(Reconstruction& reconstruction,
-                                  const std::unordered_set<point3D_t>& ids,
+                                  const NodeHashSet<point3D_t>& ids,
                                   double max_angular_error_rad) {
   size_t num_filtered_observations = 0;
   for (const point3D_t point3D_id : ids) {
@@ -139,7 +139,7 @@ size_t FilterTracksByAngularError(Reconstruction& reconstruction,
 }
 
 size_t FilterTracksByNormalizedError(Reconstruction& reconstruction,
-                                     const std::unordered_set<point3D_t>& ids,
+                                     const NodeHashSet<point3D_t>& ids,
                                      double max_normalized_error) {
   size_t num_filtered_observations = 0;
   for (const point3D_t point3D_id : ids) {
@@ -204,7 +204,7 @@ size_t FilterTracksByNormalizedError(Reconstruction& reconstruction,
 
 size_t FilterTracksBySmallTriangulationAngle(
     Reconstruction& reconstruction,
-    const std::unordered_set<point3D_t>& ids,
+    const NodeHashSet<point3D_t>& ids,
     double min_tri_angle_rad) {
   std::vector<point3D_t> points_to_delete;
   for (const point3D_t point3D_id : ids) {
@@ -506,7 +506,7 @@ bool GlobalMapper::GlobalPositioning(
     return false;
   }
 
-  std::unordered_set<point3D_t> point3D_ids = reconstruction_->Point3DIds();
+  NodeHashSet<point3D_t> point3D_ids = reconstruction_->Point3DIds();
 
   // Filter tracks based on the estimation. The fork reads the per-image pose
   // through ProjectionMatrix() (frame-aware) and the angular error through

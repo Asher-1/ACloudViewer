@@ -1026,6 +1026,7 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
     // Download the extracted keypoints and descriptors.
     sift_gpu->GetFeatureVector(keypoints_data.data(), descriptors_float.data());
 
+
     keypoints->resize(num_features);
     for (size_t i = 0; i < num_features; ++i) {
         (*keypoints)[i] =

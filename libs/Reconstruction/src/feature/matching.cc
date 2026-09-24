@@ -34,6 +34,7 @@
 
 #include <fstream>
 #include <numeric>
+#include <unordered_set>
 
 #include "SiftGPU/SiftGPU.h"
 #include "aicore/loma_capi.h"
@@ -355,6 +356,14 @@ std::vector<image_t> FeatureMatcherCache::GetImageIds() {
     image_ids.push_back(image.first);
   }
 
+  // Sort the images for deterministic behavior. Note that the images_cache_ is
+  // an unordered_map, which does not guarantee a deterministic order across
+  // different standard library implementations. Upstream parity (d3ccaf35
+  // controllers/matcher_cache.cc): without this sort the exhaustive matcher
+  // generates pairs in a non-ascending image-id order, so matches are computed
+  // in the swapped (image_id1 > image_id2) direction and stored with reversed
+  // row order after the column swap in WriteMatches.
+  std::sort(image_ids.begin(), image_ids.end());
   return image_ids;
 }
 

@@ -45,6 +45,7 @@ COLMAP_ADD_SOURCES(
     model.h model.cc
     normal_map.h normal_map.cc
     texture_mapping.h texture_mapping.cc
+    textured_mesh_export.h textured_mesh_export.cc
     workspace.h workspace.cc
 )
 

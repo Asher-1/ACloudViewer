@@ -163,6 +163,22 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_API_HEADERS}
 )
 
+# LingBot host-side floating-point parity: the reference implementation
+# (upstream cpp_ggml) compiles WITHOUT -march (x86-64 baseline, no FMA),
+# while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to this tree. With
+# contraction enabled GCC fuses `a*b+c` into vfmadd inside the DINO
+# positional-table interpolation and the Pillow resample kernels, and the
+# resulting 1-ULP drift propagates through all 24 transformer blocks into
+# visibly different depth/pose output. Disabling contraction on the
+# lingbot TUs restores the reference bit-exact contract; ggml kernels are
+# unaffected (they are compiled in ext_ggml without -march).
+set_source_files_properties(
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_capi.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_skyseg.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_gguf_loader.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     FOLDER "core"

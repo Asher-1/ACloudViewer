@@ -1136,7 +1136,10 @@ def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[s
         is_timing = any(part.endswith(TIMING_SUFFIXES) for part in path_parts)
         if (is_timing and float(value) > 0.0) or leaf in {
                 "mask_iou", "box_error", "score_error", "worst_rel_mae",
-                "kpt_median_px", "descriptor_cosine_median"}:
+                "kpt_median_px", "descriptor_cosine_median",
+                # lingbot upstream-parity probe (test_lingbot_stream_parity)
+                "pose_t_rmse", "pose_quat_maxdiff", "intr_maxdiff",
+                "depth_pool_rel_rmse", "conf_mean_maxdiff"}:
             metrics[prefix] = float(value)
     elif isinstance(value, str):
         leaf = prefix.rsplit("/", 1)[-1].lower()

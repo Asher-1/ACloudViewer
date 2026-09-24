@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "util/hash_containers.h"
 #include <QOpenGLFunctions_3_2_Core>
 #include <QtCore>
 #include <QtGlobal>
@@ -109,9 +110,9 @@ public:
 
     // Copy of current scene data that is displayed
     Reconstruction* reconstruction = nullptr;
-    std::unordered_map<camera_t, Camera> cameras;
-    std::unordered_map<image_t, Image> images;
-    std::unordered_map<point3D_t, Point3D> points3D;
+    NodeHashMap<camera_t, Camera> cameras;
+    NodeHashMap<image_t, Image> images;
+    NodeHashMap<point3D_t, Point3D> points3D;
     std::vector<image_t> reg_image_ids;
 
     QLabel* statusbar_status_label;

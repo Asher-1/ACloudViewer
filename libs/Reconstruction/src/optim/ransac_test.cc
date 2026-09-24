@@ -63,26 +63,27 @@ TEST(optim_ransac, TestReport) {
 }
 
 TEST(optim_ransac, TestNumTrials) {
+  // Expected values from upstream d3ccaf35 optim/ransac_test.cc (the
+  // without-replacement stopping criterion; the third round of the E2E
+  // alignment switched the implementation to that formula but left these
+  // expectations at the legacy pow-approximation values).
   EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         1, 100, 0.99, 1.0),
-                    4605168);
+                    18446744073709551615llu);
   EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.99, 1.0),
-                    4603);
+                    6204);
   EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.999, 1.0),
-                    6905);
+                    9305);
   EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.999, 2.0),
-                    13809);
+                    18610);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                        50, 100, 0.99, 1.0),
+                    36);
   EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         100, 100, 0.99, 1.0),
-                    1);
-  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
-                        100, 100, 0.999, 1.0),
-                    1);
-  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
-                        100, 100, 0, 1.0),
                     1);
 }
 

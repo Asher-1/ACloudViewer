@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "util/hash_containers.h"
 #include <filesystem>
 #include <functional>
 #include <limits>

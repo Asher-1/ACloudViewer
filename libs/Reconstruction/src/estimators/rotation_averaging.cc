@@ -708,7 +708,7 @@ bool RunRotationAveraging(const RotationEstimatorOptions& options,
     for (const image_t image_id : filtered_active_image_ids) {
       active_frame_ids.insert(reconstruction.Image(image_id).FrameId());
     }
-    const std::unordered_set<frame_t> reg_frame_ids_snapshot =
+    const NodeHashSet<frame_t> reg_frame_ids_snapshot =
         reconstruction.RegFrameIds();
     for (const frame_t frame_id : reg_frame_ids_snapshot) {
       THROW_CHECK(reconstruction.Frame(frame_id).HasPose());

@@ -140,6 +140,126 @@
           "size_bytes": 150644
         }
       ]
+    },
+    {
+      "id": "lingbot-parity-00000000",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000000.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000000.png",
+      "sha256": "8b07befd90f26e87411e64f7fd433c6b96b2dec6d640ce1e3c78f35402043b8c",
+      "size_bytes": 250946
+    },
+    {
+      "id": "lingbot-parity-00000001",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000001.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000001.png",
+      "sha256": "382233d33a4e6c4c596d09cf8d44c361962df502a180bfa9c1a64e8cf10e3425",
+      "size_bytes": 253281
+    },
+    {
+      "id": "lingbot-parity-00000002",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000002.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000002.png",
+      "sha256": "234711bff562f68da4e8515d0788404d406591a93f0efe4391c34ff6c7f3f1e2",
+      "size_bytes": 257494
+    },
+    {
+      "id": "lingbot-parity-00000003",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000003.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000003.png",
+      "sha256": "54549d7a0a6386d1e2279060836edddd20b68c4c5f3acfe7198ed20cc0c869b4",
+      "size_bytes": 256887
+    },
+    {
+      "id": "lingbot-parity-00000004",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000004.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000004.png",
+      "sha256": "52a808711be5309c8be9041acd947d2adba0d754da0c35da6537c1fb1b210c9f",
+      "size_bytes": 254207
+    },
+    {
+      "id": "lingbot-parity-00000005",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000005.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000005.png",
+      "sha256": "7d44bf8ecaa77e06567a431cb0d731bf31c486fa7c397ee76d8571d43a4f6c87",
+      "size_bytes": 257942
+    },
+    {
+      "id": "lingbot-parity-00000006",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000006.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000006.png",
+      "sha256": "b4c6aa89f28d696c3acdb6b06917ed7d51a21dbb1a770b6e7b4ec2262fc8030a",
+      "size_bytes": 243505
+    },
+    {
+      "id": "lingbot-parity-00000007",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000007.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000007.png",
+      "sha256": "e94422026dee320f1c1455ec461df9dbff80c10557a582ec5f62d0a57dd66eea",
+      "size_bytes": 225809
+    },
+    {
+      "id": "lingbot-parity-00000008",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000008.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000008.png",
+      "sha256": "b18bfeb7f53b4a24e873eb466ec10f6dae41a430defbe82566c9b2d587c6a3ad",
+      "size_bytes": 212422
+    },
+    {
+      "id": "lingbot-parity-00000009",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000009.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000009.png",
+      "sha256": "34e0b857cdc4283c120b8b459e1dc9c4f74bd48b6d2f466e423e3ab9f004d4a1",
+      "size_bytes": 223683
+    },
+    {
+      "id": "lingbot-parity-00000010",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000010.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000010.png",
+      "sha256": "284d286be98c402a7f7c9ba042bd2bc816dd874d05793da91092e605fc515de4",
+      "size_bytes": 237418
+    },
+    {
+      "id": "lingbot-parity-00000011",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000011.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000011.png",
+      "sha256": "c5218ca179da1c8e7cbaa94ac5af6f6fd2f2b86d76d120a5d600d7a017da25b0",
+      "size_bytes": 238558
     }
   ],
   "scenarios": [
@@ -1278,6 +1398,71 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "generic",
       "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-parity",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "executable": "binary:test_lingbot_stream_parity",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_INPUT_DIR": "{assets}/lingbot_parity",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "engine-vs-upstream numeric parity on the pinned courthouse fixtures: pose_enc/intrinsics/depth/depth-conf within the calibrated per-backend tolerance of the captured upstream lingbot-map-cli goldens (same profile, byte-identical preprocessed stream; per-backend goldens, unknown backends skip)",
+      "accuracy": {
+        "reference": "upstream_lingbot_map_ggml_cli",
+        "reference_id": "lingbot-map-ggml@156117fffedf27421a44f5c918a983a6d8cdec34 cpp_ggml lingbot-map-cli --kv-f16 strict --kv-scale 2 --kv-window 8 on courthouse frames 000000-000011, preprocessed by aicore_lingbot_preprocess_image; goldens captured per backend by core/AICore/tests/lingbot/gen_stream_parity_golden.py",
+        "checks": [
+          {
+            "metric": "pose_t_rmse",
+            "op": "<=",
+            "value": 0.02,
+            "label": "camera-translation RMSE vs upstream (scene units)"
+          },
+          {
+            "metric": "pose_quat_maxdiff",
+            "op": "<=",
+            "value": 0.005,
+            "label": "elementwise quaternion drift vs upstream"
+          },
+          {
+            "metric": "intr_maxdiff",
+            "op": "<=",
+            "value": 0.5,
+            "label": "elementwise fx/fy/cx/cy drift vs upstream (fov->fx rounding dominates on Vulkan/CPU; convention errors are O(100))"
+          },
+          {
+            "metric": "depth_pool_rel_rmse",
+            "op": "<=",
+            "value": 0.02,
+            "label": "16x16 block-mean depth RMSE relative to the golden mean"
+          },
+          {
+            "metric": "conf_mean_maxdiff",
+            "op": "<=",
+            "value": 0.05,
+            "label": "per-frame depth-confidence mean drift vs upstream"
+          }
+        ],
+        "require_metrics": [
+          "pose_t_rmse",
+          "pose_quat_maxdiff",
+          "intr_maxdiff",
+          "depth_pool_rel_rmse",
+          "conf_mean_maxdiff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
     },
     {
       "id": "lingbot-stream-keyframe",

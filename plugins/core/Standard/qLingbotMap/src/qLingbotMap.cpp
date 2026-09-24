@@ -18,6 +18,8 @@
 #include <ecvPolyline.h>
 #include <ecvViewManager.h>
 
+#include <CVLog.h>
+
 #include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
@@ -135,6 +137,7 @@ qLingbotMap::qLingbotMap(QObject* parent)
     qRegisterMetaType<LingbotRunResult>("LingbotRunResult");
     qRegisterMetaType<LingbotFrameResult>("LingbotFrameResult");
     qRegisterMetaType<LingbotFramePreview>("LingbotFramePreview");
+    qRegisterMetaType<LingbotAlignedPreview>("LingbotAlignedPreview");
     qRegisterMetaType<LingbotMapWorker::Settings>("LingbotMapWorker::Settings");
     m_action = new QAction(tr("LingBot-Map Reconstruction"), this);
     m_action->setToolTip(
@@ -188,16 +191,24 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
         return;
     }
     m_worker = new LingbotMapWorker(settings, this);
-    connect(m_worker, &LingbotMapWorker::logMessage, m_dialog,
-            &LingbotMapDialog::appendLog);
-    connect(m_worker, &LingbotMapWorker::taskStage, m_dialog,
-            &LingbotMapDialog::appendLog);
+    // Dual log sink: the dialog panel is the interactive view; CVLog (the
+    // app console) persists the SAME lines into the session log file. Without
+    // the file sink, a failed run leaves NO trace in logs/ACloudViewer.*.log
+    // and parameter questions cannot be answered after the fact.
+    auto forwardLog = [this](const QString& msg) {
+        m_dialog->appendLog(msg);
+        CVLog::Print(msg);
+    };
+    connect(m_worker, &LingbotMapWorker::logMessage, this, forwardLog);
+    connect(m_worker, &LingbotMapWorker::taskStage, this, forwardLog);
     connect(m_worker, &LingbotMapWorker::taskStage, m_dialog,
             [this](const QString& stage, int percent) {
                 if (percent >= 0) m_dialog->setProgress(percent);
             });
     connect(m_worker, &LingbotMapWorker::framePreviewReady, this,
             &qLingbotMap::onFramePreview);
+    connect(m_worker, &LingbotMapWorker::alignedPreviewReady, this,
+            &qLingbotMap::onAlignedPreview);
     connect(m_worker, &LingbotMapWorker::resultReady, this,
             &qLingbotMap::onResultReady);
     connect(m_worker, &LingbotMapWorker::taskFinished, this,
@@ -205,18 +216,20 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_inferenceElapsedSeconds = 0;
     m_dialog->setTaskRunning(true);
     m_inferenceHeartbeat->start();
+    m_pendingResult = LingbotRunResult{};
     m_lastSettings = settings;
 
     // Fresh online-preview state for this run (official StreamingViewer:
     // the scene grows frame by frame while the engine streams).
     disposeOnlineGroup();
-    m_onlineWindowCount = 0;
-    m_onlineCurrentWindow = nullptr;
     m_onlineBaselines.clear();
     m_lastPreviewC2w.clear();
     m_onlineRefreshThrottle.start();
     stopPlayback();
-    m_frameCameraIds.clear();
+    m_onlineCloudPoints = 0;
+    m_onlineAlignedCloud = nullptr;
+    m_alignedCloudPoints = 0;
+    m_frameCameras.clear();
     m_resultGroupId = 0;
 
     m_worker->start();
@@ -242,10 +255,23 @@ void qLingbotMap::onTaskFinished(bool success) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
-    // The transient online preview is replaced by the final (full-res,
-    // aligned) result in every case.
-    disposeOnlineGroup();
-    if (!success) {
+    if (success) {
+        // The transient online preview is replaced by the final (full-res,
+        // aligned) result.
+        disposeOnlineGroup();
+    } else {
+        // A failed run's online preview (the aligned cross-window map
+        // included) is the ONLY reconstruction output it produced — keep
+        // it in the DB tree for inspection instead of deleting the user's
+        // evidence; the next executeTask() disposes it on restart.
+        if (m_dialog && m_onlineGroup) {
+            m_dialog->appendLog(
+                    tr("[LingbotMap] Partial online preview (aligned map) "
+                       "kept in the DB tree for inspection."));
+        }
+        // No full-res result exists for a failed run: never fall through
+        // to the materialization below (m_pendingResult may still hold the
+        // PREVIOUS run's frames).
         return;
     }
     if (m_dialog) {
@@ -261,19 +287,18 @@ void qLingbotMap::onTaskFinished(bool success) {
 
 void qLingbotMap::onFramePreview(const LingbotFramePreview& preview) {
     if (!m_app) return;
+    // Streaming runs only (the worker skips per-frame previews for windowed
+    // runs): the single stream IS the global coordinate frame, so the
+    // per-frame points accumulate exactly like the official StreamingViewer.
     // The user removed the online group mid-run: drop the preview instead
     // of rebuilding it behind their back.
     if (m_onlineGroup && m_app->dbRootObject() &&
         !m_app->dbRootObject()->find(m_onlineGroup->getUniqueID())) {
         m_onlineGroup = nullptr;
-        m_onlineCurrentWindow = nullptr;
-    }
-    if (m_onlineWindowCount == 0 && preview.windowCount > 0) {
-        m_onlineWindowCount = preview.windowCount;
+        m_onlineAlignedCloud = nullptr;
     }
 
-    ccHObject* parent =
-            onlineWindowGroup(preview.windowIndex, preview.windowCount);
+    ccHObject* parent = ensureOnlineGroup();
     if (!parent) return;
 
     if (!preview.points.isEmpty()) {
@@ -301,55 +326,161 @@ void qLingbotMap::onFramePreview(const LingbotFramePreview& preview) {
             }
         }
     }
-    addOnlineCamera(parent, preview);
+    addOnlineCamera(preview.c2w.constData(), preview.intrinsics, preview.width,
+                    preview.height, preview.globalIndex);
 
-    // Windowed runs re-anchor nothing until the stitch: opening a new
-    // window hides the previous one (window-local coordinates; mirrors the
-    // official window-tagged scene keys).
-    if (m_onlineWindowCount > 1 && m_onlineCurrentWindow &&
-        m_onlineCurrentWindow != parent) {
-        m_onlineCurrentWindow->setEnabled(false);
+    // Adaptive refresh: the per-refresh VTK re-conversion of the growing
+    // preview cloud is O(total points); stretch the interval as it grows so
+    // the UI thread never saturates and mouse interaction stays live.
+    if (ccPointCloud* cloud = onlineCloud(parent)) {
+        m_onlineCloudPoints = cloud->size();
     }
-    m_onlineCurrentWindow = parent;
-
-    if (m_onlineRefreshThrottle.elapsed() >= kOnlineRefreshIntervalMs) {
+    const qint64 refreshInterval =
+            kOnlineRefreshIntervalMs +
+            100LL * std::min<unsigned>(m_onlineCloudPoints / 250000u, 5u);
+    if (m_onlineRefreshThrottle.elapsed() >= refreshInterval) {
         m_onlineRefreshThrottle.restart();
         m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
     }
 }
 
-ccHObject* qLingbotMap::onlineWindowGroup(int windowIndex, int windowCount) {
+ccHObject* qLingbotMap::ensureOnlineGroup() {
     if (!m_app) return nullptr;
-    if (!m_onlineGroup) {
-        const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-                m_lastSettings.modelPath);
-        m_onlineGroup = new ccHObject(
-                QStringLiteral("LingbotMap_Online_%1").arg(modelTag));
-        m_onlineGroup->setMetaData(QStringLiteral("LingbotMap"), true);
-        m_onlineGroup->setDisplay(m_app->getActiveGLDisplay());
-        m_onlineGroup->setEnabled(true);
-        m_onlineGroup->setVisible(true);
-        m_app->addToDB(m_onlineGroup, /*updateZoom=*/false,
-                       /*autoExpandDBTree=*/false, /*checkDimensions=*/false,
-                       /*autoRedraw=*/false);
+    if (m_onlineGroup) return m_onlineGroup;
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(m_lastSettings.modelPath);
+    m_onlineGroup = new ccHObject(
+            QStringLiteral("LingbotMap_Online_%1").arg(modelTag));
+    m_onlineGroup->setMetaData(QStringLiteral("LingbotMap"), true);
+    m_onlineGroup->setDisplay(m_app->getActiveGLDisplay());
+    m_onlineGroup->setEnabled(true);
+    m_onlineGroup->setVisible(true);
+    m_app->addToDB(m_onlineGroup, /*updateZoom=*/false,
+                   /*autoExpandDBTree=*/false, /*checkDimensions=*/false,
+                   /*autoRedraw=*/false);
+    return m_onlineGroup;
+}
+
+ccPointCloud* qLingbotMap::onlineAlignedCloud() {
+    ccHObject* group = ensureOnlineGroup();
+    if (!group) return nullptr;
+    for (unsigned i = 0; i < group->getChildrenNumber(); ++i) {
+        ccHObject* child = group->getChild(i);
+        if (child && child->getName() ==
+                             QStringLiteral("LingbotMap_aligned_points")) {
+            return ccHObjectCaster::ToPointCloud(child);
+        }
     }
-    if (windowCount <= 1) {
-        return m_onlineGroup;
+    auto* cloud =
+            new ccPointCloud(QStringLiteral("LingbotMap_aligned_points"));
+    cloud->setMetaData(QStringLiteral("LingbotMap"), true);
+    cloud->setDisplay(m_app->getActiveGLDisplay());
+    cloud->setVisible(true);
+    group->addChild(cloud);
+    return cloud;
+}
+
+void qLingbotMap::onAlignedPreview(const LingbotAlignedPreview& preview) {
+    if (!m_app) return;
+    // The user removed the online group mid-run: rebuild it for the
+    // aligned map (same policy as onFramePreview).
+    if (m_onlineGroup && m_app->dbRootObject() &&
+        !m_app->dbRootObject()->find(m_onlineGroup->getUniqueID())) {
+        m_onlineGroup = nullptr;
+        m_onlineAlignedCloud = nullptr;
     }
-    // Per-window subgroups (window-local coordinates before the stitch).
-    const QString name = QStringLiteral("window_%1")
-                                 .arg(windowIndex, 2, 10, QLatin1Char('0'));
-    for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber(); ++i) {
-        ccHObject* child = m_onlineGroup->getChild(i);
-        if (child->getName() == name) return child;
+    if (!preview.points.isEmpty()) {
+        if (ccPointCloud* cloud = onlineAlignedCloud()) {
+            const unsigned n =
+                    static_cast<unsigned>(preview.points.size() / 3);
+            const unsigned cur = cloud->size();
+            // Grow with slack so most appends skip the realloc+copy.
+            if (cloud->reserve(cur + n + std::max<unsigned>(4096, cur / 4))) {
+                const float* xyz = preview.points.constData();
+                bool hasColors = !preview.colors.isEmpty();
+                if (hasColors && !cloud->hasColors() &&
+                    !cloud->reserveTheRGBTable()) {
+                    hasColors = false;
+                }
+                for (unsigned i = 0; i < n; ++i) {
+                    cloud->addPoint(CCVector3(xyz[i * 3], xyz[i * 3 + 1],
+                                              xyz[i * 3 + 2]));
+                    if (hasColors) {
+                        cloud->addRGBColor(preview.colors[i * 3],
+                                           preview.colors[i * 3 + 1],
+                                           preview.colors[i * 3 + 2]);
+                    }
+                }
+                cloud->showColors(hasColors);
+                m_alignedCloudPoints = cloud->size();
+            }
+        }
     }
-    auto* windowGroup = new ccHObject(name);
-    windowGroup->setMetaData(QStringLiteral("LingbotMap"), true);
-    windowGroup->setDisplay(m_app->getActiveGLDisplay());
-    windowGroup->setEnabled(true);
-    windowGroup->setVisible(true);
-    m_onlineGroup->addChild(windowGroup);
-    return windowGroup;
+    // One aligned camera frustum per contributed frame (the c2w values are
+    // already in the first window's coordinate frame, like the points).
+    const int camCount = static_cast<int>(preview.camFrames.size());
+    for (int i = 0; i < camCount; ++i) {
+        const int base16 = i * 16;
+        const int base4 = i * 4;
+        addOnlineCamera(preview.camC2w.constData() + base16,
+                        preview.camIntr.mid(base4, 4), preview.width,
+                        preview.height, preview.camFrames[i]);
+    }
+    // One batch per window: refresh immediately (outside the per-frame
+    // throttle) so the accumulated map is visible before the next
+    // window's aligned batch lands.
+    m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
+}
+
+ccHObject* qLingbotMap::ensureCamerasGroup() {
+    ccHObject* group = ensureOnlineGroup();
+    if (!group) return nullptr;
+    for (unsigned i = 0; i < group->getChildrenNumber(); ++i) {
+        ccHObject* child = group->getChild(i);
+        if (child &&
+            child->getName() == QStringLiteral("LingbotMap_cameras")) {
+            return child;
+        }
+    }
+    // Dedicated subfolder: every online camera frustum lives here, never
+    // mixed with the point clouds, so the DB tree stays manageable.
+    auto* cameras = new ccHObject(QStringLiteral("LingbotMap_cameras"));
+    cameras->setMetaData(QStringLiteral("LingbotMap"), true);
+    cameras->setDisplay(m_app->getActiveGLDisplay());
+    cameras->setEnabled(true);
+    cameras->setVisible(true);
+    group->addChild(cameras);
+    return cameras;
+}
+
+void qLingbotMap::addOnlineCamera(const float* c2w,
+                                  const QVector<float>& intrinsics,
+                                  int width,
+                                  int height,
+                                  int globalIndex) {
+    if (!c2w || intrinsics.isEmpty()) return;
+    if (m_lastPreviewC2w.size() >= 16) {
+        const CCVector3f prev = cameraCenter(m_lastPreviewC2w.constData());
+        const CCVector3f curr = cameraCenter(c2w);
+        m_onlineBaselines.push_back((curr - prev).norm());
+    }
+    m_lastPreviewC2w = QVector<float>(c2w, c2w + 16);
+    const float med = medianBaseline(m_onlineBaselines);
+    const float displaySize =
+            med > 0.f ? med * kCameraBaselineFraction : kFallbackCameraSize;
+    const float fx = intrinsics.value(0, 0.f);
+    ccCameraSensor* sensor =
+            buildCameraSensor(c2w, fx, width, height, displaySize);
+    if (!sensor) return;
+    sensor->setName(QStringLiteral("LingbotMap_online_cam_%1")
+                            .arg(globalIndex, 6, 10, QLatin1Char('0')));
+    sensor->setMetaData(QStringLiteral("LingbotMap"), true);
+    sensor->setDisplay(m_app->getActiveGLDisplay());
+    if (ccHObject* cameras = ensureCamerasGroup()) {
+        cameras->addChild(sensor);
+    } else {
+        delete sensor;
+    }
 }
 
 ccPointCloud* qLingbotMap::onlineCloud(ccHObject* parent) {
@@ -368,29 +499,6 @@ ccPointCloud* qLingbotMap::onlineCloud(ccHObject* parent) {
     return cloud;
 }
 
-void qLingbotMap::addOnlineCamera(ccHObject* parent,
-                                  const LingbotFramePreview& p) {
-    if (!parent || p.c2w.isEmpty()) return;
-    if (m_lastPreviewC2w.size() >= 16) {
-        const CCVector3f prev = cameraCenter(m_lastPreviewC2w.constData());
-        const CCVector3f curr = cameraCenter(p.c2w.constData());
-        m_onlineBaselines.push_back((curr - prev).norm());
-    }
-    m_lastPreviewC2w = p.c2w;
-    const float med = medianBaseline(m_onlineBaselines);
-    const float displaySize =
-            med > 0.f ? med * kCameraBaselineFraction : kFallbackCameraSize;
-    const float fx = p.intrinsics.value(0, 0.f);
-    ccCameraSensor* sensor = buildCameraSensor(p.c2w.constData(), fx, p.width,
-                                               p.height, displaySize);
-    if (!sensor) return;
-    sensor->setName(QStringLiteral("LingbotMap_online_cam_%1")
-                            .arg(p.globalIndex, 6, 10, QLatin1Char('0')));
-    sensor->setMetaData(QStringLiteral("LingbotMap"), true);
-    sensor->setDisplay(m_app->getActiveGLDisplay());
-    parent->addChild(sensor);
-}
-
 void qLingbotMap::disposeOnlineGroup() {
     if (!m_app || !m_onlineGroup) return;
     ccHObject* root = m_app->dbRootObject();
@@ -399,7 +507,7 @@ void qLingbotMap::disposeOnlineGroup() {
         m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
     }
     m_onlineGroup = nullptr;
-    m_onlineCurrentWindow = nullptr;
+    m_onlineAlignedCloud = nullptr;
 }
 
 bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
@@ -459,8 +567,13 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     auto keepPixel = [confThreshold](const LingbotFrameResult& frame,
                                      size_t i) {
         const float d = frame.depth[i];
-        if (d <= 0.f || !std::isfinite(d)) return false;
-        if (frame.depthConf[i] < confThreshold) return false;
+        // Official fused-viewer predicate (point_cloud_viewer.parse_pc_data):
+        // finite points with confidence STRICTLY above the threshold — no
+        // depth-sign filter. Sky pixels arrive with zeroed confidence (the
+        // engine's --mask_sky semantics), so the skyKeep check is a
+        // redundant second line of defense for the preview color path.
+        if (!std::isfinite(d)) return false;
+        if (frame.depthConf[i] <= confThreshold) return false;
         return frame.skyKeep.isEmpty() || frame.skyKeep[i] != 0;
     };
     std::vector<FrameInput> inputs;
@@ -516,7 +629,20 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
             for (const FrameInput& in : inputs) {
                 const LingbotFrameResult& frame = *in.frame;
                 const float* R = in.R;
+                // Row-pointer color fetch: QImage::pixel() pays a bounds
+                // check plus a format conversion per call — 43M+ calls per
+                // 286-frame materialization otherwise.
+                const bool fastRgb =
+                        in.hasRgb &&
+                        frame.frameRgb.format() == QImage::Format_RGB888;
+                const uchar* rgbBits = fastRgb ? frame.frameRgb.constBits()
+                                                : nullptr;
+                const auto rgbStride = frame.frameRgb.bytesPerLine();
                 for (int y = 0; y < in.h; ++y) {
+                    const uchar* rgbRow =
+                            rgbBits ? rgbBits + static_cast<qsizetype>(y) *
+                                                          rgbStride
+                                    : nullptr;
                     for (int x = 0; x < in.w; ++x) {
                         const size_t i = static_cast<size_t>(y) * in.w + x;
                         if (!keepPixel(frame, i)) continue;
@@ -543,7 +669,11 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
                         }
                         mapCloud->addPoint(CCVector3(wx, wy, wz));
                         if (anyRgb) {
-                            const QRgb rgb = frame.frameRgb.pixel(x, y);
+                            const QRgb rgb =
+                                    rgbRow ? qRgb(rgbRow[x * 3 + 0],
+                                                  rgbRow[x * 3 + 1],
+                                                  rgbRow[x * 3 + 2])
+                                           : frame.frameRgb.pixel(x, y);
                             mapCloud->addRGBColor(
                                     static_cast<ColorCompType>(qRed(rgb)),
                                     static_cast<ColorCompType>(qGreen(rgb)),
@@ -564,7 +694,16 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     }
 
     // COLMAP-style camera frustum per frame (the same ccCameraSensor
-    // objects the Reconstruction module renders).
+    // objects the Reconstruction module renders). All of them live in the
+    // dedicated "LingbotMap_cameras" subfolder — the same policy as the
+    // online preview — so the DB tree keeps the map cloud and the camera
+    // set independently manageable.
+    auto* cameraGroup = new ccHObject(QStringLiteral("LingbotMap_cameras"));
+    cameraGroup->setMetaData(QStringLiteral("LingbotMap"), true);
+    cameraGroup->setDisplay(m_app->getActiveGLDisplay());
+    cameraGroup->setEnabled(true);
+    cameraGroup->setVisible(true);
+    group->addChild(cameraGroup);
     for (int f = 0; f < result.frames.size(); ++f) {
         const LingbotFrameResult& frame = result.frames[f];
         if (frame.c2w.size() < 16) continue;
@@ -580,8 +719,8 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
                              10, QLatin1Char('0')));
         sensor->setMetaData(QStringLiteral("LingbotMap"), true);
         sensor->setDisplay(m_app->getActiveGLDisplay());
-        group->addChild(sensor);
-        m_frameCameraIds.push_back(sensor->getUniqueID());
+        cameraGroup->addChild(sensor);
+        m_frameCameras.push_back(sensor);
     }
 
     // Camera trajectory as a continuous polyline through the per-frame
@@ -620,8 +759,11 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         delete trajVertices;
     }
 
-    if (group->getChildrenNumber() == 0) {
-        delete group;
+    // The cameras subfolder is always present; "empty" means no map cloud
+    // AND no camera survived the filter (i.e. nothing to show at all).
+    const bool emptyResult = totalPoints == 0 && m_frameCameras.empty();
+    if (emptyResult) {
+        delete group;  // cascades into the cameras subfolder
         m_dialog->appendLog(tr("[LingbotMap] No valid points after filtering "
                                "(threshold %1).")
                                     .arg(settings.confThreshold));
@@ -631,7 +773,7 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     // Playback state over this result (official viewer playback).
     m_resultGroupId = group->getUniqueID();
     m_playbackFrame = 0;
-    const unsigned cameraCount = static_cast<unsigned>(m_frameCameraIds.size());
+    const unsigned cameraCount = static_cast<unsigned>(m_frameCameras.size());
 
     // addToDB (not a raw addChild): the app facade handles the DB tree
     // insertion AND refits the active VTK window on the new reconstruction,
@@ -664,10 +806,8 @@ void qLingbotMap::onPlaybackSettingsChanged(bool enabled,
         if (m_app && m_resultGroupId != 0) {
             if (ccHObject* group =
                         m_app->dbRootObject()->find(m_resultGroupId)) {
-                for (unsigned id : m_frameCameraIds) {
-                    if (ccHObject* cam = group->find(id)) {
-                        cam->setEnabled(true);
-                    }
+                for (ccHObject* cam : m_frameCameras) {
+                    if (cam) cam->setEnabled(true);
                 }
                 m_app->refreshAll(false, false);
             }
@@ -676,7 +816,7 @@ void qLingbotMap::onPlaybackSettingsChanged(bool enabled,
 }
 
 void qLingbotMap::startPlayback() {
-    if (!m_app || m_frameCameraIds.empty()) return;
+    if (!m_app || m_frameCameras.empty()) return;
     m_playbackFrame = 0;
     m_playbackTimer->start(1000 / std::max(1, m_playbackFps));
 }
@@ -686,23 +826,26 @@ void qLingbotMap::stopPlayback() {
 }
 
 void qLingbotMap::onPlaybackTick() {
-    if (!m_app || m_frameCameraIds.empty()) {
+    if (!m_app || m_frameCameras.empty()) {
         stopPlayback();
         return;
     }
+    // The result group was deleted by the user: stop the loop (the cached
+    // sensor pointers die together with it).
     ccHObject* root = m_app->dbRootObject();
-    ccHObject* group = root ? root->find(m_resultGroupId) : nullptr;
-    if (!group) {  // result deleted by the user: stop the loop
+    if (!root || !root->find(m_resultGroupId)) {
         stopPlayback();
-        m_frameCameraIds.clear();
+        m_frameCameras.clear();
         m_resultGroupId = 0;
         return;
     }
     // The map is a single merged cloud; the frame walk cycles the camera
-    // frustums instead (currentFrameOnly: one frustum at a time).
-    const int count = static_cast<int>(m_frameCameraIds.size());
+    // frustums instead (currentFrameOnly: one frustum at a time). The
+    // sensors are cached pointers — a per-tick group->find per camera used
+    // to be O(cameras x tree) at playback FPS.
+    const int count = static_cast<int>(m_frameCameras.size());
     for (int i = 0; i < count; ++i) {
-        ccHObject* cam = group->find(m_frameCameraIds[static_cast<size_t>(i)]);
+        ccHObject* cam = m_frameCameras[static_cast<size_t>(i)];
         if (!cam) continue;
         cam->setEnabled(!m_playbackCurrentFrameOnly || i == m_playbackFrame);
     }

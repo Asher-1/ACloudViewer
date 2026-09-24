@@ -157,8 +157,10 @@ node_modules/
 *.*~
 *.log
 docker_build*.log
-# ctest output directory (Temporary/LastTest.log, CTestCostData.txt)
-/Testing/
+# ctest output directory (Temporary/LastTest.log, CTestCostData.txt);
+# unanchored so any working-directory ctest run is covered (e.g.
+# libs/Reconstruction/src/Testing when ctest runs from that source dir)
+Testing/
 # Local configs
 _vimrc_local.vim
 .vs/

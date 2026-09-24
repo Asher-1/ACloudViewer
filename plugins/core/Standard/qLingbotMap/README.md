@@ -10,10 +10,13 @@ preprocessing (aspect-preserving bicubic resize to a patch-grid-snapped
 width, default 518), streams them through the persistent-KV-cache GCT graph,
 and writes the reconstruction into the DB tree:
 
-- `LingbotMap_<model>_<device>` group with one colored point cloud per frame
-  (depth back-projected with the frame intrinsics, camera-to-world pose
-  applied, visibility-confidence filtered, optionally sky-filtered),
-- COLMAP-style camera frustum per frame (`LingbotMap_cam_*`),
+- `LingbotMap_<model>_<device>` group with one merged colored map cloud
+  `LingbotMap_points` (every frame's depth back-projected with the frame
+  intrinsics, camera-to-world pose applied, visibility-confidence filtered,
+  optionally sky-filtered, appended into a single entity),
+- a dedicated `LingbotMap_cameras` subfolder holding the COLMAP-style
+  camera frustum per frame (`LingbotMap_cam_*`) — never mixed with the
+  point clouds,
 - `LingbotMap_trajectory` camera-center polyline points.
 
 ## Requirements
@@ -28,9 +31,10 @@ and writes the reconstruction into the DB tree:
   pointing at `BUILD_OPENCV`.
 - A LingBot-Map GGUF from
   [Asher-1/lingbot-map-gguf](https://huggingface.co/Asher-1/lingbot-map-gguf).
-  The dialog defaults to the **f16** model — the upstream GUI default and
-  full-alignment format (pose 1.72e-04 / depth 4.72e-04 vs the official
-  fp32 checkpoint over 286 frames); q8 is the memory-saving option for
+  The dialog's first-run default follows the upstream CLI default — the
+  **q8** model on a 24-GB-class GPU (f16 needs a ≥30-GiB card: q8 + the
+  release profile measures ~21 GiB, f16 adds 1.1 GiB of weights and OOMs
+  on window 6/6 of a 24-GiB 4090); q8 is the memory-saving option for
   small-VRAM tiers, f32 the exact reference, q4 experimental. Missing
   files auto-download with pinned SHA-256 ingestion. The optional native
   sky-segmentation GGUF (`lingbot-map-skyseg-*`) is downloaded the same
@@ -92,13 +96,14 @@ collapsed:
 
 On the **first run** (no persisted choice yet) the KV-cache profile AND the
 model format are auto-profiled to the detected GPU memory via
-`aicore_lingbot_device_total_memory`: ≥22 GiB cards get the official
-release profile (8/64) with the **f16** model (the upstream GUI default,
-full-alignment format); 12-GB-class and smaller cards keep the official
-memory-saving **q8** model with a downscaled profile (4/32, then 2/16); a
-CPU-only run follows the upstream default (f16, 8/64) on host memory. An
-info hint in the Advanced group states the detected VRAM and the applied
-tier; any manual change persists and the auto tier never fires again.
+`aicore_lingbot_device_total_memory`: ≥30 GiB cards get the **f16** model
+with the official release profile (8/64); 24-GB-class and smaller cards
+follow the upstream CLI default (**q8**, ~21 GiB with the release profile —
+f16's extra 1.1 GiB of weights OOMs on a 24-GiB card that also runs the
+render context) with a downscaled profile (4/32, then 2/16); a CPU-only
+run follows the upstream default (f16, 8/64) on host memory. An info hint
+in the Advanced group states the detected VRAM and the applied tier; any
+manual change persists and the auto tier never fires again.
 
 ### Video input (upstream `--video_path` / `--fps` parity)
 
@@ -131,9 +136,20 @@ every window runs the streaming primitive over a fresh KV cache, and
 consecutive windows are similarity-aligned on the overlap and stitched into
 the first window's frame. Pick `Mode → Windowed (long sequences)` and the
 `long-*` GGUF variants; window size / overlap expose the official defaults.
+The worker also upgrades a streaming run whose length exceeds one window
+(> 320 frames) to windowed automatically — short scenes always keep the
+zero-drift single-KV path, exactly like the upstream `--mode streaming`
+default.
 The numeric core (`LingbotWindowStitcher`) is gated against the official
 Python pipeline by `test_lingbot_window_stitch` (build with
-`QLINGBOTMAP_BUILD_TESTS=ON`).
+`QLINGBOTMAP_BUILD_TESTS=ON`). The engine itself is gated against the
+upstream C++ reference by the `lingbot-stream-parity` validation scenario
+(`core/AICore/tests/lingbot/test_lingbot_stream_parity`): the pinned
+courthouse fixtures stream through the official preprocessing and the
+engine's pose/depth/conf must stay within the calibrated per-backend
+tolerance of the captured upstream `lingbot-map-cli` goldens (captured by
+core/AICore/tests/lingbot/gen_stream_parity_golden.py); unknown backends
+skip.
 
 ## Long sequences (streaming + official keyframe policy)
 
@@ -164,11 +180,16 @@ suggests the matching `Max frames`; the model choice always stays yours.
 ## Live preview and playback
 
 While the engine streams, a transient `LingbotMap_Online_*` group grows in
-the render window: one stride-subsampled point cloud plus one camera frustum
-per completed frame (windowed runs keep per-window subgroups until the final
-aligned result replaces them). After the run, the dialog's playback controls
-cycle the final per-frame clouds at 1–60 FPS in `3D (all frames)` or
-`4D (current frame)` mode — the same loop the official viewer plays.
+the render window. Streaming runs append one stride-subsampled point cloud
+plus one camera frustum per completed frame. Windowed runs accumulate the
+**aligned** map instead: every finished window contributes its
+deduplicated frames after the official similarity warp into the single
+`LingbotMap_aligned_points` cloud, one aligned camera frustum per frame —
+never a window-local (unaligned) intermediate. All online camera frustums
+live in the dedicated `LingbotMap_cameras` subfolder, never mixed with the
+point clouds. After the run, the dialog's playback controls cycle the final
+per-frame cameras at 1–60 FPS in `3D (all frames)` or `4D (current frame)`
+mode — the same loop the official viewer plays.
 
 ## Memory notes
 

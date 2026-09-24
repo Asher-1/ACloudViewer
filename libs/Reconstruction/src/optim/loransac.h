@@ -198,8 +198,7 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
                                                      &local_models);
                         }
 
-                        const size_t prev_best_num_inliers =
-                                best_support.num_inliers;
+                        bool improved_support = false;
 
                         for (const auto& local_model : local_models) {
                             local_estimator.Residuals(X, Y, local_model,
@@ -216,14 +215,16 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
                                 best_support = local_support;
                                 best_model = local_model;
                                 best_model_is_local = true;
+                                improved_support = true;
                                 std::swap(residuals, best_local_residuals);
                             }
                         }
 
-                        // Only continue recursive local optimization, if the
-                        // inlier set size increased and we thus have a chance
-                        // to further improve.
-                        if (best_support.num_inliers <= prev_best_num_inliers) {
+                        // Upstream parity (d3ccaf35): keep expanding the
+                        // recursive local optimization while the refit
+                        // improves the support (score), not merely the raw
+                        // inlier count.
+                        if (!improved_support) {
                             break;
                         }
 
@@ -245,6 +246,11 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
             if (report.num_trials >= dyn_max_num_trials &&
                 report.num_trials >= options_.min_num_trials) {
                 abort = true;
+                // Upstream parity (d3ccaf35): the trial counter also counts
+                // the aborted trial itself (trial_counter.load() after
+                // fetch_add), so the reported num_trials is one past the
+                // last executed one.
+                report.num_trials += 1;
                 break;
             }
         }

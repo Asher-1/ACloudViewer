@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "util/hash_containers.h"
 #include <QtCore>
 #include <QtGui>
 #include <QtWidgets>
@@ -62,7 +63,7 @@ private:
     QCheckBox* smooth_cb_;
     QDoubleSpinBox* smoothness_sb_;
 
-    std::unordered_map<const QTableWidgetItem*, ViewData> view_data_;
+    NodeHashMap<const QTableWidgetItem*, ViewData> view_data_;
 };
 
 }  // namespace colmap

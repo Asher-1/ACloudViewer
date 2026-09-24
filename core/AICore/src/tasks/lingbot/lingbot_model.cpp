@@ -574,8 +574,29 @@ struct graph_builder {
         // reference. Keep convolution reductions in fp32 by making the
         // lowering's left operand fp32; this is required for DPT parity.
         w = f32(w);
-        auto *y = ggml_conv_2d(ctx, w, x, stride, stride, padding, padding,
-                               dilation, dilation);
+        // Byte-parity with the reference CLI: ggml_conv_2d's internal mul_mat
+        // carries no node name, so the CPU sgemm and CUDA MMQ name-routed
+        // exemptions (lingbot_merged/0003) cannot see it, and its reduction
+        // tree diverges from the reference's generic path. Split the op here
+        // — node-for-node identical to ggml_conv_2d — so the inner matmul is
+        // named and routed. w is F32 after the cast, so the reference's
+        // im2col type selection (BF16 ? F32 : F16) lowers it to F16, exactly
+        // like the reference build.
+        auto *im2col = ggml_im2col(ctx, w, x, stride, stride, padding, padding,
+                                   dilation, dilation, true,
+                                   w->type == GGML_TYPE_BF16 ? GGML_TYPE_F32
+                                                             : GGML_TYPE_F16);
+        auto *mm = ggml_mul_mat(
+                ctx,
+                ggml_reshape_2d(ctx, im2col, im2col->ne[0],
+                                im2col->ne[3] * im2col->ne[2] * im2col->ne[1]),
+                ggml_reshape_2d(ctx, w, w->ne[0] * w->ne[1] * w->ne[2],
+                                w->ne[3]));
+        ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
+        ggml_set_name(mm, "lingbot_scalar_proj");
+        auto *y = ggml_reshape_4d(ctx, mm, im2col->ne[1], im2col->ne[2],
+                                  im2col->ne[3], w->ne[3]);
+        y = ggml_cont(ctx, ggml_permute(ctx, y, 0, 1, 3, 2));
         return add_channel_bias(y, bias(prefix), w->ne[3]);
     }
 
@@ -966,6 +987,7 @@ struct graph_builder {
         }
         q = ggml_cont(ctx, ggml_permute(ctx, q, 0, 2, 1, 3));
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
+        if (dump_internal) debug_tensor(prefix + ".attn.kfull", k);
         v = ggml_cont(ctx, ggml_permute(ctx, v, 1, 2, 0, 3));
         // Exact attention in query chunks: every chunk still softmaxes over
         // the full key axis, so the math is identical to the unchunked form,
@@ -994,6 +1016,7 @@ struct graph_builder {
                                                 q->ne[3], q->nb[1], q->nb[2],
                                                 q->nb[3], q0 * q->nb[1]));
             auto *scores = ggml_mul_mat(ctx, k, q_c);
+            if (dump_internal && q0 == 0) debug_tensor(prefix + ".attn.scores0", scores);
             // Attention inputs are presently f32, but persist the precision
             // contract explicitly so a future storage-type optimization cannot
             // silently reintroduce fp16 accumulation here.
@@ -1579,7 +1602,14 @@ void model::set_frame_callback(std::function<bool(int, const output &)> cb) {
     p_->frame_cb = std::move(cb);
     p_->frame_cursor = 0;
 }
-model::~model() = default;
+model::~model() {
+    // RAII anchor: release() frees every device resource owned by the impl
+    // (weights buffers, device context, pooled graph allocator, resident-KV
+    // payloads). The default destructor left all of them leaked — a plugin
+    // that frees its context after one reconstruction kept ~21 GiB of VRAM
+    // alive and the next run OOM'd on its first scale-pass allocation.
+    release();
+}
 model::model(model &&) noexcept = default;
 model &model::operator=(model &&) noexcept = default;
 
@@ -1729,7 +1759,25 @@ void model::release() {
 }
 
 void model::reset_cache() {
-    if (p_) p_->kv_cache.clear();
+    if (!p_) return;
+    p_->kv_cache.clear();
+    // The device-resident KV payload is PART OF THE STREAM STATE. Leaving it
+    // attached would seed the NEXT stream with THIS stream's tail — payload
+    // bytes AND the sp_count/sc_count/used counters that shape every
+    // attention read — and the one-time init in resident_cache() (if (!rp.pk))
+    // would then skip the re-seed entirely. Windowed runs
+    // (aicore_lingbot_stream_reset before every window) exposed exactly
+    // that: window 2 attended to window 1's KV, and windows 3+ collapsed
+    // onto identical outputs (the cross-window alignment scale froze at the
+    // same value). The upstream windowed pipeline never hits this because
+    // it runs every window in a fresh CLI process. Free the payloads so the
+    // next scale pass re-runs the one-time init against the new window
+    // (same cleanup pattern as release()).
+    for (auto &item : p_->res_cache) {
+        if (item.second.buf) ggml_backend_buffer_free(item.second.buf);
+        if (item.second.ctx) ggml_free(item.second.ctx);
+    }
+    p_->res_cache.clear();
 }
 
 bool model::infer(const float *images,
@@ -2516,11 +2564,20 @@ bool model::infer(const float *images,
         const float *pose = result->pose_enc.data() + i * 9;
         const float x = pose[3], y = pose[4], z = pose[5], r = pose[6];
         const float two_s = 2.0f / (x * x + y * y + z * z + r * r);
-        // pose_enc stores the camera-from-world (w2c) transform [R|t], matching
-        // pose_encoding_to_extri_intri. Consumers (viewer unprojection, BSS
-        // artifacts) expect camera-to-world, so emit the proper inverse:
-        // c2w_rot = R^T and c2w_t = -R^T t. Copying [R|t] verbatim rotated
-        // every reconstructed frame by the w2c/c2w discrepancy.
+        // Official pose semantics (established end-to-end; the previous
+        // inv-decode interpretation was wrong): pose_enc decodes to [R|t]
+        // which IS the camera-to-world — world = R @ X_cam + t. The official
+        // PyTorch demo decodes then INVERTS into pred_dict["extrinsic"]
+        // (demo.py _convert_pose_enc_to_extrinsics), and the fused viewers
+        // invert it back — net transform = decode. This sidecar therefore
+        // carries the w2c twin [R^T | -R^T t] (== inv(decode) == the
+        // upstream CLI .post "c2w" field, whose name is inverted upstream;
+        // the ggml live viewer misuses it as c2w, hidden by per-frame
+        // rendering). Geometry check (286-frame courthouse): cross-frame
+        // depth consistency 0.0067 decode-as-c2w vs 0.0995 inverted.
+        // Consumers that FUSE frames must decode pose_enc — see the
+        // qLingbotMap worker's decodePoseC2w and
+        // test_lingbot_window_stitch's expectC2wMatchesPoseEnc.
         const float r00 = 1.0f - two_s * (y * y + z * z);
         const float r01 = two_s * (x * y - z * r);
         const float r02 = two_s * (x * z + y * r);

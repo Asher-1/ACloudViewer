@@ -356,8 +356,9 @@ void pybind_mappers(py::module& m) {
                        colmap::image_t image_id2) -> py::object {
                         colmap::image_t id1 = image_id1;
                         colmap::image_t id2 = image_id2;
-                        if (!self.mapper->FindInitialImagePair(options, &id1,
-                                                               &id2)) {
+                        colmap::Rigid3d cam2_from_cam1;
+                        if (!self.mapper->FindInitialImagePair(
+                                    options, id1, id2, cam2_from_cam1)) {
                             return py::none();
                         }
                         return py::cast(std::make_pair(id1, id2));
@@ -369,12 +370,16 @@ void pybind_mappers(py::module& m) {
                     "register_initial_image_pair",
                     [](PyMapper& self,
                        const IncrementalMapper::Options& options,
-                       colmap::image_t image_id1, colmap::image_t image_id2) {
+                       colmap::image_t image_id1, colmap::image_t image_id2,
+                       const colmap::Rigid3d& cam2_from_cam1) {
                         return self.mapper->RegisterInitialImagePair(
-                                options, image_id1, image_id2);
+                                options, image_id1, image_id2,
+                                cam2_from_cam1);
                     },
                     "options"_a, "image_id1"_a, "image_id2"_a,
-                    "Attempt to seed the reconstruction from an image pair.")
+                    "cam2_from_cam1"_a,
+                    "Attempt to seed the reconstruction from an image pair "
+                    "(pose from find_initial_image_pair).")
             .def(
                     "find_next_images",
                     [](PyMapper& self,
@@ -500,14 +505,14 @@ void pybind_mappers(py::module& m) {
                     "normalize_reconstruction"_a = true,
                     "Perform multiple rounds of global bundle adjustment.")
             .def(
-                    "filter_images",
+                    "filter_frames",
                     [](PyMapper& self,
                        const IncrementalMapper::Options& options) {
-                        return self.mapper->FilterImages(options);
+                        return self.mapper->FilterFrames(options);
                     },
                     "options"_a,
-                    "Filter images with degenerate camera parameters or no "
-                    "observations.")
+                    "Filter frames (and their images) with degenerate camera "
+                    "parameters or no observations.")
             .def(
                     "filter_points",
                     [](PyMapper& self,

@@ -2477,18 +2477,14 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
-        # Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
-        if (NOT ${GLIBCXX_USE_CXX11_ABI})
-            include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-            import_3rdparty_library(3rdparty_boost
-                    INCLUDE_DIRS ${Boost_INCLUDE_DIR}
-                    LIB_DIR ${Boost_LIBRARY_DIRS}
-                    LIBRARIES ${BOOST_LIBRARIES}
-                    DEPENDS ext_boost
-                    )
-            message(STATUS "BOOST_INCLUDE_DIR: " ${BOOST_INCLUDE_DIR})
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
-        endif()
+        # Boost comes from the distro packages (apt libboost-all-dev, e.g. 1.74
+        # on 22.04 / 1.83 on 24.04) via find_package in libs/Reconstruction.
+        # The former ext_boost source build existed solely for
+        # -DGLIBCXX_USE_CXX11_ABI=OFF builds (a system libboost .so is compiled
+        # with the default ABI, so an ABI=0 build cannot link it); no CI,
+        # docker or conda configuration in this repository uses that option
+        # (it defaults to ON), so the source build was removed to keep the
+        # boost story identical across the three platforms.
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -2739,7 +2735,9 @@ else()
         endif()
     endif()
 
-    # must build vtk from source due to boost
+    # must build vtk from source
+    # (its boost-consuming InfovisBoost* modules are disabled below, so no
+    # boost dependency is needed here anymore)
     if(NOT USE_SYSTEM_VTK)
         include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk_build.cmake)
         import_3rdparty_library(3rdparty_vtk
@@ -2747,7 +2745,7 @@ else()
             INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
             LIB_DIR      ${VTK_LIB_DIR}
             LIBRARIES    ${VTK_LIBRARIES}
-            DEPENDS      ext_vtk ext_boost
+            DEPENDS      ext_vtk
         )
         if(UNIX AND NOT APPLE)
             target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})

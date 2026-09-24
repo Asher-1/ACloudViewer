@@ -560,6 +560,12 @@ set_tests_properties(test_gkd_capi_load PROPERTIES LABELS "capi;model")
 aicore_add_lingbot_capi_test(test_lingbot_capi_contract)
 aicore_add_lingbot_capi_test(test_lingbot_capi_load)
 set_tests_properties(test_lingbot_capi_load PROPERTIES LABELS "capi;model")
+# Upstream numeric-parity probe (pinned courthouse fixtures + captured
+# upstream goldens; see tests/lingbot/gen_stream_parity_golden.py). Needs
+# AICORE_TEST_LINGBOT_GGUF/AICORE_TEST_LINGBOT_INPUT_DIR — bare ctest runs
+# skip it (exit 77); the validation runner wires the assets.
+aicore_add_lingbot_capi_test(test_lingbot_stream_parity)
+set_tests_properties(test_lingbot_stream_parity PROPERTIES LABELS "capi;model")
 
 aicore_add_reid_capi_test(test_reid_capi_contract)
 aicore_add_reid_capi_test(test_reid_capi_load)
@@ -582,6 +588,21 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
 aicore_apply_compile_definitions(dump_lingbot_frames)
 set_target_properties(dump_lingbot_frames PROPERTIES POSITION_INDEPENDENT_CODE ON)
 cloudviewer_set_aicore_test_runtime_layout(dump_lingbot_frames)
+
+# stream_reset freshness gate (needs the q8 GGUF + real frames; run
+# manually — see tests/lingbot/test_lingbot_reset_freshness.cpp for usage).
+add_executable(test_lingbot_reset_freshness lingbot/test_lingbot_reset_freshness.cpp)
+target_link_libraries(test_lingbot_reset_freshness PRIVATE AICore)
+_aicore_capi_link(test_lingbot_reset_freshness)
+if(NOT MSVC)
+    target_compile_options(test_lingbot_reset_freshness PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(test_lingbot_reset_freshness PRIVATE "-no-pie")
+endif()
+target_include_directories(test_lingbot_reset_freshness PRIVATE ${AICORE_TEST_INC})
+target_include_directories(test_lingbot_reset_freshness PRIVATE ${AICORE_TEST_INC}/..)
+aicore_apply_compile_definitions(test_lingbot_reset_freshness)
+set_target_properties(test_lingbot_reset_freshness PROPERTIES POSITION_INDEPENDENT_CODE ON)
+cloudviewer_set_aicore_test_runtime_layout(test_lingbot_reset_freshness)
 
 if(TARGET AICore_test)
     aicore_add_facedetect_whitebox_test(test_facedetect_align)

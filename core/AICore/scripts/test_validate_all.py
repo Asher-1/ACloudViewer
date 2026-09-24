@@ -165,6 +165,23 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(metrics,
                          {"graph_ms/p50": 12.0, "graph_ms/p90": 14.0})
 
+    def test_lingbot_parity_metrics_are_flattened(self):
+        metrics, _ = VALIDATE_ALL.flatten_json({
+            "pose_t_rmse": 3.3e-05,
+            "pose_quat_maxdiff": 1.9e-05,
+            "intr_maxdiff": 0.012,
+            "depth_pool_rel_rmse": 2.4e-04,
+            "conf_mean_maxdiff": 8.1e-04,
+            "frames": 12,  # informational leaf: not whitelisted
+        })
+        self.assertEqual(
+            metrics,
+            {"pose_t_rmse": 3.3e-05,
+             "pose_quat_maxdiff": 1.9e-05,
+             "intr_maxdiff": 0.012,
+             "depth_pool_rel_rmse": 2.4e-04,
+             "conf_mean_maxdiff": 8.1e-04})
+
     def test_structured_accuracy_gate_resolves_leaf_metric_and_rejects_threshold(self):
         gate = {
             "reference": "cpu_reference",

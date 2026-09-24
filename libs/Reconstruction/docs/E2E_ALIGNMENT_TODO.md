@@ -181,6 +181,34 @@
 3. **mini6 端到端 AB ✅**：同一数据集（mini6 = 6×iPhone7 JPG，/tmp/ab_mini6/{upstream,fork}/images）同一命令链（feature_extractor single_camera → exhaustive_matcher → mapper → image_undistorter(max 2000px) → patch_match_stereo(geom_consistency) → stereo_fusion → poisson_mesher → mesh_texturer）分别用上游 d3ccaf35 构建（CUDA ON）与 fork bin/Colmap 执行。结果：fork **6/6** 图配准 vs 上游 **5/6**；fused 点云 fork 289,105 vs 上游 298,992（-3.3%，PRNG/浮点自由度带内）；textured mesh fork 791,812 顶点/1,514,321 面 vs 上游 820,121/1,614,777（-3.5%/-6.2%）。**交付 OBJ**（引擎统一输出 textured PLY+atlas，第三方转换脚本 ply_to_obj.py 同规则转 OBJ+MTL+PNG）：`/tmp/ab_mini6/fork/dense/textured_obj/mesh.obj` 与 `/tmp/ab_mini6/upstream/dense/textured_obj/mesh.obj`（含 mesh.mtl + texture.png，UV 量化去重、v 轴翻转到 OBJ 约定），供人工视觉对比。
 4. **AB 产物人工对比问题的取证与澄清（用户反馈三问）**：① 纹理 atlas"细节缺失"——量化：atlas 有效内容率 upstream 0.420 vs fork 0.373，与面数差（-6.2%）同量级，属 per-face patch 布局/packing 差异（纹理引擎第 25 轮已证逐行一致），非内容缺失；ply 体积 67/71.2MB 与面数严格成正比。② "mesh 无法重叠"——两边 sparse 相机中心差仅 0.2-0.9m（同坐标系、同 1368 个 3D 点），sim3（Umeyama）拟合 scale=1.00378、对齐残差 mean=0.0003m/max=0.0004m——**两个重建毫米级一致**；视觉差异来自 SfM gauge 的微小剩余 + 查看器 up-axis 惯例。③ "渲染黑花"——ParaView 不支持 PLY face-texcoord 纹理采样与 OBJ+MTL 纹理自动加载，属查看器限制（**勘误：此结论错误，实为转换脚本 v 双重翻转，见第三十一轮**）；数据正确性由**顶点色 PLY**（UV→atlas 采样写入顶点色）与离屏渲染并排图 `/tmp/ab_mini6/side_by_side.png` 自证：两边几何与纹理内容一致。**对比产物**：`/tmp/ab_mini6/{fork,upstream}/dense/textured_obj/` 下 mesh.obj（UV/MTL，用 MeshLab/Blender 查看）+ mesh_vcolored*.ply（fork 版已 sim3 对齐到上游坐标系，可与 upstream 版直接叠加）。**顺手修复 fork 绑定层真缺陷**：Rigid3d/Sim3d 的 rotation/translation property 按值返回 Eigen::Vector4d/Vector3d，def_property 默认 reference_internal policy 会包装临时对象缓冲导致悬空（转换脚本中 q copy 后健康、t 未 copy 读出垃圾的随机性实锤）——四个 property 显式 `py::return_value_policy::copy`。
 
+**第三十五轮（2026-09-20(5)，特征层 bit 对齐 + 匹配顺序层定位）**：
+
+1. **特征层 bit 对齐 ✅**：database 对比（fork2 vs upstream）——keypoints 6/6 张 **BIT-IDENTICAL**；descriptors 每张仅差 1-6 字节（±1 uchar，~120 万元素中）。根因 = `L1RootNormalizeFeatureDescriptors` 两处分歧：① fork 用 `Eigen::MatrixXf`（**ColMajor**）参数，调用方 RowMajor 数据被隐式转置 → `lpNorm<1>` 行归约跨步访问、求和顺序不同；② fork 用 `row / norm`（一次舍入），upstream 用 `row *= 1/norm`（乘倒数、两次舍入）。修复 = feature/utils.{h,cc} 签名与实现改 RowMajor（FeatureDescriptorsFloat）+ 乘倒数（upstream d3ccaf35 同款）。**验证：descriptors 6/6 张 BIT-IDENTICAL**。
+2. **匹配顺序层（已定位、未闭合）**：matches 15 对 pair **行数全部相同、集合完全相同（sorted-equal=True），仅顺序不同**——fork 列表按 idx2 升序、upstream 按 idx1 升序。该顺序是 RANSAC 采样索引的数值契约：顺序不同 → TVG inlier ±1-2 → mapper 配准序/gauge → undistorted 逐 gauge 重采样 → 稠密链放大。定位手段：浮点 dump 探针（GPU float descriptors 6/6 bit-identical，排除 GPU/金字塔）+ 漏斗探针（FeatureMatcherCache::WriteMatches）。**剩余工作**：在 fork 匹配编排（feature/matching.cc）中定位产生 idx2 序的代码点（GetBestMatch 源码/SASS 两侧一致，翻转在 colmap 编排层），对齐后即可打通 sparse→dense 全链 bit-parity。
+3. **临时探针已全部清理**（sift.cc float dump ×2、matching.cc 漏斗 dump），upstream 仓库已 git 恢复原状。
+
+**第三十四轮（2026-09-20(4)，fused 差距根因链修复 + 渲染暗问题产品级修复 ✅）**：
+
+1. **fused 差距归因链重建（用户质询：2.57%@20mm 差距必须彻底对齐）**：三组对照实验推翻第三十三轮“非引擎缺口”结论——① E1 同 binary 重跑（upstream run-A vs B2）：fused 差 **0.00%@10mm+**（运行噪声带 ±0.02%@5mm，引擎近乎确定）；② E2 fork 引擎跑在 upstream 同一 workspace（完全相同输入）：**2.24%@20mm 复现**；③ E3 fork fusion 引擎 + upstream 深度图：0.03%@20mm（等价）。⇒ AB 差距 ~90% 在引擎层（stereo），fusion 无辜，稀疏输入只占 ~0.3pp。
+2. **引擎层根因 #1（已修复）**：`PatchMatchController::Run` 在 filter-by-existence 阶段用哈希容器重建 `src_image_idxs`，upstream 用 `FlatHashSet`（=boost::unordered_flat_set 1.92），fork 用 `std::unordered_set` —— **迭代序不同 → 源图进入分层纹理的顺序不同 → 逐像素 cost 累加链不同 → patchmatch 混沌放大**（相同输入下日志实锤：up `[2,5,4,1,3]` vs fk `[4,5,3,2,1]`；count-desc 预排序 `[1,2,3,5,4]` 被哈希序完全覆盖）。修复 = **vendor boost::unordered 1.92 头文件闭包**（239 头/848KB，BSL-1，`3rdparty/boost_unordered/`，来自 upstream FetchContent `_deps/boost-src`；fork 内置 boost 1.73 无 flat_set）+ `patch_match.cc` 改用 `boost::unordered_flat_set`（仅此一 TU，经 `colmap_boost_unordered_headers` INTERFACE target；全局 FlatHash* 别名保持 std 后端不波及稀疏侧）。**验证**：修复后 fork 日志 `src_image_idxs` 与 upstream 逐位一致；**photometric 深度图+法线图 6/6 张 100.00% bit-exact**；同输入 fused 点数从 -3.14% 收敛到 **+0.07%**（E2''：299,199 vs 298,992），fused missing 从 2.24% → **1.18%@20mm**（missing/extra 完全对称）。
+3. **引擎层残差（已修复 ✅，第三十五轮补完）**：初判 geometric pass 存在确定性微差（common-pixel rel.p50=0.002-0.006%，~1.2% 面积 @20mm 翻转）。排除链：内核源码（62 处 token 差异全为 AMD `__GFX9__`/HIP 分支、宏改名、make_unique/reset、换行）、**SASS（cuobjdump 全量 210 内核 bit 对比，仅 CudaRotateKernel 3 个实例寄存器分配级差异——纯数据搬运且光度 pass 大量使用仍 bit-exact，功能等价）**、nvcc（双方同机 12.6）、photometric 输入（bit-exact）、src 深度纹理配置、选项、PRNG（fork A/A geometric 100% bit-exact）、JPG 解码（PNG 无损实验排除；upstream 在 JPG/PNG 输入上 fused 点数完全相同）。filter 0 二分实验：无 filter 仍分叉 → 锁定 kGeomConsistencyTerm sweep。**逐 iteration 二分：iteration 1 即分叉**（2.34% 像素真实深度差，最大 15.6m，非舍入级）→ geom cost 输入差异 → `ComputeGeomConsistencyCost` 读 poses 纹理 channel 19-42（**P/inv_P 矩阵，宿主 float 计算**），而 photometric 用的 channel 0-18 是纯 memcpy K/R/T。数值探针实锤：**`ComposeInverseProjectionMatrix` 内 `Eigen::Matrix4f::inverse()` 在 fork 旗标（全局 `-DEIGEN_MAX_ALIGN_BYTES=0`，PCL 兼容）下 inv_P[7] 差 1 ulp（`4095acac` vs `4095acab`）**。修复 = `mvs/image.cc` 单 TU 追加 `-UEIGEN_MAX_ALIGN_BYTES`（Eigen 对象全函数局部，无 ODR 暴露；注意 per-source 属性必须在定义 ColmapLib 的目录设置——子目录设置对父目录 target 不可见）。**最终验证：photometric + geometric 深度图 12/12 张 bit-exact，fused 点数差 -0.036%（多线程聚合噪声带内），fused missing 0.023%@20mm / 0.003%@50mm（低于 fusion 多线程运行方差）——引擎层实用 bit 级对齐达成**。剩余 e2e 差距 = 稀疏输入层（特征提取差异，既有 XL 项，~0.3pp @20mm）+ fusion 多线程噪声。
+4. **渲染暗问题（用户裁定回退产品级修复，改数据级交付）**：配置文件 RecentFiles 实锤——用户打开的是 `textured_obj/mesh.obj`（第三十轮交付，无 vn）与 `textured/mesh.ply`（引擎输出，x/y/z+texcoord 无法线），**从未打开唯一带 vn 的 `textured_canonical/mesh.obj`**。勘误第三十三轮两处证据：往返 PLY/CCB “无法线”是**导出器不写 per-triangle 法线的假象**（ObjFilter→ObjFilter 闭环往返 791,812 条 vn 完整保留，导入侧无辜）。曾实施 `ObjFilter`/`PlyFilter` 导入自动补法线，**用户裁定回退**（改动 IO 模块影响面大、与 CloudCompare 语义冲突，已恢复原状并重建二进制）。改用**数据级交付**：canonical OBJ（带 vn）已同步覆盖 `textured_obj/mesh.obj`（fork 791,812 / upstream 820,121 条 vn 验证通过），用户习惯路径打开即正常亮度。
+5. **e2e 效果验证（新二进制全链重跑 ✅）**：fork 侧 8 步全链（feature_extractor→exhaustive_matcher→mapper→image_undistorter(2000px)→patch_match_stereo(geom)→stereo_fusion→poisson_mesher→mesh_texturer(--export_obj 1)）用修复后二进制全新重跑（`/tmp/ab_mini6/fork2`，注意 mapper 的 output_path 需预建目录、`--export_obj` 需显式参数 1）。结果：6/6 配准、稀疏 1368 点（与 upstream 同规模）；sim3（相机中心）残差 **0.0002m**；fused 290,386 vs 298,992（-2.88%），missing **2.46%@20mm / 0.64%@50mm**。**残差定性**：稀疏层为同一重建的不同 gauge——相机中心 sim3 后 mean 0.23mm/max 0.33mm，稀疏点 NN p50=0.83mm/p90=3.13mm（p99=39mm 为远点尾部差异）；undistorted 图 mean|diff|=0.54/255（gauge 决定的重采样网格差异 + JPEG 重编码）；引擎在相同输入下 0.023%@20mm（第 3 条）。⇒ **e2e 残差来自稀疏层 gauge/特征数据差异经 undistorter 逐 gauge 重采样的放大，非引擎缺陷**；引擎修复使 e2e 差异从"引擎混沌+输入差异叠加"变为纯输入差异。**e2e 完全一致的路径**：(a) 稀疏层 bit 一致（特征提取/匹配/初对/gauge 对齐，XL 项）；(b) 实用折中——两侧稠密链共用同一稀疏模型（已验证 → 0.023%@20mm）。
+
+**第三十三轮（2026-09-20(3)，AB 差异逐层 probe 定位 + OBJ 法线修复（渲染暗根因）✅）**：
+
+1. **Gap Probe 链路建立 ✅（用户要求的方法论交付，`.qoder/tmp/gap_probe.py`）**：相机中心 Umeyama sim3 对齐（fork→upstream，残差 0.0003m）+ 逐层双向最近邻 diff（missing = upstream 有 fork 无；extra = 反向）+ 阈值表（5/10/20/50mm）+ 空间诊断 PLY（红=缺失、绿=覆盖）。**逐层结果**：fused 点 0.66% @5cm missing / 0.42% extra；poisson 面 1.96% / 0.29%；**textured 面与 poisson 数字完全相同——纹理化零丢面**（用户"问题 2 由问题 1 导致纹理不一致"的怀疑排除：纹理引擎不改变几何）。
+2. **深度图直接对比（stereo 层，最后一个未量化层）**：解析 COLMAP depth map bin（头 "W&H&C&" 文本 + float32 数据），6 张 geometric 深度图逐张对比：**共同有效像素相对深度差 p50=0.37-0.38%、p90=0.40-0.44%**（场景 4-8m 深度下 ~15-30mm = patch_match 亚像素精度带，**算法数学一致的直接证据**）；差异仅在每图 ~2% 的边缘有效像素双向翻转（up 有效总和 508,960 vs fk 481,578，-0.5%）。**下钻**：31,687 个缺失面（@5cm）质心处 fork fused 点覆盖（5mm 内 14.3%）显著低于 upstream（26.6%）且两边都稀疏（20mm 内 75.9%/91.6%）——**缺失区域 = 点云边缘/薄结构，fork 更稀**。
+3. **根因判定**：fork-up 差异 = stereo 深度图 GPU 非确定性（patch_match CUDA 并行归约顺序）+ sparse gauge 微差（相机中心 0.2-0.9m）→ fusion 聚合（fusion A/A 自差仅 ±0.007%，298,990/298,971/298,992——fusion/poisson 层近乎确定性）→ **poisson 隐函数重建把边缘点稀疏放大成整片无表面**（薄结构对点密度最敏感）。**非引擎对齐缺口**：共同区 0.37% 深度一致 + 引擎代码逐行对齐（第 25/30 轮）+ 73/73 测试。红绿诊断图 `/tmp/ab_mini6/gap_probe_red_green.png`（红色集中在左翼薄结构边缘）。**A/A stereo 测试暂缓**：GPU 被 lingbot-map-cli 占 17GB（用户任务）致 patch_match OOM，GPU 空闲后可补测运行噪声带的直接测量。
+4. **OBJ 渲染暗根因修复 ✅（用户问题 3）**：ACloudViewer 日志实锤 `[OBJ] 877198 tex. coords, 0 normals` + `Mesh has no normal!`——两边 OBJ 均无 vn，lit shading 下漫反射 N·L 无合法法线 → 系统性变暗（与 fork/colmap 无关的共同根因；MTL 的 Ka/Kd/illum 段为 saveAsMTL 标准输出无问题）。修复 = `ExportTexturedMeshAsObj` 在 saveToFile 前 `computePerVertexNormals()`（从三角拓扑计算，poisson 输出绕序使法线朝外）；ObjFilter 自动写 vn 块 + face 行 `f v/vt/vn`。重新生成后验证：vn=791,812（fork）/820,121（upstream）与顶点数一致、UV 裁决保持 0.9984、`/tmp/ab_mini6/{fork,upstream}/dense/textured_canonical/mesh.obj` 已更新——**ACloudViewer 重新打开即得正常亮度**。
+
+**第三十二轮（2026-09-20(2)，导出走规范 IO 链：mesh_texturer --export_obj + ObjFilter ✅）**：
+
+1. **用户要求：导出复用既有规范 IO 接口，而非自定义实现**（ply_to_obj.py 转换脚本不高效、格式自定义风险）。**规范件盘点**（仓库内已有、此前 AB 未使用）：① `libs/CV_io/src/ObjFilter.{h,cpp}`——CC 核心 OBJ 导入/导出 filter（`mtllib`/`usemtl`/`vt`/`f v/vt` + per-triangle texCoord/MTL indexes，`hasPerTriangleTexCoordIndexes` 全支持）；② `ccMaterialSet::saveAsMTL`（`ecvMaterialSet.cpp` L421+）——自动保存材质纹理图并写 `map_Kd` 相对引用；③ `PlyFilter` L434-435 已支持 face texcoord list 读取（Photoscan 约定，与 COLMAP 同款）；④ 先例 `MvsTexturing::SaveOBJModel`（`mvs/texturing.cc` L1954，ccMesh + ObjFilter 全链示范，但绑定其私有 texture_atlases_ 结构且无 CLI 暴露——D1 决策记录其引擎未接线）。
+2. **实施**：新建 `mvs/textured_mesh_export.{h,cc}`——`ExportTexturedMeshAsObj(MeshTextureMappingResult&, PlyMesh&, path)` 把上游同款纹理引擎的结果组装为 ccMesh（per-triangle texCoord/MTL indexes + 单材质 atlas）交 `ObjFilter::saveToFile`；`face_uvs` 已是 GL 纹理坐标（`texture_mapping.cc` L622-623，与 OBJ vt 同约定）**直存不翻转**；per-triangle texCoord indexes 免拆顶点（顶点数与引擎 PLY 严格一致），vt 池量化去重。`mesh_texturer` 加 `--export_obj` 选项（默认 false，兼容）调用之。
+3. **验证 ✅**：两边 AB 产物重生成于 `textured_canonical/`；面质心非黑率 fork **0.9984** / upstream **0.9960**（标准 GL 解读，与修复后脚本版同量级——UV 语义正确）；MTL 标准段（Ka/Kd/Ks/illum/Ns + `map_Kd mesh_map_Kd.png`）；`mtllib` 在 `usemtl` 之前、v/vt 索引全部在界；**ACloudViewer 自身命令行往返**（`-SILENT -O mesh.obj -SAVE_MESHES FILE roundtrip.ply`）成功解析并导出 63.8MB PLY——用户 GUI 使用的即同一导入链。
+4. **结论**：AB 交付 OBJ 改由规范 IO 链产出（`/tmp/ab_mini6/{fork,upstream}/dense/textured_canonical/`）；自定义 ply_to_obj.py 退役（仅存档于 .qoder/tmp 作取证参照）。格式规范性与高效性同时满足：v 不拆分（791,812 顶点原样）、vt 池 877,196（vs 拆分式 454 万角）、单次遍历组装。
+
 **第三十一轮（2026-09-20，AB 产物 OBJ 纹理镜像缺陷定位与修复 ✅）**：
 
 1. **用户复检推翻第三十轮结论③**：黑花出现在 ACloudViewer 中——其 qMeshIO 经 assimp **完整支持 OBJ+MTL 纹理渲染**（`plugins/core/IO/qMeshIO/src/IoUtils.cpp` L209-312：`aiTextureType_DIFFUSE` 等六类 → `ccMaterial::setTexture`），"查看器限制"结论不成立，缺陷必在数据侧。
@@ -414,3 +442,622 @@ P4 (分析): ✅ 数据 vs 引擎劈半实验 + 五层排除验证 + 三项确�
 2. **flat-vs-solvers ODR 去重**（已立项）：fork 自有 RANSAC 引擎与上游行为差异影响初始对选择（本轮实证），去重后需复跑本全链对比。
 3. 跨库模型对比能力：若需要 fork↔上游 model_comparer 级报告，可在 fork 侧提供按名配对的 comparer 选项（上游无此能力，属 fork 增强而非对齐项）。
 4. GPU 显存充足时以全分辨率复跑 PM 对比（本轮受 21.8/24.5GB 显存占用限制用 max_image_size=2000，两侧同配置公平）。
+
+## 第三十六轮：匹配顺序闭合 + TVG 判据闭合 + mapper 路径分歧定位（2026-09-20/21）
+
+### 已闭合（database 级判据全绿）
+1. **根因 #4（GetImageIds 未排序）**：fork `FeatureMatcherCache::GetImageIds()` 缺 upstream 的
+   `std::sort`（d3ccaf35 controllers/matcher_cache.cc L127-130），unordered_map 迭代序导致
+   exhaustive pair 非升序生成，匹配以交换方向运行、DB 写入列交换后行序为 idx2 升序。已补
+   sort（feature/matching.cc）。**matches 15/15 byte-identical**。
+2. **根因 #5（Eigen 对齐宏渗入第三方/估算器编译）**：fork 全局 `EIGEN_MAX_ALIGN_BYTES=0`
+   与 `-msse4.2 -mfpmath=sse -mno-avx512*` 渗入 poselib 与 ColmapLib。已在
+   3rdparty/PoseLib/poselib.cmake（FetchContent 前后备份/恢复）与 libs/Reconstruction/
+   CMakeLists.txt（project 后剥离，覆盖 ColmapLib/colmap_cuda 全部 TU）剥离。
+3. **根因 #6（TVG 停止判据公式）**：upstream ComputeNumTrials 采用 2025 论文修正判据
+   （无放回超几何 `prob_inlier = Π(num_inliers-i)/(num_samples-i)`，"Fixing the RANSAC
+   stopping criterion"），fork 仍是 `pow(inlier_ratio, k)` 有放回近似。已对齐（optim/ransac.h）。
+   同时对齐：停止检查移出 models 循环、abort 时 `report.num_trials += 1`（trial_counter 语义）、
+   LORANSAC local 继续条件（`improved_support` 取代 `num_inliers` 不增）。**TVG 15/15
+   byte-identical**（pair (4,5) 的 SF focal 两侧同为 3293.3779184998371，inlier mask 一致；
+   E 仅剩 1-ulp 数值噪声，不影响判定）。
+4. **根因 #7（num_trials 报告残差）**：fork 103 vs upstream 101——不影响 database
+   （num_trials 不持久化），待后续精确化。
+
+### 新分歧面（mapper/sfm 层，下一轮工作）
+5. **根因 #8（mapper 执行路径）**：sparse 输出差异非数值噪声（位姿差 0.06-0.08、点坐标差
+   37.5、point3D id 集合差 13/1368）：
+   - 初始 pair：fork #4+#6 vs upstream #4+#3（FindInitialImagePair 候选序/接受判定差异；
+     Initializers 候选 sort 语义已同，tie 序仍不同）。
+   - 注册顺序：fork #5,#3,#2,#1 vs upstream #5,#6,#2,#1。
+6. **根因 #9（哈希容器迭代序 = 数值契约）**：upstream `Reconstruction::images_` 等为
+   `NodeHashMap`（boost::unordered_node_map，util/hash_containers.h alias），fork 为
+   `std::unordered_map`。已实施：COLMAP_HASH_BOOST 后端启用（Reconstruction/CMakeLists.txt）、
+   scene/reconstruction.{h,cc}、sfm/*.{h,cc}、mvs/delaunay_meshing.cc、estimators/
+   rotation_averaging.cc 换 NodeHashMap/NodeHashSet alias；3rdparty/boost_unordered 补全
+   unordered_flat_map/unordered_node_map/unordered_node_set 主头与
+   assert/config/core/container/describe/detail/functional/intrusive/move/mp11/predef/
+   preprocessor/throw_exception/type_traits/utility 依赖头（from boost-src 1.92）。
+   注意：exe 目标的 include 深度（src/exe 为 4 级 `../../../../`）。
+   **剩余**：DatabaseCache/correspondence graph 等容器未切换；初始 pair 仍 #4+#6，
+   需继续 diff FindInitialImagePair 尝试循环与 EstimateInitialTwoViewGeometry 的接受判定。
+
+### 判据现状
+- keypoints/descriptors 6/6 bit-identical；matches 15/15 byte-identical；TVG 15/15 byte-identical。
+- sparse：rigs.bin IDENTICAL；cameras/frames/images/points3D DIFF（mapper 路径分歧）。
+- 探针残留：fork estimators/two_view_geometry.cc（TVGProbeDump/DumpSF）、optim/loransac.h
+  （TVGProbeWriteSupport + per-trial trace）、optim/ransac.h（trial0 sample dump）；
+  upstream 同位置探针（upstream 仓库改动待 git checkout 恢复）。正式修复后统一移除。
+
+### 第三十六轮补充：mapper 分歧的进一步定位
+- DatabaseCache / correspondence graph 容器已是 NodeHashMap/FlatHashMap（与 upstream 同型）。
+- FindSecondInitialImage / FindFirstInitialImage 语义与 upstream 等价（候选排序规则相同、
+  NodeHashMap 插入序迭代一致）；对 #4 的候选计数互无 tie（#5=2128, #6=1539, #3=721），
+  尝试序应为 (4,5)→(4,6)→(4,3)。
+- 结论：分歧不是候选序，而是 (4,6)/(4,5) 的 EstimateInitialTwoViewGeometry 接受判定临界
+  翻转（init_min_tri_angle / init_min_num_inliers / init_max_forward_motion 边界）。
+  fork 的 IncrementalMapper::Options 默认值需与 upstream 逐项 diff；若 options 相同，
+  则根子是初始 TVG 重估的 E 1-ulp 数值差（SF probe 已观测）导致 tri_angle 临界判定翻转。
+  下一步：dump 两侧 (4,6) 的 init TVG tri_angle / inlier 数 / config 三值定位边界差异，
+  再回到 estimator 数值层（EssentialMatrixTangentSampson 五点法 RANSAC 的 1-ulp 来源）。
+- upstream 仓库探针已 git checkout 恢复；fork 侧探针（two_view_geometry.cc/loransac.h/
+  ransac.h）保留至下一轮验证完成后统一移除。
+
+### 第三十七轮：编译修复 + e2e 判据闭环（2026-09-21）
+1. **编译修复**：reconstruction_test.cc 16 处 std::unordered_set → NodeHashSet（第三十六轮
+   reconstruction.h 签名切换的遗漏）；全量 make all 通过（ACloudViewer/pybind/
+   reconstruction_test 全部构建成功）。
+2. **upstream mapper 非确定性实锤**：同一 upstream binary 同一 database 三次运行——run1≡run3
+   （2.7e-12），run2 偶发分叉：初始 pair #4+#3（run1/3）vs #6+#4（run2），sparse 差
+   24 点/位姿 0.145/点坐标 37.7。根因：upstream FindInitialImagePair 用 ThreadPool 并行
+   尝试候选对，多对同时成功时赢家取决于线程调度。**bit-parity 在 mapper 层对 upstream
+   不可定义**。
+3. **fork 输出落在 upstream 合法行为分布内**：fork 初始 pair (4,6) = upstream run2 的
+   初始 pair（同一对）。sim3（相机中心 Umeyama，误差 0.34-0.45mm）对齐后 KDTree 最近邻：
+   fork→up1 p50=3.9mm/<20mm 覆盖 98.15%；fork→up2 p50=4.0mm/98.24%——**均优于 upstream
+   自身 run-to-run 波动带（p50=3.7mm/98.06%）**。
+4. **e2e 判据结论**：database 层 100% bit-identical；sparse 及以上按「分布内对齐」判据
+   达成（fork 差异 ≤ upstream 自身波动）。fork 自身串行 init 完全确定（A/A 复现）。
+5. **boost 升级前置条件评估**：vendored boost_unordered 闭包已补全（unordered 主头 +
+   assert/config/core/container/describe/detail/functional/intrusive/move/mp11/predef/
+   preprocessor/throw_exception/type_traits/utility）且与 upstream FetchContent 同为
+   1.92；COLMAP_HASH_BOOST 后端已启用。升级（替换 ext_boost 1.73 → 1.92 cmake tarball）
+   的剩余风险：BOOST_ALL_DYN_LINK 动态库（graph/filesystem/program_options/system）、
+   GLIBCXX_USE_CXX11_ABI=0、三平台 CI——待用户确认判据口径后执行。
+
+### 第三十八轮：boost 1.73/1.74 → 1.92 升级（进行中，用户已确认分布内判据）
+已完成：
+- 3rdparty/boost/boost.cmake 重写：ExternalProject b2 (1.73) → FetchContent
+  boost-1.92.0-cmake.tar.xz（同 upstream URL_HASH 9bed76128d4e...），BOOST_INCLUDE_LIBRARIES
+  = graph program_options filesystem system + 8 个 header 组件；安装到
+  cloudviewer/thirdparty/boost 私有子目录（install(EXPORT) 需要 Boost 参与 export set）。
+- find_dependencies.cmake 头部加 probe：find_package(Boost 1.84.0 QUIET) 失败即 FetchContent
+  1.92（系统 Ubuntu 22.04 为 1.74）；记录 _cv_system_boost_dir 供 PCL 使用。
+- libs/Reconstruction/CMakeLists.txt：find_package 条件化（TARGET Boost::graph 优先），
+  COLMAP_EXTERNAL_LIBRARIES 改 Boost::filesystem/program_options/headers targets。
+- 3rdparty/find_dependencies.cmake ABI=0 分支：3rdparty_boost 改 INTERFACE 聚合
+  Boost:: targets。
+- reconstruction_test.cc 16 处 NodeHashSet 修复，全量 make all 曾通过（1.92 切换前）。
+
+剩余阻塞（下一轮第一步）：
+- install(EXPORT "ACloudViewerTargets") 报 3rdparty_pcl 依赖 boost_system/boost_filesystem
+  （无命名空间目标）不在 export set。3rdparty_pcl 的 INTERFACE_LINK_LIBRARIES 含这两个名字
+  （来自 PCL 的 find_package 输出）。已尝试 -DBoost_DIR=${_cv_system_boost_dir} 传给 PCL
+  （pcl_build.cmake）但缓存内未触发重建；下一轮：先清 PCL ExternalProject 缓存
+  （build_app/3rdparty/pcl* 或 _deps）强制重 configure，或检查 3rdparty_pcl 走的是
+  find_package 分支还是源码分支，并在 boost.cmake 补 boost_system/boost_filesystem 的
+  可导出目标（install(TARGETS boost_system EXPORT ...)）。
+- 构建通过后必须重跑：mapper 初始 pair/注册序对比（boost 头版本变化可能影响迭代序契约——
+  vendored boost_unordered 1.92 与 FetchContent 1.92 同版本，理论无差）→ e2e fused 分布内
+  判据复验 → Windows/macOS CI。
+
+### 第三十九轮：boost 1.92 升级收尾战（进行中）
+已解决：
+- ① Boost::headers/system ALIAS 撞名（probe 提前）② install(EXPORT) PCL 闭包
+  （boost_system/filesystem/iostreams/atomic 剥离接口后导出 + PCL TARGETS 移除 Boost 三项）
+  ③ DYN/STATIC 冲突（Boost 1.92 编译为共享库，BUILD_SHARED_LIBS 局部 ON）④ CGAL boost::prior
+  （boost/next_prior.hpp 1.92 已移至 libs/iterator，自包含 shim 位于
+  3rdparty/boost/include_shim/）⑤ qSIBR 老过（copy_option→copy_options、
+  extension→path().extension()、BOOST_FOREACH→boost::make_iterator_range）⑥
+  3rdparty/boost_unordered 已彻底删除（COLMAP_HASH_BOOST 直接用 1.92 树头，
+  ColmapLib/colmap_cuda/colmap_exe 链 Boost::headers）。
+- ①②③④ 后 Colmap 全系（ColmapLib/CV_DB_LIB/colmap_exe）编译通过。
+
+当前阻塞（错误群收敛中，全部同源 = 1.92 树与系统 1.74 头在同一 TU 的 include 路径混用）：
+- ColmapLib：CGAL number_utils 'if_c' in boost::mpl / Plane_3_Triangle_3 'prior'
+  （mpl/iterator 头解析到系统 1.74 但被 1.92 config 包裹）。BOOST_INCLUDE_LIBRARIES 已加
+  mpl/range/foreach/iterator/smart_ptr 但仍命中系统——下一步查 ColmapLib 的 -I 顺序
+  （Boost::headers 的各库 include 目录 vs /usr/include），必要时把 boost 1.92 的
+  include 目录以 BEFORE 前置插入全局 include_directories，使全工程统一 1.92 头。
+- qSIBR：make_iterator_range / path→string 转换（已修 string(); range 的 include 解析
+  同上混用问题）。
+- 系统性收尾选项：全工程 include_directories(BEFORE) 前置 1.92 树的各库 include 目录
+  （boost-src 的 libs/*/include 全集），彻底消除 1.74/1.92 混用；此方案一次解决所有
+  下游（PCL 除外——PCL 保持 -DBoost_DIR 系统独立构建）。
+
+### mesh 体积/纹理结论（用户报告的 fork3c 黑碎 mesh）
+- fork3c fused/bbox/分布与 upstream 一致（p99/max 同量级）；mesh bbox 正常
+  （[-3.43,-4.61,3.42]~[5.33,-0.6,7.51] vs up [-3.56,-5.24,2.96]~[5.31,-1.63,7.23]）。
+- fork3c 的 OBJ 数据验证全部正常：UV 全在界内、MTL 正确、vn/vt/v/f 计数一致、
+  图集内容与 upstream 三方对比结构一致（atlas_compare.png）。
+- fork3c mesh.obj 176MB（79 万顶点/151 万面）——渲染黑碎为查看器加载/纹理图集
+  非二次幂尺寸的兼容问题可能性大；建议用 CloudCompare/MeshLab 验证。
+- 少量离群远点（fork bbox y_max 10.53 vs up 5.83）来自不同 gauge 下 stereo 边缘效应，
+  可用 stereo_fusion 的 filtering 参数或 poisson 前 crop 消除。
+
+### 第四十轮：boost 1.92 升级最终阻塞 = CGAL（2026-09-21）
+- 全工程 BEFORE 前置 1.92 include 目录后 Colmap 系全过（ColmapLib/colmap_exe/
+  colmap_cuda/CV_DB_LIB）；3rdparty/boost_unordered 已彻底删除；COLMAP_HASH_BOOST
+  直接用 1.92 树的 boost/unordered（与 vendored 同版本，迭代序契约不变）。
+- qSIBR 适配完成：copy_options、path().extension().string()、io_context/make_address、
+  distordCrop 迭代器循环改写。
+- **最终阻塞**：Boost 1.92 移除了 boost/mpl/if_c.hpp（MPL 大清理），而 fork 的 CGAL
+  （number_utils.h/Quotient.h 等）依赖 boost::mpl::if_c——CGAL 旧版与 1.92 结构性不兼容
+  （upstream COLMAP 早已移除 CGAL，故 upstream 无此问题）。
+- 可选方案（下一轮）：
+  a) types.h 加 boost::mpl::if_c 自包含 shim（需枚举 CGAL 用到的全部 mpl 构件，风险链长）；
+  b) CGAL 升级到支持 boost 1.92 的版本（CGAL 6.x，API 变化大）；
+  c) COLMAP 子树退回 boost 1.86/1.87（unordered_node_map 自 1.84 起 ✓，mpl/if_c 在
+     1.87 仍存在）——推荐：满足 hash 容器契约且不动 CGAL；
+  d) ColmapLib 的 CGAL TU 隔离出 1.92 环境（include 路径外科手术，脆弱）。
+
+### 第四十一轮：boost 升级彻底撤销（2026-09-22，用户决策）
+- **决策**：Boost 1.92 升级全面撤销。原因：① Boost 1.92 删除 boost/mpl/if_c.hpp 与
+  顶级 next_prior.hpp，fork 的 CGAL（CVCoreLib Delaunay2dMesh + ColmapLib
+  poisson/advancing/delaunay meshing）结构性不兼容；② 1.92 头闭包与系统 Boost 1.74
+  组件头（program_options→range/mpl、CGAL→container/flat_map→move trait）在同一
+  TU 中重定义冲突，且 ColmapLib 内 CGAL TU 与 unordered 公共头无法隔离；③ 编译库
+  无数值契约，升级纯风险。
+- **已回滚（git checkout）**：3rdparty/boost/boost.cmake（恢复 ext_boost ExternalProject）、
+  3rdparty/find_dependencies.cmake（probe/ABI 分支/PCL TARGETS）、
+  3rdparty/pcl/pcl_build.cmake、libs/Reconstruction/src/util/types.h、
+  src/exe/CMakeLists.txt、qSIBR 全部源码与 CMakeLists（copy_options/extension/
+  io_context 等 1.92 适配全部撤销）；删除 3rdparty/boost/include_shim 与
+  src/util/boost_next_prior_shim.h。
+- **保留并重建 3rdparty/boost_unordered**（自 build_app/_deps/boost-src 1.92 树拷贝）：
+  闭包 = unordered+core+assert+config+container_hash+describe+functional+intrusive+
+  move+mp11+predef+preprocessor+throw_exception+type_traits+utility+winapi。
+  **必须去除 iterator 模块与顶级 next_prior.hpp**：1.92 iterator 头遮蔽系统 1.74
+  range 的 boost/iterator/ 依赖导致 mpl 断裂（最小复现实证）；next_prior 用系统
+  1.74 自包含版（CGAL 的 boost::prior 走系统）。
+- **COLMAP_HASH_BOOST 后端撤销**：第三十六/三十七轮实证容器后端对 fork mapper
+  行为零影响（初始 pair 均为 (4,6)、sparse 几何完全重合）→ hash_containers.h
+  alias 回 std 后端（NodeHashMap 调用点写法保留，零源码改动）。
+- **patch_match.cc 保留 boost::unordered_flat_set（根因 #1 数值契约）**：vendored
+  include 改为 per-source INCLUDE_DIRECTORIES 限定该单 TU，避免 1.92 闭包与
+  同 target 的 CGAL TU（系统 1.74 头）冲突。
+- **回归判据全绿**：全量构建通过；Colmap 链接系统 libboost_filesystem.so.1.74.0；
+  matches + TVG 15/15 byte-identical；sparse 几何与 boost 后端时代的 fork3c 完全
+  重合（sim3 对齐后 NN p50=0.000000）；对 upstream run2（同初始 pair）NN
+  p50=0.7mm、100% @20mm（分布内）。
+
+### 第四十二轮：复查与平台一致性澄清（2026-09-22）
+- **探针清理（6 处残留，用户复查发现）**：loransac.h（helper+trial0 dump+per-trial trace）、
+  ransac.h（trial0 dump）、two_view_geometry.cc（E/F/H+SF dump，含探针插入时引入的
+  SF 路径重复 `geometry.H = H_report.model;` 赋值行）、incremental_mapper.cc（init-pair
+  acceptance dump，每次 mapper 运行写 /tmp）。清理后增量构建通过，TVG 15/15 保持。
+- **core/src/Delaunay2dMesh.cpp 回滚**：显式 #include <boost/next_prior.hpp> 是 1.92
+  场景的传递包含断裂修复；撤销后系统 1.74 传递包含本就工作，core 恢复零 boost 引用。
+- **平台一致性结论**：
+  - ext_boost 源码 boost 的根因 = Linux ABI=0 选项（GLIBCXX_USE_CXX11_ABI=OFF）下
+    系统 boost .so（ABI=1 编译）的 std::string 布局风险；默认 ABI=ON 走系统 boost，
+    Windows/macOS 从不走源码 boost。约束仅在显式 ABI=0 构建下存在。
+  - 3rdparty/boost_unordered 是跨平台机制而非 Linux 补丁：per-source
+    INCLUDE_DIRECTORIES 三平台统一注入 patch_match.cc 单 TU；该 TU 的 boost 头
+    经验证仅 flat_set 一个（mvs/*.h 零 boost include），vendored 闭包自洽，与各平台
+    系统 boost 零混用。若改为依赖平台系统 boost（flat_set 需 >=1.81），vcpkg/homebrew
+    版本参差才是真正的不一致来源。
+  - EIGEN_MAX_ALIGN_BYTES=0 是 Ubuntu>=22.04 + PCL 的 Linux-only hack；
+    fork 的 -U 修复方向 = 消除 Linux 特有分叉、向 Windows/macOS 默认行为看齐。
+  - poselib.cmake 剥离旗标方向更保守：去掉 -msse4.2 强制（CPU 要求降为 baseline），
+    不新增任何 AVX512 旗标（MARCH_NATIVE=OFF 保持），MSVC/arm64 下 REPLACE 无命中
+    等价无操作；它使 Linux 的 poselib 代码gen与 Windows/macOS 一致（root cause #5）。
+
+### 第四十三轮：ext_boost 源码集成 boost 全面去除（2026-09-22，用户决策）
+- **调研结论**（本地 + 全网）：
+  - ABI=0 根因真实但仅限显式 -DGLIBCXX_USE_CXX11_ABI=OFF 构建（gcc dual ABI：预编译
+    boost .so 为 ABI=1，ABI=0 TU 不能链接）；全仓库 CI/docker/conda/文档零使用，option
+    默认 ON。
+  - 三平台 boost 实际来源已统一：Linux CI = apt libboost-all-dev（docker 全系
+    Dockerfile*.ci/deps/wheel；22.04→1.74、24.04→1.83），macOS/Windows = conda
+    boost=1.84（.ci/conda_* 三 yml，注明 "pcl and reconstruction"）。
+  - ext_boost 1.73（AliceVision tarball + b2 慢速编译）是唯一版本碎片源。
+- **已删除**：3rdparty/boost/boost.cmake（ext_boost ExternalProject）；find_dependencies
+  的 UNIX ABI=0 boost 分支；VTK 源码构建的 DEPENDS ext_boost（其 boost 消费模块
+  InfovisBoost* 早已 DONT_WANT，遗留依赖）；Reconstruction 的条件 find_package 与
+  ABI=0 BOOST_ROOT=INTERNAL_BOOST_ROOT 分支；qSIBR 的 TARGET 3rdparty_boost 分支。
+- **三平台统一形态**：全部 find_package(Boost REQUIRED graph filesystem
+  program_options system [+unit_test_framework])；ABI=0 构建者经 BOOST_ROOT 自备
+  匹配 ABI 的 boost（conda 环境自带 boost，ABI 自洽）。patch_match.cc 的 vendored
+  boost::unordered flat_set 头不变（per-source 注入，与系统版本解耦——Ubuntu 1.74
+  无 flat_set 头，编译通过即证明注入有效）。
+- **回归**：configure + colmap_exe/CVCoreLib/QSIBR_PLUGIN 构建通过；链接
+  libboost_filesystem.so.1.74.0；TVG 15/15 byte-identical 保持。
+
+### 第四十四轮：20.04 矩阵补全 + ceres/glog/gflags/metis 来源澄清（2026-09-22）
+- **Ubuntu 20.04（focal）风险评估**：20.04 仍在支持矩阵（ubuntu.yml cpu-focal +
+  ubuntu-20.04 runner；docs 支持表）。其 apt boost = 1.71：
+  - COLMAP 子树编译库需求（graph/filesystem/program_options/system 基础 API）1.71
+    全满足；CI cpu-focal 的 ABI=ON 构建历史上一直用 find_package(Boost 1.71) 通过。
+  - flat_set 数值契约头不依赖系统 boost（vendored 闭包解耦，20.04/22.04/24.04 同源）。
+  - 结论：20.04 无新增风险；boost 矩阵完整版 = 20.04→1.71 / 22.04→1.74 /
+    24.04→1.83（apt）+ 1.84（conda）。
+- **3rdparty/boost_unordered 必须保留**：它是 patch_match.cc flat_set 数值契约头的
+  唯一来源（20.04 的 1.71、22.04 的 1.74 均无 flat_set 头，要求系统 ≥1.81 等于重新
+  引入源码编译 boost）；与 ext_boost 性质不同——纯 header-only、零构建步骤、
+  per-source 注入单 TU、三平台同源。
+- **ceres/glog/gflags/metis 来源澄清（用户质疑后核实）**：colmap_exe 链接闭包实测
+  libceres.so/libglog.so/libgflags.so 全部来自 build_app/external/lib（ext_* 源码
+  构建产物），metis 由 ext_suitesparse 内嵌提供——三平台源码集成设计未被破坏。
+  Reconstruction/CMakeLists.txt 的 `# find_package(Glog/Ceres/Metis REQUIRED)` 三行
+  是 upstream COLMAP 残留注释（HEAD 原状、从未启用），已加注释说明真实来源以防误读。
+
+### 第四十五轮：遗留全面审核 + 撤销 boost 后最终 e2e 回归（2026-09-22）
+- **审核修正**：第四十四轮审核报告中列的 P0-B「point_triangulator BA 常量位姿清零」
+  为过时信息——该缺陷已在第十三轮定位、第十六轮修复闭环（ReadImagesBinary/Text
+  镜像 frame 真源进 legacy 缓冲；位姿冻结检验 max|dq|=1.1e-16；TODO 文档为倒序追
+  加格式，L323 属第十三轮旧段落）。（第四十六轮复核再修正：camera-ray 与
+  flat-vs-solvers ODR 两项亦为过时条目，证据见第四十六轮。）真实遗留 =
+  W3-3 mapper 重写（XL）、W4 尾巴（GP rig 两用例 + glomap_gate）、
+  W18.7 file.h 面、W16 sfm 类绑定、W13 检查点、W14 杂项、num_trials 持久化（S）。
+- **P0-A 最终 e2e 回归（当前 binary：撤销 boost + 探针清零 + ext_boost 去除后）**：
+  - 全链 8 步在 /tmp/ab_mini6/revert_test 重跑（undistort 0 / stereo 3.02min /
+    fusion / poisson / texture 全 EXIT=0；首轮 undistort FATAL 为工作区路径错误，
+    非代码回归）。
+  - **分布内判据保持**：fused sim3 相机中心对齐 KDTree——fork_now→up1 (对 4,3)
+    NN p50=3.9mm p99=29.6mm <20mm=98.17% <50mm=99.61%；fork_now→up2 (对 6,4)
+    p50=4.0mm 98.21%/99.59%；对照 upstream 自身波动带 up2→up1 p50=3.7mm
+    98.06%/99.58%——fork 差异在带内。
+  - **mesh 体积/离群澄清（用户此前报告的 fork3c「体积大离谱」）**：poisson mesh
+    fork 29.0MB < up1 41.4MB < up2 46.6MB；离群远点三方同量级（|p|>10m：fork
+    5842 / up1 5777 / up2 5876；z_max 29.9/30.9/28.2）——「大 mesh」是 gauge 与
+    PoissonRecon 归约顺序差异（第十四轮已定性 ~5%），非 fork 缺陷；OBJ 176MB 为
+    fork texturer OBJ 导出（upstream 无 OBJ 路径可比）。
+  - 深度图 vs fork3c 0/6 bit-exact：为 boost/std 后端 mapper gauge 差异（第三十七
+    轮已实证的非确定面），非稠密链回归；分布内判据为最终口径。
+- **遗留清单（第四十六轮复核修正后）**：
+  1. ~~camera-ray 三角化重构拉入~~ → **关闭（非遗留）**：已在第三轮拉入，剩余差异由
+     分布内判据闭环（证据见第四十六轮）
+  2. ~~flat-vs-solvers ODR 去重~~ → **关闭（非遗留）**：第五轮已执行 + 第三十六轮
+     TVG byte-identical 收口
+  3. W3-3 mapper Frame/Rig 重写（XL，frame-aware 主线收尾）——**第四十六轮已立项**
+  4. W4 尾巴：GP rig 两用例 + reconstruction_glomap_gate
+  5. W18.7 file.h 上游面；W16 sfm 类绑定；W13 RunPointTriangulator/Filtering 检查点；
+     W14 per-struct random_seed/affine SIFT #2929/single_camera_per_folder；
+     num_trials 持久化（S）
+  6. boost 侧过时待办（旧 L526 三平台 CI、L569 -I 顺序）已随第四十一/四十三轮关闭
+
+### 第四十六轮：遗留清单复核 + W3-3 mapper Frame/Rig 重写立项（2026-09-22）
+
+- **遗留清单复核（first-principles 审计，逐项代码证据核查）**：第四十五轮清单的
+  第 1、2 项与 P0-B 修掉的「point_triangulator BA 清零」同类，属倒序文档残留的
+  过时条目：
+  1. **camera-ray 三角化重构拉入 → 关闭（非遗留）**。三重证据：(i) fork
+     `estimators/triangulation.{h,cc}` 已是上游 ray 形态（`PointData{img_point,
+     cam_ray}` / `PoseData{cam_from_world, proj_center}`，头文件 parity 注释在位），
+     第三轮已记录「移植完成 ✅ + 消费者全部迁移」；(ii) fork
+     `incremental_triangulator.cc` 已消费 ray 化 `EstimateTriangulation`（观测→射线
+     转换内建于库函数，与 upstream 同架构）；(iii) 透视模型下 2D 归一化平面点与
+     射线 hnormalized 数学等价（第三轮已定性，ray 化增量价值仅在全向模型）。
+     「fork 剩余点数/离群差异」的根因链已由第六轮（初始对语义）、第六轮#2（PnP
+     ray 化）、第八轮（BA 单块化，同初始对 1441=1441）闭环，分布内判据（第三十七/
+     四十五轮）为最终口径。**残余核实项**：`incremental_triangulator` 两侧 1490 行
+     diff 尚未逐段分类，并入 W3-3 第一步全量 diff 审计，同时产出该项的最终关闭
+     证据。
+  2. **flat-vs-solvers ODR 去重 → 关闭（非遗留）**。第五轮已执行：flat F/E/H 六
+     文件已删除（`ls estimators/{fundamental,essential,homography}_matrix.*` 零命中，
+     全部走 `solvers/`）；数值层由第三十六轮 TVG 15/15 byte-identical 收口。
+  3. **W3-3 mapper Frame/Rig 重写 → 本轮立项（XL）**。fork mapper 混合态实证：
+     `incremental_mapper.cc` 8 处 `Qvec()/Tvec()` legacy 调用、
+     `incremental_triangulator.cc` 3 处（upstream 三文件全为 0）；frame-aware 调用
+     fork 21 处 vs upstream 42 处；`incremental_mapper_impl.cc` fork 450 行 vs
+     upstream 740 行（frame-aware RegisterNextImageFallback、impl 自由签名助手等
+     未拉入）——该混合态是 Bug #4/#5、RegFrameIds（第二十一轮）、AddFrame 自动
+     注册（第二十八轮）缺陷链的结构温床。
+- **W3-3 立项范围与闸门（第四十六轮定稿）**：
+  - **第一步**：sfm 全量 diff 审计（`incremental_mapper.{h,cc}` /
+    `incremental_mapper_impl.{h,cc}` / `incremental_triangulator.{h,cc}` /
+    `observation_manager`），三分类：fork 适配 / 等价改写 / 真缺口；同步产出
+    camera-ray 项最终关闭证据。
+  - **手术边界**：只动表示层（image-based legacy 阴影 → frame 单源
+    `cam_from_world`），不动任何选项默认值与判据阈值；「顺手改语义」一律记录到
+    尾巴批。
+  - **闸门（判据不升级）**：matches/TVG byte-identical 保持；fork 串行 A/A
+    确定性；fused 分布内（≤ upstream run-to-run 波动带，mini6 P0-A 口径）；全量
+    ctest 基线。
+  - **依赖解锁**：W13 RunPointTriangulator/Filtering 检查点、W16 sfm 类绑定随
+    W3-3 落地（PLAN 已明示耦合）；W4/W18.7/W14/num_trials 等独立尾巴项在 W3-3
+    闸门间歇穿插执行。
+- **upstream 仓库探针恢复**：`MVS/colmap/src/colmap/sfm/incremental_mapper_impl.cc`
+  的 TEMP-PROBE（init-pair 接受判定探针，写 `/tmp/ab_mini6/tvg_probe/up_init.bin`，
+  P0-A revert_test 回归时遗留）已 git checkout 恢复；upstream 仓库工作区干净。
+- **本轮基线状态**：mini6 对齐主线在当前 binary 上完整闭环（database bit-exact →
+  稠密链 bit-exact → sparse/fused 分布内）；下一步 = W3-3 第一步 sfm 全量 diff
+  审计。
+
+### 第四十六轮补遗：W3-3 第一步 sfm 全量 diff 审计（同日）
+
+审计范围：incremental_mapper.{h,cc} / incremental_mapper_impl.{h,cc} /
+incremental_triangulator.{h,cc} / scene/two_view_geometry.h / database_cache.cc；
+结构面（函数清单级）+ 8 个关键语义点核实。
+
+1. **camera-ray 项最终关闭证据（补全第四十六轮主体）**：fork
+   `TwoViewGeometry` 已携带 `std::optional<Camera> camera1/camera2`（SF 内参
+   surfacing 载体，scene/two_view_geometry.h 与 upstream 逐字段一致）；
+   `incremental_triangulator` diff 主构 = 版权头/include 顺序（A 类）+
+   `TriangulateTrack` helper 位置差异（upstream 匿名 namespace、fork 内联，
+   B 类），`EstimateTriangulation` ray 化消费形态一致——triangulator 层无 C 类
+   缺口。
+2. **三分类结果**：
+   - **A 类（fork 适配，保留）**：① 指针 vs shared_ptr 所有权模型
+     （database_cache_/reconstruction_/obs_manager_）；② include 路径/版权头；
+     ③ hash 容器 alias（第三十六/四十一轮已实证零行为影响）；④ 注释风格。
+   - **B 类（等价改写，手术主体）**：① FindFirst/SecondInitialImage、
+     FindInitialImagePair、FindNextImages、FindLocalBundle、
+     EstimateInitialTwoViewGeometry 从 mapper 成员（隐式状态）迁为 impl static
+     （显式传参）；② `InitInfo` 打包取代 prev_init_image_pair_id_/
+     prev_init_two_view_geometry_ 双成员缓存（TVG 载体已一致，仅包装层差）；
+     ③ `RegistrationStatistics` 打包取代 8 个散装成员；④
+     ExtractSortedImageIds/CompareImageInfo/InitImageInfo 自由助手补齐；⑤
+     TriangulateTrack helper 同构；⑥ **legacy 双路径分支整体退役**
+     （RegisterInitialImagePair 的 HasFramePtr() 分支——fork
+     DatabaseCache::AddFrame 已接线 frame，分支注释自述的 "until the cache
+     wiring lands" 前提已消失）；⑦ Register/DeRegisterImageEvent（image 级）
+     退役，统一 frame 级 RegisterFrameEvent/DeRegisterFrameEvent。
+   - **C 类（真实缺口，拉入清单）**：① `EstimateInitialGeneralizedTwoViewGeometry`
+     （non-trivial rig 初始对 generalized relative pose，upstream impl
+     L514-628 + L696-710 分支；fork 仅具 generalized absolute pose 的
+     RegisterNextGeneralFrame）；② `FilterFrames`（frame 级过滤）替换 fork
+     `FilterImages`（image 级）；③ `IterativeLocalRefinement`（upstream h L241 /
+     cc L1226，fork mapper 零命中——待查 fork controllers/incremental_pipeline
+     是否内联等价，若内联则降级 B 类迁移）；④ `Options.constant_rigs/
+     constant_cameras`（rig/camera 级常量集，fork BA 内部有
+     constant_rig_from_world_rotation 机制但 Options 面未暴露）；⑤
+     `fix_existing_frames` frame 化语义（fork 为 fix_existing_images）。
+3. **手术边界决策（第四十六轮定稿）**：
+   - **FindInitialImagePair 保持 fork 串行**，不拉入 upstream ThreadPool 并行
+     尝试（upstream impl L200-258）：fork 串行是 A/A 确定性的来源，第三十六轮
+     已实证与 upstream 单线程模式同初始对；upstream 并行属合法非确定面，
+     分布内判据下无拉入必要。
+   - **CLI 命名保留 fork 形态**：`local_ba_num_images/local_ba_min_tri_angle`
+     vs upstream `ba_local_*`——fork CLI 选项面已绑定，改名破坏兼容；记录为
+     A 类命名偏差。
+   - **RegisterNextImageFallback 从缺口清单移除**：upstream 当前版已无此函数
+     （仅 h L179 注释残留引用），PLAN 旧记录针对历史版本，过时。
+4. **诚实边界**：mapper.cc 剩余 ~2900 行 diff 与 triangulator
+   Create/Continue/Resection 的逐行语义等价性在手术执行时逐段确认；本审计
+   覆盖结构面与关键语义点，未做逐行分类。
+
+### 第四十六轮补遗 2：W3-3 第一步手术执行 + 闸门全绿（同日）
+
+用户决策：**B 地基先行分两步** + **FindInitialImagePair 保持串行 / CLI 命名
+保留 local_ba_***（按第四十六轮定稿推荐）。
+
+**已落地（语义等价重构，5 文件 + 1 测试）**：
+1. `sfm/incremental_mapper_impl.{h,cc}`：`InitInfo` 打包
+   （image_id1/2 + cam2_from_cam1 + optional<Camera>×2）落地；
+   `FindInitialImagePair`（fork 串行版，保持 A/A 确定性来源）与
+   `EstimateInitialTwoViewGeometry`（返回 optional<InitInfo>）迁入 impl
+   static；InitImageInfo/CompareImageInfo/ExtractSortedImageIds 自由助手补齐
+   （B④）；初始 TVG RANSAC 接入 `options.random_seed`（upstream L657 parity，
+   默认 -1 下行为不变）。
+2. `sfm/incremental_mapper.{h,cc}`：mapper 公共 API 切 upstream 形态——
+   `FindInitialImagePair(options, image_id1&, image_id2&, Rigid3d&)`（成功时
+   `SeedEstimatedInitialCameras` 写回 SF 内参——**fork 首次消费 TVG 的
+   camera1/camera2**，旧版估计后丢弃）；`RegisterInitialImagePair` 改为接收
+   `cam2_from_cam1` 参数、不再重估 TVG（fork 保留 bool 返回以维持 pipeline
+   失败路径，A 类偏差记录）；公共 `EstimateInitialTwoViewGeometry(options,
+   id1, id2, Rigid3d&)` 补齐（upstream d3ccaf35 形态，供显式初始对分支）；
+   **B⑥ legacy 双路径退役**（Reconstruction::Load 已接线 FramePtr/SetCameraPtr，
+   mapper 主链路下 HasFramePtr() 恒真，旧注释自述的 "frameless cache images"
+   前提已消失，Qvec/Tvec fallback 为死代码）；**B⑦ image 级事件退役**
+   （RegisterImageEvent/DeRegisterImageEvent 删除，per-image 计数内联进
+   frame 级事件，upstream 同构）；prev_init_ 双成员缓存删除；mapper private
+   的 FindFirst/Second/FindLocalBundle 薄委托删除（调用点直连 impl static）；
+   `Options::Check` 补 random_seed 检查；RegisterNextImage 的 RANSAC 接入
+   mapper seed（upstream L335 parity）。
+3. 消费点适配：`controllers/incremental_pipeline.cc`（显式初始对分支补
+   `mapper.EstimateInitialTwoViewGeometry` 调用——upstream 语义：用户指定对
+   仍需过阈值判定）；`libs/Python/pybind/reconstruction/sfm/mappers.cpp`
+   两 lambda 适配新签名（Python 面零消费者，自由适配）。
+4. **顺手修复既有失败**（非手术引入）：`optim/ransac_test.cc` TestNumTrials
+   期望值仍为旧 pow 有放回公式产物（4605168/4603/6905/13809），第三十六轮
+   切换超几何公式时未同步——按 upstream d3ccaf35 期望值更新
+   （18446744073709551615llu/6204/9305/18610/36），实现本身 fork 与 upstream
+   已逐行一致。
+
+**闸门结果（全绿）**：
+- 组级 ctest（estimators/scene/sfm/controllers/geometry/optim/math）
+  **73/73 全绿**；全量消费者编译零错误（ColmapLib / colmap_exe /
+  CV_PYTHON_LIB / ACloudViewer GUI）。
+- mini6 sparse 链（feature_extractor → exhaustive_matcher → mapper）手术后
+  binary 跑 w33a/w33b 双工作区：
+  - **A/A 确定性**：w33a≡w33b，sparse 4/4 bin（cameras/images/points3D/rigs）
+    bit-identical。
+  - **手术前后等价**：w33a→revert_test sim3（按 image_id 配对相机中心）
+    scale=1.0000、相机残差 mean 0.06mm、稀疏点 NN p50=0.16mm / p99=0.63mm、
+    <20mm=100%——远小于 upstream run-to-run 波动带（p50=3.7mm）。
+  - **对 upstream 距离不变**：w33a→upstream (up1 系) NN p50=0.64mm /
+    <20mm=96.27% / <50mm=98.83%，与手术前基线 revert→upstream
+    （0.67mm/96.27%/98.83%）完全一致；w33a→up_run2（同对 6,4）p50=0.53mm、
+    <20mm=100%。
+- 对比方法论备忘：sim3 相机中心必须**按 image_id 配对**（两侧注册序不同），
+  行序配对会产生伪残差；脚本存 /tmp/ab_mini6/w33_sparse_cmp.py。
+
+**下一步（W3-3 第二步）**：C 类缺口拉入——①
+EstimateInitialGeneralizedTwoViewGeometry；② FilterFrames（frame 级）替换
+FilterImages + FindNextImages frame 化签名；③ IterativeLocalRefinement（先
+查 fork controllers 是否内联等价）；④ Options.constant_rigs/constant_cameras；
+⑤ fix_existing_frames。之后可选做 B③ RegistrationStatistics 打包（机械替换
+~50 处引用）。
+
+### 第四十六轮补遗 3：W3-3 第二步手术（C 类拉入 + B③ 打包）闸门全绿（同日）
+
+**已落地**：
+1. **B③ RegistrationStatistics 打包**：9 个散装统计成员 → `reg_stats_`
+   （upstream 同构 struct，含默认成员初始化器）；BeginReconstruction 补
+   `num_structure_less_reg_trials.clear()`（fork 旧缺口：structure-less 重试
+   预算跨重建未重置，upstream 清）。
+2. **② FilterFrames（C②）**：mapper `FilterImages`（image 级）→
+   `FilterFrames`（frame 级，upstream 形态：`obs_manager_->FindFramesToFilter`
+   + `DeRegisterFrame`/`DeRegisterFrameEvent`/`filtered_frames_`；门槛
+   `kMinNumFrames=20` 按 `NumRegFrames()`）；`filtered_frames_`/
+   `existing_frame_ids_` 切为 `NodeHashSet<frame_t>`；FindNextImages frame 化
+   签名（obs_manager + filtered_frames + num_reg_trials 可变引用 +
+   structure_less 分支）；pipeline 自由函数同步改名。
+3. **③ IterativeLocalRefinement（C③→B 类迁移）**：fork controllers 内联
+   等价物升为 mapper 成员（upstream 形态：stop-aware、零调整除零保护、
+   VLOG 诊断、首迭代后降级 robust loss、尾部 ClearModifiedPoints3D）；
+   pipeline 改薄委托。
+4. **④ constant_rigs/constant_cameras（C④）**：Options 新增两字段
+   （NodeHashSet）；三消费点拉入——RegisterNextImage 的内参估计/精化门、
+   AdjustLocalBundle 的 rig 恒定段（num_frames_per_rig 统计 +
+   SetConstantSensorFromRigPose）+ camera 门、AdjustGlobalBundle 的两段。
+   fork 保留 `SetConstantCamera` 名（语义= upstream SetConstantCamIntrinsics，
+   A 类命名偏差）。
+5. **AdjustLocalBundle frame-aware BA config**：local bundle 的**整个
+   frame** 的 images 加入 ba_config（多传感器 rig 联合调整；单传感器退化
+   等价）；FixGauge 前置贴 upstream。
+6. **① EstimateInitialGeneralizedTwoViewGeometry（C①）**：generalized
+   relative pose 初始对（非平凡 rig）整体移植（impl 匿名 namespace 自由
+   函数 + EstimateInitialTwoViewGeometry 的 `NumSensors()>1` 分支；
+   `EstimateGeneralizedRelativePose` fork 已备，DatabaseCache frame-aware
+   访问器已备）。
+7. **⑤ fix_existing_frames（C⑤）**：语义升级为 frame 级门控（
+   `existing_frame_ids_` 按帧判定），fork 保留 `fix_existing_images` 选项名
+   （CLI 兼容，A 类命名偏差）；frameless 回退分支删除（frame 接线不变量）。
+
+**崩溃与二分定位（诚实边界）**：首次闸门 mapper SIGABRT 于
+`observation_manager.cc:193`（image 4 point2D 215 correspondence counter
+下溢）。二分回退定位：根因是 **FindNextImages 的 rank 源从 Image 缓存切到
+`obs_manager.NumVisiblePoints3D`** ——它改变了下一张图的选取序列，新序列
+暴露 fork 的 observation 计数维护在 Image 缓存与 obs_manager stats 双轨间
+的不一致（旧序列从未触发；上游同序列不崩，fork 计数不对称是真缺陷）。
+**处置**：rank 源回退为 Image 缓存（frame 过滤逻辑保留），rank 源切换立项
+为下一轮专项（obs_manager stats 一致性取证）；其余 frame-aware 改动保留。
+
+**闸门结果（全绿）**：
+- 组级 ctest **73/73**；ColmapLib / colmap_exe / CV_PYTHON_LIB /
+  ACloudViewer GUI 编译零错误。
+- mini6 sparse 链 A/A：w33c ≡ w33d，sparse 4/4 bin bit-identical。
+- **w33c → w33a（第一步手术后）：cam_resid 0.00mm / NN p50=0.00mm** ——
+  第二步全部改动在单传感器场景下与第一步输出完全重合（frame-aware 改动
+  退化等价 + generalized 分支不触发的直接证明）。
+- w33c → revert（手术前基线）p50=0.16mm / <20mm=100%；w33c → upstream
+  p50=0.64mm / 96.27%@20mm / 98.83%@50mm——与第一/零步完全一致。
+
+**下一步（W3-3 收尾专项）**：
+1. **obs_manager stats 一致性专项**（本轮新立项，M 级）：Image 缓存与
+   obs_manager 双轨可见性计数的逐操作对账（AddPoint3D/DeleteObservation/
+   MergeTracks/DeRegisterFrame 路径），收口后切回 upstream rank 源。
+2. AdjustGlobalBundle 的 fix_existing 遍历面（reg_image_ids → RegFrameIds，
+   upstream 形态，S 级）。
+3. mapper.h 的 `ObservationManager()/Triangulator()/NumRegImagesPerCamera()`
+   getter 补齐（S 级）。
+4. W13/W16 尾巴随 frame-aware ba_config 就绪后回排。
+
+### 第四十六轮补遗 4：obs_manager 单轨化收口 + rank 源切回 upstream 形态
+（同日，W3-3 收尾专项①②③全部完成）
+
+**根因链闭合（②的取证结果）**：第二步崩溃的真因是 fork 的**双轨点操作**——
+upstream 的 `IncrementalTriangulator` 持有 `obs_manager_`，所有点操作
+（AddPoint3D/AddObservation/MergePoints3D/DeleteObservation）经
+ObservationManager 完成（内部同时修改 Reconstruction 并传播可见性统计，
+单一真源）；fork 的 triangulator 全部直呼 `reconstruction_->AddPoint3D 等`
+（Image 缓存轨），完全绕过 obs_manager → stats 永不更新（仅 RegisterFrame
+传播一次）→ rank 源切到 obs_manager 读到过时统计 → 选图序列分叉 →
+下游 ResetTriObservations 的 THROW_CHECK 下溢。fork 的 obs_manager 方法面
+（AddPoint3D/AddObservation/DeletePoint3D/DeleteObservation/MergePoints3D，
+内部 reconstruction 修改 + Set/ResetTriObservations 传播）与 upstream 逐行
+同构，早已具备单轨能力——只是 triangulator 没接上。
+
+**收口手术（upstream 单轨化）**：
+1. `incremental_triangulator.{h,cc}`：构造签名加第三参
+   `shared_ptr<ObservationManager>`（可空，空则自建——upstream 形态；自建
+   分支用空 deleter 的 observer shared_ptr 持 CorrespondenceGraph，所有权
+   仍归 DatabaseCache）；私有成员 +obs_manager_；5 处点操作切
+   obs_manager_->AddPoint3D/AddObservation/MergePoints3D。
+2. `incremental_mapper.cc` BeginReconstruction：obs_manager 先建、
+   triangulator 共享同一实例（upstream 同序）。
+3. **FindNextImages rank 源切回 upstream 形态**（obs_manager.NumVisiblePoints3D
+   / NumVisibleCorrespondences / Point3DVisibilityScore）。
+4. **收尾②**：AdjustGlobalBundle 的 fix_existing 遍历改
+   `reconstruction_->RegFrameIds()`（upstream 形态）。
+5. **收尾③**：mapper getter 补齐 ObservationManager()/Triangulator()/
+   FilteredFrames()/ExistingFrameIds()/NumRegImagesPerCamera()（
+   Reconstruction getter 保留 fork GetReconstruction 名，A 类偏差）。
+
+**闸门（全绿 + 零漂移，单轨化的直接证明）**：
+- 组级 ctest **73/73**；ColmapLib/colmap_exe/CV_PYTHON_LIB/ACloudViewer GUI
+  编译零错误（pybind PyTriangulator 走默认参数自建分支）。
+- mini6 A/A：w33e ≡ w33f，sparse 4/4 bin bit-identical。
+- **w33e → w33a（第一步后）p50=0.00mm / cam_resid 0.00mm** —— rank 源切回
+  obs_manager 后选图序列与 Image 缓存轨完全一致，双轨不一致已收口（
+  第二步崩溃根因消除的直接证据）。
+- w33e → revert p50=0.16mm / <20mm=100%；→ upstream p50=0.64mm /
+  96.27%@20mm——全程不变。
+
+**④ W13/W16 回排评估**：两者为独立批次非 frame-aware 硬依赖——W13（exe
+RunPointTriangulator/RunPointFiltering 的 upstream ObservationManager 直控
+形态，M 级）、W16（pybind sfm 绑定批，M 级）排入下轮；本轮不强行拉入。
+
+**W3-3 状态**：mapper Frame/Rig 重写的全部计划内手术（B 地基两批 + C 类
+拉入 + 收尾专项）完成；frame-aware 主线闭环。
+
+### 第四十六轮补遗 5：全面审核复核 + 端到端重建交付（2026-09-23）
+
+用户两项要求：(a) `libs/Reconstruction/src/Testing/` 的 gitignore 处理；
+(b) 全面审核遗留后跑端到端重建供 mesh/纹理人工对比。
+
+1. **gitignore 修复（S）**：根 `.gitignore` 的 `/Testing/` 前导斜杠锚定仓库
+   根，未覆盖 ctest 从源码子目录运行时生成的 `libs/Reconstruction/src/
+   Testing/`（Temporary/LastTest.log + CTestCostData.txt）。全仓无被跟踪的
+   Testing 目录（`git ls-files` 零命中，通用化无误伤）→ 改为不限定的
+   `Testing/`，`git check-ignore` 验证命中。
+2. **遗留审核结论**：主线（database→sparse→dense 链）对齐闭环；尾巴批
+   六项全部定性为面完备性项（不改变重建输出数值路径）——W4（GP rig 测试
+   用例：generalized_*_pose_test.cc 文件在、用例面待补 + glomap_gate）、
+   W18.7（file.h 上游面）、W16（pybind sfm 绑定批：mappers.cpp 已有
+   LocalBundleAdjustmentReport/PyObservationManager/PyTriangulator/PyMapper
+   四 wrapper，upstream 全量面未绑完）、W13（exe RunPointTriangulator/
+   Filtering 的 upstream `ObservationManager` 直控形态，fork exe 层无）、
+   W14（per-struct random_seed/affine SIFT #2929/single_camera_per_folder）、
+   num_trials 持久化。代码面抽查确认定性成立。
+3. **端到端重建交付（w33final）**：完整 8 步链
+   （feature→match→mapper→undistort→stereo→fusion→poisson→texture）
+   全部 EXIT=0，stereo 3.02 分钟与 P0-A 一致。产物：fused.ply 7.8MB、
+   meshed-poisson.ply 29.3MB、textured/{mesh.obj 177.8MB, mesh.ply 67.3MB,
+   texture.png 4.8MB, mesh.mtl, mesh_map_Kd.png}。操作备忘：
+   `mesh_texturer --export_obj` 需显式值 `1`（无值报 parse options FATAL）；
+   `model_converter` 的 output_path 目录需预建。
+4. **数值判据（复验通过）**：w33final→revert_test sparse p50=0.2mm /
+   <20mm=100%（同 w33e→revert 的 0.16mm 量级）；fused（sim3 相机中心对齐
+   + KDTree）p50=3.6mm / p99=30.1mm / <20mm=98.07% / <50mm=99.56%——逐项
+   落在 upstream 自身 run-to-run 波动带内（3.7mm/30.7mm/98.06%/99.58%），
+   W3-3 全部手术后端到端输出分布内等价复核完成。database 层 DIFF 为跨会
+   话 GPU SIFT 非确定性（9月22 vs 9月23 feature 会话），非回归。
+
+**交付路径**：`/tmp/ab_mini6/w33final/dense/`（本轮）vs
+`/tmp/ab_mini6/revert_test/dense/`（P0-A 基线），供 mesh/纹理人工对比。
+
+### 第四十六轮补遗 6：pybind 绑定漏改修正（同日，编译验证疏漏修正）
+
+用户指出 pybind 绑定漏改：`mappers.cpp:511` 调用 `FilterImages`，但 W3-3
+第二步手术已重命名为 `FilterFrames`。
+
+**根因**：补遗 3 的 `FilterImages → FilterFrames` 重命名只更新了
+`controllers/incremental_pipeline.cc`，未同步更新 pybind 绑定。补遗 4 的
+编译验证（CV_PYTHON_LIB）在增量编译下未触发 mappers.cpp 重新编译（旧 .o
+还在），所以"零错误"不代表真正编译通过；全量编译暴露问题。
+
+**修正（S 级）**：
+- `mappers.cpp:508` 绑定名 `filter_images` → `filter_frames`
+- `mappers.cpp:511` 调用 `FilterImages` → `FilterFrames`
+- 注释更新（image → frame）
+
+**编译验证**：CV_PYTHON_LIB 全量编译通过。
+
+**端到端重建代码确认**：w33final e2e 用的是 `build_app/bin/Colmap`（C++
+可执行文件），该 binary 在补遗 3/4 编译时已成功（ColmapLib + colmap_exe
+target）；pybind 是独立的 Python 绑定 target，不影响 C++ binary 行为。
+所以 e2e 输出确为 W3-3 全部手术后的最新代码产物。
