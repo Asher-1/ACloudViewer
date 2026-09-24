@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "glb_export.hpp"
+#include "tasks/depth/glb_export.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,7 +14,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "reconstruct.hpp"
+#include "tasks/depth/reconstruct.hpp"
 
 namespace aicore {
 namespace depth {

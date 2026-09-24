@@ -21,8 +21,8 @@
 #include <random>
 #include <vector>
 
-#include "pose.h"
-#include "splat.h"
+#include "tasks/gaussian/pose.h"
+#include "tasks/gaussian/splat.h"
 
 using namespace aicore::gaussian::pose;
 using fsla::Mat3;

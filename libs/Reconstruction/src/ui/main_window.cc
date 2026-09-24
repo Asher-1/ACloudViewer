@@ -29,9 +29,12 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include <filesystem>
 #include <clocale>
 
 #include "ui/main_window.h"
+
+#include "scene/reconstruction_io.h"
 
 #include "util/version.h"
 
@@ -641,24 +644,24 @@ void MainWindow::ProjectSaveAs() {
 }
 
 void MainWindow::Import() {
-  const std::string import_path =
+  const std::filesystem::path import_path =
       QFileDialog::getExistingDirectory(this, tr("Select source..."), "",
                                         QFileDialog::ShowDirsOnly)
           .toUtf8()
           .constData();
 
   // Selection canceled?
-  if (import_path == "") {
+  if (import_path.empty()) {
     return;
   }
 
-  const std::string project_path = JoinPaths(import_path, "project.ini");
-  const std::string cameras_bin_path = JoinPaths(import_path, "cameras.bin");
-  const std::string images_bin_path = JoinPaths(import_path, "images.bin");
-  const std::string points3D_bin_path = JoinPaths(import_path, "points3D.bin");
-  const std::string cameras_txt_path = JoinPaths(import_path, "cameras.txt");
-  const std::string images_txt_path = JoinPaths(import_path, "images.txt");
-  const std::string points3D_txt_path = JoinPaths(import_path, "points3D.txt");
+  const auto project_path = import_path / "project.ini";
+  const auto cameras_bin_path = import_path / "cameras.bin";
+  const auto images_bin_path = import_path / "images.bin";
+  const auto points3D_bin_path = import_path / "points3D.bin";
+  const auto cameras_txt_path = import_path / "cameras.txt";
+  const auto images_txt_path = import_path / "images.txt";
+  const auto points3D_txt_path = import_path / "points3D.txt";
 
   if ((!ExistsFile(cameras_bin_path) || !ExistsFile(images_bin_path) ||
        !ExistsFile(points3D_bin_path)) &&
@@ -740,14 +743,14 @@ void MainWindow::Export() {
     return;
   }
 
-  const std::string export_path =
+  const std::filesystem::path export_path =
       QFileDialog::getExistingDirectory(this, tr("Select destination..."), "",
                                         QFileDialog::ShowDirsOnly)
           .toUtf8()
           .constData();
 
   // Selection canceled?
-  if (export_path == "") {
+  if (export_path.empty()) {
     return;
   }
 
@@ -755,10 +758,10 @@ void MainWindow::Export() {
   const std::string images_name = "images.bin";
   const std::string points3D_name = "points3D.bin";
 
-  const std::string project_path = JoinPaths(export_path, "project.ini");
-  const std::string cameras_path = JoinPaths(export_path, cameras_name);
-  const std::string images_path = JoinPaths(export_path, images_name);
-  const std::string points3D_path = JoinPaths(export_path, points3D_name);
+  const auto project_path = export_path / "project.ini";
+  const auto cameras_path = export_path / cameras_name;
+  const auto images_path = export_path / images_name;
+  const auto points3D_path = export_path / points3D_name;
 
   if (ExistsFile(cameras_path) || ExistsFile(images_path) ||
       ExistsFile(points3D_path)) {
@@ -828,17 +831,18 @@ void MainWindow::ExportAs() {
         const Reconstruction& reconstruction =
             reconstruction_manager_.Get(SelectedReconstructionIdx());
         if (filter == "NVM (*.nvm)") {
-          reconstruction.ExportNVM(export_path);
+          ExportNVM(reconstruction, export_path);
         } else if (filter == "Bundler (*.out)") {
-          reconstruction.ExportBundler(export_path, export_path + ".list.txt");
+          ExportBundler(reconstruction, export_path,
+                            export_path + ".list.txt");
         } else if (filter == "PLY (*.ply)") {
-          reconstruction.ExportPLY(export_path);
+          ExportPLY(reconstruction, export_path);
         } else if (filter == "VRML (*.wrl)") {
           const auto base_path =
               export_path.substr(0, export_path.find_last_of("."));
-          reconstruction.ExportVRML(base_path + ".images.wrl",
-                                    base_path + ".points3D.wrl", 1,
-                                    Eigen::Vector3d(1, 0, 0));
+          ExportVRML(reconstruction, base_path + ".images.wrl",
+                                     base_path + ".points3D.wrl", 1,
+                                     Eigen::Vector3d(1, 0, 0));
         }
       });
 }
@@ -848,14 +852,14 @@ void MainWindow::ExportAsText() {
     return;
   }
 
-  const std::string export_path =
+  const std::filesystem::path export_path =
       QFileDialog::getExistingDirectory(this, tr("Select destination..."), "",
                                         QFileDialog::ShowDirsOnly)
           .toUtf8()
           .constData();
 
   // Selection canceled?
-  if (export_path == "") {
+  if (export_path.empty()) {
     return;
   }
 
@@ -863,10 +867,10 @@ void MainWindow::ExportAsText() {
   const std::string images_name = "images.txt";
   const std::string points3D_name = "points3D.txt";
 
-  const std::string project_path = JoinPaths(export_path, "project.ini");
-  const std::string cameras_path = JoinPaths(export_path, cameras_name);
-  const std::string images_path = JoinPaths(export_path, images_name);
-  const std::string points3D_path = JoinPaths(export_path, points3D_name);
+  const auto project_path = export_path / "project.ini";
+  const auto cameras_path = export_path / cameras_name;
+  const auto images_path = export_path / images_name;
+  const auto points3D_path = export_path / points3D_name;
 
   if (ExistsFile(cameras_path) || ExistsFile(images_path) ||
       ExistsFile(points3D_path)) {
@@ -1323,7 +1327,7 @@ void MainWindow::UpdateWindowTitle() {
   if (*options_.project_path == "") {
     setWindowTitle(QString::fromStdString("COLMAP"));
   } else {
-    std::string project_title = *options_.project_path;
+    std::string project_title = options_.project_path->string();
     if (project_title.size() > 80) {
       project_title =
           "..." + project_title.substr(project_title.size() - 77, 77);

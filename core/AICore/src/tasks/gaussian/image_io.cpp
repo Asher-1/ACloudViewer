@@ -6,46 +6,28 @@
 // ----------------------------------------------------------------------------
 
 // Qt-based image I/O implementation for FreeSplatter.
-// Replaces stb_image with QImage for loading, center-cropping, and resizing.
-#include "image_io.hpp"
+// QImage-based loading, center-cropping, and resizing.
+#include "tasks/gaussian/image_io.hpp"
 
 #include <QImage>
 #include <QImageReader>
 #include <algorithm>
 #include <cstring>
 
-#ifdef AICore_HAS_CVLOG
-#include "CVLog.h"
-#include "CVTools.h"
-#else
-#define CVLog_warning(...)
-#endif
-
 namespace aicore {
 namespace gaussian {
 
-bool load_image_chw(const std::string& path,
-                    int size,
-                    std::vector<float>& out,
-                    std::string& err) {
-    QImageReader reader(QString::fromStdString(path));
-    reader.setAutoTransform(true);
-    QImage img = reader.read();
-    if (img.isNull()) {
-        err = "failed to decode image: " + path + " (" +
-              reader.errorString().toStdString() + ")";
-        return false;
-    }
-
-    img = img.convertToFormat(QImage::Format_RGB888);
+bool append_qimage_chw(const QImage& image_in,
+                       int size,
+                       std::vector<float>& out,
+                       std::string& err) {
+    QImage img = image_in.convertToFormat(QImage::Format_RGB888);
 
     // Center-crop to square
     const int w = img.width();
     const int h = img.height();
     const int s = std::min(w, h);
-    const int left = (w - s) / 2;
-    const int top = (h - s) / 2;
-    QImage cropped = img.copy(left, top, s, s);
+    QImage cropped = img.copy((w - s) / 2, (h - s) / 2, s, s);
 
     // Resize to model resolution
     QImage resized = cropped.scaled(size, size, Qt::KeepAspectRatioByExpanding,
@@ -69,6 +51,56 @@ bool load_image_chw(const std::string& path,
                 out[base + (size_t)c * size * size + y * size + x] =
                         line[x * 3 + c] / 255.0f;
             }
+        }
+    }
+    return true;
+}
+
+bool load_image_chw(const std::string& path,
+                    int size,
+                    std::vector<float>& out,
+                    std::string& err) {
+    QImageReader reader(QString::fromStdString(path));
+    reader.setAutoTransform(true);
+    QImage img = reader.read();
+    if (img.isNull()) {
+        err = "failed to decode image: " + path + " (" +
+              reader.errorString().toStdString() + ")";
+        return false;
+    }
+
+    return append_qimage_chw(img, size, out, err);
+}
+
+bool append_image_view_chw(const aicore_image_view& view,
+                           int size,
+                           std::vector<float>& out,
+                           std::string& err) {
+    if (view.format != AICORE_IMAGE_RGB8 || view.width <= 0 ||
+        view.height <= 0) {
+        err = "gaussian image_view must be non-empty AICORE_IMAGE_RGB8";
+        return false;
+    }
+    /* Borrowed-pixel QImage: no copy; the view outlives this call. */
+    QImage img(view.data, view.width, view.height, (int)view.row_stride_bytes,
+               QImage::Format_RGB888);
+    if (img.isNull()) {
+        err = "invalid image_view buffer";
+        return false;
+    }
+    return append_qimage_chw(img, size, out, err);
+}
+
+bool append_image_views_chw(const aicore_image_view* views,
+                            int32_t n_views,
+                            int size,
+                            std::vector<float>& out,
+                            std::string& err) {
+    out.clear();
+    out.reserve((size_t)n_views * 3 * size * size);
+    for (int32_t i = 0; i < n_views; i++) {
+        if (!append_image_view_chw(views[i], size, out, err)) {
+            return false;
         }
     }
     return true;

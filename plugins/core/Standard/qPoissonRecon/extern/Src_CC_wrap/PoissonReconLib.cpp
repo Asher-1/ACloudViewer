@@ -65,7 +65,7 @@ namespace {
 	{
 		return sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
 	}
-	
+
 	inline double ComputeNorm(const double vec[3])
 	{
 		return sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
@@ -319,7 +319,7 @@ struct SystemDual
 	{
 		return dValues * weight;
 	};
-	
+
 	CumulativeDerivativeValues<double, Dim, 0> operator()(	const Point<Real, Dim>& p,
 															const CumulativeDerivativeValues<double, Dim, 0>& dValues) const
 	{
@@ -366,7 +366,7 @@ void ExtractMesh(	const PoissonReconLib::Parameters& params,
 	const bool polygon_mesh = false;
 
 	CoredVectorMeshData<Vertex, node_index_type> mesh;
-	
+
 	if (samples && sampleData)
 	{
 		typedef typename FEMTree<Dim, Real>::template DensityEstimator<WEIGHT_DEGREE> DensityEstimator;
@@ -382,7 +382,7 @@ void ExtractMesh(	const PoissonReconLib::Parameters& params,
 			if (color)
 				(*color) *= static_cast<Real>(pow(params.colorPullFactor, tree.depth(n)));
 		}
-		
+
 		IsoSurfaceExtractor<Dim, Real, Vertex>::template Extract< PointData<Real> >(Sigs(), UIntPack<WEIGHT_DEGREE>(), UIntPack<DataSig>(), tree, density, &_sampleData, solution, isoValue, mesh, SetVertex, !params.linearFit, !non_manifold, polygon_mesh, false);
 	}
 	else
@@ -409,7 +409,7 @@ void ExtractMesh(	const PoissonReconLib::Parameters& params,
 			out_mesh.addDensity(v.w);
 		}
 	}
-	
+
 	for (size_t tidx = 0; tidx < mesh.polygonCount(); ++tidx)
 	{
 		std::vector<CoredVertexIndex<node_index_type>> triangle;
@@ -530,7 +530,7 @@ static bool Execute(PointStream<Real>& pointStream,
 		// Transform the Hermite samples into a vector field
 		{
 			normalInfo = new SparseNodeData<Point<Real, Dim>, NormalSigs>();
-			
+
 			if (params.normalConfidenceBias > 0)
 			{
 				std::function<bool(PointData<Real>, Point<Real, Dim>&, Real&)> ConversionAndBiasFunction = [&](PointData<Real> in, Point<Real, Dim>& out, Real& bias)
@@ -571,7 +571,7 @@ static bool Execute(PointStream<Real>& pointStream,
 			{
 				(*normalInfo)[i] *= static_cast<Real>(-1.0);
 			};
-			
+
 			ThreadPool::Parallel_for(0, normalInfo->size(), InvertNormal);
 		}
 
@@ -587,7 +587,7 @@ static bool Execute(PointStream<Real>& pointStream,
 		// Trim the tree and prepare for multigrid
 		{
 			constexpr int MAX_DEGREE = NORMAL_DEGREE > Degrees::Max() ? NORMAL_DEGREE : Degrees::Max();
-			
+
 			tree.template finalizeForMultigrid<MAX_DEGREE>( params.fullDepth,
 															typename FEMTree<Dim, Real>::template HasNormalDataFunctor<NormalSigs>(*normalInfo),
 															normalInfo,
@@ -600,10 +600,10 @@ static bool Execute(PointStream<Real>& pointStream,
 			constraints = tree.initDenseNodeData(Sigs());
 			typename FEMIntegrator::template Constraint<Sigs, IsotropicUIntPack<Dim, 1>, NormalSigs, IsotropicUIntPack<Dim, 0>, Dim> F;
 			unsigned int derivatives2[Dim];
-			
+
 			for (unsigned int d = 0; d < Dim; d++)
 				derivatives2[d] = 0;
-			
+
 			typedef IsotropicUIntPack<Dim, 1> Derivatives1;
 			typedef IsotropicUIntPack<Dim, 0> Derivatives2;
 			for (unsigned int d = 0; d < Dim; d++)
@@ -611,10 +611,10 @@ static bool Execute(PointStream<Real>& pointStream,
 				unsigned int derivatives1[Dim];
 				for (unsigned int dd = 0; dd < Dim; dd++)
 					derivatives1[dd] = (dd == d ? 1 : 0);
-				
+
 				F.weights[d][TensorDerivatives<Derivatives1>::Index(derivatives1)][TensorDerivatives<Derivatives2>::Index(derivatives2)] = 1;
 			}
-			
+
 			tree.addFEMConstraints(F, *normalInfo, constraints, solve_depth);
 		}
 
@@ -667,7 +667,7 @@ static bool Execute(PointStream<Real>& pointStream,
 				sInfo.baseVCycles = params.baseVCycles;
 			}
 			typename FEMIntegrator::template System<Sigs, IsotropicUIntPack<Dim, 1> > F({ 0.0, 1.0 });
-			
+
 			solution = tree.solveSystem(Sigs(), F, constraints, solve_depth,sInfo, iInfo);
 		}
 
@@ -683,7 +683,7 @@ static bool Execute(PointStream<Real>& pointStream,
 	{
 		double valueSum = 0, weightSum = 0;
 		typename FEMTree<Dim, Real>::template MultiThreadedEvaluator<Sigs, 0> evaluator(&tree, solution);
-		
+
 		std::vector<double> valueSums(ThreadPool::NumThreads(), 0);
 		std::vector<double> weightSums(ThreadPool::NumThreads(), 0);
 
@@ -696,15 +696,15 @@ static bool Execute(PointStream<Real>& pointStream,
 				valueSums[thread] += evaluator.values(sample.data / sample.weight, thread, (*samples)[j].node)[0] * sample.weight;
 			}
 		};
-		
+
 		ThreadPool::Parallel_for( 0, samples->size(), func);
-		
+
 		for (size_t t = 0; t < valueSums.size(); t++)
 		{
 			valueSum += valueSums[t];
 			weightSum += weightSums[t];
 		}
-		
+
 		isoValue = static_cast<Real>(valueSum / weightSum);
 
 		if (!params.withColors || params.colorPullFactor == 0)

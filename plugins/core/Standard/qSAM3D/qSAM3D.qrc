@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/CC/plugin/qSAM3D">
+    <file>info.json</file>
+    <file>images/qSAM3D.svg</file>
+  </qresource>
+</RCC>

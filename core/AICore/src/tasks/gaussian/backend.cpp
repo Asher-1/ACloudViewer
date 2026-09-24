@@ -9,7 +9,7 @@
 // Adapted from free-splatter.cpp/src/backend.cpp to use the shared AICore
 // backend registry.
 
-#include "backend.hpp"
+#include "tasks/gaussian/backend.hpp"
 
 #include <ggml-backend.h>
 #if !defined(AICORE_BACKEND_DL)
@@ -24,8 +24,8 @@
 #include <vector>
 
 #include "aicore/runtime_capi.h"
-#include "common.hpp"
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/gaussian/common.hpp"
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
@@ -64,34 +64,14 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
         name == "opencl" || name == "metal" || name == "sycl" ||
         name == "vulkan") {
         clear_sticky_cuda_errors();
-#ifdef __APPLE__
-        const bool disable_metal_opt =
+        // Interface-only control: the metal-optimizer disable scope lives in
+        // the common layer (ggml_common::resolve_gpu_group), so this task
+        // module carries no environment-mechanism references.
+        ggml_common::GpuResolveOptions gpu_opts;
+        gpu_opts.disable_metal_graph_opt =
                 (name == "metal" || name == "gpu" || name == "auto");
-        const char* saved_opt =
-                disable_metal_opt ? getenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE")
-                                  : nullptr;
-        const char* saved_fuse = disable_metal_opt
-                                         ? getenv("GGML_METAL_FUSION_DISABLE")
-                                         : nullptr;
-        if (disable_metal_opt) {
-            setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", "1", 1);
-            setenv("GGML_METAL_FUSION_DISABLE", "1", 1);
-        }
-#endif
         ggml_common::GpuBackendGroup group =
-                ggml_common::resolve_gpu_group(device_req);
-#ifdef __APPLE__
-        if (disable_metal_opt) {
-            if (saved_opt)
-                setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", saved_opt, 1);
-            else
-                unsetenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE");
-            if (saved_fuse)
-                setenv("GGML_METAL_FUSION_DISABLE", saved_fuse, 1);
-            else
-                unsetenv("GGML_METAL_FUSION_DISABLE");
-        }
-#endif
+                ggml_common::resolve_gpu_group(device_req, gpu_opts);
         if (!group.primary()) {
             if (name.empty() || name == "auto") {
                 return init("cpu", n_threads);
@@ -119,9 +99,8 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
             device += " (x" + std::to_string(gpu_backends.size()) + " GPUs)";
         }
     } else if (name == "cpu") {
-        if (const char* env = std::getenv("FREE_SPLATTER_NTHREADS")) {
-            if (int v = std::atoi(env)) n_threads = v;
-        }
+        // The historical FREE_SPLATTER_NTHREADS default override was an env
+        // fallback and is removed; explicit threads/options win.
         if (n_threads <= 0) {
             n_threads = (int)ggml_common::default_cpu_threads();
         }

@@ -11,10 +11,20 @@ add_subdirectory( include )
 add_subdirectory( src )
 add_subdirectory( ui )
 
+if (BUILD_UNIT_TESTS)
+    add_subdirectory( tests )
+endif()
+
 # We only need the includes from the stub
 get_target_property( STUB_INCLUDES CVPluginStub INCLUDE_DIRECTORIES )
 
 target_include_directories( ${PROJECT_NAME} PUBLIC "${STUB_INCLUDES}" )
+
+# Header-only dependency: ecvAssetIntegrity::PinnedDigest() resolves
+# release-asset digests from the registry published with AICore. No library
+# linkage needed.
+target_include_directories( ${PROJECT_NAME} PRIVATE
+	${CMAKE_SOURCE_DIR}/core/AICore/include )
 
 target_link_libraries( ${PROJECT_NAME}
 	CV_DB_LIB

@@ -31,9 +31,11 @@
 
 #include "exe/database.h"
 
-#include "base/database.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
+#include "scene/rig.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 
@@ -46,28 +48,28 @@ int RunDatabaseCleaner(int argc, char** argv) {
   options.Parse(argc, argv);
 
   StringToLower(&type);
-  Database database(*options.database_path);
+  auto database = Database::Open(*options.database_path);
   PrintHeading1("Clearing database");
   {
-    DatabaseTransaction transaction(&database);
+    DatabaseTransaction transaction(database.get());
     if (type == "all") {
       PrintHeading2("Clearing all tables");
-      database.ClearAllTables();
+      database->ClearAllTables();
     } else if (type == "images") {
       PrintHeading2("Clearing Images and all dependent tables");
-      database.ClearImages();
-      database.ClearTwoViewGeometries();
-      database.ClearMatches();
+      database->ClearImages();
+      database->ClearTwoViewGeometries();
+      database->ClearMatches();
     } else if (type == "features") {
       PrintHeading2("Clearing image features and matches");
-      database.ClearDescriptors();
-      database.ClearKeypoints();
-      database.ClearTwoViewGeometries();
-      database.ClearMatches();
+      database->ClearDescriptors();
+      database->ClearKeypoints();
+      database->ClearTwoViewGeometries();
+      database->ClearMatches();
     } else if (type == "matches") {
       PrintHeading2("Clearing image matches");
-      database.ClearTwoViewGeometries();
-      database.ClearMatches();
+      database->ClearTwoViewGeometries();
+      database->ClearMatches();
     } else {
       std::cout << "WARNING: Invalid cleanup type: " << type <<
                 "; no changes in database" << std::endl;
@@ -83,7 +85,7 @@ int RunDatabaseCreator(int argc, char** argv) {
   options.AddDatabaseOptions();
   options.Parse(argc, argv);
 
-  Database database(*options.database_path);
+  auto database = Database::Open(*options.database_path);
 
   return EXIT_SUCCESS;
 }
@@ -104,12 +106,56 @@ int RunDatabaseMerger(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  Database database1(database_path1);
-  Database database2(database_path2);
-  Database merged_database(merged_database_path);
-  Database::Merge(database1, database2, &merged_database);
+  auto database1 = Database::Open(database_path1);
+  auto database2 = Database::Open(database_path2);
+  auto merged_database = Database::Open(merged_database_path);
+  Database::Merge(*database1, *database2, merged_database.get());
 
   return EXIT_SUCCESS;
+}
+
+int RunRigConfigurator(int argc, char** argv) {
+    std::filesystem::path database_path;
+    std::filesystem::path rig_config_path;
+    std::filesystem::path input_path;
+    std::filesystem::path output_path;
+
+    OptionManager options;
+    options.AddRequiredOption("database_path", &database_path);
+    options.AddRequiredOption("rig_config_path",
+                              &rig_config_path,
+                              "Rig configuration as a .json file.");
+    options.AddDefaultOption("input_path",
+                             &input_path,
+                             "Optional input reconstruction to automatically "
+                             "derive the (average) rig and camera calibrations. "
+                             "If not provided, the rig intrinsics and "
+                             "extrinsics must be specified in the provided "
+                             "config.");
+    options.AddDefaultOption(
+        "output_path",
+        &output_path,
+        "Optional output reconstruction with configured rigs/frames.");
+    options.Parse(argc, argv);
+
+    std::optional<Reconstruction> reconstruction;
+    if (!input_path.empty()) {
+        reconstruction = std::make_optional<Reconstruction>();
+        reconstruction->Read(input_path);
+    }
+
+    auto database = Database::Open(database_path);
+
+    ApplyRigConfig(
+        ReadRigConfig(rig_config_path),
+        *database,
+        reconstruction.has_value() ? &reconstruction.value() : nullptr);
+
+    if (reconstruction.has_value() && !output_path.empty()) {
+        reconstruction->Write(output_path);
+    }
+
+    return EXIT_SUCCESS;
 }
 
 }  // namespace colmap

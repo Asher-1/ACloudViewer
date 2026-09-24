@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "simple_gguf_io.hpp"
+#include "common/simple_gguf_io.hpp"
 
 #include <ggml.h>
 

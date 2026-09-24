@@ -1,0 +1,129 @@
+diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
+index 685cafb..a40720a 100644
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -1534,6 +1534,10 @@ struct igemm_conv_plan {
+     void * nhwc_input  = nullptr;
+     void * nhwc_output = nullptr;
+     void * nhwc_weight = nullptr;
++    int64_t in_nbytes  = 0;  // ggml_nbytes(input) at creation; guards the
++    int64_t out_nbytes = 0;  // pointer-keyed cache against graph rebuilds
++    int64_t wbytes     = 0;  // staged weight size; a 1x1 and a 3x3 conv can
++                             // share in/out byte sizes but not weight size
+ 
+     ~igemm_conv_plan() {
+         if (nhwc_weight) cudaFree(nhwc_weight);
+@@ -1552,9 +1556,25 @@ struct igemm_nhwc_copy {
+     const void * ptr;
+     ggml_type    type;
+     int64_t      ne[4];
++    const igemm_conv_plan * plan;  // owning plan; NULL means the entry is stale
+ };
+ static std::unordered_map<const ggml_tensor *, igemm_nhwc_copy> g_nhwc_copies;
+ 
++// A recycled ggml context can leave a pointer-keyed plan pointing at memory
++// that a later cudaMalloc reused for an unrelated buffer; validate the three
++// device pointers before launching so a stale plan falls back to the naive
++// conv path instead of faulting in the kernel.
++static bool igemm_ptr_valid(const void * p) {
++    if (p == nullptr) return false;
++    cudaPointerAttributes attr;
++    if (cudaPointerGetAttributes(&attr, p) != cudaSuccess) return false;
++#if CUDART_VERSION >= 10000
++    return attr.type == cudaMemoryTypeDevice;
++#else
++    return attr.memoryType == cudaMemoryTypeDevice;
++#endif
++}
++
+ static bool igemm_env_enabled(const char * name) {
+     const char * value = getenv(name);
+     return value && value[0] != '\0' && strcmp(value, "0") != 0;
+@@ -1572,8 +1592,11 @@ static igemm_conv_plan * igemm_create_plan(ggml_tensor * dst, cudaStream_t strea
+                            (q8_kernel ? (int64_t) sizeof(half) : (int64_t) ggml_type_size(kernel->type));
+ 
+     auto plan = std::make_unique<igemm_conv_plan>();
+-    if (cudaMalloc(&plan->nhwc_input, ggml_nbytes(input)) != cudaSuccess ||
+-        cudaMalloc(&plan->nhwc_output, ggml_nbytes(dst)) != cudaSuccess ||
++    plan->in_nbytes  = ggml_nbytes(input);
++    plan->out_nbytes = ggml_nbytes(dst);
++    plan->wbytes     = wbytes;
++    if (cudaMalloc(&plan->nhwc_input, plan->in_nbytes) != cudaSuccess ||
++        cudaMalloc(&plan->nhwc_output, plan->out_nbytes) != cudaSuccess ||
+         cudaMalloc(&plan->nhwc_weight, wbytes) != cudaSuccess) {
+         cudaGetLastError();
+         return nullptr;
+@@ -1646,6 +1669,24 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+         if (!plan) g_igemm_plans.emplace(dst, std::unique_ptr<igemm_conv_plan>(nullptr));
+     } else {
+         plan = it->second.get();
++        // A rebuilt ggml graph can reuse a dst tensor pointer with different
++        // geometry; a stale plan then writes out of bounds (observed with
++        // per-call ggml contexts that recycle heap addresses). Recreate the
++        // plan whenever the tensor byte sizes no longer match.
++        const int64_t wbytes_cur = kernel->ne[3] * (int64_t) kernel->ne[0] * kernel->ne[1] * kernel->ne[2] *
++                                   (kernel->type == GGML_TYPE_Q8_0 ? (int64_t) sizeof(half) : (int64_t) ggml_type_size(kernel->type));
++        if (plan && (plan->in_nbytes != ggml_nbytes(input) ||
++                     plan->out_nbytes != ggml_nbytes(dst) ||
++                     plan->wbytes != wbytes_cur)) {
++            // The stale plan's kernels may still be queued on the stream:
++            // graph compute is asynchronous, and per-call ggml contexts can
++            // recycle the same dst pointer between invocations. Free the old
++            // buffers only after every queued kernel has retired.
++            cudaStreamSynchronize(ctx.stream());
++            g_igemm_plans.erase(it);
++            plan = igemm_create_plan(dst, ctx.stream());
++            if (!plan) g_igemm_plans.emplace(dst, std::unique_ptr<igemm_conv_plan>(nullptr));
++        }
+     }
+     if (!plan) return false;
+ 
+@@ -1677,7 +1718,17 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     // Chained input: the upstream igemm conv published its NHWC output; a
+     // pointer/type/shape match lets this conv consume it directly.
+     auto cit = g_nhwc_copies.find(input);
++    // The published buffer lives inside the producer's plan; when a graph
++    // rebuild reused the input pointer for a different tensor, the owning
++    // plan may be gone (recreated) and the cached pointer dangling.
++    const igemm_conv_plan * owner = nullptr;
++    {
++        auto pit = g_igemm_plans.find(input);
++        if (pit != g_igemm_plans.end() && pit->second) owner = pit->second.get();
++    }
+     const bool chained = cit != g_nhwc_copies.end() &&
++                         cit->second.plan != nullptr &&
++                         cit->second.plan == owner &&
+                          cit->second.type == input->type &&
+                          cit->second.ne[0] == input->ne[0] &&
+                          cit->second.ne[1] == input->ne[1] &&
+@@ -1691,12 +1742,17 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     // C % 8 == 0 keeps every staged 16B vector aligned; unaligned channel
+     // counts (e.g. the RGB first layer) fall back to scalar staging.
+     if (use_f32) {
+-        if (!chained) {
+-            igemm_nchw_to_nhwc<float>(input->data, plan->nhwc_input, B, C, H, W, stream);
+-        }
+         const float * in_p = (const float *) (chained ? cit->second.ptr : plan->nhwc_input);
+         const float * w_p  = (const float *) plan->nhwc_weight;
+         float * out_p      = (float *) plan->nhwc_output;
++        if (!igemm_ptr_valid(in_p) || !igemm_ptr_valid(w_p) || !igemm_ptr_valid(out_p)) {
++            GGML_LOG_WARN("CUDA IGEMM stale plan dropped for dst=%p (in=%p w=%p out=%p); falling back\n",
++                          (void*) dst, (const void*) in_p, (const void*) w_p, (const void*) out_p);
++            return false;
++        }
++        if (!chained) {
++            igemm_nchw_to_nhwc<float>(input->data, plan->nhwc_input, B, C, H, W, stream);
++        }
+         if (C % 8 == 0) {
+             igemm_conv_dispatch_f32<true>(grid, with_bias, with_silu, in_p, w_p, b_p, out_p,
+                                           stream, H, W, C, P, Q, K, R, S, p);
+@@ -1728,7 +1784,8 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     // Publish the NHWC output for chained consumers; the NCHW write-back
+     // always runs so every other consumer keeps reading dst->data.
+     g_nhwc_copies[dst] = igemm_nhwc_copy{ plan->nhwc_output, dst->type,
+-                                          { dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3] } };
++                                          { dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3] },
++                                          plan };
+     if (use_f32) {
+         igemm_nhwc_to_nchw<float>(plan->nhwc_output, dst->data, B, K, P, Q, stream);
+     } else {

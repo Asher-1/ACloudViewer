@@ -18,8 +18,7 @@
 //
 // This is the ONE definition both call, so they cannot diverge again. It is
 // pinned byte-for-byte by tests/test_pose.cpp::test_splat_record.
-#ifndef FREE_SPLATTER_SPLAT_H
-#define FREE_SPLATTER_SPLAT_H
+#pragma once
 
 #include <cmath>
 #include <cstring>
@@ -64,5 +63,3 @@ inline void encode_splat_record(unsigned char out[32],
 
 }  // namespace gaussian
 }  // namespace aicore
-
-#endif  // FREE_SPLATTER_SPLAT_H

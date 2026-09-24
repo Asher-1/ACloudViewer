@@ -185,6 +185,31 @@ class CCWheelBundler:
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
 
+    @staticmethod
+    def _get_install_name(mainlib: Path) -> str | None:
+        """Return the LC_ID_DYLIB install name of a dylib (otool -D).
+
+        Executables carry no install name; otool -D then prints only the
+        '<path>:' header and None is returned.
+
+        Args:
+        ----
+            mainlib (Path): Path to a binary (lib, executable)
+
+        Returns:
+        -------
+            str | None: install name (e.g. '@rpath/libfoo.dylib') or None
+
+        """
+        with subprocess.Popen(["otool", "-D", str(mainlib)], stdout=subprocess.PIPE) as proc:
+            lines = proc.stdout.readlines()
+        if len(lines) < 2:
+            return None
+        vals = lines[1].split()
+        if not vals:
+            return None
+        return vals[0].decode()
+
     def _get_lib_dependencies(self, mainlib: Path) -> tuple[list[str], list[str]]:
         """List dependencies of mainlib (using otool -L).
 
@@ -205,16 +230,26 @@ class CCWheelBundler:
         libs: list[Path] = []
         lib_ex: list[Path] = []
         warning_libs = []
+        install_name = self._get_install_name(mainlib)
         with subprocess.Popen(["otool", "-L", str(mainlib)], stdout=subprocess.PIPE) as proc:
             lines = proc.stdout.readlines()
             logger.debug(mainlib)
             lines.pop(0)  # Drop the first line as it contains the name of the lib / binary
-            # now first line is LC_ID_DYLIB (should be @rpath/libname)
+            # The first remaining dylib record is LC_ID_DYLIB: the library's
+            # OWN install name repeated by otool -L, not a dependency. Every
+            # @rpath-installed dylib therefore used to sprout a fake
+            # self-dependency here, silently ignored until the missing-
+            # dependency guard started rejecting unresolvable single-component
+            # names (observed as 'cannot resolve cloudViewer_torch_ops.dylib'
+            # on the macOS wheel CI). Filter it out with otool -D's answer.
             for line in lines:
                 vals = line.split()
                 if len(vals) < 2:
                     continue
                 pathlib = vals[0].decode()
+                if install_name is not None and pathlib == install_name:
+                    logger.debug("%s: skipping own install name %s", mainlib, pathlib)
+                    continue
                 logger.debug("->pathlib: %s", pathlib)
                 if pathlib == self.config.extra_pathlib:
                     logger.info("%s lib from additional extra pathlib", mainlib)
@@ -368,19 +403,45 @@ class CCWheelBundler:
             # we can take advantage of that...
             if self.config.extra_pathlib not in abs_search_paths:
                 abs_search_paths.append(self.config.extra_pathlib)
+            # Libraries already staged in the wheel payload (e.g. the
+            # source-built OIIO dylibs pre-copied by make_python_package.cmake,
+            # like the ggml backend modules) are legitimate resolution
+            # targets for @rpath dependencies of other payload members.
+            if self.config.lib_path not in abs_search_paths:
+                abs_search_paths.append(self.config.lib_path)
 
             # TODO: check if exists, else throw and exception
             for dependency in lib_deps:
+                abslib_path = None
                 for abs_rp in abs_search_paths:
-                    abslib_path = abs_rp / dependency
-                    if abslib_path.is_file():
-                        if should_skip_cuda_runtime_lib(abslib_path):
-                            logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
-                            break
-                        if abslib_path not in libs_to_check and abslib_path not in libs_found:
-                            # if this lib was not checked for dependencies yet, we append it to the list of lib to check
-                            libs_to_check.append(abslib_path)
+                    candidate = abs_rp / dependency
+                    if candidate.is_file():
+                        abslib_path = candidate
                         break
+                # dependency comes from _get_lib_dependencies as a Path;
+                # `in` on a Path raises TypeError, so test its string form.
+                if abslib_path is None and "/" not in str(dependency):
+                    # An unresolvable @rpath dependency would be silently
+                    # missing from the wheel and crash at import time
+                    # ("Library not loaded: @rpath/..."). Fail the
+                    # packaging here instead, matching the packaging guards
+                    # in make_python_package.cmake. Multi-component @rpath
+                    # paths (e.g. Foo.framework/Versions/A/Foo) keep the
+                    # legacy silent skip.
+                    raise RuntimeError(
+                        f"CCWheelBundler: cannot resolve @rpath dependency "
+                        f"'{dependency}' of {lib2check} from its rpaths "
+                        f"{rpaths_str} plus extra pathlib "
+                        f"{self.config.extra_pathlib}; the built wheel "
+                        f"would fail at import. Make sure the dependency is "
+                        f"built or installed into a directory listed on the "
+                        f"consuming binary's build rpath.")
+                if abslib_path is not None:
+                    if should_skip_cuda_runtime_lib(abslib_path):
+                        logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
+                    elif abslib_path not in libs_to_check and abslib_path not in libs_found:
+                        # if this lib was not checked for dependencies yet, we append it to the list of lib to check
+                        libs_to_check.append(abslib_path)
 
             # TODO: handle lib_ex here
             # for dependency in lib_ex:...

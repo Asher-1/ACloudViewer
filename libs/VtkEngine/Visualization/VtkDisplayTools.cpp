@@ -74,6 +74,23 @@
 #include <QImage>
 #include <algorithm>
 
+namespace {
+
+// RAII accumulator for the per-pass draw probe: attributes the enclosing
+// block's wall time to a probe bucket regardless of early returns.
+struct DrawProbeScope {
+    double& ms;
+    int& n;
+    QElapsedTimer t;
+    DrawProbeScope(double& msRef, int& nRef) : ms(msRef), n(nRef) { t.start(); }
+    ~DrawProbeScope() {
+        ms += double(t.nsecsElapsed()) / 1e6;
+        ++n;
+    }
+};
+
+}  // namespace
+
 namespace Visualization {
 
 void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
@@ -135,24 +152,51 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
                 VtkVis::INTERACTION_MODE_2D);
     }
 
+    // Stateless (capture-free) callback: resolves windows from the global
+    // view manager, so it stays valid regardless of this instance's
+    // lifetime. A non-null view tears down exactly that window's vis; a
+    // null view sweeps EVERY window — required because representations only
+    // exist for windows where the entity was property-edited, while a
+    // removed entity may be rendered in all of them (composite group
+    // teardown included). The per-entity teardown is idempotent.
     ecvRepresentationManager::instance().setActorCleanupCallback(
-            [this](ccHObject* entity, ecvGenericGLDisplay* view) {
+            [](ccHObject* entity, ecvGenericGLDisplay* view) {
                 if (!entity) return;
+                std::string viewID = CVTools::FromQString(entity->getViewId());
+                auto teardownOne = [viewID](VtkVis* vis) {
+                    if (!vis) return;
+                    // Composite teardown FIRST: an aggregated leaf owns no
+                    // actor-map entries (its block lives in the group), and
+                    // a folder owning a group must take the whole group
+                    // actor out — otherwise removed entities keep rendering
+                    // as ghost geometry.
+                    if (vis->isCompositeLeaf(viewID)) {
+                        vis->removeCompositeLeafEntity(viewID, 0);
+                    } else if (vis->hasCompositeGroup(viewID)) {
+                        vis->removeCompositeGroupEntity(viewID, 0);
+                    }
+                    if (vis->contains(viewID) || vis->isCompositeLeaf(viewID)) {
+                        vis->removePointCloud(viewID);
+                        vis->removePolygonMesh(viewID);
+                        vis->removeShape(viewID);
+                    }
+                    const std::string bboxId = "BBox-" + viewID;
+                    if (vis->contains(bboxId)) {
+                        vis->removeShape(bboxId);
+                    }
+                };
                 if (view) {
                     auto* glView = dynamic_cast<vtkGLView*>(view);
-                    if (glView && !glView->getVisualizer3D()) return;
+                    if (!glView || !glView->getVisualizer3D()) return;
+                    teardownOne(
+                            dynamic_cast<VtkVis*>(glView->getVisualizer3D()));
+                    return;
                 }
-                std::string viewID = CVTools::FromQString(entity->getViewId());
-                VtkVis* vis = resolveVisualizer(view);
-                if (!vis) return;
-                if (vis->contains(viewID)) {
-                    vis->removePointCloud(viewID);
-                    vis->removePolygonMesh(viewID);
-                    vis->removeShape(viewID);
-                }
-                const std::string bboxId = "BBox-" + viewID;
-                if (vis->contains(bboxId)) {
-                    vis->removeShape(bboxId);
+                for (auto* v : ecvViewManager::instance().getAllViews()) {
+                    auto* glView = dynamic_cast<vtkGLView*>(v);
+                    if (!glView) continue;
+                    teardownOne(
+                            dynamic_cast<VtkVis*>(glView->getVisualizer3D()));
                 }
             });
 }
@@ -266,6 +310,19 @@ VtkVis* VtkDisplayTools::findVisByActorIdOrActive(
         const std::string& viewId) const {
     VtkVis* vis = findVisByActorId(viewId);
     if (vis) return vis;
+    // Composite leaves own no actor-map entries: scan the composite
+    // registries as well, otherwise a per-entity edit routed to the ACTIVE
+    // view's registry while the leaf was aggregated in another view's group
+    // — silently lost in multi-window layouts.
+    for (auto* view : ecvViewManager::instance().getAllViews()) {
+        auto* glView = dynamic_cast<vtkGLView*>(view);
+        if (glView && glView->getVisualizer3D()) {
+            auto* candidate = dynamic_cast<VtkVis*>(glView->getVisualizer3D());
+            if (candidate && candidate->isCompositeLeaf(viewId)) {
+                return candidate;
+            }
+        }
+    }
     ecvGenericGLDisplay* targetView =
             ecvViewManager::instance().getEffectiveView();
     if (!targetView) {
@@ -556,8 +613,20 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     VtkVis* vis = resolveVisualizer(context.display);
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
+
+    // Per-entity context isolation: the context object is shared across
+    // sibling entities, so the mutations below must not leak into their
+    // draws (a leaked visFiltering=true silently disabled composite
+    // aggregation scene-wide; a leaked forceRedraw=true defeated the
+    // same-source geometry skip for every leaf after the first dirty one).
+    const bool inheritedVisFiltering = context.visFiltering;
+    const bool inheritedForceRedraw = context.forceRedraw;
+
     context.visFiltering = true;
-    bool firstShow = !vis->contains(viewID);
+    // Composite leaves own no entry in the actor maps: without the
+    // isCompositeLeaf check they would be treated as first-show on every
+    // redraw.
+    bool firstShow = !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
 
     // Set forceRedraw based on entity's redraw state
     // This ensures updateShadingMode() in VtkVis updates normals/colors when
@@ -567,11 +636,14 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     }
 
     if (mesh->isRedraw() || firstShow) {
+        DrawProbeScope fullProbe(m_probeMeshFullMs, m_probeMeshFullN);
         ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
         if (!ecvCloud) {
             CVLog::Warning(
                     "[VtkDisplayTools::drawMesh] Failed to get point cloud "
                     "from mesh!");
+            context.visFiltering = inheritedVisFiltering;
+            context.forceRedraw = inheritedForceRedraw;
             return;
         }
 
@@ -614,7 +686,11 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 if (applyMaterials || showTextures) {
                     const ccMaterialSet* materials = mesh->getMaterialSet();
                     if (materials) {
-                        if (!vis->updateTexture(context, materials)) {
+                        // Non-forced: skips the full texture/PBR re-apply
+                        // when the material set is unchanged (selection &
+                        // camera redraws keep large scenes responsive).
+                        if (!vis->updateTexture(context, materials,
+                                                /*forceApply=*/false)) {
                             CVLog::Warning(
                                     "[VtkDisplayTools::drawMesh] Update "
                                     "texture failed!");
@@ -629,12 +705,39 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         vis->transformEntities(context);
     }
 
-    if (vis->contains(viewID)) {
+    // Per-frame property sync is for entities with a DEDICATED actor only.
+    // Composite leaves share the group actor's material: writing a leaf's
+    // opacity/representation/point-size here stamped the last-drawn leaf's
+    // state onto ALL sibling blocks (one leaf's wireframe toggle blanked the
+    // whole 287-mesh group). Group-level state is applied at re-block time
+    // (applyLightPropertiesToActor) and via the group-level fast paths.
+    if (vis->contains(viewID) || vis->isCompositeLeaf(viewID)) {
+        DrawProbeScope syncProbe(m_probeMeshSyncMs, m_probeMeshSyncN);
         vis->setMeshRenderingMode(context.meshRenderingMode, viewID, viewport);
 
         ccMesh* ccMeshObj = dynamic_cast<ccMesh*>(mesh);
         if (ccMeshObj && firstShow) {
             vis->setCurrentSourceObject(ccMeshObj, viewID);
+        }
+
+        // Normals checkbox semantics (VTK): normals exist and shown → smooth
+        // (Gouraud); otherwise faceted (Flat). Interpolation is per-actor —
+        // composite leaves get it from the re-block path — so this write is
+        // for DEDICATED actors only. Material/texture/PBR-driven meshes are
+        // EXCLUDED: their renderer owns the interpolation (PBR mode), and a
+        // Gouraud/Flat write here stripped the PBR look every frame
+        // (monkey.obj rendered as untextured gray). Same guard as the
+        // default-color write below.
+        if (vis->contains(viewID)) {
+            const bool hasMats = mesh->hasMaterials() && mesh->materialsShown();
+            const bool hasTex = mesh->hasTextures() && mesh->materialsShown();
+            if (!hasMats && !hasTex) {
+                vis->setMeshShadingMode(
+                        (mesh->hasNormals() && mesh->normalsShown())
+                                ? SHADING_MODE::ECV_SHADING_GOURAUD
+                                : SHADING_MODE::ECV_SHADING_FLAT,
+                        viewID, viewport);
+            }
         }
 
         if (mesh->isColorOverridden()) {
@@ -659,6 +762,9 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 mesh->pointGaussianShaderPreset(),
                 mesh->pointGaussianEmissive(), viewID, viewport);
     }
+
+    context.visFiltering = inheritedVisFiltering;
+    context.forceRedraw = inheritedForceRedraw;
 }
 
 void VtkDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context,
@@ -935,8 +1041,33 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
     return (true);
 }
 
+void VtkDisplayTools::logDrawProbe(const std::string& passLabel) {
+    const double total = m_probeMeshMs + m_probeCloudMs + m_probeOtherMs;
+    if (total < 100.0 || !CVLog::diagnosticsEnabled()) {
+        resetDrawProbe();
+        return;
+    }
+    CVLog::Print(
+            "[drawProbe] pass=%s mesh: N=%d total=%.1fms (full=%.1f/%d "
+            "sync=%.1f/%d) | cloud: N=%d total=%.1fms | hideShow: N=%d "
+            "total=%.1fms | other: N=%d total=%.1fms",
+            passLabel.c_str(), m_probeMeshN, m_probeMeshMs, m_probeMeshFullMs,
+            m_probeMeshFullN, m_probeMeshSyncMs, m_probeMeshSyncN,
+            m_probeCloudN, m_probeCloudMs, m_probeHideShowN, m_probeHideShowMs,
+            m_probeOtherN, m_probeOtherMs);
+    resetDrawProbe();
+}
+
 void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
                            const ccHObject* obj) {
+    const bool probeMesh = obj && obj->isKindOf(CV_TYPES::MESH);
+    const bool probeCloud =
+            obj && obj->isA(CV_TYPES::POINT_CLOUD) && !probeMesh;
+    DrawProbeScope probe(
+            probeMesh ? m_probeMeshMs
+                      : (probeCloud ? m_probeCloudMs : m_probeOtherMs),
+            probeMesh ? m_probeMeshN
+                      : (probeCloud ? m_probeCloudN : m_probeOtherN));
     VtkVis* vis = resolveVisualizer(context.display);
     if (vis) {
         vis->applyDisplaySettingsLighting(context);
@@ -1275,9 +1406,17 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                context.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT) {
         std::string viewId = CVTools::FromQString(context.removeViewID);
         if (!viewId.empty()) {
+            // Massive-import critical path: the DB-tree name block fires this
+            // cleanup for EVERY entity on EVERY tree traversal even when no
+            // 2D layer exists (names are off by default). The bounds
+            // invalidation + full clipping recompute + renderScene below are
+            // only meaningful when a layer was actually removed — gating on
+            // that turns ~864 no-op calls per redraw into O(1) checks.
+            bool removedAny = false;
             auto removeFromImageVis = [&](ImageVis* imageVis) {
                 if (imageVis && imageVis->contains(viewId)) {
                     imageVis->removeLayer(viewId);
+                    removedAny = true;
                 }
             };
 
@@ -1290,17 +1429,19 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
                     removeFromImageVis(glView->getImageVis().get());
                 }
             }
-        }
 
-        if (vis) {
-            vis->invalidateGeometryBounds();
-            vis->resetCameraClippingRange(context.defaultViewPort);
-        }
+            if (removedAny) {
+                if (vis) {
+                    vis->invalidateGeometryBounds();
+                    vis->resetCameraClippingRange(context.defaultViewPort);
+                }
 
-        for (auto* view : ecvViewManager::instance().getAllViews()) {
-            if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
-                glView->invalidateViewport();
-                glView->renderScene();
+                for (auto* view : ecvViewManager::instance().getAllViews()) {
+                    if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
+                        glView->invalidateViewport();
+                        glView->renderScene();
+                    }
+                }
             }
         }
     } else {
@@ -1400,6 +1541,7 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
 }
 
 bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
+    DrawProbeScope hideShowProbe(m_probeHideShowMs, m_probeHideShowN);
     VtkVis* vis = resolveVisualizer(context.display);
     std::string viewId = CVTools::FromQString(context.viewID);
 
@@ -1442,7 +1584,7 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
             }
         }
 
-        if (vis->contains(viewId)) {
+        if (vis->contains(viewId) || vis->isCompositeLeaf(viewId)) {
             vis->hideShowActors(context.visible, viewId,
                                 context.defaultViewPort);
             found = true;
@@ -1955,11 +2097,8 @@ QString VtkDisplayTools::pickObject(double x, double y) {
     if (m_visualizer3D) {
         vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
         if (pickedActor) {
-            if (pickedActor) {
-                return m_visualizer3D->getIdByActor(pickedActor).c_str();
-            } else {
-                return "-1";
-            }
+            // Resolves composite-group hits down to the leaf entity.
+            return m_visualizer3D->pickLeafViewId(x, y).c_str();
         }
     }
     return "-1";
@@ -2201,7 +2340,25 @@ void VtkDisplayTools::setObjectLightIntensity(const QString& viewID,
     std::string id = CVTools::FromQString(viewID);
     VtkVis* vis = findVisByActorIdOrActive(id);
     if (!vis) return;
+    const bool wasComposite = vis->isCompositeLeaf(id);
     vis->setObjectLightIntensity(id, intensity, 0, triggerRender);
+    if (wasComposite && !vis->isCompositeLeaf(id)) {
+        // The leaf left its composite group for per-entity lighting: rebuild
+        // it as a dedicated actor now (a bare Render would show nothing).
+        RedrawDisplay(false, false);
+    }
+}
+
+bool VtkDisplayTools::hasCompositeGroup(const QString& viewID) {
+    const std::string id = CVTools::FromQString(viewID);
+    VtkVis* vis = findVisByActorIdOrActive(id);
+    return vis && vis->hasCompositeGroup(id);
+}
+
+bool VtkDisplayTools::isCompositeLeafEntity(const QString& viewID) {
+    const std::string id = CVTools::FromQString(viewID);
+    VtkVis* vis = findVisByActorIdOrActive(id);
+    return vis && vis->isCompositeLeaf(id);
 }
 
 double VtkDisplayTools::getObjectLightIntensity(const QString& viewID) const {

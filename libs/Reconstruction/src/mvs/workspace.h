@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "mvs/consistency_graph.h"
 #include "mvs/depth_map.h"
 #include "mvs/model.h"
 #include "mvs/normal_map.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 #include "util/cache.h"
 #include "util/misc.h"
 
@@ -34,7 +36,7 @@ public:
         bool image_as_rgb = true;
 
         // Location and type of workspace.
-        std::string workspace_path;
+        std::filesystem::path workspace_path;
         std::string workspace_format;
         std::string input_type;
         std::string stereo_folder = "stereo";

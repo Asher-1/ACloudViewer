@@ -5,19 +5,22 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_loader.hpp"
+#include "tasks/facedetect/model_loader.hpp"
 
 #include <cstring>
 #include <utility>
 #include <vector>
 
-#include "backend.hpp"
-#include "common.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
 #include "gguf.h"
+#include "tasks/facedetect/antispoof_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
 namespace fd {
 
 // --- KV helpers (tolerant: return the default when a key is absent) ----------
@@ -69,6 +72,8 @@ static std::vector<std::string> kv_str_arr(gguf_context* g, const char* k) {
 }
 
 ModelLoader::~ModelLoader() {
+    invalidate_bn_fold_cache(*this);
+    invalidate_antispoof_fold_cache(*this);
     if (weights_buf_) {
         // Purge any persistent graph-cache entries that reference these weights
         // BEFORE the buffer is freed, so a later model reallocating this
@@ -80,6 +85,14 @@ ModelLoader::~ModelLoader() {
     if (device_ctx_) ggml_free(device_ctx_);
     if (gguf_) gguf_free(gguf_);
     if (ctx_) ggml_free(ctx_);
+}
+
+bool ModelLoader::owns_tensor(const ggml_tensor* tensor) const {
+    if (tensor == nullptr) return false;
+    for (const auto& item : tensors_) {
+        if (item.second == tensor) return true;
+    }
+    return false;
 }
 
 bool ModelLoader::realize_weights(ggml_backend_t backend) {
@@ -145,12 +158,11 @@ bool ModelLoader::realize_weights(ggml_backend_t backend) {
 }
 
 bool ModelLoader::load(const std::string& path) {
-    struct gguf_init_params p { /*no_alloc*/
-        false, /*ctx*/ &ctx_
-    };
-    gguf_ = gguf_init_from_file(path.c_str(), p);
+    std::string open_error;
+    gguf_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &ctx_,
+                                        "facedetect", &open_error);
     if (!gguf_) {
-        FD_LOG("gguf open failed: %s", path.c_str());
+        FD_LOG("%s", open_error.c_str());
         return false;
     }
 

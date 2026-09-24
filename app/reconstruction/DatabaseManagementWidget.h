@@ -12,13 +12,13 @@
 #include <unordered_map>
 
 #include "ImageViewerWidget.h"
-#include "base/database.h"
+#include "scene/database.h"
 
 namespace colmap {
 class Reconstruction;
 }
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace cloudViewer {
 
@@ -168,7 +168,7 @@ private:
     QWidget* parent_;
 
     OptionManager* options_;
-    colmap::Database database_;
+    std::shared_ptr<colmap::Database> database_;
 
     QTabWidget* tab_widget_;
     ImageTab* image_tab_;

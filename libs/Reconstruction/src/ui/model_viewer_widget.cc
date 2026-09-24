@@ -83,7 +83,7 @@ void BuildImageModel(const Image& image, const Camera& camera,
   const float image_extent = std::max(image_width, image_height);
   const float camera_extent = std::max(camera.Width(), camera.Height());
   const float camera_extent_world =
-      static_cast<float>(camera.ImageToWorldThreshold(camera_extent));
+      static_cast<float>(camera.CamFromImgThreshold(camera_extent));
   const float focal_length = 2.0f * image_extent / camera_extent_world;
 
   const Eigen::Matrix<float, 3, 4> inv_proj_matrix =
@@ -241,6 +241,7 @@ void ModelViewerWidget::initializeGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   SetupPainters();
+  mesh_painter_.Setup();
   SetupView();
 }
 
@@ -270,6 +271,12 @@ void ModelViewerWidget::paintGL() {
   // Points
   point_painter_.Render(pmv_matrix, point_size_);
   point_connection_painter_.Render(pmv_matrix, width(), height(), 1);
+
+  // Mesh (upstream parity: textured surface mesh, wireframe/color options)
+  mesh_painter_.Render(pmv_matrix,
+                       model_view_matrix_,
+                       options_->render->mesh_wireframe,
+                       options_->render->mesh_color);
 
   // Images
   image_line_painter_.Render(pmv_matrix, width(), height(), 1);
@@ -321,6 +328,10 @@ void ModelViewerWidget::ClearReconstruction() {
   points3D.clear();
   reg_image_ids.clear();
   reconstruction = nullptr;
+  surface_mesh.reset();
+  surface_texture_data.clear();
+  surface_texture_width = 0;
+  surface_texture_height = 0;
   Upload();
 }
 
@@ -707,6 +718,7 @@ void ModelViewerWidget::Upload() {
   UploadMovieGrabberData();
   UploadPointConnectionData();
   UploadImageConnectionData();
+  UploadSurfaceMeshData();
 
   update();
 }
@@ -845,6 +857,72 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
   }
 
   point_painter_.Upload(data);
+}
+
+void ModelViewerWidget::UploadSurfaceMeshData() {
+  makeCurrent();
+
+  if (!surface_mesh.has_value() || surface_mesh->mesh.faces.empty()) {
+    mesh_painter_.Upload({});
+    return;
+  }
+
+  const PlyMesh& mesh = surface_mesh->mesh;
+  const bool has_uvs = !surface_mesh->face_uvs.empty();
+
+  std::vector<MeshPainter::Data> data;
+  data.reserve(mesh.faces.size() * 3);
+
+  for (size_t fi = 0; fi < mesh.faces.size(); ++fi) {
+    const PlyMeshFace& face = mesh.faces[fi];
+    const PlyMeshVertex& v0 = mesh.vertices.at(face.vertex_idx1);
+    const PlyMeshVertex& v1 = mesh.vertices.at(face.vertex_idx2);
+    const PlyMeshVertex& v2 = mesh.vertices.at(face.vertex_idx3);
+
+    // Fork parity with the point rendering path: vertices are uploaded in
+    // model coordinates; the view matrix handles the placement (the fork has
+    // no model_scale_/model_origin_ members).
+    const Eigen::Vector3f p0(
+        static_cast<float>(v0.x), static_cast<float>(v0.y),
+        static_cast<float>(v0.z));
+    const Eigen::Vector3f p1(
+        static_cast<float>(v1.x), static_cast<float>(v1.y),
+        static_cast<float>(v1.z));
+    const Eigen::Vector3f p2(
+        static_cast<float>(v2.x), static_cast<float>(v2.y),
+        static_cast<float>(v2.z));
+
+    // Compute the face normal from the cross product.
+    const Eigen::Vector3f edge1 = p1 - p0;
+    const Eigen::Vector3f edge2 = p2 - p0;
+    const Eigen::Vector3f normal = edge1.cross(edge2).normalized();
+
+    if (has_uvs) {
+      const float* uvs = &surface_mesh->face_uvs[fi * 6];
+      data.emplace_back(p0.x(), p0.y(), p0.z(), normal.x(), normal.y(),
+                        normal.z(), uvs[0], uvs[1], v0.r, v0.g, v0.b);
+      data.emplace_back(p1.x(), p1.y(), p1.z(), normal.x(), normal.y(),
+                        normal.z(), uvs[2], uvs[3], v1.r, v1.g, v1.b);
+      data.emplace_back(p2.x(), p2.y(), p2.z(), normal.x(), normal.y(),
+                        normal.z(), uvs[4], uvs[5], v2.r, v2.g, v2.b);
+    } else {
+      data.emplace_back(p0.x(), p0.y(), p0.z(), normal.x(), normal.y(),
+                        normal.z(), v0.r, v0.g, v0.b);
+      data.emplace_back(p1.x(), p1.y(), p1.z(), normal.x(), normal.y(),
+                        normal.z(), v1.r, v1.g, v1.b);
+      data.emplace_back(p2.x(), p2.y(), p2.z(), normal.x(), normal.y(),
+                        normal.z(), v2.r, v2.g, v2.b);
+    }
+  }
+
+  mesh_painter_.Upload(data);
+
+  if (!surface_texture_data.empty()) {
+    mesh_painter_.UploadTexture(std::move(surface_texture_data),
+                                surface_texture_width,
+                                surface_texture_height,
+                                3);
+  }
 }
 
 void ModelViewerWidget::UploadPointConnectionData() {

@@ -29,7 +29,7 @@ env:
   # Keep in sync with docker/Dockerfile.ci ENV VTK_VERSION / PCL_VERSION.
   VTK_VERSION: "9.3.1"
   PCL_VERSION: "1.14.1"
-  CMAKE_VERSION: cmake-3.29.2-linux-x86_64
+  CMAKE_VERSION: cmake-3.31.8-linux-x86_64
   QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
   RELEASE_TAG: ubuntu-prebuild-deps
 

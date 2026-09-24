@@ -1,14 +1,16 @@
 #pragma once
 #include <vector>
-#include "align.hpp"      // fd::Landmarks5
-#include "image_io.hpp"
+
+#include "align.hpp"  // fd::Landmarks5
+#include "tasks/facedetect/image_io.hpp"
+
 
 namespace fd {
 
 class ModelLoader;
 
-// One detected face: a pixel-space box (x1,y1,x2,y2), a detection score, and the
-// 5 landmarks SCRFD regresses alongside each box.
+// One detected face: a pixel-space box (x1,y1,x2,y2), a detection score, and
+// the 5 landmarks SCRFD regresses alongside each box.
 struct Detection {
     float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     float score = 0;
@@ -17,7 +19,7 @@ struct Detection {
 
 // Run the SCRFD detector over `img` and return all faces above the score
 // threshold, in NMS-keep (descending-score) order, with pixel-space boxes + 5
-// landmarks. Full production path: scrfd_letterbox (stb-decoded source) ->
+// landmarks. Full production path: scrfd_letterbox (RGB source) ->
 // to_blob -> scrfd_forward (the ggml conv graph) -> host-side anchor decode ->
 // NMS. Reproduces insightface SCRFD.forward/detect/nms numerically: per-stride
 // (8/16/32) anchor centers (col*stride, row*stride, duplicated num_anchors
@@ -33,4 +35,4 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img);
 // independently of the network graph.
 std::vector<int> nms(const std::vector<Detection>& dets, float iou_thresh);
 
-} // namespace fd
+}  // namespace fd

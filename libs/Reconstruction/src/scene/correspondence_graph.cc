@@ -1,0 +1,368 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "scene/correspondence_graph.h"
+
+#include <algorithm>
+
+#include "geometry/pose.h"
+#include "util/string.h"
+
+namespace colmap {
+
+NodeHashMap<image_pair_t, point2D_t>
+CorrespondenceGraph::NumMatchesBetweenAllImages() const {
+  NodeHashMap<image_pair_t, point2D_t> num_matches_between_images;
+  num_matches_between_images.reserve(image_pairs_.size());
+  for (const auto& [pair_id, pair] : image_pairs_) {
+    num_matches_between_images.emplace(pair_id, pair.num_matches);
+  }
+  return num_matches_between_images;
+}
+
+std::vector<image_pair_t> CorrespondenceGraph::ImagePairs() const {
+  std::vector<image_pair_t> image_pairs;
+  image_pairs.reserve(image_pairs_.size());
+  for (const auto& [pair_id, _] : image_pairs_) {
+    image_pairs.push_back(pair_id);
+  }
+  return image_pairs;
+}
+
+void CorrespondenceGraph::Finalize() {
+  THROW_CHECK(!finalized_);
+  finalized_ = true;
+
+  // Flatten all correspondences into a compact representation.
+  for (auto& [_, image] : images_) {
+    // Verify incremental num_observations tracking is consistent.
+    size_t num_total_corrs = 0;
+    point2D_t expected_num_observations = 0;
+    for (const auto& corr : image.corrs) {
+      num_total_corrs += corr.size();
+      if (!corr.empty()) {
+        expected_num_observations += 1;
+      }
+    }
+    THROW_CHECK_EQ(image.num_observations, expected_num_observations);
+
+    // Reshuffle correspondences into flattened vector.
+    const point2D_t num_points2D = image.corrs.size();
+    image.flat_corrs.reserve(num_total_corrs);
+    image.flat_corr_begs.resize(num_points2D + 1);
+    for (point2D_t point2D_idx = 0; point2D_idx < num_points2D;
+         ++point2D_idx) {
+      image.flat_corr_begs[point2D_idx] = image.flat_corrs.size();
+      std::vector<Correspondence>& corrs = image.corrs[point2D_idx];
+      image.flat_corrs.insert(
+          image.flat_corrs.end(), corrs.begin(), corrs.end());
+    }
+    image.flat_corr_begs[num_points2D] = image.flat_corrs.size();
+
+    // Ensure we reserved enough space before insertion.
+    THROW_CHECK_EQ(image.flat_corrs.size(), num_total_corrs);
+
+    // Deallocate original data.
+    std::vector<std::vector<Correspondence>>().swap(image.corrs);
+  }
+}
+
+void CorrespondenceGraph::AddImage(const image_t image_id,
+                                   const size_t num_points) {
+  THROW_CHECK(!ExistsImage(image_id));
+  images_[image_id].corrs.resize(num_points);
+}
+
+void CorrespondenceGraph::AddTwoViewGeometry(
+    const image_t image_id1,
+    const image_t image_id2,
+    TwoViewGeometry two_view_geometry) {
+  // Avoid self-matches - should only happen, if user provides custom matches.
+  if (image_id1 == image_id2) {
+    std::cout << "WARNING: Cannot use self-matches for image_id=" << image_id1
+              << std::endl;
+    return;
+  }
+
+  // Corresponding images.
+  struct Image& image1 = images_.at(image_id1);
+  struct Image& image2 = images_.at(image_id2);
+
+  // Store number of correspondences for each image to find good initial pair.
+  image1.num_correspondences += two_view_geometry.inlier_matches.size();
+  image2.num_correspondences += two_view_geometry.inlier_matches.size();
+
+  // Set the number of all correspondences for this image pair. Further
+  // below, we will make sure that only unique correspondences are counted.
+  const image_pair_t pair_id =
+      Database::ImagePairToPairId(image_id1, image_id2);
+  auto [image_pair_it, inserted] = image_pairs_.try_emplace(pair_id);
+  THROW_CHECK(inserted)
+      << "Two view geometry for image pair was already added: image_id1="
+      << image_id1 << ", image_id2=" << image_id2;
+  image_pair_it->second.num_matches =
+      static_cast<point2D_t>(two_view_geometry.inlier_matches.size());
+
+  // Store all matches in correspondence graph data structure. This data-
+  // structure uses more memory than storing the raw match matrices, but is
+  // significantly more efficient when updating the correspondences in case
+  // an observation is triangulated.
+
+  for (const auto& match : two_view_geometry.inlier_matches) {
+    const bool valid_idx1 = match.point2D_idx1 < image1.corrs.size();
+    const bool valid_idx2 = match.point2D_idx2 < image2.corrs.size();
+
+    if (valid_idx1 && valid_idx2) {
+      auto& corrs1 = image1.corrs[match.point2D_idx1];
+      auto& corrs2 = image2.corrs[match.point2D_idx2];
+
+      // We add valid correspondences bidirectionally, so checking from
+      // only one side is sufficient to detect duplicated matches.
+      const bool duplicate =
+          std::find_if(corrs1.begin(),
+                       corrs1.end(),
+                       [image_id2, &match](const Correspondence& corr) {
+                         return corr.image_id == image_id2 &&
+                                corr.point2D_idx == match.point2D_idx2;
+                       }) != corrs1.end();
+
+      if (duplicate) {
+        image1.num_correspondences -= 1;
+        image2.num_correspondences -= 1;
+        image_pair_it->second.num_matches -= 1;
+        std::cout << StringPrintf(
+                         "WARNING: Duplicate correspondence between "
+                         "point2D_idx=%d in image_id=%d and point2D_idx=%d in "
+                         "image_id=%d",
+                         match.point2D_idx1,
+                         image_id1,
+                         match.point2D_idx2,
+                         image_id2)
+                  << std::endl;
+      } else {
+        corrs1.emplace_back(image_id2, match.point2D_idx2);
+        // First correspondence makes this point an observation.
+        if (corrs1.size() == 1) {
+          image1.num_observations += 1;
+        }
+        corrs2.emplace_back(image_id1, match.point2D_idx1);
+        if (corrs2.size() == 1) {
+          image2.num_observations += 1;
+        }
+      }
+    } else {
+      image1.num_correspondences -= 1;
+      image2.num_correspondences -= 1;
+      image_pair_it->second.num_matches -= 1;
+      if (!valid_idx1) {
+        std::cout
+            << StringPrintf(
+                   "WARNING: point2D_idx=%d in image_id=%d does not exist",
+                   match.point2D_idx1, image_id1)
+            << std::endl;
+      }
+      if (!valid_idx2) {
+        std::cout
+            << StringPrintf(
+                   "WARNING: point2D_idx=%d in image_id=%d does not exist",
+                   match.point2D_idx2, image_id2)
+            << std::endl;
+      }
+    }
+  }
+
+  // Clear and deallocate matches.
+  FeatureMatches().swap(two_view_geometry.inlier_matches);
+
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+
+  image_pair_it->second.two_view_geometry = std::move(two_view_geometry);
+}
+
+CorrespondenceGraph::CorrespondenceRange
+CorrespondenceGraph::FindCorrespondences(const image_t image_id,
+                                         const point2D_t point2D_idx) const {
+  const Image& image = images_.at(image_id);
+  if (!finalized_) {
+    const auto& corrs = image.corrs.at(point2D_idx);
+    return CorrespondenceRange{corrs.data(), corrs.data() + corrs.size()};
+  }
+  const Correspondence* beg =
+      image.flat_corrs.data() + image.flat_corr_begs.at(point2D_idx);
+  const Correspondence* end =
+      image.flat_corrs.data() + image.flat_corr_begs.at(point2D_idx + 1);
+  return CorrespondenceRange{beg, end};
+}
+
+void CorrespondenceGraph::ExtractCorrespondences(
+    const image_t image_id,
+    const point2D_t point2D_idx,
+    std::vector<Correspondence>* corrs) const {
+  const auto range = FindCorrespondences(image_id, point2D_idx);
+  corrs->clear();
+  corrs->reserve(range.end - range.beg);
+  for (const Correspondence* corr = range.beg; corr < range.end; ++corr) {
+    corrs->push_back(*corr);
+  }
+}
+
+void CorrespondenceGraph::ExtractTransitiveCorrespondences(
+    const image_t image_id,
+    const point2D_t point2D_idx,
+    const size_t transitivity,
+    std::vector<Correspondence>* corrs) const {
+  if (transitivity == 1) {
+    ExtractCorrespondences(image_id, point2D_idx, corrs);
+    return;
+  }
+
+  corrs->clear();
+  if (!HasCorrespondences(image_id, point2D_idx)) {
+    return;
+  }
+
+  // Push requested image point on queue to visit. Will be removed later.
+  corrs->emplace_back(image_id, point2D_idx);
+
+  // Visited (image, point2D) observations, for deduplication only; the
+  // iteration order is never observed (the output is the discovery-ordered
+  // `corrs` vector).
+  FlatHashSet<std::pair<image_t, point2D_t>, PairHash> image_corrs;
+  image_corrs.insert({image_id, point2D_idx});
+
+  size_t corr_queue_beg = 0;
+  size_t corr_queue_end = 1;
+
+  for (size_t t = 0; t < transitivity; ++t) {
+    // Collect correspondences at transitive level t to all
+    // correspondences that were collected at transitive level t - 1.
+    for (size_t i = corr_queue_beg; i < corr_queue_end; ++i) {
+      const Correspondence ref_corr = (*corrs)[i];
+      const CorrespondenceRange ref_corr_range =
+          FindCorrespondences(ref_corr.image_id, ref_corr.point2D_idx);
+      for (const Correspondence* corr = ref_corr_range.beg;
+           corr < ref_corr_range.end;
+           ++corr) {
+        // Check if correspondence already collected, otherwise collect.
+        if (image_corrs.insert({corr->image_id, corr->point2D_idx}).second) {
+          corrs->emplace_back(corr->image_id, corr->point2D_idx);
+        }
+      }
+    }
+
+    // Move on to the next block of correspondences at next transitive level.
+    corr_queue_beg = corr_queue_end;
+    corr_queue_end = corrs->size();
+
+    // No new correspondences collected in last transitive level.
+    if (corr_queue_beg == corr_queue_end) {
+      break;
+    }
+  }
+
+  // Remove first element, which is the given observation by swapping it
+  // with the last collected correspondence.
+  if (corrs->size() > 1) {
+    corrs->front() = corrs->back();
+  }
+  corrs->pop_back();
+}
+
+void CorrespondenceGraph::ExtractMatchesBetweenImages(
+    const image_t image_id1,
+    const image_t image_id2,
+    FeatureMatches& matches) const {
+  matches.clear();
+
+  const point2D_t num_correspondences =
+      NumMatchesBetweenImages(image_id1, image_id2);
+  if (num_correspondences == 0) {
+    return;
+  }
+
+  matches.reserve(num_correspondences);
+
+  const Image& image1 = images_.at(image_id1);
+  const point2D_t num_points2D1 =
+      finalized_ ? image1.flat_corr_begs.size() - 1 : image1.corrs.size();
+  for (point2D_t point2D_idx1 = 0; point2D_idx1 < num_points2D1;
+       ++point2D_idx1) {
+    const CorrespondenceRange range =
+        FindCorrespondences(image_id1, point2D_idx1);
+    for (const Correspondence* corr = range.beg; corr < range.end; ++corr) {
+      if (corr->image_id == image_id2) {
+        matches.emplace_back(point2D_idx1, corr->point2D_idx);
+      }
+    }
+  }
+}
+
+TwoViewGeometry CorrespondenceGraph::ExtractTwoViewGeometry(
+    const image_t image_id1,
+    const image_t image_id2,
+    const bool extract_inlier_matches) const {
+  const image_pair_t pair_id =
+      Database::ImagePairToPairId(image_id1, image_id2);
+  auto image_pair_it = image_pairs_.find(pair_id);
+  THROW_CHECK(image_pair_it != image_pairs_.end());
+  TwoViewGeometry two_view_geometry = image_pair_it->second.two_view_geometry;
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  // Extract after inversion, as they are extracted in the correct order.
+  if (extract_inlier_matches) {
+    ExtractMatchesBetweenImages(image_id1, image_id2,
+                                two_view_geometry.inlier_matches);
+  }
+  return two_view_geometry;
+}
+
+void CorrespondenceGraph::UpdateTwoViewGeometry(
+    const image_t image_id1,
+    const image_t image_id2,
+    TwoViewGeometry two_view_geometry) {
+  const image_pair_t pair_id =
+      Database::ImagePairToPairId(image_id1, image_id2);
+  auto image_pair_it = image_pairs_.find(pair_id);
+  THROW_CHECK(image_pair_it != image_pairs_.end());
+  FeatureMatches().swap(two_view_geometry.inlier_matches);
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  image_pair_it->second.two_view_geometry = std::move(two_view_geometry);
+}
+
+bool CorrespondenceGraph::IsTwoViewObservation(
+    const image_t image_id, const point2D_t point2D_idx) const {
+  const CorrespondenceRange range = FindCorrespondences(image_id, point2D_idx);
+  if (range.end - range.beg != 1) {
+    return false;
+  }
+  const CorrespondenceRange other_range =
+      FindCorrespondences(range.beg->image_id, range.beg->point2D_idx);
+  return (other_range.end - other_range.beg) == 1;
+}
+
+std::ostream& operator<<(
+    std::ostream& stream,
+    const CorrespondenceGraph::Correspondence& correspondence) {
+  stream << "Correspondence(image_id=" << correspondence.image_id
+         << ", point2D_idx=" << correspondence.point2D_idx << ")";
+  return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream,
+                         const CorrespondenceGraph& correspondence_graph) {
+  stream << "CorrespondenceGraph(num_images="
+         << correspondence_graph.NumImages()
+         << ", num_image_pairs=" << correspondence_graph.NumImagePairs() << ")";
+  return stream;
+}
+
+}  // namespace colmap

@@ -22,16 +22,16 @@ void pybind_core_nns(py::module &m) {
     py::module m_nns = m.def_submodule("nns");
     py::class_<NearestNeighborSearch, std::shared_ptr<NearestNeighborSearch>>
             nns(m_nns, "NearestNeighborSearch",
-                R"(NearestNeighborSearch class for nearest neighbor search. 
+                R"(NearestNeighborSearch class for nearest neighbor search.
 
-This class holds multiple index types to accelerate various nearest neighbor 
+This class holds multiple index types to accelerate various nearest neighbor
 search operations for a dataset of points with shape {n,d} with `n` as the number
 of points and `d` as the dimension of the points. The class supports knn search,
 fixed-radius search, multi-radius search, and hybrid search.
 
 Example:
     The following example demonstrates how to perform knn search using the class::
-        
+
         import cloudViewer as cv3d
         import numpy as np
 
@@ -43,7 +43,7 @@ Example:
         # initialize the knn_index before we can use knn_search
         nns.knn_index()
 
-        # perform knn search to get the 3 closest points with respect to the 
+        # perform knn search to get the 3 closest points with respect to the
         # Euclidean distance. The returned distance is given as the squared
         # distances
         indices, squared_distances = nns.knn_search(query_points, knn=3)
@@ -56,7 +56,7 @@ Example:
 
     // Index functions.
     nns.def("knn_index", &NearestNeighborSearch::KnnIndex,
-            R"(Initialize the index for knn search. 
+            R"(Initialize the index for knn search.
 
 This function needs to be called once before performing search operations.
 
@@ -143,7 +143,7 @@ Example:
         # initialize the knn_index before we can use knn_search
         nns.knn_index()
 
-        # perform knn search to get the 3 closest points with respect to the 
+        # perform knn search to get the 3 closest points with respect to the
         # Euclidean distance. The returned distance is given as the squared
         # distances
         indices, squared_distances = nns.knn_search(query_points, knn=3)
@@ -177,7 +177,7 @@ Args:
         query_points (cloudViewer.core.Tensor): Query points with shape {n, d}.
         radius (float): Radius value for fixed-radius search. Note that this
             parameter can differ from the radius used to initialize the index
-            for convenience, which may cause the index to be rebuilt for GPU 
+            for convenience, which may cause the index to be rebuilt for GPU
             devices.
         sort (bool, optional): Sort the results by distance. Default is True.
 
@@ -185,7 +185,7 @@ Returns:
         Tuple of Tensors (indices, splits, distances).
             - indices: The indices of the neighbors.
             - distances: The squared L2 distances.
-            - splits: The splits of the indices and distances defining the start 
+            - splits: The splits of the indices and distances defining the start
                 and exclusive end of each query point's neighbors. The shape is {num_queries+1}
 
 Example:
@@ -237,7 +237,7 @@ Returns:
         Tuple of Tensors (indices, splits, distances).
             - indices: The indices of the neighbors.
             - distances: The squared L2 distances.
-            - splits: The splits of the indices and distances defining the start 
+            - splits: The splits of the indices and distances defining the start
                 and exclusive end of each query point's neighbors. The shape is {num_queries+1}
 
 Example:

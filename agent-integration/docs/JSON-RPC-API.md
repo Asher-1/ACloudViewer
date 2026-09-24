@@ -777,6 +777,38 @@ RANSAC shape detection (planes, spheres, cylinders, etc.).
 
 **Params:** `{input_path, output_path, ?epsilon, ?bitmap_epsilon, ?support_points, ?max_normal_dev, ?probability, ?primitives[]}`
 
+### sam3d.generate
+
+Batch SAM 3D Objects image-to-3D via a headless `-SILENT -SAM3D_GENERATE`
+child process (same offscreen pattern as `yolo.track` / `process.run_cli`).
+One child process loads the model set once and runs the full AICore sam3d
+pipeline over N input images, exporting one Gaussian PLY per image plus a
+RESULT_JSON manifest (also embedded in the RPC response).
+
+**Params:** `{images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}`
+
+- `images[]`: absolute input image paths; the object mask is either embedded
+  as the alpha channel or supplied as an ordered `masks[]` companion
+  (GRAY8/alpha mask, `mask > 0` keeps the pixel).
+- `dtype` selects the quantized model set (`q4_k` default; see the qSAM3D
+  plugin README for VRAM figures).
+- `moge_cache` default 0: the MoGe point-map cache is disabled for
+  bit-for-bit parity with the acceptance probe / upstream reference; set 1
+  to reuse cached point maps for repeat runs (tiny numeric drift).
+- `timeout_ms` default 3600000 (sam3d is a multi-minute diffusion pipeline).
+
+**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, items[], ok_count, failed_count, backend}` where each item is
+`{image, mask, ply, gaussians, mesh_vertices, mesh_triangles, e2e_ms, status}`.
+
+**Example:**
+
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "sam3d.generate",
+ "params": {"images": ["/data/sacre_coeur1.jpg"],
+            "output_dir": "/tmp/sam3d_out", "dtype": "q4_k", "steps": 25,
+            "seed": 42, "device": "cuda"}}
+```
+
 ### methods.list
 
 List all available RPC methods with descriptions. The method list is

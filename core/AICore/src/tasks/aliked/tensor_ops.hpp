@@ -1,5 +1,17 @@
 #pragma once
 
+// CPU reference implementations of the ALIKED tensor ops. Each function
+// mirrors the corresponding PyTorch op exactly (torchvision deform_conv2d,
+// nn.Conv2d, nn.BatchNorm2d, F.avg_pool2d, F.interpolate(..., 'bilinear'),
+// nn.SELU) so the GPU paths (CUDA / Vulkan) have a bit-exact reference.
+//
+// Layout convention (row-major, contiguous):
+//   images: [C, H, W]  (batch = 1; no N dim)
+//   conv weight: [OC, IC, KH, KW]
+//   conv offset (deform): [offset_groups*2*KH*KW, H, W]
+// Functions that take `std::vector<float>* output` write into a pre-sized
+// vector; helpers that take `std::vector<float>* tensor` operate in place.
+
 #include <cmath>
 #include <cstdint>
 #include <vector>

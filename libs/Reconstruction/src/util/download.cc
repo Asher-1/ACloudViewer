@@ -31,6 +31,7 @@
 
 #ifdef COLMAP_DOWNLOAD_ENABLED
 
+#include "util/file.h"
 #include "util/logging.h"
 #include "util/misc.h"
 #include "util/string.h"
@@ -107,17 +108,17 @@ int CurlProgressCallback(void* clientp,
                          curl_off_t /* ultotal */,
                          curl_off_t /* ulnow */) {
   ProgressData* progress_data = static_cast<ProgressData*>(clientp);
-  
+
   // Check if download was canceled
   if (progress_data && progress_data->cancel_callback &&
       progress_data->cancel_callback()) {
     return 1;  // Return non-zero to cancel download
   }
-  
+
   if (progress_data && progress_data->callback) {
     // Call the user-provided callback (convert curl_off_t to int64_t)
     progress_data->callback(static_cast<int64_t>(dlnow), static_cast<int64_t>(dltotal));
-    
+
     // Check again after the progress update so a UI cancel request can abort
     // this transfer without pumping the GUI event loop on the worker thread.
     if (progress_data->cancel_callback && progress_data->cancel_callback()) {
@@ -136,7 +137,7 @@ int CurlProgressCallback(void* clientp,
     // Print progress bar: [====>    ] 45.2% (12.3/27.2 MB)
     const int bar_width = 40;
     const int filled = static_cast<int>(bar_width * percent / 100.0);
-    
+
     // Use \r to overwrite the same line (single-line progress bar)
     // Use std::cout for normal log output
     std::cout << "\r[";
@@ -152,7 +153,7 @@ int CurlProgressCallback(void* clientp,
     std::cout << "] " << std::fixed << std::setprecision(1) << percent << "% ("
               << dlnow_mb << "/" << dltotal_mb << " MB)" << std::flush;
   }
-  
+
   return 0;  // Continue download
 }
 
@@ -414,30 +415,29 @@ std::string ComputeSHA256(const std::string_view& str) {
   return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
 }
 
+std::string ComputeFileSHA256(const std::filesystem::path& path) {
+  std::FILE* file = std::fopen(path.string().c_str(), "rb");
+  if (file == nullptr) {
+    return "";
+  }
+  SHA256_CTX ctx;
+  SHA256_Init(&ctx);
+  std::vector<char> buffer(1 << 20);
+  size_t bytes = 0;
+  while ((bytes = std::fread(buffer.data(), 1, buffer.size(), file)) > 0) {
+    SHA256_Update(&ctx, buffer.data(), bytes);
+  }
+  std::fclose(file);
+  unsigned char digest[SHA256_DIGEST_LENGTH];
+  SHA256_Final(digest, &ctx);
+  return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
+}
+
 namespace {
 
 std::optional<std::filesystem::path> download_cache_dir_overwrite;
 
-std::optional<std::filesystem::path> HomeDir() {
-#ifdef _MSC_VER
-  std::optional<std::string> userprofile = GetEnvSafe("USERPROFILE");
-  if (userprofile.has_value()) {
-    return *userprofile;
-  }
-  const std::optional<std::string> homedrive = GetEnvSafe("HOMEDRIVE");
-  const std::optional<std::string> homepath = GetEnvSafe("HOMEPATH");
-  if (!homedrive.has_value() || !homepath.has_value()) {
-    return std::nullopt;
-  }
-  return std::filesystem::path(*homedrive) / std::filesystem::path(*homepath);
-#else
-  std::optional<std::string> home = GetEnvSafe("HOME");
-  if (!home.has_value()) {
-    return std::nullopt;
-  }
-  return *home;
-#endif
-}
+// HomeDir() now lives in util/file.{h,cc} (upstream parity).
 
 }  // namespace
 
@@ -559,7 +559,7 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
   if (!IsURI(uri)) {
     return std::filesystem::path();  // Not a URI, return empty
   }
-  
+
   const std::vector<std::string> parts = StringSplit(uri, ";");
   if (parts.size() != 3) {
     return std::filesystem::path();  // Invalid URI format
@@ -594,7 +594,7 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
   if (std::filesystem::exists(path)) {
     return path;
   }
-  
+
   return std::filesystem::path();  // File doesn't exist
 }
 

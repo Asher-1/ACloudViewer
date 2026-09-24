@@ -32,7 +32,8 @@
 set(FOLDER_NAME "feature")
 
 COLMAP_ADD_SOURCES(
-    extraction.h extraction.cc
+    index.h index.cc
+    loma.h loma.cc
     matching.h matching.cc
     sift.h sift.cc
     types.h types.cc
@@ -40,5 +41,7 @@ COLMAP_ADD_SOURCES(
 )
 
 COLMAP_ADD_TEST(feature_utils_test utils_test.cc)
+
+COLMAP_ADD_TEST(index_test index_test.cc)
 COLMAP_ADD_TEST(sift_test sift_test.cc)
 COLMAP_ADD_TEST(types_test types_test.cc)

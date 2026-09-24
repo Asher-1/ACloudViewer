@@ -58,6 +58,7 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `open`, `export` | `open_file`, `export_entity` | `open`, `export` **(G)** |
 | `transform apply` / `transform apply-file` | `transform_apply`, `transform_apply_file` | `transform.apply` **(B)** |
 | `reconstruct` (Colmap) | `colmap_*`, `colmap_run` | `colmap.reconstruct`, `colmap.run` **(H)** subprocess / **(G)** RPC |
+| `sam3d generate` (batch image-to-3D) | — | `sam3d.generate` **(G)** RPC / **(H)** direct: `-SILENT -SAM3D_GENERATE …` |
 | `sibr` | `sibr_*` | — **(H)** (external SIBR tools) |
 | `methods` | `list_rpc_methods` | `methods.list` **(G)** |
 | `session` | `get_session_info` (and CLI session commands) | — **(B)** |

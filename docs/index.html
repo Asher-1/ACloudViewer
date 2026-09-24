@@ -173,7 +173,7 @@
                         <i class="fas fa-microchip"></i>
                     </div>
                     <h3 data-i18n="features.aicore.title">AICore AI Plugins</h3>
-                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), face recognition, feature matching (LightGlue), and 3D Gaussian splats (FreeSplatter) — no Python runtime</p>
+                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), detection & segmentation (YOLO / RF-DETR / SAM3), background removal (RMBG), matching (LightGlue), and 3D generation (Trellis / FreeSplatter) — no Python runtime</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -190,7 +190,7 @@
     <section id="aicore" class="aicore-showcase">
         <div class="container">
             <h2 class="section-title" data-i18n="aicore.title">AICore AI Plugins</h2>
-            <p class="section-subtitle" data-i18n="aicore.subtitle">Depth estimation, feature matching, and 3D Gaussian splats — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
+            <p class="section-subtitle" data-i18n="aicore.subtitle">Depth, detection, segmentation, matching, background removal, and 3D generation — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
 
             <div class="aicore-badges">
                 <span class="aicore-badge"><i class="fas fa-bolt"></i> <span data-i18n="aicore.badge.gpu">CUDA / Vulkan / Metal</span></span>
@@ -257,6 +257,102 @@
                         <ul class="aicore-plugin-points">
                             <li data-i18n="aicore.freesplatter.point1">Sparse-view 3DGS — no COLMAP preprocessing required</li>
                             <li data-i18n="aicore.freesplatter.point2">Full export with spherical harmonics, scale, and normals</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-seg.jpg" alt="YOLO instance segmentation">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-pose.jpg" alt="YOLO pose estimation">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>YOLO Detection, Segmentation & Depth (qYOLO)</h3>
+                        <p>Ultralytics YOLOv8 / YOLO26 GGUF — COCO-80 detection, instance segmentation, metric depth, pose, OBB and classification, plus open-vocabulary World / YOLOE prompts in 100+ languages.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>63 published GGUF models across 9 task families</li>
+                            <li>Live camera / video with inference-paced playback and DB-tree capture</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_full.jpg" alt="SAM3 segmentation dialog">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_visual.jpg" alt="SAM3 visual prompting">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>SAM 2 / 2.1 / 3 Segmentation (qSAM3)</h3>
+                        <p>Promptable segmentation with points, boxes and text prompts (SAM3), plus video object tracking — a native ggml re-implementation of the upstream demo, no Python required.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>39 published GGUF models (SAM3 / SAM2.1 / SAM2 backbones)</li>
+                            <li>Export masks as annotated images into the DB tree</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" alt="TRELLIS.2 image-to-3D with PBR">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>TRELLIS.2 Image-to-3D (qTrellis)</h3>
+                        <p>Turn a single photo into a 3D triangle mesh with per-vertex PBR materials — DINOv3 encoding, flow-matching DiTs and FlexiDualGrid decoding, fully in-process on ggml.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Presets from 64³ coarse preview to the 1024³ Full cascade</li>
+                            <li>GLB export with UV-atlas texturing (xatlas + meshoptimizer)</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.jpg" alt="RF-DETR detection">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr_video.jpg" alt="RF-DETR live video">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>RF-DETR Detection & Segmentation (qRFDetr)</h3>
+                        <p>Real-time object detection (COCO 91-class layout) with optional instance masks, per-class allowlist filtering, and inference-paced live camera / video playback.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>44 GGUF variants (11 model sizes × 4 quantizations)</li>
+                            <li>GPU latency from 13 ms per image (nano f16)</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.jpg" alt="RMBG background removal">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG_video.jpg" alt="RMBG live video">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Background Removal (qRMBG)</h3>
+                        <p>RMBG-2.0 (BiRefNet-Swin-L) GGUF for high-quality transparent background removal, with a raw alpha-matte API for downstream compositing workflows.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Image and live-video tabs over a checkerboard preview</li>
+                            <li>Custom CUDA kernels and Vulkan shaders</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDeepLSD/images/qDeepLSD.png" alt="DeepLSD line extraction">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>DeepLSD Line Extraction (qDeepLSD)</h3>
+                        <p>Wireframe line-segment extraction from GGUF distance + angle fields with AFM-guided LSD post-processing — feed registration and matching pipelines directly.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Wireframe (indoor) / MegaDepth (outdoor) variants</li>
+                            <li>Export detected segments as ccPolyline entities</li>
                         </ul>
                     </div>
                 </article>
@@ -3427,6 +3523,55 @@ make -j$(nproc)">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.qfreesplatter.title">FreeSplatter 3DGS</h3>
                             <p data-i18n="gallery.qfreesplatter.desc">Two photos or guided Face Capture to a 3D Gaussian scene — optional pose estimation, SIBR PLY export, one-click preview</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" alt="qFaceDetect registry recognition">
+                        <div class="gallery-overlay">
+                            <h3>Face Detection &amp; Recognition</h3>
+                            <p>SCRFD + ArcFace identity registry, verification, and live multi-face recognition — GGUF packs, no Python runtime</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDeepLSD/images/qDeepLSD.png" alt="DeepLSD line extraction">
+                        <div class="gallery-overlay">
+                            <h3>DeepLSD Line Extraction</h3>
+                            <p>Wireframe line segments from GGUF distance + angle fields with AFM-guided LSD post-processing</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-seg.jpg" alt="YOLO instance segmentation">
+                        <div class="gallery-overlay">
+                            <h3>YOLO Detection, Segmentation &amp; Depth</h3>
+                            <p>COCO-80 detection, instance segmentation, metric depth, pose, OBB, classification and open-vocab World / YOLOE prompts</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_full.jpg" alt="SAM3 segmentation">
+                        <div class="gallery-overlay">
+                            <h3>SAM 2 / 2.1 / 3 Segmentation</h3>
+                            <p>Promptable segmentation with points, boxes and text prompts, plus video object tracking — native ggml, 39 GGUF models</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" alt="TRELLIS.2 image-to-3D with PBR">
+                        <div class="gallery-overlay">
+                            <h3>TRELLIS.2 Image-to-3D</h3>
+                            <p>Single photo to a PBR-textured 3D mesh — DINOv3 + flow-matching DiTs, GLB export with UV-atlas texturing</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.jpg" alt="RF-DETR detection">
+                        <div class="gallery-overlay">
+                            <h3>RF-DETR Detection &amp; Segmentation</h3>
+                            <p>Real-time COCO detection with optional instance masks, per-class allowlist, and inference-paced live video</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.jpg" alt="RMBG background removal">
+                        <div class="gallery-overlay">
+                            <h3>Background Removal</h3>
+                            <p>RMBG-2.0 (BiRefNet-Swin-L) transparent background removal with raw alpha matte — image and live video</p>
                         </div>
                     </div>
                 </div>

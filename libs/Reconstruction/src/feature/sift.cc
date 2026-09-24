@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "feature/index.h"
 #include "feature/sift.h"
 
 #include <array>
@@ -43,12 +44,113 @@
 #include "feature/utils.h"
 #include "util/cuda.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
 
 namespace colmap {
 namespace {
+
+// Upstream parity (d3ccaf35 feature/sift.cc): squared norm of the unit-budget
+// SIFT descriptor (512 * 4 levels of 32 * rounding to 512).
+constexpr int kSqSiftDescriptorNorm = 512 * 512;
+
+// Upstream parity (d3ccaf35 feature/sift.cc): index-based (exact faiss L2)
+// 2-NN filtering with ratio and distance thresholds.
+size_t FindBestMatchesOneWayIndex(const Eigen::RowMajorMatrixXi& indices,
+                                  const Eigen::RowMajorMatrixXf& l2_dists,
+                                  const float max_ratio,
+                                  const float max_distance,
+                                  std::vector<int>* matches) {
+    const float max_l2_dist =
+            kSqSiftDescriptorNorm * max_distance * max_distance;
+
+    size_t num_matches = 0;
+    matches->resize(indices.rows(), -1);
+
+    for (int d1_idx = 0; d1_idx < indices.rows(); ++d1_idx) {
+        int best_d2_idx = -1;
+        float best_l2_dist = std::numeric_limits<float>::max();
+        float second_best_l2_dist = std::numeric_limits<float>::max();
+        for (int n_idx = 0; n_idx < indices.cols(); ++n_idx) {
+            const int d2_idx = indices(d1_idx, n_idx);
+            const float l2_dist = l2_dists(d1_idx, n_idx);
+            if (l2_dist < best_l2_dist) {
+                best_d2_idx = d2_idx;
+                second_best_l2_dist = best_l2_dist;
+                best_l2_dist = l2_dist;
+            } else if (l2_dist < second_best_l2_dist) {
+                second_best_l2_dist = l2_dist;
+            }
+        }
+
+        // Check if any match found.
+        if (best_d2_idx == -1) {
+            continue;
+        }
+
+        // Check if match distance passes threshold.
+        if (best_l2_dist > max_l2_dist) {
+            continue;
+        }
+
+        // Check if match passes ratio test. Keep this comparison >= in order
+        // to ensure that the case of best == second_best is detected.
+        if (std::sqrt(best_l2_dist) >=
+            max_ratio * std::sqrt(second_best_l2_dist)) {
+            continue;
+        }
+
+        ++num_matches;
+        (*matches)[d1_idx] = best_d2_idx;
+    }
+
+    return num_matches;
+}
+
+void FindBestMatchesIndex(const Eigen::RowMajorMatrixXi& indices_1to2,
+                          const Eigen::RowMajorMatrixXf& l2_dists_1to2,
+                          const Eigen::RowMajorMatrixXi& indices_2to1,
+                          const Eigen::RowMajorMatrixXf& l2_dists_2to1,
+                          const float max_ratio,
+                          const float max_distance,
+                          const bool cross_check,
+                          FeatureMatches* matches) {
+    matches->clear();
+
+    std::vector<int> matches_1to2;
+    const size_t num_matches_1to2 = FindBestMatchesOneWayIndex(
+            indices_1to2, l2_dists_1to2, max_ratio, max_distance,
+            &matches_1to2);
+
+    if (cross_check && indices_2to1.rows()) {
+        std::vector<int> matches_2to1;
+        const size_t num_matches_2to1 = FindBestMatchesOneWayIndex(
+                indices_2to1, l2_dists_2to1, max_ratio, max_distance,
+                &matches_2to1);
+        matches->reserve(std::min(num_matches_1to2, num_matches_2to1));
+        for (size_t i1 = 0; i1 < matches_1to2.size(); ++i1) {
+            if (matches_1to2[i1] != -1 &&
+                matches_2to1[matches_1to2[i1]] != -1 &&
+                matches_2to1[matches_1to2[i1]] == static_cast<int>(i1)) {
+                FeatureMatch match;
+                match.point2D_idx1 = i1;
+                match.point2D_idx2 = matches_1to2[i1];
+                matches->push_back(match);
+            }
+        }
+    } else {
+        matches->reserve(num_matches_1to2);
+        for (size_t i1 = 0; i1 < matches_1to2.size(); ++i1) {
+            if (matches_1to2[i1] != -1) {
+                FeatureMatch match;
+                match.point2D_idx1 = i1;
+                match.point2D_idx2 = matches_1to2[i1];
+                matches->push_back(match);
+            }
+        }
+    }
+}
 
 size_t FindBestMatchesOneWayBruteForce(const Eigen::MatrixXi& dists,
                                        const float max_ratio,
@@ -407,6 +509,13 @@ bool SiftMatchingOptions::Check() const {
     CHECK_OPTION_GT(max_ratio, 0.0);
     CHECK_OPTION_GT(max_distance, 0.0);
     CHECK_OPTION_GT(max_error, 0.0);
+    CHECK_OPTION_GE(loma_min_score, 0.0);
+    CHECK_OPTION_LE(loma_min_score, 1.0);
+    CHECK_OPTION(loma_matcher_variant == "b" ||
+                 loma_matcher_variant == "b128" ||
+                 loma_matcher_variant == "r" ||
+                 loma_matcher_variant == "l" ||
+                 loma_matcher_variant == "g");
     CHECK_OPTION_GE(min_num_trials, 0);
     CHECK_OPTION_GT(max_num_trials, 0);
     CHECK_OPTION_LE(min_num_trials, max_num_trials);
@@ -940,13 +1049,13 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
     return true;
 }
 
-void LoadSiftFeaturesFromTextFile(const std::string& path,
+void LoadSiftFeaturesFromTextFile(const std::filesystem::path& path,
                                   FeatureKeypoints* keypoints,
                                   FeatureDescriptors* descriptors) {
     CHECK_NOTNULL(keypoints);
     CHECK_NOTNULL(descriptors);
 
-    std::ifstream file(path.c_str());
+    std::ifstream file(path);
     CHECK(file.is_open()) << path;
 
     std::string line;
@@ -1043,8 +1152,26 @@ void MatchSiftFeaturesCPU(const SiftMatchingOptions& match_options,
                           const FeatureDescriptors& descriptors1,
                           const FeatureDescriptors& descriptors2,
                           FeatureMatches* matches) {
-    MatchSiftFeaturesCPUFLANN(match_options, descriptors1, descriptors2,
-                              matches);
+    // Upstream parity (d3ccaf35 SiftCPUFeatureMatcher::Match): exact 2-NN
+    // through the faiss-backed FeatureDescriptorIndex instead of the legacy
+    // approximate FLANN KD-tree (the approximate search perturbed the raw
+    // match set by ~3%).
+    auto index1 = FeatureDescriptorIndex::Create();
+    auto index2 = FeatureDescriptorIndex::Create();
+    index1->Build(ToFloat(descriptors1));
+    index2->Build(ToFloat(descriptors2));
+
+    Eigen::RowMajorMatrixXi indices_1to2, indices_2to1;
+    Eigen::RowMajorMatrixXf l2_dists_1to2, l2_dists_2to1;
+    index2->Search(/*num_neighbors=*/2, ToFloat(descriptors1), indices_1to2,
+                   l2_dists_1to2);
+    index1->Search(/*num_neighbors=*/2, ToFloat(descriptors2), indices_2to1,
+                   l2_dists_2to1);
+
+    FindBestMatchesIndex(indices_1to2, l2_dists_1to2, indices_2to1,
+                         l2_dists_2to1, match_options.max_ratio,
+                         match_options.max_distance, match_options.cross_check,
+                         matches);
 }
 
 void MatchGuidedSiftFeaturesCPU(const SiftMatchingOptions& match_options,
@@ -1059,8 +1186,13 @@ void MatchGuidedSiftFeaturesCPU(const SiftMatchingOptions& match_options,
     const float max_residual =
             match_options.max_error * match_options.max_error;
 
-    const Eigen::Matrix3f F = two_view_geometry->F.cast<float>();
-    const Eigen::Matrix3f H = two_view_geometry->H.cast<float>();
+    static const Eigen::Matrix3d kIdentity3d = Eigen::Matrix3d::Identity();
+    const Eigen::Matrix3f F = two_view_geometry->F.has_value()
+                                      ? two_view_geometry->F->cast<float>()
+                                      : kIdentity3d.cast<float>();
+    const Eigen::Matrix3f H = two_view_geometry->H.has_value()
+                                      ? two_view_geometry->H->cast<float>()
+                                      : kIdentity3d.cast<float>();
 
     std::function<bool(float, float, float, float)> guided_filter;
     if (two_view_geometry->config == TwoViewGeometry::CALIBRATED ||
@@ -1319,13 +1451,17 @@ void MatchGuidedSiftFeaturesGPU(const SiftMatchingOptions& match_options,
     float* H_ptr = nullptr;
     if (two_view_geometry->config == TwoViewGeometry::CALIBRATED ||
         two_view_geometry->config == TwoViewGeometry::UNCALIBRATED) {
-        F = two_view_geometry->F.cast<float>();
+        F = two_view_geometry->F.has_value()
+                    ? Eigen::Matrix3f(two_view_geometry->F->cast<float>())
+                    : Eigen::Matrix3f::Identity();
         F_ptr = F.data();
     } else if (two_view_geometry->config == TwoViewGeometry::PLANAR ||
                two_view_geometry->config == TwoViewGeometry::PANORAMIC ||
                two_view_geometry->config ==
                        TwoViewGeometry::PLANAR_OR_PANORAMIC) {
-        H = two_view_geometry->H.cast<float>();
+        H = two_view_geometry->H.has_value()
+                    ? Eigen::Matrix3f(two_view_geometry->H->cast<float>())
+                    : Eigen::Matrix3f::Identity();
         H_ptr = H.data();
     } else {
         return;

@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
@@ -48,10 +50,7 @@ void DeepLSDWorker::requestTaskCancel() {
 
 void DeepLSDWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_deeplsd_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_deeplsd_free);
 #endif
 }
 
@@ -197,7 +196,7 @@ bool DeepLSDWorker::runExtract() {
     if (char* info = aicore_deeplsd_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_deeplsd_free_string(info);
+        aicore_deeplsd_free_buffer(info);
         const QString resolved = obj.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("DeepLSD"),
                                                   resolved);
@@ -243,7 +242,7 @@ bool DeepLSDWorker::runExtract() {
     if (char* info = aicore_deeplsd_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_deeplsd_free_string(info);
+        aicore_deeplsd_free_buffer(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
     }
     result.lineVisualization =

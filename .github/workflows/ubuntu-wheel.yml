@@ -78,6 +78,19 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'false'
+      # Local composite actions (./.github/actions/...) only resolve after
+      # checkout. Install the fixed CMake BEFORE the disk reshaping below:
+      # lukka/get-cmake
+      # extracts into /home/runner/work/_temp on the root filesystem, and
+      # maximize-build-space leaves the root with only its ~10 GB reserve —
+      # tight enough that the tar extraction failed with "Wrote only N of M
+      # bytes" (ENOSPC). On the pre-maximize root there is ample space.
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
@@ -90,7 +103,7 @@ jobs:
           remove-docker-images: 'true'
           build-mount-path: '/var/lib/docker'
           build-mount-path-ownership: 'root:root'
-      - name: Clean runner logs and cache before checkout
+      - name: Clean runner logs and cache
         run: |
           echo "=== Disk space before cleanup ==="
           df -h
@@ -122,10 +135,6 @@ jobs:
           echo ""
           echo "=== Largest directories on root filesystem ==="
           sudo du -h --max-depth=1 / 2>/dev/null | sort -hr | head -20 || true
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          submodules: 'false'
       - name: Additional space optimization
         run: |
           source util/ci_utils.sh
@@ -181,6 +190,15 @@ jobs:
           name: ubuntu-wheel-build-log-py${{ matrix.python_version }}
           path: /tmp/ubuntu-wheel-build.log
           if-no-files-found: ignore
+
+      - name: Validate produced wheels
+        # basename(1) leaves a literal glob pattern when nothing matched, so a
+        # silently missing wheel would otherwise only surface later in the
+        # test job. Fail here with a clear message instead.
+        run: |
+          echo "CUDA wheel: ${PIP_PKG_NAME}"
+          echo "CPU wheel:  ${PIP_CPU_PKG_NAME}"
+          ls -l ${PIP_PKG_NAME} ${PIP_CPU_PKG_NAME}
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4

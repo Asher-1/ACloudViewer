@@ -136,16 +136,16 @@ public:
 		}
 		mu1 /= ndata_class1;
 		mu2 /= ndata_class2;
-		
+
 		// if you get a compilation error coming from here (with templates
 		// and a 'visual_studio_sucks_cov_helper' structure involved) then
 		// you may have to patch the dlib's file 'matrix_utilities.h":
-		// 
+		//
 		// line 1611, replace
 		//	const matrix<double,EXP::type::NR,EXP::type::NC, typename EXP::mem_manager_type> avg = mean(m);
 		// by
 		//  const typename EXP::type avg = mean(m);
-		// 
+		//
 		dlib::matrix<float> sigma1 = covariance(samples1);
 		dlib::matrix<float> sigma2 = covariance(samples2);
 

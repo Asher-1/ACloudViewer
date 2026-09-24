@@ -89,7 +89,7 @@ Write-Host "conda env create and activate..."
 $env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
 
 Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destination "$env:TEMP\conda_windows.yml"
-(Get-Content "$env:TEMP\conda_windows.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows.yml"
+(Get-Content "$env:TEMP\conda_windows.yml") -replace "3.10", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows.yml"
 
 conda env create -f "$env:TEMP\conda_windows.yml"
 conda activate $env:ENV_NAME

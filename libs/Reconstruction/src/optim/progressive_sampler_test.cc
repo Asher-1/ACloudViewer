@@ -38,33 +38,33 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestLessSamples) {
+TEST(optim_progressive_sampler, TestLessSamples) {
   ProgressiveSampler sampler(2);
   sampler.Initialize(5);
-  BOOST_CHECK_EQUAL(sampler.MaxNumSamples(),
+  EXPECT_EQ(sampler.MaxNumSamples(),
                     std::numeric_limits<size_t>::max());
   for (size_t i = 0; i < 100; ++i) {
     const auto samples = sampler.Sample();
-    BOOST_CHECK_EQUAL(samples.size(), 2);
-    BOOST_CHECK_EQUAL(
+    EXPECT_EQ(samples.size(), 2);
+    EXPECT_EQ(
         std::unordered_set<size_t>(samples.begin(), samples.end()).size(), 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestEqualSamples) {
+TEST(optim_progressive_sampler, TestEqualSamples) {
   ProgressiveSampler sampler(5);
   sampler.Initialize(5);
-  BOOST_CHECK_EQUAL(sampler.MaxNumSamples(),
+  EXPECT_EQ(sampler.MaxNumSamples(),
                     std::numeric_limits<size_t>::max());
   for (size_t i = 0; i < 100; ++i) {
     const auto samples = sampler.Sample();
-    BOOST_CHECK_EQUAL(samples.size(), 5);
-    BOOST_CHECK_EQUAL(
+    EXPECT_EQ(samples.size(), 5);
+    EXPECT_EQ(
         std::unordered_set<size_t>(samples.begin(), samples.end()).size(), 5);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestProgressive) {
+TEST(optim_progressive_sampler, TestProgressive) {
   const size_t kNumSamples = 5;
   ProgressiveSampler sampler(kNumSamples);
   sampler.Initialize(50);
@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(TestProgressive) {
   for (size_t i = 0; i < 100; ++i) {
     const auto samples = sampler.Sample();
     for (size_t i = 0; i < samples.size() - 1; ++i) {
-      BOOST_CHECK_LT(samples[i], samples.back());
-      BOOST_CHECK_GE(samples.back(), prev_last_sample);
+      EXPECT_LT(samples[i], samples.back());
+      EXPECT_GE(samples.back(), prev_last_sample);
       prev_last_sample = samples.back();
     }
   }

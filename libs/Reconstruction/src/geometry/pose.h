@@ -1,0 +1,268 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <Eigen/Core>
+#include <vector>
+
+#include "geometry/rigid3.h"
+#include "geometry/sim3.h"
+#include "util/alignment.h"
+#include "util/types.h"
+
+namespace colmap {
+
+// A unit camera bearing and the unprojection Jacobian d(bearing)/d(pixel).
+// Keeping both values together preserves correspondence indexing while a
+// robust estimator sub-samples its input.
+struct CamRayWithJac {
+    Eigen::Vector3d ray = Eigen::Vector3d::Zero();
+    Eigen::Matrix<double, 3, 2> jacobian = Eigen::Matrix<double, 3, 2>::Zero();
+
+    static CamRayWithJac Zero() { return CamRayWithJac(); }
+};
+
+// Compose the skew symmetric cross product matrix from a vector.
+Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector);
+
+// Convert 3D rotation matrix to Euler angles.
+//
+// The convention `R = Rx * Ry * Rz` is used,
+// using a right-handed coordinate system.
+//
+// @param R              3x3 rotation matrix.
+// @param rx, ry, rz     Euler angles in radians.
+void RotationMatrixToEulerAngles(const Eigen::Matrix3d& R,
+                                 double* rx,
+                                 double* ry,
+                                 double* rz);
+
+// Convert Euler angles to 3D rotation matrix.
+//
+// The convention `R = Rz * Ry * Rx` is used,
+// using a right-handed coordinate system.
+//
+// @param rx, ry, rz     Euler angles in radians.
+//
+// @return               3x3 rotation matrix.
+Eigen::Matrix3d EulerAnglesToRotationMatrix(const double rx,
+                                            const double ry,
+                                            const double rz);
+
+// Convert 3D rotation matrix to Quaternion representation.
+//
+// @param rot_mat        3x3 rotation matrix.
+//
+// @return               Unit Quaternion rotation coefficients (w, x, y, z).
+Eigen::Vector4d RotationMatrixToQuaternion(const Eigen::Matrix3d& rot_mat);
+
+// Convert Quaternion representation to 3D rotation matrix.
+//
+// @param qvec           Unit Quaternion rotation coefficients (w, x, y, z).
+//
+// @return               3x3 rotation matrix.
+Eigen::Matrix3d QuaternionToRotationMatrix(const Eigen::Vector4d& qvec);
+
+// Compose the Quaternion vector corresponding to a  identity transformation.
+inline Eigen::Vector4d ComposeIdentityQuaternion();
+
+// Normalize Quaternion vector.
+//
+// @param qvec          Quaternion rotation coefficients (w, x, y, z).
+//
+// @return              Unit Quaternion rotation coefficients (w, x, y, z).
+Eigen::Vector4d NormalizeQuaternion(const Eigen::Vector4d& qvec);
+
+// Invert Quaternion vector to return Quaternion of inverse rotation.
+//
+// @param qvec          Quaternion rotation coefficients (w, x, y, z).
+//
+// @return              Inverse Quaternion rotation coefficients (w, x, y, z).
+Eigen::Vector4d InvertQuaternion(const Eigen::Vector4d& qvec);
+
+// Concatenate Quaternion rotations such that the rotation of `qvec1` is applied
+// before the rotation of `qvec2`.
+//
+// @param qvec1         Quaternion rotation coefficients (w, x, y, z).
+// @param qvec2         Quaternion rotation coefficients (w, x, y, z).
+//
+// @return              Concatenated Quaternion coefficients (w, x, y, z).
+Eigen::Vector4d ConcatenateQuaternions(const Eigen::Vector4d& qvec1,
+                                       const Eigen::Vector4d& qvec2);
+
+// Transform point by quaternion rotation.
+//
+// @param qvec          Quaternion rotation coefficients (w, x, y, z).
+// @param point         Point to rotate.
+//
+// @return              Rotated point.
+Eigen::Vector3d QuaternionRotatePoint(const Eigen::Vector4d& qvec,
+                                      const Eigen::Vector3d& point);
+
+// Compute the weighted average of multiple Quaternions according to:
+//
+//    Markley, F. Landis, et al. "Averaging quaternions."
+//    Journal of Guidance, Control, and Dynamics 30.4 (2007): 1193-1197.
+//
+// @param qvecs         The Quaternions to be averaged.
+// @param weights       Non-negative weights.
+//
+// @return              The average Quaternion.
+Eigen::Vector4d AverageQuaternions(const std::vector<Eigen::Vector4d>& qvecs,
+                                   const std::vector<double>& weights);
+
+// Compose rotation matrix that rotates unit vector 1 to unit vector 2.
+// Note that when vector 1 points into the opposite direction of vector 2,
+// the function returns an identity rotation.
+Eigen::Matrix3d RotationFromUnitVectors(const Eigen::Vector3d& vec1,
+                                        const Eigen::Vector3d& vec2);
+
+// Extract camera projection center from projection matrix, i.e. the projection
+// center in world coordinates `-R^T t`.
+Eigen::Vector3d ProjectionCenterFromMatrix(
+        const Eigen::Matrix3x4d& proj_matrix);
+
+// Extract camera projection center from projection parameters.
+//
+// @param qvec           Unit Quaternion rotation coefficients (w, x, y, z).
+// @param tvec           3x1 translation vector.
+//
+// @return               3x1 camera projection center.
+Eigen::Vector3d ProjectionCenterFromPose(const Eigen::Vector4d& qvec,
+                                         const Eigen::Vector3d& tvec);
+
+// Compute the relative transformation from pose 1 to 2.
+//
+// @param qvec1, tvec1      First camera pose.
+// @param qvec2, tvec2      Second camera pose.
+// @param qvec12, tvec12    Relative pose.
+void ComputeRelativePose(const Eigen::Vector4d& qvec1,
+                         const Eigen::Vector3d& tvec1,
+                         const Eigen::Vector4d& qvec2,
+                         const Eigen::Vector3d& tvec2,
+                         Eigen::Vector4d* qvec12,
+                         Eigen::Vector3d* tvec12);
+
+// Concatenate the transformations of the two poses.
+//
+// @param qvec1, tvec1      First camera pose.
+// @param qvec2, tvec2      Second camera pose.
+// @param qvec12, tvec12    Concatenated pose.
+void ConcatenatePoses(const Eigen::Vector4d& qvec1,
+                      const Eigen::Vector3d& tvec1,
+                      const Eigen::Vector4d& qvec2,
+                      const Eigen::Vector3d& tvec2,
+                      Eigen::Vector4d* qvec12,
+                      Eigen::Vector3d* tvec12);
+
+// Invert transformation of the pose.
+// @param qvec, tvec          Input camera pose.
+// @param inv_qvec, inv_tvec  Inverse camera pose.
+void InvertPose(const Eigen::Vector4d& qvec,
+                const Eigen::Vector3d& tvec,
+                Eigen::Vector4d* inv_qvec,
+                Eigen::Vector3d* inv_tvec);
+
+// Linearly interpolate camera pose.
+//
+// @param qvec1, tvec1      Camera pose at t0 = 0.
+// @param qvec2, tvec2      Camera pose at t1 = 1.
+// @param t                 Interpolation time.
+// @param qveci, tveci      Camera pose at time t.
+void InterpolatePose(const Eigen::Vector4d& qvec1,
+                     const Eigen::Vector3d& tvec1,
+                     const Eigen::Vector4d& qvec2,
+                     const Eigen::Vector3d& tvec2,
+                     const double t,
+                     Eigen::Vector4d* qveci,
+                     Eigen::Vector3d* tveci);
+
+// Calculate baseline vector from first to second pose.
+//
+// The given rotation and orientation is expected as the
+// world to camera transformation.
+//
+// @param qvec1           Unit Quaternion rotation coefficients (w, x, y, z).
+// @param tvec1           3x1 translation vector.
+// @param qvec2           Unit Quaternion rotation coefficients (w, x, y, z).
+// @param tvec2           3x1 translation vector.
+//
+// @return                Baseline vector from 1 to 2.
+Eigen::Vector3d CalculateBaseline(const Eigen::Vector4d& qvec1,
+                                  const Eigen::Vector3d& tvec1,
+                                  const Eigen::Vector4d& qvec2,
+                                  const Eigen::Vector3d& tvec2);
+
+// Perform cheirality constraint test, i.e., determine which of the triangulated
+// correspondences lie in front of of both cameras. The first camera has the
+// projection matrix P1 = [I | 0] and the second camera has the projection
+// matrix P2 = [R | t].
+//
+// @param R            3x3 rotation matrix of second projection matrix.
+// @param t            3x1 translation vector of second projection matrix.
+// @param points1      First set of corresponding points.
+// @param points2      Second set of corresponding points.
+// @param points3D     Points that lie in front of both cameras.
+bool CheckCheirality(const Eigen::Matrix3d& R,
+                     const Eigen::Vector3d& t,
+                     const std::vector<Eigen::Vector2d>& points1,
+                     const std::vector<Eigen::Vector2d>& points2,
+                     std::vector<Eigen::Vector3d>* points3D);
+
+////////////////////////////////////////////////////////////////////////////////
+// Implementation
+////////////////////////////////////////////////////////////////////////////////
+
+Eigen::Vector4d ComposeIdentityQuaternion() {
+    return Eigen::Vector4d(1, 0, 0, 0);
+}
+
+// Upstream-parity cheirality check on camera rays (COLMAP 4.x pose.h).
+bool CheckCheirality(const Rigid3d& cam2_from_cam1,
+                     const std::vector<Eigen::Vector3d>& cam_rays1,
+                     const std::vector<Eigen::Vector3d>& cam_rays2,
+                     std::vector<int>* indices);
+
+// Upstream COLMAP dbb41680 geometry/pose.h: weighted average of unit
+// vectors via the principal singular vector, sign-aligned with the
+// weighted majority. Used by the GLomap rotation averaging stack (W4).
+Eigen::VectorXd AverageUnitVectors(const Eigen::MatrixXd& vectors,
+                                   const Eigen::VectorXd& weights = {});
+Eigen::Vector3d AverageDirections(
+        const std::vector<Eigen::Vector3d>& directions,
+        const std::vector<double>& weights = {});
+
+// Upstream COLMAP dbb41680 geometry/pose.h: Markley quaternion averaging
+// built on AverageUnitVectors (overload of the legacy Vector4d version).
+Eigen::Quaterniond AverageQuaternions(
+        const std::vector<Eigen::Quaterniond>& quats,
+        const std::vector<double>& weights);
+
+// Upstream COLMAP dbb41680 geometry/pose.h: compose the camera pose from
+// world after a similarity transform of the world frame.
+Rigid3d TransformCameraWorld(const Sim3d& new_from_old_world,
+                             const Rigid3d& cam_from_world);
+
+// Convert rotation matrix to/from angle axis.
+Eigen::Vector3d RotationMatrixToAngleAxis(const Eigen::Matrix3d& R);
+Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w);
+
+// Compute a gravity-aligned rotation matrix from a gravity direction via
+// Householder QR. The second column of the output matrix is the gravity
+// direction. Upstream parity, used by the GLomap gravity refinement (W4/W7).
+Eigen::Matrix3d GravityAlignedRotation(const Eigen::Vector3d& gravity);
+
+// Convert 3D rotation matrix to Euler angles (convention R = Rz * Ry * Rx,
+// right-handed). Upstream parity, used by the GLomap gravity refinement.
+double YAxisAngleFromRotation(const Eigen::Matrix3d& rotation);
+
+// Construct gravity-aligned rotation matrix from yaw angle, i.e., a rotation
+// about the Y-axis (gravity direction).
+Eigen::Matrix3d RotationFromYAxisAngle(double angle);
+
+}  // namespace colmap

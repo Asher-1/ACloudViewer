@@ -230,8 +230,13 @@ __device__ inline void ComputeViewingAngles(
     const float SX_inv_norm = rsqrt(DotProduct3(SX, SX));
 
     *cos_incident_angle = DotProduct3(SX, normal) * SX_inv_norm;
+    // Upstream parity (d3ccaf35 patch_match_cuda.cu): the ray from the point
+    // to the reference camera is -point, so the triangulation-angle cosine
+    // carries a minus. The old fork form dropped it; the consistency filter
+    // then accepted near-parallel (small-baseline) source views whose depth
+    // uncertainty inflated the dense maps (far-tail outliers).
     *cos_triangulation_angle =
-            DotProduct3(SX, point) * RX_inv_norm * SX_inv_norm;
+            -DotProduct3(SX, point) * RX_inv_norm * SX_inv_norm;
 }
 
 __device__ inline void ComposeHomography(
@@ -679,10 +684,12 @@ public:
     // Compute the triangulation angle probability.
     __device__ inline float ComputeTriProb(
             const float cos_triangulation_angle) const {
-        const float abs_cos_triangulation_angle = abs(cos_triangulation_angle);
-        if (abs_cos_triangulation_angle > cos_min_triangulation_angle_) {
+        // Upstream parity (d3ccaf35): the signed cosine is used directly; the
+        // old fork abs() form compensated the missing minus in
+        // ComputeViewingAngles and is no longer needed.
+        if (cos_triangulation_angle > cos_min_triangulation_angle_) {
             const float scaled =
-                    1.0f - (1.0f - abs_cos_triangulation_angle) /
+                    1.0f - (1.0f - cos_triangulation_angle) /
                                    (1.0f - cos_min_triangulation_angle_);
             const float likelihood = 1.0f - scaled * scaled;
             return min(1.0f, max(0.0f, likelihood));
@@ -778,8 +785,8 @@ private:
 };
 
 // Rotate normals by 90deg around z-axis in counter-clockwise direction.
-__global__ void InitNormalMap(GpuMat<float> normal_map,
-                              GpuMat<curandState> rand_state_map) {
+__global__ void InitNormalMap(GpuMatView<float> normal_map,
+                              GpuMatView<curandState> rand_state_map) {
     const int row = blockDim.y * blockIdx.y + threadIdx.y;
     const int col = blockDim.x * blockIdx.x + threadIdx.x;
     if (col < normal_map.GetWidth() && row < normal_map.GetHeight()) {
@@ -792,7 +799,7 @@ __global__ void InitNormalMap(GpuMat<float> normal_map,
 }
 
 // Rotate normals by 90deg around z-axis in counter-clockwise direction.
-__global__ void RotateNormalMap(GpuMat<float> normal_map) {
+__global__ void RotateNormalMap(GpuMatView<float> normal_map) {
     const int row = blockDim.y * blockIdx.y + threadIdx.y;
     const int col = blockDim.x * blockIdx.x + threadIdx.x;
     if (col < normal_map.GetWidth() && row < normal_map.GetHeight()) {
@@ -807,16 +814,17 @@ __global__ void RotateNormalMap(GpuMat<float> normal_map) {
 }
 
 template <int kWindowSize, int kWindowStep>
-__global__ void ComputeInitialCost(GpuMat<float> cost_map,
-                                   const GpuMat<float> depth_map,
-                                   const GpuMat<float> normal_map,
-                                   const cudaTextureObject_t ref_image_texture,
-                                   const GpuMat<float> ref_sum_image,
-                                   const GpuMat<float> ref_squared_sum_image,
-                                   const cudaTextureObject_t src_images_texture,
-                                   const cudaTextureObject_t poses_texture,
-                                   const float sigma_spatial,
-                                   const float sigma_color) {
+__global__ void ComputeInitialCost(
+        GpuMatView<float> cost_map,
+        const GpuMatView<float> depth_map,
+        const GpuMatView<float> normal_map,
+        const cudaTextureObject_t ref_image_texture,
+        const GpuMatView<float> ref_sum_image,
+        const GpuMatView<float> ref_squared_sum_image,
+        const cudaTextureObject_t src_images_texture,
+        const cudaTextureObject_t poses_texture,
+        const float sigma_spatial,
+        const float sigma_color) {
     const int col = blockDim.x * blockIdx.x + threadIdx.x;
 
     typedef PhotoConsistencyCostComputer<kWindowSize, kWindowStep>
@@ -881,17 +889,17 @@ template <int kWindowSize,
           bool kFilterPhotoConsistency = false,
           bool kFilterGeomConsistency = false>
 __global__ void SweepFromTopToBottom(
-        GpuMat<float> global_workspace,
-        GpuMat<curandState> rand_state_map,
-        GpuMat<float> cost_map,
-        GpuMat<float> depth_map,
-        GpuMat<float> normal_map,
-        GpuMat<uint8_t> consistency_mask,
-        GpuMat<float> sel_prob_map,
-        const GpuMat<float> prev_sel_prob_map,
+        GpuMatView<float> global_workspace,
+        GpuMatView<curandState> rand_state_map,
+        GpuMatView<float> cost_map,
+        GpuMatView<float> depth_map,
+        GpuMatView<float> normal_map,
+        GpuMatView<uint8_t> consistency_mask,
+        GpuMatView<float> sel_prob_map,
+        const GpuMatView<float> prev_sel_prob_map,
         const cudaTextureObject_t ref_image_texture,
-        const GpuMat<float> ref_sum_image,
-        const GpuMat<float> ref_squared_sum_image,
+        const GpuMatView<float> ref_sum_image,
+        const GpuMatView<float> ref_squared_sum_image,
         const cudaTextureObject_t src_images_texture,
         const cudaTextureObject_t src_depth_maps_texture,
         const cudaTextureObject_t poses_texture,
@@ -1329,9 +1337,9 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
     ComputeCudaConfig();
     ComputeInitialCost<kWindowSize, kWindowStep>
             <<<sweep_grid_size_, sweep_block_size_>>>(
-                    *cost_map_, *depth_map_, *normal_map_,
-                    ref_image_texture_->GetObj(), *ref_image_->sum_image,
-                    *ref_image_->squared_sum_image,
+                    cost_map_->View(), depth_map_->View(), normal_map_->View(),
+                    ref_image_texture_->GetObj(), ref_image_->sum_image->View(),
+                    ref_image_->squared_sum_image->View(),
                     src_images_texture_->GetObj(), poses_texture_[0]->GetObj(),
                     options_.sigma_spatial, options_.sigma_color);
     CUDA_SYNC_AND_CHECK();
@@ -1385,11 +1393,13 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
     SweepFromTopToBottom<kWindowSize, kWindowStep, kGeomConsistencyTerm,  \
                          kFilterPhotoConsistency, kFilterGeomConsistency> \
             <<<sweep_grid_size_, sweep_block_size_>>>(                    \
-                    *global_workspace_, *rand_state_map_, *cost_map_,     \
-                    *depth_map_, *normal_map_, *consistency_mask_,        \
-                    *sel_prob_map_, *prev_sel_prob_map_,                  \
-                    ref_image_texture_->GetObj(), *ref_image_->sum_image, \
-                    *ref_image_->squared_sum_image,                       \
+                    global_workspace_->View(), rand_state_map_->View(),   \
+                    cost_map_->View(), depth_map_->View(),                \
+                    normal_map_->View(), consistency_mask_->View(),       \
+                    sel_prob_map_->View(), prev_sel_prob_map_->View(),    \
+                    ref_image_texture_->GetObj(),                         \
+                    ref_image_->sum_image->View(),                        \
+                    ref_image_->squared_sum_image->View(),                \
                     src_images_texture_->GetObj(),                        \
                     src_depth_maps_texture_ == nullptr                    \
                             ? 0                                           \
@@ -1767,7 +1777,7 @@ void PatchMatchCuda::InitWorkspaceMemory() {
                                   init_normal_map.GetWidth() * sizeof(float));
     } else {
         InitNormalMap<<<elem_wise_grid_size_, elem_wise_block_size_>>>(
-                *normal_map_, *rand_state_map_);
+                normal_map_->View(), rand_state_map_->View());
     }
 }
 
@@ -1803,7 +1813,7 @@ void PatchMatchCuda::Rotate() {
     // Rotate normal map.
     {
         RotateNormalMap<<<elem_wise_grid_size_, elem_wise_block_size_>>>(
-                *normal_map_);
+                normal_map_->View());
         std::unique_ptr<GpuMat<float>> rotated_normal_map(
                 new GpuMat<float>(width, height, 3));
         normal_map_->Rotate(rotated_normal_map.get());

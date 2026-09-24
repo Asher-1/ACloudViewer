@@ -37,7 +37,7 @@
 #include "mvs/consistency_graph.h"
 #include "mvs/patch_match_cuda.h"
 #include "mvs/workspace.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/misc.h"
 
 #define PrintOption(option) std::cout << #option ": " << option << std::endl
@@ -49,37 +49,6 @@ PatchMatch::PatchMatch(const PatchMatchOptions& options, const Problem& problem)
     : options_(options), problem_(problem) {}
 
 PatchMatch::~PatchMatch() {}
-
-void PatchMatchOptions::Print() const {
-  PrintHeading2("PatchMatchOptions");
-  PrintOption(max_image_size);
-  PrintOption(gpu_index);
-  PrintOption(depth_min);
-  PrintOption(depth_max);
-  PrintOption(window_radius);
-  PrintOption(window_step);
-  PrintOption(sigma_spatial);
-  PrintOption(sigma_color);
-  PrintOption(num_samples);
-  PrintOption(ncc_sigma);
-  PrintOption(min_triangulation_angle);
-  PrintOption(incident_angle_sigma);
-  PrintOption(num_iterations);
-  PrintOption(geom_consistency);
-  PrintOption(geom_consistency_regularizer);
-  PrintOption(geom_consistency_max_cost);
-  PrintOption(filter);
-  PrintOption(filter_min_ncc);
-  PrintOption(filter_min_triangulation_angle);
-  PrintOption(filter_min_num_consistent);
-  PrintOption(filter_geom_consistency_max_cost);
-  PrintOption(write_consistency_graph);
-  PrintOption(allow_missing_files);
-  PrintOption(photometric_force_recompute);
-  PrintOption(photometric_use_existing_as_init);
-  PrintOption(skip_photometric_pass);
-}
-
 void PatchMatch::Problem::Print() const {
   PrintHeading2("PatchMatch::Problem");
 
@@ -185,10 +154,10 @@ ConsistencyGraph PatchMatch::GetConsistencyGraph() const {
 }
 
 PatchMatchController::PatchMatchController(const PatchMatchOptions& options,
-                                           const std::string& workspace_path,
+                                           const std::filesystem::path& workspace_path,
                                            const std::string& workspace_format,
                                            const std::string& pmvs_option_name,
-                                           const std::string& config_path)
+                                           const std::filesystem::path& config_path)
     : options_(options),
       workspace_path_(workspace_path),
       workspace_format_(workspace_format),
@@ -269,10 +238,10 @@ void PatchMatchController::ReadProblems() {
 
   const auto& model = workspace_->GetModel();
 
-  const std::string config_path =
+  const std::filesystem::path config_path =
       config_path_.empty()
-          ? JoinPaths(workspace_path_, workspace_->GetOptions().stereo_folder,
-                      "patch-match.cfg")
+          ? workspace_path_ / workspace_->GetOptions().stereo_folder /
+                "patch-match.cfg"
           : config_path_;
   std::vector<std::string> config = ReadTextFileLines(config_path);
 
@@ -429,12 +398,12 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
   const std::string image_name = model.GetImageName(problem.ref_image_idx);
   const std::string file_name =
       StringPrintf("%s.%s.bin", image_name.c_str(), output_type.c_str());
-  const std::string depth_map_path =
-      JoinPaths(workspace_path_, stereo_folder, "depth_maps", file_name);
-  const std::string normal_map_path =
-      JoinPaths(workspace_path_, stereo_folder, "normal_maps", file_name);
-  const std::string consistency_graph_path = JoinPaths(
-      workspace_path_, stereo_folder, "consistency_graphs", file_name);
+  const std::filesystem::path depth_map_path =
+      workspace_path_ / stereo_folder / "depth_maps" / file_name;
+  const std::filesystem::path normal_map_path =
+      workspace_path_ / stereo_folder / "normal_maps" / file_name;
+  const std::filesystem::path consistency_graph_path =
+      workspace_path_ / stereo_folder / "consistency_graphs" / file_name;
 
   if (ExistsFile(depth_map_path) && ExistsFile(normal_map_path) &&
       (!options.write_consistency_graph ||

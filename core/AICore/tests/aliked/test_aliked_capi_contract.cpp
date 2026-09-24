@@ -12,17 +12,17 @@
 
 #include "aicore/aliked_capi.h"
 #include "aicore/lightglue_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
 int main() {
     AICORE_CHECK(aicore_aliked_abi_version() >= 2);
-    AICORE_CHECK(aicore_aliked_quantize(nullptr, nullptr, nullptr) != 0);
+    AICORE_CHECK(aicore_aliked_quantize_gguf(nullptr, nullptr, nullptr) != 0);
 
     aicore_aliked_free(nullptr);
     aicore_aliked_options_free(nullptr);
-    aicore_aliked_free_string(nullptr);
+    aicore_aliked_free_buffer(nullptr);
 
     AICORE_CHECK(aicore_aliked_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_aliked_is_ready(nullptr) == 0);
@@ -39,11 +39,14 @@ int main() {
     aicore_lightglue_features features{};
     AICORE_CHECK(aicore_aliked_extract_rgb(nullptr, nullptr, 0, 0, 0,
                                            &features) != 0);
+    /* F-01 batch A: image_view entry is NULL-safe. */
+    AICORE_CHECK(
+            aicore_aliked_extract_image_view(nullptr, nullptr, &features) != 0);
 
     char* dir = aicore_aliked_model_cache_dir();
     AICORE_CHECK(dir != nullptr);
     AICORE_CHECK(std::strlen(dir) > 0);
-    aicore_aliked_free_string(dir);
+    aicore_aliked_free_buffer(dir);
 
     return failures;
 }

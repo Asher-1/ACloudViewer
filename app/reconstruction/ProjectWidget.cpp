@@ -7,8 +7,8 @@
 
 #include "ProjectWidget.h"
 
-#include "base/database.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -32,14 +32,15 @@ ProjectWidget::ProjectWidget(QWidget* parent, OptionManager* options)
             &ProjectWidget::SelectExistingDatabasePath);
     database_path_text_ = new QLineEdit(this);
     database_path_text_->setText(
-            QString::fromStdString(*options_->database_path));
+            QString::fromStdString(options_->database_path->string()));
 
     // Image path.
     QPushButton* image_path_select = new QPushButton(tr("Select"), this);
     connect(image_path_select, &QPushButton::released, this,
             &ProjectWidget::SelectImagePath);
     image_path_text_ = new QLineEdit(this);
-    image_path_text_->setText(QString::fromStdString(*options_->image_path));
+    image_path_text_->setText(
+            QString::fromStdString(options_->image_path->string()));
 
     // Save button.
     QPushButton* create_button = new QPushButton(tr("Save"), this);
@@ -69,14 +70,16 @@ void ProjectWidget::Reset() {
     image_path_text_->clear();
 }
 
-void ProjectWidget::persistSave(const std::string& project_path,
-                                const std::string& database_path,
-                                const std::string& image_path) {
+void ProjectWidget::persistSave(const std::filesystem::path& project_path,
+                                const std::filesystem::path& database_path,
+                                const std::filesystem::path& image_path) {
     QSettings settings;
     settings.beginGroup("Reconstruction");
-    settings.setValue("project_path", CVTools::ToQString(project_path));
-    settings.setValue("database_path", CVTools::ToQString(database_path));
-    settings.setValue("image_path", CVTools::ToQString(image_path));
+    settings.setValue("project_path",
+                      CVTools::ToQString(project_path.string()));
+    settings.setValue("database_path",
+                      CVTools::ToQString(database_path.string()));
+    settings.setValue("image_path", CVTools::ToQString(image_path.string()));
     settings.endGroup();
 }
 
@@ -88,12 +91,12 @@ std::string ProjectWidget::GetImagePath() const {
     return image_path_text_->text().toUtf8().constData();
 }
 
-void ProjectWidget::SetDatabasePath(const std::string& path) {
-    database_path_text_->setText(QString::fromStdString(path));
+void ProjectWidget::SetDatabasePath(const std::filesystem::path& path) {
+    database_path_text_->setText(QString::fromStdString(path.string()));
 }
 
-void ProjectWidget::SetImagePath(const std::string& path) {
-    image_path_text_->setText(QString::fromStdString(path));
+void ProjectWidget::SetImagePath(const std::filesystem::path& path) {
+    image_path_text_->setText(QString::fromStdString(path.string()));
 }
 
 void ProjectWidget::Save() {
@@ -102,7 +105,7 @@ void ProjectWidget::Save() {
         *options_->image_path = GetImagePath();
 
         // Save empty database file.
-        Database database(*options_->database_path);
+        auto database = Database::Open(*options_->database_path);
         persistSave(*options_->project_path, *options_->database_path,
                     *options_->image_path);
 
@@ -152,7 +155,7 @@ QString ProjectWidget::DefaultDirectory() {
     if (!options_->project_path->empty()) {
         const auto parent_path = GetParentDir(*options_->project_path);
         if (ExistsDir(parent_path)) {
-            return QString::fromStdString(parent_path);
+            return QString::fromStdString(parent_path.string());
         }
     }
 
@@ -160,7 +163,7 @@ QString ProjectWidget::DefaultDirectory() {
         const auto parent_path =
                 GetParentDir(database_path_text_->text().toUtf8().constData());
         if (ExistsDir(parent_path)) {
-            return QString::fromStdString(parent_path);
+            return QString::fromStdString(parent_path.string());
         }
     }
 

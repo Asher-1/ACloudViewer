@@ -30,21 +30,41 @@ set(SHARED_BUILD_OPENCV ON)
 # Base (always when BUILD_OPENCV): core, imgproc, imgcodecs, highgui
 #
 # features2d + flann : qLightGlue (cv::SIFT in feature_extractor.cpp)
-# videoio            : qSIBR (VideoCapture files), qFreeSplatter, qFaceDetect
+# videoio            : qSIBR (VideoCapture files), qFreeSplatter, qFaceDetect,
+#                      and every video_base consumer that reads video files:
+#                      qLingbotMap (--video_path parity), qYOLO / qRFDetr /
+#                      qRMBG (VideoPlaybackWidget live tabs), qSAM3
+#                      (VideoTab, cvMatToQImage + VideoFrameReader)
 # WITH_FFMPEG        : MP4/file demux for videoio consumers
-# WITH_V4L           : live webcam (qFreeSplatter, qFaceDetect only — not qSIBR)
+# WITH_V4L           : live webcam (qFreeSplatter, qFaceDetect and the
+#                      VideoPlaybackWidget subclasses qYOLO / qRFDetr /
+#                      qRMBG — not qSIBR / qLingbotMap / qSAM3, which read
+#                      files only)
 # objdetect+calib3d  : qFreeSplatter Haar fallback, qManualCalib
 # ml                 : q3DMASC
-# opencv_video       : OFF — qSIBR VideoUtils.cpp (optflow/LK) excluded from build
+# opencv_video       : qYOLO multi-object tracking (tracker GMC calls the
+#                      same cv2.calcOpticalFlowPyrLK as upstream
+#                      ultralytics/trackers/utils/gmc.py sparseOptFlow);
+#                      the historical consumer (qSIBR VideoUtils.cpp) was
+#                      excluded from the build instead
+# features2d/calib3d for qYOLO: orb/sift (features2d) and ecc
+#                      (calib3d findTransformECC) GMC methods, same cv2
+#                      routines as upstream
 
 set(_opencv_features2d OFF)
-if(PLUGIN_STANDARD_QLIGHTGLUE)
+if(PLUGIN_STANDARD_QLIGHTGLUE OR PLUGIN_STANDARD_QYOLO)
     set(_opencv_features2d ON)
 endif()
 
+# Every video_base consumer needs the videoio module; keeping this list in
+# sync with the plugins linking video_base (see their CMakeLists) means a
+# plugin-only BUILD_OPENCV=ON configure still produces an OpenCV that can
+# actually decode video for it.
 set(_opencv_videoio OFF)
 if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QFREESPLATTER
-        OR PLUGIN_STANDARD_QFACEDETECT)
+        OR PLUGIN_STANDARD_QFACEDETECT OR PLUGIN_STANDARD_QLINGBOTMAP
+        OR PLUGIN_STANDARD_QYOLO OR PLUGIN_STANDARD_QRFDETR
+        OR PLUGIN_STANDARD_QRMBG OR PLUGIN_STANDARD_QSAM3)
     set(_opencv_videoio ON)
 endif()
 
@@ -54,8 +74,13 @@ if(_opencv_videoio)
     set(_opencv_videoio_ffmpeg ON)
 endif()
 
+# Live-camera backends: only the plugins exposing VideoPlaybackWidget's
+# camera input (the LiveWidget subclasses + the two original camera users).
+# qLingbotMap and qSAM3 read video files only, qSIBR has no camera path.
 set(_opencv_videoio_v4l OFF)
-if(PLUGIN_STANDARD_QFREESPLATTER OR PLUGIN_STANDARD_QFACEDETECT)
+if(PLUGIN_STANDARD_QFREESPLATTER OR PLUGIN_STANDARD_QFACEDETECT
+        OR PLUGIN_STANDARD_QYOLO OR PLUGIN_STANDARD_QRFDETR
+        OR PLUGIN_STANDARD_QRMBG)
     set(_opencv_videoio_v4l ON)
 endif()
 
@@ -65,15 +90,22 @@ if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QFREESPLATTER)
 endif()
 # objdetect requires calib3d in OpenCV 4.7+ (ArUco was moved from contrib)
 set(_opencv_calib3d OFF)
-if(PLUGIN_STANDARD_QMANUAL_CALIB OR _opencv_objdetect)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QYOLO
+        OR _opencv_objdetect)
     set(_opencv_calib3d ON)
+endif()
+
+# Tracker GMC (qYOLO): sparseOptFlow needs the video module's optical flow.
+set(_opencv_video OFF)
+if(PLUGIN_STANDARD_QYOLO)
+    set(_opencv_video ON)
 endif()
 
 if(BUILD_OPENCV)
     message(STATUS "OpenCV modules: features2d=${_opencv_features2d} "
             "videoio=${_opencv_videoio} ffmpeg=${_opencv_videoio_ffmpeg} "
             "v4l=${_opencv_videoio_v4l} objdetect=${_opencv_objdetect} "
-            "calib3d=${_opencv_calib3d} video=OFF")
+            "calib3d=${_opencv_calib3d} video=${_opencv_video}")
 endif()
 
 # OpenCV's bundled OpenEXR/Imath (BUILD_OPENEXR=ON) still uses deprecated C++11
@@ -155,7 +187,7 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=OFF
+            -DBUILD_opencv_video=${_opencv_video}
             -DBUILD_opencv_videoio=${_opencv_videoio}
             -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF

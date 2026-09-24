@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qSAM3">
+        <file>info.json</file>
+        <file>images/qSAM3.svg</file>
+    </qresource>
+</RCC>

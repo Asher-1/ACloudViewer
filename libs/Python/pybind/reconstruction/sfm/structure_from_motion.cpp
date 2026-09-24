@@ -17,6 +17,7 @@
 #include "pipelines/sfm.h"
 #include "pybind/docstring.h"
 #include "pybind/reconstruction/reconstruction_options.h"
+#include "pybind/reconstruction/sfm/mappers.h"
 
 namespace cloudViewer {
 namespace reconstruction {
@@ -248,22 +249,15 @@ void pybind_sfm_methods(py::module& m) {
           "incremental_mapper_options"_a = colmap::IncrementalMapperOptions());
     docstring::FunctionDocInject(m, "triangulate_points",
                                  map_shared_argument_docstrings);
-
-    m.def("rig_bundle_adjustment", &RigBundleAdjust,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for the rig bundle adjustment", "input_path"_a,
-          "output_path"_a, "rig_config_path"_a,
-          "estimate_rig_relative_poses"_a = true,
-          "refine_relative_poses"_a = true,
-          "bundle_adjustment_options"_a = colmap::BundleAdjustmentOptions());
-    docstring::FunctionDocInject(m, "rig_bundle_adjustment",
-                                 map_shared_argument_docstrings);
 }
 
 void pybind_structure_from_motion(py::module& m) {
     py::module m_submodule =
             m.def_submodule("sfm", "Reconstruction structure from motion.");
     pybind_sfm_methods(m_submodule);
+    // Upstream pycolmap parity (src/pycolmap/sfm): the incremental mapping
+    // class bindings share the same submodule.
+    pybind_mappers(m_submodule);
 }
 
 }  // namespace sfm

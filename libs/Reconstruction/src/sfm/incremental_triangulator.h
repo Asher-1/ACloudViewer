@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
+#include "scene/database_cache.h"
+#include "scene/reconstruction.h"
 #include "util/alignment.h"
 
 namespace colmap {
@@ -59,6 +59,10 @@ public:
         double min_focal_length_ratio = 0.1;
         double max_focal_length_ratio = 10.0;
         double max_extra_param = 1.0;
+
+        // PRNG seed for all stochastic methods during triangulation
+        // (upstream parity, d3ccaf35 incremental_triangulator.h).
+        int random_seed = -1;
 
         bool Check() const;
     };

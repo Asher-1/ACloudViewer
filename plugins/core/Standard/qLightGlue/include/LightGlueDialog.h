@@ -33,6 +33,7 @@ struct LightGlueBuiltinModel {
     QString filename;
     QString downloadUrl;
     int matcherType = 2;
+    QString sha256;
 };
 
 class LightGlueDialog : public QDialog {
@@ -83,6 +84,8 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void onBrowseFile();

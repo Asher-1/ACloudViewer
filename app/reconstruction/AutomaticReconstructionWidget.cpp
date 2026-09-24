@@ -86,6 +86,30 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddOptionBool(&options_.sparse, "Sparse model");
     dense_cb_ = AddOptionBool(&options_.dense, "Dense model");
     meshing_cb_ = AddOptionBool(&options_.meshing, "Surface meshing");
+    AddOptionBool(&options_.mesh_post_processing.enabled,
+                  "Mesh cleanup and smoothing");
+    AddOptionBool(&options_.mesh_post_processing.remove_small_components,
+                  "Remove small components");
+    AddOptionBool(&options_.mesh_post_processing.remove_degenerate_faces,
+                  "Remove degenerate faces");
+    AddOptionBool(&options_.mesh_post_processing.simplify, "Simplify mesh");
+    AddOptionBool(&options_.mesh_post_processing.smooth, "Smooth mesh");
+    AddOptionBool(&options_.mesh_post_processing.preserve_boundary,
+                  "Preserve boundary");
+    AddOptionDouble(&options_.mesh_post_processing.prune_error, "Prune error",
+                    0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.target_face_ratio,
+                    "Target face ratio", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.simplify_error,
+                    "Simplify error", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.max_aspect_ratio,
+                    "Max aspect ratio", 0);
+    AddOptionInt(&options_.mesh_post_processing.smoothing_iterations,
+                 "Smoothing iterations", 0);
+    AddOptionDouble(&options_.mesh_post_processing.smoothing_lambda,
+                    "Smoothing lambda", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.smoothing_mu, "Smoothing mu",
+                    -1, 0);
     texturing_cb_ = AddOptionBool(&options_.texturing, "Mesh texturing");
     AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
@@ -97,6 +121,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     mesher_cb_ = new QComboBox(this);
     mesher_cb_->addItem("Delaunay");
     mesher_cb_->addItem("Poisson");
+    mesher_cb_->addItem("Advancing Front");
     mesher_cb_->setCurrentIndex(0);
     grid_layout_->addWidget(mesher_cb_, grid_layout_->rowCount() - 1, 1);
 
@@ -112,6 +137,21 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
             });
     mesher_cb_->setEnabled(meshing_cb_->isChecked());
     texturing_cb_->setEnabled(meshing_cb_->isChecked());
+
+    QLabel* texturing_type_label = new QLabel(tr("Texturing engine"), this);
+    texturing_type_label->setFont(font());
+    texturing_type_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(texturing_type_label, grid_layout_->rowCount(), 0);
+
+    texturing_type_cb_ = new QComboBox(this);
+    texturing_type_cb_->addItem("Mesh texturer (COLMAP)");
+    texturing_type_cb_->addItem("Image texturer (integration)");
+    texturing_type_cb_->setCurrentIndex(0);
+    grid_layout_->addWidget(texturing_type_cb_, grid_layout_->rowCount() - 1,
+                            1);
+    texturing_type_cb_->setEnabled(texturing_cb_->isChecked());
+    connect(texturing_cb_, &QCheckBox::toggled, texturing_type_cb_,
+            &QWidget::setEnabled);
 
     AddSpacer();
 
@@ -491,9 +531,26 @@ void AutomaticReconstructionWidget::Run() {
             options_.mesher =
                     AutomaticReconstructionController::Mesher::POISSON;
             break;
+        case 2:
+            options_.mesher =
+                    AutomaticReconstructionController::Mesher::ADVANCING_FRONT;
+            break;
         default:
             options_.mesher =
                     AutomaticReconstructionController::Mesher::DELAUNAY;
+            break;
+    }
+
+    switch (texturing_type_cb_->currentIndex()) {
+        case 1:
+            options_.texturing_type =
+                    colmap::AutomaticReconstructionController::Options::
+                            TexturingType::IMAGE_TEXTUREUR;
+            break;
+        default:
+            options_.texturing_type =
+                    colmap::AutomaticReconstructionController::Options::
+                            TexturingType::MESH_TEXTUREUR;
             break;
     }
 
@@ -656,9 +713,10 @@ void AutomaticReconstructionWidget::Run() {
     }
 
     // Check if vocab_tree_path is a URI and needs to be downloaded
-    std::string vocab_tree_path = options_.vocab_tree_path;
+    // MSVC has no implicit path-to-string conversion, so bridge explicitly.
+    std::string vocab_tree_path = options_.vocab_tree_path.string();
     if (vocab_tree_path.empty()) {
-        vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        vocab_tree_path = kDefaultSiftVocabTreeUri.string();
     }
 
     // If it's a URI, check if it's already cached or needs to be downloaded
@@ -705,8 +763,8 @@ void AutomaticReconstructionWidget::Run() {
     controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
         struct Results {
             std::vector<std::vector<colmap::PlyPoint>> fusedPoints;
-            std::vector<std::string> meshingPaths;
-            std::vector<std::string> texturedPaths;
+            std::vector<std::filesystem::path> meshingPaths;
+            std::vector<std::filesystem::path> texturedPaths;
             bool texturingSuccess = false;
             colmap::DA3VramCapWarning vramWarning;
         };
@@ -753,7 +811,7 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // This ensures that even if WriteOptions() previously saved an empty value,
     // we restore the default value when the window is shown
     if (options_.vocab_tree_path.empty()) {
-        options_.vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        options_.vocab_tree_path = kDefaultSiftVocabTreeUri;
     }
 
     // Call base class showEvent to read all options (including the default
@@ -773,13 +831,15 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     colmap::DA3ReconstructionUiBindings::Sync(da3_ui_controls_);
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
-    // This handles the case where options_.vocab_tree_path was empty before
-    for (auto& option : options_path_) {
+    // This handles the case where options_.vocab_tree_path was empty before.
+    // vocab_tree_path registers through the std::filesystem::path overload,
+    // so it lives in options_fspath_ rather than options_path_.
+    for (auto& option : options_fspath_) {
         if (option.second == &options_.vocab_tree_path) {
             if (option.first->text().isEmpty() &&
                 !options_.vocab_tree_path.empty()) {
-                option.first->setText(
-                        QString::fromStdString(options_.vocab_tree_path));
+                option.first->setText(QString::fromStdString(
+                        options_.vocab_tree_path.string()));
             }
             break;
         }
@@ -882,15 +942,15 @@ void AutomaticReconstructionWidget::RenderResult() {
                 // meshes
                 if (options_.texturing && texturing_success_ &&
                     !textured_paths_.empty()) {
-                    for (const std::string& path : textured_paths_) {
+                    for (const std::filesystem::path& path : textured_paths_) {
                         if (!ExistsFile(path)) {
                             CVLog::Warning(
                                     "[RenderResult] Ignore invalid textured "
                                     "mesh for file [%s]",
-                                    path.c_str());
+                                    path.string().c_str());
                             continue;
                         }
-                        filenames.push_back(path.c_str());
+                        filenames.push_back(path.string().c_str());
                     }
                     if (!filenames.isEmpty()) {
                         CVLog::Print("Adding %d textured mesh(es) to scene",
@@ -900,15 +960,15 @@ void AutomaticReconstructionWidget::RenderResult() {
                 }
                 // Otherwise, add non-textured meshes
                 else if (!meshing_paths_.empty()) {
-                    for (const std::string& path : meshing_paths_) {
+                    for (const std::filesystem::path& path : meshing_paths_) {
                         if (!ExistsFile(path)) {
                             CVLog::Warning(
                                     "[RenderResult] Ignore invalid meshed "
                                     "model for file [%s]",
-                                    path.c_str());
+                                    path.string().c_str());
                             continue;
                         }
-                        filenames.push_back(path.c_str());
+                        filenames.push_back(path.string().c_str());
                     }
                     if (!filenames.isEmpty()) {
                         CVLog::Print("Adding %d mesh(es) to scene",

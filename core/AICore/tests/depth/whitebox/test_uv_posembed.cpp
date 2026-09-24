@@ -8,8 +8,9 @@
 #include <cstdlib>
 #include <vector>
 
-#include "parity.hpp"
-#include "uv_posembed.hpp"
+#include "tasks/depth/uv_posembed.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 int main() {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");
     if (!base) return 77;

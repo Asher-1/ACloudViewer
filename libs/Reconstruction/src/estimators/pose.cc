@@ -31,51 +31,24 @@
 
 #include "estimators/pose.h"
 
-#include "base/camera_models.h"
-#include "base/cost_functions.h"
-#include "base/essential_matrix.h"
-#include "base/pose.h"
-#include "estimators/absolute_pose.h"
-#include "estimators/essential_matrix.h"
-#include "optim/bundle_adjustment.h"
-#include "util/matrix.h"
+#include "estimators/cost_functions/cost_functions.h"
+#include "estimators/cost_functions/manifold.h"
+#include "estimators/cost_functions/pose_prior.h"
+#include "estimators/cost_functions/reprojection_error.h"
+#include "estimators/solvers/absolute_pose.h"
+#include "estimators/solvers/essential_matrix.h"
+#include "estimators/bundle_adjustment.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/pose.h"
+#include "math/matrix.h"
 #include "util/misc.h"
-#include "util/threading.h"
 
 namespace colmap {
-namespace {
 
-typedef LORANSAC<P3PEstimator, EPNPEstimator> AbsolutePoseRANSAC;
-
-void EstimateAbsolutePoseKernel(const Camera& camera,
-                                const double focal_length_factor,
-                                const std::vector<Eigen::Vector2d>& points2D,
-                                const std::vector<Eigen::Vector3d>& points3D,
-                                const RANSACOptions& options,
-                                AbsolutePoseRANSAC::Report* report) {
-    // Scale the focal length by the given factor.
-    Camera scaled_camera = camera;
-    const std::vector<size_t>& focal_length_idxs = camera.FocalLengthIdxs();
-    for (const size_t idx : focal_length_idxs) {
-        scaled_camera.Params(idx) *= focal_length_factor;
-    }
-
-    // Normalize image coordinates with current camera hypothesis.
-    std::vector<Eigen::Vector2d> points2D_N(points2D.size());
-    for (size_t i = 0; i < points2D.size(); ++i) {
-        points2D_N[i] = scaled_camera.ImageToWorld(points2D[i]);
-    }
-
-    // Estimate pose for given focal length.
-    auto custom_options = options;
-    custom_options.max_error =
-            scaled_camera.ImageToWorldThreshold(options.max_error);
-    AbsolutePoseRANSAC ransac(custom_options);
-    *report = ransac.Estimate(points2D_N, points3D);
-}
-
-}  // namespace
-
+// Upstream parity (d3ccaf35 estimators/pose.cc): the RANSAC layer decides the
+// inlier set and the initial pose through the ray-based PoseLib P3P/EPNP (or
+// P4PF when the focal length is unknown); the downstream refinement then
+// converges from the same starting point.
 bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
                           const std::vector<Eigen::Vector2d>& points2D,
                           const std::vector<Eigen::Vector3d>& points3D,
@@ -84,75 +57,73 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
                           Camera* camera,
                           size_t* num_inliers,
                           std::vector<char>* inlier_mask) {
+    THROW_CHECK_EQ(points2D.size(), points3D.size());
     options.Check();
 
-    std::vector<double> focal_length_factors;
-    if (options.estimate_focal_length) {
-        // Generate focal length factors using a quadratic function,
-        // such that more samples are drawn for small focal lengths
-        focal_length_factors.reserve(options.num_focal_length_samples + 1);
-        const double fstep = 1.0 / options.num_focal_length_samples;
-        const double fscale =
-                options.max_focal_length_ratio - options.min_focal_length_ratio;
-        for (double f = 0; f <= 1.0; f += fstep) {
-            focal_length_factors.push_back(options.min_focal_length_ratio +
-                                           fscale * f * f);
-        }
-    } else {
-        focal_length_factors.reserve(1);
-        focal_length_factors.push_back(1);
-    }
-
-    std::vector<std::future<void>> futures;
-    futures.resize(focal_length_factors.size());
-    std::vector<typename AbsolutePoseRANSAC::Report,
-                Eigen::aligned_allocator<typename AbsolutePoseRANSAC::Report>>
-            reports;
-    reports.resize(focal_length_factors.size());
-
-    ThreadPool thread_pool(
-            std::min(options.num_threads,
-                     static_cast<int>(focal_length_factors.size())));
-
-    for (size_t i = 0; i < focal_length_factors.size(); ++i) {
-        futures[i] = thread_pool.AddTask(
-                EstimateAbsolutePoseKernel, *camera, focal_length_factors[i],
-                points2D, points3D, options.ransac_options, &reports[i]);
-    }
-
-    double focal_length_factor = 0;
-    Eigen::Matrix3x4d proj_matrix;
     *num_inliers = 0;
     inlier_mask->clear();
 
-    // Find best model among all focal lengths.
-    for (size_t i = 0; i < focal_length_factors.size(); ++i) {
-        futures[i].get();
-        const auto report = reports[i];
-        if (report.success && report.support.num_inliers > *num_inliers) {
+    bool success = false;
+    if (options.estimate_focal_length) {
+        // The 2D observations are expected to be centered on the principal
+        // point; the solver estimates pose and focal length jointly.
+        const Eigen::Vector2d principal_point(camera->PrincipalPointX(),
+                                              camera->PrincipalPointY());
+        std::vector<Eigen::Vector2d> points2D_centered(points2D.size());
+        for (size_t i = 0; i < points2D.size(); ++i) {
+            points2D_centered[i] = points2D[i] - principal_point;
+        }
+        const std::vector<size_t> focal_length_idxs =
+                camera->FocalLengthIdxs();
+        RANSAC<P4PFEstimator> ransac(
+                options.ransac_options,
+                P4PFEstimator(/*share_focal_length=*/
+                              focal_length_idxs.size() == 1));
+        auto report = ransac.Estimate(points2D_centered, points3D);
+        if (report.success) {
+            const Eigen::Quaterniond quat(
+                    report.model.cam_from_world.leftCols<3>());
+            *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
+            *tvec = report.model.cam_from_world.col(3);
+            for (size_t k = 0; k < focal_length_idxs.size(); ++k) {
+                camera->Params(focal_length_idxs[k]) =
+                        report.model.focal_lengths[k];
+            }
             *num_inliers = report.support.num_inliers;
-            proj_matrix = report.model;
-            *inlier_mask = report.inlier_mask;
-            focal_length_factor = focal_length_factors[i];
+            *inlier_mask = std::move(report.inlier_mask);
+            success = true;
+        }
+    } else {
+        std::vector<P3PEstimator::X_t> points2D_with_rays(points2D.size());
+        for (size_t i = 0; i < points2D.size(); ++i) {
+            points2D_with_rays[i].image_point = points2D[i];
+            points2D_with_rays[i].camera_ray =
+                    camera->CamRayFromImg(points2D[i])
+                            .value_or(Eigen::Vector3d::Zero());
+        }
+
+        ImgFromCamFunc img_from_cam_func =
+                [camera](const Eigen::Vector3d& cam_point) {
+                    return camera->ImgFromCam(cam_point);
+                };
+        LORANSAC<P3PEstimator, EPNPEstimator> ransac(
+                options.ransac_options,
+                P3PEstimator(img_from_cam_func),
+                EPNPEstimator(img_from_cam_func));
+        auto report = ransac.Estimate(points2D_with_rays, points3D);
+        if (report.success) {
+            const Eigen::Quaterniond quat(report.model.leftCols<3>());
+            *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
+            *tvec = report.model.col(3);
+            *num_inliers = report.support.num_inliers;
+            *inlier_mask = std::move(report.inlier_mask);
+            success = true;
         }
     }
 
-    if (*num_inliers == 0) {
+    if (!success) {
         return false;
     }
-
-    // Scale output camera with best estimated focal length.
-    if (options.estimate_focal_length && *num_inliers > 0) {
-        const std::vector<size_t>& focal_length_idxs =
-                camera->FocalLengthIdxs();
-        for (const size_t idx : focal_length_idxs) {
-            camera->Params(idx) *= focal_length_factor;
-        }
-    }
-
-    // Extract pose parameters.
-    *qvec = RotationMatrixToQuaternion(proj_matrix.leftCols<3>());
-    *tvec = proj_matrix.rightCols<1>();
 
     if (IsNaN(*qvec) || IsNaN(*tvec)) {
         return false;
@@ -161,150 +132,150 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
     return true;
 }
 
-size_t EstimateRelativePose(const RANSACOptions& ransac_options,
-                            const std::vector<Eigen::Vector2d>& points1,
-                            const std::vector<Eigen::Vector2d>& points2,
-                            Eigen::Vector4d* qvec,
-                            Eigen::Vector3d* tvec) {
-    RANSAC<EssentialMatrixFivePointEstimator> ransac(ransac_options);
-    const auto report = ransac.Estimate(points1, points2);
+bool EstimateRelativePose(
+        const RANSACOptions& ransac_options,
+        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+        Rigid3d* cam2_from_cam1,
+        size_t* num_inliers,
+        std::vector<char>* inlier_mask) {
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), cam_rays2_with_jac.size());
+
+    LORANSAC<EssentialMatrixTangentSampsonEstimator,
+             EssentialMatrixTangentSampsonEstimator>
+            ransac(ransac_options);
+    auto report = ransac.Estimate(cam_rays1_with_jac, cam_rays2_with_jac);
 
     if (!report.success) {
-        return 0;
+        return false;
     }
 
-    std::vector<Eigen::Vector2d> inliers1(report.support.num_inliers);
-    std::vector<Eigen::Vector2d> inliers2(report.support.num_inliers);
-
-    size_t j = 0;
-    for (size_t i = 0; i < points1.size(); ++i) {
+    std::vector<Eigen::Vector3d> inlier_cam_rays1;
+    std::vector<Eigen::Vector3d> inlier_cam_rays2;
+    inlier_cam_rays1.reserve(report.support.num_inliers);
+    inlier_cam_rays2.reserve(report.support.num_inliers);
+    for (size_t i = 0; i < cam_rays1_with_jac.size(); ++i) {
         if (report.inlier_mask[i]) {
-            inliers1[j] = points1[i];
-            inliers2[j] = points2[i];
-            j += 1;
+            inlier_cam_rays1.push_back(cam_rays1_with_jac[i].ray);
+            inlier_cam_rays2.push_back(cam_rays2_with_jac[i].ray);
         }
     }
 
-    Eigen::Matrix3d R;
+    std::vector<int> valid_indices;
+    PoseFromEssentialMatrix(report.model,
+                            inlier_cam_rays1,
+                            inlier_cam_rays2,
+                            cam2_from_cam1,
+                            &valid_indices);
 
-    std::vector<Eigen::Vector3d> points3D;
-    PoseFromEssentialMatrix(report.model, inliers1, inliers2, &R, tvec,
-                            &points3D);
-
-    *qvec = RotationMatrixToQuaternion(R);
-
-    if (IsNaN(*qvec) || IsNaN(*tvec)) {
-        return 0;
+    if (cam2_from_cam1->rotation().coeffs().array().isNaN().any() ||
+        cam2_from_cam1->translation().array().isNaN().any()) {
+        return false;
     }
 
-    return points3D.size();
+    *num_inliers = report.support.num_inliers;
+    *inlier_mask = std::move(report.inlier_mask);
+
+    return !valid_indices.empty();
 }
 
 bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
                         const std::vector<char>& inlier_mask,
                         const std::vector<Eigen::Vector2d>& points2D,
                         const std::vector<Eigen::Vector3d>& points3D,
-                        Eigen::Vector4d* qvec,
-                        Eigen::Vector3d* tvec,
-                        Camera* camera) {
+                        Rigid3d* cam_from_world,
+                        Camera* camera,
+                        Eigen::Matrix6d* cam_from_world_cov) {
     CHECK_EQ(inlier_mask.size(), points2D.size());
     CHECK_EQ(points2D.size(), points3D.size());
     options.Check();
 
-    ceres::LossFunction* loss_function =
-            new ceres::CauchyLoss(options.loss_function_scale);
+    const auto loss_function =
+            std::make_unique<ceres::CauchyLoss>(options.loss_function_scale);
 
-    double* camera_params_data = camera->ParamsData();
-    double* qvec_data = qvec->data();
-    double* tvec_data = tvec->data();
+    // CostFunction assumes unit quaternions.
+    cam_from_world->rotation().normalize();
 
-    std::vector<Eigen::Vector3d> points3D_copy = points3D;
-
-    ceres::Problem problem;
+    ceres::Problem::Options problem_options;
+    problem_options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+    ceres::Problem problem(problem_options);
 
     for (size_t i = 0; i < points2D.size(); ++i) {
         // Skip outlier observations
         if (!inlier_mask[i]) {
             continue;
         }
+        problem.AddResidualBlock(
+                CreateCameraCostFunction<ReprojErrorConstantPoint3DCostFunctor>(
+                        camera->ModelId(), points2D[i], points3D[i]),
+                loss_function.get(),
+                cam_from_world->params.data(),
+                camera->ParamsData());
+    }
 
-        ceres::CostFunction* cost_function = nullptr;
-
-        switch (camera->ModelId()) {
-#define CAMERA_MODEL_CASE(CameraModel)                                     \
-    case CameraModel::kModelId:                                            \
-        cost_function = BundleAdjustmentCostFunction<CameraModel>::Create( \
-                points2D[i]);                                              \
-        break;
-
-            CAMERA_MODEL_SWITCH_CASES
-
-#undef CAMERA_MODEL_CASE
-        }
-
-        problem.AddResidualBlock(cost_function, loss_function, qvec_data,
-                                 tvec_data, points3D_copy[i].data(),
-                                 camera_params_data);
-        problem.SetParameterBlockConstant(points3D_copy[i].data());
+    if (options.use_position_prior) {
+        problem.AddResidualBlock(
+                CovarianceWeightedCostFunctor<
+                        AbsolutePosePositionPriorCostFunctor>::Create(
+                        options.position_prior_covariance,
+                        options.position_prior_in_world),
+                nullptr,
+                cam_from_world->params.data());
     }
 
     if (problem.NumResiduals() > 0) {
-        // Quaternion parameterization.
-        *qvec = NormalizeQuaternion(*qvec);
-        SetQuaternionManifold(&problem, qvec_data);
-        // ceres::LocalParameterization* quaternion_parameterization =
-        //     new ceres::QuaternionParameterization;
-        // problem.SetParameterization(qvec_data, quaternion_parameterization);
-
-        // Camera parameterization.
-        if (!options.refine_focal_length && !options.refine_extra_params) {
-            problem.SetParameterBlockConstant(camera->ParamsData());
-        } else {
-            // Always set the principal point as fixed.
-            std::vector<int> camera_params_const;
-            const std::vector<size_t>& principal_point_idxs =
-                    camera->PrincipalPointIdxs();
-            camera_params_const.insert(camera_params_const.end(),
-                                       principal_point_idxs.begin(),
-                                       principal_point_idxs.end());
-
-            if (!options.refine_focal_length) {
-                const std::vector<size_t>& focal_length_idxs =
-                        camera->FocalLengthIdxs();
-                camera_params_const.insert(camera_params_const.end(),
-                                           focal_length_idxs.begin(),
-                                           focal_length_idxs.end());
-            }
-
-            if (!options.refine_extra_params) {
-                const std::vector<size_t>& extra_params_idxs =
-                        camera->ExtraParamsIdxs();
-                camera_params_const.insert(camera_params_const.end(),
-                                           extra_params_idxs.begin(),
-                                           extra_params_idxs.end());
-            }
-
-            if (camera_params_const.size() == camera->NumParams()) {
+        if (problem.HasParameterBlock(camera->ParamsData())) {
+            // Camera parameterization.
+            if (!options.refine_focal_length && !options.refine_extra_params) {
                 problem.SetParameterBlockConstant(camera->ParamsData());
             } else {
-                SetSubsetManifold(static_cast<int>(camera->NumParams()),
-                                  camera_params_const, &problem,
-                                  camera->ParamsData());
-                // ceres::SubsetParameterization* camera_params_parameterization
-                // =
-                //     new ceres::SubsetParameterization(
-                //         static_cast<int>(camera->NumParams()),
-                //         camera_params_const);
-                // problem.SetParameterization(camera->ParamsData(),
-                //                             camera_params_parameterization);
+                // Always set the principal point as fixed.
+                std::vector<int> camera_params_const;
+                const std::vector<size_t>& principal_point_idxs =
+                        camera->PrincipalPointIdxs();
+                camera_params_const.insert(camera_params_const.end(),
+                                           principal_point_idxs.begin(),
+                                           principal_point_idxs.end());
+
+                if (!options.refine_focal_length) {
+                    const std::vector<size_t>& focal_length_idxs =
+                            camera->FocalLengthIdxs();
+                    camera_params_const.insert(camera_params_const.end(),
+                                               focal_length_idxs.begin(),
+                                               focal_length_idxs.end());
+                }
+
+                if (!options.refine_extra_params) {
+                    const std::vector<size_t>& extra_params_idxs =
+                            camera->ExtraParamsIdxs();
+                    camera_params_const.insert(camera_params_const.end(),
+                                               extra_params_idxs.begin(),
+                                               extra_params_idxs.end());
+                }
+
+                if (camera_params_const.size() == camera->NumParams()) {
+                    problem.SetParameterBlockConstant(camera->ParamsData());
+                } else {
+                    SetManifold(&problem, camera->ParamsData(),
+                                CreateSubsetManifold(
+                                        static_cast<int>(camera->NumParams()),
+                                        camera_params_const));
+                }
             }
         }
+
+        // Upstream parity (d3ccaf35): the pose is a single Rigid3d block
+        // under a product (EigenQuaternion + Euclidean) manifold.
+        SetManifold(&problem, cam_from_world->params.data(),
+                    CreateProductManifold(CreateEigenQuaternionManifold(),
+                                          CreateEuclideanManifold<3>()));
     }
 
     ceres::Solver::Options solver_options;
     solver_options.gradient_tolerance = options.gradient_tolerance;
     solver_options.max_num_iterations = options.max_num_iterations;
     solver_options.linear_solver_type = ceres::DENSE_QR;
+    solver_options.logging_type = ceres::LoggingType::SILENT;
 
     // The overhead of creating threads is too large.
     solver_options.num_threads = 1;
@@ -315,16 +286,31 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
     ceres::Solver::Summary summary;
     ceres::Solve(solver_options, &problem, &summary);
 
-    if (solver_options.minimizer_progress_to_stdout) {
-        std::cout << std::endl;
-    }
-
-    if (options.print_summary) {
+    if (options.print_summary || VLOG_IS_ON(1)) {
         PrintHeading2("Pose refinement report");
         PrintSolverSummary(summary);
     }
 
-    return summary.IsSolutionUsable();
+    if (!summary.IsSolutionUsable()) {
+        return false;
+    }
+
+    if (problem.NumResiduals() > 0 && cam_from_world_cov != nullptr) {
+        ceres::Covariance::Options cov_options;
+        ceres::Covariance covariance(cov_options);
+        std::vector<const double*> parameter_blocks = {
+                cam_from_world->params.data()};
+        if (!covariance.Compute(parameter_blocks, &problem)) {
+            return false;
+        }
+        // The rotation covariance is estimated in the tangent space of the
+        // quaternion, which corresponds to the 3-DoF axis-angle local
+        // parameterization.
+        covariance.GetCovarianceMatrixInTangentSpace(
+                parameter_blocks, cam_from_world_cov->data());
+    }
+
+    return true;
 }
 
 bool RefineRelativePose(const ceres::Solver::Options& options,
@@ -357,7 +343,7 @@ bool RefineRelativePose(const ceres::Solver::Options& options,
     //         new ceres::HomogeneousVectorParameterization(3);
     // problem.SetParameterization(tvec->data(), homogeneous_parameterization);
 
-    SetQuaternionManifold(&problem, qvec->data());
+    SetQuaternionManifoldWxyz(&problem, qvec->data());
     SetSphereManifold<3>(&problem, tvec->data());
 
     ceres::Solver::Summary summary;

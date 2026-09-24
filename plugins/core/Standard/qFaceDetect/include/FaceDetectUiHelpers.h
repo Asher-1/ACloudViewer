@@ -64,7 +64,7 @@ inline void setupTwoColumnFormGrid(
 
 inline void setupCompactMainLayout(QVBoxLayout* layout) {
     if (!layout) return;
-    layout->setContentsMargins(4, 8, 4, 2);
+    layout->setContentsMargins(4, 4, 4, 2);
     layout->setSpacing(4);
 }
 
@@ -74,7 +74,7 @@ inline void applyTabWidgetPaneStyle(QTabWidget* tabs) {
     if (!tabs) return;
     tabs->setDocumentMode(false);
     tabs->setStyleSheet(QStringLiteral(
-            "QTabWidget::pane { border: 0; padding: 8px 4px 4px 4px; top: 0px; "
+            "QTabWidget::pane { border: 0; padding: 4px 4px 2px 4px; top: 0px; "
             "}"
             "QTabBar::tab { padding: 4px 10px; min-height: 18px; }"));
 }

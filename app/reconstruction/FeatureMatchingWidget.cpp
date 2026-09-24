@@ -8,10 +8,10 @@
 #include "FeatureMatchingWidget.h"
 
 #include "ThreadControlWidget.h"
+#include "controllers/option_manager.h"
 #include "feature/matching.h"
 #include "ui/options_widget.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
@@ -68,7 +68,7 @@ public:
     void Run() override;
 
 private:
-    std::string match_list_path_;
+    std::filesystem::path match_list_path_;
     QComboBox* match_type_cb_;
 };
 
@@ -160,6 +160,9 @@ SequentialMatchingTab::SequentialMatchingTab(QWidget* parent,
     options_widget_->AddOptionInt(
             &options_->sequential_matching->loop_detection_num_images,
             "loop_detection_num_images");
+    options_widget_->AddOptionInt(
+            &options_->sequential_matching->loop_detection_min_index_distance,
+            "loop_detection_min_index_distance", 0);
     options_widget_->AddOptionInt(
             &options_->sequential_matching
                      ->loop_detection_num_nearest_neighbors,

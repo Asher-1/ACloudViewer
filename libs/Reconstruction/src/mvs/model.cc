@@ -31,17 +31,17 @@
 
 #include "mvs/model.h"
 
-#include "base/camera_models.h"
-#include "base/pose.h"
-#include "base/projection.h"
-#include "base/reconstruction.h"
-#include "base/triangulation.h"
+#include "sensor/models.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
+#include "scene/reconstruction.h"
+#include "geometry/triangulation.h"
 #include "util/misc.h"
 
 namespace colmap {
 namespace mvs {
 
-void Model::Read(const std::string& path, const std::string& format) {
+void Model::Read(const std::filesystem::path& path, const std::string& format) {
   auto format_lower_case = format;
   StringToLower(&format_lower_case);
   if (format_lower_case == "colmap") {
@@ -53,7 +53,7 @@ void Model::Read(const std::string& path, const std::string& format) {
   }
 }
 
-void Model::ReadFromCOLMAP(const std::string& path,
+void Model::ReadFromCOLMAP(const std::filesystem::path& path,
                            const std::string& sparse_path,
                            const std::string& images_path) {
   Reconstruction reconstruction;
@@ -69,9 +69,13 @@ void Model::ReadFromCOLMAP(const std::string& path,
     const std::string image_path = JoinPaths(path, images_path, image.Name());
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> K =
         camera.CalibrationMatrix().cast<float>();
+    // Upstream parity: read the pose through the rig-aware CamFromWorld()
+    // accessor (frame-wired images carry their pose in the frame after
+    // Reconstruction::Read; the legacy qvec/tvec buffers are not populated
+    // by the read path).
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R =
-        QuaternionToRotationMatrix(image.Qvec()).cast<float>();
-    const Eigen::Vector3f T = image.Tvec().cast<float>();
+        image.CamFromWorld().rotation().toRotationMatrix().cast<float>();
+    const Eigen::Vector3f T = image.CamFromWorld().translation().cast<float>();
 
     images.emplace_back(image_path, camera.Width(), camera.Height(), K.data(),
                         R.data(), T.data());
@@ -161,7 +165,7 @@ void Model::LoadVisDat(const std::string& path) {
   }
 }
 
-void Model::ReadFromPMVS(const std::string& path) {
+void Model::ReadFromPMVS(const std::filesystem::path& path) {
   if (ReadFromBundlerPMVS(path)) {
     return;
   } else if (ReadFromRawPMVS(path)) {
@@ -340,7 +344,7 @@ std::vector<std::map<int, float>> Model::ComputeTriangulationAngles(
   return triangulation_angles;
 }
 
-bool Model::ReadFromBundlerPMVS(const std::string& path) {
+bool Model::ReadFromBundlerPMVS(const std::filesystem::path& path) {
   const std::string bundle_file_path = JoinPaths(path, "bundle.rd.out");
 
   if (!ExistsFile(bundle_file_path)) {
@@ -418,7 +422,7 @@ bool Model::ReadFromBundlerPMVS(const std::string& path) {
   return true;
 }
 
-bool Model::ReadFromRawPMVS(const std::string& path) {
+bool Model::ReadFromRawPMVS(const std::filesystem::path& path) {
   const std::string vis_dat_path = JoinPaths(path, "vis.dat");
   if (!ExistsFile(vis_dat_path)) {
     return false;

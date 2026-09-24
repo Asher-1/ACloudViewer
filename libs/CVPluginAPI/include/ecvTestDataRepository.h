@@ -13,24 +13,26 @@
 #include <functional>
 
 #include "CVPluginAPI.h"
+#include "ecvAssetIntegrity.h"
 
 class ecvModelDownloader;
 
 /**
- * @brief Unified test data repository for reconstruction plugins.
+ * @brief Unified test data repository for application plugins.
  *
  * Provides a single source of truth for downloading, caching, and accessing
- * test datasets (Monstree, FriendsFaces, etc.) used by qFreeSplatter, qDA3,
- * qlightglue, and other reconstruction plugins.
+ * test datasets used by reconstruction and AI inference plugins.
  *
  * Directory structure:
  *   ~/cloudViewer_data/
  *     ├── download/          # Raw zip files
  *     │   ├── dataset_monstree.zip
- *     │   └── friends_faces.zip
+ *     │   ├── friends_faces.zip
+ *     │   └── objects_detection_data.zip
  *     └── extract/           # Extracted datasets
  *         ├── dataset_monstree/
- *         └── friends_faces/
+ *         ├── friends_faces/
+ *         └── objects_detection_data/
  */
 class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
     Q_OBJECT
@@ -38,19 +40,40 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,     ///< Monstree dataset for image-based reconstruction
-        FriendsFaces  ///< FriendsFaces video for face capture
+        Monstree,          ///< Monstree dataset for image-based reconstruction
+        FriendsFaces,      ///< FriendsFaces video for face capture
+        ObjectsDetection,  ///< Shared images/videos for AI inference plugins
+        Image2Mesh,        ///< Single-image-to-3D samples (qTrellis etc.)
+        SAM3,              ///< SAM3 segmentation images + tracking videos
+        GeneralKeypointDetection,  ///< Official GKDT demo images (qGKD)
+        LingbotMapCourthouse,      ///< LingBot-Map courthouse stream (outdoor)
+        LingbotMapLoop,            ///< LingBot-Map loop-closure stream (indoor)
+        LingbotMapOxford,  ///< LingBot-Map Oxford Spires stream (outdoor)
+        LingbotMapOxfordSkyMasks,  ///< Cached native sky masks for oxford
+        LingbotMapUniversity,      ///< LingBot-Map university stream (outdoor)
+        LingbotMapUniversitySkyMasks,  ///< Cached sky masks for university
+        /** LingBot-Map official long-model demo videos (single-file mp4
+         *  assets, no extraction): drive = N=1050 @ fps10 / auto kf=4,
+         *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
+         *  long_real campaign runs with the long-model GGUFs. */
+        LingbotMapDriveVideo,       ///< drive_frames.mp4 (long-model dataset)
+        LingbotMapLingboWorldVideo  ///< lingbo_world_frames.mp4 (long model)
     };
 
     /** Dataset metadata. */
     struct DatasetInfo {
         Dataset kind;
-        QString displayName;     ///< Human-readable name
-        QString zipFileName;     ///< Name of the zip file
-        QString extractDirName;  ///< Directory name after extraction
-        QString downloadUrl;     ///< Remote URL
-        QString expectedMd5;     ///< Expected MD5 hash
-        qint64 expectedSize;     ///< Expected file size in bytes
+        QString displayName;               ///< Human-readable name
+        QString zipFileName;               ///< Name of the zip file
+        QString extractDirName;            ///< Directory name after extraction
+        QString downloadUrl;               ///< Remote URL
+        ecvAssetIntegrity::Anchor anchor;  ///< Content identity pinned in
+                                           ///< source; verified once at
+                                           ///< ingestion (streamed digest)
+                                           ///< and recorded in the
+                                           ///< <zip>.cvintegrity ledger —
+                                           ///< later access checks are
+                                           ///< stat-only.
     };
 
     /** Returns the singleton instance. */
@@ -74,19 +97,21 @@ public:
     /** Returns the path where a dataset should be extracted. */
     static QString extractPath(Dataset kind);
 
-    /** Returns true if the dataset is extracted or a valid zip is cached. */
-    bool isDatasetAvailable(Dataset kind) const;
+    /** Find one uniquely named file below a dataset's extraction directory. */
+    static QString findDatasetFile(Dataset kind, const QString& fileName);
 
-    /**
-     * @brief Verify zip file integrity (size + MD5).
-     * @param zipPath Path to the zip file
-     * @param expectedMd5 Expected MD5 hash (empty = skip MD5 check)
-     * @param expectedMinSize Minimum expected file size (0 = skip size check)
-     * @return true if file exists, passes size check, and MD5 matches
-     */
-    static bool verifyZipIntegrity(const QString& zipPath,
-                                   const QString& expectedMd5,
-                                   qint64 expectedMinSize = 0);
+    /** True when the dataset is a single-file asset (the downloaded file
+     *  itself is the content; no zip extraction step). */
+    static bool isSingleFileDataset(Dataset kind);
+
+    /** List the sample images of a GeneralKeypointDetection bundle root
+     *  (the official GKDT demo images, sorted case-insensitively). */
+    static QStringList getGeneralKeypointDetectionImages(
+            const QString& bundleRoot);
+
+    /** Returns true if the dataset is extracted or a verified zip is
+     *  cached. */
+    bool isDatasetAvailable(Dataset kind) const;
 
     /**
      * @brief Start downloading a dataset.
@@ -142,6 +167,48 @@ public:
      * @return Absolute path to the video file, or empty if not found
      */
     static QString findFriendsVideo(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample images from the Image2Mesh dataset.
+     * Scans <root>/examples_images for the main single-image-to-3D samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getImage2MeshImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample images from the SAM3 dataset.
+     * Scans <root>/images for segmentation samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSamImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the SAM 3D Objects scene images from the Image2Mesh bundle.
+     * Scans <root>/sam3d_images (the official sam-3d-objects demo scenes
+     * shipped inside image_to_mesh_data.zip; RGBA image.png with the object
+     * mask embedded as alpha).
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSam3dObjectImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample videos from the SAM3 dataset.
+     * Scans <root>/videos for tracking samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute video file paths
+     */
+    static QStringList getSamVideos(const QString& bundleRoot);
+
+    /** @brief List the stream frames of a LingBot-Map scene bundle root
+     *  (ordered 000000.png ... image sequence, sorted case-insensitively).
+     *  Used for both the scene image datasets and the sky-mask datasets.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getLingbotMapImages(const QString& bundleRoot);
 
 signals:
     /** Emitted during download with progress (0-100). */

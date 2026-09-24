@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "engine.hpp"
-#include "image_io.hpp"
-#include "parity.hpp"
-#include "quantize.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tasks/depth/quantize.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 static double corr(const std::vector<float>& a, const std::vector<float>& b) {
     double ma = 0, mb = 0;
@@ -45,7 +45,7 @@ static bool run_one(const char* gguf,
         std::fprintf(stderr, "quantize %s failed\n", type.c_str());
         return false;
     }
-    auto eng = aicore::depth::Engine::load(out, 0);
+    auto eng = aicore::depth::Engine::load(out, {});
     if (!eng) {
         std::remove(out.c_str());
         return false;

@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "RMBG Remove Background",
+  "icon": ":/CC/plugin/qRMBG/images/qRMBG.svg",
+  "description": "RMBG-2.0 (BiRefNet-Swin-L) background removal with transparent output via native GGML inference.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "RMBG-2.0-GGML: https://github.com/Asher-1/RMBG-2.0-GGML" },
+    { "text": "BRIA RMBG-2.0: https://huggingface.co/briaai/RMBG-2.0" },
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/trellis2-ggml" }
+  ]
+}

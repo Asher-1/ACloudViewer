@@ -7,13 +7,15 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
-#include "base/reconstruction_manager.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
+#include "controllers/option_manager.h"
+#include "mvs/mesh_postprocessing.h"
 #include "retrieval/resources.h"
-#include "util/option_manager.h"
+#include "scene/reconstruction_manager.h"
 #include "util/ply_point_filter.h"
 #include "util/threading.h"
 
@@ -23,20 +25,22 @@ class AutomaticReconstructionController : public Thread {
 public:
     enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
     enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
-    enum class Mesher { POISSON, DELAUNAY };
+    enum class Mesher { POISSON, DELAUNAY, ADVANCING_FRONT };
 
     struct Options {
         // The path to the workspace folder in which all results are stored.
-        std::string workspace_path;
+        std::filesystem::path workspace_path;
 
         // The path to the image folder which are used as input.
-        std::string image_path;
+        std::filesystem::path image_path;
 
         // The path to the mask folder which are used as input.
-        std::string mask_path;
+        std::filesystem::path mask_path;
 
         // The path to the vocabulary tree for feature matching.
-        std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        // Upstream parity (d3ccaf35): an empty path selects the default
+        // vocabulary tree for the feature type at match time.
+        std::filesystem::path vocab_tree_path;
 
         // The type of input data used to choose optimal mapper settings.
         DataType data_type = DataType::INDIVIDUAL;
@@ -64,11 +68,19 @@ public:
         Mesher mesher = Mesher::POISSON;
 #endif
 
-        // Whether to perform surface meshing (Poisson / Delaunay).
+        // Whether to perform surface meshing.
         bool meshing = true;
 
         // Whether to perform surface texturing.
         bool texturing = true;
+
+        // Which texturing engine to run after meshing (product decision D1).
+        // MESH_TEXTUREUR is the upstream mesh_texturer equivalent flow
+        // (MeshTextureMapping atlas via TexturingReconstruction) and is the
+        // default; IMAGE_TEXTUREUR selects the fork's own MvsTexturing
+        // integration engine (mvs/texturing.h).
+        enum class TexturingType { MESH_TEXTUREUR, IMAGE_TEXTUREUR };
+        TexturingType texturing_type = TexturingType::MESH_TEXTUREUR;
 
         // The number of threads to use in all stages.
         int num_threads = -1;
@@ -128,6 +140,10 @@ public:
 
         // Optional voxel + SOR cleanup on fused.ply before Poisson meshing.
         FusedPointFilterOptions fused_point_filter;
+
+        // Shared meshoptimizer cleanup and boundary-preserving smoothing after
+        // surface meshing and before texturing. Enabled by default.
+        mvs::MeshPostProcessingOptions mesh_post_processing;
     };
 
     AutomaticReconstructionController(
@@ -146,9 +162,10 @@ protected:
     virtual void OnFusedPointsGenerated(size_t reconstruction_idx,
                                         const std::vector<PlyPoint>& points) {}
     virtual void OnMeshGenerated(size_t reconstruction_idx,
-                                 const std::string& mesh_path) {}
-    virtual void OnTexturedMeshGenerated(size_t reconstruction_idx,
-                                         const std::string& textured_path) {}
+                                 const std::filesystem::path& mesh_path) {}
+    virtual void OnTexturedMeshGenerated(
+            size_t reconstruction_idx,
+            const std::filesystem::path& textured_path) {}
 
     // Protected members for derived classes
     const Options options_;

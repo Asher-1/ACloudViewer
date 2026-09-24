@@ -1,0 +1,14 @@
+diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -845,6 +845,10 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     if (!use_q8 && kernel->ne[3] % 8 != 0) return false;
+     if (use_q8 && (kernel->ne[0] * kernel->ne[1] * kernel->ne[2]) % QK8_0 != 0) return false;
+     if (igemm_env_enabled("GGML_CUDA_DISABLE_IGEMM")) return false;
++    // The F32 IGEMM kernel uses TF32 WMMA on Ampere and later. A direct F32
++    // convolution promises F32 input semantics, so route it through the
++    // existing scalar-F32 fallback instead of silently rounding operands.
++    if (use_f32) return false;
+     // TF32 tensor-core mma exists on Ampere and newer; f16 WMMA on Volta+.
+     const int min_cc = use_f32 ? 800 : 700;
+     if (ggml_cuda_info().devices[ggml_cuda_get_device()].cc < min_cc) return false;
