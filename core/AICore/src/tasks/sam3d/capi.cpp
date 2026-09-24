@@ -10,6 +10,7 @@
 // storage, and reports the common pipeline timing contract. Exceptions from
 // the C++ session are fenced; they never cross this boundary.
 
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -29,14 +30,6 @@ constexpr int kSam3dAbiVersion = AICORE_SAM3D_ABI_VERSION;
 
 }  // namespace
 
-#if defined(_WIN32)
-#include <process.h>
-#define SAM3D_GETPID _getpid
-#else
-#include <unistd.h>
-#define SAM3D_GETPID getpid
-#endif
-
 #include "asset_io.hpp"
 #include "common.hpp"
 #include "common/capi_utils.hpp"
@@ -44,6 +37,7 @@ constexpr int kSam3dAbiVersion = AICORE_SAM3D_ABI_VERSION;
 #include "common/runtime_cleanup.hpp"
 #include "model_catalog.hpp"
 #include "sam3dggml.h"
+#include "scene_assemble.hpp"
 
 // Opaque struct definitions live at global scope so they complete the
 // typedefs declared in the public header (an anonymous-namespace definition
@@ -64,8 +58,9 @@ struct aicore_sam3d_options {
     int gs_portable_attention = 0;
     int disable_moge_cache = 0;
     uint32_t philox_blocks = 0;
-    std::string noise_dir;       // accuracy-diagnostic fixed noise input
-    std::string conditions_out;  // caller-owned condition dump/replay dir
+    std::string noise_dir;          // accuracy-diagnostic fixed noise input
+    std::string conditions_out;     // caller-owned condition dump/replay dir
+    bool scene_attributes = false;  // capture composer interchange attrs
 };
 
 struct aicore_sam3d_ctx {
@@ -86,6 +81,16 @@ struct aicore_sam3d_result {
     std::vector<uint32_t> mesh_triangles;
     int64_t gaussian_count = 0;
     int voxel_count = 0;
+    // Display-ready splat artifacts (in-memory result path).
+    std::vector<float> splat_centers;  // 3 * gaussian_count, world domain
+    std::vector<float> splat_rgb;      // 3 * gaussian_count, 0..1
+    // Scene-composer interchange attributes (scene_attributes contexts).
+    bool has_pose = false;
+    std::array<float, 10> pose{};        // wxyz(4) + translation(3) + scale(3)
+    std::vector<float> splat_sh0;        // 3 * N, raw f_dc
+    std::vector<float> splat_log_scale;  // 3 * N, PLY scale_N
+    std::vector<float> splat_opacity_logit;  // N, PLY opacity
+    std::vector<float> splat_rot_ply;        // 4 * N, PLY rot (unnormalized)
 };
 
 namespace {
@@ -235,19 +240,6 @@ bool rgba_from_views(const aicore_image_view* image,
     return true;
 }
 
-// Light PLY header scan for the Gaussian count export artifact.
-int64_t gaussian_count_from_ply_header(const std::string& path) {
-    FILE* f = std::fopen(path.c_str(), "rb");
-    if (!f) return 0;
-    char buffer[4096] = {0};
-    const size_t n = std::fread(buffer, 1, sizeof(buffer) - 1, f);
-    std::fclose(f);
-    const char* element = std::strstr(buffer, "element vertex ");
-    if (element == nullptr) return 0;
-    const long long parsed = std::strtoll(element + 15, nullptr, 10);
-    return parsed > 0 ? static_cast<int64_t>(parsed) : 0;
-}
-
 void set_timings(aicore_sam3d_ctx* ctx, double e2e_ms) {
     ctx->timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;
     ctx->timings.valid_fields = AICORE_TIMING_E2E;
@@ -256,13 +248,6 @@ void set_timings(aicore_sam3d_ctx* ctx, double e2e_ms) {
     ctx->timings.postprocess_ms = 0.0;
     ctx->timings.serialization_ms = 0.0;
     ctx->timings.e2e_ms = e2e_ms;
-}
-
-std::string mesh_temp_dir() {
-    std::error_code ec;
-    std::filesystem::path base = std::filesystem::temp_directory_path(ec);
-    if (ec) base = std::filesystem::path(".");
-    return (base / ("aicore_sam3d_" + std::to_string(SAM3D_GETPID()))).string();
 }
 
 }  // namespace
@@ -347,6 +332,11 @@ void aicore_sam3d_options_set_conditions_out(aicore_sam3d_options* options,
     if (options && conditions_out) options->conditions_out = conditions_out;
 }
 
+void aicore_sam3d_options_set_scene_attributes(aicore_sam3d_options* options,
+                                               int scene_attributes) {
+    if (options) options->scene_attributes = scene_attributes != 0;
+}
+
 aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
                                          char* err,
                                          size_t err_size) {
@@ -383,6 +373,7 @@ aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
     request.disable_moge_pointmap_cache = options->disable_moge_cache != 0;
     request.noise_dir = options->noise_dir;
     request.conditions_out = options->conditions_out;
+    request.scene_attributes = options->scene_attributes;
 
     ctx->caps = AICORE_SAM3D_CAP_GAUSSIAN;
     {
@@ -439,10 +430,10 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         return nullptr;
     }
     ctx->last_error.clear();
-    if (!out_ply || *out_ply == '\0') {
-        ctx->last_error = "out_ply is required";
-        return nullptr;
-    }
+    // out_ply is optional: the in-memory artifact sink below delivers the
+    // gaussian splats and the mesh without any file round-trip. A non-empty
+    // out_ply keeps the CLI-compatible PLY export (and is still required by
+    // the PBR branch inside the session).
     if ((decode_mesh != 0) && !(ctx->caps & AICORE_SAM3D_CAP_MESH)) {
         ctx->last_error =
                 "mesh decoding requested but slat_decoder_mesh-<dtype>.gguf is "
@@ -461,22 +452,13 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
     request.image_override = rgba;
     request.mask_path.clear();
     request.image_path.clear();
-    request.out_ply = out_ply;
+    request.out_ply = out_ply ? out_ply : "";
+    request.decode_mesh = decode_mesh != 0;
 
-    std::string mesh_dir;
-    if (decode_mesh != 0) {
-        mesh_dir = mesh_temp_dir();
-        std::error_code ec;
-        std::filesystem::create_directories(mesh_dir, ec);
-        if (ec) {
-            ctx->last_error = "failed to create the mesh scratch directory";
-            return nullptr;
-        }
-        request.out_mesh_vertices =
-                (std::filesystem::path(mesh_dir) / "vertices.samt").string();
-        request.out_mesh_faces =
-                (std::filesystem::path(mesh_dir) / "faces.samt").string();
-    }
+    // In-memory artifact sink: no scratch directories, no PLY header re-scan,
+    // no SAMT file round-trip for the mesh.
+    sam3d::Sam3dArtifacts artifacts;
+    request.artifacts = &artifacts;
 
     if (progress != nullptr) {
         request.progress = [progress, user](int stage, int step, int total) {
@@ -503,46 +485,57 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         ctx->last_error = run.error.empty()
                                   ? "native image-to-3D pipeline failed"
                                   : run.error;
-        if (decode_mesh != 0) {
-            std::error_code ec;
-            std::filesystem::remove_all(mesh_dir, ec);
-        }
+        return nullptr;
+    }
+    if (artifacts.gaussian_count <= 0 || artifacts.splat_centers.empty()) {
+        ctx->last_error = "the pipeline delivered no gaussian artifacts";
         return nullptr;
     }
 
     auto result = std::make_unique<aicore_sam3d_result>();
-    result->gaussian_count = gaussian_count_from_ply_header(out_ply);
+    result->gaussian_count = artifacts.gaussian_count;
+    result->splat_centers = std::move(artifacts.splat_centers);
+    result->splat_rgb = std::move(artifacts.splat_rgb);
+    if (request.scene_attributes) {
+        result->has_pose = artifacts.has_pose;
+        if (artifacts.has_pose) {
+            std::copy(artifacts.pose.rotation_wxyz.begin(),
+                      artifacts.pose.rotation_wxyz.end(), result->pose.begin());
+            std::copy(artifacts.pose.translation.begin(),
+                      artifacts.pose.translation.end(),
+                      result->pose.begin() + 4);
+            // Official receipt semantics (write_native_pose_json top level /
+            // the upstream scene-assemble input): the per-axis native scale
+            // is collapsed to its uniform mean, exactly like the official
+            // pose_decoder wrapper in inference_utils.py. The composer and
+            // every consumer of this receipt apply the uniform value, so a
+            // composed scene stays comparable with the upstream
+            // scene-assemble flow.
+            const float uniform_scale =
+                    (artifacts.pose.scale[0] + artifacts.pose.scale[1] +
+                     artifacts.pose.scale[2]) /
+                    3.0f;
+            result->pose[7] = uniform_scale;
+            result->pose[8] = uniform_scale;
+            result->pose[9] = uniform_scale;
+        }
+        result->splat_sh0 = std::move(artifacts.splat_sh0);
+        result->splat_log_scale = std::move(artifacts.splat_log_scale);
+        result->splat_opacity_logit = std::move(artifacts.splat_opacity_logit);
+        result->splat_rot_ply = std::move(artifacts.splat_rot_ply);
+    }
 
     if (decode_mesh != 0) {
-        sam3d::RawTensor vertices;
-        sam3d::RawTensor faces;
-        const bool loaded =
-                sam3d::load_raw_tensor(request.out_mesh_vertices, vertices) &&
-                sam3d::load_raw_tensor(request.out_mesh_faces, faces) &&
-                vertices.ne.size() == 2 && vertices.ne[0] == 3 &&
-                vertices.type == GGML_TYPE_F32 && faces.ne.size() == 2 &&
-                faces.ne[0] == 3 && faces.type == GGML_TYPE_I32;
-        if (!loaded) {
-            ctx->last_error = "mesh decoder artifacts are missing or malformed";
-        } else {
-            const int64_t n_vertices = vertices.ne[1];
-            const int64_t n_faces = faces.ne[1];
-            const auto* vertex_data =
-                    reinterpret_cast<const float*>(vertices.data.data());
-            const auto* face_data =
-                    reinterpret_cast<const int32_t*>(faces.data.data());
-            result->has_mesh = true;
-            result->mesh_vertices.assign(vertex_data,
-                                         vertex_data + n_vertices * 3);
-            result->mesh_triangles.reserve(static_cast<size_t>(n_faces) * 3);
-            for (int64_t i = 0; i < n_faces * 3; ++i) {
-                result->mesh_triangles.push_back(
-                        static_cast<uint32_t>(face_data[i]));
-            }
+        if (artifacts.mesh_vertices.empty() ||
+            artifacts.mesh_triangles.empty()) {
+            ctx->last_error =
+                    "mesh decoding was requested but the pipeline delivered no "
+                    "mesh artifacts";
+            return nullptr;
         }
-        std::error_code ec;
-        std::filesystem::remove_all(mesh_dir, ec);
-        if (!ctx->last_error.empty()) return nullptr;
+        result->has_mesh = true;
+        result->mesh_vertices = std::move(artifacts.mesh_vertices);
+        result->mesh_triangles = std::move(artifacts.mesh_triangles);
     }
 
     return result.release();
@@ -587,7 +580,168 @@ int64_t aicore_sam3d_result_gaussian_count(const aicore_sam3d_result* result) {
     return result ? result->gaussian_count : 0;
 }
 
+const float* aicore_sam3d_result_splat_centers(
+        const aicore_sam3d_result* result) {
+    return result && !result->splat_centers.empty()
+                   ? result->splat_centers.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_result_splat_rgb(const aicore_sam3d_result* result) {
+    return result && !result->splat_rgb.empty() ? result->splat_rgb.data()
+                                                : NULL;
+}
+
+int aicore_sam3d_result_has_pose(const aicore_sam3d_result* result) {
+    return result && result->has_pose ? 1 : 0;
+}
+
+const float* aicore_sam3d_result_pose(const aicore_sam3d_result* result) {
+    return result && result->has_pose ? result->pose.data() : NULL;
+}
+
+const float* aicore_sam3d_result_splat_sh0(const aicore_sam3d_result* result) {
+    return result && !result->splat_sh0.empty() ? result->splat_sh0.data()
+                                                : NULL;
+}
+
+const float* aicore_sam3d_result_splat_log_scale(
+        const aicore_sam3d_result* result) {
+    return result && !result->splat_log_scale.empty()
+                   ? result->splat_log_scale.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_result_splat_opacity_logit(
+        const aicore_sam3d_result* result) {
+    return result && !result->splat_opacity_logit.empty()
+                   ? result->splat_opacity_logit.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_result_splat_rot_ply(
+        const aicore_sam3d_result* result) {
+    return result && !result->splat_rot_ply.empty()
+                   ? result->splat_rot_ply.data()
+                   : NULL;
+}
+
 void aicore_sam3d_result_free(aicore_sam3d_result* result) { delete result; }
+
+// ---- Multi-object scene assembly -------------------------------------------
+
+struct aicore_sam3d_scene_result {
+    sam3d::SceneSplatSet splats;
+};
+
+aicore_sam3d_scene_result* aicore_sam3d_scene_assemble(
+        const aicore_sam3d_scene_object* objects,
+        int object_count,
+        int normalize,
+        char* err,
+        size_t err_size) {
+    const auto fail = [&](const std::string& message) {
+        if (err && err_size > 0) {
+            std::snprintf(err, err_size, "%s", message.c_str());
+        }
+        return static_cast<aicore_sam3d_scene_result*>(nullptr);
+    };
+    if (object_count <= 0 || !objects) {
+        return fail("scene assembly requires at least one object");
+    }
+    // Exceptions are fenced here: the composition is pure host math, but the
+    // boundary contract never lets one cross.
+    std::unique_ptr<aicore_sam3d_scene_result> result;
+    try {
+        std::vector<sam3d::SceneObjectInput> inputs(object_count);
+        for (int index = 0; index < object_count; ++index) {
+            const aicore_sam3d_scene_object& src = objects[index];
+            if (src.splat_count <= 0) {
+                return fail("scene object " + std::to_string(index) +
+                            " has an empty splat set");
+            }
+            inputs[index].splat_count = static_cast<size_t>(src.splat_count);
+            inputs[index].centers = src.centers;
+            inputs[index].sh0 = src.sh0;
+            inputs[index].opacity_logit = src.opacity_logit;
+            inputs[index].log_scale = src.log_scale;
+            inputs[index].rot_ply = src.rot_ply;
+            if (!src.centers || !src.sh0 || !src.opacity_logit ||
+                !src.log_scale || !src.rot_ply || !src.pose) {
+                return fail("scene object " + std::to_string(index) +
+                            " is missing a required array or pose");
+            }
+        }
+        std::vector<sam3d::NativeInstancePose> poses(
+                static_cast<size_t>(object_count));
+        // decode the packed 10-float receipts into the task pose struct
+        for (int index = 0; index < object_count; ++index) {
+            sam3d::NativeInstancePose& pose = poses[index];
+            const float* packed = objects[index].pose;
+            for (int c = 0; c < 4; ++c) pose.rotation_wxyz[c] = packed[c];
+            for (int c = 0; c < 3; ++c) {
+                pose.translation[c] = packed[4 + c];
+                pose.scale[c] = packed[7 + c];
+            }
+            inputs[index].pose = &pose;
+        }
+        result = std::make_unique<aicore_sam3d_scene_result>();
+        std::string error;
+        if (!compose_scene(inputs.data(), static_cast<size_t>(object_count),
+                           normalize != 0, result->splats, error) ||
+            !result->splats.valid()) {
+            return fail(error.empty() ? "scene composition failed" : error);
+        }
+    } catch (const std::exception& exception) {
+        return fail(std::string("scene assembly failed: ") + exception.what());
+    } catch (...) {
+        return fail("scene assembly failed: unknown exception");
+    }
+    return result.release();
+}
+
+int64_t aicore_sam3d_scene_result_splat_count(
+        const aicore_sam3d_scene_result* result) {
+    return result ? static_cast<int64_t>(result->splats.size()) : 0;
+}
+
+const float* aicore_sam3d_scene_result_positions(
+        const aicore_sam3d_scene_result* result) {
+    return result && !result->splats.positions.empty()
+                   ? result->splats.positions.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_scene_result_sh0(
+        const aicore_sam3d_scene_result* result) {
+    return result && !result->splats.sh0.empty() ? result->splats.sh0.data()
+                                                 : NULL;
+}
+
+const float* aicore_sam3d_scene_result_opacities(
+        const aicore_sam3d_scene_result* result) {
+    return result && !result->splats.opacities.empty()
+                   ? result->splats.opacities.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_scene_result_scales(
+        const aicore_sam3d_scene_result* result) {
+    return result && !result->splats.scales.empty()
+                   ? result->splats.scales.data()
+                   : NULL;
+}
+
+const float* aicore_sam3d_scene_result_rotations(
+        const aicore_sam3d_scene_result* result) {
+    return result && !result->splats.rotations.empty()
+                   ? result->splats.rotations.data()
+                   : NULL;
+}
+
+void aicore_sam3d_scene_result_free(aicore_sam3d_scene_result* result) {
+    delete result;
+}
 
 int aicore_sam3d_last_pipeline_timings(const aicore_sam3d_ctx* ctx,
                                        aicore_pipeline_timings* timings) {

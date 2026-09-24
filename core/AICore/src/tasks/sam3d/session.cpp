@@ -587,6 +587,16 @@ struct CondInputs {
     int64_t W = 518, H = 518;
 };
 
+// 1-channel masks: the Dino wrapper repeats them to 3 channels
+void repeat_mask_channels_to_3(RawImg& m) {
+    if (m.c != 1) return;
+    std::vector<float> m3(m.data.size() * 3);
+    for (size_t i = 0; i < m.data.size(); i++)
+        for (int c = 0; c < 3; c++) m3[i * 3 + c] = m.data[i];
+    m.c = 3;
+    m.data = std::move(m3);
+}
+
 bool load_cond_inputs(const std::string& dir, CondInputs& ci) {
     auto load = [&](const char* name, RawTensor& t) {
         if (!load_raw_tensor(dir + "/" + name, t)) {
@@ -609,19 +619,59 @@ bool load_cond_inputs(const std::string& dir, CondInputs& ci) {
     ci.H = ci.image.h;
     ci.mask3 = chw_to_hwc(mask);
     ci.rgb_image_mask3 = chw_to_hwc(rgb_image_mask);
-    // 1-channel masks: the Dino wrapper repeats them to 3 channels
-    auto rep3 = [](RawImg& m) {
-        if (m.c != 1) return;
-        std::vector<float> m3(m.data.size() * 3);
-        for (size_t i = 0; i < m.data.size(); i++)
-            for (int c = 0; c < 3; c++) m3[i * 3 + c] = m.data[i];
-        m.c = 3;
-        m.data = std::move(m3);
-    };
-    rep3(ci.mask3);
-    rep3(ci.rgb_image_mask3);
+    repeat_mask_channels_to_3(ci.mask3);
+    repeat_mask_channels_to_3(ci.rgb_image_mask3);
     ci.pointmap = as_chw(pointmap);
     ci.rgb_pointmap = as_chw(rgb_pointmap);
+    return true;
+}
+
+// In-memory equivalent of load_cond_inputs(): the file path stores the CHW
+// f32 payloads verbatim (ne = [W, H, C, 1]) and reads them back through
+// chw_to_hwc/as_chw; this performs the identical index transforms on the
+// native condition struct, so the full-pipeline numerics are bit-exact
+// without the disk round-trip.
+bool cond_inputs_from_native(const NativeConditionInputs& in, CondInputs& ci) {
+    const int64_t W = in.width;
+    const int64_t H = in.height;
+    if (W <= 0 || H <= 0) {
+        LOGE("e2e: invalid in-memory condition dimensions %lldx%lld",
+             (long long)W, (long long)H);
+        return false;
+    }
+    const size_t image_elems = static_cast<size_t>(W) * H * 3;
+    const size_t mask_elems = static_cast<size_t>(W) * H;
+    if (in.image.size() != image_elems || in.rgb_image.size() != image_elems ||
+        in.pointmap.size() != image_elems ||
+        in.rgb_pointmap.size() != image_elems || in.mask.size() != mask_elems ||
+        in.rgb_image_mask.size() != mask_elems) {
+        LOGE("e2e: in-memory condition payload sizes mismatch %lldx%lld",
+             (long long)W, (long long)H);
+        return false;
+    }
+    auto to_hwc = [&](const std::vector<float>& chw, int64_t C) {
+        RawImg out;
+        out.c = C;
+        out.h = H;
+        out.w = W;
+        out.data.resize(static_cast<size_t>(C) * H * W);
+        const float* src = chw.data();
+        for (int64_t y = 0; y < H; y++)
+            for (int64_t x = 0; x < W; x++)
+                for (int64_t c = 0; c < C; c++)
+                    out.data[(y * W + x) * C + c] = src[c * H * W + y * W + x];
+        return out;
+    };
+    ci.image = to_hwc(in.image, 3);
+    ci.rgb_image = to_hwc(in.rgb_image, 3);
+    ci.W = W;
+    ci.H = H;
+    ci.mask3 = to_hwc(in.mask, 1);
+    ci.rgb_image_mask3 = to_hwc(in.rgb_image_mask, 1);
+    repeat_mask_channels_to_3(ci.mask3);
+    repeat_mask_channels_to_3(ci.rgb_image_mask3);
+    ci.pointmap = in.pointmap;  // CHW passthrough (bit-exact)
+    ci.rgb_pointmap = in.rgb_pointmap;
     return true;
 }
 
@@ -982,7 +1032,12 @@ int cmd_e2e(const E2eOptions& opt) {
         LOGI("e2e: SKIP_COND - fused cond tokens loaded");
     }
     if (!skip_cond) {
-        if (!load_cond_inputs(cond_dir, ci)) return 1;
+        // In-memory condition handoff (C API path) bypasses cond_dir; the
+        // directory input stays the CLI/stage-replay contract.
+        if (opt.conditions ? !cond_inputs_from_native(*opt.conditions, ci)
+                           : !load_cond_inputs(cond_dir, ci)) {
+            return 1;
+        }
     }
     if (opt.progress) opt.progress(kStageCondition, 0, 0);
     LOGI("e2e: condition inputs %lldx%lld", (long long)ci.W, (long long)ci.H);
@@ -1042,10 +1097,14 @@ int cmd_e2e(const E2eOptions& opt) {
             if (!ss.backend->run(graph)) return 1;
             ss.backend->get_tensor_f32(out, cond_out);
         }
-        save_raw_tensor_f32(out_ply + ".ss_cond.samt", {1024, 7528},
-                            cond_out.data());
+        // The side files are PLY-path artifacts (stage probes read them);
+        // with an empty out_ply (in-memory artifacts path) there is no file
+        // family to extend.
+        if (!out_ply.empty()) {
+            save_raw_tensor_f32(out_ply + ".ss_cond.samt", {1024, 7528},
+                                cond_out.data());
+        }
         ss.close();  // free the SS weights before the slat embedder stage
-
         Stage slat_emb;
         if (!slat_emb.open(models_dir + "/slat_generator-" + slat_dt + ".gguf",
                            be_name, nthreads, "condition_slat_generator",
@@ -1083,8 +1142,11 @@ int cmd_e2e(const E2eOptions& opt) {
             if (!slat_emb.backend->run(graph)) return 1;
             slat_emb.backend->get_tensor_f32(out, slat_out);
         }
-        save_raw_tensor_f32(out_ply + ".slat_cond.samt", {1024, 5496},
-                            slat_out.data());
+        // The side files are PLY-path artifacts (stage probes read them).
+        if (!out_ply.empty()) {
+            save_raw_tensor_f32(out_ply + ".slat_cond.samt", {1024, 5496},
+                                slat_out.data());
+        }
         LOGI("e2e-cond: done in %.1fs", elapsed_seconds());
         if (!dtype_contract.complete(dtype_contract_error)) {
             LOGE("e2e-cond: failed to write dtype contract: %s",
@@ -1614,13 +1676,21 @@ int cmd_e2e(const E2eOptions& opt) {
                 effective_pose_downsample_factor = 2;
             }
         }
-        if (!out_pose.empty()) {
+        const bool want_pose_json = !out_pose.empty();
+        const bool want_pose_artifact =
+                opt.artifacts != nullptr && opt.scene_attributes;
+        if (want_pose_json || want_pose_artifact) {
             std::array<float, 3> pointmap_scale{};
             std::array<float, 3> pointmap_shift{};
-            if (!load_f32_vector(cond_dir + "/ss_input_pointmap_scale.samt", 3,
-                                 pointmap_scale) ||
-                !load_f32_vector(cond_dir + "/ss_input_pointmap_shift.samt", 3,
-                                 pointmap_shift)) {
+            if (opt.conditions) {
+                pointmap_scale = opt.conditions->pointmap_scale;
+                pointmap_shift = opt.conditions->pointmap_shift;
+            } else if (!load_f32_vector(
+                               cond_dir + "/ss_input_pointmap_scale.samt", 3,
+                               pointmap_scale) ||
+                       !load_f32_vector(
+                               cond_dir + "/ss_input_pointmap_shift.samt", 3,
+                               pointmap_shift)) {
                 return 1;
             }
             NativeInstancePose pose;
@@ -1628,14 +1698,22 @@ int cmd_e2e(const E2eOptions& opt) {
             if (!decode_scale_shift_invariant_pose(
                         x_6d.data(), x_sc.data(), x_tr.data(), x_ts[0],
                         pointmap_scale.data(), pointmap_shift.data(), pose,
-                        pose_error, effective_pose_downsample_factor) ||
+                        pose_error, effective_pose_downsample_factor)) {
+                LOGE("e2e: native pose decode/export failed: %s",
+                     pose_error.c_str());
+                return 1;
+            }
+            if (want_pose_json &&
                 !write_native_pose_json(out_pose, pose, pose_error)) {
                 LOGE("e2e: native pose decode/export failed: %s",
                      pose_error.c_str());
                 return 1;
             }
-            LOGI("e2e: wrote official ScaleShiftInvariant pose to %s",
-                 out_pose.c_str());
+            if (want_pose_artifact) {
+                opt.artifacts->pose = pose;
+                opt.artifacts->has_pose = true;
+            }
+            LOGI("e2e: decoded official ScaleShiftInvariant pose");
         }
         LOGI("e2e: occupancy coords %lld (of 262144)",
              (long long)coords.size() / 4);
@@ -2209,7 +2287,55 @@ int cmd_e2e(const E2eOptions& opt) {
             op[n * GS_NGAUSS + g] = r[416 + g];
         }
     }
-    if (!write_gaussian_ply(out_ply, n_gs_total, xyz, fdc, op, scl, rot)) {
+    if (opt.artifacts) {
+        // Display-ready in-memory artifacts for the C API path: the splat
+        // centers use the PLY/world domain (xyz - 0.5, matching the mesh
+        // vertices) and the colors are 0.5 + SH_C0 * f_dc clamped to 0..1.
+        opt.artifacts->gaussian_count = n_gs_total;
+        opt.artifacts->splat_centers.resize(static_cast<size_t>(n_gs_total) *
+                                            3);
+        opt.artifacts->splat_rgb.resize(static_cast<size_t>(n_gs_total) * 3);
+        for (int64_t i = 0; i < n_gs_total; ++i) {
+            for (int c = 0; c < 3; ++c) {
+                opt.artifacts->splat_centers[i * 3 + c] = xyz[i * 3 + c] - 0.5f;
+                float rgb = 0.5f + 0.28209479177387814f * fdc[i * 3 + c];
+                opt.artifacts->splat_rgb[i * 3 + c] =
+                        rgb < 0.f ? 0.f : (rgb > 1.f ? 1.f : rgb);
+            }
+        }
+        if (opt.scene_attributes) {
+            // Composer-facing PLY-semantic interchange rows. Every expression
+            // mirrors write_gaussian_ply in the same order so the in-memory
+            // path and the PLY export stay bit-identical inputs for the
+            // scene composer and the upstream scene-assemble flow.
+            const float scale_bias = softplus_inv(GS_SCALING_BIAS);
+            const float op_bias = inv_sigmoid(GS_OPACITY_BIAS);
+            opt.artifacts->splat_sh0.resize(static_cast<size_t>(n_gs_total) *
+                                            3);
+            opt.artifacts->splat_log_scale.resize(
+                    static_cast<size_t>(n_gs_total) * 3);
+            opt.artifacts->splat_opacity_logit.resize(
+                    static_cast<size_t>(n_gs_total));
+            opt.artifacts->splat_rot_ply.resize(
+                    static_cast<size_t>(n_gs_total) * 4);
+            for (int64_t i = 0; i < n_gs_total; ++i) {
+                for (int c = 0; c < 3; ++c) {
+                    opt.artifacts->splat_sh0[i * 3 + c] = fdc[i * 3 + c];
+                    const float sp = softplus(scl[i * 3 + c] + scale_bias);
+                    opt.artifacts->splat_log_scale[i * 3 + c] = logf(
+                            sqrtf(sp * sp + GS_MIN_KERNEL * GS_MIN_KERNEL));
+                }
+                opt.artifacts->splat_opacity_logit[i] = op[i] + op_bias;
+                opt.artifacts->splat_rot_ply[i * 4 + 0] = rot[i * 4 + 0] + 1.f;
+                opt.artifacts->splat_rot_ply[i * 4 + 1] = rot[i * 4 + 1];
+                opt.artifacts->splat_rot_ply[i * 4 + 2] = rot[i * 4 + 2];
+                opt.artifacts->splat_rot_ply[i * 4 + 3] = rot[i * 4 + 3];
+            }
+        }
+    }
+    const bool export_ply = !out_ply.empty();
+    if (export_ply &&
+        !write_gaussian_ply(out_ply, n_gs_total, xyz, fdc, op, scl, rot)) {
         LOGE("e2e: failed to write %s", out_ply.c_str());
         return 1;
     }
@@ -2230,7 +2356,11 @@ int cmd_e2e(const E2eOptions& opt) {
     rot.shrink_to_fit();
 
     const bool export_raw_mesh = !out_mesh_vertices.empty();
-    if (export_raw_mesh || !out_pbr.empty()) {
+    // The mesh stage runs for file exports (CLI/PBR interchange), for the
+    // in-memory artifact sink (opt.decode_mesh), or for the PBR branch.
+    const bool want_mesh = export_raw_mesh || !out_pbr.empty() ||
+                           (opt.artifacts && opt.decode_mesh);
+    if (want_mesh) {
         MeshDecoderRunOptions mesh_options;
         mesh_options.model_path =
                 models_dir + "/slat_decoder_mesh-" + mesh_dt + ".gguf";
@@ -2259,6 +2389,12 @@ int cmd_e2e(const E2eOptions& opt) {
                                flexicubes, mesh_error)) {
             LOGE("e2e: FlexiCubes extraction failed: %s", mesh_error.c_str());
             return 1;
+        }
+        if (opt.artifacts) {
+            // In-memory mesh for the C API path: same world domain as the
+            // splat centers; the SAMT file exports stay a CLI-only boundary.
+            opt.artifacts->mesh_vertices = flexicubes.positions;
+            opt.artifacts->mesh_triangles = flexicubes.indices;
         }
         if (export_raw_mesh) {
             std::vector<int32_t> mesh_faces;
@@ -2294,6 +2430,11 @@ int cmd_e2e(const E2eOptions& opt) {
                  "SAM3D_GGML_MESHFIX_GPL=ON");
             return 1;
 #else
+            if (!export_ply) {
+                LOGE("e2e: --pbr-out reads back the Gaussian PLY; request an "
+                     "out_ply export together with the PBR assembly");
+                return 1;
+            }
             NativeMesh decoded_mesh;
             decoded_mesh.positions = std::move(flexicubes.positions);
             decoded_mesh.indices = std::move(flexicubes.indices);
@@ -2329,8 +2470,9 @@ int cmd_e2e(const E2eOptions& opt) {
 #endif
         }
     }
-    LOGI("e2e: wrote %s (%lld gaussians) in %.1fs for native generation stages",
-         out_ply.c_str(), (long long)n_gs_total, elapsed_seconds());
+    LOGI("e2e: %s (%lld gaussians) in %.1fs for native generation stages",
+         export_ply ? out_ply.c_str() : "in-memory artifacts requested",
+         (long long)n_gs_total, elapsed_seconds());
     if (!dtype_contract.complete(dtype_contract_error)) {
         LOGE("e2e: failed to write dtype contract: %s",
              dtype_contract_error.c_str());
@@ -2529,13 +2671,14 @@ struct ImageTo3DSession::Impl {
 
     RunResult run(const ImageTo3DOptions& opts) {
         RunResult result;
-        if (!opts.image_override &&
-            (opts.image_path.empty() || opts.out_ply.empty())) {
-            result.error = "image_path and out_ply are required";
+        if (!opts.image_override && opts.image_path.empty()) {
+            result.error = "image_path is required";
             return result;
         }
-        if (opts.image_override && opts.out_ply.empty()) {
-            result.error = "out_ply is required";
+        if (opts.out_ply.empty() && opts.artifacts == nullptr) {
+            // The pipeline needs at least one output: the file export or the
+            // in-memory artifact sink (the C API path).
+            result.error = "out_ply or artifacts is required";
             return result;
         }
         if (opts.progress) opts.progress(0 /*load*/, 0, 0);
@@ -2664,23 +2807,40 @@ struct ImageTo3DSession::Impl {
             cached_valid = true;
         }
 
-        ScopedConditionDirectory conditions;
-        if (!conditions.create(opts.conditions_out, error)) {
-            result.error = error;
-            return result;
-        }
         NativeConditionInputs condition_inputs;
         if (!preprocess_ss_conditions(image, moge_result.pointmap_pytorch3d,
                                       moge_result.width, moge_result.height, {},
-                                      condition_inputs, error) ||
-            !write_ss_conditions(conditions.path(), condition_inputs, error)) {
+                                      condition_inputs, error)) {
             result.error = "native condition preprocessing failed: " + error;
             return result;
+        }
+        // The conditions_out path is a caller-requested condition dump (a
+        // replay/inspection artifact): create the directory and write the
+        // SAMT files as before. The default C API path hands the condition
+        // tensors to cmd_e2e in memory — no scratch directory and no
+        // condition file IO in the end-to-end request.
+        bool cond_memory_path = false;
+        std::string cond_dir_for_e2e;
+        if (opts.conditions_out.empty()) {
+            cond_memory_path = true;
+        } else {
+            ScopedConditionDirectory conditions;
+            if (!conditions.create(opts.conditions_out, error)) {
+                result.error = error;
+                return result;
+            }
+            if (!write_ss_conditions(conditions.path(), condition_inputs,
+                                     error)) {
+                result.error =
+                        "native condition preprocessing failed: " + error;
+                return result;
+            }
+            cond_dir_for_e2e = conditions.path();
         }
 
         E2eOptions e2e;
         e2e.models_dir = opts.models_dir;
-        e2e.cond_dir = conditions.path();
+        e2e.cond_dir = cond_dir_for_e2e;
         // image-to-3d generates noise internally (empty noise_dir = fresh
         // noise)
         e2e.out_ply = opts.out_ply;
@@ -2719,6 +2879,10 @@ struct ImageTo3DSession::Impl {
                                                      "cuda", 4) == 0)
                                      ? nullptr
                                      : backend.get();
+        e2e.artifacts = opts.artifacts;
+        e2e.decode_mesh = opts.decode_mesh;
+        e2e.scene_attributes = opts.scene_attributes;
+        e2e.conditions = cond_memory_path ? &condition_inputs : nullptr;
         e2e.progress = opts.progress;
         const int rc = cmd_e2e(e2e);
 

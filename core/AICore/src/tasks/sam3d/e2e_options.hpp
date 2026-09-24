@@ -7,8 +7,13 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <vector>
+
+#include "pose_decoder.hpp"  // NativeInstancePose
 
 namespace sam3d {
+
+struct NativeConditionInputs;  // image_preprocess.hpp (in-memory handoff)
 
 // Stage indices reported through E2eOptions::progress. They mirror the
 // aicore_sam3d progress contract (stage-level events; step/total optional).
@@ -19,6 +24,35 @@ enum E2eStage {
     kStageSlatFlow = 5,
     kStageGsDecode = 6,
     kStageMeshDecode = 7,
+};
+
+// In-memory result sink for callers that want the pipeline artifacts without
+// file round-trips (the C API path). When E2eOptions::artifacts is set,
+// cmd_e2e fills it alongside (or instead of) the file exports. The splat
+// centers use the PLY/world domain (xyz - 0.5, matching the mesh vertices)
+// and the colors are display-ready 0..1 (0.5 + SH_C0 * f_dc, clamped).
+//
+// When E2eOptions::scene_attributes is set, the composer-facing PLY-semantic
+// interchange attributes are captured as well. Their values are exactly the
+// binary Gaussian PLY row fields (see write_gaussian_ply): the multi-object
+// scene composer activates them with the same sigmoid/exp/normalize rules as
+// the upstream PLY loader, so a composed scene stays bit-comparable with the
+// upstream scene-assemble flow.
+struct Sam3dArtifacts {
+    int64_t gaussian_count = 0;
+    std::vector<float> splat_centers;      // 3 * N
+    std::vector<float> splat_rgb;          // 3 * N (display 0..1)
+    std::vector<float> mesh_vertices;      // 3 * V
+    std::vector<uint32_t> mesh_triangles;  // 3 * F
+    // ---- scene-composer interchange attributes (scene_attributes = true) --
+    std::vector<float> splat_sh0;           // 3 * N, raw f_dc (SH coefficient 0)
+    std::vector<float> splat_log_scale;     // 3 * N, PLY scale_N (log space)
+    std::vector<float> splat_opacity_logit; // N, PLY opacity (logit + bias)
+    std::vector<float> splat_rot_ply;       // 4 * N, PLY rot (unnormalized)
+    // Official ScaleShiftInvariant pose receipt (the scene composer's
+    // make_scene input). Valid only when has_pose is set.
+    NativeInstancePose pose{};
+    bool has_pose = false;
 };
 
 struct E2eOptions {
@@ -89,6 +123,29 @@ struct E2eOptions {
     // per stage exactly as with owned backends. A Backend* is stored raw to
     // keep this header dependency-free.
     void* shared_backend = nullptr;
+
+    // Optional in-memory result sink (C API path). When set, the splat
+    // centers/colors and the FlexiCubes mesh are delivered here; the mesh
+    // SAMT file exports (out_mesh_vertices/out_mesh_faces) are not required
+    // for this and stay a CLI-only boundary.
+    Sam3dArtifacts* artifacts = nullptr;
+
+    // In-memory condition inputs (C API path). When set, the full-pipeline
+    // stage consumes them directly: cond_dir is not touched and the
+    // condition scratch directory (write + re-read round-trip) is skipped.
+    // The caller's NativeConditionInputs must outlive the cmd_e2e call.
+    const NativeConditionInputs* conditions = nullptr;
+
+    // Run the FlexiCubes mesh decode stage for the in-memory artifact sink
+    // without requesting mesh file exports (the file exports alone also
+    // trigger the stage). Zero file IO when no export path is set.
+    bool decode_mesh = false;
+
+    // Capture the scene-composer interchange attributes (PLY-semantic splat
+    // rows + the official pose receipt) into the artifact sink. Raises the
+    // per-splat artifact footprint by 44 bytes; off by default because the
+    // single-object consumers never read them.
+    bool scene_attributes = false;
 
     // Optional stage-level progress reporting. Never invoked from multiple
     // threads: cmd_e2e is single-threaded across its stage boundaries.

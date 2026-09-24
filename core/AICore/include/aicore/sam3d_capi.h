@@ -118,6 +118,12 @@ AICORE_CAPI void aicore_sam3d_options_set_noise_dir(
         aicore_sam3d_options* options, const char* noise_dir);
 AICORE_CAPI void aicore_sam3d_options_set_conditions_out(
         aicore_sam3d_options* options, const char* conditions_out);
+// Capture the multi-object scene-composer interchange attributes (the
+// PLY-semantic splat rows + the official ScaleShiftInvariant pose receipt)
+// into the per-request result. Off by default; the single-object consumers
+// never read them.
+AICORE_CAPI void aicore_sam3d_options_set_scene_attributes(
+        aicore_sam3d_options* options, int scene_attributes);
 
 // ---- Context lifecycle -----------------------------------------------------
 //
@@ -145,7 +151,10 @@ AICORE_CAPI int aicore_sam3d_caps(const aicore_sam3d_ctx* ctx);
 //        when the format carries alpha.
 // mask:  optional borrowed binary-mask view (> 0 -> object). GRAY8 or an
 //        alpha-carrying format; overrides the image alpha channel.
-// out_ply: destination path for the Gaussian PLY export (required).
+// out_ply: optional destination path for the Gaussian PLY export. NULL or ""
+//          skips the file export entirely (the caller consumes the in-memory
+//          splat/mesh result instead). The PBR-assembly path still requires
+//          an out_ply export.
 // decode_mesh: when non-zero, also run the FlexiCubes mesh decoder
 //        (requires slat_decoder_mesh-<dtype>.gguf in models_dir).
 // progress: optional stage callback. stage is one of the
@@ -196,7 +205,85 @@ AICORE_CAPI int aicore_sam3d_result_voxel_count(
 // Gaussian splat count encoded in the exported PLY (0 when unknown).
 AICORE_CAPI int64_t
 aicore_sam3d_result_gaussian_count(const aicore_sam3d_result* result);
+// Display-ready splat data for callers that consume the result in memory
+// (no PLY export). Both return 3*N floats with N from gaussian_count and
+// stay owned by the result; copy before releasing it. Centers use the same
+// world domain as the mesh vertices; rgb is 0..1 (0.5 + SH_C0 * f_dc,
+// clamped). NULL when the result carries no splat artifacts.
+AICORE_CAPI const float* aicore_sam3d_result_splat_centers(
+        const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_splat_rgb(
+        const aicore_sam3d_result* result);
+
+// ---- Scene-composer interchange attributes ---------------------------------
+//
+// Available when the context was created with scene_attributes enabled and
+// the request produced them. The values are exactly the binary Gaussian PLY
+// row fields (centers = PLY x/y/z world domain, sh0 = raw f_dc,
+// opacity_logit = PLY opacity, log_scale = PLY scale_N, rot_ply = PLY rot
+// unnormalized); the pose is the official ScaleShiftInvariant receipt as 10
+// floats (rotation wxyz, translation, scale with the native per-axis scale
+// collapsed to its uniform mean — the official receipt semantics). Everything
+// stays owned by the result; copy before releasing it.
+AICORE_CAPI int aicore_sam3d_result_has_pose(const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_pose(
+        const aicore_sam3d_result* result);  // 10 floats, NULL when absent
+AICORE_CAPI const float* aicore_sam3d_result_splat_sh0(
+        const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_splat_log_scale(
+        const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_splat_opacity_logit(
+        const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_splat_rot_ply(
+        const aicore_sam3d_result* result);
 AICORE_CAPI void aicore_sam3d_result_free(aicore_sam3d_result* result);
+
+// ---- Multi-object scene assembly -------------------------------------------
+//
+// Deterministic post-processing composition of N single-object results (the
+// official demo_multi_object flow): per-object activation of the interchange
+// rows (sigmoid / exp / quaternion normalize), official make_scene pose
+// application, concatenation and optional opacity-bound normalization. No
+// context, model or backend involvement. The math mirrors the upstream
+// scene-assemble command so composed scenes stay comparable with it.
+typedef struct aicore_sam3d_scene_object {
+    int64_t splat_count;
+    const float* centers;        // 3 * N, PLY world-domain x/y/z
+    const float* sh0;            // 3 * N, raw f_dc
+    const float* opacity_logit;  // N, PLY opacity (logit + bias)
+    const float* log_scale;      // 3 * N, PLY scale_N
+    const float* rot_ply;        // 4 * N, PLY rot (unnormalized)
+    const float* pose;  // 10 floats: wxyz(4) + translation(3) + scale(3)
+} aicore_sam3d_scene_object;
+
+typedef struct aicore_sam3d_scene_result aicore_sam3d_scene_result;
+
+// objects must stay valid for the duration of the call. normalize applies
+// the official normalized_gaussian rescale/centering (upstream demo default).
+// Returns NULL on contract errors (err receives the message when non-NULL).
+AICORE_CAPI aicore_sam3d_scene_result* aicore_sam3d_scene_assemble(
+        const aicore_sam3d_scene_object* objects,
+        int object_count,
+        int normalize,
+        char* err,
+        size_t err_size);
+
+AICORE_CAPI int64_t
+aicore_sam3d_scene_result_splat_count(const aicore_sam3d_scene_result* result);
+// Activated representation accessors (positions/sh0 raw, opacities 0..1,
+// scales exp(log_scale), rotations normalized wxyz). Owned by the result.
+AICORE_CAPI const float* aicore_sam3d_scene_result_positions(
+        const aicore_sam3d_scene_result* result);
+AICORE_CAPI const float* aicore_sam3d_scene_result_sh0(
+        const aicore_sam3d_scene_result* result);
+AICORE_CAPI const float* aicore_sam3d_scene_result_opacities(
+        const aicore_sam3d_scene_result* result);
+AICORE_CAPI const float* aicore_sam3d_scene_result_scales(
+        const aicore_sam3d_scene_result* result);
+AICORE_CAPI const float* aicore_sam3d_scene_result_rotations(
+        const aicore_sam3d_scene_result* result);
+AICORE_CAPI void aicore_sam3d_scene_result_free(
+        aicore_sam3d_scene_result* result);
 
 // Common timing contract: one entry per generate call. e2e_ms is measured;
 // the stage split follows the aicore_pipeline_timings semantics with only

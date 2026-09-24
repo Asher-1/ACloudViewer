@@ -17,7 +17,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
@@ -80,17 +79,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
             &Sam3dDialog::onTestDataClicked);
     form->addRow(QString(), m_testDataBtn);
 
-    // Output directory -------------------------------------------------------
-    auto* outRow = new QHBoxLayout;
-    m_outputDirEdit = new QLineEdit(this);
-    m_outputDirEdit->setPlaceholderText(tr("Gaussian PLY export directory"));
-    auto* browseOut = new QPushButton(tr("Browse..."), this);
-    connect(browseOut, &QPushButton::clicked, this,
-            &Sam3dDialog::browseOutputDir);
-    outRow->addWidget(m_outputDirEdit, 1);
-    outRow->addWidget(browseOut);
-    form->addRow(tr("Output:"), outRow);
-
+    // Output options (DB import by default; file export is opt-in) ----------
     m_deviceCombo = new QComboBox(this);
     m_deviceCombo->addItems({tr("auto"), QStringLiteral("cpu"),
                              QStringLiteral("cuda"), QStringLiteral("vulkan")});
@@ -128,12 +117,105 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     m_rmbgCheck = new QCheckBox(
             tr("Remove background (RMBG; builds the object mask)"), this);
     m_rmbgCheck->setChecked(true);
-    form->addRow(QString(), m_rmbgCheck);
+    m_rmbgDtypeCombo = new QComboBox(this);
+    m_rmbgDtypeCombo->addItem(QStringLiteral("q8_0"));
+    m_rmbgDtypeCombo->addItem(QStringLiteral("f16"));
+    m_rmbgDtypeCombo->setToolTip(
+            tr("RMBG model quantization (rmbg_q8.gguf / rmbg_f16.gguf; the\n"
+               "file is shared with the qRMBG plugin's model cache)."));
+    auto* rmbgRow = new QHBoxLayout;
+    rmbgRow->addWidget(m_rmbgCheck, 1);
+    rmbgRow->addWidget(new QLabel(tr("Quantization:"), this));
+    rmbgRow->addWidget(m_rmbgDtypeCombo);
+    form->addRow(QString(), rmbgRow);
 
-    m_meshCheck = new QCheckBox(
-            tr("Also generate the FlexiCubes mesh (needs mesh decoder)"), this);
-    m_meshCheck->setChecked(true);
-    form->addRow(QString(), m_meshCheck);
+    // Output artifacts = pipeline gating. The colored point cloud is the
+    // mandatory generation product; the textured mesh extends the pipeline
+    // with the FlexiCubes decode + UV-atlas bake stages.
+    m_pointCloudCheck = new QCheckBox(
+            tr("Colored gaussian point cloud (generation product)"), this);
+    m_pointCloudCheck->setChecked(true);
+    m_pointCloudCheck->setToolTip(
+            tr("Gaussian splats with their display colors, delivered into\n"
+               "the DB tree. This is the direct generation output — the\n"
+               "pipeline always produces it."));
+    form->addRow(QString(), m_pointCloudCheck);
+
+    m_texturedMeshCheck = new QCheckBox(
+            tr("Textured mesh (FlexiCubes decode + UV-atlas bake)"), this);
+    m_texturedMeshCheck->setChecked(true);
+    m_texturedMeshCheck->setToolTip(
+            tr("Extends the pipeline past the point cloud: FlexiCubes mesh\n"
+               "decode, then a textured GLB bake (xatlas UV unwrap →\n"
+               "per-texel bake → gutter inpaint) through the shared AICore\n"
+               "bake API. Uncheck to stop the pipeline at the point cloud\n"
+               "and skip both stages (~105 s faster)."));
+    form->addRow(QString(), m_texturedMeshCheck);
+
+    m_importDbCheck = new QCheckBox(tr("Import results into the DB"), this);
+    m_importDbCheck->setChecked(true);
+    form->addRow(QString(), m_importDbCheck);
+
+    m_exportPlyCheck =
+            new QCheckBox(tr("Export Gaussian PLY to file (optional)"), this);
+    m_exportPlyCheck->setChecked(false);
+    form->addRow(QString(), m_exportPlyCheck);
+
+    // Scene mode: per-object binary masks compose a full scene (the official
+    // demo_multi_object flow). Masks ship with the sample bundles as
+    // <n>.png at the image resolution.
+    m_sceneCheck = new QCheckBox(
+            tr("Multi-object scene mode (per-object mask directory)"), this);
+    m_sceneCheck->setChecked(false);
+    m_sceneCheck->setToolTip(
+            tr("Reconstruct every <n>.png mask in the directory as an\n"
+               "independent single-object run, then compose the objects\n"
+               "into one scene with the official make_scene pose semantics\n"
+               "(upstream scene-assemble flow). Each object becomes its own\n"
+               "textured GLB entity. RMBG is not used in this mode."));
+    form->addRow(QString(), m_sceneCheck);
+    auto* masksRow = new QHBoxLayout;
+    m_masksDirEdit = new QLineEdit(this);
+    m_masksDirEdit->setPlaceholderText(
+            tr("Directory of per-object masks (0.png, 1.png, ...)"));
+    m_browseMasksBtn = new QPushButton(tr("Browse..."), this);
+    connect(m_browseMasksBtn, &QPushButton::clicked, this, [this]() {
+        const QString dir = QFileDialog::getExistingDirectory(
+                this, tr("Mask directory"), m_masksDirEdit->text());
+        if (!dir.isEmpty()) m_masksDirEdit->setText(dir);
+    });
+    masksRow->addWidget(m_masksDirEdit, 1);
+    masksRow->addWidget(m_browseMasksBtn);
+    form->addRow(tr("Masks:"), masksRow);
+    auto updateMasksEnabled = [this]() {
+        const bool scene = m_sceneCheck->isChecked();
+        m_masksDirEdit->setEnabled(scene);
+        m_browseMasksBtn->setEnabled(scene);
+    };
+    connect(m_sceneCheck, &QCheckBox::toggled, this, updateMasksEnabled);
+    updateMasksEnabled();
+
+    // Output directory (only used by the opt-in file exports) --------------
+    auto* outRow = new QHBoxLayout;
+    m_outputDirEdit = new QLineEdit(this);
+    m_outputDirEdit->setPlaceholderText(
+            tr("GLB / Gaussian PLY export directory"));
+    auto* browseOut = new QPushButton(tr("Browse..."), this);
+    connect(browseOut, &QPushButton::clicked, this,
+            &Sam3dDialog::browseOutputDir);
+    outRow->addWidget(m_outputDirEdit, 1);
+    outRow->addWidget(browseOut);
+    form->addRow(tr("Output:"), outRow);
+    auto updateOutputEnabled = [this, browseOut]() {
+        const bool enabled = m_exportPlyCheck->isChecked() ||
+                             m_texturedMeshCheck->isChecked();
+        m_outputDirEdit->setEnabled(enabled);
+        browseOut->setEnabled(enabled);
+    };
+    connect(m_exportPlyCheck, &QCheckBox::toggled, this, updateOutputEnabled);
+    connect(m_texturedMeshCheck, &QCheckBox::toggled, this,
+            updateOutputEnabled);
+    updateOutputEnabled();
 
     layout->addLayout(form);
 
@@ -144,11 +226,6 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
 
     m_status = new QLabel(this);
     layout->addWidget(m_status);
-
-    m_log = new QPlainTextEdit(this);
-    m_log->setReadOnly(true);
-    m_log->setMaximumHeight(160);
-    layout->addWidget(m_log);
 
     auto* buttons = new QHBoxLayout;
     m_runButton = new QPushButton(tr("Generate"), this);
@@ -175,7 +252,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
                 }
             });
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
-            &Sam3dDialog::appendLog);
+            [this](const QString& message) { appendLog(message); });
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& path) {
                 m_downloadInProgress = false;
@@ -184,7 +261,8 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
                     appendLog(tr("[SAM3D] Download failed: %1 — retry, or "
                                  "fetch the file manually from the URL shown "
                                  "in the log and place it at that path.")
-                                      .arg(path));
+                                      .arg(path),
+                              ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
                     return;
                 }
                 appendLog(tr("[SAM3D] Model downloaded: %1").arg(path));
@@ -200,7 +278,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
                 m_status->setText(statusText);
             });
     connect(&testDataRepo, &ecvTestDataRepository::downloadLogMessage, this,
-            &Sam3dDialog::appendLog);
+            [this](const QString& message) { appendLog(message); });
     connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
             [this](bool success, ecvTestDataRepository::Dataset dataset) {
                 if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
@@ -257,17 +335,28 @@ Sam3dDialog::Settings Sam3dDialog::settings() const {
     Settings s;
     s.imagePath = m_imageEdit->text().trimmed();
     s.outputDir = m_outputDirEdit->text().trimmed();
+    s.masksDir = m_sceneCheck->isChecked() ? m_masksDirEdit->text().trimmed()
+                                           : QString();
     s.device = m_deviceCombo->currentText();
     s.dtypeIndex = m_dtypeCombo->currentIndex();
+    s.rmbgDtypeIndex = m_rmbgDtypeCombo->currentIndex();
     s.steps = m_stepsSpin->value();
     s.seed = m_seedSpin->value();
     s.useRmbg = m_rmbgCheck->isChecked();
-    s.generateMesh = m_meshCheck->isChecked();
+    s.outputPointCloud = m_pointCloudCheck->isChecked();
+    s.outputTexturedMesh = m_texturedMeshCheck->isChecked();
+    s.importToDb = m_importDbCheck->isChecked();
+    s.exportPly = m_exportPlyCheck->isChecked();
     return s;
 }
 
-void Sam3dDialog::appendLog(const QString& message) {
-    m_log->appendPlainText(message);
+void Sam3dDialog::appendLog(const QString& message,
+                            ecvMainAppInterface::ConsoleMessageLevel level) {
+    // Reuse the application console (same channel as every other plugin);
+    // the dialog itself only keeps the single-line status label.
+    if (m_app) {
+        m_app->dispToConsole(message, level);
+    }
 }
 
 void Sam3dDialog::setProgress(int percent) {
@@ -290,9 +379,39 @@ void Sam3dDialog::emitRun() {
         m_status->setText(tr("Select a source image first."));
         return;
     }
-    if (s.outputDir.isEmpty()) {
-        m_status->setText(tr("Select an output directory first."));
+    if (!s.outputPointCloud && !s.outputTexturedMesh) {
+        m_status->setText(tr("Select at least one output artifact."));
         return;
+    }
+    if (!s.importToDb && !s.exportPly && !s.outputTexturedMesh) {
+        m_status->setText(
+                tr("Select an output: DB import and/or a file "
+                   "export."));
+        return;
+    }
+    if ((s.exportPly || s.outputTexturedMesh) && s.outputDir.isEmpty()) {
+        m_status->setText(
+                tr("Select an output directory for the file "
+                   "exports."));
+        return;
+    }
+    if (!s.masksDir.isEmpty()) {
+        // Scene mode: every object bakes into its own GLB file (released
+        // from memory right after the write), so the textured bake needs a
+        // writable output directory.
+        if (s.outputTexturedMesh && s.outputDir.isEmpty()) {
+            m_status->setText(
+                    tr("Scene mode with textured mesh requires an "
+                       "output directory."));
+            return;
+        }
+        QFileInfoList masks =
+                QDir(s.masksDir)
+                        .entryInfoList(QStringList{"*.png"}, QDir::Files);
+        if (masks.isEmpty()) {
+            m_status->setText(tr("The mask directory has no PNG masks."));
+            return;
+        }
     }
     emit runRequested(s);
 }
@@ -358,7 +477,7 @@ void Sam3dDialog::onDownloadModels() {
 
     m_pendingDownloads.clear();
     for (const QString& name :
-         sam3dRequiredModels(dtype, m_meshCheck->isChecked())) {
+         sam3dRequiredModels(dtype, m_texturedMeshCheck->isChecked())) {
         const QString path = QDir(cacheDir).filePath(name);
         const aicore_sam3d_model_entry* entry =
                 aicore_sam3d_model_by_filename(name.toUtf8().constData());

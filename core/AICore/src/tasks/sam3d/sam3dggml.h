@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "e2e_options.hpp"  // Sam3dArtifacts
+
 namespace aicore {
 namespace runtime {
 class BackendLease;
@@ -125,6 +127,17 @@ struct ImageTo3DOptions {
     // Optional JSON summary of the dtypes and operations present in every
     // native end-to-end graph constructed for this request.
     std::string out_dtype_contract;
+    // Optional in-memory artifact sink (C API path): splat centers/colors and
+    // the FlexiCubes mesh are delivered here; out_ply and the mesh SAMT
+    // exports become optional when it is set.
+    Sam3dArtifacts* artifacts = nullptr;
+    // Run the FlexiCubes mesh stage for the artifact sink without mesh file
+    // exports (zero file IO). Ignored when artifacts is null.
+    bool decode_mesh = false;
+    // Capture the scene-composer interchange attributes (PLY-semantic splat
+    // rows + the official pose receipt) into the artifact sink. Ignored when
+    // artifacts is null.
+    bool scene_attributes = false;
     // Optional immutable official stage directory containing initial SS and
     // SLat noise. This is an accuracy-diagnostic input, not a production
     // sampling mode: a normal request must generate its own noise from seed.

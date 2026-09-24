@@ -722,6 +722,7 @@ function(aicore_add_sam3d_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 aicore_add_sam3d_capi_test(test_sam3d_capi_contract)
+aicore_add_sam3d_capi_test(test_sam3d_scene_assemble)
 
 add_executable(bench_sam3d_backend_acceptance sam3d/bench_sam3d_backend_acceptance.cpp)
 target_link_libraries(bench_sam3d_backend_acceptance PRIVATE AICore)
@@ -1086,7 +1087,8 @@ set(_aicore_contract_targets
     test_reid_capi_load
     test_deeplsd_capi_load
     test_depth_capi_backend_parity)
-list(APPEND _aicore_contract_targets test_sam3d_capi_contract)
+list(APPEND _aicore_contract_targets test_sam3d_capi_contract
+        test_sam3d_scene_assemble)
 # capi-labeled model tests: registered unconditionally below, but their
 # binaries are normally only built by the model tier. With
 # AICORE_TEST_ENABLE_MODEL_TESTS=ON the contract tier selects them via
