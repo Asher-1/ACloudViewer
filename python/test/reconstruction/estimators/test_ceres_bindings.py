@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/ceres_bindings_test.py (Open3D style).
 
 The upstream accesses the surface as ``pycolmap._core.pyceres``; the fork
@@ -51,7 +58,9 @@ def test_trust_region_strategy_type_enum(recon):
 
 def test_logging_type_enum(recon):
     pyceres = recon.pyceres
-    assert {k: int(v) for k, v in pyceres.LoggingType.__members__.items()} == {
+    assert {
+        k: int(v) for k, v in pyceres.LoggingType.__members__.items()
+    } == {
         "SILENT": 0,
         "PER_MINIMIZER_ITERATION": 1,
     }

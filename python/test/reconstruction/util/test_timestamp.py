@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap util/timestamp_test.py (skipped with reason).
 
 Fork adjudication (batch 24): the nanosecond timestamp helpers

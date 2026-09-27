@@ -14,14 +14,11 @@
 #include "estimators/bundle_adjustment.h"
 #include "estimators/bundle_adjustment_caspar.h"
 #include "estimators/bundle_adjustment_ceres.h"
-#include "estimators/bundle_adjustment_ceres.h"
+#include "estimators/covariance.h"
 #include "estimators/generalized_pose.h"
 #include "estimators/global_positioning.h"
 #include "estimators/gravity_refinement.h"
-#include "estimators/covariance.h"
 #include "estimators/pose.h"
-#include "estimators/rotation_averaging.h"
-#include "estimators/triangulation.h"
 #include "estimators/rotation_averaging.h"
 #include "estimators/solvers/affine_transform.h"
 #include "estimators/solvers/essential_matrix.h"
@@ -245,7 +242,7 @@ void pybind_estimators(py::module& m) {
                     "refine_absolute_pose",
                     [](const AbsolutePoseRefinementOptions& options,
                        const py::array_t<bool, py::array::c_style |
-                                                         py::array::forcecast>&
+                                                       py::array::forcecast>&
                                inlier_mask_array,
                        const py::array_t<double, py::array::c_style |
                                                          py::array::forcecast>&
@@ -2117,9 +2114,9 @@ void pybind_estimators(py::module& m) {
             .value("ANGULAR_ERROR",
                    colmap::TriangulationEstimator::ResidualType::ANGULAR_ERROR)
             .value("REPROJECTION_ERROR",
-                   colmap::TriangulationEstimator::ResidualType::REPROJECTION_ERROR)
+                   colmap::TriangulationEstimator::ResidualType::
+                           REPROJECTION_ERROR)
             .export_values();
-
 
     // Upstream parity (estimators/bundle_adjustment_caspar.h): the aggregate
     // caspar solver-parameter contract; the fork execution still runs through
@@ -2127,34 +2124,44 @@ void pybind_estimators(py::module& m) {
     py::class_<colmap::CasparBundleAdjustmentOptions>(
             m_estimators, "CasparBundleAdjustmentOptions")
             .def(py::init<>())
-            .def_readwrite("solver_iter_max",
-                           &colmap::CasparBundleAdjustmentOptions::solver_iter_max)
+            .def_readwrite(
+                    "solver_iter_max",
+                    &colmap::CasparBundleAdjustmentOptions::solver_iter_max)
             .def_readwrite("pcg_iter_max",
                            &colmap::CasparBundleAdjustmentOptions::pcg_iter_max)
             .def_readwrite("diag_init",
                            &colmap::CasparBundleAdjustmentOptions::diag_init)
             .def_readwrite("diag_min",
                            &colmap::CasparBundleAdjustmentOptions::diag_min)
-            .def_readwrite("diag_scaling_up",
-                           &colmap::CasparBundleAdjustmentOptions::diag_scaling_up)
-            .def_readwrite("diag_scaling_down",
-                           &colmap::CasparBundleAdjustmentOptions::diag_scaling_down)
-            .def_readwrite("diag_exit_value",
-                           &colmap::CasparBundleAdjustmentOptions::diag_exit_value)
-            .def_readwrite("score_exit_value",
-                           &colmap::CasparBundleAdjustmentOptions::score_exit_value)
-            .def_readwrite("pcg_rel_error_exit",
-                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_error_exit)
-            .def_readwrite("pcg_rel_score_exit",
-                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_score_exit)
+            .def_readwrite(
+                    "diag_scaling_up",
+                    &colmap::CasparBundleAdjustmentOptions::diag_scaling_up)
+            .def_readwrite(
+                    "diag_scaling_down",
+                    &colmap::CasparBundleAdjustmentOptions::diag_scaling_down)
+            .def_readwrite(
+                    "diag_exit_value",
+                    &colmap::CasparBundleAdjustmentOptions::diag_exit_value)
+            .def_readwrite(
+                    "score_exit_value",
+                    &colmap::CasparBundleAdjustmentOptions::score_exit_value)
+            .def_readwrite(
+                    "pcg_rel_error_exit",
+                    &colmap::CasparBundleAdjustmentOptions::pcg_rel_error_exit)
+            .def_readwrite(
+                    "pcg_rel_score_exit",
+                    &colmap::CasparBundleAdjustmentOptions::pcg_rel_score_exit)
             .def_readwrite("pcg_rel_decrease_min",
-                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_decrease_min)
+                           &colmap::CasparBundleAdjustmentOptions::
+                                   pcg_rel_decrease_min)
             .def_readwrite("solver_rel_decrease_min",
-                           &colmap::CasparBundleAdjustmentOptions::solver_rel_decrease_min)
+                           &colmap::CasparBundleAdjustmentOptions::
+                                   solver_rel_decrease_min)
             .def_readwrite("gpu_index",
                            &colmap::CasparBundleAdjustmentOptions::gpu_index)
             .def_readwrite("collect_iteration_data",
-                           &colmap::CasparBundleAdjustmentOptions::collect_iteration_data)
+                           &colmap::CasparBundleAdjustmentOptions::
+                                   collect_iteration_data)
             .def("check", &colmap::CasparBundleAdjustmentOptions::Check);
 
     // Upstream parity (estimators/covariance.cc): internal::PoseParam
@@ -2165,13 +2172,15 @@ void pybind_estimators(py::module& m) {
             .def(py::init<>());
 
     py::class_<colmap::CasparBundleAdjustmentSummary,
-               colmap::BundleAdjustmentSummary>(
-            m_estimators, "CasparBundleAdjustmentSummary")
+               colmap::BundleAdjustmentSummary>(m_estimators,
+                                                "CasparBundleAdjustmentSummary")
             .def(py::init<>())
-            .def_readonly("iteration_count",
-                          &colmap::CasparBundleAdjustmentSummary::iteration_count)
-            .def_readonly("initial_score",
-                          &colmap::CasparBundleAdjustmentSummary::initial_score);
+            .def_readonly(
+                    "iteration_count",
+                    &colmap::CasparBundleAdjustmentSummary::iteration_count)
+            .def_readonly(
+                    "initial_score",
+                    &colmap::CasparBundleAdjustmentSummary::initial_score);
 
     // Upstream name of the pose-prior BA options (the fork type is registered
     // above under the pre-unification name).

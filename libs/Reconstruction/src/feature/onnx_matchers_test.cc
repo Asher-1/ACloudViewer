@@ -86,7 +86,6 @@ bool LightGlueModelAvailable() {
   return std::filesystem::is_regular_file(DefaultAlikedLightGlueModelPath());
 }
 
-}  // namespace
 
 class BruteForceMatcherTest : public testing::Test {};
 

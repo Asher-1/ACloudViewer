@@ -9,19 +9,19 @@
 
 #include <QCoreApplication>
 #include <QSysInfo>
-
 #include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 
 #ifdef _WIN32
-#include <windows.h>
 #include <dbghelp.h>
+#include <windows.h>
 #else
-#include <csignal>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <csignal>
 #if defined(__GLIBC__) || defined(__APPLE__)
 #include <dlfcn.h>
 #include <execinfo.h>
@@ -56,9 +56,9 @@ int s_throwSnapCount = 0;
 
 void writeRaw(const char *text, size_t len) {
 #ifdef _WIN32
-    HANDLE h = CreateFileA(s_logPath.toUtf8().constData(), FILE_APPEND_DATA, 0,
-                           nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL,
-                           nullptr);
+    HANDLE h =
+            CreateFileA(s_logPath.toUtf8().constData(), FILE_APPEND_DATA, 0,
+                        nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
         SetFilePointer(h, 0, nullptr, FILE_END);
         DWORD written = 0;
@@ -113,8 +113,8 @@ void writeStampWindows(const char *reason) {
     localtime_s(&tmBuf, &now);
     std::snprintf(stamp, sizeof(stamp),
                   "\n===== CRASH %s %04d-%02d-%02d %02d:%02d:%02d =====\n",
-                  reason, tmBuf.tm_year + 1900, tmBuf.tm_mon + 1,
-                  tmBuf.tm_mday, tmBuf.tm_hour, tmBuf.tm_min, tmBuf.tm_sec);
+                  reason, tmBuf.tm_year + 1900, tmBuf.tm_mon + 1, tmBuf.tm_mday,
+                  tmBuf.tm_hour, tmBuf.tm_min, tmBuf.tm_sec);
     writeLine(stamp);
 }
 
@@ -143,23 +143,23 @@ extern "C" void posixSignalHandler(int sig) {
 
     const char *name = "UNKNOWN";
     switch (sig) {
-    case SIGSEGV:
-        name = "SIGSEGV";
-        break;
-    case SIGBUS:
-        name = "SIGBUS";
-        break;
-    case SIGFPE:
-        name = "SIGFPE";
-        break;
-    case SIGILL:
-        name = "SIGILL";
-        break;
-    case SIGABRT:
-        name = "SIGABRT";
-        break;
-    default:
-        break;
+        case SIGSEGV:
+            name = "SIGSEGV";
+            break;
+        case SIGBUS:
+            name = "SIGBUS";
+            break;
+        case SIGFPE:
+            name = "SIGFPE";
+            break;
+        case SIGILL:
+            name = "SIGILL";
+            break;
+        case SIGABRT:
+            name = "SIGABRT";
+            break;
+        default:
+            break;
     }
     writeStampSignalSafe(name);
 #if defined(ECV_HAS_BACKTRACE)
@@ -273,8 +273,9 @@ void logUnhandledException(const QString &what) {
 #ifdef _WIN32
     writeStampWindows("CAUGHT C++ EXCEPTION (top-level handler)");
     writeLine(what.toUtf8().constData());
-    writeLine("(no stack: the exception was caught by the application and "
-              "the stack has unwound)");
+    writeLine(
+            "(no stack: the exception was caught by the application and "
+            "the stack has unwound)");
     writeLine("===== END CRASH =====\n");
 #else
     writeStampSignalSafe("CAUGHT C++ EXCEPTION (top-level handler)");
@@ -284,8 +285,9 @@ void logUnhandledException(const QString &what) {
     // before it did.
     writeThrowSiteStack();
 #else
-    writeLine("(no stack: the exception was caught by the application and "
-              "the stack has unwound)");
+    writeLine(
+            "(no stack: the exception was caught by the application and "
+            "the stack has unwound)");
 #endif
     writeLine("===== END CRASH =====\n");
 #endif

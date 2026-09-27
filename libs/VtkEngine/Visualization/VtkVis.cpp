@@ -2088,16 +2088,15 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
     // Line width has no per-block equivalent in VTK composite attributes:
     // group cameras per resolved width (1 plain / 2 with frustum lines) so
     // the single group-actor property always matches every member block.
-    const std::string groupId =
-            CVTools::FromQString(container->getViewId()) + "#lw" +
-            std::to_string(static_cast<int>(lineWidth));
+    const std::string groupId = CVTools::FromQString(container->getViewId()) +
+                                "#lw" +
+                                std::to_string(static_cast<int>(lineWidth));
 
     CompositeLeafKey key;
     key.sensor = camera;
-    key.sensorPointCount =
-            unsigned(camera->getNearPlane().points_.size() +
-                     camera->getSideLines().points_.size() +
-                     camera->getArrow().points_.size());
+    key.sensorPointCount = unsigned(camera->getNearPlane().points_.size() +
+                                    camera->getSideLines().points_.size() +
+                                    camera->getArrow().points_.size());
     key.sensorLineWidth = lineWidth;
     key.sensorFrameColor = framePacked;
     key.sensorPlaneColor = planePacked;
@@ -2162,8 +2161,8 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
     // opacity written before it would die with that block. Re-applying the
     // persisted entity opacity here closes the loop for every registration
     // path (fresh, same-group replace, cross-group move).
-    m_compositeRegistry.setLeafOpacity(viewID,
-                                       static_cast<double>(sensor->getOpacity()));
+    m_compositeRegistry.setLeafOpacity(
+            viewID, static_cast<double>(sensor->getOpacity()));
     // Anchor the still-local block geometry so per-frame pose application is
     // an absolute, idempotent bake (applyGLTransform → setLeafWorldTransform)
     // instead of an accumulating incremental one.
@@ -2313,8 +2312,7 @@ namespace {
 // while an epsilon could swallow a real but tiny pose increment and freeze
 // the entity). @returns true ONLY when the transform actually changed.
 bool setActorUserTransformIfChanged(vtkActor* actor, vtkMatrix4x4* mat44) {
-    if (auto* current =
-                vtkTransform::SafeDownCast(actor->GetUserTransform())) {
+    if (auto* current = vtkTransform::SafeDownCast(actor->GetUserTransform())) {
         const double* cur = current->GetMatrix()->GetData();
         const double* next = mat44->GetData();
         bool same = true;
@@ -2340,8 +2338,7 @@ bool setActorUserTransformIfChanged(vtkActor* actor, vtkMatrix4x4* mat44) {
 // @returns true ONLY when the transform was actually cleared.
 bool clearActorUserTransformIfSet(vtkActor* actor) {
     if (!actor->GetUserTransform()) return false;
-    if (auto* current =
-                vtkTransform::SafeDownCast(actor->GetUserTransform())) {
+    if (auto* current = vtkTransform::SafeDownCast(actor->GetUserTransform())) {
         const double* m = current->GetMatrix()->GetData();
         static constexpr double kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0,
                                                  0, 0, 1, 0, 0, 0, 0, 1};
@@ -2425,14 +2422,13 @@ void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
             // (baking identity would dirty the points → VBO re-upload every
             // frame) without changing the relative-bake semantics.
             const float* d = glTrans.data();
-            const bool identity = d[0] == 1.0f && d[5] == 1.0f &&
-                                  d[10] == 1.0f && d[15] == 1.0f &&
-                                  d[1] == 0.0f && d[2] == 0.0f &&
-                                  d[3] == 0.0f && d[4] == 0.0f &&
-                                  d[6] == 0.0f && d[7] == 0.0f &&
-                                  d[8] == 0.0f && d[9] == 0.0f &&
-                                  d[11] == 0.0f && d[12] == 0.0f &&
-                                  d[13] == 0.0f && d[14] == 0.0f;
+            const bool identity =
+                    d[0] == 1.0f && d[5] == 1.0f && d[10] == 1.0f &&
+                    d[15] == 1.0f && d[1] == 0.0f && d[2] == 0.0f &&
+                    d[3] == 0.0f && d[4] == 0.0f && d[6] == 0.0f &&
+                    d[7] == 0.0f && d[8] == 0.0f && d[9] == 0.0f &&
+                    d[11] == 0.0f && d[12] == 0.0f && d[13] == 0.0f &&
+                    d[14] == 0.0f;
             if (!identity) {
                 m_compositeRegistry.bakeLeafTransform(viewID, mat44);
                 invalidateGeometryBounds();
@@ -3743,8 +3739,8 @@ void VtkVis::removeCameraPlaneFacesByPrefix(const std::string& prefix,
                                             int viewport) {
     // Collect first: removeShape mutates the map we iterate.
     std::vector<std::string> matches;
-    for (const auto &entry : *getShapeActorMap()) {
-        const std::string &id = entry.first;
+    for (const auto& entry : *getShapeActorMap()) {
+        const std::string& id = entry.first;
         // viewIDs are BARE decimal strings: a bare prefix compare would let
         // container "12" match camera "123"'s face. The prefix must be
         // followed EXACTLY by the "#plane" separator (same anchor rule as
@@ -3756,7 +3752,7 @@ void VtkVis::removeCameraPlaneFacesByPrefix(const std::string& prefix,
             matches.push_back(id);
         }
     }
-    for (const auto &id : matches) {
+    for (const auto& id : matches) {
         removeShape(id, viewport);
     }
 }
@@ -5748,8 +5744,8 @@ vtkActor* VtkVis::evictCompositeLeaf(const std::string& viewID, int viewport) {
     if (m_compositeRegistry.containsLeaf(viewID)) {
         const std::string groupId = m_compositeRegistry.groupOfLeaf(viewID);
         if (vtkActor* groupActor = m_compositeRegistry.groupActor(groupId)) {
-            evictedLineWidth =
-                    static_cast<float>(groupActor->GetProperty()->GetLineWidth());
+            evictedLineWidth = static_cast<float>(
+                    groupActor->GetProperty()->GetLineWidth());
         }
     }
 
@@ -5809,8 +5805,7 @@ vtkActor* VtkVis::evictCompositeLeaf(const std::string& viewID, int viewport) {
                     VtkRendering::CreateActorFromVTKDataSet(linesData,
                                                             linesActor);
                     if (linesActor) {
-                        linesActor->GetProperty()
-                                ->SetRepresentationToSurface();
+                        linesActor->GetProperty()->SetRepresentationToSurface();
                         linesActor->GetProperty()->SetLineWidth(
                                 evictedLineWidth);
                         addActorToRenderer(linesActor, viewport);
@@ -5974,8 +5969,8 @@ std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
             winH = wsz[1];
         }
     }
-    const double tanHalfFov = std::tan(
-            ren->GetActiveCamera()->GetViewAngle() * 0.5 * M_PI / 180.0);
+    const double tanHalfFov = std::tan(ren->GetActiveCamera()->GetViewAngle() *
+                                       0.5 * M_PI / 180.0);
 
     std::string bestLeaf;
     double bestT = std::numeric_limits<double>::max();
@@ -6066,6 +6061,88 @@ std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
     return bestLeaf;
 }
 
+std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
+    auto shapeMap = getShapeActorMap();
+    auto* ren = getRendererCollection()->GetFirstRenderer();
+    if (!shapeMap || !ren || !ren->GetActiveCamera()) return std::string();
+
+    auto worldRay = [ren](double px, double py, double outO[3],
+                          double outD[3]) -> bool {
+        double a[4] = {px, py, 0.0, 1.0};
+        double b[4] = {px, py, 1.0, 1.0};
+        double w0[4], w1[4];
+        ren->SetDisplayPoint(a);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w0);
+        ren->SetDisplayPoint(b);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w1);
+        if (std::abs(w0[3]) < 1e-12 || std::abs(w1[3]) < 1e-12) return false;
+        outO[0] = w0[0] / w0[3];
+        outO[1] = w0[1] / w0[3];
+        outO[2] = w0[2] / w0[3];
+        outD[0] = w1[0] / w1[3] - outO[0];
+        outD[1] = w1[1] / w1[3] - outO[1];
+        outD[2] = w1[2] / w1[3] - outO[2];
+        return true;
+    };
+
+    // Center pixel plus a small ring so a face edge still counts.
+    const double offsets[5][2] = {
+            {0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+    vtkNew<vtkGenericCell> cell;
+    for (const auto& kv : *shapeMap) {
+        const std::string& key = kv.first;
+        if (key.size() <= 6 ||
+            key.compare(key.size() - 6, 6, "#plane") != 0) {
+            continue;
+        }
+        auto* faceActor = vtkActor::SafeDownCast(kv.second);
+        // Hidden faces (replay-hidden camera, DB-tree toggle) are not
+        // pickable — GetVisibility reflects the reconciled actor state.
+        if (!faceActor || !faceActor->GetVisibility()) continue;
+        auto* mapper = faceActor->GetMapper();
+        auto* poly = mapper
+                ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
+                : nullptr;
+        if (!poly) continue;
+        vtkMatrix4x4* actorMat = faceActor->GetMatrix();
+
+        for (const auto& off : offsets) {
+            double o[3], d[3];
+            if (!worldRay(x + off[0], y + off[1], o, d)) continue;
+            const vtkIdType nCells = poly->GetNumberOfCells();
+            for (vtkIdType c = 0; c < nCells; ++c) {
+                poly->GetCell(c, cell);
+                if (cell->GetNumberOfPoints() != 3) continue;
+                double tri[3][3];
+                for (int k = 0; k < 3; ++k) {
+                    double lp[3];
+                    cell->GetPoints()->GetPoint(k, lp);
+                    double h[4] = {lp[0], lp[1], lp[2], 1.0};
+                    double wOut[4];
+                    actorMat->MultiplyPoint(h, wOut);
+                    const double invW =
+                            std::abs(wOut[3]) < 1e-12
+                                    ? 1.0
+                                    : 1.0 / wOut[3];
+                    tri[k][0] = wOut[0] * invW;
+                    tri[k][1] = wOut[1] * invW;
+                    tri[k][2] = wOut[2] * invW;
+                }
+                double t = 0.0;
+                if (RayTriangle(o, d, tri[0], tri[1], tri[2], t)) {
+                    // The face actor id is "<sensorId>#plane"; the maps'
+                    // id conventions strip the suffix back to the camera.
+                    return stripPickSuffix(key);
+                }
+            }
+        }
+    }
+    return std::string();
+}
+
 std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     auto* ren = getRendererCollection()->GetFirstRenderer();
     if (!ren) return std::string();
@@ -6093,6 +6170,24 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     // the CPU ray-cast fallback below covers the composite-miss case without
     // touching the render pipeline during picking.
     vtkSmartPointer<vtkSelection> selection = runHwPass(x, y);
+
+    // CAMERA-PICK PRIORITY: the near-plane faces are translucent (skipped
+    // by the hardware selection pass) and the frustum beams are 1-px lines
+    // — both lose the "closest prop" contest to any point cloud in front
+    // of them, which made camera picks near-impossible in dense scenes.
+    // Entity picking resolves a camera first whenever its face is under
+    // the cursor; point/triangle/label picking (selection tools) never
+    // enters this path, so their behavior is untouched.
+    {
+        const std::string camId = nearestCameraFaceUnderPixel(x, y);
+        if (!camId.empty()) {
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[pick] camera face probe -> '%s'",
+                             camId.c_str());
+            }
+            return camId;
+        }
+    }
 
     if (selection && selection->GetNumberOfNodes() > 0) {
         vtkSelectionNode* node = selection->GetNode(0);

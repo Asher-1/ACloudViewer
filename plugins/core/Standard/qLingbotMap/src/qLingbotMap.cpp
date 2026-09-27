@@ -194,8 +194,8 @@ void qLingbotMap::showDialog() {
                 &qLingbotMap::onReplaySeek);
         connect(m_dialog, &LingbotMapDialog::liveViewModeChanged, this,
                 &qLingbotMap::onLiveViewModeChanged);
-        connect(m_dialog, &LingbotMapDialog::resultDisplaySettingsChanged,
-                this, &qLingbotMap::onResultDisplayChanged);
+        connect(m_dialog, &LingbotMapDialog::resultDisplaySettingsChanged, this,
+                &qLingbotMap::onResultDisplayChanged);
         connect(m_dialog, &LingbotMapDialog::resultViewRequested, this,
                 &qLingbotMap::onResultViewRequested);
         connect(m_dialog, &LingbotMapDialog::pauseRequested, this,
@@ -243,7 +243,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     // mutable value capture: the functor outlives this stack frame.
     QString lastStage;
     connect(m_worker, &LingbotMapWorker::taskStage, this,
-            [this, lastStage, forwardLog](const QString &stage,
+            [this, lastStage, forwardLog](const QString& stage,
                                           int percent) mutable {
                 if (percent >= 0) m_dialog->setProgress(percent);
                 if (stage != lastStage) {
@@ -291,6 +291,33 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_onlineRefreshThrottle.start();
     // A previous result's replay must not keep running into the new run.
     stopPlaybackAndRestore();
+    // A fresh run starts from a CLEAN SLATE: drop the previous run's
+    // materialized result group (its cameras/trajectory/point clouds would
+    // otherwise pile up next to the new run's output — the user sees the
+    // old camera trail at full density while the new reconstruction is
+    // still on its first frames and reads it as "replay not syncing").
+    // The online preview group is disposed above; this targets the
+    // materialized result group(s) only.
+    if (ccHObject* rootDb = m_app ? m_app->dbRootObject() : nullptr) {
+        std::vector<ccHObject*> doomed;
+        for (unsigned i = 0; i < rootDb->getChildrenNumber(); ++i) {
+            ccHObject* child = rootDb->getChild(i);
+            if (child && isLingbotMapEntity(child) &&
+                !child->getName().startsWith(
+                        QStringLiteral("LingbotMap_Online"))) {
+                doomed.push_back(child);
+            }
+        }
+        for (ccHObject* child : doomed) {
+            m_app->removeFromDB(child, /*autoDelete=*/true);
+        }
+        if (!doomed.empty()) {
+            m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
+        }
+    }
+    // Refresh the replay UI after the reset (a stale "1 / 286" from the
+    // previous run would otherwise linger until the next materialization).
+    syncReplayStateToDialog();
     m_onlineCloudPoints = 0;
     m_alignedBatchCount = 0;
     m_refreshCostSamples.clear();
@@ -680,7 +707,8 @@ void qLingbotMap::onLiveViewModeChanged(int mode) {
         // Immediate feedback: re-apply from the cached latest frame and
         // render once (no next-frame wait). Follow goes through the
         // sensor's applyViewport (same chain as the per-frame path).
-        if (mode == 2 && m_lastOnlineSensor && m_lastOnlineSensor->getDisplay()) {
+        if (mode == 2 && m_lastOnlineSensor &&
+            m_lastOnlineSensor->getDisplay()) {
             m_lastOnlineSensor->applyViewport();
         } else {
             applyLiveCameraPose(mode, m_lastFrameC2w, m_lastFrameCenter,
@@ -775,8 +803,7 @@ void qLingbotMap::refilterResultClouds(double threshold) {
         return;
     }
     ccHObject* root = m_app->dbRootObject();
-    ccHObject* group =
-            root ? root->find(m_resultGroupId) : nullptr;
+    ccHObject* group = root ? root->find(m_resultGroupId) : nullptr;
     if (!group) {
         if (m_dialog) {
             m_dialog->appendLog(
@@ -813,13 +840,11 @@ void qLingbotMap::refilterResultClouds(double threshold) {
 }
 
 void qLingbotMap::applyCameraDisplay(bool showCameras,
-                                    int camStride,
-                                    int camSizePercent) {
+                                     int camStride,
+                                     int camSizePercent) {
     const int stride = std::max(1, camStride);
-    const PointCoordinateType scale =
-            static_cast<PointCoordinateType>(m_cameraBaseScale *
-                                             std::max(1, camSizePercent) /
-                                             100.0);
+    const PointCoordinateType scale = static_cast<PointCoordinateType>(
+            m_cameraBaseScale * std::max(1, camSizePercent) / 100.0);
     // Replay owns camera visibility while active: a slider tick (Camera
     // size % / stride / Show cameras fire on valueChanged) would otherwise
     // stomp the incremental per-frame visibility set by onPlaybackTick —
@@ -869,11 +894,10 @@ void qLingbotMap::onResultViewRequested(int which) {
     if (frame.c2w.size() < 16) return;
     double radius = m_lastFrameRadius;
     if (ccHObject* root = m_app->dbRootObject()) {
-        if (ccHObject* group =
-                    m_resultGroupId != 0 ? root->find(m_resultGroupId)
-                                         : nullptr) {
-            const ccBBox box =
-                    group->getBB_recursive(true, false);
+        if (ccHObject* group = m_resultGroupId != 0
+                                       ? root->find(m_resultGroupId)
+                                       : nullptr) {
+            const ccBBox box = group->getBB_recursive(true, false);
             if (box.isValid()) {
                 radius = box.getDiagNorm() / 2.0;
             }
@@ -1284,8 +1308,7 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
             if (!std::isfinite(wx) || !std::isfinite(wy) || !std::isfinite(wz))
                 continue;
             cloud->addPoint(CCVector3(wx, wy, wz));
-            if (confSf)
-                confSf->setValue(cloud->size() - 1, frame.depthConf[i]);
+            if (confSf) confSf->setValue(cloud->size() - 1, frame.depthConf[i]);
             if (cloudHasRgb) {
                 const QRgb rgb =
                         rgbBits ? qRgb(rgbBits[y * rgbStride + x * 3 + 0],
@@ -1566,8 +1589,8 @@ void qLingbotMap::seekPlayback(int frame) {
 void qLingbotMap::syncReplayStateToDialog() {
     if (!m_dialog) return;
     const int count = static_cast<int>(m_frameCameras.size());
-    m_dialog->setReplayState(static_cast<int>(m_replayState),
-                             m_playbackFrame, count);
+    m_dialog->setReplayState(static_cast<int>(m_replayState), m_playbackFrame,
+                             count);
 }
 
 void qLingbotMap::syncReplayPreviewToDialog() {
@@ -1576,8 +1599,7 @@ void qLingbotMap::syncReplayPreviewToDialog() {
     if (i < 0 || i >= static_cast<int>(m_replayResultIndex.size())) return;
     const int resultIdx = m_replayResultIndex[static_cast<size_t>(i)];
     if (resultIdx < 0 || resultIdx >= m_pendingResult.frames.size()) return;
-    const LingbotFrameResult& fr =
-            m_pendingResult.frames.at(resultIdx);
+    const LingbotFrameResult& fr = m_pendingResult.frames.at(resultIdx);
     if (!fr.frameRgb.isNull()) {
         m_dialog->updatePreviewImage(fr.frameRgb, i);
     }
@@ -1598,8 +1620,8 @@ void qLingbotMap::applyReplayVisibility() {
         const bool frameShown = m_playbackCurrentFrameOnly
                                         ? i == m_playbackFrame
                                         : i <= m_playbackFrame;
-        const bool camVisible = m_resultShowCameras &&
-                                (i % stride == 0) && frameShown;
+        const bool camVisible =
+                m_resultShowCameras && (i % stride == 0) && frameShown;
         if (ccHObject* cam = m_frameCameras[static_cast<size_t>(i)]) {
             cam->setVisible(camVisible);
             if (camVisible) ++visibleCams;
@@ -1653,8 +1675,8 @@ void qLingbotMap::onPlaybackTick() {
     // per-tick group->find per camera used to be O(cameras x tree) at
     // playback FPS.
     applyReplayVisibility();
-    m_playbackFrame = (m_playbackFrame + 1) %
-                      static_cast<int>(m_frameCameras.size());
+    m_playbackFrame =
+            (m_playbackFrame + 1) % static_cast<int>(m_frameCameras.size());
     // Reconstruction ↔ input-stream lockstep: the dialog preview shows the
     // frame just became current (official frame-panel behavior).
     syncReplayPreviewToDialog();

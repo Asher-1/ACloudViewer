@@ -9,8 +9,8 @@
 
 #include "feature/aliked.h"
 #include "feature/extractor.h"
-#include "feature/loma.h"
 #include "feature/learned_matchers.h"
+#include "feature/loma.h"
 #include "feature/matcher.h"
 #include "feature/types.h"
 #include "pipelines/feature.h"
@@ -423,12 +423,10 @@ void pybind_feature(py::module& m) {
     // feature/matcher.h): thin factories over the fork SIFT/LoMa engines;
     // the ALIKED branches throw until the AICore ggml task lands.
     // ------------------------------------------------------------------
-    py::class_<colmap::FeatureExtractionOptions>(
-            m, "FeatureExtractionOptions")
+    py::class_<colmap::FeatureExtractionOptions>(m, "FeatureExtractionOptions")
             .def(py::init<colmap::FeatureExtractorType>(),
                  "type"_a = colmap::FeatureExtractorType::SIFT)
-            .def_readwrite("type",
-                           &colmap::FeatureExtractionOptions::type)
+            .def_readwrite("type", &colmap::FeatureExtractionOptions::type)
             .def_readwrite("max_image_size",
                            &colmap::FeatureExtractionOptions::max_image_size)
             .def_readwrite("num_threads",
@@ -437,14 +435,10 @@ void pybind_feature(py::module& m) {
                            &colmap::FeatureExtractionOptions::use_gpu)
             .def_readwrite("gpu_index",
                            &colmap::FeatureExtractionOptions::gpu_index)
-            .def_readwrite("sift",
-                           &colmap::FeatureExtractionOptions::sift)
-            .def_readwrite("loma",
-                           &colmap::FeatureExtractionOptions::loma)
-            .def_readwrite("aliked",
-                           &colmap::FeatureExtractionOptions::aliked)
-            .def("requires_rgb",
-                 &colmap::FeatureExtractionOptions::RequiresRGB)
+            .def_readwrite("sift", &colmap::FeatureExtractionOptions::sift)
+            .def_readwrite("loma", &colmap::FeatureExtractionOptions::loma)
+            .def_readwrite("aliked", &colmap::FeatureExtractionOptions::aliked)
+            .def("requires_rgb", &colmap::FeatureExtractionOptions::RequiresRGB)
             .def("requires_open_gl",
                  &colmap::FeatureExtractionOptions::RequiresOpenGL)
             .def("eff_max_image_size",
@@ -457,17 +451,18 @@ void pybind_feature(py::module& m) {
             "dispatches to the fork SIFT (CPU) or LoMa (ggml) engine.")
             .def_static("create", &colmap::FeatureExtractor::Create,
                         "options"_a)
-            .def("extract",
-                 [](colmap::FeatureExtractor& self,
-                    const colmap::Bitmap& bitmap) {
-                     colmap::FeatureKeypoints keypoints;
-                     colmap::FeatureDescriptorsFloat descriptors;
-                     THROW_CHECK(self.Extract(bitmap, &keypoints,
-                                              &descriptors));
-                     return py::make_tuple(keypoints, descriptors);
-                 },
-                 "bitmap"_a,
-                 "Extract keypoints and float descriptors from the image.");
+            .def(
+                    "extract",
+                    [](colmap::FeatureExtractor& self,
+                       const colmap::Bitmap& bitmap) {
+                        colmap::FeatureKeypoints keypoints;
+                        colmap::FeatureDescriptorsFloat descriptors;
+                        THROW_CHECK(
+                                self.Extract(bitmap, &keypoints, &descriptors));
+                        return py::make_tuple(keypoints, descriptors);
+                    },
+                    "bitmap"_a,
+                    "Extract keypoints and float descriptors from the image.");
 
     py::class_<colmap::FeatureMatchingOptions>(m, "FeatureMatchingOptions")
             .def(py::init<colmap::FeatureMatcherType>(),
@@ -475,8 +470,7 @@ void pybind_feature(py::module& m) {
             .def_readwrite("type", &colmap::FeatureMatchingOptions::type)
             .def_readwrite("num_threads",
                            &colmap::FeatureMatchingOptions::num_threads)
-            .def_readwrite("use_gpu",
-                           &colmap::FeatureMatchingOptions::use_gpu)
+            .def_readwrite("use_gpu", &colmap::FeatureMatchingOptions::use_gpu)
             .def_readwrite("gpu_index",
                            &colmap::FeatureMatchingOptions::gpu_index)
             .def_readwrite("max_num_matches",
@@ -501,10 +495,8 @@ void pybind_feature(py::module& m) {
             "The per-image inputs of the new-style matcher (upstream nests "
             "this as FeatureMatcher::Image).")
             .def(py::init<>())
-            .def_readwrite("image_id",
-                           &colmap::FeatureMatcher::Image::image_id)
-            .def_readwrite("camera",
-                           &colmap::FeatureMatcher::Image::camera)
+            .def_readwrite("image_id", &colmap::FeatureMatcher::Image::image_id)
+            .def_readwrite("camera", &colmap::FeatureMatcher::Image::camera)
             .def_readwrite("keypoints",
                            &colmap::FeatureMatcher::Image::keypoints)
             .def_readwrite("descriptors",
@@ -513,30 +505,31 @@ void pybind_feature(py::module& m) {
     py::class_<colmap::FeatureMatcher>(m, "FeatureMatcher",
                                        "The new-style in-memory feature "
                                        "matching abstraction.")
-            .def_static("create", &colmap::FeatureMatcher::Create,
-                        "options"_a)
-            .def("match",
-                 [](colmap::FeatureMatcher& self,
-                    const colmap::FeatureMatcher::Image& image1,
-                    const colmap::FeatureMatcher::Image& image2) {
-                     colmap::FeatureMatches matches;
-                     self.Match(image1, image2, &matches);
-                     return matches;
-                 },
-                 "image1"_a, "image2"_a,
-                 "Match two images and return the feature matches.")
-            .def("match_guided",
-                 [](colmap::FeatureMatcher& self, double max_error,
-                    const colmap::FeatureMatcher::Image& image1,
-                    const colmap::FeatureMatcher::Image& image2) {
-                     colmap::TwoViewGeometry two_view_geometry;
-                     self.MatchGuided(max_error, image1, image2,
-                                      &two_view_geometry);
-                     return two_view_geometry;
-                 },
-                 "max_error"_a, "image1"_a, "image2"_a,
-                 "Match two images with the guided matcher and return the "
-                 "two-view geometry.");
+            .def_static("create", &colmap::FeatureMatcher::Create, "options"_a)
+            .def(
+                    "match",
+                    [](colmap::FeatureMatcher& self,
+                       const colmap::FeatureMatcher::Image& image1,
+                       const colmap::FeatureMatcher::Image& image2) {
+                        colmap::FeatureMatches matches;
+                        self.Match(image1, image2, &matches);
+                        return matches;
+                    },
+                    "image1"_a, "image2"_a,
+                    "Match two images and return the feature matches.")
+            .def(
+                    "match_guided",
+                    [](colmap::FeatureMatcher& self, double max_error,
+                       const colmap::FeatureMatcher::Image& image1,
+                       const colmap::FeatureMatcher::Image& image2) {
+                        colmap::TwoViewGeometry two_view_geometry;
+                        self.MatchGuided(max_error, image1, image2,
+                                         &two_view_geometry);
+                        return two_view_geometry;
+                    },
+                    "max_error"_a, "image1"_a, "image2"_a,
+                    "Match two images with the guided matcher and return the "
+                    "two-view geometry.");
 
     // Fork-specific descriptor-type dispatch (consumed by
     // LomaExtractionOptions and the database descriptor-type column).
@@ -550,7 +543,6 @@ void pybind_feature(py::module& m) {
             .value("kLomaL", colmap::FeatureDescriptorType::kLomaL)
             .value("kLomaG", colmap::FeatureDescriptorType::kLomaG)
             .export_values();
-
 
     py::class_<colmap::LomaExtractionOptions>(m, "LomaExtractionOptions")
             .def(py::init<>())
@@ -618,8 +610,8 @@ void pybind_feature(py::module& m) {
                            &colmap::LightGlueGGMLMatchingOptions::model_path)
             .def("check", &colmap::LightGlueGGMLMatchingOptions::Check);
 
-    py::class_<colmap::LomaVariantMatcherOptions>(
-            m, "LomaVariantMatcherOptions")
+    py::class_<colmap::LomaVariantMatcherOptions>(m,
+                                                  "LomaVariantMatcherOptions")
             .def(py::init<>())
             .def_readwrite("model_path",
                            &colmap::LomaVariantMatcherOptions::model_path)
@@ -634,8 +626,7 @@ void pybind_feature(py::module& m) {
                     &colmap::LomaMatchingOptions::matcher_model_path,
                     "Matcher model path (ggml AICore catalog default when "
                     "empty).")
-            .def_readwrite("min_score",
-                           &colmap::LomaMatchingOptions::min_score)
+            .def_readwrite("min_score", &colmap::LomaMatchingOptions::min_score)
             .def_readwrite("device", &colmap::LomaMatchingOptions::device)
             .def_readwrite("matcher_variant",
                            &colmap::LomaMatchingOptions::matcher_variant)

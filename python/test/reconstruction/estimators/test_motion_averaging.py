@@ -1,21 +1,32 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/motion_averaging_test.py (Open3D
 style)."""
 import numpy as np
 
 
 def test_rotation_weight_type_enum(estimators):
-    assert {k: int(v)
-            for k, v in estimators.RotationWeightType.__members__.items()} == {
-                "GEMAN_MCCLURE": 0,
-                "HALF_NORM": 1,
-            }
+    assert {
+        k: int(v) for k, v in estimators.RotationWeightType.__members__.items()
+    } == {
+        "GEMAN_MCCLURE": 0,
+        "HALF_NORM": 1,
+    }
 
 
 def test_rotation_averaging_reweighting_enum(estimators):
     assert {
         k: int(v)
         for k, v in estimators.RotationAveragingReweighting.__members__.items()
-    } == {"UNIFORM": 0, "INLIER_MATCH_COUNT": 1}
+    } == {
+        "UNIFORM": 0,
+        "INLIER_MATCH_COUNT": 1
+    }
 
 
 def test_rotation_estimator_options_default_init(estimators):

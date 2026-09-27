@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap scene/reconstruction_test.py (Open3D style)."""
 import copy
 
@@ -16,8 +23,8 @@ def rec(scene, geometry):
     img.camera_id = 1
     img.image_id = 1
     r.add_image_with_trivial_frame(
-        img, geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                              translation=[0, 0, 0]))
+        img, geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[0, 0,
+                                                                       0]))
     r.add_point3D([0.0, 0.0, 5.0], scene.Track(), [255, 0, 0])
     return r
 

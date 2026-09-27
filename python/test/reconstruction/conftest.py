@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Shared bootstrap for the pycolmap-parity reconstruction test suite.
 
 Loads the freshly built ``pybind`` extension directly from the build tree so
@@ -26,6 +33,7 @@ def pytest_configure(config):
     # process before the real test result is reported. Run this suite
     # without capture (harmless for the other suites).
     config.option.capture = "no"
+
 
 import glob as _glob
 
@@ -88,11 +96,9 @@ def pybind():
         except ImportError:
             pass
         else:
-            for name in ("cloudViewer.cuda.pybind",
-                         "cloudViewer.cpu.pybind"):
+            for name in ("cloudViewer.cuda.pybind", "cloudViewer.cpu.pybind"):
                 module = sys.modules.get(name)
-                if module is not None and hasattr(module,
-                                                  "reconstruction"):
+                if module is not None and hasattr(module, "reconstruction"):
                     return module
     # 2) Build-tree bootstrap.
     if "pybind" in sys.modules:
@@ -135,7 +141,6 @@ def mvs(recon):
 @pytest.fixture(scope="session")
 def pipeline(recon):
     return recon.pipeline
-
 
 
 @pytest.fixture(scope="session")

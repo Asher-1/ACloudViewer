@@ -242,6 +242,7 @@ private:
      *  Visibility-Threshold semantics; can only tighten the display). */
     void refilterResultClouds(double threshold);
     /** Applies show/stride/scale camera display state (no redraw). */
-    void applyCameraDisplay(bool showCameras, int camStride,
+    void applyCameraDisplay(bool showCameras,
+                            int camStride,
                             int camSizePercent);
 };

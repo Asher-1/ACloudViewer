@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap scene/camera_test.py (Open3D style)."""
 import numpy as np
 import pytest
@@ -20,8 +27,8 @@ def test_camera_model_id_pinhole(pinhole):
 
 
 def test_camera_model_id_simple_radial(scene):
-    cam = scene.Camera.create_from_model_name(1, "SIMPLE_RADIAL", 800.0,
-                                              640, 480)
+    cam = scene.Camera.create_from_model_name(1, "SIMPLE_RADIAL", 800.0, 640,
+                                              480)
     assert cam.model_name == "SIMPLE_RADIAL"
 
 
@@ -36,8 +43,8 @@ def test_camera_create_from_model_name(pinhole):
 
 
 def test_camera_single_focal_length(scene):
-    cam = scene.Camera.create_from_model_name(1, "SIMPLE_RADIAL", 800.0,
-                                              640, 480)
+    cam = scene.Camera.create_from_model_name(1, "SIMPLE_RADIAL", 800.0, 640,
+                                              480)
     assert cam.focal_length == 800.0
 
 

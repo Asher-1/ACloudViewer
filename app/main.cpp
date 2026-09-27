@@ -68,10 +68,12 @@
 
 #if defined(__GLIBC__) || defined(__linux__)
 #include <execinfo.h>  // backtrace: symbolized stack on crash
+
 #include <cstdlib>
 #endif
 
 #include <CrashHandler.h>
+
 #include "ecvConsole.h"
 
 // COMMON
@@ -846,7 +848,7 @@ int main(int argc, char* argv[]) {
         // (ACloudViewer.<stamp>.<pid>.crash.log) so each run's crashes land
         // beside its own log, 1:1, instead of mixing into one shared file.
         QString crashLogName;
-        ecvConsole *console = ecvConsole::TheInstance(/*autoInit=*/false);
+        ecvConsole* console = ecvConsole::TheInstance(/*autoInit=*/false);
         const QString sessionLog =
                 console ? console->currentLogFilePath() : QString();
         if (!sessionLog.isEmpty()) {
@@ -866,8 +868,7 @@ int main(int argc, char* argv[]) {
             // Unified crash-log record (the exception was CAUGHT here, so
             // std::terminate / the signal collectors never see it; the
             // throw-site stack comes from the __cxa_throw snapshot).
-            ecvCrashHandler::logUnhandledException(
-                    QString::fromUtf8(e.what()));
+            ecvCrashHandler::logUnhandledException(QString::fromUtf8(e.what()));
             QMessageBox::warning(
                     nullptr, QObject::tr("ECV crashed!"),
                     QObject::tr("Hum, it seems that ECV has crashed... Sorry "

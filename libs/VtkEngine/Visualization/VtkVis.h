@@ -985,7 +985,7 @@ private:
     /// Removes the dedicated near-plane face actors of all cameras whose
     /// viewId starts with \p prefix (used when a whole folder/group owning
     /// camera sensors goes away).
-    void removeCameraPlaneFacesByPrefix(const std::string &prefix,
+    void removeCameraPlaneFacesByPrefix(const std::string& prefix,
                                         int viewport = 0);
     void removeMesh(const std::string& viewId, int viewport = 0);
     bool removeText2D(const std::string& viewId, int viewport = 0);
@@ -1062,8 +1062,19 @@ public:
      *  line-only composite blocks, so when it comes back empty the hint is
      *  the only reliable hit — resolved through getIdByActor (suffix-
      *  stripped). */
-    std::string pickLeafViewId(double x, double y,
+    std::string pickLeafViewId(double x,
+                               double y,
                                vtkActor* hintActor = nullptr);
+    /** CAMERA-PICK PRIORITY probe (entity picking only): resolves the
+     *  camera whose near-plane face actor lies under the display pixel.
+     *  The faces are translucent (skipped by the hardware selection pass)
+     *  and lose the "closest prop" contest to point clouds in front of
+     *  them, so without this probe camera picks are near-impossible in
+     *  dense scenes. Returns the camera viewId ("<id>#plane" with the
+     *  suffix stripped by getIdByActor conventions), empty when no face is
+     *  under the cursor. Point/triangle/label picking (selection tools)
+     *  never enters this path. */
+    std::string nearestCameraFaceUnderPixel(double x, double y);
     /** CPU ray-cast fallback for composite groups: the VTK selection pass
      *  may produce no fragments for the composite actor (VTK 9.3 composite
      *  pick regression), which degraded every mesh click to the group/folder.

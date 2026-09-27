@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap retrieval/visual_index_test.py (Open3D style)."""
 import numpy as np
 import pytest
@@ -15,8 +22,8 @@ def test_visual_index_options(retrieval):
 
 
 @pytest.mark.skip(reason="faiss aborts on degenerate all-zero visual words; "
-                         "needs a real codebook fixture (upstream test uses "
-                         "a trained vocabulary)")
+                  "needs a real codebook fixture (upstream test uses "
+                  "a trained vocabulary)")
 def test_visual_index_build_and_query(retrieval):
     index = retrieval.VisualIndex.create()
     build_opts = retrieval.VisualIndex.BuildOptions()

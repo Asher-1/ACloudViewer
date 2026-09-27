@@ -30,12 +30,12 @@ class FeatureMatcher;
 // LIGHTGLUE) and download into the AICore shared cache with pinned SHA-256
 // verification, mirroring the LoMa wiring (feature/loma.cc).
 //
-// Upstream's nested BruteForceONNXMatchingOptions / LightGlueONNXMatchingOptions
-// groups are flattened onto AlikedMatchingOptions (learned_matchers.h
-// adjudication carried by feature/matcher_test.cc). The brute-force matcher
-// itself is pure Eigen cosine-similarity matching on the fork - semantically
-// identical to upstream's brute-force ONNX network (mutual NN + min_cossim +
-// ratio test + cross check) without a model round trip.
+// Upstream's nested BruteForceONNXMatchingOptions /
+// LightGlueONNXMatchingOptions groups are flattened onto AlikedMatchingOptions
+// (learned_matchers.h adjudication carried by feature/matcher_test.cc). The
+// brute-force matcher itself is pure Eigen cosine-similarity matching on the
+// fork - semantically identical to upstream's brute-force ONNX network (mutual
+// NN + min_cossim + ratio test + cross check) without a model round trip.
 
 struct AlikedExtractionOptions {
     // Maximum number of features to detect, keeping higher-score features.
@@ -110,26 +110,24 @@ bool ExtractAlikedFeatures(const AlikedExtractionOptions& options,
 // Brute-force cosine-similarity matching (options.min_cossim/max_ratio/
 // cross_check). The descriptors are matched as-is; callers pass
 // unit-length or raw rows alike because cosine similarity normalizes.
-bool MatchAlikedFeaturesBruteForce(
-        const AlikedMatchingOptions& options,
-        const FeatureKeypoints& keypoints1,
-        const FeatureDescriptorsFloat& descriptors1,
-        const FeatureKeypoints& keypoints2,
-        const FeatureDescriptorsFloat& descriptors2,
-        FeatureMatches* matches);
+bool MatchAlikedFeaturesBruteForce(const AlikedMatchingOptions& options,
+                                   const FeatureKeypoints& keypoints1,
+                                   const FeatureDescriptorsFloat& descriptors1,
+                                   const FeatureKeypoints& keypoints2,
+                                   const FeatureDescriptorsFloat& descriptors2,
+                                   FeatureMatches* matches);
 
 // LightGlue matching through the AICore ggml task (ALIKED geometry).
-bool MatchAlikedFeaturesLightGlue(
-        const AlikedMatchingOptions& options,
-        const FeatureKeypoints& keypoints1,
-        const FeatureDescriptorsFloat& descriptors1,
-        int image_width1,
-        int image_height1,
-        const FeatureKeypoints& keypoints2,
-        const FeatureDescriptorsFloat& descriptors2,
-        int image_width2,
-        int image_height2,
-        FeatureMatches* matches);
+bool MatchAlikedFeaturesLightGlue(const AlikedMatchingOptions& options,
+                                  const FeatureKeypoints& keypoints1,
+                                  const FeatureDescriptorsFloat& descriptors1,
+                                  int image_width1,
+                                  int image_height1,
+                                  const FeatureKeypoints& keypoints2,
+                                  const FeatureDescriptorsFloat& descriptors2,
+                                  int image_width2,
+                                  int image_height2,
+                                  FeatureMatches* matches);
 
 // Upstream parity factories; the ALIKED branch of
 // FeatureExtractor/FeatureMatcher::Create dispatches to these.

@@ -18,13 +18,13 @@
 // match options by the factories. Differences are adjudicated in
 // colmap_alignment_manifest.json.
 
+#include <filesystem>
+#include <memory>
+
 #include "controllers/pairing.h"
 #include "estimators/two_view_geometry.h"
 #include "feature/sift.h"
 #include "util/threading.h"
-
-#include <filesystem>
-#include <memory>
 
 namespace colmap {
 
@@ -33,8 +33,8 @@ namespace colmap {
 // flags (rig_verification, use_existing_relative_pose) have no fork
 // counterpart and only the thread count remains.
 struct GeometricVerifierOptions {
-  // Number of threads for geometric verification.
-  int num_threads = -1;
+    // Number of threads for geometric verification.
+    int num_threads = -1;
 };
 
 // Exhaustively match images using an ExhaustivePairGenerator.

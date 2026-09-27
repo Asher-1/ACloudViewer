@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/generalized_pose_test.py (Open3D
 style)."""
 import numpy as np
@@ -22,8 +29,8 @@ def test_public_api_callable(estimators, name):
 
 def build_tiny_scaled_problem(scene, geometry):
     """Two-camera rig with exact correspondences for smoke testing."""
-    camera = scene.Camera.create_from_model_name(
-        1, "SIMPLE_PINHOLE", 500.0, 640, 480)
+    camera = scene.Camera.create_from_model_name(1, "SIMPLE_PINHOLE", 500.0,
+                                                 640, 480)
     identity = np.array([1.0, 0.0, 0.0, 0.0])
     gt_rig_from_world = geometry.Sim3d(1.5, identity, np.zeros(3))
     cams_from_rig = [
@@ -63,5 +70,5 @@ def test_scaled_generalized_absolute_pose_smoke(estimators, scene, geometry):
         estimation_options=ransac_options,
     )
     assert estimation is not None
-    assert {"rig_from_world", "num_inliers", "inlier_mask"} <= set(
-        estimation.keys())
+    assert {"rig_from_world", "num_inliers",
+            "inlier_mask"} <= set(estimation.keys())

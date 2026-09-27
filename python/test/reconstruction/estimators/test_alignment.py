@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/alignment_test.py (Open3D style)."""
 import numpy as np
 import pytest
@@ -11,24 +18,27 @@ def _rec(scene, geometry, pipeline):
     return rec
 
 
-def test_align_reconstruction_to_locations(scene, estimators, geometry,
-                                           pybind, pipeline):
+def test_align_reconstruction_to_locations(scene, estimators, geometry, pybind,
+                                           pipeline):
     rec = _rec(scene, geometry, pipeline)
     names = [f"image{i}.jpg" for i in range(1, 11)]
-    locations = pybind.utility.Vector3dVector(
-        [(float(i), 0.0, 0.0) for i in range(1, 11)])
-    aligned = (estimators.ImageAlignmentError
-               .align_reconstruction_to_locations(
-                   rec, names, locations, 3, estimators.RANSACOptions()))
+    locations = pybind.utility.Vector3dVector([
+        (float(i), 0.0, 0.0) for i in range(1, 11)
+    ])
+    aligned = (estimators.ImageAlignmentError.align_reconstruction_to_locations(
+        rec, names, locations, 3, estimators.RANSACOptions()))
     # RANSAC may legitimately return None on the random synthetic layout.
     assert aligned is None or aligned is not None
 
 
-def test_align_reconstructions_via_proj_centers(scene, estimators, geometry, pipeline):
+def test_align_reconstructions_via_proj_centers(scene, estimators, geometry,
+                                                pipeline):
     src = _rec(scene, geometry, pipeline)
     tgt = _rec(scene, geometry, pipeline)
-    tgt.transform(geometry.Sim3d(scale=2.0, rotation_wxyz=[1, 0, 0, 0],
-                                 translation=[0, 0, 0]))
+    tgt.transform(
+        geometry.Sim3d(scale=2.0,
+                       rotation_wxyz=[1, 0, 0, 0],
+                       translation=[0, 0, 0]))
     result = estimators.ImageAlignmentError \
         .align_reconstructions_via_proj_centers(src, tgt, 1e9)
     # RANSAC may legitimately fail on a degenerate 3-image config.
@@ -37,10 +47,11 @@ def test_align_reconstructions_via_proj_centers(scene, estimators, geometry, pip
 
 def test_compare_reconstructions(scene, estimators, geometry, pipeline):
     src = _rec(scene, geometry, pipeline)
-    identity = geometry.Sim3d(scale=1.0, rotation_wxyz=[1, 0, 0, 0],
+    identity = geometry.Sim3d(scale=1.0,
+                              rotation_wxyz=[1, 0, 0, 0],
                               translation=[0, 0, 0])
-    result = (estimators.ImageAlignmentError
-              .compare_reconstructions(src, src, identity))
+    result = (estimators.ImageAlignmentError.compare_reconstructions(
+        src, src, identity))
     assert isinstance(result, dict)
 
 

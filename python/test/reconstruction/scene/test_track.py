@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap scene/track_test.py (Open3D style)."""
 
 
@@ -7,8 +14,9 @@ def test_track_default(scene):
 
 
 def test_track_init_elements(scene):
-    t = scene.Track(elements=[scene.TrackElement(1, 0),
-                              scene.TrackElement(2, 3)])
+    t = scene.Track(
+        elements=[scene.TrackElement(1, 0),
+                  scene.TrackElement(2, 3)])
     assert t.length == 2
 
 

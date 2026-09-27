@@ -7,8 +7,9 @@
 
 // Upstream pycolmap parity (src/pycolmap/pipeline/match_features.cc): the
 // pairing-driven feature matching surface. Engine-side classes come from the
-// ported fork controllers (controllers/pairing.h, controllers/feature_matching.h).
-// Divergences, all recorded in colmap_alignment_manifest.json:
+// ported fork controllers (controllers/pairing.h,
+// controllers/feature_matching.h). Divergences, all recorded in
+// colmap_alignment_manifest.json:
 //   - The upstream FeatureMatchingOptions parameter is the fork's
 //     SiftMatchingOptions (single SIFT/LoMa matcher family).
 //   - guided_geometric_verification has no fork implementation (upstream
@@ -60,16 +61,14 @@ inline bool IsGPU(const Device device) {
     return static_cast<bool>(device);
 }
 
-[[noreturn]] void ThrowCancelled() {
-    throw std::runtime_error("Cancelled");
-}
+[[noreturn]] void ThrowCancelled() { throw std::runtime_error("Cancelled"); }
 
 // Upstream parity (src/pycolmap/helpers.h PyWait): wait for a running thread
 // while servicing Python signals and the cancellation token. The GIL is
 // released while polling and re-acquired periodically for PyErr_CheckSignals.
-void PyWait(colmap::Thread* thread,
-            const std::shared_ptr<colmap::CancellationToken>&
-                    cancellation_token) {
+void PyWait(
+        colmap::Thread* thread,
+        const std::shared_ptr<colmap::CancellationToken>& cancellation_token) {
     while (thread->IsRunning()) {
         if (cancellation_token && cancellation_token->IsCancelled()) {
             thread->Stop();
@@ -125,9 +124,9 @@ void MatchFeatures(
     matching_options.use_gpu = IsGPU(device);
     THROW_CHECK(matching_options.Check());
     py::gil_scoped_release release;
-    std::unique_ptr<colmap::Thread> matcher = MatcherFactory(
-            pairing_options, matching_options, verification_options,
-            database_path);
+    std::unique_ptr<colmap::Thread> matcher =
+            MatcherFactory(pairing_options, matching_options,
+                           verification_options, database_path);
     matcher->Start();
     PyWait(matcher.get(), cancellation_token);
 }
@@ -168,9 +167,8 @@ void GeometricVerification(
     CheckDatabasePath(database_path);
 
     py::gil_scoped_release release;  // verification is multi-threaded
-    std::unique_ptr<colmap::Thread> verifier =
-            colmap::CreateGeometricVerifier(verifier_options, pairing_options,
-                                            geometry_options, database_path);
+    std::unique_ptr<colmap::Thread> verifier = colmap::CreateGeometricVerifier(
+            verifier_options, pairing_options, geometry_options, database_path);
     verifier->Start();
     PyWait(verifier.get(), cancellation_token);
 }
@@ -197,14 +195,14 @@ void pybind_match_features(py::module& m, py::module& m_root) {
             py::class_<colmap::ExhaustivePairingOptions>(
                     m, "ExhaustivePairingOptions")
                     .def(py::init<>())
-                    .def_readwrite("block_size",
-                                   &colmap::ExhaustivePairingOptions::
-                                           block_size)
+                    .def_readwrite(
+                            "block_size",
+                            &colmap::ExhaustivePairingOptions::block_size)
                     .def("check", &colmap::ExhaustivePairingOptions::Check);
 
     auto PySpatialPairingOptions =
-            py::class_<colmap::SpatialPairingOptions>(
-                    m, "SpatialPairingOptions")
+            py::class_<colmap::SpatialPairingOptions>(m,
+                                                      "SpatialPairingOptions")
                     .def(py::init<>())
                     .def_readwrite("ignore_z",
                                    &colmap::SpatialPairingOptions::ignore_z,
@@ -221,11 +219,10 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                             "The minimum number of nearest neighbors to "
                             "match. Neighbors include those within "
                             "max_distance or to satisfy min_num_neighbors.")
-                    .def_readwrite(
-                            "max_distance",
-                            &colmap::SpatialPairingOptions::max_distance,
-                            "The maximum distance between the query and "
-                            "nearest neighbor [meters].")
+                    .def_readwrite("max_distance",
+                                   &colmap::SpatialPairingOptions::max_distance,
+                                   "The maximum distance between the query and "
+                                   "nearest neighbor [meters].")
                     .def_readwrite("num_threads",
                                    &colmap::SpatialPairingOptions::num_threads)
                     .def("check", &colmap::SpatialPairingOptions::Check);
@@ -250,41 +247,38 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                             &colmap::VocabTreePairingOptions::num_checks,
                             "Number of nearest-neighbor checks to use in "
                             "retrieval.")
-                    .def_readwrite(
-                            "num_images_after_verification",
-                            &colmap::VocabTreePairingOptions::
-                                    num_images_after_verification,
-                            "How many images to return after spatial "
-                            "verification. Set to 0 to turn off spatial "
-                            "verification.")
+                    .def_readwrite("num_images_after_verification",
+                                   &colmap::VocabTreePairingOptions::
+                                           num_images_after_verification,
+                                   "How many images to return after spatial "
+                                   "verification. Set to 0 to turn off spatial "
+                                   "verification.")
                     .def_readwrite(
                             "max_num_features",
-                            &colmap::VocabTreePairingOptions::
-                                    max_num_features,
+                            &colmap::VocabTreePairingOptions::max_num_features,
                             "The maximum number of features to use for "
                             "indexing an image.")
-                    .def_readwrite("vocab_tree_path",
-                                   &colmap::VocabTreePairingOptions::
-                                           vocab_tree_path,
-                                   "Path to the vocabulary tree.")
+                    .def_readwrite(
+                            "vocab_tree_path",
+                            &colmap::VocabTreePairingOptions::vocab_tree_path,
+                            "Path to the vocabulary tree.")
                     .def_readwrite(
                             "match_list_path",
                             &colmap::VocabTreePairingOptions::match_list_path,
                             "Optional path to file with specific image names "
                             "to match.")
-                    .def_readwrite("num_threads",
-                                   &colmap::VocabTreePairingOptions::
-                                           num_threads)
+                    .def_readwrite(
+                            "num_threads",
+                            &colmap::VocabTreePairingOptions::num_threads)
                     .def("check", &colmap::VocabTreePairingOptions::Check);
 
     auto PySequentialPairingOptions =
             py::class_<colmap::SequentialPairingOptions>(
                     m, "SequentialPairingOptions")
                     .def(py::init<>())
-                    .def_readwrite(
-                            "overlap",
-                            &colmap::SequentialPairingOptions::overlap,
-                            "Number of overlapping image pairs.")
+                    .def_readwrite("overlap",
+                                   &colmap::SequentialPairingOptions::overlap,
+                                   "Number of overlapping image pairs.")
                     .def_readwrite(
                             "quadratic_overlap",
                             &colmap::SequentialPairingOptions::
@@ -304,12 +298,11 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                             &colmap::SequentialPairingOptions::loop_detection,
                             "Loop detection is invoked every "
                             "`loop_detection_period` images.")
-                    .def_readwrite(
-                            "loop_detection_period",
-                            &colmap::SequentialPairingOptions::
-                                    loop_detection_period,
-                            "The frequency at which loop detection is "
-                            "triggered, in number of images.")
+                    .def_readwrite("loop_detection_period",
+                                   &colmap::SequentialPairingOptions::
+                                           loop_detection_period,
+                                   "The frequency at which loop detection is "
+                                   "triggered, in number of images.")
                     .def_readwrite(
                             "loop_detection_num_images",
                             &colmap::SequentialPairingOptions::
@@ -354,8 +347,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                             "be indexed.")
                     .def_readwrite(
                             "vocab_tree_path",
-                            &colmap::SequentialPairingOptions::
-                                    vocab_tree_path,
+                            &colmap::SequentialPairingOptions::vocab_tree_path,
                             "Path to the vocabulary tree.")
                     .def_readwrite(
                             "num_threads",
@@ -367,8 +359,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     .def("check", &colmap::SequentialPairingOptions::Check);
 
     auto PyImportedPairingOptions =
-            py::class_<colmap::ImportedPairingOptions>(
-                    m, "ImportedPairingOptions")
+            py::class_<colmap::ImportedPairingOptions>(m,
+                                                       "ImportedPairingOptions")
                     .def(py::init<>())
                     .def_readwrite(
                             "block_size",
@@ -390,14 +382,19 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     .def("check",
                          &colmap::ExistingMatchedPairingOptions::Check);
 
-    auto PyGeometricVerifierOptions = py::class_<colmap::GeometricVerifierOptions>(
-            m, "GeometricVerifierOptions",
-            "Options for geometric verification. The fork verifies plain "
-            "two-view geometry per pair; the upstream rig_verification and "
-            "use_existing_relative_pose flags have no fork counterpart.")
-            .def(py::init<>())
-            .def_readwrite("num_threads",
-                           &colmap::GeometricVerifierOptions::num_threads);
+    auto PyGeometricVerifierOptions =
+            py::class_<colmap::GeometricVerifierOptions>(
+                    m, "GeometricVerifierOptions",
+                    "Options for geometric verification. The fork verifies "
+                    "plain "
+                    "two-view geometry per pair; the upstream rig_verification "
+                    "and "
+                    "use_existing_relative_pose flags have no fork "
+                    "counterpart.")
+                    .def(py::init<>())
+                    .def_readwrite(
+                            "num_threads",
+                            &colmap::GeometricVerifierOptions::num_threads);
 
     // ------------------------------------------------------------------
     // PairGenerator family (upstream pipeline/match_features.cc)
@@ -453,8 +450,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "ExhaustivePairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
                     "TwoViewGeometryOptions()"),
-          "device"_a = Device::AUTO,
-          "cancellation_token"_a = py::none(),
+          "device"_a = Device::AUTO, "cancellation_token"_a = py::none(),
           "Exhaustive feature matching");
 
     m.def("match_spatial",
@@ -467,8 +463,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "SpatialPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
                     "TwoViewGeometryOptions()"),
-          "device"_a = Device::AUTO,
-          "cancellation_token"_a = py::none(),
+          "device"_a = Device::AUTO, "cancellation_token"_a = py::none(),
           "Spatial feature matching");
 
     m.def("match_vocabtree",
@@ -481,8 +476,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "VocabTreePairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
                     "TwoViewGeometryOptions()"),
-          "device"_a = Device::AUTO,
-          "cancellation_token"_a = py::none(),
+          "device"_a = Device::AUTO, "cancellation_token"_a = py::none(),
           "Vocab tree feature matching");
 
     m.def("match_sequential",
@@ -495,8 +489,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "SequentialPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
                     "TwoViewGeometryOptions()"),
-          "device"_a = Device::AUTO,
-          "cancellation_token"_a = py::none(),
+          "device"_a = Device::AUTO, "cancellation_token"_a = py::none(),
           "Sequential feature matching");
 
     m.def("match_image_pairs",
@@ -509,8 +502,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "ImportedPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
                     "TwoViewGeometryOptions()"),
-          "device"_a = Device::AUTO,
-          "cancellation_token"_a = py::none(),
+          "device"_a = Device::AUTO, "cancellation_token"_a = py::none(),
           "Match features between image pairs specified in a file");
 
     m.def("verify_matches", &VerifyMatches, "database_path"_a, "pairs_path"_a,
@@ -522,8 +514,7 @@ void pybind_match_features(py::module& m, py::module& m_root) {
     m.def("geometric_verification", &GeometricVerification, "database_path"_a,
           py::arg_v("verifier_options", colmap::GeometricVerifierOptions(),
                     "GeometricVerifierOptions()"),
-          py::arg_v("pairing_options",
-                    colmap::ExistingMatchedPairingOptions(),
+          py::arg_v("pairing_options", colmap::ExistingMatchedPairingOptions(),
                     "ExistingMatchedPairingOptions()"),
           py::arg_v("two_view_geometry_options",
                     colmap::TwoViewGeometryOptions(),

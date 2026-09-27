@@ -256,14 +256,13 @@ inline void OptionManager::AddAndRegisterDefaultOption<std::filesystem::path>(
         const std::string& name,
         std::filesystem::path* option,
         const std::string& help_text) {
-    desc_->add_options()(
-            name.c_str(),
-            boost::program_options::value<std::string>()
-                    ->notifier([option](const std::string& value) {
-                        *option = std::filesystem::path(value);
-                    })
-                    ->default_value(option->string()),
-            help_text.c_str());
+    desc_->add_options()(name.c_str(),
+                         boost::program_options::value<std::string>()
+                                 ->notifier([option](const std::string& value) {
+                                     *option = std::filesystem::path(value);
+                                 })
+                                 ->default_value(option->string()),
+                         help_text.c_str());
     RegisterOption(name, option);
 }
 

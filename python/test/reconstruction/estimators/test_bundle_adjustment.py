@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/bundle_adjustment_test.py."""
 import numpy as np
 import pytest
@@ -29,7 +36,8 @@ def test_ba_options_check(estimators):
 
 def test_create_default_bundle_adjuster(estimators):
     adjuster = estimators.create_default_bundle_adjuster(
-        estimators.BundleAdjustmentOptions(), estimators.BundleAdjustmentConfig())
+        estimators.BundleAdjustmentOptions(),
+        estimators.BundleAdjustmentConfig())
     assert isinstance(adjuster, estimators.BundleAdjuster)
 
 

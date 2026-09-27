@@ -30,11 +30,11 @@ except ImportError:  # build-tree bootstrap (any cpython ABI tag)
     _repo = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     _hits = sorted(
-        _glob.glob(os.path.join(
-            _repo, "build_app", "lib", "*", "Python", "*",
-            "pybind.cpython-*.so"))
-        + _glob.glob(os.path.join(
-            _repo, "build_app", "lib", "*", "Python", "pybind.cpython-*.so")))
+        _glob.glob(
+            os.path.join(_repo, "build_app", "lib", "*", "Python", "*",
+                         "pybind.cpython-*.so")) + _glob.glob(
+                             os.path.join(_repo, "build_app", "lib", "*",
+                                          "Python", "pybind.cpython-*.so")))
     assert _hits, "pybind extension not found in build_app"
     import sys as _sys
     if "pybind" in _sys.modules:

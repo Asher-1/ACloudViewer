@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap estimators/covariance_test.py (Open3D style).
 
 The fork exposes estimate_ba_covariance as a module-level entry over the
@@ -15,8 +22,9 @@ def test_ba_covariance_options_surface(estimators):
 
 def test_estimate_ba_covariance_missing_reconstruction(estimators):
     adjuster = estimators.create_default_bundle_adjuster(
-        estimators.BundleAdjustmentOptions(), estimators.BundleAdjustmentConfig())
+        estimators.BundleAdjustmentOptions(),
+        estimators.BundleAdjustmentConfig())
     # Estimating covariance before a solve must raise rather than crash.
     with pytest.raises(Exception):
-        estimators.estimate_ba_covariance(
-            estimators.BACovarianceOptions(), adjuster, None)
+        estimators.estimate_ba_covariance(estimators.BACovarianceOptions(),
+                                          adjuster, None)

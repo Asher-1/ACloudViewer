@@ -45,8 +45,7 @@ struct CeresBundleAdjustmentSummary : public BundleAdjustmentSummary {
 // execution path; this aggregate mirrors the upstream field layout for the
 // pycolmap-parity bindings.
 struct CeresBundleAdjustmentOptions {
-    CeresLossFunctionType loss_function_type =
-            CeresLossFunctionType::TRIVIAL;
+    CeresLossFunctionType loss_function_type = CeresLossFunctionType::TRIVIAL;
     double loss_function_scale = 1.0;
     double loss_function_weight = 1.0;
     bool use_gpu = false;

@@ -26,8 +26,7 @@ class Point3DAlignmentCostFunctor
 public:
     explicit Point3DAlignmentCostFunctor(
             const Eigen::Vector3d& point_in_b_prior, bool use_log_scale = true)
-        : point_in_b_prior_(point_in_b_prior),
-          use_log_scale_(use_log_scale) {}
+        : point_in_b_prior_(point_in_b_prior), use_log_scale_(use_log_scale) {}
 
     template <typename T>
     bool operator()(const T* const point_in_a,

@@ -13,7 +13,6 @@
 // abstraction, the exe-level Run*Impl entry points) are intentionally NOT
 // fabricated here and are recorded in colmap_alignment_manifest.json.
 
-#include "pybind/reconstruction/pipeline/match_features.h"
 #include "pybind/reconstruction/pipeline/pipeline.h"
 
 #include <filesystem>
@@ -27,6 +26,7 @@
 #include "image/undistortion.h"
 #include "image/warp.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/pipeline/match_features.h"
 #include "scene/database.h"
 #include "scene/scene_clustering.h"
 #include "scene/synthetic.h"
@@ -66,15 +66,14 @@ void pybind_pipeline(py::module& m, py::module& m_root) {
     // WarpImageOptions (fork: image/warp.h; upstream binds it as part of
     // the undistortion family)
     // ------------------------------------------------------------------
-    py::class_<colmap::WarpImageOptions>
-warp_image_options(m_image, "WarpImageOptions",
+    py::class_<colmap::WarpImageOptions> warp_image_options(
+            m_image, "WarpImageOptions",
             "Options for direct target-resolution warping used by "
             "undistortion and stereo rectification.");
     warp_image_options.def(py::init<>())
-            .def_readwrite(
-                    "interpolation",
-                    &colmap::WarpImageOptions::interpolation,
-                    "Source-image sampling interpolation method.")
+            .def_readwrite("interpolation",
+                           &colmap::WarpImageOptions::interpolation,
+                           "Source-image sampling interpolation method.")
             .def_readwrite(
                     "direct_warp_min_scale",
                     &colmap::WarpImageOptions::direct_warp_min_scale,
@@ -85,8 +84,8 @@ warp_image_options(m_image, "WarpImageOptions",
     // ------------------------------------------------------------------
     // UndistortCameraOptions (upstream pipeline/undistort_camera.cc)
     // ------------------------------------------------------------------
-    py::class_<colmap::UndistortCameraOptions>
-undistort_camera_options(m_image, "UndistortCameraOptions",
+    py::class_<colmap::UndistortCameraOptions> undistort_camera_options(
+            m_image, "UndistortCameraOptions",
             "Options for undistorting images and cameras.");
     undistort_camera_options.def(py::init<>())
             .def_readwrite(
@@ -167,8 +166,8 @@ undistort_camera_options(m_image, "UndistortCameraOptions",
     // SceneClusteringOptions (fork: scene/scene_clustering.h; upstream
     // pipeline/scene_clustering.cc)
     // ------------------------------------------------------------------
-    py::class_<colmap::SceneClustering::Options>
-scene_clustering_options(m_sfm, "SceneClusteringOptions",
+    py::class_<colmap::SceneClustering::Options> scene_clustering_options(
+            m_sfm, "SceneClusteringOptions",
             "Options for hierarchical scene clustering used by the "
             "hierarchical pipeline.");
     scene_clustering_options.def(py::init<>())
@@ -205,7 +204,8 @@ scene_clustering_options(m_sfm, "SceneClusteringOptions",
     // upstream bundles them into one options struct)
     // ------------------------------------------------------------------
     py::class_<colmap::HierarchicalMapperController::Options>
-hierarchical_pipeline_options(m_sfm, "HierarchicalPipelineOptions",
+            hierarchical_pipeline_options(
+                    m_sfm, "HierarchicalPipelineOptions",
                     "Options for the hierarchical mapping pipeline. The fork "
                     "engine takes the scene clustering options and the "
                     "incremental pipeline options as separate constructor "
@@ -241,8 +241,8 @@ hierarchical_pipeline_options(m_sfm, "HierarchicalPipelineOptions",
     // GlobalMapperOptions (fork: sfm/global_mapper.h; upstream
     // estimators/global_mapper.h via pycolmap GlobalMapperOptions)
     // ------------------------------------------------------------------
-    py::class_<colmap::GlobalMapperOptions>
-global_mapper_options(m_sfm, "GlobalMapperOptions",
+    py::class_<colmap::GlobalMapperOptions> global_mapper_options(
+            m_sfm, "GlobalMapperOptions",
             "Options for the global mapping stage (GLOMAP-style rotation "
             "averaging, global positioning, and joint bundle adjustment).");
     global_mapper_options.def(py::init<>())
@@ -367,8 +367,8 @@ global_mapper_options(m_sfm, "GlobalMapperOptions",
     // GlobalPipelineOptions (fork: controllers/global_pipeline.h; upstream
     // pipeline/sfm.cc GlobalPipelineOptions)
     // ------------------------------------------------------------------
-    py::class_<colmap::GlobalPipelineOptions>
-global_pipeline_options(m_sfm, "GlobalPipelineOptions",
+    py::class_<colmap::GlobalPipelineOptions> global_pipeline_options(
+            m_sfm, "GlobalPipelineOptions",
             "Options for the global structure-from-motion pipeline "
             "(GLOMAP-style).");
     global_pipeline_options.def(py::init<>())
@@ -424,8 +424,8 @@ global_pipeline_options(m_sfm, "GlobalPipelineOptions",
     // scene/synthetic.cc; the fork engine owns both option structs and
     // entry points, see scene/synthetic.h).
     // ------------------------------------------------------------------
-    py::class_<colmap::SyntheticNoiseOptions>
-synthetic_noise_options(m_scene, "SyntheticNoiseOptions",
+    py::class_<colmap::SyntheticNoiseOptions> synthetic_noise_options(
+            m_scene, "SyntheticNoiseOptions",
             "Perturbation of a synthetic reconstruction (poses, points, "
             "priors).");
     synthetic_noise_options.def(py::init<>())
@@ -457,8 +457,8 @@ synthetic_noise_options(m_scene, "SyntheticNoiseOptions",
                            "float: (Default ``1.0``) Rotational stddev of the "
                            "prior gravity in degrees.");
 
-    py::class_<colmap::SyntheticImageOptions>
-synthetic_image_options(m_scene, "SyntheticImageOptions",
+    py::class_<colmap::SyntheticImageOptions> synthetic_image_options(
+            m_scene, "SyntheticImageOptions",
             "Options for generating synthetic observation images.");
     synthetic_image_options.def(py::init<>())
             .def_readwrite("feature_peak_radius",
@@ -666,13 +666,12 @@ synthetic_image_options(m_scene, "SyntheticImageOptions",
                     auto* options_ptr =
                             new colmap::HierarchicalMapperController::Options(
                                     std::move(options));
-                    auto* controller =
-                            new colmap::HierarchicalMapperController(
-                                    *options_ptr,
-                                    colmap::SceneClustering::Options(),
-                                    colmap::IncrementalMapperOptions(),
-                                    reconstruction_manager.get());
-                    return std::shared_ptr<colmap::HierarchicalMapperController>(
+                    auto* controller = new colmap::HierarchicalMapperController(
+                            *options_ptr, colmap::SceneClustering::Options(),
+                            colmap::IncrementalMapperOptions(),
+                            reconstruction_manager.get());
+                    return std::shared_ptr<
+                            colmap::HierarchicalMapperController>(
                             controller,
                             [options_ptr, reconstruction_manager](
                                     colmap::HierarchicalMapperController* p) {
@@ -691,27 +690,29 @@ synthetic_image_options(m_scene, "SyntheticImageOptions",
                                  const std::string& database_path,
                                  std::shared_ptr<colmap::ReconstructionManager>
                                          reconstruction_manager) {
-                    auto* options_ptr = new colmap::IncrementalMapperOptions(
-                            std::move(options));
-                    auto* controller =
-                            new colmap::IncrementalMapperController(
-                                    options_ptr, image_path, database_path,
-                                    reconstruction_manager.get());
-                    return std::shared_ptr<colmap::IncrementalMapperController>(
-                            controller,
-                            [options_ptr, reconstruction_manager](
-                                    colmap::IncrementalMapperController* p) {
-                                delete options_ptr;
-                                delete p;
-                            });
-                }),
-                "options"_a, "image_path"_a, "database_path"_a,
-                "reconstruction_manager"_a);
+                         auto* options_ptr =
+                                 new colmap::IncrementalMapperOptions(
+                                         std::move(options));
+                         auto* controller =
+                                 new colmap::IncrementalMapperController(
+                                         options_ptr, image_path, database_path,
+                                         reconstruction_manager.get());
+                         return std::shared_ptr<
+                                 colmap::IncrementalMapperController>(
+                                 controller,
+                                 [options_ptr, reconstruction_manager](
+                                         colmap::IncrementalMapperController*
+                                                 p) {
+                                     delete options_ptr;
+                                     delete p;
+                                 });
+                     }),
+                     "options"_a, "image_path"_a, "database_path"_a,
+                     "reconstruction_manager"_a);
     }
     // Upstream top-level name (pycolmap image/undistortion.cc): the nested
     // WarpImageOptions::Interpolation sampling enum.
-    py::enum_<colmap::WarpImageOptions::Interpolation>(
-            m_image, "Interpolation")
+    py::enum_<colmap::WarpImageOptions::Interpolation>(m_image, "Interpolation")
             .value("kNearest",
                    colmap::WarpImageOptions::Interpolation::kNearest)
             .value("kBilinear",

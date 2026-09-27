@@ -30,8 +30,7 @@
     }
 #define ENUM_STRINGS_PROCESS_ELEMENT(r, name, idx, elem) \
     BOOST_PP_STRINGIZE(elem),
-#define ENUM_VALUE_PROCESS_ELEMENT(r, name, idx, elem) \
-    name::elem,
+#define ENUM_VALUE_PROCESS_ELEMENT(r, name, idx, elem) name::elem,
 
 #define DEFINE_ENUM_TO_FROM_STRING(name, start_idx, ...)                       \
     [[maybe_unused]] static std::string_view name##ToString(int value) {       \
@@ -54,8 +53,9 @@
                                  " for enum: " + BOOST_PP_STRINGIZE(name));    \
     }                                                                          \
     [[maybe_unused]] static std::vector<name> name##Values() {                 \
-        return {BOOST_PP_SEQ_FOR_EACH_I(ENUM_VALUE_PROCESS_ELEMENT, name,      \
-                                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))};\
+        return {BOOST_PP_SEQ_FOR_EACH_I(                                       \
+                ENUM_VALUE_PROCESS_ELEMENT, name,                              \
+                BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))};                       \
     }                                                                          \
     template <typename Pred>                                                   \
     [[maybe_unused]] static std::vector<name> name##Values(Pred&& pred) {      \
@@ -68,8 +68,9 @@
         return out;                                                            \
     }                                                                          \
     [[maybe_unused]] static std::vector<std::string_view> name##Strings() {    \
-        return {BOOST_PP_SEQ_FOR_EACH_I(ENUM_STRINGS_PROCESS_ELEMENT, name,    \
-                                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))};\
+        return {BOOST_PP_SEQ_FOR_EACH_I(                                       \
+                ENUM_STRINGS_PROCESS_ELEMENT, name,                            \
+                BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))};                       \
     }                                                                          \
     template <typename Pred>                                                   \
     [[maybe_unused]] static std::vector<std::string_view> name##Strings(       \

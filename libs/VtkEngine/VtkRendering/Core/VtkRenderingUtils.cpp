@@ -301,7 +301,6 @@ void SetPolyDataColor(vtkSmartPointer<vtkPolyData> polyData,
     }
 }
 
-
 void AddPolyDataCell(vtkSmartPointer<vtkPolyData> polyData) {
     vtkSmartPointer<vtkCellArray> cellArray =
             vtkSmartPointer<vtkCellArray>::New();
@@ -416,7 +415,8 @@ vtkSmartPointer<vtkPolyData> CreateGBLSensor(const ccGBLSensor* gBLSensor) {
 }
 
 vtkSmartPointer<vtkPolyData> CreateCameraSensor(
-        const ccCameraSensor* cameraSensor, const ecvColor::Rgb& lineColor,
+        const ccCameraSensor* cameraSensor,
+        const ecvColor::Rgb& lineColor,
         const ecvColor::Rgb& planeColor,
         vtkSmartPointer<vtkPolyData>* planeFaceOut /* = nullptr */) {
     assert(cameraSensor);

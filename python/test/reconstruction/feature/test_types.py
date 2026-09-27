@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap feature/types_test.py (Open3D style)."""
 import numpy as np
 
@@ -22,5 +29,4 @@ def test_feature_descriptors_from_bytes(feature):
     fd.data = np.zeros((2, 8), dtype=np.uint8)
     fb = feature.FeatureDescriptorsFloat.from_bytes(fd)
     assert fb.shape == (2, 2)
-    np.testing.assert_allclose(np.asarray(fb.to_bytes().data),
-                               np.zeros((2, 8)))
+    np.testing.assert_allclose(np.asarray(fb.to_bytes().data), np.zeros((2, 8)))

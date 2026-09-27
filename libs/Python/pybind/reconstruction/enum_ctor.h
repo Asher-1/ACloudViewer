@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <string>
-
 #include <pybind11/pybind11.h>
+
+#include <string>
 
 namespace py = pybind11;
 
@@ -23,8 +23,7 @@ namespace reconstruction {
 /// keeps the qualified "Type.MEMBER" form.
 template <typename T>
 inline void AddStringToEnumConstructor(py::enum_<T>& enm) {
-    enm.def(
-            py::init([enm](const std::string& name) {
+    enm.def(py::init([enm](const std::string& name) {
                 py::object member = enm.attr("__members__")[py::str(name)];
                 return member.cast<T>();
             }),

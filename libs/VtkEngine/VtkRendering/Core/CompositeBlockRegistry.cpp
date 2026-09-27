@@ -399,8 +399,8 @@ void CompositeBlockRegistry::anchorLeafBase(const std::string& leafId) {
     m_leafWorldMatrix.erase(leafId);
 }
 
-bool CompositeBlockRegistry::setLeafWorldTransform(
-        const std::string& leafId, const vtkMatrix4x4* matrix) {
+bool CompositeBlockRegistry::setLeafWorldTransform(const std::string& leafId,
+                                                   const vtkMatrix4x4* matrix) {
     if (!matrix) {
         return false;
     }
@@ -442,9 +442,8 @@ bool CompositeBlockRegistry::setLeafWorldTransform(
     auto* block =
             vtkPolyData::SafeDownCast(blockObject(group, it->second.flatIndex));
     vtkPoints* points = block ? block->GetPoints() : nullptr;
-    if (!points ||
-        points->GetNumberOfPoints() * 3 !=
-                static_cast<vtkIdType>(baseIt->second.size())) {
+    if (!points || points->GetNumberOfPoints() * 3 !=
+                           static_cast<vtkIdType>(baseIt->second.size())) {
         return false;
     }
 

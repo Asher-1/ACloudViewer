@@ -946,8 +946,7 @@ void VtkDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context,
     // Composite leaves own no entry in the actor maps: without the
     // isCompositeLeaf check they would be treated as first-show on every
     // redraw (same rule as drawMesh).
-    bool firstShow =
-            !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
+    bool firstShow = !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
     int viewport = context.defaultViewPort;
 
     if (sensor->isRedraw() || firstShow) {

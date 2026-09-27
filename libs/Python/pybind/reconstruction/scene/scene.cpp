@@ -25,10 +25,10 @@
 #include "scene/reconstruction_manager.h"
 #include "scene/rig.h"
 #include "scene/synthetic.h"
-#include "sfm/observation_manager.h"
 #include "scene/track.h"
 #include "scene/two_view_geometry.h"
 #include "sensor/models.h"
+#include "sfm/observation_manager.h"
 #include "util/ply.h"
 
 namespace cloudViewer {
@@ -83,8 +83,8 @@ void pybind_scene(py::module& m) {
             "The camera model family. Values carry the model names; the "
             "integer values match the upstream CameraModelId ordering.");
     camera_model_id.value("INVALID", colmap::CameraModelId::kInvalid);
-#define CAMERA_MODEL_CASE(CameraModel)                                    \
-    camera_model_id.value(colmap::CameraModel::model_name.c_str(),        \
+#define CAMERA_MODEL_CASE(CameraModel)                             \
+    camera_model_id.value(colmap::CameraModel::model_name.c_str(), \
                           colmap::CameraModel::model_id);
 
     CAMERA_MODEL_CASES
@@ -794,8 +794,7 @@ void pybind_scene(py::module& m) {
 
     // Upstream top-level name (pycolmap sfm/incremental_mapper.cc): the
     // reprojection-error-type enum used by ObservationManager.
-    py::enum_<colmap::ReprojectionErrorType>(
-            m_scene, "ReprojectionErrorType")
+    py::enum_<colmap::ReprojectionErrorType>(m_scene, "ReprojectionErrorType")
             .value("PIXEL", colmap::ReprojectionErrorType::PIXEL)
             .value("NORMALIZED", colmap::ReprojectionErrorType::NORMALIZED)
             .value("ANGULAR", colmap::ReprojectionErrorType::ANGULAR)

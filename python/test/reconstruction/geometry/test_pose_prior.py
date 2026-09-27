@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap geometry/pose_prior_test.py (Open3D style)."""
 import numpy as np
 
@@ -15,8 +22,7 @@ def test_pose_prior_default_init(geometry):
 def test_pose_prior_position_readwrite(geometry):
     pose_prior = geometry.PosePrior()
     pose_prior.position = np.array([1.0, 2.0, 3.0])
-    np.testing.assert_array_almost_equal(pose_prior.position,
-                                         [1.0, 2.0, 3.0])
+    np.testing.assert_array_almost_equal(pose_prior.position, [1.0, 2.0, 3.0])
 
 
 def test_pose_prior_position_covariance_readwrite(geometry):

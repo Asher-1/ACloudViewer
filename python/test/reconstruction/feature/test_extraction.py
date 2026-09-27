@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap feature/extraction_test.py (Open3D style).
 
 Adaptations to the fork pybind surface:
@@ -136,7 +143,7 @@ def test_feature_extractor_create_loma_options_resolve(recon):
 
 def test_feature_extractor_create_aliked_not_registered(recon):
     options = recon.FeatureExtractionOptions(
-            recon.FeatureExtractorType.ALIKED_N16ROT)
+        recon.FeatureExtractorType.ALIKED_N16ROT)
     assert options.check()
     with pytest.raises(RuntimeError):
         recon.FeatureExtractor.create(options)

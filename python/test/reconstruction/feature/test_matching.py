@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap feature/matching_test.py (Open3D style).
 
 Adaptations to the fork pybind surface:
@@ -68,8 +75,7 @@ def test_feature_matching_options_guided_matching_readwrite(recon):
     assert options.guided_matching is False
 
 
-def test_feature_matching_options_skip_geometric_verification_readwrite(
-        recon):
+def test_feature_matching_options_skip_geometric_verification_readwrite(recon):
     options = recon.FeatureMatchingOptions()
     options.skip_geometric_verification = True
     assert options.skip_geometric_verification is True
@@ -98,7 +104,7 @@ def test_feature_matcher_create(recon):
 
 def test_feature_matcher_create_aliked_not_registered(recon):
     options = recon.FeatureMatchingOptions(
-            recon.FeatureMatcherType.ALIKED_BRUTEFORCE)
+        recon.FeatureMatcherType.ALIKED_BRUTEFORCE)
     assert options.check()
     with pytest.raises(RuntimeError):
         recon.FeatureMatcher.create(options)

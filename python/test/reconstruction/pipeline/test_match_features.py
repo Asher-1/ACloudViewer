@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap pipeline/match_features_test.py (Open3D style),
 plus end-to-end coverage of the fork's pairing-driven matching engine."""
 import os
@@ -6,15 +13,20 @@ import numpy as np
 import pytest
 
 
-def _make_database(database, utility, scene, tmp_path, num_images=3,
-                   seed=7, num_keypoints=80):
+def _make_database(database,
+                   utility,
+                   scene,
+                   tmp_path,
+                   num_images=3,
+                   seed=7,
+                   num_keypoints=80):
     """Creates a database with a camera, images and near-identical SIFT-like
     features so that matching produces real matches."""
     db_path = str(tmp_path / "test.db")
     db = database.Database.open(db_path)
     cam = scene.Camera.create_from_model_name(1, "PINHOLE", 50.0, 100, 100)
-    camera_id = db.write_camera(cam, utility.DoubleVector([50.0, 50.0, 50.0,
-                                                            50.0]))
+    camera_id = db.write_camera(cam,
+                                utility.DoubleVector([50.0, 50.0, 50.0, 50.0]))
     rng = np.random.RandomState(seed)
     base_desc = (rng.rand(num_keypoints, 128) * 255).astype(np.uint8)
     kps = (rng.rand(num_keypoints, 6).astype(np.float32) * 100)
@@ -106,8 +118,8 @@ def test_exhaustive_pair_generator_pairs(pipeline, database, utility, scene,
     db_path = str(tmp_path / "test.db")
     db = database.Database.open(db_path)
     cam = scene.Camera.create_from_model_name(1, "PINHOLE", 50.0, 100, 100)
-    camera_id = db.write_camera(cam, utility.DoubleVector([50.0, 50.0, 50.0,
-                                                            50.0]))
+    camera_id = db.write_camera(cam,
+                                utility.DoubleVector([50.0, 50.0, 50.0, 50.0]))
     for i in range(4):
         img = scene.Image()
         img.name = f"image{i}.jpg"
@@ -120,13 +132,12 @@ def test_exhaustive_pair_generator_pairs(pipeline, database, utility, scene,
     db.close()
 
 
-def test_imported_pair_generator(pipeline, database, utility, scene,
-                                 tmp_path):
+def test_imported_pair_generator(pipeline, database, utility, scene, tmp_path):
     db_path = str(tmp_path / "test.db")
     db = database.Database.open(db_path)
     cam = scene.Camera.create_from_model_name(1, "PINHOLE", 50.0, 100, 100)
-    camera_id = db.write_camera(cam, utility.DoubleVector([50.0, 50.0, 50.0,
-                                                            50.0]))
+    camera_id = db.write_camera(cam,
+                                utility.DoubleVector([50.0, 50.0, 50.0, 50.0]))
     for i in range(3):
         img = scene.Image()
         img.name = f"image{i}.jpg"
@@ -166,12 +177,13 @@ def test_match_sequential(pipeline, database, utility, scene, tmp_path):
     db.close()
 
 
-def test_match_sequential_quadratic_overlap(pipeline, database, utility,
-                                            scene, tmp_path):
+def test_match_sequential_quadratic_overlap(pipeline, database, utility, scene,
+                                            tmp_path):
     db_path = _make_database(database, utility, scene, tmp_path, num_images=5)
     opts = pipeline.SequentialPairingOptions()
     opts.quadratic_overlap = True
-    pipeline.match_sequential(db_path, pairing_options=opts,
+    pipeline.match_sequential(db_path,
+                              pairing_options=opts,
                               device=pipeline.Device.CPU)
     db = database.Database.open(db_path)
     assert len(db.read_matches(1, 2)) > 0
@@ -183,8 +195,10 @@ def test_verify_matches(pipeline, database, utility, scene, tmp_path):
     # Import matches first: use match_image_pairs on a pairs file.
     pairs_file = tmp_path / "pairs.txt"
     pairs_file.write_text("image0.jpg image1.jpg\n")
-    pipeline.match_image_pairs(db_path, pairing_options=_imported_opts(
-        pipeline, str(pairs_file)), device=pipeline.Device.CPU)
+    pipeline.match_image_pairs(db_path,
+                               pairing_options=_imported_opts(
+                                   pipeline, str(pairs_file)),
+                               device=pipeline.Device.CPU)
     db = database.Database.open(db_path)
     assert len(db.read_matches(1, 2)) > 0
     db.close()
@@ -196,8 +210,10 @@ def test_match_image_pairs_missing_image(pipeline, database, utility, scene,
     pairs_file = tmp_path / "pairs.txt"
     pairs_file.write_text("missing0.jpg missing1.jpg\n")
     # Upstream behavior: unknown image names are reported and skipped.
-    pipeline.match_image_pairs(db_path, pairing_options=_imported_opts(
-        pipeline, str(pairs_file)), device=pipeline.Device.CPU)
+    pipeline.match_image_pairs(db_path,
+                               pairing_options=_imported_opts(
+                                   pipeline, str(pairs_file)),
+                               device=pipeline.Device.CPU)
 
 
 def test_match_rejects_missing_database(pipeline, tmp_path):
@@ -205,8 +221,7 @@ def test_match_rejects_missing_database(pipeline, tmp_path):
         pipeline.match_exhaustive(str(tmp_path / "does_not_exist.db"))
 
 
-def test_geometric_verification(pipeline, database, utility, scene,
-                                tmp_path):
+def test_geometric_verification(pipeline, database, utility, scene, tmp_path):
     db_path = _make_database(database, utility, scene, tmp_path)
     # Match first so that the database holds matches + two-view geometries.
     pipeline.match_exhaustive(db_path, device=pipeline.Device.CPU)

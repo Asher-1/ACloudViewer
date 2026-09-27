@@ -12,6 +12,9 @@
 // dispatches SIFT (in-memory CPU matching) and LoMa (ggml AICore); the
 // ALIKED branch throws until its AICore task lands.
 
+#include <memory>
+#include <string>
+
 #include "estimators/two_view_geometry.h"
 #include "feature/extractor.h"
 #include "feature/learned_matchers.h"
@@ -19,9 +22,6 @@
 #include "feature/types.h"
 #include "geometry/pose_prior.h"
 #include "scene/camera.h"
-
-#include <memory>
-#include <string>
 
 namespace colmap {
 
@@ -35,8 +35,7 @@ struct FeatureMatchingOptions {
     FeatureMatchingOptions(const FeatureMatchingOptions& other);
     FeatureMatchingOptions& operator=(const FeatureMatchingOptions& other);
     FeatureMatchingOptions(FeatureMatchingOptions&& other) = default;
-    FeatureMatchingOptions& operator=(FeatureMatchingOptions&& other) =
-            default;
+    FeatureMatchingOptions& operator=(FeatureMatchingOptions&& other) = default;
 
     FeatureMatcherType type = FeatureMatcherType::SIFT_BRUTEFORCE;
 

@@ -7,13 +7,12 @@
 
 #include "pybind/reconstruction/mvs/multi_views_stereo.h"
 
-#include "mvs/advancing_front_meshing.h"
-
 #include <cstring>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/depth_map.h"
 #include "mvs/model.h"
 #include "mvs/normal_map.h"
@@ -389,9 +388,9 @@ void pybind_multi_views_stereo(py::module& m) {
     py::class_<colmap::mvs::AdvancingFrontMeshingOptions>(
             m_submodule, "AdvancingFrontMeshingOptions")
             .def(py::init<>())
-            .def_readwrite("max_edge_length",
-                           &colmap::mvs::AdvancingFrontMeshingOptions::
-                                   max_edge_length)
+            .def_readwrite(
+                    "max_edge_length",
+                    &colmap::mvs::AdvancingFrontMeshingOptions::max_edge_length)
             .def_readwrite("visibility_filtering",
                            &colmap::mvs::AdvancingFrontMeshingOptions::
                                    visibility_filtering)
@@ -404,14 +403,16 @@ void pybind_multi_views_stereo(py::module& m) {
             .def_readwrite("visibility_ray_trim_offset",
                            &colmap::mvs::AdvancingFrontMeshingOptions::
                                    visibility_ray_trim_offset)
-            .def_readwrite("block_size",
-                           &colmap::mvs::AdvancingFrontMeshingOptions::block_size)
-            .def_readwrite("block_overlap",
-                           &colmap::mvs::AdvancingFrontMeshingOptions::block_overlap)
-            .def_readwrite("num_threads",
-                           &colmap::mvs::AdvancingFrontMeshingOptions::num_threads)
-            .def("check",
-                 &colmap::mvs::AdvancingFrontMeshingOptions::Check);
+            .def_readwrite(
+                    "block_size",
+                    &colmap::mvs::AdvancingFrontMeshingOptions::block_size)
+            .def_readwrite(
+                    "block_overlap",
+                    &colmap::mvs::AdvancingFrontMeshingOptions::block_overlap)
+            .def_readwrite(
+                    "num_threads",
+                    &colmap::mvs::AdvancingFrontMeshingOptions::num_threads)
+            .def("check", &colmap::mvs::AdvancingFrontMeshingOptions::Check);
 }
 
 }  // namespace mvs

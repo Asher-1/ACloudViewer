@@ -23,7 +23,7 @@ namespace reconstruction {
 namespace estimators {
 namespace {
 
-using namespace colmap;  // NOLINT(google-build-using-namespace)
+using namespace colmap;              // NOLINT(google-build-using-namespace)
 using namespace pybind11::literals;  // NOLINT(google-build-using-namespace)
 
 // Create is overloaded on single and per-residual stddevs, so taking its
@@ -60,15 +60,15 @@ void pybind_cost_functions(py::module& m) {
                  "camera_model_id"_a, "point2D_cov"_a, "point2D"_a,
                  "Reprojection error with 2D detection noise.")
             .def("ReprojErrorCost",
-                 &CreateScaleWeightedCameraCostFunction<
-                         ReprojErrorCostFunctor, double,
-                         const Eigen::Vector2d&>,
+                 &CreateScaleWeightedCameraCostFunction<ReprojErrorCostFunctor,
+                                                        double,
+                                                        const Eigen::Vector2d&>,
                  "camera_model_id"_a, "point2D_stddev"_a, "point2D"_a,
                  "Reprojection error with isotropic 2D detection noise.")
             .def("ReprojErrorCost",
-                 &CreateScaleWeightedCameraCostFunction<
-                         ReprojErrorCostFunctor, Eigen::Vector2d,
-                         const Eigen::Vector2d&>,
+                 &CreateScaleWeightedCameraCostFunction<ReprojErrorCostFunctor,
+                                                        Eigen::Vector2d,
+                                                        const Eigen::Vector2d&>,
                  "camera_model_id"_a, "point2D_stddev"_a, "point2D"_a,
                  "Reprojection error with per-axis 2D detection noise.")
 
@@ -96,9 +96,8 @@ void pybind_cost_functions(py::module& m) {
                  "isotropic 2D detection noise.")
             .def("ReprojErrorCost",
                  &CreateScaleWeightedCameraCostFunction<
-                         ReprojErrorConstantPoseCostFunctor,
-                         Eigen::Vector2d, const Eigen::Vector2d&,
-                         const Rigid3d&>,
+                         ReprojErrorConstantPoseCostFunctor, Eigen::Vector2d,
+                         const Eigen::Vector2d&, const Rigid3d&>,
                  "camera_model_id"_a, "point2D_stddev"_a, "point2D"_a,
                  "cam_from_world"_a,
                  "Reprojection error with constant camera pose and per-axis "
@@ -112,11 +111,9 @@ void pybind_cost_functions(py::module& m) {
                  "Reprojection error with constant 3D point.")
             .def("ReprojErrorCost",
                  &CreateCovarianceWeightedCameraCostFunction<
-                         ReprojErrorConstantPoint3DCostFunctor,
-                         Eigen::Matrix2d, const Eigen::Vector2d&,
-                         const Eigen::Vector3d&>,
-                 "camera_model_id"_a, "point2D_cov"_a, "point2D"_a,
-                 "point3D"_a,
+                         ReprojErrorConstantPoint3DCostFunctor, Eigen::Matrix2d,
+                         const Eigen::Vector2d&, const Eigen::Vector3d&>,
+                 "camera_model_id"_a, "point2D_cov"_a, "point2D"_a, "point3D"_a,
                  "Reprojection error with constant 3D point and 2D detection "
                  "noise.")
             .def("ReprojErrorCost",
@@ -129,9 +126,8 @@ void pybind_cost_functions(py::module& m) {
                  "detection noise.")
             .def("ReprojErrorCost",
                  &CreateScaleWeightedCameraCostFunction<
-                         ReprojErrorConstantPoint3DCostFunctor,
-                         Eigen::Vector2d, const Eigen::Vector2d&,
-                         const Eigen::Vector3d&>,
+                         ReprojErrorConstantPoint3DCostFunctor, Eigen::Vector2d,
+                         const Eigen::Vector2d&, const Eigen::Vector3d&>,
                  "camera_model_id"_a, "point2D_stddev"_a, "point2D"_a,
                  "point3D"_a,
                  "Reprojection error with constant 3D point and per-axis 2D "
@@ -173,9 +169,8 @@ void pybind_cost_functions(py::module& m) {
                  "cam-from-rig pose.")
             .def("RigReprojErrorCost",
                  &CreateCovarianceWeightedCameraCostFunction<
-                         RigReprojErrorConstantRigCostFunctor,
-                         Eigen::Matrix2d, const Eigen::Vector2d&,
-                         const Rigid3d&>,
+                         RigReprojErrorConstantRigCostFunctor, Eigen::Matrix2d,
+                         const Eigen::Vector2d&, const Rigid3d&>,
                  "camera_model_id"_a, "point2D_cov"_a, "point2D"_a,
                  "cam_from_rig"_a,
                  "Reprojection error for camera rig with constant "
@@ -190,9 +185,8 @@ void pybind_cost_functions(py::module& m) {
                  "cam-from-rig pose and isotropic 2D detection noise.")
             .def("RigReprojErrorCost",
                  &CreateScaleWeightedCameraCostFunction<
-                         RigReprojErrorConstantRigCostFunctor,
-                         Eigen::Vector2d, const Eigen::Vector2d&,
-                         const Rigid3d&>,
+                         RigReprojErrorConstantRigCostFunctor, Eigen::Vector2d,
+                         const Eigen::Vector2d&, const Rigid3d&>,
                  "camera_model_id"_a, "point2D_stddev"_a, "point2D"_a,
                  "cam_from_rig"_a,
                  "Reprojection error for camera rig with constant "
@@ -249,8 +243,7 @@ void pybind_cost_functions(py::module& m) {
                  "6-DoF error on the absolute camera pose with prior "
                  "covariance.")
             .def("AbsolutePosePriorCost",
-                 ScaleVecCost<AbsolutePosePriorCostFunctor,
-                              const Rigid3d&>(),
+                 ScaleVecCost<AbsolutePosePriorCostFunctor, const Rigid3d&>(),
                  "cam_stddev_from_world_prior"_a, "cam_from_world_prior"_a,
                  "6-DoF error on the absolute camera pose with per-DoF "
                  "prior standard deviations. The first three are on the "
@@ -266,8 +259,7 @@ void pybind_cost_functions(py::module& m) {
                  &CovarianceWeightedCostFunctor<
                          AbsolutePosePositionPriorCostFunctor>::
                          Create<const Eigen::Vector3d&>,
-                 "position_cov_in_world_prior"_a,
-                 "position_in_world_prior"_a,
+                 "position_cov_in_world_prior"_a, "position_in_world_prior"_a,
                  "3-DoF error on the absolute camera pose's position with "
                  "prior covariance.")
             .def("AbsolutePosePositionPriorCost",
@@ -297,8 +289,7 @@ void pybind_cost_functions(py::module& m) {
                  "6-DoF error between two absolute camera poses based on a "
                  "prior relative pose with prior covariance.")
             .def("RelativePosePriorCost",
-                 ScaleVecCost<RelativePosePriorCostFunctor,
-                              const Rigid3d&>(),
+                 ScaleVecCost<RelativePosePriorCostFunctor, const Rigid3d&>(),
                  "i_stddev_from_j_prior"_a, "i_from_j_prior"_a,
                  "6-DoF error between two absolute camera poses based on a "
                  "prior relative pose with per-DoF prior standard "
@@ -313,16 +304,15 @@ void pybind_cost_functions(py::module& m) {
                  "Error between 3D points transformed by a 3D similarity "
                  "transform.")
             .def("Point3DAlignmentCost",
-                 &CovarianceWeightedCostFunctor<
-                         Point3DAlignmentCostFunctor>::
+                 &CovarianceWeightedCostFunctor<Point3DAlignmentCostFunctor>::
                          Create<const Eigen::Vector3d&, bool>,
                  "point_cov_in_b_prior"_a, "point_in_b_prior"_a,
                  "use_log_scale"_a = true,
                  "Error between 3D points transformed by a 3D similarity "
                  "transform with prior covariance.")
             .def("Point3DAlignmentCost",
-                 ScaleCost<Point3DAlignmentCostFunctor,
-                           const Eigen::Vector3d&, bool>(),
+                 ScaleCost<Point3DAlignmentCostFunctor, const Eigen::Vector3d&,
+                           bool>(),
                  "point_stddev_in_b_prior"_a, "point_in_b_prior"_a,
                  "use_log_scale"_a = true,
                  "Error between 3D points transformed by a 3D similarity "

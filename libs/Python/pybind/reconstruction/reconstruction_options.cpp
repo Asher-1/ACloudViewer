@@ -154,8 +154,7 @@ void pybind_sift_extraction_options(py::module& m) {
                     "int: (Default ``-1``) First octave in the pyramid, i.e. "
                     "-1 upsamples the image by one level.")
             .def_readwrite(
-                    "num_octaves",
-                    &colmap::SiftExtractionOptions::num_octaves,
+                    "num_octaves", &colmap::SiftExtractionOptions::num_octaves,
                     "int: (Default ``4``) Number of octaves in the pyramid.")
             .def_readwrite("octave_resolution",
                            &colmap::SiftExtractionOptions::octave_resolution,
@@ -963,7 +962,6 @@ void pybind_incremental_mapper_options(py::module& m) {
             .export_values()
             .finalize();
 
-
     // Upstream pycolmap parity: the upstream class name is
     // IncrementalPipelineOptions; the historical cloudViewer name
     // IncrementalMapperOptions remains as a module-level alias so that
@@ -1674,20 +1672,17 @@ void pybind_reconstruction_options_early(py::module& m) {
     // upstream estimators/bundle_adjustment.cc and sfm/incremental_*.cc
     // (default-argument values of the image/sfm binder entry points)
     py::module m_estimators = m.attr("estimators")
-                                      ? m.attr("estimators")
-                                                .cast<py::module>()
+                                      ? m.attr("estimators").cast<py::module>()
                                       : m.def_submodule("estimators");
-    py::module m_sfm = m.attr("sfm")
-                               ? m.attr("sfm").cast<py::module>()
-                               : m.def_submodule("sfm");
+    py::module m_sfm = m.attr("sfm") ? m.attr("sfm").cast<py::module>()
+                                     : m.def_submodule("sfm");
     pybind_bundle_adjustment_options(m_estimators);
     pybind_incremental_triangulator_options(m_sfm);
     pybind_incremental_mapper_options(m_sfm);
     // upstream pipeline/mvs.cc and pipeline/meshing.cc (the fork engine
     // owns these under mvs/, so they land on the mvs submodule)
-    py::module m_mvs = m.attr("mvs")
-                               ? m.attr("mvs").cast<py::module>()
-                               : m.def_submodule("mvs");
+    py::module m_mvs = m.attr("mvs") ? m.attr("mvs").cast<py::module>()
+                                     : m.def_submodule("mvs");
     pybind_patch_match_options(m_mvs);
     pybind_stereo_fusion_options(m_mvs);
     pybind_poisson_meshing_options(m_mvs);

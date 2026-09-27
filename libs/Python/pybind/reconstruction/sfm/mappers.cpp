@@ -778,7 +778,6 @@ void pybind_mappers(py::module& m) {
                     "initial pair and check its suitability; returns the "
                     "cam2_from_cam1 pose or None.");
 
-
     m.attr("__docstring__") = map_shared_argument_docstrings;
 }
 

@@ -274,8 +274,7 @@ void BindCeresSolver(py::module& m) {
                            &Options::min_line_search_step_contraction,
                            "double: (Default ``0.6``) Minimum contraction.")
             .def_readwrite("max_num_line_search_step_size_iterations",
-                           &Options::
-                                   max_num_line_search_step_size_iterations,
+                           &Options::max_num_line_search_step_size_iterations,
                            "int: (Default ``20``) Maximum step size "
                            "iterations.")
             .def_readwrite("max_num_line_search_direction_restarts",
@@ -342,21 +341,16 @@ void BindCeresSolver(py::module& m) {
             .def_readwrite("max_num_consecutive_invalid_steps",
                            &Options::max_num_consecutive_invalid_steps,
                            "int: (Default ``5``).")
-            .def_readwrite("function_tolerance",
-                           &Options::function_tolerance,
+            .def_readwrite("function_tolerance", &Options::function_tolerance,
                            "double: (Default ``1e-6``).")
-            .def_readwrite("gradient_tolerance",
-                           &Options::gradient_tolerance,
+            .def_readwrite("gradient_tolerance", &Options::gradient_tolerance,
                            "double: (Default ``1e-10``).")
-            .def_readwrite("parameter_tolerance",
-                           &Options::parameter_tolerance,
+            .def_readwrite("parameter_tolerance", &Options::parameter_tolerance,
                            "double: (Default ``1e-8``).")
-            .def_readwrite("linear_solver_type",
-                           &Options::linear_solver_type,
+            .def_readwrite("linear_solver_type", &Options::linear_solver_type,
                            "LinearSolverType: (Default ``SPARSE_NORMAL_"
                            "CHOLESKY``).")
-            .def_readwrite("preconditioner_type",
-                           &Options::preconditioner_type,
+            .def_readwrite("preconditioner_type", &Options::preconditioner_type,
                            "PreconditionerType: (Default ``JACOBI``).")
             .def_readwrite("visibility_clustering_type",
                            &Options::visibility_clustering_type,
@@ -387,8 +381,7 @@ void BindCeresSolver(py::module& m) {
             .def_readwrite("max_linear_solver_iterations",
                            &Options::max_linear_solver_iterations,
                            "int: (Default ``500``).")
-            .def_readwrite("eta", &Options::eta,
-                           "double: (Default ``1e-2``).")
+            .def_readwrite("eta", &Options::eta, "double: (Default ``1e-2``).")
             .def_readwrite("jacobi_scaling", &Options::jacobi_scaling,
                            "bool: (Default ``true``).")
             .def_readwrite("logging_type", &Options::logging_type,
@@ -468,8 +461,7 @@ void BindCeresSolver(py::module& m) {
             .def_readwrite("linear_solver_time_in_seconds",
                            &Summary::linear_solver_time_in_seconds,
                            "double: Time spent in the linear solver.")
-            .def_readwrite("num_linear_solves",
-                           &Summary::num_linear_solves,
+            .def_readwrite("num_linear_solves", &Summary::num_linear_solves,
                            "int: Number of linear solves.")
             .def_readwrite("residual_evaluation_time_in_seconds",
                            &Summary::residual_evaluation_time_in_seconds,
@@ -511,8 +503,7 @@ void BindCeresSolver(py::module& m) {
                            &Summary::num_effective_parameters,
                            "int: Number of effective (tangent-space) "
                            "parameters.")
-            .def_readwrite("num_residual_blocks",
-                           &Summary::num_residual_blocks,
+            .def_readwrite("num_residual_blocks", &Summary::num_residual_blocks,
                            "int: Number of residual blocks.")
             .def_readwrite("num_residuals", &Summary::num_residuals,
                            "int: Number of residuals.")
@@ -613,21 +604,18 @@ void BindCeresSolver(py::module& m) {
             .def_readonly("cost_change", &IterSummary::cost_change,
                           "double: Cost change relative to the previous "
                           "iteration.")
-            .def_readonly("gradient_max_norm",
-                          &IterSummary::gradient_max_norm,
+            .def_readonly("gradient_max_norm", &IterSummary::gradient_max_norm,
                           "double: Max norm of the gradient.")
             .def_readonly("gradient_norm", &IterSummary::gradient_norm,
                           "double: Norm of the gradient.")
             .def_readonly("step_norm", &IterSummary::step_norm,
                           "double: Norm of the parameter update.")
-            .def_readonly("relative_decrease",
-                          &IterSummary::relative_decrease,
+            .def_readonly("relative_decrease", &IterSummary::relative_decrease,
                           "double: Relative cost decrease.")
             .def_readonly("trust_region_radius",
                           &IterSummary::trust_region_radius,
                           "double: Trust region radius after the step.")
-            .def_readonly("eta", &IterSummary::eta,
-                          "double: Eta for the step.")
+            .def_readonly("eta", &IterSummary::eta, "double: Eta for the step.")
             .def_readonly("step_size", &IterSummary::step_size,
                           "double: Line search step size.")
             .def_readonly("line_search_function_evaluations",
@@ -672,12 +660,13 @@ void pybind_ceres(py::module& m) {
             "evaluation).")
             .def("num_residuals", &ceres::CostFunction::num_residuals,
                  "Number of residuals of the cost function.")
-            .def("parameter_block_sizes",
-                 [](const ceres::CostFunction& self) {
-                     return self.parameter_block_sizes();
-                 },
-                 "Sizes of the parameter blocks the cost function "
-                 "evaluates.");
+            .def(
+                    "parameter_block_sizes",
+                    [](const ceres::CostFunction& self) {
+                        return self.parameter_block_sizes();
+                    },
+                    "Sizes of the parameter blocks the cost function "
+                    "evaluates.");
 }
 
 }  // namespace estimators

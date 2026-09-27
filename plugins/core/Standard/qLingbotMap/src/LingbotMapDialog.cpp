@@ -29,7 +29,6 @@
 #include <QSlider>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
-
 #include <cmath>
 
 #include "aicore/inference_log.h"
@@ -288,9 +287,8 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                 // empty); with Image folder selected, jump back off a
                 // video scene. Explicit Custom stays put.
                 if (!m_testSceneCombo) return;
-                const bool video =
-                        m_inputModeCombo->currentData().toString() ==
-                        QStringLiteral("video");
+                const bool video = m_inputModeCombo->currentData().toString() ==
+                                   QStringLiteral("video");
                 const QString scene =
                         m_testSceneCombo->currentData().toString();
                 const bool sceneIsVideo =
@@ -577,8 +575,8 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_rotate90->setToolTip(
             tr("Rotate frames 90° clockwise (upstream --rotate_clockwise_90; "
                "for portrait phone sequences stored sideways)."));
-    advRow2(tr("Image extensions"), m_imageExt,
-            tr("Rotate frames 90°"), m_rotate90);
+    advRow2(tr("Image extensions"), m_imageExt, tr("Rotate frames 90°"),
+            m_rotate90);
     auto* advLayout = new QVBoxLayout(m_advancedBox);
     advLayout->setContentsMargins(0, 0, 0, 0);
     advLayout->addWidget(m_advancedContainer);
@@ -636,8 +634,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     // --- replay transport (official viewer Playing semantics with an
     // explicit Play/Pause/Stop state machine; the official "Playing
     // unchecked" = PAUSE on the current frame, NOT restore-all) ---
-    m_playbackCheck =
-            new QCheckBox(tr("Auto-play after reconstruction"), this);
+    m_playbackCheck = new QCheckBox(tr("Auto-play after reconstruction"), this);
     row(QString(), m_playbackCheck);
     m_playbackFps = new QSpinBox(this);
     m_playbackFps->setRange(1, 60);
@@ -712,9 +709,8 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     connect(m_replayNextButton, &QPushButton::clicked, this, [this]() {
         emit replaySeekRequested(m_replaySlider->value() + 1);
     });
-    connect(m_replaySlider, &QSlider::sliderReleased, this, [this]() {
-        emit replaySeekRequested(m_replaySlider->value());
-    });
+    connect(m_replaySlider, &QSlider::sliderReleased, this,
+            [this]() { emit replaySeekRequested(m_replaySlider->value()); });
     m_playbackResetButton = new QPushButton(tr("Reset replay"), m_playbackRow);
     m_playbackResetButton->setToolTip(
             tr("Stop the replay and restore every frame's cloud and camera "
@@ -735,13 +731,12 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
         resultGrid->addWidget(w, rrow, 0, 1, 4);
         ++rrow;
     };
-    auto resultRow2 = [&](const QString& l1, QWidget* w1,
-                          const QString& l2, QWidget* w2) {
+    auto resultRow2 = [&](const QString& l1, QWidget* w1, const QString& l2,
+                          QWidget* w2) {
         resultGrid->addWidget(new QLabel(l1, m_resultDisplayBox), rrow, 0);
         resultGrid->addWidget(w1, rrow, 1);
         if (w2) {
-            resultGrid->addWidget(new QLabel(l2, m_resultDisplayBox), rrow,
-                                  2);
+            resultGrid->addWidget(new QLabel(l2, m_resultDisplayBox), rrow, 2);
             resultGrid->addWidget(w2, rrow, 3);
         }
         ++rrow;
@@ -751,8 +746,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     // The slider bottoms at the materialization threshold: points below it
     // were never materialized, so the live re-filter can only TIGHTEN the
     // display (Run again with a lower Confidence threshold to loosen it).
-    m_resultThresholdSlider =
-            new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultThresholdSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
     m_resultThresholdSlider->setRange(150, 500);  // ×100
     m_resultThresholdSlider->setValue(150);
     m_resultThresholdLabel =
@@ -778,14 +772,13 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_resultCamSizeSlider->setToolTip(
             tr("Camera frustum size, % of the auto-computed baseline size "
                "(official Camera Size slider)."));
-    resultRow2(tr("Point size"), m_resultPointSizeSlider,
-               tr("Camera size %"), m_resultCamSizeSlider);
+    resultRow2(tr("Point size"), m_resultPointSizeSlider, tr("Camera size %"),
+               m_resultCamSizeSlider);
 
     m_resultShowCamsCheck =
             new QCheckBox(tr("Show cameras"), m_resultDisplayBox);
     m_resultShowCamsCheck->setChecked(true);
-    m_resultCamStrideSlider =
-            new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultCamStrideSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
     m_resultCamStrideSlider->setRange(1, 50);
     m_resultCamStrideSlider->setValue(1);
     m_resultCamStrideSlider->setToolTip(
@@ -802,8 +795,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                 new QPushButton(tr("Go to first camera"), viewRow);
         m_resultFirstCamButton->setToolTip(
                 tr("Move the view to the first frame's camera pose."));
-        m_resultFitAllButton =
-                new QPushButton(tr("Fit all"), viewRow);
+        m_resultFitAllButton = new QPushButton(tr("Fit all"), viewRow);
         m_resultFitAllButton->setToolTip(
                 tr("Refit the view on the whole reconstruction (official "
                    "Overview button)."));
@@ -824,13 +816,10 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     };
     // Slides coalesce: label/tooltip feedback on valueChanged, the actual
     // (re-filter/rebuild) application on sliderReleased.
-    connect(m_resultThresholdSlider, &QSlider::valueChanged, this,
-            [this]() {
-                m_resultThresholdLabel->setText(
-                        QString::number(m_resultThresholdSlider->value() /
-                                        100.0,
-                                        'f', 2));
-            });
+    connect(m_resultThresholdSlider, &QSlider::valueChanged, this, [this]() {
+        m_resultThresholdLabel->setText(QString::number(
+                m_resultThresholdSlider->value() / 100.0, 'f', 2));
+    });
     connect(m_resultThresholdSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
     connect(m_resultPointSizeSlider, &QSlider::sliderReleased, this,
@@ -1496,8 +1485,7 @@ void LingbotMapDialog::loadSettings() {
             settings.value(QStringLiteral("resultCamSizePercent"), 100)
                     .toInt());
     m_resultShowCamsCheck->setChecked(
-            settings.value(QStringLiteral("resultShowCameras"), true)
-                    .toBool());
+            settings.value(QStringLiteral("resultShowCameras"), true).toBool());
     m_resultCamStrideSlider->setValue(
             settings.value(QStringLiteral("resultCamStride"), 1).toInt());
     settings.endGroup();
@@ -1630,8 +1618,7 @@ void LingbotMapDialog::setPaused(bool paused) {
     m_pauseButton->setEnabled(m_taskRunning);
 }
 
-void LingbotMapDialog::setResultDisplayReady(bool ready,
-                                             double minThreshold) {
+void LingbotMapDialog::setResultDisplayReady(bool ready, double minThreshold) {
     m_resultDisplayBox->setEnabled(ready);
     if (!ready) return;
     // The live threshold slider bottoms at the materialization threshold:

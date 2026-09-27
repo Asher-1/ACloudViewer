@@ -9,10 +9,10 @@
 
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/reconstruction/database/database.h"
-#include "pybind/reconstruction/estimators/estimators.h"
-#include "pybind/reconstruction/feature/feature.h"
 #include "pybind/reconstruction/estimators/ceres_bindings.h"
 #include "pybind/reconstruction/estimators/cost_functions_bindings.h"
+#include "pybind/reconstruction/estimators/estimators.h"
+#include "pybind/reconstruction/feature/feature.h"
 #include "pybind/reconstruction/geometry/geometry.h"
 #include "pybind/reconstruction/gui/gui.h"
 #include "pybind/reconstruction/image/image.h"

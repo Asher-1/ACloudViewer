@@ -12,14 +12,14 @@
 // dispatches SIFT (CPU) and LoMa (ggml AICore); the ALIKED branch throws
 // until its AICore task lands.
 
+#include <memory>
+#include <string>
+
 #include "feature/aliked.h"
 #include "feature/loma.h"
 #include "feature/sift.h"
 #include "feature/types.h"
 #include "sensor/bitmap.h"
-
-#include <memory>
-#include <string>
 
 namespace colmap {
 

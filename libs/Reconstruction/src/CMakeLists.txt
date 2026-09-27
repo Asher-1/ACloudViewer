@@ -159,7 +159,9 @@ endif()
 # PoseLib is enabled by default for reconstruction. Keep it scoped to ColmapLib
 # so unrelated CloudViewer targets do not inherit a minimal-solver library.
 if(RECONSTRUCTION_FETCH_POSELIB AND TARGET PoseLib::PoseLib)
-    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE PoseLib::PoseLib)
+    # PUBLIC: estimators/solvers/poselib_utils.h exposes poselib types in
+    # its interface, so test targets including it need the include dirs.
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC PoseLib::PoseLib)
     target_compile_definitions(${COLMAP_LIB_NAME} PRIVATE RECONSTRUCTION_FETCH_POSELIB)
 endif()
 

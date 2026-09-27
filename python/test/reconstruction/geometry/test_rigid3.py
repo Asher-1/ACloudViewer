@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Port of upstream pycolmap geometry/rigid3_test.py (Open3D style).
 
 Covers the Rigid3d surface exposed by the fork: construction, accessors,
@@ -18,8 +25,7 @@ def test_rigid3d_default_init(geometry):
 
 
 def test_rigid3d_init_rotation_translation(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[1, 2, 3])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[1, 2, 3])
     np.testing.assert_array_almost_equal(list(rigid.translation), [1, 2, 3])
 
 
@@ -38,8 +44,7 @@ def test_rigid3d_translation_readwrite(geometry):
 
 
 def test_rigid3d_matrix(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[1, 2, 3])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[1, 2, 3])
     matrix = rigid.matrix()
     assert matrix.shape == (3, 4)
     np.testing.assert_array_almost_equal(matrix[:, :3], np.eye(3))
@@ -47,31 +52,26 @@ def test_rigid3d_matrix(geometry):
 
 
 def test_rigid3d_tgt_origin_in_src(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[1, 2, 3])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[1, 2, 3])
     origin = rigid.tgt_origin_in_src()
     np.testing.assert_array_almost_equal(origin, [-1, -2, -3])
 
 
 def test_rigid3d_adjoint(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[0, 0, 0])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[0, 0, 0])
     assert rigid.adjoint().shape == (6, 6)
     assert rigid.adjoint_inverse().shape == (6, 6)
 
 
 def test_rigid3d_inverse(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[1, 2, 3])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[1, 2, 3])
     inv = rigid.inverse()
     composed = rigid.apply(list(inv.translation))
-    np.testing.assert_array_almost_equal(list(composed), [0, 0, 0],
-                                         decimal=9)
+    np.testing.assert_array_almost_equal(list(composed), [0, 0, 0], decimal=9)
 
 
 def test_rigid3d_apply_vector3d(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[1, 0, 0])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[1, 0, 0])
     point = rigid.apply([1, 0, 0])
     np.testing.assert_array_almost_equal(point, [2, 0, 0])
 
@@ -98,23 +98,20 @@ def test_interpolate_camera_poses_free_function(geometry):
 
 
 def test_get_covariance_for_inverse(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[0, 0, 0])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[0, 0, 0])
     cov = np.eye(6)
     assert geometry.get_covariance_for_inverse(rigid, cov).shape == (6, 6)
 
 
 def test_get_covariance_for_composed_rigid3d(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[0, 0, 0])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[0, 0, 0])
     cov = np.eye(12)
-    assert geometry.get_covariance_for_composed_rigid3d(
-        rigid, cov).shape == (6, 6)
+    assert geometry.get_covariance_for_composed_rigid3d(rigid,
+                                                        cov).shape == (6, 6)
 
 
 def test_get_covariance_for_relative_rigid3d(geometry):
-    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0],
-                             translation=[0, 0, 0])
+    rigid = geometry.Rigid3d(rotation_wxyz=[1, 0, 0, 0], translation=[0, 0, 0])
     cov = np.eye(12)
-    assert geometry.get_covariance_for_relative_rigid3d(
-        rigid, rigid, cov).shape == (6, 6)
+    assert geometry.get_covariance_for_relative_rigid3d(rigid, rigid,
+                                                        cov).shape == (6, 6)

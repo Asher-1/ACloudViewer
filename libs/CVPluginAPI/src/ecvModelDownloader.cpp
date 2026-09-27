@@ -202,8 +202,7 @@ void ecvModelDownloader::startAttempt() {
     // comes from and where it lands — users can mirror the download
     // manually (browser/wget) and drop the file into the destination when
     // the network path fails.
-    emit logMessage(tr("[Download] GET %1 -> %2")
-                            .arg(attemptUrl, m_destPath));
+    emit logMessage(tr("[Download] GET %1 -> %2").arg(attemptUrl, m_destPath));
 
     QNetworkRequest req{QUrl(attemptUrl)};
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
