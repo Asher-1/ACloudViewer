@@ -458,6 +458,20 @@ public:
     void applyGLTransform(const ccGLMatrix& glTrans,
                           const std::string& viewID,
                           int viewport);
+    /// ParaView-style camera-frustum aggregation (drawSensor): registers the
+    /// camera's line geometry as a block of ONE group actor under its
+    /// container, split per resolved line width (an actor-level property
+    /// with no per-block VTK equivalent). Pose is NOT baked here — the block
+    /// stays in the local frame and tracks an absolute (idempotent) world
+    /// transform applied by applyGLTransform, so per-frame pose application
+    /// never re-converts geometry. @returns false (caller falls back to the
+    /// dedicated-actor path) when VTK < 9, the camera carries a per-entity
+    /// state without a per-block equivalent, or the container is too small
+    /// to be worth the bookkeeping.
+    bool aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
+                               const ccSensor* sensor,
+                               const std::string& viewID,
+                               int viewport);
     /// Clear any previously set GL user-transform on a VTK actor.
     void clearGLTransform(const std::string& viewID, int viewport);
     vtkSmartPointer<vtkTransform> getTransformation(
@@ -968,6 +982,11 @@ private:
     bool removeWidgets(const std::string& viewId, int viewport);
     void removePointClouds(const std::string& viewId, int viewport = 0);
     void removeShapes(const std::string& viewId, int viewport = 0);
+    /// Removes the dedicated near-plane face actors of all cameras whose
+    /// viewId starts with \p prefix (used when a whole folder/group owning
+    /// camera sensors goes away).
+    void removeCameraPlaneFacesByPrefix(const std::string &prefix,
+                                        int viewport = 0);
     void removeMesh(const std::string& viewId, int viewport = 0);
     bool removeText2D(const std::string& viewId, int viewport = 0);
     void removeText3D(const std::string& viewId, int viewport = 0);
@@ -1036,7 +1055,15 @@ public:
      *  COMPOSITE_INDEX pass; other entities resolve through their actor.
      *  @return Leaf (or group) view ID, empty when nothing was hit
      */
-    std::string pickLeafViewId(double x, double y);
+    /** Resolves the entity viewId under the display pixel. \p hintActor is
+     *  the actor already hit by the software pick (vtkPropPicker): the
+     *  hardware selection pass SKIPS translucent actors (the 50%-alpha
+     *  camera near-plane faces) and emits no COMPOSITE_INDEX for
+     *  line-only composite blocks, so when it comes back empty the hint is
+     *  the only reliable hit — resolved through getIdByActor (suffix-
+     *  stripped). */
+    std::string pickLeafViewId(double x, double y,
+                               vtkActor* hintActor = nullptr);
     /** CPU ray-cast fallback for composite groups: the VTK selection pass
      *  may produce no fragments for the composite actor (VTK 9.3 composite
      *  pick regression), which degraded every mesh click to the group/folder.
@@ -1054,6 +1081,16 @@ public:
      *  (e.g. light intensity) resolve on the group actor without eviction. */
     bool hasCompositeGroup(const std::string& viewID) const {
         return m_compositeRegistry.hasGroup(viewID);
+    }
+    /** Container-scoped group-family lookup: camera frustum groups are
+     *  split per line width ("viewId#lwN"), so folder-level operations
+     *  address them with the bare container viewID as a PREFIX. */
+    bool hasCompositeGroupWithPrefix(const std::string& viewID) const {
+        return m_compositeRegistry.hasCompositeGroupWithPrefix(viewID);
+    }
+    /** Removes every group family member under @a viewID. @returns count. */
+    int removeCompositeGroupsByPrefix(const std::string& viewID) {
+        return m_compositeRegistry.removeCompositeGroupsByPrefix(viewID);
     }
     /** Unified rendering-property resolution: composite leaves return their
      *  group actor (group-shared properties like shading/width/light apply
@@ -1489,6 +1526,10 @@ protected:
     /// Container leaf-count cache for the aggregation eligibility test
     /// (avoids recomputing an O(leaves) walk on every drawMesh call).
     std::unordered_map<const ccHObject*, size_t> m_containerLeafCountCache;
+    /// Same cache for camera-sensor containers (kept separate: a container
+    /// may hold both meshes and sensors, and the two gates must not read
+    /// each other's counts).
+    std::unordered_map<const ccHObject*, size_t> m_containerSensorCountCache;
     /// Reconciliation signature for an aggregated leaf: every input that
     /// MeshToPolyData consumes, collected with O(1) getters. Redraws whose
     /// signature is unchanged skip the polydata re-conversion and block
@@ -1506,6 +1547,20 @@ protected:
         double sfStop = 0.0;
         bool sfGreyNaN = false;
         size_t visCount = 0;
+        // Camera-sensor aggregation (drawSensor): the sensor identity, the
+        // frustum line-set scale (nearPlane/sideLines/arrow point counts),
+        // the resolved line width (1 plain / 2 with frustum lines — an
+        // actor-level property with no per-block equivalent, so it must
+        // match the group) and the packed frame/plane colors (already baked
+        // into the block's point scalars). Pose is deliberately NOT part of
+        // the key: it is applied idempotently as an absolute world transform
+        // on top of the anchored local-frame base, so pose changes never
+        // re-convert geometry.
+        const void* sensor = nullptr;
+        unsigned sensorPointCount = 0;
+        float sensorLineWidth = 0.0f;
+        unsigned sensorFrameColor = 0;
+        unsigned sensorPlaneColor = 0;
         bool operator==(const CompositeLeafKey& o) const {
             return mesh == o.mesh && triCount == o.triCount &&
                    sfShown == o.sfShown && colorsShown == o.colorsShown &&
@@ -1513,7 +1568,11 @@ protected:
                    hasMaterials == o.hasMaterials &&
                    displayedSF == o.displayedSF && sfStart == o.sfStart &&
                    sfStop == o.sfStop && sfGreyNaN == o.sfGreyNaN &&
-                   visCount == o.visCount;
+                   visCount == o.visCount && sensor == o.sensor &&
+                   sensorPointCount == o.sensorPointCount &&
+                   sensorLineWidth == o.sensorLineWidth &&
+                   sensorFrameColor == o.sensorFrameColor &&
+                   sensorPlaneColor == o.sensorPlaneColor;
         }
     };
     std::unordered_map<std::string, CompositeLeafKey> m_leafGeometryKey;

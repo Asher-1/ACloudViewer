@@ -172,14 +172,21 @@ void VtkDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
                     // as ghost geometry.
                     if (vis->isCompositeLeaf(viewID)) {
                         vis->removeCompositeLeafEntity(viewID, 0);
-                    } else if (vis->hasCompositeGroup(viewID)) {
-                        vis->removeCompositeGroupEntity(viewID, 0);
+                    } else if (vis->hasCompositeGroupWithPrefix(viewID)) {
+                        // Container-scoped group families: camera-frustum
+                        // aggregation splits per line width ("viewId#lwN"),
+                        // so the bare container viewID must match by prefix.
+                        vis->removeCompositeGroupsByPrefix(viewID);
                     }
                     if (vis->contains(viewID) || vis->isCompositeLeaf(viewID)) {
                         vis->removePointCloud(viewID);
                         vis->removePolygonMesh(viewID);
                         vis->removeShape(viewID);
                     }
+                    // Source registration (setCurrentSourceObject) must not
+                    // outlive the entity — stale entries are dangling
+                    // pointers for later getSourceObject-based lookups.
+                    vis->removeSourceObject(viewID);
                     const std::string bboxId = "BBox-" + viewID;
                     if (vis->contains(bboxId)) {
                         vis->removeShape(bboxId);
@@ -936,7 +943,11 @@ void VtkDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context,
 
     VtkVis* vis = resolveVisualizer(context.display);
     std::string viewID = CVTools::FromQString(context.viewID);
-    bool firstShow = !vis->contains(viewID);
+    // Composite leaves own no entry in the actor maps: without the
+    // isCompositeLeaf check they would be treated as first-show on every
+    // redraw (same rule as drawMesh).
+    bool firstShow =
+            !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
     int viewport = context.defaultViewPort;
 
     if (sensor->isRedraw() || firstShow) {
@@ -944,7 +955,10 @@ void VtkDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context,
         vis->transformEntities(context);
     }
 
-    if (vis->contains(viewID)) {
+    // Line width resolves through the GROUP actor for aggregated cameras
+    // (actorForRenderingProperties); the group carries one width per
+    // "#lw"-split group, so sibling writes are idempotent no-ops.
+    if (vis->contains(viewID) || vis->isCompositeLeaf(viewID)) {
         vis->setLineWidth(context.currentLineWidth, viewID, viewport);
     }
 }
@@ -1115,6 +1129,13 @@ void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
     // Apply accumulated GL transformation from ancestor
     // setGLTransformation calls.  This mirrors OpenGL's glMultMatrix
     // applied before each entity in CC's rendering path.
+    // NOTE: no unconditional bounds invalidation here — static entities
+    // apply identical state every pass, and a dirty flag set every frame
+    // would force the pre-render clipping observer to recompute
+    // ComputeVisiblePropBounds (O(all actors)) on every interaction.
+    // Bounds-affecting changes invalidate at their actual sites:
+    // addActorToRenderer (rebuilds), hideShowEntities (visibility),
+    // applyGLTransform / clearGLTransform / transformEntities (transforms).
     if (vis) {
         std::string viewID = CVTools::FromQString(context.viewID);
         if (context.hasGLTransAccum) {
@@ -1123,7 +1144,6 @@ void VtkDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         } else {
             vis->clearGLTransform(viewID, context.defaultViewPort);
         }
-        vis->resetCameraClippingRange(context.defaultViewPort);
     }
 }
 
@@ -1564,8 +1584,14 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
 
         imageVis->hideShowActors(context.visible, viewId);
         if (vis) {
+            // Visibility toggles change the visible-prop bounds: mark them
+            // dirty and let the pre-render ResetCameraClippingRangeEvent
+            // observer (resetCameraClippingCached) recompute ONCE per render.
+            // A per-entity resetCameraClippingRange here recomputed
+            // ComputeVisiblePropBounds over ALL actors for EVERY entity — an
+            // O(N²) redraw pass that stalled DBTree selection on scenes with
+            // many camera/point-cloud entities.
             vis->invalidateGeometryBounds();
-            vis->resetCameraClippingRange(context.defaultViewPort);
         }
         return true;
     } else if (context.hideShowEntityType == ENTITY_TYPE::ECV_CAPTION) {
@@ -1598,8 +1624,27 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
             found = true;
         }
 
+        // Camera near-plane FACE actors carry a "#plane"-suffixed id (they
+        // are dedicated actors split from the wireframe for their own 50%
+        // opacity): they must follow the sensor's visibility, or a hidden
+        // camera keeps rendering its red face.
+        const std::string faceViewId = viewId + "#plane";
+        if (vis->contains(faceViewId)) {
+            vis->hideShowActors(context.visible, faceViewId,
+                                context.defaultViewPort);
+            found = true;
+        }
+
         if (found) {
-            vis->resetCameraClippingRange(context.defaultViewPort);
+            // Visibility toggles change the visible-prop bounds: mark them
+            // dirty and let the pre-render ResetCameraClippingRangeEvent
+            // observer (resetCameraClippingCached) recompute ONCE per render.
+            // A per-entity resetCameraClippingRange here ran
+            // ComputeVisiblePropBounds over ALL actors for EVERY entity — an
+            // O(N²) redraw pass that stalled DBTree selection on scenes with
+            // many camera/point-cloud entities (composite aggregation masks
+            // it for meshes by collapsing them into few actors).
+            vis->invalidateGeometryBounds();
         }
 
         return found;
@@ -2097,8 +2142,12 @@ QString VtkDisplayTools::pickObject(double x, double y) {
     if (m_visualizer3D) {
         vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
         if (pickedActor) {
-            // Resolves composite-group hits down to the leaf entity.
-            return m_visualizer3D->pickLeafViewId(x, y).c_str();
+            // Resolves composite-group hits down to the leaf entity. The
+            // software hit rides along as a HINT: the hardware selection
+            // pass skips translucent actors (camera near-plane faces) and
+            // line-only composite blocks emit no COMPOSITE_INDEX, so the
+            // hint is the only reliable resolution for camera picks.
+            return m_visualizer3D->pickLeafViewId(x, y, pickedActor).c_str();
         }
     }
     return "-1";
