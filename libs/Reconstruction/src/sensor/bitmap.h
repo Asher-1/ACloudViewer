@@ -144,6 +144,15 @@ public:
     void Smooth(const float sigma_x, const float sigma_y);
 
     // Rescale image to the new dimensions.
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): in-place 90 degree
+    // rotation (counter-clockwise when counterclockwise=true).
+    void Rot90(bool counterclockwise = false);
+
+    // Upstream parity: JPEG quality for subsequent Write() calls; values
+    // in [0, 100], -1 keeps the caller-supplied flags untouched.
+    void SetJPEGQuality(int quality);
+    int JPEGQuality() const;
+
     void Rescale(
             const int new_width,
             const int new_height,
@@ -164,6 +173,7 @@ public:
 
 private:
     struct Storage;
+    int jpeg_quality_ = -1;
     std::unique_ptr<Storage> data_;
     int width_;
     int height_;

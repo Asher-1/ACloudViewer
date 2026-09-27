@@ -248,6 +248,12 @@ Eigen::Quaterniond AverageQuaternions(
 Rigid3d TransformCameraWorld(const Sim3d& new_from_old_world,
                              const Rigid3d& cam_from_world);
 
+// Upstream COLMAP d3ccaf35 geometry/pose.h: interpolate two camera poses
+// (slerp on the rotation, lerp on the translation).
+Rigid3d InterpolateCameraPoses(const Rigid3d& cam1_from_world,
+                               const Rigid3d& cam2_from_world,
+                               double t);
+
 // Convert rotation matrix to/from angle axis.
 Eigen::Vector3d RotationMatrixToAngleAxis(const Eigen::Matrix3d& R);
 Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w);

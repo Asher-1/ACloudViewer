@@ -248,6 +248,25 @@ void OptionManager::AddAndRegisterDefaultOption(const std::string& name,
     RegisterOption(name, option);
 }
 
+// std::filesystem::path has no boost::program_options lexical-cast path for
+// empty strings (written "option=" entries fail to parse), so path options
+// go through a string value with a notifier instead (batch 24 alignment).
+template <>
+inline void OptionManager::AddAndRegisterDefaultOption<std::filesystem::path>(
+        const std::string& name,
+        std::filesystem::path* option,
+        const std::string& help_text) {
+    desc_->add_options()(
+            name.c_str(),
+            boost::program_options::value<std::string>()
+                    ->notifier([option](const std::string& value) {
+                        *option = std::filesystem::path(value);
+                    })
+                    ->default_value(option->string()),
+            help_text.c_str());
+    RegisterOption(name, option);
+}
+
 template <typename T>
 void OptionManager::RegisterOption(const std::string& name, const T* option) {
     if (std::is_same<T, bool>::value) {

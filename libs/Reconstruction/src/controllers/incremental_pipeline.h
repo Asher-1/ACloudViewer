@@ -8,6 +8,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 
 #include "scene/reconstruction_manager.h"
 #include "sfm/incremental_mapper.h"
@@ -144,7 +145,11 @@ public:
 // initializing reconstructions from the same scene graph.
 class IncrementalMapperController : public Thread {
 public:
-    enum {
+    // Upstream parity (d3ccaf35 IncrementalPipeline::CallbackType): named so
+    // the binding layer can export it under the upstream top-level name
+    // IncrementalPipelineCallback. Unscoped, so the bare enumerator names
+    // used by the fork code paths keep resolving.
+    enum CallbackType {
         INITIAL_IMAGE_PAIR_REG_CALLBACK,
         NEXT_IMAGE_REG_CALLBACK,
         LAST_IMAGE_REG_CALLBACK,
@@ -155,16 +160,24 @@ public:
                                 const std::filesystem::path& database_path,
                                 ReconstructionManager* reconstruction_manager);
 
+    // Upstream parity (d3ccaf35 IncrementalPipeline::SetCheckIfStoppedFunc):
+    // an external cancellation probe polled alongside the thread stop flag;
+    // when it returns true the controller stops at the next checkpoint.
+    void SetCheckIfStoppedFunc(std::function<bool()> func);
+
 private:
     void Run();
     bool LoadDatabase();
     void Reconstruct(const IncrementalMapper::Options& init_mapper_options);
+
+    bool ShouldStop();
 
     const IncrementalMapperOptions* options_;
     const std::string image_path_;
     const std::string database_path_;
     ReconstructionManager* reconstruction_manager_;
     DatabaseCache database_cache_;
+    std::function<bool()> check_if_stopped_func_;
 };
 
 // Globally filter points and images in mapper.

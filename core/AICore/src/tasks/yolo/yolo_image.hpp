@@ -10,9 +10,9 @@
 //
 // Letterbox preprocessing and depth-map restoration. In-tree port of
 // ultralytics-ggml cpp_ggml/src/image_io.{hpp,cpp}, reduced to the pure
-// algorithms the C API needs: the upstream stb_image load/save, the bitmap
-// glyph renderer and the colorized depth PNG writer live on the plugin side
-// (Qt QImage / QPainter), matching the qRFDetr split.
+// algorithms the C API needs: image load/save, the bitmap glyph renderer
+// and the colorized depth PNG writer live on the plugin side (Qt QImage /
+// QPainter), matching the qRFDetr split.
 
 #include <vector>
 

@@ -172,6 +172,12 @@ public:
     // Project point from camera frame to image plane. Without cheirality
     // check, points behind the camera are projected as well and only points
     // on the camera plane fail.
+    // Upstream parity (d3ccaf35 scene/camera.h): indices of metadata
+    // parameters in params (empty: all fork models are perspective).
+    std::vector<size_t> MetaDataParamsIdxs() const {
+        return CameraModelMetaDataParamsIdxs(ModelId());
+    }
+
     std::optional<Eigen::Vector2d> ImgFromCam(
             const Eigen::Vector3d& camera_point,
             bool check_cheirality = true) const;

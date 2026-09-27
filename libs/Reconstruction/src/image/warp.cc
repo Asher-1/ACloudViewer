@@ -31,6 +31,8 @@
 
 #include "image/warp.h"
 
+#include <cmath>
+
 #include <algorithm>
 
 #include "VLFeat/imopv.h"
@@ -114,8 +116,25 @@ void WarpImageBetweenCameras(const WarpImageOptions& options,
       const Eigen::Vector2d warped_source_point = *source_point;
 
       BitmapColor<float> color;
-      if (source_image.InterpolateBilinear(warped_source_point.x() - 0.5,
-                                           warped_source_point.y() - 0.5, &color)) {
+      bool sampled = false;
+      if (options.interpolation == WarpImageOptions::Interpolation::kNearest) {
+        // Nearest-neighbor sampling: round to the closest source pixel.
+        const int sx = static_cast<int>(std::round(warped_source_point.x() - 0.5));
+        const int sy = static_cast<int>(std::round(warped_source_point.y() - 0.5));
+        if (sx >= 0 && sy >= 0 && sx < source_image.Width() &&
+            sy < source_image.Height()) {
+          BitmapColor<uint8_t> pixel;
+          if (source_image.GetPixel(sx, sy, &pixel)) {
+            color = BitmapColor<float>(pixel.r, pixel.g, pixel.b);
+            sampled = true;
+          }
+        }
+      } else {
+        sampled = source_image.InterpolateBilinear(
+                warped_source_point.x() - 0.5, warped_source_point.y() - 0.5,
+                &color);
+      }
+      if (sampled) {
         target_image->SetPixel(x, y, color.Cast<uint8_t>());
       } else {
         target_image->SetPixel(x, y, BitmapColor<uint8_t>(0));

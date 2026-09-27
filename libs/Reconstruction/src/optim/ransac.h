@@ -216,9 +216,9 @@ size_t RANSAC<Estimator, SupportMeasurer, Sampler>::ComputeNumTrials(
         return std::numeric_limits<size_t>::max();
     }
 
-    return static_cast<size_t>(std::ceil(
-            std::log(prob_failure) / std::log(prob_outlier) *
-            num_trials_multiplier));
+    return static_cast<size_t>(
+            std::ceil(std::log(prob_failure) / std::log(prob_outlier) *
+                      num_trials_multiplier));
 }
 
 template <typename Estimator, typename SupportMeasurer, typename Sampler>
@@ -293,7 +293,6 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
                                          options_.confidence,
                                          options_.dyn_num_trials_multiplier);
             }
-
         }
 
         if (report.num_trials >= dyn_max_num_trials &&

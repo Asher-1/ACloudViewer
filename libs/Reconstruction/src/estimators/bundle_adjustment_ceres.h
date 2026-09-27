@@ -20,6 +20,8 @@
 
 namespace colmap {
 
+using CeresLossFunctionType = BundleAdjustmentOptions::LossFunctionType;
+
 // Ceres-specific bundle adjustment summary with access to full solver
 // details (upstream parity, d3ccaf35 bundle_adjustment_ceres.h). The fork
 // keeps its bool Solve + ceres Summary() interface; the summary is built
@@ -38,6 +40,29 @@ struct CeresBundleAdjustmentSummary : public BundleAdjustmentSummary {
 // configurations and provides best solution quality. The fork's CASPAR GPU
 // backend is dispatched first inside Solve() when requested, falling back to
 // Ceres for problems Caspar cannot represent.
+// Upstream parity (d3ccaf35 bundle_adjustment_ceres.h): the Ceres-specific
+// aggregate option contract. The fork keeps the flat BundleAdjustmentOptions
+// execution path; this aggregate mirrors the upstream field layout for the
+// pycolmap-parity bindings.
+struct CeresBundleAdjustmentOptions {
+    CeresLossFunctionType loss_function_type =
+            CeresLossFunctionType::TRIVIAL;
+    double loss_function_scale = 1.0;
+    double loss_function_weight = 1.0;
+    bool use_gpu = false;
+    std::string gpu_index = "-1";
+    ceres::Solver::Options solver_options;
+    int min_num_images_gpu_solver = 50;
+    int min_num_residuals_for_cpu_multi_threading = 50000;
+    int max_num_images_direct_dense_cpu_solver = 50;
+    int max_num_images_direct_sparse_cpu_solver = 1000;
+    int max_num_images_direct_dense_gpu_solver = 200;
+    int max_num_images_direct_sparse_gpu_solver = 4000;
+    bool auto_select_solver_type = true;
+
+    bool Check() const { return loss_function_scale > 0.0; }
+};
+
 class CeresBundleAdjuster : public BundleAdjuster {
 public:
     CeresBundleAdjuster(const BundleAdjustmentOptions& options,

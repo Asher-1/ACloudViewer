@@ -35,6 +35,13 @@ struct LomaExtractionOptions {
     bool Check() const;
 };
 
+// Upstream parity (LomaMatchingOptions::Variant): per-variant model paths.
+struct LomaVariantMatcherOptions {
+    std::string model_path;
+    std::string model_path_bf16;
+    bool Check() const { return true; }
+};
+
 struct LomaMatchingOptions {
     std::string matcher_model_path;
     float min_score = 0.1f;

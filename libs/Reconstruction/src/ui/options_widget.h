@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include <QtCore>
 #include <QtWidgets>
 #include <filesystem>
 #include <unordered_map>
+
+#include "util/hash_containers.h"
 
 namespace colmap {
 

@@ -45,8 +45,15 @@ COLMAP_ADD_SOURCES(
     image_reader.h image_reader.cc
     option_manager.h option_manager.cc
     feature_extraction.h feature_extraction.cc
+    pairing.h pairing.cc
+    feature_matching.h feature_matching.cc
 )
 
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
 
 COLMAP_ADD_TEST(global_pipeline_test global_pipeline_test.cc)
+COLMAP_ADD_TEST(controllers_bundle_adjustment_test bundle_adjustment_test.cc)
+COLMAP_ADD_TEST(image_reader_test image_reader_test.cc)
+COLMAP_ADD_TEST(option_manager_test option_manager_test.cc)
+COLMAP_ADD_TEST(controllers_reconstruction_clustering_test reconstruction_clustering_test.cc)
+COLMAP_ADD_TEST(controllers_rotation_averaging_test rotation_averaging_test.cc)

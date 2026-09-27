@@ -60,6 +60,27 @@
 
 namespace config = boost::program_options;
 
+// boost::program_options has a built-in validator for boost::filesystem::path
+// but not for std::filesystem::path, so empty ("option=") entries in written
+// config files fail to parse. Provide the same validator for the std type so
+// that the Write->Read round trip works (batch 24 test alignment surfaced
+// this).
+namespace boost {
+namespace program_options {
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     std::filesystem::path*,
+                     long) {
+    if (v.empty()) {
+        v = std::filesystem::path(values.front());
+    } else {
+        const auto& prior = boost::any_cast<const std::filesystem::path&>(v);
+        v = prior / std::filesystem::path(values.front());
+    }
+}
+}  // namespace program_options
+}  // namespace boost
+
 namespace colmap {
 
 OptionManager::OptionManager(bool add_project_options) {

@@ -12,6 +12,8 @@
 // usage: bench_sam3d_backend_acceptance <models_dir> <image> <inference_runs>
 //            <backend> [dtype] [steps] [seed]
 
+#include <QtCore/QString>
+#include <QtGui/QImage>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -21,10 +23,6 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <QtCore/QString>
-#include <QtGui/QImage>
 
 #include "aicore/pipeline_timing.h"
 #include "aicore/sam3d_capi.h"

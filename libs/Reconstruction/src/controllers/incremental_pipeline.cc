@@ -260,6 +260,16 @@ IncrementalMapperController::IncrementalMapperController(
     RegisterCallback(LAST_IMAGE_REG_CALLBACK);
 }
 
+void IncrementalMapperController::SetCheckIfStoppedFunc(
+        std::function<bool()> func) {
+    check_if_stopped_func_ = std::move(func);
+}
+
+bool IncrementalMapperController::ShouldStop() {
+    return IsStopped() ||
+           (check_if_stopped_func_ && check_if_stopped_func_());
+}
+
 void IncrementalMapperController::Run() {
     if (!LoadDatabase()) {
         return;
@@ -270,7 +280,7 @@ void IncrementalMapperController::Run() {
 
     const size_t kNumInitRelaxations = 2;
     for (size_t i = 0; i < kNumInitRelaxations; ++i) {
-        if (reconstruction_manager_->Size() > 0 || IsStopped()) {
+        if (reconstruction_manager_->Size() > 0 || ShouldStop()) {
             break;
         }
 
@@ -279,7 +289,7 @@ void IncrementalMapperController::Run() {
         init_mapper_options.init_min_num_inliers /= 2;
         Reconstruct(init_mapper_options);
 
-        if (reconstruction_manager_->Size() > 0 || IsStopped()) {
+        if (reconstruction_manager_->Size() > 0 || ShouldStop()) {
             break;
         }
 
@@ -355,7 +365,7 @@ void IncrementalMapperController::Reconstruct(
     for (int num_trials = 0; num_trials < options_->init_num_trials;
          ++num_trials) {
         BlockIfPaused();
-        if (IsStopped()) {
+        if (ShouldStop()) {
             break;
         }
 
@@ -493,7 +503,7 @@ void IncrementalMapperController::Reconstruct(
         bool prev_reg_next_success = true;
         while (reg_next_success) {
             BlockIfPaused();
-            if (IsStopped()) {
+            if (ShouldStop()) {
                 break;
             }
 
@@ -607,7 +617,7 @@ void IncrementalMapperController::Reconstruct(
             }
         }
 
-        if (IsStopped()) {
+        if (ShouldStop()) {
             const bool kDiscardReconstruction = false;
             mapper.EndReconstruction(kDiscardReconstruction);
             break;

@@ -176,14 +176,16 @@ void Model::ReadFromPMVS(const std::filesystem::path& path) {
 }
 
 int Model::GetImageIdx(const std::string& name) const {
-  CHECK_GT(image_name_to_idx_.count(name), 0)
+  // Upstream parity: out-of-range lookups throw (std::invalid_argument)
+  // instead of aborting, so callers can recover.
+  THROW_CHECK_GT(image_name_to_idx_.count(name), 0)
       << "Image with name `" << name << "` does not exist";
   return image_name_to_idx_.at(name);
 }
 
 std::string Model::GetImageName(const int image_idx) const {
-  CHECK_GE(image_idx, 0);
-  CHECK_LT(image_idx, image_names_.size());
+  THROW_CHECK_GE(image_idx, 0);
+  THROW_CHECK_LT(image_idx, static_cast<int>(image_names_.size()));
   return image_names_.at(image_idx);
 }
 

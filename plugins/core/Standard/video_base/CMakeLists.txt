@@ -100,16 +100,10 @@ if(NOT MSVC)
     target_compile_options( test_video_base_gestures PRIVATE -fPIC)
     target_link_options( test_video_base_gestures PRIVATE "-no-pie")
 endif()
-add_test( NAME video_base_gestures COMMAND test_video_base_gestures )
-
-# CI contract (core/AICore/tests/CMakeLists.txt _aicore_fast_targets): the
-# fast-tier custom target is defined in add_subdirectory(core), which CMake
-# processes BEFORE add_subdirectory(plugins) — so its configure-time
-# `if(TARGET test_video_base_gestures)` filter cannot see this target and
-# silently drops it from DEPENDS, leaving the binary unbuilt (CI: ctest
-# "Could not find executable" / Not Run / gmake Error 8). Attach the binary
-# from here instead: at this point both targets already exist, and
-# add_dependencies needs no directory-order coupling.
-if(TARGET aicore-fast-tests)
-    add_dependencies( aicore-fast-tests test_video_base_gestures )
-endif()
+# Tier attachment is automatic: aicore_register_test (defined in
+# core/AICore/tests/CMakeLists.txt) registers the ctest entry and attaches the
+# binary to the matching AICore tier — there is no cross-directory dependency
+# list to maintain. (The previous manual-contract design failed CI with ctest
+# "Could not find executable" / Not Run / gmake Error 8 when the attach was
+# forgotten or dropped.)
+aicore_register_test(NAME video_base_gestures TARGET test_video_base_gestures)

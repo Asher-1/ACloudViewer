@@ -123,6 +123,9 @@ public:
         // initial
         // point, so no meaningful step could be taken.
         COST_FUNCTION_FAILED,
+        // A non-finite value (NaN/inf) appeared in the residuals, the
+        // Jacobian, the parameters, or the step (upstream parity, batch 24).
+        NUMERICAL_FAILURE,
     };
 
     struct Options {
@@ -180,6 +183,12 @@ public:
             summary_.status = COST_FUNCTION_FAILED;
             return summary_;
         }
+        // Non-finite initial residuals/Jacobian (or parameters that poison
+        // them) leave no meaningful descent direction; bail out cleanly.
+        if (!residuals_.allFinite() || !jacobian_.allFinite()) {
+            summary_.status = NUMERICAL_FAILURE;
+            return summary_;
+        }
         summary_.initial_cost = cost_;
         summary_.final_cost = cost_;
 
@@ -219,6 +228,12 @@ public:
             }
             lm_step_ = linear_solver_.solve(g_);
             dx_ = jacobi_scaling_.asDiagonal() * lm_step_;
+            // A silent linear-solve failure can produce a non-finite step;
+            // report it instead of acting on garbage.
+            if (!dx_.allFinite()) {
+                summary_.status = NUMERICAL_FAILURE;
+                break;
+            }
 
             // Adding parameter_tolerance to x.norm() ensures that this
             // works if x is near zero.
@@ -235,6 +250,13 @@ public:
             // the step and shrink the trust region rather than acting on
             // garbage.
             if (!function(x_new_.data(), f_x_new_.data(), nullptr)) {
+                u *= v;
+                v *= 2;
+                continue;
+            }
+            // A trial evaluation can also succeed but return non-finite
+            // residuals; reject that like a failed evaluation.
+            if (!f_x_new_.allFinite()) {
                 u *= v;
                 v *= 2;
                 continue;
@@ -265,6 +287,12 @@ public:
                 // expected to fail; guard against it regardless.
                 if (!Update(function, x)) {
                     summary_.status = COST_FUNCTION_FAILED;
+                    break;
+                }
+                if (!residuals_.allFinite() || !jacobian_.allFinite()) {
+                    // The accepted point reports its own cost; the poisoned
+                    // Jacobian/residuals only mean no further progress.
+                    summary_.status = NUMERICAL_FAILURE;
                     break;
                 }
                 if (summary_.gradient_max_norm < options.gradient_tolerance) {

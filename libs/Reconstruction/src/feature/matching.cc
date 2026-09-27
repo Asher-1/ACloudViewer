@@ -262,6 +262,43 @@ void FeatureMatcherCache::MaybeLoadImages() {
   }
 }
 
+void FeatureMatcherCache::MaybeLoadFrames() {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  if (frames_cache_) {
+    return;
+  }
+
+  std::vector<Frame> frames = database_->ReadAllFrames();
+  frames_cache_ = std::make_unique<std::unordered_map<frame_t, Frame>>();
+  frames_cache_->reserve(frames.size());
+  for (Frame& frame : frames) {
+    frames_cache_->emplace(frame.FrameId(), std::move(frame));
+  }
+}
+
+void FeatureMatcherCache::MaybeLoadPosePriors() {
+  MaybeLoadImages();
+
+  std::lock_guard<std::mutex> lock(database_mutex_);
+
+  if (pose_priors_cache_) {
+    return;
+  }
+
+  std::vector<PosePrior> pose_priors = database_->ReadAllPosePriors();
+  pose_priors_cache_ =
+      std::make_unique<std::unordered_map<image_t, PosePrior>>();
+  pose_priors_cache_->reserve(pose_priors.size());
+  for (PosePrior& pose_prior : pose_priors) {
+    if (pose_prior.corr_data_id.sensor_id.type == SensorType::CAMERA) {
+      const image_t image_id = pose_prior.corr_data_id.id;
+      THROW_CHECK(
+          pose_priors_cache_->emplace(image_id, std::move(pose_prior)).second)
+          << "Duplicate pose prior for image " << image_id;
+    }
+  }
+}
+
 void FeatureMatcherCache::Setup() {
   keypoints_cache_ =
         std::make_unique<ThreadSafeLRUCache<image_t, FeatureKeypoints>>(
@@ -367,6 +404,37 @@ std::vector<image_t> FeatureMatcherCache::GetImageIds() {
   return image_ids;
 }
 
+const Frame& FeatureMatcherCache::GetFrame(const frame_t frame_id) {
+  MaybeLoadFrames();
+  return frames_cache_->at(frame_id);
+}
+
+const PosePrior* FeatureMatcherCache::FindImagePosePriorOrNull(
+    const image_t image_id) {
+  MaybeLoadPosePriors();
+
+  const auto it = pose_priors_cache_->find(image_id);
+  if (it != pose_priors_cache_->end()) {
+    return &it->second;
+  }
+  return nullptr;
+}
+
+std::vector<frame_t> FeatureMatcherCache::GetFrameIds() {
+  MaybeLoadFrames();
+
+  std::vector<frame_t> frame_ids;
+  frame_ids.reserve(frames_cache_->size());
+  for (const auto& frame : *frames_cache_) {
+    frame_ids.push_back(frame.first);
+  }
+  // Sort the frames for deterministic behavior. Note that the frames_cache_ is
+  // an unordered_map, which does not guarantee a deterministic order across
+  // different standard library implementations.
+  std::sort(frame_ids.begin(), frame_ids.end());
+  return frame_ids;
+}
+
 bool FeatureMatcherCache::ExistsKeypoints(const image_t image_id) {
   return *keypoints_exists_cache_->Get(image_id);
 }
@@ -409,6 +477,12 @@ void FeatureMatcherCache::DeleteMatches(const image_t image_id1,
                                         const image_t image_id2) {
   std::unique_lock<std::mutex> lock(database_mutex_);
   database_->DeleteMatches(image_id1, image_id2);
+}
+
+void FeatureMatcherCache::DeleteTwoViewGeometry(const image_t image_id1,
+                                                const image_t image_id2) {
+  std::unique_lock<std::mutex> lock(database_mutex_);
+  database_->DeleteTwoViewGeometry(image_id1, image_id2);
 }
 
 void FeatureMatcherCache::DeleteInlierMatches(const image_t image_id1,

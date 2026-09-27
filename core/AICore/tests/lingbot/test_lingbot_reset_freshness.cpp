@@ -55,8 +55,7 @@ struct RunDigest {
 
 int main(int argc, char** argv) {
     if (argc < 6) {
-        std::fprintf(stderr,
-                     "usage: %s MODEL.gguf FRAMES.bin BACKEND H W\n",
+        std::fprintf(stderr, "usage: %s MODEL.gguf FRAMES.bin BACKEND H W\n",
                      argv[0]);
         return 2;
     }
@@ -81,8 +80,8 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    auto runStream = [&](aicore_lingbot_ctx* ctx, const float* data,
-                         int n, RunDigest* out) {
+    auto runStream = [&](aicore_lingbot_ctx* ctx, const float* data, int n,
+                         RunDigest* out) {
         auto cb = +[](void* user, const aicore_lingbot_result* r) -> int {
             auto* d = static_cast<RunDigest*>(user);
             if (d->delivered == 0) d->firstFrame = frameDigest(r);
@@ -132,7 +131,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     RunDigest runRef;
-    if (!runStream(ctx2, frames.data() + 8 * frameValues, 16, &runRef)) return 1;
+    if (!runStream(ctx2, frames.data() + 8 * frameValues, 16, &runRef))
+        return 1;
     aicore_lingbot_free(ctx2);
     aicore_lingbot_options_free(opts2);
     aicore_lingbot_shutdown();

@@ -18,16 +18,21 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFormLayout>
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QSettings>
+#include <QSlider>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
+#include <cmath>
+
+#include "aicore/inference_log.h"
 #include "aicore/lingbot_capi.h"
 #include "cvFileDialog.h"
 #include "ecvAICoreUiHelper.h"
@@ -164,12 +169,150 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     resize(640, 780);
 
     auto* rootLayout = new QVBoxLayout(this);
-    auto* form = new QFormLayout;
-    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    // Two-column parameter grid (label|field|label|field) — halves the
+    // dialog height versus a single-column QFormLayout.
+    auto* form = new QGridLayout;
+    form->setColumnStretch(1, 1);
+    form->setColumnStretch(3, 1);
+    int gridRow = 0;
+    auto gridLabel = [this](const QString& text) {
+        return new QLabel(text, this);
+    };
+    // Wide (full-row) entry; empty label = the widget spans all columns.
+    auto row = [&](const QString& label, QWidget* w) {
+        if (label.isEmpty()) {
+            form->addWidget(w, gridRow, 0, 1, 4);
+        } else {
+            form->addWidget(gridLabel(label), gridRow, 0);
+            form->addWidget(w, gridRow, 1, 1, 3);
+        }
+        ++gridRow;
+    };
+    // Paired (two-column) entry.
+    auto row2 = [&](const QString& l1, QWidget* w1, const QString& l2,
+                    QWidget* w2) {
+        form->addWidget(gridLabel(l1), gridRow, 0);
+        form->addWidget(w1, gridRow, 1);
+        form->addWidget(gridLabel(l2), gridRow, 2);
+        form->addWidget(w2, gridRow, 3);
+        ++gridRow;
+    };
+
+    // --- input ---
+    m_folderRow = new QWidget(this);
+    auto* folderLayout = new QHBoxLayout(m_folderRow);
+    folderLayout->setContentsMargins(0, 0, 0, 0);
+    m_imageFolder = new QLineEdit(m_folderRow);
+    auto* browseFolderBtn = new QPushButton(tr("Browse…"), m_folderRow);
+    folderLayout->addWidget(m_imageFolder, 1);
+    folderLayout->addWidget(browseFolderBtn);
+    row(tr("Image folder"), m_folderRow);
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    m_videoRow = new QWidget(this);
+    auto* videoLayout = new QHBoxLayout(m_videoRow);
+    videoLayout->setContentsMargins(0, 0, 0, 0);
+    videoLayout->addWidget(new QLabel(tr("Video file:"), m_videoRow), 0);
+    m_videoPath = new QLineEdit(m_videoRow);
+    auto* browseVideoBtn = new QPushButton(tr("Browse…"), m_videoRow);
+    videoLayout->addWidget(m_videoPath, 1);
+    videoLayout->addWidget(browseVideoBtn);
+    m_videoRow->setVisible(false);
+    row(QString(), m_videoRow);
+
+    m_videoFpsRow = new QWidget(this);
+    auto* fpsLayout = new QHBoxLayout(m_videoFpsRow);
+    fpsLayout->setContentsMargins(0, 0, 0, 0);
+    fpsLayout->addWidget(new QLabel(tr("Sampling fps:"), m_videoFpsRow), 0);
+    m_videoFps = new QSpinBox(m_videoFpsRow);
+    m_videoFps->setRange(1, 60);
+    m_videoFps->setValue(10);
+    m_videoFps->setToolTip(
+            tr("Sampling rate for the video input (upstream --fps; default "
+               "10)."));
+    fpsLayout->addWidget(m_videoFps, 1);
+    m_videoFpsRow->setVisible(false);
+    row(QString(), m_videoFpsRow);
+    connect(browseVideoBtn, &QPushButton::clicked, this,
+            &LingbotMapDialog::onBrowseVideoFile);
+#endif
+
+    m_maxFrames = new QSpinBox(this);
+    m_maxFrames->setRange(0, 1000000);
+    m_maxFrames->setValue(0);
+    m_maxFrames->setSpecialValueText(tr("all"));
+    m_maxFrames->setToolTip(
+            tr("Limit the stream to the first N frames (upstream --frames; "
+               "default: all frames in the folder)."));
+    // (Processing width pairs below once created.)
+
+    m_imageSize = new QSpinBox(this);
+    m_imageSize->setRange(224, 1022);
+    m_imageSize->setValue(518);
+    m_imageSize->setSingleStep(14);
+    m_imageSize->setToolTip(
+            tr("Official crop width (upstream --image_size; default 518, "
+               "snapped to the 14-px patch grid). Height follows the "
+               "aspect ratio."));
+    row2(tr("Max frames"), m_maxFrames, tr("Processing width"), m_imageSize);
+
+    // --- backend ---
+    m_deviceCombo = new QComboBox(this);
+    m_deviceCombo->addItem(tr("Auto"), QStringLiteral("auto"));
+    m_deviceCombo->addItem(QStringLiteral("CPU"), QStringLiteral("cpu"));
+    m_deviceCombo->addItem(QStringLiteral("GPU"), QStringLiteral("gpu"));
+    m_deviceCombo->setToolTip(
+            tr("Auto follows the AICore runtime device order (CUDA → Vulkan "
+               "→ CPU on Linux); upstream --backend."));
+    // --- input source: image folder (default) or video file ---
+    m_inputModeCombo = new QComboBox(this);
+    m_inputModeCombo->addItem(tr("Image folder (ordered sequence)"),
+                              QStringLiteral("folder"));
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    m_inputModeCombo->addItem(tr("Video file (sampled at fps)"),
+                              QStringLiteral("video"));
+#endif
+    m_inputModeCombo->setToolTip(
+            tr("Upstream --image_folder / --video_path parity: video frames "
+               "are sampled at the fps below (interval = round(source fps / "
+               "fps), source fps falls back to 30)."));
+    // (Device pairs below once created.)
+    connect(m_inputModeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) {
+                refreshInputRows();
+                // Keep the sample-data scene in step with the input mode:
+                // with Video selected, "Try sample data" must target a
+                // VIDEO dataset (otherwise the courthouse image scene
+                // filled the image folder and the video path stayed
+                // empty); with Image folder selected, jump back off a
+                // video scene. Explicit Custom stays put.
+                if (!m_testSceneCombo) return;
+                const bool video =
+                        m_inputModeCombo->currentData().toString() ==
+                        QStringLiteral("video");
+                const QString scene =
+                        m_testSceneCombo->currentData().toString();
+                const bool sceneIsVideo =
+                        scene == QStringLiteral("LingbotMapDriveVideo") ||
+                        scene == QStringLiteral("LingbotMapLingboWorldVideo");
+                if (video && !sceneIsVideo &&
+                    scene != QStringLiteral("Custom")) {
+                    const int idx = m_testSceneCombo->findData(
+                            QStringLiteral("LingbotMapDriveVideo"));
+                    if (idx >= 0) m_testSceneCombo->setCurrentIndex(idx);
+                } else if (!video && sceneIsVideo) {
+                    const int idx = m_testSceneCombo->findData(
+                            QStringLiteral("LingbotMapCourthouse"));
+                    if (idx >= 0) m_testSceneCombo->setCurrentIndex(idx);
+                }
+            });
+
+    row2(tr("Input source"), m_inputModeCombo, tr("Device"), m_deviceCombo);
 
     // --- model catalog (map role) ---
     m_modelCombo = new QComboBox(this);
-    form->addRow(tr("Model"), m_modelCombo);
+    // (Sky masking pairs below once created.)
 
     // Hidden rows keep their controls inside the row widget with an
     // in-row label: a plain QFormLayout label would stay visible when only
@@ -184,7 +327,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     customLayout->addWidget(m_customModelPath, 1);
     customLayout->addWidget(browseModelBtn);
     m_customModelRow->setVisible(false);
-    form->addRow(QString(), m_customModelRow);
+    row(QString(), m_customModelRow);
 
     // --- sky masking source (none / native skyseg / cached test masks) ---
     m_skySourceCombo = new QComboBox(this);
@@ -200,13 +343,16 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_skysegCombo->setToolTip(
             tr("SkySeg GGUF variant: f16 is the recommended release profile; "
                "q8_0 halves the download size, f32 is the exact reference."));
-    form->addRow(tr("Sky masking"), m_skySourceCombo);
+    row2(tr("Model"), m_modelCombo, tr("Sky masking"), m_skySourceCombo);
+    // Two-column alignment: the label lives in the grid's label column
+    // (row2), the combo fills field column 1 — same geometry as every
+    // other combo row. The wrapper widget keeps the conditional
+    // visibility toggle (native skyseg only) working for the whole row.
     m_skysegRow = new QWidget(this);
     auto* skysegLayout = new QHBoxLayout(m_skysegRow);
     skysegLayout->setContentsMargins(0, 0, 0, 0);
-    skysegLayout->addWidget(new QLabel(tr("Skyseg model:"), m_skysegRow), 0);
     skysegLayout->addWidget(m_skysegCombo, 1);
-    form->addRow(QString(), m_skysegRow);
+    row2(tr("Skyseg model"), m_skysegRow, QString(), nullptr);
 
     // --- test data row (cached download + auto-fill, lingbot_map_data) ---
     m_testSceneCombo = new QComboBox(this);
@@ -225,10 +371,12 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                 if (!m_skyAutoSwitching) m_skySourceUserSet = true;
                 refreshSkySourceOptions();
             });
-    auto* testRow = new QHBoxLayout;
-    testRow->addWidget(m_testSceneCombo, 1);
-    testRow->addWidget(m_testDataBtn);
-    form->addRow(tr("Test data:"), testRow);
+    auto* testRowLayout = new QHBoxLayout;
+    testRowLayout->addWidget(m_testSceneCombo, 1);
+    testRowLayout->addWidget(m_testDataBtn);
+    auto* testRow = new QWidget(this);
+    testRowLayout->setContentsMargins(0, 0, 0, 0);
+    testRow->setLayout(testRowLayout);
 
     // Cached sky-mask directory (auto-filled by the test-data flow; a
     // custom directory works too — masks must be <frame-stem>.png with
@@ -242,7 +390,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     maskRowLayout->addWidget(browseMaskBtn);
     connect(browseMaskBtn, &QPushButton::clicked, this,
             &LingbotMapDialog::onBrowseSkyMaskDir);
-    form->addRow(tr("Mask folder"), m_skyMaskRow);
+    row2(tr("Test data:"), testRow, tr("Mask folder"), m_skyMaskRow);
     m_skyMaskRow->setVisible(false);
 
     // Custom-data reminder: outdoor sequences with sky in view should enable
@@ -252,99 +400,14 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "masking (Native skyseg or cached masks) to filter sky points.");
     m_skyHint = ecvAICoreUi::makeHintLabel(m_customSkyHintText, this);
     m_skyHint->setVisible(false);
-    form->addRow(QString(), m_skyHint);
+    row(QString(), m_skyHint);
 
     // Dataset → model guidance (tips/label): tells the user which model
     // and pipeline each dataset is adapted for, per the upstream long_real
     // campaign.
     m_datasetHint = ecvAICoreUi::makeHintLabel(QString(), this);
     m_datasetHint->setWordWrap(true);
-    form->addRow(QString(), m_datasetHint);
-
-    // --- input source: image folder (default) or video file ---
-    m_inputModeCombo = new QComboBox(this);
-    m_inputModeCombo->addItem(tr("Image folder (ordered sequence)"),
-                              QStringLiteral("folder"));
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    m_inputModeCombo->addItem(tr("Video file (sampled at fps)"),
-                              QStringLiteral("video"));
-#endif
-    m_inputModeCombo->setToolTip(
-            tr("Upstream --image_folder / --video_path parity: video frames "
-               "are sampled at the fps below (interval = round(source fps / "
-               "fps), source fps falls back to 30)."));
-    form->addRow(tr("Input source"), m_inputModeCombo);
-    connect(m_inputModeCombo,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) { refreshInputRows(); });
-
-    // --- input ---
-    m_folderRow = new QWidget(this);
-    auto* folderLayout = new QHBoxLayout(m_folderRow);
-    folderLayout->setContentsMargins(0, 0, 0, 0);
-    m_imageFolder = new QLineEdit(m_folderRow);
-    auto* browseFolderBtn = new QPushButton(tr("Browse…"), m_folderRow);
-    folderLayout->addWidget(m_imageFolder, 1);
-    folderLayout->addWidget(browseFolderBtn);
-    form->addRow(tr("Image folder"), m_folderRow);
-
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    m_videoRow = new QWidget(this);
-    auto* videoLayout = new QHBoxLayout(m_videoRow);
-    videoLayout->setContentsMargins(0, 0, 0, 0);
-    videoLayout->addWidget(new QLabel(tr("Video file:"), m_videoRow), 0);
-    m_videoPath = new QLineEdit(m_videoRow);
-    auto* browseVideoBtn = new QPushButton(tr("Browse…"), m_videoRow);
-    videoLayout->addWidget(m_videoPath, 1);
-    videoLayout->addWidget(browseVideoBtn);
-    m_videoRow->setVisible(false);
-    form->addRow(QString(), m_videoRow);
-
-    m_videoFpsRow = new QWidget(this);
-    auto* fpsLayout = new QHBoxLayout(m_videoFpsRow);
-    fpsLayout->setContentsMargins(0, 0, 0, 0);
-    fpsLayout->addWidget(new QLabel(tr("Sampling fps:"), m_videoFpsRow), 0);
-    m_videoFps = new QSpinBox(m_videoFpsRow);
-    m_videoFps->setRange(1, 60);
-    m_videoFps->setValue(10);
-    m_videoFps->setToolTip(
-            tr("Sampling rate for the video input (upstream --fps; default "
-               "10)."));
-    fpsLayout->addWidget(m_videoFps, 1);
-    m_videoFpsRow->setVisible(false);
-    form->addRow(QString(), m_videoFpsRow);
-    connect(browseVideoBtn, &QPushButton::clicked, this,
-            &LingbotMapDialog::onBrowseVideoFile);
-#endif
-
-    m_maxFrames = new QSpinBox(this);
-    m_maxFrames->setRange(0, 1000000);
-    m_maxFrames->setValue(0);
-    m_maxFrames->setSpecialValueText(tr("all"));
-    m_maxFrames->setToolTip(
-            tr("Limit the stream to the first N frames (upstream --frames; "
-               "default: all frames in the folder)."));
-    form->addRow(tr("Max frames"), m_maxFrames);
-
-    m_imageSize = new QSpinBox(this);
-    m_imageSize->setRange(224, 1022);
-    m_imageSize->setValue(518);
-    m_imageSize->setSingleStep(14);
-    m_imageSize->setToolTip(
-            tr("Official crop width (upstream --image_size; default 518, "
-               "snapped to the 14-px patch grid). Height follows the "
-               "aspect ratio."));
-    form->addRow(tr("Processing width"), m_imageSize);
-
-    // --- backend ---
-    m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItem(tr("Auto"), QStringLiteral("auto"));
-    m_deviceCombo->addItem(QStringLiteral("CPU"), QStringLiteral("cpu"));
-    m_deviceCombo->addItem(QStringLiteral("GPU"), QStringLiteral("gpu"));
-    m_deviceCombo->setToolTip(
-            tr("Auto follows the AICore runtime device order (CUDA → Vulkan "
-               "→ CPU on Linux); upstream --backend."));
-    form->addRow(tr("Device"), m_deviceCombo);
+    row(QString(), m_datasetHint);
 
     m_threads = new QSpinBox(this);
     m_threads->setRange(0, 256);
@@ -353,7 +416,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_threads->setToolTip(
             tr("CPU thread count (upstream --threads; default: backend "
                "auto)."));
-    form->addRow(tr("CPU threads"), m_threads);
+    // (Confidence threshold pairs below once created.)
 
     m_confThreshold = new QDoubleSpinBox(this);
     m_confThreshold->setRange(0.0, 100.0);
@@ -362,7 +425,38 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_confThreshold->setToolTip(
             tr("Visibility confidence filter (upstream --conf_threshold; "
                "default 1.5)."));
-    form->addRow(tr("Confidence threshold"), m_confThreshold);
+    row2(tr("CPU threads"), m_threads, tr("Confidence threshold"),
+         m_confThreshold);
+
+    m_downsampleFactor = new QSpinBox(this);
+    m_downsampleFactor->setRange(1, 1000);
+    m_downsampleFactor->setValue(10);
+    m_downsampleFactor->setToolTip(
+            tr("Per-frame point-cloud downsample (upstream "
+               "--downsample_factor; official viewer default 10: keep "
+               "every Nth filtered point). 1 = full density."));
+    // (Live camera pairs below once created.)
+
+    m_liveViewCombo = new QComboBox(this);
+    m_liveViewCombo->addItem(tr("Global view (free camera)"), 0);
+    m_liveViewCombo->addItem(tr("Fit latest frame (official)"), 1);
+    m_liveViewCombo->addItem(tr("Follow latest camera"), 2);
+    m_liveViewCombo->setToolTip(
+            tr("Live preview camera behavior (official StreamingViewer "
+               "parity). Global: the view stays where you put it. Fit: "
+               "the official _fit_view — the camera re-fits the newest "
+               "frame at frames 1/10/50/120. Follow: the view rides the "
+               "newest camera frustum every frame (the plugin owns the "
+               "camera in the last two modes)."));
+    row2(tr("Downsample factor"), m_downsampleFactor, tr("Live camera"),
+         m_liveViewCombo);
+
+    connect(m_liveViewCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) {
+                emit liveViewModeChanged(
+                        m_liveViewCombo->currentData().toInt());
+            });
 
     // --- advanced engine options (upstream ggml_demo parity) ---
     // First-run defaults: auto-profile the KV cache AND the map-model format
@@ -401,8 +495,24 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "matching upstream ggml_demo.py --kv_cache_scale / "
                "--kv_cache_window / --stride / --rotate_clockwise_90."));
     m_advancedContainer = new QWidget(m_advancedBox);
-    auto* advForm = new QFormLayout(m_advancedContainer);
-    advForm->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    auto* advForm = new QGridLayout(m_advancedContainer);
+    advForm->setColumnStretch(1, 1);
+    advForm->setColumnStretch(3, 1);
+    int advRow = 0;
+    auto advRow2 = [&](const QString& l1, QWidget* w1, const QString& l2,
+                       QWidget* w2) {
+        advForm->addWidget(new QLabel(l1, m_advancedContainer), advRow, 0);
+        advForm->addWidget(w1, advRow, 1);
+        if (w2) {
+            advForm->addWidget(new QLabel(l2, m_advancedContainer), advRow, 2);
+            advForm->addWidget(w2, advRow, 3);
+        }
+        ++advRow;
+    };
+    auto advWide = [&](QWidget* w) {
+        advForm->addWidget(w, advRow, 0, 1, 4);
+        ++advRow;
+    };
     m_kvScale = new QSpinBox(m_advancedContainer);
     m_kvScale->setRange(1, 32);
     m_kvScale->setValue(kvDefaultScale);
@@ -410,7 +520,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
             tr("Persistent scale frames of the GCT KV cache (upstream "
                "--kv_cache_scale; official release default 8). The first-run "
                "default is auto-profiled to the detected GPU memory."));
-    advForm->addRow(tr("KV cache scale"), m_kvScale);
+    // (KV cache window pairs below once created.)
     m_kvWindow = new QSpinBox(m_advancedContainer);
     m_kvWindow->setRange(1, 256);
     m_kvWindow->setValue(kvDefaultWindow);
@@ -419,7 +529,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "--kv_cache_window; official release default 64). The "
                "first-run default is auto-profiled to the detected GPU "
                "memory."));
-    advForm->addRow(tr("KV cache window"), m_kvWindow);
+    advRow2(tr("KV cache scale"), m_kvScale, tr("KV cache window"), m_kvWindow);
     m_keyframeInterval = new QSpinBox(m_advancedContainer);
     m_keyframeInterval->setRange(0, 64);
     m_keyframeInterval->setValue(0);
@@ -431,23 +541,20 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "resolves to ceil(N/320) per the official streaming rule "
                "(1 when the stream is shorter). Windowed mode always runs "
                "per-window interval 1."));
-    advForm->addRow(tr("Keyframe interval"), m_keyframeInterval);
+    // (Frame stride pairs below once created.)
     if (kvAutoProfiled) {
-        advForm->addRow(
-                QString(),
-                ecvAICoreUi::makeHintLabel(
-                        tr("Auto-profiled for the detected GPU (%1 GiB): KV "
-                           "scale=%2, window=%3, model=%4. Adjust freely — "
-                           "your choice persists.")
-                                .arg(static_cast<int>(gpuTotalBytes /
-                                                      (1024ull * 1024 * 1024)))
-                                .arg(kvDefaultScale)
-                                .arg(kvDefaultWindow)
-                                .arg(modelDefault.isEmpty()
-                                             ? QStringLiteral("f16")
-                                             : QFileInfo(modelDefault)
-                                                       .baseName()),
-                        m_advancedContainer));
+        advWide(ecvAICoreUi::makeHintLabel(
+                tr("Auto-profiled for the detected GPU (%1 GiB): KV "
+                   "scale=%2, window=%3, model=%4. Adjust freely — "
+                   "your choice persists.")
+                        .arg(static_cast<int>(gpuTotalBytes /
+                                              (1024ull * 1024 * 1024)))
+                        .arg(kvDefaultScale)
+                        .arg(kvDefaultWindow)
+                        .arg(modelDefault.isEmpty()
+                                     ? QStringLiteral("f16")
+                                     : QFileInfo(modelDefault).baseName()),
+                m_advancedContainer));
     }
     m_frameStride = new QSpinBox(m_advancedContainer);
     m_frameStride->setRange(1, 100);
@@ -455,20 +562,23 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_frameStride->setToolTip(
             tr("Process every Nth frame of the sequence (upstream --stride; "
                "1 = all frames). Applied after Max frames, as upstream."));
-    advForm->addRow(tr("Frame stride"), m_frameStride);
+    advRow2(tr("Keyframe interval"), m_keyframeInterval, tr("Frame stride"),
+            m_frameStride);
     m_imageExt = new QLineEdit(m_advancedContainer);
     m_imageExt->setText(QStringLiteral(".jpg,.png,.jpeg,.bmp,.tif,.tiff"));
     m_imageExt->setToolTip(
             tr("Comma-separated extensions for the folder input (upstream "
                "--image_ext); matching is case-insensitive, so .JPG counts "
                "as .jpg."));
-    advForm->addRow(tr("Image extensions"), m_imageExt);
-    m_rotate90 = new QCheckBox(tr("Rotate frames 90° clockwise"),
-                               m_advancedContainer);
+    // Rotate90 shares the extensions row's right column (compact Advanced
+    // block; upstream --rotate_clockwise_90, for portrait phone sequences
+    // stored sideways).
+    m_rotate90 = new QCheckBox(tr("Rotate 90° cw"), m_advancedContainer);
     m_rotate90->setToolTip(
-            tr("Upstream --rotate_clockwise_90; for portrait phone "
-               "sequences stored sideways."));
-    advForm->addRow(QString(), m_rotate90);
+            tr("Rotate frames 90° clockwise (upstream --rotate_clockwise_90; "
+               "for portrait phone sequences stored sideways)."));
+    advRow2(tr("Image extensions"), m_imageExt,
+            tr("Rotate frames 90°"), m_rotate90);
     auto* advLayout = new QVBoxLayout(m_advancedBox);
     advLayout->setContentsMargins(0, 0, 0, 0);
     advLayout->addWidget(m_advancedContainer);
@@ -476,7 +586,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     // toggled connection shows/hides the container when the user folds it.
     connect(m_advancedBox, &QGroupBox::toggled, m_advancedContainer,
             &QWidget::setVisible);
-    form->addRow(QString(), m_advancedBox);
+    row(QString(), m_advancedBox);
     // --- reconstruction mode (official long-sequence pipeline) ---
     m_modeCombo = new QComboBox(this);
     m_modeCombo->addItem(tr("Streaming (single KV cache)"),
@@ -500,7 +610,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     // for bounded KV memory (measured: 6-window courthouse edges show
     // ghosting that the single-KV run does not have).
     m_modeCombo->setCurrentIndex(0);
-    form->addRow(tr("Mode"), m_modeCombo);
+    row(tr("Mode"), m_modeCombo);
     m_windowSize = new QSpinBox(this);
     m_windowSize->setRange(8, 512);
     m_windowSize->setValue(64);
@@ -515,7 +625,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     windowLayout->addWidget(m_windowSize, 1);
     windowLayout->addWidget(new QLabel(tr("Overlap:"), m_windowRow), 0);
     windowLayout->addWidget(m_overlap, 1);
-    form->addRow(QString(), m_windowRow);
+    row(QString(), m_windowRow);
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this]() {
                 m_windowRow->setVisible(
@@ -523,44 +633,226 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                         LingbotMapWorker::Settings::Mode::Windowed);
             });
 
-    // --- loop playback (official viewer Playing/FPS semantics) ---
+    // --- replay transport (official viewer Playing semantics with an
+    // explicit Play/Pause/Stop state machine; the official "Playing
+    // unchecked" = PAUSE on the current frame, NOT restore-all) ---
     m_playbackCheck =
-            new QCheckBox(tr("Loop playback of reconstruction frames"), this);
-    form->addRow(QString(), m_playbackCheck);
+            new QCheckBox(tr("Auto-play after reconstruction"), this);
+    row(QString(), m_playbackCheck);
     m_playbackFps = new QSpinBox(this);
     m_playbackFps->setRange(1, 60);
     m_playbackFps->setValue(20);
     m_playbackMode = new QComboBox(this);
-    m_playbackMode->addItem(tr("3D (all frames)"), QStringLiteral("all"));
+    // Official PointCloudViewer replay semantics: the default 3D mode is
+    // INCREMENTAL (every frame up to the current one stays visible — the
+    // reconstruction visibly grows back frame by frame, cf.
+    // update_frame_visibility), 4D shows only the current frame.
+    m_playbackMode->addItem(tr("3D (incremental replay)"),
+                            QStringLiteral("all"));
     m_playbackMode->addItem(tr("4D (current frame)"),
                             QStringLiteral("current"));
     m_playbackRow = new QWidget(this);
     auto* playbackLayout = new QHBoxLayout(m_playbackRow);
     playbackLayout->setContentsMargins(0, 0, 0, 0);
-    playbackLayout->addWidget(new QLabel(tr("FPS:"), m_playbackRow), 0);
-    playbackLayout->addWidget(m_playbackFps, 1);
-    playbackLayout->addWidget(new QLabel(tr("Mode:"), m_playbackRow), 0);
-    playbackLayout->addWidget(m_playbackMode, 1);
-    form->addRow(QString(), m_playbackRow);
-    auto emitPlaybackSettings = [this]() {
-        emit playbackSettingsChanged(m_playbackCheck->isChecked(),
-                                     m_playbackFps->value(),
-                                     m_playbackMode->currentData().toString() ==
-                                             QStringLiteral("current"));
-    };
+    m_replayPlayButton = new QPushButton(tr("Play"), m_playbackRow);
+    m_replayPlayButton->setEnabled(false);
+    m_replayPauseButton = new QPushButton(tr("Pause"), m_playbackRow);
+    m_replayPauseButton->setEnabled(false);
+    m_replayStopButton = new QPushButton(tr("Stop"), m_playbackRow);
+    m_replayStopButton->setEnabled(false);
+    m_replayPrevButton = new QPushButton(tr("<"), m_playbackRow);
+    m_replayPrevButton->setToolTip(
+            tr("Step one frame back (stopped/paused only)."));
+    m_replayPrevButton->setEnabled(false);
+    m_replayNextButton = new QPushButton(tr(">"), m_playbackRow);
+    m_replayNextButton->setToolTip(
+            tr("Step one frame forward (stopped/paused only)."));
+    m_replayNextButton->setEnabled(false);
+    m_replaySlider = new QSlider(Qt::Horizontal, m_playbackRow);
+    m_replaySlider->setRange(0, 0);
+    m_replaySlider->setEnabled(false);
+    m_replaySlider->setToolTip(
+            tr("Timeline scrub: show any frame (official gui_timestep; "
+               "disabled while playing)."));
+    m_replayFrameLabel = new QLabel(QStringLiteral("-"), m_playbackRow);
+    m_replayFrameLabel->setMinimumWidth(56);
+    playbackLayout->addWidget(m_replayPlayButton, 0);
+    playbackLayout->addWidget(m_replayPauseButton, 0);
+    playbackLayout->addWidget(m_replayStopButton, 0);
+    playbackLayout->addWidget(m_replayPrevButton, 0);
+    playbackLayout->addWidget(m_replayNextButton, 0);
+    playbackLayout->addWidget(m_replaySlider, 1);
+    playbackLayout->addWidget(m_replayFrameLabel, 0);
+    row(QString(), m_playbackRow);
+    auto* replaySettingsRow = new QWidget(this);
+    {
+        auto* l = new QHBoxLayout(replaySettingsRow);
+        l->setContentsMargins(0, 0, 0, 0);
+        l->addWidget(new QLabel(tr("FPS:"), replaySettingsRow), 0);
+        l->addWidget(m_playbackFps, 1);
+        l->addWidget(new QLabel(tr("Mode:"), replaySettingsRow), 0);
+        l->addWidget(m_playbackMode, 2);
+    }
+    row(QString(), replaySettingsRow);
     connect(m_playbackCheck, &QCheckBox::toggled, this,
-            [this, emitPlaybackSettings]() {
-                m_playbackRow->setVisible(m_playbackCheck->isChecked());
-                emitPlaybackSettings();
-            });
+            &LingbotMapDialog::publishPlaybackSettings);
     connect(m_playbackFps, qOverload<int>(&QSpinBox::valueChanged), this,
-            emitPlaybackSettings);
+            &LingbotMapDialog::publishPlaybackSettings);
     connect(m_playbackMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, emitPlaybackSettings);
+            this, &LingbotMapDialog::publishPlaybackSettings);
+    connect(m_replayPlayButton, &QPushButton::clicked, this,
+            &LingbotMapDialog::replayPlayRequested);
+    connect(m_replayPauseButton, &QPushButton::clicked, this,
+            &LingbotMapDialog::replayPauseRequested);
+    connect(m_replayStopButton, &QPushButton::clicked, this,
+            &LingbotMapDialog::replayStopRequested);
+    connect(m_replayPrevButton, &QPushButton::clicked, this, [this]() {
+        emit replaySeekRequested(m_replaySlider->value() - 1);
+    });
+    connect(m_replayNextButton, &QPushButton::clicked, this, [this]() {
+        emit replaySeekRequested(m_replaySlider->value() + 1);
+    });
+    connect(m_replaySlider, &QSlider::sliderReleased, this, [this]() {
+        emit replaySeekRequested(m_replaySlider->value());
+    });
+    m_playbackResetButton = new QPushButton(tr("Reset replay"), m_playbackRow);
+    m_playbackResetButton->setToolTip(
+            tr("Stop the replay and restore every frame's cloud and camera "
+               "(back to the full static result)."));
+    playbackLayout->addWidget(m_playbackResetButton, 0);
+    connect(m_playbackResetButton, &QPushButton::clicked, this,
+            &LingbotMapDialog::playbackReset);
+
+    // --- result display (official viewer display sliders, live over the
+    // LAST materialized result; disabled until one exists) ---
+    m_resultDisplayBox = new QGroupBox(tr("Result display"), this);
+    m_resultDisplayBox->setEnabled(false);
+    auto* resultGrid = new QGridLayout(m_resultDisplayBox);
+    resultGrid->setColumnStretch(1, 1);
+    resultGrid->setColumnStretch(3, 1);
+    int rrow = 0;
+    auto resultWide = [&](QWidget* w) {
+        resultGrid->addWidget(w, rrow, 0, 1, 4);
+        ++rrow;
+    };
+    auto resultRow2 = [&](const QString& l1, QWidget* w1,
+                          const QString& l2, QWidget* w2) {
+        resultGrid->addWidget(new QLabel(l1, m_resultDisplayBox), rrow, 0);
+        resultGrid->addWidget(w1, rrow, 1);
+        if (w2) {
+            resultGrid->addWidget(new QLabel(l2, m_resultDisplayBox), rrow,
+                                  2);
+            resultGrid->addWidget(w2, rrow, 3);
+        }
+        ++rrow;
+    };
+
+    // Visibility threshold (official slider 1.0-5.0, live re-filter).
+    // The slider bottoms at the materialization threshold: points below it
+    // were never materialized, so the live re-filter can only TIGHTEN the
+    // display (Run again with a lower Confidence threshold to loosen it).
+    m_resultThresholdSlider =
+            new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultThresholdSlider->setRange(150, 500);  // ×100
+    m_resultThresholdSlider->setValue(150);
+    m_resultThresholdLabel =
+            new QLabel(QStringLiteral("1.50"), m_resultDisplayBox);
+    m_resultThresholdLabel->setMinimumWidth(36);
+    auto* thrRow = new QWidget(m_resultDisplayBox);
+    {
+        auto* l = new QHBoxLayout(thrRow);
+        l->setContentsMargins(0, 0, 0, 0);
+        l->addWidget(m_resultThresholdSlider, 1);
+        l->addWidget(m_resultThresholdLabel, 0);
+    }
+    resultWide(thrRow);
+
+    m_resultPointSizeSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultPointSizeSlider->setRange(1, 16);
+    m_resultPointSizeSlider->setValue(3);
+    m_resultPointSizeSlider->setToolTip(
+            tr("Rendered point size in pixels (official Point Size slider)."));
+    m_resultCamSizeSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultCamSizeSlider->setRange(25, 400);  // % of the auto baseline
+    m_resultCamSizeSlider->setValue(100);
+    m_resultCamSizeSlider->setToolTip(
+            tr("Camera frustum size, % of the auto-computed baseline size "
+               "(official Camera Size slider)."));
+    resultRow2(tr("Point size"), m_resultPointSizeSlider,
+               tr("Camera size %"), m_resultCamSizeSlider);
+
+    m_resultShowCamsCheck =
+            new QCheckBox(tr("Show cameras"), m_resultDisplayBox);
+    m_resultShowCamsCheck->setChecked(true);
+    m_resultCamStrideSlider =
+            new QSlider(Qt::Horizontal, m_resultDisplayBox);
+    m_resultCamStrideSlider->setRange(1, 50);
+    m_resultCamStrideSlider->setValue(1);
+    m_resultCamStrideSlider->setToolTip(
+            tr("Show one camera frustum every N frames (official Camera "
+               "Downsample Factor slider)."));
+    resultRow2(QString(), m_resultShowCamsCheck, tr("Camera stride"),
+               m_resultCamStrideSlider);
+
+    auto* viewRow = new QWidget(m_resultDisplayBox);
+    {
+        auto* l = new QHBoxLayout(viewRow);
+        l->setContentsMargins(0, 0, 0, 0);
+        m_resultFirstCamButton =
+                new QPushButton(tr("Go to first camera"), viewRow);
+        m_resultFirstCamButton->setToolTip(
+                tr("Move the view to the first frame's camera pose."));
+        m_resultFitAllButton =
+                new QPushButton(tr("Fit all"), viewRow);
+        m_resultFitAllButton->setToolTip(
+                tr("Refit the view on the whole reconstruction (official "
+                   "Overview button)."));
+        l->addWidget(m_resultFirstCamButton, 1);
+        l->addWidget(m_resultFitAllButton, 1);
+    }
+    resultWide(viewRow);
+    row(QString(), m_resultDisplayBox);
+
+    auto emitResultDisplay = [this]() {
+        if (!m_resultDisplayBox->isEnabled()) return;
+        emit resultDisplaySettingsChanged(
+                m_resultThresholdSlider->value() / 100.0,
+                m_resultPointSizeSlider->value(),
+                m_resultCamSizeSlider->value(),
+                m_resultShowCamsCheck->isChecked(),
+                m_resultCamStrideSlider->value());
+    };
+    // Slides coalesce: label/tooltip feedback on valueChanged, the actual
+    // (re-filter/rebuild) application on sliderReleased.
+    connect(m_resultThresholdSlider, &QSlider::valueChanged, this,
+            [this]() {
+                m_resultThresholdLabel->setText(
+                        QString::number(m_resultThresholdSlider->value() /
+                                        100.0,
+                                        'f', 2));
+            });
+    connect(m_resultThresholdSlider, &QSlider::sliderReleased, this,
+            emitResultDisplay);
+    connect(m_resultPointSizeSlider, &QSlider::sliderReleased, this,
+            emitResultDisplay);
+    connect(m_resultPointSizeSlider, &QSlider::valueChanged, this,
+            emitResultDisplay);
+    connect(m_resultCamSizeSlider, &QSlider::sliderReleased, this,
+            emitResultDisplay);
+    connect(m_resultCamStrideSlider, &QSlider::sliderReleased, this,
+            emitResultDisplay);
+    connect(m_resultCamStrideSlider, &QSlider::valueChanged, this,
+            emitResultDisplay);
+    connect(m_resultShowCamsCheck, &QCheckBox::toggled, this,
+            emitResultDisplay);
+    connect(m_resultFirstCamButton, &QPushButton::clicked, this,
+            [this]() { emit resultViewRequested(0); });
+    connect(m_resultFitAllButton, &QPushButton::clicked, this,
+            [this]() { emit resultViewRequested(1); });
 
     m_addDbCheck = new QCheckBox(tr("Add reconstruction to DB tree"), this);
     m_addDbCheck->setChecked(true);
-    form->addRow(QString(), m_addDbCheck);
+    row(QString(), m_addDbCheck);
 
     rootLayout->addLayout(form);
 
@@ -568,25 +860,51 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     auto* buttons = new QHBoxLayout;
     m_runButton = new QPushButton(tr("Run"), this);
     m_runButton->setDefault(true);
+    m_pauseButton = new QPushButton(tr("Pause"), this);
+    m_pauseButton->setEnabled(false);
+    m_pauseButton->setToolTip(
+            tr("Pause the streaming reconstruction (the render window "
+               "freezes with it); click again to resume the same stream."));
     m_cancelButton = new QPushButton(tr("Cancel"), this);
     m_cancelButton->setEnabled(false);
     m_downloadButton = new QPushButton(tr("Download model"), this);
     buttons->addWidget(m_runButton);
+    buttons->addWidget(m_pauseButton);
     buttons->addWidget(m_cancelButton);
     buttons->addWidget(m_downloadButton);
     buttons->addStretch(1);
     rootLayout->addLayout(buttons);
 
-    // --- progress + log (shared AICore plugin layout) ---
+    // --- input-image mirror of the frame just reconstructed (official
+    // viewer's frame panel): the reconstruction and its input stay in
+    // lockstep on screen ---
+    m_previewImageLabel = new QLabel(this);
+    // Legible mirror size: the 518x294 processed frame must stay readable
+    // (a collapsed QLabel shrunk it to a thumbnail).
+    m_previewImageLabel->setMinimumSize(480, 240);
+    m_previewImageLabel->setSizePolicy(QSizePolicy::Expanding,
+                                       QSizePolicy::Expanding);
+    m_previewImageLabel->setAlignment(Qt::AlignCenter);
+    m_previewImageLabel->setStyleSheet(
+            "QLabel { background: #202020; color: #909090; }");
+    m_previewImageLabel->setText(tr("Input frame preview"));
+    m_previewFrameLabel = new QLabel(this);
+    m_previewFrameLabel->setVisible(false);
+    rootLayout->addWidget(m_previewImageLabel);
+    rootLayout->addWidget(m_previewFrameLabel);
+    connect(this, &LingbotMapDialog::pauseRequested, this, [this](bool) {
+        m_pauseButton->setEnabled(false);  // re-enabled on the worker's ack
+    });
+
+    // --- progress (shared AICore plugin layout; LOGGING goes through
+    // aicore_inference_log → the main-window console, no per-plugin log
+    // widget) ---
     m_downloadLabel = new QLabel(this);
     m_downloadLabel->setVisible(false);
     m_progress = new QProgressBar(this);
     m_progress->setVisible(false);
     rootLayout->addWidget(m_downloadLabel);
     rootLayout->addWidget(m_progress);
-    m_log = new QTextEdit(this);
-    m_log->setReadOnly(true);
-    rootLayout->addWidget(m_log, 1);
 
     connect(m_runButton, &QPushButton::clicked, this, &LingbotMapDialog::onRun);
     connect(m_cancelButton, &QPushButton::clicked, this,
@@ -735,9 +1053,10 @@ void LingbotMapDialog::populateSkysegCombo(const QString& filename) {
 }
 
 void LingbotMapDialog::appendLog(const QString& msg) {
-    m_log->append(QStringLiteral("[%1] %2").arg(
-            QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss")),
-            msg));
+    // Shared AICore log route (CVLog → the MAIN-WINDOW console + log
+    // file): plugins must not host their own log widgets — the same
+    // routing qDA3 and the whole AICore plugin family use.
+    aicore_inference_log::log(msg);
 }
 
 void LingbotMapDialog::onModelComboChanged() {
@@ -911,6 +1230,8 @@ LingbotMapWorker::Settings LingbotMapDialog::collectSettings() const {
     s.device = m_deviceCombo->currentData().toString();
     s.image_size = m_imageSize->value();
     s.confThreshold = static_cast<float>(m_confThreshold->value());
+    s.downsampleFactor = m_downsampleFactor->value();
+    s.liveViewMode = m_liveViewCombo->currentData().toInt();
     s.kvScale = m_kvScale->value();
     s.kvWindow = m_kvWindow->value();
     s.keyframeInterval = m_keyframeInterval->value();
@@ -1083,6 +1404,22 @@ void LingbotMapDialog::loadSettings() {
             settings.value(QStringLiteral("imageSize"), 518).toInt());
     m_confThreshold->setValue(
             settings.value(QStringLiteral("confThreshold"), 1.5).toDouble());
+    m_downsampleFactor->setValue(
+            settings.value(QStringLiteral("downsampleFactor"), 10).toInt());
+    {
+        const int mode =
+                settings.value(QStringLiteral("liveViewMode"), 1).toInt();
+        const int idx = m_liveViewCombo->findData(mode);
+        m_liveViewCombo->setCurrentIndex(idx >= 0 ? idx : 1);
+    }
+    m_playbackCheck->setChecked(
+            settings.value(QStringLiteral("playbackEnabled"), true).toBool());
+    m_playbackFps->setValue(
+            settings.value(QStringLiteral("playbackFps"), 20).toInt());
+    // Replay mode intentionally NOT persisted: the official default is the
+    // 3D incremental replay, and a saved "4D (current frame)" from an
+    // earlier session kept overriding it on every launch. 4D is a
+    // per-session choice from the combo below (defaults to index 0 = 3D).
 #ifdef HAS_OPENCV_FACE_CAPTURE
     {
         const QString inputMode = settings.value(QStringLiteral("inputMode"),
@@ -1147,16 +1484,22 @@ void LingbotMapDialog::loadSettings() {
     m_windowSize->setValue(
             settings.value(QStringLiteral("windowSize"), 64).toInt());
     m_overlap->setValue(settings.value(QStringLiteral("overlap"), 16).toInt());
-    m_playbackCheck->setChecked(
-            settings.value(QStringLiteral("playback"), false).toBool());
-    m_playbackRow->setVisible(m_playbackCheck->isChecked());
-    m_playbackFps->setValue(
-            settings.value(QStringLiteral("playbackFps"), 20).toInt());
-    const QString playbackMode = settings.value(QStringLiteral("playbackMode"),
-                                                QStringLiteral("current"))
-                                         .toString();
-    const int pbIdx = m_playbackMode->findData(playbackMode);
-    if (pbIdx >= 0) m_playbackMode->setCurrentIndex(pbIdx);
+    // Auto-play/FPS were already restored at the top of this function
+    // (keys "playbackEnabled"/"playbackFps"; the legacy "playback" key
+    // from earlier iterations is obsolete; the replay MODE is not
+    // persisted — session-only choice, see the m_playbackMode setup).
+    // Result-display sliders (official viewer parity; the threshold slider
+    // re-bases on every materialized result via setResultDisplayReady).
+    m_resultPointSizeSlider->setValue(
+            settings.value(QStringLiteral("resultPointSize"), 3).toInt());
+    m_resultCamSizeSlider->setValue(
+            settings.value(QStringLiteral("resultCamSizePercent"), 100)
+                    .toInt());
+    m_resultShowCamsCheck->setChecked(
+            settings.value(QStringLiteral("resultShowCameras"), true)
+                    .toBool());
+    m_resultCamStrideSlider->setValue(
+            settings.value(QStringLiteral("resultCamStride"), 1).toInt());
     settings.endGroup();
 
     // Re-apply the test-scene defaults AFTER the persisted values land.
@@ -1183,6 +1526,22 @@ void LingbotMapDialog::saveSettings() const {
     settings.setValue(QStringLiteral("imageSize"), m_imageSize->value());
     settings.setValue(QStringLiteral("confThreshold"),
                       m_confThreshold->value());
+    settings.setValue(QStringLiteral("downsampleFactor"),
+                      m_downsampleFactor->value());
+    settings.setValue(QStringLiteral("liveViewMode"),
+                      m_liveViewCombo->currentData().toInt());
+    settings.setValue(QStringLiteral("playbackEnabled"),
+                      m_playbackCheck->isChecked());
+    settings.setValue(QStringLiteral("playbackFps"), m_playbackFps->value());
+    // playbackMode not saved — see loadSettings (session-only choice).
+    settings.setValue(QStringLiteral("resultPointSize"),
+                      m_resultPointSizeSlider->value());
+    settings.setValue(QStringLiteral("resultCamSizePercent"),
+                      m_resultCamSizeSlider->value());
+    settings.setValue(QStringLiteral("resultShowCameras"),
+                      m_resultShowCamsCheck->isChecked());
+    settings.setValue(QStringLiteral("resultCamStride"),
+                      m_resultCamStrideSlider->value());
 #ifdef HAS_OPENCV_FACE_CAPTURE
     settings.setValue(QStringLiteral("inputMode"),
                       m_inputModeCombo->currentData().toString());
@@ -1208,10 +1567,6 @@ void LingbotMapDialog::saveSettings() const {
     // always starts from --mode streaming; no cross-session state).
     settings.setValue(QStringLiteral("windowSize"), m_windowSize->value());
     settings.setValue(QStringLiteral("overlap"), m_overlap->value());
-    settings.setValue(QStringLiteral("playback"), m_playbackCheck->isChecked());
-    settings.setValue(QStringLiteral("playbackFps"), m_playbackFps->value());
-    settings.setValue(QStringLiteral("playbackMode"),
-                      m_playbackMode->currentData().toString());
     settings.endGroup();
 }
 
@@ -1219,10 +1574,86 @@ void LingbotMapDialog::setTaskRunning(bool running) {
     m_taskRunning = running;
     m_runButton->setEnabled(!running);
     m_cancelButton->setEnabled(running);
+    m_pauseButton->setEnabled(running);
     if (!running) {
+        m_pauseButton->setText(tr("Pause"));
         m_progress->setVisible(false);
         m_downloadLabel->setVisible(false);
     }
+}
+
+void LingbotMapDialog::publishPlaybackSettings() {
+    emit playbackSettingsChanged(m_playbackCheck->isChecked(),
+                                 m_playbackFps->value(),
+                                 m_playbackMode->currentData().toString() ==
+                                         QStringLiteral("current"));
+    // Hot-swappable while the task runs: the plugin updates the worker's
+    // camera policy mid-stream.
+    emit liveViewModeChanged(m_liveViewCombo->currentData().toInt());
+}
+
+void LingbotMapDialog::setReplayState(int state, int frame, int count) {
+    // state: 0 = stopped, 1 = playing, 2 = paused; count <= 0 = no result.
+    const bool hasResult = count > 0;
+    const bool playing = state == 1;
+    const bool stopped = state == 0;
+    m_replayPlayButton->setEnabled(hasResult && !playing);
+    m_replayPlayButton->setText(state == 2 ? tr("Resume") : tr("Play"));
+    m_replayPauseButton->setEnabled(playing);
+    m_replayStopButton->setEnabled(hasResult && !stopped);
+    // Timeline scrub / stepping follow the official gui_timestep rule:
+    // disabled while Playing, usable when stopped or paused.
+    const bool scrub = hasResult && !playing;
+    m_replayPrevButton->setEnabled(scrub);
+    m_replayNextButton->setEnabled(scrub);
+    m_replaySlider->setEnabled(scrub);
+    m_playbackResetButton->setEnabled(hasResult);
+    if (!hasResult) {
+        m_replaySlider->setRange(0, 0);
+        m_replayFrameLabel->setText(QStringLiteral("-"));
+        return;
+    }
+    if (m_replaySlider->maximum() != count - 1) {
+        m_replaySlider->setRange(0, count - 1);
+    }
+    // While Playing the slider mirrors the clock (blocked: the user cannot
+    // drag it anyway); while stopped/paused the seek drives the position.
+    m_replaySlider->blockSignals(true);
+    m_replaySlider->setValue(frame);
+    m_replaySlider->blockSignals(false);
+    m_replayFrameLabel->setText(
+            QStringLiteral("%1 / %2").arg(frame + 1).arg(count));
+}
+
+void LingbotMapDialog::setPaused(bool paused) {
+    m_pauseButton->setText(paused ? tr("Resume") : tr("Pause"));
+    m_pauseButton->setEnabled(m_taskRunning);
+}
+
+void LingbotMapDialog::setResultDisplayReady(bool ready,
+                                             double minThreshold) {
+    m_resultDisplayBox->setEnabled(ready);
+    if (!ready) return;
+    // The live threshold slider bottoms at the materialization threshold:
+    // points below it were never materialized (re-filtering only tightens
+    // the display; loosening requires a new Run with a lower threshold).
+    const int minVal =
+            std::max(100, static_cast<int>(std::lround(minThreshold * 100.0)));
+    m_resultThresholdSlider->setMinimum(minVal);
+    if (m_resultThresholdSlider->value() < minVal) {
+        m_resultThresholdSlider->setValue(minVal);
+    }
+}
+
+void LingbotMapDialog::updatePreviewImage(const QImage& image,
+                                          int globalIndex) {
+    if (!m_previewImageLabel) return;
+    if (image.isNull()) return;
+    m_previewImageLabel->setPixmap(QPixmap::fromImage(image).scaled(
+            m_previewImageLabel->size(), Qt::KeepAspectRatio,
+            Qt::SmoothTransformation));
+    m_previewFrameLabel->setVisible(true);
+    m_previewFrameLabel->setText(tr("Input frame #%1").arg(globalIndex));
 }
 
 void LingbotMapDialog::setProgress(int percent) {
@@ -1436,7 +1867,8 @@ void LingbotMapDialog::updateDatasetHint() {
     } else if (sceneName.startsWith(QStringLiteral("LingbotMap")) &&
                sceneName != QStringLiteral("LingbotMapLoop")) {
         hint =
-                tr("Short outdoor demo sequence: Streaming mode with the default q8 "
+                tr("Short outdoor demo sequence: Streaming mode with the "
+                   "default q8 "
                    "model (single KV, no cross-window drift; f16 needs "
                    "≥30 GiB). Outdoor scenes benefit from sky masking.");
     } else if (sceneName == QStringLiteral("LingbotMapLoop")) {

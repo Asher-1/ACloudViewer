@@ -582,10 +582,10 @@ struct graph_builder {
         // named and routed. w is F32 after the cast, so the reference's
         // im2col type selection (BF16 ? F32 : F16) lowers it to F16, exactly
         // like the reference build.
-        auto *im2col = ggml_im2col(ctx, w, x, stride, stride, padding, padding,
-                                   dilation, dilation, true,
-                                   w->type == GGML_TYPE_BF16 ? GGML_TYPE_F32
-                                                             : GGML_TYPE_F16);
+        auto *im2col = ggml_im2col(
+                ctx, w, x, stride, stride, padding, padding, dilation, dilation,
+                true,
+                w->type == GGML_TYPE_BF16 ? GGML_TYPE_F32 : GGML_TYPE_F16);
         auto *mm = ggml_mul_mat(
                 ctx,
                 ggml_reshape_2d(ctx, im2col, im2col->ne[0],
@@ -1016,7 +1016,8 @@ struct graph_builder {
                                                 q->ne[3], q->nb[1], q->nb[2],
                                                 q->nb[3], q0 * q->nb[1]));
             auto *scores = ggml_mul_mat(ctx, k, q_c);
-            if (dump_internal && q0 == 0) debug_tensor(prefix + ".attn.scores0", scores);
+            if (dump_internal && q0 == 0)
+                debug_tensor(prefix + ".attn.scores0", scores);
             // Attention inputs are presently f32, but persist the precision
             // contract explicitly so a future storage-type optimization cannot
             // silently reintroduce fp16 accumulation here.

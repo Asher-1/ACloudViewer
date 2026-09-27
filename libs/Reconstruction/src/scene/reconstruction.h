@@ -26,11 +26,10 @@
 #include "scene/frame.h"
 #include "scene/image.h"
 #include "scene/point2d.h"
-
-#include "util/hash_containers.h"
 #include "scene/point3d.h"
 #include "scene/rig.h"
 #include "scene/track.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -116,11 +115,15 @@ public:
     void UpdatePoint3DErrors();
     inline const std::vector<image_t>& RegImageIds() const;
     inline const NodeHashMap<point3D_t, class Point3D>& Points3D() const;
-    inline const NodeHashMap<image_pair_t, ImagePairStat>& ImagePairs()
-            const;
+    inline const NodeHashMap<image_pair_t, ImagePairStat>& ImagePairs() const;
 
     // Identifiers of all 3D points.
     NodeHashSet<point3D_t> Point3DIds() const;
+
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): check the internal
+    // consistency of rig/frame/image/camera associations, 2D-3D track
+    // references in both directions, and registered frame poses.
+    bool IsValid() const;
 
     // Check whether specific object exists.
     inline bool ExistsCamera(const camera_t camera_id) const;

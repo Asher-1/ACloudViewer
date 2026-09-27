@@ -42,3 +42,5 @@ COLMAP_ADD_SOURCES(
 COLMAP_ADD_TEST(global_mapper_test global_mapper_test.cc)
 
 COLMAP_ADD_TEST(observation_manager_test observation_manager_test.cc)
+COLMAP_ADD_TEST(incremental_mapper_test incremental_mapper_test.cc)
+COLMAP_ADD_TEST(incremental_triangulator_test incremental_triangulator_test.cc)

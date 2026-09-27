@@ -33,6 +33,7 @@
 
 // QT
 #include <QDir>
+#include <QFileInfo>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QSurfaceFormat>
 #else
@@ -64,6 +65,14 @@
 #include <cstdlib>  // For putenv
 #include <cstring>
 #endif
+
+#if defined(__GLIBC__) || defined(__linux__)
+#include <execinfo.h>  // backtrace: symbolized stack on crash
+#include <cstdlib>
+#endif
+
+#include <CrashHandler.h>
+#include "ecvConsole.h"
 
 // COMMON
 #include "CommonSettings.h"
@@ -830,16 +839,42 @@ int main(int argc, char* argv[]) {
 
         QDir::setCurrent(workingDir.absolutePath());
 
+        // Unified crash collector (core): fatal signals, unhandled SEH,
+        // uncaught C++ exceptions AND caught exceptions (throw-site stack
+        // snapshotted at __cxa_throw) append to THIS session's crash log —
+        // same name prefix as the session's main log
+        // (ACloudViewer.<stamp>.<pid>.crash.log) so each run's crashes land
+        // beside its own log, 1:1, instead of mixing into one shared file.
+        QString crashLogName;
+        ecvConsole *console = ecvConsole::TheInstance(/*autoInit=*/false);
+        const QString sessionLog =
+                console ? console->currentLogFilePath() : QString();
+        if (!sessionLog.isEmpty()) {
+            crashLogName = QFileInfo(sessionLog).completeBaseName() +
+                           QStringLiteral(".crash.log");
+        } else {
+            // No session log (silent/CLI runs): keep the stable name.
+            crashLogName = QStringLiteral("ACloudViewer.crash.log");
+        }
+        ecvCrashHandler::install(
+                QDir(ecvConsole::getLogDirectory()).filePath(crashLogName));
+
         // let's rock!
         try {
-            // mainWindow->drawWidgets();
             result = app.exec();
         } catch (const std::exception& e) {
+            // Unified crash-log record (the exception was CAUGHT here, so
+            // std::terminate / the signal collectors never see it; the
+            // throw-site stack comes from the __cxa_throw snapshot).
+            ecvCrashHandler::logUnhandledException(
+                    QString::fromUtf8(e.what()));
             QMessageBox::warning(
                     nullptr, QObject::tr("ECV crashed!"),
                     QObject::tr("Hum, it seems that ECV has crashed... Sorry "
-                                "about that :)\n") +
-                            e.what());
+                                "about that :)\n%1\n\nThe details have been "
+                                "written to the crash log (%2 in the logs "
+                                "folder).")
+                            .arg(QString::fromUtf8(e.what()), crashLogName));
         } catch (...) {
             QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
                                  QObject::tr("Hum, it seems that ECV has "

@@ -56,3 +56,6 @@ elseif(UNIX OR WIN32)
     COLMAP_ADD_EXECUTABLE(colmap_exe colmap.cc)
     set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME ${COLMAP_APP_NAME})
 endif()
+
+# Batch 24 test alignment: exe-layer tests (upstream parity).
+COLMAP_ADD_TEST(exe_sfm_test sfm_test.cc)

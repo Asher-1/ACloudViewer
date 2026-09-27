@@ -7,6 +7,8 @@
 
 #include "pybind/reconstruction/mvs/multi_views_stereo.h"
 
+#include "mvs/advancing_front_meshing.h"
+
 #include <cstring>
 #include <sstream>
 #include <unordered_map>
@@ -159,6 +161,19 @@ void pybind_multi_views_stereo(py::module& m) {
                     "path"_a, "Write the depth map to a file.")
             .def("rescale", &DepthMap::Rescale, "factor"_a)
             .def("downsize", &DepthMap::Downsize, "max_width"_a, "max_height"_a)
+            // Upstream pycolmap parity: materialize the packed engine data
+            // as a (H, W) float32 numpy copy.
+            .def(
+                    "to_array",
+                    [](const DepthMap& self) {
+                        const size_t h = self.GetHeight();
+                        const size_t w = self.GetWidth();
+                        py::array_t<float> out({h, w});
+                        std::memcpy(out.mutable_data(), self.GetPtr(),
+                                    h * w * sizeof(float));
+                        return out;
+                    },
+                    "float32 array of shape (height, width).")
             .def(
                     "to_bitmap",
                     [](const DepthMap& self, float min_percentile,
@@ -250,6 +265,29 @@ void pybind_multi_views_stereo(py::module& m) {
                     "to_bitmap",
                     [](const NormalMap& self) { return self.ToBitmap(); },
                     "Convert the normal map to a color Bitmap.")
+            // Upstream pycolmap parity name for the existing ``array``
+            // accessor.
+            .def(
+                    "to_array",
+                    [](const NormalMap& self) {
+                        py::array_t<float> arr(
+                                {static_cast<py::ssize_t>(self.GetHeight()),
+                                 static_cast<py::ssize_t>(self.GetWidth()),
+                                 py::ssize_t(3)});
+                        auto buf = arr.mutable_unchecked<3>();
+                        for (py::ssize_t r = 0; r < buf.shape(0); ++r) {
+                            for (py::ssize_t c = 0; c < buf.shape(1); ++c) {
+                                for (py::ssize_t s = 0; s < 3; ++s) {
+                                    buf(r, c, s) =
+                                            self.Get(static_cast<size_t>(r),
+                                                     static_cast<size_t>(c),
+                                                     static_cast<size_t>(s));
+                                }
+                            }
+                        }
+                        return arr;
+                    },
+                    "float32 array of shape (height, width, 3).")
             .def("__repr__", [](const NormalMap& self) {
                 return "NormalMap(width=" + std::to_string(self.GetWidth()) +
                        ", height=" + std::to_string(self.GetHeight()) + ")";
@@ -304,6 +342,23 @@ void pybind_multi_views_stereo(py::module& m) {
                  &Model::ComputeTriangulationAngles, "percentile"_a = 50,
                  "Median triangulation angles between all overlapping "
                  "images.")
+            .def(
+                    "get_max_overlapping_images_from_pmvs",
+                    [](const Model& self)
+                            -> const std::vector<std::vector<int>>& {
+                        return self.GetMaxOverlappingImagesFromPMVS();
+                    },
+                    py::return_value_policy::reference_internal,
+                    "Maximally overlapping images per image from the PMVS "
+                    "vis.dat file.")
+            .def(
+                    "load_vis_dat",
+                    [](Model& self, const std::string& path) {
+                        self.LoadVisDat(path);
+                    },
+                    "path"_a,
+                    "Load the visibility information from a PMVS vis.dat "
+                    "file.")
             .def_property_readonly(
                     "images", [](Model& self) { return &self.images; },
                     py::return_value_policy::reference_internal)
@@ -327,6 +382,36 @@ void pybind_multi_views_stereo(py::module& m) {
                        ", num_points=" + std::to_string(self.points.size()) +
                        ")";
             });
+
+    // Upstream pycolmap parity (src/pycolmap/pipeline/meshing.cc): the
+    // advancing-front surface reconstruction options (fork engine has the
+    // AFSR implementation in mvs/advancing_front_meshing.{h,cc}).
+    py::class_<colmap::mvs::AdvancingFrontMeshingOptions>(
+            m_submodule, "AdvancingFrontMeshingOptions")
+            .def(py::init<>())
+            .def_readwrite("max_edge_length",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::
+                                   max_edge_length)
+            .def_readwrite("visibility_filtering",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::
+                                   visibility_filtering)
+            .def_readwrite("visibility_filtering_max_intersections",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::
+                                   visibility_filtering_max_intersections)
+            .def_readwrite("visibility_post_filtering",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::
+                                   visibility_post_filtering)
+            .def_readwrite("visibility_ray_trim_offset",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::
+                                   visibility_ray_trim_offset)
+            .def_readwrite("block_size",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::block_size)
+            .def_readwrite("block_overlap",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::block_overlap)
+            .def_readwrite("num_threads",
+                           &colmap::mvs::AdvancingFrontMeshingOptions::num_threads)
+            .def("check",
+                 &colmap::mvs::AdvancingFrontMeshingOptions::Check);
 }
 
 }  // namespace mvs

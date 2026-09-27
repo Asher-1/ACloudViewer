@@ -174,11 +174,10 @@ int main(int argc, char** argv) {
             char maskPath[1024];
             std::snprintf(maskPath, sizeof(maskPath), "%s/mask_%04d.bin",
                           ds->skyMaskOut.c_str(), ds->delivered);
-            const int needed = aicore_lingbot_last_sky_mask(
-                    ds->ctx, nullptr, 0);
+            const int needed =
+                    aicore_lingbot_last_sky_mask(ds->ctx, nullptr, 0);
             if (needed > 0) {
-                std::vector<unsigned char> mask(
-                        static_cast<size_t>(needed));
+                std::vector<unsigned char> mask(static_cast<size_t>(needed));
                 if (aicore_lingbot_last_sky_mask(ds->ctx, mask.data(),
                                                  needed) == needed) {
                     std::ofstream maskFile(maskPath, std::ios::binary);

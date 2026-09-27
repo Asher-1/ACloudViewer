@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -84,9 +85,23 @@ void WriteBinaryBlob(const std::filesystem::path& path,
 // Remove an argument from the list of command-line arguments.
 void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);
 
+// Creates a deep copy of the managed object, or returns nullptr when the
+// input is empty (upstream parity; used by the feature option shells to
+// give the shared_ptr option groups value semantics).
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr) {
+    if (ptr) {
+        return std::make_shared<T>(*ptr);
+    }
+    return nullptr;
+}
 
 template <typename T>
 std::string JoinPathString(T const& path) {

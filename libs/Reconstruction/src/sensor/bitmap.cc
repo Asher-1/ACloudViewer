@@ -328,4 +328,34 @@ unsigned int Bitmap::BitsPerPixel() const { return channels_ * 8; } unsigned int
 bool Bitmap::IsRGB() const { return channels_ == 3; } bool Bitmap::IsGrey() const { return channels_ == 1; }
 
 float JetColormap::Red(const float g){return Base(g-.25f);} float JetColormap::Green(const float g){return Base(g);} float JetColormap::Blue(const float g){return Base(g+.25f);} float JetColormap::Base(const float v){if(v<=.125f)return 0;if(v<=.375f)return Interpolate(2*v-1,0,-.75f,1,-.25f);if(v<=.625f)return 1;if(v<=.87f)return Interpolate(2*v-1,1,.25f,0,.75f);return 0;} float JetColormap::Interpolate(const float v,const float y0,const float x0,const float y1,const float x1){return(v-x0)*(y1-y0)/(x1-x0)+y0;}
+
+void Bitmap::Rot90(bool counterclockwise) {
+  if (!data_) return;
+  const int new_width = height_;
+  const int new_height = width_;
+  std::vector<uint8_t> rotated(static_cast<size_t>(new_width) * new_height *
+                               channels_);
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      const int nx = counterclockwise ? y : (height_ - 1 - y);
+      const int ny = counterclockwise ? (width_ - 1 - x) : x;
+      for (int c = 0; c < channels_; ++c) {
+        rotated[(static_cast<size_t>(ny) * new_width + nx) * channels_ + c] =
+            data_->pixels[(static_cast<size_t>(y) * width_ + x) * channels_ +
+                          c];
+      }
+    }
+  }
+  data_->pixels = std::move(rotated);
+  std::swap(width_, height_);
+}
+
+void Bitmap::SetJPEGQuality(int quality) {
+  if (quality >= 0 && quality <= 100) {
+    jpeg_quality_ = quality;
+  }
+}
+
+int Bitmap::JPEGQuality() const { return jpeg_quality_; }
+
 }  // namespace colmap

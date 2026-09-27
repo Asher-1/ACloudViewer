@@ -328,6 +328,11 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
 
         add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
                  COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        # Collect for the unified reconstruction_cpp_tests_gate (CUDA tests
+        # use COLMAP_ADD_CUDA_TEST and are intentionally not collected: the
+        # gate must stay GPU-independent for GPU-less CI runners).
+        set_property(GLOBAL APPEND PROPERTY COLMAP_RECONSTRUCTION_TESTS
+                     "${TARGET_NAME}")
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})

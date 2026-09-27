@@ -9,9 +9,11 @@
 
 #include <QElapsedTimer>
 #include <QImage>
+#include <QMutex>
 #include <QStringList>
 #include <QThread>
 #include <QVector>
+#include <QWaitCondition>
 #include <atomic>
 
 struct aicore_lingbot_ctx;
@@ -120,6 +122,16 @@ public:
         QString device = QStringLiteral("auto");
         int image_size = 518;       /**< official crop width */
         float confThreshold = 1.5f; /**< visibility confidence filter */
+        /** Official --downsample_factor (fused viewer display default 10):
+         *  per-frame clouds keep every Nth filtered point (parse_pc_data's
+         *  sequential arange stride). 1 = full density. */
+        int downsampleFactor = 10;
+        /** Live-preview camera behavior (official StreamingViewer parity):
+         *  0 = Global view (user-controlled, never touched);
+         *  1 = Fit latest frame (the official _fit_view: mean center,
+         *  fixed diagonal eye, re-fit at frames 1/10/50/120);
+         *  2 = Follow latest camera (the view rides the newest frustum). */
+        int liveViewMode = 1;
         /** Sky masking mode: none, native (skyseg GGUF), or cached PNG
          *  masks (upstream <scene>_sky_masks cache semantics; PNG value
          *  255 = keep, named after the source frame stem). */
@@ -155,7 +167,21 @@ public:
     /** Move the pending model context back to the main thread and free it.
      *  Safe to call from the main thread while the worker is idle. */
     void releaseContextOnMainThread();
-    void requestTaskCancel() { m_cancelRequested.store(true); }
+    void requestTaskCancel() {
+        m_cancelRequested.store(true);
+        // A paused stream waits on this condition; cancellation must wake
+        // it or the worker would hang inside the frame callback.
+        m_pauseCond.wakeAll();
+    }
+    /** Live control (official viewer pause semantics): the stream waits
+     *  INSIDE the frame callback, so no engine frame is consumed while
+     *  paused and the render window stops growing; resume continues the
+     *  same stream. Cancellation always breaks the wait. */
+    void requestPause() { m_pauseRequested.store(true); }
+    void requestResume() {
+        m_pauseRequested.store(false);
+        m_pauseCond.wakeAll();
+    }
 
 signals:
     void logMessage(const QString& msg);
@@ -163,6 +189,12 @@ signals:
     void framesDecoded(int count);
     /** Live per-frame preview while the engine streams (main-thread slot). */
     void framePreviewReady(const LingbotFramePreview& preview);
+    /** The processed-resolution input image of the frame just delivered
+     *  (implicit-sharing copy; lets the dialog mirror the reconstruction
+     *  progress like the official viewer's frame image panel). */
+    void previewImage(const QImage& image, int globalIndex);
+    /** Pause state transitions (emitted from the worker thread). */
+    void pauseStateChanged(bool paused);
     /** ALIGNED per-window preview batch (main-thread slot): the persistent
      *  cross-window map the transient per-window previews fold into. */
     void alignedPreviewReady(const LingbotAlignedPreview& preview);
@@ -174,6 +206,9 @@ protected:
 
 private:
     bool runInference(QString* error);
+    /** Blocks inside the engine's frame callback while paused; returns
+     *  when resumed or cancelled (the callback then reports cancel). */
+    void waitWhilePaused();
     /** Shared per-frame engine-callback state (streaming + windowed). */
     struct StreamState {
         LingbotMapWorker* worker;
@@ -219,6 +254,12 @@ private:
 
     Settings m_settings;
     std::atomic<bool> m_cancelRequested{false};
+    /** Live pause state (see requestPause/requestResume). */
+    std::atomic<bool> m_pauseRequested{false};
+    bool m_pauseNotified =
+            false; /**< dedupes pauseStateChanged, worker thread only */
+    QMutex m_pauseMutex;
+    QWaitCondition m_pauseCond;
     void* m_pendingCtx = nullptr; /**< aicore_lingbot_ctx* (opaque) */
     // Worker-thread-only stream state (used inside the C callback).
     friend struct StreamState;

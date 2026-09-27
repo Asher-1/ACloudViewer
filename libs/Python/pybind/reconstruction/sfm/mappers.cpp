@@ -16,6 +16,7 @@
 #include "scene/database_cache.h"
 #include "scene/reconstruction.h"
 #include "sfm/incremental_mapper.h"
+#include "sfm/incremental_mapper_impl.h"
 #include "sfm/incremental_triangulator.h"
 #include "sfm/observation_manager.h"
 #include "util/hash_containers.h"
@@ -93,7 +94,32 @@ void pybind_mappers(py::module& m) {
             m, "ObservationManager",
             "Book-keeping for 3D point observations on top of a "
             "reconstruction and its correspondence graph.");
+    // Upstream pycolmap parity (src/pycolmap/sfm/observation_manager.cc):
+    // per-image-pair triangulation statistics.
+    py::class_<ObservationManager::ImagePairStat> image_pair_stat(
+            obs_manager, "ImagePairStat",
+            "Per-image-pair triangulation statistics.");
+    image_pair_stat.def(py::init<>())
+            .def_readwrite("num_tri_corrs",
+                           &ObservationManager::ImagePairStat::num_tri_corrs,
+                           "Number of triangulated correspondences.")
+            .def_readwrite("num_total_corrs",
+                           &ObservationManager::ImagePairStat::num_total_corrs,
+                           "Number of total correspondences/matches.");
+    // Upstream pycolmap parity: ImagePairStat is a top-level name.
+    m.attr("ImagePairStat") = obs_manager.attr("ImagePairStat");
     obs_manager
+            .def_property_readonly(
+                    "image_pairs",
+                    [](PyObservationManager& self) {
+                        py::dict out;
+                        for (const auto& [pair_id, stat] :
+                             self.manager->ImagePairs()) {
+                            out[py::int_(pair_id)] = stat;
+                        }
+                        return out;
+                    },
+                    "Copied {pair_id: ImagePairStat} view.")
             .def(py::init([](py::object reconstruction_obj,
                              py::object graph_obj) {
                      auto* reconstruction =
@@ -212,7 +238,130 @@ void pybind_mappers(py::module& m) {
                                                 point3D_ids.begin(),
                                                 point3D_ids.end()));
                     },
-                    "min_tri_angle"_a, "point3D_ids"_a);
+                    "min_tri_angle"_a, "point3D_ids"_a)
+            .def(
+                    "filter_frames",
+                    [](PyObservationManager& self,
+                       double min_focal_length_ratio,
+                       double max_focal_length_ratio, double max_extra_param,
+                       int min_num_observations) {
+                        return self.manager->FindFramesToFilter(
+                                min_focal_length_ratio, max_focal_length_ratio,
+                                max_extra_param, min_num_observations);
+                    },
+                    "min_focal_length_ratio"_a, "max_focal_length_ratio"_a,
+                    "max_extra_param"_a, "min_num_observations"_a,
+                    "Find frames that should be filtered due to having no "
+                    "observations or bogus camera parameters, without "
+                    "de-registering them; pass the result to "
+                    "deregister_frame.")
+            .def(
+                    "find_points3D_with_small_triangulation_angle",
+                    [](PyObservationManager& self, double min_tri_angle,
+                       const std::vector<colmap::point3D_t>& point3D_ids) {
+                        return self.manager
+                                ->FilterPoints3DWithSmallTriangulationAngle(
+                                        min_tri_angle,
+                                        colmap::FlatHashSet<colmap::point3D_t>(
+                                                point3D_ids.begin(),
+                                                point3D_ids.end()));
+                    },
+                    "min_tri_angle"_a, "point3D_ids"_a,
+                    "Upstream name of "
+                    "``filter_points3D_with_small_triangulation_angle``.")
+            .def(
+                    "filter_points3D_with_large_reprojection_error",
+                    [](PyObservationManager& self, double max_reproj_error,
+                       const std::vector<colmap::point3D_t>& point3D_ids) {
+                        return self.manager
+                                ->FilterPoints3DWithLargeReprojectionError(
+                                        max_reproj_error,
+                                        colmap::FlatHashSet<colmap::point3D_t>(
+                                                point3D_ids.begin(),
+                                                point3D_ids.end()));
+                    },
+                    "max_reproj_error"_a, "point3D_ids"_a,
+                    "Filter 3D points with large reprojection errors; "
+                    "returns the number of deleted observations.")
+            .def(
+                    "register_frame",
+                    [](PyObservationManager& self, colmap::frame_t frame_id) {
+                        self.manager->RegisterFrame(frame_id);
+                    },
+                    "frame_id"_a,
+                    "Register a frame and update the per-image observation "
+                    "counters of every image in the frame.")
+            .def(
+                    "deregister_frame",
+                    [](PyObservationManager& self, colmap::frame_t frame_id) {
+                        self.manager->DeRegisterFrame(frame_id);
+                    },
+                    "frame_id"_a, "De-register a frame and reset its pose.")
+            .def(
+                    "increment_correspondence_has_point3D",
+                    [](PyObservationManager& self, colmap::image_t image_id,
+                       colmap::point2D_t point2D_idx) {
+                        self.manager->IncrementCorrespondenceHasPoint3D(
+                                image_id, point2D_idx);
+                    },
+                    "image_id"_a, "point2D_idx"_a,
+                    "Indicate that another image has a triangulated point "
+                    "with a correspondence to this image point.")
+            .def(
+                    "decrement_correspondence_has_point3D",
+                    [](PyObservationManager& self, colmap::image_t image_id,
+                       colmap::point2D_t point2D_idx) {
+                        self.manager->DecrementCorrespondenceHasPoint3D(
+                                image_id, point2D_idx);
+                    },
+                    "image_id"_a, "point2D_idx"_a,
+                    "Indicate that another image no longer has a "
+                    "triangulated point with a correspondence to this image "
+                    "point.")
+            .def(
+                    "num_observations",
+                    [](PyObservationManager& self, colmap::image_t image_id) {
+                        return self.manager->NumObservations(image_id);
+                    },
+                    "image_id"_a,
+                    "Number of observations of an image (fork per-image form; "
+                    "upstream pycolmap exposes an aggregate without "
+                    "arguments).")
+            .def(
+                    "num_correspondences",
+                    [](PyObservationManager& self, colmap::image_t image_id) {
+                        return self.manager->NumCorrespondences(image_id);
+                    },
+                    "image_id"_a,
+                    "Number of correspondences of an image (fork per-image "
+                    "form).")
+            .def(
+                    "num_visible_correspondences",
+                    [](PyObservationManager& self, colmap::image_t image_id) {
+                        return self.manager->NumVisibleCorrespondences(
+                                image_id);
+                    },
+                    "image_id"_a,
+                    "Number of correspondences that have a 3D point (fork "
+                    "per-image form).")
+            .def(
+                    "num_visible_points3D",
+                    [](PyObservationManager& self, colmap::image_t image_id) {
+                        return self.manager->NumVisiblePoints3D(image_id);
+                    },
+                    "image_id"_a,
+                    "Number of triangulated correspondences of an image (fork "
+                    "per-image form).")
+            .def(
+                    "point3D_visibility_score",
+                    [](PyObservationManager& self, colmap::image_t image_id) {
+                        return self.manager->Point3DVisibilityScore(image_id);
+                    },
+                    "image_id"_a,
+                    "Visibility score of an image (fork per-image form).")
+            .def("__repr__", [](PyObservationManager& self) {
+                return "<ObservationManager>";
+            });
 
     py::class_<PyTriangulator> triangulator(
             m, "IncrementalTriangulator",
@@ -313,8 +462,25 @@ void pybind_mappers(py::module& m) {
                      return std::vector<colmap::point3D_t>(modified.begin(),
                                                            modified.end());
                  })
-            .def("clear_modified_points3D", [](PyTriangulator& self) {
-                self.triangulator->ClearModifiedPoints3D();
+            .def("clear_modified_points3D",
+                 [](PyTriangulator& self) {
+                     self.triangulator->ClearModifiedPoints3D();
+                 })
+            // Upstream pycolmap parity: the triangulator wraps shared state
+            // (correspondence graph + reconstruction) and cannot be value-
+            // copied; upstream's __copy__ semantics also share the instance.
+            .def(
+                    "__copy__", [](PyTriangulator& self) { return &self; },
+                    py::return_value_policy::reference_internal)
+            .def(
+                    "__deepcopy__",
+                    [](PyTriangulator& self, py::dict) { return &self; },
+                    py::return_value_policy::reference_internal)
+            .def("__repr__", [](PyTriangulator& self) {
+                return "<IncrementalTriangulator with " +
+                       std::to_string(self.triangulator->GetModifiedPoints3D()
+                                              .size()) +
+                       " modified points3D>";
             });
 
     py::class_<PyMapper> mapper(
@@ -373,8 +539,7 @@ void pybind_mappers(py::module& m) {
                        colmap::image_t image_id1, colmap::image_t image_id2,
                        const colmap::Rigid3d& cam2_from_cam1) {
                         return self.mapper->RegisterInitialImagePair(
-                                options, image_id1, image_id2,
-                                cam2_from_cam1);
+                                options, image_id1, image_id2, cam2_from_cam1);
                     },
                     "options"_a, "image_id1"_a, "image_id2"_a,
                     "cam2_from_cam1"_a,
@@ -552,7 +717,67 @@ void pybind_mappers(py::module& m) {
                                                            modified.end());
                  })
             .def("clear_modified_points3D",
-                 [](PyMapper& self) { self.mapper->ClearModifiedPoints3D(); });
+                 [](PyMapper& self) { self.mapper->ClearModifiedPoints3D(); })
+            // Upstream pycolmap parity (d3ccaf35 IncrementalMapper):
+            // iterative local refinement and initial two-view geometry
+            // estimation. reset_initialization_stats and find_local_bundle
+            // have no fork engine counterpart (recorded in the alignment
+            // manifest).
+            .def(
+                    "iterative_local_refinement",
+                    [](PyMapper& self, int max_num_refinements,
+                       double max_refinement_change,
+                       const IncrementalMapper::Options& options,
+                       const BundleAdjustmentOptions& ba_options,
+                       const IncrementalTriangulator::Options& tri_options,
+                       colmap::image_t image_id) {
+                        self.mapper->IterativeLocalRefinement(
+                                max_num_refinements, max_refinement_change,
+                                options, ba_options, tri_options, image_id);
+                    },
+                    "max_num_refinements"_a, "max_refinement_change"_a,
+                    "options"_a, "ba_options"_a, "tri_options"_a, "image_id"_a,
+                    "Perform multiple rounds of local bundle adjustment "
+                    "until the changed-observation ratio converges.")
+            .def(
+                    "reset_initialization_stats",
+                    [](PyMapper& self) {
+                        self.mapper->ResetInitializationStats();
+                    },
+                    "Clear the initialization statistics (initial pairs and "
+                    "registration trials).")
+            .def(
+                    "find_local_bundle",
+                    [](PyMapper& self,
+                       const IncrementalMapper::Options& options,
+                       colmap::image_t image_id) {
+                        return colmap::IncrementalMapperImpl::FindLocalBundle(
+                                options, image_id,
+                                self.mapper->GetReconstruction());
+                    },
+                    "options"_a, "image_id"_a,
+                    "Determine the images in the local bundle around the "
+                    "given image (upstream d3ccaf35 semantics; implemented "
+                    "by the fork in IncrementalMapperImpl).")
+            .def(
+                    "estimate_initial_two_view_geometry",
+                    [](PyMapper& self,
+                       const IncrementalMapper::Options& options,
+                       colmap::image_t image_id1,
+                       colmap::image_t image_id2) -> py::object {
+                        Rigid3d cam2_from_cam1;
+                        if (!self.mapper->EstimateInitialTwoViewGeometry(
+                                    options, image_id1, image_id2,
+                                    cam2_from_cam1)) {
+                            return py::none();
+                        }
+                        return py::cast(cam2_from_cam1);
+                    },
+                    "options"_a, "image_id1"_a, "image_id2"_a,
+                    "Estimate the two-view geometry between a potential "
+                    "initial pair and check its suitability; returns the "
+                    "cam2_from_cam1 pose or None.");
+
 
     m.attr("__docstring__") = map_shared_argument_docstrings;
 }

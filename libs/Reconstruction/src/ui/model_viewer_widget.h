@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include <QOpenGLFunctions_3_2_Core>
 #include <QtCore>
 #include <QtGlobal>
 #include <QtOpenGL>
+
+#include "util/hash_containers.h"
 // QOpenGLWidget: In Qt5 it's in QtOpenGL module, in Qt6 it's in QtOpenGLWidgets
 // module Use direct include which works for both when the appropriate module is
 // linked

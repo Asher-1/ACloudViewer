@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include <filesystem>
 #include <functional>
 #include <limits>
@@ -19,6 +18,7 @@
 #include "scene/pose_graph.h"
 #include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 

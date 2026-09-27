@@ -34,6 +34,7 @@
 // enforced locally with the same thresholds so the probe also gates under
 // plain ctest.
 
+#include <QImage>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -44,14 +45,9 @@
 #include <vector>
 
 #include "aicore/lingbot_capi.h"
+#include "lingbot_stream_parity_golden.h"
 #include "tests/common/test_macros.hpp"
 #include "tests/common/validation_probe.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#include "stb_image.h"
-
-#include "lingbot_stream_parity_golden.h"
 
 namespace {
 
@@ -194,25 +190,26 @@ int main() {
     std::vector<float> stream;
     int procW = 0, procH = 0;
     for (const std::string& path : files) {
-        int w = 0, h = 0, comp = 0;
-        stbi_uc* rgb = stbi_load(path.c_str(), &w, &h, &comp, STBI_rgb);
-        if (!rgb) {
+        // QImage ships the same PNG decode the plugin uses; RGB888 keeps a
+        // tightly packed 3-bytes-per-pixel row layout for the image view.
+        QImage decoded(QString::fromStdString(path));
+        if (decoded.isNull()) {
             std::fprintf(stderr, "cannot decode fixture: %s\n", path.c_str());
             return 1;
         }
+        QImage rgb = decoded.convertToFormat(QImage::Format_RGB888);
         aicore_image_view view{};
-        view.data = rgb;
-        view.width = w;
-        view.height = h;
-        view.row_stride_bytes = w * 3;
+        view.data = rgb.bits();
+        view.width = rgb.width();
+        view.height = rgb.height();
+        view.row_stride_bytes = rgb.bytesPerLine();
         view.format = AICORE_IMAGE_RGB8;
         int32_t pw = 0, ph = 0;
-        const int needed = aicore_lingbot_preprocess_image(
-                &view, 518, nullptr, 0, &pw, &ph);
+        const int needed = aicore_lingbot_preprocess_image(&view, 518, nullptr,
+                                                           0, &pw, &ph);
         if (needed <= 0) {
             std::fprintf(stderr, "preprocess sizing failed: %s\n",
                          path.c_str());
-            stbi_image_free(rgb);
             return 1;
         }
         if (stream.empty()) {
@@ -223,7 +220,6 @@ int main() {
         } else if (pw != procW || ph != procH) {
             std::fprintf(stderr, "mismatched processed size: %s\n",
                          path.c_str());
-            stbi_image_free(rgb);
             return 1;
         }
         const size_t offset = stream.size();
@@ -232,10 +228,8 @@ int main() {
                                             needed, nullptr,
                                             nullptr) != needed) {
             std::fprintf(stderr, "preprocess failed: %s\n", path.c_str());
-            stbi_image_free(rgb);
             return 1;
         }
-        stbi_image_free(rgb);
     }
     const int n = static_cast<int>(files.size());
 
@@ -252,14 +246,15 @@ int main() {
         const std::string metaPath = std::string(dumpStream) + ".meta.json";
         std::FILE* meta = std::fopen(metaPath.c_str(), "w");
         if (meta) {
-            std::fprintf(meta,
-                         "{\"n\":%d,\"width\":%d,\"height\":%d,"
-                         "\"kv\":\"%s\"}\n",
-                         n, procW, procH,
-                         std::getenv("AICORE_TEST_LINGBOT_KV") &&
-                                         std::getenv("AICORE_TEST_LINGBOT_KV")[0]
-                                 ? std::getenv("AICORE_TEST_LINGBOT_KV")
-                                 : "2,8");
+            std::fprintf(
+                    meta,
+                    "{\"n\":%d,\"width\":%d,\"height\":%d,"
+                    "\"kv\":\"%s\"}\n",
+                    n, procW, procH,
+                    std::getenv("AICORE_TEST_LINGBOT_KV") &&
+                                    std::getenv("AICORE_TEST_LINGBOT_KV")[0]
+                            ? std::getenv("AICORE_TEST_LINGBOT_KV")
+                            : "2,8");
             std::fclose(meta);
         }
         std::printf("dumped stream: n=%d %dx%d -> %s\n", n, procW, procH,
@@ -269,11 +264,10 @@ int main() {
 
     if (n != kLingbotParityFrames || procW != kLingbotParityWidth ||
         procH != kLingbotParityHeight) {
-        std::fprintf(
-                stderr,
-                "fixture layout mismatch: n=%d %dx%d, golden n=%d %dx%d\n", n,
-                procW, procH, kLingbotParityFrames, kLingbotParityWidth,
-                kLingbotParityHeight);
+        std::fprintf(stderr,
+                     "fixture layout mismatch: n=%d %dx%d, golden n=%d %dx%d\n",
+                     n, procW, procH, kLingbotParityFrames, kLingbotParityWidth,
+                     kLingbotParityHeight);
         return 1;
     }
     const ParityGoldens goldens = selectGoldens(device);
@@ -341,15 +335,18 @@ int main() {
             tDiffSq += d * d;
         }
         for (int i = 3; i < 7; ++i) {
-            quatMax = std::max(quatMax, std::abs(
-                    static_cast<double>(state.pose[f][i]) - g[i]));
+            quatMax = std::max(
+                    quatMax,
+                    std::abs(static_cast<double>(state.pose[f][i]) - g[i]));
         }
         for (int i = 0; i < 4; ++i) {
-            intrMax = std::max(intrMax, std::abs(
-                    static_cast<double>(state.intr[f][i]) - g[9 + i]));
+            intrMax = std::max(
+                    intrMax,
+                    std::abs(static_cast<double>(state.intr[f][i]) - g[9 + i]));
         }
-        confMax = std::max(confMax, std::abs(
-                static_cast<double>(state.confMean[f]) - g[13]));
+        confMax = std::max(
+                confMax,
+                std::abs(static_cast<double>(state.confMean[f]) - g[13]));
         const std::vector<float> pool =
                 poolDepth(state.depth[f].data(), procW, procH, grid);
         for (int i = 0; i < grid * grid; ++i) {
@@ -362,9 +359,9 @@ int main() {
     }
     const double poseTRmse = std::sqrt(tDiffSq / n);
     const double depthPoolRelRmse =
-            poolAbsSum > 0.0 ? std::sqrt(poolDiffSq / poolCount) *
-                                       poolCount / poolAbsSum
-                             : 0.0;
+            poolAbsSum > 0.0
+                    ? std::sqrt(poolDiffSq / poolCount) * poolCount / poolAbsSum
+                    : 0.0;
 
     aicore_lingbot_shutdown();
     aicore_lingbot_free(ctx);

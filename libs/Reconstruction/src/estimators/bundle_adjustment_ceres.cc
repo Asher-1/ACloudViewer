@@ -105,11 +105,20 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
                                         &summary_)) {
             return true;
         }
-        LOG(WARNING) << "Caspar BA cannot represent this legacy problem; "
-                        "using the Ceres backend for this solve";
+        // Upstream parity (bundle_adjustment_caspar.cc): the Caspar adapter
+        // skips unsupported camera models with a per-image warning and
+        // surfaces configuration conflicts as hard failures - a false
+        // return is a bundle-adjustment failure, never a silent fallback
+        // to Ceres.
+        return false;
 #else
-        LOG(WARNING) << "Caspar BA was requested, but this build does not "
-                        "enable RECONSTRUCTION_CASPAR_ENABLED; using Ceres";
+        // Upstream parity (bundle_adjustment.cc CreateBundleAdjuster):
+        // selecting the CASPAR backend without CASPAR_ENABLED is a hard
+        // construction error.
+        LOG(FATAL_THROW)
+                << "Caspar BA backend selected but COLMAP was built without "
+                   "RECONSTRUCTION_CASPAR_ENABLED; rebuild with "
+                   "-DRECONSTRUCTION_CASPAR_ENABLED=ON to use it";
 #endif
     }
 

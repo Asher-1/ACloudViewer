@@ -32,7 +32,10 @@ class ecvModelDownloader;
  *     └── extract/           # Extracted datasets
  *         ├── dataset_monstree/
  *         ├── friends_faces/
- *         └── objects_detection_data/
+ *         ├── objects_detection_data/
+ *         └── lingbot_map_test_data/   # Grouped plugin datasets
+ *             ├── courthouse/
+ *             └── loop/
  */
 class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
     Q_OBJECT
@@ -74,6 +77,12 @@ public:
                                            ///< <zip>.cvintegrity ledger —
                                            ///< later access checks are
                                            ///< stat-only.
+        /** Optional group subdirectory UNDER extract/ (e.g.
+         *  "lingbot_map_test_data"): datasets of one plugin family land in
+         *  extract/<group>/<extractDirName> instead of littering the
+         *  extract root shared with the model catalogs. Empty = extract
+         *  root (legacy single-dataset layout). */
+        QString extractGroupName;
     };
 
     /** Returns the singleton instance. */
@@ -94,7 +103,8 @@ public:
     /** Returns the path where a dataset zip should be stored. */
     static QString zipPath(Dataset kind);
 
-    /** Returns the path where a dataset should be extracted. */
+    /** Returns the path where a dataset should be extracted. Datasets with
+     *  an extractGroupName land in extract/<group>/<extractDirName>. */
     static QString extractPath(Dataset kind);
 
     /** Find one uniquely named file below a dataset's extraction directory. */

@@ -671,7 +671,9 @@ std::vector<std::vector<int>> ReadPointsVisibility(
     CHECK(file.is_open()) << path;
 
     const size_t file_num_points = ReadBinaryLittleEndian<uint64_t>(&file);
-    CHECK_EQ(file_num_points, num_points);
+    // Upstream parity: a size mismatch is a throw (std::invalid_argument),
+    // not a process abort, so callers/tests can handle it.
+    THROW_CHECK_EQ(file_num_points, num_points);
 
     std::vector<std::vector<int>> visibility(num_points);
     for (size_t i = 0; i < num_points; ++i) {

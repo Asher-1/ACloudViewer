@@ -227,14 +227,13 @@ LingbotFramePreview buildPreview(const aicore_lingbot_result* r,
     const int step = std::max(1, stride);
     // Row-pointer color fetch: QImage::pixel() pays a bounds check plus a
     // format conversion per call; the processed RGB is always RGB888 here.
-    const bool fastRgb =
-            !rgb.isNull() && rgb.format() == QImage::Format_RGB888;
+    const bool fastRgb = !rgb.isNull() && rgb.format() == QImage::Format_RGB888;
     const uchar* rgbBits = fastRgb ? rgb.constBits() : nullptr;
     const auto rgbStride = rgb.bytesPerLine();
     for (int y = 0; y < r->height; y += step) {
-        const uchar* rgbRow = rgbBits ? rgbBits + static_cast<qsizetype>(y) *
-                                                          rgbStride
-                                      : nullptr;
+        const uchar* rgbRow =
+                rgbBits ? rgbBits + static_cast<qsizetype>(y) * rgbStride
+                        : nullptr;
         for (int x = 0; x < r->width; x += step) {
             const size_t i = static_cast<size_t>(y) * r->width + x;
             const float d = r->depth[i];
@@ -316,24 +315,19 @@ void fillWindowRow(lingbot_stitch::WindowData& win,
                    int localIndex,
                    const aicore_lingbot_result* r) {
     const size_t plane = static_cast<size_t>(r->width) * r->height;
-    std::memcpy(win.poseEnc.data() +
-                        static_cast<size_t>(localIndex) *
-                                lingbot_stitch::kPoseEncSize,
-                r->pose_enc,
-                lingbot_stitch::kPoseEncSize * sizeof(float));
+    std::memcpy(win.poseEnc.data() + static_cast<size_t>(localIndex) *
+                                             lingbot_stitch::kPoseEncSize,
+                r->pose_enc, lingbot_stitch::kPoseEncSize * sizeof(float));
     std::memcpy(win.depth.data() + static_cast<size_t>(localIndex) * plane,
                 r->depth, plane * sizeof(float));
-    std::memcpy(
-            win.depthConf.data() + static_cast<size_t>(localIndex) * plane,
-            r->depth_conf, plane * sizeof(float));
+    std::memcpy(win.depthConf.data() + static_cast<size_t>(localIndex) * plane,
+                r->depth_conf, plane * sizeof(float));
     decodePoseC2w(r->pose_enc,
                   win.c2w.data() + static_cast<size_t>(localIndex) *
                                            lingbot_stitch::kC2WSize);
-    std::memcpy(win.intrinsics.data() +
-                        static_cast<size_t>(localIndex) *
-                                lingbot_stitch::kIntrinsicsSize,
-                r->intrinsics,
-                lingbot_stitch::kIntrinsicsSize * sizeof(float));
+    std::memcpy(win.intrinsics.data() + static_cast<size_t>(localIndex) *
+                                                lingbot_stitch::kIntrinsicsSize,
+                r->intrinsics, lingbot_stitch::kIntrinsicsSize * sizeof(float));
 }
 
 /** Aggregated ALIGNED preview of one finished window: its contribution
@@ -367,16 +361,14 @@ LingbotAlignedPreview buildAlignedPreview(
         stride *= 2;
     }
     for (int f = 0; f < contributionFrames; ++f) {
-        const float* c2w =
-                win.c2w.data() +
-                static_cast<size_t>(f) * lingbot_stitch::kC2WSize;
-        const float* depth =
-                win.depth.data() + static_cast<size_t>(f) * plane;
+        const float* c2w = win.c2w.data() +
+                           static_cast<size_t>(f) * lingbot_stitch::kC2WSize;
+        const float* depth = win.depth.data() + static_cast<size_t>(f) * plane;
         const float* conf =
                 win.depthConf.data() + static_cast<size_t>(f) * plane;
-        const float* intr = win.intrinsics.data() +
-                            static_cast<size_t>(f) *
-                                    lingbot_stitch::kIntrinsicsSize;
+        const float* intr =
+                win.intrinsics.data() +
+                static_cast<size_t>(f) * lingbot_stitch::kIntrinsicsSize;
         // Aligned camera FIRST: a degenerate frame still contributes its
         // frustum (official StreamingViewer semantics).
         for (int i = 0; i < lingbot_stitch::kC2WSize; ++i)
@@ -399,10 +391,10 @@ LingbotAlignedPreview buildAlignedPreview(
                         ? &meta[static_cast<size_t>(f)].skyKeep
                         : nullptr;
         const int global = win.start + f;
-        const QImage* rgbImg = (global >= 0 &&
-                                global < static_cast<int>(rgb.size()))
-                                       ? &rgb[static_cast<size_t>(global)]
-                                       : nullptr;
+        const QImage* rgbImg =
+                (global >= 0 && global < static_cast<int>(rgb.size()))
+                        ? &rgb[static_cast<size_t>(global)]
+                        : nullptr;
         const bool fastRgb = rgbImg && !rgbImg->isNull() &&
                              rgbImg->format() == QImage::Format_RGB888;
         const uchar* rgbBits = fastRgb ? rgbImg->constBits() : nullptr;
@@ -444,11 +436,36 @@ LingbotAlignedPreview buildAlignedPreview(
 
 }  // namespace
 
+void LingbotMapWorker::waitWhilePaused() {
+    if (!m_pauseRequested.load()) return;
+    // Emit the transition once (the callback is serialized on the worker
+    // thread, so a plain member flag dedupes repeated notifications).
+    if (!m_pauseNotified) {
+        m_pauseNotified = true;
+        emit pauseStateChanged(true);
+    }
+    while (m_pauseRequested.load() && !m_cancelRequested.load()) {
+        // Timed wait so cancellation state changes are polled even if the
+        // wakeAll races with the mutex hand-off.
+        QMutexLocker lock(&m_pauseMutex);
+        m_pauseCond.wait(&m_pauseMutex, 100);
+    }
+    if (!m_pauseRequested.load() && m_pauseNotified) {
+        m_pauseNotified = false;
+        emit pauseStateChanged(false);
+    }
+}
+
 int LingbotMapWorker::streamCallbackEntry(void* user,
                                           const aicore_lingbot_result* r) {
     auto* s = static_cast<StreamState*>(user);
     const int idx = s->worker->m_delivered;
     if (idx >= s->total || !r) return 1;  // abort
+    // Live pause: block INSIDE the engine's frame callback so no engine
+    // frame is consumed while paused (the render window freezes too);
+    // resume continues the same stream, cancellation breaks the wait and
+    // is reported by the normal return path below.
+    s->worker->waitWhilePaused();
     const int globalIndex = s->globalStart + idx;
     LingbotFrameResult& out = (*s->frames)[static_cast<size_t>(idx)];
     if (s->window) {
@@ -495,26 +512,30 @@ int LingbotMapWorker::streamCallbackEntry(void* user,
                 static_cast<size_t>(r->width) * static_cast<size_t>(r->height);
         while (stride < 32 &&
                s->worker->m_previewPointTotal +
-                               plane /
-                                       (static_cast<size_t>(stride) * stride) >
+                               plane / (static_cast<size_t>(stride) * stride) >
                        kOnlinePreviewPointBudget) {
             stride *= 2;
         }
-        LingbotFramePreview preview =
-                buildPreview(r, globalIndex, s->windowIndex, s->windowCount,
-                             (*s->rgb)[static_cast<size_t>(globalIndex)],
-                             stride, s->worker->m_settings.confThreshold,
-                             out.skyKeep.isEmpty() ? nullptr
-                                                   : out.skyKeep.constData());
+        LingbotFramePreview preview = buildPreview(
+                r, globalIndex, s->windowIndex, s->windowCount,
+                (*s->rgb)[static_cast<size_t>(globalIndex)], stride,
+                s->worker->m_settings.confThreshold,
+                out.skyKeep.isEmpty() ? nullptr : out.skyKeep.constData());
         s->worker->m_previewPointTotal += preview.points.size() / 3;
         if (stride != baseStride && (globalIndex & 31) == 0) {
-            emit s->worker->logMessage(QObject::tr(
-                    "[LingbotMap] Online preview density reduced to 1/%1 "
-                    "(point budget; the final result stays full "
-                    "resolution)")
-                                               .arg(stride));
+            emit s->worker->logMessage(
+                    QObject::tr("[LingbotMap] Online preview density reduced "
+                                "to 1/%1 "
+                                "(point budget; the final result stays full "
+                                "resolution)")
+                            .arg(stride));
         }
         emit s->worker->framePreviewReady(preview);
+        // Mirror the just-reconstructed frame's input image (official
+        // viewer's frame panel): implicit-sharing copy, cheap to cross
+        // threads; the dialog scales it for display.
+        emit s->worker->previewImage(
+                (*s->rgb)[static_cast<size_t>(globalIndex)], globalIndex);
     }
     emit s->worker->taskStage(
             s->windowCount > 1
@@ -717,13 +738,12 @@ void LingbotMapWorker::run() {
                                 .arg(QString::fromUtf8(
                                         aicore_lingbot_last_error(ctx))));
         const QFileInfo modelInfo(m_settings.modelPath);
-        emit logMessage(
-                tr("[LingbotMap] Model path: %1 (%2)")
-                        .arg(m_settings.modelPath,
-                             modelInfo.exists()
-                                     ? QStringLiteral("%1 bytes")
-                                               .arg(modelInfo.size())
-                                     : QStringLiteral("FILE MISSING")));
+        emit logMessage(tr("[LingbotMap] Model path: %1 (%2)")
+                                .arg(m_settings.modelPath,
+                                     modelInfo.exists()
+                                             ? QStringLiteral("%1 bytes")
+                                                       .arg(modelInfo.size())
+                                             : QStringLiteral("FILE MISSING")));
         logVramGuidance();
         aicore_lingbot_free(ctx);
         m_pendingCtx = nullptr;
@@ -862,6 +882,12 @@ bool LingbotMapWorker::runInference(QString* error) {
             emit logMessage(tr("[LingbotMap] Cancelled during preprocessing."));
             return false;
         }
+        // Live pause ALSO covers the preprocessing loop: without this the
+        // Pause button was dead until the first engine frame callback (the
+        // user saw the progress bar frozen at "Preprocessing 5%" while the
+        // click did nothing). Same semantics as the stream callback: block
+        // here, resume in place, cancellation breaks the wait.
+        waitWhilePaused();
         // Video mode reads the pre-decoded RGB frame; folder mode loads
         // from disk.
         QImage img = (static_cast<int>(decoded.size()) > i)
@@ -1153,9 +1179,9 @@ bool LingbotMapWorker::runWindowed(aicore_lingbot_ctx* ctx,
         win.intrinsics.resize(static_cast<size_t>(win.frames) *
                               lingbot_stitch::kIntrinsicsSize);
         std::vector<LingbotFrameResult> local(static_cast<size_t>(end - start));
-        StreamState state{this, &local,     &rgb,
-                          end - start, start, wi,
-                          result.windowCount, &win};
+        StreamState state{
+                this, &local, &rgb, end - start, start, wi, result.windowCount,
+                &win};
         m_delivered = 0;
         m_previewPointTotal = 0;
         if (aicore_lingbot_infer_stream(
@@ -1191,11 +1217,9 @@ bool LingbotMapWorker::runWindowed(aicore_lingbot_ctx* ctx,
         // boundaries (the per-window streaming preview is window-local and
         // gets hidden when the next window opens).
         const bool isLastWindow = (wi + 1 == result.windowCount);
-        const int contribution = isLastWindow
-                                         ? win.frames
-                                         : std::max(win.frames -
-                                                            plan.effOverlap,
-                                                    0);
+        const int contribution =
+                isLastWindow ? win.frames
+                             : std::max(win.frames - plan.effOverlap, 0);
         if (contribution > 0) {
             LingbotAlignedPreview aligned = buildAlignedPreview(
                     win, contribution, local, rgb, m_settings.previewStride,

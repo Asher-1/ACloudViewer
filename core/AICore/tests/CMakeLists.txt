@@ -1,9 +1,12 @@
 # AICore unit tests — mirrors src/ layout: common/, depth/, gaussian/
 #
-# Tiers:
+# Tiers (selection is purely LABELS-driven):
 #   fast   — no GGUF assets (default ctest -LE model)
 #   model  — requires AICORE_TEST_DEPTH_GGUF / AICORE_TEST_GAUSSIAN_GGUF
 #   capi   — links libAICore.so (exported C API contract)
+# Every add_test below is captured by the registry override; the tier DEPENDS
+# lists at the bottom of this file are DERIVED from the registry + LABELS, so
+# adding a test never requires touching a tier list.
 
 set(AICORE_TEST_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 set(AICORE_TEST_INC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -65,7 +68,11 @@ function(_aicore_test_common name)
         endif()
     endforeach()
     if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -Wall -Wextra)
+        # Qt is built with -reduce-relocations: every AICore test binary
+        # compiles with -fPIC and links -no-pie (same requirement as the
+        # AICore libraries themselves).
+        target_compile_options(${name} PRIVATE -Wall -Wextra -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
     endif()
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
@@ -82,6 +89,97 @@ function(_aicore_test_common name)
             ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
     else()
         set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
+    endif()
+endfunction()
+
+# --- Tier filters (single source of truth) ---------------------------------
+# Byte-identical to the ctest label arguments in the tier targets below; the
+# derived DEPENDS lists and aicore_register_test route on these. CACHE INTERNAL
+# so plugin directories (processed later) see the same values.
+set(AICORE_TIER_FAST_EXCLUDE "model|gpu|e2e|cvpluginapi" CACHE INTERNAL
+    "Labels that exclude a test from the fast tier")
+set(AICORE_TIER_CONTRACT_LABEL "capi" CACHE INTERNAL
+    "Label that selects a test into the contract tier")
+set(AICORE_TIER_CONTRACT_MODEL_EXCLUDE "model|gpu|e2e" CACHE INTERNAL
+    "Contract-tier exclusion applied when model tests are disabled")
+set(AICORE_TIER_MODEL_LABEL "model" CACHE INTERNAL
+    "Label that selects a test into the model tier")
+
+# --- Test registration registry (self-adapting tier attachment) -------------
+# Every add_test() call in this directory is intercepted below and recorded
+# into a global registry: the test name plus — when the COMMAND invokes a
+# buildable target directly — that target. The derivation block at the bottom
+# of this file combines the registry with each test's LABELS property to build
+# the tier DEPENDS lists, replicating the exact ctest filters, so a newly
+# registered test is attached to the right tier automatically and the
+# historical "Could not find executable / Not Run" (ctest exit 8) failure
+# mode cannot recur. Outside this directory the override is a passthrough.
+set(AICORE_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+function(add_test)
+    cmake_parse_arguments(_aicore_at "" "NAME" "COMMAND" ${ARGN})
+    if(_aicore_at_NAME
+            AND "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${AICORE_TESTS_DIR}")
+        set_property(GLOBAL APPEND PROPERTY AICORE_TEST_NAMES
+            "${_aicore_at_NAME}")
+        set(_aicore_at_tgt "")
+        if(_aicore_at_COMMAND)
+            list(GET _aicore_at_COMMAND 0 _aicore_at_cmd0)
+            if(TARGET "${_aicore_at_cmd0}")
+                set(_aicore_at_tgt "${_aicore_at_cmd0}")
+            endif()
+        endif()
+        set_property(GLOBAL PROPERTY "AICORE_TEST_TGT_${_aicore_at_NAME}"
+            "${_aicore_at_tgt}")
+    endif()
+    _add_test(${ARGN})
+endfunction()
+
+# External (plugin-directory) registration for tests that belong to an AICore
+# tier: plugins are processed after this directory, so their add_test calls
+# cannot flow through the registry override. One call registers the ctest
+# entry and attaches the binary to the matching tier target — there is no
+# cross-directory dependency list to maintain (this replaces the manual
+# add_dependencies(aicore-fast-tests ...) contract).
+#   aicore_register_test(NAME <test> TARGET <binary> [LABELS <l1;...>])
+function(aicore_register_test)
+    cmake_parse_arguments(AIRT "" "NAME;TARGET" "LABELS" ${ARGN})
+    if(NOT AIRT_NAME OR NOT AIRT_TARGET)
+        message(FATAL_ERROR "aicore_register_test requires NAME and TARGET")
+    endif()
+    if(NOT TARGET ${AIRT_TARGET})
+        message(FATAL_ERROR "aicore_register_test: unknown target ${AIRT_TARGET}")
+    endif()
+    add_test(NAME ${AIRT_NAME} COMMAND ${AIRT_TARGET})
+    if(AIRT_LABELS)
+        set_tests_properties(${AIRT_NAME} PROPERTIES LABELS "${AIRT_LABELS}")
+    endif()
+    set(_airt_model FALSE)
+    set(_airt_fast FALSE)
+    set(_airt_contract FALSE)
+    if(AIRT_LABELS)
+        if(AIRT_LABELS MATCHES "${AICORE_TIER_MODEL_LABEL}")
+            set(_airt_model TRUE)
+        endif()
+        if(AIRT_LABELS MATCHES "${AICORE_TIER_CONTRACT_LABEL}"
+                AND (AICORE_TEST_ENABLE_MODEL_TESTS
+                    OR NOT AIRT_LABELS MATCHES
+                        "${AICORE_TIER_CONTRACT_MODEL_EXCLUDE}"))
+            set(_airt_contract TRUE)
+        endif()
+        if(NOT AIRT_LABELS MATCHES "${AICORE_TIER_FAST_EXCLUDE}")
+            set(_airt_fast TRUE)
+        endif()
+    else()
+        set(_airt_fast TRUE)
+    endif()
+    if(_airt_fast AND TARGET aicore-fast-tests)
+        add_dependencies(aicore-fast-tests ${AIRT_TARGET})
+    endif()
+    if(_airt_contract AND TARGET aicore-contract-tests)
+        add_dependencies(aicore-contract-tests ${AIRT_TARGET})
+    endif()
+    if(_airt_model AND TARGET aicore-model-tests)
+        add_dependencies(aicore-model-tests ${AIRT_TARGET})
     endif()
 endfunction()
 
@@ -142,56 +240,98 @@ if(NOT MSVC)
     unset(_aicore_ld_library_path)
 endif()
 
-function(aicore_add_common_test name)
-    add_executable(${name} common/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    _aicore_test_common(${name})
-endfunction()
+# Unit tests against the whitebox library: aicore_add_whitebox_test with the
+# task directory. (The former aicore_add_common_test / aicore_add_depth_test /
+# aicore_add_gaussian_test helpers were the same shape.)
 
-function(aicore_add_common_capi_test name)
-    add_executable(${name} common/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore Threads::Threads)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_depth_test name)
-    add_executable(${name} depth/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    _aicore_test_common(${name})
-endfunction()
-
-function(aicore_add_depth_capi_test name)
-    add_executable(${name} depth/${name}.cpp)
+# Generic C API test binary: <dir>/<name>.cpp linked against libAICore and
+# registered as a ctest. One call per test — the label set lives here, not in
+# a follow-up set_tests_properties. Keywords:
+#   LIBS <l...>   — extra link libraries (e.g. Threads::Threads)
+#   LABELS <l...> — replaces the default "capi" label set
+function(aicore_add_capi_test name dir)
+    cmake_parse_arguments(ACT "" "" "LIBS;LABELS" ${ARGN})
+    add_executable(${name} ${dir}/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    foreach(_aicore_lib IN LISTS ACT_LIBS)
+        target_link_libraries(${name} PRIVATE ${_aicore_lib})
+    endforeach()
     _aicore_capi_link(${name})
     _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
+    if(NOT ACT_LABELS)
+        set(ACT_LABELS capi)
     endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
+    set_tests_properties(${name} PROPERTIES LABELS "${ACT_LABELS}")
 endfunction()
 
-function(aicore_add_depth_whitebox_test name)
+# C API diagnostic/bench binary (NOT a ctest — manual tools with side-input
+# requirements; registering them would put Not Run / usage-exit entries into
+# the tiers): same compile setup as aicore_add_capi_test, no registration.
+function(aicore_add_capi_tool name source)
+    cmake_parse_arguments(AICT "" "" "LIBS;INCLUDE_DIRS" ${ARGN})
+    add_executable(${name} ${source})
+    target_link_libraries(${name} PRIVATE AICore)
+    foreach(_aicore_lib IN LISTS AICT_LIBS)
+        target_link_libraries(${name} PRIVATE ${_aicore_lib})
+    endforeach()
+    _aicore_capi_link(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -Wall -Wextra -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    if(AICT_INCLUDE_DIRS)
+        foreach(_aicore_inc IN LISTS AICT_INCLUDE_DIRS)
+            target_include_directories(${name} PRIVATE ${_aicore_inc})
+        endforeach()
+    else()
+        target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
+        target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
+    endif()
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
+    aicore_apply_compile_definitions(${name})
+    set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    cloudviewer_set_aicore_test_runtime_layout(${name})
+endfunction()
+
+# White-box unit tests compile private AICore implementation sources and link
+# the static AICore_test library; they are only built with
+# AICORE_BUILD_WHITEBOX_TESTS=ON and default to LABELS "whitebox". Keywords:
+#   SOURCE <path>       — overrides the default <dir>/<name>.cpp
+#   INCLUDE_DIRS <d...> — prepended before AICore_test-propagated dirs
+#   LABELS <l...>       — replaces the default "whitebox" label set
+function(aicore_add_whitebox_test name dir)
+    cmake_parse_arguments(AWT "" "SOURCE" "INCLUDE_DIRS;LABELS" ${ARGN})
     if(NOT TARGET AICore_test)
         return()
     endif()
-    add_executable(${name} depth/whitebox/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    target_include_directories(${name} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/depth/whitebox)
-    _aicore_test_common(${name})
-    set(_labels "whitebox")
-    if(ARGC GREATER 1 AND "${ARGV1}" STREQUAL "MODEL")
-        list(APPEND _labels "model")
+    if(AWT_SOURCE)
+        set(_aicore_src "${AWT_SOURCE}")
+    else()
+        set(_aicore_src "${dir}/${name}.cpp")
     endif()
-    set_tests_properties(${name} PROPERTIES LABELS "${_labels}")
+    add_executable(${name} ${_aicore_src})
+    target_link_libraries(${name} PRIVATE AICore_test)
+    foreach(_aicore_inc IN LISTS AWT_INCLUDE_DIRS)
+        target_include_directories(${name} PRIVATE ${_aicore_inc})
+    endforeach()
+    _aicore_test_common(${name})
+    if(NOT DEFINED AWT_LABELS)
+        set(AWT_LABELS whitebox)
+    endif()
+    if(AWT_LABELS)
+        set_tests_properties(${name} PROPERTIES LABELS "${AWT_LABELS}")
+    endif()
+endfunction()
+
+function(aicore_add_depth_whitebox_test name)
+    cmake_parse_arguments(DWT "" "" "LABELS" ${ARGN})
+    set(_aicore_dwt_args
+        SOURCE depth/whitebox/${name}.cpp
+        INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/depth/whitebox)
+    if(DWT_LABELS)
+        list(APPEND _aicore_dwt_args LABELS ${DWT_LABELS})
+    endif()
+    aicore_add_whitebox_test(${name} depth ${_aicore_dwt_args})
 endfunction()
 
 function(aicore_add_gaussian_test name)
@@ -200,137 +340,26 @@ function(aicore_add_gaussian_test name)
     _aicore_test_common(${name})
 endfunction()
 
-function(aicore_add_lightglue_capi_test name)
-    add_executable(${name} lightglue/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_loma_capi_test name)
-    add_executable(${name} loma/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
 function(aicore_add_loma_whitebox_test name)
-    if(NOT TARGET AICore_test)
-        return()
-    endif()
-    add_executable(${name} loma/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    _aicore_test_common(${name})
-    set_tests_properties(${name} PROPERTIES LABELS "whitebox;model;reference;accuracy")
-endfunction()
-
-function(aicore_add_deeplsd_capi_test name)
-    add_executable(${name} deeplsd/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_gkd_capi_test name)
-    add_executable(${name} gkd/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_lingbot_capi_test name)
-    add_executable(${name} lingbot/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_reid_capi_test name)
-    add_executable(${name} reid/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
+    aicore_add_whitebox_test(${name} loma
+        LABELS "whitebox;model;reference;accuracy")
 endfunction()
 
 function(aicore_add_facedetect_whitebox_test name)
-    if(NOT TARGET AICore_test)
-        return()
-    endif()
-    add_executable(${name} facedetect/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    target_include_directories(${name} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/facedetect)
-    _aicore_test_common(${name})
-endfunction()
-
-function(aicore_add_facedetect_capi_test name)
-    add_executable(${name} facedetect/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_rfdetr_capi_test name)
-    add_executable(${name} rfdetr/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
+    aicore_add_whitebox_test(${name} facedetect
+        INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../src/facedetect
+        LABELS "")
 endfunction()
 
 function(aicore_add_rfdetr_whitebox_test name)
-    if(NOT TARGET AICore_test)
-        return()
-    endif()
-    add_executable(${name} rfdetr/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    # NOTE: must be the real src/tasks/rfdetr directory and must come before
-    # the include dirs propagated by AICore_test (which list depth/, facedetect/,
-    # gaussian/ first): image_io.hpp, model_loader.hpp and backend.hpp exist in
-    # several task directories and would otherwise resolve to the wrong task.
-    target_include_directories(${name} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
-    _aicore_test_common(${name})
-    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+    aicore_add_whitebox_test(${name} rfdetr
+        # NOTE: must be the real src/tasks/rfdetr directory and must come
+        # before the include dirs propagated by AICore_test (which list
+        # depth/, facedetect/, gaussian/ first): image_io.hpp, model_loader.hpp
+        # and backend.hpp exist in several task directories and would
+        # otherwise resolve to the wrong task.
+        INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr
+        LABELS whitebox)
 endfunction()
 
 # Manual perf probe (NOT a ctest — needs a local GGUF, run by hand):
@@ -344,84 +373,17 @@ function(aicore_add_rfdetr_perf_bench)
     target_link_libraries(bench_rfdetr_perf PRIVATE AICore_test)
     target_include_directories(bench_rfdetr_perf PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
-    if(NOT MSVC)
-        target_compile_options(bench_rfdetr_perf PRIVATE -Wall -Wextra)
-    endif()
-    target_include_directories(bench_rfdetr_perf PRIVATE ${AICORE_TEST_INC})
-    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
-    aicore_apply_compile_definitions(bench_rfdetr_perf)
-    set_target_properties(bench_rfdetr_perf PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    cloudviewer_set_aicore_test_runtime_layout(bench_rfdetr_perf)
-endfunction()
-
-function(aicore_add_rmbg_capi_test name)
-    add_executable(${name} rmbg/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_sam3_capi_test name)
-    add_executable(${name} sam3/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_trellis_capi_test name)
-    add_executable(${name} trellis/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_aliked_capi_test name)
-    add_executable(${name} aliked/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_gaussian_capi_test name)
-    add_executable(${name} gaussian/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
+    _aicore_test_common(bench_rfdetr_perf NO_CTEST)
 endfunction()
 
 if(TARGET AICore_test)
     # White-box tests compile private AICore implementation sources.
-    aicore_add_common_test(test_data_root)
-    aicore_add_common_test(test_backend_registry)
-    aicore_add_common_test(test_image_view_contract)
-    aicore_add_depth_test(test_gguf_keys)
-    aicore_add_depth_test(test_path_util)
-    aicore_add_depth_test(test_compute_mode)
+    aicore_add_whitebox_test(test_data_root common)
+    aicore_add_whitebox_test(test_backend_registry common)
+    aicore_add_whitebox_test(test_image_view_contract common)
+    aicore_add_whitebox_test(test_gguf_keys depth)
+    aicore_add_whitebox_test(test_path_util depth)
+    aicore_add_whitebox_test(test_compute_mode depth)
 
     # depth whitebox (migrated from qDA3/tests)
     set(_aicore_depth_whitebox_fast
@@ -470,21 +432,20 @@ if(TARGET AICore_test)
         test_ray_pose
     )
     foreach(_t IN LISTS _aicore_depth_whitebox_model)
-        aicore_add_depth_whitebox_test(${_t} MODEL)
+        aicore_add_depth_whitebox_test(${_t} LABELS whitebox;model)
     endforeach()
 
-    aicore_add_gaussian_test(test_loader)
-    aicore_add_gaussian_test(test_graph_blocks)
-    aicore_add_gaussian_test(test_image)
-    aicore_add_gaussian_test(test_pose)
-    aicore_add_gaussian_test(test_gaussian_path_util)
-    aicore_add_gaussian_test(test_parity)
-    set_tests_properties(test_parity PROPERTIES LABELS "model")
+    aicore_add_whitebox_test(test_loader gaussian)
+    aicore_add_whitebox_test(test_graph_blocks gaussian)
+    aicore_add_whitebox_test(test_image gaussian)
+    aicore_add_whitebox_test(test_pose gaussian)
+    aicore_add_whitebox_test(test_gaussian_path_util gaussian)
+    aicore_add_whitebox_test(test_parity gaussian LABELS model)
 endif()
 
 # --- depth (C API / libAICore) ---
-aicore_add_common_capi_test(test_runtime_capi_contract)
-aicore_add_common_capi_test(test_pipeline_timing_contract)
+aicore_add_capi_test(test_runtime_capi_contract common LIBS Threads::Threads)
+aicore_add_capi_test(test_pipeline_timing_contract common LIBS Threads::Threads)
 # Shared GGUF open helper (F-06): synthetic-file unit coverage for both
 # no_alloc modes, ownership round-trip, and the failure-message shape.
 # Links AICore_test (not the AICore shared lib) because the helper header
@@ -499,179 +460,104 @@ if(TARGET AICore_test)
     endif()
     set_tests_properties(test_gguf_file_io PROPERTIES LABELS "capi")
 endif()
-aicore_add_depth_capi_test(test_depth_capi_contract)
-aicore_add_depth_capi_test(test_image_depth)
-aicore_add_depth_capi_test(test_depth_capi_load)
-set_tests_properties(test_depth_capi_load PROPERTIES LABELS "capi;model")
-aicore_add_depth_capi_test(test_depth_capi_backend_parity)
-set_tests_properties(test_depth_capi_backend_parity
-    PROPERTIES LABELS "capi;model;gpu;parity")
+aicore_add_capi_test(test_depth_capi_contract depth)
+aicore_add_capi_test(test_image_depth depth)
+aicore_add_capi_test(test_depth_capi_load depth LABELS capi;model)
+aicore_add_capi_test(test_depth_capi_backend_parity depth LABELS capi;model;gpu;parity)
 
 # --- gaussian (C API / libAICore) ---
-aicore_add_gaussian_capi_test(test_gaussian_capi_contract)
-aicore_add_gaussian_capi_test(test_gaussian_capi_load)
-set_tests_properties(test_gaussian_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_gaussian_capi_contract gaussian)
+aicore_add_capi_test(test_gaussian_capi_load gaussian LABELS capi;model)
 
-aicore_add_lightglue_capi_test(test_lightglue_capi_contract)
-aicore_add_lightglue_capi_test(test_lightglue_aliked_e2e)
-aicore_add_lightglue_capi_test(test_lightglue_model_validation)
-set_tests_properties(test_lightglue_aliked_e2e
-    PROPERTIES LABELS "capi;model;gpu;e2e")
-set_tests_properties(test_lightglue_model_validation
-    PROPERTIES LABELS "capi;model;gpu;validation")
+aicore_add_capi_test(test_lightglue_capi_contract lightglue)
+aicore_add_capi_test(test_lightglue_aliked_e2e lightglue LABELS capi;model;gpu;e2e)
+aicore_add_capi_test(test_lightglue_model_validation lightglue LABELS capi;model;gpu;validation)
 
-aicore_add_loma_capi_test(test_loma_capi_contract)
-aicore_add_loma_capi_test(test_loma_default_triplet)
-set_tests_properties(test_loma_default_triplet PROPERTIES LABELS "capi;model;e2e")
-aicore_add_loma_capi_test(test_loma_matcher_e2e)
-set_tests_properties(test_loma_matcher_e2e PROPERTIES LABELS "capi;model;e2e")
-aicore_add_loma_capi_test(test_loma_published_model_gate)
-set_tests_properties(test_loma_published_model_gate
-    PROPERTIES LABELS "capi;model;validation")
-aicore_add_loma_capi_test(test_loma_detector_reference_gate)
-set_tests_properties(test_loma_detector_reference_gate
-    PROPERTIES LABELS "capi;model;reference;accuracy")
-aicore_add_loma_capi_test(test_loma_descriptor_reference_gate)
-set_tests_properties(test_loma_descriptor_reference_gate
-    PROPERTIES LABELS "capi;model;reference;accuracy")
+aicore_add_capi_test(test_loma_capi_contract loma)
+aicore_add_capi_test(test_loma_default_triplet loma LABELS capi;model;e2e)
+aicore_add_capi_test(test_loma_matcher_e2e loma LABELS capi;model;e2e)
+aicore_add_capi_test(test_loma_published_model_gate loma LABELS capi;model;validation)
+aicore_add_capi_test(test_loma_detector_reference_gate loma LABELS capi;model;reference;accuracy)
+aicore_add_capi_test(test_loma_descriptor_reference_gate loma LABELS capi;model;reference;accuracy)
 aicore_add_loma_whitebox_test(test_loma_g_token_reference_gate)
 aicore_add_loma_whitebox_test(test_loma_g_backend_parity)
-aicore_add_loma_capi_test(test_loma_b128_e2e_reference_gate)
-set_tests_properties(test_loma_b128_e2e_reference_gate
-    PROPERTIES LABELS "capi;model;reference;accuracy;e2e")
-aicore_add_loma_capi_test(test_loma_matcher_reference_gate)
-set_tests_properties(test_loma_matcher_reference_gate
-    PROPERTIES LABELS "capi;model;validation")
+aicore_add_capi_test(test_loma_b128_e2e_reference_gate loma LABELS capi;model;reference;accuracy;e2e)
+aicore_add_capi_test(test_loma_matcher_reference_gate loma LABELS capi;model;validation)
 
-aicore_add_aliked_capi_test(test_aliked_capi_contract)
-aicore_add_aliked_capi_test(test_aliked_capi_parity)
-set_tests_properties(test_aliked_capi_parity PROPERTIES LABELS "capi;model;gpu")
-aicore_add_aliked_capi_test(test_aliked_e2e_smoke)
-set_tests_properties(test_aliked_e2e_smoke PROPERTIES LABELS "capi;model;gpu;smoke")
+aicore_add_capi_test(test_aliked_capi_contract aliked)
+aicore_add_capi_test(test_aliked_capi_parity aliked LABELS capi;model;gpu)
+aicore_add_capi_test(test_aliked_e2e_smoke aliked LABELS capi;model;gpu;smoke)
 
-aicore_add_deeplsd_capi_test(test_deeplsd_capi_contract)
-aicore_add_deeplsd_capi_test(test_deeplsd_capi_load)
-set_tests_properties(test_deeplsd_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_deeplsd_capi_contract deeplsd)
+aicore_add_capi_test(test_deeplsd_capi_load deeplsd LABELS capi;model)
 
-aicore_add_gkd_capi_test(test_gkd_capi_contract)
-aicore_add_gkd_capi_test(test_gkd_capi_load)
-set_tests_properties(test_gkd_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_gkd_capi_contract gkd)
+aicore_add_capi_test(test_gkd_capi_load gkd LABELS capi;model)
 
-aicore_add_lingbot_capi_test(test_lingbot_capi_contract)
-aicore_add_lingbot_capi_test(test_lingbot_capi_load)
-set_tests_properties(test_lingbot_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_lingbot_capi_contract lingbot)
+aicore_add_capi_test(test_lingbot_capi_load lingbot LABELS capi;model)
 # Upstream numeric-parity probe (pinned courthouse fixtures + captured
 # upstream goldens; see tests/lingbot/gen_stream_parity_golden.py). Needs
 # AICORE_TEST_LINGBOT_GGUF/AICORE_TEST_LINGBOT_INPUT_DIR — bare ctest runs
 # skip it (exit 77); the validation runner wires the assets.
-aicore_add_lingbot_capi_test(test_lingbot_stream_parity)
-set_tests_properties(test_lingbot_stream_parity PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_lingbot_stream_parity lingbot LABELS capi;model)
+# The probe decodes the pinned PNG fixtures through QImage.
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(test_lingbot_stream_parity PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(test_lingbot_stream_parity PRIVATE Qt5::Core Qt5::Gui)
+endif()
 
-aicore_add_reid_capi_test(test_reid_capi_contract)
-aicore_add_reid_capi_test(test_reid_capi_load)
-set_tests_properties(test_reid_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_reid_capi_contract reid)
+aicore_add_capi_test(test_reid_capi_load reid LABELS capi;model)
 
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
 # per-frame binaries for the compare_lingbot_parity.py A/B against
 # lingbot-map-cli --stream-dir. Same compile setup as the capi tests, minus
 # add_test() so the ctest tiers never select a missing binary.
-add_executable(dump_lingbot_frames lingbot/dump_lingbot_frames.cpp)
-target_link_libraries(dump_lingbot_frames PRIVATE AICore)
-_aicore_capi_link(dump_lingbot_frames)
-if(NOT MSVC)
-    target_compile_options(dump_lingbot_frames PRIVATE -Wall -Wextra -fPIC)
-    target_link_options(dump_lingbot_frames PRIVATE "-no-pie")
-endif()
-target_include_directories(dump_lingbot_frames PRIVATE ${AICORE_TEST_INC})
-target_include_directories(dump_lingbot_frames PRIVATE ${AICORE_TEST_INC}/..)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
-aicore_apply_compile_definitions(dump_lingbot_frames)
-set_target_properties(dump_lingbot_frames PROPERTIES POSITION_INDEPENDENT_CODE ON)
-cloudviewer_set_aicore_test_runtime_layout(dump_lingbot_frames)
+aicore_add_capi_tool(dump_lingbot_frames lingbot/dump_lingbot_frames.cpp)
 
-# stream_reset freshness gate (needs the q8 GGUF + real frames; run
-# manually — see tests/lingbot/test_lingbot_reset_freshness.cpp for usage).
-add_executable(test_lingbot_reset_freshness lingbot/test_lingbot_reset_freshness.cpp)
-target_link_libraries(test_lingbot_reset_freshness PRIVATE AICore)
-_aicore_capi_link(test_lingbot_reset_freshness)
-if(NOT MSVC)
-    target_compile_options(test_lingbot_reset_freshness PRIVATE -Wall -Wextra -fPIC)
-    target_link_options(test_lingbot_reset_freshness PRIVATE "-no-pie")
-endif()
-target_include_directories(test_lingbot_reset_freshness PRIVATE ${AICORE_TEST_INC})
-target_include_directories(test_lingbot_reset_freshness PRIVATE ${AICORE_TEST_INC}/..)
-aicore_apply_compile_definitions(test_lingbot_reset_freshness)
-set_target_properties(test_lingbot_reset_freshness PROPERTIES POSITION_INDEPENDENT_CODE ON)
-cloudviewer_set_aicore_test_runtime_layout(test_lingbot_reset_freshness)
+aicore_add_capi_tool(test_lingbot_reset_freshness
+    lingbot/test_lingbot_reset_freshness.cpp)
 
 if(TARGET AICore_test)
     aicore_add_facedetect_whitebox_test(test_facedetect_align)
 endif()
-aicore_add_facedetect_capi_test(test_facedetect_embed_capi)
-set_tests_properties(test_facedetect_embed_capi PROPERTIES LABELS "capi;model")
-aicore_add_facedetect_capi_test(test_facedetect_dense_validation)
-set_tests_properties(test_facedetect_dense_validation
-    PROPERTIES LABELS "capi;model;validation")
-aicore_add_facedetect_capi_test(test_facedetect_match_capi)
-aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
-set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
+aicore_add_capi_test(test_facedetect_embed_capi facedetect LABELS capi;model)
+aicore_add_capi_test(test_facedetect_dense_validation facedetect LABELS capi;model;validation)
+aicore_add_capi_test(test_facedetect_match_capi facedetect)
+aicore_add_capi_test(test_facedetect_contexts_capi facedetect LABELS capi;model)
 
 # FaceDetect C API contract test (no GGUF assets: ABI, catalog, lifecycle,
 # null guards — see tests/facedetect/test_facedetect_capi_contract.cpp).
-aicore_add_facedetect_capi_test(test_facedetect_capi_contract)
-set_tests_properties(test_facedetect_capi_contract PROPERTIES LABELS "capi")
+aicore_add_capi_test(test_facedetect_capi_contract facedetect LABELS capi)
 
 aicore_add_rfdetr_whitebox_test(test_rfdetr_preprocess)
 aicore_add_rfdetr_whitebox_test(test_rfdetr_two_stage_mask)
 aicore_add_rfdetr_perf_bench()
-aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
-aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
-aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
-aicore_add_sam3_capi_test(test_sam3_capi_contract)
+aicore_add_capi_test(test_rfdetr_capi_contract rfdetr)
+aicore_add_capi_test(test_rmbg_capi_contract rmbg)
+aicore_add_capi_test(test_rmbg_capi_performance rmbg LABELS capi;model;gpu;performance)
+aicore_add_capi_test(test_sam3_capi_contract sam3)
 
 # Cross-catalog default-row contract (see tests/catalog/ header): locks the
 # aicore_<task>_model_default_index() declarations and the
 # "first row of every family is the recommended pack" catalogs to the
 # visible "(recommended)" marker. Fast, no GGUF assets.
-add_executable(test_model_catalog_defaults catalog/test_model_catalog_defaults.cpp)
-target_link_libraries(test_model_catalog_defaults PRIVATE AICore)
-_aicore_capi_link(test_model_catalog_defaults)
-_aicore_test_common(test_model_catalog_defaults)
-if(NOT MSVC)
-    target_compile_options(test_model_catalog_defaults PRIVATE -fPIC)
-    target_link_options(test_model_catalog_defaults PRIVATE "-no-pie")
-endif()
-set_tests_properties(test_model_catalog_defaults PROPERTIES LABELS "capi")
-
-add_executable(test_shared_model_catalog catalog/test_shared_model_catalog.cpp)
-target_link_libraries(test_shared_model_catalog PRIVATE AICore)
-_aicore_capi_link(test_shared_model_catalog)
-_aicore_test_common(test_shared_model_catalog)
-if(NOT MSVC)
-    target_compile_options(test_shared_model_catalog PRIVATE -fPIC)
-    target_link_options(test_shared_model_catalog PRIVATE "-no-pie")
-endif()
-set_tests_properties(test_shared_model_catalog PROPERTIES LABELS "capi")
+aicore_add_capi_test(test_model_catalog_defaults catalog)
+aicore_add_capi_test(test_shared_model_catalog catalog)
 
 # Manual real-model acceptance probe for a ggml-version worktree. It is not a
 # CTest because it requires a local SAM3 GGUF, a Vulkan-capable GPU, and takes
 # several minutes on CPU. See the source header for its exact parity gates.
-add_executable(bench_sam3_backend_acceptance sam3/bench_sam3_backend_acceptance.cpp)
-target_link_libraries(bench_sam3_backend_acceptance PRIVATE AICore)
-_aicore_capi_link(bench_sam3_backend_acceptance)
+aicore_add_capi_tool(bench_sam3_backend_acceptance
+    sam3/bench_sam3_backend_acceptance.cpp
+    INCLUDE_DIRS ${AICORE_TEST_INC})
 if(TARGET Qt::Core AND TARGET Qt::Gui)
     target_link_libraries(bench_sam3_backend_acceptance PRIVATE Qt::Core Qt::Gui)
 elseif(Qt5_FOUND)
     target_link_libraries(bench_sam3_backend_acceptance PRIVATE Qt5::Core Qt5::Gui)
 endif()
-if(NOT MSVC)
-    target_compile_options(bench_sam3_backend_acceptance PRIVATE -Wall -Wextra -fPIC)
-    target_link_options(bench_sam3_backend_acceptance PRIVATE "-no-pie")
-endif()
-target_include_directories(bench_sam3_backend_acceptance PRIVATE ${AICORE_TEST_INC})
-include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
-aicore_apply_compile_definitions(bench_sam3_backend_acceptance)
-cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
 
 # Per-stage CPU/Vulkan divergence locator for the SAM3 ViT encoder. Manual
 # diagnostic (needs a local SAM3 GGUF + Vulkan GPU), not a CTest. The internal
@@ -727,35 +613,16 @@ target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC})
 target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC}/../src)
 aicore_apply_compile_definitions(cmp_sam3_vit_stages)
 cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_vit_stages)
-aicore_add_trellis_capi_test(test_trellis_capi_contract)
+aicore_add_capi_test(test_trellis_capi_contract trellis)
 
 # SAM 3D C API contract test (model-free) plus the real-asset acceptance
 # probe consumed by the aicore-validate-all runner.
-function(aicore_add_sam3d_capi_test name)
-    add_executable(${name} sam3d/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-aicore_add_sam3d_capi_test(test_sam3d_capi_contract)
-aicore_add_sam3d_capi_test(test_sam3d_scene_assemble)
+aicore_add_capi_test(test_sam3d_capi_contract sam3d)
+aicore_add_capi_test(test_sam3d_scene_assemble sam3d)
 
-add_executable(bench_sam3d_backend_acceptance sam3d/bench_sam3d_backend_acceptance.cpp)
-target_link_libraries(bench_sam3d_backend_acceptance PRIVATE AICore)
-_aicore_capi_link(bench_sam3d_backend_acceptance)
-if(NOT MSVC)
-    target_compile_options(bench_sam3d_backend_acceptance PRIVATE -Wall -Wextra -fPIC)
-    target_link_options(bench_sam3d_backend_acceptance PRIVATE "-no-pie")
-endif()
-target_include_directories(bench_sam3d_backend_acceptance PRIVATE
-    ${AICORE_TEST_INC})
-aicore_apply_compile_definitions(bench_sam3d_backend_acceptance)
-cloudviewer_set_aicore_test_runtime_layout(bench_sam3d_backend_acceptance)
+aicore_add_capi_tool(bench_sam3d_backend_acceptance
+    sam3d/bench_sam3d_backend_acceptance.cpp
+    INCLUDE_DIRS ${AICORE_TEST_INC})
 
 # White-box stage-bisect probe: runs cmd_e2e from a fixed condition/noise
 # directory (upstream sam3d-cli --conditions-out layout) so output
@@ -772,67 +639,48 @@ if(TARGET AICore_test)
     cloudviewer_set_aicore_test_runtime_layout(sam3d_stage_bisect)
 endif()
 
-set_tests_properties(test_rmbg_capi_performance PROPERTIES
-    LABELS "capi;model;gpu;performance")
 
 # YOLO C API performance benchmark (upstream ultralytics-ggml bench matrix
 # counterpart; see tests/yolo/test_yolo_capi_performance.cpp header for the
 # timing contract). Skips (77) without AICORE_TEST_YOLO_* assets.
 function(aicore_add_yolo_capi_test name)
-    add_executable(${name} yolo/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
+    cmake_parse_arguments(YCT "" "" "LIBS;LABELS" ${ARGN})
+    set(_aicore_yolo_args)
     if(WIN32)
         # dirent.h is POSIX-only; 3rdparty/dirent provides the MSVC shim
         # (test_yolo_capi_performance.cpp includes <dirent/dirent.h> there).
-        target_link_libraries(${name} PRIVATE 3rdparty_dirent)
+        list(APPEND _aicore_yolo_args LIBS 3rdparty_dirent)
     endif()
-    _aicore_capi_link(${name})
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
+    if(YCT_LIBS)
+        list(APPEND _aicore_yolo_args LIBS ${YCT_LIBS})
     endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
+    if(YCT_LABELS)
+        list(APPEND _aicore_yolo_args LABELS ${YCT_LABELS})
+    endif()
+    aicore_add_capi_test(${name} yolo ${_aicore_yolo_args})
 endfunction()
 
-aicore_add_yolo_capi_test(test_yolo_capi_performance)
-set_tests_properties(test_yolo_capi_performance PROPERTIES
-    LABELS "capi;model;gpu;performance")
-aicore_add_yolo_capi_test(test_yolo_text_model_validation)
-set_tests_properties(test_yolo_text_model_validation PROPERTIES
-    LABELS "capi;model;validation;performance")
+aicore_add_yolo_capi_test(test_yolo_capi_performance LABELS capi;model;gpu;performance)
+aicore_add_yolo_capi_test(test_yolo_text_model_validation LABELS capi;model;validation;performance)
 
 # TEMPORARY probe for reproducing the yoloe/seg visualization issues
 # (delete after diagnosis).
-add_executable(yolo_prompt_probe yolo/yolo_prompt_probe.cpp)
-target_link_libraries(yolo_prompt_probe PRIVATE AICore)
-_aicore_capi_link(yolo_prompt_probe)
+aicore_add_capi_tool(yolo_prompt_probe yolo/yolo_prompt_probe.cpp
+    INCLUDE_DIRS ${AICORE_TEST_INC})
 if(TARGET Qt::Core AND TARGET Qt::Gui)
     target_link_libraries(yolo_prompt_probe PRIVATE Qt::Core Qt::Gui)
 elseif(Qt5_FOUND)
     target_link_libraries(yolo_prompt_probe PRIVATE Qt5::Core Qt5::Gui)
 endif()
-if(NOT MSVC)
-    target_compile_options(yolo_prompt_probe PRIVATE -Wall -Wextra -fPIC)
-    target_link_options(yolo_prompt_probe PRIVATE "-no-pie")
-endif()
-target_include_directories(yolo_prompt_probe PRIVATE ${AICORE_TEST_INC})
-include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
-aicore_apply_compile_definitions(yolo_prompt_probe)
-cloudviewer_set_aicore_test_runtime_layout(yolo_prompt_probe)
 
 # YOLO device-parity test (CPU vs GPU numeric gates on real GGUF assets;
 # see tests/yolo/test_yolo_capi_parity.cpp for the gate table). Skips (77)
 # without AICORE_TEST_YOLO_* assets or a GPU backend.
-aicore_add_yolo_capi_test(test_yolo_capi_parity)
-set_tests_properties(test_yolo_capi_parity PROPERTIES
-    LABELS "capi;model;gpu")
+aicore_add_yolo_capi_test(test_yolo_capi_parity LABELS capi;model;gpu)
 
 # Per-call vocabulary switching on a resident world detector (the reload-
 # avoidance contract). Skips (77) without AICORE_TEST_YOLO_* assets.
-aicore_add_yolo_capi_test(test_yolo_with_classes)
-set_tests_properties(test_yolo_with_classes PROPERTIES
-    LABELS "capi;model")
+aicore_add_yolo_capi_test(test_yolo_with_classes LABELS capi;model)
 
 # Full same-model/same-input matrix: CPU/CUDA/Vulkan latency plus CPU-vs-GPU
 # numeric parity for every YOLO task and f32/f16/q8_0. Missing assets skip;
@@ -858,27 +706,21 @@ endif()
 
 # YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
 # guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
-aicore_add_yolo_capi_test(test_yolo_capi_contract)
-set_tests_properties(test_yolo_capi_contract PROPERTIES
-    LABELS "capi")
+aicore_add_yolo_capi_test(test_yolo_capi_contract LABELS capi)
 
 # YOLOE visual-prompt (SAVPE) model-tier test (needs a savpe-converted
 # yoloe GGUF + prompt image; skips with 77 without
 # AICORE_TEST_YOLO_SAVPE_* assets — see test_yolo_capi_savpe.cpp).
-aicore_add_yolo_capi_test(test_yolo_capi_savpe)
-set_tests_properties(test_yolo_capi_savpe PROPERTIES
-    LABELS "capi;model")
+aicore_add_yolo_capi_test(test_yolo_capi_savpe LABELS capi;model)
 
 # YOLO geometry whitebox test (no GGUF assets: mask unscale / letterbox
 # inverse mapping — see tests/yolo/test_yolo_unscale_masks.cpp).
 function(aicore_add_yolo_whitebox_test name)
-    if(NOT TARGET AICore_test)
-        return()
+    set(_labels whitebox)
+    if(ARGC GREATER 1)
+        set(_labels "whitebox;${ARGV1}")
     endif()
-    add_executable(${name} yolo/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    _aicore_test_common(${name})
-    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+    aicore_add_whitebox_test(${name} yolo LABELS ${_labels})
 endfunction()
 
 aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
@@ -886,19 +728,7 @@ aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
 # Whitebox op-level bisection tool for world-family device-parity failures
 # (model/env-gated; see tests/yolo/test_yolo_world_optrace.cpp).
 function(aicore_add_yolo_optrace_test name)
-    if(NOT TARGET AICore_test)
-        return()
-    endif()
-    add_executable(${name} yolo/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
-    # Qt was built with -reduce-relocations → compile with -fPIC (same
-    # pattern as aicore_add_yolo_capi_test; -fPIE is not enough).
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    _aicore_test_common(${name})
-    set_tests_properties(${name} PROPERTIES LABELS "whitebox;gpu")
+    aicore_add_yolo_whitebox_test(${name} gpu)
 endfunction()
 aicore_add_yolo_optrace_test(test_yolo_world_optrace)
 
@@ -1065,90 +895,19 @@ if(NOT WIN32)
     set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
 endif()
 
-set(_aicore_contract_targets
-    test_runtime_capi_contract
-    test_pipeline_timing_contract
-    test_depth_capi_contract
-    test_image_depth
-    test_depth_capi_load
-    test_gaussian_capi_contract
-    test_gaussian_capi_load
-    test_lightglue_capi_contract
-    test_lightglue_aliked_e2e
-    test_lightglue_model_validation
-    test_aliked_capi_contract
-    test_aliked_capi_parity
-    test_aliked_e2e_smoke
-    test_deeplsd_capi_contract
-    test_loma_capi_contract
-    test_facedetect_match_capi
-    test_facedetect_capi_contract
-    test_rfdetr_capi_contract
-    test_yolo_capi_contract
-    test_yolo_capi_parity
-    test_yolo_capi_savpe
-    test_yolo_text_model_validation
-    test_rmbg_capi_contract
-    test_rmbg_capi_performance
-    test_gkd_capi_contract
-    test_gkd_capi_load
-    test_lingbot_capi_contract
-    test_lingbot_capi_load
-    test_sam3_capi_contract
-    test_trellis_capi_contract
-    test_yolo_capi_performance
-    test_model_catalog_defaults
-    test_shared_model_catalog
-    # Registered-capable tests that were missing from this list ran in the
-    # capi tier with no built binary (CTest "Not Run"): the shared GGUF open
-    # helper (whitebox-guarded), the reid contract pair, and the model-tier
-    # loaders reached when AICORE_TEST_ENABLE_MODEL_TESTS=ON.
-    test_gguf_file_io
-    test_reid_capi_contract
-    test_reid_capi_load
-    test_deeplsd_capi_load
-    test_depth_capi_backend_parity)
-list(APPEND _aicore_contract_targets test_sam3d_capi_contract
-        test_sam3d_scene_assemble)
-# capi-labeled model tests: registered unconditionally below, but their
-# binaries are normally only built by the model tier. With
-# AICORE_TEST_ENABLE_MODEL_TESTS=ON the contract tier selects them via
-# -L capi with no -LE exclusion, and an unbuilt binary is a CTest "Not Run"
-# failure — so build them here too (workflow_dispatch model-tests variant;
-# see ubuntu.yml: enabling model tests must never introduce an unreachable
-# check). Gated so the default CPU-only CI lane pays no extra build cost.
-if(AICORE_TEST_ENABLE_MODEL_TESTS)
-    list(APPEND _aicore_contract_targets
-        test_loma_default_triplet
-        test_loma_matcher_e2e
-        test_loma_published_model_gate
-        test_loma_detector_reference_gate
-        test_loma_descriptor_reference_gate
-        test_loma_b128_e2e_reference_gate
-        test_loma_matcher_reference_gate
-        test_facedetect_embed_capi
-        test_facedetect_dense_validation
-        test_facedetect_contexts_capi
-        test_yolo_with_classes)
-endif()
+# Contract tier: ctest -L capi, with -LE model|gpu|e2e when model tests are
+# disabled. The DEPENDS list is derived at the bottom of this file from the
+# registration registry + LABELS (the exact predicate ctest applies), so a
+# newly registered capi test needs no list edit here.
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
 endif()
-# Drop entries whose target was not created (test_gguf_file_io needs the
-# whitebox library) so the tier stays buildable in every configuration.
-set(_aicore_contract_targets_existing)
-foreach(_aicore_t IN LISTS _aicore_contract_targets)
-    if(TARGET ${_aicore_t})
-        list(APPEND _aicore_contract_targets_existing ${_aicore_t})
-    endif()
-endforeach()
 add_custom_target(aicore-contract-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi
             ${_aicore_contract_model_exclude}
             -j1
             -C $<CONFIG>
-    DEPENDS ${_aicore_contract_targets_existing}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore public contract tests"
     VERBATIM
@@ -1188,57 +947,15 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         LABELS "catalog-remote" TIMEOUT 600)
 endif()
 
-# --- Fast tier: no GGUF assets (whitebox/common/gaussian units + capi
-# contract subset + catalog URL dump). Mirror entry point of
-# aicore-contract-tests so CI can address the tier by name. Whitebox targets
-# exist only when AICore_BUILD_WHITEBOX_TESTS=ON; keep the DEPENDS list to
-# targets present in this configuration, while ctest -LE runs every registered
-# fast test. When adding a new fast-tier test target, append it here, otherwise
-# ctest fails at runtime with a missing binary.
-set(_aicore_fast_targets
-    test_data_root
-    test_backend_registry
-    test_image_view_contract
-    test_gguf_keys
-    test_path_util
-    test_compute_mode
-    test_backend
-    test_linalg
-    test_ggml_extend
-    test_winograd
-    test_reconstruct
-    test_loader
-    test_graph_blocks
-    test_image
-    test_pose
-    test_gaussian_path_util
-    test_facedetect_align
-    test_rfdetr_preprocess
-    test_rfdetr_two_stage_mask
-    test_yolo_unscale_masks
-    test_catalog_dump_urls
-    # Registered by plugins/core/Standard/video_base (no labels, so ctest -LE
-    # above selects it). Its binary is NOT buildable from this list: this
-    # directory is processed by add_subdirectory(core) before
-    # add_subdirectory(plugins), so the if(TARGET) filter below never sees the
-    # target here. video_base/CMakeLists.txt attaches it with
-    # add_dependencies(aicore-fast-tests ...) instead — kept in this list as
-    # the tier contract record only.
-    test_video_base_gestures)
-# The fast tier also runs the no-asset subset of the capi contract suite
-# (ctest -LE "model|gpu|e2e" selects them), so those binaries must exist too.
-list(APPEND _aicore_fast_targets ${_aicore_contract_targets})
-set(_aicore_fast_targets_existing)
-foreach(_t IN LISTS _aicore_fast_targets)
-    if(TARGET ${_t})
-        list(APPEND _aicore_fast_targets_existing ${_t})
-    endif()
-endforeach()
+# --- Fast tier: no GGUF assets (whitebox/common/gaussian units + no-asset
+# capi subset + catalog URL dump). Mirror entry point of aicore-contract-tests
+# so CI can address the tier by name. DEPENDS derived at the bottom of this
+# file: fast-classified binaries plus the contract-tier set (the fast ctest
+# -LE also runs the no-asset capi subset).
 add_custom_target(aicore-fast-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e|cvpluginapi"
             -j2
             -C $<CONFIG>
-    DEPENDS ${_aicore_fast_targets_existing}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore fast-tier tests (no GGUF assets)"
     VERBATIM
@@ -1249,82 +966,10 @@ add_custom_target(aicore-fast-tests
 # target never fails on missing assets — it only executes them. Mirror of
 # the fast/contract entry points; the ctest -L "model" selection also covers
 # the two parity variants that reuse the test_aliked_capi_parity binary.
-set(_aicore_model_targets
-    test_dpt_blocks
-    test_rope2d
-    test_uv_posembed
-    test_quantize
-    test_quantize_accuracy
-    test_model_loader
-    test_cam_pose
-    test_preprocess
-    test_backbone
-    test_backbone_prepare
-    test_backbone_mv
-    test_backbone_mv4
-    test_backbone_metric
-    test_backbone_giant
-    test_backbone_da2
-    test_dpt_head
-    test_engine_depth
-    test_engine_depth_native
-    test_engine_pose
-    test_engine_mono
-    test_engine_mv
-    test_engine_metric
-    test_engine_da2
-    test_fused_depth
-    test_gs_head
-    test_gs_adapter
-    test_giant_depth_pose
-    test_head_rays
-    test_metric_head
-    test_nested_align
-    test_preprocess_real
-    test_ray_pose
-    test_parity
-    test_depth_capi_load
-    test_depth_capi_backend_parity
-    test_gaussian_capi_load
-    test_lightglue_aliked_e2e
-    test_lightglue_model_validation
-    test_aliked_capi_parity
-    test_aliked_e2e_smoke
-    test_deeplsd_capi_load
-    test_facedetect_embed_capi
-    test_facedetect_dense_validation
-    test_facedetect_contexts_capi
-    # capi-labeled model tests registered unconditionally above (loma gates,
-    # yolo classes): -L model selects them, so their binaries belong in this
-    # dependency list too — same Not Run contract as the fast/contract tiers.
-    test_loma_default_triplet
-    test_loma_matcher_e2e
-    test_loma_published_model_gate
-    test_loma_detector_reference_gate
-    test_loma_descriptor_reference_gate
-    test_loma_b128_e2e_reference_gate
-    test_loma_matcher_reference_gate
-    test_yolo_with_classes
-    # loma whitebox reference gates (model-labeled, no capi label): built by
-    # aicore_add_loma_whitebox_test when the whitebox library exists.
-    test_loma_g_token_reference_gate
-    test_loma_g_backend_parity
-    test_rmbg_capi_performance
-    test_gkd_capi_load
-    test_lingbot_capi_load
-    test_reid_capi_load
-    test_yolo_capi_performance)
-set(_aicore_model_targets_existing)
-foreach(_t IN LISTS _aicore_model_targets)
-    if(TARGET ${_t})
-        list(APPEND _aicore_model_targets_existing ${_t})
-    endif()
-endforeach()
 add_custom_target(aicore-model-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L "model"
             -j1
             -C $<CONFIG>
-    DEPENDS ${_aicore_model_targets_existing}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore model-tier tests (skips without GGUF assets)"
     VERBATIM
@@ -1412,3 +1057,46 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set_tests_properties(test_aicore_plugin_boundary_scanner PROPERTIES
         LABELS "fast;validation")
 endif()
+
+# --- Tier DEPENDS derivation (KEEP LAST) ------------------------------------
+# Runs after every add_test and LABELS assignment above. Combines the registry
+# captured by the add_test override with each test's final LABELS property,
+# using the same unanchored label regexes ctest applies, so every tier builds
+# exactly the binaries its ctest selection will run. Registering a test here
+# can never again miss its tier.
+get_property(_aicore_registry_tests GLOBAL PROPERTY AICORE_TEST_NAMES)
+set(_aicore_fast_bins "")
+set(_aicore_contract_bins "")
+set(_aicore_model_bins "")
+foreach(_aicore_t IN LISTS _aicore_registry_tests)
+    get_property(_aicore_tgt GLOBAL PROPERTY "AICORE_TEST_TGT_${_aicore_t}")
+    if(NOT _aicore_tgt)
+        continue() # script / cmake -P / multi-binary commands: nothing to build
+    endif()
+    get_test_property(${_aicore_t} LABELS _aicore_labels)
+    if(NOT _aicore_labels OR _aicore_labels MATCHES "NOTFOUND")
+        set(_aicore_labels "")
+    endif()
+    if(_aicore_labels MATCHES "${AICORE_TIER_MODEL_LABEL}")
+        list(APPEND _aicore_model_bins ${_aicore_tgt})
+    endif()
+    if(_aicore_labels MATCHES "${AICORE_TIER_CONTRACT_LABEL}"
+            AND (AICORE_TEST_ENABLE_MODEL_TESTS
+                OR NOT _aicore_labels MATCHES
+                    "${AICORE_TIER_CONTRACT_MODEL_EXCLUDE}"))
+        list(APPEND _aicore_contract_bins ${_aicore_tgt})
+    endif()
+    if(NOT _aicore_labels MATCHES "${AICORE_TIER_FAST_EXCLUDE}")
+        list(APPEND _aicore_fast_bins ${_aicore_tgt})
+    endif()
+endforeach()
+foreach(_aicore_list _aicore_fast_bins _aicore_contract_bins _aicore_model_bins)
+    if(${_aicore_list})
+        list(REMOVE_DUPLICATES ${_aicore_list})
+    endif()
+endforeach()
+# The fast tier also runs the no-asset subset of the capi contract suite, so
+# its graph carries the contract binaries too (same union as before).
+add_dependencies(aicore-contract-tests ${_aicore_contract_bins})
+add_dependencies(aicore-fast-tests ${_aicore_fast_bins} ${_aicore_contract_bins})
+add_dependencies(aicore-model-tests ${_aicore_model_bins})

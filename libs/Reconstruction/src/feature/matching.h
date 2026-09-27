@@ -170,16 +170,30 @@ class FeatureMatcherCache {
 public:
     FeatureMatcherCache(const size_t cache_size, const Database* database);
 
+    // Upstream parity (d3ccaf35 controllers/matcher_cache.h): thread-safe
+    // exclusive database access through the cache's own mutex. Required by
+    // the pairing generators (e.g. spatial pairing position-prior reads).
+    void AccessDatabase(
+            const std::function<void(const Database& database)>& func) {
+        std::lock_guard<std::mutex> lock(database_mutex_);
+        func(*database_);
+    }
+
     void Setup();
 
     const Camera& GetCamera(const camera_t camera_id);
+    const Frame& GetFrame(const frame_t frame_id);
     const Image& GetImage(const image_t image_id);
+    // Upstream parity (d3ccaf35 controllers/matcher_cache.h): image-keyed
+    // pose-prior lookup for the spatial pair generator.
+    const PosePrior* FindImagePosePriorOrNull(const image_t image_id);
     std::shared_ptr<FeatureKeypoints> GetKeypoints(const image_t image_id);
     std::shared_ptr<FeatureDescriptors> GetDescriptors(const image_t image_id);
     std::shared_ptr<FeatureDescriptorsFloat> GetFloatDescriptors(
             const image_t image_id);
     FeatureDescriptorType GetDescriptorType(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
+    std::vector<frame_t> GetFrameIds();
     std::vector<image_t> GetImageIds();
 
     bool ExistsKeypoints(const image_t image_id);
@@ -198,16 +212,25 @@ public:
 
     void DeleteMatches(const image_t image_id1, const image_t image_id2);
     void DeleteInlierMatches(const image_t image_id1, const image_t image_id2);
+    // Upstream parity (d3ccaf35 controllers/matcher_cache.h): required by
+    // the geometric verifier, which must delete an existing two-view
+    // geometry row before writing the re-verified result.
+    void DeleteTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2);
 
 private:
     void MaybeLoadCameras();
+    void MaybeLoadFrames();
     void MaybeLoadImages();
+    void MaybeLoadPosePriors();
 
     const size_t cache_size_;
     const Database* database_;
     std::mutex database_mutex_;
     std::unique_ptr<std::unordered_map<camera_t, Camera>> cameras_cache_;
+    std::unique_ptr<std::unordered_map<frame_t, Frame>> frames_cache_;
     std::unique_ptr<std::unordered_map<image_t, Image>> images_cache_;
+    std::unique_ptr<std::unordered_map<image_t, PosePrior>> pose_priors_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureKeypoints>>
             keypoints_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>>

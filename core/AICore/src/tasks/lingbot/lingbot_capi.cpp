@@ -133,8 +133,7 @@ AICORE_CAPI void aicore_lingbot_options_set_stream_capacity(
 
 AICORE_CAPI void aicore_lingbot_options_set_dump_stages_dir(
         aicore_lingbot_options* opts, const char* dir) {
-    if (Options* o = as_opts(opts))
-        o->dump_stages_dir = dir ? dir : "";
+    if (Options* o = as_opts(opts)) o->dump_stages_dir = dir ? dir : "";
 }
 
 AICORE_CAPI void aicore_lingbot_options_set_dump_internal(

@@ -70,3 +70,12 @@
 
 #include "sensor/models/jacobian.h"
 #include "sensor/models/runtime.h"
+
+// Upstream parity (d3ccaf35 sensor/models.cc): only spherical camera models
+// carry metadata parameters; every model supported by this fork is a
+// perspective model, so the metadata index set is always empty.
+inline std::vector<size_t> CameraModelMetaDataParamsIdxs(
+        const colmap::CameraModelId model_id) {
+    (void)model_id;
+    return {};
+}

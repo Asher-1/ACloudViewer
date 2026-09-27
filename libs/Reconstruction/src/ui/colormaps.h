@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include <Eigen/Core>
 
 #include "scene/reconstruction.h"
 #include "util/alignment.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {

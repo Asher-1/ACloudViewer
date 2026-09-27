@@ -12,11 +12,16 @@
 
 #include "estimators/alignment.h"
 #include "estimators/bundle_adjustment.h"
+#include "estimators/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "estimators/bundle_adjustment_ceres.h"
 #include "estimators/generalized_pose.h"
 #include "estimators/global_positioning.h"
 #include "estimators/gravity_refinement.h"
+#include "estimators/covariance.h"
 #include "estimators/pose.h"
+#include "estimators/rotation_averaging.h"
+#include "estimators/triangulation.h"
 #include "estimators/rotation_averaging.h"
 #include "estimators/solvers/affine_transform.h"
 #include "estimators/solvers/essential_matrix.h"
@@ -36,6 +41,7 @@
 #include "pybind/reconstruction/estimators/covariance_bindings.h"
 #include "scene/camera.h"
 #include "scene/pose_graph.h"
+#include "scene/rig.h"
 #include "scene/two_view_geometry.h"
 #include "util/logging.h"
 
@@ -150,7 +156,9 @@ void pybind_estimators(py::module& m) {
                            &RANSACOptions::dyn_num_trials_multiplier)
             .def_readwrite("min_num_trials", &RANSACOptions::min_num_trials)
             .def_readwrite("max_num_trials", &RANSACOptions::max_num_trials)
-            .def_readwrite("random_seed", &RANSACOptions::random_seed);
+            .def_readwrite("random_seed", &RANSACOptions::random_seed)
+            .def("check", &RANSACOptions::Check,
+                 "Validate the option values (throws on invalid values).");
 
     py::class_<AbsolutePoseEstimationOptions> abs_est(
             m_estimators, "AbsolutePoseEstimationOptions",
@@ -188,7 +196,136 @@ void pybind_estimators(py::module& m) {
             .def_readwrite("print_summary",
                            &AbsolutePoseRefinementOptions::print_summary)
             .def_readwrite("refine_extra_params",
-                           &AbsolutePoseRefinementOptions::refine_extra_params);
+                           &AbsolutePoseRefinementOptions::refine_extra_params)
+            // Upstream pycolmap parity (src/pycolmap/estimators/pose.cc):
+            // pose estimation/refinement entry points attached to the
+            // refinement options. The fork's estimate_relative_pose was
+            // retired on the engine side and refine_relative_pose takes a
+            // raw ceres::Solver::Options (no pyceres binding layer), so
+            // both stay unbound and are recorded in the alignment manifest.
+            .def(
+                    "estimate_absolute_pose",
+                    [](const AbsolutePoseRefinementOptions&,
+                       const AbsolutePoseEstimationOptions& est_options,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2D,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points3D,
+                       Camera& camera) -> py::object {
+                        auto pts2 = Points2DFromNdarray(points2D);
+                        auto pts3 = Points3DFromNdarray(points3D);
+                        Eigen::Vector4d qvec;
+                        Eigen::Vector3d tvec;
+                        size_t num_inliers = 0;
+                        std::vector<char> inlier_mask;
+                        if (!colmap::EstimateAbsolutePose(
+                                    est_options, pts2, pts3, &qvec, &tvec,
+                                    &camera, &num_inliers, &inlier_mask)) {
+                            return py::none();
+                        }
+                        py::dict out;
+                        out["cam_from_world"] =
+                                Rigid3d(Eigen::Quaterniond(qvec[0], qvec[1],
+                                                           qvec[2], qvec[3]),
+                                        tvec);
+                        out["num_inliers"] = num_inliers;
+                        out["inlier_mask"] = InlierMaskToList(inlier_mask);
+                        return out;
+                    },
+                    "estimation_options"_a, "points2D"_a, "points3D"_a,
+                    "camera"_a,
+                    "Estimate the absolute pose (PnP) of a camera from 2D-3D "
+                    "correspondences; returns a dict with cam_from_world / "
+                    "num_inliers / inlier_mask or None. The camera is "
+                    "modified in-place to store the estimated focal "
+                    "length.")
+            .def(
+                    "refine_absolute_pose",
+                    [](const AbsolutePoseRefinementOptions& options,
+                       const py::array_t<bool, py::array::c_style |
+                                                         py::array::forcecast>&
+                               inlier_mask_array,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2D,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points3D,
+                       Rigid3d& cam_from_world, Camera& camera) -> py::object {
+                        // Match the module-level surface: numpy bool masks
+                        // are accepted (the repo-wide std::vector<char>
+                        // caster rejects plain lists).
+                        std::vector<char> inlier_mask(inlier_mask_array.size());
+                        {
+                            auto buf = inlier_mask_array.unchecked<1>();
+                            for (py::ssize_t i = 0; i < buf.shape(0); ++i) {
+                                inlier_mask[static_cast<size_t>(i)] =
+                                        buf[i] ? 1 : 0;
+                            }
+                        }
+                        auto pts2 = Points2DFromNdarray(points2D);
+                        auto pts3 = Points3DFromNdarray(points3D);
+                        if (!colmap::RefineAbsolutePose(
+                                    options, inlier_mask, pts2, pts3,
+                                    &cam_from_world, &camera)) {
+                            return py::none();
+                        }
+                        py::dict out;
+                        out["cam_from_world"] = cam_from_world;
+                        return out;
+                    },
+                    "inlier_mask"_a, "points2D"_a, "points3D"_a,
+                    "cam_from_world"_a, "camera"_a,
+                    "Refine the absolute pose of a camera from 2D-3D "
+                    "correspondences; returns a dict with cam_from_world or "
+                    "None.")
+            .def(
+                    "estimate_and_refine_absolute_pose",
+                    [](const AbsolutePoseRefinementOptions& ref_options,
+                       const AbsolutePoseEstimationOptions& est_options,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2D,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points3D,
+                       Camera& camera) -> py::object {
+                        auto pts2 = Points2DFromNdarray(points2D);
+                        auto pts3 = Points3DFromNdarray(points3D);
+                        // Binding-level composition of the engine's
+                        // EstimateAbsolutePose + RefineAbsolutePose (the
+                        // fork engine has no fused entry point).
+                        Eigen::Vector4d qvec;
+                        Eigen::Vector3d tvec;
+                        size_t num_inliers = 0;
+                        std::vector<char> inlier_mask;
+                        if (!colmap::EstimateAbsolutePose(
+                                    est_options, pts2, pts3, &qvec, &tvec,
+                                    &camera, &num_inliers, &inlier_mask)) {
+                            return py::none();
+                        }
+                        Rigid3d cam_from_world(
+                                Eigen::Quaterniond(qvec[0], qvec[1], qvec[2],
+                                                   qvec[3]),
+                                tvec);
+                        if (!colmap::RefineAbsolutePose(
+                                    ref_options, inlier_mask, pts2, pts3,
+                                    &cam_from_world, &camera)) {
+                            return py::none();
+                        }
+                        py::dict out;
+                        out["cam_from_world"] = cam_from_world;
+                        out["num_inliers"] = num_inliers;
+                        out["inlier_mask"] = InlierMaskToList(inlier_mask);
+                        return out;
+                    },
+                    "estimation_options"_a = AbsolutePoseEstimationOptions(),
+                    "points2D"_a, "points3D"_a, "camera"_a,
+                    "Estimate and refine the absolute pose of a camera from "
+                    "2D-3D correspondences; returns a dict with "
+                    "cam_from_world / num_inliers / inlier_mask or None.");
 
     py::class_<EstimateTriangulationOptions> tri_opt(
             m_estimators, "EstimateTriangulationOptions",
@@ -197,7 +334,37 @@ void pybind_estimators(py::module& m) {
             .def_readwrite("min_tri_angle",
                            &EstimateTriangulationOptions::min_tri_angle)
             .def_readwrite("ransac_options",
-                           &EstimateTriangulationOptions::ransac_options);
+                           &EstimateTriangulationOptions::ransac_options)
+            .def(
+                    "estimate_triangulation",
+                    [](const EstimateTriangulationOptions& options,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points,
+                       const std::vector<Rigid3d>& cams_from_world,
+                       const std::vector<Camera>& cameras) -> py::object {
+                        auto pts = Points2DFromNdarray(points);
+                        THROW_CHECK_EQ(cams_from_world.size(), cameras.size());
+                        std::vector<const Camera*> camera_ptrs;
+                        camera_ptrs.reserve(cameras.size());
+                        for (const auto& camera : cameras) {
+                            camera_ptrs.push_back(&camera);
+                        }
+                        std::vector<char> inlier_mask;
+                        Eigen::Vector3d xyz;
+                        if (!colmap::EstimateTriangulation(
+                                    options, pts, cams_from_world, camera_ptrs,
+                                    &inlier_mask, &xyz)) {
+                            return py::none();
+                        }
+                        py::dict out;
+                        out["xyz"] = xyz;
+                        out["inlier_mask"] = InlierMaskToList(inlier_mask);
+                        return out;
+                    },
+                    "points"_a, "cams_from_world"_a, "cameras"_a,
+                    "Triangulate a 3D point from multiple views; returns a "
+                    "dict with xyz / inlier_mask or None.");
 
     m_estimators.def(
             "triangulate_point",
@@ -358,7 +525,116 @@ void pybind_estimators(py::module& m) {
                            &TwoViewGeometryOptions::compute_relative_pose)
             .def_readwrite("multiple_models",
                            &TwoViewGeometryOptions::multiple_models)
-            .def_readwrite("ransac", &TwoViewGeometryOptions::ransac_options);
+            .def_readwrite("ransac", &TwoViewGeometryOptions::ransac_options)
+            // Upstream pycolmap parity: the two-view geometry entry points
+            // are methods on the options class. The same functionality is
+            // also available as module-level free functions (bound below).
+            .def(
+                    "estimate_two_view_geometry",
+                    [](const TwoViewGeometryOptions& options,
+                       const Camera& camera1,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points1,
+                       const Camera& camera2,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2,
+                       const py::object& matches) {
+                        FeatureMatches feature_matches =
+                                MatchesFromOptionalNdarray(matches);
+                        auto pts1 = Points2DFromNdarray(points1);
+                        auto pts2 = Points2DFromNdarray(points2);
+                        if (feature_matches.empty()) {
+                            THROW_CHECK_EQ(pts1.size(), pts2.size());
+                            feature_matches.reserve(pts1.size());
+                            for (size_t i = 0; i < pts1.size(); ++i) {
+                                feature_matches.emplace_back(i, i);
+                            }
+                        }
+                        return colmap::EstimateTwoViewGeometry(
+                                camera1, pts1, camera2, pts2,
+                                std::move(feature_matches), options);
+                    },
+                    "camera1"_a, "points1"_a, "camera2"_a, "points2"_a,
+                    "matches"_a = py::none(),
+                    "Estimate the two-view geometry from an image pair.")
+            .def(
+                    "estimate_calibrated_two_view_geometry",
+                    [](const TwoViewGeometryOptions& options,
+                       const Camera& camera1,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points1,
+                       const Camera& camera2,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2,
+                       const py::object& matches) {
+                        FeatureMatches feature_matches =
+                                MatchesFromOptionalNdarray(matches);
+                        auto pts1 = Points2DFromNdarray(points1);
+                        auto pts2 = Points2DFromNdarray(points2);
+                        if (feature_matches.empty()) {
+                            THROW_CHECK_EQ(pts1.size(), pts2.size());
+                            feature_matches.reserve(pts1.size());
+                            for (size_t i = 0; i < pts1.size(); ++i) {
+                                feature_matches.emplace_back(i, i);
+                            }
+                        }
+                        return colmap::EstimateCalibratedTwoViewGeometry(
+                                camera1, pts1, camera2, pts2, feature_matches,
+                                options);
+                    },
+                    "camera1"_a, "points1"_a, "camera2"_a, "points2"_a,
+                    "matches"_a = py::none(),
+                    "Estimate the two-view geometry from a calibrated image "
+                    "pair.")
+            .def(
+                    "estimate_two_view_geometry_pose",
+                    [](const TwoViewGeometryOptions&, const Camera& camera1,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points1,
+                       const Camera& camera2,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2,
+                       TwoViewGeometry& geometry) -> py::object {
+                        auto pts1 = Points2DFromNdarray(points1);
+                        auto pts2 = Points2DFromNdarray(points2);
+                        if (!colmap::EstimateTwoViewGeometryPose(
+                                    camera1, pts1, camera2, pts2, &geometry)) {
+                            return py::none();
+                        }
+                        return py::cast(geometry);
+                    },
+                    "camera1"_a, "points1"_a, "camera2"_a, "points2"_a,
+                    "geometry"_a,
+                    "Decompose the relative pose and triangulation angle on an "
+                    "estimated two-view geometry.")
+            .def(
+                    "compute_squared_sampson_error",
+                    [](const TwoViewGeometryOptions&,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points1,
+                       const py::array_t<double, py::array::c_style |
+                                                         py::array::forcecast>&
+                               points2,
+                       const Eigen::Matrix3d& E) {
+                        auto pts1 = Points2DFromNdarray(points1);
+                        auto pts2 = Points2DFromNdarray(points2);
+                        THROW_CHECK_EQ(pts1.size(), pts2.size());
+                        std::vector<double> residuals(pts1.size());
+                        colmap::ComputeSquaredSampsonError(pts1, pts2, E,
+                                                           &residuals);
+                        return residuals;
+                    },
+                    "points1"_a, "points2"_a, "E"_a,
+                    "Compute the squared Sampson error for a list of "
+                    "correspondences w.r.t. the given essential/fundamental "
+                    "matrix.");
 
     m_estimators.def(
             "estimate_essential_matrix",
@@ -570,6 +846,232 @@ void pybind_estimators(py::module& m) {
             .def_readwrite("proj_center_error",
                            &ImageAlignmentError::proj_center_error);
 
+    // Upstream pycolmap parity (src/pycolmap/estimators/alignment.cc): the
+    // alignment entry points are exposed on the ImageAlignmentError class;
+    // the same operations are also available as module-level free functions
+    // below.
+    alignment_error
+            .def_static(
+                    "align_reconstruction_to_locations",
+                    [](const Reconstruction& src,
+                       const std::vector<std::string>& tgt_image_names,
+                       const std::vector<Eigen::Vector3d>& tgt_locations,
+                       int min_common_images,
+                       const RANSACOptions& ransac_options) -> py::object {
+                        Sim3d tgt_from_src;
+                        if (!colmap::AlignReconstructionToLocations(
+                                    src, tgt_image_names, tgt_locations,
+                                    min_common_images, ransac_options,
+                                    &tgt_from_src)) {
+                            return py::none();
+                        }
+                        return py::cast(tgt_from_src);
+                    },
+                    "src"_a, "tgt_image_names"_a, "tgt_image_locations"_a,
+                    "min_common_images"_a, "ransac_options"_a,
+                    "Align the reconstruction to target locations via "
+                    "common images; returns tgt_from_src or None.")
+            .def_static(
+                    "align_reconstructions_via_reprojections",
+                    [](const Reconstruction& src, const Reconstruction& tgt,
+                       double min_inlier_observations,
+                       double max_reproj_error) -> py::object {
+                        Sim3d tgt_from_src;
+                        if (!colmap::AlignReconstructionsViaReprojections(
+                                    src, tgt, min_inlier_observations,
+                                    max_reproj_error, &tgt_from_src)) {
+                            return py::none();
+                        }
+                        return py::cast(tgt_from_src);
+                    },
+                    "src"_a, "tgt"_a, "min_inlier_observations"_a,
+                    "max_reproj_error"_a,
+                    "Align two reconstructions via common image "
+                    "reprojections; returns tgt_from_src or None.")
+            .def_static(
+                    "align_reconstructions_via_proj_centers",
+                    [](const Reconstruction& src, const Reconstruction& tgt,
+                       double max_proj_center_error) -> py::object {
+                        Sim3d tgt_from_src;
+                        if (!colmap::AlignReconstructionsViaProjCenters(
+                                    src, tgt, max_proj_center_error,
+                                    &tgt_from_src)) {
+                            return py::none();
+                        }
+                        return py::cast(tgt_from_src);
+                    },
+                    "src"_a, "tgt"_a, "max_proj_center_error"_a,
+                    "Align two reconstructions via common projection "
+                    "centers; returns tgt_from_src or None.")
+            .def_static(
+                    "align_reconstructions_via_points",
+                    [](const Reconstruction& src, const Reconstruction& tgt,
+                       size_t min_common_observations, double max_error,
+                       double min_inlier_ratio) -> py::object {
+                        Sim3d tgt_from_src;
+                        if (!colmap::AlignReconstructionsViaPoints(
+                                    src, tgt, min_common_observations,
+                                    max_error, min_inlier_ratio,
+                                    &tgt_from_src)) {
+                            return py::none();
+                        }
+                        return py::cast(tgt_from_src);
+                    },
+                    "src"_a, "tgt"_a, "min_common_observations"_a,
+                    "max_error"_a, "min_inlier_ratio"_a,
+                    "Align two reconstructions via common 3D points; "
+                    "returns tgt_from_src or None.")
+            .def_static(
+                    "align_reconstruction_to_orig_rig_scales",
+                    [](Reconstruction& reconstruction,
+                       const std::unordered_map<uint32_t, colmap::Rig>&
+                               orig_rigs) {
+                        colmap::NodeHashMap<colmap::rig_t, colmap::Rig> rigs;
+                        for (const auto& [rig_id, rig] : orig_rigs) {
+                            rigs.emplace(rig_id, rig);
+                        }
+                        return colmap::AlignReconstructionToOrigRigScales(
+                                rigs, &reconstruction);
+                    },
+                    "reconstruction"_a, "orig_rigs"_a,
+                    "Align the reconstruction rig scales to the original "
+                    "rigs (dict of rig_id -> Rig); returns True on success.")
+            .def_static(
+                    "compare_reconstructions",
+                    [](const Reconstruction& src, const Reconstruction& tgt,
+                       const Sim3d& tgt_from_src) {
+                        auto errors = colmap::ComputeImageAlignmentError(
+                                src, tgt, tgt_from_src);
+                        py::list err_list;
+                        for (const auto& err : errors) {
+                            err_list.append(err);
+                        }
+                        auto summary =
+                                colmap::AlignmentErrorSummary::Compute(errors);
+                        py::dict out;
+                        out["image_errors"] = err_list;
+                        out["summary"] = summary;
+                        return out;
+                    },
+                    "src"_a, "tgt"_a, "tgt_from_src"_a,
+                    "Compare two aligned reconstructions; returns a dict "
+                    "with image_errors and summary statistics.");
+
+    // Upstream pycolmap parity: AlignmentErrorSummary value type (returned
+    // by compare_reconstructions).
+    py::class_<colmap::AlignmentErrorSummary> alignment_summary(
+            m_estimators, "AlignmentErrorSummary",
+            "Aggregate (min/max/mean/median/p90/p99) alignment error "
+            "statistics.");
+    py::class_<colmap::AlignmentErrorSummary::Statistics> alignment_stats(
+            alignment_summary, "Statistics",
+            "Error distribution "
+            "statistics.");
+    alignment_stats
+            .def_readwrite("min",
+                           &colmap::AlignmentErrorSummary::Statistics::min)
+            .def_readwrite("max",
+                           &colmap::AlignmentErrorSummary::Statistics::max)
+            .def_readwrite("mean",
+                           &colmap::AlignmentErrorSummary::Statistics::mean)
+            .def_readwrite("median",
+                           &colmap::AlignmentErrorSummary::Statistics::median)
+            .def_readwrite("p90",
+                           &colmap::AlignmentErrorSummary::Statistics::p90)
+            .def_readwrite("p99",
+                           &colmap::AlignmentErrorSummary::Statistics::p99)
+            .def("__repr__",
+                 [](const colmap::AlignmentErrorSummary::Statistics& self) {
+                     return "Statistics(min=" + std::to_string(self.min) +
+                            ", max=" + std::to_string(self.max) +
+                            ", mean=" + std::to_string(self.mean) + ")";
+                 });
+    alignment_summary
+            .def_readwrite("rotation_errors_deg",
+                           &colmap::AlignmentErrorSummary::rotation_errors_deg)
+            .def_readwrite("proj_center_errors",
+                           &colmap::AlignmentErrorSummary::proj_center_errors)
+            .def_static(
+                    "compute",
+                    [](const std::vector<colmap::ImageAlignmentError>& errors) {
+                        return colmap::AlignmentErrorSummary::Compute(errors);
+                    },
+                    "image_errors"_a,
+                    "Compute summary statistics from per-image errors.");
+
+    // Upstream pycolmap parity: align_reconstruction_to_orig_rig_scales.
+    m_estimators.def(
+            "align_reconstruction_to_orig_rig_scales",
+            [](Reconstruction& reconstruction,
+               const std::unordered_map<uint32_t, colmap::Rig>& orig_rigs) {
+                colmap::NodeHashMap<colmap::rig_t, colmap::Rig> rigs;
+                for (const auto& [rig_id, rig] : orig_rigs) {
+                    rigs.emplace(rig_id, rig);
+                }
+                return colmap::AlignReconstructionToOrigRigScales(
+                        rigs, &reconstruction);
+            },
+            "reconstruction"_a, "orig_rigs"_a,
+            "Align the reconstruction rig scales to the original rigs "
+            "(dict of rig_id -> Rig); returns True on success. The "
+            "reconstruction is updated in-place.");
+
+    // Upstream pycolmap parity (src/pycolmap/scene/rig.cc): the rig
+    // configuration family and the apply_rig_config entry point.
+    py::class_<colmap::RigConfig::RigCamera> rig_config_camera(
+            m_estimators, "RigConfigCamera",
+            "Per-sensor entry of a rig configuration.");
+    rig_config_camera.def(py::init<>())
+            .def_readwrite("ref_sensor",
+                           &colmap::RigConfig::RigCamera::ref_sensor,
+                           "bool: Whether this sensor is the reference "
+                           "sensor of the rig.")
+            .def_readwrite("image_prefix",
+                           &colmap::RigConfig::RigCamera::image_prefix,
+                           "str: The image filename prefix matched against "
+                           "this sensor.")
+            .def_readwrite(
+                    "cam_from_rig", &colmap::RigConfig::RigCamera::cam_from_rig,
+                    "Rigid3d or None: Optional known sensor-from-rig pose.")
+            .def_readwrite("camera", &colmap::RigConfig::RigCamera::camera,
+                           "Camera or None: Optional known camera intrinsics.")
+            .def("__repr__", [](const colmap::RigConfig::RigCamera& self) {
+                return "RigConfigCamera(image_prefix='" + self.image_prefix +
+                       "', ref_sensor=" + (self.ref_sensor ? "True" : "False") +
+                       ")";
+            });
+
+    py::class_<colmap::RigConfig> rig_config(
+            m_estimators, "RigConfig",
+            "Configuration of one rig (list of sensors with image prefix "
+            "matching rules). See also ReadRigConfig/ApplyRigConfig.");
+    rig_config.def(py::init<>())
+            .def_readwrite("cameras", &colmap::RigConfig::cameras,
+                           "list(RigConfigCamera, ...): The sensors of the "
+                           "rig. (Upstream also exposes rig_name; the fork "
+                           "config has no name member.)")
+            .def("__repr__", [](const colmap::RigConfig& self) {
+                return "RigConfig(num_cameras=" +
+                       std::to_string(self.cameras.size()) + ")";
+            });
+
+    m_estimators.def(
+            "read_rig_config",
+            [](const std::string& path) { return colmap::ReadRigConfig(path); },
+            "path"_a, "Read a rig configuration from a JSON file.");
+
+    m_estimators.def(
+            "apply_rig_config",
+            [](const std::vector<colmap::RigConfig>& configs,
+               colmap::Database& database,
+               colmap::Reconstruction* reconstruction) {
+                colmap::ApplyRigConfig(configs, database, reconstruction);
+            },
+            "configs"_a, "database"_a, "reconstruction"_a = py::none(),
+            "Apply the rig configuration to the database and optionally "
+            "derive camera rig extrinsics/intrinsics from the "
+            "reconstruction. Existing rigs and frames are cleared.");
+
     m_estimators.def(
             "align_reconstructions_via_reprojections",
             [](const Reconstruction& src_reconstruction,
@@ -760,6 +1262,43 @@ void pybind_estimators(py::module& m) {
                  &colmap::BundleAdjustmentSummary::IsSolutionUsable)
             .def("brief_report", &colmap::BundleAdjustmentSummary::BriefReport);
 
+    // Upstream pycolmap parity (src/pycolmap/estimators/bundle_adjustment.cc):
+    // the backend-typed summary. The fork's ceres_summary member is the raw
+    // ceres::Solver::Summary, which belongs to the embedded-ceres binding
+    // subproject (recorded in the alignment manifest); the common summary
+    // surface is fully available here.
+    py::class_<colmap::CeresBundleAdjustmentSummary,
+               colmap::BundleAdjustmentSummary>(
+            m_estimators, "CeresBundleAdjustmentSummary",
+            "Summary of a Ceres bundle adjustment run.")
+            .def(py::init<>());
+
+    // Upstream pycolmap parity: options for pose-prior-regularized bundle
+    // adjustment. The upstream also embeds a ceres solver options member
+    // (embedded-ceres subproject, not bound here).
+    py::class_<colmap::PosePriorBundleAdjustmentOptions> pose_prior_ba_options(
+            m_estimators, "PosePriorBundleAdjustmentOptions",
+            "Options for pose-prior-regularized bundle adjustment.");
+    pose_prior_ba_options.def(py::init<>())
+            .def_readwrite(
+                    "prior_position_fallback_stddev",
+                    &colmap::PosePriorBundleAdjustmentOptions::
+                            prior_position_fallback_stddev,
+                    "Fallback if no prior position covariance is provided.")
+            .def_readwrite(
+                    "alignment_ransac",
+                    &colmap::PosePriorBundleAdjustmentOptions::
+                            alignment_ransac_options,
+                    "RANSAC options for aligning the reconstruction to the "
+                    "priors before the adjustment.")
+            .def_readwrite(
+                    "prior_position_loss_scale",
+                    &colmap::PosePriorBundleAdjustmentOptions::
+                            prior_position_loss_scale,
+                    "Scale of the robust loss on the prior position terms.")
+            .def("check", &colmap::PosePriorBundleAdjustmentOptions::Check,
+                 "Validate the option values.");
+
     py::class_<colmap::BundleAdjustmentConfig> ba_config(
             m_estimators, "BundleAdjustmentConfig",
             "Configuration container to set up bundle adjustment problems.");
@@ -774,6 +1313,26 @@ void pybind_estimators(py::module& m) {
             .def("num_points", &colmap::BundleAdjustmentConfig::NumPoints)
             .def("num_constant_cameras",
                  &colmap::BundleAdjustmentConfig::NumConstantCameras)
+            // Upstream pycolmap parity names for the camera-intrinsics
+            // freezing family (the fork engine names them cameras).
+            .def("set_constant_cam_intrinsics",
+                 &colmap::BundleAdjustmentConfig::SetConstantCamera,
+                 "camera_id"_a, "Upstream name of ``set_constant_camera``.")
+            .def("set_variable_cam_intrinsics",
+                 &colmap::BundleAdjustmentConfig::SetVariableCamera,
+                 "camera_id"_a, "Upstream name of ``set_variable_camera``.")
+            .def("has_constant_cam_intrinsics",
+                 &colmap::BundleAdjustmentConfig::IsConstantCamera,
+                 "camera_id"_a, "Upstream name of ``is_constant_camera``.")
+            .def("num_constant_cam_intrinsics",
+                 &colmap::BundleAdjustmentConfig::NumConstantCameras,
+                 "Upstream name of ``num_constant_cameras``.")
+            .def("num_constant_rig_from_world_poses",
+                 &colmap::BundleAdjustmentConfig::NumConstantPoses,
+                 "Upstream name of ``num_constant_poses``.")
+            .def("num_constant_sensor_from_rig_poses",
+                 &colmap::BundleAdjustmentConfig::NumConstantSensorFromRigPoses,
+                 "The number of constant sensor-from-rig poses.")
             .def("num_constant_poses",
                  &colmap::BundleAdjustmentConfig::NumConstantPoses)
             .def("num_constant_tvecs",
@@ -974,7 +1533,21 @@ void pybind_estimators(py::module& m) {
                     "refine_sensor_from_rig",
                     &colmap::RotationEstimatorOptions::refine_sensor_from_rig)
             .def_readwrite("weight_type",
-                           &colmap::RotationEstimatorOptions::weight_type);
+                           &colmap::RotationEstimatorOptions::weight_type)
+            .def(
+                    "run_rotation_averaging",
+                    [](const colmap::RotationEstimatorOptions& options,
+                       colmap::PoseGraph& pose_graph,
+                       Reconstruction& reconstruction,
+                       std::vector<colmap::PosePrior> pose_priors) {
+                        return colmap::RunRotationAveraging(options, pose_graph,
+                                                            reconstruction,
+                                                            pose_priors);
+                    },
+                    "pose_graph"_a, "reconstruction"_a,
+                    "pose_priors"_a = std::vector<colmap::PosePrior>{},
+                    "Run the high-level rotation averaging solver that handles "
+                    "rig expansion; returns True on success.");
 
     m_estimators.def(
             "estimate_rotations",
@@ -1035,7 +1608,18 @@ void pybind_estimators(py::module& m) {
                     &colmap::GlobalPositionerOptions::loss_function_scale)
             .def_readwrite("use_parameter_block_ordering",
                            &colmap::GlobalPositionerOptions::
-                                   use_parameter_block_ordering);
+                                   use_parameter_block_ordering)
+            .def(
+                    "run_global_positioning",
+                    [](const colmap::GlobalPositionerOptions& options,
+                       const colmap::PoseGraph& pose_graph,
+                       Reconstruction& reconstruction) {
+                        return colmap::RunGlobalPositioning(options, pose_graph,
+                                                            reconstruction);
+                    },
+                    "pose_graph"_a, "reconstruction"_a,
+                    "Solve global positioning using point-to-camera "
+                    "constraints; returns True on success.");
 
     m_estimators.def(
             "run_global_positioning",
@@ -1058,7 +1642,22 @@ void pybind_estimators(py::module& m) {
             .def_readwrite("max_gravity_error",
                            &colmap::GravityRefinerOptions::max_gravity_error)
             .def_readwrite("min_num_neighbors",
-                           &colmap::GravityRefinerOptions::min_num_neighbors);
+                           &colmap::GravityRefinerOptions::min_num_neighbors)
+            .def(
+                    "run_gravity_refinement",
+                    [](const colmap::GravityRefinerOptions& options,
+                       const colmap::PoseGraph& pose_graph,
+                       const Reconstruction& reconstruction,
+                       std::vector<colmap::PosePrior>& pose_priors) {
+                        colmap::RunGravityRefinement(options, pose_graph,
+                                                     reconstruction,
+                                                     pose_priors);
+                        return pose_priors;
+                    },
+                    "pose_graph"_a, "reconstruction"_a, "pose_priors"_a,
+                    "Refine the gravity of pose priors in place using relative "
+                    "rotations from the pose graph; returns the refined pose "
+                    "prior list.");
 
     m_estimators.def(
             "run_gravity_refinement",
@@ -1496,6 +2095,88 @@ void pybind_estimators(py::module& m) {
             "Estimate the absolute pose of a query camera from structure-less "
             "2D-2D correspondences against registered world cameras; returns a "
             "dict with query_cam_from_world/num_inliers/inlier_mask or None.");
+
+    // ------------------------------------------------------------------
+    // Upstream pycolmap parity (top-level names; the engine declares these
+    // enums nested - the bindings export them at module level exactly like
+    // upstream pycolmap does).
+    // ------------------------------------------------------------------
+
+    py::enum_<colmap::RotationAveragingReweighting>(
+            m_estimators, "RotationAveragingReweighting",
+            "The reweighting scheme applied to the relative-rotation "
+            "constraints.")
+            .value("UNIFORM", colmap::RotationAveragingReweighting::UNIFORM)
+            .value("INLIER_MATCH_COUNT",
+                   colmap::RotationAveragingReweighting::INLIER_MATCH_COUNT)
+            .export_values();
+
+    py::enum_<colmap::TriangulationEstimator::ResidualType>(
+            m_estimators, "TriangulationResidualType",
+            "The residual type used during triangulation.")
+            .value("ANGULAR_ERROR",
+                   colmap::TriangulationEstimator::ResidualType::ANGULAR_ERROR)
+            .value("REPROJECTION_ERROR",
+                   colmap::TriangulationEstimator::ResidualType::REPROJECTION_ERROR)
+            .export_values();
+
+
+    // Upstream parity (estimators/bundle_adjustment_caspar.h): the aggregate
+    // caspar solver-parameter contract; the fork execution still runs through
+    // the flat BundleAdjustmentOptions path.
+    py::class_<colmap::CasparBundleAdjustmentOptions>(
+            m_estimators, "CasparBundleAdjustmentOptions")
+            .def(py::init<>())
+            .def_readwrite("solver_iter_max",
+                           &colmap::CasparBundleAdjustmentOptions::solver_iter_max)
+            .def_readwrite("pcg_iter_max",
+                           &colmap::CasparBundleAdjustmentOptions::pcg_iter_max)
+            .def_readwrite("diag_init",
+                           &colmap::CasparBundleAdjustmentOptions::diag_init)
+            .def_readwrite("diag_min",
+                           &colmap::CasparBundleAdjustmentOptions::diag_min)
+            .def_readwrite("diag_scaling_up",
+                           &colmap::CasparBundleAdjustmentOptions::diag_scaling_up)
+            .def_readwrite("diag_scaling_down",
+                           &colmap::CasparBundleAdjustmentOptions::diag_scaling_down)
+            .def_readwrite("diag_exit_value",
+                           &colmap::CasparBundleAdjustmentOptions::diag_exit_value)
+            .def_readwrite("score_exit_value",
+                           &colmap::CasparBundleAdjustmentOptions::score_exit_value)
+            .def_readwrite("pcg_rel_error_exit",
+                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_error_exit)
+            .def_readwrite("pcg_rel_score_exit",
+                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_score_exit)
+            .def_readwrite("pcg_rel_decrease_min",
+                           &colmap::CasparBundleAdjustmentOptions::pcg_rel_decrease_min)
+            .def_readwrite("solver_rel_decrease_min",
+                           &colmap::CasparBundleAdjustmentOptions::solver_rel_decrease_min)
+            .def_readwrite("gpu_index",
+                           &colmap::CasparBundleAdjustmentOptions::gpu_index)
+            .def_readwrite("collect_iteration_data",
+                           &colmap::CasparBundleAdjustmentOptions::collect_iteration_data)
+            .def("check", &colmap::CasparBundleAdjustmentOptions::Check);
+
+    // Upstream parity (estimators/covariance.cc): internal::PoseParam
+    // exposed under the upstream ExperimentalPoseParam name.
+    py::class_<colmap::internal::PoseParam,
+               std::shared_ptr<colmap::internal::PoseParam>>(
+            m_estimators, "ExperimentalPoseParam")
+            .def(py::init<>());
+
+    py::class_<colmap::CasparBundleAdjustmentSummary,
+               colmap::BundleAdjustmentSummary>(
+            m_estimators, "CasparBundleAdjustmentSummary")
+            .def(py::init<>())
+            .def_readonly("iteration_count",
+                          &colmap::CasparBundleAdjustmentSummary::iteration_count)
+            .def_readonly("initial_score",
+                          &colmap::CasparBundleAdjustmentSummary::initial_score);
+
+    // Upstream name of the pose-prior BA options (the fork type is registered
+    // above under the pre-unification name).
+    m_estimators.attr("CeresPosePriorBundleAdjustmentOptions") =
+            m_estimators.attr("PosePriorBundleAdjustmentOptions");
 
     m_estimators.attr("__docstring__") = map_shared_argument_docstrings;
 }

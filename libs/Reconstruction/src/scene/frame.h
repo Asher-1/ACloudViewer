@@ -38,6 +38,12 @@ public:
     size_t NumDataIds() const { return data_ids_.size(); }
     void ClearDataIds() { data_ids_.clear(); }
 
+    // Upstream parity (d3ccaf35 scene/frame.h): mark the data ids as final
+    // when the frame is added to a reconstruction, to ensure consistency of
+    // cached counters.
+    void FinalizeDataIds() { has_final_data_ids_ = true; }
+    bool HasFinalDataIds() const { return has_final_data_ids_; }
+
     void AddImageId(image_t image_id);
     bool HasImageId(image_t image_id) const;
     const std::set<image_t>& ImageIds() const;
@@ -116,6 +122,7 @@ private:
     frame_t frame_id_ = kInvalidFrameId;
     rig_t rig_id_ = kInvalidRigId;
     std::set<data_t> data_ids_;
+    bool has_final_data_ids_ = false;
     std::set<image_t> image_ids_;
     class Rig* rig_ptr_ = nullptr;
     bool has_pose_ = false;

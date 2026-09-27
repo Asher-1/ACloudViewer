@@ -1513,4 +1513,10 @@ bool IncrementalMapper::RegisterNextStructureLessImage(
     return true;
 }
 
+
+void IncrementalMapper::ResetInitializationStats() {
+  reg_stats_.init_num_reg_trials.clear();
+  reg_stats_.init_image_pairs.clear();
+}
+
 }  // namespace colmap

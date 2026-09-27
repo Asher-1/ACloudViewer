@@ -355,6 +355,52 @@ if (DOWNLOAD_ENABLED)
     add_compile_definitions(COLMAP_DOWNLOAD_ENABLED)
 endif ()
 
+# Export the engine feature macros that are currently active so consumers
+# outside this directory scope (the python pybind extension TUs, which
+# include the same engine headers) can mirror them and stay ABI-identical.
+# add_compile_definitions above is directory-scoped and does NOT reach
+# sibling directories.
+set(ACV_COLMAP_ENGINE_MACROS "")
+if (OPENMP_ENABLED AND OPENMP_FOUND)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENMP_ENABLED)
+endif ()
+if (CUDA_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CUDA_ENABLED)
+endif ()
+if (GUI_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS GUI_ENABLED)
+endif ()
+if (OPENGL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENGL_ENABLED)
+endif ()
+if (CGAL_FOUND AND CGAL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CGAL_ENABLED)
+endif ()
+if (DOWNLOAD_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_DOWNLOAD_ENABLED)
+endif ()
+list(APPEND ACV_COLMAP_ENGINE_MACROS MAX_STURM_RECURSION_DEPTH_LIMIT=300)
+list(APPEND ACV_COLMAP_ENGINE_MACROS POSELIB_DEBUG=0)
+if (RECONSTRUCTION_FETCH_POSELIB)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS RECONSTRUCTION_FETCH_POSELIB)
+endif ()
+if (HIP_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_HIP_ENABLED)
+endif ()
+# Unconditional vendored-library configuration macros that engine headers
+# propagate to their consumers; the python binding TUs must agree on these
+# too (e.g. kiss_fft_scalar changes struct layouts).
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_ALL_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_TEST_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_WRITE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYGLTF_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYOBJLOADER_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS kiss_fft_scalar=double)
+set(ACV_COLMAP_ENGINE_MACROS "${ACV_COLMAP_ENGINE_MACROS}"
+        CACHE INTERNAL "ACloudViewer COLMAP engine feature macros")
+
 # DA3 depth estimation integration (AICore from core/DA3)
 if(AICore_ENABLED AND TARGET AICore)
     message(STATUS "DA3 depth estimation integration enabled (AICore)")

@@ -1710,6 +1710,22 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     }
     const bool cascadeVisible = context.visible;
 
+    // The draw context is shared by the whole traversal. Per-entity state
+    // (per-view representation overrides and values written inside
+    // drawMeOnly) must not leak into entities drawn afterwards, otherwise
+    // editing e.g. cloud A's point size also resizes every sibling cloud
+    // that has no explicit size of its own. Save the fields overridden
+    // below or during drawing and restore them once this entity is done
+    // (same scoping as the glTransAccum matrix stack above).
+    const unsigned char savedDefaultPointSize = context.defaultPointSize;
+    const unsigned char savedDefaultLineWidth = context.defaultLineWidth;
+    const unsigned char savedCurrentLineWidth = context.currentLineWidth;
+    const float savedNormalScale = context.normalScale;
+    const MESH_RENDERING_MODE savedMeshRenderingMode =
+            context.meshRenderingMode;
+    const ecvColor::Rgbub savedDefaultPolylineColor =
+            context.defaultPolylineColor;
+
     context.opacity = (viewRep && viewRep->properties().opacity.has_value())
                               ? viewRep->effectiveOpacity()
                               : getOpacity();
@@ -1786,6 +1802,16 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             }
         }
     }
+
+    // Restore the per-entity context fields saved above so siblings (and
+    // children) start from the traversal state instead of this entity's
+    // overrides (prevents point size / line width / normals scale bleed).
+    context.defaultPointSize = savedDefaultPointSize;
+    context.defaultLineWidth = savedDefaultLineWidth;
+    context.currentLineWidth = savedCurrentLineWidth;
+    context.normalScale = savedNormalScale;
+    context.meshRenderingMode = savedMeshRenderingMode;
+    context.defaultPolylineColor = savedDefaultPolylineColor;
 
     // hide or show entities
     {

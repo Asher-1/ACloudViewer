@@ -28,6 +28,24 @@ MAKE_ENUM_CLASS_OVERLOAD_STREAM(FeatureExtractorType,
                                 LOMA_B,
                                 LOMA_B128);
 
+// Upstream parity (d3ccaf35 feature/types.h): the matcher-type dispatch
+// enum for the new-style FeatureMatcher abstraction. The fork resolves
+// SIFT_*/LOMA_* on the SIFT/LoMa engines; ALIKED_* land with the AICore
+// ggml task family.
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(FeatureMatcherType,
+                                -1,
+                                UNDEFINED,
+                                SIFT_BRUTEFORCE,
+                                SIFT_LIGHTGLUE,
+                                ALIKED_BRUTEFORCE,
+                                ALIKED_LIGHTGLUE,
+                                LOMA_BRUTEFORCE,
+                                LOMA_B,
+                                LOMA_B128,
+                                LOMA_R,
+                                LOMA_L,
+                                LOMA_G);
+
 struct FeatureKeypoint {
     FeatureKeypoint();
     FeatureKeypoint(const float x, const float y);

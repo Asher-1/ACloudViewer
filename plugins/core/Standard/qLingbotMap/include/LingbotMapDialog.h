@@ -23,6 +23,10 @@ class QComboBox;
 class QGroupBox;
 class QLineEdit;
 class QDoubleSpinBox;
+class QPushButton;
+class QLabel;
+class QSlider;
+class QSpinBox;
 
 class ecvModelDownloader;
 class ecvMainAppInterface;
@@ -57,10 +61,54 @@ protected:
 signals:
     void runRequested(const LingbotMapWorker::Settings& settings);
     void cancelRequested();
-    /** Loop-playback controls changed (official viewer semantics). */
+    /** Live pause/resume of the streaming reconstruction (official viewer
+     *  pause semantics: the render window freezes with it). */
+    void pauseRequested(bool paused);
+    /** Loop-playback controls changed: "enabled" is the AUTO-PLAY preset
+     *  (start the replay right after a result lands); fps/mode apply
+     *  immediately to a running replay. */
     void playbackSettingsChanged(bool enabled, int fps, bool currentFrameOnly);
+    /** Replay transport (official viewer Playing semantics): explicit
+     *  Play/Pause/Stop + timeline seek/step. */
+    void replayPlayRequested();
+    void replayPauseRequested();
+    void replayStopRequested();
+    void replaySeekRequested(int frame);
+    /** Reset the replay (stop, restore every frame, rewind to frame 0). */
+    void playbackReset();
+    /** Live camera mode changed (applies to the RUNNING reconstruction:
+     *  the worker's camera policy is hot-swappable mid-stream). */
+    void liveViewModeChanged(int mode);
+    /** Result-display adjustments (official viewer sliders parity), applied
+     *  to the LAST result group: visibility threshold re-filter, point
+     *  size, camera size/visibility/stride. */
+    void resultDisplaySettingsChanged(double threshold,
+                                      int pointSize,
+                                      int camSizePercent,
+                                      bool showCameras,
+                                      int camStride);
+    /** Result view shortcuts: 0 = move to first camera, 1 = fit all. */
+    void resultViewRequested(int which);
 
 public slots:
+    /** Mirrors the input image of the frame just reconstructed (official
+     *  viewer's frame panel). */
+    void updatePreviewImage(const QImage& image, int globalIndex);
+    /** Enables the result-display group once a result is materialized;
+     *  \p minThreshold is the materialization threshold (the live slider
+     *  can only tighten the display beyond it). */
+    void setResultDisplayReady(bool ready, double minThreshold);
+    /** Mirrors the replay state machine from the plugin: drives the
+     *  Play/Pause/Stop/step enables and the timeline slider
+     *  (state: 0 = stopped, 1 = playing, 2 = paused; count <= 0 = no
+     *  result yet, everything disabled). */
+    void setReplayState(int state, int frame, int count);
+    /** Publishes the current auto-play/FPS/replay-mode values (the
+     *  plugin calls this after wiring, since the constructor's initial
+     *  emission had no receiver yet). */
+    void publishPlaybackSettings();
+    /** Pause button state (driven by the worker's transitions). */
+    void setPaused(bool paused);
     /** Automatic download wiring shared with the AICore plugin family. */
     void onModelComboChanged();
     void onBrowseCustomModel();
@@ -103,6 +151,9 @@ private:
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
     QDoubleSpinBox* m_confThreshold = nullptr;
+    QSpinBox* m_downsampleFactor = nullptr;
+    /** Live-preview camera behavior (Global / Fit latest / Follow). */
+    QComboBox* m_liveViewCombo = nullptr;
     QComboBox* m_skySourceCombo = nullptr;
     QWidget* m_skysegRow = nullptr;
     QLineEdit* m_skyMaskDir = nullptr;
@@ -123,9 +174,32 @@ private:
     QCheckBox* m_rotate90 = nullptr;
     QCheckBox* m_addDbCheck = nullptr;
     QPushButton* m_runButton = nullptr;
+    QPushButton* m_pauseButton = nullptr;
     QPushButton* m_cancelButton = nullptr;
     QPushButton* m_downloadButton = nullptr;
-    QTextEdit* m_log = nullptr;
+    /** Input-image mirror of the frame just reconstructed. */
+    QLabel* m_previewImageLabel = nullptr;
+    QLabel* m_previewFrameLabel = nullptr;
+    QPushButton* m_playbackResetButton = nullptr;
+    /** Replay transport (Play/Pause/Stop + step + timeline). */
+    QPushButton* m_replayPlayButton = nullptr;
+    QPushButton* m_replayPauseButton = nullptr;
+    QPushButton* m_replayStopButton = nullptr;
+    QPushButton* m_replayPrevButton = nullptr;
+    QPushButton* m_replayNextButton = nullptr;
+    QSlider* m_replaySlider = nullptr;
+    QLabel* m_replayFrameLabel = nullptr;
+    /** Official-viewer display sliders over the LAST result (disabled
+     *  until a result is materialized). */
+    QGroupBox* m_resultDisplayBox = nullptr;
+    QSlider* m_resultThresholdSlider = nullptr;
+    QLabel* m_resultThresholdLabel = nullptr;
+    QSlider* m_resultPointSizeSlider = nullptr;
+    QSlider* m_resultCamSizeSlider = nullptr;
+    QCheckBox* m_resultShowCamsCheck = nullptr;
+    QSlider* m_resultCamStrideSlider = nullptr;
+    QPushButton* m_resultFirstCamButton = nullptr;
+    QPushButton* m_resultFitAllButton = nullptr;
     QProgressBar* m_progress = nullptr;
     QLabel* m_downloadLabel = nullptr;
 

@@ -10,7 +10,6 @@
 // selection heuristics and the initial-pair orchestration live in a stateless
 // algorithm class whose methods receive the mapper state explicitly.
 
-#include "util/hash_containers.h"
 #include <optional>
 #include <vector>
 
@@ -20,6 +19,7 @@
 #include "scene/reconstruction.h"
 #include "sfm/incremental_mapper.h"
 #include "sfm/observation_manager.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {

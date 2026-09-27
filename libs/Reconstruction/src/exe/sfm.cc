@@ -38,7 +38,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include "scene/reconstruction.h"\n#include "scene/projection.h"
+#include "scene/reconstruction.h"
+#include "scene/projection.h"
 #include "controllers/automatic_reconstruction.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
@@ -379,6 +380,78 @@ void UpdateDatabasePosePriorsCovariance(
 
 }  // namespace
 
+// Upstream parity (d3ccaf35 exe/sfm.cc RunIncrementalMapperImpl), driving
+// the fork's IncrementalMapperController with the same contracts.
+bool RunIncrementalMapperImpl(
+    const std::filesystem::path& database_path,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
+    const std::shared_ptr<IncrementalMapperOptions>& mapper_options,
+    std::shared_ptr<ReconstructionManager>& reconstruction_manager,
+    std::function<void()> initial_image_pair_callback,
+    std::function<void()> next_image_callback,
+    std::function<bool()> check_if_stopped) {
+  const bool exists_input_reconstruction =
+      reconstruction_manager->Size() > 0;
+
+  IncrementalMapperController mapper(mapper_options.get(), image_path,
+                                     database_path,
+                                     reconstruction_manager.get());
+  mapper.SetCheckIfStoppedFunc(std::move(check_if_stopped));
+
+  // In case a new reconstruction is started, write results of individual
+  // sub-models as they finish instead of writing all results afterwards.
+  size_t prev_num_reconstructions = 0;
+  const auto write_new_reconstructions = [&]() {
+    while (prev_num_reconstructions < reconstruction_manager->Size()) {
+      const auto reconstruction_path =
+          output_path / std::to_string(prev_num_reconstructions);
+      CreateDirIfNotExists(reconstruction_path);
+      reconstruction_manager->Get(prev_num_reconstructions)
+          .Write(reconstruction_path);
+      ++prev_num_reconstructions;
+    }
+  };
+  if (!exists_input_reconstruction) {
+    mapper.AddCallback(IncrementalMapperController::LAST_IMAGE_REG_CALLBACK,
+                       write_new_reconstructions);
+  }
+
+  if (initial_image_pair_callback) {
+    mapper.AddCallback(
+        IncrementalMapperController::INITIAL_IMAGE_PAIR_REG_CALLBACK,
+        std::move(initial_image_pair_callback));
+  }
+
+  if (next_image_callback) {
+    mapper.AddCallback(IncrementalMapperController::NEXT_IMAGE_REG_CALLBACK,
+                       std::move(next_image_callback));
+  }
+
+  mapper.Start();
+  mapper.Wait();
+
+  if (!exists_input_reconstruction) {
+    // The final callback is intentionally not invoked for an interrupted
+    // sub-model, so flush any reconstruction retained by the interruption
+    // path before returning.
+    write_new_reconstructions();
+  }
+
+  if (reconstruction_manager->Size() == 0) {
+    LOG(ERROR) << "Failed to create any sparse model";
+    return false;
+  }
+
+  // In case the reconstruction is continued from an existing reconstruction,
+  // do not create sub-folders but directly write the results.
+  if (exists_input_reconstruction) {
+    reconstruction_manager->Get(0).Write(output_path);
+  }
+
+  return true;
+}
+
 int RunMapper(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
@@ -404,53 +477,19 @@ int RunMapper(int argc, char** argv) {
         std::unordered_set<std::string>(image_names.begin(), image_names.end());
   }
 
-  ReconstructionManager reconstruction_manager;
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
   if (input_path != "") {
     if (!ExistsDir(input_path)) {
       std::cerr << "ERROR: `input_path` is not a directory." << std::endl;
       return EXIT_FAILURE;
     }
-    reconstruction_manager.Read(input_path);
+    reconstruction_manager->Read(input_path);
   }
 
-  IncrementalMapperController mapper(options.mapper.get(), *options.image_path,
-                                     *options.database_path,
-                                     &reconstruction_manager);
-
-  // In case a new reconstruction is started, write results of individual sub-
-  // models to as their reconstruction finishes instead of writing all results
-  // after all reconstructions finished.
-  size_t prev_num_reconstructions = 0;
-  if (input_path == "") {
-    mapper.AddCallback(
-        IncrementalMapperController::LAST_IMAGE_REG_CALLBACK, [&]() {
-          // If the number of reconstructions has not changed, the last model
-          // was discarded for some reason.
-          if (reconstruction_manager.Size() > prev_num_reconstructions) {
-            const std::string reconstruction_path = JoinPaths(
-                output_path, std::to_string(prev_num_reconstructions));
-            const auto& reconstruction =
-                reconstruction_manager.Get(prev_num_reconstructions);
-            CreateDirIfNotExists(reconstruction_path);
-            reconstruction.Write(reconstruction_path);
-            options.Write(JoinPaths(reconstruction_path, "project.ini"));
-            prev_num_reconstructions = reconstruction_manager.Size();
-          }
-        });
-  }
-
-  mapper.Start();
-  mapper.Wait();
-
-  if (reconstruction_manager.Size() == 0) {
-    std::cerr << "ERROR: failed to create sparse model" << std::endl;
+  if (!RunIncrementalMapperImpl(*options.database_path, *options.image_path,
+                                output_path, options.mapper,
+                                reconstruction_manager)) {
     return EXIT_FAILURE;
-  }
-
-  // In case the reconstruction is continued from an existing reconstruction, do
-  // not create sub-folders but directly write the results.
-  if (input_path != "" && reconstruction_manager.Size() > 0) {
-    reconstruction_manager.Get(0).Write(output_path);
   }
 
   return EXIT_SUCCESS;
@@ -538,6 +577,22 @@ int RunPosePriorMapper(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
+// Upstream parity (d3ccaf35 exe/sfm.cc RunHierarchicalMapperImpl), driving
+// the fork's HierarchicalMapperController.
+bool RunHierarchicalMapperImpl(
+    const HierarchicalMapperController::Options& controller_options,
+    const SceneClustering::Options& clustering_options,
+    const IncrementalMapperOptions& mapper_options,
+    const std::filesystem::path& output_path,
+    ReconstructionManager* reconstruction_manager) {
+  HierarchicalMapperController hierarchical_mapper(
+      controller_options, clustering_options, mapper_options,
+      reconstruction_manager);
+  hierarchical_mapper.Start();
+  hierarchical_mapper.Wait();
+  return reconstruction_manager->Size() > 0;
+}
+
 int RunHierarchicalMapper(int argc, char** argv) {
   HierarchicalMapperController::Options hierarchical_options;
   SceneClustering::Options clustering_options;
@@ -562,13 +617,9 @@ int RunHierarchicalMapper(int argc, char** argv) {
 
   ReconstructionManager reconstruction_manager;
 
-  HierarchicalMapperController hierarchical_mapper(
-      hierarchical_options, clustering_options, *options.mapper,
-      &reconstruction_manager);
-  hierarchical_mapper.Start();
-  hierarchical_mapper.Wait();
-
-  if (reconstruction_manager.Size() == 0) {
+  if (!RunHierarchicalMapperImpl(hierarchical_options, clustering_options,
+                                 *options.mapper, output_path,
+                                 &reconstruction_manager)) {
     std::cerr << "ERROR: failed to create sparse model" << std::endl;
     return EXIT_FAILURE;
   }
@@ -615,12 +666,134 @@ int RunPointFiltering(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
+// Upstream parity (d3ccaf35 exe/sfm.cc RunPointTriangulatorImpl): the
+// fork drives IncrementalMapper directly over the loaded model; the stop
+// probe switches the write target to "<output>.partial" instead of
+// overwriting the caller's reconstruction output.
+void RunPointTriangulatorImpl(
+    const std::shared_ptr<Reconstruction>& reconstruction,
+    const std::filesystem::path& database_path,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
+    const IncrementalMapperOptions& options,
+    const bool clear_points,
+    const bool refine_intrinsics,
+    std::function<bool()> check_if_stopped) {
+  THROW_CHECK_GE(reconstruction->NumRegImages(), 2)
+      << "Need at least two images for triangulation";
+
+  if (clear_points) {
+    reconstruction->DeleteAllPoints2DAndPoints3D();
+    reconstruction->TranscribeImageIdsToDatabase(
+        *Database::Open(database_path));
+  }
+
+  // Upstream parity: triangulation operates on every registered image, not
+  // only the configured image-list subset.
+  IncrementalMapperOptions mapper_options = options;
+  mapper_options.image_names.clear();
+
+  PrintHeading1("Loading database");
+
+  DatabaseCache database_cache;
+  {
+    auto database = Database::Open(database_path);
+
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
+        static_cast<size_t>(mapper_options.min_num_matches);
+    cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
+    database_cache.Load(*database, cache_options);
+  }
+
+  IncrementalMapper mapper(&database_cache);
+  mapper.BeginReconstruction(reconstruction.get());
+
+  bool stopped = false;
+
+  // Triangulation
+  const auto tri_options = mapper_options.Triangulation();
+  const auto& reg_image_ids = reconstruction->RegImageIds();
+
+  for (size_t i = 0; i < reg_image_ids.size(); ++i) {
+    if (check_if_stopped && check_if_stopped()) {
+      stopped = true;
+      break;
+    }
+    const image_t image_id = reg_image_ids[i];
+    const auto& image = reconstruction->Image(image_id);
+    mapper.TriangulateImage(tri_options, image_id);
+  }
+
+  // Retriangulation and bundle adjustment
+  if (!stopped) {
+    CompleteAndMergeTracks(mapper_options, &mapper);
+
+    auto ba_options = mapper_options.GlobalBundleAdjustment();
+    ba_options.refine_focal_length = refine_intrinsics;
+    ba_options.refine_principal_point = false;
+    ba_options.refine_extra_params = refine_intrinsics;
+    ba_options.refine_extrinsics = false;
+
+    BundleAdjustmentConfig ba_config;
+    for (const image_t image_id : reconstruction->RegImageIds()) {
+      ba_config.AddImage(image_id);
+    }
+
+    for (int i = 0; i < mapper_options.ba_global_max_refinements; ++i) {
+      if (check_if_stopped && check_if_stopped()) {
+        stopped = true;
+        break;
+      }
+      reconstruction->FilterObservationsWithNegativeDepth();
+
+      const size_t num_observations = reconstruction->ComputeNumObservations();
+
+      auto bundle_adjuster =
+          CreateDefaultBundleAdjuster(ba_options, ba_config);
+      CHECK(bundle_adjuster->Solve(reconstruction.get()));
+
+      size_t num_changed_observations = 0;
+      num_changed_observations +=
+          CompleteAndMergeTracks(mapper_options, &mapper);
+      num_changed_observations += FilterPoints(mapper_options, &mapper);
+      const double changed =
+          static_cast<double>(num_changed_observations) / num_observations;
+      if (changed < mapper_options.ba_global_max_refinement_change) {
+        break;
+      }
+    }
+  }
+
+  if (mapper_options.extract_colors && !stopped) {
+    reconstruction->ExtractColorsForAllImages(image_path);
+  }
+
+  const bool kDiscardReconstruction = false;
+  mapper.EndReconstruction(kDiscardReconstruction);
+
+  std::filesystem::path write_path = output_path;
+  if (stopped) {
+    std::filesystem::path normalized_output_path =
+        output_path.lexically_normal();
+    if (normalized_output_path.filename().empty()) {
+      normalized_output_path = normalized_output_path.parent_path();
+    }
+    write_path = normalized_output_path.parent_path() /
+                 (normalized_output_path.filename().string() + ".partial");
+    CreateDirIfNotExists(write_path);
+    LOG(WARNING) << "Writing partial triangulation output to " << write_path;
+  }
+  reconstruction->Write(write_path);
+}
+
 int RunPointTriangulator(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
   // Upstream parity (d3ccaf35 exe/sfm.cc): point triangulation clears the
   // existing points by default and recomputes them from the database.
   bool clear_points = true;
+  bool refine_intrinsics = false;
 
   OptionManager options;
   options.AddDatabaseOptions();
@@ -630,6 +803,8 @@ int RunPointTriangulator(int argc, char** argv) {
   options.AddDefaultOption(
       "clear_points", &clear_points,
       "Whether to clear all existing points and observations");
+  options.AddDefaultOption("refine_intrinsics", &refine_intrinsics,
+                           "Whether to refine the intrinsics of the cameras");
   options.AddMapperOptions();
   options.Parse(argc, argv);
 
@@ -643,132 +818,19 @@ int RunPointTriangulator(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  const auto& mapper_options = *options.mapper;
+  auto reconstruction = std::make_shared<Reconstruction>();
+  reconstruction->Read(input_path);
 
-  PrintHeading1("Loading model");
-
-  Reconstruction reconstruction;
-  reconstruction.Read(input_path);
-
-  PrintHeading1("Loading database");
-
-  DatabaseCache database_cache;
-
-  {
-    Timer timer;
-    timer.Start();
-
-    auto database = Database::Open(*options.database_path);
-
-    DatabaseCache::Options cache_options;
-    cache_options.min_num_matches =
-        static_cast<size_t>(mapper_options.min_num_matches);
-    cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
-    cache_options.image_names = {mapper_options.image_names.begin(),
-                                 mapper_options.image_names.end()};
-    database_cache.Load(*database, cache_options);
-
-    if (clear_points) {
-      reconstruction.DeleteAllPoints2DAndPoints3D();
-      reconstruction.TranscribeImageIdsToDatabase(*database);
-    }
-
-    std::cout << std::endl;
-    timer.PrintMinutes();
-  }
-
-  std::cout << std::endl;
-
-  CHECK_GE(reconstruction.NumRegImages(), 2)
-      << "Need at least two images for triangulation";
-
-  IncrementalMapper mapper(&database_cache);
-  mapper.BeginReconstruction(&reconstruction);
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Triangulation
-  //////////////////////////////////////////////////////////////////////////////
-
-  const auto tri_options = mapper_options.Triangulation();
-
-  const auto& reg_image_ids = reconstruction.RegImageIds();
-
-  for (size_t i = 0; i < reg_image_ids.size(); ++i) {
-    const image_t image_id = reg_image_ids[i];
-
-    const auto& image = reconstruction.Image(image_id);
-
-    PrintHeading1(StringPrintf("Triangulating image #%d (%d)", image_id, i));
-
-
-    const size_t num_existing_points3D = image.NumPoints3D();
-
-    std::cout << "  => Image sees " << num_existing_points3D << " / "
-              << image.NumObservations() << " points" << std::endl;
-
-    mapper.TriangulateImage(tri_options, image_id);
-
-    std::cout << "  => Triangulated "
-              << (image.NumPoints3D() - num_existing_points3D) << " points"
-              << std::endl;
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Retriangulation
-  //////////////////////////////////////////////////////////////////////////////
-
-  PrintHeading1("Retriangulation");
-
-  CompleteAndMergeTracks(mapper_options, &mapper);
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Bundle adjustment
-  //////////////////////////////////////////////////////////////////////////////
-
-  auto ba_options = mapper_options.GlobalBundleAdjustment();
-  ba_options.refine_focal_length = false;
-  ba_options.refine_principal_point = false;
-  ba_options.refine_extra_params = false;
-  ba_options.refine_extrinsics = false;
-
-  // Configure bundle adjustment.
-  BundleAdjustmentConfig ba_config;
-  for (const image_t image_id : reconstruction.RegImageIds()) {
-    ba_config.AddImage(image_id);
-  }
-
-  for (int i = 0; i < mapper_options.ba_global_max_refinements; ++i) {
-    // Avoid degeneracies in bundle adjustment.
-    reconstruction.FilterObservationsWithNegativeDepth();
-
-    const size_t num_observations = reconstruction.ComputeNumObservations();
-
-    PrintHeading1("Bundle adjustment");
-    auto bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
-    CHECK(bundle_adjuster->Solve(&reconstruction));
-
-    size_t num_changed_observations = 0;
-    num_changed_observations += CompleteAndMergeTracks(mapper_options, &mapper);
-    num_changed_observations += FilterPoints(mapper_options, &mapper);
-    const double changed =
-        static_cast<double>(num_changed_observations) / num_observations;
-    std::cout << StringPrintf("  => Changed observations: %.6f", changed)
-              << std::endl;
-    if (changed < mapper_options.ba_global_max_refinement_change) {
-      break;
-    }
-  }
-
-  PrintHeading1("Extracting colors");
-  reconstruction.ExtractColorsForAllImages(*options.image_path);
-
-  const bool kDiscardReconstruction = false;
-  mapper.EndReconstruction(kDiscardReconstruction);
-
-  reconstruction.Write(output_path);
-
+  RunPointTriangulatorImpl(reconstruction,
+                           *options.database_path,
+                           *options.image_path,
+                           output_path,
+                           *options.mapper,
+                           clear_points,
+                           refine_intrinsics);
   return EXIT_SUCCESS;
 }
+
 
 namespace {
 
@@ -853,16 +915,13 @@ namespace {
 //
 }  // namespace
 
-namespace {
-
-// Upstream parity (dbb41680 exe/sfm.cc RunGlobalMapperImpl). The fork's
+// Upstream parity (d3ccaf35 exe/sfm.cc RunGlobalMapperImpl). The fork's
 // Database is constructed directly (no Database::Open factory).
 bool RunGlobalMapperImpl(
     const std::filesystem::path& database_path,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
     const std::shared_ptr<GlobalPipelineOptions>& mapper_options,
-    const OptionManager& options,
     std::shared_ptr<ReconstructionManager>& reconstruction_manager) {
   GlobalPipelineOptions pipeline_options = *mapper_options;
   pipeline_options.image_path = image_path;
@@ -877,13 +936,9 @@ bool RunGlobalMapperImpl(
     return false;
   }
 
-  // Fork parity: the fork's manager Write also persists options; the fork's
-  // OptionManager::Parse returns void (errors abort via CHECK).
-  reconstruction_manager->Write(output_path, &options);
+  reconstruction_manager->Write(output_path);
   return true;
 }
-
-}  // namespace
 
 int RunGlobalMapper(int argc, char** argv) {
   std::filesystem::path output_path;
@@ -905,7 +960,6 @@ int RunGlobalMapper(int argc, char** argv) {
                            *options.image_path,
                            output_path,
                            options.global_mapper,
-                           options,
                            reconstruction_manager)) {
     return EXIT_FAILURE;
   }

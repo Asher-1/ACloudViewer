@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include "estimators/bundle_adjustment.h"
 #include "estimators/generalized_pose.h"
 #include "geometry/pose.h"
@@ -16,6 +15,7 @@
 #include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
 #include "util/alignment.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 
@@ -306,6 +306,10 @@ public:
 
     // Number of registered frames per rig (upstream parity, d3ccaf35).
     const NodeHashMap<rig_t, size_t>& NumRegFramesPerRig() const;
+
+    // Upstream parity (d3ccaf35 sfm/incremental_mapper.h): clear the
+    // initialization statistics (initial pairs and registration trials).
+    void ResetInitializationStats();
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
     const NodeHashSet<point3D_t>& GetModifiedPoints3D();

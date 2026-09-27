@@ -78,6 +78,11 @@ public:
     size_t NumImages() const;
     size_t NumPoints() const;
     size_t NumConstantCameras() const;
+
+    // Upstream parity (d3ccaf35 bundle_adjustment.h).
+    size_t NumConstantSensorFromRigPoses() const {
+        return constant_sensor_from_rig_poses_.size();
+    }
     size_t NumConstantPoses() const;
     size_t NumConstantTvecs() const;
     size_t NumVariablePoints() const;

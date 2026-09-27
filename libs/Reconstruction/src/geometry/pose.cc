@@ -402,4 +402,14 @@ Eigen::Matrix3d GravityAlignedRotation(const Eigen::Vector3d& gravity) {
   return R;
 }
 
+Rigid3d InterpolateCameraPoses(const Rigid3d& cam1_from_world,
+                               const Rigid3d& cam2_from_world,
+                               double t) {
+  const Eigen::Vector3d translation12 =
+          cam2_from_world.translation() - cam1_from_world.translation();
+  return Rigid3d(
+          cam1_from_world.rotation().slerp(t, cam2_from_world.rotation()),
+          cam1_from_world.translation() + translation12 * t);
+}
+
 }  // namespace colmap

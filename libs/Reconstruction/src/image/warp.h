@@ -14,10 +14,17 @@
 namespace colmap {
 
 struct WarpImageOptions {
+    // Upstream parity (d3ccaf35 image/warp.h): the source-image sampling
+    // interpolation method.
+    enum class Interpolation { kNearest, kBilinear };
+
     // Warp directly at target resolution when this ratio is met. Smaller
     // reductions use source-resolution warp followed by resize to avoid
     // aliasing.
     double direct_warp_min_scale = 0.5;
+
+    // Interpolation method for sampling the source image.
+    Interpolation interpolation = Interpolation::kBilinear;
 };
 
 void WarpImageBetweenCameras(const WarpImageOptions& options,

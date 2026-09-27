@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "util/hash_containers.h"
 #include <QtCore>
 #include <QtGui>
 #include <QtWidgets>
 #include <unordered_map>
 
 #include "scene/reconstruction.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 

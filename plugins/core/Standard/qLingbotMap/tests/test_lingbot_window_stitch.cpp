@@ -60,8 +60,10 @@ void expectArraysNear(const float* actual,
  *  c2w must equal the identically-warped pose_enc's [R|t]
  *  element-for-element, and the official warp goldens (sidecar
  *  semantics) pin the exact upstream warp too once inverted. */
-static void expectC2wMatchesPoseEnc(const float* c2w, const float* pe,
-                                    int frames, const char* label) {
+static void expectC2wMatchesPoseEnc(const float* c2w,
+                                    const float* pe,
+                                    int frames,
+                                    const char* label) {
     for (int f = 0; f < frames; ++f) {
         const float* e = pe + static_cast<size_t>(f) * kPoseEncSize;
         const float* c = c2w + static_cast<size_t>(f) * kC2WSize;
@@ -78,8 +80,7 @@ static void expectC2wMatchesPoseEnc(const float* c2w, const float* pe,
  *  arrays carry the sidecar w2c semantics, the stitcher works in true
  *  c2w terms — mirror the worker boundary decode exactly. */
 static void invertRigidInPlace(float* m) {
-    const float R[9] = {m[0], m[1], m[2], m[4], m[5],
-                        m[6], m[8], m[9], m[10]};
+    const float R[9] = {m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]};
     const float t[3] = {m[3], m[7], m[11]};
     m[0] = R[0];
     m[1] = R[3];
@@ -118,8 +119,7 @@ WindowData windowFromGolden(int start,
     // true camera-to-world (decodePoseC2w), so mirror that inversion here
     // before the stitcher consumes the window.
     for (int f = 0; f < frames; ++f) {
-        invertRigidInPlace(w.c2w.data() +
-                           static_cast<size_t>(f) * kC2WSize);
+        invertRigidInPlace(w.c2w.data() + static_cast<size_t>(f) * kC2WSize);
     }
     w.intrinsics.assign(intr,
                         intr + static_cast<size_t>(frames) * kIntrinsicsSize);
@@ -169,9 +169,8 @@ int main() {
         {
             // Golden warped c2w is sidecar (w2c) semantics: invert to c2w
             // per frame before comparing with the stitcher's output.
-            std::vector<float> expect(
-                    kTwoWinWarped1C2w,
-                    kTwoWinWarped1C2w + 12 * kC2WSize);
+            std::vector<float> expect(kTwoWinWarped1C2w,
+                                      kTwoWinWarped1C2w + 12 * kC2WSize);
             for (int f = 0; f < 12; ++f)
                 invertRigidInPlace(expect.data() +
                                    static_cast<size_t>(f) * kC2WSize);
@@ -211,9 +210,8 @@ int main() {
                     static_cast<size_t>(kTwoWinMergedFrames) * kC2WSize,
                     "TwoWin merged c2w golden");
         }
-        expectC2wMatchesPoseEnc(
-                merged.c2w.data(), merged.poseEnc.data(), kTwoWinMergedFrames,
-                "TwoWin merged c2w");
+        expectC2wMatchesPoseEnc(merged.c2w.data(), merged.poseEnc.data(),
+                                kTwoWinMergedFrames, "TwoWin merged c2w");
         expectArraysNear(
                 merged.intrinsics.data(), kTwoWinMergedIntr,
                 static_cast<size_t>(kTwoWinMergedFrames) * kIntrinsicsSize,
@@ -239,9 +237,8 @@ int main() {
         expectArraysNear(w1.poseEnc.data(), kThreeWinWarped1PoseEnc,
                          16 * kPoseEncSize, "ThreeWin warped1 pose_enc");
         {
-            std::vector<float> expect(
-                    kThreeWinWarped1C2w,
-                    kThreeWinWarped1C2w + 16 * kC2WSize);
+            std::vector<float> expect(kThreeWinWarped1C2w,
+                                      kThreeWinWarped1C2w + 16 * kC2WSize);
             for (int f = 0; f < 16; ++f)
                 invertRigidInPlace(expect.data() +
                                    static_cast<size_t>(f) * kC2WSize);
@@ -258,9 +255,8 @@ int main() {
         expectArraysNear(w2.poseEnc.data(), kThreeWinWarped2PoseEnc,
                          14 * kPoseEncSize, "ThreeWin warped2 pose_enc");
         {
-            std::vector<float> expect(
-                    kThreeWinWarped2C2w,
-                    kThreeWinWarped2C2w + 14 * kC2WSize);
+            std::vector<float> expect(kThreeWinWarped2C2w,
+                                      kThreeWinWarped2C2w + 14 * kC2WSize);
             for (int f = 0; f < 14; ++f)
                 invertRigidInPlace(expect.data() +
                                    static_cast<size_t>(f) * kC2WSize);
@@ -299,9 +295,8 @@ int main() {
                     static_cast<size_t>(kThreeWinMergedFrames) * kC2WSize,
                     "ThreeWin merged c2w golden");
         }
-        expectC2wMatchesPoseEnc(
-                merged.c2w.data(), merged.poseEnc.data(), kThreeWinMergedFrames,
-                "ThreeWin merged c2w");
+        expectC2wMatchesPoseEnc(merged.c2w.data(), merged.poseEnc.data(),
+                                kThreeWinMergedFrames, "ThreeWin merged c2w");
     }
 
     if (g_failures != 0) {

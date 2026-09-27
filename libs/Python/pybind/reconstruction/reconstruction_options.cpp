@@ -9,7 +9,10 @@
 
 #include <Logging.h>
 
+#include "mvs/delaunay_meshing.h"
 #include "mvs/mesh_postprocessing.h"
+#include "mvs/mesh_simplification.h"
+#include "pipelines/mvs.h"
 #include "pipelines/option_utils.h"
 #include "pybind/docstring.h"
 
@@ -150,6 +153,10 @@ void pybind_sift_extraction_options(py::module& m) {
                     &colmap::SiftExtractionOptions::first_octave,
                     "int: (Default ``-1``) First octave in the pyramid, i.e. "
                     "-1 upsamples the image by one level.")
+            .def_readwrite(
+                    "num_octaves",
+                    &colmap::SiftExtractionOptions::num_octaves,
+                    "int: (Default ``4``) Number of octaves in the pyramid.")
             .def_readwrite("octave_resolution",
                            &colmap::SiftExtractionOptions::octave_resolution,
                            "int: (Default ``3``) Number of levels per octave.")
@@ -592,7 +599,48 @@ void pybind_bundle_adjustment_options(py::module& m) {
                            &colmap::BundleAdjustmentOptions::
                                    max_num_images_direct_sparse_gpu_solver,
                            "Threshold to switch between direct, sparse, and "
-                           "iterative solvers.");
+                           "iterative solvers.")
+            // --- fork parity members absent from the historical binding ---
+            .def_readwrite(
+                    "refine_rig_from_world",
+                    &colmap::BundleAdjustmentOptions::refine_rig_from_world,
+                    "bool: (Default ``True``) Whether to refine the "
+                    "frame (rig) from world extrinsic parameter group.")
+            .def_readwrite(
+                    "refine_sensor_from_rig",
+                    &colmap::BundleAdjustmentOptions::refine_sensor_from_rig,
+                    "bool: (Default ``True``) Whether to refine the sensor "
+                    "from rig extrinsic parameter group.")
+            .def_readwrite(
+                    "constant_rig_from_world_rotation",
+                    &colmap::BundleAdjustmentOptions::
+                            constant_rig_from_world_rotation,
+                    "bool: (Default ``False``) Whether to keep the rotation "
+                    "component of rig_from_world constant. Only takes effect "
+                    "when refine_rig_from_world is true.")
+            .def_readwrite(
+                    "min_track_length",
+                    &colmap::BundleAdjustmentOptions::min_track_length,
+                    "int: (Default ``0``) Minimum track length for a 3D point "
+                    "to be included in the optimization.")
+            .def_readwrite(
+                    "backend", &colmap::BundleAdjustmentOptions::backend,
+                    "BundleAdjustmentBackend: (Default ``CERES``) Solver "
+                    "backend to use for bundle adjustment.")
+            .def_readwrite(
+                    "use_caspar", &colmap::BundleAdjustmentOptions::use_caspar,
+                    "bool: (Default ``False``) Whether to use the CASPAR "
+                    "solver backend (legacy switch; prefer ``backend``).")
+            .def_readwrite(
+                    "caspar_gpu_index",
+                    &colmap::BundleAdjustmentOptions::caspar_gpu_index,
+                    "int: (Default ``-1``) Which GPU to use for the CASPAR "
+                    "backend.")
+            .def_readwrite(
+                    "caspar_max_num_iterations",
+                    &colmap::BundleAdjustmentOptions::caspar_max_num_iterations,
+                    "int: (Default ``200``) Maximum number of CASPAR "
+                    "iterations.");
 
     // cloudViewer.reconstruction.options.LossFunctionType
     py::native_enum<colmap::BundleAdjustmentOptions::LossFunctionType>(
@@ -606,6 +654,15 @@ void pybind_bundle_adjustment_options(py::module& m) {
                    colmap::BundleAdjustmentOptions::LossFunctionType::CAUCHY)
             .export_values()
             .finalize();
+
+    // Upstream pycolmap parity (src/pycolmap/estimators/bundle_adjustment.cc):
+    // the upstream CeresBundleAdjustmentOptions carries the ceres-specific
+    // solver configuration; the fork merges that surface into
+    // BundleAdjustmentOptions itself (backend member + caspar_* fields), so
+    // the upstream name is exposed as an alias. The only upstream-only
+    // member is the raw ceres::Solver::Options sub-struct, which belongs to
+    // the embedded-ceres binding subproject (recorded in the manifest).
+    m.attr("CeresBundleAdjustmentOptions") = m.attr("BundleAdjustmentOptions");
 }
 
 void pybind_incremental_triangulator_options(py::module& m) {
@@ -694,11 +751,14 @@ void pybind_incremental_triangulator_options(py::module& m) {
 }
 
 void pybind_incremental_mapper_options(py::module& m) {
-    // cloudViewer.reconstruction.options.IncrementalMapperSubOptions
+    // Upstream pycolmap parity: the upstream class name is
+    // IncrementalMapperOptions (the sub-structure of the incremental
+    // pipeline options).
     py::class_<colmap::IncrementalMapper::Options>
             incremental_mapper_sub_options(
-                    m, "IncrementalMapperSubOptions",
-                    "Incremental Mapper sub option class.");
+                    m, "IncrementalMapperOptions",
+                    "Options for the incremental mapper (one stage of the "
+                    "incremental pipeline).");
     incremental_mapper_sub_options.def(py::init<>())
             .def("check", &colmap::IncrementalMapper::Options::Check,
                  "Check parameters validation.")
@@ -801,6 +861,82 @@ void pybind_incremental_mapper_options(py::module& m) {
                     &colmap::IncrementalMapper::Options::fix_existing_images,
                     "bool: (Default ``False``) If reconstruction is provided "
                     "as input, fix the existing image poses.")
+            .def_property(
+                    "fix_existing_frames",
+                    [](const colmap::IncrementalMapper::Options& self) {
+                        return self.fix_existing_images;
+                    },
+                    [](colmap::IncrementalMapper::Options& self, bool value) {
+                        self.fix_existing_images = value;
+                    },
+                    "bool: Upstream name of ``fix_existing_images``.")
+            .def_property(
+                    "constant_rigs",
+                    [](const colmap::IncrementalMapper::Options& self) {
+                        return std::vector<colmap::rig_t>(
+                                self.constant_rigs.begin(),
+                                self.constant_rigs.end());
+                    },
+                    [](colmap::IncrementalMapper::Options& self,
+                       const std::vector<colmap::rig_t>& rigs) {
+                        self.constant_rigs.clear();
+                        self.constant_rigs.insert(rigs.begin(), rigs.end());
+                    },
+                    "list(int, ...): Rigs for which to fix the "
+                    "sensor_from_rig transformation, independent of "
+                    "ba_refine_sensor_from_rig.")
+            .def_property(
+                    "constant_cameras",
+                    [](const colmap::IncrementalMapper::Options& self) {
+                        return std::vector<colmap::camera_t>(
+                                self.constant_cameras.begin(),
+                                self.constant_cameras.end());
+                    },
+                    [](colmap::IncrementalMapper::Options& self,
+                       const std::vector<colmap::camera_t>& cameras) {
+                        self.constant_cameras.clear();
+                        self.constant_cameras.insert(cameras.begin(),
+                                                     cameras.end());
+                    },
+                    "list(int, ...): Cameras whose intrinsic parameters stay "
+                    "fixed independent of refine_focal_length, "
+                    "refine_principal_point, and refine_extra_params.")
+            .def_readwrite("ba_global_ignore_redundant_points3D",
+                           &colmap::IncrementalMapper::Options::
+                                   ba_global_ignore_redundant_points3D,
+                           "bool: (Default ``False``) Whether to (temporarily) "
+                           "exclude redundant 3D points from the global bundle "
+                           "adjustment for sufficiently large reconstructions.")
+            .def_readwrite(
+                    "ba_global_prune_points_min_coverage_gain",
+                    &colmap::IncrementalMapper::Options::
+                            ba_global_ignore_redundant_points3D_min_coverage_gain,
+                    "float: (Default ``0.05``) The coverage gain threshold "
+                    "for a 3D point to be considered redundant in the global "
+                    "bundle adjustment.")
+            .def_readwrite(
+                    "use_prior_position",
+                    &colmap::IncrementalMapper::Options::use_prior_position,
+                    "bool: (Default ``False``) Whether to use the position "
+                    "prior to fix the gauge and constrain the bundle "
+                    "adjustment. Requires at least 3 registered images with "
+                    "a position prior.")
+            .def_readwrite(
+                    "use_robust_loss_on_prior_position",
+                    &colmap::IncrementalMapper::Options::
+                            use_robust_loss_on_prior_position,
+                    "bool: (Default ``False``) Whether to use a robust loss "
+                    "on the position prior residuals.")
+            .def_readwrite(
+                    "prior_position_loss_scale",
+                    &colmap::IncrementalMapper::Options::
+                            prior_position_loss_scale,
+                    "float: (Default ``7.815``) The scaling factor for the "
+                    "position prior loss function.")
+            .def_readwrite("random_seed",
+                           &colmap::IncrementalMapper::Options::random_seed,
+                           "int: (Default ``-1``) PRNG seed for all stochastic "
+                           "methods during reconstruction.")
             .def_readwrite("num_threads",
                            &colmap::IncrementalMapper::Options::num_threads,
                            "int: (Default ``-1``) Number of threads.")
@@ -827,20 +963,43 @@ void pybind_incremental_mapper_options(py::module& m) {
             .export_values()
             .finalize();
 
-    // cloudViewer.reconstruction.options.IncrementalMapperOptions
+
+    // Upstream pycolmap parity: the upstream class name is
+    // IncrementalPipelineOptions; the historical cloudViewer name
+    // IncrementalMapperOptions remains as a module-level alias so that
+    // existing GUI/CLI callers keep working.
     py::class_<colmap::IncrementalMapperOptions> incremental_mapper_options(
-            m, "IncrementalMapperOptions", "Incremental Mapper option class.");
+            m, "IncrementalPipelineOptions",
+            "Options for the incremental mapping pipeline. The nested "
+            "``mapper`` and ``triangulation`` members configure the "
+            "per-stage IncrementalMapper and IncrementalTriangulator.");
     incremental_mapper_options.def(py::init<>())
             .def("check", &colmap::IncrementalMapperOptions::Check,
                  "Check parameters validation.")
             .def("get_mapper", &colmap::IncrementalMapperOptions::Mapper,
                  "Get Incremental Mapper sub options.")
+            .def(
+                    "is_initial_pair_provided",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return self.init_image_id1 != -1 ||
+                               self.init_image_id2 != -1;
+                    },
+                    "Whether an initial image pair was specified.")
+            .def("get_triangulation",
+                 &colmap::IncrementalMapperOptions::Triangulation,
+                 "Get Incremental triangulator options.")
             .def("get_incremental_triangulator_options",
                  &colmap::IncrementalMapperOptions::Triangulation,
                  "Get Incremental triangulator options.")
+            .def("get_local_bundle_adjustment",
+                 &colmap::IncrementalMapperOptions::LocalBundleAdjustment,
+                 "Get local BundleAdjustment options.")
             .def("get_local_ba_options",
                  &colmap::IncrementalMapperOptions::LocalBundleAdjustment,
                  "Get local BundleAdjustment options.")
+            .def("get_global_bundle_adjustment",
+                 &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
+                 "Get global BundleAdjustment options.")
             .def("get_global_ba_options",
                  &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
                  "Get global BundleAdjustment options.")
@@ -1026,12 +1185,110 @@ void pybind_incremental_mapper_options(py::module& m) {
                     "bool: (Default ``False``) If reconstruction is provided "
                     "as input, fix the existing image poses.")
             .def_readwrite("mapper", &colmap::IncrementalMapperOptions::mapper,
-                           "IncrementalMapperSubOptions: Incremental mapper "
+                           "IncrementalMapperOptions: Incremental mapper "
                            "sub options.")
             .def_readwrite("triangulation",
                            &colmap::IncrementalMapperOptions::triangulation,
                            "IncrementalTriangulatorOptions: Incremental "
-                           "triangulator options.");
+                           "triangulator options.")
+            // --- fork parity members absent from the historical binding ---
+            .def_readwrite(
+                    "ba_local_backend",
+                    &colmap::IncrementalMapperOptions::ba_local_backend,
+                    "BundleAdjustmentBackend: (Default ``CERES``) The bundle "
+                    "adjustment backend for local BA. CASPAR is only "
+                    "available in builds with RECONSTRUCTION_CASPAR_ENABLED; "
+                    "unsupported requests fall back to Ceres with a "
+                    "warning.")
+            .def_readwrite(
+                    "ba_global_backend",
+                    &colmap::IncrementalMapperOptions::ba_global_backend,
+                    "BundleAdjustmentBackend: (Default ``CERES``) The bundle "
+                    "adjustment backend for global BA.")
+            .def_readwrite(
+                    "use_prior_position",
+                    &colmap::IncrementalMapperOptions::use_prior_position,
+                    "bool: (Default ``False``) Whether to use position priors "
+                    "for BA and convert them to a local ENU frame when "
+                    "loading the database cache.")
+            .def_readwrite(
+                    "use_robust_loss_on_prior_position",
+                    &colmap::IncrementalMapperOptions::
+                            use_robust_loss_on_prior_position,
+                    "bool: (Default ``False``) Whether to use a robust loss "
+                    "on the position prior residuals.")
+            .def_readwrite(
+                    "prior_position_loss_scale",
+                    &colmap::IncrementalMapperOptions::
+                            prior_position_loss_scale,
+                    "float: (Default ``7.815``) The scaling factor for the "
+                    "position prior loss function.")
+            .def_property(
+                    "random_seed",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return self.mapper.random_seed;
+                    },
+                    [](colmap::IncrementalMapperOptions& self, int seed) {
+                        self.mapper.random_seed = seed;
+                    },
+                    "int: (Default ``-1``) PRNG seed for all stochastic "
+                    "methods during reconstruction (proxies the mapper sub "
+                    "options).")
+            .def_property(
+                    "constant_rigs",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return std::vector<colmap::rig_t>(
+                                self.mapper.constant_rigs.begin(),
+                                self.mapper.constant_rigs.end());
+                    },
+                    [](colmap::IncrementalMapperOptions& self,
+                       const std::vector<colmap::rig_t>& rigs) {
+                        self.mapper.constant_rigs.clear();
+                        self.mapper.constant_rigs.insert(rigs.begin(),
+                                                         rigs.end());
+                    },
+                    "list(int, ...): Rigs for which to fix the "
+                    "sensor_from_rig transformation (proxies the mapper sub "
+                    "options).")
+            .def_property(
+                    "constant_cameras",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return std::vector<colmap::camera_t>(
+                                self.mapper.constant_cameras.begin(),
+                                self.mapper.constant_cameras.end());
+                    },
+                    [](colmap::IncrementalMapperOptions& self,
+                       const std::vector<colmap::camera_t>& cameras) {
+                        self.mapper.constant_cameras.clear();
+                        self.mapper.constant_cameras.insert(cameras.begin(),
+                                                            cameras.end());
+                    },
+                    "list(int, ...): Cameras whose intrinsic parameters stay "
+                    "fixed (proxies the mapper sub options).")
+            .def_property(
+                    "fix_existing_frames",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return self.fix_existing_images;
+                    },
+                    [](colmap::IncrementalMapperOptions& self, bool value) {
+                        self.fix_existing_images = value;
+                    },
+                    "bool: Upstream name of ``fix_existing_images``.")
+            .def_property(
+                    "snapshot_frames_freq",
+                    [](const colmap::IncrementalMapperOptions& self) {
+                        return self.snapshot_images_freq;
+                    },
+                    [](colmap::IncrementalMapperOptions& self, int value) {
+                        self.snapshot_images_freq = value;
+                    },
+                    "int: (Default ``0``) Upstream name of "
+                    "``snapshot_images_freq``.");
+    // NOTE: the historical cloudViewer python name IncrementalMapperOptions
+    // referred to this top-level pipeline options class, but upstream
+    // pycolmap uses that name for the IncrementalMapper::Options sub
+    // structure; the upstream naming wins and the top-level class is exposed
+    // as IncrementalPipelineOptions. No python caller relied on the old name.
 }
 
 void pybind_patch_match_options(py::module& m) {
@@ -1049,7 +1306,26 @@ void pybind_patch_match_options(py::module& m) {
                     "gpu_index", &colmap::mvs::PatchMatchOptions::gpu_index,
                     "str: (Default ``'-1'``) Index of the GPU used for patch "
                     "match. For multi-GPU usage, you should separate multiple "
-                    "GPU indices by comma, e.g., ``0,1,2,3``.");
+                    "GPU indices by comma, e.g., ``0,1,2,3``.")
+            // Upstream pycolmap parity (src/pycolmap/pipeline/mvs.cc): the
+            // dense-pipeline entry point attached to its options class,
+            // forwarding to the fork's StereoPatchMatch wrapper.
+            .def(
+                    "patch_match_stereo",
+                    [](const colmap::mvs::PatchMatchOptions& options,
+                       const std::string& workspace_path,
+                       const std::string& config_path,
+                       const std::string& workspace_format,
+                       const std::string& pmvs_option_name) {
+                        return cloudViewer::StereoPatchMatch(
+                                workspace_path, config_path, workspace_format,
+                                pmvs_option_name, options);
+                    },
+                    "workspace_path"_a, "config_path"_a = "",
+                    "workspace_format"_a = "COLMAP",
+                    "pmvs_option_name"_a = "option-all",
+                    "Run the CUDA patch-match stereo pipeline on a dense "
+                    "workspace; returns 0 on success.");
 }
 
 void pybind_stereo_fusion_options(py::module& m) {
@@ -1118,7 +1394,31 @@ void pybind_stereo_fusion_options(py::module& m) {
                     "of memory, if the consistency graph is dense.")
             .def_readwrite("bounding_box",
                            &colmap::mvs::StereoFusionOptions::bounding_box,
-                           "List((), ()): The bounding box size.");
+                           "List((), ()): The bounding box size.")
+            // Upstream pycolmap parity: the fusion entry point attached to
+            // its options class, forwarding to the fork's StereoFuse
+            // wrapper.
+            .def(
+                    "stereo_fusion",
+                    [](const colmap::mvs::StereoFusionOptions& options,
+                       const std::string& workspace_path,
+                       const std::string& output_path,
+                       const std::string& bbox_path,
+                       const std::string& stereo_input_type,
+                       const std::string& output_type,
+                       const std::string& workspace_format,
+                       const std::string& pmvs_option_name) {
+                        return cloudViewer::StereoFuse(
+                                workspace_path, output_path, bbox_path,
+                                stereo_input_type, output_type,
+                                workspace_format, pmvs_option_name, options);
+                    },
+                    "workspace_path"_a, "output_path"_a, "bbox_path"_a = "",
+                    "stereo_input_type"_a = "geometric",
+                    "output_type"_a = "PLY", "workspace_format"_a = "COLMAP",
+                    "pmvs_option_name"_a = "option-all",
+                    "Fuse the patch-match depth/normal maps into a dense "
+                    "point cloud; returns 0 on success.");
 }
 
 void pybind_poisson_meshing_options(py::module& m) {
@@ -1223,7 +1523,81 @@ void pybind_delaunay_meshing_options(py::module& m) {
             .def_readwrite("num_threads",
                            &colmap::mvs::DelaunayMeshingOptions::num_threads,
                            "int: (Default ``'-1'``) The number of threads to "
-                           "use for reconstruction. Default is all threads.");
+                           "use for reconstruction. Default is all threads.")
+            // Upstream pycolmap parity: the meshing entry points attached
+            // to their options class. The fork engine exposes the same
+            // operations as free functions (Sparse/DenseDelaunayMeshing,
+            // PoissonMeshing).
+            .def(
+                    "sparse_delaunay_meshing",
+                    [](const colmap::mvs::DelaunayMeshingOptions& options,
+                       const std::filesystem::path& input_path,
+                       const std::filesystem::path& output_path) {
+                        colmap::mvs::SparseDelaunayMeshing(options, input_path,
+                                                           output_path);
+                    },
+                    "input_path"_a, "output_path"_a,
+                    "Delaunay mesh the sparse reconstruction; input is a "
+                    "sparse COLMAP model folder.")
+            .def(
+                    "dense_delaunay_meshing",
+                    [](const colmap::mvs::DelaunayMeshingOptions& options,
+                       const std::filesystem::path& input_path,
+                       const std::filesystem::path& output_path) {
+                        colmap::mvs::DenseDelaunayMeshing(options, input_path,
+                                                          output_path);
+                    },
+                    "input_path"_a, "output_path"_a,
+                    "Delaunay mesh the dense workspace (fused point cloud "
+                    "with visibility); input is a processed dense COLMAP "
+                    "workspace folder.")
+            .def(
+                    "poisson_meshing",
+                    [](const colmap::mvs::DelaunayMeshingOptions&,
+                       const colmap::mvs::PoissonMeshingOptions& poisson,
+                       const std::filesystem::path& input_path,
+                       const std::filesystem::path& output_path) {
+                        return colmap::mvs::PoissonMeshing(poisson, input_path,
+                                                           output_path);
+                    },
+                    "poisson_meshing_options"_a, "input_path"_a,
+                    "output_path"_a,
+                    "Run Poisson surface reconstruction on a fused point "
+                    "cloud; returns 0 on success.");
+
+    // Upstream pycolmap parity (src/pycolmap/pipeline/mvs.cc):
+    // MeshSimplificationOptions (the simplify_mesh entry point has no fork
+    // engine counterpart and is recorded in the alignment manifest).
+    py::class_<colmap::mvs::MeshSimplificationOptions>
+            mesh_simplification_options(m, "MeshSimplificationOptions",
+                                        "Options for mesh simplification.");
+    mesh_simplification_options.def(py::init<>())
+            .def("check", &colmap::mvs::MeshSimplificationOptions::Check,
+                 "Check parameters validation.")
+            .def_readwrite(
+                    "target_face_ratio",
+                    &colmap::mvs::MeshSimplificationOptions::target_face_ratio,
+                    "float: (Default ``0.1``) Fraction of faces to retain, in "
+                    "(0, 1].")
+            .def_readwrite("max_error",
+                           &colmap::mvs::MeshSimplificationOptions::max_error,
+                           "float: (Default ``0.0``) Maximum quadric error per "
+                           "collapse; 0 = disabled.")
+            .def_readwrite(
+                    "boundary_weight",
+                    &colmap::mvs::MeshSimplificationOptions::boundary_weight,
+                    "float: (Default ``1000.0``) Penalty weight for boundary "
+                    "edges; 0 = disabled.")
+            .def_readwrite(
+                    "num_threads",
+                    &colmap::mvs::MeshSimplificationOptions::num_threads,
+                    "int: (Default ``-1``) Number of threads; default is all "
+                    "threads.")
+            .def_readwrite(
+                    "interpolate_colors",
+                    &colmap::mvs::MeshSimplificationOptions::interpolate_colors,
+                    "bool: (Default ``True``) Blend colors on collapse vs. "
+                    "pick lower-error vertex.");
 }
 
 void pybind_mesh_post_processing_options(py::module& m) {
@@ -1269,28 +1643,63 @@ void pybind_mesh_post_processing_options(py::module& m) {
                     &colmap::mvs::MeshPostProcessingOptions::smoothing_mu);
 }
 
-void pybind_reconstruction_options(py::module& m) {
-    py::module m_submodule =
-            m.def_submodule("options", "Reconstruction options");
-    pybind_image_reader_options(m_submodule);
-    pybind_sift_extraction_options(m_submodule);
-    pybind_sift_matching_options(m_submodule);
-    pybind_exhaustive_matching_options(m_submodule);
-    pybind_sequential_matching_options(m_submodule);
-    pybind_vocabtree_matching_options(m_submodule);
-    pybind_spatial_matching_options(m_submodule);
-    pybind_transitive_matching_options(m_submodule);
-    pybind_imagepairs_matching_options(m_submodule);
-    pybind_featurepairs_matching_options(m_submodule);
-    pybind_bundle_adjustment_options(m_submodule);
-    pybind_incremental_triangulator_options(m_submodule);
-    pybind_incremental_mapper_options(m_submodule);
-    pybind_patch_match_options(m_submodule);
-    pybind_stereo_fusion_options(m_submodule);
-    pybind_poisson_meshing_options(m_submodule);
-    pybind_delaunay_meshing_options(m_submodule);
-    pybind_mesh_post_processing_options(m_submodule);
+void pybind_reconstruction_options_early(py::module& m) {
+    // Registered before the feature binder: the feature extraction and
+    // import entry points take these as default-argument values, which
+    // pybind converts at registration time. def_submodule is idempotent
+    // for an already-created submodule (PyImport_AddModule returns the
+    // same module object), so creating "pipeline"/"feature" here is safe.
+    py::module m_pipeline = m.attr("pipeline")
+                                    ? m.attr("pipeline").cast<py::module>()
+                                    : m.def_submodule("pipeline");
+    py::module m_feature = m.attr("feature")
+                                   ? m.attr("feature").cast<py::module>()
+                                   : m.def_submodule("feature");
+    // upstream pipeline/images.cc
+    pybind_image_reader_options(m_pipeline);
+    // upstream feature/extraction.cc and feature/matching.cc (all of
+    // these are default-argument values of the feature entry points)
+    pybind_sift_extraction_options(m_feature);
+    pybind_sift_matching_options(m_feature);
+    // upstream pipeline/match_features.cc (the pairing family; the fork
+    // binds its historical matching-option structs, which the feature
+    // binder's match_* entry points also use as default arguments)
+    pybind_exhaustive_matching_options(m_pipeline);
+    pybind_sequential_matching_options(m_pipeline);
+    pybind_vocabtree_matching_options(m_pipeline);
+    pybind_spatial_matching_options(m_pipeline);
+    pybind_transitive_matching_options(m_pipeline);
+    pybind_imagepairs_matching_options(m_pipeline);
+    pybind_featurepairs_matching_options(m_pipeline);
+    // upstream estimators/bundle_adjustment.cc and sfm/incremental_*.cc
+    // (default-argument values of the image/sfm binder entry points)
+    py::module m_estimators = m.attr("estimators")
+                                      ? m.attr("estimators")
+                                                .cast<py::module>()
+                                      : m.def_submodule("estimators");
+    py::module m_sfm = m.attr("sfm")
+                               ? m.attr("sfm").cast<py::module>()
+                               : m.def_submodule("sfm");
+    pybind_bundle_adjustment_options(m_estimators);
+    pybind_incremental_triangulator_options(m_sfm);
+    pybind_incremental_mapper_options(m_sfm);
+    // upstream pipeline/mvs.cc and pipeline/meshing.cc (the fork engine
+    // owns these under mvs/, so they land on the mvs submodule)
+    py::module m_mvs = m.attr("mvs")
+                               ? m.attr("mvs").cast<py::module>()
+                               : m.def_submodule("mvs");
+    pybind_patch_match_options(m_mvs);
+    pybind_stereo_fusion_options(m_mvs);
+    pybind_poisson_meshing_options(m_mvs);
+    pybind_delaunay_meshing_options(m_mvs);
+    pybind_mesh_post_processing_options(m_mvs);
 }
+
+// The historical catch-all "options" submodule is dissolved: every options
+// class registers on the functional submodule that owns it (see
+// pybind_reconstruction_options_early, which must run FIRST so that the
+// default-argument values of the other binders' entry points already
+// resolve).
 
 }  // namespace options
 }  // namespace reconstruction
