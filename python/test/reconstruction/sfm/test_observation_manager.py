@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap sfm/observation_manager_test.py (Open3D
 style)."""
 import pytest

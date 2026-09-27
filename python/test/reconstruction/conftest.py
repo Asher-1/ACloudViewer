@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Shared bootstrap for the pycolmap-parity reconstruction test suite.
 
 Loads the freshly built ``pybind`` extension directly from the build tree so

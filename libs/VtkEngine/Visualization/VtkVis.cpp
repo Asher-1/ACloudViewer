@@ -6088,14 +6088,12 @@ std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
     };
 
     // Center pixel plus a small ring so a face edge still counts.
-    const double offsets[5][2] = {
-            {0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    const double offsets[5][2] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     vtkNew<vtkGenericCell> cell;
     for (const auto& kv : *shapeMap) {
         const std::string& key = kv.first;
-        if (key.size() <= 6 ||
-            key.compare(key.size() - 6, 6, "#plane") != 0) {
+        if (key.size() <= 6 || key.compare(key.size() - 6, 6, "#plane") != 0) {
             continue;
         }
         auto* faceActor = vtkActor::SafeDownCast(kv.second);
@@ -6103,9 +6101,9 @@ std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
         // pickable — GetVisibility reflects the reconciled actor state.
         if (!faceActor || !faceActor->GetVisibility()) continue;
         auto* mapper = faceActor->GetMapper();
-        auto* poly = mapper
-                ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
-                : nullptr;
+        auto* poly =
+                mapper ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
+                       : nullptr;
         if (!poly) continue;
         vtkMatrix4x4* actorMat = faceActor->GetMatrix();
 
@@ -6124,9 +6122,7 @@ std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
                     double wOut[4];
                     actorMat->MultiplyPoint(h, wOut);
                     const double invW =
-                            std::abs(wOut[3]) < 1e-12
-                                    ? 1.0
-                                    : 1.0 / wOut[3];
+                            std::abs(wOut[3]) < 1e-12 ? 1.0 : 1.0 / wOut[3];
                     tri[k][0] = wOut[0] * invW;
                     tri[k][1] = wOut[1] * invW;
                     tri[k][2] = wOut[2] * invW;
@@ -6182,8 +6178,7 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
         const std::string camId = nearestCameraFaceUnderPixel(x, y);
         if (!camId.empty()) {
             if (CVLog::diagnosticsEnabled()) {
-                CVLog::Print("[pick] camera face probe -> '%s'",
-                             camId.c_str());
+                CVLog::Print("[pick] camera face probe -> '%s'", camId.c_str());
             }
             return camId;
         }
@@ -6267,12 +6262,13 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     // Hardware selection came back EMPTY. Two proven causes: translucent
     // actors (the 50%-alpha camera near-plane faces) are skipped by the
     // selection pass, and line-only composite blocks emit no selection
-    // fragments. The software pick (vtkPropPicker) DID hit an actor in
-    // those cases — resolve it through the id maps instead of returning
-    // nothing (the camera-pick regression).
+    // fragments. The software propPicker walks every prop (expensive on
+    // dense scenes) — lazy here: only reached after the face probe, the
+    // hardware pass and the CPU ray-cast all missed.
     {
-        const std::string hintId =
-                hintActor ? getIdByActor(hintActor) : std::string();
+        vtkActor* soft = hintActor;
+        if (!soft) soft = pickActor(x, y);
+        const std::string hintId = soft ? getIdByActor(soft) : std::string();
         if (!hintId.empty()) {
             if (CVLog::diagnosticsEnabled()) {
                 CVLog::Print("[pick] hw-empty -> software hint '%s'",
@@ -6302,10 +6298,13 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
         }
     }
     // Same hw-empty case from the other exit: prefer the software-pick hint
-    // (translucent faces, line-only composite blocks) over a miss.
+    // (translucent faces, line-only composite blocks) over a miss. The
+    // software pick is lazy here (only after face probe / hw / ray-cast
+    // all missed).
     {
-        const std::string hintId =
-                hintActor ? getIdByActor(hintActor) : std::string();
+        vtkActor* soft = hintActor;
+        if (!soft) soft = pickActor(x, y);
+        const std::string hintId = soft ? getIdByActor(soft) : std::string();
         if (!hintId.empty()) {
             if (CVLog::diagnosticsEnabled()) {
                 CVLog::Print("[pick] hw miss -> software hint '%s'",

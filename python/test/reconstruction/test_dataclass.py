@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap dataclass_test.py (skipped with reason).
 
 Fork adjudication (batch 24): the upstream dataclass protocol surface

@@ -2139,15 +2139,12 @@ QString VtkDisplayTools::pick3DItem(int x, int y) {
 
 QString VtkDisplayTools::pickObject(double x, double y) {
     if (m_visualizer3D) {
-        vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
-        if (pickedActor) {
-            // Resolves composite-group hits down to the leaf entity. The
-            // software hit rides along as a HINT: the hardware selection
-            // pass skips translucent actors (camera near-plane faces) and
-            // line-only composite blocks emit no COMPOSITE_INDEX, so the
-            // hint is the only reliable resolution for camera picks.
-            return m_visualizer3D->pickLeafViewId(x, y, pickedActor).c_str();
-        }
+        // Fast-first ordering: the face probe, the hardware selection pass
+        // and the CPU ray-cast inside pickLeafViewId are pixel-cheap; the
+        // software propPicker (which walks EVERY prop) is the LAST resort
+        // there, so dense point-cloud scenes pay it only when everything
+        // else missed. Never pre-run it here.
+        return m_visualizer3D->pickLeafViewId(x, y).c_str();
     }
     return "-1";
 }

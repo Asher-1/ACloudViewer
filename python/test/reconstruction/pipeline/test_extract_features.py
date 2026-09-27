@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap pipeline/extract_features_test.py (Open3D
 style). The upstream pybind surface exposes ``pycolmap.extract_features``
 (plural); the fork's pairing-driven engine surface exposes

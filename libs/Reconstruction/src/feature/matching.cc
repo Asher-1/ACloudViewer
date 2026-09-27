@@ -234,6 +234,64 @@ FeatureMatcherCache::FeatureMatcherCache(const size_t cache_size,
   CHECK_NOTNULL(database_);
 }
 
+FeatureMatcherCache::FeatureMatcherCache(
+        const size_t cache_size, const std::shared_ptr<Database>& database)
+    : cache_size_(cache_size),
+      database_shared_(database),
+      database_(database_shared_.get()) {
+  CHECK_NOTNULL(database_);
+}
+
+
+TwoViewGeometry FeatureMatcherCache::GetTwoViewGeometry(
+        const image_t image_id1, const image_t image_id2) {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  return database_->ReadTwoViewGeometry(image_id1, image_id2);
+}
+
+bool FeatureMatcherCache::ExistsTwoViewGeometry(const image_t image_id1,
+                                                const image_t image_id2) {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  return database_->ExistsTwoViewGeometry(image_id1, image_id2);
+}
+
+void FeatureMatcherCache::UpdateTwoViewGeometry(
+        const image_t image_id1,
+        const image_t image_id2,
+        const TwoViewGeometry& two_view_geometry) {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  database_->UpdateTwoViewGeometry(image_id1, image_id2, two_view_geometry);
+}
+
+size_t FeatureMatcherCache::MaxNumKeypoints() {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  if (!max_num_keypoints_) {
+    max_num_keypoints_ = database_->MaxNumKeypoints();
+  }
+  return *max_num_keypoints_;
+}
+
+ThreadSafeLRUCache<image_t, FeatureDescriptorIndex>&
+FeatureMatcherCache::GetFeatureDescriptorIndexCache() {
+  if (!descriptor_index_cache_) {
+    descriptor_index_cache_ =
+            std::make_unique<ThreadSafeLRUCache<image_t,
+                                                FeatureDescriptorIndex>>(
+                    cache_size_, [this](const image_t image_id) {
+                      // Upstream builds the index lazily from the cached
+                      // descriptors; the fork builds it from the database
+                      // read on first access for that image.
+                      auto index = FeatureDescriptorIndex::Create();
+                      auto descriptors = GetDescriptors(image_id);
+                      if (descriptors != nullptr && descriptors->rows() > 0) {
+                        index->Build(*descriptors);
+                      }
+                      return index;
+                    });
+  }
+  return *descriptor_index_cache_;
+}
+
 void FeatureMatcherCache::MaybeLoadCameras() {
   std::lock_guard<std::mutex> lock(database_mutex_);
   if (cameras_cache_) {

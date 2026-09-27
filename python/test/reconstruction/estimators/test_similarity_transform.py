@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap estimators/similarity_transform_test.py
 (Open3D style). Fork adaptation: vector inputs use the utility.Vector3dVector
 container."""

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap estimators/pose_test.py (Open3D style).
 
 The fork exposes the pose entry points as methods on the options classes

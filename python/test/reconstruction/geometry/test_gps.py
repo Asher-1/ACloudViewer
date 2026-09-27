@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap geometry/gps_test.py (Open3D style).
 
 The fork owns the full GPSTransform conversion surface (ellipsoid/ENU/ECEF)

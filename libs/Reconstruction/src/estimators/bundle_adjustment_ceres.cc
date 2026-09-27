@@ -43,8 +43,9 @@ namespace colmap {
 namespace {
 
 // Wraps the options-level check_if_stopped hook into a Ceres iteration
-// callback: returning USER_ABORT stops the minimizer after the current
-// iteration while keeping all accepted parameter updates.
+// callback: terminating successfully stops the minimizer after the current
+// iteration while keeping all accepted parameter updates and reporting
+// USER_SUCCESS, mirroring upstream's cancellation contract.
 class CancellationCallback : public ceres::IterationCallback {
 public:
     explicit CancellationCallback(std::function<bool()> check_if_stopped)
@@ -52,10 +53,8 @@ public:
 
     ceres::CallbackReturnType operator()(
             const ceres::IterationSummary&) override {
-        // Upstream Ceres 2.x renamed SOLVER_ABORT to USER_ABORT; the
-        // self-built Ceres in this repo keeps the SOLVER_ABORT spelling.
         return check_if_stopped_ && check_if_stopped_()
-                       ? ceres::SOLVER_ABORT
+                       ? ceres::SOLVER_TERMINATE_SUCCESSFULLY
                        : ceres::SOLVER_CONTINUE;
     }
 
@@ -1026,6 +1025,59 @@ std::unique_ptr<BundleAdjuster> CreateDefaultBundleAdjuster(
         const BundleAdjustmentOptions& options,
         const BundleAdjustmentConfig& config) {
   return std::make_unique<CeresBundleAdjuster>(options, config);
+}
+
+// ---------------------------------------------------------------------------
+// Upstream parity (d3ccaf35 batch B): the Ceres-only surface of the option
+// struct and a factory-bound adjuster, implemented on top of the fork's
+// merged BundleAdjustmentOptions base and Solve(Reconstruction*) entry.
+// ---------------------------------------------------------------------------
+
+ceres::Solver::Options CeresBundleAdjustmentOptions::CreateSolverOptions(
+        const BundleAdjustmentConfig& config,
+        const ceres::Problem& problem) const {
+    BundleAdjustmentOptions base;
+    base.solver_options = solver_options;
+    base.use_gpu = use_gpu;
+    base.gpu_index = gpu_index;
+    base.min_num_images_gpu_solver = min_num_images_gpu_solver;
+    base.max_num_images_direct_dense_cpu_solver =
+            max_num_images_direct_dense_cpu_solver;
+    base.max_num_images_direct_sparse_cpu_solver =
+            max_num_images_direct_sparse_cpu_solver;
+    base.max_num_images_direct_dense_gpu_solver =
+            max_num_images_direct_dense_gpu_solver;
+    base.max_num_images_direct_sparse_gpu_solver =
+            max_num_images_direct_sparse_gpu_solver;
+    return base.CreateSolverOptions(config, problem);
+}
+
+void CeresBundleAdjuster::BindReconstruction(Reconstruction* reconstruction) {
+    bound_reconstruction_ = reconstruction;
+}
+
+std::shared_ptr<BundleAdjustmentSummary> CeresBundleAdjuster::Solve() {
+    THROW_CHECK_NOTNULL(bound_reconstruction_);
+    const bool ok = Solve(bound_reconstruction_);
+    (void)ok;  // Termination type is carried by the summary either way.
+    return summary();
+}
+
+std::unique_ptr<CeresBundleAdjuster> CreateDefaultCeresBundleAdjuster(
+        const BundleAdjustmentOptions& options,
+        const BundleAdjustmentConfig& config,
+        Reconstruction& reconstruction) {
+    auto adjuster = std::make_unique<CeresBundleAdjuster>(options, config);
+    adjuster->BindReconstruction(&reconstruction);
+    return adjuster;
+}
+
+void PrintSolverSummary(const ceres::Solver::Summary& summary,
+                        const std::string& header) {
+    if (!header.empty()) {
+        std::cout << header << std::endl;
+    }
+    PrintSolverSummary(summary);
 }
 
 }  // namespace colmap

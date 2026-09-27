@@ -703,6 +703,9 @@ void RunPointTriangulatorImpl(
     cache_options.min_num_matches =
         static_cast<size_t>(mapper_options.min_num_matches);
     cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
+    // Upstream parity (load_all_images=true): triangulation operates on the
+    // registered reconstruction regardless of pair connectivity.
+    cache_options.load_all_images = true;
     database_cache.Load(*database, cache_options);
   }
 

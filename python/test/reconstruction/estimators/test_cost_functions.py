@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap estimators/cost_functions_test.py (Open3D style).
 
 The upstream only asserts that the factory entry points exist; this port

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap geometry/rigid3_test.py (Open3D style).
 
 Covers the Rigid3d surface exposed by the fork: construction, accessors,

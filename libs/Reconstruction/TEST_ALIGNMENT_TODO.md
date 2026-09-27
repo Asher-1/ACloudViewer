@@ -32,7 +32,7 @@
 |---|---|---|
 | 1 | `alignment_test` ✅已入 gate | `src/colmap/estimators/` |
 | 2 | `alignment_test` ✅已入 gate(cost_functions 版) | `src/colmap/estimators/cost_functions/` |
-| 3 | `aliked_test` ⚠裁定:待 AICore ALIKED task | `src/colmap/feature/` |
+| 3 | `aliked_test` ✅已入 gate(批次A:ggml引擎接线) | `src/colmap/feature/` |
 | 4 | `automatic_reconstruction_test` ⚠裁定:fork 已重构为 DA3 控制器 | `src/colmap/controllers/` |
 | 5 | `base_controller_test` ✅已入 gate | `src/colmap/util/` |
 | 6 | `base_option_manager_test` ⚠裁定:fork 无 BaseOptionManager 面 | `src/colmap/controllers/` |
@@ -155,8 +155,65 @@
   `cost_functions_alignment_test`、`mvs_image_test`);ctest 名仍带目录前缀不冲突。
 - Python 基名冲突沿用改名惯例:geometry 侧 `test_essential_matrix_from_pose.py` /
   `test_homography_matrix_from_pose.py`(estimator 侧保留原名)。
-- 未移植项恢复条件汇总:ALIKED/ONNX 引擎面待 AICore ALIKED task;controllers 新抽象
+- 未移植项恢复条件汇总:ALIKED/ONNX 引擎面批次A已接线ggml引擎;controllers 新抽象
   (FeatureExtractorController/FeatureMatcherController/HierarchicalPipeline/
   AutomaticReconstruction/IncrementalPipeline/undistorters/FeatureMatcherCache/
   BaseOptionManager)待 fork 迁移到上游控制器抽象;PoseLib 待构建启用;dataclass
   协议/时间戳助手/pybind requires_rgb 之外的字段级绑定缺口随绑定收口补齐。
+
+## 批次 A — 接线与补注册(2026-09-27)
+
+- ALIKED/LightGlue feature 层接线完成:feature/aliked.{h,cc} 通过共享 aicore 模型目录
+  (AICORE_MODEL_FAMILY_ALIKED/LIGHTGLUE)解析默认模型,SHA-256 校验 + 共享缓存下载
+  (feature/loma.cc 模式);FeatureExtractor/FeatureMatcher::Create 的 ALIKED 分支从
+  throw 改为真实 shell(提取 = aicore_aliked_extract_image_view;LightGlue =
+  aicore_lightglue_run_match;BF = Eigen 余弦 + upstream ONNX 网络同语义)。
+- 引擎测试落地:feature/aliked_test.cc(N16Rot 真推理,N32 未发布裁定 skip)、
+  feature/onnx_matchers_test.cc(BF 6 用例 hermetic + LightGlue 2 真推理)、
+  feature/onnx_utils_test.cc(session 契约;Identity/provider 用例无 fork 等价,留因)。
+- estimators/solvers/poselib_utils_test.cc 补注册(2/2);exe/sfm.{h,cc} 拆出
+  RunPointTriangulatorImpl/RunIncrementalMapperImpl/RunGlobalMapperImpl/
+  RunHierarchicalMapperImpl(upstream 签名;取消探针 → .partial 写入语义),exe/sfm_test.cc
+  5 用例移植(3 过;IncrementalMapper 2 用例 DISABLED 留因:fork 观测簿记 underflow 缺陷,
+  与批次 24 EndReconstructionDiscard 同源)。
+- 控制器面:IncrementalMapperController 补 SetCheckIfStoppedFunc/ShouldStop(5 检查点)。
+- 修复 PoseLib 链接 PRIVATE→PUBLIC(poselib_utils.h 在接口中暴露 poselib 类型)。
+- gate 154/154;pytest 395 passed/3 skipped;边界检查 PASS。
+
+## 批次 B — BundleAdjustmentCeres Ceres 面对齐(2026-09-27)
+
+- `estimators/bundle_adjustment_ceres.{h,cc}` 补 upstream d3ccaf35 的 Ceres-only 面:
+  `CeresBundleAdjustmentOptions::CreateSolverOptions(config, problem)`(转发共享基类)、
+  `CeresPosePriorBundleAdjustmentOptions` 别名(fork prior struct 为语义超集,注释留档)、
+  `CeresBundleAdjuster::BindReconstruction()` + 无参 `Solve()` 返回 shared summary、
+  `CreateDefaultCeresBundleAdjuster(options, config, reconstruction&)` 工厂、
+  `PrintSolverSummary(summary, header)` 重载。fork 既有 `Solve(Reconstruction*)`
+  入口与 Caspar 分派不动。
+- **生产语义修复**:BA 取消回调由 `SOLVER_ABORT`(→USER_FAILURE)对齐为
+  `SOLVER_TERMINATE_SUCCESSFULLY`(→USER_SUCCESS),取消=保留已接受参数更新的成功收尾
+  (upstream 契约,有 bundle_adjustment_ceres_test.Cancellation 断言背书)。
+- `estimators/bundle_adjustment_ceres_test.cc` 移植 2 个代表用例
+  (NominalMultiCameraRig rig 多相机合成重建精度 + Cancellation);其余 upstream 用例为
+  同一 rig/gauge/constant 矩阵的增量变体,fork bundle_adjustment_test 已覆盖共享
+  BundleAdjuster 契约,机械跟进即可。
+- gate 155/155。
+
+## 批次 C — controllers 新抽象迁移(结构化计划,10 项)
+
+按"接口对齐+适配层"策略逐模块执行,每模块完成即移植其测试并跑全量 gate;
+fork 增强面(DA3、global_mapper、RotationAveraging、ViewGraphCalibration CLI)保留为
+适配层消费者,行为保持为验收底线:
+
+1. `feature_matching_utils.{h,cc}`(引擎无关 MatchFeatures 入口,复用批次 A 的
+   ALIKED/LoMa shell)→ feature_matching_utils_test
+2. `matcher_cache.{h,cc}`(DatabaseMatcherCache,复用 DatabaseCache 面)→ matcher_cache_test
+3. `pairing`(librelay 风格 pairing)→ pairing_test
+4. `undistorters.{h,cc}` → undistorters_test
+5. `base_option_manager.{h,cc}`(OptionManager 保持 CLI exit 语义)→ base_option_manager_test
+6. `feature_extraction`/`feature_matching` 控制器接口对齐 upstream(消费 1/2 的新面;
+   app/reconstruction 与 exe/feature 调用点同批适配)→ 2 个测试
+7. `incremental_pipeline`/`hierarchical_pipeline`/`automatic_reconstruction` 接口
+   对齐(GUI 4 文件 + DA3 调用点同批适配)→ 3 个测试
+- 前置修复建议:fork 观测簿记 underflow 缺陷(observation_manager deregistration,
+  已 3 处测试 DISABLED 留因)——在批次 C 触及 controller 生命周期前先收敛该缺陷,
+  可一并解锁 IncrementalMapper 2 个取消用例与 EndReconstructionDiscard。

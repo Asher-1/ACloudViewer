@@ -94,6 +94,7 @@ COLMAP_ADD_TEST(solvers_essential_matrix_test solvers/essential_matrix_test.cc)
 COLMAP_ADD_TEST(solvers_fundamental_matrix_test solvers/fundamental_matrix_test.cc)
 COLMAP_ADD_TEST(solvers_homography_matrix_test solvers/homography_matrix_test.cc)
 COLMAP_ADD_TEST(poselib_utils_test solvers/poselib_utils_test.cc)
+COLMAP_ADD_TEST(bundle_adjustment_ceres_test bundle_adjustment_ceres_test.cc)
 COLMAP_ADD_TEST(view_graph_calibration_test view_graph_calibration_test.cc)
 # Minimal Boost.Test parity gate for the modernized two-view estimator; the
 # full upstream gtest suite follows the W9 synthetic-dataset port.

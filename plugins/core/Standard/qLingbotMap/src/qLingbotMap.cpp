@@ -302,7 +302,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
         std::vector<ccHObject*> doomed;
         for (unsigned i = 0; i < rootDb->getChildrenNumber(); ++i) {
             ccHObject* child = rootDb->getChild(i);
-            if (child && isLingbotMapEntity(child) &&
+            if (child && isLingbotOutputEntity(child) &&
                 !child->getName().startsWith(
                         QStringLiteral("LingbotMap_Online"))) {
                 doomed.push_back(child);
@@ -627,10 +627,14 @@ void qLingbotMap::applyLiveCameraPose(int mode,
     CCVector3d forward;
     CCVector3d up(0, 0, 1);
     if (mode == 1) {
-        // Official _fit_view geometry: mean center, max radius, fixed
-        // diagonal eye offset (radius, -radius, 0.6*radius).
-        eye = center + CCVector3d(radius, -radius, 0.6 * radius);
-        forward = center - eye;
+        // Official viewer "Fit latest frame": a TOP-DOWN FOLLOW eye — the
+        // camera hovers ABOVE the newest frame's center looking straight
+        // down, so the reconstruction grows underneath a bird's-eye view
+        // that tracks the travel. Height scales with the frame radius so
+        // the newest frame fills the view; world +Y is the screen-up.
+        eye = center + CCVector3d(0, 0, std::max(2.2 * radius, 1e-3));
+        forward = center - eye;  // straight down
+        up = CCVector3d(0, 1, 0);
     } else {
         // Follow latest camera: sit at the frustum's camera center and
         // look along its optical axis (OpenCV convention: +Z forward,
@@ -1616,6 +1620,8 @@ void qLingbotMap::applyReplayVisibility() {
     const int count = static_cast<int>(m_frameCameras.size());
     const int stride = std::max(1, m_resultCamStride);
     int visibleCams = 0;
+    ecvGenericGLDisplay* reconcileDisplay =
+            m_app ? m_app->getActiveGLDisplay() : nullptr;
     for (int i = 0; i < count; ++i) {
         const bool frameShown = m_playbackCurrentFrameOnly
                                         ? i == m_playbackFrame
@@ -1625,6 +1631,22 @@ void qLingbotMap::applyReplayVisibility() {
         if (ccHObject* cam = m_frameCameras[static_cast<size_t>(i)]) {
             cam->setVisible(camVisible);
             if (camVisible) ++visibleCams;
+            // Deterministic reconcile: drive the engine's hide/show DIRECTLY
+            // for aggregated frustums (composite per-block attributes)
+            // instead of relying solely on the next redraw's tree pass —
+            // the replay cannot be hostage to pass-ordering subtleties.
+            // Hides/shows the frustum block AND its "#plane" face actor
+            // (the engine's hideShowEntities probes the suffix).
+            if (reconcileDisplay) {
+                CC_DRAW_CONTEXT ctx;
+                ecvGenericGLDisplay* camDisplay = cam->getDisplay();
+                ctx.display = camDisplay ? camDisplay : reconcileDisplay;
+                ctx.viewID = cam->getViewId();
+                ctx.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
+                ctx.visible = camVisible;
+                ctx.defaultViewPort = 0;
+                reconcileDisplay->hideShowEntities(ctx);
+            }
         }
         // Clouds have no stride/visibility density concept — they follow
         // the frame rule only. Aligned slots: cloud i belongs to frame i.

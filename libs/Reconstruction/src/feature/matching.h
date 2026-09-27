@@ -12,10 +12,12 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "feature/index.h"
 #include "feature/sift.h"
 #include "retrieval/resources.h"
 #include "scene/database.h"
@@ -169,6 +171,10 @@ struct FeatureMatcherData {
 class FeatureMatcherCache {
 public:
     FeatureMatcherCache(const size_t cache_size, const Database* database);
+    // Upstream parity (d3ccaf35): the cache owns the database lifetime when
+    // constructed from a shared_ptr (controllers/matcher_cache.h).
+    FeatureMatcherCache(const size_t cache_size,
+                        const std::shared_ptr<Database>& database);
 
     // Upstream parity (d3ccaf35 controllers/matcher_cache.h): thread-safe
     // exclusive database access through the cache's own mutex. Required by
@@ -193,6 +199,17 @@ public:
             const image_t image_id);
     FeatureDescriptorType GetDescriptorType(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
+    // Upstream parity (d3ccaf35 controllers/matcher_cache.h).
+    TwoViewGeometry GetTwoViewGeometry(const image_t image_id1,
+                                       const image_t image_id2);
+    bool ExistsTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2);
+    void UpdateTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2,
+                               const TwoViewGeometry& two_view_geometry);
+    size_t MaxNumKeypoints();
+    ThreadSafeLRUCache<image_t, FeatureDescriptorIndex>&
+    GetFeatureDescriptorIndexCache();
     std::vector<frame_t> GetFrameIds();
     std::vector<image_t> GetImageIds();
 
@@ -225,6 +242,9 @@ private:
     void MaybeLoadPosePriors();
 
     const size_t cache_size_;
+    // Upstream-parity ownership: holds the database when constructed from a
+    // shared_ptr; empty for the raw-pointer fork-internal construction.
+    std::shared_ptr<Database> database_shared_;
     const Database* database_;
     std::mutex database_mutex_;
     std::unique_ptr<std::unordered_map<camera_t, Camera>> cameras_cache_;
@@ -237,6 +257,9 @@ private:
             descriptors_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptorsFloat>>
             float_descriptors_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptorIndex>>
+            descriptor_index_cache_;
+    std::optional<size_t> max_num_keypoints_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> keypoints_exists_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
             descriptors_exists_cache_;

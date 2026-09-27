@@ -143,6 +143,10 @@ private:
      *  process: batch image-to-3D (Gaussian PLY + optional mesh) with a
      *  single model load, RESULT_JSON manifest (same offscreen pattern). */
     JsonRPCResult rpcSam3dGenerate(const QMap<QString, QVariant>& params);
+    /** mapanything.reconstruct: batch multi-view reconstruction (one model
+     *  load, merged world-frame PLY + RESULT_JSON). */
+    JsonRPCResult rpcMapAnythingReconstruct(
+            const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessCsf(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessM3c2(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessRansac(const QMap<QString, QVariant>& params);

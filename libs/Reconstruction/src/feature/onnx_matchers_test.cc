@@ -76,7 +76,10 @@ FeatureMatcher::Image MakeImage(image_t id,
                                 FeatureDescriptorsFloat descriptors) {
   FeatureMatcher::Image image;
   image.image_id = id;
-  image.camera = nullptr;
+  // Mirrors upstream's CreateCamera(): the LightGlue engine validates the
+  // image dimensions carried by the camera.
+  image.camera = std::make_shared<Camera>(
+          Camera::CreateFromModelName(1, "SIMPLE_PINHOLE", 500.0, 100, 100));
   image.keypoints = std::move(keypoints);
   image.descriptors = std::move(descriptors);
   return image;

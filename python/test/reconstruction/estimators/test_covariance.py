@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap estimators/covariance_test.py (Open3D style).
 
 The fork exposes estimate_ba_covariance as a module-level entry over the

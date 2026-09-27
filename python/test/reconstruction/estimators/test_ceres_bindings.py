@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap estimators/ceres_bindings_test.py (Open3D style).
 
 The upstream accesses the surface as ``pycolmap._core.pyceres``; the fork

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap sfm/global_mapper_test.py (Open3D style).
 
 Fork adaptation: option paths are plain strings (upstream uses fs::path)."""

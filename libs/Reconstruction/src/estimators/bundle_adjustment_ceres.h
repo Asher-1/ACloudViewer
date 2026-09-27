@@ -60,7 +60,19 @@ struct CeresBundleAdjustmentOptions {
     bool auto_select_solver_type = true;
 
     bool Check() const { return loss_function_scale > 0.0; }
+
+    // Upstream parity (d3ccaf35): the solver-option derivation is exposed on
+    // the Ceres option struct; the fork keeps the implementation on the
+    // shared BundleAdjustmentOptions base and forwards.
+    ceres::Solver::Options CreateSolverOptions(
+            const BundleAdjustmentConfig& config,
+            const ceres::Problem& problem) const;
 };
+
+// Upstream parity alias; the fork's PosePriorBundleAdjustmentOptions keeps
+// the fork-specific fallback-stddev / RANSAC-alignment fields as a semantic
+// superset of upstream's loss-function-only struct.
+using CeresPosePriorBundleAdjustmentOptions = PosePriorBundleAdjustmentOptions;
 
 class CeresBundleAdjuster : public BundleAdjuster {
 public:
@@ -83,6 +95,12 @@ public:
     // e.g. for covariance estimation over the assembled problem.
     ceres::Problem& Problem();
     const ceres::Problem& Problem() const;
+
+    // Upstream parity (d3ccaf35): the factory binds the reconstruction and
+    // Solve() takes no arguments, returning the shared summary. The fork's
+    // Solve(Reconstruction*) entry point is unchanged for existing callers.
+    void BindReconstruction(Reconstruction* reconstruction);
+    std::shared_ptr<BundleAdjustmentSummary> Solve();
 
     struct FramePoseBlock {
         frame_t frame_id;
@@ -135,6 +153,8 @@ private:
     };
     std::map<std::pair<rig_t, sensor_t>, SensorPoseBlock> sensor_blocks_;
     std::map<frame_t, FramePoseBlock> frame_blocks_;
+    // Upstream-parity factory binding for the argument-less Solve().
+    Reconstruction* bound_reconstruction_ = nullptr;
     // Frame blocks are shared by every image of a frame; guard the one-time
     // manifold installation (repeated installation aborts).
     std::unordered_set<const double*> manifold_marked_blocks_;
@@ -153,5 +173,15 @@ private:
     void FixGaugeWithTwoCamsFromWorld(Reconstruction* reconstruction);
     void FixGaugeWithThreePoints(Reconstruction* reconstruction);
 };
+
+// Upstream parity (d3ccaf35): the Ceres factory binds the reconstruction.
+std::unique_ptr<CeresBundleAdjuster> CreateDefaultCeresBundleAdjuster(
+        const BundleAdjustmentOptions& options,
+        const BundleAdjustmentConfig& config,
+        Reconstruction& reconstruction);
+
+// Upstream parity overload with a report header.
+void PrintSolverSummary(const ceres::Solver::Summary& summary,
+                        const std::string& header);
 
 }  // namespace colmap

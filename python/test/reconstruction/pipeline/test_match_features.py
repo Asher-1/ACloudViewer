@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap pipeline/match_features_test.py (Open3D style),
 plus end-to-end coverage of the fork's pairing-driven matching engine."""
 import os

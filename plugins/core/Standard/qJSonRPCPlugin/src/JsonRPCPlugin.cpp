@@ -633,6 +633,8 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcYoloTrack(p); });
     reg("sam3d.generate",    "Batch SAM 3D Objects image-to-3D (Gaussian PLY + optional FlexiCubes mesh, single model load): {images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}",
         [this](auto& p){ return rpcSam3dGenerate(p); });
+    reg("mapanything.reconstruct", "Multi-view metric 3D reconstruction (MapAnything family, single model load): {images[2..16], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?result_json, ?timeout_ms}",
+        [this](auto& p){ return rpcMapAnythingReconstruct(p); });
     reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
         [this](auto& p){ return rpcProcessCsf(p); });
     reg("process.m3c2",      "M3C2 distance computation: {cloud1_path, cloud2_path, params_file, output_path}",
@@ -3711,6 +3713,98 @@ JsonRPCResult JsonRPCPlugin::rpcSam3dGenerate(
                 3, "SAM 3D batch generation failed",
                 D("exit_code", process.exitCode(), "stderr",
                   result["stderr"].toString(), "items", result["items"]));
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcMapAnythingReconstruct(
+        const QMap<QString, QVariant>& params) {
+    const QVariantList imageList = params.value("images").toList();
+    const QString outputDir = params.value("output_dir").toString();
+    if (imageList.isEmpty() || outputDir.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameters: images[] and output_dir");
+    }
+    QStringList images;
+    for (const QVariant& v : imageList) {
+        const QString path = v.toString().trimmed();
+        if (path.isEmpty()) {
+            return JsonRPCResult::error(-32602,
+                                        "images[] contains an empty path");
+        }
+        images << path;
+    }
+
+    QString resultJson = params.value("result_json").toString().trimmed();
+    if (resultJson.isEmpty()) {
+        resultJson = QDir(outputDir).filePath(
+                QStringLiteral("_map_anything_result.json"));
+    }
+    const int timeoutMs = params.value("timeout_ms", 3600000).toInt();
+
+    QStringList argList;
+    argList << "-SILENT" << "-NO_TIMESTAMP" << "-MAP_ANYTHING_RECONSTRUCT";
+    for (const QString& image : images) {
+        argList << "IMAGE" << image;
+    }
+    argList << "OUT_DIR" << outputDir;
+
+    const QHash<QString, QString> optionKeys = {
+            {"model", "MODEL"},           {"device", "DEVICE"},
+            {"image_size", "IMAGE_SIZE"}, {"resize_mode", "RESIZE_MODE"},
+            {"min_conf", "MIN_CONF"},     {"threads", "THREADS"},
+            {"cloud_ply", "CLOUD_PLY"},
+    };
+    for (auto it = optionKeys.constBegin(); it != optionKeys.constEnd(); ++it) {
+        const QString value = params.value(it.key()).toString().trimmed();
+        if (!value.isEmpty()) {
+            argList << it.value() << value;
+        }
+    }
+    argList << "RESULT_JSON" << resultJson;
+
+    QElapsedTimer timer;
+    timer.start();
+    QProcess process;
+    process.setProgram(QCoreApplication::applicationFilePath());
+    process.setArguments(argList);
+    process.setEnvironment(QProcess::systemEnvironment()
+                           << "QT_QPA_PLATFORM=offscreen");
+    process.start();
+    if (!process.waitForFinished(timeoutMs)) {
+        process.kill();
+        return JsonRPCResult::error(
+                3, "MapAnything reconstruction timed out",
+                D("timeout_ms", timeoutMs, "images_count", images.size()));
+    }
+
+    QJsonObject result;
+    result["exit_code"] = process.exitCode();
+    result["stdout"] =
+            QString::fromUtf8(process.readAllStandardOutput()).left(5000);
+    result["stderr"] =
+            QString::fromUtf8(process.readAllStandardError()).left(2000);
+    result["result_json"] = resultJson;
+    result["elapsed_ms"] = static_cast<qint64>(timer.elapsed());
+
+    QFile jsonFile(resultJson);
+    if (jsonFile.open(QIODevice::ReadOnly)) {
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonFile.readAll());
+        jsonFile.close();
+        if (doc.isObject()) {
+            result["architecture"] =
+                    doc.object().value("architecture").toString();
+            result["points"] = doc.object().value("points").toInt();
+            result["views"] = doc.object().value("views").toInt();
+            result["e2e_ms"] = doc.object().value("e2e_ms").toDouble();
+            result["ply"] = doc.object().value("ply").toString();
+        }
+    }
+
+    if (process.exitCode() != 0) {
+        return JsonRPCResult::error(3, "MapAnything reconstruction failed",
+                                    D("exit_code", process.exitCode(), "stderr",
+                                      result["stderr"].toString()));
     }
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }

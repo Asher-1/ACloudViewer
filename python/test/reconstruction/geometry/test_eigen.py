@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap geometry/eigen_test.py (Open3D style).
 
 Covers the Rotation3d and AlignedBox3d wrappers added for parity.

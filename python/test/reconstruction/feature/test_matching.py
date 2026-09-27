@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Port of upstream pycolmap feature/matching_test.py (Open3D style).
 
 Adaptations to the fork pybind surface:
@@ -102,9 +101,12 @@ def test_feature_matcher_create(recon):
     assert matcher is not None
 
 
-def test_feature_matcher_create_aliked_not_registered(recon):
+def test_feature_matcher_create_aliked_registered(recon):
+    # Batch A engine alignment: the ALIKED backends now resolve through the
+    # AICore ggml task family, so the factory constructs successfully
+    # (upstream ONNX-enabled parity); the brute-force path needs no model.
     options = recon.FeatureMatchingOptions(
         recon.FeatureMatcherType.ALIKED_BRUTEFORCE)
     assert options.check()
-    with pytest.raises(RuntimeError):
-        recon.FeatureMatcher.create(options)
+    matcher = recon.FeatureMatcher.create(options)
+    assert matcher is not None
