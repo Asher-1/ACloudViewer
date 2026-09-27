@@ -4,8 +4,20 @@
 
 # $ErrorActionPreference = "Stop"
 
-$env:GENERATOR = "Visual Studio 17 2022"
+# Generator override hook (CI Windows app job uses "Ninja Multi-Config" via
+# CLOUDVIEWER_GENERATOR; default stays the VS generator for local/wheel builds).
+$env:GENERATOR = if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_GENERATOR)) { $env:CLOUDVIEWER_GENERATOR } else { "Visual Studio 17 2022" }
 $env:ARCHITECTURE = "x64"
+
+# Only multi-config Visual Studio generators take the -A platform argument;
+# Ninja (Multi-Config) derives the platform from the vcvars environment.
+function Get-CMakeGeneratorArgs {
+    $genArgs = @("-G", $env:GENERATOR)
+    if ($env:GENERATOR -match "Visual Studio") {
+        $genArgs += @("-A", $env:ARCHITECTURE)
+    }
+    return $genArgs
+}
 $env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
 $env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
 $env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
@@ -325,6 +337,9 @@ function Build-GuiApp {
     $BUILD_PYTHON_MODULE = if ($env:BUILD_PYTHON_MODULE) { $env:BUILD_PYTHON_MODULE } else { "ON" }
     $PLUGIN_PYTHON_COPY_MINIMAL_ENV = if ($env:PLUGIN_PYTHON_COPY_MINIMAL_ENV) { $env:PLUGIN_PYTHON_COPY_MINIMAL_ENV } else { "ON" }
     $PLUGIN_PYTHON_COPY_ENV = if ($env:PLUGIN_PYTHON_COPY_ENV) { $env:PLUGIN_PYTHON_COPY_ENV } else { "OFF" }
+    # Test-build knobs (CI CUDA lane disables both — see build_win_app.ps1).
+    $BUILD_UNIT_TESTS = if (-not [string]::IsNullOrEmpty($env:CI_BUILD_UNIT_TESTS)) { $env:CI_BUILD_UNIT_TESTS } else { "ON" }
+    $AICORE_BUILD_TESTS = if (-not [string]::IsNullOrEmpty($env:CI_AICORE_BUILD_TESTS)) { $env:CI_AICORE_BUILD_TESTS } else { "ON" }
 
     if (Test-PythonReleaseDepsRequired) {
         Install-PythonReleaseDeps
@@ -409,7 +424,10 @@ function Build-GuiApp {
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DSTATIC_WINDOWS_RUNTIME=$env:STATIC_RUNTIME",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_UNIT_TESTS=ON",
+        # Pin the config list so multi-config generators (and any tool that
+        # builds the "default" config) always produce Release artifacts.
+        "-DCMAKE_CONFIGURATION_TYPES=Release",
+        "-DBUILD_UNIT_TESTS=$BUILD_UNIT_TESTS",
         "-DBUILD_JUPYTER_EXTENSION=OFF",
         "-DBUILD_LIBREALSENSE=OFF",
         "-DBUILD_AZURE_KINECT=OFF",
@@ -474,7 +492,7 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_G3POINT=ON",
         "-DPLUGIN_STANDARD_QSIBR=ON",
         "-DAICore_ENABLED=ON",
-        "-DAICore_BUILD_TESTS=ON",
+        "-DAICore_BUILD_TESTS=$AICORE_BUILD_TESTS",
         "-DAICore_USE_VULKAN=$($env:AICore_USE_VULKAN)",
         "-DAICore_USE_CUDA=$($env:AICore_USE_CUDA)",
         "-DAICore_BUNDLE_CUDA_RUNTIME=$($env:AICore_BUNDLE_CUDA_RUNTIME)",
@@ -500,9 +518,24 @@ function Build-GuiApp {
         "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
     )
 
+    # CUDA architectures: always the repo default (BUILD_COMMON_CUDA_ARCHS
+    # full matrix). Do not add a CI override here — shipped installers must
+    # keep their full GPU compatibility (see note in windows.yml).
+
+    # Optional compile-cache launcher (CI-only hook; cold runs leave it unset
+    # for a vanilla from-scratch build). ExternalProject_CMAKE_ARGS forwards
+    # the launcher to VTK/OpenCV/COLMAP/ggml. CUDA (nvcc) caching is
+    # intentionally not enabled until the MSVC+nvcc path has soak time.
+    if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+        Write-Host "Compile cache launcher: $env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeGuiOptions += "-DCMAKE_C_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeGuiOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+    }
+
     Write-Host ""
     Write-Host "Running cmake $($cmakeGuiOptions -join ' ') .."
-    & cmake -G $env:GENERATOR -A $env:ARCHITECTURE $cmakeGuiOptions ..
+    $generatorArgs = Get-CMakeGeneratorArgs
+    & cmake @generatorArgs $cmakeGuiOptions ..
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake configure failed with exit code $LASTEXITCODE"
@@ -517,10 +550,16 @@ function Build-GuiApp {
         throw "cmake --build failed with exit code $LASTEXITCODE"
     }
 
-    & cmake --build . --target aicore-contract-tests --config Release --parallel $env:NPROC
-    if ($LASTEXITCODE -ne 0) {
-        Pop-Location
-        throw "AICore contract tests failed with exit code $LASTEXITCODE"
+    # The aicore-contract-tests target only exists when AICore tests are built
+    # (core/AICore/CMakeLists.txt guards add_subdirectory(tests)).
+    if ($AICORE_BUILD_TESTS -eq "ON") {
+        & cmake --build . --target aicore-contract-tests --config Release --parallel $env:NPROC
+        if ($LASTEXITCODE -ne 0) {
+            Pop-Location
+            throw "AICore contract tests failed with exit code $LASTEXITCODE"
+        }
+    } else {
+        Write-Host "Skipping AICore contract tests (AICore_BUILD_TESTS=$AICORE_BUILD_TESTS)"
     }
 
     & cmake --install . --config Release --verbose
@@ -668,8 +707,17 @@ function Build-PipPackage {
         "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
     )
 
+    # Optional compile-cache launcher (CI-only hook, same policy as
+    # Build-GuiApp; applies to both the CPU and the CUDA reconfigure passes).
+    if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+        Write-Host "Compile cache launcher: $env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeOptions += "-DCMAKE_C_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+    }
+
     Write-Host "Executing cmake command..."
-    cmake -G $env:GENERATOR -A $env:ARCHITECTURE -DBUILD_CUDA_MODULE=OFF $cmakeOptions ..
+    $generatorArgs = Get-CMakeGeneratorArgs
+    cmake @generatorArgs -DBUILD_CUDA_MODULE=OFF $cmakeOptions ..
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake configure (CPU) failed with exit code $LASTEXITCODE"
