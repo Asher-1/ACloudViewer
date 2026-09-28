@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <boost/program_options.hpp>
 #include <filesystem>
 #include <memory>
+#include <string>
 
-#include "util/logging.h"
+#include "controllers/base_option_manager.h"
 
 namespace colmap {
 
@@ -45,7 +45,7 @@ struct MeshSimplificationOptions;
 struct MeshPostProcessingOptions;
 }  // namespace mvs
 
-class OptionManager {
+class OptionManager : public BaseOptionManager {
 public:
     OptionManager(bool add_project_options = true);
 
@@ -64,11 +64,13 @@ public:
     void ModifyForHighQuality();
     void ModifyForExtremeQuality();
 
-    void AddAllOptions();
-    void AddLogOptions();
-    void AddRandomOptions();
-    void AddDatabaseOptions();
-    void AddImageOptions();
+    void AddAllOptions() override;
+
+    // Fork legacy flag spellings (--log_to_stderr/--random_seed); the base
+    // group entry points are virtual so these stay authoritative. The
+    // database/image groups reuse BaseOptionManager's (identical contracts).
+    void AddRandomOptions() override;
+    void AddLogOptions() override;
     void AddExtractionOptions();
     void AddMatchingOptions();
     void AddExhaustiveMatchingOptions();
@@ -97,28 +99,20 @@ public:
     void AddMeshTextureMappingOptions();
     void AddRenderOptions();
 
-    template <typename T>
-    void AddRequiredOption(const std::string& name,
-                           T* option,
-                           const std::string& help_text = "");
-    template <typename T>
-    void AddDefaultOption(const std::string& name,
-                          T* option,
-                          const std::string& help_text = "");
+    void Reset(bool reset_logging = true) override;
+    void ResetOptions(const bool reset_paths) override;
 
-    void Reset();
-    void ResetOptions(const bool reset_paths);
+    bool Check() override;
 
-    bool Check();
+    bool Read(const std::filesystem::path& path,
+              bool allow_unregistered = true) override;
+    void PrintHelp() const override;
+    // Fork legacy: the fork sets glog flags directly (Reset/log_to_stderr);
+    // the base's log_target_ mapping must not override them after Parse.
+    void ApplyLogFlags() override;
 
-    void Parse(const int argc, char** argv);
-    bool Read(const std::filesystem::path& path);
-    bool ReRead(const std::filesystem::path& path);
-    void Write(const std::filesystem::path& path) const;
-
-    std::shared_ptr<std::filesystem::path> project_path;
-    std::shared_ptr<std::filesystem::path> database_path;
-    std::shared_ptr<std::filesystem::path> image_path;
+    // The project/database/image path shared_ptrs are inherited from
+    // BaseOptionManager (allocated in its constructor).
 
     std::shared_ptr<ImageReaderOptions> image_reader;
     std::shared_ptr<SiftExtractionOptions> sift_extraction;
@@ -152,138 +146,53 @@ public:
     std::shared_ptr<RenderOptions> render;
 
 private:
+    void ResetOptionStructs();
+
+    // The group-registration call sites in option_manager.cc keep the fork
+    // spelling; both forward to the base (which also registers the option
+    // into the typed registries, upstream semantics).
     template <typename T>
     void AddAndRegisterRequiredOption(const std::string& name,
                                       T* option,
-                                      const std::string& help_text = "");
+                                      const std::string& help_text = "") {
+        BaseOptionManager::AddRequiredOption(name, option, help_text);
+    }
     template <typename T>
     void AddAndRegisterDefaultOption(const std::string& name,
                                      T* option,
-                                     const std::string& help_text = "");
+                                     const std::string& help_text = "") {
+        BaseOptionManager::AddDefaultOption(name, option, help_text);
+    }
 
-    template <typename T>
-    void RegisterOption(const std::string& name, const T* option);
-
-    std::shared_ptr<boost::program_options::options_description> desc_;
-
-    std::vector<std::pair<std::string, const bool*>> options_bool_;
-    std::vector<std::pair<std::string, const int*>> options_int_;
-    std::vector<std::pair<std::string, const double*>> options_double_;
-    std::vector<std::pair<std::string, const std::string*>> options_string_;
-    std::vector<std::pair<std::string, const std::filesystem::path*>>
-            options_path_;
-
-    bool added_log_options_;
-    bool added_random_options_;
-    bool added_database_options_;
-    bool added_image_options_;
-    bool added_extraction_options_;
-    bool added_match_options_;
-    bool added_exhaustive_match_options_;
-    bool added_sequential_match_options_;
-    bool added_vocab_tree_match_options_;
-    bool added_spatial_match_options_;
-    bool added_transitive_match_options_;
-    bool added_image_pairs_match_options_;
-    bool added_ba_options_;
-    bool added_mapper_options_;
+    bool added_extraction_options_ = false;
+    bool added_match_options_ = false;
+    bool added_exhaustive_match_options_ = false;
+    bool added_sequential_match_options_ = false;
+    bool added_vocab_tree_match_options_ = false;
+    bool added_spatial_match_options_ = false;
+    bool added_transitive_match_options_ = false;
+    bool added_image_pairs_match_options_ = false;
+    bool added_ba_options_ = false;
+    bool added_mapper_options_ = false;
     bool added_global_mapper_options_ = false;
     bool added_gravity_refiner_options_ = false;
     bool added_reconstruction_clusterer_options_ = false;
     bool added_mesh_texture_mapping_options_ = false;
     std::filesystem::path global_mapper_image_list_path_;
 
-    bool added_patch_match_stereo_options_;
-    bool added_stereo_fusion_options_;
-    bool added_poisson_meshing_options_;
-    bool added_delaunay_meshing_options_;
-    bool added_advancing_front_meshing_options_;
-    bool added_mesh_simplification_options_;
-    bool added_mesh_post_processing_options_;
-    bool added_texturing_options_;
-    bool added_render_options_;
+    bool added_patch_match_stereo_options_ = false;
+    bool added_stereo_fusion_options_ = false;
+    bool added_poisson_meshing_options_ = false;
+    bool added_delaunay_meshing_options_ = false;
+    bool added_advancing_front_meshing_options_ = false;
+    bool added_mesh_simplification_options_ = false;
+    bool added_mesh_post_processing_options_ = false;
+    bool added_texturing_options_ = false;
+    bool added_render_options_ = false;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
-
-template <typename T>
-void OptionManager::AddRequiredOption(const std::string& name,
-                                      T* option,
-                                      const std::string& help_text) {
-    desc_->add_options()(name.c_str(),
-                         boost::program_options::value<T>(option)->required(),
-                         help_text.c_str());
-}
-
-template <typename T>
-void OptionManager::AddDefaultOption(const std::string& name,
-                                     T* option,
-                                     const std::string& help_text) {
-    desc_->add_options()(
-            name.c_str(),
-            boost::program_options::value<T>(option)->default_value(*option),
-            help_text.c_str());
-}
-
-template <typename T>
-void OptionManager::AddAndRegisterRequiredOption(const std::string& name,
-                                                 T* option,
-                                                 const std::string& help_text) {
-    desc_->add_options()(name.c_str(),
-                         boost::program_options::value<T>(option)->required(),
-                         help_text.c_str());
-    RegisterOption(name, option);
-}
-
-template <typename T>
-void OptionManager::AddAndRegisterDefaultOption(const std::string& name,
-                                                T* option,
-                                                const std::string& help_text) {
-    desc_->add_options()(
-            name.c_str(),
-            boost::program_options::value<T>(option)->default_value(*option),
-            help_text.c_str());
-    RegisterOption(name, option);
-}
-
-// std::filesystem::path has no boost::program_options lexical-cast path for
-// empty strings (written "option=" entries fail to parse), so path options
-// go through a string value with a notifier instead (batch 24 alignment).
-template <>
-inline void OptionManager::AddAndRegisterDefaultOption<std::filesystem::path>(
-        const std::string& name,
-        std::filesystem::path* option,
-        const std::string& help_text) {
-    desc_->add_options()(name.c_str(),
-                         boost::program_options::value<std::string>()
-                                 ->notifier([option](const std::string& value) {
-                                     *option = std::filesystem::path(value);
-                                 })
-                                 ->default_value(option->string()),
-                         help_text.c_str());
-    RegisterOption(name, option);
-}
-
-template <typename T>
-void OptionManager::RegisterOption(const std::string& name, const T* option) {
-    if (std::is_same<T, bool>::value) {
-        options_bool_.emplace_back(name, reinterpret_cast<const bool*>(option));
-    } else if (std::is_same<T, int>::value) {
-        options_int_.emplace_back(name, reinterpret_cast<const int*>(option));
-    } else if (std::is_same<T, double>::value) {
-        options_double_.emplace_back(name,
-                                     reinterpret_cast<const double*>(option));
-    } else if (std::is_same<T, std::string>::value) {
-        options_string_.emplace_back(
-                name, reinterpret_cast<const std::string*>(option));
-    } else if (std::is_same<T, std::filesystem::path>::value) {
-        options_path_.emplace_back(
-                name, reinterpret_cast<const std::filesystem::path*>(option));
-    } else {
-        LOG(FATAL) << "Unsupported option type";
-    }
-}
 
 }  // namespace colmap

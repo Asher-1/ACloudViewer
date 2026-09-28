@@ -929,14 +929,14 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
       UndistortCameraOptions undistortion_options;
       undistortion_options.max_image_size =
           option_manager_.patch_match_stereo->max_image_size;
-      COLMAPUndistorter undistorter(undistortion_options,
+      COLMAPUndistorterImpl undistorter(undistortion_options,
                                     &reconstruction_manager_->Get(i),
                                     *option_manager_.image_path, dense_path);
       active_thread_ = &undistorter;
       undistorter.Start();
       undistorter.Wait();
       active_thread_ = nullptr;
-      // COLMAPUndistorter writes empty stereo/ skeleton; depth must be rebuilt.
+      // COLMAPUndistorterImpl writes empty stereo/ skeleton; depth must be rebuilt.
       RemovePathIfExists(dense_path / "stereo" / "fusion.cfg");
       RemovePathIfExists(dense_path / "stereo" / "patch-match.cfg");
     }
@@ -1089,7 +1089,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       UndistortCameraOptions undistortion_options;
       undistortion_options.max_image_size =
           option_manager_.patch_match_stereo->max_image_size;
-      COLMAPUndistorter undistorter(undistortion_options,
+      COLMAPUndistorterImpl undistorter(undistortion_options,
                                     &reconstruction_manager_->Get(i),
                                     *option_manager_.image_path, dense_path);
       active_thread_ = &undistorter;

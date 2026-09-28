@@ -240,6 +240,10 @@ FeatureMatcherCache::FeatureMatcherCache(
       database_shared_(database),
       database_(database_shared_.get()) {
   CHECK_NOTNULL(database_);
+  // Upstream parity (d3ccaf35): the cache is immediately usable after
+  // construction; the fork-internal raw-pointer construction keeps its
+  // explicit Setup() call site.
+  Setup();
 }
 
 
@@ -282,7 +286,7 @@ FeatureMatcherCache::GetFeatureDescriptorIndexCache() {
                       // descriptors; the fork builds it from the database
                       // read on first access for that image.
                       auto index = FeatureDescriptorIndex::Create();
-                      auto descriptors = GetDescriptors(image_id);
+                      auto descriptors = GetFloatDescriptors(image_id);
                       if (descriptors != nullptr && descriptors->rows() > 0) {
                         index->Build(*descriptors);
                       }

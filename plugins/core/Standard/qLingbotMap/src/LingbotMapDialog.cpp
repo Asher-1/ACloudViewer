@@ -814,23 +814,40 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                 m_resultShowCamsCheck->isChecked(),
                 m_resultCamStrideSlider->value());
     };
-    // Slides coalesce: label/tooltip feedback on valueChanged, the actual
-    // (re-filter/rebuild) application on sliderReleased.
+    // Slides coalesce (project UI-performance convention): dragging only
+    // updates the control's own tooltip as lightweight feedback; the scene
+    // applies ONCE on sliderReleased. The former wiring connected
+    // valueChanged to the full apply as well, which re-ran the entire
+    // camera/cloud walk (O(cameras+clouds) + forced render) on EVERY drag
+    // tick — redundant work with zero extra fidelity.
     connect(m_resultThresholdSlider, &QSlider::valueChanged, this, [this]() {
         m_resultThresholdLabel->setText(QString::number(
                 m_resultThresholdSlider->value() / 100.0, 'f', 2));
     });
     connect(m_resultThresholdSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
+    connect(m_resultPointSizeSlider, &QSlider::valueChanged, this,
+            [this](int value) {
+                m_resultPointSizeSlider->setToolTip(
+                        tr("Point size: %1 px (applies on release)").arg(value));
+            });
     connect(m_resultPointSizeSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
-    connect(m_resultPointSizeSlider, &QSlider::valueChanged, this,
-            emitResultDisplay);
+    connect(m_resultCamSizeSlider, &QSlider::valueChanged, this,
+            [this](int value) {
+                m_resultCamSizeSlider->setToolTip(
+                        tr("Camera size: %1% (applies on release)").arg(value));
+            });
     connect(m_resultCamSizeSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
-    connect(m_resultCamStrideSlider, &QSlider::sliderReleased, this,
-            emitResultDisplay);
     connect(m_resultCamStrideSlider, &QSlider::valueChanged, this,
+            [this](int value) {
+                m_resultCamStrideSlider->setToolTip(
+                        tr("Show one frustum every %1 frame(s) (applies on "
+                           "release)")
+                                .arg(std::max(1, value)));
+            });
+    connect(m_resultCamStrideSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
     connect(m_resultShowCamsCheck, &QCheckBox::toggled, this,
             emitResultDisplay);

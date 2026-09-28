@@ -1751,6 +1751,15 @@ void vtkGLView::removeWidgets(const WIDGETS_PARAMETER& param) {
     if (m_displayTools) m_displayTools->removeWidgets(param);
 }
 
+void vtkGLView::setCameraAggregationSuspended(bool suspended) {
+    // The active view IS a vtkGLView (ecvViewManager::getActiveView): the
+    // replay channel switch must land on THIS view's visualizer, or it
+    // silently hits the base no-op and the suspension never happens.
+    if (m_visualizer3D) {
+        m_visualizer3D->setSensorAggregationSuspended(suspended);
+    }
+}
+
 bool vtkGLView::hideShowEntities(const ccGLDrawContext& context) {
     if (m_displayTools) return m_displayTools->hideShowEntities(context);
     return true;

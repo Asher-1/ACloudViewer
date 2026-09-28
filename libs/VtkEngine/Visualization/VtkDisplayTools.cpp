@@ -1559,6 +1559,12 @@ void VtkDisplayTools::removeEntities(const CC_DRAW_CONTEXT& context) {
     }
 }
 
+void VtkDisplayTools::setCameraAggregationSuspended(bool suspended) {
+    if (m_visualizer3D) {
+        m_visualizer3D->setSensorAggregationSuspended(suspended);
+    }
+}
+
 bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
     DrawProbeScope hideShowProbe(m_probeHideShowMs, m_probeHideShowN);
     VtkVis* vis = resolveVisualizer(context.display);

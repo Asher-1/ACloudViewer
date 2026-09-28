@@ -148,10 +148,23 @@ private:
      *  transition reports back through the dialog's setReplayState. */
     enum class ReplayState { Stopped, Playing, Paused };
     void startPlayback();
+    /** SINGLE WRITER for the Result-display state over the GOVERNED entity
+     *  set: the materialized result cameras/clouds when present, else the
+     *  streaming online-preview trail (the sliders stay live mid-run).
+     *  Applies, in one pass:
+     *    camera visible = Show cameras && (ordinal % stride == 0) &&
+     *                     frameGate (official replay rule while a replay
+     *                     runs, always true when stopped)
+     *    camera scale   = baseScale * Camera size% (per-sensor base)
+     *    cloud visible  = frameGate
+     *  plus the engine reconcile (composite blocks + "#plane" faces).
+     *  Tick, seek, slider changes and playback restore all route here —
+     *  there is no second visibility owner to fight the sliders. */
+    void applyDisplayState();
     /** Replay-owned camera/cloud visibility: official frame rule (3D
      *  incremental / 4D current) COMBINED with the result-display density
-     *  (Show cameras / Camera stride). One formula for tick, seek and
-     *  slider changes. */
+     *  (Show cameras / Camera stride). Thin wrapper over applyDisplayState
+     *  kept for the tick/seek call-site readability. */
     void applyReplayVisibility();
     void pausePlayback();
     void stopPlaybackAndRestore();
@@ -189,6 +202,11 @@ private:
     double m_lastFrameRadius = 0.0;
     float m_lastFrameC2w[16] = {};
     bool m_lastFrameHasPoints = false;
+    /** World up, DERIVED from the streamed cameras' own up vectors (EMA
+     *  smoothed). The engine world frame is the first camera's frame
+     *  (OpenCV: +Z forward, +Y down), so no world axis letter is "up" by
+     *  construction — hard-coding one rolled the Fit view upside down. */
+    CCVector3d m_worldUp{0, 0, 0};
 
     // ---- loop playback over the final result (camera-frustum cycle) ----
     QTimer* m_playbackTimer = nullptr;

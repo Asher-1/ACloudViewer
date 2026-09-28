@@ -677,8 +677,13 @@ bool SqliteDatabase::ExistsMatches(const image_t image_id1,
 
 bool SqliteDatabase::ExistsInlierMatches(const image_t image_id1,
                                    const image_t image_id2) const {
-  return ExistsRowId(sql_stmt_exists_two_view_geometry_,
-                     ImagePairToPairId(image_id1, image_id2));
+  // Upstream parity (d3ccaf35): the entry must exist AND carry a non-empty
+  // inlier array (the fork previously aliased this to row existence).
+  if (!ExistsRowId(sql_stmt_exists_two_view_geometry_,
+                   ImagePairToPairId(image_id1, image_id2))) {
+    return false;
+  }
+  return !ReadTwoViewGeometry(image_id1, image_id2).inlier_matches.empty();
 }
 
 bool SqliteDatabase::ExistsTwoViewGeometry(const image_t image_id1,
@@ -1679,7 +1684,10 @@ void SqliteDatabase::UpdateKeypoints(const image_t image_id,
 void SqliteDatabase::UpdateTwoViewGeometry(
         const image_t image_id1, const image_t image_id2,
         const TwoViewGeometry& two_view_geometry) const {
-  DeleteInlierMatches(image_id1, image_id2);
+  // Full-row replacement: deleting via DeleteInlierMatches only clears the
+  // inlier array (upstream semantics) and leaves the row in place, which
+  // would trip the pair_id uniqueness on the write below.
+  DeleteTwoViewGeometry(image_id1, image_id2);
   WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
 }
 
@@ -1703,11 +1711,17 @@ void SqliteDatabase::DeleteTwoViewGeometry(const image_t image_id1,
 
 void SqliteDatabase::DeleteInlierMatches(const image_t image_id1,
                                    const image_t image_id2) const {
+  // Upstream parity (d3ccaf35): clear the inlier array while keeping the
+  // two-view geometry entry itself. A plain UPDATE avoids the fork's
+  // delete+write UpdateTwoViewGeometry (which must not be re-entered) and
+  // is unconditional - a missing row is a no-op, matching the upstream
+  // Exists-guard semantics.
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_delete_two_view_geometry_, 1,
-                                  static_cast<sqlite3_int64>(pair_id)));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_delete_two_view_geometry_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_two_view_geometry_));
+  const std::string sql =
+          "UPDATE two_view_geometries SET rows = 0, cols = 0, data = NULL"
+          " WHERE pair_id = " +
+          std::to_string(static_cast<long long>(pair_id)) + ";";
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
 void SqliteDatabase::ClearAllTables() const {

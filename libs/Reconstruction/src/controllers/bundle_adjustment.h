@@ -22,7 +22,8 @@ public:
 private:
     void Run();
 
-    const OptionManager options_;
+    // Upstream parity: reference semantics; the caller outlives the run.
+    const OptionManager& options_;
     Reconstruction* reconstruction_;
 };
 

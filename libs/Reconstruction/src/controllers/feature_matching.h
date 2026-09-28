@@ -35,6 +35,10 @@ namespace colmap {
 struct GeometricVerifierOptions {
     // Number of threads for geometric verification.
     int num_threads = -1;
+
+    // Upstream parity (d3ccaf35): reuse the relative pose already stored in
+    // the two-view geometry payload instead of re-estimating it.
+    bool use_existing_relative_pose = false;
 };
 
 // Exhaustively match images using an ExhaustivePairGenerator.

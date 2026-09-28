@@ -153,7 +153,7 @@ void WriteCOLMAPCommands(const bool geometric,
 
 }  // namespace
 
-COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
+COLMAPUndistorterImpl::COLMAPUndistorterImpl(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
                                      const std::filesystem::path& image_path,
                                      const std::filesystem::path& output_path,
@@ -168,7 +168,7 @@ COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
       reconstruction_(CHECK_NOTNULL(reconstruction)),
       image_ids_(image_ids) {}
 
-void COLMAPUndistorter::Run() {
+void COLMAPUndistorterImpl::Run() {
   PrintHeading1("Image undistortion");
 
   CreateDirIfNotExists(output_path_ / "images");
@@ -189,12 +189,12 @@ void COLMAPUndistorter::Run() {
     for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
       const image_t image_id = reconstruction_->RegImageIds().at(i);
       futures.push_back(
-          thread_pool.AddTask(&COLMAPUndistorter::Undistort, this, image_id));
+          thread_pool.AddTask(&COLMAPUndistorterImpl::Undistort, this, image_id));
     }
   } else {
     for (const image_t image_id : image_ids_) {
       futures.push_back(
-          thread_pool.AddTask(&COLMAPUndistorter::Undistort, this, image_id));
+          thread_pool.AddTask(&COLMAPUndistorterImpl::Undistort, this, image_id));
     }
   }
 
@@ -202,7 +202,7 @@ void COLMAPUndistorter::Run() {
   // when writing the MVS config files
   image_names_.clear();
   for (size_t i = 0; i < futures.size(); ++i) {
-    if (IsStopped()) {
+    if (ShouldStop()) {
       break;
     }
 
@@ -218,6 +218,15 @@ void COLMAPUndistorter::Run() {
         image_names_.push_back(reconstruction_->Image(image_ids_[i]).Name());
       }
     }
+  }
+
+  // Upstream parity (StopsPendingWork): a cancelled undistortion waits for
+  // the in-flight tasks and returns without rewriting the reconstruction or
+  // emitting the MVS configs; continuing here would also race the in-place
+  // UndistortReconstruction against still-running per-image workers.
+  if (ShouldStop()) {
+    thread_pool.Wait();
+    return;
   }
 
   std::cout << "Writing reconstruction..." << std::endl;
@@ -238,7 +247,18 @@ void COLMAPUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool COLMAPUndistorter::Undistort(const image_t image_id) const {
+
+void COLMAPUndistorterImpl::SetCheckIfStoppedFunc(
+        std::function<bool()> func) {
+  check_if_stopped_func_ = std::move(func);
+}
+
+bool COLMAPUndistorterImpl::ShouldStop() {
+  return IsStopped() ||
+         (check_if_stopped_func_ && check_if_stopped_func_());
+}
+
+bool COLMAPUndistorterImpl::Undistort(const image_t image_id) const {
   const Image& image = reconstruction_->Image(image_id);
 
   Bitmap distorted_bitmap;
@@ -271,7 +291,7 @@ bool COLMAPUndistorter::Undistort(const image_t image_id) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-void COLMAPUndistorter::WritePatchMatchConfig() const {
+void COLMAPUndistorterImpl::WritePatchMatchConfig() const {
   const auto path = output_path_ / "stereo/patch-match.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -281,7 +301,7 @@ void COLMAPUndistorter::WritePatchMatchConfig() const {
   }
 }
 
-void COLMAPUndistorter::WriteFusionConfig() const {
+void COLMAPUndistorterImpl::WriteFusionConfig() const {
   const auto path = output_path_ / "stereo/fusion.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -290,7 +310,7 @@ void COLMAPUndistorter::WriteFusionConfig() const {
   }
 }
 
-void COLMAPUndistorter::WriteScript(const bool geometric) const {
+void COLMAPUndistorterImpl::WriteScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-colmap-geometric.sh"
                                 : "run-colmap-photometric.sh");
@@ -302,7 +322,7 @@ void COLMAPUndistorter::WriteScript(const bool geometric) const {
   WriteCOLMAPCommands(geometric, ".", "COLMAP", "option-all", "", "", &file);
 }
 
-PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
+PMVSUndistorterImpl::PMVSUndistorterImpl(const UndistortCameraOptions& options,
                                  Reconstruction* reconstruction,
                                  const std::filesystem::path& image_path,
                                  const std::filesystem::path& output_path)
@@ -311,7 +331,7 @@ PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
       output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void PMVSUndistorter::Run() {
+void PMVSUndistorterImpl::Run() {
   PrintHeading1("Image undistortion (CMVS/PMVS)");
 
   CreateDirIfNotExists(output_path_ / "pmvs");
@@ -324,7 +344,7 @@ void PMVSUndistorter::Run() {
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
-        thread_pool.AddTask(&PMVSUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&PMVSUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -367,7 +387,7 @@ void PMVSUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
+bool PMVSUndistorterImpl::Undistort(const size_t reg_image_idx) const {
   const auto output_image_path =
       output_path_ / StringPrintf("pmvs/visualize/%08d.jpg", reg_image_idx);
   const auto proj_matrix_path =
@@ -395,7 +415,7 @@ bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-void PMVSUndistorter::WriteVisibilityData() const {
+void PMVSUndistorterImpl::WriteVisibilityData() const {
   const auto path = output_path_ / "pmvs/vis.dat";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -434,7 +454,7 @@ void PMVSUndistorter::WriteVisibilityData() const {
   }
 }
 
-void PMVSUndistorter::WritePMVSScript() const {
+void PMVSUndistorterImpl::WritePMVSScript() const {
   const auto path = output_path_ / "run-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -444,7 +464,7 @@ void PMVSUndistorter::WritePMVSScript() const {
   file << "$PMVS_EXE_PATH/pmvs2 pmvs/ option-all" << std::endl;
 }
 
-void PMVSUndistorter::WriteCMVSPMVSScript() const {
+void PMVSUndistorterImpl::WriteCMVSPMVSScript() const {
   const auto path = output_path_ / "run-cmvs-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -464,7 +484,7 @@ void PMVSUndistorter::WriteCMVSPMVSScript() const {
   file << "done" << std::endl;
 }
 
-void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
+void PMVSUndistorterImpl::WriteCOLMAPScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-colmap-geometric.sh"
                                 : "run-colmap-photometric.sh");
@@ -477,7 +497,7 @@ void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
                       "", &file);
 }
 
-void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
+void PMVSUndistorterImpl::WriteCMVSCOLMAPScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-cmvs-colmap-geometric.sh"
                                 : "run-cmvs-colmap-photometric.sh");
@@ -504,7 +524,7 @@ void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
   file << "done" << std::endl;
 }
 
-void PMVSUndistorter::WriteOptionFile() const {
+void PMVSUndistorterImpl::WriteOptionFile() const {
   const auto path = output_path_ / "pmvs/option-all";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -533,7 +553,7 @@ void PMVSUndistorter::WriteOptionFile() const {
   file << "oimages 0" << std::endl;
 }
 
-CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
+CMPMVSUndistorterImpl::CMPMVSUndistorterImpl(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
                                      const std::filesystem::path& image_path,
                                      const std::filesystem::path& output_path)
@@ -542,7 +562,7 @@ CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
       output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void CMPMVSUndistorter::Run() {
+void CMPMVSUndistorterImpl::Run() {
   PrintHeading1("Image undistortion (CMP-MVS)");
 
   ThreadPool thread_pool;
@@ -550,7 +570,7 @@ void CMPMVSUndistorter::Run() {
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
-        thread_pool.AddTask(&CMPMVSUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&CMPMVSUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -568,7 +588,7 @@ void CMPMVSUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
+bool CMPMVSUndistorterImpl::Undistort(const size_t reg_image_idx) const {
   const auto output_image_path =
       output_path_ / StringPrintf("%05d.jpg", reg_image_idx + 1);
   const auto proj_matrix_path =
@@ -595,7 +615,7 @@ bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-PureImageUndistorter::PureImageUndistorter(
+PureImageUndistorterImpl::PureImageUndistorterImpl(
     const UndistortCameraOptions& options,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
@@ -605,7 +625,7 @@ PureImageUndistorter::PureImageUndistorter(
       output_path_(output_path),
       image_names_and_cameras_(image_names_and_cameras) {}
 
-void PureImageUndistorter::Run() {
+void PureImageUndistorterImpl::Run() {
   PrintHeading1("Image undistortion");
 
   CreateDirIfNotExists(output_path_);
@@ -616,7 +636,7 @@ void PureImageUndistorter::Run() {
   futures.reserve(num_images);
   for (size_t i = 0; i < num_images; ++i) {
     futures.push_back(
-        thread_pool.AddTask(&PureImageUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&PureImageUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -634,7 +654,7 @@ void PureImageUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool PureImageUndistorter::Undistort(const size_t image_idx) const {
+bool PureImageUndistorterImpl::Undistort(const size_t image_idx) const {
   const std::string& image_name = image_names_and_cameras_[image_idx].first;
   const Camera& camera = image_names_and_cameras_[image_idx].second;
 
@@ -656,7 +676,7 @@ bool PureImageUndistorter::Undistort(const size_t image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-StereoImageRectifier::StereoImageRectifier(
+StereoImageRectifierImpl::StereoImageRectifierImpl(
     const UndistortCameraOptions& options, Reconstruction* reconstruction,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
@@ -667,14 +687,14 @@ StereoImageRectifier::StereoImageRectifier(
       stereo_pairs_(stereo_pairs),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void StereoImageRectifier::Run() {
+void StereoImageRectifierImpl::Run() {
   PrintHeading1("Stereo rectification");
 
   ThreadPool thread_pool;
   std::vector<std::future<void>> futures;
   futures.reserve(stereo_pairs_.size());
   for (const auto& stereo_pair : stereo_pairs_) {
-    futures.push_back(thread_pool.AddTask(&StereoImageRectifier::Rectify, this,
+    futures.push_back(thread_pool.AddTask(&StereoImageRectifierImpl::Rectify, this,
                                           stereo_pair.first,
                                           stereo_pair.second));
   }
@@ -694,7 +714,7 @@ void StereoImageRectifier::Run() {
   GetTimer().PrintMinutes();
 }
 
-void StereoImageRectifier::Rectify(const image_t image_id1,
+void StereoImageRectifierImpl::Rectify(const image_t image_id1,
                                    const image_t image_id2) const {
   const Image& image1 = reconstruction_->Image(image_id1);
   const Image& image2 = reconstruction_->Image(image_id2);

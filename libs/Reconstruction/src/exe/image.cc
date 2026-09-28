@@ -90,7 +90,9 @@ int RunImageDeleter(int argc, char** argv) {
   options.AddDefaultOption(
       "image_names_path", &image_names_path,
       "Path to text file containing one image name to delete per line");
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -159,7 +161,7 @@ int RunImageFilterer(int argc, char** argv) {
   double min_focal_length_ratio = 0.1;
   double max_focal_length_ratio = 10.0;
   double max_extra_param = 100.0;
-  size_t min_num_observations = 10;
+  int min_num_observations = 10;
 
   OptionManager options;
   options.AddRequiredOption("input_path", &input_path);
@@ -168,7 +170,9 @@ int RunImageFilterer(int argc, char** argv) {
   options.AddDefaultOption("max_focal_length_ratio", &max_focal_length_ratio);
   options.AddDefaultOption("max_extra_param", &max_extra_param);
   options.AddDefaultOption("min_num_observations", &min_num_observations);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -181,7 +185,8 @@ int RunImageFilterer(int argc, char** argv) {
   std::vector<image_t> filtered_image_ids;
   for (const auto& image : reconstruction.Images()) {
     if (image.second.IsRegistered() &&
-        image.second.NumPoints3D() < min_num_observations) {
+        image.second.NumPoints3D() <
+                static_cast<size_t>(min_num_observations)) {
       filtered_image_ids.push_back(image.first);
     }
   }
@@ -220,7 +225,9 @@ int RunImageRectifier(int argc, char** argv) {
   options.AddDefaultOption("max_scale", &undistort_camera_options.max_scale);
   options.AddDefaultOption("max_image_size",
                            &undistort_camera_options.max_image_size);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -228,7 +235,7 @@ int RunImageRectifier(int argc, char** argv) {
   const auto stereo_pairs =
       ReadStereoImagePairs(stereo_pairs_list, reconstruction);
 
-  StereoImageRectifier rectifier(undistort_camera_options, &reconstruction,
+  StereoImageRectifierImpl rectifier(undistort_camera_options, &reconstruction,
                                   *options.image_path, output_path,
                                   stereo_pairs);
   rectifier.Start();
@@ -246,7 +253,9 @@ int RunImageRegistrator(int argc, char** argv) {
   options.AddRequiredOption("input_path", &input_path);
   options.AddRequiredOption("output_path", &output_path);
   options.AddMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -342,7 +351,9 @@ int RunImageUndistorter(int argc, char** argv) {
   options.AddDefaultOption("roi_min_y", &undistort_camera_options.roi_min_y);
   options.AddDefaultOption("roi_max_x", &undistort_camera_options.roi_max_x);
   options.AddDefaultOption("roi_max_y", &undistort_camera_options.roi_max_y);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   CreateDirIfNotExists(output_path);
 
@@ -383,15 +394,15 @@ int RunImageUndistorter(int argc, char** argv) {
 
   std::unique_ptr<Thread> undistorter;
   if (output_type == "COLMAP") {
-    undistorter.reset(new COLMAPUndistorter(
+    undistorter.reset(new COLMAPUndistorterImpl(
         undistort_camera_options, &reconstruction, *options.image_path,
         output_path, num_patch_match_src_images, copy_type, image_ids));
   } else if (output_type == "PMVS") {
-    undistorter.reset(new PMVSUndistorter(undistort_camera_options,
+    undistorter.reset(new PMVSUndistorterImpl(undistort_camera_options,
                                           &reconstruction, *options.image_path,
                                           output_path));
   } else if (output_type == "CMP-MVS") {
-    undistorter.reset(new CMPMVSUndistorter(undistort_camera_options,
+    undistorter.reset(new CMPMVSUndistorterImpl(undistort_camera_options,
                                             &reconstruction, *options.image_path,
                                             output_path));
   } else {
@@ -427,7 +438,9 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
   options.AddDefaultOption("roi_min_y", &undistort_camera_options.roi_min_y);
   options.AddDefaultOption("roi_max_x", &undistort_camera_options.roi_max_x);
   options.AddDefaultOption("roi_max_y", &undistort_camera_options.roi_max_y);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   CreateDirIfNotExists(output_path);
 
@@ -486,7 +499,7 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
   }
 
   std::unique_ptr<Thread> undistorter;
-  undistorter.reset(new PureImageUndistorter(undistort_camera_options,
+  undistorter.reset(new PureImageUndistorterImpl(undistort_camera_options,
                                              *options.image_path, output_path,
                                              image_names_and_cameras));
 
@@ -506,7 +519,9 @@ int RunImageTexturer(int argc, char** argv) {
   options.AddRequiredOption("output_path", &output_path);
   options.AddRequiredOption("mesh_path", &mesh_path);
   options.AddTexturingOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` does not exist" << std::endl;

@@ -539,9 +539,19 @@ TEST(base_database, TestTwoViewGeometry) {
   EXPECT_EQ(num_inliers[0], two_view_geometry.inlier_matches.size());
   EXPECT_EQ(database->NumInlierMatches(), 1000);
   database->DeleteInlierMatches(image_id1, image_id2);
+  // Upstream parity (d3ccaf35): deleting the inlier matches keeps the
+  // two-view geometry entry itself.
+  EXPECT_TRUE(database->ExistsTwoViewGeometry(image_id1, image_id2));
+  EXPECT_EQ(database->NumInlierMatches(), 0);
+  database->DeleteTwoViewGeometry(image_id1, image_id2);
+  EXPECT_FALSE(database->ExistsTwoViewGeometry(image_id1, image_id2));
   EXPECT_EQ(database->NumInlierMatches(), 0);
   database->WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
   EXPECT_EQ(database->NumInlierMatches(), 1000);
+  // Upstream additionally asserts that a duplicate write throws; the fork's
+  // SQLite error helper exits the process instead of throwing (adjudicated
+  // in util/sqlite3_utils.h until the W17.2b database abstraction lands),
+  // so that contract is verified by the CLI tests rather than in-process.
 }
 
 TEST(base_database, TestMerge) {

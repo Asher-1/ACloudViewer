@@ -522,8 +522,8 @@ void DenseReconstructionWidget::Undistort() {
     }
 
     // Pass reconstruction pointer for in-place undistortion
-    COLMAPUndistorter* undistorter =
-            new COLMAPUndistorter(UndistortCameraOptions(), reconstruction_,
+    COLMAPUndistorterImpl* undistorter =
+            new COLMAPUndistorterImpl(UndistortCameraOptions(), reconstruction_,
                                   *options_->image_path, workspace_path);
     undistorter->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
         QMetaObject::invokeMethod(

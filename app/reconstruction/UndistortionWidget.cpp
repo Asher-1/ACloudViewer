@@ -67,17 +67,17 @@ void UndistortionWidget::Undistort() {
         Thread* undistorter = nullptr;
 
         if (output_format_->currentIndex() == 0) {
-            undistorter = new COLMAPUndistorter(
+            undistorter = new COLMAPUndistorterImpl(
                     undistortion_options_,
                     const_cast<colmap::Reconstruction*>(reconstruction_),
                     *options_->image_path, output_path_);
         } else if (output_format_->currentIndex() == 1) {
-            undistorter = new PMVSUndistorter(
+            undistorter = new PMVSUndistorterImpl(
                     undistortion_options_,
                     const_cast<colmap::Reconstruction*>(reconstruction_),
                     *options_->image_path, output_path_);
         } else if (output_format_->currentIndex() == 2) {
-            undistorter = new CMPMVSUndistorter(
+            undistorter = new CMPMVSUndistorterImpl(
                     undistortion_options_,
                     const_cast<colmap::Reconstruction*>(reconstruction_),
                     *options_->image_path, output_path_);

@@ -88,6 +88,20 @@ struct FeatureKeypoint {
     float a12;
     float a21;
     float a22;
+
+    // Upstream parity (d3ccaf35): value comparison for cache/database
+    // round-trip assertions. Keypoints are compared exactly - they are
+    // serialized losslessly as float32.
+    friend bool operator==(const FeatureKeypoint& lhs,
+                           const FeatureKeypoint& rhs) {
+        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.a11 == rhs.a11 &&
+               lhs.a12 == rhs.a12 && lhs.a21 == rhs.a21 &&
+               lhs.a22 == rhs.a22;
+    }
+    friend bool operator!=(const FeatureKeypoint& lhs,
+                           const FeatureKeypoint& rhs) {
+        return !(lhs == rhs);
+    }
 };
 
 typedef Eigen::Matrix<uint8_t, 1, Eigen::Dynamic, Eigen::RowMajor>

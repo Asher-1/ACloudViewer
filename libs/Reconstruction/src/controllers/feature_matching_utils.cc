@@ -1,0 +1,505 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Upstream parity (d3ccaf35 controllers/feature_matching_utils.cc), adapted
+// to the fork: value-semantic FeatureMatcher::Image (no pose-prior slot),
+// fork SiftMatchingOptions without the shared descriptor-index hook (the
+// fork's SIFT shell owns its FLANN indexes internally), and the fork's
+// FeatureMatcherCache / JobQueue / Thread utilities.
+
+#include "controllers/feature_matching_utils.h"
+
+#include <algorithm>
+#include <numeric>
+#include <unordered_set>
+#include <utility>
+
+#include "feature/utils.h"
+#include "util/hash_containers.h"
+#include "util/misc.h"
+
+namespace colmap {
+namespace {
+
+// Upstream parity (VerifierWorker): estimate the two-view geometry for one
+// pair, optionally from a known relative pose stored in the payload.
+class VerifierWorker : public Thread {
+ public:
+  using Input = FeatureMatcherData;
+  using Output = FeatureMatcherData;
+
+  VerifierWorker(const TwoViewGeometryOptions& options,
+                 std::shared_ptr<FeatureMatcherCache> cache,
+                 JobQueue<Input>* input_queue,
+                 JobQueue<Output>* output_queue,
+                 const bool use_existing_relative_pose = false)
+      : options_(options),
+        cache_(std::move(cache)),
+        use_existing_relative_pose_(use_existing_relative_pose),
+        input_queue_(input_queue),
+        output_queue_(output_queue) {
+    THROW_CHECK(options_.Check());
+  }
+
+ protected:
+  void Run() override {
+    while (true) {
+      if (IsStopped()) {
+        break;
+      }
+      auto input_job = input_queue_->Pop();
+      if (input_job.IsValid()) {
+        auto& data = input_job.Data();
+        if (data.matches.size() <
+            static_cast<size_t>(options_.min_num_inliers)) {
+          data.two_view_geometry.config =
+              TwoViewGeometry::ConfigurationType::DEGENERATE;
+          THROW_CHECK(output_queue_->Push(std::move(data)));
+          continue;
+        }
+        const auto& camera1 =
+            cache_->GetCamera(cache_->GetImage(data.image_id1).CameraId());
+        const auto& camera2 =
+            cache_->GetCamera(cache_->GetImage(data.image_id2).CameraId());
+        const auto keypoints1 = cache_->GetKeypoints(data.image_id1);
+        const auto keypoints2 = cache_->GetKeypoints(data.image_id2);
+        const std::vector<Eigen::Vector2d> points1 =
+            FeatureKeypointsToPointsVector(*keypoints1);
+        const std::vector<Eigen::Vector2d> points2 =
+            FeatureKeypointsToPointsVector(*keypoints2);
+        if (use_existing_relative_pose_ &&
+            data.two_view_geometry.cam2_from_cam1.has_value()) {
+          data.two_view_geometry = TwoViewGeometryFromKnownRelativePose(
+              camera1,
+              points1,
+              camera2,
+              points2,
+              *data.two_view_geometry.cam2_from_cam1,
+              data.matches,
+              options_.min_num_inliers,
+              options_.ransac_options.max_error);
+        } else {
+          data.two_view_geometry = EstimateTwoViewGeometry(
+              camera1, points1, camera2, points2, data.matches, options_);
+        }
+        THROW_CHECK(output_queue_->Push(std::move(data)));
+      }
+    }
+  }
+
+ private:
+  const TwoViewGeometryOptions options_;
+  std::shared_ptr<FeatureMatcherCache> cache_;
+  const bool use_existing_relative_pose_;
+  JobQueue<Input>* input_queue_;
+  JobQueue<Output>* output_queue_;
+};
+
+void WriteVerifiedTwoViewGeometry(FeatureMatcherCache& cache,
+                                  image_t image_id1,
+                                  image_t image_id2,
+                                  TwoViewGeometry two_view_geometry,
+                                  int min_num_inliers) {
+  if (two_view_geometry.config ==
+      TwoViewGeometry::ConfigurationType::UNDEFINED) {
+    return;
+  }
+  if (two_view_geometry.config ==
+          TwoViewGeometry::ConfigurationType::DEGENERATE ||
+      two_view_geometry.inlier_matches.size() <
+          static_cast<size_t>(min_num_inliers)) {
+    two_view_geometry = TwoViewGeometry();
+    two_view_geometry.config = TwoViewGeometry::ConfigurationType::DEGENERATE;
+  }
+  cache.WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
+}
+
+}  // namespace
+
+FeatureMatcherWorker::FeatureMatcherWorker(
+    const FeatureMatchingOptions& matching_options,
+    const TwoViewGeometryOptions& geometry_options,
+    const std::shared_ptr<FeatureMatcherCache>& cache,
+    JobQueue<Input>* input_queue,
+    JobQueue<Output>* output_queue)
+    : matching_options_(matching_options),
+      geometry_options_(geometry_options),
+      cache_(cache),
+      input_queue_(input_queue),
+      output_queue_(output_queue) {
+  THROW_CHECK(matching_options_.Check());
+}
+
+void FeatureMatcherWorker::Run() {
+  matching_options_.max_num_matches = std::min<int>(
+      matching_options_.max_num_matches, cache_->MaxNumKeypoints());
+  std::unique_ptr<FeatureMatcher> matcher =
+      FeatureMatcher::Create(matching_options_);
+  if (matcher == nullptr) {
+    LOG(ERROR) << "Failed to create feature matcher.";
+    SignalInvalidSetup();
+    return;
+  }
+  SignalValidSetup();
+  while (true) {
+    if (IsStopped()) {
+      break;
+    }
+    auto input_job = input_queue_->Pop();
+    if (input_job.IsValid()) {
+      auto& data = input_job.Data();
+      if (!cache_->ExistsDescriptors(data.image_id1) ||
+          !cache_->ExistsDescriptors(data.image_id2)) {
+        THROW_CHECK(output_queue_->Push(std::move(data)));
+        continue;
+      }
+      const auto& camera1 =
+          cache_->GetCamera(cache_->GetImage(data.image_id1).CameraId());
+      const auto& camera2 =
+          cache_->GetCamera(cache_->GetImage(data.image_id2).CameraId());
+      // Fork adaptation: the Image payload is value-semantic and its camera
+      // is a shared_ptr; alias without ownership over the cache-owned camera.
+      const auto make_image = [&cache = *cache_](image_t image_id,
+                                                 const Camera& camera) {
+        FeatureMatcher::Image image;
+        image.image_id = image_id;
+        image.camera =
+                std::shared_ptr<const Camera>(&camera, [](const Camera*) {});
+        image.keypoints = *cache.GetKeypoints(image_id);
+        image.descriptors = FromPackedU8(*cache.GetDescriptors(image_id));
+        return image;
+      };
+      if (matching_options_.guided_matching) {
+        matcher->MatchGuided(
+            geometry_options_.ransac_options.max_error,
+            make_image(data.image_id1, camera1),
+            make_image(data.image_id2, camera2),
+            &data.two_view_geometry);
+      } else {
+        matcher->Match(make_image(data.image_id1, camera1),
+                       make_image(data.image_id2, camera2),
+                       &data.matches);
+        if (matching_options_.max_num_matches > 0 &&
+            data.matches.size() >
+                static_cast<size_t>(matching_options_.max_num_matches)) {
+          data.matches.resize(matching_options_.max_num_matches);
+        }
+      }
+      THROW_CHECK(output_queue_->Push(std::move(data)));
+    }
+  }
+}
+
+FeatureMatcherController::FeatureMatcherController(
+    const FeatureMatchingOptions& matching_options,
+    const TwoViewGeometryOptions& geometry_options,
+    std::shared_ptr<FeatureMatcherCache> cache)
+    : matching_options_(matching_options),
+      geometry_options_(geometry_options),
+      cache_(std::move(cache)),
+      skip_geometric_verification_(
+          matching_options.skip_geometric_verification &&
+          !matching_options.guided_matching),
+      is_setup_(false) {
+  THROW_CHECK(matching_options_.Check());
+  THROW_CHECK(geometry_options_.Check());
+  // Upstream additionally asserts ransac_options.num_threads == 1; the fork's
+  // RANSACOptions has no parallel-RANSAC knob, so the invariant holds
+  // trivially.
+  const int num_threads = GetEffectiveNumThreads(matching_options_.num_threads);
+  THROW_CHECK_GT(num_threads, 0);
+
+  JobQueue<FeatureMatcherData>* matcher_output_queue =
+      skip_geometric_verification_ ? &output_queue_ : &verifier_queue_;
+
+  auto worker_matching_options = matching_options_;
+  worker_matching_options.num_threads = 1;
+  worker_matching_options.guided_matching = false;
+  matchers_.reserve(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
+    matchers_.emplace_back(
+        std::make_unique<FeatureMatcherWorker>(worker_matching_options,
+                                               geometry_options_,
+                                               cache_,
+                                               &matcher_queue_,
+                                               matcher_output_queue));
+  }
+
+  verifiers_.reserve(num_threads);
+  if (matching_options_.guided_matching) {
+    for (int i = 0; i < num_threads; ++i) {
+      verifiers_.emplace_back(std::make_unique<VerifierWorker>(
+          geometry_options_, cache_, &verifier_queue_, &guided_matcher_queue_));
+    }
+    auto guided_matching_options = matching_options_;
+    guided_matching_options.num_threads = 1;
+    guided_matchers_.reserve(num_threads);
+    for (int i = 0; i < num_threads; ++i) {
+      guided_matchers_.emplace_back(
+          std::make_unique<FeatureMatcherWorker>(guided_matching_options,
+                                                 geometry_options_,
+                                                 cache_,
+                                                 &guided_matcher_queue_,
+                                                 &output_queue_));
+    }
+  } else if (!matching_options.skip_geometric_verification) {
+    for (int i = 0; i < num_threads; ++i) {
+      verifiers_.emplace_back(std::make_unique<VerifierWorker>(
+          geometry_options_, cache_, &verifier_queue_, &output_queue_));
+    }
+  }
+}
+
+FeatureMatcherController::~FeatureMatcherController() {
+  matcher_queue_.Wait();
+  verifier_queue_.Wait();
+  guided_matcher_queue_.Wait();
+  output_queue_.Wait();
+
+  for (auto& matcher : matchers_) {
+    matcher->Stop();
+  }
+  for (auto& verifier : verifiers_) {
+    verifier->Stop();
+  }
+  for (auto& guided_matcher : guided_matchers_) {
+    guided_matcher->Stop();
+  }
+
+  matcher_queue_.Stop();
+  verifier_queue_.Stop();
+  guided_matcher_queue_.Stop();
+  output_queue_.Stop();
+
+  for (auto& matcher : matchers_) {
+    matcher->Wait();
+  }
+  for (auto& verifier : verifiers_) {
+    verifier->Wait();
+  }
+  for (auto& guided_matcher : guided_matchers_) {
+    guided_matcher->Wait();
+  }
+}
+
+bool FeatureMatcherController::Setup() {
+  for (auto& matcher : matchers_) {
+    matcher->Start();
+  }
+  for (auto& verifier : verifiers_) {
+    verifier->Start();
+  }
+  for (auto& guided_matcher : guided_matchers_) {
+    guided_matcher->Start();
+  }
+  for (auto& matcher : matchers_) {
+    if (!matcher->CheckValidSetup()) {
+      return false;
+    }
+  }
+  for (auto& guided_matcher : guided_matchers_) {
+    if (!guided_matcher->CheckValidSetup()) {
+      return false;
+    }
+  }
+  is_setup_ = true;
+  return true;
+}
+
+void FeatureMatcherController::Match(
+    const std::vector<std::pair<image_t, image_t>>& image_pairs) {
+  THROW_CHECK_NOTNULL(cache_);
+  THROW_CHECK(is_setup_);
+  if (image_pairs.empty()) {
+    return;
+  }
+
+  FlatHashSet<image_pair_t> image_pair_ids;
+  image_pair_ids.reserve(image_pairs.size());
+
+  size_t num_outputs = 0;
+  for (const auto& [image_id1, image_id2] : image_pairs) {
+    if (image_id1 == image_id2) {
+      continue;
+    }
+    const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
+    if (!image_pair_ids.insert(pair_id).second) {
+      continue;
+    }
+    if (matching_options_.skip_image_pairs_in_same_frame) {
+      const Image& image1 = cache_->GetImage(image_id1);
+      const Image& image2 = cache_->GetImage(image_id2);
+      if (image1.HasFrameId() && image2.HasFrameId() &&
+          image1.FrameId() == image2.FrameId()) {
+        continue;
+      }
+    }
+
+    const bool exists_matches = cache_->ExistsMatches(image_id1, image_id2);
+    const bool exists_two_view_geometry =
+        cache_->ExistsTwoViewGeometry(image_id1, image_id2);
+    if (exists_matches && exists_two_view_geometry) {
+      continue;
+    }
+    if (exists_matches && skip_geometric_verification_) {
+      continue;
+    }
+
+    num_outputs += 1;
+
+    if (exists_two_view_geometry) {
+      cache_->DeleteTwoViewGeometry(image_id1, image_id2);
+    }
+
+    FeatureMatcherData data;
+    data.image_id1 = image_id1;
+    data.image_id2 = image_id2;
+    if (exists_matches) {
+      data.matches = cache_->GetMatches(image_id1, image_id2);
+      cache_->DeleteMatches(image_id1, image_id2);
+      THROW_CHECK(verifier_queue_.Push(std::move(data)));
+    } else {
+      THROW_CHECK(matcher_queue_.Push(std::move(data)));
+    }
+  }
+
+  for (size_t i = 0; i < num_outputs; ++i) {
+    auto output_job = output_queue_.Pop();
+    THROW_CHECK(output_job.IsValid());
+    auto& output = output_job.Data();
+    if (output.matches.size() <
+        static_cast<size_t>(geometry_options_.min_num_inliers)) {
+      output.matches = {};
+    }
+    cache_->WriteMatches(output.image_id1, output.image_id2, output.matches);
+    WriteVerifiedTwoViewGeometry(*cache_,
+                                 output.image_id1,
+                                 output.image_id2,
+                                 std::move(output.two_view_geometry),
+                                 geometry_options_.min_num_inliers);
+  }
+
+  THROW_CHECK_EQ(output_queue_.Size(), 0);
+}
+
+GeometricVerifierController::GeometricVerifierController(
+    const GeometricVerifierOptions& options,
+    const TwoViewGeometryOptions& geometry_options,
+    std::shared_ptr<FeatureMatcherCache> cache)
+    : geometry_options_(geometry_options),
+      cache_(std::move(cache)),
+      options_(options),
+      is_setup_(false) {
+  THROW_CHECK(geometry_options_.Check());
+  const int num_threads = GetEffectiveNumThreads(options_.num_threads);
+  for (int i = 0; i < num_threads; ++i) {
+    verifiers_.emplace_back(
+        std::make_unique<VerifierWorker>(geometry_options_,
+                                         cache_,
+                                         &verifier_queue_,
+                                         &output_queue_,
+                                         options_.use_existing_relative_pose));
+  }
+}
+
+GeometricVerifierController::~GeometricVerifierController() {
+  verifier_queue_.Wait();
+  output_queue_.Wait();
+
+  for (auto& verifier : verifiers_) {
+    verifier->Stop();
+  }
+
+  verifier_queue_.Stop();
+  output_queue_.Stop();
+
+  for (auto& verifier : verifiers_) {
+    verifier->Wait();
+  }
+}
+
+const GeometricVerifierOptions& GeometricVerifierController::Options() const {
+  return options_;
+}
+
+GeometricVerifierOptions& GeometricVerifierController::Options() {
+  return options_;
+}
+
+bool GeometricVerifierController::Setup() {
+  for (auto& verifier : verifiers_) {
+    verifier->Start();
+  }
+  is_setup_ = true;
+  return true;
+}
+
+void GeometricVerifierController::Verify(
+    const std::vector<std::pair<image_t, image_t>>& image_pairs) {
+  THROW_CHECK_NOTNULL(cache_);
+  THROW_CHECK(is_setup_);
+  if (image_pairs.empty()) {
+    return;
+  }
+
+  FlatHashSet<image_pair_t> image_pair_ids;
+  image_pair_ids.reserve(image_pairs.size());
+
+  size_t num_outputs = 0;
+  for (const auto& [image_id1, image_id2] : image_pairs) {
+    if (image_id1 == image_id2) {
+      continue;
+    }
+    const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
+    if (!image_pair_ids.insert(pair_id).second) {
+      continue;
+    }
+    const bool exists_matches = cache_->ExistsMatches(image_id1, image_id2);
+    const bool exists_inlier_matches =
+        cache_->ExistsInlierMatches(image_id1, image_id2);
+    if (exists_matches && exists_inlier_matches) {
+      continue;
+    }
+    num_outputs += 1;
+    if (exists_inlier_matches) {
+      cache_->DeleteTwoViewGeometry(image_id1, image_id2);
+    }
+    FeatureMatcherData data;
+    data.image_id1 = image_id1;
+    data.image_id2 = image_id2;
+    if (exists_matches) {
+      data.matches = cache_->GetMatches(image_id1, image_id2);
+      if (cache_->ExistsTwoViewGeometry(image_id1, image_id2)) {
+        data.two_view_geometry =
+            cache_->GetTwoViewGeometry(image_id1, image_id2);
+      }
+      THROW_CHECK(verifier_queue_.Push(std::move(data)));
+    }
+  }
+
+  for (size_t i = 0; i < num_outputs; ++i) {
+    auto output_job = output_queue_.Pop();
+    THROW_CHECK(output_job.IsValid());
+    auto& output = output_job.Data();
+    if (output.matches.size() <
+        static_cast<size_t>(geometry_options_.min_num_inliers)) {
+      output.matches = {};
+    }
+    if (cache_->ExistsTwoViewGeometry(output.image_id1, output.image_id2)) {
+      cache_->DeleteTwoViewGeometry(output.image_id1, output.image_id2);
+    }
+    WriteVerifiedTwoViewGeometry(*cache_,
+                                 output.image_id1,
+                                 output.image_id2,
+                                 std::move(output.two_view_geometry),
+                                 geometry_options_.min_num_inliers);
+  }
+
+  THROW_CHECK_EQ(output_queue_.Size(), 0);
+}
+
+}  // namespace colmap

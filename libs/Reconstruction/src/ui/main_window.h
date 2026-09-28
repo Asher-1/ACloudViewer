@@ -35,7 +35,7 @@ namespace colmap {
 
 class MainWindow : public QMainWindow {
 public:
-    explicit MainWindow(const OptionManager& options);
+    explicit MainWindow(OptionManager options);
 
     void ImportReconstruction(const std::string& path);
 

@@ -160,7 +160,9 @@ int RunFeatureExtractor(int argc, char** argv) {
     options.AddDefaultOption("loma_descriptor_model", &loma_descriptor_model);
     options.AddDefaultOption("loma_device", &loma_device);
     options.AddExtractionOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     ImageReaderOptions reader_options = *options.image_reader;
     reader_options.database_path = *options.database_path;
@@ -258,7 +260,9 @@ int RunFeatureImporter(int argc, char** argv) {
     options.AddRequiredOption("import_path", &import_path);
     options.AddDefaultOption("image_list_path", &image_list_path);
     options.AddExtractionOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     ImageReaderOptions reader_options = *options.image_reader;
     reader_options.database_path = *options.database_path;
@@ -298,7 +302,9 @@ int RunMatchesImporter(int argc, char** argv) {
     options.AddDefaultOption("match_type", &match_type,
                              "{'pairs', 'raw', 'inliers'}");
     options.AddMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {
@@ -345,7 +351,9 @@ int RunExhaustiveMatcher(int argc, char** argv) {
     OptionManager options;
     options.AddDatabaseOptions();
     options.AddExhaustiveMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {
@@ -377,7 +385,9 @@ int RunSequentialMatcher(int argc, char** argv) {
     OptionManager options;
     options.AddDatabaseOptions();
     options.AddSequentialMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {
@@ -409,7 +419,9 @@ int RunSpatialMatcher(int argc, char** argv) {
     OptionManager options;
     options.AddDatabaseOptions();
     options.AddSpatialMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {
@@ -441,7 +453,9 @@ int RunTransitiveMatcher(int argc, char** argv) {
     OptionManager options;
     options.AddDatabaseOptions();
     options.AddTransitiveMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {
@@ -473,7 +487,9 @@ int RunVocabTreeMatcher(int argc, char** argv) {
     OptionManager options;
     options.AddDatabaseOptions();
     options.AddVocabTreeMatchingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!UsesLomaMatching(*options.sift_matching) &&
         !VerifySiftGPUParams(options.sift_matching->use_gpu)) {

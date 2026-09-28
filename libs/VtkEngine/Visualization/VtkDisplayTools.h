@@ -160,6 +160,7 @@ public:  // inherit from ecvDisplayTools
 
     virtual void removeEntities(const CC_DRAW_CONTEXT& context) override;
     virtual bool hideShowEntities(const CC_DRAW_CONTEXT& context) override;
+    void setCameraAggregationSuspended(bool suspended) override;
 
     void updateApplyViewportPreviewOverlay(ecvGenericGLDisplay* display,
                                            unsigned sensorId);

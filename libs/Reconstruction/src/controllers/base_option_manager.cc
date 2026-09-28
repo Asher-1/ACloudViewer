@@ -1,0 +1,334 @@
+// ------------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                    -
+// ------------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ------------------------------------------------------------------------------
+
+// Upstream parity (d3ccaf35 controllers/base_option_manager.cc), adapted to
+// the fork: THROW_CHECK_FILE_OPEN maps to CHECK(file.is_open()) (the fork's
+// logging header has no THROW_CHECK_FILE_OPEN), the fork's glog build declares
+// neither FLAGS_minloglevel nor color flags (so the log group carries only
+// log_target/log_path/log_level and ApplyLogFlags maps stderr fallbacks), and
+// the fork has no SetFullPrecTextStream helper (write_ini keeps the fork's
+// pre-existing stream precision).
+
+#include "controllers/base_option_manager.h"
+
+#include <fstream>
+#include <utility>
+
+#include <boost/property_tree/ini_parser.hpp>
+
+#include "math/random.h"
+#include "util/file.h"
+#include "util/version.h"
+
+namespace config = boost::program_options;
+
+namespace colmap {
+
+BaseOptionManager::BaseOptionManager(bool add_project_options) {
+    project_path = std::make_shared<std::filesystem::path>();
+    database_path = std::make_shared<std::filesystem::path>();
+    image_path = std::make_shared<std::filesystem::path>();
+
+    // Upstream calls AddRandomOptions()/AddLogOptions() here; see the header
+    // deviation note - a derived manager's overrides must stay authoritative,
+    // so groups are added via AddAllOptions()/explicit calls instead.
+    desc_ = std::make_shared<boost::program_options::options_description>();
+    desc_->add_options()("help,h", "");
+    if (add_project_options) {
+        desc_->add_options()("project_path", config::value<std::string>());
+    }
+}
+
+bool BaseOptionManager::RegisterOptionGroupOnce(
+        const std::string& option_group) {
+    return added_option_groups_.insert(option_group).second;
+}
+
+bool BaseOptionManager::HasOptionGroup(const std::string& option_group) const {
+    return added_option_groups_.count(option_group) > 0;
+}
+
+void BaseOptionManager::AddRandomOptions() {
+    if (!RegisterOptionGroupOnce("random")) {
+        return;
+    }
+    AddDefaultOption("default_random_seed", &kDefaultPRNGSeed);
+}
+
+void BaseOptionManager::AddLogOptions() {
+    if (!RegisterOptionGroupOnce("log")) {
+        return;
+    }
+    AddDefaultOption("log_target", &log_target_,
+                     "{stderr, stdout, file, stderr_and_file}");
+    AddDefaultOption("log_path", &FLAGS_log_dir);
+    AddDefaultOption("log_level", &FLAGS_v);
+}
+
+void BaseOptionManager::AddDatabaseOptions() {
+    if (!RegisterOptionGroupOnce("database")) {
+        return;
+    }
+    AddRequiredOption("database_path", database_path.get());
+}
+
+void BaseOptionManager::AddImageOptions() {
+    if (!RegisterOptionGroupOnce("image")) {
+        return;
+    }
+    AddRequiredOption("image_path", image_path.get());
+}
+
+void BaseOptionManager::ResetPaths() {
+    *project_path = "";
+    *database_path = "";
+    *image_path = "";
+}
+
+void BaseOptionManager::ClearRegisteredOptions() {
+    desc_ = std::make_shared<boost::program_options::options_description>();
+    desc_->add_options()("help,h", "");
+    options_bool_.clear();
+    options_int_.clear();
+    options_double_.clear();
+    options_string_.clear();
+    options_path_.clear();
+    enum_options_.clear();
+    added_option_groups_.clear();
+}
+
+void BaseOptionManager::Reset(bool reset_logging) {
+    if (reset_logging) {
+        log_target_ = "stderr_and_file";
+        FLAGS_log_dir = "";
+        FLAGS_v = 0;
+        ApplyLogFlags();
+    }
+    ResetPaths();
+    ClearRegisteredOptions();
+}
+
+void BaseOptionManager::ResetOptions(bool reset_paths) {
+    auto saved_project_path = std::move(*project_path);
+    auto saved_database_path = std::move(*database_path);
+    auto saved_image_path = std::move(*image_path);
+    Reset(/*reset_logging=*/false);
+    AddAllOptions();
+    if (!reset_paths) {
+        *project_path = std::move(saved_project_path);
+        *database_path = std::move(saved_database_path);
+        *image_path = std::move(saved_image_path);
+    }
+}
+
+bool BaseOptionManager::Check() {
+    bool success = true;
+
+    if (HasOptionGroup("database")) {
+        const auto database_parent_path = GetParentDir(*database_path);
+        success = success && CHECK_OPTION_IMPL(!ExistsDir(*database_path)) &&
+                  CHECK_OPTION_IMPL(database_parent_path.empty() ||
+                                    ExistsDir(database_parent_path));
+    }
+
+    if (HasOptionGroup("image")) {
+        success = success && CHECK_OPTION_IMPL(ExistsDir(*image_path));
+    }
+
+    return success;
+}
+
+void BaseOptionManager::ApplyEnumConversions() {
+    for (const auto& info : enum_options_) {
+        info->apply();
+    }
+}
+
+void BaseOptionManager::ApplyLogFlags() {
+    FLAGS_logtostderr = false;
+    FLAGS_alsologtostderr = false;
+    if (log_target_ == "stderr") {
+        FLAGS_logtostderr = true;
+    } else if (log_target_ == "stdout") {
+        // The fork's glog build has no stdout target; fall back to stderr.
+        LOG(WARNING) << "log_target=stdout requires glog >= 0.6. "
+                        "Falling back to stderr.";
+        FLAGS_logtostderr = true;
+    } else if (log_target_ == "file") {
+        // Logs go to FLAGS_log_dir only.
+    } else if (log_target_ == "stderr_and_file") {
+        FLAGS_alsologtostderr = true;
+    } else {
+        LOG(ERROR) << "Invalid log_target: " << log_target_
+                   << ". Falling back to stderr_and_file.";
+        FLAGS_alsologtostderr = true;
+    }
+    if (!FLAGS_log_dir.empty() &&
+        (log_target_ == "file" || log_target_ == "stderr_and_file")) {
+        CreateDirIfNotExists(FLAGS_log_dir);
+    }
+}
+
+void BaseOptionManager::PrintHelp() const {
+    LOG(INFO) << "Options can either be specified via command-line or by "
+                 "defining them in a .ini project file.\n"
+              << *desc_;
+}
+
+void BaseOptionManager::AddAllOptions() {
+    AddRandomOptions();
+    AddLogOptions();
+    AddDatabaseOptions();
+    AddImageOptions();
+}
+
+bool BaseOptionManager::Parse(const int argc, char** argv) {
+    config::variables_map vmap;
+
+    try {
+        config::store(config::parse_command_line(argc, argv, *desc_), vmap);
+
+        if (vmap.count("help")) {
+            PrintHelp();
+            exit(EXIT_SUCCESS);
+        }
+
+        if (vmap.count("project_path")) {
+            *project_path = vmap["project_path"].as<std::string>();
+            if (!Read(*project_path)) {
+                return false;
+            }
+        } else {
+            vmap.notify();
+        }
+
+        ApplyEnumConversions();
+        ApplyLogFlags();
+        PostParse();
+    } catch (std::exception& exc) {
+        LOG(ERROR) << "Failed to parse options - " << exc.what() << ".";
+        return false;
+    } catch (...) {
+        LOG(ERROR) << "Failed to parse options for unknown reason.";
+        return false;
+    }
+
+    if (!Check()) {
+        LOG(ERROR) << "Invalid options provided.";
+        return false;
+    }
+
+    return true;
+}
+
+bool BaseOptionManager::Read(const std::filesystem::path& path,
+                             bool allow_unregistered) {
+    config::variables_map vmap;
+
+    if (!ExistsFile(path)) {
+        LOG(ERROR) << "Configuration file does not exist.";
+        return false;
+    }
+
+    try {
+        std::ifstream file(path);
+        CHECK(file.is_open()) << path;
+        const config::parsed_options parsed_options =
+                config::parse_config_file(file, *desc_, allow_unregistered);
+        config::store(parsed_options, vmap);
+        if (allow_unregistered) {
+            for (const auto& option : parsed_options.options) {
+                if (option.unregistered) {
+                    LOG(WARNING) << "Unrecognized option key: "
+                                 << option.string_key;
+                }
+            }
+        }
+        vmap.notify();
+        ApplyEnumConversions();
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Failed to parse options " << e.what() << ".";
+        return false;
+    } catch (...) {
+        LOG(ERROR) << "Failed to parse options for unknown reason.";
+        return false;
+    }
+
+    return true;
+}
+
+bool BaseOptionManager::ReRead(const std::filesystem::path& path,
+                               bool reset_logging,
+                               bool allow_unregistered) {
+    Reset(reset_logging);
+    AddAllOptions();
+    return Read(path, allow_unregistered);
+}
+
+void BaseOptionManager::Write(const std::filesystem::path& path) const {
+    boost::property_tree::ptree pt;
+
+    // First, put all options without a section and then those with a section.
+    // This is necessary as otherwise older Boost versions will write the
+    // options without a section in between other sections and therefore
+    // the errors will be assigned to the wrong section if read later.
+    for (const auto& [key, value] : options_bool_) {
+        if (!StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_int_) {
+        if (!StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_double_) {
+        if (!StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_string_) {
+        if (!StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_path_) {
+        if (!StringContains(key, ".")) {
+            pt.put(key, value->string());
+        }
+    }
+
+    for (const auto& [key, value] : options_bool_) {
+        if (StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_int_) {
+        if (StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_double_) {
+        if (StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_string_) {
+        if (StringContains(key, ".")) {
+            pt.put(key, *value);
+        }
+    }
+    for (const auto& [key, value] : options_path_) {
+        if (StringContains(key, ".")) {
+            pt.put(key, value->string());
+        }
+    }
+
+    boost::property_tree::write_ini(path.string(), pt);
+}
+
+}  // namespace colmap

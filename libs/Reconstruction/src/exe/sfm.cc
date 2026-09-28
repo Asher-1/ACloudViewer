@@ -181,7 +181,9 @@ int RunAutomaticReconstructor(int argc, char** argv) {
                            &reconstruction_options.fused_point_filter.sor_nb_neighbors);
   options.AddDefaultOption("fused_sor_std_ratio",
                            &reconstruction_options.fused_point_filter.sor_std_ratio);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   StringToLower(&data_type);
   if (data_type == "individual") {
@@ -318,7 +320,9 @@ int RunBundleAdjuster(int argc, char** argv) {
   options.AddRequiredOption("input_path", &input_path);
   options.AddRequiredOption("output_path", &output_path);
   options.AddBundleAdjustmentOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -350,7 +354,9 @@ int RunColorExtractor(int argc, char** argv) {
   options.AddImageOptions();
   options.AddDefaultOption("input_path", &input_path);
   options.AddRequiredOption("output_path", &output_path);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -464,7 +470,9 @@ int RunMapper(int argc, char** argv) {
   options.AddRequiredOption("output_path", &output_path);
   options.AddDefaultOption("image_list_path", &image_list_path);
   options.AddMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(output_path)) {
     std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
@@ -527,7 +535,9 @@ int RunPosePriorMapper(int argc, char** argv) {
                            &options.mapper->mapper.use_robust_loss_on_prior_position);
   options.AddDefaultOption("prior_position_loss_scale",
                            &options.mapper->mapper.prior_position_loss_scale);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(output_path)) {
     std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
@@ -608,7 +618,9 @@ int RunHierarchicalMapper(int argc, char** argv) {
   options.AddDefaultOption("leaf_max_num_images",
                            &clustering_options.leaf_max_num_images);
   options.AddMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(output_path)) {
     std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
@@ -633,7 +645,7 @@ int RunPointFiltering(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
 
-  size_t min_track_len = 2;
+  int min_track_len = 2;
   double max_reproj_error = 4.0;
   double min_tri_angle = 1.5;
 
@@ -643,7 +655,9 @@ int RunPointFiltering(int argc, char** argv) {
   options.AddDefaultOption("min_track_len", &min_track_len);
   options.AddDefaultOption("max_reproj_error", &max_reproj_error);
   options.AddDefaultOption("min_tri_angle", &min_tri_angle);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -809,7 +823,9 @@ int RunPointTriangulator(int argc, char** argv) {
   options.AddDefaultOption("refine_intrinsics", &refine_intrinsics,
                            "Whether to refine the intrinsics of the cameras");
   options.AddMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -951,7 +967,9 @@ int RunGlobalMapper(int argc, char** argv) {
   options.AddImageOptions();
   options.AddRequiredOption("output_path", &output_path);
   options.AddGlobalMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(output_path)) {
     LOG(ERROR) << "`output_path` is not a directory.";
@@ -997,7 +1015,9 @@ int RunRotationAverager(int argc, char** argv) {
   options.AddDefaultOption("refine_gravity",
                            &controller_options.refine_gravity);
   options.AddGravityRefinerOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   controller_options.gravity_refiner = *options.gravity_refiner;
 
@@ -1064,7 +1084,9 @@ int RunViewGraphCalibrator(int argc, char** argv) {
       "relpose_min_inlier_ratio",
       &calibration_options.relpose_min_inlier_ratio,
       "Minimum inlier ratio for relative pose re-estimation");
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   // Fork parity: the fork constructs the Database directly (no Open factory).
   auto database = Database::Open(*options.database_path);

@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <cstring>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -167,6 +168,25 @@ struct FeatureMatcherData {
 
 }  // namespace internal
 
+// Packed-layout bridges shared by the matcher shells and the matching
+// controllers (batch C): 4 bytes per float, row-major memcpy. The fork
+// matcher shells consume packed-u8-as-float payloads.
+inline FeatureDescriptors ToPackedU8(const FeatureDescriptorsFloat& src) {
+    const long rows = src.rows();
+    const long cols = src.cols();
+    FeatureDescriptors dst = FeatureDescriptors::Zero(rows, cols * 4);
+    std::memcpy(dst.data(), src.data(), sizeof(float) * rows * cols);
+    return dst;
+}
+
+inline FeatureDescriptorsFloat FromPackedU8(const FeatureDescriptors& src) {
+    const long rows = src.rows();
+    const long cols = src.cols() / 4;
+    FeatureDescriptorsFloat dst = FeatureDescriptorsFloat::Zero(rows, cols);
+    std::memcpy(dst.data(), src.data(), sizeof(float) * rows * cols);
+    return dst;
+}
+
 // Cache for feature matching to minimize database access during matching.
 class FeatureMatcherCache {
 public:
@@ -179,10 +199,13 @@ public:
     // Upstream parity (d3ccaf35 controllers/matcher_cache.h): thread-safe
     // exclusive database access through the cache's own mutex. Required by
     // the pairing generators (e.g. spatial pairing position-prior reads).
-    void AccessDatabase(
-            const std::function<void(const Database& database)>& func) {
+    // Upstream parity (d3ccaf35): non-const database access (e.g. writes).
+    void AccessDatabase(const std::function<void(Database& database)>& func) {
         std::lock_guard<std::mutex> lock(database_mutex_);
-        func(*database_);
+        // The pointee is always a non-const Database (Database::Open returns
+        // a non-const shared_ptr); the const pointer member is a fork-legacy
+        // storage detail, so the upstream non-const access is safe.
+        func(*const_cast<Database*>(database_));
     }
 
     void Setup();

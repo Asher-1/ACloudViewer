@@ -134,7 +134,9 @@ int RunVocabTreeBuilder(int argc, char** argv) {
   options.AddDefaultOption("num_checks", &build_options.num_checks);
   options.AddDefaultOption("num_iterations", &build_options.num_iterations);
   options.AddDefaultOption("max_num_images", &max_num_images);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   auto visual_index = retrieval::VisualIndex::Create();
 
@@ -176,7 +178,9 @@ int RunVocabTreeRetriever(int argc, char** argv) {
   options.AddDefaultOption("num_images_after_verification",
                            &query_options.num_images_after_verification);
   options.AddDefaultOption("max_num_features", &max_num_features);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   // VisualIndex::Read downloads and caches URI paths (upstream parity).
   auto visual_index = retrieval::VisualIndex::Read(vocab_tree_path);

@@ -32,6 +32,7 @@
 set(FOLDER_NAME "controllers")
 
 COLMAP_ADD_SOURCES(
+    base_option_manager.h base_option_manager.cc
     automatic_reconstruction.h automatic_reconstruction.cc
     bundle_adjustment.h bundle_adjustment.cc
     da3_depth_controller.h da3_depth_controller.cc
@@ -47,6 +48,8 @@ COLMAP_ADD_SOURCES(
     feature_extraction.h feature_extraction.cc
     pairing.h pairing.cc
     feature_matching.h feature_matching.cc
+    feature_matching_utils.h feature_matching_utils.cc
+    undistorters.h undistorters.cc
 )
 
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
@@ -57,3 +60,8 @@ COLMAP_ADD_TEST(image_reader_test image_reader_test.cc)
 COLMAP_ADD_TEST(option_manager_test option_manager_test.cc)
 COLMAP_ADD_TEST(controllers_reconstruction_clustering_test reconstruction_clustering_test.cc)
 COLMAP_ADD_TEST(controllers_rotation_averaging_test rotation_averaging_test.cc)
+COLMAP_ADD_TEST(matcher_cache_test matcher_cache_test.cc)
+COLMAP_ADD_TEST(base_option_manager_test base_option_manager_test.cc)
+COLMAP_ADD_TEST(feature_matching_utils_test feature_matching_utils_test.cc)
+COLMAP_ADD_TEST(pairing_test pairing_test.cc)
+COLMAP_ADD_TEST(undistorters_test undistorters_test.cc)

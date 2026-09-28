@@ -314,10 +314,27 @@ TEST(OptionManager, ParseEmptyArguments) {
   options.Parse(argv.size(), argv.data());
 }
 
-// Fork adjudication: the fork's OptionManager::Parse exits the process on
-// unknown options (CLI semantics, option_manager.cc exit(EXIT_FAILURE))
-// instead of throwing like upstream, so this case cannot be verified
-// in-process; it is covered by the CLI integration tests.
+TEST(OptionManager, ParseUnknownArgumentsFails) {
+  // Batch C5: Parse moved to BaseOptionManager with upstream's bool-return
+  // contract, so the unknown-argument case is verifiable in-process again.
+  const auto test_dir = CreateTestDir();
+  OptionManager options(/*add_project_options=*/false);
+  options.AddDatabaseOptions();
+  const auto database_path = test_dir / "database.db";
+  const std::vector<std::string> args = {
+      "colmap",
+      "--database_path",
+      database_path.string(),
+      "--unknown_option",
+      "value",
+  };
+  std::vector<char*> argv;
+  argv.reserve(args.size());
+  for (auto& arg : args) {
+    argv.push_back(const_cast<char*>(arg.c_str()));
+  }
+  EXPECT_FALSE(options.Parse(argv.size(), argv.data()));
+}
 
 
 TEST(OptionManager, WriteAfterResetOptions) {

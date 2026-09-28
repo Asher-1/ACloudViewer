@@ -40,8 +40,8 @@
 
 namespace colmap {
 
-MainWindow::MainWindow(const OptionManager& options)
-    : options_(options),
+MainWindow::MainWindow(OptionManager options)
+    : options_(std::move(options)),
       thread_control_widget_(new ThreadControlWidget(this)),
       window_closed_(false) {
   std::setlocale(LC_NUMERIC, "C");

@@ -125,7 +125,9 @@ int RunAdvancingFrontMesher(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddAdvancingFrontMeshingOptions();
     options.AddMeshPostProcessingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     mvs::AdvancingFrontMeshing(*options.advancing_front_meshing, input_path,
                                output_path);
@@ -158,7 +160,9 @@ int RunDelaunayMesher(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddDelaunayMeshingOptions();
     options.AddMeshPostProcessingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&input_type);
     if (input_type == "sparse") {
@@ -213,7 +217,9 @@ int RunMeshTexturer(int argc, char** argv) {
             "Also export a standard OBJ + MTL pair through the canonical "
             "ObjFilter IO chain (defaults to false)");
     options.AddMeshTextureMappingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&output_type);
     THROW_CHECK(output_type == "bin" || output_type == "txt")
@@ -293,7 +299,9 @@ int RunMeshSimplifier(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path,
                               "Path to output PLY mesh");
     options.AddMeshSimplificationOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsFile(input_path) || !HasPlyExtension(input_path)) {
         LOG(ERROR) << "Input must be an existing PLY mesh: " << input_path;
@@ -339,7 +347,9 @@ int RunPatchMatchStereo(int argc, char** argv) {
     options.AddDefaultOption("pmvs_option_name", &pmvs_option_name);
     options.AddDefaultOption("config_path", &config_path);
     options.AddPatchMatchStereoOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&workspace_format);
     if (workspace_format != "colmap" && workspace_format != "pmvs") {
@@ -370,7 +380,9 @@ int RunPoissonMesher(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddPoissonMeshingOptions();
     options.AddMeshPostProcessingOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     CHECK(mvs::PoissonMeshing(*options.poisson_meshing, input_path,
                               output_path));
@@ -404,7 +416,9 @@ int RunStereoFuser(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddDefaultOption("bbox_path", &bbox_path);
     options.AddStereoFusionOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&workspace_format);
     if (workspace_format != "colmap" && workspace_format != "pmvs") {

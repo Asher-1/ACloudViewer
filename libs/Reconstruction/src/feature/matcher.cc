@@ -9,6 +9,7 @@
 
 #include "feature/aliked.h"
 #include "feature/extractor.h"
+#include "feature/matching.h"
 #include "util/logging.h"
 #include "util/misc.h"
 
@@ -119,25 +120,6 @@ bool FeatureMatchingOptions::Check() const {
 }
 
 namespace {
-
-// Fork feature types are plain Eigen matrices; the packed uint8 <-> float
-// conversions mirror the binding-layer wrapper semantics (4 bytes per float,
-// row-major memcpy).
-FeatureDescriptors ToPackedU8(const FeatureDescriptorsFloat& src) {
-    const long rows = src.rows();
-    const long cols = src.cols();
-    FeatureDescriptors dst = FeatureDescriptors::Zero(rows, cols * 4);
-    std::memcpy(dst.data(), src.data(), sizeof(float) * rows * cols);
-    return dst;
-}
-
-FeatureDescriptorsFloat FromPackedU8(const FeatureDescriptors& src) {
-    const long rows = src.rows();
-    const long cols = src.cols() / 4;
-    FeatureDescriptorsFloat dst = FeatureDescriptorsFloat::Zero(rows, cols);
-    std::memcpy(dst.data(), src.data(), sizeof(float) * rows * cols);
-    return dst;
-}
 
 class SiftFeatureMatcherShell : public FeatureMatcher {
  public:

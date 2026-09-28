@@ -264,7 +264,9 @@ int RunModelAligner(int argc, char** argv) {
             "{plane, ecef, enu, enu-plane, enu-plane-unscaled, custom}");
     options.AddDefaultOption("min_common_images", &min_common_images);
     options.AddDefaultOption("alignment_max_error", &ransac_options.max_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&alignment_type);
     const FlatHashSet<std::string> alignment_options{
@@ -414,7 +416,9 @@ int RunModelAnalyzer(int argc, char** argv) {
 
     OptionManager options;
     options.AddRequiredOption("path", &path);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction;
     reconstruction.Read(path);
@@ -522,7 +526,9 @@ int RunModelComparer(int argc, char** argv) {
                              &min_inlier_observations);
     options.AddDefaultOption("max_reproj_error", &max_reproj_error);
     options.AddDefaultOption("max_proj_center_error", &max_proj_center_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!output_path.empty() && !ExistsDir(output_path)) {
         LOG(ERROR) << "Provided output path is not a valid directory";
@@ -565,7 +571,9 @@ int RunModelClusterer(int argc, char** argv) {
     options.AddRequiredOption("input_path", &input_path);
     options.AddRequiredOption("output_path", &output_path);
     options.AddReconstructionClustererOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         LOG(ERROR) << "`input_path` is not a directory";
@@ -607,7 +615,9 @@ int RunModelConverter(int argc, char** argv) {
     options.AddRequiredOption("output_type", &output_type,
                               "{BIN, TXT, NVM, Bundler, VRML, PLY, R3D, CAM}");
     options.AddDefaultOption("skip_distortion", &skip_distortion);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction;
     reconstruction.Read(input_path);
@@ -656,7 +666,9 @@ int RunModelCropper(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddRequiredOption("boundary", &boundary);
     options.AddDefaultOption("gps_transform_path", &gps_transform_path);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -725,7 +737,9 @@ int RunModelMerger(int argc, char** argv) {
     options.AddRequiredOption("input_path2", &input_path2);
     options.AddRequiredOption("output_path", &output_path);
     options.AddDefaultOption("max_reproj_error", &max_reproj_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction1;
     reconstruction1.Read(input_path1);
@@ -775,7 +789,9 @@ int RunModelOrientationAligner(int argc, char** argv) {
                              "{MANHATTAN-WORLD, IMAGE-ORIENTATION}");
     options.AddDefaultOption("max_image_size",
                              &frame_estimation_options.max_image_size);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&method);
     if (method != "manhattan-world" && method != "image-orientation") {
@@ -854,7 +870,9 @@ int RunModelSplitter(int argc, char** argv) {
     options.AddDefaultOption("min_num_points", &min_num_points);
     options.AddDefaultOption("overlap_ratio", &overlap_ratio);
     options.AddDefaultOption("min_area_ratio", &min_area_ratio);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -1022,7 +1040,9 @@ int RunModelTransformer(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddRequiredOption("transform_path", &transform_path);
     options.AddDefaultOption("is_inverse", &is_inverse);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     std::cout << "Reading points input: " << input_path << std::endl;
     Reconstruction recon;

@@ -1087,6 +1087,18 @@ public:
     bool isCompositeLeaf(const std::string& viewID) const {
         return m_compositeRegistry.containsLeaf(viewID);
     }
+    /** Aggregation channel switch (replay): while suspended,
+     *  ccCameraSensor draws fall back to DEDICATED per-camera actors so
+     *  per-frame visibility is a plain boolean actor flip — the SAME
+     *  channel point clouds use, whose replay behavior is proven in the
+     *  exact same loop. Suspending EVICTS every camera composite leaf
+     *  (the "#lw" group families) so no stale group actor keeps
+     *  rendering ghost wireframes beside the dedicated ones; resuming
+     *  re-aggregates on the next forced draw. */
+    void setSensorAggregationSuspended(bool suspended);
+    bool sensorAggregationSuspended() const {
+        return m_sensorAggregationSuspended;
+    }
     /** @return True when the view ID owns a composite group (it is the
      *  container whose viewID names the group actor); group-level properties
      *  (e.g. light intensity) resolve on the group actor without eviction. */
@@ -1165,6 +1177,7 @@ protected:
     int m_currentMode;
     bool m_pointPickingEnabled;
     bool m_areaPickingEnabled;
+    bool m_sensorAggregationSuspended = false;
     bool m_actorPickingEnabled;
 
     bool m_autoUpdateCameraPos;

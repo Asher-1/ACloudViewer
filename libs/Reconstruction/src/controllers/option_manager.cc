@@ -83,11 +83,11 @@ inline void validate(boost::any& v,
 
 namespace colmap {
 
-OptionManager::OptionManager(bool add_project_options) {
-    project_path.reset(new std::filesystem::path());
-    database_path.reset(new std::filesystem::path());
-    image_path.reset(new std::filesystem::path());
-
+OptionManager::OptionManager(bool add_project_options)
+    : BaseOptionManager(add_project_options) {
+    // The project/database/image path shared_ptrs and the help/project_path
+    // program options come from BaseOptionManager; the option structs are
+    // freshly default-allocated here, so no Reset() round-trip is needed.
     global_mapper.reset(new GlobalPipelineOptions());
     gravity_refiner.reset(new GravityRefinerOptions());
     image_reader.reset(new ImageReaderOptions());
@@ -112,18 +112,6 @@ OptionManager::OptionManager(bool add_project_options) {
     reconstruction_clusterer.reset(new ReconstructionClusteringOptions());
     mesh_texture_mapping.reset(new mvs::MeshTextureMappingOptions());
     render.reset(new RenderOptions());
-
-    Reset();
-
-    desc_->add_options()("help,h", "");
-
-    AddRandomOptions();
-    AddLogOptions();
-
-    if (add_project_options) {
-        desc_->add_options()("project_path",
-                             config::value<std::filesystem::path>());
-    }
 }
 
 void OptionManager::ModifyForIndividualData() {
@@ -239,41 +227,24 @@ void OptionManager::AddAllOptions() {
 }
 
 void OptionManager::AddLogOptions() {
-    if (added_log_options_) {
+    if (!RegisterOptionGroupOnce("log")) {
         return;
     }
-    added_log_options_ = true;
-
+    // Fork legacy flag spellings (CLI compatibility); upstream's
+    // log_target/log_path/log_severity group lives on the base manager.
     AddAndRegisterDefaultOption("log_to_stderr", &FLAGS_logtostderr);
     AddAndRegisterDefaultOption("log_level", &FLAGS_v);
 }
 
 void OptionManager::AddRandomOptions() {
-    if (added_random_options_) {
+    if (!RegisterOptionGroupOnce("random")) {
         return;
     }
-    added_random_options_ = true;
-
     AddAndRegisterDefaultOption("random_seed", &kDefaultPRNGSeed);
 }
 
-void OptionManager::AddDatabaseOptions() {
-    if (added_database_options_) {
-        return;
-    }
-    added_database_options_ = true;
-
-    AddAndRegisterRequiredOption("database_path", database_path.get());
-}
-
-void OptionManager::AddImageOptions() {
-    if (added_image_options_) {
-        return;
-    }
-    added_image_options_ = true;
-
-    AddAndRegisterRequiredOption("image_path", image_path.get());
-}
+// The database/image groups reuse BaseOptionManager::AddDatabaseOptions /
+// AddImageOptions (required database_path / image_path, identical contracts).
 
 void OptionManager::AddExtractionOptions() {
     if (added_extraction_options_) {
@@ -1043,25 +1014,16 @@ void OptionManager::AddRenderOptions() {
                                 &render->projection_type);
 }
 
-void OptionManager::Reset() {
-    FLAGS_logtostderr = true;
-    FLAGS_v = 2;
+void OptionManager::Reset(const bool reset_logging) {
+    if (reset_logging) {
+        FLAGS_logtostderr = true;
+        FLAGS_v = 2;
+    }
 
-    const bool kResetPaths = true;
-    ResetOptions(kResetPaths);
+    ResetPaths();
+    ResetOptionStructs();
+    ClearRegisteredOptions();
 
-    desc_.reset(new boost::program_options::options_description());
-
-    options_bool_.clear();
-    options_int_.clear();
-    options_double_.clear();
-    options_string_.clear();
-    options_path_.clear();
-
-    added_log_options_ = false;
-    added_random_options_ = false;
-    added_database_options_ = false;
-    added_image_options_ = false;
     added_extraction_options_ = false;
     added_match_options_ = false;
     added_exhaustive_match_options_ = false;
@@ -1072,6 +1034,10 @@ void OptionManager::Reset() {
     added_image_pairs_match_options_ = false;
     added_ba_options_ = false;
     added_mapper_options_ = false;
+    added_global_mapper_options_ = false;
+    added_gravity_refiner_options_ = false;
+    added_reconstruction_clusterer_options_ = false;
+    added_mesh_texture_mapping_options_ = false;
     added_patch_match_stereo_options_ = false;
     added_stereo_fusion_options_ = false;
     added_poisson_meshing_options_ = false;
@@ -1083,12 +1049,7 @@ void OptionManager::Reset() {
     added_render_options_ = false;
 }
 
-void OptionManager::ResetOptions(const bool reset_paths) {
-    if (reset_paths) {
-        *project_path = "";
-        *database_path = "";
-        *image_path = "";
-    }
+void OptionManager::ResetOptionStructs() {
     *image_reader = ImageReaderOptions();
     *sift_extraction = SiftExtractionOptions();
     *sift_matching = SiftMatchingOptions();
@@ -1100,6 +1061,8 @@ void OptionManager::ResetOptions(const bool reset_paths) {
     *image_pairs_matching = ImagePairsMatchingOptions();
     *bundle_adjustment = BundleAdjustmentOptions();
     *mapper = IncrementalMapperOptions();
+    *global_mapper = GlobalPipelineOptions();
+    *gravity_refiner = GravityRefinerOptions();
     *patch_match_stereo = mvs::PatchMatchOptions();
     *stereo_fusion = mvs::StereoFusionOptions();
     *poisson_meshing = mvs::PoissonMeshingOptions();
@@ -1113,18 +1076,19 @@ void OptionManager::ResetOptions(const bool reset_paths) {
     *render = RenderOptions();
 }
 
-bool OptionManager::Check() {
-    bool success = true;
+void OptionManager::ResetOptions(const bool reset_paths) {
+    ResetOptionStructs();
+    // Upstream parity: run the base's save/Reset/AddAllOptions/restore cycle
+    // so the generic registries and option-group guards stay consistent.
+    BaseOptionManager::ResetOptions(reset_paths);
+}
 
-    if (added_database_options_) {
-        const auto database_parent_path = GetParentDir(*database_path);
-        success = success && CHECK_OPTION_IMPL(!ExistsDir(*database_path)) &&
-                  CHECK_OPTION_IMPL(database_parent_path == "" ||
-                                    ExistsDir(database_parent_path));
+bool OptionManager::Check() {
+    if (!BaseOptionManager::Check()) {
+        return false;
     }
 
-    if (added_image_options_)
-        success = success && CHECK_OPTION_IMPL(ExistsDir(*image_path));
+    bool success = true;
 
     if (image_reader) success = success && image_reader->Check();
     if (sift_extraction) success = success && sift_extraction->Check();
@@ -1159,153 +1123,31 @@ bool OptionManager::Check() {
     return success;
 }
 
-void OptionManager::Parse(const int argc, char** argv) {
-    config::variables_map vmap;
-
-    try {
-        config::store(config::parse_command_line(argc, argv, *desc_), vmap);
-
-        if (vmap.count("help")) {
-            std::cout << StringPrintf("%s (%s)", GetVersionInfo().c_str(),
-                                      GetBuildInfo().c_str())
-                      << std::endl
-                      << std::endl;
-            std::cout
-                    << "Options can either be specified via command-line or by "
-                       "defining"
-                    << std::endl
-                    << "them in a .ini project file passed to `--project_path`."
-                    << std::endl
-                    << std::endl;
-            std::cout << *desc_ << std::endl;
-            exit(EXIT_SUCCESS);
-        }
-
-        if (vmap.count("project_path")) {
-            *project_path = vmap["project_path"].as<std::filesystem::path>();
-            if (!Read(*project_path)) {
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            vmap.notify();
-        }
-    } catch (std::exception& exc) {
-        std::cerr << "ERROR: Failed to parse options - " << exc.what() << "."
-                  << std::endl;
-        exit(EXIT_FAILURE);
-    } catch (...) {
-        std::cerr << "ERROR: Failed to parse options for unknown reason."
-                  << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    if (!Check()) {
-        std::cerr << "ERROR: Invalid options provided." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
-bool OptionManager::Read(const std::filesystem::path& path) {
-    config::variables_map vmap;
-
-    if (!ExistsFile(path)) {
-        std::cout << "WARNING: Configuration file does not exist." << std::endl;
+bool OptionManager::Read(const std::filesystem::path& path,
+                         bool allow_unregistered) {
+    if (!BaseOptionManager::Read(path, allow_unregistered)) {
         return false;
     }
-
-    try {
-        std::ifstream file(path);
-        CHECK(file.is_open()) << path;
-        config::store(config::parse_config_file(file, *desc_), vmap);
-        vmap.notify();
-    } catch (std::exception& e) {
-        std::cout << "WARNING: Failed to parse options " << e.what() << "."
-                  << std::endl;
-        return false;
-    } catch (...) {
-        std::cout << "WARNING: Failed to parse options for unknown reason."
-                  << std::endl;
-        return false;
-    }
-
     return Check();
 }
 
-bool OptionManager::ReRead(const std::filesystem::path& path) {
-    Reset();
-    AddAllOptions();
-    return Read(path);
+void OptionManager::PrintHelp() const {
+    std::cout << StringPrintf("%s (%s)", GetVersionInfo().c_str(),
+                              GetBuildInfo().c_str())
+              << std::endl
+              << std::endl;
+    std::cout
+            << "Options can either be specified via command-line or by defining"
+            << std::endl
+            << "them in a .ini project file passed to `--project_path`."
+            << std::endl
+            << std::endl;
+    std::cout << *desc_ << std::endl;
 }
 
-void OptionManager::Write(const std::filesystem::path& path) const {
-    boost::property_tree::ptree pt;
-
-    // First, put all options without a section and then those with a section.
-    // This is necessary as otherwise older Boost versions will write the
-    // options without a section in between other sections and therefore
-    // the errors will be assigned to the wrong section if read later.
-
-    for (const auto& option : options_bool_) {
-        if (!StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_int_) {
-        if (!StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_double_) {
-        if (!StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_string_) {
-        if (!StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_path_) {
-        if (!StringContains(option.first, ".")) {
-            pt.put(option.first, option.second->string());
-        }
-    }
-
-    for (const auto& option : options_bool_) {
-        if (StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_int_) {
-        if (StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_double_) {
-        if (StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_string_) {
-        if (StringContains(option.first, ".")) {
-            pt.put(option.first, *option.second);
-        }
-    }
-
-    for (const auto& option : options_path_) {
-        if (StringContains(option.first, ".")) {
-            pt.put(option.first, option.second->string());
-        }
-    }
-
-    boost::property_tree::write_ini(path.string(), pt);
+void OptionManager::ApplyLogFlags() {
+    // Fork legacy: glog flags are owned by Reset() and the log_to_stderr
+    // option; the base's log_target_ mapping must not run after Parse.
 }
 
 void OptionManager::AddReconstructionClustererOptions() {

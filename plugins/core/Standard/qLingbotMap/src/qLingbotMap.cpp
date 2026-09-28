@@ -290,6 +290,13 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_lastPreviewC2w.clear();
     m_onlineRefreshThrottle.start();
     // A previous result's replay must not keep running into the new run.
+    // Also make sure the aggregation channel is active again (a suspended
+    // channel must never leak past a replay's lifetime).
+    if (m_app) {
+        if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+            display->setCameraAggregationSuspended(false);
+        }
+    }
     stopPlaybackAndRestore();
     // A fresh run starts from a CLEAN SLATE: drop the previous run's
     // materialized result group (its cameras/trajectory/point clouds would
@@ -315,9 +322,6 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
             m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
         }
     }
-    // Refresh the replay UI after the reset (a stale "1 / 286" from the
-    // previous run would otherwise linger until the next materialization).
-    syncReplayStateToDialog();
     m_onlineCloudPoints = 0;
     m_alignedBatchCount = 0;
     m_refreshCostSamples.clear();
@@ -325,6 +329,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_lastFrameHasPoints = false;
     m_lastFrameRadius = 0.0;
     std::memset(m_lastFrameC2w, 0, sizeof(m_lastFrameC2w));
+    m_worldUp = CCVector3d(0, 0, 0);  // re-derived from the new run's cameras
     m_frameCameras.clear();
     m_frameClouds.clear();
     m_replayResultIndex.clear();
@@ -332,9 +337,13 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_resultFramesFolder = nullptr;
     m_resultFramesFolderId = 0;
     m_resultConfApplied = m_resultConfMin;
-    m_resultShowCameras = true;
-    m_resultCamStride = 1;
-    m_resultCamSizePercent = 100;
+    // The user's Result-display slider state (Show cameras / stride / size)
+    // is NOT reset here: the dialog keeps its slider positions across runs,
+    // so the cached state must match them (the sliders re-emit on the next
+    // commit anyway; a reset would desync state from what the user sees).
+    // The replay UI sync runs AFTER the cache clears — syncing before them
+    // resurrected the previous run's "1 / 286" until materialization.
+    syncReplayStateToDialog();
     if (m_dialog) {
         m_dialog->setResultDisplayReady(false, m_resultConfMin);
         // No result yet: disable the replay transport.
@@ -627,14 +636,48 @@ void qLingbotMap::applyLiveCameraPose(int mode,
     CCVector3d forward;
     CCVector3d up(0, 0, 1);
     if (mode == 1) {
-        // Official viewer "Fit latest frame": a TOP-DOWN FOLLOW eye — the
-        // camera hovers ABOVE the newest frame's center looking straight
-        // down, so the reconstruction grows underneath a bird's-eye view
-        // that tracks the travel. Height scales with the frame radius so
-        // the newest frame fills the view; world +Y is the screen-up.
-        eye = center + CCVector3d(0, 0, std::max(2.2 * radius, 1e-3));
-        forward = center - eye;  // straight down
-        up = CCVector3d(0, 1, 0);
+        // Official viewer "Fit latest frame": an OVERHEAD-TILTED FOLLOW.
+        // The engine world frame is the FIRST CAMERA's frame (OpenCV:
+        // +Z forward, +Y down), so NO world axis letter is "up" by
+        // construction — the earlier hard-coded eye offset (0,0,2.2r) with
+        // up=(0,1,0) placed the eye HORIZONTALLY in front of the scene and
+        // rolled the view 180° (the whole reconstruction rendered upside
+        // down). Derive up from the cameras themselves — the same -Y
+        // column the Follow branch uses — EMA-smoothed across frames,
+        // hover along it and look down at the newest frame: the view
+        // tracks the travel with the ground pinned to the screen bottom.
+        if (!c2w) return;
+        CCVector3d camUp(-static_cast<double>(c2w[1]),
+                         -static_cast<double>(c2w[5]),
+                         -static_cast<double>(c2w[9]));
+        if (camUp.norm() < 1e-12) return;
+        camUp.normalize();
+        // Individual cameras pitch; the sequence's mean up is the stable
+        // world up (0.9/0.1 EMA ≈ 10-frame time constant).
+        m_worldUp = m_worldUp.norm() > 1e-9
+                            ? (m_worldUp * 0.9 + camUp * 0.1)
+                            : camUp;
+        m_worldUp.normalize();
+        // Tilt anchor: the newest camera's HORIZONTAL forward (up
+        // component removed) — the eye sits above-and-behind the travel
+        // direction, so the reconstruction grows toward the horizon.
+        CCVector3d camFwd(c2w[2], c2w[6], c2w[10]);
+        CCVector3d horiz = camFwd - m_worldUp * camFwd.dot(m_worldUp);
+        if (horiz.norm() < 1e-9) {
+            // Camera looks straight up/down: any horizontal direction
+            // perpendicular to up works — take the world axis least
+            // aligned with up.
+            CCVector3d axis(0, 0, 1);
+            if (std::abs(m_worldUp.z) > 0.9) axis = CCVector3d(1, 0, 0);
+            horiz = axis - m_worldUp * axis.dot(m_worldUp);
+        }
+        horiz.normalize();
+        // ~55° elevation (1.6r up, 1.1r back): overhead enough to read
+        // the map's growth, tilted enough for a well-defined screen up.
+        eye = center + m_worldUp * std::max(1.6 * radius, 1e-3) -
+              horiz * std::max(1.1 * radius, 1e-3);
+        forward = center - eye;
+        up = m_worldUp;
     } else {
         // Follow latest camera: sit at the frustum's camera center and
         // look along its optical axis (OpenCV convention: +Z forward,
@@ -735,10 +778,6 @@ void qLingbotMap::onResultDisplayChanged(double threshold,
                                          bool showCameras,
                                          int camStride) {
     if (!m_app) return;
-    // Result-display state cache (also consumed by onPlaybackReset).
-    m_resultShowCameras = showCameras;
-    m_resultCamStride = std::max(1, camStride);
-    m_resultCamSizePercent = std::max(1, camSizePercent);
 
     // 1. Visibility threshold re-filter (official Visibility Threshold
     //    slider). The re-filter can only TIGHTEN the display: points below
@@ -753,22 +792,35 @@ void qLingbotMap::onResultDisplayChanged(double threshold,
         rematerialized = true;
     }
 
-    // 2. Camera display state (official Show Camera / Camera Downsample /
-    //    Camera Size sliders): pure visibility + graphic-scale writes, no
-    //    per-entity redraw. During playback the replay formula below owns
-    //    the visibility (density is applied live); when stopped,
-    //    applyCameraDisplay is the writer.
+    // 2. Camera display state: SINGLE WRITER (state store + governed-set
+    //    apply, replay gate included) — no separate replay hand-off.
     applyCameraDisplay(showCameras, camStride, camSizePercent);
-    if (m_replayState != ReplayState::Stopped) {
-        applyReplayVisibility();
-    }
 
     // 3. Point size (official Point Size slider): the VTK property path —
-    //    actor-level SetPointSize, no geometry rebuild.
+    //    actor-level SetPointSize, no geometry rebuild. Governs the online
+    //    preview clouds too while a run streams (empty result cache).
     if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
         const unsigned char size = static_cast<unsigned char>(
                 std::max(1, std::min(16, pointSize)));
-        for (ccPointCloud* cloud : m_frameClouds) {
+        std::vector<ccPointCloud*> clouds(m_frameClouds.begin(),
+                                          m_frameClouds.end());
+        if (clouds.empty() && m_onlineGroup) {
+            for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber();
+                 ++i) {
+                ccHObject* child = m_onlineGroup->getChild(i);
+                if (!child ||
+                    child->getName() != QStringLiteral("LingbotMap_frames")) {
+                    continue;
+                }
+                for (unsigned j = 0; j < child->getChildrenNumber(); ++j) {
+                    if (auto* cloud = ccHObjectCaster::ToPointCloud(
+                                child->getChild(j))) {
+                        clouds.push_back(cloud);
+                    }
+                }
+            }
+        }
+        for (ccPointCloud* cloud : clouds) {
             if (!cloud) continue;
             cloud->setPointSize(size);
             PROPERTY_PARAM param(cloud, size);
@@ -843,30 +895,135 @@ void qLingbotMap::refilterResultClouds(double threshold) {
     }
 }
 
+namespace {
+
+// Engine-side reconcile for ONE camera: drives the hide/show channel
+// DIRECTLY so the composite per-block attributes (and the "#plane" face
+// actor) match the entity state immediately — not on the next redraw's
+// tree pass. Idempotent; O(1) per camera.
+void reconcileCameraVisibility(ccHObject* cam,
+                               bool visible,
+                               ecvGenericGLDisplay* fallbackDisplay) {
+    if (!cam || !fallbackDisplay) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.display = cam->getDisplay() ? cam->getDisplay() : fallbackDisplay;
+    ctx.viewID = cam->getViewId();
+    ctx.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
+    ctx.visible = visible;
+    ctx.defaultViewPort = 0;
+    fallbackDisplay->hideShowEntities(ctx);
+}
+
+}  // namespace
+
 void qLingbotMap::applyCameraDisplay(bool showCameras,
                                      int camStride,
                                      int camSizePercent) {
-    const int stride = std::max(1, camStride);
-    const PointCoordinateType scale = static_cast<PointCoordinateType>(
-            m_cameraBaseScale * std::max(1, camSizePercent) / 100.0);
-    // Replay owns camera visibility while active: a slider tick (Camera
-    // size % / stride / Show cameras fire on valueChanged) would otherwise
-    // stomp the incremental per-frame visibility set by onPlaybackTick —
-    // the "playback shows all cameras" symptom. Graphic scale stays live;
-    // the replay baseline is re-applied by stopPlaybackAndRestore on Stop.
-    const bool replayOwnsVisibility = m_replayState != ReplayState::Stopped;
-    int frameIndex = 0;
-    for (ccHObject* cam : m_frameCameras) {
+    // Result-display state store + SINGLE-WRITER apply (official Show
+    // Camera / Camera Downsample / Camera Size sliders). The replay gate
+    // lives inside applyDisplayState — there is no separate visibility
+    // owner to hand off to, and no per-drag-tick ownership race.
+    m_resultShowCameras = showCameras;
+    m_resultCamStride = std::max(1, camStride);
+    m_resultCamSizePercent = std::max(1, camSizePercent);
+    applyDisplayState();
+}
+
+void qLingbotMap::applyDisplayState() {
+    if (!m_app) return;
+    const bool replayActive = m_replayState != ReplayState::Stopped;
+    const int stride = std::max(1, m_resultCamStride);
+    const double sizePct = std::max(1, m_resultCamSizePercent) / 100.0;
+    ecvGenericGLDisplay* display = m_app->getActiveGLDisplay();
+    const int currentFrame = m_playbackFrame;
+    // Official replay rule (point_cloud_viewer.py update_frame_visibility):
+    // 3D mode shows every frame UP TO the current one (incremental), 4D
+    // shows only the current one; no replay running -> everything passes.
+    auto frameGate = [&](int ordinal) {
+        if (!replayActive) return true;
+        return m_playbackCurrentFrameOnly ? ordinal == currentFrame
+                                          : ordinal <= currentFrame;
+    };
+
+    if (!m_frameCameras.empty()) {
+        // Materialized result governance: visibility, density, size and
+        // the engine reconcile (composite block + "#plane" face) in ONE
+        // absolute write per camera — idempotent, order-free.
+        for (size_t i = 0; i < m_frameCameras.size(); ++i) {
+            ccHObject* cam = m_frameCameras[i];
+            if (!cam) continue;
+            const int ordinal = static_cast<int>(i);
+            const bool vis = m_resultShowCameras &&
+                             (ordinal % stride == 0) && frameGate(ordinal);
+            cam->setVisible(vis);
+            if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
+                // Idempotent write: setGraphicScale marks the geometry dirty
+                // on the sensor — an unconditional write would re-dirty all
+                // N cameras on EVERY replay tick (20 fps) for a value that
+                // only changes on a slider commit.
+                const PointCoordinateType targetScale =
+                        static_cast<PointCoordinateType>(m_cameraBaseScale *
+                                                         sizePct);
+                if (std::abs(sensor->getGraphicScale() - targetScale) > 1e-9) {
+                    sensor->setGraphicScale(targetScale);
+                }
+            }
+            reconcileCameraVisibility(cam, vis, display);
+        }
+        for (size_t i = 0; i < m_frameClouds.size(); ++i) {
+            if (ccPointCloud* cloud = m_frameClouds[i]) {
+                cloud->setVisible(frameGate(static_cast<int>(i)));
+            }
+        }
+        return;
+    }
+
+    // Streaming governance: the ONLINE trail is the on-screen camera set
+    // while a run streams. Without this branch the Result-display sliders
+    // go dead mid-run — the trail ignored the state entirely (the "only a
+    // few cameras respond" symptom: the responding few were recent cameras
+    // whose displaySize moved with the median-baseline recomputation).
+    if (!m_onlineGroup) return;
+    ccHObject* camerasFolder = nullptr;
+    for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber(); ++i) {
+        ccHObject* child = m_onlineGroup->getChild(i);
+        if (child &&
+            child->getName() == QStringLiteral("LingbotMap_cameras")) {
+            camerasFolder = child;
+            break;
+        }
+    }
+    if (!camerasFolder) return;
+    for (unsigned i = 0; i < camerasFolder->getChildrenNumber(); ++i) {
+        ccHObject* cam = camerasFolder->getChild(i);
         if (!cam) continue;
-        // Official Camera Downsample Factor semantics: show one frustum
-        // every N frames (visibility, NOT the DB-tree enable state).
-        if (!replayOwnsVisibility) {
-            cam->setVisible(showCameras && (frameIndex % stride == 0));
+        // The ridden Follow-mode sensor is owned by the live-view logic.
+        if (cam == m_lastOnlineSensor && m_lastSettings.liveViewMode == 2) {
+            continue;
         }
+        const int ordinal = static_cast<int>(i);
+        const bool vis = m_resultShowCameras && (ordinal % stride == 0);
+        cam->setVisible(vis);
         if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
-            sensor->setGraphicScale(scale);  // marks the geometry dirty
+            // Per-sensor base captured at creation (retina-aware); a
+            // missing entry means a pre-state camera — adopt its current
+            // scale as the base ONCE and persist it, so re-applies never
+            // compound.
+            const QString baseKey = QStringLiteral("LingbotMap_baseScale");
+            double base = sensor->getMetaData(baseKey).toDouble();
+            if (base <= 0.0) {
+                base = sensor->getGraphicScale();
+                sensor->setMetaData(baseKey, base);
+            }
+            // Idempotent write (same rationale as the result branch above):
+            // this runs on every streaming-frame display pass.
+            const PointCoordinateType targetScale =
+                    static_cast<PointCoordinateType>(base * sizePct);
+            if (std::abs(sensor->getGraphicScale() - targetScale) > 1e-9) {
+                sensor->setGraphicScale(targetScale);
+            }
         }
-        ++frameIndex;
+        reconcileCameraVisibility(cam, vis, display);
     }
 }
 
@@ -1091,6 +1248,13 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     sensor->setDisplay(m_app->getActiveGLDisplay());
     // First-draw latch (same escape-path mechanism as onlineFrameCloud).
     sensor->setForceRedraw(true);
+    // Born under the current Result-display state: per-sensor base scale
+    // (retina-aware, persisted so re-applies never compound) with the
+    // Camera size% factor applied from frame zero.
+    const double baseScale = sensor->getGraphicScale();
+    sensor->setMetaData(QStringLiteral("LingbotMap_baseScale"), baseScale);
+    sensor->setGraphicScale(static_cast<PointCoordinateType>(
+            baseScale * std::max(1, m_resultCamSizePercent) / 100.0));
     // Live-camera Follow mode puts the EYE at this camera's pose — the
     // frustum sitting there wraps the whole view (its red near-plane
     // wireframe rides the screen edge and the side lines sweep past the
@@ -1099,7 +1263,8 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     if (m_lastSettings.liveViewMode == 2) {
         sensor->setVisible(false);
         // Hand the ride over: the previous frame's sensor becomes a normal
-        // (visible) historical frustum again.
+        // (visible) historical frustum again (the next applyDisplayState
+        // pass re-applies the stride gate to it).
         if (m_lastOnlineSensor && m_lastOnlineSensor != sensor) {
             m_lastOnlineSensor->setVisible(true);
         }
@@ -1107,7 +1272,18 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     } else {
         m_lastOnlineSensor = nullptr;
     }
+    // Density gate from birth: the trail must respect the user's Show
+    // cameras / Camera stride state immediately. The ordinal is the folder
+    // child index — the SAME ordinal applyDisplayState gates on (frame
+    // indices can be non-contiguous; insertion order cannot drift).
     if (ccHObject* cameras = ensureCamerasGroup()) {
+        const int ordinal =
+                static_cast<int>(cameras->getChildrenNumber());
+        if (m_lastSettings.liveViewMode != 2) {
+            sensor->setVisible(m_resultShowCameras &&
+                               (ordinal % std::max(1, m_resultCamStride) ==
+                                0));
+        }
         cameras->addChild(sensor);
     } else {
         delete sensor;
@@ -1466,6 +1642,11 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
                     .arg(totalPoints)
                     .arg(cameraCount)
                     .arg(timer.elapsed() / 1000.0, 0, 'f', 1));
+    // Born under the current Result-display state: a stride/size chosen
+    // during streaming must survive materialization (all-visible creation
+    // would otherwise flash the full-density trail until the next commit).
+    applyCameraDisplay(m_resultShowCameras, m_resultCamStride,
+                       m_resultCamSizePercent);
     syncReplayStateToDialog();
     if (m_autoPlayAfterRun) {
         startPlayback();
@@ -1510,14 +1691,22 @@ void qLingbotMap::onReplaySeek(int frame) {
 
 void qLingbotMap::startPlayback() {
     if (!m_app || m_frameCameras.empty()) return;
-    if (m_replayState == ReplayState::Stopped) {
-        // Entering Playing from Stopped restarts from frame 0; resuming
-        // from Paused continues from where it froze.
+    const bool freshStart = (m_replayState == ReplayState::Stopped);
+    // Channel switch FIRST (fresh start AND resume): replay rides DEDICATED
+    // per-camera actors (the boolean-visibility channel point clouds prove
+    // every tick). The composite per-block attributes channel left ghost
+    // wireframe rings on screen — hidden-by-replay cameras kept rendering
+    // without their faces no matter which writer pushed the state.
+    if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+        display->setCameraAggregationSuspended(true);
+    }
+    if (freshStart) {
+        // Entering Playing from Stopped restarts from frame 0.
         m_playbackFrame = 0;
         // Official replay keeps a GLOBAL view: the incremental growth is
-        // only legible from a fixed vantage point, while a Follow/Fit live
-        // camera leaves the ride-along pose from the streaming phase (the
-        // replay then looks like a single point blob flying past the
+        // only legible from a fixed vantage point, while a Follow/Fit
+        // live camera leaves the ride-along pose from the streaming phase
+        // (the replay then looks like a single point blob flying past the
         // frustum trail).
         if (m_lastSettings.liveViewMode > 0) {
             if (ccHObject* group =
@@ -1530,11 +1719,18 @@ void qLingbotMap::startPlayback() {
                     }
                 }
             }
-            // Frame 0 visibility immediately (no first-tick wait).
-            applyReplayVisibility();
         }
     }
+    // Playing BEFORE the visibility pass so the frame gate applies on the
+    // very first frame (passing it while still Stopped showed everything
+    // for one tick — the "cameras always there" flash).
     m_replayState = ReplayState::Playing;
+    // Initial visibility pass; the forced redraw rebuilds the dedicated
+    // actors of the VISIBLE cameras (hidden ones render nothing at all).
+    // Resuming from Paused re-applies the same frozen-frame state — a
+    // no-op — and the already-suspended channel short-circuits.
+    applyReplayVisibility();
+    m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
     syncReplayStateToDialog();
     m_playbackTimer->start(1000 / std::max(1, m_playbackFps));
 }
@@ -1553,26 +1749,25 @@ void qLingbotMap::stopPlaybackAndRestore() {
     if (m_playbackTimer) m_playbackTimer->stop();
     m_replayState = ReplayState::Stopped;
     m_playbackFrame = 0;
+    // Back to the aggregated channel: the forced redraw below re-registers
+    // blocks for the visible cameras (hidden-by-stride cameras simply stay
+    // unregistered until shown).
+    if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+        display->setCameraAggregationSuspended(false);
+    }
     // Restore EVERY replay-controlled entity (the frustums AND the
     // per-frame clouds — the replay hides both) and force one real redraw.
     // A bare refreshAll(false,false) only clears redraw flags and renders
     // nothing, which left the window frozen on whatever the last played
     // frame showed — the "playback cannot be stopped" symptom.
-    if (m_app && m_resultGroupId != 0) {
-        if (ccHObject* group = m_app->dbRootObject()->find(m_resultGroupId)) {
-            for (ccHObject* cam : m_frameCameras) {
-                if (cam) cam->setVisible(true);
-            }
-            for (ccPointCloud* cloud : m_frameClouds) {
-                if (cloud) cloud->setVisible(true);
-            }
-            // The user's result-display camera state (Show cameras /
-            // stride) stays authoritative on top of the all-visible
-            // baseline.
-            applyCameraDisplay(m_resultShowCameras, m_resultCamStride,
-                               m_resultCamSizePercent);
-            m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
-        }
+    if (m_app && m_resultGroupId != 0 &&
+        m_app->dbRootObject()->find(m_resultGroupId)) {
+        // One writer, absolute visibility: with the replay inactive the
+        // frame gate passes everything, so applyDisplayState IS the full
+        // baseline, with the user's Show cameras / stride state on top.
+        applyCameraDisplay(m_resultShowCameras, m_resultCamStride,
+                           m_resultCamSizePercent);
+        m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
     }
     syncReplayStateToDialog();
 }
@@ -1610,55 +1805,14 @@ void qLingbotMap::syncReplayPreviewToDialog() {
 }
 
 void qLingbotMap::applyReplayVisibility() {
-    // Replay-owned visibility, ONE formula for tick/seek/slider changes:
-    //   camera  = Show cameras && (ordinal % stride == 0) && frameShown
-    //   cloud   = frameShown
-    // where frameShown is the official replay rule (3D: frames UP TO the
-    // current one — incremental; 4D: current only). The stride stays live
-    // DURING playback: dragging the slider re-densifies/–thins the
-    // frustums on the very next call instead of being a no-op.
-    const int count = static_cast<int>(m_frameCameras.size());
-    const int stride = std::max(1, m_resultCamStride);
-    int visibleCams = 0;
-    ecvGenericGLDisplay* reconcileDisplay =
-            m_app ? m_app->getActiveGLDisplay() : nullptr;
-    for (int i = 0; i < count; ++i) {
-        const bool frameShown = m_playbackCurrentFrameOnly
-                                        ? i == m_playbackFrame
-                                        : i <= m_playbackFrame;
-        const bool camVisible =
-                m_resultShowCameras && (i % stride == 0) && frameShown;
-        if (ccHObject* cam = m_frameCameras[static_cast<size_t>(i)]) {
-            cam->setVisible(camVisible);
-            if (camVisible) ++visibleCams;
-            // Deterministic reconcile: drive the engine's hide/show DIRECTLY
-            // for aggregated frustums (composite per-block attributes)
-            // instead of relying solely on the next redraw's tree pass —
-            // the replay cannot be hostage to pass-ordering subtleties.
-            // Hides/shows the frustum block AND its "#plane" face actor
-            // (the engine's hideShowEntities probes the suffix).
-            if (reconcileDisplay) {
-                CC_DRAW_CONTEXT ctx;
-                ecvGenericGLDisplay* camDisplay = cam->getDisplay();
-                ctx.display = camDisplay ? camDisplay : reconcileDisplay;
-                ctx.viewID = cam->getViewId();
-                ctx.hideShowEntityType = ENTITY_TYPE::ECV_SENSOR;
-                ctx.visible = camVisible;
-                ctx.defaultViewPort = 0;
-                reconcileDisplay->hideShowEntities(ctx);
-            }
-        }
-        // Clouds have no stride/visibility density concept — they follow
-        // the frame rule only. Aligned slots: cloud i belongs to frame i.
-        if (i < static_cast<int>(m_frameClouds.size())) {
-            if (ccPointCloud* cloud = m_frameClouds[static_cast<size_t>(i)]) {
-                cloud->setVisible(frameShown);
-            }
-        }
-    }
+    // Replay ticks/seek route through the SAME single writer — the
+    // visibility formula (Show cameras && stride && frameGate) lives in
+    // applyDisplayState, so no second writer can fight the sliders.
+    applyDisplayState();
     if (CVLog::diagnosticsEnabled()) {
-        CVLog::Print("[replay] frame=%d/%d stride=%d visibleCams=%d",
-                     m_playbackFrame, count, stride, visibleCams);
+        CVLog::Print("[replay] frame=%d/%d stride=%d", m_playbackFrame,
+                     static_cast<int>(m_frameCameras.size()),
+                     std::max(1, m_resultCamStride));
     }
 }
 

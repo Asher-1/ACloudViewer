@@ -315,6 +315,12 @@ public:
         Q_UNUSED(param);
     }
 
+    /** Channel switch for massive-sensor scenes (qLingbotMap replay):
+     *  while suspended, camera sensors render as DEDICATED per-camera
+     *  actors so per-frame visibility is a plain actor flip instead of
+     *  composite per-block attributes. Default no-op for backends
+     *  without the composite aggregation. */
+    virtual void setCameraAggregationSuspended(bool) {}
     virtual bool hideShowEntities(const ccGLDrawContext& context) {
         Q_UNUSED(context);
         return true;

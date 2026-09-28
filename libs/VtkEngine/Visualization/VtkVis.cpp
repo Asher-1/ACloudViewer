@@ -2044,6 +2044,10 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
                                    const ccSensor* sensor,
                                    const std::string& viewID,
                                    int viewport) {
+    // Replay channel switch: dedicated actors only (see the setter doc —
+    // per-frame replay visibility rides the boolean actor channel that
+    // point clouds prove every tick, not per-block attributes).
+    if (m_sensorAggregationSuspended) return false;
     // Same VTK version guard as the mesh aggregation.
     if (!compositeRenderingSupported()) return false;
     // Per-entity light overrides have no per-block equivalent (the group
@@ -2105,12 +2109,16 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
     // block replacement trigger a composite VBO rebuild, so unchanged cameras
     // must neither convert nor re-register on any pass. Pose changes do NOT
     // reach this branch — they flow through the idempotent absolute transform
-    // in applyGLTransform on top of the anchored local-frame base.
+    // in applyGLTransform on top of the anchored local-frame base. The face
+    // actor must exist too: it lives OUTSIDE the registry (a dedicated
+    // "#plane" actor), so any removal path that dropped it (folder teardown,
+    // prefix sweeps) must fall through and rebuild BOTH parts — otherwise
+    // the camera renders as a wireframe WITHOUT its near-plane face.
     auto srcIt = m_leafGeometryKey.find(viewID);
     if (m_compositeRegistry.containsLeaf(viewID) &&
         m_compositeRegistry.groupOfLeaf(viewID) == groupId &&
         srcIt != m_leafGeometryKey.end() && srcIt->second == key &&
-        !sensor->isRedraw()) {
+        !sensor->isRedraw() && contains(viewID + "#plane")) {
         return true;
     }
 
@@ -5692,6 +5700,39 @@ bool VtkVis::compositeRenderingSupported() {
 #endif
 }
 
+void VtkVis::setSensorAggregationSuspended(bool suspended) {
+    if (m_sensorAggregationSuspended == suspended) return;
+    m_sensorAggregationSuspended = suspended;
+    if (!suspended) {
+        // Resuming: the next forced draw re-aggregates every visible camera
+        // (the dedicated actors are replaced by blocks; hidden-by-state
+        // cameras simply stay unregistered until they are shown).
+        return;
+    }
+    // Evict every camera composite leaf: the group actors would otherwise
+    // keep rendering their blocks as ghost wireframes (hidden-by-replay
+    // leaves never leave the screen, and the blocks have no face actor —
+    // the "cameras are always there / some have no face" pair). Groups die
+    // automatically with their last leaf (removeLeaf).
+    for (const std::string& groupId : m_compositeRegistry.groupIds()) {
+        // Camera-frustum groups are split per line width: "viewId#lwN".
+        if (groupId.find("#lw") == std::string::npos) continue;
+        const vtkIdType slotCount =
+                m_compositeRegistry.leafSlotCount(groupId);
+        for (vtkIdType i = 0; i < slotCount; ++i) {
+            const std::string leafId =
+                    m_compositeRegistry.leafAtFlatIndex(groupId, i);
+            if (!leafId.empty()) {
+                removeFromComposite(leafId, 0);
+            }
+        }
+    }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[replay] camera aggregation suspended -> dedicated actors");
+    }
+}
+
 void VtkVis::removeCompositeLeafEntity(const std::string& leafId,
                                        int viewport) {
     if (!m_compositeRegistry.containsLeaf(leafId)) {
@@ -6167,22 +6208,25 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     // touching the render pipeline during picking.
     vtkSmartPointer<vtkSelection> selection = runHwPass(x, y);
 
-    // CAMERA-PICK PRIORITY: the near-plane faces are translucent (skipped
-    // by the hardware selection pass) and the frustum beams are 1-px lines
-    // — both lose the "closest prop" contest to any point cloud in front
-    // of them, which made camera picks near-impossible in dense scenes.
-    // Entity picking resolves a camera first whenever its face is under
-    // the cursor; point/triangle/label picking (selection tools) never
-    // enters this path, so their behavior is untouched.
-    {
+    // Camera near-plane FACE probe (translucent, skipped by the hardware
+    // pass) — a FALLBACK, not a priority: opaque geometry under the cursor
+    // (point clouds, meshes) must keep winning over a translucent overlay,
+    // or every click near a frustum would hijack the pick away from the
+    // cloud behind it. The probe runs only when the hardware pass missed
+    // or returned an unresolvable group (the camera wireframe's line-only
+    // composite blocks). Point/triangle/label picking (selection tools)
+    // never enters this path, so their behavior is untouched.
+    auto probeCameraFace = [this, x, y, &t0]() -> std::string {
         const std::string camId = nearestCameraFaceUnderPixel(x, y);
-        if (!camId.empty()) {
-            if (CVLog::diagnosticsEnabled()) {
-                CVLog::Print("[pick] camera face probe -> '%s'", camId.c_str());
-            }
-            return camId;
+        if (!camId.empty() && CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[pick] camera face probe -> '%s' (%.1f ms)",
+                         camId.c_str(),
+                         std::chrono::duration<double, std::milli>(
+                                 std::chrono::steady_clock::now() - t0)
+                                 .count());
         }
-    }
+        return camId;
+    };
 
     if (selection && selection->GetNumberOfNodes() > 0) {
         vtkSelectionNode* node = selection->GetNode(0);
@@ -6255,6 +6299,13 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
                     return cpuLeaf;
                 }
             }
+            // Line-only camera group: the wireframe is the camera's own
+            // geometry — resolve it through the face probe before giving up
+            // on the leaf.
+            {
+                const std::string camId = probeCameraFace();
+                if (!camId.empty()) return camId;
+            }
             return groupId;
         }
     }
@@ -6262,10 +6313,14 @@ std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     // Hardware selection came back EMPTY. Two proven causes: translucent
     // actors (the 50%-alpha camera near-plane faces) are skipped by the
     // selection pass, and line-only composite blocks emit no selection
-    // fragments. The software propPicker walks every prop (expensive on
-    // dense scenes) — lazy here: only reached after the face probe, the
-    // hardware pass and the CPU ray-cast all missed.
+    // fragments. Resolve the cheapest evidence first: the face probe (a
+    // per-#plane-actor ray test), then the CPU ray-cast; the software
+    // propPicker walks every prop (expensive on dense scenes) and stays
+    // the LAST resort.
     {
+        const std::string camId = probeCameraFace();
+        if (!camId.empty()) return camId;
+
         vtkActor* soft = hintActor;
         if (!soft) soft = pickActor(x, y);
         const std::string hintId = soft ? getIdByActor(soft) : std::string();

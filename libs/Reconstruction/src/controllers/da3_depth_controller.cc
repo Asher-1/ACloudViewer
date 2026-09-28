@@ -1229,7 +1229,7 @@ struct ExportedDepthView {
     float cy = 0.0f;
 };
 
-// COLMAPUndistorter writes undistorted cameras to dense/<i>/sparse/ (no /0).
+// COLMAPUndistorterImpl writes undistorted cameras to dense/<i>/sparse/ (no /0).
 // DA3 sparse export may write dense/<i>/sparse/0/. Prefer the undistorted model.
 std::filesystem::path FindUndistortedSparseModelPath(
         const std::filesystem::path& dense_path) {
