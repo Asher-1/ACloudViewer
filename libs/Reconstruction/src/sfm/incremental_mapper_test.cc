@@ -166,38 +166,6 @@ class IncrementalMapperLargeDatasetTest : public IncrementalMapperTest {
 };
 
 // Standalone test: needs to check state before BeginReconstruction.
-TEST(IncrementalMapper, GettersAfterBeginReconstruction) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
-  Reconstruction gt_reconstruction;
-  SynthesizeDataset(
-      DefaultSyntheticOptions(), &gt_reconstruction, database.get());
-
-  DatabaseCache::Options cache_options;
-  auto cache = DatabaseCache::Create(*database, cache_options);
-  // 2 rigs x 1 camera x 5 frames = 10 images
-  EXPECT_EQ(cache->Images().size(), 10);
-
-  IncrementalMapper mapper(cache.get());
-
-  // Fork adaptation: GetReconstruction() is a reference accessor, so the
-  // pre-Begin nullptr check from upstream does not apply.
-
-  auto reconstruction = std::make_shared<Reconstruction>();
-  mapper.BeginReconstruction(reconstruction.get());
-
-  EXPECT_EQ(&mapper.GetReconstruction(), reconstruction.get());
-  EXPECT_NO_THROW(mapper.Triangulator());
-  EXPECT_NO_THROW(mapper.ObservationManager());
-  EXPECT_TRUE(mapper.FilteredFrames().empty());
-  // Fork: existing-frame stats are cache-seeded at BeginReconstruction.
-  // Fork: per-rig stats are also cache-seeded at BeginReconstruction.
-  // Fork: per-camera stats are seeded from the database cache at
-  // BeginReconstruction, so they are not empty for a fresh reconstruction.
-  // Fork: NumTotalRegImages is cache-cumulative, not per-reconstruction.
-  EXPECT_EQ(mapper.NumSharedRegImages(), 0);
-
-  mapper.EndReconstruction(/*discard=*/false);
-}
 
 // Fork adjudication: EndReconstruction(discard=false) on the fork triggers a
 // visible-correspondence underflow when the observation manager re-registers
@@ -323,4 +291,321 @@ TEST_F(IncrementalMapperLargeDatasetTest,
 // cross-reconstruction stat reset is deferred until reconciled.
 
 }  // namespace
+
+// ---------------------------------------------------------------------------
+// Restored upstream cases (batch C observation-bookkeeping fix): the
+// underflow root cause is resolved in IncrementalMapper::BeginReconstruction
+// (cache frames are unregistered on load), so these lifecycle cases run
+// against the fork mapper with the standard fork adaptations.
+// ---------------------------------------------------------------------------
+
+TEST(IncrementalMapper, GettersAfterBeginReconstruction) {
+  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  Reconstruction gt_reconstruction;
+  SynthesizeDataset(
+      DefaultSyntheticOptions(), &gt_reconstruction, database.get());
+
+  DatabaseCache::Options cache_options;
+  auto cache = DatabaseCache::Create(*database, cache_options);
+  // 2 rigs x 1 camera x 5 frames = 10 images
+  EXPECT_EQ(cache->Images().size(), 10);
+
+  IncrementalMapper mapper(cache.get());
+
+  auto reconstruction = std::make_shared<Reconstruction>();
+  mapper.BeginReconstruction(reconstruction.get());
+
+  EXPECT_EQ(&mapper.GetReconstruction(), reconstruction.get());
+  EXPECT_NO_THROW(mapper.Triangulator());
+  EXPECT_NO_THROW(mapper.ObservationManager());
+  EXPECT_TRUE(mapper.FilteredFrames().empty());
+  EXPECT_TRUE(mapper.ExistingFrameIds().empty());
+  EXPECT_TRUE(mapper.NumRegFramesPerRig().empty());
+  EXPECT_TRUE(mapper.NumRegImagesPerCamera().empty());
+  EXPECT_EQ(mapper.NumTotalRegImages(), 0);
+  EXPECT_EQ(mapper.NumSharedRegImages(), 0);
+
+  mapper.EndReconstruction(/*discard=*/false);
+}
+
+TEST_F(IncrementalMapperTest, EndReconstructionDiscard) {
+  FindAndRegisterInitialPair();
+
+  // Initial pair registers 2 frames, each with 1 image
+  EXPECT_EQ(mapper_->NumTotalRegImages(), 2);
+  EXPECT_EQ(reconstruction_->NumRegFrames(), 2);
+
+  // Discard the reconstruction — stats should be rolled back
+  mapper_->EndReconstruction(/*discard=*/true);
+  EXPECT_EQ(mapper_->NumTotalRegImages(), 0);
+  EXPECT_EQ(mapper_->NumSharedRegImages(), 0);
+}
+
+TEST_F(IncrementalMapperTest, EstimateInitialTwoViewGeometry) {
+  // Use FindInitialImagePair to select a pair with enough correspondences,
+  // then verify EstimateInitialTwoViewGeometry re-estimates valid geometry.
+  image_t image_id1 = kInvalidImageId;
+  image_t image_id2 = kInvalidImageId;
+  Rigid3d cam2_from_cam1_found;
+  ASSERT_TRUE(mapper_->FindInitialImagePair(
+      options_, image_id1, image_id2, cam2_from_cam1_found));
+  EXPECT_NE(image_id1, image_id2);
+
+  Rigid3d cam2_from_cam1;
+  ASSERT_TRUE(mapper_->EstimateInitialTwoViewGeometry(
+      options_, image_id1, image_id2, cam2_from_cam1));
+
+  // The estimated pose should have non-trivial translation
+  EXPECT_GT(cam2_from_cam1.translation().norm(), 0.0);
+}
+
+TEST_F(IncrementalMapperTest, FullPipeline) {
+  // Step 1: Find and register initial image pair
+  FindAndRegisterInitialPair();
+  EXPECT_NE(image_id1_, kInvalidImageId);
+  EXPECT_NE(image_id2_, kInvalidImageId);
+  EXPECT_GE(reconstruction_->NumRegFrames(), 2);
+
+  // Step 2: Triangulate initial observations
+  TriangulateInitialPair();
+  EXPECT_GT(reconstruction_->NumPoints3D(), 0);
+
+  // Step 3: Find and register next images
+  RegisterAllRemainingImages();
+  EXPECT_EQ(reconstruction_->NumRegFrames(), 10);
+
+  // Step 4: Global bundle adjustment
+  BundleAdjustmentOptions ba_options;
+  EXPECT_TRUE(mapper_->AdjustGlobalBundle(options_, ba_options));
+
+  // Step 5: Filtering
+  mapper_->FilterPoints(options_);
+  mapper_->FilterFrames(options_);
+
+  // Step 6: Track completion and merging
+  mapper_->CompleteAndMergeTracks(tri_options_);
+
+  // Verify the reconstruction is reasonable
+  EXPECT_THAT(gt_reconstruction_,
+              ReconstructionNear(*reconstruction_,
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1));
+
+  // Verify registration stats match the reconstruction.
+  // The synthetic dataset has 2 rigs with 1 camera each and 5 frames per rig,
+  // giving 10 total frames/images. All should be registered.
+  EXPECT_EQ(reconstruction_->NumRegFrames(), 10);
+
+  const auto& num_per_rig = mapper_->NumRegFramesPerRig();
+  EXPECT_EQ(num_per_rig.size(), 2);
+  for (const auto& [rig_id, count] : num_per_rig) {
+    EXPECT_EQ(count, 5);
+  }
+
+  const auto& num_per_camera = mapper_->NumRegImagesPerCamera();
+  EXPECT_EQ(num_per_camera.size(), 2);
+  for (const auto& [camera_id, count] : num_per_camera) {
+    EXPECT_EQ(count, 5);
+  }
+
+  EXPECT_EQ(mapper_->NumTotalRegImages(), 10);
+  EXPECT_EQ(mapper_->NumSharedRegImages(), 0);
+  EXPECT_TRUE(mapper_->FilteredFrames().empty());
+
+  // Sanity check tracks: with dense visibility, at least one track
+  // should be observed by all registered images.
+  size_t max_track_length = 0;
+  for (const auto& [point3D_id, point3D] : reconstruction_->Points3D()) {
+    max_track_length = std::max(max_track_length, point3D.Track().Length());
+  }
+  EXPECT_GE(max_track_length, reconstruction_->NumRegImages());
+}
+
+TEST_F(IncrementalMapperTest, ResetInitializationStats) {
+  // Find an initial pair (updates init stats internally)
+  ASSERT_TRUE(mapper_->FindInitialImagePair(
+      options_, image_id1_, image_id2_, cam2_from_cam1_));
+  EXPECT_NE(image_id1_, kInvalidImageId);
+  EXPECT_NE(image_id2_, kInvalidImageId);
+
+  // Reset stats and find again — should succeed with valid IDs
+  mapper_->ResetInitializationStats();
+  image_t image_id3 = kInvalidImageId;
+  image_t image_id4 = kInvalidImageId;
+  Rigid3d cam2_from_cam1_2;
+  ASSERT_TRUE(mapper_->FindInitialImagePair(
+      options_, image_id3, image_id4, cam2_from_cam1_2));
+  EXPECT_NE(image_id3, kInvalidImageId);
+  EXPECT_NE(image_id4, kInvalidImageId);
+}
+
+TEST_F(IncrementalMapperLargeDatasetTest,
+       ObservationBookkeepingAfterInitAndFilter) {
+  BeginWithSynthesizedReconstruction();
+
+  const size_t num_reg_frames_before = reconstruction_->NumRegFrames();
+  const size_t num_reg_images_before = mapper_->NumTotalRegImages();
+
+  // All images are registered, so num_visible_correspondences must exactly
+  // equal num_correspondences (every correspondence partner is registered).
+  const auto& obs_manager = mapper_->ObservationManager();
+  for (const auto& [image_id, image] : reconstruction_->Images()) {
+    EXPECT_EQ(obs_manager.NumObservations(image_id), image.NumPoints3D());
+    EXPECT_EQ(obs_manager.NumVisiblePoints3D(image_id),
+              reconstruction_->NumPoints3D());
+    EXPECT_EQ(obs_manager.NumVisibleCorrespondences(image_id),
+              obs_manager.NumCorrespondences(image_id))
+        << "num_visible_correspondences wrong for image " << image_id;
+  }
+
+  const frame_t target_frame_id = FindRegisteredFrameWithPoints3D();
+  ASSERT_NE(target_frame_id, kInvalidFrameId);
+  const Frame& target_frame = reconstruction_->Frame(target_frame_id);
+  const size_t num_images_in_frame = std::distance(
+      target_frame.ImageIds().begin(), target_frame.ImageIds().end());
+
+  DeleteAllObservationsInFrame(target_frame_id);
+  ASSERT_EQ(CountFramePoints3D(target_frame_id), 0);
+
+  mapper_->FilterFrames(options_);
+
+  // Verify reconstruction state.
+  EXPECT_EQ(reconstruction_->NumRegFrames(), num_reg_frames_before - 1);
+
+  // Verify reg_stats_ consistency after filtering.
+  EXPECT_EQ(mapper_->NumTotalRegImages(),
+            num_reg_images_before - num_images_in_frame);
+  EXPECT_EQ(mapper_->FilteredFrames().count(target_frame_id), 1);
+
+  FlatHashSet<image_t> filtered_image_ids;
+  for (const image_t data_id : target_frame.ImageIds()) {
+    filtered_image_ids.insert(data_id);
+  }
+
+  // After filtering, verify exact num_visible_correspondences for every image.
+  // DeRegisterFrame decrements the correspondence partners' counters, so each
+  // remaining image loses exactly the matches it had to the deregistered
+  // images. The deregistered images' own counters are unchanged
+  // (DeRegisterFrame only touches partners). An underflowed uint32_t would wrap
+  // to a very large value, failing these exact checks.
+  const auto& corr_graph = *cache_->CorrespondenceGraph();
+  for (const auto& [image_id, image] : reconstruction_->Images()) {
+    point2D_t expected_visible_corrs = obs_manager.NumCorrespondences(image_id);
+    if (!filtered_image_ids.count(image_id)) {
+      // Registered image: lost matches to each deregistered image.
+      for (const image_t filtered_image_id : filtered_image_ids) {
+        expected_visible_corrs -=
+            corr_graph.NumMatchesBetweenImages(image_id, filtered_image_id);
+      }
+    }
+    EXPECT_EQ(obs_manager.NumVisibleCorrespondences(image_id),
+              expected_visible_corrs)
+        << "num_visible_correspondences wrong for image " << image_id;
+
+    // Visibility counts must remain internally consistent.
+    EXPECT_LE(obs_manager.NumVisiblePoints3D(image_id),
+              obs_manager.NumObservations(image_id));
+  }
+}
+
+TEST_F(IncrementalMapperLargeDatasetTest,
+       ObservationBookkeepingAfterDiscardAndReinit) {
+  BeginWithSynthesizedReconstruction();
+
+  const size_t num_reg_frames = reconstruction_->NumRegFrames();
+  ASSERT_GE(num_reg_frames, 20);
+
+  // Discard and re-initialize with the same ground truth reconstruction.
+  mapper_->EndReconstruction(/*discard=*/true);
+  BeginWithSynthesizedReconstruction();
+
+  EXPECT_EQ(reconstruction_->NumRegFrames(), num_reg_frames);
+  EXPECT_EQ(mapper_->NumTotalRegImages(), reconstruction_->NumRegImages());
+
+  // After a full discard + reinit cycle, the observation bookkeeping
+  // must be correct again — no state leaks from the previous cycle.
+  const auto& obs_manager = mapper_->ObservationManager();
+  for (const auto& [image_id, image] : reconstruction_->Images()) {
+    EXPECT_EQ(obs_manager.NumVisibleCorrespondences(image_id),
+              obs_manager.NumCorrespondences(image_id))
+        << "num_visible_correspondences wrong for image " << image_id;
+  }
+}
+
+TEST_F(IncrementalMapperTest, RegStatsResetBetweenReconstructions) {
+  BeginWithSynthesizedReconstruction();
+
+  const size_t num_reg_images_first = mapper_->NumTotalRegImages();
+  const auto rig_counts_first = mapper_->NumRegFramesPerRig();
+  const auto camera_counts_first = mapper_->NumRegImagesPerCamera();
+  ASSERT_GT(num_reg_images_first, 0);
+  ASSERT_FALSE(rig_counts_first.empty());
+  ASSERT_FALSE(camera_counts_first.empty());
+  ASSERT_FALSE(mapper_->ExistingFrameIds().empty());
+
+  // End without discard (keeps cross-reconstruction state).
+  mapper_->EndReconstruction(/*discard=*/false);
+
+  // Begin a fresh empty reconstruction.
+  reconstruction_ = std::make_shared<Reconstruction>();
+  mapper_->BeginReconstruction(reconstruction_.get());
+
+  // Per-reconstruction stats must be reset for a fresh reconstruction.
+  EXPECT_TRUE(mapper_->NumRegFramesPerRig().empty());
+  EXPECT_TRUE(mapper_->NumRegImagesPerCamera().empty());
+  EXPECT_TRUE(mapper_->FilteredFrames().empty());
+  EXPECT_TRUE(mapper_->ExistingFrameIds().empty());
+  EXPECT_EQ(mapper_->NumSharedRegImages(), 0);
+
+  // Cross-reconstruction stats must persist.
+  EXPECT_EQ(mapper_->NumTotalRegImages(), num_reg_images_first);
+
+  mapper_->EndReconstruction(/*discard=*/false);
+
+  // Re-add the same reconstruction — images are now shared across two cycles.
+  BeginWithSynthesizedReconstruction();
+
+  // Per-reconstruction stats must match the first cycle.
+  EXPECT_EQ(mapper_->NumRegFramesPerRig(), rig_counts_first);
+  EXPECT_EQ(mapper_->NumRegImagesPerCamera(), camera_counts_first);
+  EXPECT_FALSE(mapper_->ExistingFrameIds().empty());
+
+  // All images were already registered in the first cycle, so they are
+  // now shared. num_total_reg_images stays the same (same images, not new
+  // ones), and num_shared_reg_images equals the number of re-registered images.
+  EXPECT_EQ(mapper_->NumTotalRegImages(), num_reg_images_first);
+  EXPECT_EQ(mapper_->NumSharedRegImages(), num_reg_images_first);
+
+  mapper_->EndReconstruction(/*discard=*/false);
+}
+
+
+// Restored ModifiedPoints3D (batch C): the fork exposes Get/ModifiedPoints3D
+// via ClearModifiedPoints3D, so the upstream case ports directly.
+
+TEST_F(IncrementalMapperTest, ModifiedPoints3D) {
+  // Initially no modified points
+  mapper_->ClearModifiedPoints3D();
+  EXPECT_TRUE(mapper_->GetModifiedPoints3D().empty());
+
+  FindAndRegisterInitialPair();
+  EXPECT_EQ(mapper_->NumTotalRegImages(), 2);
+  EXPECT_EQ(reconstruction_->NumRegFrames(), 2);
+
+  TriangulateInitialPair();
+  EXPECT_GT(reconstruction_->NumPoints3D(), 0);
+
+  // After triangulation, modified points should be non-empty
+  const auto& modified = mapper_->GetModifiedPoints3D();
+  EXPECT_FALSE(modified.empty());
+  // All modified point IDs should exist in the reconstruction
+  for (const auto point3D_id : modified) {
+    EXPECT_TRUE(reconstruction_->ExistsPoint3D(point3D_id));
+  }
+
+  // After clearing, modified points should be empty again
+  mapper_->ClearModifiedPoints3D();
+  EXPECT_TRUE(mapper_->GetModifiedPoints3D().empty());
+}
+
 }  // namespace colmap

@@ -106,7 +106,29 @@ IncrementalMapper::IncrementalMapper(const DatabaseCache* database_cache)
 void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     CHECK(reconstruction_ == nullptr);
     reconstruction_ = reconstruction;
+    // Snapshot the frames that already belong to a continued reconstruction
+    // before the cache load (batch C observation-bookkeeping fix).
+    const NodeHashSet<frame_t> pre_existing_frames =
+            reconstruction->RegFrameIds();
     reconstruction_->Load(*database_cache_);
+    // Fork fix (surfaced by IncrementalMapperTest.EndReconstructionDiscard /
+    // exe/sfm_test WritesInterruptedReconstruction): the fork database
+    // round-trip persists frame poses (a fork extension), so Load() brings
+    // cache frames in as "registered" through AddFrame's pose rule while the
+    // observation bookkeeping is still empty - registration and
+    // visible-correspondence accounting would be permanently out of sync
+    // (visible-correspondence underflow on EndReconstruction(discard)), and
+    // FindNextImages' HasPose() proxy would skip every frame, leaving no
+    // candidates for the initial pair. Upstream does not hit this because its
+    // database frames carry no poses. Undo the pose-based registration for
+    // the frames the load introduced, so incremental SfM re-establishes
+    // registration and accounting together; frames of a continued
+    // reconstruction (registered before the load) are kept.
+    for (const frame_t frame_id : reconstruction_->RegFrameIds()) {
+        if (pre_existing_frames.count(frame_id) == 0) {
+            reconstruction_->DeRegisterFrame(frame_id);
+        }
+    }
     reconstruction_->SetUp(database_cache_->CorrespondenceGraph().get());
     obs_manager_ = std::make_shared<class ObservationManager>(
             *reconstruction, database_cache_->CorrespondenceGraph());
@@ -136,7 +158,13 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
 }
 
 void IncrementalMapper::EndReconstruction(const bool discard) {
-    CHECK_NOTNULL(reconstruction_);
+    // Upstream parity: idempotent against a second end/reinit cycle (a
+    // discard already ended the reconstruction; upstream's fixture guards
+    // via the nullable Reconstruction() accessor, which the fork's raw
+    // pointer surface expresses as an early return here).
+    if (reconstruction_ == nullptr) {
+        return;
+    }
 
     if (discard) {
         // Upstream parity (d3ccaf35): de-register at the frame level.

@@ -353,3 +353,49 @@ fork 增强面(DA3、global_mapper、RotationAveraging、ViewGraphCalibration CL
 - C++ gate:`ctest -R "^[a-z_0-9]+/[a-z_0-9]+$" -E "^(feature/sift_test|util/opengl_utils_test)$"`
   **160/160 通过**(首跑 caspar 偶发,复跑全绿)。
 - pytest:`python/test/reconstruction/` **395 passed / 3 skipped**;AICore 边界检查 PASS。
+
+## 观测簿记 underflow 根因修复 + C6/C7 测试解锁(2026-09-29)
+
+### 根因(插桩实证,observation_manager 本身无缺陷)
+
+- `:626` 的 THROW_CHECK 是 upstream 同款防御断言,正确报告了配对失衡;真正的根因在
+  **fork db round-trip 把 GT pose 写进 frames 表**(fork 扩展,upstream db 不存 pose):
+  `IncrementalMapper::BeginReconstruction -> Reconstruction::Load(cache)` 时,
+  `AddFrame` 的 upstream parity 规则"带 pose 即注册"把全部 cache 帧**假注册**
+  (帧进 reg_frame_ids_,但 Load 的 frames-先-images-后循环顺序使 images 未注册,
+  ObservationManager ctor 遍历空的 RegImageIds_ -> **可见对应计费恒为 0**);
+  同时 `FindNextImages` 以 `HasPose()` 为"已注册"代理,所有帧被跳过 ->
+  "No good initial image pair found"。EndReconstruction(discard) 一 deregister 即下溢。
+- **修复**(incremental_mapper.cc BeginReconstruction):Load 前快照
+  pre_existing_frames(continue 场景 Read 来的真注册帧),Load 后对**新引入帧**
+  `DeRegisterFrame`(撤注册+ResetPose,恢复 upstream"从零注册,注册与计费由 SfM
+  配对建立"语义;prior 走 db 的 pose_priors 表,不受影响);
+  `EndReconstruction` 对 reconstruction_==nullptr 幂等返回(第二 end/reinit 周期,
+  upstream fixture 的 nullable Reconstruction() 守卫在 fork 裸指针面的等价表达)。
+
+### 解锁与移植(26+ 用例)
+
+- `sfm/incremental_mapper_test`:恢复 upstream 用例 9 个(GettersAfterBeginReconstruction/
+  EndReconstructionDiscard/EstimateInitialTwoViewGeometry/FullPipeline/
+  ResetInitializationStats/ModifiedPoints3D/ObservationBookkeepingAfterInitAndFilter/
+  ObservationBookkeepingAfterDiscardAndReinit/RegStatsResetBetweenReconstructions),
+  **13/13 全过**(ModifiedPoints3D 裁定过时:fork 已有 Get/ClearModifiedPoints3D)。
+- `controllers/incremental_pipeline_test` **首次移植**(22 用例):**7 个活跃用例全过**
+  (WithoutNoise/WithPriorFocalLength/MultiReconstruction/ChainedMatches/
+  IgnoreRedundantPoints3D/两个 Options 传播用例),13 个 DISABLED 留因:
+  - 9 个 camera.cc:159 abort 组:fork synthetic 对 upstream 非平凡 rig(多相机每帧/
+    球面/全景/未知传感器/prior 组合)未构造 camera 参数,恢复条件=fork synthetic
+    对齐 upstream 的 per-rig camera 模型;
+  - WithNoise:顺序相关的 tri 观察计费失衡(num_tri_corrs>num_total_corrs,单跑过,
+    第二个簿记缺陷);
+  - FixExistingFrames:fork fix_existing_images 路径内部 map::at;
+  - DefaultMaxNumIterations:fork 无 -1 sentinel(默认即 25/50)。
+- `exe/sfm_test` 3/3(WritesInterruptedReconstruction/DiscardsInterrupt... 恢复,
+  后者因 fork controller 的取消探针短路顺序改为 DISABLED 留因)。
+- `scene/synthetic_test` 的 MapperFrameWiring 用例随新语义适配(cache 帧加载后
+  未注册/无 pose 为预期,接线断言保持)。
+
+### 本轮最终验证
+
+- 全量构建 + **C++ gate 161/161**;pytest 395/3;AICore 边界 PASS。
+- hierarchical_pipeline_test 移植留待下轮(同 pipeline 模式)。

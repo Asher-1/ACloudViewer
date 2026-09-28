@@ -598,8 +598,13 @@ TEST(IncrementalMapperFrameWiring, SyntheticCacheIsFrameWiredAndDualPathConsiste
   Image& img = recon.Image(first_id);
   EXPECT_TRUE(img.HasFramePtr());
   EXPECT_TRUE(img.FramePtr()->HasRigPtr());
-  EXPECT_TRUE(img.FramePtr()->HasPose());
   EXPECT_TRUE(img.HasCameraPtr());
+  // Batch C fix: BeginReconstruction unregisters the cache-loaded frames
+  // (and their poses) so incremental SfM starts from zero registration with
+  // matching observation bookkeeping; the wiring assertions above are what
+  // this case guards, and the pose is re-established below through the
+  // mapper stage-1 write path.
+  EXPECT_FALSE(img.FramePtr()->HasPose());
 
   // Frame write (mapper stage-1 path) must be visible through the
   // pose-derived accessors and must keep the legacy shadow in sync.

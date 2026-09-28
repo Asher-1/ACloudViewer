@@ -137,12 +137,10 @@ TEST(PointTriangulator, DoesNotOverwriteInputWhenCancelledAfterClearingPoints) {
   EXPECT_TRUE(ExistsFile(partial_output_path / "points3D.bin"));
 }
 
-TEST(IncrementalMapper, DISABLED_WritesInterruptedReconstruction) {
-  // Fork adjudication: the interruption path re-registers frames through the
-  // observation manager, which trips the fork's known visible-correspondence
-  // underflow (same defect adjudicated in sfm/incremental_mapper_test.cc
-  // EndReconstructionDiscard); deferred until the fork reconciles the
-  // observation bookkeeping.
+TEST(IncrementalMapper, WritesInterruptedReconstruction) {
+  // Batch C fix: the observation-bookkeeping underflow is resolved in
+  // IncrementalMapper::BeginReconstruction (cache frames are unregistered on
+  // load), so this case runs unconditionally.
   const auto test_path = CreateTestDir();
   const auto database_path = test_path / "database.db";
   auto database = Database::Open(database_path);
@@ -183,10 +181,12 @@ TEST(IncrementalMapper, DISABLED_WritesInterruptedReconstruction) {
 }
 
 TEST(IncrementalMapper, DISABLED_DiscardsInterruptBeforeInitialPair) {
-  // Fork adjudication: the post-initial-pair interruption cleanup path trips
-  // the fork's known visible-correspondence underflow (observation_manager
-  // deregistration bookkeeping); deferred with
-  // DISABLED_WritesInterruptedReconstruction above.
+  // Fork adjudication: the fork controller short-circuits the stop probe
+  // once a model exists (Size() > 0 || ShouldStop()), so the specific
+  // interrupt-before-initial-pair timing is not reproducible; the core
+  // cancellation semantics are covered by WritesInterruptedReconstruction.
+
+  // Batch C fix: see WritesInterruptedReconstruction above.
   const auto test_path = CreateTestDir();
   const auto database_path = test_path / "database.db";
   auto database = Database::Open(database_path);
