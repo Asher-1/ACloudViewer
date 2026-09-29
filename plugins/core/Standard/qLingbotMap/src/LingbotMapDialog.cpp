@@ -1647,6 +1647,16 @@ void LingbotMapDialog::setResultDisplayReady(bool ready, double minThreshold) {
     if (m_resultThresholdSlider->value() < minVal) {
         m_resultThresholdSlider->setValue(minVal);
     }
+    // Born-consistent display state: push the sliders' CURRENT values to
+    // the freshly materialized entities. Without this push the first
+    // commit of ANY slider would apply the point-size slider's current
+    // value to the clouds as a side effect (the perceived "Camera size
+    // slider changed my point size" on first drag).
+    emit resultDisplaySettingsChanged(
+            m_resultThresholdSlider->value() / 100.0,
+            m_resultPointSizeSlider->value(), m_resultCamSizeSlider->value(),
+            m_resultShowCamsCheck->isChecked(),
+            m_resultCamStrideSlider->value());
 }
 
 void LingbotMapDialog::updatePreviewImage(const QImage& image,

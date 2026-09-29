@@ -49,11 +49,10 @@ TEST(IncrementalMapperController, WithoutNoise) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, DISABLED_WithoutNoiseSphericalCameras) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
+  // Batch C fix: the camera.cc abort was resolved by the missing
+  // non-perspective guard in RegisterNextImage (spherical cameras now take
+  // the camera-ray P3P branch of EstimateAbsolutePose).
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -88,10 +87,11 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseSphericalCameras) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -130,10 +130,11 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) 
 }
 
 TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -166,10 +167,11 @@ TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) 
 }
 
 TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAndCameras) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -217,10 +219,11 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivialFrames) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -490,10 +493,11 @@ TEST(IncrementalMapperController, ChainedMatches) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -536,10 +540,11 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -594,10 +599,11 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTr
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -638,10 +644,11 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -727,10 +734,11 @@ TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithRandomSeedStability) {
-  // Fork adjudication: the fork's synthetic dataset / camera setup leaves
-  // the camera params empty for this upstream rig combination (camera.cc
-  // CHECK_EQ(PrincipalPointIdxs().size(), 2) aborts); deferred until the
-  // fork's synthetic layer constructs the upstream per-rig camera models.
+  // Fork adjudication: non-trivial-rig registration trips the
+  // SetObservationAsTriangulated duplicate-correspondence guard
+  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
+  // WithNoise order-dependence; deferred until that pairing defect is
+  // reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 

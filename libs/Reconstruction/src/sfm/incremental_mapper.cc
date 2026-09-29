@@ -467,6 +467,17 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
         abs_pose_refinement_options.refine_extra_params = false;
     }
 
+    // Upstream parity (d3ccaf35 sfm/incremental_mapper.cc): non-perspective
+    // cameras (spherical / equirectangular) must take the camera-ray P3P
+    // branch of EstimateAbsolutePose - the P4PF branch reads the principal
+    // point indices, which are empty for these models and previously aborted
+    // the process.
+    if (!camera.IsPerspective()) {
+        abs_pose_options.estimate_focal_length = false;
+        abs_pose_refinement_options.refine_focal_length = false;
+        abs_pose_refinement_options.refine_extra_params = false;
+    }
+
     size_t num_inliers;
     std::vector<char> inlier_mask;
 

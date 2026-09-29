@@ -1829,8 +1829,18 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         // shown in a view it is not bound to.
         const bool savedVisible = context.visible;
         if (!isHierarchy) {
-            context.visible = m_visible && (context.skipDisplayCheck ||
-                                            isDisplayedIn(context.display));
+            // Fold the ANCESTOR cascade back in: a leaf whose OWN checkbox
+            // is on but whose parent folder is hidden must push HIDDEN —
+            // dropping the cascade here kept every already-created actor of
+            // a hidden folder on screen (folder-level hiding never worked
+            // for entities rendered through this channel). m_visible stays
+            // in the product so a selected-but-hidden entity remains
+            // hidden; skipDisplayCheck bypasses isDisplayedIn() for ownDB
+            // entities in comparative views (intentionally shown in a view
+            // they are not bound to).
+            context.visible = m_visible && savedVisible &&
+                              (context.skipDisplayCheck ||
+                               isDisplayedIn(context.display));
         }
 
         bool hasExist = true;

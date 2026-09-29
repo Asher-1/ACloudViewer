@@ -399,3 +399,40 @@ fork 增强面(DA3、global_mapper、RotationAveraging、ViewGraphCalibration CL
 
 - 全量构建 + **C++ gate 161/161**;pytest 395/3;AICore 边界 PASS。
 - hierarchical_pipeline_test 移植留待下轮(同 pipeline 模式)。
+
+## 三缺陷批次 — T1 camera 守卫修复 + T2 定性 + T3 hierarchical 首移植(2026-09-29)
+
+### T1 — 非透视相机的 absolute-pose 分流守卫(完成,解锁 Spherical)
+
+- 根因(fprintf ret-addr 插桩实证):upstream d3ccaf35 的 RegisterNextImage 在
+  abs_pose_options 段尾有 `if (!camera.IsPerspective()) { estimate_focal_length=false;
+  refine_* = false; }` 守卫——非透视相机(Spherical/EQUIRECT)强制走
+  EstimateAbsolutePose 的 **camera-ray P3P 分支**(CamRayFromImg, model-aware);
+  fork 缺该守卫, spherical 相机带 estimate_focal_length=true 进 P4PF 分支,
+  `PrincipalPointX/Y` 对空 principal-point 索引 `CHECK_EQ(idxs.size(),2)` abort。
+- 修复:sfm/incremental_mapper.cc RegisterNextImage 补该守卫(upstream 逐字)。
+- **WithoutNoiseSphericalCameras 解锁**,incremental_pipeline_test 活跃用例 7→8。
+
+### T2 — tri 观察计费失衡(定性,修复留待下轮)
+
+- T1 修复后,其余 9 个 pipeline DISABLED 与 hierarchical 4 用例**全部收敛到同一
+  断言**:observation_manager.cc:233 `num_tri_corrs <= num_total_corrs`
+  (SetObservationAsTriangulated 的重复对应守卫)。
+- 特性:非平凡 rig(多相机每帧/全景)与 prior 组合下**必现**;WithNoise 为顺序相关
+  (全量 PRNG 状态依赖,单跑过);Spherical 组已被 T1 修复分离出来,证明该缺陷与
+  相机模型无关,而是**非平凡 rig 的 track/对应配对**路径(IncrementalTriangulator
+  的 AddObservation 或 MergeTracks 对同一 (pair,corr) 重复计费)。
+- 恢复条件:修好该配对缺陷后,pipeline 9 个 + hierarchical 4 个用例一次性解锁。
+
+### T3 — hierarchical_pipeline_test 首次移植(22→4 用例,DISABLED 留因)
+
+- 全量 4 用例移植(WithoutNoise/WithoutNoiseAndNonTrivialFrames/
+  WithoutNoiseAndPanoramicNonTrivialFrames/MultiReconstruction),编译通过,
+  运行被 T2 tri 失衡与 hierarchical_pipeline.cc:159 的 cache/cluster image-id
+  一致性 map::at 阻塞,DISABLED 留因(恢复条件同 T2)。
+- fork 适配:三分离 options(controller/clustering/mapper)+Thread Start/Wait、
+  Get(0) 引用语义、MultiReconstruction 指针对比形态。
+
+### 验证
+
+- 全量构建 + **C++ gate 162/162**;pytest 395/3;AICore 边界 PASS。

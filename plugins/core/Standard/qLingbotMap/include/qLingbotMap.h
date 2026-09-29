@@ -161,6 +161,12 @@ private:
      *  Tick, seek, slider changes and playback restore all route here —
      *  there is no second visibility owner to fight the sliders. */
     void applyDisplayState();
+    /** Re-derives the replay frame caches from the LIVE result folders
+     *  (LingbotMap_cameras / LingbotMap_frames children). Called on every
+     *  applyDisplayState pass so external DB edits (user deleting cameras
+     *  or clouds while a replay is paused/running) can never leave
+     *  dangling cached pointers. */
+    void rebuildFrameCachesFromResult(ccHObject* group);
     /** Replay-owned camera/cloud visibility: official frame rule (3D
      *  incremental / 4D current) COMBINED with the result-display density
      *  (Show cameras / Camera stride). Thin wrapper over applyDisplayState
@@ -207,6 +213,10 @@ private:
      *  (OpenCV: +Z forward, +Y down), so no world axis letter is "up" by
      *  construction — hard-coding one rolled the Fit view upside down. */
     CCVector3d m_worldUp{0, 0, 0};
+    /** Last point size actually pushed to the clouds (-1 = never). Gates
+     *  the per-commit cloud walk so moving ANY other slider does not
+     *  restomp the clouds with the point-size slider's current value. */
+    int m_appliedPointSize = -1;
 
     // ---- loop playback over the final result (camera-frustum cycle) ----
     QTimer* m_playbackTimer = nullptr;

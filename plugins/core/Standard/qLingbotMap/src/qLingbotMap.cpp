@@ -346,8 +346,8 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     syncReplayStateToDialog();
     if (m_dialog) {
         m_dialog->setResultDisplayReady(false, m_resultConfMin);
-        // No result yet: disable the replay transport.
-        syncReplayStateToDialog();
+        // No result yet: disable the replay transport (the sync below the
+        // state clears already refreshed the replay UI).
     }
 
     m_worker->start();
@@ -799,33 +799,39 @@ void qLingbotMap::onResultDisplayChanged(double threshold,
     // 3. Point size (official Point Size slider): the VTK property path —
     //    actor-level SetPointSize, no geometry rebuild. Governs the online
     //    preview clouds too while a run streams (empty result cache).
-    if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
-        const unsigned char size = static_cast<unsigned char>(
-                std::max(1, std::min(16, pointSize)));
-        std::vector<ccPointCloud*> clouds(m_frameClouds.begin(),
-                                          m_frameClouds.end());
-        if (clouds.empty() && m_onlineGroup) {
-            for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber();
-                 ++i) {
-                ccHObject* child = m_onlineGroup->getChild(i);
-                if (!child ||
-                    child->getName() != QStringLiteral("LingbotMap_frames")) {
-                    continue;
-                }
-                for (unsigned j = 0; j < child->getChildrenNumber(); ++j) {
-                    if (auto* cloud = ccHObjectCaster::ToPointCloud(
-                                child->getChild(j))) {
-                        clouds.push_back(cloud);
+    //    GATED on an actual change: the first commit of ANY slider must not
+    //    stomp the cloud size with the slider's current value (the clouds
+    //    were born at this exact value via the setResultDisplayReady push).
+    if (pointSize != m_appliedPointSize) {
+        m_appliedPointSize = pointSize;
+        if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+            const unsigned char size = static_cast<unsigned char>(
+                    std::max(1, std::min(16, pointSize)));
+            std::vector<ccPointCloud*> clouds(m_frameClouds.begin(),
+                                              m_frameClouds.end());
+            if (clouds.empty() && m_onlineGroup) {
+                for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber();
+                     ++i) {
+                    ccHObject* child = m_onlineGroup->getChild(i);
+                    if (!child || child->getName() !=
+                                          QStringLiteral("LingbotMap_frames")) {
+                        continue;
+                    }
+                    for (unsigned j = 0; j < child->getChildrenNumber(); ++j) {
+                        if (auto* cloud = ccHObjectCaster::ToPointCloud(
+                                    child->getChild(j))) {
+                            clouds.push_back(cloud);
+                        }
                     }
                 }
             }
-        }
-        for (ccPointCloud* cloud : clouds) {
-            if (!cloud) continue;
-            cloud->setPointSize(size);
-            PROPERTY_PARAM param(cloud, size);
-            param.viewId = cloud->getViewId();
-            display->changeEntityProperties(param);
+            for (ccPointCloud* cloud : clouds) {
+                if (!cloud) continue;
+                cloud->setPointSize(size);
+                PROPERTY_PARAM param(cloud, size);
+                param.viewId = cloud->getViewId();
+                display->changeEntityProperties(param);
+            }
         }
     }
 
@@ -849,6 +855,7 @@ void qLingbotMap::refilterResultClouds(double threshold) {
     // This is also strictly closer to the official semantics than
     // re-filtering the already-downsampled points: the official viewer
     // re-runs conf filtering AND the arange downsample from the full data.
+    m_appliedPointSize = -1;  // clouds are recreated: force the size re-push
     if (m_pendingResult.frames.isEmpty() || m_resultGroupId == 0) {
         if (m_dialog) {
             m_dialog->appendLog(
@@ -914,6 +921,16 @@ void reconcileCameraVisibility(ccHObject* cam,
     fallbackDisplay->hideShowEntities(ctx);
 }
 
+/** First child matching @a name (direct children only). */
+ccHObject* findChildByName(ccHObject* parent, const QString& name) {
+    if (!parent) return nullptr;
+    for (unsigned i = 0; i < parent->getChildrenNumber(); ++i) {
+        ccHObject* child = parent->getChild(i);
+        if (child && child->getName() == name) return child;
+    }
+    return nullptr;
+}
+
 }  // namespace
 
 void qLingbotMap::applyCameraDisplay(bool showCameras,
@@ -944,6 +961,19 @@ void qLingbotMap::applyDisplayState() {
         return m_playbackCurrentFrameOnly ? ordinal == currentFrame
                                           : ordinal <= currentFrame;
     };
+
+    // Re-derive the frame caches from the LIVE result folders on every
+    // pass: external DB edits (the user deleting cameras/clouds while a
+    // replay is paused/running) invalidate raw cached pointers — folder
+    // children are always live tree entries, so the caches can never
+    // dangle. O(children) pointer walks ≈ µs per pass.
+    ccHObject* resultGroup = nullptr;
+    if (m_app && m_resultGroupId != 0 && m_app->dbRootObject()) {
+        resultGroup = m_app->dbRootObject()->find(m_resultGroupId);
+    }
+    if (resultGroup) {
+        rebuildFrameCachesFromResult(resultGroup);
+    }
 
     if (!m_frameCameras.empty()) {
         // Materialized result governance: visibility, density, size and
@@ -1024,6 +1054,31 @@ void qLingbotMap::applyDisplayState() {
             }
         }
         reconcileCameraVisibility(cam, vis, display);
+    }
+}
+
+void qLingbotMap::rebuildFrameCachesFromResult(ccHObject* group) {
+    if (!group) return;
+    ccHObject* camFolder =
+            findChildByName(group, QStringLiteral("LingbotMap_cameras"));
+    ccHObject* framesFolder =
+            findChildByName(group, QStringLiteral("LingbotMap_frames"));
+    m_frameCameras.clear();
+    m_frameClouds.clear();
+    m_replayResultIndex.clear();
+    if (camFolder) {
+        m_frameCameras.reserve(camFolder->getChildrenNumber());
+        for (unsigned i = 0; i < camFolder->getChildrenNumber(); ++i) {
+            m_frameCameras.push_back(camFolder->getChild(i));
+            m_replayResultIndex.push_back(static_cast<int>(i));
+        }
+    }
+    if (framesFolder) {
+        m_frameClouds.reserve(framesFolder->getChildrenNumber());
+        for (unsigned i = 0; i < framesFolder->getChildrenNumber(); ++i) {
+            m_frameClouds.push_back(
+                    ccHObjectCaster::ToPointCloud(framesFolder->getChild(i)));
+        }
     }
 }
 

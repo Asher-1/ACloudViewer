@@ -150,12 +150,26 @@ void Camera::SetFocalLengthY(const double focal_length_y) {
 
 double Camera::PrincipalPointX() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
+  if (idxs.size() != 2) {
+    fprintf(stderr,
+            "[CAM] PPX empty, cam=%u model=%d w=%d h=%d ret=%p\n",
+            camera_id_, static_cast<int>(model_id_), width_, height_,
+            __builtin_return_address(0));
+    fflush(stderr);
+  }
   CHECK_EQ(idxs.size(), 2);
   return params_[idxs[0]];
 }
 
 double Camera::PrincipalPointY() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
+  if (idxs.size() != 2) {
+    fprintf(stderr,
+            "[CAM] PPY empty, cam=%u model=%d w=%d h=%d ret=%p\n",
+            camera_id_, static_cast<int>(model_id_), width_, height_,
+            __builtin_return_address(0));
+    fflush(stderr);
+  }
   CHECK_EQ(idxs.size(), 2);
   return params_[idxs[1]];
 }
