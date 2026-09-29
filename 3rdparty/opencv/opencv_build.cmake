@@ -101,11 +101,23 @@ if(PLUGIN_STANDARD_QYOLO)
     set(_opencv_video ON)
 endif()
 
+# photo: required by the SAM3D official PBR chain (cv::inpaint
+# INPAINT_TELEA texture-bake hole repair, texture_inpaint.cpp — the only
+# cv::inpaint consumer in the repo). The switch is owned by
+# cmake/AICoreOptions.cmake (AICore_USE_SAM3D_PBR, declared before
+# find_dependencies runs), so a default (PBR=OFF) OpenCV build skips the
+# module instead of relying on this comment staying in sync.
+set(_opencv_photo OFF)
+if(AICore_USE_SAM3D_PBR)
+    set(_opencv_photo ON)
+endif()
+
 if(BUILD_OPENCV)
     message(STATUS "OpenCV modules: features2d=${_opencv_features2d} "
             "videoio=${_opencv_videoio} ffmpeg=${_opencv_videoio_ffmpeg} "
             "v4l=${_opencv_videoio_v4l} objdetect=${_opencv_objdetect} "
-            "calib3d=${_opencv_calib3d} video=${_opencv_video}")
+            "calib3d=${_opencv_calib3d} video=${_opencv_video} "
+            "photo=${_opencv_photo}")
 endif()
 
 # OpenCV's bundled OpenEXR/Imath (BUILD_OPENEXR=ON) still uses deprecated C++11
@@ -166,7 +178,8 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_flann=${_opencv_features2d}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
-            -DBUILD_opencv_photo=OFF
+            # photo follows the SAM3D PBR switch (see _opencv_photo above).
+            -DBUILD_opencv_photo=${_opencv_photo}
             -DBUILD_opencv_calib3d=${_opencv_calib3d}
             -DBUILD_JAVA=OFF
             -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]

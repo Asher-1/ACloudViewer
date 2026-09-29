@@ -241,7 +241,7 @@ jobs:
           }
           
           # Check if test executable exists
-          $testExe = Join-Path $buildDir "bin\${{ matrix.CONFIG }}\tests.exe"
+          $testExe = Join-Path $buildDir "bin\cloudviewer_test\${{ matrix.CONFIG }}\tests.exe"
           if (-not (Test-Path $testExe)) {
             Write-Error "Test executable not found: $testExe"
             Write-Host "Current directory: $(Get-Location)"
@@ -256,6 +256,12 @@ jobs:
           Write-Host "Test executable: $testExe"
           Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
           Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          
+          # tests.exe lives under bin\cloudviewer_test\ but the shared DLLs are
+          # centralized in bin\<CONFIG>\; Windows has no RPATH, so prepend the
+          # DLL directory before launching.
+          $dllDir = Join-Path $buildDir "bin\${{ matrix.CONFIG }}"
+          $env:PATH = "$dllDir;$env:PATH"
           
           # Run the tests
           & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*

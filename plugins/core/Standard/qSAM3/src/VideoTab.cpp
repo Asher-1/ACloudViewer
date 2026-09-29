@@ -18,23 +18,29 @@
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPainter>
 #include <QProgressBar>
+#include <QProgressDialog>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSaveFile>
 #include <QSlider>
 #include <QVBoxLayout>
 #include <algorithm>
 
 #include "VideoFrameReader.h"
+#include "VideoMaskArchive.h"
 #include "VideoPlaybackWidget.h"  // cvMatToQImage
 #include "ecvModelDownloader.h"
 
@@ -194,6 +200,9 @@ VideoTab::~VideoTab() {
 }
 
 void VideoTab::releaseModel() {
+    if (!m_videoExportDir.isEmpty())
+        finishVideoExport(false, tr("Model released."));
+    if (m_exportVideoBtn) m_exportVideoBtn->setEnabled(false);
     m_playTimer.stop();
     m_playing = false;
     if (m_playBtn) m_playBtn->setText(tr("Play"));
@@ -234,11 +243,23 @@ void VideoTab::setDevice(const QString& device) {
     if (!m_deviceCombo) return;
     for (int i = 0; i < m_deviceCombo->count(); ++i) {
         if (m_deviceCombo->itemText(i).compare(device, Qt::CaseInsensitive) ==
-            0) {
+                    0 ||
+            m_deviceCombo->itemData(i).toString().compare(
+                    device, Qt::CaseInsensitive) == 0) {
             m_deviceCombo->setCurrentIndex(i);
             return;
         }
     }
+}
+
+void VideoTab::setStandaloneDeviceControlsVisible(bool visible) {
+    if (m_deviceLabel) m_deviceLabel->setVisible(visible);
+    if (m_deviceCombo) m_deviceCombo->setVisible(visible);
+    if (m_backendLabel) m_backendLabel->setVisible(visible);
+}
+
+QString VideoTab::selectedDevice() const {
+    return m_deviceCombo->currentData().toString().toLower();
 }
 
 void VideoTab::setupUi() {
@@ -332,6 +353,7 @@ void VideoTab::setupUi() {
     auto* row2 = new QHBoxLayout();
     auto* modelLabel = new QLabel(tr("Model:"));
     m_modelCombo = new QComboBox();
+    m_modelCombo->setObjectName(QStringLiteral("SAM3VideoModel"));
     m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
     m_loadBtn->setStyleSheet(
@@ -344,18 +366,25 @@ void VideoTab::setupUi() {
     // The button is kept hidden for the Browse fallback in onLoadModel().
     m_loadBtn->setVisible(false);
 
-    // Hidden device widgets (keep for internal state tracking, not visible).
-    // Items carry the runtime registry device ids (aicore/backend_capi.h),
-    // matching what SAM3Dialog forwards via setDevice(); item text stays the
-    // id so onLoadModel()'s currentText() is the C-API device string.
+    // SAM3Dialog owns the visible selector; standalone hosts show this row.
+    // Device IDs are kept as item data for the AICore call and archive
+    // metadata.
+    m_deviceLabel = new QLabel(tr("Device:"), this);
+    m_deviceLabel->setObjectName(QStringLiteral("SAM3VideoDeviceLabel"));
     m_deviceCombo = new QComboBox(this);
+    m_deviceCombo->setObjectName(QStringLiteral("SAM3VideoDevice"));
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* dev = aicore_device_at(i);
         if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->id));
+        m_deviceCombo->addItem(
+                QString::fromUtf8(dev->label ? dev->label : dev->id),
+                QString::fromUtf8(dev->id));
+        if (dev->is_default)
+            m_deviceCombo->setCurrentIndex(m_deviceCombo->count() - 1);
     }
     m_deviceCombo->hide();
     m_backendLabel = new QLabel(tr("Backend: none"), this);
+    m_backendLabel->setObjectName(QStringLiteral("SAM3VideoBackend"));
     m_backendLabel->hide();
 
     row2->addWidget(modelLabel);
@@ -370,6 +399,9 @@ void VideoTab::setupUi() {
     });
     row2->addWidget(m_downloadBtn);
     row2->addWidget(m_loadBtn);
+    row2->addWidget(m_deviceLabel);
+    row2->addWidget(m_deviceCombo);
+    row2->addWidget(m_backendLabel);
     row2->addStretch();
     layout->addLayout(row2);
 
@@ -442,6 +474,12 @@ void VideoTab::setupUi() {
     m_exportFrameToDbBtn->setToolTip(
             tr("Export the current annotated frame to the DB tree (one-shot)"));
 
+    m_exportVideoBtn = new QPushButton(tr("Track and export video..."));
+    m_exportVideoBtn->setEnabled(false);
+    m_exportVideoBtn->setToolTip(
+            tr("Track from the current frame through the end; save each "
+               "instance mask and frame index to a folder"));
+
     auto* instLabel = new QLabel(tr("Tracked instances:"));
     m_instanceLabel = new QLabel(tr("(none)"));
     m_instanceLabel->setStyleSheet("color: #999;");
@@ -453,6 +491,7 @@ void VideoTab::setupUi() {
 
     bottom2->addWidget(m_exportBtn);
     bottom2->addWidget(m_exportFrameToDbBtn);
+    bottom2->addWidget(m_exportVideoBtn);
     bottom2->addSpacing(12);
     bottom2->addWidget(instLabel);
     bottom2->addWidget(m_instanceLabel);
@@ -512,6 +551,8 @@ void VideoTab::setupUi() {
     // Mask export: PNG files to a directory plus grayscale mask images
     // into the DB tree (see onExportMasks).
     connect(m_exportBtn, &QPushButton::clicked, this, &VideoTab::onExportMasks);
+    connect(m_exportVideoBtn, &QPushButton::clicked, this,
+            &VideoTab::onExportVideoMasks);
     // One-shot export of the current frame to the DB tree.
     connect(m_exportFrameToDbBtn, &QPushButton::clicked, this,
             &VideoTab::exportCurrentFrameToDb);
@@ -650,7 +691,8 @@ void VideoTab::updateDownloadButton() {
             isCatalogModel &&
             isValidCatalogModel(cacheDir + QLatin1Char('/') + filename,
                                 filename);
-    m_downloadBtn->setEnabled(!m_downloadInProgress && isCatalogModel &&
+    m_downloadBtn->setEnabled(!m_downloadInProgress &&
+                              m_videoExportDir.isEmpty() && isCatalogModel &&
                               !cached && !m_busy);
     m_downloadBtn->setText(cached ? tr("Cached") : tr("Download"));
 }
@@ -666,6 +708,8 @@ void VideoTab::onOpenVideo() {
 }
 
 void VideoTab::openVideoFile(const QString& path) {
+    if (!m_videoExportDir.isEmpty())
+        finishVideoExport(false, tr("Video changed."));
     // A stale playback timer must never fire into the newly opened video
     // (trackNextFrame does not check m_playing).
     m_playTimer.stop();
@@ -674,6 +718,10 @@ void VideoTab::openVideoFile(const QString& path) {
         connect(m_reader, &VideoFrameReader::frameReady, this,
                 &VideoTab::onFrameReady);
         connect(m_reader, &VideoFrameReader::frameReadFailed, this, [this]() {
+            if (!m_videoExportDir.isEmpty()) {
+                finishVideoExport(false, tr("Video frame read failed."));
+                return;
+            }
             m_playing = false;
             m_playBtn->setText(tr("Play"));
             CVLog::Warning(
@@ -699,6 +747,7 @@ void VideoTab::openVideoFile(const QString& path) {
     m_timelineEntries.clear();
     m_timelineInstanceIds.clear();
     m_lastResult = SAM3WorkerResult{};
+    m_lastResultFrame = -1;
     m_timeline->setFrameCount(m_totalFrames);
     m_timeline->setCurrentFrame(0);
     m_timeline->setProcessedMax(-1);
@@ -825,7 +874,7 @@ void VideoTab::onLoadModel() {
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::LoadModel;
     req.modelPath = path;
-    req.device = m_deviceCombo->currentText().toLower();
+    req.device = selectedDevice();
     req.textPrompt = desiredTextPrompt();
     req.scoreThreshold = static_cast<float>(m_scoreSpin->value());
     m_loadingModelPath = QFileInfo(path).absoluteFilePath();
@@ -843,7 +892,7 @@ void VideoTab::onLoadModel() {
 bool VideoTab::ensureModelReady() {
     const QString path = modelPath();
     const QString requestedPath = QFileInfo(path).absoluteFilePath();
-    const QString requestedDevice = m_deviceCombo->currentText().toLower();
+    const QString requestedDevice = selectedDevice();
     // A live worker is only reusable when it owns the model/device selected
     // in the UI. Otherwise the next action must hot-reload first.
     if (m_worker && m_worker->hasModel() &&
@@ -968,7 +1017,10 @@ QString VideoTab::desiredTextPrompt() const {
 }
 
 void VideoTab::clearTrackingVisualization() {
+    if (!m_videoExportDir.isEmpty())
+        finishVideoExport(false, tr("Tracker reset."));
     m_lastResult = SAM3WorkerResult{};
+    m_lastResultFrame = -1;
     m_processedMax = -1;
     m_timelineEntries.clear();
     m_timelineInstanceIds.clear();
@@ -1031,6 +1083,7 @@ void VideoTab::onModelReady(const QString& backend, bool visualOnly) {
     }
     m_canvas->setInteractive(true);
     m_stepBtn->setEnabled(true);
+    m_exportVideoBtn->setEnabled(!m_videoPath.isEmpty());
     m_trackerActive = true;
     setStatus(tr("Tracker created. Press Play or add instances."));
     // Re-run the operation that triggered the lazy load (Play / Step /
@@ -1109,11 +1162,26 @@ void VideoTab::trackNextFrame() {
 }
 
 void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
+    if (!m_videoExportDir.isEmpty() &&
+        frameIndex != m_videoExportExpectedFrame) {
+        finishVideoExport(false, tr("Unexpected decoded frame %1; expected %2.")
+                                         .arg(frameIndex)
+                                         .arg(m_videoExportExpectedFrame));
+        return;
+    }
     QImage img = VideoPlaybackWidget::cvMatToQImage(rgbFrame);
     if (img.isNull()) {
         CVLog::Warning("[qSAM3][VideoTab] frame %d decoded to a null QImage",
                        frameIndex);
         appendLog(tr("Frame %1 has no data.").arg(frameIndex));
+        if (!m_videoExportDir.isEmpty()) {
+            finishVideoExport(false,
+                              tr("Frame %1 decode failed.").arg(frameIndex));
+        } else {
+            m_playing = false;
+            m_playTimer.stop();
+            m_playBtn->setText(tr("Play"));
+        }
         return;
     }
     m_currentFrameImage = img;
@@ -1131,6 +1199,7 @@ void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
     m_timeline->setCurrentFrame(frameIndex);
 
     if (m_worker && m_worker->hasModel()) {
+        if (!m_videoExportDir.isEmpty()) m_videoExportAwaitedFrame = frameIndex;
         VideoWorker::TrackRequest req;
         req.action = VideoWorker::Action::TrackFrame;
         req.frameIndex = frameIndex;
@@ -1145,11 +1214,46 @@ void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
 }
 
 void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
+    // A latest-wins worker can finish an older request after a newer frame was
+    // decoded. During an archive run, accepting that result would append a
+    // valid-looking mask under the wrong frame and move the UI backwards.
+    if (!m_videoExportDir.isEmpty() &&
+        frameIndex != m_videoExportExpectedFrame) {
+        finishVideoExport(
+                false,
+                tr("Unexpected tracking result for frame %1; expected %2.")
+                        .arg(frameIndex)
+                        .arg(m_videoExportExpectedFrame));
+        return;
+    }
+    if (frameIndex != m_currentFrame) {
+        appendLog(tr("Ignored stale tracking result for frame %1.")
+                          .arg(frameIndex));
+        return;
+    }
+
     m_lastResult = result;
+    m_lastResultFrame = frameIndex;
     m_currentFrame = frameIndex;
     if (frameIndex > m_processedMax) m_processedMax = frameIndex;
     updateCanvasInstances();
     updateTimeline(frameIndex, result);
+
+    if (!m_videoExportDir.isEmpty()) {
+        if (!result.valid || !result.errorMsg.isEmpty() ||
+            !appendVideoMasks(result, frameIndex)) {
+            finishVideoExport(
+                    false,
+                    result.errorMsg.isEmpty()
+                            ? tr("Frame %1 export failed.").arg(frameIndex)
+                            : result.errorMsg);
+            return;
+        } else if (m_videoExportProgress) {
+            m_videoExportAwaitedFrame = -1;
+            m_videoExportExpectedFrame = frameIndex + 1;
+            m_videoExportProgress->setValue(frameIndex + 1);
+        }
+    }
 
     // Auto-export to DB tree if enabled.
     if (m_exportToDbCheckBox->isChecked() && m_app) {
@@ -1157,7 +1261,11 @@ void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
     }
 
     if (!result.errorMsg.isEmpty()) {
+        m_playing = false;
+        m_playTimer.stop();
+        m_playBtn->setText(tr("Play"));
         setStatus(result.errorMsg);
+        return;
     } else if (result.valid) {
         setStatus(tr("Frame %1/%2 — %3 objects tracked")
                           .arg(frameIndex)
@@ -1170,6 +1278,7 @@ void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
 void VideoTab::schedulePlayback() {
     if (!m_playing || m_totalFrames <= 0) return;
     if (m_currentFrame + 1 >= m_totalFrames) {
+        if (!m_videoExportDir.isEmpty()) finishVideoExport(true);
         m_playing = false;
         m_playBtn->setText(tr("Play"));
         setStatus(tr("End of video."));
@@ -1177,11 +1286,18 @@ void VideoTab::schedulePlayback() {
     }
     const double speed = m_speedSlider->value() / 10.0;
     const int intervalMs =
-            m_fps > 0.0 ? static_cast<int>(1000.0 / (m_fps * speed)) : 40;
+            !m_videoExportDir.isEmpty()
+                    ? 0
+                    : (m_fps > 0.0 ? static_cast<int>(1000.0 / (m_fps * speed))
+                                   : 40);
     m_playTimer.start(std::max(1, intervalMs));
 }
 
 void VideoTab::onPlayPause() {
+    if (!m_videoExportDir.isEmpty()) {
+        finishVideoExport(false, tr("Canceled."));
+        return;
+    }
     if (m_videoPath.isEmpty()) {
         CVLog::Warning("[qSAM3][VideoTab] Play pressed with no video open");
         appendLog(tr("Open a video first."));
@@ -1222,11 +1338,14 @@ void VideoTab::onStep() {
 }
 
 void VideoTab::onReset() {
+    if (!m_videoExportDir.isEmpty())
+        finishVideoExport(false, tr("Tracker reset."));
     m_playing = false;
     m_playBtn->setText(tr("Play"));
     m_playTimer.stop();
     resetPrompts();
     m_lastResult = SAM3WorkerResult{};
+    m_lastResultFrame = -1;
     m_timelineEntries.clear();
     m_timelineInstanceIds.clear();
     m_timeline->setTimeline(m_timelineEntries);
@@ -1437,12 +1556,21 @@ void VideoTab::onInstanceRefined(int instanceId, bool ok) {
 
 void VideoTab::onBusyChanged(bool busy) {
     m_busy = busy;
-    m_loadBtn->setEnabled(!busy);
-    m_modelCombo->setEnabled(!busy);
-    m_deviceCombo->setEnabled(!busy);
-    m_canvas->setInteractive(!busy);
-    m_stepBtn->setEnabled(!busy && m_worker && m_worker->hasModel());
+    const bool canEditModel = !busy && m_videoExportDir.isEmpty();
+    m_loadBtn->setEnabled(canEditModel);
+    m_modelCombo->setEnabled(canEditModel);
+    m_deviceCombo->setEnabled(canEditModel);
+    m_canvas->setInteractive(!busy && m_videoExportDir.isEmpty());
+    m_stepBtn->setEnabled(canEditModel && m_worker && m_worker->hasModel());
+    m_exportVideoBtn->setEnabled(!busy && m_videoExportDir.isEmpty() &&
+                                 m_worker && m_worker->hasModel() &&
+                                 !m_videoPath.isEmpty());
     updateDownloadButton();
+    if (!busy && !m_videoExportDir.isEmpty() &&
+        m_videoExportAwaitedFrame >= 0) {
+        finishVideoExport(false, tr("Tracking failed on frame %1.")
+                                         .arg(m_videoExportAwaitedFrame));
+    }
     if (busy) {
         m_playTimer.stop();
     } else if (m_worker && !m_worker->hasModel() &&
@@ -1474,6 +1602,8 @@ void VideoTab::onBusyChanged(bool busy) {
 void VideoTab::onLog(const QString& msg) { setStatus(msg); }
 
 void VideoTab::onSeek(int frame) {
+    if (!m_videoExportDir.isEmpty())
+        finishVideoExport(false, tr("Seek interrupted export."));
     if (m_videoPath.isEmpty()) return;
     if (!ensureModelReady()) {
         // Track the requested frame once the lazy model load finishes
@@ -1490,6 +1620,7 @@ void VideoTab::onSeek(int frame) {
     // would highlight the wrong objects. Drop them — the first tracked
     // frame after the seek repopulates the overlay.
     m_lastResult = SAM3WorkerResult{};
+    m_lastResultFrame = -1;
     updateCanvasInstances();
     trackNextFrame();
 }
@@ -1581,12 +1712,218 @@ void VideoTab::onExportMasks() {
     }
 }
 
+void VideoTab::onExportVideoMasks() {
+    if (!m_videoExportDir.isEmpty() || m_busy || !m_worker ||
+        !m_worker->hasModel() || m_videoPath.isEmpty() || m_totalFrames <= 0) {
+        setStatus(tr("Open a video and wait for the tracker to be ready."));
+        return;
+    }
+    if (m_currentFrame > 0) {
+        QMessageBox scope(this);
+        scope.setWindowTitle(tr("Video tracking range"));
+        scope.setText(tr("Tracking will start at frame %1 of %2.")
+                              .arg(m_currentFrame)
+                              .arg(m_totalFrames));
+        scope.setInformativeText(
+                tr("Export the remaining frames, or reset to frame 0 for a "
+                   "complete video. Reset clears manually added instances; "
+                   "add their prompts on frame 0, then click export again."));
+        auto* remaining = scope.addButton(tr("Export remaining frames"),
+                                          QMessageBox::AcceptRole);
+        auto* reset = scope.addButton(tr("Reset to frame 0"),
+                                      QMessageBox::ActionRole);
+        scope.addButton(QMessageBox::Cancel);
+        scope.exec();
+        if (scope.clickedButton() == reset) {
+            onReset();
+            setStatus(
+                    tr("Reset to frame 0. Add prompts on the first frame, "
+                       "then choose Track and export video again."));
+            return;
+        }
+        if (scope.clickedButton() != remaining) return;
+    }
+    const QString parent = QFileDialog::getExistingDirectory(
+            this, tr("Choose tracking output folder"),
+            QFileInfo(m_videoPath).absolutePath());
+    if (parent.isEmpty()) return;
+    startVideoExport(parent);
+}
+
+void VideoTab::startVideoExport(const QString& parent) {
+    if (parent.isEmpty() || !m_videoExportDir.isEmpty() ||
+        m_videoPath.isEmpty() || m_totalFrames <= 0 || !m_worker ||
+        !m_worker->hasModel()) {
+        setStatus(tr("Open a video and wait for the tracker to be ready."));
+        return;
+    }
+    QString digestError;
+    const QString sourceDigest =
+            videoMaskArchiveSha256(m_videoPath, &digestError);
+    if (sourceDigest.isEmpty()) {
+        setStatus(tr("Could not read source video: %1").arg(digestError));
+        return;
+    }
+    const QString folder = QFileInfo(m_videoPath).completeBaseName() +
+                           QStringLiteral("_sam3_") +
+                           QDateTime::currentDateTimeUtc().toString(
+                                   QStringLiteral("yyyyMMddTHHmmsszzz"));
+    QDir directory(parent);
+    if (!directory.mkdir(folder)) {
+        QMessageBox::warning(
+                this, tr("Video tracking"),
+                tr("Cannot create output folder in %1.").arg(parent));
+        return;
+    }
+    m_videoExportDir = directory.filePath(folder);
+    m_videoExportSourceDigest = sourceDigest;
+    m_videoExportFrames = QJsonArray();
+    m_videoExportStart = m_currentFrame;
+    m_videoExportExpectedFrame = m_currentFrame;
+    m_videoExportAwaitedFrame = -1;
+    m_videoExportProgress =
+            new QProgressDialog(tr("Tracking frames %1 to %2...")
+                                        .arg(m_videoExportStart)
+                                        .arg(m_totalFrames - 1),
+                                tr("Cancel"), 0, m_totalFrames, this);
+    m_videoExportProgress->setWindowModality(Qt::WindowModal);
+    m_videoExportProgress->setAutoClose(false);
+    m_videoExportProgress->setAutoReset(false);
+    m_videoExportProgress->setMinimumDuration(0);
+    m_videoExportProgress->setValue(m_currentFrame);
+    connect(m_videoExportProgress, &QProgressDialog::canceled, this,
+            [this]() { finishVideoExport(false, tr("Canceled.")); });
+    m_videoExportProgress->show();
+    m_openBtn->setEnabled(false);
+    m_testVideoCombo->setEnabled(false);
+    m_testDataBtn->setEnabled(false);
+    m_resetBtn->setEnabled(false);
+    m_stepBtn->setEnabled(false);
+    m_exportVideoBtn->setEnabled(false);
+    m_modelCombo->setEnabled(false);
+    m_deviceCombo->setEnabled(false);
+    m_downloadBtn->setEnabled(false);
+    m_canvas->setInteractive(false);
+    m_timeline->setEnabled(false);
+    m_modeText->setEnabled(false);
+    m_modeBox->setEnabled(false);
+    m_modePoints->setEnabled(false);
+    m_textPrompt->setEnabled(false);
+    m_scoreSpin->setEnabled(false);
+    m_playBtn->setText(tr("Stop export"));
+    m_playing = true;
+    m_playTimer.stop();
+    if (m_lastResult.valid && m_lastResultFrame == m_currentFrame) {
+        if (!appendVideoMasks(m_lastResult, m_currentFrame)) {
+            finishVideoExport(false, tr("Could not write the current frame."));
+            return;
+        }
+        m_videoExportProgress->setValue(m_currentFrame + 1);
+        m_videoExportExpectedFrame = m_currentFrame + 1;
+        schedulePlayback();
+    } else {
+        trackNextFrame();
+    }
+}
+
+bool VideoTab::appendVideoMasks(const SAM3WorkerResult& result,
+                                int frameIndex) {
+    QJsonObject entry;
+    if (!writeVideoMaskFrame(m_videoExportDir, frameIndex, result, &entry))
+        return false;
+    m_videoExportFrames.append(entry);
+    return true;
+}
+
+void VideoTab::finishVideoExport(bool complete, const QString& error) {
+    if (m_videoExportDir.isEmpty()) return;
+    complete = complete && m_videoExportExpectedFrame == m_totalFrames &&
+               m_videoExportFrames.size() == m_totalFrames - m_videoExportStart;
+    QString archiveError = error;
+    m_playing = false;
+    m_playTimer.stop();
+    m_playBtn->setText(tr("Play"));
+    QJsonObject manifest{
+            {QStringLiteral("format"),
+             QStringLiteral("acloudviewer_sam3_tracking_v1")},
+            {QStringLiteral("source"), m_videoPath},
+            {QStringLiteral("model"), QFileInfo(m_loadedModelPath).fileName()},
+            {QStringLiteral("device"), m_loadedDevice},
+            {QStringLiteral("fps"), m_fps},
+            {QStringLiteral("width"), m_currentFrameImage.width()},
+            {QStringLiteral("height"), m_currentFrameImage.height()},
+            {QStringLiteral("total_frames"), m_totalFrames},
+            {QStringLiteral("start_frame"), m_videoExportStart},
+            {QStringLiteral("complete"), complete},
+            {QStringLiteral("full_video"), false},
+            {QStringLiteral("frames"), m_videoExportFrames}};
+    QString digestError;
+    const QString sourceDigest =
+            videoMaskArchiveSha256(m_videoPath, &digestError);
+    if (!sourceDigest.isEmpty() && sourceDigest == m_videoExportSourceDigest) {
+        manifest.insert(QStringLiteral("source_sha256"),
+                        m_videoExportSourceDigest);
+    } else {
+        complete = false;
+        const QString sourceError =
+                sourceDigest.isEmpty()
+                        ? tr("Could not read source video: %1").arg(digestError)
+                        : tr("Source video changed during tracking.");
+        archiveError =
+                archiveError.isEmpty()
+                        ? sourceError
+                        : archiveError + QStringLiteral("; ") + sourceError;
+        appendLog(sourceError);
+    }
+    manifest.insert(QStringLiteral("complete"), complete);
+    manifest.insert(QStringLiteral("full_video"),
+                    complete && m_videoExportStart == 0);
+    if (!archiveError.isEmpty())
+        manifest.insert(QStringLiteral("error"), archiveError);
+    const QString manifestPath =
+            QDir(m_videoExportDir).filePath(QStringLiteral("manifest.json"));
+    const bool saved = writeVideoMaskManifest(m_videoExportDir, manifest);
+    if (m_videoExportProgress) {
+        disconnect(m_videoExportProgress, nullptr, this, nullptr);
+        m_videoExportProgress->close();
+        m_videoExportProgress->deleteLater();
+        m_videoExportProgress = nullptr;
+    }
+    m_openBtn->setEnabled(true);
+    m_testVideoCombo->setEnabled(true);
+    m_testDataBtn->setEnabled(true);
+    m_resetBtn->setEnabled(true);
+    m_stepBtn->setEnabled(!m_busy && m_worker && m_worker->hasModel());
+    m_exportVideoBtn->setEnabled(m_worker && m_worker->hasModel());
+    m_modelCombo->setEnabled(!m_busy);
+    m_deviceCombo->setEnabled(!m_busy);
+    updateDownloadButton();
+    m_canvas->setInteractive(!m_busy && m_worker && m_worker->hasModel());
+    m_timeline->setEnabled(true);
+    m_modeText->setEnabled(!m_visualOnly);
+    m_modeBox->setEnabled(true);
+    m_modePoints->setEnabled(true);
+    m_textPrompt->setEnabled(!m_visualOnly && m_modeText->isChecked());
+    m_scoreSpin->setEnabled(true);
+    setStatus(saved ? (complete ? tr("Tracking saved: %1").arg(m_videoExportDir)
+                                : tr("Partial tracking saved: %1 (%2)")
+                                          .arg(m_videoExportDir, archiveError))
+                    : tr("Could not write tracking manifest: %1")
+                              .arg(manifestPath));
+    m_videoExportDir.clear();
+    m_videoExportSourceDigest.clear();
+    m_videoExportFrames = QJsonArray();
+    m_videoExportStart = -1;
+    m_videoExportExpectedFrame = -1;
+    m_videoExportAwaitedFrame = -1;
+}
+
 int VideoTab::exportMasksToDb() {
     if (!m_lastResult.valid || !m_app || m_lastResult.instanceMasks.isEmpty()) {
         return 0;
     }
     const QString deviceTag =
-            ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
+            ecvPluginDbNaming::deviceTagFromName(selectedDevice());
     const QString modelTag =
             ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString baseName = QFileInfo(m_videoPath).completeBaseName();
@@ -1610,8 +1947,7 @@ int VideoTab::exportMasksToDb() {
                          static_cast<double>(m_lastResult.scores.value(i)));
         img->setMetaData(QStringLiteral("SAM3/Frame"),
                          static_cast<qlonglong>(m_currentFrame));
-        img->setMetaData(QStringLiteral("SAM3/Device"),
-                         m_deviceCombo->currentText());
+        img->setMetaData(QStringLiteral("SAM3/Device"), selectedDevice());
         img->setMetaData(QStringLiteral("SAM3/Model"),
                          QFileInfo(m_loadedModelPath).fileName());
         if (!m_videoPath.isEmpty()) {
@@ -1742,7 +2078,7 @@ void VideoTab::exportCurrentFrameToDb() {
     }
 
     const QString deviceTag =
-            ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
+            ecvPluginDbNaming::deviceTagFromName(selectedDevice());
     const QString modelTag =
             ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString baseName = QFileInfo(m_videoPath).completeBaseName();
@@ -1756,8 +2092,7 @@ void VideoTab::exportCurrentFrameToDb() {
     img->setMetaData(QStringLiteral("SAM3"), true);
     img->setMetaData(QStringLiteral("SAM3/DetectionCount"),
                      static_cast<qlonglong>(m_lastResult.detCount));
-    img->setMetaData(QStringLiteral("SAM3/Device"),
-                     m_deviceCombo->currentText());
+    img->setMetaData(QStringLiteral("SAM3/Device"), selectedDevice());
     img->setMetaData(QStringLiteral("SAM3/Frame"),
                      static_cast<qlonglong>(m_currentFrame));
     img->setMetaData(QStringLiteral("Runtime (ms)"),

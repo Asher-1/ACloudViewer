@@ -23,8 +23,7 @@
 
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
-
-class ecvTestDataRepository;
+#include "ecvTestDataRepository.h"
 
 class ecvMainAppInterface;
 
@@ -104,9 +103,24 @@ private slots:
     void onCancel();
     void onExportMatches();
     void onUseTestData();
+    //! Shared ecvTestDataRepository broadcasts, filter-guarded by dataset
+    //! kind (the singleton serves every plugin's test data).
+    void onTestDataDownloadFinished(bool success,
+                                    ecvTestDataRepository::Dataset kind);
+    void onTestDataExtractionFinished(bool success,
+                                      ecvTestDataRepository::Dataset kind);
 
 private:
     void setupUi();
+    //! Test-data fill: the shared ecvTestDataRepository owns the download,
+    //! the integrity ledger, and the extraction of the official LightGlue
+    //! demo pair (sacre_coeur day/night, Dataset::LightGlueTestImages
+    //! registration); the dialog collects the pair from the extraction
+    //! tree and auto-fills both slots.
+    void finishTestDataFill();
+    //! Fill m_testDataPaths via ecvTestDataRepository::findDatasetFile;
+    //! true when both demo images are present.
+    bool collectTestImagePaths();
     void populateModelCombo(const QString& keepFilename = QString());
     bool selectModelByFilename(const QString& filename);
     QString resolveModelPath() const;
@@ -175,6 +189,7 @@ private:
 
     ecvMainAppInterface* m_app = nullptr;
     ecvModelDownloader* m_downloader = nullptr;
+    QStringList m_testDataPaths;
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
     bool m_testDataInProgress = false;

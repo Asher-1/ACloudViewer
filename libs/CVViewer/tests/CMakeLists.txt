@@ -25,6 +25,12 @@ target_sources(tests PRIVATE
 
 target_include_directories(tests PRIVATE ".")
 
+# Monolithic test runner (500MB+ linked against the full library): keep it out
+# of bin/ alongside the other grouped test folders (colmap_test/, aicore_tests/,
+# plugin_test/).
+set_target_properties(tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/cloudviewer_test")
+
 # Fix Qt -fPIC requirement
 cloudViewer_set_targets_independent(tests)
 
@@ -63,7 +69,8 @@ if (WIN32)
   add_custom_command(
       TARGET tests
       POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+      # $<TARGET_FILE_DIR:tests> follows the grouped runtime output directory.
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "$<TARGET_FILE_DIR:tests>/"
   )
 endif()
 

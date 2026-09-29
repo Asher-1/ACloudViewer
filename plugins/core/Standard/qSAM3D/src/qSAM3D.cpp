@@ -8,7 +8,9 @@
 #include "qSAM3D.h"
 
 #include <FileIOFilter.h>
+#include <ecvGLMatrix.h>
 #include <ecvGlobalShiftManager.h>
+#include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
 #include <ecvPluginDbNaming.h>
@@ -20,10 +22,70 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QTemporaryFile>
+#include <algorithm>
 
 #include "Sam3dGenerateCommand.h"
 #include "Sam3dVertexColors.h"
 #include "ecvPersistentSettings.h"
+
+namespace {
+
+// Place an imported GLB entity into the DB's Z-up world:
+//
+// 1. Every GLB this plugin imports (the official PBR bake and the shared
+//    AICore bake alike) stores its vertices rotated by the writers'
+//    (x, y, z) -> (x, z, -y) glTF Y-up action, while the DB world and the
+//    splat clouds are Z-up. Without the inverse rotation the mesh lands 90°
+//    away from its own splats.
+// 2. The official PBR GLB additionally carries the DECODER-frame mesh
+//    (AICore bakes before the scene pose), so the official make_scene pose
+//    is applied on top: p' = R^T @ diag(scale) @ p + t (scene_assemble.cpp
+//    pytorch3d row-vector action — the naive R reading is wrong by exactly
+//    R vs R^T). CPU-baked GLBs arrive with posed vertices and carry no pose.
+void applyGlbPlacement(ccHObject* glbEntity, const Sam3dRunResult& object) {
+    if (!glbEntity) return;
+    // Column-major (x, y, z) -> (x, -z, y): the exact inverse of the GLB
+    // writers' Y-up rotation.
+    float mat16[16] = {1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1};
+    if (object.hasPbr && object.pose.size() == 10) {
+        const float* q = object.pose.constData();  // wxyz(4)+t(3)+s(3)
+        const float norm2 =
+                q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+        if (norm2 > 0.0f) {
+            const float two_s = 2.0f / norm2;
+            // Row-major quaternion_to_matrix (pytorch3d convention) — the
+            // same matrix the worker and the official composer use.
+            const float R[3][3] = {
+                    {1.0f - two_s * (q[2] * q[2] + q[3] * q[3]),
+                     two_s * (q[1] * q[2] - q[3] * q[0]),
+                     two_s * (q[1] * q[3] + q[2] * q[0])},
+                    {two_s * (q[1] * q[2] + q[3] * q[0]),
+                     1.0f - two_s * (q[1] * q[1] + q[3] * q[3]),
+                     two_s * (q[2] * q[3] - q[1] * q[0])},
+                    {two_s * (q[1] * q[3] - q[2] * q[0]),
+                     two_s * (q[2] * q[3] + q[1] * q[0]),
+                     1.0f - two_s * (q[1] * q[1] + q[2] * q[2])}};
+            const float* s = q + 7;  // uniform scale (official receipt)
+            const float* t = q + 4;  // translation
+            // Compose M = Pose · YupInv in place: the YupInv columns select
+            // (x, -z, y), so the combined 3x3 is
+            //   col0 = R[0][:]·s[0]
+            //   col1 = R[2][:]·s[2]
+            //   col2 = -R[1][:]·s[1]
+            for (int row = 0; row < 3; ++row) {
+                mat16[row] = R[0][row] * s[0];
+                mat16[4 + row] = R[2][row] * s[2];
+                mat16[8 + row] = -R[1][row] * s[1];
+                mat16[12 + row] = t[row];
+            }
+        }
+    }
+    ccGLMatrix transform(mat16);
+    glbEntity->setGLTransformation(transform);
+    glbEntity->applyGLTransformation_recursive();
+}
+
+}  // namespace
 
 qSAM3D::qSAM3D(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qSAM3D/info.json") {
@@ -57,6 +119,10 @@ void qSAM3D::showDialog() {
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &Sam3dDialog::runRequested, this,
                 &qSAM3D::executeTask);
+        // Two-step scene workflow, step 1: the worker sees previewOnly=true
+        // in the settings and stops after the segmentation preview.
+        connect(m_dialog, &Sam3dDialog::previewMasksRequested, this,
+                &qSAM3D::executeTask);
         connect(m_dialog, &Sam3dDialog::cancelRequested, this,
                 &qSAM3D::cancelTask);
     }
@@ -73,9 +139,28 @@ void qSAM3D::executeTask(const Sam3dDialog::Settings& settings) {
         return;
     }
     m_lastSettings = settings;
-    m_dialog->setRunning(true);
-    m_dialog->appendLog(tr("[SAM3D] Starting generation from '%1'...")
-                                .arg(settings.imagePath));
+    // Fresh incremental-delivery state for this run.
+    m_sceneGroup = nullptr;
+    m_meshesGroup = nullptr;
+    m_splatsGroup = nullptr;
+    m_sceneGroupName.clear();
+    m_sceneMeshCount = 0;
+    m_sceneCloudCount = 0;
+    m_sceneObjectTotal = 0;
+    if (settings.previewOnly) {
+        // Two-step workflow, step 1: make the mode unmistakable in both the
+        // status line and the console (a preview run must never read as the
+        // full reconstruction pipeline).
+        m_dialog->setRunning(
+                true, tr("Running the SAM3 segmentation preview only..."));
+        m_dialog->appendLog(tr("[SAM3D] Starting segmentation preview from "
+                               "'%1' (no reconstruction)...")
+                                    .arg(settings.imagePath));
+    } else {
+        m_dialog->setRunning(true);
+        m_dialog->appendLog(tr("[SAM3D] Starting generation from '%1'...")
+                                    .arg(settings.imagePath));
+    }
 
     m_worker = new Sam3dWorker(this);
     m_worker->configure(settings);
@@ -83,8 +168,21 @@ void qSAM3D::executeTask(const Sam3dDialog::Settings& settings) {
     // slot arity <= signal arity, so route through a lambda).
     connect(m_worker, &Sam3dWorker::logMessage, m_dialog,
             [this](const QString& message) { m_dialog->appendLog(message); });
-    connect(m_worker, &Sam3dWorker::stageChanged, this, &qSAM3D::onWorkerStage);
+    // Progress: the worker maps pipeline stages / diffusion steps / scene
+    // object slices onto a single 0..100 percent.
+    connect(m_worker, &Sam3dWorker::progressChanged, m_dialog,
+            &Sam3dDialog::setProgress);
     connect(m_worker, &Sam3dWorker::resultReady, this, &qSAM3D::onResultReady);
+    // Incremental scene delivery: each finished object lands in the DB
+    // tree while the remaining objects are still generating.
+    connect(m_worker, &Sam3dWorker::objectReady, this, &qSAM3D::onObjectReady);
+    connect(m_worker, &Sam3dWorker::sceneObjectTotalChanged, this,
+            [this](int total) { m_sceneObjectTotal = total; });
+    // Segmentation diagnostic: the masks-over-image preview lands in the DB
+    // tree before the first object finishes, so recall gaps are visible
+    // while the run is still going.
+    connect(m_worker, &Sam3dWorker::segmentationPreviewReady, this,
+            &qSAM3D::onSegmentationPreview);
     connect(m_worker, &Sam3dWorker::sceneReady, this, &qSAM3D::onSceneReady);
     connect(m_worker, &Sam3dWorker::taskFinished, this,
             &qSAM3D::onTaskFinished);
@@ -98,13 +196,6 @@ void qSAM3D::cancelTask() {
     }
 }
 
-void qSAM3D::onWorkerStage(int stage, int, int) {
-    // Stage 0..7 maps onto a coarse progress bar; stage-level granularity is
-    // what the AICore contract provides.
-    m_dialog->setProgress(0);
-    Q_UNUSED(stage);
-}
-
 void qSAM3D::onResultReady(const Sam3dRunResult& result) {
     addResultToDb(result);
 }
@@ -113,118 +204,185 @@ void qSAM3D::onSceneReady(const Sam3dSceneResult& result) {
     addSceneResultToDb(result);
 }
 
-void qSAM3D::addSceneResultToDb(const Sam3dSceneResult& result) {
-    if (!m_app) return;
-    const bool importToDb = m_lastSettings.importToDb;
-    const QString sourceName = QFileInfo(result.sourceImage).completeBaseName();
-    const QString groupName = ecvPluginDbNaming::makeUnique(
+void qSAM3D::onObjectReady(const Sam3dRunResult& object) {
+    addObjectToDb(object);
+}
+
+ccHObject* qSAM3D::sceneGroupRef(const Sam3dRunResult& object) {
+    if (!m_lastSettings.importToDb) return nullptr;
+    if (m_sceneGroup) return m_sceneGroup;
+    // The per-run group name is computed ONCE and the group entity is kept
+    // for the whole run: repeated ecvPluginDbNaming::makeUnique calls would
+    // suffix the name once the group is in the DB.
+    const QString sourceName = QFileInfo(object.sourceImage).completeBaseName();
+    m_sceneGroupName = ecvPluginDbNaming::makeUnique(
             QStringLiteral("SAM3D_%1_%2")
                     .arg(sourceName, ecvPluginDbNaming::deviceTagFromName(
-                                             result.backend.isEmpty()
+                                             object.backend.isEmpty()
                                                      ? QStringLiteral("auto")
-                                                     : result.backend)),
+                                                     : object.backend)),
             m_app);
+    m_sceneGroup = new ccHObject(m_sceneGroupName);
+    m_sceneGroup->setDisplay(m_app->getActiveGLDisplay());
+    m_sceneGroup->setVisible(true);
+    m_app->addToDB(m_sceneGroup, false, true, false, true);
+    m_sceneSourceImage = object.sourceImage;
+    m_sceneBackend = object.backend;
+    m_sceneDtype = object.dtype;
+    return m_sceneGroup;
+}
 
-    ccHObject* group = nullptr;
-    auto groupRef = [&]() -> ccHObject* {
-        if (!importToDb) return nullptr;
-        if (!group) {
-            group = new ccHObject(groupName);
+void qSAM3D::addObjectToDb(const Sam3dRunResult& object) {
+    if (!m_app) return;
+    ccHObject* root = sceneGroupRef(object);
+    const QString entityName =
+            m_sceneGroupName.isEmpty()
+                    ? object.objectLabel
+                    : QStringLiteral("%1.%2").arg(m_sceneGroupName,
+                                                  object.objectLabel);
+
+    // Two dedicated sub-groups: the textured meshes and the splat point
+    // clouds stay in separate folders inside the run group.
+    auto subGroupRef = [this, root](const QString& suffix,
+                                    ccHObject** group) -> ccHObject* {
+        if (*group != nullptr) return *group;
+        *group = new ccHObject(
+                QStringLiteral("%1.%2").arg(m_sceneGroupName, suffix));
+        (*group)->setDisplay(m_app->getActiveGLDisplay());
+        (*group)->setVisible(true);
+        if (root) {
+            root->addChild(*group);
+            // The DB tree model only learns about entities through addToDB
+            // (ccDBRoot::addElement inserts the row under the recorded
+            // parent); an addChild alone leaves the subtree invisible.
+            m_app->addToDB(*group, false, true, false, false);
         }
-        return group;
+        return *group;
     };
 
-    int importedObjects = 0;
-    for (const Sam3dRunResult& object : result.objects) {
-        const QString entityName =
-                QStringLiteral("%1.%2").arg(groupName, object.objectLabel);
-        ccHObject* glbEntity = nullptr;
-        if (!object.glbPath.isEmpty() && QFileInfo::exists(object.glbPath)) {
-            glbEntity =
-                    importGlbFile(object.glbPath, result, object, entityName);
-        } else if (!object.glb.isEmpty()) {
-            // Defensive: a bake that kept its bytes (no output dir).
-            glbEntity = importGlbEntity(object.glb, object, entityName);
-        }
-        if (glbEntity) {
-            ++importedObjects;
+    // One reconstruction product per object: its own textured GLB mesh plus
+    // its own colored splat point cloud. The splat centers and the CPU-bake
+    // mesh vertices are already in the scene frame (the worker applied the
+    // official make_scene position action); the official PBR GLB carries the
+    // DECODER-frame mesh (AICore bakes before the pose), so the official
+    // pose is applied here as one GL transformation instead (see
+    // applyGlbPlacement for the full frame-contract, including the glTF
+    // Y-up correction).
+    if (!object.glbPath.isEmpty() && QFileInfo::exists(object.glbPath)) {
+        if (ccHObject* glbEntity =
+                    importGlbFile(object.glbPath, object, entityName)) {
+            applyGlbPlacement(glbEntity, object);
+            ++m_sceneMeshCount;
             glbEntity->setDisplay(m_app->getActiveGLDisplay());
             glbEntity->setVisible(true);
-            if (ccHObject* parent = groupRef()) {
+            if (ccHObject* parent =
+                        subGroupRef(QStringLiteral("meshes"), &m_meshesGroup)) {
                 parent->addChild(glbEntity);
+                m_app->addToDB(glbEntity, false, true, false, true);
+            } else {
+                m_app->addToDB(glbEntity, false, true, false, true);
+            }
+        }
+    } else if (!object.glb.isEmpty()) {
+        // Defensive: a bake that kept its bytes (no output dir).
+        if (ccHObject* glbEntity =
+                    importGlbEntity(object.glb, object, entityName)) {
+            applyGlbPlacement(glbEntity, object);
+            ++m_sceneMeshCount;
+            glbEntity->setDisplay(m_app->getActiveGLDisplay());
+            glbEntity->setVisible(true);
+            if (ccHObject* parent =
+                        subGroupRef(QStringLiteral("meshes"), &m_meshesGroup)) {
+                parent->addChild(glbEntity);
+                m_app->addToDB(glbEntity, false, true, false, true);
             } else {
                 m_app->addToDB(glbEntity, false, true, false, true);
             }
         }
     }
 
-    // Composed scene splat cloud: every object's pose-applied gaussians in
-    // one world frame (the official scene-assemble product).
-    const int n = result.sceneSplatCount;
-    const bool haveScene =
+    const int n = object.gaussianCount;
+    const bool haveCloud =
             n > 0 &&
-            result.sceneCenters.size() == static_cast<qsizetype>(n) * 3 &&
-            result.sceneRgb.size() == result.sceneCenters.size();
-    if (haveScene) {
-        auto* cloud =
-                new ccPointCloud(QStringLiteral("%1.scene").arg(groupName));
-        if (cloud->reserve(n)) {
-            const float* centers = result.sceneCenters.constData();
-            const float* rgb = result.sceneRgb.constData();
-            for (int i = 0; i < n; ++i) {
-                cloud->addPoint(CCVector3(centers[i * 3 + 0],
-                                          centers[i * 3 + 1],
-                                          centers[i * 3 + 2]));
-            }
-            if (cloud->resizeTheRGBTable()) {
-                for (int i = 0; i < n; ++i) {
-                    cloud->setPointColor(
-                            i, ecvColor::Rgb(static_cast<ColorCompType>(
-                                                     rgb[i * 3 + 0] * 255.0f),
-                                             static_cast<ColorCompType>(
-                                                     rgb[i * 3 + 1] * 255.0f),
-                                             static_cast<ColorCompType>(
-                                                     rgb[i * 3 + 2] * 255.0f)));
-                }
-                cloud->showColors(true);
-            }
-            cloud->setMetaData(QStringLiteral("Source"), result.sourceImage);
-            cloud->setMetaData(QStringLiteral("Backend"), result.backend);
-            cloud->setMetaData(QStringLiteral("Quantization"), result.dtype);
-            cloud->setMetaData(QStringLiteral("Objects"),
-                               static_cast<int>(result.objects.size()));
-            if (ccHObject* parent = groupRef()) {
-                parent->addChild(cloud);
-            } else {
-                cloud->setDisplay(m_app->getActiveGLDisplay());
-                cloud->setVisible(true);
-                m_app->addToDB(cloud, false, true, false, true);
-            }
-        } else {
-            delete cloud;
-        }
+            object.splatCenters.size() == static_cast<qsizetype>(n) * 3 &&
+            object.splatSh0.size() == object.splatCenters.size();
+    if (!haveCloud) return;
+    auto* cloud = new ccPointCloud(QStringLiteral("%1.splats").arg(entityName));
+    if (!cloud->reserve(n)) {
+        delete cloud;
+        return;
     }
+    const float* centers = object.splatCenters.constData();
+    const float* sh0 = object.splatSh0.constData();
+    constexpr float kSh0 = 0.28209479177387814f;
+    for (int i = 0; i < n; ++i) {
+        cloud->addPoint(CCVector3(centers[i * 3 + 0], centers[i * 3 + 1],
+                                  centers[i * 3 + 2]));
+    }
+    if (cloud->resizeTheRGBTable()) {
+        for (int i = 0; i < n; ++i) {
+            const float rgb[3] = {0.5f + kSh0 * sh0[i * 3 + 0],
+                                  0.5f + kSh0 * sh0[i * 3 + 1],
+                                  0.5f + kSh0 * sh0[i * 3 + 2]};
+            auto clamp = [](float v) {
+                return static_cast<ColorCompType>(
+                        std::min(1.0f, std::max(0.0f, v)) * 255.0f);
+            };
+            cloud->setPointColor(i, ecvColor::Rgb(clamp(rgb[0]), clamp(rgb[1]),
+                                                  clamp(rgb[2])));
+        }
+        cloud->showColors(true);
+    }
+    cloud->setMetaData(QStringLiteral("Source"), object.sourceImage);
+    cloud->setMetaData(QStringLiteral("Backend"), object.backend);
+    cloud->setMetaData(QStringLiteral("Quantization"), object.dtype);
+    cloud->setMetaData(QStringLiteral("Object"), object.objectLabel);
+    ++m_sceneCloudCount;
+    cloud->setDisplay(m_app->getActiveGLDisplay());
+    cloud->setVisible(true);
+    if (ccHObject* parent =
+                subGroupRef(QStringLiteral("splats"), &m_splatsGroup)) {
+        parent->addChild(cloud);
+        m_app->addToDB(cloud, false, true, false, true);
+    } else {
+        m_app->addToDB(cloud, false, true, false, true);
+    }
+    m_dialog->appendLog(tr("[SAM3D] object '%1' imported (%2/%3).")
+                                .arg(object.objectLabel)
+                                .arg(m_sceneMeshCount + m_sceneCloudCount)
+                                .arg(m_sceneObjectTotal * 2));
+}
 
-    if (group) {
-        group->setDisplay(m_app->getActiveGLDisplay());
-        group->setVisible(true);
-        m_app->addToDB(group, false, true, false, true);
-    } else if (!importToDb) {
+void qSAM3D::addSceneResultToDb(const Sam3dSceneResult& result) {
+    // Run-completion summary: the entities were already imported one by one
+    // through onObjectReady — nothing to batch here anymore.
+    if (!m_lastSettings.importToDb) {
         m_dialog->appendLog(tr("[SAM3D] Scene kept out of the DB (import "
                                "disabled); %1 GLB file(s) remain in the "
                                "output directory.")
                                     .arg(result.objects.size()));
+        return;
+    }
+    const int expected = static_cast<int>(result.objects.size());
+    if (m_sceneMeshCount < expected) {
+        m_dialog->appendLog(
+                tr("[SAM3D] %1 object GLB bake(s) did not import — those "
+                   "objects keep their splat point cloud only.")
+                        .arg(expected - m_sceneMeshCount),
+                ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
     }
     m_dialog->appendLog(
-            tr("[SAM3D] Scene '%1': %2 object mesh(es) imported, %3 composed "
-               "splats.")
-                    .arg(groupName)
-                    .arg(importedObjects)
-                    .arg(haveScene ? n : 0));
+            tr("[SAM3D] Scene '%1' complete: %2 object mesh(es) + %3 splat "
+               "cloud(s) imported.")
+                    .arg(m_sceneGroupName)
+                    .arg(m_sceneMeshCount)
+                    .arg(m_sceneCloudCount));
+    // The next run starts a fresh group.
+    m_sceneGroup = nullptr;
+    m_sceneGroupName.clear();
 }
 
 ccHObject* qSAM3D::importGlbFile(const QString& glbPath,
-                                 const Sam3dSceneResult& scene,
                                  const Sam3dRunResult& object,
                                  const QString& entityName) {
     if (!m_app || glbPath.isEmpty()) return nullptr;
@@ -247,8 +405,36 @@ ccHObject* qSAM3D::importGlbFile(const QString& glbPath,
     imported->setMetaData(QStringLiteral("Material"),
                           QStringLiteral("Baked UV-atlas GLB"));
     imported->setMetaData(QStringLiteral("Object"), object.objectLabel);
-    imported->setMetaData(QStringLiteral("Scene"), scene.sourceImage);
+    imported->setMetaData(QStringLiteral("Scene"), object.sourceImage);
     return imported;
+}
+
+void qSAM3D::onSegmentationPreview(const QImage& preview, int maskCount) {
+    if (!m_app || preview.isNull()) return;
+    if (!m_lastSettings.importToDb) {
+        m_dialog->appendLog(
+                tr("[SAM3D] Segmentation preview kept out of the "
+                   "DB (import disabled)."));
+        return;
+    }
+    const QString sourceName =
+            QFileInfo(m_lastSettings.imagePath).completeBaseName();
+    const QString name = ecvPluginDbNaming::makeUnique(
+            QStringLiteral("SAM3D_seg_%1").arg(sourceName), m_app);
+    auto* img = new ccImage(preview, name);
+    img->setMetaData(QStringLiteral("Source"), m_lastSettings.imagePath);
+    img->setMetaData(QStringLiteral("Role"),
+                     QStringLiteral("scene segmentation preview"));
+    img->setMetaData(QStringLiteral("MaskCount"),
+                     static_cast<qlonglong>(maskCount));
+    img->setDisplay(m_app->getActiveGLDisplay());
+    img->setVisible(true);
+    m_app->addToDB(img, false, true, false, true);
+    m_dialog->appendLog(
+            tr("[SAM3D] Segmentation preview '%1' imported (%2 object "
+               "mask(s)).")
+                    .arg(name)
+                    .arg(maskCount));
 }
 
 void qSAM3D::onTaskFinished(bool success) {
@@ -261,6 +447,7 @@ void qSAM3D::onTaskFinished(bool success) {
                                   tr("Generation failed:\n%1").arg(error));
         } else {
             m_dialog->appendLog(tr("[SAM3D] Task finished."));
+            m_dialog->setProgress(100);
         }
         m_worker->deleteLater();
         m_worker = nullptr;
@@ -287,6 +474,10 @@ void qSAM3D::addResultToDb(const Sam3dRunResult& result) {
     ccHObject* glbEntity = nullptr;
     if (!result.glb.isEmpty()) {
         glbEntity = importGlbEntity(result.glb, result, entityName);
+        // Single-object runs carry no scene pose, but the GLB still needs
+        // its glTF Y-up vertices rotated back into the DB's Z-up world (the
+        // same frame the splat cloud below uses) or the two never align.
+        applyGlbPlacement(glbEntity, result);
     }
 
     // Gaussian splats (world-domain centers + display RGB) -> colored point
@@ -459,20 +650,8 @@ void qSAM3D::addResultToDb(const Sam3dRunResult& result) {
         delete glbEntity;
     }
 
-    if (!result.glbPath.isEmpty()) {
-        if (QFileInfo::exists(result.glbPath)) {
-            m_dialog->appendLog(
-                    tr("[SAM3D] Textured GLB written to %1 "
-                       "(%2 MB).")
-                            .arg(result.glbPath)
-                            .arg(result.glb.size() / (1024.0 * 1024.0), 0, 'f',
-                                 1));
-        } else {
-            m_dialog->appendLog(tr("[SAM3D] GLB file export failed: %1")
-                                        .arg(result.glbPath),
-                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-        }
-    }
+    // GLB/PLY file-export results are reported once, by the worker, at the
+    // moment of the write — no duplicate confirmation here.
     if (!result.plyPath.isEmpty()) {
         if (QFileInfo::exists(result.plyPath)) {
             m_dialog->appendLog(tr("[SAM3D] Gaussian PLY written to %1 "

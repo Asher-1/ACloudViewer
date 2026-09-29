@@ -124,6 +124,30 @@ AICORE_CAPI void aicore_sam3d_options_set_conditions_out(
 // never read them.
 AICORE_CAPI void aicore_sam3d_options_set_scene_attributes(
         aicore_sam3d_options* options, int scene_attributes);
+// Official native PBR assembly (assemble_official_pbr_cuda: VTK quadric
+// simplify → nvdiffrast 1000-view visibility → min-cut filter → pymeshfix
+// repair → xatlas UV → 100-view mip-splatting render → 2500-step Adam/TV
+// texture bake → Telea inpaint → Y-up GLB). CUDA-only and restricted to
+// builds configured with AICore_USE_SAM3D_PBR (plus its license-gated
+// vendors); otherwise the caps bit stays clear and generate fails with an
+// explicit error. texture_size/steps <= 0 select the official defaults
+// (1024 / 2500). Requires an out_ply export on the generate call (the
+// assembly reads the Gaussian PLY back, exactly like the upstream CLI).
+AICORE_CAPI void aicore_sam3d_options_set_pbr(aicore_sam3d_options* options,
+                                              int enable,
+                                              int texture_size,
+                                              int steps);
+// Frozen-input PBR A/B path (the upstream Vulkan→CUDA pbr-assemble
+// interchange): when all three paths are set, the PBR branch consumes the
+// raw FlexiCubes SAMT tensors ([3,V] f32 / [3,F] i32) and this Gaussian PLY
+// instead of the freshly decoded mesh and the exported PLY. out_ply then
+// becomes optional. Intended for bit-parity probes against the upstream
+// sam3d-cli pbr-assemble command on pinned inputs.
+AICORE_CAPI void aicore_sam3d_options_set_pbr_frozen_input(
+        aicore_sam3d_options* options,
+        const char* vertices_samt,
+        const char* faces_samt,
+        const char* ply);
 
 // ---- Context lifecycle -----------------------------------------------------
 //
@@ -143,6 +167,8 @@ AICORE_CAPI const char* aicore_sam3d_backend_note(const aicore_sam3d_ctx* ctx);
 AICORE_CAPI int aicore_sam3d_caps(const aicore_sam3d_ctx* ctx);
 #define AICORE_SAM3D_CAP_GAUSSIAN 0x1u
 #define AICORE_SAM3D_CAP_MESH 0x2u
+// Official native PBR assembly (CUDA + opt-in vendors compiled in).
+#define AICORE_SAM3D_CAP_PBR 0x4u
 
 // ---- Inference -------------------------------------------------------------
 //
@@ -174,6 +200,7 @@ typedef void (*aicore_sam3d_progress_fn)(void* user,
 #define AICORE_SAM3D_STAGE_SLAT_FLOW 5
 #define AICORE_SAM3D_STAGE_GS_DECODE 6
 #define AICORE_SAM3D_STAGE_MESH_DECODE 7
+#define AICORE_SAM3D_STAGE_PBR 8  //!< official native PBR assembly (CUDA)
 
 AICORE_CAPI aicore_sam3d_result* aicore_sam3d_generate(
         aicore_sam3d_ctx* ctx,
@@ -199,6 +226,14 @@ AICORE_CAPI const float* aicore_sam3d_result_mesh_normals(
         const aicore_sam3d_result* result);
 AICORE_CAPI const uint32_t* aicore_sam3d_result_mesh_triangles(
         const aicore_sam3d_result* result);
+/** Official SLatMeshDecoder use_color payload: 6 floats per mesh vertex —
+ *  RGB at [0:3] and the learned normal at [3:6], interpolated from the
+ *  FlexiCubes feature's color channels. This is the color source of the
+ *  official non-baked GLB path (mesh-export --attrs); smooth neural-field
+ *  vertex colors, unlike a nearest-splat sampling. NULL when the mesh was
+ *  decoded without color attributes. */
+AICORE_CAPI const float* aicore_sam3d_result_mesh_vertex_attrs(
+        const aicore_sam3d_result* result);
 // Number of active voxels behind the sample (diagnostic).
 AICORE_CAPI int aicore_sam3d_result_voxel_count(
         const aicore_sam3d_result* result);
@@ -214,6 +249,30 @@ AICORE_CAPI const float* aicore_sam3d_result_splat_centers(
         const aicore_sam3d_result* result);
 AICORE_CAPI const float* aicore_sam3d_result_splat_rgb(
         const aicore_sam3d_result* result);
+
+// ---- Official PBR assembly result ------------------------------------------
+//
+// Available when the request enabled the PBR assembly (options_set_pbr) and
+// the build carries AICORE_SAM3D_CAP_PBR. The mesh accessors above then
+// return the FINAL Y-up simplified mesh; the UVs are the glTF-convention
+// texcoords (V already flipped after baking) and the texture is the baked
+// base-color atlas. glb is the exact write_pbr_glb() encoding of the same
+// mesh (export boundary, mirrors the upstream --pbr-out artifact; compare it
+// byte-wise against a reference for parity). Everything stays owned by the
+// result; copy before releasing it.
+AICORE_CAPI int aicore_sam3d_result_has_pbr(const aicore_sam3d_result* result);
+AICORE_CAPI const float* aicore_sam3d_result_pbr_uv(
+        const aicore_sam3d_result* result);  // 2 * vertex_count
+AICORE_CAPI int aicore_sam3d_result_pbr_texture_width(
+        const aicore_sam3d_result* result);
+AICORE_CAPI int aicore_sam3d_result_pbr_texture_height(
+        const aicore_sam3d_result* result);
+AICORE_CAPI const uint8_t* aicore_sam3d_result_pbr_texture_rgba(
+        const aicore_sam3d_result* result);  // 4 * w * h
+// Encoded PBR GLB (export boundary). len receives the byte size; NULL/0 when
+// the assembly did not run.
+AICORE_CAPI const uint8_t* aicore_sam3d_result_pbr_glb(
+        const aicore_sam3d_result* result, size_t* len);
 
 // ---- Scene-composer interchange attributes ---------------------------------
 //

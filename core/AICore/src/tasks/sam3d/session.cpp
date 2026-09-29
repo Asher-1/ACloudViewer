@@ -2395,6 +2395,11 @@ int cmd_e2e(const E2eOptions& opt) {
             // splat centers; the SAMT file exports stay a CLI-only boundary.
             opt.artifacts->mesh_vertices = flexicubes.positions;
             opt.artifacts->mesh_triangles = flexicubes.indices;
+            // Official SLatMeshDecoder use_color payload (RGB + learned
+            // normal, interpolated from the FlexiCubes color channels) —
+            // the color source of the official non-baked GLB path.
+            opt.artifacts->mesh_vertex_attributes =
+                    flexicubes.vertex_attributes;
         }
         if (export_raw_mesh) {
             std::vector<int32_t> mesh_faces;
@@ -2430,30 +2435,82 @@ int cmd_e2e(const E2eOptions& opt) {
                  "SAM3D_GGML_MESHFIX_GPL=ON");
             return 1;
 #else
-            if (!export_ply) {
+            const bool frozen_mesh =
+                    !opt.in_mesh_vertices.empty() && !opt.in_mesh_faces.empty();
+            const bool frozen_ply = !opt.in_ply.empty();
+            if (!export_ply && !frozen_ply) {
                 LOGE("e2e: --pbr-out reads back the Gaussian PLY; request an "
                      "out_ply export together with the PBR assembly");
                 return 1;
             }
             NativeMesh decoded_mesh;
-            decoded_mesh.positions = std::move(flexicubes.positions);
-            decoded_mesh.indices = std::move(flexicubes.indices);
-            decoded_mesh.vertex_attributes =
-                    std::move(flexicubes.vertex_attributes);
+            if (frozen_mesh) {
+                // Upstream Vulkan→CUDA interchange: consume the raw SAMT
+                // tensors instead of the freshly decoded FlexiCubes mesh.
+                RawTensor vertices_tensor, faces_tensor;
+                if (!load_raw_tensor(opt.in_mesh_vertices, vertices_tensor) ||
+                    !load_raw_tensor(opt.in_mesh_faces, faces_tensor)) {
+                    LOGE("e2e: failed to read the frozen FlexiCubes mesh SAMT "
+                         "inputs");
+                    return 1;
+                }
+                const size_t vertex_count =
+                        vertices_tensor.ne.size() == 2
+                                ? static_cast<size_t>(vertices_tensor.ne[1])
+                                : 0;
+                const size_t face_count =
+                        faces_tensor.ne.size() == 2
+                                ? static_cast<size_t>(faces_tensor.ne[1])
+                                : 0;
+                if (vertex_count == 0 || face_count == 0 ||
+                    vertices_tensor.data.size() <
+                            vertex_count * 3 * sizeof(float) ||
+                    faces_tensor.data.size() <
+                            face_count * 3 * sizeof(int32_t)) {
+                    LOGE("e2e: frozen FlexiCubes mesh SAMT tensors have an "
+                         "unexpected layout (want [3,V] f32 / [3,F] i32)");
+                    return 1;
+                }
+                decoded_mesh.positions.resize(vertex_count * 3);
+                memcpy(decoded_mesh.positions.data(),
+                       vertices_tensor.data.data(),
+                       vertex_count * 3 * sizeof(float));
+                decoded_mesh.indices.resize(face_count * 3);
+                memcpy(decoded_mesh.indices.data(), faces_tensor.data.data(),
+                       face_count * 3 * sizeof(int32_t));
+            } else {
+                decoded_mesh.positions = std::move(flexicubes.positions);
+                decoded_mesh.indices = std::move(flexicubes.indices);
+                decoded_mesh.vertex_attributes =
+                        std::move(flexicubes.vertex_attributes);
+            }
             GaussianSplatSet splats;
-            if (!load_gaussian_splat_ply(out_ply, splats, mesh_error)) {
+            const std::string& splat_ply = frozen_ply ? opt.in_ply : out_ply;
+            if (!load_gaussian_splat_ply(splat_ply, splats, mesh_error)) {
                 LOGE("e2e: failed to reopen native Gaussian PLY for PBR: %s",
                      mesh_error.c_str());
                 return 1;
             }
             NativePbrPipelineConfig pbr_config;
             pbr_config.random_seed = seed;
+            if (opt.pbr_texture_size > 0) {
+                pbr_config.texture_size = opt.pbr_texture_size;
+            }
+            if (opt.pbr_steps > 0) {
+                pbr_config.texture_steps = opt.pbr_steps;
+            }
+            if (opt.progress) {
+                opt.progress(kStagePbr, 0, 0);
+            }
             NativePbrPipelineResult pbr_result;
             if (!assemble_official_pbr_cuda(decoded_mesh, splats, pbr_config,
                                             pbr_result, mesh_error) ||
                 !write_pbr_glb(out_pbr, pbr_result.mesh, mesh_error)) {
                 LOGE("e2e: native PBR assembly failed: %s", mesh_error.c_str());
                 return 1;
+            }
+            if (opt.progress) {
+                opt.progress(kStagePbr, 1, 0);
             }
             auto texture_path = std::filesystem::path(out_pbr);
             texture_path.replace_extension(".base_color.png");
@@ -2463,6 +2520,28 @@ int cmd_e2e(const E2eOptions& opt) {
                 LOGE("e2e: failed to write base-color texture: %s",
                      mesh_error.c_str());
                 return 1;
+            }
+            if (opt.artifacts != nullptr) {
+                // In-memory delivery of the same official chain result the
+                // GLB encodes: final Y-up mesh, glTF UVs and the baked
+                // base-color atlas. The GLB bytes themselves ride the C API
+                // result (the caller reads the out_pbr file it passed).
+                opt.artifacts->mesh_vertices =
+                        std::move(pbr_result.mesh.positions);
+                opt.artifacts->mesh_normals =
+                        std::move(pbr_result.mesh.normals);
+                opt.artifacts->mesh_triangles =
+                        std::move(pbr_result.mesh.indices);
+                opt.artifacts->mesh_vertex_attributes.clear();
+                opt.artifacts->pbr_texcoords =
+                        std::move(pbr_result.mesh.texcoords);
+                opt.artifacts->pbr_texture_width =
+                        pbr_result.mesh.material.base_color_texture.width;
+                opt.artifacts->pbr_texture_height =
+                        pbr_result.mesh.material.base_color_texture.height;
+                opt.artifacts->pbr_texture_rgba = std::move(
+                        pbr_result.mesh.material.base_color_texture.rgba);
+                opt.artifacts->has_pbr = true;
             }
             LOGI("e2e: wrote %s (%zu rendered views, %zu final triangles)",
                  out_pbr.c_str(), pbr_result.rendered_views,
@@ -2681,6 +2760,26 @@ struct ImageTo3DSession::Impl {
             result.error = "out_ply or artifacts is required";
             return result;
         }
+        // The official PBR assembly is CUDA-only at runtime too (same as the
+        // upstream sam3d-cli): a non-CUDA session must not fall into the
+        // CUDA-only nvdiffrast/mip-splatting kernels. The documented non-CUDA
+        // path is the raw FlexiCubes mesh + Gaussian PLY interchange consumed
+        // through the frozen-input PBR path on a CUDA session
+        // (aicore_sam3d_options_set_pbr_frozen_input). This gate fires before
+        // any weight IO, so it is reachable on model-free builds.
+        if (!opts.out_pbr.empty() &&
+            !(backend &&
+              strncasecmp(backend->backend_name(), "cuda", 4) == 0)) {
+            result.error =
+                    "the official PBR assembly requires a CUDA session "
+                    "(resolved backend: " +
+                    std::string(backend ? backend->backend_name() : "none") +
+                    "); non-CUDA sessions export the raw FlexiCubes mesh "
+                    "(out_mesh_vertices/out_mesh_faces) plus the Gaussian PLY "
+                    "and consume them via the frozen-input PBR path on a CUDA "
+                    "session";
+            return result;
+        }
         if (opts.progress) opts.progress(0 /*load*/, 0, 0);
         if (!validate_session_config(opts, result.error)) return result;
         // The session fixes models/backend/dtype/threads; a mismatching
@@ -2882,6 +2981,11 @@ struct ImageTo3DSession::Impl {
         e2e.artifacts = opts.artifacts;
         e2e.decode_mesh = opts.decode_mesh;
         e2e.scene_attributes = opts.scene_attributes;
+        e2e.pbr_texture_size = opts.pbr_texture_size;
+        e2e.pbr_steps = opts.pbr_steps;
+        e2e.in_mesh_vertices = opts.in_mesh_vertices;
+        e2e.in_mesh_faces = opts.in_mesh_faces;
+        e2e.in_ply = opts.in_ply;
         e2e.conditions = cond_memory_path ? &condition_inputs : nullptr;
         e2e.progress = opts.progress;
         const int rc = cmd_e2e(e2e);

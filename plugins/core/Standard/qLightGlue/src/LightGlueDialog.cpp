@@ -120,6 +120,33 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
     setMinimumSize(ecvAICoreUi::dpiScaled(720), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
+    // Test data flows through the shared ecvTestDataRepository (the
+    // Dataset::LightGlueTestImages registration owns the URL, the zip
+    // cache, the integrity ledger, and extraction) — the dialog only
+    // filters its broadcasts by dataset kind.
+    auto& testDataRepo = ecvTestDataRepository::instance();
+    connect(&testDataRepo, &ecvTestDataRepository::downloadLogMessage, this,
+            [this](const QString& message) {
+                if (m_testDataInProgress) appendLog(message);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
+            [this](int percent, const QString&) {
+                if (m_testDataInProgress && m_progress) {
+                    m_progress->setValue(percent);
+                }
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
+            &LightGlueDialog::onTestDataDownloadFinished);
+    connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
+            [this](int current, int total) {
+                if (!m_testDataInProgress || !m_progress || total <= 0) {
+                    return;
+                }
+                m_progress->setRange(0, total);
+                m_progress->setValue(current);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
+            &LightGlueDialog::onTestDataExtractionFinished);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &LightGlueDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -1368,115 +1395,103 @@ void LightGlueDialog::keyPressEvent(QKeyEvent* event) {
 
 void LightGlueDialog::onExportMatches() { emit exportMatchesRequested(); }
 
+bool LightGlueDialog::collectTestImagePaths() {
+    static const QStringList kAssets = {QStringLiteral("sacre_coeur1.jpg"),
+                                        QStringLiteral("sacre_coeur2.jpg")};
+    const auto kind = ecvTestDataRepository::Dataset::LightGlueTestImages;
+    m_testDataPaths.clear();
+    for (const QString& asset : kAssets) {
+        // Recursive, ambiguity-guarded lookup in the shared extraction
+        // tree (the release zip may root its files or nest them).
+        const QString path =
+                ecvTestDataRepository::findDatasetFile(kind, asset);
+        if (!path.isEmpty()) m_testDataPaths << path;
+    }
+    return m_testDataPaths.size() == kAssets.size();
+}
+
 void LightGlueDialog::onUseTestData() {
-    using TestDataset = ecvTestDataRepository::Dataset;
-    auto& repo = ecvTestDataRepository::instance();
-    const TestDataset kind = TestDataset::Monstree;
-
-    // Check if already extracted
-    const QString bundleRoot = ecvTestDataRepository::extractPath(kind);
-    if (QDir(bundleRoot).exists()) {
-        const QStringList images =
-                ecvTestDataRepository::getMonstreeImages(bundleRoot);
-        if (!images.isEmpty()) {
-            clearAllSlots();
-            setFilePoolPaths(images);
-            autoAssignPaths(images);
-            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
-                              .arg(images.size()));
-            return;
-        }
-    }
-
-    // Check if zip is cached
-    if (repo.isDatasetAvailable(kind)) {
-        appendLog(tr("[Test data] Extracting cached Monstree archive..."));
-        m_testDataInProgress = true;
-        m_useTestDataBtn->setEnabled(false);
-        m_progress->setRange(0, 100);
-        m_progress->setValue(0);
-        m_progress->setFormat(tr("Extracting... %p%"));
-        m_progress->setVisible(true);
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // Need to download
-    if (m_testDataInProgress || m_downloadInProgress) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataInProgress) {
         appendLog(tr("[Test data] Another operation is in progress."));
         return;
     }
-
-    appendLog(tr("[Test data] Downloading Monstree dataset..."));
+    // Official LightGlue demo pair (the same images the upstream repo and
+    // the AICore parity tests ship): a day/night, wide-baseline pair that
+    // exercises the matcher far better than consecutive video frames.
+    // Download, integrity ledger, and extraction are owned by the shared
+    // ecvTestDataRepository (Dataset::LightGlueTestImages registration).
+    auto& repo = ecvTestDataRepository::instance();
+    const auto kind = ecvTestDataRepository::Dataset::LightGlueTestImages;
+    if (collectTestImagePaths()) {
+        finishTestDataFill();
+        return;
+    }
     m_testDataInProgress = true;
     m_useTestDataBtn->setEnabled(false);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
-    m_progress->setFormat(tr("Downloading... %p%"));
     m_progress->setVisible(true);
-
-    // Progress connections
-    auto onDownloadProgress = [this](int percent, const QString& status) {
-        if (m_testDataInProgress && m_progress) {
-            m_progress->setValue(percent);
-            m_progress->setFormat(tr("Downloading... %p%"));
-        }
-    };
-    auto onExtractionProgress = [this](int current, int total) {
-        if (m_testDataInProgress && m_progress && total > 0) {
-            if (m_progress->maximum() != total) {
-                m_progress->setRange(0, total);
-            }
-            m_progress->setValue(current);
-            m_progress->setFormat(tr("Extracting... %v/%m"));
-        }
-    };
-
-    auto onFinished = [this, &repo, kind](bool success,
-                                          ecvTestDataRepository::Dataset) {
-        if (!m_testDataInProgress) return;
-        if (!success) {
-            appendLog(tr("[Test data] Download failed."));
-            m_testDataInProgress = false;
-            m_useTestDataBtn->setEnabled(true);
-            m_progress->setVisible(false);
-            return;
-        }
-        appendLog(tr("[Test data] Extracting..."));
-        m_progress->setValue(0);
-        m_progress->setFormat(tr("Extracting... %p%"));
+    if (repo.isDatasetAvailable(kind)) {
+        appendLog(
+                tr("[Test data] Extracting the cached LightGlue demo "
+                   "pair..."));
+        // Synchronous extraction; extractionFinished completes the fill.
         repo.extractDataset(kind);
-    };
-    auto onExtracted = [this, kind](bool success,
-                                    ecvTestDataRepository::Dataset) {
-        if (!m_testDataInProgress) return;
-        m_testDataInProgress = false;
-        m_useTestDataBtn->setEnabled(true);
-        m_progress->setVisible(false);
-        if (!success) {
-            appendLog(tr("[Test data] Extraction failed."));
-            return;
-        }
-        const QString root = ecvTestDataRepository::extractPath(kind);
-        const QStringList images =
-                ecvTestDataRepository::getMonstreeImages(root);
-        if (!images.isEmpty()) {
-            clearAllSlots();
-            setFilePoolPaths(images);
-            autoAssignPaths(images);
-            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
-                              .arg(images.size()));
-        } else {
-            appendLog(tr("[Test data] No images found in bundle."));
-        }
-    };
-
-    connect(&repo, &ecvTestDataRepository::downloadProgress, this,
-            onDownloadProgress);
-    connect(&repo, &ecvTestDataRepository::extractionProgress, this,
-            onExtractionProgress);
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this, onFinished);
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
-            onExtracted);
+        return;
+    }
+    if (repo.isDownloadInProgress()) {
+        // One shared downloader slot serves every plugin's datasets.
+        appendLog(
+                tr("[Test data] A shared dataset download is running; "
+                   "please retry in a moment."));
+        finishTestDataFill();
+        return;
+    }
+    appendLog(
+            tr("[Test data] Downloading the official LightGlue demo pair "
+               "(sacre_coeur day/night)..."));
     repo.startDownload(kind);
+}
+
+void LightGlueDialog::onTestDataDownloadFinished(
+        bool success, ecvTestDataRepository::Dataset kind) {
+    if (kind != ecvTestDataRepository::Dataset::LightGlueTestImages) return;
+    if (!m_testDataInProgress) return;
+    if (!success) {
+        appendLog(tr("[Test data] Download failed."));
+        finishTestDataFill();
+        return;
+    }
+    // Synchronous extraction; extractionFinished completes the fill.
+    ecvTestDataRepository::instance().extractDataset(
+            ecvTestDataRepository::Dataset::LightGlueTestImages);
+}
+
+void LightGlueDialog::onTestDataExtractionFinished(
+        bool success, ecvTestDataRepository::Dataset kind) {
+    if (kind != ecvTestDataRepository::Dataset::LightGlueTestImages) return;
+    if (!m_testDataInProgress) return;
+    if (!success) {
+        appendLog(tr("[Test data] Extraction failed."));
+        finishTestDataFill();
+        return;
+    }
+    collectTestImagePaths();
+    finishTestDataFill();
+}
+
+void LightGlueDialog::finishTestDataFill() {
+    m_testDataInProgress = false;
+    m_useTestDataBtn->setEnabled(true);
+    m_progress->setVisible(false);
+    if (m_testDataPaths.size() < 2) {
+        appendLog(tr("[Test data] LightGlue test images unavailable."));
+        return;
+    }
+    clearAllSlots();
+    setFilePoolPaths(m_testDataPaths);
+    autoAssignPaths(m_testDataPaths);
+    appendLog(
+            tr("[Test data] Loaded the official LightGlue demo pair "
+               "(sacre_coeur day/night)."));
 }

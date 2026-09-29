@@ -93,7 +93,7 @@ cpp_test_only() {
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
      && cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
      && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
      && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
      && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
@@ -144,7 +144,7 @@ cpp_python_command_tools_test() {
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
      && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
      && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
      && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \

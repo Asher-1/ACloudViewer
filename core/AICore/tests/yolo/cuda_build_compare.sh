@@ -24,7 +24,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 INTEGRATED="${INTEGRATED_BUILD:-$REPO_ROOT/build_app}"
 UPSTREAM="${UPSTREAM_DIR:-$REPO_ROOT/dl/ultralytics-ggml}"
 MODEL="${MODEL:-yolov8n-f16.gguf}"
-TEST_BIN="${TEST_BIN:-$INTEGRATED/bin/test_yolo_capi_performance}"
+TEST_BIN="${TEST_BIN:-$INTEGRATED/bin/aicore_tests/test_yolo_capi_performance}"
 
 usage() { sed -n '2,20p' "$0" | sed 's/^# \?//'; exit 1; }
 while [ $# -gt 0 ]; do

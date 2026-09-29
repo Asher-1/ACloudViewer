@@ -16,6 +16,8 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <thread>
@@ -61,6 +63,15 @@ struct aicore_sam3d_options {
     std::string noise_dir;          // accuracy-diagnostic fixed noise input
     std::string conditions_out;     // caller-owned condition dump/replay dir
     bool scene_attributes = false;  // capture composer interchange attrs
+    // Official native PBR assembly (0 size/steps = official defaults).
+    bool pbr = false;
+    int pbr_texture_size = 0;
+    int pbr_steps = 0;
+    // Frozen-input PBR test path (upstream pbr-assemble A/B): see
+    // aicore_sam3d_options_set_pbr_frozen_input.
+    std::string in_mesh_vertices;
+    std::string in_mesh_faces;
+    std::string in_ply;
 };
 
 struct aicore_sam3d_ctx {
@@ -79,6 +90,9 @@ struct aicore_sam3d_result {
     std::vector<float> mesh_vertices;  // xyz per vertex
     std::vector<float> mesh_normals;   // xyz per vertex (optional)
     std::vector<uint32_t> mesh_triangles;
+    // Official SLatMeshDecoder use_color payload: 6 floats per vertex
+    // (RGB + learned normal), the official non-baked GLB color source.
+    std::vector<float> mesh_vertex_attributes;
     int64_t gaussian_count = 0;
     int voxel_count = 0;
     // Display-ready splat artifacts (in-memory result path).
@@ -91,6 +105,13 @@ struct aicore_sam3d_result {
     std::vector<float> splat_log_scale;  // 3 * N, PLY scale_N
     std::vector<float> splat_opacity_logit;  // N, PLY opacity
     std::vector<float> splat_rot_ply;        // 4 * N, PLY rot (unnormalized)
+    // Official native PBR assembly outputs (PBR-enabled builds, pbr request).
+    bool has_pbr = false;
+    std::vector<float> pbr_texcoords;  // 2 * vertex_count
+    int pbr_texture_width = 0;
+    int pbr_texture_height = 0;
+    std::vector<uint8_t> pbr_texture_rgba;  // 4 * w * h
+    std::vector<uint8_t> pbr_glb;           // exact write_pbr_glb() encoding
 };
 
 namespace {
@@ -337,6 +358,26 @@ void aicore_sam3d_options_set_scene_attributes(aicore_sam3d_options* options,
     if (options) options->scene_attributes = scene_attributes != 0;
 }
 
+void aicore_sam3d_options_set_pbr(aicore_sam3d_options* options,
+                                  int enable,
+                                  int texture_size,
+                                  int steps) {
+    if (!options) return;
+    options->pbr = enable != 0;
+    options->pbr_texture_size = texture_size;
+    options->pbr_steps = steps;
+}
+
+void aicore_sam3d_options_set_pbr_frozen_input(aicore_sam3d_options* options,
+                                               const char* vertices_samt,
+                                               const char* faces_samt,
+                                               const char* ply) {
+    if (!options) return;
+    if (vertices_samt) options->in_mesh_vertices = vertices_samt;
+    if (faces_samt) options->in_mesh_faces = faces_samt;
+    if (ply) options->in_ply = ply;
+}
+
 aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
                                          char* err,
                                          size_t err_size) {
@@ -374,6 +415,12 @@ aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
     request.noise_dir = options->noise_dir;
     request.conditions_out = options->conditions_out;
     request.scene_attributes = options->scene_attributes;
+    request.pbr = options->pbr;
+    request.pbr_texture_size = options->pbr_texture_size;
+    request.pbr_steps = options->pbr_steps;
+    request.in_mesh_vertices = options->in_mesh_vertices;
+    request.in_mesh_faces = options->in_mesh_faces;
+    request.in_ply = options->in_ply;
 
     ctx->caps = AICORE_SAM3D_CAP_GAUSSIAN;
     {
@@ -385,6 +432,14 @@ aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
             ctx->caps |= AICORE_SAM3D_CAP_MESH;
         }
     }
+#if defined(SAM3D_USE_NVDIFFRAST_CUDARASTER) && defined(SAM3D_USE_MESHFIX_GPL)
+    // The official PBR chain is CUDA-only (same as upstream). The resolved
+    // backend is known after session init below; a non-CUDA session with the
+    // bit set is rejected at session run start (ImageTo3DSession::run) with
+    // the explicit interchange guidance before any weight IO, so keep the
+    // capability bit compile-scoped here.
+    ctx->caps |= AICORE_SAM3D_CAP_PBR;
+#endif
 
     ctx->session = std::make_unique<sam3d::ImageTo3DSession>();
     std::string error;
@@ -441,6 +496,40 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         return nullptr;
     }
 
+    // Official PBR assembly: mirror the upstream CLI --pbr-out semantics —
+    // it requires the Gaussian PLY export (the assembly reads it back) and
+    // encodes the GLB through write_pbr_glb to a destination path. The C API
+    // owns a request-scoped scratch directory for that file and moves the
+    // encoded bytes into the result below.
+    std::filesystem::path pbr_scratch;
+    const bool want_pbr = ctx->request.pbr;
+    if (want_pbr) {
+        if (!(ctx->caps & AICORE_SAM3D_CAP_PBR)) {
+            ctx->last_error =
+                    "the official PBR assembly requires a CUDA AICore build "
+                    "configured with AICore_USE_SAM3D_PBR=ON (license-gated "
+                    "nvdiffrast + pymeshfix vendors)";
+            return nullptr;
+        }
+        const bool frozen_ply = !ctx->request.in_ply.empty();
+        if ((!out_ply || !*out_ply) && !frozen_ply) {
+            ctx->last_error =
+                    "the official PBR assembly requires an out_ply export "
+                    "(it reads the Gaussian PLY back, like --pbr-out)";
+            return nullptr;
+        }
+        std::error_code ec;
+        pbr_scratch = std::filesystem::temp_directory_path(ec) /
+                      ("aicore-sam3d-pbr-" +
+                       std::to_string(std::chrono::steady_clock::now()
+                                              .time_since_epoch()
+                                              .count()));
+        if (ec || !std::filesystem::create_directories(pbr_scratch, ec) || ec) {
+            ctx->last_error = "failed to create the PBR scratch directory";
+            return nullptr;
+        }
+    }
+
     auto rgba = std::make_shared<sam3d::RgbaImage>();
     std::string error;
     if (!rgba_from_views(image, mask, *rgba, error)) {
@@ -454,6 +543,12 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
     request.image_path.clear();
     request.out_ply = out_ply ? out_ply : "";
     request.decode_mesh = decode_mesh != 0;
+    if (want_pbr) {
+        // The assembly consumes the FlexiCubes mesh and reads the written
+        // Gaussian PLY back, exactly like the upstream --pbr-out flow.
+        request.decode_mesh = true;
+        request.out_pbr = (pbr_scratch / "pbr.glb").string();
+    }
 
     // In-memory artifact sink: no scratch directories, no PLY header re-scan,
     // no SAMT file round-trip for the mesh.
@@ -536,6 +631,32 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         result->has_mesh = true;
         result->mesh_vertices = std::move(artifacts.mesh_vertices);
         result->mesh_triangles = std::move(artifacts.mesh_triangles);
+        result->mesh_normals = std::move(artifacts.mesh_normals);
+        result->mesh_vertex_attributes =
+                std::move(artifacts.mesh_vertex_attributes);
+    }
+
+    if (want_pbr) {
+        if (!artifacts.has_pbr) {
+            ctx->last_error = "the PBR assembly finished without its artifacts";
+            return nullptr;
+        }
+        result->has_pbr = true;
+        result->pbr_texcoords = std::move(artifacts.pbr_texcoords);
+        result->pbr_texture_width = artifacts.pbr_texture_width;
+        result->pbr_texture_height = artifacts.pbr_texture_height;
+        result->pbr_texture_rgba = std::move(artifacts.pbr_texture_rgba);
+        {
+            // The session encoded the official GLB to the scratch path;
+            // lift the bytes into the result and drop the scratch dir.
+            std::ifstream glb_file(request.out_pbr, std::ios::binary);
+            if (glb_file) {
+                result->pbr_glb.assign(std::istreambuf_iterator<char>(glb_file),
+                                       std::istreambuf_iterator<char>());
+            }
+        }
+        std::error_code ec;
+        std::filesystem::remove_all(pbr_scratch, ec);
     }
 
     return result.release();
@@ -543,6 +664,37 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
 
 int aicore_sam3d_result_has_mesh(const aicore_sam3d_result* result) {
     return result && result->has_mesh ? 1 : 0;
+}
+
+int aicore_sam3d_result_has_pbr(const aicore_sam3d_result* result) {
+    return result && result->has_pbr ? 1 : 0;
+}
+
+const float* aicore_sam3d_result_pbr_uv(const aicore_sam3d_result* result) {
+    return result && result->has_pbr ? result->pbr_texcoords.data() : NULL;
+}
+
+int aicore_sam3d_result_pbr_texture_width(const aicore_sam3d_result* result) {
+    return result && result->has_pbr ? result->pbr_texture_width : 0;
+}
+
+int aicore_sam3d_result_pbr_texture_height(const aicore_sam3d_result* result) {
+    return result && result->has_pbr ? result->pbr_texture_height : 0;
+}
+
+const uint8_t* aicore_sam3d_result_pbr_texture_rgba(
+        const aicore_sam3d_result* result) {
+    return result && result->has_pbr ? result->pbr_texture_rgba.data() : NULL;
+}
+
+const uint8_t* aicore_sam3d_result_pbr_glb(const aicore_sam3d_result* result,
+                                           size_t* len) {
+    if (!result || !result->has_pbr || result->pbr_glb.empty()) {
+        if (len) *len = 0;
+        return NULL;
+    }
+    if (len) *len = result->pbr_glb.size();
+    return result->pbr_glb.data();
 }
 
 int aicore_sam3d_result_mesh_vertex_count(const aicore_sam3d_result* result) {
@@ -560,6 +712,15 @@ int aicore_sam3d_result_mesh_triangle_count(const aicore_sam3d_result* result) {
 const float* aicore_sam3d_result_mesh_vertices(
         const aicore_sam3d_result* result) {
     return result && result->has_mesh ? result->mesh_vertices.data() : NULL;
+}
+
+const float* aicore_sam3d_result_mesh_vertex_attrs(
+        const aicore_sam3d_result* result) {
+    return result && result->has_mesh &&
+                           result->mesh_vertex_attributes.size() ==
+                                   result->mesh_vertices.size() * 2
+                   ? result->mesh_vertex_attributes.data()
+                   : NULL;
 }
 
 const float* aicore_sam3d_result_mesh_normals(
@@ -782,6 +943,18 @@ const char* aicore_sam3d_info_json(void) {
         json += ",\"dtypes\":[\"f16\",\"q8_0\",\"q4_k\"]";
         json += ",\"model_count\":";
         json += std::to_string(aicore::sam3d_model_count());
+        // Build capability (not a runtime device fact): the official PBR
+        // chain is compile-scoped, exactly like the AICORE_SAM3D_CAP_PBR bit
+        // a CUDA-session context would report. UI consumers read this to
+        // default their controls without constructing a context or resolving
+        // a backend; a non-CUDA device still fails the request explicitly at
+        // session run start.
+        json += ",\"pbr\":";
+#if defined(SAM3D_USE_NVDIFFRAST_CUDARASTER) && defined(SAM3D_USE_MESHFIX_GPL)
+        json += "true";
+#else
+        json += "false";
+#endif
         json += ",\"download_base\":";
         json += "\"";
         json += aicore::sam3d_model_download_base();

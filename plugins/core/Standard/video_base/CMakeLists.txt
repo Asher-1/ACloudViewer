@@ -100,6 +100,7 @@ if(NOT MSVC)
     target_compile_options( test_video_base_gestures PRIVATE -fPIC)
     target_link_options( test_video_base_gestures PRIVATE "-no-pie")
 endif()
+cloudviewer_set_bin_runtime_output_directory(test_video_base_gestures)
 add_test( NAME video_base_gestures COMMAND test_video_base_gestures )
 
 # CI contract (core/AICore/tests/CMakeLists.txt _aicore_fast_targets): the

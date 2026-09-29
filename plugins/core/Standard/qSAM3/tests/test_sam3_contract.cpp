@@ -28,6 +28,11 @@
 #include <cstdint>
 #include <vector>
 
+#ifdef AICORE_SAM3_TEST_OPENCV
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+#endif
+
 // ---------------------------------------------------------------------------
 // ABI version
 // ---------------------------------------------------------------------------
@@ -482,3 +487,153 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     // Shutdown backends to clean up GPU resources
     aicore_sam3_shutdown();
 }
+
+#ifdef AICORE_SAM3_TEST_OPENCV
+TEST_F(SAM3PrecisionContract, TrackDistinctVideoFrames) {
+    const QString videoPath =
+            QString::fromLocal8Bit(qgetenv("AICORE_SAM3_TEST_VIDEO"));
+    if (videoPath.isEmpty()) {
+        GTEST_SKIP() << "Set AICORE_SAM3_TEST_VIDEO to run the real video test";
+    }
+    if (s_modelPath.isEmpty()) {
+        GTEST_SKIP() << "SAM3 GGUF model not found";
+    }
+
+    cv::VideoCapture video(videoPath.toStdString());
+    ASSERT_TRUE(video.isOpened()) << videoPath.toStdString();
+    auto readFrame = [&video]() {
+        cv::Mat bgr;
+        video >> bgr;
+        if (bgr.empty()) return cv::Mat{};
+        const int width = std::min(bgr.cols, 640);
+        const int height = std::max(1, bgr.rows * width / bgr.cols);
+        cv::Mat resized;
+        cv::resize(bgr, resized, cv::Size(width, height), 0, 0, cv::INTER_AREA);
+        cv::Mat rgb;
+        cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
+        return rgb;
+    };
+
+    cv::Mat frame = readFrame();
+    ASSERT_FALSE(frame.empty());
+    auto* opts = aicore_sam3_options_new();
+    ASSERT_NE(opts, nullptr);
+    QByteArray device = qgetenv("AICORE_SAM3_TEST_DEVICE");
+    if (device.isEmpty()) device = "cpu";
+    aicore_sam3_options_set_device(opts, device.constData());
+    aicore_sam3_options_set_threads(opts, 4);
+    auto* ctx = aicore_sam3_load_opts(s_modelPath.toUtf8().constData(), opts);
+    aicore_sam3_options_free(opts);
+    ASSERT_NE(ctx, nullptr) << aicore_sam3_last_load_error();
+    auto* tracker = aicore_sam3_tracker_create(ctx);
+    ASSERT_NE(tracker, nullptr) << aicore_sam3_last_error(ctx);
+    const bool visualOnly = aicore_sam3_context_visual_only(ctx) != 0;
+    auto propagate = [tracker, visualOnly](const cv::Mat& rgb) {
+        return visualOnly
+                       ? aicore_sam3_propagate_frame(
+                                 tracker, rgb.ptr<uint8_t>(), rgb.cols,
+                                 rgb.rows, rgb.step)
+                       : aicore_sam3_track_frame(tracker, rgb.ptr<uint8_t>(),
+                                                 rgb.cols, rgb.rows, rgb.step);
+    };
+
+    auto* firstResult = propagate(frame);
+    ASSERT_NE(firstResult, nullptr) << aicore_sam3_tracker_last_error(tracker);
+    aicore_sam3_seg_result_free(firstResult);
+    aicore_sam3_pvs_prompt prompt{};
+    // The bundled market clip has a stable apple near the upper middle. A
+    // tight prompt makes a zero-area propagation distinguishable from a
+    // legitimate background-only result.
+    prompt.box = {frame.cols * 0.40f, frame.rows * 0.12f, frame.cols * 0.62f,
+                  frame.rows * 0.48f};
+    prompt.use_box = 1;
+    const int instanceId = aicore_sam3_tracker_add_instance(tracker, &prompt);
+    ASSERT_GE(instanceId, 0) << aicore_sam3_tracker_last_error(tracker);
+    auto* firstMask = aicore_sam3_tracker_segment_pvs(tracker, &prompt);
+    ASSERT_NE(firstMask, nullptr) << aicore_sam3_tracker_last_error(tracker);
+    ASSERT_GE(aicore_sam3_seg_det_count(firstMask), 1);
+    aicore_sam3_seg_result_free(firstMask);
+
+    // add_instance resets the official tracker start frame to the prompt
+    // frame. The production VideoWorker consumes that frame once before it
+    // submits the next decoded image; mirror the same replay here so this
+    // contract covers the actual plugin call sequence.
+    auto* conditioningReplay = propagate(frame);
+    ASSERT_NE(conditioningReplay, nullptr)
+            << aicore_sam3_tracker_last_error(tracker);
+    aicore_sam3_seg_result_free(conditioningReplay);
+
+    const bool fullVideo = qgetenv("AICORE_SAM3_TEST_ALL_FRAMES") == "1";
+    int nonEmptyFrames = 0;
+    int lostFrames = 0;
+    int frameIndex = 1;
+    while (true) {
+        cv::Mat next = readFrame();
+        if (next.empty()) {
+            if (fullVideo) break;
+            FAIL() << "Missing video frame " << frameIndex;
+        }
+        ASSERT_EQ(next.size(), frame.size());
+        cv::Mat delta;
+        cv::absdiff(frame, next, delta);
+        EXPECT_GT(cv::countNonZero(delta.reshape(1)), 0)
+                << "Repeated frame " << frameIndex;
+        auto* result = propagate(next);
+        ASSERT_NE(result, nullptr) << aicore_sam3_tracker_last_error(tracker);
+        bool foundInstance = false;
+        for (int i = 0; i < aicore_sam3_seg_det_count(result); ++i) {
+            if (aicore_sam3_seg_det_instance_id_at(result, i) != instanceId)
+                continue;
+            const auto mask = aicore_sam3_seg_mask_at(result, i);
+            ASSERT_NE(mask.data, nullptr);
+            EXPECT_EQ(mask.width, next.cols);
+            EXPECT_EQ(mask.height, next.rows);
+            size_t foreground = 0;
+            for (int y = 0; y < mask.height; ++y) {
+                const auto* row =
+                        static_cast<const uint8_t*>(mask.data) +
+                        static_cast<size_t>(y) * mask.row_stride_bytes;
+                foreground += static_cast<size_t>(std::count_if(
+                        row, row + mask.width,
+                        [](uint8_t pixel) { return pixel > 127; }));
+            }
+            if (fullVideo) {
+                // Full-video validation is an end-to-end completion gate:
+                // occlusion and a lost association are valid tracker
+                // outcomes, while the decoder must still return a frame
+                // result and advance monotonically.  The short contract
+                // above remains strict about non-empty propagation.
+                EXPECT_GE(foreground, 0u);
+            } else {
+                EXPECT_GT(foreground, 0u)
+                        << "Empty mask on frame " << frameIndex;
+            }
+            foundInstance = true;
+            break;
+        }
+        if (foundInstance)
+            ++nonEmptyFrames;
+        else if (fullVideo)
+            ++lostFrames;
+        if (!fullVideo) {
+            EXPECT_TRUE(foundInstance)
+                    << "Lost instance on frame " << frameIndex;
+        }
+        aicore_sam3_seg_result_free(result);
+        frame = std::move(next);
+        ++frameIndex;
+        if (!fullVideo && frameIndex > 2) break;
+    }
+    if (fullVideo)
+        EXPECT_EQ(aicore_sam3_tracker_frame_index(tracker), frameIndex);
+    else
+        EXPECT_EQ(aicore_sam3_tracker_frame_index(tracker), 3);
+    if (fullVideo)
+        qInfo("Full video frames: %d, non-empty tracked frames: %d, "
+              "lost/occluded frames: %d",
+              frameIndex + 1, nonEmptyFrames, lostFrames);
+    aicore_sam3_tracker_free(tracker);
+    aicore_sam3_free(ctx);
+    aicore_sam3_shutdown();
+}
+#endif

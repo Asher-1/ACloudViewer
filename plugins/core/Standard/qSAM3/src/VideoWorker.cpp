@@ -11,6 +11,7 @@
 
 #include <QElapsedTimer>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -104,6 +105,42 @@ void VideoWorker::run() {
 void VideoWorker::process(const TrackRequest& req) {
     m_busy = true;
     emit busyChanged(true);
+
+    // add_instance/refine_instance follow SAM3's official
+    // propagate_in_video semantics: they reset the next frame to the
+    // conditioning frame. Consume that frame once before the UI advances to
+    // the next decoded image, otherwise the next image would be interpreted
+    // as the prompt frame and temporal masks would drift or disappear.
+    auto replayConditioningFrame = [&](const TrackRequest& request) {
+        if (request.frame.isNull()) {
+            CVLog::Warning(
+                    "[qSAM3][VideoWorker] Cannot replay conditioning frame %d: "
+                    "image is null",
+                    request.frameIndex);
+            return false;
+        }
+        QImage rgb = request.frame.convertToFormat(QImage::Format_RGB888);
+        aicore_sam3_seg_result* replay =
+                m_visualOnly ? aicore_sam3_propagate_frame(
+                                       m_tracker, rgb.constBits(), rgb.width(),
+                                       rgb.height(),
+                                       static_cast<size_t>(rgb.bytesPerLine()))
+                             : aicore_sam3_track_frame(
+                                       m_tracker, rgb.constBits(), rgb.width(),
+                                       rgb.height(),
+                                       static_cast<size_t>(rgb.bytesPerLine()));
+        if (!replay) {
+            CVLog::Warning(
+                    "[qSAM3][VideoWorker] Conditioning frame replay(%d) "
+                    "failed: %s",
+                    request.frameIndex,
+                    aicore_sam3_tracker_last_error(m_tracker));
+            return false;
+        }
+        aicore_sam3_seg_result_free(replay);
+        m_encodedFrameIndex = request.frameIndex;
+        return true;
+    };
 
     if (req.action == Action::LoadModel) {
         // A device switch must release the old context under the old device's
@@ -234,7 +271,104 @@ void VideoWorker::process(const TrackRequest& req) {
                                                 m_tracker)));
                 break;
             }
-            m_lastFrameResult = buildResult(res, req.frame);
+            SAM3WorkerResult current = buildResult(res, req.frame);
+
+            // A visual tracker can briefly return no mask when the object
+            // pointer is occluded or the association IoU drops below the
+            // backend threshold.  The upstream UI keeps the instance alive
+            // and lets the next interaction recondition it.  For unattended
+            // video export we can do better: use the last non-empty mask to
+            // place a positive point on the already encoded current frame,
+            // refine the same instance id, then replay the conditioning frame
+            // so the next request remains frame aligned.  This preserves
+            // stable ids and avoids silently exporting a permanently lost
+            // track after one bad propagation.
+            bool recovered = false;
+            bool replayRequired = false;
+            if (current.valid && m_lastFrameResult.valid &&
+                m_lastFrameResult.detCount > 0) {
+                auto containsInstance = [](const SAM3WorkerResult& value,
+                                           int id) {
+                    return value.instanceIds.contains(id);
+                };
+                for (int previousIndex = 0;
+                     previousIndex < m_lastFrameResult.detCount;
+                     ++previousIndex) {
+                    const int id = m_lastFrameResult.instanceIds.value(
+                            previousIndex, -1);
+                    if (id < 0 || containsInstance(current, id)) continue;
+                    const QImage previousMask =
+                            m_lastFrameResult.instanceMasks.value(
+                                    previousIndex);
+                    if (previousMask.isNull()) continue;
+
+                    qint64 sx = 0;
+                    qint64 sy = 0;
+                    qint64 count = 0;
+                    for (int y = 0; y < previousMask.height(); ++y) {
+                        const uchar* row = previousMask.constScanLine(y);
+                        for (int x = 0; x < previousMask.width(); ++x) {
+                            if (row[x] > 127) {
+                                sx += x;
+                                sy += y;
+                                ++count;
+                            }
+                        }
+                    }
+                    if (count == 0) continue;
+
+                    const float scaleX = static_cast<float>(req.frame.width()) /
+                                         std::max(1, previousMask.width());
+                    const float scaleY =
+                            static_cast<float>(req.frame.height()) /
+                            std::max(1, previousMask.height());
+                    aicore_sam3_point point{
+                            static_cast<float>(sx) / count * scaleX,
+                            static_cast<float>(sy) / count * scaleY};
+                    const int ok = aicore_sam3_refine_instance(
+                            m_tracker, id, &point, 1, nullptr, 0);
+                    if (ok != 0) continue;
+
+                    aicore_sam3_pvs_prompt recoveryPrompt{};
+                    recoveryPrompt.pos_points = &point;
+                    recoveryPrompt.n_pos_points = 1;
+                    aicore_sam3_seg_result* recoveredMask =
+                            aicore_sam3_tracker_segment_pvs(m_tracker,
+                                                            &recoveryPrompt);
+                    if (!recoveredMask) continue;
+                    SAM3WorkerResult refined =
+                            buildResult(recoveredMask, req.frame);
+                    aicore_sam3_seg_result_free(recoveredMask);
+                    if (refined.instanceMasks.isEmpty()) continue;
+                    for (int i = 0; i < refined.instanceIds.size(); ++i)
+                        refined.instanceIds[i] = id;
+
+                    current.boxes.append(refined.boxes);
+                    current.scores.append(refined.scores);
+                    current.ious.append(refined.ious);
+                    current.instanceIds.append(refined.instanceIds);
+                    current.instanceMasks.append(refined.instanceMasks);
+                    current.detCount = current.instanceIds.size();
+                    current.valid = true;
+                    current.errorMsg.clear();
+                    current.timings = refined.timings;
+                    recovered = true;
+                    replayRequired = true;
+                }
+            }
+            if (replayRequired && !replayConditioningFrame(req)) {
+                current.valid = false;
+                current.errorMsg =
+                        tr("Recovered a lost instance, but tracker replay "
+                           "failed; reset the tracker before continuing.");
+            }
+            if (recovered) {
+                CVLog::Warning(
+                        "[qSAM3][VideoWorker] TrackFrame(%d) recovered a "
+                        "lost instance from the previous mask",
+                        req.frameIndex);
+            }
+            m_lastFrameResult = current;
             m_encodedFrameIndex = req.frameIndex;
             CVLog::Print(
                     "[qSAM3][VideoWorker] TrackFrame(%d) ok: %d det(s), "
@@ -317,6 +451,7 @@ void VideoWorker::process(const TrackRequest& req) {
                     aicore_sam3_tracker_add_instance(m_tracker, &prompt);
             if (newId >= 0) {
                 emit instanceAdded(newId);
+                bool hasMaskResult = false;
                 // Upstream main_video.cpp re-runs PVS on the encoded frame
                 // right after add_instance to display the new instance's mask
                 // immediately (without advancing the tracker). Merge it into
@@ -340,12 +475,26 @@ void VideoWorker::process(const TrackRequest& req) {
                         merged.instanceMasks.append(maskResult.instanceMasks);
                         merged.detCount = merged.boxes.size();
                         merged.valid = true;
+                        merged.errorMsg = maskResult.errorMsg;
                         merged.timings = maskResult.timings;
                         m_lastFrameResult = merged;
-                        emit frameResultReady(m_lastFrameResult,
-                                              req.frameIndex);
+                        hasMaskResult = true;
                     }
                 }
+                // add_instance resets the tracker frame index to the prompt
+                // frame. Advance it with the same image before playback sends
+                // the following frame.
+                const bool replayed = replayConditioningFrame(req);
+                if (!replayed) {
+                    m_lastFrameResult.valid = false;
+                    m_lastFrameResult.errorMsg =
+                            tr("Conditioning-frame replay failed after adding "
+                               "the instance; reset the tracker before "
+                               "continuing playback.");
+                    emit logMessage(m_lastFrameResult.errorMsg);
+                }
+                if (hasMaskResult || !replayed)
+                    emit frameResultReady(m_lastFrameResult, req.frameIndex);
             } else {
                 CVLog::Warning(
                         "[qSAM3][VideoWorker] AddInstance(%d) failed: %s",
@@ -421,6 +570,7 @@ void VideoWorker::process(const TrackRequest& req) {
                     m_tracker, req.instanceId, pos.data(),
                     static_cast<int>(pos.size()), neg.data(),
                     static_cast<int>(neg.size()));
+            bool replayed = true;
             if (ok != 0) {
                 CVLog::Warning(
                         "[qSAM3][VideoWorker] RefineInstance(%d, id=%d) "
@@ -428,6 +578,7 @@ void VideoWorker::process(const TrackRequest& req) {
                         req.frameIndex, req.instanceId,
                         aicore_sam3_tracker_last_error(m_tracker));
             } else {
+                bool hasMaskResult = false;
                 if (aicore_sam3_seg_result* maskRes =
                             aicore_sam3_tracker_segment_pvs(m_tracker,
                                                             &prompt)) {
@@ -459,11 +610,26 @@ void VideoWorker::process(const TrackRequest& req) {
                     merged.instanceMasks.append(refined.instanceMasks);
                     merged.detCount = merged.boxes.size();
                     merged.timings = refined.timings;
+                    merged.errorMsg = refined.errorMsg;
                     m_lastFrameResult = merged;
-                    emit frameResultReady(m_lastFrameResult, req.frameIndex);
+                    hasMaskResult = true;
                 }
+                // refine_instance has the same conditioning-frame reset as
+                // add_instance; keep temporal propagation aligned after the
+                // refined mask is displayed.
+                replayed = replayConditioningFrame(req);
+                if (!replayed) {
+                    m_lastFrameResult.valid = false;
+                    m_lastFrameResult.errorMsg =
+                            tr("Conditioning-frame replay failed after "
+                               "refining the instance; reset the tracker "
+                               "before continuing playback.");
+                    emit logMessage(m_lastFrameResult.errorMsg);
+                }
+                if (hasMaskResult || !replayed)
+                    emit frameResultReady(m_lastFrameResult, req.frameIndex);
             }
-            emit instanceRefined(req.instanceId, ok == 0);
+            emit instanceRefined(req.instanceId, ok == 0 && replayed);
             break;
         }
         case Action::ResetTracker: {

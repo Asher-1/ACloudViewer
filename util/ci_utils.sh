@@ -667,6 +667,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QGKD=ON"
                 "-DPLUGIN_STANDARD_QLINGBOTMAP=ON"
                 "-DPLUGIN_STANDARD_QSAM3D=ON"
+                "-DPLUGIN_STANDARD_QANYLABELING=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
@@ -1031,8 +1032,8 @@ run_cpp_unit_tests() {
     
     pushd build
     # Check if tests executable exists
-    if [ ! -f "./bin/tests" ]; then
-        echo "Error: tests executable not found at ./bin/tests"
+    if [ ! -f "./bin/cloudviewer_test/tests" ]; then
+        echo "Error: tests executable not found at ./bin/cloudviewer_test/tests"
         echo "Please build with -DBUILD_UNIT_TESTS=ON"
         return 1
     fi
@@ -1044,11 +1045,11 @@ run_cpp_unit_tests() {
     fi
     
     echo "Test flags: $unitTestFlags"
-    echo "Tip: Run './bin/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
+    echo "Tip: Run './bin/cloudviewer_test/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
     echo ""
     
     # Run the tests
-    ./bin/tests $unitTestFlags
+    ./bin/cloudviewer_test/tests $unitTestFlags
     test_result=$?
     
     echo ""

@@ -17,6 +17,8 @@
 #include <QVector>
 #include <atomic>
 
+#include "SAM3Types.h"
+
 // Actions the worker can perform
 enum class SAM3WorkerAction {
     None,
@@ -25,27 +27,6 @@ enum class SAM3WorkerAction {
     EncodeAndSegmentPCS,
     SegmentOnly,  // re-segment on already-encoded image
 };
-
-// Result data transferred from worker back to UI thread
-struct SAM3WorkerResult {
-    bool valid = false;
-    int detCount = 0;
-    QVector<aicore_sam3_box> boxes;
-    QVector<float> scores;
-    QVector<float> ious;
-    QVector<int> instanceIds;
-    QVector<QImage> instanceMasks;  // per-detection 0/255 mask at original size
-    QImage maskComposite;  // masks blended on the source image (0.4 alpha, like
-                           // upstream)
-    aicore_sam3_timings timings{};
-    QString errorMsg;
-};
-
-// The worker emits resultReady() / frameResultReady() from its own thread;
-// without this registration Qt silently drops queued (cross-thread) signals
-// of this custom type, so the UI never sees the segmentation output. qYOLO
-// / qRFDetr follow the same pattern (Q_DECLARE_METATYPE after the struct).
-Q_DECLARE_METATYPE(SAM3WorkerResult)
 
 class SAM3Worker : public QThread {
     Q_OBJECT
@@ -64,21 +45,7 @@ public:
         int fillHoleArea = 16;
     };
 
-    struct Prompt {
-        // PVS mode
-        QVector<aicore_sam3_point> posPoints;
-        QVector<aicore_sam3_point> negPoints;
-        std::vector<aicore_sam3_box> posExemplars;
-        std::vector<aicore_sam3_box> negExemplars;
-        aicore_sam3_box pvsBox{};
-        bool usePvsBox = false;
-        bool multimask = false;
-
-        // PCS mode
-        char text[256] = {};
-        float scoreThreshold = 0.5f;
-        float nmsThreshold = 0.1f;
-    };
+    using Prompt = SAM3Prompt;
 
     explicit SAM3Worker(const Settings& settings, QObject* parent = nullptr);
     ~SAM3Worker() override;

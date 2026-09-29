@@ -696,6 +696,9 @@ target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore_sam3_diagnostics AICore
 add_executable(cmp_sam3_mask_triage sam3/cmp_sam3_mask_triage.cpp)
 target_link_libraries(cmp_sam3_mask_triage PRIVATE AICore_sam3_diagnostics AICore)
 set_target_properties(cmp_sam3_mask_triage PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Same grouped runtime dir as cmp_sam3_vit_stages — without this the triage
+# probe would land in bin/ root and miss the aicore_tests ggml backend copies.
+cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_mask_triage)
 if(NOT MSVC)
     target_compile_options(cmp_sam3_vit_stages PRIVATE -Wall -Wextra -fPIC)
     target_link_options(cmp_sam3_vit_stages PRIVATE "-no-pie")

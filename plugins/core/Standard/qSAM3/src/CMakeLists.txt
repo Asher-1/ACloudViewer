@@ -7,4 +7,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/VideoTimeline.cpp
         ${CMAKE_CURRENT_LIST_DIR}/VideoWorker.cpp
         ${CMAKE_CURRENT_LIST_DIR}/VideoTab.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/VideoMaskArchive.cpp
 )

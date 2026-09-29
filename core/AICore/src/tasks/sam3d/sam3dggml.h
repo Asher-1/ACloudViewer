@@ -115,6 +115,18 @@ struct ImageTo3DOptions {
     std::string mask_path;
     std::string out_ply;
     std::string out_pbr;
+    // Official native PBR assembly switches/knobs (E2eOptions::pbr_*). 0
+    // selects the official defaults (1024 texture atlas, 2500 Adam/TV steps).
+    bool pbr = false;
+    int pbr_texture_size = 0;
+    int pbr_steps = 0;
+    // Frozen-input PBR test path (the upstream Vulkan→CUDA interchange): raw
+    // FlexiCubes SAMT tensors ([3,V] f32 / [3,F] i32) plus a Gaussian PLY.
+    // When set, the PBR branch consumes these instead of the freshly decoded
+    // mesh and the exported PLY (which becomes optional).
+    std::string in_mesh_vertices;
+    std::string in_mesh_faces;
+    std::string in_ply;
     // Raw FlexiCubes mesh in SAMT layout ([3, V] F32 and [3, F] I32). These
     // must be requested together. They are the stable Vulkan-to-CUDA PBR
     // interchange boundary, before cleanup, UV generation and texture baking.
