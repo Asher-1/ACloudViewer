@@ -34,6 +34,7 @@
 #include <ceres/ceres.h>
 
 #include "estimators/bundle_adjustment.h"
+#include "sfm/observation_manager.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -79,7 +80,10 @@ void BundleAdjustmentController::Run() {
   }
 
   // Avoid degeneracies in bundle adjustment.
-  reconstruction_->FilterObservationsWithNegativeDepth();
+  // Upstream parity (d3ccaf35 controllers/bundle_adjustment.cc): route the
+  // filtering through an ObservationManager (without a correspondence graph
+  // here), not the fork's legacy Reconstruction-level filter.
+  ObservationManager(*reconstruction_).FilterObservationsWithNegativeDepth();
 
   BundleAdjustmentOptions ba_options = *options_.bundle_adjustment;
   ba_options.solver_options.minimizer_progress_to_stdout = true;

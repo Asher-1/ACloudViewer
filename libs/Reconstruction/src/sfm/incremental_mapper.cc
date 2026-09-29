@@ -704,10 +704,18 @@ IncrementalMapper::AdjustLocalBundle(
     NodeHashSet<image_t> filter_image_ids;
     filter_image_ids.insert(image_id);
     filter_image_ids.insert(local_bundle.begin(), local_bundle.end());
-    report.num_filtered_observations = reconstruction_->FilterPoints3DInImages(
-            options.filter_max_reproj_error, options.filter_min_tri_angle,
-            filter_image_ids);
-    report.num_filtered_observations += reconstruction_->FilterPoints3D(
+    // Upstream parity (d3ccaf35 sfm/incremental_mapper.cc): the post-BA
+    // filtering must run through the ObservationManager so the triangulated
+    // correspondence bookkeeping is decremented before the observations are
+    // cleared. The fork's Reconstruction-level filters maintain a legacy
+    // private copy of the pair stats and leave the manager's counters
+    // inflated, which later trips the num_tri_corrs guard
+    // (surfaced by the non-trivial-rig pipeline cases, batch C).
+    report.num_filtered_observations =
+            obs_manager_->FilterPoints3DInImages(
+                    options.filter_max_reproj_error,
+                    options.filter_min_tri_angle, filter_image_ids);
+    report.num_filtered_observations += obs_manager_->FilterPoints3D(
             options.filter_max_reproj_error, options.filter_min_tri_angle,
             point3D_ids);
 
@@ -752,7 +760,9 @@ bool IncrementalMapper::AdjustGlobalBundle(
     }
 
     // Avoid degeneracies in bundle adjustment.
-    reconstruction_->FilterObservationsWithNegativeDepth();
+    // Upstream parity: filtering goes through the ObservationManager (see
+    // the AdjustLocalBundle note above).
+    obs_manager_->FilterObservationsWithNegativeDepth();
 
     // Configure bundle adjustment.
     BundleAdjustmentConfig ba_config;
@@ -885,8 +895,10 @@ size_t IncrementalMapper::FilterFrames(const Options& options) {
 size_t IncrementalMapper::FilterPoints(const Options& options) {
     CHECK_NOTNULL(reconstruction_);
     CHECK(options.Check());
-    return reconstruction_->FilterAllPoints3D(options.filter_max_reproj_error,
-                                              options.filter_min_tri_angle);
+    // Upstream parity (d3ccaf35): filtering goes through the
+    // ObservationManager so the triangulation bookkeeping stays in sync.
+    return obs_manager_->FilterAllPoints3D(options.filter_max_reproj_error,
+                                           options.filter_min_tri_angle);
 }
 
 size_t IncrementalMapper::CompleteAndMergeTracks(

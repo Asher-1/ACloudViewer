@@ -87,11 +87,10 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -130,11 +129,10 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) 
 }
 
 TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -167,11 +165,10 @@ TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) 
 }
 
 TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAndCameras) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -219,11 +216,10 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivialFrames) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -287,10 +283,9 @@ TEST(IncrementalMapperController, WithPriorFocalLength) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithNoise) {
-  // Fork adjudication: order-dependent tri-observation accounting
-  // (num_tri_corrs exceeds num_total_corrs for a specific global PRNG
-  // state; passes in isolation) - a second bookkeeping defect, deferred
-  // until the fork reconciles SetObservationAsTriangulated pairing.
+  // Fork adjudication (post batch-C T2 fix): the order-dependent
+  // tri-observation overflow is resolved; the remaining gap is
+  // reconstruction-quality parity on the noisy variant, deferred.
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -413,8 +408,11 @@ TEST(IncrementalMapperController, MultiReconstruction) {
 }
 
 TEST(IncrementalMapperController, DISABLED_FixExistingFrames) {
-  // Fork adjudication: the fork's fix_existing_images path throws an
-  // internal map::at lookup; deferred until that path is reconciled.
+  // Fork adjudication: the test body's direct Reconstruction-level
+  // observation edits hit an internal map::at in the fork's legacy
+  // Reconstruction-side pair stats (upstream keeps all bookkeeping on the
+  // ObservationManager); deferred until the legacy Reconstruction stats
+  // layer is retired.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -493,11 +491,10 @@ TEST(IncrementalMapperController, ChainedMatches) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -540,11 +537,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -599,11 +595,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTr
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -644,11 +639,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -734,11 +728,10 @@ TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithRandomSeedStability) {
-  // Fork adjudication: non-trivial-rig registration trips the
-  // SetObservationAsTriangulated duplicate-correspondence guard
-  // (num_tri_corrs exceeds num_total_corrs) - the same root cause as the
-  // WithNoise order-dependence; deferred until that pairing defect is
-  // reconciled.
+  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
+  // longer trips; the case now completes mapping but ends with a different
+  // reconstruction-quality surface than upstream (non-trivial-rig point
+  // coverage / model splitting), deferred until those gaps are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 

@@ -436,3 +436,44 @@ fork 增强面(DA3、global_mapper、RotationAveraging、ViewGraphCalibration CL
 ### 验证
 
 - 全量构建 + **C++ gate 162/162**;pytest 395/3;AICore 边界 PASS。
+
+## T2 tri 计费失衡根因修复(2026-09-29)
+
+### 根因(插桩实证链)
+
+- `observation_manager.cc:233` 的 THROW_CHECK 是 upstream 同款防御哨兵;Set/Reset/对应图/
+  OM ctor 全部与 upstream 逐字等价(规范化 diff 实证)。
+- **真根因 = 双轨簿记**:fork 的 `Reconstruction` 保留 upstream 已移除的私有
+  `image_pair_stats_`(fork 遗留),其 `FilterPoints3D*`/`FilterObservationsWithNegativeDepth`
+  直接 `DeletePoint3D` 只减**遗留账本**;`IncrementalMapper::AdjustLocalBundle` /
+  `AdjustGlobalBundle` / `FilterPoints` 三处调用这些遗留过滤(upstream :1083/:1112/:1348
+  全部走 `obs_manager_->FilterPoints3D*`),**ObservationManager 账本只增不减**——每次
+  local BA 后过滤泄漏 +1,非平凡 rig 场景必然累积溢出。
+- 插桩铁证:101 次 SET / **0 次 RST**;同一对应 (3,77)-(4,51) 先后计入 pt3d=70 与 pt3d=194;
+  `REPOINT old=invalid` 证明清除未走 OM;CLEAR-SITE 实锤 `Reconstruction::DeletePoint3D`。
+- 插桩调试教训再证:一轮 trace 零输出实为 camera.cc 插桩脚本截坏函数体致 BUILD=2 未察觉
+  (见记忆),必须显式校验构建退出码。
+
+### 修复(最小调用点对齐,不动 fork 遗留数据层)
+
+1. `IncrementalMapper::AdjustLocalBundle`:`reconstruction_->FilterPoints3DInImages/FilterPoints3D`
+   → `obs_manager_->FilterPoints3DInImages/FilterPoints3D`(upstream 逐字)。
+2. `IncrementalMapper::AdjustGlobalBundle`:`FilterObservationsWithNegativeDepth` → OM 版。
+3. `IncrementalMapper::FilterPoints`:`FilterAllPoints3D` → OM 版。
+4. `controllers/bundle_adjustment.cc`:`ObservationManager(*reconstruction_).
+   FilterObservationsWithNegativeDepth()`(upstream :32 逐字;临时 OM 无 graph,仅清数据)。
+
+### 效果与遗留
+
+- tri 守卫触发数:从每次必现 → **0**;pipeline 全量含 DISABLED 无 abort(RC=134 → 1)。
+- 剩余 10 个 DISABLED(9 pipeline + 4 hierarchical 中的对应项)为**各自独立缺口**:
+  非平凡 rig 点覆盖(231 vs 100)、模型分裂(Size 2 vs 1)、FixExistingFrames 测试体直调
+  触发遗留 stats map::at、EffBa* 缺面——裁定注记已逐一更新为 post-T2 状态。
+- **曾尝试一次性下线 Reconstruction 遗留簿记并回退**:该移除使 ChainedMatches 回归——
+  fork db round-trip 世界的 pipeline 依赖遗留 SetUp bulk loop 为 db 载入状态维护 image 级
+  可见性计数(Inc/Dec 探针实证 500/500 配对但读取为 0,图像对象被替换)。遗留层的退役须
+  与 Load 语义(载入时是否建立可见性)一并设计,单删会破坏 pipeline。
+
+### 验证
+
+gate 162/162(100%);pytest 395/3;AICore 边界 PASS。

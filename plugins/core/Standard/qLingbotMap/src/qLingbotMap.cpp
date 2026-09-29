@@ -975,6 +975,26 @@ void qLingbotMap::applyDisplayState() {
         rebuildFrameCachesFromResult(resultGroup);
     }
 
+    // The DB-tree checkbox toggles the ENABLED state (CloudCompare
+    // alignment), and a disabled folder/camera is the user's HARD VETO over
+    // the replay/slider formula: without folding it in, every tick and
+    // slider commit re-showed gated cameras right after the user hid the
+    // folder (the reconcile pushes directly, while the clouds — which rely
+    // on the tree pass — honored the veto, hence "points hide, cameras
+    // stay").
+    ccHObject* camFolder = nullptr;
+    ccHObject* framesFolder = nullptr;
+    bool camFolderOpen = true;
+    bool framesFolderOpen = true;
+    if (resultGroup) {
+        camFolder = findChildByName(resultGroup,
+                                    QStringLiteral("LingbotMap_cameras"));
+        framesFolder = findChildByName(resultGroup,
+                                       QStringLiteral("LingbotMap_frames"));
+        camFolderOpen = !camFolder || camFolder->isEnabled();
+        framesFolderOpen = !framesFolder || framesFolder->isEnabled();
+    }
+
     if (!m_frameCameras.empty()) {
         // Materialized result governance: visibility, density, size and
         // the engine reconcile (composite block + "#plane" face) in ONE
@@ -983,7 +1003,8 @@ void qLingbotMap::applyDisplayState() {
             ccHObject* cam = m_frameCameras[i];
             if (!cam) continue;
             const int ordinal = static_cast<int>(i);
-            const bool vis = m_resultShowCameras &&
+            const bool vis = camFolderOpen && cam->isEnabled() &&
+                             m_resultShowCameras &&
                              (ordinal % stride == 0) && frameGate(ordinal);
             cam->setVisible(vis);
             if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
@@ -1002,7 +1023,8 @@ void qLingbotMap::applyDisplayState() {
         }
         for (size_t i = 0; i < m_frameClouds.size(); ++i) {
             if (ccPointCloud* cloud = m_frameClouds[i]) {
-                cloud->setVisible(frameGate(static_cast<int>(i)));
+                cloud->setVisible(framesFolderOpen && cloud->isEnabled() &&
+                                  frameGate(static_cast<int>(i)));
             }
         }
         return;
@@ -1024,6 +1046,9 @@ void qLingbotMap::applyDisplayState() {
         }
     }
     if (!camerasFolder) return;
+    // Folder-level enabled veto for the streaming trail (same semantics as
+    // the result branch above).
+    const bool onlineFolderOpen = camerasFolder->isEnabled();
     for (unsigned i = 0; i < camerasFolder->getChildrenNumber(); ++i) {
         ccHObject* cam = camerasFolder->getChild(i);
         if (!cam) continue;
@@ -1032,7 +1057,8 @@ void qLingbotMap::applyDisplayState() {
             continue;
         }
         const int ordinal = static_cast<int>(i);
-        const bool vis = m_resultShowCameras && (ordinal % stride == 0);
+        const bool vis = onlineFolderOpen && cam->isEnabled() &&
+                         m_resultShowCameras && (ordinal % stride == 0);
         cam->setVisible(vis);
         if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
             // Per-sensor base captured at creation (retina-aware); a
