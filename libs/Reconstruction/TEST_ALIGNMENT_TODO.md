@@ -527,3 +527,44 @@ T2 修复后对剩余 10 个 DISABLED 逐一重新分诊,本轮修复 3 个独�
 ### 验证
 
 gate 162/162(100%,活跃用例含 3 个新解锁);pytest 395/3;AICore 边界 PASS。
+## bin/ 测试二进制治理 + 单账本迁移第一步(2026-09-30)
+
+### bin/ 目录治理(完成,三平台兼容)
+
+- 治理 CMake(`COLMAP_TEST_RUNTIME_DIR=bin/colmap_test`、`cloudviewer_set_bin_runtime_output_directory`=bin/plugin_test、
+  AICore layout=bin/aicore_tests)早已在工作树,但 build_app 从未重配——bin 根残留 176 个旧测试二进制。
+- 本轮重配重建:**164 个 reconstruction 测试 → bin/colmap_test/**,**13 个插件/helper 测试 → bin/plugin_test/**,
+  AICore probe 归位 bin/aicore_tests/,9 个孤儿产物(对应 target 已改名/移除)删除;bin 根只剩主程序、工具、共享库与目录。
+- **运行时解析修复**(归位暴露,全部实证):①COLMAP_ADD_TEST 补 POSIX `LD_LIBRARY_PATH` ENVIRONMENT + `BUILD_RPATH/INSTALL_RPATH`
+  (Qt 从 Qt5::Core 动态解析 + external/lib)+ `--disable-new-dtags`(DT_RPATH 传递覆盖间接依赖,如 libAICore 的 opencv);
+  ②新增共享 `cloudviewer_set_plugin_test_env[_offscreen]()`(注意:set_tests_properties 的 ENVIRONMENT 是覆盖语义,
+  QT_QPA_PLATFORM 等必须合并进同一值);③aicore layout 同款 DT_RPATH + ENVIRONMENT(系统双 Qt 时保证加载构建所用 Qt)。
+- 验证:gate 162/162(全部从 bin/colmap_test/ 运行);插件/helper 12 项全过;pytest 395/3(test_parity_batches 的
+  ImportError 是并行会话新文件读 shell 环境所致,非本任务范围);AICore 边界 PASS。提交 a64e3b86e1/c11da90498。
+
+### 单账本迁移第一步(读点切换)
+
+- 实证:fork mapper 注册门槛(:326)与控制器 "Image sees" 打印读 **Image 层遗留计数**(OM-era 三角化不维护它,恒过时);
+  upstream 读 OM。mapper 补 upstream `ObservationManager()` 访问器,两处读点切换到 `obs_manager_->NumVisiblePoints3D`。
+  提交 202b243bad。遗留层剥离(数据+SetUp bulk loop+Image 层计数器)为下一步,预计解锁 FixExistingFrames/非平凡 rig/Prior 簇。
+
+## loma/aliked ggml 替代 ONNX 的一致性评估(2026-09-30)
+
+### 已确认(有 gate 证据)
+
+- **模型层数值 parity**:AICore 已建立 reference-gate 体系,golden 明确来自 pinned upstream ONNX 图输出
+  (test_loma_descriptor_reference_gate.cpp 头注释:"fixture contains ... from the pinned upstream ONNX graphs")。
+  实测:`test_aliked_capi_parity_q8` 真推理 21.3s **通过**;`test_loma_default_triplet / test_loma_matcher_e2e /
+  test_loma_published_model_gate / test_lightglue_aliked_e2e` 4/4 通过;`test_loma_g_backend_parity`(CPU/GPU 后端间
+  parity)在注册清单。loma 的 detector/descriptor/matcher/b128_e2e reference gate 因 fixture 资产未下载而 skip(合规,
+  资产由 aicore-validate-all 机制提供,下载后即可补全数值证据)。
+- **端到端功能**:批次 A 接线后 feature/ 层 aliked_test(N16Rot 真推理)、onnx_matchers_test(LightGlue 真推理)在
+  reconstruction gate 内运行。
+
+### 未确认(诚实结论)
+
+- **端到端重建精度一致性**(onnx 管线 vs ggml 管线在同一真实数据集上的 track 数/重投影/配准指标对照):未做。
+- **速度一致性**(受控 A/B:同硬件、同模型、同输入、同采样协议):未做,且仓库无 onnxruntime 运行时,无法直接 A/B;
+  需一次性基线(上游 colmap 构建 onnx 管线或 pycolmap-onnx 环境)后按 gate 的 A/B 规程执行。
+- 结论:**模型层精度一致性有 gate 证据(loma 部分待 fixture 下载补全);端到端重建精度与速度一致性未确认,
+  是独立的验证工程,不应宣称已对齐**。
