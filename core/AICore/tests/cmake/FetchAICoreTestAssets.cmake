@@ -51,6 +51,26 @@ function(aicore_fetch_test_assets root)
     _aicore_fetch_asset("${root}" "facedetect_models/buffalo_l.gguf"
         "${base}/qFaceDetect/buffalo_l.gguf" 150000000)
 
+    # OCR parity fixtures + f32 models (qOCR / qAnyLabeling). The fixture
+    # npy pairs are the pinned PaddlePaddle reference inputs/outputs the
+    # interpreter probe compares against; they live in the asset cache,
+    # not in the source tree.
+    _aicore_fetch_asset("${root}" "ocr_models/ppocr-rec-ch-f32.gguf"
+        "${base}/PP-OCR/ppocr-rec-ch-f32.gguf" 10000000)
+    _aicore_fetch_asset("${root}" "ocr_models/ppocr-det-ch-f32.gguf"
+        "${base}/PP-OCR/ppocr-det-ch-f32.gguf" 4000000)
+    foreach(asset IN ITEMS rec_ch_input.npy rec_ch_reference.npy
+            det_ch_input.npy det_ch_reference.npy
+            layout_input.npy layout_head0.npy layout_head1.npy
+            layout_head2.npy layout_head3.npy layout_head4.npy
+            layout_head5.npy layout_head6.npy layout_head7.npy
+            layout_regions.json)
+        # Probe anchors live in their own release so the model releases
+        # carry GGUF weights (and the test-data zip) only.
+        _aicore_fetch_asset("${root}" "ocr_fixtures/${asset}"
+            "${base}/ocr-fixtures/${asset}" 100000)
+    endforeach()
+
     set(lightglue_assets
         "sacre_coeur1.jpg"
         "sacre_coeur2.jpg")

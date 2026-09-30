@@ -1,0 +1,12 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "X-AnyLabeling Annotation",
+  "icon": ":/CC/plugin/qAnyLabeling/images/icon.png",
+  "description": "X-AnyLabeling-style image annotation with native Qt editing and AICore GGML assistance.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "X-AnyLabeling: https://github.com/CVHub520/X-AnyLabeling" }
+  ]
+}

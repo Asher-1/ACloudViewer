@@ -108,6 +108,18 @@ constexpr const char* kLightGlueDownloadUrl =
         "download/LightGlue/lightglue_test_images.zip";
 constexpr const char* kLightGlueSha256 = "";
 
+// PaddleOCR official demo/test images (qOCR + qAnyLabeling). 60 images
+// straight from the PaddleOCR repo: pytest test_files, street scenes,
+// release/2.7 scene shots, and the ch/en single-word crops the official
+// recognition demos use. MANIFEST.txt inside carries per-file SHA-256.
+constexpr const char* kPpocrZipName = "ppocr_testdata.zip";
+constexpr const char* kPpocrExtractDir = "ppocr_testdata";
+constexpr const char* kPpocrDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/"
+        "download/PP-OCR/ppocr_testdata.zip";
+constexpr const char* kPpocrSha256 =
+        "ef1374e4ac9f2d99832faa96e01c8fab97d102e9ac3b0f16815f81bcc8c23356";
+
 // LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
 // demo sequences (courthouse/loop/oxford/university, pre-cropped to the
 // 518-wide processing grid) plus the cached native sky masks for the two
@@ -269,6 +281,13 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLightGlueExtractDir),
                     QString::fromLatin1(kLightGlueDownloadUrl),
                     {QCryptographicHash::Sha256, QByteArray(kLightGlueSha256)}};
+        case Dataset::Ppocr:
+            return {kind,
+                    QStringLiteral("PaddleOCR demo images"),
+                    QString::fromLatin1(kPpocrZipName),
+                    QString::fromLatin1(kPpocrExtractDir),
+                    QString::fromLatin1(kPpocrDownloadUrl),
+                    {QCryptographicHash::Sha256, QByteArray(kPpocrSha256)}};
         case Dataset::LingbotMapCourthouse:
             return {kind,
                     QStringLiteral("LingBot-Map courthouse (outdoor)"),

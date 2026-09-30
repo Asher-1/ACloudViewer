@@ -232,7 +232,7 @@ cmake \
 ```bash
 cmake -DBUILD_UNIT_TESTS=ON ..
 make -j$(nproc)
-./bin/tests
+./bin/cloudviewer_test/tests
 ```
 
 ### Python Unit Tests

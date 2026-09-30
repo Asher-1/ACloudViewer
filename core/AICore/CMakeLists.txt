@@ -441,7 +441,7 @@ else()
             set_source_files_properties(${AICORE_DEPTH_SRC_DIR}/winograd.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
             set_source_files_properties(
-                ${AICORE_FACEDETECT_SRC_DIR}/winograd.cpp
+                ${AICORE_COMMON_SRC_DIR}/winograd.cpp
                 ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
@@ -665,6 +665,8 @@ target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
 
 add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
+    # Winograd conv custom op (routed by the CPU-session graph build).
+    src/common/winograd.cpp
     # Backend discovery helpers referenced by the probe (dynamic-loader
     # backend registration lives in the env bridge).
     src/common/ggml_env_bridge.cpp)

@@ -665,6 +665,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QSAM3=ON"
                 "-DPLUGIN_STANDARD_QTRELLIS=ON"
                 "-DPLUGIN_STANDARD_QGKD=ON"
+                "-DPLUGIN_STANDARD_QOCR=ON"
                 "-DPLUGIN_STANDARD_QLINGBOTMAP=ON"
                 "-DPLUGIN_STANDARD_QSAM3D=ON"
                 "-DPLUGIN_STANDARD_QANYLABELING=ON"

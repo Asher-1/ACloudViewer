@@ -269,6 +269,12 @@ typedef struct aicore_facedetect_model_entry {
     const char* quant_note;
     const char* license_note;
     int detector_capable;
+    /* Interaction defaults from the owning task catalog (the upstream
+     * scrfd/yunet yaml values). <=0 means "task default"; landmark-only
+     * rows leave them 0. */
+    float conf_threshold;
+    float iou_threshold;
+    int32_t input_size;
 } aicore_facedetect_model_entry;
 
 /** Number of published catalog entries (all model roles). */

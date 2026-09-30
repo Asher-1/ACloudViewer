@@ -32,7 +32,9 @@ add_subdirectory( qSAM3 )
 add_subdirectory( qSAM3D )
 add_subdirectory( qTrellis )
 add_subdirectory( qGKD )
+add_subdirectory( qOCR )
 add_subdirectory( qLingbotMap )
+add_subdirectory( qAnyLabeling )
 
 #plugins integrated as submodules
 set( submod_plugins
