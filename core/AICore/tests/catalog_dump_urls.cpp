@@ -19,6 +19,7 @@
 #include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/model_catalog_capi.h"
+#include "aicore/ocr_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
@@ -123,6 +124,10 @@ void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_rmbg_model_count(); ++i) {
         const aicore_rmbg_model_entry* e = aicore_rmbg_model_at(i);
         if (e) emitAsset("rmbg", "rmbg_models", e->filename, e->download_url);
+    }
+    for (int i = 0; i < aicore_ocr_model_count(); ++i) {
+        const aicore_ocr_model_entry* e = aicore_ocr_model_at(i);
+        if (e) emitAsset("ocr", "ocr_models", e->filename, e->download_url);
     }
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const aicore_sam3_model_entry* e = aicore_sam3_model_at(i);

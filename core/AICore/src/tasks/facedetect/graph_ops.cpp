@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common/winograd.hpp"
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "tasks/facedetect/backend.hpp"
 #include "tasks/facedetect/directconv.hpp"
 #include "tasks/facedetect/model_loader.hpp"
-#include "tasks/facedetect/winograd.hpp"
 
 namespace fd {
 
@@ -237,8 +237,8 @@ ggml_tensor* conv2d(ggml_context* ctx,
     if (dconv)
         x = directconv_conv3x3(ctx, W, x, pad);
     else if (use_wino)
-        x = winograd_conv3x3(ctx, W, x, pad, prefer_f4,
-                             wino_fused ? B : nullptr, relu);
+        x = aicore::wino::winograd_conv3x3(ctx, W, x, pad, prefer_f4,
+                                           wino_fused ? B : nullptr, relu);
     else if (direct)
         x = ggml_conv_2d_direct(ctx, W, x, stride, stride, pad, pad, 1, 1);
     else

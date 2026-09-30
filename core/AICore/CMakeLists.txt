@@ -9,6 +9,7 @@
 #   src/tasks/facedetect/ — face detection, alignment, embedding
 #   src/tasks/rfdetr/     — RF-DETR object detection / segmentation
 #   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
+#   src/tasks/ocr/        — PP-OCR text detection/recognition catalog (runtime gates pending)
 #   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
 #   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
 #   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
@@ -51,6 +52,7 @@ set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
 set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
 set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
 set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
+set(AICORE_OCR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
@@ -90,6 +92,7 @@ file(GLOB AICORE_ALIKED_SOURCES CONFIGURE_DEPENDS ${AICORE_ALIKED_SRC_DIR}/*.cpp
 file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
+file(GLOB AICORE_OCR_SOURCES CONFIGURE_DEPENDS ${AICORE_OCR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
@@ -153,6 +156,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_FACEDETECT_SOURCES}
     ${AICORE_RFDETR_SOURCES}
     ${AICORE_RMBG_SOURCES}
+    ${AICORE_OCR_SOURCES}
     ${AICORE_YOLO_SOURCES}
     ${AICORE_REID_SOURCES}
     ${AICORE_SAM3_SOURCES}
@@ -231,6 +235,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_FACEDETECT_SRC_DIR}
         ${AICORE_RFDETR_SRC_DIR}
         ${AICORE_RMBG_SRC_DIR}
+        ${AICORE_OCR_SRC_DIR}
         ${AICORE_YOLO_SRC_DIR}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
@@ -245,7 +250,7 @@ target_include_directories(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer)
+target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer 3rdparty_jsoncpp)
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
     # literals (em-dashes in UI strings, the multilingual-bridge docs) — match
@@ -322,6 +327,36 @@ if(AICore_CUDA_ENABLED)
     endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 endif()
+
+# ── SAM3D official native PBR assembly ──────────────────────
+# Upstream sam-3d-objects-ggml assemble_official_pbr_cuda chain (CUDA-only):
+# VTK quadric simplify (0.95) → 1000-view nvdiffrast visibility → CPU min-cut
+# filter → pymeshfix TMesh repair (GPL) → xatlas UV → angle-weighted normals
+# → 100-view mip-splatting Gaussian render → nvdiffrast 2500-step Adam/TV
+# texture bake → Telea inpaint → Y-up GLB.
+# License isolation mirrors upstream: nvdiffrast (NVIDIA, non-commercial) and
+# pymeshfix TMesh (GPL-3.0-or-commercial) are never fetched or linked without
+# an explicit acknowledgment option; the mip-splatting rasterizer (Inria
+# non-commercial) and the MIT xatlas snapshot are vendored but also compiled
+# only under this gate. The default AICore build is untouched.
+# The task-owned wiring (vendored third-party builds, missing-module
+# diagnostics, pipeline source list) lives in src/tasks/sam3d/cmake/pbr.cmake
+# (mirroring this module's core/AICore/cmake/ convention); the switch and its
+# license acknowledgments are declared in cmake/AICoreOptions.cmake (before
+# find_dependencies, so the bundled OpenCV build wires its photo module from
+# the same switch). The CUDA-backend requirement is the only cross-module
+# linkage kept here.
+if(AICore_USE_SAM3D_PBR)
+    if(NOT AICore_CUDA_ENABLED)
+        message(
+            FATAL_ERROR
+                "AICore: AICore_USE_SAM3D_PBR requires AICore_USE_CUDA=ON: the official PBR chain is CUDA-only (same as upstream SAM3D_GGML_NATIVE_PBR). The auto-enable only fires with CUDA already ON, so this value was set explicitly — set AICore_USE_SAM3D_PBR=OFF to keep a CUDA-less build."
+        )
+    endif()
+    include(${AICORE_SAM3D_SRC_DIR}/cmake/pbr.cmake)
+    aicore_sam3d_wire_pbr(${PROJECT_NAME} ${AICORE_SAM3D_SRC_DIR})
+endif()
+
 if(AICore_VULKAN_ENABLED)
     target_sources(${PROJECT_NAME} PRIVATE
         ${AICORE_ALIKED_SRC_DIR}/vulkan/vulkan_aliked_dispatch.cpp)
@@ -346,167 +381,12 @@ endif()
 #     → chart clustering off; mesh_export falls back to simple_unwrap.
 # Point CUMESH_TORCH_DIR at the directory containing TorchConfig.cmake
 # (e.g. <conda-env>/lib/python3.*/site-packages/torch/share/cmake/Torch).
-option(
-    AICore_USE_CUMESH
-    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; auto-disabled with a warning when CUDA/libtorch/Python headers are unavailable)"
-    ON)
-set(AICORE_CUMESH_ENABLED ${AICore_USE_CUMESH})
-# Guard ladder: each step may demote AICORE_CUMESH_ENABLED with a message.
-if(AICORE_CUMESH_ENABLED AND NOT AICore_CUDA_ENABLED)
-    message(
-        STATUS
-            "AICore: CuMesh GPU chart clustering disabled (AICore_USE_CUDA=OFF)"
-    )
-    set(AICORE_CUMESH_ENABLED OFF)
-endif()
-if(AICORE_CUMESH_ENABLED
-   AND NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/cumesh.h)
-    message(
-        WARNING
-            "AICore: missing vendored CuMesh at ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh — building without GPU chart clustering"
-    )
-    set(AICORE_CUMESH_ENABLED OFF)
-endif()
-if(AICORE_CUMESH_ENABLED)
-    if(CUMESH_TORCH_DIR)
-        list(APPEND CMAKE_PREFIX_PATH "${CUMESH_TORCH_DIR}")
-    endif()
-    find_package(Torch QUIET)
-endif()
-if(AICORE_CUMESH_ENABLED AND NOT Torch_FOUND)
-    message(
-        WARNING
-            "AICore: CuMesh needs libtorch (find_package(Torch) failed; set CUMESH_TORCH_DIR to <torch-env>/lib/python3.*/site-packages/torch/share/cmake/Torch) — building without GPU chart clustering"
-    )
-    set(AICORE_CUMESH_ENABLED OFF)
-endif()
-# Torch_DIR = <torch package>/share/cmake/Torch → <torch package> = the
-# site-packages/torch directory itself.
-get_filename_component(_cumesh_torch_pkg "${Torch_DIR}/../../.." ABSOLUTE)
-set(_cumesh_torch_lib_dir "${_cumesh_torch_pkg}/lib")
-if(AICORE_CUMESH_ENABLED
-   AND NOT EXISTS "${_cumesh_torch_lib_dir}/libtorch.so")
-    message(
-        WARNING
-            "AICore: CuMesh libtorch.so not found at ${_cumesh_torch_lib_dir} (Torch_DIR=${Torch_DIR}) — building without GPU chart clustering"
-    )
-    set(AICORE_CUMESH_ENABLED OFF)
-endif()
-# The vendored glue keeps the upstream <torch/extension.h> includes (the
-# upstream glue CMakeLists does the same): it needs the pybind-layer dtype
-# aliases (torch::kUInt32, ...) that do not exist in the ATen header set.
-# That drags in Python.h + libtorch_python, so resolve the Python
-# development bits from the conda/pip env that owns torch: <env>/lib/
-# python3.x/site-packages/torch → up 4 levels to <env>.
-if(AICORE_CUMESH_ENABLED)
-    get_filename_component(_cumesh_env_root "${_cumesh_torch_pkg}/../../../.."
-                           ABSOLUTE)
-    set(_cumesh_py_inc "")
-    file(GLOB _cumesh_py_incs "${_cumesh_env_root}/include/python*")
-    foreach(_d IN LISTS _cumesh_py_incs)
-        if(EXISTS "${_d}/Python.h")
-            set(_cumesh_py_inc "${_d}")
-            break()
-        endif()
-    endforeach()
-    set(_cumesh_py_lib "")
-    file(GLOB _cumesh_py_libs "${_cumesh_env_root}/lib/libpython3*.so")
-    if(_cumesh_py_libs)
-        list(GET _cumesh_py_libs 0 _cumesh_py_lib)
-    endif()
-    if(NOT _cumesh_py_inc OR NOT _cumesh_py_lib)
-        message(
-            WARNING
-                "AICore: CuMesh needs the Python development headers/library of the libtorch env root ${_cumesh_env_root} (include=${_cumesh_py_inc}, lib=${_cumesh_py_lib}) — building without GPU chart clustering"
-        )
-        set(AICORE_CUMESH_ENABLED OFF)
-    endif()
-endif()
-
-# hash/hash.cu is part of the upstream CUMESH_SRC compile set but needs the
-# ATen UInt32 ScalarType (introduced in torch 2.3 — absent from c10/core/
-# ScalarType.h in 2.2, so "namespace torch has no member kUInt32"). Nothing
-# in the chart-clustering set calls the hashmap, so on older torch the file
-# is skipped instead of failing the build.
-set(_cumesh_hash_src "")
-if(AICORE_CUMESH_ENABLED)
-    file(READ
-         "${_cumesh_torch_pkg}/include/torch/csrc/api/include/torch/version.h"
-         _cumesh_torch_version_h)
-    string(REGEX MATCH "#define TORCH_VERSION_MAJOR ([0-9]+)" _cumesh_maj
-                  "${_cumesh_torch_version_h}")
-    set(_cumesh_torch_maj "${CMAKE_MATCH_1}")
-    string(REGEX MATCH "#define TORCH_VERSION_MINOR ([0-9]+)" _cumesh_min
-                  "${_cumesh_torch_version_h}")
-    set(_cumesh_torch_min "${CMAKE_MATCH_1}")
-    if(_cumesh_torch_maj GREATER 2
-       OR (_cumesh_torch_maj EQUAL 2 AND _cumesh_torch_min GREATER_EQUAL 3))
-        set(_cumesh_hash_src
-            ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/hash/hash.cu)
-    else()
-        message(
-            STATUS
-                "AICore: CuMesh hash/hash.cu skipped (ATen UInt32 needs torch >= 2.3; found ${_cumesh_torch_maj}.${_cumesh_torch_min}) — unused by chart clustering"
-        )
-    endif()
-endif()
-
-if(AICORE_CUMESH_ENABLED)
-    add_library(
-        aicore_cumesh SHARED
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/atlas.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/clean_up.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/connectivity.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/cumesh.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/geometry.cu
-        # See the _cumesh_hash_src version gate above (upstream CUMESH_SRC
-        # compiles hash/hash.cu on torch >= 2.3; empty on older torch).
-        ${_cumesh_hash_src}
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/io.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src/shared.cu
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/cumesh_glue/cumesh_glue.cu)
-    target_include_directories(
-        aicore_cumesh
-        PRIVATE ${AICORE_TRELLIS_SRC_DIR}
-                ${AICORE_TRELLIS_SRC_DIR}/third_party/CuMesh/src
-                ${AICORE_TRELLIS_SRC_DIR}/third_party/cumesh_glue
-                ${TORCH_INCLUDE_DIRS}
-                ${_cumesh_py_inc})
-    set_target_properties(
-        aicore_cumesh PROPERTIES CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON
-                                 POSITION_INDEPENDENT_CODE ON)
-    # ATen CUDA helpers rely on relaxed constexpr / extended lambdas.
-    target_compile_options(
-        aicore_cumesh PRIVATE
-        $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr
-        --expt-extended-lambda>
-        # Match the libtorch ABI: torch publishes
-        # TORCH_CXX_FLAGS = -D_GLIBCXX_USE_CXX11_ABI=0 for pre-2.6 wheels;
-        # without it the glue's std::string mangles differ from libc10 and
-        # c10::detail::torchCheckFail stays unresolved at dlopen time.
-        ${TORCH_CXX_FLAGS})
-    # Link the torch core libraries explicitly (conda's TORCH_LIBRARIES can
-    # carry a broken "-lFALSE" entry; same workaround as the upstream glue).
-    # torch/extension.h pulls the pybind layer, so libtorch_python and
-    # libpython are required or the shared lib keeps undefined Py* symbols.
-    target_link_directories(aicore_cumesh PRIVATE "${_cumesh_torch_lib_dir}")
-    target_link_libraries(
-        aicore_cumesh
-        PRIVATE "${_cumesh_torch_lib_dir}/libtorch.so"
-                "${_cumesh_torch_lib_dir}/libtorch_cpu.so"
-                "${_cumesh_torch_lib_dir}/libtorch_cuda.so"
-                "${_cumesh_torch_lib_dir}/libc10.so"
-                "${_cumesh_torch_lib_dir}/libc10_cuda.so"
-                "${_cumesh_torch_lib_dir}/libtorch_python.so"
-                "${_cumesh_py_lib}"
-                nvrtc)
-
-    target_compile_definitions(${PROJECT_NAME} PRIVATE TRELLIS2_HAVE_CUMESH=1)
-    target_include_directories(
-        ${PROJECT_NAME} PRIVATE ${AICORE_TRELLIS_SRC_DIR}/third_party/cumesh_glue)
-    target_link_libraries(${PROJECT_NAME} PRIVATE aicore_cumesh)
-    message(STATUS "AICore: CuMesh GPU chart clustering enabled")
-endif()
+# Task-owned wiring (graceful guard ladder, vendored SHARED build against
+# libtorch/libpython, hash.cu torch version gate) lives in
+# src/tasks/trellis/cmake/cumesh.cmake; the AICore_USE_CUMESH switch and
+# CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
+include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
+aicore_trellis_wire_cumesh(${PROJECT_NAME} ${AICORE_TRELLIS_SRC_DIR})
 # Vulkan ALIKED custom compute: 3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch
 # (AICORE_VULKAN_ALIKED when AICore_VULKAN_ENABLED — see AICoreCompileDefinitions.cmake)
 
@@ -577,7 +457,7 @@ else()
             set_source_files_properties(${AICORE_DEPTH_SRC_DIR}/winograd.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
             set_source_files_properties(
-                ${AICORE_FACEDETECT_SRC_DIR}/winograd.cpp
+                ${AICORE_COMMON_SRC_DIR}/winograd.cpp
                 ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
@@ -702,6 +582,7 @@ if(AICore_BUILD_TESTS)
             ${AICORE_FACEDETECT_SOURCES}
             ${AICORE_RFDETR_SOURCES}
             ${AICORE_RMBG_SOURCES}
+            ${AICORE_OCR_SOURCES}
             ${AICORE_YOLO_SOURCES}
             ${AICORE_SAM3_SOURCES}
             ${AICORE_TRELLIS_SOURCES}
@@ -746,7 +627,7 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
-        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib)
+        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
         endif()
@@ -797,11 +678,35 @@ message(STATUS "AICore (SHARED): tasks=${_aicore_enabled_tasks_csv}; ggml linked
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
+
+add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
+    src/tasks/ocr/ocr_runtime.cpp
+    # Winograd conv custom op (routed by the CPU-session graph build).
+    src/common/winograd.cpp
+    # Backend discovery helpers referenced by the probe (dynamic-loader
+    # backend registration lives in the env bridge).
+    src/common/ggml_env_bridge.cpp)
+target_include_directories(test_ocr_runtime PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
+    ${JSONCPP_INCLUDE_DIRS})
+# The probe is deliberately independent of the AICore shared library: the
+# ocr interpreter sources are compiled into this target directly, so the
+# parity ctest stays runnable while unrelated task sources (e.g. the sam3d
+# vendor migration) break the main-library closure.
+target_link_libraries(test_ocr_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+set_target_properties(test_ocr_runtime PROPERTIES
+    POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+    # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
+    # libAICore.so; without $ORIGIN the DL loader cannot resolve them and
+    # every device except the caller's own registrations disappears.
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN")
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()
 set_target_properties(aicore_gguf_quantize PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
     FOLDER "core/tools")
 if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         string(REPLACE ";" "|" _quantize_gpu_pipe "${GGML_GPU_BACKEND_MODULE_FILES}")
@@ -843,7 +748,7 @@ endif()
 # by Qt builds with -reduce-relocations.
 set_target_properties(reid_probe PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
     FOLDER "core/tools")
 if(NOT MSVC)
     target_compile_options(reid_probe PRIVATE -fPIC)

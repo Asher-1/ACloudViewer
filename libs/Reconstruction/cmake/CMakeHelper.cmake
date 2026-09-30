@@ -51,6 +51,13 @@ set(COLMAP_SRC_ROOT_FOLDER "colmap_sources")
 
 set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
 
+# Test executables are grouped into bin/colmap_test/ (mirroring bin/aicore_tests/)
+# so the main bin/ only holds the app and shared libraries. CTest resolves each
+# binary through $<TARGET_FILE>, so the CTest registry stays valid, and runtime
+# libraries are located via the build-tree absolute RPATH.
+set(COLMAP_TEST_RUNTIME_DIR "${CMAKE_BINARY_DIR}/bin/colmap_test")
+file(MAKE_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
+
 # When AICore is linked, omit static CUDA archives from 3rdparty deps to avoid
 # embedding ~400MB nv_fatbin into shared libs / executables (CUDA lives in libAICore.so).
 macro(COLMAP_LINK_3RDPARTY TARGET_NAME)
@@ -313,8 +320,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
     if (TESTS_ENABLED)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
-        set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
-                ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
+                RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         # gmock provides the matcher infrastructure used by upstream test
         # files (e.g. util/eigen_matchers.h).
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock)
@@ -333,6 +341,14 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # gate must stay GPU-independent for GPU-less CI runners).
         set_property(GLOBAL APPEND PROPERTY COLMAP_RECONSTRUCTION_TESTS
                      "${TARGET_NAME}")
+        if (MSVC)
+            # Tests live under bin/colmap_test/ but the shared DLLs are
+            # centralized in bin/<Config>/; Windows has no RPATH, so prepend
+            # the DLL directory for every test (requires CMake >= 3.22 for
+            # generator expressions in ENVIRONMENT).
+            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+        endif ()
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
@@ -342,7 +358,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
 
         # install
         if (IS_MSVC)
-            install(TARGETS ${TARGET_NAME} DESTINATION bin/)
+            install(TARGETS ${TARGET_NAME} DESTINATION bin/colmap_test/)
         endif ()
     endif ()
 endmacro(COLMAP_ADD_TEST)
@@ -352,7 +368,9 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
     if (TESTS_ENABLED)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
-        set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
+                RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
 
         if (MSVC)
@@ -364,6 +382,11 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
 
         add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
                  COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        if (MSVC)
+            # Same DLL-path guarantee as COLMAP_ADD_TEST above.
+            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+        endif ()
 
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -374,7 +397,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
 
         # install
         if (IS_MSVC)
-            install(TARGETS ${TARGET_NAME} DESTINATION bin/)
+            install(TARGETS ${TARGET_NAME} DESTINATION bin/colmap_test/)
         endif ()
     endif ()
 endmacro(COLMAP_ADD_CUDA_TEST)
@@ -391,7 +414,9 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
         endforeach ()
         set_source_files_properties(${HIP_TEST_SOURCES} PROPERTIES LANGUAGE HIP)
         add_executable(${TARGET_NAME} ${HIP_TEST_SOURCES})
-        set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
+                RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME}
                               gtest_main 3rdparty_rocm)
 
@@ -402,6 +427,11 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
         endif ()
 
         add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}" COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        if (MSVC)
+            # Same DLL-path guarantee as COLMAP_ADD_TEST above.
+            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+        endif ()
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})

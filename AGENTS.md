@@ -194,6 +194,18 @@ cmake \
     -DPLUGIN_STANDARD_QDEEPLSD=ON \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QSAM3=ON \
+    -DPLUGIN_STANDARD_QSAM3D=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
+    -DPLUGIN_STANDARD_QTRELLIS=ON \
+    -DPLUGIN_STANDARD_QRFDETR=ON \
+    -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QGKD=ON \
+    -DPLUGIN_STANDARD_QOCR=ON \
+    -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+    -DPLUGIN_STANDARD_QANYLABELING=ON \
+    -DPLUGIN_STANDARD_QJSONRPC=ON \
     ..
 make -j"${BUILD_JOBS:-$(nproc)}"
 ```
@@ -220,6 +232,18 @@ cmake \
     -DPLUGIN_STANDARD_QDEEPLSD=ON \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QSAM3=ON \
+    -DPLUGIN_STANDARD_QSAM3D=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
+    -DPLUGIN_STANDARD_QTRELLIS=ON \
+    -DPLUGIN_STANDARD_QRFDETR=ON \
+    -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QGKD=ON \
+    -DPLUGIN_STANDARD_QOCR=ON \
+    -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+    -DPLUGIN_STANDARD_QANYLABELING=ON \
+    -DPLUGIN_STANDARD_QJSONRPC=ON \
     ..
 make -j"${BUILD_JOBS:-$(nproc)}"
 ```
@@ -243,7 +267,8 @@ python .\scripts\build_win.py
 ### Feature toggles (add to any configure line)
 
 ```bash
-# Manual calibration
+# Manual calibration — the plugin lives on the `qcalib` branch
+# only; the switch is a no-op on branches without plugins/core/Standard/qManualCalib.
 -DPLUGIN_STANDARD_QMANUAL_CALIB=ON
 
 # Agent JSON-RPC
@@ -477,7 +502,7 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 | qGKD | `PLUGIN_STANDARD_QGKD` | General keypoint detection (GKDT); needs `AICore_ENABLED` (task `gkd`) |
 | qYOLO / qSAM3 / qTrellis / qRFDetr / qRMBG | `PLUGIN_STANDARD_QYOLO` etc. | Detection / segmentation / 3D-generation AICore plugins |
 | qFreeSplatter | `PLUGIN_STANDARD_QFREESPLATTER` | 3D Gaussian splats; optional qSIBR viewer |
-| qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree |
+| qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree — **`qcalib` branch only** |
 | qSIBR | `PLUGIN_STANDARD_QSIBR` | Gaussian / ULR viewers (CUDA, Linux/Win) |
 | qJSonRPCPlugin | `PLUGIN_STANDARD_QJSONRPC` | Agent WebSocket API |
 

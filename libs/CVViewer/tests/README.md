@@ -45,48 +45,48 @@ cmake --build build -j$(nproc)
 
 ```bash
 cd build
-./bin/tests
+./bin/cloudviewer_test/tests
 ```
 
 ### Run with Options
 
 ```bash
 # Shuffle test order (randomized)
-./bin/tests --gtest_shuffle
+./bin/cloudviewer_test/tests --gtest_shuffle
 
 # Run specific test suite
-./bin/tests --gtest_filter=Core*
+./bin/cloudviewer_test/tests --gtest_filter=Core*
 
 # Run specific test
-./bin/tests --gtest_filter=Tensor.Constructor
+./bin/cloudviewer_test/tests --gtest_filter=Tensor.Constructor
 
 # Exclude tests
-./bin/tests --gtest_filter=-*CUDA*
+./bin/cloudviewer_test/tests --gtest_filter=-*CUDA*
 
 # Repeat tests
-./bin/tests --gtest_repeat=10
+./bin/cloudviewer_test/tests --gtest_repeat=10
 
 # List all tests
-./bin/tests --gtest_list_tests
+./bin/cloudviewer_test/tests --gtest_list_tests
 
 # Set random seed for reproducibility
-./bin/tests --gtest_shuffle --gtest_random_seed=12345
+./bin/cloudviewer_test/tests --gtest_shuffle --gtest_random_seed=12345
 
 # Disable P2P for CUDA tests
-./bin/tests --disable_p2p
+./bin/cloudviewer_test/tests --disable_p2p
 ```
 
 ### Run with Verbose Output
 
 ```bash
 # Show all output
-./bin/tests --gtest_print_time=1
+./bin/cloudviewer_test/tests --gtest_print_time=1
 
 # Break on failure
-./bin/tests --gtest_break_on_failure
+./bin/cloudviewer_test/tests --gtest_break_on_failure
 
 # Generate XML report
-./bin/tests --gtest_output=xml:test_results.xml
+./bin/cloudviewer_test/tests --gtest_output=xml:test_results.xml
 ```
 
 ## Test Categories
@@ -195,7 +195,7 @@ The `CMakeLists.txt` uses `GLOB_RECURSE` to automatically find all `*.cpp` files
 
 ```bash
 cmake --build build
-./build/bin/tests --gtest_filter=MyGeometry*
+./build/bin/cloudviewer_test/tests --gtest_filter=MyGeometry*
 ```
 
 ## CI/CD Integration
@@ -219,10 +219,10 @@ run_all_tests
 
 ```bash
 # Disable P2P transfer
-./bin/tests --disable_p2p
+./bin/cloudviewer_test/tests --disable_p2p
 
 # Run only CPU tests
-./bin/tests --gtest_filter=-*CUDA*
+./bin/cloudviewer_test/tests --gtest_filter=-*CUDA*
 ```
 
 ### Memory Issues
@@ -230,17 +230,17 @@ run_all_tests
 ```bash
 # Set memory limit
 export LOW_MEM_USAGE=ON
-./bin/tests --gtest_filter=-*Reduce*Sum*
+./bin/cloudviewer_test/tests --gtest_filter=-*Reduce*Sum*
 ```
 
 ### Debugging Failed Tests
 
 ```bash
 # Run with GDB
-gdb --args ./bin/tests --gtest_filter=FailingTest
+gdb --args ./bin/cloudviewer_test/tests --gtest_filter=FailingTest
 
 # Run with Valgrind
-valgrind --leak-check=full ./bin/tests --gtest_filter=FailingTest
+valgrind --leak-check=full ./bin/cloudviewer_test/tests --gtest_filter=FailingTest
 ```
 
 ## References

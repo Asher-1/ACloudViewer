@@ -14,13 +14,14 @@
 //   Canvas: video frame with per-instance mask tints; click a mask to
 //           refine, drag a box / click points to add an instance
 //   Timeline: scrubber bar + per-instance presence bands (click to seek)
-//   Bottom: Show masks, playback speed, Export frame masks, instance list,
+//   Bottom: Show masks, playback speed, frame/sequence export, instance list,
 //           status line
 
 #pragma once
 
 #include <ecvTestDataRepository.h>
 
+#include <QJsonArray>
 #include <QTimer>
 #include <QWidget>
 
@@ -34,6 +35,7 @@ class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
 class QProgressBar;
+class QProgressDialog;
 class QPushButton;
 class QRadioButton;
 class QSlider;
@@ -53,6 +55,12 @@ public:
     ~VideoTab() override;
 
     void setDevice(const QString& device);  // propagate shared device combo
+    /**
+     * Show the device and resolved-backend controls when this page is hosted
+     * in a standalone dialog (qAnyLabeling). qSAM3Dialog keeps its shared
+     * device row and leaves this disabled to avoid a duplicate selector.
+     */
+    void setStandaloneDeviceControlsVisible(bool visible);
     /** Release the tracker/model while preserving the opened video. */
     void releaseModel();
     /** Pass the app interface for DB-tree export. */
@@ -83,6 +91,7 @@ private slots:
     void onCanvasPosPoint(const QPointF& p);
     void onCanvasNegPoint(const QPointF& p);
     void onExportMasks();
+    void onExportVideoMasks();
     /** Hot-swap: re-load the model on the newly selected device. */
     void onDeviceChanged();
     /** One-click test: download (cached) the SAM3 test dataset and open the
@@ -105,6 +114,7 @@ private:
      *  suffixes may have changed after a download). */
     void refreshModelCombo();
     QString modelPath() const;
+    QString selectedDevice() const;
     /** Download the GGUF currently selected in the model combo into the
      *  shared AICore model cache (sam3_models). Naming mirrors the
      *  qDA3/qYOLO/qDeepLSD startDownload convention. When \p thenRun is
@@ -137,6 +147,7 @@ private:
     void updateTimeline(int frameIndex, const SAM3WorkerResult& result);
     void appendLog(const QString& msg);
     void setStatus(const QString& msg);
+    void startVideoExport(const QString& parent);
     QColor instanceColor(int id) const;
     void resetPrompts();
     /** Export the current frame result to the DB tree as a ccImage. */
@@ -145,6 +156,8 @@ private:
      *  grayscale ccImages (one per instance, SAM3 metadata attached).
      *  Returns the number of images added (0 when no app interface). */
     int exportMasksToDb();
+    bool appendVideoMasks(const SAM3WorkerResult& result, int frameIndex);
+    void finishVideoExport(bool complete, const QString& error = QString());
     /** (Re)fill the test-video picker from the extracted SAM3 dataset. */
     void populateTestVideoCombo();
     /** Open the video currently selected in the test-video picker. */
@@ -168,6 +181,7 @@ private:
     QPushButton* m_downloadBtn = nullptr;  // downloads the selected GGUF
     QPushButton* m_loadBtn = nullptr;
     QComboBox* m_deviceCombo = nullptr;
+    QLabel* m_deviceLabel = nullptr;
     QLabel* m_backendLabel = nullptr;
     QComboBox* m_testVideoCombo = nullptr;  // test-video picker (SAM3 dataset)
     QPushButton* m_testDataBtn = nullptr;
@@ -179,6 +193,7 @@ private:
     QSlider* m_speedSlider = nullptr;
     QLabel* m_speedLabel = nullptr;
     QPushButton* m_exportBtn = nullptr;
+    QPushButton* m_exportVideoBtn = nullptr;
     QPushButton* m_exportFrameToDbBtn = nullptr;
     QLabel* m_instanceLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
@@ -224,10 +239,18 @@ private:
     bool m_pendingRetrack = false;
 
     SAM3WorkerResult m_lastResult;
+    int m_lastResultFrame = -1;
     QVector<VideoTimelineEntry> m_timelineEntries;
     QVector<int> m_timelineInstanceIds;
 
     // DB-tree export state
     ecvMainAppInterface* m_app = nullptr;
     QImage m_currentFrameImage;
+    QString m_videoExportDir;
+    QString m_videoExportSourceDigest;
+    QJsonArray m_videoExportFrames;
+    QProgressDialog* m_videoExportProgress = nullptr;
+    int m_videoExportStart = -1;
+    int m_videoExportExpectedFrame = -1;
+    int m_videoExportAwaitedFrame = -1;
 };

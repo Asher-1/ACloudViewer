@@ -278,7 +278,7 @@ trackers never read it). Two encoder paths exist, mirroring the official
 
 Validation: `core/AICore/tools/reid_validate.py` compares the C++ probe
 (`core/AICore/tools/reid_probe.cpp`, built as the `reid_probe` target into
-`build_app/bin/`) against the PyTorch and ONNX Runtime baselines on a fixed
+`build_app/bin/aicore_tests/`) against the PyTorch and ONNX Runtime baselines on a fixed
 synthetic image; the PyTorch/ORT baselines must run in their own process
 (numpy and libAICore cannot share one). Upstream-truth accuracy after the
 RGB32 preprocessing fix: min cosine vs PyTorch 0.9975-0.9988 across

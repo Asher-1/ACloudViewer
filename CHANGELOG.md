@@ -366,6 +366,58 @@ v3.9.5-Beta (Asher) - 08/04/2026
       - Upstream-parity advanced KV-cache/sampling options with VRAM auto-tiering
         (f16 default; GGUF auto-download from Hugging Face with pinned SHA-256)
       - CMake: `PLUGIN_STANDARD_QLINGBOTMAP=ON` + `AICore_ENABLED=ON`
+    - Add qOCR plugin: PP-OCRv4 text detection + recognition natively on ggml
+      - First-party Paddle inference → GGUF conversion
+        (`core/AICore/tools/convert_paddle_ocr_gguf.py`); recognition
+        dictionaries embedded in the rec GGUFs, published with pinned SHA-256
+        in `asset_digests.h`
+      - **OCR Workspace** dialog: recognition language / quantization (det+rec
+        GGUF pairs from the published catalog), device / threads, one-click
+        sample data, and the unified model downloader with SHA-256 verification
+      - Background `OCRWorker` runs on the shared AICore device task queue with
+        cooperative cancellation, stage-based progress, and a console heartbeat
+      - **Add result to DB** exports an annotated image (boxes + transcriptions
+        drawn over the source) with metadata, named via `ecvPluginDbNaming`
+      - CMake: `PLUGIN_STANDARD_QOCR=ON` + `AICore_ENABLED=ON`
+    - Add qSAM3D plugin: SAM 3D Objects single-image → 3D reconstruction on the
+      in-tree ggml runtime (`libAICore` task `sam3d`)
+      - Gaussian splat PLY (full neural pipeline) + optional FlexiCubes mesh
+        (101-channel sparse mesh decoder) registered to the DB tree
+      - Multi-object scene mode: SAM3 text-prompt segmentation builds per-object
+        masks, with a masks-over-image preview to tune the prompt set before the
+        per-object reconstruction; official per-object mask directories also supported
+      - Object isolation via the shared RMBG model, image alpha channels, or
+        mask images (binary alpha contract)
+      - Optional official PBR texture bake (xatlas UV unwrap → PBR → Y-up GLB;
+        CUDA, build-capability gated) replacing the projection bake
+      - Device / quantization / steps / seed controls following the official
+        trajectory gate (q4_k, 25 steps, seed 42); GGUF auto-download with
+        pinned SHA-256 from Asher-1/SAM_3D_OBJECTS_GGUF
+      - CMake: `PLUGIN_STANDARD_QSAM3D=ON` + `AICore_ENABLED=ON`
+    - Add qAnyLabeling plugin: native Qt image / video / point-cloud annotation
+      workspace inspired by X-AnyLabeling (upstream images under GPL-3.0;
+      independent C++ implementation on Qt + AICore)
+      - Image workspace: X-AnyLabeling JSON sidecars, polygon / rectangle /
+        rotation / quadrilateral / circle / line / point / line-strip / cuboid
+        shapes, brush + magic-wand editing, exact-alpha semantic masks,
+        undo/redo, label / shape / tag managers, Navigator + Compare View,
+        canvas display panel (opacity / brightness / contrast), and i18n
+        (en / zh_CN / ja_JP / ko_KR)
+      - Import / export: YOLO (boxes, segments, OBB, pose), COCO (det / seg /
+        keypoints incl. RLE masks), VOC, DOTA, MOT / MOTS, ODVG, VLM-R1 OVD,
+        PP-OCR Rec / KIE, image-flag templates, and video classification sidecars
+      - AI model panel over the AICore catalogs: DA3 depth, DeepLSD, ALIKED,
+        YOLO / YOLO-World / YOLOE (text, prompt-free, SAVPE visual prompts),
+        RF-DETR, SAM 2.1 / SAM 3 (point / box / text prompts), RMBG, GKD
+        keypoints, FaceDetect (+ dense landmarks), and the LoMa bridge;
+        Auto Run batch inference with atomic per-image saves
+      - SAM3 video tracking: text / box / point prompts, per-instance masks
+        with track IDs, archive export / import (`manifest.json` + PNG masks),
+        video classifier segments, clip export, and per-label dataset export
+      - Point-cloud annotation: `.bin` XYZI + PLY with `.label` semantic /
+        instance streams (16-bit semantic + 16-bit instance), orbit / top /
+        front / side views, brush and polygon assignment, and class definition JSON
+      - CMake: `PLUGIN_STANDARD_QANYLABELING=ON` + `AICore_ENABLED=ON`
 - New features:
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)
       - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules

@@ -528,6 +528,14 @@ aicore_add_capi_test(test_facedetect_dense_validation facedetect LABELS capi;mod
 aicore_add_capi_test(test_facedetect_match_capi facedetect)
 aicore_add_capi_test(test_facedetect_contexts_capi facedetect LABELS capi;model)
 
+# Detector-only validation for the pure-detector SCRFD packs (no recognizer
+# head, e.g. scrfd_10g_bnkps): real-image detection + run-to-run stability.
+aicore_add_facedetect_capi_test(test_facedetect_detect_only)
+set_tests_properties(test_facedetect_detect_only
+    PROPERTIES LABELS "capi;model;validation"
+               SKIP_RETURN_CODE 77
+               TIMEOUT 1800)
+
 # FaceDetect C API contract test (no GGUF assets: ABI, catalog, lifecycle,
 # null guards — see tests/facedetect/test_facedetect_capi_contract.cpp).
 aicore_add_capi_test(test_facedetect_capi_contract facedetect LABELS capi)
@@ -603,6 +611,9 @@ target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore_sam3_diagnostics AICore
 add_executable(cmp_sam3_mask_triage sam3/cmp_sam3_mask_triage.cpp)
 target_link_libraries(cmp_sam3_mask_triage PRIVATE AICore_sam3_diagnostics AICore)
 set_target_properties(cmp_sam3_mask_triage PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Same grouped runtime dir as cmp_sam3_vit_stages — without this the triage
+# probe would land in bin/ root and miss the aicore_tests ggml backend copies.
+cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_mask_triage)
 if(NOT MSVC)
     target_compile_options(cmp_sam3_vit_stages PRIVATE -Wall -Wextra -fPIC)
     target_link_options(cmp_sam3_vit_stages PRIVATE "-no-pie")
@@ -833,6 +844,38 @@ function(aicore_configure_model_test_assets)
                 ENVIRONMENT "${_env};AICORE_TEST_DEVICE=${AICORE_ALIKED_PARITY_DEVICE}")
         endif()
     endforeach()
+
+    # OCR interpreter parity probes: full rec/det graphs against the pinned
+    # PaddlePaddle fixtures. The probe exits 77 when the fixtures or the
+    # f32 models have not been fetched into the asset root.
+    add_test(
+        NAME probe_ocr_rec
+        COMMAND $<TARGET_FILE:test_ocr_runtime>
+                ${_root}/ocr_fixtures
+                ${_root}/ocr_models/ppocr-rec-ch-f32.gguf
+                rec
+                ${AICORE_TEST_DEVICE})
+    set_tests_properties(probe_ocr_rec PROPERTIES
+        SKIP_RETURN_CODE 77
+        TIMEOUT 1800
+        LABELS "capi;model;ocr"
+        ENVIRONMENT "${_env}")
+    add_test(
+        NAME probe_ocr_det
+        COMMAND $<TARGET_FILE:test_ocr_runtime>
+                ${_root}/ocr_fixtures
+                ${_root}/ocr_models/ppocr-det-ch-f32.gguf
+                det
+                ${AICORE_TEST_DEVICE})
+    set_tests_properties(probe_ocr_det PROPERTIES
+        SKIP_RETURN_CODE 77
+        TIMEOUT 1800
+        LABELS "capi;model;ocr"
+        ENVIRONMENT "${_env}")
+    if(AICORE_TEST_AUTO_DOWNLOAD)
+        set_tests_properties(probe_ocr_rec probe_ocr_det PROPERTIES
+            FIXTURES_REQUIRED aicore_model_assets)
+    endif()
 
     # Do not let the small q8 extractor hide behind the GUI f16 baseline.
     # It is a separately supported C API model and must meet the same strict

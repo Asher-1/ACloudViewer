@@ -24,6 +24,7 @@ enum E2eStage {
     kStageSlatFlow = 5,
     kStageGsDecode = 6,
     kStageMeshDecode = 7,
+    kStagePbr = 8,
 };
 
 // In-memory result sink for callers that want the pipeline artifacts without
@@ -44,6 +45,20 @@ struct Sam3dArtifacts {
     std::vector<float> splat_rgb;          // 3 * N (display 0..1)
     std::vector<float> mesh_vertices;      // 3 * V
     std::vector<uint32_t> mesh_triangles;  // 3 * F
+    //! Official SLatMeshDecoder use_color payload: 6 floats per vertex —
+    //! RGB at [0:3] and the learned normal at [3:6], interpolated from the
+    //! FlexiCubes feature's color channels (neural-field vertex colors, the
+    //! official non-baked GLB color source).
+    std::vector<float> mesh_vertex_attributes;  // 6 * V
+    // ---- official native PBR assembly outputs (out_pbr + artifact sink) ---
+    // The mesh_* fields above are overwritten with the FINAL Y-up simplified
+    // mesh when the PBR branch runs; these carry the textured-GLB extras.
+    std::vector<float> mesh_normals;        // 3 * V (PBR result; empty otherwise)
+    std::vector<float> pbr_texcoords;       // 2 * V, glTF V-flip already applied
+    int pbr_texture_width = 0;
+    int pbr_texture_height = 0;
+    std::vector<uint8_t> pbr_texture_rgba;  // 4 * w * h
+    bool has_pbr = false;
     // ---- scene-composer interchange attributes (scene_attributes = true) --
     std::vector<float> splat_sh0;           // 3 * N, raw f_dc (SH coefficient 0)
     std::vector<float> splat_log_scale;     // 3 * N, PLY scale_N (log space)
@@ -146,6 +161,20 @@ struct E2eOptions {
     // per-splat artifact footprint by 44 bytes; off by default because the
     // single-object consumers never read them.
     bool scene_attributes = false;
+
+    // Official native PBR assembly knobs. The branch triggers on a non-empty
+    // out_pbr (upstream --pbr-out semantics); these refine the bake (0 = the
+    // official 1024 atlas / 2500 Adam/TV steps).
+    int pbr_texture_size = 0;
+    int pbr_steps = 0;
+    // Frozen-input PBR test path (the upstream Vulkan→CUDA interchange): when
+    // set, the PBR branch consumes these raw FlexiCubes SAMT tensors and this
+    // Gaussian PLY instead of the freshly decoded mesh / the exported PLY.
+    // Empty = the normal generation flow. This is what makes the official
+    // pbr-assemble A/B (frozen mesh → cleanup → render → bake) possible.
+    std::string in_mesh_vertices;
+    std::string in_mesh_faces;
+    std::string in_ply;
 
     // Optional stage-level progress reporting. Never invoked from multiple
     // threads: cmd_e2e is single-threaded across its stage boundaries.

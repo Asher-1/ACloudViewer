@@ -1139,7 +1139,8 @@ def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[s
                 "kpt_median_px", "descriptor_cosine_median",
                 # lingbot upstream-parity probe (test_lingbot_stream_parity)
                 "pose_t_rmse", "pose_quat_maxdiff", "intr_maxdiff",
-                "depth_pool_rel_rmse", "conf_mean_maxdiff"}:
+                "depth_pool_rel_rmse", "conf_mean_maxdiff",
+                "max_diff", "mean_diff", "argmax_match"}:
             metrics[prefix] = float(value)
     elif isinstance(value, str):
         leaf = prefix.rsplit("/", 1)[-1].lower()

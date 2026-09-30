@@ -38,6 +38,7 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qRFDetr** | `PLUGIN_STANDARD_QRFDETR` | [docs/guides/plugins/qRFDetr.md](../docs/guides/plugins/qRFDetr.md) | [qRFDetr/README.md](core/Standard/qRFDetr/README.md) |
 | **qRMBG** | `PLUGIN_STANDARD_QRMBG` | [docs/guides/plugins/qRMBG.md](../docs/guides/plugins/qRMBG.md) | [qRMBG/README.md](core/Standard/qRMBG/README.md) |
 | **qYOLO** | `PLUGIN_STANDARD_QYOLO` | [docs/guides/plugins/qYOLO.md](../docs/guides/plugins/qYOLO.md) | [qYOLO/README.md](core/Standard/qYOLO/README.md) |
+| **qAnyLabeling** | `PLUGIN_STANDARD_QANYLABELING` | — | [qAnyLabeling/README.md](core/Standard/qAnyLabeling/README.md) |
 | **qSAM3** | `PLUGIN_STANDARD_QSAM3` | [docs/guides/plugins/qSAM3.md](../docs/guides/plugins/qSAM3.md) | [qSAM3/README.md](core/Standard/qSAM3/README.md) |
 | **qSAM3D** | `PLUGIN_STANDARD_QSAM3D` | — | [qSAM3D/README.md](core/Standard/qSAM3D/README.md) |
 | **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
@@ -62,8 +63,10 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QSAM3=ON \
       -DPLUGIN_STANDARD_QTRELLIS=ON \
       -DPLUGIN_STANDARD_QGKD=ON \
+      -DPLUGIN_STANDARD_QOCR=ON \
       -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QSAM3D=ON \
+      -DPLUGIN_STANDARD_QANYLABELING=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

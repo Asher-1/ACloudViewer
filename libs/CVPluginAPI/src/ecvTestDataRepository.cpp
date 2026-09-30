@@ -95,6 +95,31 @@ constexpr const char* kGkdDownloadUrl =
 constexpr const char* kGkdSha256 =
         "14da5f5296fcac60a248cde7623f8d93d9fa6b29b8cc9a94a0258f5da4189e23";
 
+// Official LightGlue demo pair (qLightGlue): the day/night, wide-baseline
+// sacre_coeur images shipped by the upstream repo and consumed by the AICore
+// parity tests. The release asset carries no published digest yet, so the
+// anchor stays empty on purpose (ecvAssetIntegrity "no content pin": the 1 MB
+// ingestion gate plus a size-only ledger entry; pin a SHA-256 here once the
+// release publishes one).
+constexpr const char* kLightGlueZipName = "lightglue_test_images.zip";
+constexpr const char* kLightGlueExtractDir = "lightglue_test_images";
+constexpr const char* kLightGlueDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/"
+        "download/LightGlue/lightglue_test_images.zip";
+constexpr const char* kLightGlueSha256 = "";
+
+// PaddleOCR official demo/test images (qOCR + qAnyLabeling). 60 images
+// straight from the PaddleOCR repo: pytest test_files, street scenes,
+// release/2.7 scene shots, and the ch/en single-word crops the official
+// recognition demos use. MANIFEST.txt inside carries per-file SHA-256.
+constexpr const char* kPpocrZipName = "ppocr_testdata.zip";
+constexpr const char* kPpocrExtractDir = "ppocr_testdata";
+constexpr const char* kPpocrDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/"
+        "download/PP-OCR/ppocr_testdata.zip";
+constexpr const char* kPpocrSha256 =
+        "ef1374e4ac9f2d99832faa96e01c8fab97d102e9ac3b0f16815f81bcc8c23356";
+
 // LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
 // demo sequences (courthouse/loop/oxford/university, pre-cropped to the
 // 518-wide processing grid) plus the cached native sky masks for the two
@@ -259,6 +284,20 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kGkdExtractDir),
                     QString::fromLatin1(kGkdDownloadUrl),
                     {QCryptographicHash::Sha256, QByteArray(kGkdSha256)}};
+        case Dataset::LightGlueTestImages:
+            return {kind,
+                    QStringLiteral("LightGlueTestImages"),
+                    QString::fromLatin1(kLightGlueZipName),
+                    QString::fromLatin1(kLightGlueExtractDir),
+                    QString::fromLatin1(kLightGlueDownloadUrl),
+                    {QCryptographicHash::Sha256, QByteArray(kLightGlueSha256)}};
+        case Dataset::Ppocr:
+            return {kind,
+                    QStringLiteral("PaddleOCR demo images"),
+                    QString::fromLatin1(kPpocrZipName),
+                    QString::fromLatin1(kPpocrExtractDir),
+                    QString::fromLatin1(kPpocrDownloadUrl),
+                    {QCryptographicHash::Sha256, QByteArray(kPpocrSha256)}};
         case Dataset::LingbotMapCourthouse:
             return {kind,
                     QStringLiteral("LingBot-Map courthouse (outdoor)"),
@@ -426,6 +465,14 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
             // The official GKDT demo images must all be present.
             extractedComplete =
                     !getGeneralKeypointDetectionImages(extract).isEmpty();
+            break;
+        case Dataset::LightGlueTestImages:
+            // The demo pair must both be present in the extraction tree.
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("sacre_coeur1.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind, QStringLiteral("sacre_coeur2.jpg"))
+                             .isEmpty();
             break;
         case Dataset::LingbotMapCourthouse:
         case Dataset::LingbotMapLoop:

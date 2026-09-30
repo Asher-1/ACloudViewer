@@ -49,9 +49,11 @@ public:
         Image2Mesh,        ///< Single-image-to-3D samples (qTrellis etc.)
         SAM3,              ///< SAM3 segmentation images + tracking videos
         GeneralKeypointDetection,  ///< Official GKDT demo images (qGKD)
-        LingbotMapCourthouse,      ///< LingBot-Map courthouse stream (outdoor)
-        LingbotMapLoop,            ///< LingBot-Map loop-closure stream (indoor)
-        LingbotMapOxford,  ///< LingBot-Map Oxford Spires stream (outdoor)
+        LightGlueTestImages,  ///< Official LightGlue demo pair (qLightGlue)
+        Ppocr,  ///< Official PaddleOCR demo/test images (qOCR, qAnyLabeling)
+        LingbotMapCourthouse,  ///< LingBot-Map courthouse stream (outdoor)
+        LingbotMapLoop,        ///< LingBot-Map loop-closure stream (indoor)
+        LingbotMapOxford,      ///< LingBot-Map Oxford Spires stream (outdoor)
         LingbotMapOxfordSkyMasks,  ///< Cached native sky masks for oxford
         LingbotMapUniversity,      ///< LingBot-Map university stream (outdoor)
         LingbotMapUniversitySkyMasks,  ///< Cached sky masks for university

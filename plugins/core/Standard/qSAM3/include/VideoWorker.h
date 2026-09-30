@@ -23,7 +23,7 @@
 #include <QWaitCondition>
 #include <atomic>
 
-#include "SAM3Worker.h"  // SAM3WorkerResult / Prompt types
+#include "SAM3Types.h"
 
 class VideoWorker : public QThread {
     Q_OBJECT
@@ -43,10 +43,10 @@ public:
         QString device = "auto";
         QString textPrompt;
         float scoreThreshold = 0.5f;
-        QImage frame;               // TrackFrame
-        int frameIndex = -1;        // TrackFrame: source frame number
-        SAM3Worker::Prompt prompt;  // AddInstance / RefineInstance
-        int instanceId = -1;        // RefineInstance
+        QImage frame;         // TrackFrame
+        int frameIndex = -1;  // TrackFrame: source frame number
+        SAM3Prompt prompt;    // AddInstance / RefineInstance
+        int instanceId = -1;  // RefineInstance
         bool cancel = false;
     };
 

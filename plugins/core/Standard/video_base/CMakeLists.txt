@@ -100,6 +100,7 @@ if(NOT MSVC)
     target_compile_options( test_video_base_gestures PRIVATE -fPIC)
     target_link_options( test_video_base_gestures PRIVATE "-no-pie")
 endif()
+cloudviewer_set_bin_runtime_output_directory(test_video_base_gestures)
 # Tier attachment is automatic: aicore_register_test (defined in
 # core/AICore/tests/CMakeLists.txt) registers the ctest entry and attaches the
 # binary to the matching AICore tier — there is no cross-directory dependency

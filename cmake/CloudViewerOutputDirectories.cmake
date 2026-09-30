@@ -100,9 +100,14 @@ function(cloudviewer_set_plugin_module_output_directory target)
     endif()
 endfunction()
 
+# Plugin / plugin-API unit tests are grouped under bin/plugin_test/
+# (mirroring bin/colmap_test/ and bin/aicore_tests/) so the main bin/ only
+# holds the app, plugins, and shared libraries. ctest resolves each binary
+# through the target name / $<TARGET_FILE>, and build-tree RPATHs are
+# absolute, so the subfolder does not affect test discovery or loading.
 function(cloudviewer_set_bin_runtime_output_directory target)
     if(MSVC)
-        set(_bin_root "${CMAKE_BINARY_DIR}/bin")
+        set(_bin_root "${CMAKE_BINARY_DIR}/bin/plugin_test")
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${_bin_root}/Debug"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${_bin_root}/Release"
@@ -110,7 +115,7 @@ function(cloudviewer_set_bin_runtime_output_directory target)
         )
     else()
         set_target_properties(${target} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugin_test"
         )
     endif()
 endfunction()

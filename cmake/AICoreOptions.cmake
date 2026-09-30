@@ -96,6 +96,47 @@ option(AICore_CPU_ALL_VARIANTS
     "Build all ggml CPU micro-architecture backend variants (llama.cpp release style; +~15MB on x86)"
     OFF)
 
+# --- task-private build wiring (declared here, wired by the owning task) ---
+# These options belong to one task under core/AICore/src/tasks/; the wiring
+# itself lives next to the task (sam3d/cmake/pbr.cmake,
+# trellis/cmake/cumesh.cmake) and is included from
+# core/AICore/CMakeLists.txt. They are DECLARED here —
+# before find_dependencies.cmake — so the bundled OpenCV build
+# (3rdparty/opencv/opencv_build.cmake) can wire its photo module from the
+# SAM3D PBR switch; core/AICore keeps only the cross-module CUDA linkage
+# check. Keep option names/strings in sync with the docs (BUILD.md; CuMesh
+# rows live in core/AICore/docs/ARCHITECTURE.md).
+#
+# PLUGIN_STANDARD_QSAM3D is pre-declared here for the same reason: the PBR
+# auto-enable below reads it, and the photo wiring inherits the result —
+# both run before plugins/core/Standard/qSAM3D/CMakeLists.txt (root L800,
+# after core) gets to declare it. That plugin-side option() then no-ops on
+# this cache entry — keep the docstring identical.
+option( PLUGIN_STANDARD_QSAM3D "Install qSAM3D (SAM 3D Objects image-to-3D GGML) plugin" OFF )
+
+# SAM3D PBR auto-enable: CUDA + the qSAM3D plugin. An explicit
+# -DAICore_USE_SAM3D_PBR=ON/OFF always wins (option() never overwrites an
+# existing cache entry). 3rdparty_vtk availability cannot be known this
+# early (the VTK section of find_dependencies runs later) — pbr.cmake
+# degrades with a warning (CuMesh-style ladder) when the target was never
+# created, so the auto-enabled default stays build-safe.
+set(_sam3d_pbr_auto OFF)
+if(AICore_USE_CUDA AND PLUGIN_STANDARD_QSAM3D)
+    set(_sam3d_pbr_auto ON)
+endif()
+option(AICore_USE_SAM3D_PBR
+    "SAM3D: official native PBR pipeline (CUDA-only; auto-ON with AICore_USE_CUDA=ON + PLUGIN_STANDARD_QSAM3D=ON; opt-in vendors: nvdiffrast NC, mip-splatting NC, pymeshfix GPL)"
+    ${_sam3d_pbr_auto})
+option(AICore_USE_SAM3D_PBR_NVDIFFRAST
+    "SAM3D PBR: compile+link the vendored nvdiffrast 253ac4f cudaraster core (NVIDIA non-commercial license acknowledgment)"
+    ON)
+option(AICore_USE_SAM3D_PBR_MESHFIX
+    "SAM3D PBR: compile+link the vendored pymeshfix 79adef9 TMesh boundary repair (GPL-3.0-or-commercial license acknowledgment)"
+    ON)
+option(AICore_USE_CUMESH
+    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; auto-disabled with a warning when CUDA/libtorch/Python headers are unavailable)"
+    ON)
+
 # Read-only configure results: set only in aicore_sync_results_from_ggml() as CACHE
 # entries. Do NOT initialize normal variables here — they would shadow the cache
 # and break ${AICore_*_ENABLED} reads (e.g. summary showing OFF while ggml built Vulkan).

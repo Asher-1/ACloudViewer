@@ -59,6 +59,8 @@ int main() {
     aicore_sam3d_options_set_noise_dir(nullptr, "noise");
     aicore_sam3d_options_set_conditions_out(nullptr, "conditions");
     aicore_sam3d_options_set_device(nullptr, "cpu");
+    aicore_sam3d_options_set_pbr(nullptr, 1, 0, 0);
+    aicore_sam3d_options_set_pbr_frozen_input(nullptr, "v", "f", "p");
     aicore_sam3d_options_free(nullptr);
 
     aicore_sam3d_options* options = aicore_sam3d_options_new();
@@ -78,6 +80,38 @@ int main() {
     check(lazy_ctx != nullptr,
           "load_opts with missing models still constructs (lazy weights)");
     aicore_sam3d_free(lazy_ctx);
+    aicore_sam3d_options_free(options);
+
+    // PBR runtime gate: a non-CUDA session must reject the official PBR
+    // assembly with the explicit interchange guidance before any weight IO
+    // (model-free). On a CUDA-PBR build the resolved "cpu" backend hits the
+    // session gate; on builds without the license-gated PBR vendors the C API
+    // caps pre-check rejects first. Both explicit errors name CUDA.
+    options = aicore_sam3d_options_new();
+    aicore_sam3d_options_set_models_dir(options,
+                                        "/nonexistent-sam3d-models-dir");
+    aicore_sam3d_options_set_device(options, "cpu");
+    aicore_sam3d_options_set_pbr(options, 1, 0, 0);
+    aicore_sam3d_ctx* pbr_ctx =
+            aicore_sam3d_load_opts(options, err, sizeof(err));
+    check(pbr_ctx != nullptr, "PBR lazy context constructs");
+    if (pbr_ctx != nullptr) {
+        const uint8_t pixels[2 * 2 * 3] = {0};
+        aicore_image_view view{};
+        view.data = pixels;
+        view.width = 2;
+        view.height = 2;
+        view.row_stride_bytes = 2 * 3;
+        view.format = AICORE_IMAGE_RGB8;
+        aicore_sam3d_result* pbr_result = aicore_sam3d_generate(
+                pbr_ctx, &view, nullptr, "unused.ply", 0, nullptr, nullptr);
+        check(pbr_result == nullptr, "PBR on a non-CUDA session is rejected");
+        const char* pbr_error = aicore_sam3d_last_error(pbr_ctx);
+        check(pbr_error != nullptr && std::strstr(pbr_error, "CUDA") != nullptr,
+              "PBR rejection names the CUDA requirement");
+        aicore_sam3d_result_free(pbr_result);
+        aicore_sam3d_free(pbr_ctx);
+    }
     aicore_sam3d_options_free(options);
 
     // NULL-context accessors.
@@ -129,6 +163,11 @@ int main() {
     check(std::strstr(aicore_sam3d_info_json(), "\"task\":\"sam3d\"") !=
                   nullptr,
           "info json");
+    // Build capability field (compile-scoped, same gate as the caps bit):
+    // UI consumers default their PBR controls from it. The value is
+    // build-dependent, so only the field presence is asserted here.
+    check(std::strstr(aicore_sam3d_info_json(), "\"pbr\":") != nullptr,
+          "info json carries the pbr build capability");
 
     if (failures == 0) {
         std::printf("sam3d capi contract: all checks passed\n");

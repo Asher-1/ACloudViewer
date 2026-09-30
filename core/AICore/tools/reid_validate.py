@@ -172,7 +172,7 @@ def main():
     ap.add_argument("--pt", default="/tmp/reid/yolo26n-cls.pt")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--quant", default="f16")
-    ap.add_argument("--probe", default="build_app/bin/reid_probe")
+    ap.add_argument("--probe", default="build_app/bin/aicore_tests/reid_probe")
     ap.add_argument("--output", default=None)
     args = ap.parse_args()
 
