@@ -40,6 +40,7 @@
 
 #include "scene/reconstruction.h"
 #include "scene/projection.h"
+#include "sfm/observation_manager.h"
 #include "controllers/automatic_reconstruction.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
@@ -662,16 +663,14 @@ int RunPointFiltering(int argc, char** argv) {
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
 
+  // Upstream parity (d3ccaf35 exe/sfm.cc point_filtering): filtering runs
+  // through the observation manager so the visibility ledger stays in sync;
+  // short-track pruning uses the manager's dedicated filter instead of a
+  // manual DeletePoint3D loop that bypasses the bookkeeping.
+  ObservationManager obs_manager(reconstruction);
   size_t num_filtered =
-      reconstruction.FilterAllPoints3D(max_reproj_error, min_tri_angle);
-
-  for (const auto point3D_id : reconstruction.Point3DIds()) {
-    const auto& point3D = reconstruction.Point3D(point3D_id);
-    if (point3D.Track().Length() < min_track_len) {
-      num_filtered += point3D.Track().Length();
-      reconstruction.DeletePoint3D(point3D_id);
-    }
-  }
+      obs_manager.FilterAllPoints3D(max_reproj_error, min_tri_angle);
+  num_filtered += obs_manager.FilterPoints3DWithShortTracks(min_track_len);
 
   std::cout << "Filtered observations: " << num_filtered << std::endl;
 

@@ -114,27 +114,6 @@ public:
     inline point2D_t NumCorrespondences() const;
     inline void SetNumCorrespondences(const point2D_t num_observations);
 
-    // Get the number of observations that see a triangulated point, i.e. the
-    // number of image points that have at least one correspondence to a
-    // triangulated point in another image.
-    inline point2D_t NumVisiblePoints3D() const;
-
-    // Get the score of triangulated observations. In contrast to
-    // `NumVisiblePoints3D`, this score also captures the distribution
-    // of triangulated observations in the image. This is useful to select
-    // the next best image in incremental reconstruction, because a more
-    // uniform distribution of observations results in more robust registration.
-    inline size_t Point3DVisibilityScore() const;
-
-    // Access the number of correspondences that have a 3D point per image
-    // point.
-    inline const std::vector<point2D_t>& NumCorrespondencesHavePoint3D() const;
-    inline std::vector<point2D_t>& NumCorrespondencesHavePoint3D();
-
-    // Access the visibility pyramid for triangulated correspondences.
-    inline const VisibilityPyramid& Point3DVisibilityPyramid() const;
-    inline VisibilityPyramid& Point3DVisibilityPyramid();
-
     // Access quaternion vector as (qw, qx, qy, qz) specifying the rotation of
     // the pose which is defined as the transformation from world to image
     // space.
@@ -193,24 +172,8 @@ public:
     // track.
     void ResetPoint3DForPoint2D(const point2D_t point2D_idx);
 
-    // Check whether an image point has a correspondence to an image point in
-    // another image that has a 3D point.
-    inline bool IsPoint3DVisible(const point2D_t point2D_idx) const;
-
     // Check whether one of the image points is part of the 3D point track.
     bool HasPoint3D(const point3D_t point3D_id) const;
-
-    // Indicate that another image has a point that is triangulated and has
-    // a correspondence to this image point. Note that this must only be called
-    // after calling `SetUp`.
-    void IncrementCorrespondenceHasPoint3D(const point2D_t point2D_idx);
-
-    // Indicate that another image has a point that is not triangulated any more
-    // and has a correspondence to this image point. This assumes that
-    // `IncrementCorrespondenceHasPoint3D` was called for the same image point
-    // and correspondence before. Note that this must only be called
-    // after calling `SetUp`.
-    void DecrementCorrespondenceHasPoint3D(const point2D_t point2D_idx);
 
     // Normalize the quaternion vector.
     void NormalizeQvec();
@@ -229,9 +192,6 @@ public:
 
     // Extract the viewing direction of the image.
     Eigen::Vector3d ViewingDirection() const;
-
-    // The number of levels in the 3D point multi-resolution visibility pyramid.
-    static const int kNumPoint3DVisibilityPyramidLevels;
 
 private:
     // Identifier of the image, if not specified `kInvalidImageId`.
@@ -261,11 +221,6 @@ private:
     // The sum of correspondences per image point.
     point2D_t num_correspondences_;
 
-    // The number of 2D points, which have at least one corresponding 2D point
-    // in another image that is part of a 3D point track, i.e. the sum of
-    // `points2D` where `num_tris > 0`.
-    point2D_t num_visible_points3D_;
-
     // The pose of the image, defined as the transformation from world to image.
     Eigen::Vector4d qvec_;
     Eigen::Vector3d tvec_;
@@ -276,14 +231,6 @@ private:
 
     // All image points, including points that are not part of a 3D point track.
     std::vector<class Point2D> points2D_;
-
-    // Per image point, the number of correspondences that have a 3D point.
-    std::vector<point2D_t> num_correspondences_have_point3D_;
-
-    // Data structure to compute the distribution of triangulated
-    // correspondences in the image. Note that this structure is only usable
-    // after `SetUp`.
-    VisibilityPyramid point3D_visibility_pyramid_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -329,28 +276,6 @@ point2D_t Image::NumCorrespondences() const { return num_correspondences_; }
 
 void Image::SetNumCorrespondences(const point2D_t num_correspondences) {
     num_correspondences_ = num_correspondences;
-}
-
-point2D_t Image::NumVisiblePoints3D() const { return num_visible_points3D_; }
-
-size_t Image::Point3DVisibilityScore() const {
-    return point3D_visibility_pyramid_.Score();
-}
-
-const std::vector<point2D_t>& Image::NumCorrespondencesHavePoint3D() const {
-    return num_correspondences_have_point3D_;
-}
-
-std::vector<point2D_t>& Image::NumCorrespondencesHavePoint3D() {
-    return num_correspondences_have_point3D_;
-}
-
-const VisibilityPyramid& Image::Point3DVisibilityPyramid() const {
-    return point3D_visibility_pyramid_;
-}
-
-VisibilityPyramid& Image::Point3DVisibilityPyramid() {
-    return point3D_visibility_pyramid_;
 }
 
 const Eigen::Vector4d& Image::Qvec() const { return qvec_; }
@@ -433,10 +358,6 @@ inline bool Image::operator==(const Image& other) const {
 
 inline bool Image::operator!=(const Image& other) const {
     return !(*this == other);
-}
-
-bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
-    return num_correspondences_have_point3D_.at(point2D_idx) > 0;
 }
 
 inline class Camera* Image::CameraPtr() const {

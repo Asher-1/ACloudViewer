@@ -51,17 +51,14 @@
 
 namespace colmap {
 
-Reconstruction::Reconstruction()
-    : correspondence_graph_(nullptr), num_added_points3D_(0) {}
+Reconstruction::Reconstruction() : num_added_points3D_(0) {}
 
 Reconstruction::Reconstruction(const Reconstruction& other)
-    : correspondence_graph_(other.correspondence_graph_),
-      cameras_(other.Cameras()),
+    : cameras_(other.Cameras()),
       images_(other.Images()),
       rigs_(other.Rigs()),
       frames_(other.Frames()),
       points3D_(other.Points3D()),
-      image_pair_stats_(other.ImagePairs()),
       reg_image_ids_(other.RegImageIds()),
       reg_frame_ids_(other.reg_frame_ids_),
       num_added_points3D_(other.NumAddedPoints3D()) {
@@ -70,13 +67,11 @@ Reconstruction::Reconstruction(const Reconstruction& other)
 
 Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
     if (this != &other) {
-        correspondence_graph_ = other.correspondence_graph_;
         cameras_ = other.Cameras();
         images_ = other.Images();
         rigs_ = other.Rigs();
         frames_ = other.Frames();
         points3D_ = other.Points3D();
-        image_pair_stats_ = other.ImagePairs();
         reg_image_ids_ = other.RegImageIds();
         reg_frame_ids_ = other.reg_frame_ids_;
         num_added_points3D_ = other.NumAddedPoints3D();
@@ -115,7 +110,6 @@ NodeHashSet<point3D_t> Reconstruction::Point3DIds() const {
 }
 
 void Reconstruction::Load(const DatabaseCache& database_cache) {
-    correspondence_graph_ = nullptr;
 
     // Add cameras.
     cameras_.reserve(database_cache.NumCameras());
@@ -178,46 +172,14 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
         }
     }
 
-    // Add image pairs (fork-specific statistics kept for the legacy
-    // observation bookkeeping).
-    for (const auto& image_pair :
-         database_cache.CorrespondenceGraph()->NumMatchesBetweenAllImages()) {
-        ImagePairStat image_pair_stat;
-        image_pair_stat.num_total_corrs = image_pair.second;
-        image_pair_stats_.emplace(image_pair.first, image_pair_stat);
-    }
 }
 
-void Reconstruction::SetUp(
-        std::shared_ptr<const CorrespondenceGraph> correspondence_graph) {
-    THROW_CHECK_NOTNULL(correspondence_graph);
-    for (auto& image : images_) {
-        image.second.SetUp(Camera(image.second.CameraId()));
-    }
-    correspondence_graph_ = correspondence_graph;
-
-    // If an existing model was loaded from disk and there were already images
-    // registered previously, we need to set observations as triangulated.
-    for (const auto image_id : reg_image_ids_) {
-        const class Image& image = Image(image_id);
-        for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
-             ++point2D_idx) {
-            if (image.Point2D(point2D_idx).HasPoint3D()) {
-                const bool kIsContinuedPoint3D = false;
-                SetObservationAsTriangulated(image_id, point2D_idx,
-                                             kIsContinuedPoint3D);
-            }
-        }
-    }
-}
 
 void Reconstruction::TearDown() {
     // Upstream parity (dbb41680 scene/reconstruction.cc): frame-level
     // teardown. Frames without a pose are removed together with their
     // images; rigs without kept frames are removed together with their
     // sensors' cameras.
-    (void)correspondence_graph_;
-    image_pair_stats_.clear();
 
     // Remove all non-registered frames/images.
     FlatHashSet<rig_t> keep_rig_ids;
@@ -372,8 +334,6 @@ point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
     const bool kIsContinuedPoint3D = false;
 
     for (const auto& track_el : track.Elements()) {
-        SetObservationAsTriangulated(track_el.image_id, track_el.point2D_idx,
-                                     kIsContinuedPoint3D);
     }
 
     return point3D_id;
@@ -411,8 +371,6 @@ void Reconstruction::AddObservation(const point3D_t point3D_id,
     point3D.Track().AddElement(track_el);
 
     const bool kIsContinuedPoint3D = true;
-    SetObservationAsTriangulated(track_el.image_id, track_el.point2D_idx,
-                                 kIsContinuedPoint3D);
 }
 
 point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
@@ -452,8 +410,6 @@ void Reconstruction::DeletePoint3D(const point3D_t point3D_id) {
     const bool kIsDeletedPoint3D = true;
 
     for (const auto& track_el : track.Elements()) {
-        ResetTriObservations(track_el.image_id, track_el.point2D_idx,
-                             kIsDeletedPoint3D);
     }
 
     for (const auto& track_el : track.Elements()) {
@@ -481,7 +437,6 @@ void Reconstruction::DeleteObservation(const image_t image_id,
     point3D.Track().DeleteElement(image_id, point2D_idx);
 
     const bool kIsDeletedPoint3D = false;
-    ResetTriObservations(image_id, point2D_idx, kIsDeletedPoint3D);
 
     image.ResetPoint3DForPoint2D(point2D_idx);
 }
@@ -1015,36 +970,6 @@ size_t Reconstruction::FilterPoints3D(
     return num_filtered;
 }
 
-size_t Reconstruction::FilterPoints3DInImages(
-        const double max_reproj_error,
-        const double min_tri_angle,
-        const NodeHashSet<image_t>& image_ids) {
-    NodeHashSet<point3D_t> point3D_ids;
-    for (const image_t image_id : image_ids) {
-        const class Image& image = Image(image_id);
-        for (const Point2D& point2D : image.Points2D()) {
-            if (point2D.HasPoint3D()) {
-                point3D_ids.insert(point2D.Point3DId());
-            }
-        }
-    }
-    return FilterPoints3D(max_reproj_error, min_tri_angle, point3D_ids);
-}
-
-size_t Reconstruction::FilterAllPoints3D(const double max_reproj_error,
-                                         const double min_tri_angle) {
-    // Important: First filter observations and points with large reprojection
-    // error, so that observations with large reprojection error do not make
-    // a point stable through a large triangulation angle.
-    const NodeHashSet<point3D_t>& point3D_ids = Point3DIds();
-    size_t num_filtered = 0;
-    num_filtered += FilterPoints3DWithLargeReprojectionError(max_reproj_error,
-                                                             point3D_ids);
-    num_filtered += FilterPoints3DWithSmallTriangulationAngle(min_tri_angle,
-                                                              point3D_ids);
-    return num_filtered;
-}
-
 size_t Reconstruction::FilterObservationsWithNegativeDepth() {
     size_t num_filtered = 0;
     for (const auto image_id : reg_image_ids_) {
@@ -1489,92 +1414,6 @@ size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
 
     return num_filtered;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-void Reconstruction::SetObservationAsTriangulated(
-        const image_t image_id,
-        const point2D_t point2D_idx,
-        const bool is_continued_point3D) {
-    if (correspondence_graph_ == nullptr) {
-        return;
-    }
-
-    const class Image& image = Image(image_id);
-    const Point2D& point2D = image.Point2D(point2D_idx);
-    const CorrespondenceGraph::CorrespondenceRange corrs =
-            correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
-
-    CHECK(image.IsRegistered());
-    CHECK(point2D.HasPoint3D());
-
-    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
-         corr < corrs.end; ++corr) {
-        class Image& corr_image = Image(corr->image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
-        corr_image.IncrementCorrespondenceHasPoint3D(corr->point2D_idx);
-        // Update number of shared 3D points between image pairs and make sure
-        // to only count the correspondences once (not twice forward and
-        // backward).
-        if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (is_continued_point3D || image_id < corr->image_id)) {
-            const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr->image_id);
-            image_pair_stats_[pair_id].num_tri_corrs += 1;
-            CHECK_LE(image_pair_stats_[pair_id].num_tri_corrs,
-                     image_pair_stats_[pair_id].num_total_corrs)
-                    << "The correspondence graph graph must not contain "
-                       "duplicate "
-                       "matches";
-        }
-    }
-}
-
-void Reconstruction::ResetTriObservations(const image_t image_id,
-                                          const point2D_t point2D_idx,
-                                          const bool is_deleted_point3D) {
-    if (correspondence_graph_ == nullptr) {
-        return;
-    }
-
-    const class Image& image = Image(image_id);
-    const Point2D& point2D = image.Point2D(point2D_idx);
-    const CorrespondenceGraph::CorrespondenceRange corrs =
-            correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
-
-    CHECK(image.IsRegistered());
-    CHECK(point2D.HasPoint3D());
-
-    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
-         corr < corrs.end; ++corr) {
-        class Image& corr_image = Image(corr->image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
-        corr_image.DecrementCorrespondenceHasPoint3D(corr->point2D_idx);
-        // Update number of shared 3D points between image pairs and make sure
-        // to only count the correspondences once (not twice forward and
-        // backward).
-        if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (!is_deleted_point3D || image_id < corr->image_id)) {
-            const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr->image_id);
-            image_pair_stats_[pair_id].num_tri_corrs -= 1;
-            CHECK_GE(image_pair_stats_[pair_id].num_tri_corrs, 0)
-                    << "The scene graph graph must not contain duplicate "
-                       "matches";
-        }
-    }
-}
-
 
 NodeHashSet<frame_t> Reconstruction::RegFrameIds() const {
   // Upstream d3ccaf35 semantics: registration is an explicit state held in

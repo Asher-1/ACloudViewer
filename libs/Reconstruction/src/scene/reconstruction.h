@@ -44,12 +44,6 @@ class CorrespondenceGraph;
 // written to and read from disk.
 class Reconstruction {
 public:
-    struct ImagePairStat {
-        // The number of triangulated correspondences between two images.
-        size_t num_tri_corrs = 0;
-        // The number of total correspondences/matches between two images.
-        size_t num_total_corrs = 0;
-    };
 
     Reconstruction();
 
@@ -73,7 +67,6 @@ public:
     inline size_t NumRegFrames() const { return reg_frame_ids_.size(); }
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
-    inline size_t NumImagePairs() const;
     inline size_t NumAddedPoints3D() const;
 
     // Get const objects.
@@ -82,9 +75,6 @@ public:
     inline const class Rig& Rig(const rig_t rig_id) const;
     inline const class Frame& Frame(const frame_t frame_id) const;
     inline const class Point3D& Point3D(const point3D_t point3D_id) const;
-    inline const ImagePairStat& ImagePair(const image_pair_t pair_id) const;
-    inline ImagePairStat& ImagePair(const image_t image_id1,
-                                    const image_t image_id2);
 
     // Get mutable objects.
     inline class Camera& Camera(const camera_t camera_id);
@@ -92,9 +82,6 @@ public:
     inline class Rig& Rig(const rig_t rig_id);
     inline class Frame& Frame(const frame_t frame_id);
     inline class Point3D& Point3D(const point3D_t point3D_id);
-    inline ImagePairStat& ImagePair(const image_pair_t pair_id);
-    inline const ImagePairStat& ImagePair(const image_t image_id1,
-                                          const image_t image_id2) const;
 
     // Get reference to all objects.
     inline const NodeHashMap<camera_t, class Camera>& Cameras() const;
@@ -115,7 +102,6 @@ public:
     void UpdatePoint3DErrors();
     inline const std::vector<image_t>& RegImageIds() const;
     inline const NodeHashMap<point3D_t, class Point3D>& Points3D() const;
-    inline const NodeHashMap<image_pair_t, ImagePairStat>& ImagePairs() const;
 
     // Identifiers of all 3D points.
     NodeHashSet<point3D_t> Point3DIds() const;
@@ -131,7 +117,6 @@ public:
     inline bool ExistsRig(const rig_t rig_id) const;
     inline bool ExistsFrame(const frame_t frame_id) const;
     inline bool ExistsPoint3D(const point3D_t point3D_id) const;
-    inline bool ExistsImagePair(const image_pair_t pair_id) const;
 
     // Load data from given `DatabaseCache`.
     void Load(const DatabaseCache& database_cache);
@@ -143,7 +128,6 @@ public:
     // surfacing as _Map_base::at in cross-run scenarios (batch C). Upstream
     // has no back-pointer here; the legacy fork bookkeeping still reads
     // the graph, so it holds a shared reference instead.
-    void SetUp(std::shared_ptr<const CorrespondenceGraph> correspondence_graph);
 
     // Finalize the Reconstruction after the reconstruction has finished.
     //
@@ -317,11 +301,6 @@ public:
     size_t FilterPoints3D(const double max_reproj_error,
                           const double min_tri_angle,
                           const NodeHashSet<point3D_t>& point3D_ids);
-    size_t FilterPoints3DInImages(const double max_reproj_error,
-                                  const double min_tri_angle,
-                                  const NodeHashSet<image_t>& image_ids);
-    size_t FilterAllPoints3D(const double max_reproj_error,
-                             const double min_tri_angle);
 
     // Filter observations that have negative depth.
     //
@@ -384,10 +363,6 @@ public:
     // Create all image sub-directories in the given path.
     void CreateImageDirs(const std::filesystem::path& path) const;
 
-    // Access the correspondence graph.
-    inline const CorrespondenceGraph* GetCorrespondenceGraph() const;
-    inline bool HasCorrespondenceGraph() const;
-
 private:
     size_t FilterPoints3DWithSmallTriangulationAngle(
             const double min_tri_angle,
@@ -401,14 +376,7 @@ private:
                              const double p1,
                              const bool use_images) const;
 
-    void SetObservationAsTriangulated(const image_t image_id,
-                                      const point2D_t point2D_idx,
-                                      const bool is_continued_point3D);
-    void ResetTriObservations(const image_t image_id,
-                              const point2D_t point2D_idx,
-                              const bool is_deleted_point3D);
 
-    std::shared_ptr<const CorrespondenceGraph> correspondence_graph_;
 
     NodeHashMap<camera_t, class Camera> cameras_;
     NodeHashMap<image_t, class Image> images_;
@@ -416,7 +384,6 @@ private:
     NodeHashMap<frame_t, class Frame> frames_;
     NodeHashMap<point3D_t, class Point3D> points3D_;
 
-    NodeHashMap<image_pair_t, ImagePairStat> image_pair_stats_;
 
     // { image_id, ... } where `images_.at(image_id).registered == true`.
     std::vector<image_t> reg_image_ids_;
@@ -447,10 +414,6 @@ size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
 
 size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
 
-size_t Reconstruction::NumImagePairs() const {
-    return image_pair_stats_.size();
-}
-
 size_t Reconstruction::NumAddedPoints3D() const { return num_added_points3D_; }
 
 const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
@@ -473,17 +436,6 @@ const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
     return points3D_.at(point3D_id);
 }
 
-const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_pair_t pair_id) const {
-    return image_pair_stats_.at(pair_id);
-}
-
-const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_t image_id1, const image_t image_id2) const {
-    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
-    return image_pair_stats_.at(pair_id);
-}
-
 class Camera& Reconstruction::Camera(const camera_t camera_id) {
     return cameras_.at(camera_id);
 }
@@ -500,17 +452,6 @@ class Frame& Reconstruction::Frame(const frame_t frame_id) {
 
 class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
     return points3D_.at(point3D_id);
-}
-
-Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_pair_t pair_id) {
-    return image_pair_stats_.at(pair_id);
-}
-
-Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_t image_id1, const image_t image_id2) {
-    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
-    return image_pair_stats_.at(pair_id);
 }
 
 const NodeHashMap<camera_t, Camera>& Reconstruction::Cameras() const {
@@ -537,11 +478,6 @@ const NodeHashMap<point3D_t, Point3D>& Reconstruction::Points3D() const {
     return points3D_;
 }
 
-const NodeHashMap<image_pair_t, Reconstruction::ImagePairStat>&
-Reconstruction::ImagePairs() const {
-    return image_pair_stats_;
-}
-
 bool Reconstruction::ExistsCamera(const camera_t camera_id) const {
     return cameras_.find(camera_id) != cameras_.end();
 }
@@ -562,20 +498,8 @@ bool Reconstruction::ExistsPoint3D(const point3D_t point3D_id) const {
     return points3D_.find(point3D_id) != points3D_.end();
 }
 
-bool Reconstruction::ExistsImagePair(const image_pair_t pair_id) const {
-    return image_pair_stats_.find(pair_id) != image_pair_stats_.end();
-}
-
 bool Reconstruction::IsImageRegistered(const image_t image_id) const {
     return Image(image_id).IsRegistered();
-}
-
-const CorrespondenceGraph* Reconstruction::GetCorrespondenceGraph() const {
-    return correspondence_graph_.get();
-}
-
-bool Reconstruction::HasCorrespondenceGraph() const {
-    return correspondence_graph_ != nullptr;
 }
 
 template <bool kEstimateScale>

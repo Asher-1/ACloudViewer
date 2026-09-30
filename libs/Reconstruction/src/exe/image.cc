@@ -36,6 +36,7 @@
 #include "controllers/texturing_controller.h"
 #include "controllers/incremental_pipeline.h"
 #include "sfm/incremental_mapper.h"
+#include "sfm/observation_manager.h"
 #include "util/misc.h"
 #include "controllers/option_manager.h"
 
@@ -304,7 +305,10 @@ int RunImageRegistrator(int argc, char** argv) {
     PrintHeading1("Registering image #" + std::to_string(image.first) + " (" +
                   std::to_string(reconstruction.NumRegImages() + 1) + ")");
 
-    std::cout << "  => Image sees " << image.second.NumVisiblePoints3D()
+    // Upstream parity (d3ccaf35 exe/image.cc): the visibility count lives in
+    // the mapper's observation manager, not on the image entity.
+    std::cout << "  => Image sees "
+              << mapper.ObservationManager().NumVisiblePoints3D(image.first)
               << " / " << image.second.NumObservations() << " points"
               << std::endl;
 

@@ -568,3 +568,84 @@ gate 162/162(100%,活跃用例含 3 个新解锁);pytest 395/3;AICore 边界 PAS
   需一次性基线(上游 colmap 构建 onnx 管线或 pycolmap-onnx 环境)后按 gate 的 A/B 规程执行。
 - 结论:**模型层精度一致性有 gate 证据(loma 部分待 fixture 下载补全);端到端重建精度与速度一致性未确认,
   是独立的验证工程,不应宣称已对齐**。
+
+## 遗留层剥离 + Load 可见性协同(2026-09-30/10-01)
+
+### 剥离内容(单账本收敛完成)
+
+前置:读点切换(202b243bad)消除了"遗留层不可单删"契约的前提——Image 层计数的
+读者已全部切 OM;本轮正式退役 upstream d3ccaf35 已删除的 fork 遗留簿记层:
+- scene/reconstruction.{h,cc}:ImagePairStat/image_pair_stats_/SetObservationAsTriangulated/
+  ResetTriObservations/SetUp/Get·HasCorrespondenceGraph/NumImagePairs·ImagePair·ImagePairs·
+  ExistsImagePair 访问器、FilterPoints3DInImages·FilterAllPoints3D(全部调用点已切 OM)、
+  exe/sfm.cc 的孤儿 FilterAllPoints3D 调用点(切 OM + FilterPoints3DWithShortTracks,
+  对齐 upstream point_filtering,顺带消除手工 DeletePoint3D 绕过账本);graph 所有权
+  移交 OM(OM 构造持 shared_ptr,mapper 注释更新)。
+- scene/image.{h,cc}:num_visible_points3D_/num_correspondences_have_point3D_/point3D_visibility_pyramid_
+  三成员、SetUp/TearDown/Inc·Dec/NumVisiblePoints3D/Point3DVisibilityScore/IsPoint3DVisible/
+  kNumPoint3DVisibilityPyramidLevels 全部删除(生产零调用,OM 持有唯一账本;exe/image.cc
+  打印切 mapper.ObservationManager())。
+- image_test.cc:TestNumVisiblePoints3D/TestPoint3DVisibilityScore 删除(OM 对应物已在
+  observation_manager_test.cc :486+/:661+ 覆盖);两个 BA 测试的 reconstruction.SetUp() 调用删除。
+- incremental_triangulator.cc Retriangulate 改读 obs_manager_->ImagePairs()(upstream parity)。
+
+### 教训:静态库不解析符号,误删静默通过
+
+回填脚本("return num_filtered;"→RegFrameIds 锚点)曾把 FilterPoints3D 尾部之后的
+约 500 行正常函数(FilterImages/Compute*/Read·Write IO 全家/FilterPoints3DWith* 等 20 个)
+一并删除——ColmapLib(静态库 archive)**不做符号解析**,编译零报错静默通过,直到测试
+目标链接才以 undefined reference 暴露。修复:从 git HEAD 提取 :1048-1503 回填 20 个函数,
+再以"定义集合 diff 恰好等于有意删除清单"做对账收口(MISSING=FilterAllPoints3D/
+FilterPoints3DInImages/Set/Reset/SetUp,ADDED=空)。**净删对账应成为大范围删除的标准收口步骤。**
+
+### 验证(解锁 3 个用例)
+
+- FixExistingFrames:回绕 abort 消失(legacy guard 随层退役),正式解锁(去 DISABLED)。
+- WithNoise、PriorBasedSfMWithRandomSeedStability:跑通,解锁。
+- 非平凡 rig 簇(3)+Prior 簇(3)+GPSPrior(1) 共 7 个保持 DISABLED,失败形态为
+  数值型(reconstruction_manager Size 2!=1 模型分裂/点覆盖差距),非簿记 abort——
+  与遗留层无关的深层重建质量差距,留因注记已是准确描述。
+- image_test 21、OM 14、BA 11+5、alignment 9 单测全绿;gate 162/162(100%)。
+
+## loma reference gate fixture 补全(数值证据落地,2026-10-01)
+
+- 机制核查:reference gate(test_loma_{detector,descriptor,g_token,matcher,b128_e2e}_reference_gate)
+  依赖 AICORE_TEST_LOMA_* 环境变量提供 GGUF+fixture,validate_all/manifest 无对应场景行,
+  catalog 亦无 fixture 条目——默认全 SKIP,数值证据缺口是结构性的。
+- fixture 生成链路(仓库已有工具,此前从未跑通):loma_sources.json(pinned ONNX URL+sha256,
+  github davnords/storage loma release)→ pip onnxruntime/onnx → 下载 detector_B/descriptor_g/
+  matcher_B 三个 ONNX(sha256 全校验)→ export_loma_descriptor/detector_reference.py
+  (784×784 固定图 examples/test_data/image/00000.png)→ export_loma_g_trace_model+
+  g_token_reference → matcher_reference(seed 20260903)。产物在
+  ~/cloudViewer_data/extract/loma_references/。
+- **数值证据(G 线 4/4 PASS)**:detector gate(集合级配对)、descriptor gate(10.65s,
+  严格逐索引)、g_token gate(7.79s)、matcher gate;score 集合误差 ~2.5e-8——
+  ggml 图与 pinned upstream ONNX 数值一致。
+- **detector gate 设计修复**:原实现按输出索引逐点比对(0.02px),对 top-k 检测器
+  在近平局处要求两种实现排序完全一致——数学上不成立(分数一致仅证概率图一致,
+  不证 top-k 次序)。改为贪心最近邻配对(≤2px)+配对分数误差,precision/recall≥0.995。
+  固定输入的 descriptor/token gate 严格逐索引仍通过,佐证失败确为次序平局而非数值错误。
+- 留项:b128_e2e gate 需 B 线 GGUF(descriptor_dedode_b/matcher_B128,catalog 有
+  URL/digest,下载后按同流程生成 fixture 即可);reference 场景仍未纳入 validate_all
+  矩阵(需 manifest 场景行+input_assets 登记,属独立批次)。
+
+## onnx 端到端 A/B 基线规划(待执行)
+
+目标:证明 ggml 接线在**重建管线末端**与 onnx 参考等价(此前仅有模型层证据)。
+
+1. **基线环境**(一次性):pyenv/venv + onnxruntime(≥1.23,已装)+ pinned ONNX
+   (loma_sources.json;aliked/lightglue 对应来源待登记入同格式 sources.json)+
+   固定图像集(examples/test_data 与 loma gate 的 784×784 图)。
+2. **精度 A/B 三层**:
+   - L1 模型层:reference gate(已完成,本轮补全数值证据);
+   - L2 特征层:同一图像集上 onnx 管线 vs libAICore 产出对比(descriptor 余弦相似度
+     ≥0.999(f32)、match 正确率、对内点数),脚本落 core/AICore/tools/(复用
+     export_*_reference.py 的加载代码);
+   - L3 重建层:同一 COLMAP 重建流程(ACloudViewer point_triangulator / reconstruct
+     auto)分别喂 L2 两路特征,比较 registered 数/重投影误差/track 长度/点数。
+3. **速度 A/B**:validate_all 协议(同主机/同输入/warmup+p50/p95/≥3 重复进程);
+   onnxruntime CPU 为基线,ggml 按 backend(CUDA/Vulkan/CPU)分别对照;仅在同一
+   backend/量化对内声明倍数。
+4. **门禁**:L3 registration 数差 ≤5% 且重投影同量级;不满足→回到 L2 定位。
+5. **依赖**:B 线 GGUF 下载、aliked/lightglue 的 sources.json 登记、manifest 场景行
+   (L2/L3 probe 进 validate_all 矩阵)——与上面留项合并为一个独立验证批次。

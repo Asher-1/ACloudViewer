@@ -151,9 +151,6 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     reconstruction->Image(image_id).SetPoints2D(points2D);
   }
 
-  reconstruction->SetUp(std::shared_ptr<const CorrespondenceGraph>(
-          correspondence_graph, [](const CorrespondenceGraph*) {}));
-
   for (size_t i = 0; i < num_images; ++i) {
     const image_t image_id = static_cast<image_t>(i);
     TrackElement track_el;

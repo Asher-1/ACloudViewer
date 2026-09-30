@@ -284,10 +284,10 @@ TEST(IncrementalMapperController, WithPriorFocalLength) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, DISABLED_WithNoise) {
-  // Fork adjudication (post batch-C T2 fix): the order-dependent
-  // tri-observation overflow is resolved; the remaining gap is
-  // reconstruction-quality parity on the noisy variant, deferred.
+TEST(IncrementalMapperController, WithNoise) {
+  // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
+  // visibility stats were retired (the post batch-C T2 fix had already
+  // resolved the order-dependent tri-observation overflow).
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -409,16 +409,11 @@ TEST(IncrementalMapperController, MultiReconstruction) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, DISABLED_FixExistingFrames) {
-  // Fork adjudication (updated after the batch-C graph-lifetime fix): the
-  // dangling correspondence-graph back-pointer is gone (the reconstruction
-  // now owns the graph), but the test body's direct Reconstruction-level
-  // observation edits still decrement the fork's legacy Reconstruction-side
-  // pair stats, whose entries are absent for pairs created after the load
-  // (operator[] creates {0,0}, then the decrement wraps) and the legacy
-  // guard aborts. Upstream routes all edits through the ObservationManager;
-  // deferred until the legacy stats layer is retired together with the
-  // Load visibility semantics.
+TEST(IncrementalMapperController, FixExistingFrames) {
+  // Unlocked: the legacy Reconstruction-side pair-stats layer has been
+  // retired (upstream parity - all visibility bookkeeping lives in the
+  // ObservationManager), so the test body's direct Reconstruction-level
+  // observation edits no longer trip the retired legacy underflow guard.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -733,11 +728,9 @@ TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
               ReconstructionEq(reconstruction_manager1->Get(0)));
 }
 
-TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithRandomSeedStability) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+TEST(IncrementalMapperController, PriorBasedSfMWithRandomSeedStability) {
+  // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
+  // visibility stats were retired.
 
   const auto database_path = CreateTestDir() / "database.db";
 

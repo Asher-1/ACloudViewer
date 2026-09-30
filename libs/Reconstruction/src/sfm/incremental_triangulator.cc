@@ -331,7 +331,7 @@ size_t IncrementalTriangulator::Retriangulate(const Options& options) {
     Options re_options = options;
     re_options.continue_max_angle_error = options.re_max_angle_error;
 
-    for (const auto& image_pair : reconstruction_->ImagePairs()) {
+    for (const auto& image_pair : obs_manager_->ImagePairs()) {
         // Only perform retriangulation for under-reconstructed image pairs.
         const double tri_ratio =
                 static_cast<double>(image_pair.second.num_tri_corrs) /

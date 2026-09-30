@@ -72,9 +72,6 @@ Reconstruction CreatePinholeParityReconstruction() {
     correspondence_graph.AddImage(image_id, points2D.size());
   }
 
-  // The reconstruction owns the graph from here on (batch C).
-  reconstruction.SetUp(std::shared_ptr<const CorrespondenceGraph>(
-          &correspondence_graph, [](const CorrespondenceGraph*) {}));
   for (size_t image_idx = 0; image_idx < true_tvecs.size(); ++image_idx) {
     const image_t image_id = static_cast<image_t>(image_idx + 1);
     for (size_t point_idx = 0; point_idx < point_ids.size(); ++point_idx) {
