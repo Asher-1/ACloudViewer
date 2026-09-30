@@ -477,3 +477,53 @@ fork 增强面(DA3、global_mapper、RotationAveraging、ViewGraphCalibration CL
 ### 验证
 
 gate 162/162(100%);pytest 395/3;AICore 边界 PASS。
+## T2 后续簇分诊修复 — graph 所有权 / EffBa* sentinel / UnknownSensor 守卫(2026-09-30)
+
+T2 修复后对剩余 10 个 DISABLED 逐一重新分诊,本轮修复 3 个独立簇并解锁 3 个用例
+(pipeline 活跃 8 → 11),另修 1 个生产级悬挂指针缺陷:
+
+### 1. Reconstruction 悬挂 graph 回指(生产缺陷,插桩+try/catch 实证)
+
+- `Reconstruction::correspondence_graph_` 是**裸指针**,指向 controller 成员
+  DatabaseCache 内部的 graph;controller 析构后悬挂——FixExistingFrames 的测试体直调
+  `DeRegisterFrame(1)` 走遗留 `ResetTriObservations` 解引用悬挂 graph,表现为
+  `_Map_base::at`(flaky:释放内存被复用时可能"正常")。
+- 修复:成员与 `SetUp` 形参改 `std::shared_ptr<const CorrespondenceGraph>`
+  (DatabaseCache 侧本就是 shared_ptr;upstream 无回指,注释留档 fork 遗留读用),
+  mapper :133 传 shared_ptr,3 个测试调用点包非拥有/共享别名。
+- 注意:全量 `make all` 时 3 个测试编译错暴露了裸指针消费者——教训:改接口后必须
+  `make -k all` 而非只编本目标。
+
+### 2. EffBa* sentinel 迁移(upstream parity,解锁 2 用例)
+
+- `ba_local/global_max_num_iterations` 默认 25/50 → **-1 sentinel**;
+  新增 `EffBaLocalMaxNumIterations()/EffBaGlobalMaxNumIterations()`(upstream 逐字:
+  >=0 直返,CASPAR→solver_iter_max,否则 kDefaultCeres 25/50,常量入匿名 ns);
+  `Local/GlobalBundleAdjustment()` 工厂改用 Eff 解析(生产行为不变);
+  `Check()` 的 `>= 0` 同步为 `>= -1`(sentinel 合法)。
+- 解锁:`DefaultMaxNumIterationsUsesBackendDefaults`(此前因默认非 sentinel 的
+  ASSERT_EQ(-1) 失败)+ `EffBaMaxNumIterations`(skip→真 port,fork 断言落在合并
+  options 面无 per-backend 槽)。
+
+### 3. UnknownSensorFromRig 优雅退出(upstream parity,解锁 1 用例)
+
+- 控制器 trial 循环 Begin 后补 `HasUnknownSensorFromRig` 检查(upstream :99/:534
+  逐字;LOG(ERROR)+EndReconstruction(discard)+Delete(idx)+break)→ Size()==0。
+- 测试适配:fork 的 `NonRefSensors()` 返回**值**(内部是 optional<SensorPose> 非
+  optional<Rigid3d>),upstream 返回引用——测试的 `.reset()` 打在临时副本上无效;
+  改用 fork 既有的 `SetSensorFromRig(id, nullopt)`(inline 重载→ResetSensorFromRig)。
+
+### 剩余留因(更新)
+
+- **FixExistingFrames**:悬挂已修后暴露次级根因——测试直调 `DeleteObservation`
+  递减 fork 遗留 `image_pair_stats_`,映射期新建 pair 无条目(operator[] 建 {0,0}
+  后递减回绕为无符号巨值)触发遗留守卫 abort(reconstruction.cc:1534)。恢复条件:
+  遗留 stats 层退役 + Load 重入语义一并设计(该批需为 db 载入状态建立 OM 侧可见性
+  初始化,见"遗留层不可单删"契约)。
+- **非平凡 rig 簇(4)与 Prior 观测簇(3)**:管线跑通无守卫触发,收敛为重建质量面
+  差异(点覆盖 231 vs 100 / 模型分裂 / observations 2000 vs 1900)——两条线同
+  上(遗留 stats 层 + Load 可见性)。
+
+### 验证
+
+gate 162/162(100%,活跃用例含 3 个新解锁);pytest 395/3;AICore 边界 PASS。

@@ -129,7 +129,9 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
             reconstruction_->DeRegisterFrame(frame_id);
         }
     }
-    reconstruction_->SetUp(database_cache_->CorrespondenceGraph().get());
+    // Own the graph: the reconstruction outlives this controller's cache in
+    // continue-scenarios (batch C graph-lifetime fix).
+    reconstruction_->SetUp(database_cache_->CorrespondenceGraph());
     obs_manager_ = std::make_shared<class ObservationManager>(
             *reconstruction, database_cache_->CorrespondenceGraph());
     // Upstream parity (d3ccaf35): the triangulator shares the mapper's

@@ -138,7 +138,12 @@ public:
 
     // Setup all relevant data structures before reconstruction. Note the
     // correspondence graph object must live until `TearDown` is called.
-    void SetUp(const CorrespondenceGraph* correspondence_graph);
+    // Ownership: the reconstruction keeps the graph alive. The raw
+    // back-pointer dangled once the controller's DatabaseCache died,
+    // surfacing as _Map_base::at in cross-run scenarios (batch C). Upstream
+    // has no back-pointer here; the legacy fork bookkeeping still reads
+    // the graph, so it holds a shared reference instead.
+    void SetUp(std::shared_ptr<const CorrespondenceGraph> correspondence_graph);
 
     // Finalize the Reconstruction after the reconstruction has finished.
     //
@@ -403,7 +408,7 @@ private:
                               const point2D_t point2D_idx,
                               const bool is_deleted_point3D);
 
-    const CorrespondenceGraph* correspondence_graph_;
+    std::shared_ptr<const CorrespondenceGraph> correspondence_graph_;
 
     NodeHashMap<camera_t, class Camera> cameras_;
     NodeHashMap<image_t, class Image> images_;
@@ -566,7 +571,7 @@ bool Reconstruction::IsImageRegistered(const image_t image_id) const {
 }
 
 const CorrespondenceGraph* Reconstruction::GetCorrespondenceGraph() const {
-    return correspondence_graph_;
+    return correspondence_graph_.get();
 }
 
 bool Reconstruction::HasCorrespondenceGraph() const {

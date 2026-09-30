@@ -74,8 +74,9 @@ public:
     // Ceres solver function tolerance for local bundle adjustment
     double ba_local_function_tolerance = 0.0;
 
-    // The maximum number of local bundle adjustment iterations.
-    int ba_local_max_num_iterations = 25;
+    // The maximum number of local bundle adjustment iterations. -1 means
+    // "use the configured backend's default" (upstream d3ccaf35 sentinel).
+    int ba_local_max_num_iterations = -1;
 
     // The bundle adjustment backend for local/global BA. CASPAR is only
     // available in builds with RECONSTRUCTION_CASPAR_ENABLED; unsupported
@@ -98,7 +99,7 @@ public:
     double ba_global_ignore_redundant_points3D_min_coverage_gain = 0.05;
 
     // The maximum number of global bundle adjustment iterations.
-    int ba_global_max_num_iterations = 50;
+    int ba_global_max_num_iterations = -1;
 
     // The thresholds for iterative bundle adjustment refinements.
     int ba_local_max_refinements = 2;
@@ -137,6 +138,11 @@ public:
     IncrementalTriangulator::Options Triangulation() const;
     BundleAdjustmentOptions LocalBundleAdjustment() const;
     BundleAdjustmentOptions GlobalBundleAdjustment() const;
+
+    // Upstream parity (d3ccaf35): resolve the -1 iteration sentinel to the
+    // configured backend's default (Ceres 25/50, Caspar solver_iter_max).
+    int EffBaLocalMaxNumIterations() const;
+    int EffBaGlobalMaxNumIterations() const;
 
     bool Check() const;
 };

@@ -7,6 +7,10 @@
 
 #include "controllers/incremental_pipeline.h"
 
+#include "util/hash_containers.h"
+
+#include "estimators/bundle_adjustment_caspar.h"
+
 #include "util/misc.h"
 
 namespace colmap {
@@ -84,6 +88,26 @@ void ExtractColors(const std::string& image_path,
                              image_path.c_str())
                   << std::endl;
     }
+}
+
+// Upstream parity (d3ccaf35 controllers/incremental_pipeline.cc): detect a
+// rig whose camera sensor_from_rig pose is unset; such a scene cannot be
+// reconstructed with rig constraints and must be discarded gracefully.
+bool HasUnknownSensorFromRig(const Reconstruction& reconstruction) {
+    FlatHashSet<const Rig*> parameterized_rigs;
+    for (const auto& [_, image] : reconstruction.Images()) {
+        parameterized_rigs.insert(image.FramePtr()->RigPtr());
+    }
+    for (const Rig* rig : parameterized_rigs) {
+        for (const auto& [sensor_id, sensor_from_rig] :
+             rig->NonRefSensors()) {
+            if (sensor_id.type == SensorType::CAMERA &&
+                !sensor_from_rig.has_value()) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void WriteSnapshot(const Reconstruction& reconstruction,
@@ -164,13 +188,23 @@ IncrementalTriangulator::Options IncrementalMapperOptions::Triangulation()
     return options;
 }
 
+namespace {
+
+// Upstream parity (d3ccaf35): the Ceres iteration defaults behind the
+// -1 sentinel.
+constexpr int kDefaultCeresLocalMaxNumIterations = 25;
+constexpr int kDefaultCeresGlobalMaxNumIterations = 50;
+
+}  // namespace
+
 BundleAdjustmentOptions IncrementalMapperOptions::LocalBundleAdjustment()
         const {
     BundleAdjustmentOptions options;
     options.solver_options.function_tolerance = ba_local_function_tolerance;
     options.solver_options.gradient_tolerance = 10.0;
     options.solver_options.parameter_tolerance = 0.0;
-    options.solver_options.max_num_iterations = ba_local_max_num_iterations;
+    options.solver_options.max_num_iterations =
+            EffBaLocalMaxNumIterations();
     options.solver_options.max_linear_solver_iterations = 100;
     options.solver_options.minimizer_progress_to_stdout = false;
     options.solver_options.num_threads = num_threads;
@@ -192,13 +226,35 @@ BundleAdjustmentOptions IncrementalMapperOptions::LocalBundleAdjustment()
     return options;
 }
 
+
+int IncrementalMapperOptions::EffBaLocalMaxNumIterations() const {
+    if (ba_local_max_num_iterations >= 0) {
+        return ba_local_max_num_iterations;
+    }
+    if (ba_local_backend == BundleAdjustmentBackend::CASPAR) {
+        return CasparBundleAdjustmentOptions().solver_iter_max;
+    }
+    return kDefaultCeresLocalMaxNumIterations;
+}
+
+int IncrementalMapperOptions::EffBaGlobalMaxNumIterations() const {
+    if (ba_global_max_num_iterations >= 0) {
+        return ba_global_max_num_iterations;
+    }
+    if (ba_global_backend == BundleAdjustmentBackend::CASPAR) {
+        return CasparBundleAdjustmentOptions().solver_iter_max;
+    }
+    return kDefaultCeresGlobalMaxNumIterations;
+}
+
 BundleAdjustmentOptions IncrementalMapperOptions::GlobalBundleAdjustment()
         const {
     BundleAdjustmentOptions options;
     options.solver_options.function_tolerance = ba_global_function_tolerance;
     options.solver_options.gradient_tolerance = 1.0;
     options.solver_options.parameter_tolerance = 0.0;
-    options.solver_options.max_num_iterations = ba_global_max_num_iterations;
+    options.solver_options.max_num_iterations =
+            EffBaGlobalMaxNumIterations();
     options.solver_options.max_linear_solver_iterations = 100;
     options.solver_options.minimizer_progress_to_stdout = true;
     options.solver_options.num_threads = num_threads;
@@ -229,12 +285,14 @@ bool IncrementalMapperOptions::Check() const {
     CHECK_OPTION_GT(max_focal_length_ratio, 0);
     CHECK_OPTION_GE(max_extra_param, 0);
     CHECK_OPTION_GE(ba_local_num_images, 2);
-    CHECK_OPTION_GE(ba_local_max_num_iterations, 0);
+    // Upstream parity: -1 is the "backend default" sentinel and legal.
+    CHECK_OPTION_GE(ba_local_max_num_iterations, -1);
     CHECK_OPTION_GT(ba_global_images_ratio, 1.0);
     CHECK_OPTION_GT(ba_global_points_ratio, 1.0);
     CHECK_OPTION_GT(ba_global_images_freq, 0);
     CHECK_OPTION_GT(ba_global_points_freq, 0);
-    CHECK_OPTION_GT(ba_global_max_num_iterations, 0);
+        // Upstream parity: -1 is the "backend default" sentinel and legal.
+    CHECK_OPTION_GE(ba_global_max_num_iterations, -1);
     CHECK_OPTION_GT(ba_local_max_refinements, 0);
     CHECK_OPTION_GE(ba_local_max_refinement_change, 0);
     CHECK_OPTION_GT(ba_global_max_refinements, 0);
@@ -380,6 +438,19 @@ void IncrementalMapperController::Reconstruct(
                 reconstruction_manager_->Get(reconstruction_idx);
 
         mapper.BeginReconstruction(&reconstruction);
+        if (HasUnknownSensorFromRig(reconstruction)) {
+            LOG(ERROR)
+                    << "Discarding reconstruction due to unknown "
+                       "sensor_from_rig poses. Either explicitly define the "
+                       "poses by configuring the rigs or first run "
+                       "reconstruction without configured rigs and then "
+                       "derive the poses from the initial reconstruction for "
+                       "a subsequent reconstruction with rig constraints. See "
+                       "documentation for detailed instructions.";
+            mapper.EndReconstruction(/*discard=*/true);
+            reconstruction_manager_->Delete(reconstruction_idx);
+            break;
+        }
 
         ////////////////////////////////////////////////////////////////////////////
         // Register initial pair

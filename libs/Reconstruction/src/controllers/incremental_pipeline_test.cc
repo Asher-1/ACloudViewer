@@ -128,11 +128,10 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) 
   }
 }
 
-TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
+  // Batch C: the upstream HasUnknownSensorFromRig guard landed in the
+  // controller's trial loop, so the unknown sensor_from_rig scene now
+  // discards the reconstruction gracefully (Size == 0).
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -149,9 +148,12 @@ TEST(IncrementalMapperController, DISABLED_UnknownSensorFromRigExitsGracefully) 
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
-  // Set one of the sensor from rig to unknown.
+  // Set one of the sensor from rig to unknown. Fork adaptation: the fork's
+  // NonRefSensors() returns by value (its storage is optional<SensorPose>
+  // rather than optional<Rigid3d>), so the mutation goes through the
+  // SetSensorFromRig accessor instead of resetting a temporary copy.
   auto rig = database->ReadAllRigs()[0];
-  rig.NonRefSensors().begin()->second.reset();
+  rig.SetSensorFromRig(rig.NonRefSensors().begin()->first, std::nullopt);
   database->UpdateRig(rig);
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
@@ -408,11 +410,15 @@ TEST(IncrementalMapperController, MultiReconstruction) {
 }
 
 TEST(IncrementalMapperController, DISABLED_FixExistingFrames) {
-  // Fork adjudication: the test body's direct Reconstruction-level
-  // observation edits hit an internal map::at in the fork's legacy
-  // Reconstruction-side pair stats (upstream keeps all bookkeeping on the
-  // ObservationManager); deferred until the legacy Reconstruction stats
-  // layer is retired.
+  // Fork adjudication (updated after the batch-C graph-lifetime fix): the
+  // dangling correspondence-graph back-pointer is gone (the reconstruction
+  // now owns the graph), but the test body's direct Reconstruction-level
+  // observation edits still decrement the fork's legacy Reconstruction-side
+  // pair stats, whose entries are absent for pairs created after the load
+  // (operator[] creates {0,0}, then the decrement wraps) and the legacy
+  // guard aborts. Upstream routes all edits through the ObservationManager;
+  // deferred until the legacy stats layer is retired together with the
+  // Load visibility semantics.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -793,19 +799,15 @@ TEST(IncrementalMapperOptions, PropagatesExplicitMaxNumIterations) {
   EXPECT_EQ(global_options.solver_options.max_num_iterations, 50);
 }
 
-TEST(IncrementalMapperOptions, DISABLED_DefaultMaxNumIterationsUsesBackendDefaults) {
-  // Fork adjudication: ba_*_max_num_iterations defaults to 25/50 (no
-  // upstream -1 sentinel), so the sentinel contract does not apply.
-
-  // With the -1 sentinel default, each backend must keep its own default:
-  // Ceres the previous 25/50 mapper defaults, Caspar its own tuned
-  // solver_iter_max (see review discussion on #4382/PR #4527).
+TEST(IncrementalMapperOptions, DefaultMaxNumIterationsUsesBackendDefaults) {
+  // Batch C: the fork adopted the upstream -1 sentinel and the Eff*_
+  // resolvers, so the upstream contract applies to the merged options
+  // surface (the factories resolve the sentinel into solver_options).
   const IncrementalMapperOptions options;
   ASSERT_EQ(options.ba_local_max_num_iterations, -1);
   ASSERT_EQ(options.ba_global_max_num_iterations, -1);
   const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
 
-  // Fork adaptation: single merged options surface (see the note above).
   const BundleAdjustmentOptions local_options = options.LocalBundleAdjustment();
   EXPECT_EQ(local_options.solver_options.max_num_iterations, 25);
 
@@ -815,10 +817,24 @@ TEST(IncrementalMapperOptions, DISABLED_DefaultMaxNumIterationsUsesBackendDefaul
 }
 
 TEST(IncrementalMapperOptions, EffBaMaxNumIterations) {
-  GTEST_SKIP()
-      << "Fork adjudication: the EffBa* iteration-resolution helpers are an "
-         "upstream d3ccaf35 surface; the fork reads ba_*_max_num_iterations "
-         "directly and resolves the -1 sentinel inside the BA setup.";
+  // Batch C: the Eff* resolvers landed (upstream d3ccaf35 parity); the fork
+  // asserts them on the merged options surface (no per-backend slots).
+  IncrementalMapperOptions options;
+  const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
+
+  // Sentinel resolves to the configured backend's default.
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), 25);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), 50);
+  options.ba_local_backend = BundleAdjustmentBackend::CASPAR;
+  options.ba_global_backend = BundleAdjustmentBackend::CASPAR;
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), caspar_default);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), caspar_default);
+
+  // Explicit values win regardless of backend.
+  options.ba_local_max_num_iterations = 7;
+  options.ba_global_max_num_iterations = 13;
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), 7);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), 13);
 }
 
 }  // namespace

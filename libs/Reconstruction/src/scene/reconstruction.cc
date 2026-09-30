@@ -55,7 +55,7 @@ Reconstruction::Reconstruction()
     : correspondence_graph_(nullptr), num_added_points3D_(0) {}
 
 Reconstruction::Reconstruction(const Reconstruction& other)
-    : correspondence_graph_(other.GetCorrespondenceGraph()),
+    : correspondence_graph_(other.correspondence_graph_),
       cameras_(other.Cameras()),
       images_(other.Images()),
       rigs_(other.Rigs()),
@@ -70,7 +70,7 @@ Reconstruction::Reconstruction(const Reconstruction& other)
 
 Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
     if (this != &other) {
-        correspondence_graph_ = other.GetCorrespondenceGraph();
+        correspondence_graph_ = other.correspondence_graph_;
         cameras_ = other.Cameras();
         images_ = other.Images();
         rigs_ = other.Rigs();
@@ -188,8 +188,9 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
     }
 }
 
-void Reconstruction::SetUp(const CorrespondenceGraph* correspondence_graph) {
-    CHECK_NOTNULL(correspondence_graph);
+void Reconstruction::SetUp(
+        std::shared_ptr<const CorrespondenceGraph> correspondence_graph) {
+    THROW_CHECK_NOTNULL(correspondence_graph);
     for (auto& image : images_) {
         image.second.SetUp(Camera(image.second.CameraId()));
     }

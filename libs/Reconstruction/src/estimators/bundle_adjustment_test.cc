@@ -33,6 +33,8 @@
 #include "util/testing.h"
 
 #include "sensor/models.h"
+#include <memory>
+
 #include "scene/correspondence_graph.h"
 #include "scene/projection.h"
 #include "estimators/bundle_adjustment.h"
@@ -149,7 +151,8 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     reconstruction->Image(image_id).SetPoints2D(points2D);
   }
 
-  reconstruction->SetUp(correspondence_graph);
+  reconstruction->SetUp(std::shared_ptr<const CorrespondenceGraph>(
+          correspondence_graph, [](const CorrespondenceGraph*) {}));
 
   for (size_t i = 0; i < num_images; ++i) {
     const image_t image_id = static_cast<image_t>(i);
