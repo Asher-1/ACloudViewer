@@ -86,9 +86,9 @@ private:
 class PMVSUndistorterImpl : public Thread {
 public:
     PMVSUndistorterImpl(const UndistortCameraOptions& options,
-                    Reconstruction* reconstruction,
-                    const std::filesystem::path& image_path,
-                    const std::filesystem::path& output_path);
+                        Reconstruction* reconstruction,
+                        const std::filesystem::path& image_path,
+                        const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -111,9 +111,9 @@ private:
 class CMPMVSUndistorterImpl : public Thread {
 public:
     CMPMVSUndistorterImpl(const UndistortCameraOptions& options,
-                      Reconstruction* reconstruction,
-                      const std::filesystem::path& image_path,
-                      const std::filesystem::path& output_path);
+                          Reconstruction* reconstruction,
+                          const std::filesystem::path& image_path,
+                          const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -132,10 +132,10 @@ private:
 class PureImageUndistorterImpl : public Thread {
 public:
     PureImageUndistorterImpl(const UndistortCameraOptions& options,
-                         const std::filesystem::path& image_path,
-                         const std::filesystem::path& output_path,
-                         const std::vector<std::pair<std::string, Camera>>&
-                                 image_names_and_cameras);
+                             const std::filesystem::path& image_path,
+                             const std::filesystem::path& output_path,
+                             const std::vector<std::pair<std::string, Camera>>&
+                                     image_names_and_cameras);
 
 private:
     void Run();

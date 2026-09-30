@@ -29,6 +29,12 @@ public:
     ~JsonRPCPlugin() override = default;
 
     QList<QAction*> getActions() override;
+    /** Auto-starts the WebSocket server once the app interface is bound:
+     *  the agent toolchain (cli-anything-acloudviewer, MCP, headless test
+     *  drivers) expects the RPC endpoint to be reachable as soon as the
+     *  GUI is up. The checkable menu action stays as the manual on/off
+     *  switch and is synced to the auto-started state. */
+    void setMainAppInterface(ecvMainAppInterface* app) override;
 
 public slots:
     void triggered(bool checked);
@@ -61,6 +67,15 @@ private:
     JsonRPCResult rpcSceneInfo(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcSceneRemove(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcSceneSetVisible(const QMap<QString, QVariant>& params);
+    /** Generic driver: trigger a QAction matched by its text (opens plugin
+     *  dialogs etc.). Neutral — knows no concrete plugin type. */
+    JsonRPCResult rpcUiTriggerAction(const QMap<QString, QVariant>& params);
+    /** Generic driver: Qt-reflection invoke — find the unique QObject whose
+     *  class name contains \p class_contains and which declares an invokable
+     *  \p method taking 0..3 QVariant parameters, and invoke it with \p args.
+     *  Neutral — lets agent tests drive plugin dialogs without coupling this
+     *  plugin to any of them. */
+    JsonRPCResult rpcQtInvokeMethod(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcSceneSelect(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcClear(const QMap<QString, QVariant>& params);
     // --- View control ---

@@ -322,8 +322,11 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
 
     reg_stats_.num_reg_trials[image_id] += 1;
 
-    // Check if enough 2D-3D correspondences.
-    if (image.NumVisiblePoints3D() <
+    // Check if enough 2D-3D correspondences (upstream parity: the count is
+    // read from the ObservationManager, the single ledger maintained by the
+    // OM-era triangulation path; the fork's legacy Image-level counter was
+    // stale and gated registrations off).
+    if (obs_manager_->NumVisiblePoints3D(image_id) <
         static_cast<size_t>(options.abs_pose_min_num_inliers)) {
         return false;
     }
@@ -1570,6 +1573,11 @@ bool IncrementalMapper::RegisterNextStructureLessImage(
 void IncrementalMapper::ResetInitializationStats() {
   reg_stats_.init_num_reg_trials.clear();
   reg_stats_.init_image_pairs.clear();
+}
+
+class ObservationManager& IncrementalMapper::ObservationManager() const {
+    THROW_CHECK_NOTNULL(obs_manager_);
+    return *obs_manager_;
 }
 
 }  // namespace colmap

@@ -596,9 +596,12 @@ void IncrementalMapperController::Reconstruct(
                                            next_image_id,
                                            reconstruction.NumRegImages() + 1));
 
-                std::cout << StringPrintf("  => Image sees %d / %d points",
-                                          next_image.NumVisiblePoints3D(),
-                                          next_image.NumObservations())
+                std::cout << StringPrintf(
+                                   "  => Image sees %d / %d points",
+                                   mapper.ObservationManager()
+                                           .NumVisiblePoints3D(next_image_id),
+                                   mapper.ObservationManager().NumObservations(
+                                           next_image_id))
                           << std::endl;
 
                 reg_next_success = mapper.RegisterNextImage(options_->Mapper(),

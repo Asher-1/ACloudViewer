@@ -654,9 +654,8 @@ void qLingbotMap::applyLiveCameraPose(int mode,
         camUp.normalize();
         // Individual cameras pitch; the sequence's mean up is the stable
         // world up (0.9/0.1 EMA ≈ 10-frame time constant).
-        m_worldUp = m_worldUp.norm() > 1e-9
-                            ? (m_worldUp * 0.9 + camUp * 0.1)
-                            : camUp;
+        m_worldUp = m_worldUp.norm() > 1e-9 ? (m_worldUp * 0.9 + camUp * 0.1)
+                                            : camUp;
         m_worldUp.normalize();
         // Tilt anchor: the newest camera's HORIZONTAL forward (up
         // component removed) — the eye sits above-and-behind the travel
@@ -933,6 +932,34 @@ ccHObject* findChildByName(ccHObject* parent, const QString& name) {
 
 }  // namespace
 
+void qLingbotMap::rpcStartPlayback() { startPlayback(); }
+
+void qLingbotMap::rpcPausePlayback() { pausePlayback(); }
+
+void qLingbotMap::rpcStopPlayback() { stopPlaybackAndRestore(); }
+
+void qLingbotMap::rpcSeekFrame(const QVariant& frame) {
+    seekPlayback(frame.toInt());
+}
+
+void qLingbotMap::rpcApplyCameraDisplay(const QVariant& showCameras,
+                                        const QVariant& camStride,
+                                        const QVariant& camSizePercent) {
+    applyCameraDisplay(showCameras.toBool(), camStride.toInt(),
+                       camSizePercent.toInt());
+}
+
+void qLingbotMap::rpcStartTestScene(const QVariant& scene) {
+    if (m_dialog) {
+        m_dialog->rpcStartTestScene(scene);
+    } else {
+        showDialog();
+        if (m_dialog) {
+            m_dialog->rpcStartTestScene(scene);
+        }
+    }
+}
+
 void qLingbotMap::applyCameraDisplay(bool showCameras,
                                      int camStride,
                                      int camSizePercent) {
@@ -994,6 +1021,21 @@ void qLingbotMap::applyDisplayState() {
         camFolderOpen = !camFolder || camFolder->isEnabled();
         framesFolderOpen = !framesFolder || framesFolder->isEnabled();
     }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                QStringLiteral(
+                        "[LingbotMap][applyDisplayState] replay=%1 frame=%2 "
+                        "resultGroupId=%3 groupFound=%4 cams=%5 "
+                        "camFolderOpen=%6 show=%7 stride=%8")
+                        .arg(replayActive)
+                        .arg(currentFrame)
+                        .arg(m_resultGroupId)
+                        .arg(resultGroup != nullptr)
+                        .arg(m_frameCameras.size())
+                        .arg(camFolderOpen)
+                        .arg(m_resultShowCameras)
+                        .arg(stride));
+    }
 
     if (!m_frameCameras.empty()) {
         // Materialized result governance: visibility, density, size and
@@ -1004,8 +1046,8 @@ void qLingbotMap::applyDisplayState() {
             if (!cam) continue;
             const int ordinal = static_cast<int>(i);
             const bool vis = camFolderOpen && cam->isEnabled() &&
-                             m_resultShowCameras &&
-                             (ordinal % stride == 0) && frameGate(ordinal);
+                             m_resultShowCameras && (ordinal % stride == 0) &&
+                             frameGate(ordinal);
             cam->setVisible(vis);
             if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
                 // Idempotent write: setGraphicScale marks the geometry dirty
@@ -1039,8 +1081,7 @@ void qLingbotMap::applyDisplayState() {
     ccHObject* camerasFolder = nullptr;
     for (unsigned i = 0; i < m_onlineGroup->getChildrenNumber(); ++i) {
         ccHObject* child = m_onlineGroup->getChild(i);
-        if (child &&
-            child->getName() == QStringLiteral("LingbotMap_cameras")) {
+        if (child && child->getName() == QStringLiteral("LingbotMap_cameras")) {
             camerasFolder = child;
             break;
         }
@@ -1358,12 +1399,10 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     // child index — the SAME ordinal applyDisplayState gates on (frame
     // indices can be non-contiguous; insertion order cannot drift).
     if (ccHObject* cameras = ensureCamerasGroup()) {
-        const int ordinal =
-                static_cast<int>(cameras->getChildrenNumber());
+        const int ordinal = static_cast<int>(cameras->getChildrenNumber());
         if (m_lastSettings.liveViewMode != 2) {
             sensor->setVisible(m_resultShowCameras &&
-                               (ordinal % std::max(1, m_resultCamStride) ==
-                                0));
+                               (ordinal % std::max(1, m_resultCamStride) == 0));
         }
         cameras->addChild(sensor);
     } else {
@@ -1771,6 +1810,8 @@ void qLingbotMap::onReplaySeek(int frame) {
 }
 
 void qLingbotMap::startPlayback() {
+    CVLog::Print(QStringLiteral("[LingbotMap][startPlayback] enter: cams=%1")
+                         .arg(m_frameCameras.size()));
     if (!m_app || m_frameCameras.empty()) return;
     const bool freshStart = (m_replayState == ReplayState::Stopped);
     // Channel switch FIRST (fresh start AND resume): replay rides DEDICATED
@@ -1780,6 +1821,16 @@ void qLingbotMap::startPlayback() {
     // without their faces no matter which writer pushed the state.
     if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
         display->setCameraAggregationSuspended(true);
+    }
+    // The suspension EVICTED the composite groups, and drawMeOnly only runs
+    // on a forced draw — without a per-camera latch the dedicated actors are
+    // never created and every tick flips the visibility of actors that do
+    // not exist (the replay looked frozen while the DB state churned).
+    // The entity-level forceRedraw latch routes each camera through the
+    // first-draw escape path on the very next frame, creating its dedicated
+    // actor; after that the ticks are plain boolean flips.
+    for (ccHObject* cam : m_frameCameras) {
+        if (cam) cam->setForceRedraw(true);
     }
     if (freshStart) {
         // Entering Playing from Stopped restarts from frame 0.
@@ -1827,6 +1878,10 @@ void qLingbotMap::pausePlayback() {
 }
 
 void qLingbotMap::stopPlaybackAndRestore() {
+    CVLog::Print(QStringLiteral(
+                         "[LingbotMap][stopRestore] enter: state=%1 groupId=%2")
+                         .arg(static_cast<int>(m_replayState))
+                         .arg(m_resultGroupId));
     if (m_playbackTimer) m_playbackTimer->stop();
     m_replayState = ReplayState::Stopped;
     m_playbackFrame = 0;

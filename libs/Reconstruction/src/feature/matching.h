@@ -8,10 +8,10 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 #include <filesystem>
 #include <functional>
 #include <memory>
-#include <cstring>
 #include <mutex>
 #include <optional>
 #include <string>

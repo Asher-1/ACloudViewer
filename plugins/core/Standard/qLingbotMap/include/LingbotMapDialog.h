@@ -91,6 +91,22 @@ signals:
     void resultViewRequested(int which);
 
 public slots:
+    /** RPC/test driving (agent integration): selects the test scene
+     *  (int index, or a case-insensitive name fragment such as "Loop")
+     *  through the combo's OWN signal chain, then clicks the REAL Run
+     *  button. Pure driver — no behavior change for normal UI use. */
+    Q_INVOKABLE void rpcStartTestScene(const QVariant& scene);
+    /** RPC/test driving: replay transport (same paths as the Play/Stop
+     *  buttons — emits the very signals the buttons emit). */
+    Q_INVOKABLE void rpcStartReplay();
+    Q_INVOKABLE void rpcStopReplay();
+    /** RPC/test driving: a Result-display slider COMMIT (the released()
+     *  net effect) through the dialog's own signal. */
+    Q_INVOKABLE void rpcCommitResultDisplay(const QVariant& threshold,
+                                            const QVariant& pointSize,
+                                            const QVariant& camSizePercent,
+                                            const QVariant& showCameras,
+                                            const QVariant& camStride);
     /** Mirrors the input image of the frame just reconstructed (official
      *  viewer's frame panel). */
     void updatePreviewImage(const QImage& image, int globalIndex);

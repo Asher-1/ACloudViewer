@@ -288,6 +288,7 @@ public:
             bool normalize_reconstruction = true);
 
     const Reconstruction& GetReconstruction() const;
+    class ObservationManager& ObservationManager() const;
 
     // Getter functions (upstream d3ccaf35 parity; the reconstruction getter
     // keeps the fork's GetReconstruction name for API compatibility).

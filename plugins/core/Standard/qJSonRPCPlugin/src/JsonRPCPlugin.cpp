@@ -29,6 +29,7 @@
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
 
+#include <QApplication>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
@@ -36,6 +37,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMetaMethod>
 #include <QProcess>
 #include <QtGui>
 #include <algorithm>
@@ -442,6 +446,18 @@ QList<QAction*> JsonRPCPlugin::getActions() {
     return {m_action};
 }
 
+void JsonRPCPlugin::setMainAppInterface(ecvMainAppInterface* app) {
+    ccStdPluginInterface::setMainAppInterface(app);
+    if (!app) return;
+    rpc_server.listen(6001);
+    if (m_action) {
+        m_action->setChecked(true);
+    }
+    CVLog::Print(QStringLiteral("[JsonRPC] Server auto-started on port 6001 "
+                                "(%1 methods registered)")
+                         .arg(m_methods.size()));
+}
+
 void JsonRPCPlugin::triggered(bool checked) {
     CVLog::Print(QString("JsonRPCPlugin::triggered: checked(%1)").arg(checked));
     if (checked) {
@@ -493,6 +509,12 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcSceneSelect(p); });
     reg("clear",             "Remove all entities from scene",
         [this](auto& p){ return rpcClear(p); });
+
+    // --- Generic UI drivers (agent-test integration; plugin-agnostic) ---
+    reg("ui.triggerAction",  "Trigger a QAction by its text: {text}",
+        [this](auto& p){ return rpcUiTriggerAction(p); });
+    reg("qt.invokeMethod",   "Qt-reflection invoke: {class_contains, method, ?args[0..3], ?object_contains} — the target method must be invokable (Q_INVOKABLE/slot) with QVariant parameters",
+        [this](auto& p){ return rpcQtInvokeMethod(p); });
 
     // --- View control ---
     reg("view.list",          "List all views: returns [{view_id, active}]",
@@ -1119,6 +1141,270 @@ JsonRPCResult JsonRPCPlugin::rpcSceneSetVisible(
     QJsonObject result;
     result["entity_id"] = static_cast<qint64>(entityId);
     result["visible"] = visible;
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ui.triggerAction
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace {
+
+// Plugin objects are created by QPluginLoader WITHOUT a parent, and their
+// actions/dialogs hang below them — a qApp-relative walk never reaches
+// them. Union three domains: the qApp tree, all top-level widgets
+// (parent-less dialogs are still top-level), and every menu's action list
+// (menus hold actions by reference, not by parenting).
+QList<QObject*> collectAllObjects() {
+    QList<QObject*> all;
+    QSet<QObject*> seen;
+    QList<QObject*> queue{QCoreApplication::instance()};
+    seen.insert(QCoreApplication::instance());
+    for (QWidget* w : QApplication::topLevelWidgets()) {
+        if (w && !seen.contains(w)) {
+            seen.insert(w);
+            queue.append(w);
+        }
+    }
+    while (!queue.isEmpty()) {
+        QObject* cur = queue.takeFirst();
+        if (!cur) continue;
+        all.append(cur);
+        for (QObject* child : cur->children()) {
+            if (child && !seen.contains(child)) {
+                seen.insert(child);
+                queue.append(child);
+            }
+        }
+    }
+    for (QObject* obj : all) {
+        // Union every widget's action list: plugin actions reach the UI via
+        // QMenu::addAction AND QToolBar::addAction, neither of which
+        // reparents the action to the widget.
+        if (auto* widget = qobject_cast<QWidget*>(obj)) {
+            for (QAction* action : widget->actions()) {
+                if (action && !seen.contains(action)) {
+                    seen.insert(action);
+                    all.append(action);
+                }
+            }
+        }
+    }
+    return all;
+}
+
+}  // namespace
+
+JsonRPCResult JsonRPCPlugin::rpcUiTriggerAction(
+        const QMap<QString, QVariant>& params) {
+    const QString text = params["text"].toString();
+    if (text.isEmpty()) {
+        return JsonRPCResult::error(1, "Missing parameter: text",
+                                    D("param", "text"));
+    }
+    if (!m_app) {
+        return JsonRPCResult::error(2, "App interface unavailable");
+    }
+
+    QAction* exact = nullptr;
+    QList<QAction*> partial;
+    const auto objects = collectAllObjects();
+    for (QObject* obj : objects) {
+        auto* action = qobject_cast<QAction*>(obj);
+        if (!action || action->text().isEmpty()) continue;
+        if (action->text() == text) {
+            exact = action;
+            break;
+        }
+        if (action->text().contains(text, Qt::CaseInsensitive)) {
+            partial.append(action);
+        }
+    }
+    QAction* hit = exact;
+    if (!hit && partial.size() == 1) {
+        hit = partial.first();
+    }
+    if (!hit) {
+        QJsonObject data;
+        data["text"] = text;
+        data["partial_matches"] = partial.size();
+        return JsonRPCResult::error(2,
+                                    partial.isEmpty() ? "Action not found"
+                                                      : "Ambiguous action text",
+                                    data);
+    }
+    hit->trigger();
+
+    QJsonObject result;
+    result["triggered"] = hit->text();
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// qt.invokeMethod
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcQtInvokeMethod(
+        const QMap<QString, QVariant>& params) {
+    const QString classContains = params.value("class_contains").toString();
+    const QString objectContains = params.value("object_contains").toString();
+    const QString method = params["method"].toString();
+    const QVariantList args = params.value("args").toList();
+    if (method.isEmpty()) {
+        return JsonRPCResult::error(1, "Missing parameter: method",
+                                    D("param", "method"));
+    }
+    if (args.size() > 5) {
+        return JsonRPCResult::error(1, "Too many args (max 5)",
+                                    D("args", args.size()));
+    }
+    if (!m_app) {
+        return JsonRPCResult::error(2, "App interface unavailable");
+    }
+
+    QObject* hit = nullptr;
+    QMetaMethod hitMethod;
+    const bool invokeAll = params.value("all", false).toBool();
+    QList<QPair<QObject*, QMetaMethod>> hits;
+    const QByteArray methodName = method.toLatin1();
+    const auto objects = collectAllObjects();
+    for (QObject* obj : objects) {
+        if (!obj) continue;
+        if (!classContains.isEmpty() &&
+            !QString::fromLatin1(obj->metaObject()->className())
+                     .contains(classContains, Qt::CaseInsensitive)) {
+            continue;
+        }
+        if (!objectContains.isEmpty() &&
+            !obj->objectName().contains(objectContains, Qt::CaseInsensitive)) {
+            continue;
+        }
+        const QMetaObject* mo = obj->metaObject();
+        for (int i = 0; i < mo->methodCount(); ++i) {
+            const QMetaMethod mm = mo->method(i);
+            if (mm.name() != methodName) continue;
+            if (mm.parameterCount() != args.size()) continue;
+            // Driver-side convention: parameterized targets take QVariant
+            // parameters (so the JSON types marshal losslessly); the 0-arg
+            // form has no type constraint.
+            bool typesOk = true;
+            for (int p = 0; p < mm.parameterCount(); ++p) {
+                if (mm.parameterType(p) != QMetaType::QVariant) {
+                    typesOk = false;
+                    break;
+                }
+            }
+            if (!typesOk) continue;
+            if (invokeAll) {
+                hits.append({obj, mm});
+                continue;
+            }
+            if (hit) {
+                QJsonObject data;
+                data["method"] = method;
+                data["first_match_class"] = hit->metaObject()->className();
+                return JsonRPCResult::error(2, "Ambiguous target", data);
+            }
+            hit = obj;
+            hitMethod = mm;
+        }
+    }
+    if (!hit && hits.isEmpty()) {
+        QJsonObject data;
+        data["method"] = method;
+        data["class_contains"] = classContains;
+        return JsonRPCResult::error(2, "No matching invokable method", data);
+    }
+
+    bool ok = false;
+    if (invokeAll) {
+        // Batch mode (e.g. closing every stacked modal of one class).
+        const QVariant a0 = args.value(0);
+        const QVariant a1 = args.value(1);
+        const QVariant a2 = args.value(2);
+        const QVariant a3 = args.value(3);
+        const QVariant a4 = args.value(4);
+        int invoked = 0;
+        for (const auto& h : hits) {
+            const QMetaMethod& mm = h.second;
+            switch (mm.parameterCount()) {
+                case 0:
+                    ok = mm.invoke(h.first, Qt::DirectConnection);
+                    break;
+                case 1:
+                    ok = mm.invoke(h.first, Qt::DirectConnection,
+                                   Q_ARG(QVariant, a0));
+                    break;
+                case 2:
+                    ok = mm.invoke(h.first, Qt::DirectConnection,
+                                   Q_ARG(QVariant, a0), Q_ARG(QVariant, a1));
+                    break;
+                case 3:
+                    ok = mm.invoke(h.first, Qt::DirectConnection,
+                                   Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                   Q_ARG(QVariant, a2));
+                    break;
+                case 4:
+                    ok = mm.invoke(h.first, Qt::DirectConnection,
+                                   Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                   Q_ARG(QVariant, a2), Q_ARG(QVariant, a3));
+                    break;
+                case 5:
+                    ok = mm.invoke(h.first, Qt::DirectConnection,
+                                   Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                   Q_ARG(QVariant, a2), Q_ARG(QVariant, a3),
+                                   Q_ARG(QVariant, a4));
+                    break;
+            }
+            if (ok) ++invoked;
+        }
+        QJsonObject result;
+        result["invoked"] = method;
+        result["count"] = invoked;
+        return JsonRPCResult::success(QJsonDocument(result).toVariant());
+    }
+    const QVariant a0 = args.value(0);
+    const QVariant a1 = args.value(1);
+    const QVariant a2 = args.value(2);
+    const QVariant a3 = args.value(3);
+    const QVariant a4 = args.value(4);
+    switch (hitMethod.parameterCount()) {
+        case 0:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection);
+            break;
+        case 1:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection,
+                                  Q_ARG(QVariant, a0));
+            break;
+        case 2:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection,
+                                  Q_ARG(QVariant, a0), Q_ARG(QVariant, a1));
+            break;
+        case 3:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection,
+                                  Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                  Q_ARG(QVariant, a2));
+            break;
+        case 4:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection,
+                                  Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                  Q_ARG(QVariant, a2), Q_ARG(QVariant, a3));
+            break;
+        case 5:
+            ok = hitMethod.invoke(hit, Qt::DirectConnection,
+                                  Q_ARG(QVariant, a0), Q_ARG(QVariant, a1),
+                                  Q_ARG(QVariant, a2), Q_ARG(QVariant, a3),
+                                  Q_ARG(QVariant, a4));
+            break;
+            break;
+    }
+    if (!ok) {
+        return JsonRPCResult::error(3, "invoke failed", D("method", method));
+    }
+
+    QJsonObject result;
+    result["invoked"] = method;
+    result["class"] = hit->metaObject()->className();
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
 

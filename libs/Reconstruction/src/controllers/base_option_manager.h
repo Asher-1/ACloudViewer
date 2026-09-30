@@ -1,14 +1,13 @@
-// ------------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                    -
-// ------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <boost/program_options.hpp>
-
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -181,8 +180,7 @@ template <typename T>
 void BaseOptionManager::RegisterOption(const std::string& name,
                                        const T* option) {
     if constexpr (std::is_same<T, bool>::value) {
-        options_bool_.emplace_back(name,
-                                   reinterpret_cast<const bool*>(option));
+        options_bool_.emplace_back(name, reinterpret_cast<const bool*>(option));
     } else if constexpr (std::is_same<T, int>::value) {
         options_int_.emplace_back(name, reinterpret_cast<const int*>(option));
     } else if constexpr (std::is_same<T, double>::value) {

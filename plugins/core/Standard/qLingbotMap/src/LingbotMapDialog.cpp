@@ -829,7 +829,8 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     connect(m_resultPointSizeSlider, &QSlider::valueChanged, this,
             [this](int value) {
                 m_resultPointSizeSlider->setToolTip(
-                        tr("Point size: %1 px (applies on release)").arg(value));
+                        tr("Point size: %1 px (applies on release)")
+                                .arg(value));
             });
     connect(m_resultPointSizeSlider, &QSlider::sliderReleased, this,
             emitResultDisplay);
@@ -1635,6 +1636,66 @@ void LingbotMapDialog::setPaused(bool paused) {
     m_pauseButton->setEnabled(m_taskRunning);
 }
 
+void LingbotMapDialog::rpcStartTestScene(const QVariant& scene) {
+    if (!m_testSceneCombo || !m_runButton) {
+        CVLog::Warning(
+                "[LingbotMap] rpcStartTestScene: dialog controls missing");
+        return;
+    }
+    if (scene.type() == QVariant::Int || scene.type() == QVariant::LongLong) {
+        const int idx = scene.toInt();
+        if (idx >= 0 && idx < m_testSceneCombo->count()) {
+            // Fires the combo's own signal chain (path auto-fill + sky
+            // linkage) exactly like a user selection.
+            m_testSceneCombo->setCurrentIndex(idx);
+        } else {
+            CVLog::Warning(
+                    QStringLiteral("[LingbotMap] rpcStartTestScene: index "
+                                   "%1 out of range (%2 scenes)")
+                            .arg(idx)
+                            .arg(m_testSceneCombo->count()));
+            return;
+        }
+    } else {
+        const QString frag = scene.toString();
+        bool matched = false;
+        for (int i = 0; i < m_testSceneCombo->count(); ++i) {
+            if (m_testSceneCombo->itemText(i).contains(frag,
+                                                       Qt::CaseInsensitive)) {
+                m_testSceneCombo->setCurrentIndex(i);
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            CVLog::Warning(
+                    QStringLiteral("[LingbotMap] rpcStartTestScene: no scene "
+                                   "matching '%1'")
+                            .arg(frag));
+            return;
+        }
+    }
+    if (m_runButton->isEnabled()) {
+        m_runButton->click();  // the REAL user path into executeTask
+    } else {
+        CVLog::Warning("[LingbotMap] rpcStartTestScene: Run button disabled");
+    }
+}
+
+void LingbotMapDialog::rpcStartReplay() { emit replayPlayRequested(); }
+
+void LingbotMapDialog::rpcStopReplay() { emit replayStopRequested(); }
+
+void LingbotMapDialog::rpcCommitResultDisplay(const QVariant& threshold,
+                                              const QVariant& pointSize,
+                                              const QVariant& camSizePercent,
+                                              const QVariant& showCameras,
+                                              const QVariant& camStride) {
+    emit resultDisplaySettingsChanged(threshold.toDouble(), pointSize.toInt(),
+                                      camSizePercent.toInt(),
+                                      showCameras.toBool(), camStride.toInt());
+}
+
 void LingbotMapDialog::setResultDisplayReady(bool ready, double minThreshold) {
     m_resultDisplayBox->setEnabled(ready);
     if (!ready) return;
@@ -1652,11 +1713,11 @@ void LingbotMapDialog::setResultDisplayReady(bool ready, double minThreshold) {
     // commit of ANY slider would apply the point-size slider's current
     // value to the clouds as a side effect (the perceived "Camera size
     // slider changed my point size" on first drag).
-    emit resultDisplaySettingsChanged(
-            m_resultThresholdSlider->value() / 100.0,
-            m_resultPointSizeSlider->value(), m_resultCamSizeSlider->value(),
-            m_resultShowCamsCheck->isChecked(),
-            m_resultCamStrideSlider->value());
+    emit resultDisplaySettingsChanged(m_resultThresholdSlider->value() / 100.0,
+                                      m_resultPointSizeSlider->value(),
+                                      m_resultCamSizeSlider->value(),
+                                      m_resultShowCamsCheck->isChecked(),
+                                      m_resultCamStrideSlider->value());
 }
 
 void LingbotMapDialog::updatePreviewImage(const QImage& image,

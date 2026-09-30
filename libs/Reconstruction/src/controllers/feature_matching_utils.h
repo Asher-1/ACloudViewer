@@ -28,76 +28,77 @@ namespace colmap {
 using FeatureMatcherData = internal::FeatureMatcherData;
 
 class FeatureMatcherWorker : public Thread {
- public:
-  using Input = FeatureMatcherData;
-  using Output = FeatureMatcherData;
+public:
+    using Input = FeatureMatcherData;
+    using Output = FeatureMatcherData;
 
-  FeatureMatcherWorker(const FeatureMatchingOptions& matching_options,
-                       const TwoViewGeometryOptions& geometry_options,
-                       const std::shared_ptr<FeatureMatcherCache>& cache,
-                       JobQueue<Input>* input_queue,
-                       JobQueue<Output>* output_queue);
+    FeatureMatcherWorker(const FeatureMatchingOptions& matching_options,
+                         const TwoViewGeometryOptions& geometry_options,
+                         const std::shared_ptr<FeatureMatcherCache>& cache,
+                         JobQueue<Input>* input_queue,
+                         JobQueue<Output>* output_queue);
 
- private:
-  void Run() override;
+private:
+    void Run() override;
 
-  FeatureMatchingOptions matching_options_;
-  TwoViewGeometryOptions geometry_options_;
-  std::shared_ptr<FeatureMatcherCache> cache_;
-  JobQueue<Input>* input_queue_;
-  JobQueue<Output>* output_queue_;
+    FeatureMatchingOptions matching_options_;
+    TwoViewGeometryOptions geometry_options_;
+    std::shared_ptr<FeatureMatcherCache> cache_;
+    JobQueue<Input>* input_queue_;
+    JobQueue<Output>* output_queue_;
 };
 
 class FeatureMatcherController {
- public:
-  FeatureMatcherController(const FeatureMatchingOptions& matching_options,
-                           const TwoViewGeometryOptions& geometry_options,
-                           std::shared_ptr<FeatureMatcherCache> cache);
+public:
+    FeatureMatcherController(const FeatureMatchingOptions& matching_options,
+                             const TwoViewGeometryOptions& geometry_options,
+                             std::shared_ptr<FeatureMatcherCache> cache);
 
-  ~FeatureMatcherController();
+    ~FeatureMatcherController();
 
-  bool Setup();
+    bool Setup();
 
-  void Match(const std::vector<std::pair<image_t, image_t>>& image_pairs);
+    void Match(const std::vector<std::pair<image_t, image_t>>& image_pairs);
 
- private:
-  FeatureMatchingOptions matching_options_;
-  TwoViewGeometryOptions geometry_options_;
-  std::shared_ptr<FeatureMatcherCache> cache_;
-  bool skip_geometric_verification_;
-  bool is_setup_;
-  std::vector<std::unique_ptr<FeatureMatcherWorker>> matchers_;
-  std::vector<std::unique_ptr<FeatureMatcherWorker>> guided_matchers_;
-  std::vector<std::unique_ptr<Thread>> verifiers_;
-  JobQueue<FeatureMatcherData> matcher_queue_;
-  JobQueue<FeatureMatcherData> verifier_queue_;
-  JobQueue<FeatureMatcherData> guided_matcher_queue_;
-  JobQueue<FeatureMatcherData> output_queue_;
+private:
+    FeatureMatchingOptions matching_options_;
+    TwoViewGeometryOptions geometry_options_;
+    std::shared_ptr<FeatureMatcherCache> cache_;
+    bool skip_geometric_verification_;
+    bool is_setup_;
+    std::vector<std::unique_ptr<FeatureMatcherWorker>> matchers_;
+    std::vector<std::unique_ptr<FeatureMatcherWorker>> guided_matchers_;
+    std::vector<std::unique_ptr<Thread>> verifiers_;
+    JobQueue<FeatureMatcherData> matcher_queue_;
+    JobQueue<FeatureMatcherData> verifier_queue_;
+    JobQueue<FeatureMatcherData> guided_matcher_queue_;
+    JobQueue<FeatureMatcherData> output_queue_;
 };
 
 class GeometricVerifierController {
- public:
-  GeometricVerifierController(const GeometricVerifierOptions& verifier_options,
-                              const TwoViewGeometryOptions& geometry_options,
-                              std::shared_ptr<FeatureMatcherCache> cache);
+public:
+    GeometricVerifierController(
+            const GeometricVerifierOptions& verifier_options,
+            const TwoViewGeometryOptions& geometry_options,
+            std::shared_ptr<FeatureMatcherCache> cache);
 
-  const GeometricVerifierOptions& Options() const;
-  GeometricVerifierOptions& Options();
+    const GeometricVerifierOptions& Options() const;
+    GeometricVerifierOptions& Options();
 
-  ~GeometricVerifierController();
+    ~GeometricVerifierController();
 
-  bool Setup();
+    bool Setup();
 
-  void Verify(const std::vector<std::pair<image_t, image_t>>& image_pairs);
+    void Verify(const std::vector<std::pair<image_t, image_t>>& image_pairs);
 
- private:
-  TwoViewGeometryOptions geometry_options_;
-  std::shared_ptr<FeatureMatcherCache> cache_;
-  GeometricVerifierOptions options_;
-  bool is_setup_;
-  std::vector<std::unique_ptr<Thread>> verifiers_;
-  JobQueue<FeatureMatcherData> verifier_queue_;
-  JobQueue<FeatureMatcherData> output_queue_;
+private:
+    TwoViewGeometryOptions geometry_options_;
+    std::shared_ptr<FeatureMatcherCache> cache_;
+    GeometricVerifierOptions options_;
+    bool is_setup_;
+    std::vector<std::unique_ptr<Thread>> verifiers_;
+    JobQueue<FeatureMatcherData> verifier_queue_;
+    JobQueue<FeatureMatcherData> output_queue_;
 };
 
 }  // namespace colmap

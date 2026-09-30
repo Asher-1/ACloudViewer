@@ -32,6 +32,22 @@ public:
 
     QList<QAction*> getActions() override;
 
+    /** RPC/test driving (agent integration): thin Q_INVOKABLE forwards to
+     *  the private replay/display-state entry points so the JSON-RPC
+     *  driver can exercise the EXACT user-visible paths (start/pause/stop
+     *  replay, seek, slider-commit semantics) without exposing them to
+     *  normal UI code. Each wrapper adds no logic of its own. */
+    Q_INVOKABLE void rpcStartPlayback();
+    Q_INVOKABLE void rpcPausePlayback();
+    Q_INVOKABLE void rpcStopPlayback();
+    Q_INVOKABLE void rpcSeekFrame(const QVariant& frame);
+    /** Net effect of a Result-display slider commit (single writer). */
+    Q_INVOKABLE void rpcApplyCameraDisplay(const QVariant& showCameras,
+                                           const QVariant& camStride,
+                                           const QVariant& camSizePercent);
+    /** Opens the dialog (if needed) and forwards to LingbotMapDialog. */
+    Q_INVOKABLE void rpcStartTestScene(const QVariant& scene);
+
 private slots:
     void showDialog();
     void executeTask(const LingbotMapWorker::Settings& settings);
