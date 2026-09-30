@@ -105,6 +105,36 @@ endfunction()
 # holds the app, plugins, and shared libraries. ctest resolves each binary
 # through the target name / $<TARGET_FILE>, and build-tree RPATHs are
 # absolute, so the subfolder does not affect test discovery or loading.
+# Resolve the directory holding the Qt runtime libraries for whichever Qt
+# major version this build links (Qt5 / Qt6 / unprefixed alias). Batch C
+# test-layout consumers (RPATH / ctest ENVIRONMENT) must not hardcode a
+# version: Qt6 exports Qt6::<mod> plus a Qt::<mod> alias, while Qt5 only
+# exports Qt5::<mod>; conda-forge Qt5 additionally defines Qt::<mod> as an
+# INTERFACE aggregate without LOCATION, so the alias is only usable through
+# ALIASED_TARGET (same caveat as the AICore layout's Qt5/6::Gui chain).
+function(cloudviewer_resolve_qt_lib_dir out_var)
+    set(_qt_core_target "")
+    if (TARGET Qt5::Core)
+        set(_qt_core_target Qt5::Core)
+    elseif (TARGET Qt6::Core)
+        set(_qt_core_target Qt6::Core)
+    elseif (TARGET Qt::Core)
+        get_target_property(_qt_core_alias Qt::Core ALIASED_TARGET)
+        if (_qt_core_alias)
+            set(_qt_core_target ${_qt_core_alias})
+        endif ()
+    endif ()
+    set(${out_var} "")
+    if (_qt_core_target)
+        get_target_property(_qt_core_loc ${_qt_core_target} LOCATION)
+        if (_qt_core_loc)
+            get_filename_component(_qt_dir "${_qt_core_loc}" DIRECTORY)
+            set(${out_var} "${_qt_dir}")
+        endif ()
+    endif ()
+    set(${out_var} "${${out_var}}" PARENT_SCOPE)
+endfunction()
+
 function(cloudviewer_set_bin_runtime_output_directory target)
     if(MSVC)
         set(_bin_root "${CMAKE_BINARY_DIR}/bin/plugin_test")
@@ -127,11 +157,7 @@ endfunction()
 # Offscreen variant: merges QT_QPA_PLATFORM into the same ENVIRONMENT value
 # (a second set_tests_properties would overwrite the first).
 function(cloudviewer_set_plugin_test_env_offscreen test_name)
-    set(_qt_lib_dir "")
-    if (TARGET Qt5::Core)
-        get_target_property(_qt_core_loc Qt5::Core LOCATION)
-        get_filename_component(_qt_lib_dir "${_qt_core_loc}" DIRECTORY)
-    endif ()
+    cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
     if (MSVC)
         set_tests_properties(${test_name} PROPERTIES
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
@@ -142,11 +168,7 @@ function(cloudviewer_set_plugin_test_env_offscreen test_name)
 endfunction()
 
 function(cloudviewer_set_plugin_test_env test_name)
-    set(_qt_lib_dir "")
-    if (TARGET Qt5::Core)
-        get_target_property(_qt_core_loc Qt5::Core LOCATION)
-        get_filename_component(_qt_lib_dir "${_qt_core_loc}" DIRECTORY)
-    endif ()
+    cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
     if (MSVC)
         set_tests_properties(${test_name} PROPERTIES
                 ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
@@ -232,11 +254,7 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
             # Systems with a second system-wide Qt (different 5.x minor) must
             # load the Qt that AICore was built against: prepend the resolved
             # Qt lib dir for ctest runs (batch C test-layout fix).
-            set(_qt_dir_for_env "")
-            if (TARGET Qt5::Core)
-                get_target_property(_qt_core_loc_env Qt5::Core LOCATION)
-                get_filename_component(_qt_dir_for_env "${_qt_core_loc_env}" DIRECTORY)
-            endif ()
+            cloudviewer_resolve_qt_lib_dir(_qt_dir_for_env)
             if (TEST ${target})
                 set_tests_properties(${target} PROPERTIES
                         ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/bin:${_qt_dir_for_env}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")

@@ -332,9 +332,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # relocated tests under bin/colmap_test/ stay runnable on all three
         # platforms without relying on the caller's shell environment.
         set(_COLMAP_TEST_BUILD_RPATH "${CMAKE_BINARY_DIR}/external/lib:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-        if (TARGET Qt5::Core)
-            get_target_property(_COLMAP_QT_CORE_LOCATION Qt5::Core LOCATION)
-            get_filename_component(_COLMAP_QT_LIB_DIR "${_COLMAP_QT_CORE_LOCATION}" DIRECTORY)
+        # Version-agnostic Qt runtime directory (Qt5/Qt6/unprefixed alias).
+        cloudviewer_resolve_qt_lib_dir(_COLMAP_QT_LIB_DIR)
+        if (_COLMAP_QT_LIB_DIR)
             string(APPEND _COLMAP_TEST_BUILD_RPATH ":${_COLMAP_QT_LIB_DIR}")
         endif ()
         set_target_properties(${TARGET_NAME} PROPERTIES
