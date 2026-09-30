@@ -1575,9 +1575,4 @@ void IncrementalMapper::ResetInitializationStats() {
   reg_stats_.init_image_pairs.clear();
 }
 
-class ObservationManager& IncrementalMapper::ObservationManager() const {
-    THROW_CHECK_NOTNULL(obs_manager_);
-    return *obs_manager_;
-}
-
 }  // namespace colmap

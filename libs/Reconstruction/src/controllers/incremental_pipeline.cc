@@ -7,6 +7,8 @@
 
 #include "controllers/incremental_pipeline.h"
 
+#include "sfm/observation_manager.h"
+
 #include "util/hash_containers.h"
 
 #include "estimators/bundle_adjustment_caspar.h"
