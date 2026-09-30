@@ -120,6 +120,25 @@ function(cloudviewer_set_bin_runtime_output_directory target)
     endif()
 endfunction()
 
+
+# Batch C test-layout companion: ctest environment for tests relocated under
+# bin/plugin_test/ (PATH for MSVC DLLs; LD_LIBRARY_PATH for Linux/macOS with
+# Qt and the vendored opencv resolved from their configure-time locations).
+function(cloudviewer_set_plugin_test_env test_name)
+    set(_qt_lib_dir "")
+    if (TARGET Qt5::Core)
+        get_target_property(_qt_core_loc Qt5::Core LOCATION)
+        get_filename_component(_qt_lib_dir "${_qt_core_loc}" DIRECTORY)
+    endif ()
+    if (MSVC)
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+    else ()
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+    endif ()
+endfunction()
+
 function(cloudviewer_set_examples_runtime_output_directory target)
     # Per-target override matches legacy EXAMPLE_BIN_DIR = bin/examples on all platforms.
     set_target_properties(${target} PROPERTIES
@@ -179,6 +198,16 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
             endif()
         else()
             set(_rpath "\$ORIGIN/..")
+            # Build-tree-only addition (batch C test-layout fix): the vendored
+            # opencv (libopencv_world.so.<abi>) lives under external/lib and is
+            # a transitive dependency of libAICore; without it, link-time and
+            # run-time resolution fail once tests moved out of bin/.
+            list(APPEND _rpath "${CMAKE_BINARY_DIR}/external/lib")
+            set_target_properties(${target} PROPERTIES
+                BUILD_RPATH "${_rpath}"
+                INSTALL_RPATH "\$ORIGIN/.."
+            )
+            return()
         endif()
         set_target_properties(${target} PROPERTIES
             BUILD_RPATH "${_rpath}"

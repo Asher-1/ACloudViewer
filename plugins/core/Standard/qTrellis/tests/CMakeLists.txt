@@ -35,3 +35,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qtrellis_catalog)
 add_test(NAME test_qtrellis_catalog COMMAND test_qtrellis_catalog)
+cloudviewer_set_plugin_test_env(test_qtrellis_catalog)

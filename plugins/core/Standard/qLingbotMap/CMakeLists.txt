@@ -57,5 +57,6 @@ if( PLUGIN_STANDARD_QLINGBOTMAP )
         )
         add_test( NAME test_lingbot_window_stitch
                   COMMAND test_lingbot_window_stitch )
+cloudviewer_set_plugin_test_env(test_lingbot_window_stitch)
     endif()
 endif()

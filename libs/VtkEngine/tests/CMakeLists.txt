@@ -25,3 +25,5 @@ target_include_directories(test_composite_block_registry PRIVATE
 
 add_test(NAME composite_block_registry
          COMMAND test_composite_block_registry)
+cloudviewer_set_bin_runtime_output_directory(test_composite_block_registry)
+cloudviewer_set_plugin_test_env(composite_block_registry)

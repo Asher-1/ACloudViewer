@@ -42,3 +42,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qgkd_helpers)
 add_test(NAME test_qgkd_helpers COMMAND test_qgkd_helpers)
+cloudviewer_set_plugin_test_env(test_qgkd_helpers)

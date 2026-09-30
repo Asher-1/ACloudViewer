@@ -327,6 +327,27 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # files (e.g. util/eigen_matchers.h).
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock)
 
+        # Batch C test-layout fix: resolve shared-library directories at
+        # configure time (Qt, vendored opencv) into the build RPATH so the
+        # relocated tests under bin/colmap_test/ stay runnable on all three
+        # platforms without relying on the caller's shell environment.
+        set(_COLMAP_TEST_BUILD_RPATH "${CMAKE_BINARY_DIR}/external/lib:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+        if (TARGET Qt5::Core)
+            get_target_property(_COLMAP_QT_CORE_LOCATION Qt5::Core LOCATION)
+            get_filename_component(_COLMAP_QT_LIB_DIR "${_COLMAP_QT_CORE_LOCATION}" DIRECTORY)
+            string(APPEND _COLMAP_TEST_BUILD_RPATH ":${_COLMAP_QT_LIB_DIR}")
+        endif ()
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                BUILD_RPATH "${_COLMAP_TEST_BUILD_RPATH}"
+                INSTALL_RPATH "${_COLMAP_TEST_BUILD_RPATH}")
+        if (NOT MSVC)
+            # Emit DT_RPATH instead of DT_RUNPATH on Linux: RPATH is honored
+            # for the whole dependency tree (indirect deps such as opencv
+            # pulled in through CVCoreLib), while RUNPATH is not. macOS rpath
+            # lists already apply globally per executable.
+            target_link_options(${TARGET_NAME} PRIVATE "-Wl,--disable-new-dtags")
+        endif ()
+
         if (MSVC)
             # fix compiling error on windows platform
             target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
@@ -348,6 +369,14 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             # generator expressions in ENVIRONMENT).
             set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
                     ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+        else ()
+            # Linux/macOS: same reasoning for shared libraries that live in
+            # bin/ (e.g. libAICore.so, whose own $ORIGIN RUNPATH deliberately
+            # hides build paths, so its vendored-opencv dependency must be
+            # resolved from the environment) plus the Qt and vendored-opencv
+            # directories resolved above (batch C test-layout fix).
+            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                    ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_COLMAP_QT_LIB_DIR}:${CMAKE_BINARY_DIR}/external/lib:${COLMAP_TEST_RUNTIME_DIR}:$ENV{LD_LIBRARY_PATH}")
         endif ()
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
