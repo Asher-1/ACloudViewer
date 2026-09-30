@@ -219,8 +219,8 @@ if(PLUGIN_STANDARD_QANYLABELING)
         cloudviewer_set_bin_runtime_output_directory(test_qanylabeling_loma_bridge)
         add_test(NAME test_qanylabeling_loma_bridge
             COMMAND test_qanylabeling_loma_bridge)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_loma_bridge)
         set_tests_properties(test_qanylabeling_loma_bridge PROPERTIES
-            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             SKIP_RETURN_CODE 77)
 
         add_executable(test_qanylabeling_exporter

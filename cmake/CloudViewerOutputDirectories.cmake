@@ -124,6 +124,23 @@ endfunction()
 # Batch C test-layout companion: ctest environment for tests relocated under
 # bin/plugin_test/ (PATH for MSVC DLLs; LD_LIBRARY_PATH for Linux/macOS with
 # Qt and the vendored opencv resolved from their configure-time locations).
+# Offscreen variant: merges QT_QPA_PLATFORM into the same ENVIRONMENT value
+# (a second set_tests_properties would overwrite the first).
+function(cloudviewer_set_plugin_test_env_offscreen test_name)
+    set(_qt_lib_dir "")
+    if (TARGET Qt5::Core)
+        get_target_property(_qt_core_loc Qt5::Core LOCATION)
+        get_filename_component(_qt_lib_dir "${_qt_core_loc}" DIRECTORY)
+    endif ()
+    if (MSVC)
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+    else ()
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+    endif ()
+endfunction()
+
 function(cloudviewer_set_plugin_test_env test_name)
     set(_qt_lib_dir "")
     if (TARGET Qt5::Core)
@@ -207,6 +224,23 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
                 BUILD_RPATH "${_rpath}"
                 INSTALL_RPATH "\$ORIGIN/.."
             )
+            # DT_RPATH (not RUNPATH) so the executable's search list also
+            # covers indirect dependencies such as libAICore's opencv.
+            if (NOT MSVC)
+                target_link_options(${target} PRIVATE "-Wl,--disable-new-dtags")
+            endif ()
+            # Systems with a second system-wide Qt (different 5.x minor) must
+            # load the Qt that AICore was built against: prepend the resolved
+            # Qt lib dir for ctest runs (batch C test-layout fix).
+            set(_qt_dir_for_env "")
+            if (TARGET Qt5::Core)
+                get_target_property(_qt_core_loc_env Qt5::Core LOCATION)
+                get_filename_component(_qt_dir_for_env "${_qt_core_loc_env}" DIRECTORY)
+            endif ()
+            if (TEST ${target})
+                set_tests_properties(${target} PROPERTIES
+                        ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/bin:${_qt_dir_for_env}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+            endif ()
             return()
         endif()
         set_target_properties(${target} PROPERTIES
