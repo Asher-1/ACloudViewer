@@ -55,6 +55,9 @@ COLMAP_ADD_SOURCES(
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
 
 COLMAP_ADD_TEST(global_pipeline_test global_pipeline_test.cc)
+# TEMP-DIAG: PRNG seed scan for the non-trivial-rig filtering variance;
+# DISABLED_ test, run manually with --gtest_also_run_disabled_tests.
+COLMAP_ADD_TEST(pipeline_rng_scan_test pipeline_rng_scan_test.cc)
 COLMAP_ADD_TEST(controllers_bundle_adjustment_test bundle_adjustment_test.cc)
 COLMAP_ADD_TEST(image_reader_test image_reader_test.cc)
 COLMAP_ADD_TEST(option_manager_test option_manager_test.cc)

@@ -755,6 +755,27 @@ alignment.cc 已有但从未在 pipeline 调用)移植到 fork 的两个 keep �
   下一批入口:固定 PRNG 态复现 2600 案例(临时 debug target 扫 SetPRNGSeed(k))
   + BA 前后帧级位姿对比,定位不收敛帧与 upstream 的行为差。
 
+### 批次 G 补充:viewer 裁定回滚 + 方差二轮定性(2026-10-01)
+
+- **viewer/pycolmap 删除裁定回滚**(用户质询命中):upstream 的 3D Viewer
+  是纯前端静态页(viewer_src TS → vite → 嵌入文档站),**不是 CLI 能力**——
+  upstream 全仓也无 `viewer` 命令(与 fork 命令面一致);pycolmap 文档是
+  python 对齐 TODO 的目标态描述。全部恢复,doc 树回到与 upstream 逐字节
+  一致(对账 UP/FORK/DIFF 全 NONE);仅保留 3 个真 FORK-only 删除
+  (Colmap.desktop 旧启动脚本变体 + 2 张旧 png)。
+- **方差二轮定性**(前缀组合扫描,零编译):同二进制、同用例顺序、同 PRNG
+  前缀下 PriorBasedSfMWithoutNoise 10/10 PASS(含完整 13 前序组合)——
+  PRNG 假设降级;全量挂仅发生在 ctest -j4 并行下 → **方差 = ceres 多线程
+  位级抖动 × fork 在部分 PRNG 序列下贴近 filter 阈值边缘(质量余量不足)**;
+  upstream 同为全核但质量余量大,故稳定。
+- 新增 controllers/pipeline_rng_scan_test.cc(TEMP-DIAG,DISABLED_,不入
+  gate,gate 命令需 -E controllers/pipeline_rng_scan_test):扫
+  SetPRNGSeed(k) + options.random_seed=k 记录观测数;编译暂被并行会话的
+  ggml patch 迭代阻断(ext_ggml 源与 patch 不同步),ggml 恢复后执行。
+- 教训:删除同源快照件前必须验证 upstream 侧真相,而非只验证 fork 侧
+  缺失——对齐工程中「fork 没有 X」不蕴含「应删除 X 的文档」,先判定 X
+  在 upstream 的形态(能力 vs 文档资产)。
+
 ### doc 目录对账与清理(与 upstream d3ccaf35 逐文件对账)
 
 - 对账结果:69 个共同文件**逐字节一致**(fork doc = upstream doc 快照);
