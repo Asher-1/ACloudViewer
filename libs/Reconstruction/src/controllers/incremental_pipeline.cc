@@ -170,6 +170,9 @@ IncrementalMapper::Options IncrementalMapperOptions::Mapper() const {
     options.num_threads = num_threads;
     options.local_ba_num_images = ba_local_num_images;
     options.fix_existing_images = fix_existing_images;
+    options.constant_rigs = constant_rigs;
+    options.constant_cameras = constant_cameras;
+    options.random_seed = random_seed;
     options.ba_global_ignore_redundant_points3D =
             ba_global_ignore_redundant_points3D;
     options.ba_global_ignore_redundant_points3D_min_coverage_gain =
@@ -187,6 +190,7 @@ IncrementalTriangulator::Options IncrementalMapperOptions::Triangulation()
     options.min_focal_length_ratio = min_focal_length_ratio;
     options.max_focal_length_ratio = max_focal_length_ratio;
     options.max_extra_param = max_extra_param;
+    options.random_seed = random_seed;
     return options;
 }
 
@@ -217,6 +221,7 @@ BundleAdjustmentOptions IncrementalMapperOptions::LocalBundleAdjustment()
     options.refine_focal_length = ba_refine_focal_length;
     options.refine_principal_point = ba_refine_principal_point;
     options.refine_extra_params = ba_refine_extra_params;
+    options.refine_sensor_from_rig = ba_refine_sensor_from_rig;
     options.min_num_residuals_for_cpu_multi_threading =
             ba_min_num_residuals_for_cpu_multi_threading;
     options.loss_function_scale = 1.0;
@@ -267,6 +272,7 @@ BundleAdjustmentOptions IncrementalMapperOptions::GlobalBundleAdjustment()
     options.refine_focal_length = ba_refine_focal_length;
     options.refine_principal_point = ba_refine_principal_point;
     options.refine_extra_params = ba_refine_extra_params;
+    options.refine_sensor_from_rig = ba_refine_sensor_from_rig;
     options.min_num_residuals_for_cpu_multi_threading =
             ba_min_num_residuals_for_cpu_multi_threading;
     options.loss_function_type =

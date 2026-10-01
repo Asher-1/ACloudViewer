@@ -87,10 +87,15 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the option-surface alignment batch): the
+  // missing controller knobs (ba_refine_sensor_from_rig, constant_rigs,
+  // constant_cameras, random_seed) are now ported and wired to the mapper,
+  // triangulator, and both BA option builders, and the synthetic per-rig
+  // construction matches upstream verbatim, yet the model still splits.
+  // Fresh evidence: the first local BA starts at ~80px initial cost on this
+  // noise-free dataset (upstream converges from sub-pixel) and the post-BA
+  // filter drops 99/100 observations, tearing the model apart. Next probe:
+  // two-view initialization / triangulation under non-trivial rigs.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -110,7 +115,7 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) 
   // Fork adjudication: the fork has no per-sensor-from-rig BA refinement
   // knob (ba_refine_sensor_from_rig), so the upstream two-variant loop runs
   // its single supported variant.
-  for (const bool refine_sensor_from_rig : {true}) {
+  for (const bool refine_sensor_from_rig : {true, false}) {
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
     auto options = std::make_shared<IncrementalMapperOptions>();
     IncrementalMapperController mapper(options.get(), "", database_path,
@@ -167,10 +172,13 @@ TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAndCameras) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the option-surface alignment batch):
+  // constant_rigs/constant_cameras are now ported to the controller options
+  // and consumed by the existing BA config path (SetConstantSensorFromRigPose
+  // / SetConstantCamera), but the model splits even harder with
+  // the rig pinned (Size 3). Same signature as the sibling non-trivial-rig
+  // cases: inflated initial BA cost then mass post-BA filtering. Next probe:
+  // two-view initialization / triangulation under non-trivial rigs.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -192,6 +200,8 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
   auto options = std::make_shared<IncrementalMapperOptions>();
+  options->constant_rigs.insert(kConstantRigId);
+  options->constant_cameras.insert(kConstantCameraId);
   IncrementalMapperController mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
@@ -218,10 +228,11 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivialFrames) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the option-surface alignment batch):
+  // the two refine_sensor_from_rig variants now run, and both still split.
+  // Same signature as the sibling non-trivial-rig cases: inflated initial
+  // BA cost then mass post-BA filtering. Next probe: two-view
+  // initialization / triangulation under non-trivial rigs.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -241,7 +252,7 @@ TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivia
   // Fork adjudication: the fork has no per-sensor-from-rig BA refinement
   // knob (ba_refine_sensor_from_rig), so the upstream two-variant loop runs
   // its single supported variant.
-  for (const bool refine_sensor_from_rig : {true}) {
+  for (const bool refine_sensor_from_rig : {true, false}) {
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
     auto options = std::make_shared<IncrementalMapperOptions>();
     IncrementalMapperController mapper(options.get(), "", database_path,

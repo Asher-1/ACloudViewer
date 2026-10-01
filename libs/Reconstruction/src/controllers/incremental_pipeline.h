@@ -12,6 +12,7 @@
 
 #include "scene/reconstruction_manager.h"
 #include "sfm/incremental_mapper.h"
+#include "util/hash_containers.h"
 #include "util/threading.h"
 
 namespace colmap {
@@ -63,6 +64,10 @@ public:
     bool ba_refine_focal_length = true;
     bool ba_refine_principal_point = false;
     bool ba_refine_extra_params = true;
+
+    // Whether to refine the sensor-from-rig poses in bundle adjustment
+    // (upstream d3ccaf35 incremental_pipeline.h).
+    bool ba_refine_sensor_from_rig = true;
 
     // The minimum number of residuals per bundle adjustment problem to
     // enable multi-threading solving of the problems.
@@ -123,6 +128,19 @@ public:
 
     // If reconstruction is provided as input, fix the existing image poses.
     bool fix_existing_images = false;
+
+    // List of rigs for which to fix the sensor_from_rig transformation,
+    // independent of ba_refine_sensor_from_rig (upstream parity;
+    // fork consumes the same NodeHashSet type as the mapper options).
+    NodeHashSet<rig_t> constant_rigs;
+
+    // List of cameras for which to fix the camera parameters independent
+    // of refine_focal_length, refine_principal_point, and refine_extra_params.
+    NodeHashSet<camera_t> constant_cameras;
+
+    // Random seed for randomized sub-steps (RANSAC in absolute pose
+    // estimation and prior alignment); -1 leaves the default non-determinism.
+    int random_seed = -1;
 
     // Whether to use position priors for BA and to convert them to a local
     // ENU frame when loading the database cache (upstream parity,

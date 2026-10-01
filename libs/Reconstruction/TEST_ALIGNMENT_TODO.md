@@ -649,3 +649,37 @@ FilterPoints3DInImages/Set/Reset/SetUp,ADDED=空)。**净删对账应成为大�
 4. **门禁**:L3 registration 数差 ≤5% 且重投影同量级;不满足→回到 L2 定位。
 5. **依赖**:B 线 GGUF 下载、aliked/lightglue 的 sources.json 登记、manifest 场景行
    (L2/L3 probe 进 validate_all 矩阵)——与上面留项合并为一个独立验证批次。
+
+## 批次 D:controller 选项面 frame 级对齐 + 分裂根因取证(2026-10-01)
+
+### 选项面移植(upstream parity 补齐)
+
+对照 upstream IncrementalPipelineOptions 全字段 diff,fork 缺失面移植到
+IncrementalMapperOptions:
+- `ba_refine_sensor_from_rig`(默认 true):显式传入 Local/Global BA options——此前
+  fork 依赖 BA options 默认值 true 行为等价,但两变体测试与 CLI 面缺失;现与
+  upstream :178/:221 同路径,并注册 `Mapper.ba_refine_sensor_from_rig`;
+- `constant_rigs`/`constant_cameras`(NodeHashSet,与 mapper Options 同型):传入
+  mapper Options;BA config 消费链(SetConstantSensorFromRigPose/SetConstantCamera,
+  mapper.cc :622-:799)fork 已完整存在;
+- `random_seed`:传入 mapper(triangulator);fork mapper 已消费于 abs_pose RANSAC
+  (:425)与 CHECK(:97)。
+- 命名滞后项(fix_existing_frames vs fork fix_existing_images、ba_global_frames_ratio/freq
+  vs images_ratio/freq、snapshot_frames_freq vs snapshot_images_freq)为 frame 级改名
+  遗留,语义等价,另批处理(CLI 面已绑定旧名,改名牵连 exe/app)。
+
+### 分裂根因取证(两个假设证伪,新证据链)
+
+- 假设 1 证伪:"fork 无 per-sensor-from-rig BA refinement"——批次 B 已对齐 BA 层
+  (bundle_adjustment.h :205 + ceres rig 参数块),controller knob 移植后行为不变;
+- 假设 2 证伪:synthetic per-rig 构造差异——fork synthetic.cc 的 sensor_from_rig
+  生成与 upstream 逐字一致(Z 轴旋转 clamp + 平移高斯);
+- 新证据(WithoutNoiseAndWithNonTrivialFrames 实测日志):
+  ①首个 local BA **initial cost ~80px**(无噪声数据,upstream 应为亚像素级起点);
+  ②Iterations 201/No convergence 后 final 0.0099px,但紧随的过滤阶段
+  **丢弃 99/100 观测** → 模型死亡 → 开新模型 = fragmentation 机理;
+  ③ConstantRigs 用固定 rig 后分裂更重(Size 3)。
+- 结论:根因收敛到 **two-view 初始化/三角化在非平凡 rig 下的系统性错误**
+  (初始位姿或三角化点严重偏离,BA 参数化仍能拉回低残差但过滤阶段按真实几何
+  阈值剔除),下一批需插桩对比 init 两图的 relative pose/三角化点 vs GT。
+- 验证:gate 162/162;三用例保持 DISABLED,注记更新为本证据链。
