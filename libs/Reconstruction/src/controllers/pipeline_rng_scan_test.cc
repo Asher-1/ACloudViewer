@@ -40,6 +40,10 @@ TEST(PipelineRngScan, DISABLED_ScanSeeds) {
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
     auto options = std::make_shared<IncrementalMapperOptions>();
     options->random_seed = static_cast<int>(k);
+    // TEMP-DIAG(batch-I): pin single-threaded BA so the ceres reduction
+    // order is deterministic; multi-threaded runs fork the pipeline at
+    // bit-level jitter and mask the per-seed pipeline quality question.
+    options->num_threads = 1;
     IncrementalMapperController mapper(options.get(), "", database_path,
                                        reconstruction_manager.get());
     mapper.Start();
@@ -54,6 +58,37 @@ TEST(PipelineRngScan, DISABLED_ScanSeeds) {
       num_obs = rec.ComputeNumObservations();
       num_frames = rec.NumRegFrames();
       num_points = rec.NumPoints3D();
+    }
+    // TEMP-DIAG(batch-I): cross-ledger comparison at read time.
+    for (size_t mi = 0; mi < num_models; ++mi) {
+      const Reconstruction& mrec = reconstruction_manager->Get(mi);
+      size_t track_obs = 0;
+      for (const auto& pit : mrec.Points3D()) {
+        track_obs += pit.second.Track().Length();
+      }
+      std::cout << "[rng-scan-ledger] seed=" << k << " model=" << mi
+                << " obs_image=" << mrec.ComputeNumObservations()
+                << " obs_track=" << track_obs << std::endl;
+    }
+    // TEMP-DIAG(batch-I): dangling point2D->point3D reference audit; a
+    // dangling reference makes ExtractColorsForImage throw std::out_of_range
+    // (the gtest_repeat at() crash mechanism).
+    if (num_models > 0) {
+      const Reconstruction& rec0 = reconstruction_manager->Get(0);
+      size_t dangling = 0;
+      for (const image_t img_id : rec0.RegImageIds()) {
+        const Image& img = rec0.Image(img_id);
+        for (size_t p2d_idx = 0; p2d_idx < img.Points2D().size(); ++p2d_idx) {
+          const Point2D& p2d = img.Point2D(p2d_idx);
+          if (p2d.HasPoint3D() && rec0.ExistsPoint3D(p2d.Point3DId()) == false) {
+            ++dangling;
+          }
+        }
+      }
+      if (dangling > 0) {
+        std::cout << "[dangling-diag] seed=" << k << " dangling=" << dangling
+                  << std::endl;
+      }
     }
     std::cout << "[rng-scan] seed=" << k << " models=" << num_models
               << " reg_frames=" << num_frames << " points3D=" << num_points

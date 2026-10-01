@@ -838,17 +838,31 @@ void CeresBundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
 
         ceres::CostFunction* cost_function = nullptr;
 
+        // Upstream parity (d3ccaf35): the constant pose for track-extension
+        // images must be the live rig-aware frame composition (ref sensor:
+        // RigFromWorld; non-ref: SensorFromRig * RigFromWorld). The legacy
+        // qvec/tvec mirrors go stale for frames outside the last BA window
+        // and would poison the BA start with hundreds-of-px residuals,
+        // spiraling into divergence and mass observation filtering.
+        const Rigid3d cam_from_world_ext = image.CamFromWorld();
+        const Eigen::Vector4d ext_qvec(
+                cam_from_world_ext.rotation().w(),
+                cam_from_world_ext.rotation().x(),
+                cam_from_world_ext.rotation().y(),
+                cam_from_world_ext.rotation().z());
         if (camera.ModelId() == EquirectangularCameraModel::model_id) {
             cost_function =
                     EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
-                            image.Qvec(), image.Tvec(), point2D.XY());
+                            ext_qvec, cam_from_world_ext.translation(),
+                            point2D.XY());
         } else {
             switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                         \
     case CameraModel::model_id:                                                \
         cost_function =                                                        \
                 BundleAdjustmentConstantPoseCostFunction<CameraModel>::Create( \
-                        image.Qvec(), image.Tvec(), point2D.XY());             \
+                        ext_qvec, cam_from_world_ext.translation(),             \
+                        point2D.XY());                                         \
         break;
 
             CAMERA_MODEL_SWITCH_CASES

@@ -407,11 +407,6 @@ void Reconstruction::DeletePoint3D(const point3D_t point3D_id) {
 
     const class Track& track = Point3D(point3D_id).Track();
 
-    const bool kIsDeletedPoint3D = true;
-
-    for (const auto& track_el : track.Elements()) {
-    }
-
     for (const auto& track_el : track.Elements()) {
         class Image& image = Image(track_el.image_id);
         image.ResetPoint3DForPoint2D(track_el.point2D_idx);
@@ -1204,6 +1199,14 @@ bool Reconstruction::ExtractColorsForImage(const image_t image_id,
     const Eigen::Vector3ub kBlackColor(0, 0, 0);
     for (const Point2D& point2D : image.Points2D()) {
         if (point2D.HasPoint3D()) {
+            // Defensive guard: a dangling point2D->point3D reference (a
+            // track element that survived a point deletion) must not
+            // throw std::out_of_range from Point3D()'s map::at here - the
+            // color extraction runs inside the live reconstruction loop
+            // (gtest_repeat surfaced this as a cross-iteration crash).
+            if (!ExistsPoint3D(point2D.Point3DId())) {
+                continue;
+            }
             class Point3D& point3D = Point3D(point2D.Point3DId());
             if (point3D.Color() == kBlackColor) {
                 BitmapColor<float> color;

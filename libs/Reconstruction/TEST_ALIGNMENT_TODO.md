@@ -818,3 +818,78 @@ alignment.cc 已有但从未在 pipeline 调用)移植到 fork 的两个 keep �
 - 保留:其余 rst(与 upstream 逐字一致且描述的 CLI/GUI/格式/相机/rig
   能力 fork 全部存在,实测 Colmap help 命令面与 cli.rst 对齐)、
   COLMAP.desktop/colmap.1/sphinx 基建。
+
+## 批次 I:第三处镜像读取面实锤修复 + 三缺陷裁定 + 全仓对齐扫描(2026-10-01)
+
+### 缺陷 1:观测缺口与分裂回归 → 根因修复(第三处镜像消费)
+
+批次 H 修复改变管线轨迹后,PRNG 扫描(k=1..30,单线程确定性验证)暴露
+8/30 seed 退化:2600/2400 观测缺口、seed 5/14/28 分裂(models=2)。
+分段追踪(管线四断点 + OM filter 分类 + 双账本口径 + local BA 前后
+per-image RMS)逐层收窄:
+
+- 缺口是**帧级全灭**:撕点在 image #5/#26 注册后的 local BA——
+  abs-pose 8.5e-06px 完美 + Continued 100,ceres initial_cost 却 211px;
+- **量级矛盾**直指参数块初值:track 扩展(`AddPointToProblem` 对 config 外
+  image)建 constant-pose residual 时用 **stale 双轨镜像 image.Qvec()/Tvec()**,
+  upstream d3ccaf35 用**实时 rig-aware 组合**(ref: RigFromWorld;
+  非 ref: SensorFromRig*RigFromWorld)→ 起点数百 px → ceres 发散
+  (worst RMS 达 1e154px)→ filter 屠杀 → 计数缺口/模型死亡;
+- **修复**(bundle_adjustment_ceres.cc):track 扩展 constant pose 改读
+  `image.CamFromWorld()`——与批次 E(SetUp 反写)/H(Continue/Complete)
+  构成镜像缺陷三连修,全部同族(镜像窗口外 stale);
+- **效果**:扫描 30/30 全部 models=1/14 帧/100 点/2800 观测,与 upstream
+  d3ccaf35 同实验(同参数 up 探针 30/30 完美)**完全对齐**;
+- **解锁 4 个 DISABLED**:WithoutNoiseAndWithNonTrivialFrames(两变体)、
+  WithNonTrivialFramesAndConstantRigsAndCameras、
+  WithoutNoiseAndWithPanoramicNonTrivialFrames——3 次重复全绿(17 PASSED)。
+
+### 缺陷 2:Cholesky failure → 良性瞬态裁定
+
+单线程确定性下 Cholesky failure 仅出现在 **seed 26/27(完美 seed)**,
+与异常 seed 零关联——ceres trust-region 中间迭代的病态步瞬态(内部防御
+路径工作正常,终态 Convergence)。批次 H 的「13-15 段大量失败」是日志
+切段污染造成的误关联。**非缺陷**。
+
+### 缺陷 3:gtest_repeat at 崩溃 → 机制取证 + 防御加固
+
+- 崩溃点:ExtractColors WARNING 之后的下一 map at()(二进制 stripped,
+  原子帧无符号);机制 = 跨迭代全局态(残留 PRNG 序列)产生
+  point2D→point3D 悬挂引用;
+- 30-seed 单线程扫描(含 ExtractColors 全开)**零悬挂**——需 repeat 特有
+  序列才触发;
+- 加固:ExtractColorsForImage 对悬挂引用防御性 skip(不再 at() 崩);
+  DeletePoint3D 清理空循环残骸;
+- **留因**:悬挂引用的原子产生点未定位(需 -g 重编 repeat 复现);非 gate
+  面(gate 不用 repeat)。
+
+### 全仓上游对齐扫描(逐文件 diff + 函数签名对账)
+
+- 605 upstream 文件:575 内容 diff(含版权头差异)、30 upstream-only、
+  67 fork-only;**P0 = 0**(编译/链接/gate 全绿);
+- upstream-only 等价裁定:scene/rig(→fork scene/rig.h)、matcher_cache
+  (→feature/matching 内联)、ceres_loss_function(→bundle_adjustment_ceres.h
+  内联)、solvers/utils(→estimators/utils)、onnx_*(→AICore ggml 有意替代)、
+  util/testing 等基建(fork 自有测试基建);
+- **P1 清单(真缺失,行为面)**:
+  1. **prior-position BA 残差路径**(CreatePositionPriorCostFunction/
+     AddImagePosePriorToProblem/PosePriorBundleAdjuster ceres 版)——fork
+     prior 只做收尾 Sim3 对齐(批次 E),upstream 在管线内 BA 约束——
+     **3 个 Prior 用例 1900/2000 缺口的根因候选**;
+  2. **two_view_geometry degenerate-check 家族**(upstream 23 处
+     OrDegenerate/Check*,fork 0)——鲁棒性路径;
+  3. SolveWithGpuFallback(GPU BA fallback,fork 无 GPU BA 面);
+  4. SolveTriangulationDlt/LeftJacobianFromAngleAxis(数值路径升级);
+  5. MaybeMarkWatermark 细节/RescaleToMaxImageSize/feature 面杂项。
+- P2:其余(等价改名/平台特定 Win/CUDA/util 下载面/ui 自有实现/
+  fork-only 扩展 67 文件有意保留)。
+
+### 附带发现与基建状态
+
+- caspar_test 的 SplitIntrinsic 子用例存在 **GPU warmup 顺序依赖**
+  (单跑/并行坏值 63.9px,全量顺序跑过)——先前批次遗留 flaky,与本轮
+  无关(修复路径未触及该 fixture);rerun 即过,gate 默认顺序满足;
+- pipeline_rng_scan_test(TEMP-DIAG,gate 排除)保留:seed 扫描 + SeedDetail
+  track 配对 + 悬挂引用审计三个探针,num_threads=1 固定确定性;
+- upstream 对照实验基建:upstream build 树可编 main() 探针(用完即删,
+  本次已清理)——后续对齐裁定可复用此通道。

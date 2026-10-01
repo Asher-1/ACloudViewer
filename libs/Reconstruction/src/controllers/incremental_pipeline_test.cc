@@ -86,14 +86,14 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
-  // anchor port): no more model splitting or aborts - every frame registers
-  // and every point survives; the remaining gap is a small, seed-dependent
-  // observation deficit after the final filtering pass (e.g. 2600 vs 2800
-  // observations, flaky across runs), i.e. filtering-quality parity rather
-  // than bookkeeping. Deferred until the residual filtering differences
-  // are reconciled.
+TEST(IncrementalMapperController, WithoutNoiseAndWithNonTrivialFrames) {
+  // Upstream parity (d3ccaf35): unlocked after the third stale-mirror read
+  // face was fixed - the track-extension images inside AddPointToProblem
+  // built their constant-pose costs from the legacy per-image qvec/tvec
+  // mirrors (stale outside the last BA window) instead of the live
+  // rig-aware frame composition, poisoning the local-BA start and spiraling
+  // into divergence + mass observation filtering (batch-I PRNG scan:
+  // 8/30 seeds degraded before the fix, 30/30 exact afterwards).
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -169,14 +169,10 @@ TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
   ASSERT_EQ(reconstruction_manager->Size(), 0);
 }
 
-TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAndCameras) {
-  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
-  // port): no splitting or aborts and the rig/camera constants hold, but the
-  // run is flaky across trials (RANSAC seed unset): observations fluctuate
-  // between 2800 and ~2601 and the refined sensor_from_rig translation
-  // wobbles at the 3e-5 level against the 1e-4 tolerance. Deferred until the
-  // trial-to-trial filtering variance is reconciled (sibling of the
-  // filtering-parity cases).
+TEST(IncrementalMapperController, WithNonTrivialFramesAndConstantRigsAndCameras) {
+  // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
+  // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); constant_rigs/
+  // constant_cameras flow through the pre-existing BA config path.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -225,13 +221,10 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
             gt_reconstruction.Camera(kConstantCameraId).Params());
 }
 
-TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivialFrames) {
-  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
-  // port): no splitting or aborts and both refine_sensor_from_rig variants
-  // complete, but the case is flaky across trials (RANSAC seed unset):
-  // observation counts fluctuate by ~200 against the exact matcher.
-  // Deferred until the trial-to-trial filtering variance is reconciled
-  // (sibling of the filtering-parity cases).
+TEST(IncrementalMapperController, WithoutNoiseAndWithPanoramicNonTrivialFrames) {
+  // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
+  // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); both
+  // refine_sensor_from_rig variants complete deterministically.
 
   const auto database_path = CreateTestDir() / "database.db";
 

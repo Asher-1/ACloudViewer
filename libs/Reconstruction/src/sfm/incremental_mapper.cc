@@ -686,7 +686,6 @@ IncrementalMapper::AdjustLocalBundle(
         // Adjust the local bundle.
         auto bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
         bundle_adjuster->Solve(reconstruction_);
-
         report.num_adjusted_observations =
                 bundle_adjuster->Summary().num_residuals / 2;
 
