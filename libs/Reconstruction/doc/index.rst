@@ -75,6 +75,13 @@ Features
       A full-featured GUI for interactive reconstruction plus a scriptable
       command-line interface for automated pipelines.
 
+   .. grid-item-card:: PyCOLMAP
+      :link: pycolmap/index
+      :link-type: doc
+
+      Python bindings exposing most of COLMAP's functionality, from the
+      reconstruction pipeline to robust geometric estimators.
+
    .. grid-item-card:: Camera Models & Rigs
       :link: cameras
       :link-type: doc
@@ -176,6 +183,7 @@ support (special credits to `Torsten Sattler <https://tsattler.github.io>`_).
    install
    tutorial
    concepts
+   viewer
    features
    database
    cameras
@@ -184,6 +192,7 @@ support (special credits to `Torsten Sattler <https://tsattler.github.io>`_).
    datasets
    gui
    cli
+   pycolmap/index
    faq
    changelog
    contribution

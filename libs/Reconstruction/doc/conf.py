@@ -214,9 +214,7 @@ html_logo = "_static/colmap-logo.svg"
 html_favicon = "_static/favicon.svg"
 
 # Give the landing page a full-width layout by dropping the left sidebar.
-# Fork note: the upstream "viewer" entry is dropped - this fork ships no web
-# viewer (no `viewer` CLI command, no viewer_src frontend).
-html_sidebars: dict[str, list[str]] = {"index": []}
+html_sidebars: dict[str, list[str]] = {"index": [], "viewer": []}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
