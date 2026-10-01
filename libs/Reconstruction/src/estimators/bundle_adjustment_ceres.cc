@@ -226,10 +226,14 @@ void CeresBundleAdjuster::SetUp(Reconstruction* reconstruction,
     frame_blocks_.clear();
     sensor_blocks_.clear();
 
-    // W3-2b step 4: forward dual-track sync. The pose parameter blocks are
-    // the frame storage; make sure it holds the freshest camera poses before
-    // the problem is built (the global mapper pre-syncs frames itself, but
-    // image-level writers like the legacy incremental mapper may not).
+    // W3-2b step 4 (REVISED after the non-trivial-rig fragmentation root
+    // cause): the frame's rig_from_world is the single authoritative pose and
+    // the per-image qvec/tvec buffers are projection mirrors. The unconditional
+    // mirror-to-frame write previously here overwrote estimated poses with the
+    // stale load-time mirrors of the frame's non-ref images (frame-level
+    // registration never rewrites those), tearing the initial world apart and
+    // fragmenting every non-trivial-rig pipeline case. Only seed a pose-less
+    // frame from its image mirror; never the reverse.
     for (const image_t image_id : config_.Images()) {
         if (!reconstruction->ExistsImage(image_id)) {
             continue;
@@ -239,12 +243,15 @@ void CeresBundleAdjuster::SetUp(Reconstruction* reconstruction,
             !reconstruction->ExistsFrame(image.FrameId())) {
             continue;
         }
+        Frame& frame = reconstruction->Frame(image.FrameId());
+        if (frame.HasPose()) {
+            continue;
+        }
         const Rigid3d cam_from_world(
                 Eigen::Quaterniond(image.Qvec()(0), image.Qvec()(1),
                                    image.Qvec()(2), image.Qvec()(3)),
                 image.Tvec());
-        reconstruction->Frame(image.FrameId())
-                .SetCamFromWorld(image.CameraId(), cam_from_world);
+        frame.SetCamFromWorld(image.CameraId(), cam_from_world);
     }
     for (const image_t image_id : config_.Images()) {
         AddImageToProblem(image_id, reconstruction, loss_function);

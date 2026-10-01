@@ -87,15 +87,13 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication (updated after the option-surface alignment batch): the
-  // missing controller knobs (ba_refine_sensor_from_rig, constant_rigs,
-  // constant_cameras, random_seed) are now ported and wired to the mapper,
-  // triangulator, and both BA option builders, and the synthetic per-rig
-  // construction matches upstream verbatim, yet the model still splits.
-  // Fresh evidence: the first local BA starts at ~80px initial cost on this
-  // noise-free dataset (upstream converges from sub-pixel) and the post-BA
-  // filter drops 99/100 observations, tearing the model apart. Next probe:
-  // two-view initialization / triangulation under non-trivial rigs.
+  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
+  // anchor port): no more model splitting or aborts - every frame registers
+  // and every point survives; the remaining gap is a small, seed-dependent
+  // observation deficit after the final filtering pass (e.g. 2600 vs 2800
+  // observations, flaky across runs), i.e. filtering-quality parity rather
+  // than bookkeeping. Deferred until the residual filtering differences
+  // are reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -172,13 +170,13 @@ TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
 }
 
 TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAndCameras) {
-  // Fork adjudication (updated after the option-surface alignment batch):
-  // constant_rigs/constant_cameras are now ported to the controller options
-  // and consumed by the existing BA config path (SetConstantSensorFromRigPose
-  // / SetConstantCamera), but the model splits even harder with
-  // the rig pinned (Size 3). Same signature as the sibling non-trivial-rig
-  // cases: inflated initial BA cost then mass post-BA filtering. Next probe:
-  // two-view initialization / triangulation under non-trivial rigs.
+  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
+  // port): no splitting or aborts and the rig/camera constants hold, but the
+  // run is flaky across trials (RANSAC seed unset): observations fluctuate
+  // between 2800 and ~2601 and the refined sensor_from_rig translation
+  // wobbles at the 3e-5 level against the 1e-4 tolerance. Deferred until the
+  // trial-to-trial filtering variance is reconciled (sibling of the
+  // filtering-parity cases).
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -228,11 +226,12 @@ TEST(IncrementalMapperController, DISABLED_WithNonTrivialFramesAndConstantRigsAn
 }
 
 TEST(IncrementalMapperController, DISABLED_WithoutNoiseAndWithPanoramicNonTrivialFrames) {
-  // Fork adjudication (updated after the option-surface alignment batch):
-  // the two refine_sensor_from_rig variants now run, and both still split.
-  // Same signature as the sibling non-trivial-rig cases: inflated initial
-  // BA cost then mass post-BA filtering. Next probe: two-view
-  // initialization / triangulation under non-trivial rigs.
+  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
+  // port): no splitting or aborts and both refine_sensor_from_rig variants
+  // complete, but the case is flaky across trials (RANSAC seed unset):
+  // observation counts fluctuate by ~200 against the exact matcher.
+  // Deferred until the trial-to-trial filtering variance is reconciled
+  // (sibling of the filtering-parity cases).
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -503,10 +502,10 @@ TEST(IncrementalMapperController, ChainedMatches) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
+  // anchor port): no splitting or aborts; remaining gap is a small,
+  // seed-dependent observation deficit after final filtering (~1901 vs 2000
+  // observations). Deferred with the sibling filtering-parity cases.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -549,10 +548,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
+  // port): no splitting or aborts, but the case shares the seed-dependent
+  // observation-count variance of the filtering-parity siblings and is
+  // kept disabled until that variance is reconciled.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -607,10 +606,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTr
 }
 
 TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
+  // anchor port): no splitting or aborts; remaining gap is the same
+  // seed-dependent observation deficit after final filtering, on the noisy
+  // prior variant. Deferred with the sibling filtering-parity cases.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -651,10 +650,10 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
 }
 
 TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
-  // Fork adjudication (post batch-C T2 fix): the tri-observation guard no
-  // longer trips; the case now completes mapping but ends with a different
-  // reconstruction-quality surface than upstream (non-trivial-rig point
-  // coverage / model splitting), deferred until those gaps are reconciled.
+  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
+  // anchor port): no splitting or aborts; remaining gap is the same
+  // seed-dependent observation deficit after final filtering, on the GPS
+  // prior variant. Deferred with the sibling filtering-parity cases.
 
   const auto database_path = CreateTestDir() / "database.db";
 

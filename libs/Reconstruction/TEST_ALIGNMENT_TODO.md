@@ -683,3 +683,52 @@ IncrementalMapperOptions:
   (初始位姿或三角化点严重偏离,BA 参数化仍能拉回低残差但过滤阶段按真实几何
   阈值剔除),下一批需插桩对比 init 两图的 relative pose/三角化点 vs GT。
 - 验证:gate 162/162;三用例保持 DISABLED,注记更新为本证据链。
+
+## 批次 E:非平凡 rig 分裂根因修复 + 尺度锚定移植(2026-10-01)
+
+### 三轮插桩取证(假设逐层证伪到实锤)
+
+1. init 位姿写入探针(RegisterInitialImagePair 尾):5 次 init 全部
+   cam1_is_identity_err=0、cam2 rot_err≤1.7e-6°、t_err≤8.9e-16 ——
+   **SetCamFromWorld/Frame 分解组合序无缺陷**(假设证伪);
+2. filter 分类探针(OM FilterAllPoints3D):**reproj=99、tri_angle=0**
+   ——先前 min_tri_angle_deg=85.94 的读数是诊断打印自身二次换算的误读
+   (OM 内部已 DegToRad,传入即度);reproj 是唯一杀手;
+3. 三角化点级探针(TriangulateImage 后、BA 前):重投影 mean 1.6e-05px、
+   focal=1280 正常 —— **三角化也完美**;但同一 run 的 BA report 报
+   initial cost 80px —— **BA 参数块初始值 ≠ reconstruction 当前几何**。
+
+### 根因实锤:BA SetUp 的反向 dual-track 同步
+
+`CeresBundleAdjuster::SetUp` 的 W3-2b step4 把 **image 的 legacy qvec/tvec
+镜像反写回 frame**(SetCamFromWorld(image.Qvec(), image.Tvec()))。fork 的
+frame 级注册下,同一 frame 的**非 ref image** 的镜像从未在 init/Register
+时被重写(仍持 synthetic load 时的 GT 位姿),反写即用 GT 世界系的位姿覆盖
+init 估计世界系的位姿 —— **世界系撕裂** → BA initial 80px、撕裂起点下
+BA 不收敛到全局一致 → filter 丢 99 → 雪崩。upstream 无此段(参数块直接
+用 frame storage 就地优化,零写回零同步)。全部失败用例恰为
+num_cameras_per_rig≥2(存在非 ref image),与现象完全吻合。
+
+修复(bundle_adjustment_ceres.cc):frame 权威位姿存在时绝不接受镜像反写,
+仅允许给无位姿 frame 播种(`frame.HasPose()` 守卫)。
+
+### 尺度锚定移植
+
+修复后模型不再分裂但尺度漂移 20%(scale 0.80)——upstream 的
+`AlignReconstructionToPriorsOrRigScale`(pipeline 收尾:prior 对齐失败/未启
+用时 fallback 到 AlignReconstructionToOrigRigScales,fork 的依赖函数
+alignment.cc 已有但从未在 pipeline 调用)移植到 fork 的两个 keep 分支
+(ShouldStop + 正常完成)。
+
+### 效果与剩余留因(更新)
+
+- **结构性缺陷清零**:不再有分裂(Size 2/3)、不再有 abort、BA initial
+  cost 80px→8.6e-06px、scale 0.80→阈值内;
+- 7 个 DISABLED 的失败形态全部变为 **seed-dependent 观测计数方差**
+  (2600 vs 2800 / 2601 / 1901 vs 2000,跨 trial 波动,RANSAC seed=-1);
+- 3 个用例曾短暂解锁但实测 flaky(ConstantRigs 1/3 挂、Panoramic 2/2 挂)
+  ——按 gate 稳定原则回退 DISABLED,注记更新为方差形态;
+- gate 162/162 ×2 次 + pipeline 默认跑法 ×3 全绿;
+- **下一批入口**:trial 间 ~200 观测的过滤方差取证(统计化:多 trial 的
+  filter 命中分布 vs upstream 同分布),而非继续逐层静态 diff——静态面已
+  全部对齐。

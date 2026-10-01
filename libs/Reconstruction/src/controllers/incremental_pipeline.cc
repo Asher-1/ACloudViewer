@@ -11,7 +11,9 @@
 
 #include "util/hash_containers.h"
 
+#include "estimators/alignment.h"
 #include "estimators/bundle_adjustment_caspar.h"
+#include "scene/projection.h"
 
 #include "util/misc.h"
 
@@ -27,6 +29,36 @@ size_t TriangulateImage(const IncrementalMapperOptions& options,
             mapper->TriangulateImage(options.Triangulation(), image.ImageId());
     std::cout << "  => Added observations: " << num_tris << std::endl;
     return num_tris;
+}
+
+// Upstream parity (d3ccaf35 incremental_pipeline.cc): anchor the final
+// reconstruction to the metric prior positions when enabled, falling back to
+// the original rig extrinsic scales; without this the BA gauge lets the
+// model drift away from the GT scale.
+void AlignReconstructionToPriorsOrRigScale(
+        const IncrementalMapperOptions& options,
+        const DatabaseCache& database_cache,
+        Reconstruction* reconstruction) {
+    if (options.use_prior_position) {
+        PosePriorBundleAdjustmentOptions prior_options;
+        prior_options.alignment_ransac_options.random_seed =
+                options.random_seed;
+
+        Sim3d metric_from_reconstruction;
+        if (AlignReconstructionToPosePriors(
+                *reconstruction,
+                database_cache.PosePriors(),
+                prior_options.alignment_ransac_options,
+                prior_options.prior_position_fallback_stddev,
+                &metric_from_reconstruction)) {
+            reconstruction->Transform(metric_from_reconstruction);
+            return;
+        }
+        LOG(WARNING) << "Final alignment w.r.t. prior positions failed; "
+                        "restoring the original rig scale instead";
+    }
+
+    AlignReconstructionToOrigRigScales(database_cache.Rigs(), reconstruction);
 }
 
 void AdjustGlobalBundle(const IncrementalMapperOptions& options,
@@ -702,6 +734,8 @@ void IncrementalMapperController::Reconstruct(
         if (ShouldStop()) {
             const bool kDiscardReconstruction = false;
             mapper.EndReconstruction(kDiscardReconstruction);
+            AlignReconstructionToPriorsOrRigScale(
+                    *options_, database_cache_, &reconstruction);
             break;
         }
 
@@ -726,6 +760,8 @@ void IncrementalMapperController::Reconstruct(
         } else {
             const bool kDiscardReconstruction = false;
             mapper.EndReconstruction(kDiscardReconstruction);
+            AlignReconstructionToPriorsOrRigScale(
+                    *options_, database_cache_, &reconstruction);
         }
 
         Callback(LAST_IMAGE_REG_CALLBACK);
