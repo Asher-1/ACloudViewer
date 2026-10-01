@@ -801,10 +801,10 @@ bool IncrementalMapper::AdjustGlobalBundle(
 
     // Ignore redundant 3D points in the first solve, if option specified
     // (upstream parity; only past the "small reconstruction" threshold).
+    std::vector<point3D_t> redundant_point3D_ids;
     if (!is_small_reconstruction &&
         options.ba_global_ignore_redundant_points3D) {
-        const std::vector<point3D_t> redundant_point3D_ids =
-                FindRedundantPoints3D(
+        redundant_point3D_ids = FindRedundantPoints3D(
                         options
                                 .ba_global_ignore_redundant_points3D_min_coverage_gain,
                         *reconstruction_);
@@ -815,21 +815,23 @@ bool IncrementalMapper::AdjustGlobalBundle(
         }
     }
 
-    // Fix 7-DOFs of the bundle adjustment problem.
-    ba_config.SetConstantPose(reg_image_ids[0]);
-    if (!options.fix_existing_images ||
-        !existing_frame_ids_.count(
-                reconstruction_->Image(reg_image_ids[1]).FrameId())) {
-        ba_config.SetConstantTvec(reg_image_ids[1], {0});
-    }
-
-    // Run bundle adjustment. With position priors, the gauge is fixed by
-    // the priors instead of the two-camera heuristic (upstream parity).
+    // Run bundle adjustment (upstream parity, d3ccaf35): with position
+    // priors the gauge is fixed by the priors themselves, so no explicit
+    // gauge fixation is applied; without priors the gauge is fixed with the
+    // two-cameras heuristic (more stable and fewer steps than fixing three
+    // points). The old fork form fixed image0's full pose plus one tvec
+    // component unconditionally, which fought the priors in
+    // use_prior_position runs and degraded their convergence.
     const bool use_prior_position =
             options.use_prior_position &&
             NumRegisteredPosePriors(database_cache_->PosePriors(),
                                     ba_config) >= 3;
-    if (use_prior_position) {
+    std::unique_ptr<BundleAdjuster> bundle_adjuster;
+    if (!use_prior_position) {
+        ba_config.FixGauge(BundleAdjustmentGauge::TWO_CAMS_FROM_WORLD);
+        bundle_adjuster =
+                CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
+    } else {
         PosePriorBundleAdjustmentOptions prior_options;
         if (options.use_robust_loss_on_prior_position) {
             prior_options.prior_position_loss_function_type =
@@ -837,22 +839,52 @@ bool IncrementalMapper::AdjustGlobalBundle(
         }
         prior_options.prior_position_loss_scale =
                 options.prior_position_loss_scale;
-        auto bundle_adjuster = CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
+        prior_options.alignment_ransac_options.random_seed =
+                options.random_seed;
+        bundle_adjuster =
+                CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
         bundle_adjuster->SetPosePriors(prior_options,
-                                      database_cache_->PosePriors());
-        if (!bundle_adjuster->Solve(reconstruction_)) {
-            return false;
+                                       database_cache_->PosePriors());
+    }
+    if (!bundle_adjuster->Solve(reconstruction_)) {
+        return false;
+    }
+
+    // Optimize the redundant 3D points with all other parameters fixed
+    // (upstream parity, d3ccaf35): the first solve ignored them, so a
+    // second dedicated solve pulls them back in without disturbing the
+    // rest of the reconstruction.
+    if (!is_small_reconstruction &&
+        options.ba_global_ignore_redundant_points3D) {
+        if (custom_ba_options.check_if_stopped &&
+            custom_ba_options.check_if_stopped()) {
+            return true;
         }
-    } else {
-        auto bundle_adjuster = CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
+
+        ba_config = BundleAdjustmentConfig();
+        for (const point3D_t point3D_id : redundant_point3D_ids) {
+            ba_config.AddVariablePoint(point3D_id);
+        }
+        for (const frame_t frame_id : reconstruction_->RegFrameIds()) {
+            ba_config.SetConstantRigFromWorldPose(frame_id);
+        }
+        for (const auto& camera_id_and_camera : reconstruction_->Cameras()) {
+            ba_config.SetConstantCamera(camera_id_and_camera.first);
+        }
+        for (const auto& rig_id_and_rig : reconstruction_->Rigs()) {
+            for (const auto& sensor_id_and_pose :
+                    rig_id_and_rig.second.NonRefSensors()) {
+                ba_config.SetConstantSensorFromRigPose(
+                        sensor_id_and_pose.first);
+            }
+        }
+
+        bundle_adjuster =
+                CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
         if (!bundle_adjuster->Solve(reconstruction_)) {
             return false;
         }
     }
-
-    // Normalize scene for numerical stability and
-    // to avoid large scale changes in viewer.
-    reconstruction_->Normalize();
 
     return true;
 }

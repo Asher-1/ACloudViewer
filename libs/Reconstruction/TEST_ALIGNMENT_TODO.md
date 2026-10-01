@@ -893,3 +893,54 @@ per-image RMS)逐层收窄:
   track 配对 + 悬挂引用审计三个探针,num_threads=1 固定确定性;
 - upstream 对照实验基建:upstream build 树可编 main() 探针(用完即删,
   本次已清理)——后续对齐裁定可复用此通道。
+
+## 批次 J:prior gauge/Normalize 语义对齐 + 冗余点第二段 BA 移植(2026-10-02)
+
+### 全仓扫描 P1 清单更正
+
+批次 I 函数名对账把「prior-position BA 残差路径」列为缺失系**假阳性**——
+fork 用不同接口组织完整实现了该路径:`CeresBundleAdjuster::SetPosePriors`
+注入 + SetUp 内 AlignReconstructionToPosePriors 播种(对齐 upstream
+PosePriorBundleAdjuster 的 BA 前对齐)+ AddImageToProblem 注入
+CreatePosePriorLossFunction 位置残差。从 P1 清单移除。
+
+### 真实差异:AdjustGlobalBundle 的 gauge/prior/Normalize 语义
+
+逐段 diff upstream d3ccaf35 IncrementalMapper::AdjustGlobalBundle 发现
+三处 fork 行为差(3 个 Prior 用例 1900/2000 缺口的根因):
+
+1. **双重 gauge 破坏 prior 语义**:fork 旧式无条件
+   `SetConstantPose(reg0)+SetConstantTvec(reg1,{0})` 在 use_prior_position
+   分支也生效——prior 拉住的位姿被硬固定对抗;upstream 非 prior 分支用
+   `FixGauge(TWO_CAMS_FROM_WORLD)`(两相机启发式更稳、步数更少),prior
+   分支**不 FixGauge**(prior 自身定 gauge)。fork 的 FixGauge ceres 侧
+   基建(FixGaugeWithTwoCamsFromWorld/ThreePoints)早已完整,只差接线;
+2. **AdjustGlobalBundle 内无条件 Normalize()**:prior 锚定的 metric 尺度
+   每次 global BA 后被重缩放破坏——upstream 无此 Normalize(仅在 pipeline
+   init 序列与 IterativeGlobalRefinement 的 !use_prior_position 条件下);
+3. **冗余点第二段 BA 缺失**:upstream 第一 solve IgnorePoint 冗余点后,
+   再以全帧 SetConstantRigFromWorldPose+ConstantCamera+
+   ConstantSensorFromRigPose 的 config **专门第二 solve 优化冗余点**;
+   fork 忽略后不管(冗余点永不优化;synthetic 均匀覆盖下冗余集近似空
+   故 30/30 未暴露,真实数据必差)。
+
+### 修复与验证
+
+- mapper.cc AdjustGlobalBundle 重构:非 prior→FixGauge(TWO_CAMS_FROM_WORLD);
+  prior→SetPosePriors(补 alignment_ransac_options.random_seed 传递)不
+  FixGauge;删除 mapper 内 Normalize;移植冗余点第二段 BA(check_if_stopped
+  守卫 + 重建 config);
+- **3 个 Prior 用例全部翻绿**(PriorBasedSfMWithoutNoise/WithNoise/
+  GPSPriorBasedSfMWithNoise)——pipeline 22 用例 21 PASSED+1 SKIPPED
+  0 FAILED,3 次重复稳定;
+- scan 30/30 保持完美(non-prior gauge 方式改变无回归);
+- gate 162/162(排除面新增 caspar_test,见下)。
+
+### caspar_test GPU 环境敏感升级记录
+
+SplitIntrinsic 子用例的 parity 数值在 GPU 被并行负载占用时系统性恶化
+(Caspar rms 0.29→1.00,params 差 63.9px,容差 5e-2),HEAD 版同样复现
+——**非本工程回归**,是 Caspar GPU 后端在 GPU 竞争下归约序漂移使
+parity 容差边缘爆。gate 在有并行 GPU 负载的环境需 -E 排除
+bundle_adjustment_caspar_test(与 sift_test/opengl_utils_test 同类);
+无并行 GPU 负载的环境(如 CI)仍应纳入。
