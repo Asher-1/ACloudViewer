@@ -111,6 +111,15 @@ double CalculateAngularError(const Eigen::Vector2d& point2D,
                              const Eigen::Matrix3x4d& proj_matrix,
                              const Camera& camera);
 
+// Upstream parity (d3ccaf35 scene/projection.h): angular error from the
+// live frame-composed pose. Legacy per-image qvec/tvec mirrors can go stale
+// for frames outside the last bundle-adjustment window, so all triangulator
+// accept/reject decisions must read the pose through CamFromWorld.
+double CalculateAngularReprojectionError(const Eigen::Vector2d& point2D,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world,
+                                         const Camera& camera);
+
 // Calculate angulate error using normalized image points.
 //
 // The angular error is the angle between the observed viewing ray and the

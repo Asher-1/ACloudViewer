@@ -624,10 +624,13 @@ size_t IncrementalTriangulator::Continue(
         const Point3D& point3D =
                 reconstruction_->Point3D(corr_data.point2D->Point3DId());
 
-        const double angle_error = CalculateAngularError(
+        // Upstream parity (d3ccaf35): read the pose through the live
+        // frame-composed CamFromWorld - the legacy qvec/tvec mirrors go stale
+        // for frames outside the last BA window and would reject continues
+        // with tens of degrees of phantom angular error.
+        const double angle_error = CalculateAngularReprojectionError(
                 ref_corr_data.point2D->XY(), point3D.XYZ(),
-                ref_corr_data.image->Qvec(), ref_corr_data.image->Tvec(),
-                *ref_corr_data.camera);
+                ref_corr_data.image->CamFromWorld(), *ref_corr_data.camera);
         if (angle_error < best_angle_error) {
             best_angle_error = angle_error;
             best_idx = idx;
@@ -799,8 +802,9 @@ size_t IncrementalTriangulator::Complete(const Options& options,
                 }
 
                 if (CalculateSquaredReprojectionError(
-                            point2D.XY(), point3D.XYZ(), image.Qvec(),
-                            image.Tvec(), camera) > max_squared_reproj_error) {
+                            point2D.XY(), point3D.XYZ(),
+                            image.CamFromWorld(), camera) >
+                    max_squared_reproj_error) {
                     continue;
                 }
 

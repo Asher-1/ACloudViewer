@@ -776,6 +776,32 @@ alignment.cc 已有但从未在 pipeline 调用)移植到 fork 的两个 keep �
   缺失——对齐工程中「fork 没有 X」不蕴含「应删除 X 的文档」,先判定 X
   在 upstream 的形态(能力 vs 文档资产)。
 
+## 批次 H:三角化器第二处镜像读取面实锤与修复(2026-10-01)
+
+- 扫描基建落地:ggml 收敛后 pipeline_rng_scan_test 编译成功,k=1..30 扫描:
+  修复 E 后结构性稳固(models=1/14 帧全注册 ×30),但发现**新指纹**:
+  seed 4→304 点、11→203、13/14→200(GT=100)——**同一物理点被拆成多个
+  point3D**(track 碎化,直方图双峰 len=16×95 + len=6×195,模式 28=16+6+6)。
+- SeedDetail 探针(seed=4,按 2D 观测集合配对 GT↔fork track):
+  **gt_split=100/100**——每个 GT 点的观测集都被 fork 分到 ≥2 个 point3D;
+  未对齐 XYZ 距离 1.3~2.9 系坐标系差异(首次实验设计缺陷:须先 Sim3 对齐)。
+- Continue 角误差插桩:被拒候选全部来自 ref_img=24,**角误差 37°~50° vs
+  阈值 5°**——非边缘拒绝,是 **image 24 的 legacy qvec/tvec 镜像 stale**
+  (注册后 local BA 窗口外优化改变点/位姿,镜像只在 config 内帧刷新;
+  upstream 用 CamFromWorld() 实时组合永不过期)。
+- 修复(upstream parity):
+  ①scene/projection.{h,cc} 移植 `CalculateAngularReprojectionError(Rigid3d)`;
+  ②incremental_triangulator.cc Continue 改读 `image->CamFromWorld()`;
+  ③incremental_triangulator.cc Complete 的 reproj 过滤同步改
+  `image.CamFromWorld()`(upstream Merge/Complete 同款)。
+- 效果:**SeedDetail gt_split 100→0、gt_fully_single 0→100**;gate 162/162;
+  但修复改变管线轨迹后暴露下一层:2600×4、2400×1、seed 14 分裂回归(models=2)
+  + seed 13/14/15 段大量 **ceres "Linear solver failure: dense Cholesky
+  factorization"**(BA 无效步,分裂/观测丢失的直接机理候选)。
+- 下一批入口:①Cholesky failure 的触发条件(哪个 BA/哪些参数块——norm
+  退化/零列?与 upstream 对照);②剩余 2600/2400 的 seed 分段追踪;③
+  gtest_repeat at 崩溃仍待独立排查。
+
 ### doc 目录对账与清理(与 upstream d3ccaf35 逐文件对账)
 
 - 对账结果:69 个共同文件**逐字节一致**(fork doc = upstream doc 快照);

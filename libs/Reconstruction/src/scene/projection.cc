@@ -179,6 +179,20 @@ double CalculateAngularError(const Eigen::Vector2d& point2D,
                               -1.0, 1.0));
 }
 
+double CalculateAngularReprojectionError(const Eigen::Vector2d& point2D,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world,
+                                         const Camera& camera) {
+  const auto ray = camera.CamRayFromImg(point2D);
+  const Eigen::Vector3d point_in_camera = cam_from_world * point3D;
+  if (!ray.has_value() || point_in_camera.squaredNorm() <=
+                              std::numeric_limits<double>::epsilon()) {
+    return std::numeric_limits<double>::max();
+  }
+  return std::acos(std::clamp(ray->dot(point_in_camera.normalized()),
+                              -1.0, 1.0));
+}
+
 double CalculateAngularError(const Eigen::Vector2d& point2D,
                              const Eigen::Vector3d& point3D,
                              const Eigen::Matrix3x4d& proj_matrix,
