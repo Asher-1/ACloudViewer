@@ -19,8 +19,7 @@ homebrew, installing COLMAP is as easy as running ``brew install colmap``.
 COLMAP can be used as an independent application through the command-line or
 graphical user interface. Alternatively, COLMAP is also built as a reusable
 library, i.e., you can include and link COLMAP against your own C++ source code,
-as described further below. Furthermore, you can use most of COLMAP's
-functionality with :ref:`PyCOLMAP <pycolmap/index>` in Python.
+as described further below.
 
 ------------------
 Pre-built Binaries

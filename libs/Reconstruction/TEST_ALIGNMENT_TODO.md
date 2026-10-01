@@ -732,3 +732,42 @@ alignment.cc 已有但从未在 pipeline 调用)移植到 fork 的两个 keep �
 - **下一批入口**:trial 间 ~200 观测的过滤方差取证(统计化:多 trial 的
   filter 命中分布 vs upstream 同分布),而非继续逐层静态 diff——静态面已
   全部对齐。
+
+## 批次 F:过滤方差统计化取证 + doc 清理(2026-10-01)
+
+### 方差取证(独立进程 vs 全量跑的对照实验)
+
+- **独立进程 ×20**(每买 shell 循环新进程跑 DISABLED_WithoutNoiseAndWithNonTrivialFrames):
+  **20/20 全部 OK**(2800/2800)——单用例在干净全局态下完全稳定;
+- 全量顺序跑时挂的用例每次不同(ConstantRigs/Panoramic/WithoutNoise 轮流挂,
+  观测 2600/2601/1901 不等)——**方差源 = 进程内全局 PRNG 残留态**:前序用例
+  消耗 PRNG 序列 → 后续用例的合成数据/RANSAC 采样不同 → 部分序列下
+  2 帧的观测被 reproj 过滤清除;
+- upstream 同样共享 PRNG 残留态(两边的 synthetic.cc 均为
+  `if (PRNG == nullptr) SetPRNGSeed();`,fork :366 逐字存在——先前
+  "fork 丢 SetPRNGSeed" 的判断是 grep 相对路径在错误 cwd 下零命中的误报)
+  ——**upstream 对任意 PRNG 序列产的数据鲁棒,fork 在部分序列下丢 2 帧观测**,
+  这是剩余的真实质量差距;
+- **附带发现**:gtest_repeat≥2 时第 2 迭代必崩 `_Map_base::at`(跨迭代
+  全局态污染,独立缺陷,单跑从不复现)——下一批候选之一;
+- 结论:方差取证完成定性——**不是簿记/几何 bug,是特定数据序列下局部 BA
+  不收敛(12.6→0.525px No convergence 案例)致 2 帧位姿劣化被 filter 清除**。
+  下一批入口:固定 PRNG 态复现 2600 案例(临时 debug target 扫 SetPRNGSeed(k))
+  + BA 前后帧级位姿对比,定位不收敛帧与 upstream 的行为差。
+
+### doc 目录对账与清理(与 upstream d3ccaf35 逐文件对账)
+
+- 对账结果:69 个共同文件**逐字节一致**(fork doc = upstream doc 快照);
+  FORK-only 遗留 3 件(Colmap.desktop 大小写变体、2 张 upstream 已换 webp
+  的旧 png)→ 删除;
+- "本地对不上"裁定(逐一核实 fork 实际能力面):fork Colmap exe 无
+  `viewer` 命令(与 upstream cli.rst 一致均无)、无 web viewer 前端、
+  python 模块名为 `pybind`(cloudViewer 包)非 pycolmap → 删除
+  viewer.rst/viewer_src//tests/(playwright)/vite/package/playwright/tsconfig
+  /pycolmap/ 全家及 _static/viewer-licenses.txt;
+- 同步更新引用:index.rst 去掉 PyCOLMAP grid card 与 viewer/pycolmap
+  toctree 行、conf.py html_sidebars 去 viewer 键(带 fork 注记)、
+  gui.rst 去掉 :doc:3D Viewer 断链段、install.rst 去掉 PyCOLMAP :ref: 断链;
+- 保留:其余 rst(与 upstream 逐字一致且描述的 CLI/GUI/格式/相机/rig
+  能力 fork 全部存在,实测 Colmap help 命令面与 cli.rst 对齐)、
+  COLMAP.desktop/colmap.1/sphinx 基建。
