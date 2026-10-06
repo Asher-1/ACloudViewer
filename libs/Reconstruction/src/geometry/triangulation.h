@@ -74,9 +74,10 @@ std::vector<Eigen::Vector3d> TriangulatePoints(
 // @param points              Image observations of multi-view observations.
 //
 // @return                    Estimated 3D point.
-Eigen::Vector3d TriangulateMultiViewPoint(
-        const std::vector<Eigen::Matrix3x4d>& proj_matrices,
-        const std::vector<Eigen::Vector2d>& points);
+bool TriangulateMultiViewPoint(
+    const std::vector<Eigen::Matrix3x4d>& cams_from_world,
+    const std::vector<Eigen::Vector2d>& cam_points,
+    Eigen::Vector3d* xyz);
 
 // Triangulate 3D point from multiple camera-frame bearing vectors
 // (upstream parity, d3ccaf35: span-based; the fork passes std::vector, which
@@ -130,7 +131,8 @@ std::vector<double> CalculateTriangulationAngles(
         const Eigen::Vector3d& proj_center2,
         const std::vector<Eigen::Vector3d>& points3D);
 
-// Upstream-parity helper (COLMAP 4.x geometry/triangulation.h).
+// Upstream parity (d3ccaf35): the angle between two arbitrary vectors, with
+// the zero-vector edge case returning 0.
 double CalculateAngleBetweenVectors(const Eigen::Vector3d& v1,
                                     const Eigen::Vector3d& v2);
 

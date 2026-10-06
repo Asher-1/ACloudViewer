@@ -1024,3 +1024,32 @@ split-variant 求解走稳定 kernel 路径;冷启动首解落在不同 kernel �
 4. **剩余**:SolveTriangulationDlt/Left·RightJacobianFromAngleAxis 等数值
    路径升级(低风险独立移植)、MaybeMarkWatermark 细节面、
    RescaleToMaxImageSize、feature 面残差——均 P2 级,随对应模块批次处理。
+
+## 批次 M:数值路径增量移植(DLT 三角化统一 + SO(3) 雅可比族)(2026-10-06)
+
+### 数值路径对账(假阳性甄别后的真差异)
+
+- **SolveTriangulationDlt/TriangulationDltTerm**:upstream 的多视 DLT
+  求解器与其数学等价物在 fork 已存在(cam_rays 版手写展开同算法),真实
+  差异仅两点:①fork 的 cam_rays 版缺 `eigen_solver.info() != Success`
+  失败检查;②fork 的**矩阵版**(points 参数)是旧式 Vector3d 返回且无
+  失败语义(且无消费者——幽灵 API);
+- **CalculateAngleBetweenVectors**:fork 已有实现与 .h 声明(本批重复
+  移植即重定义报错暴露)——**假阳性**,已回退重复;
+- **pose 雅可比族**(QuaternionFromAngleAxis/Left·RightJacobianFromAngle
+  Axis + kSmallAngleThreshold 小角阈值):真缺失,纯增量。
+
+### 移植(增量,不破坏 fork 消费面)
+
+- triangulation.cc:匿名区加 TriangulationDltTerm/SolveTriangulationDlt;
+  两个 TriangulateMultiViewPoint 重载改用共享 DLT 求解器(矩阵版签名
+  Vector3d→bool 对齐 upstream——该重载无 fork 消费者,签名变更安全);
+- pose.{h,cc}:追加雅可比族(实现逐字 upstream 依赖 fork 既有
+  CrossProductMatrix);
+- .h 的重复 CalculateAngleBetweenVectors 声明为历史遗留(两处同签名
+  声明无害但冗余),留待后续清理。
+
+### 验证
+
+pose_test 21/21、triangulation_test 2/2、gate 161/161 全绿(排除面:
+sift/opengl/caspar/loma——均为 GPU 环境性)。

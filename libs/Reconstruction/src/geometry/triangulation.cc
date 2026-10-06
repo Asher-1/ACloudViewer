@@ -123,23 +123,36 @@ std::vector<Eigen::Vector3d> TriangulatePoints(
   return points3D;
 }
 
-Eigen::Vector3d TriangulateMultiViewPoint(
-    const std::vector<Eigen::Matrix3x4d>& proj_matrices,
-    const std::vector<Eigen::Vector2d>& points) {
-  CHECK_EQ(proj_matrices.size(), points.size());
+inline Eigen::Matrix4d TriangulationDltTerm(
+    const Eigen::Matrix3x4d& cam_from_world, const Eigen::Vector3d& cam_ray) {
+  const Eigen::Matrix3x4d term =
+      cam_from_world - cam_ray * cam_ray.transpose() * cam_from_world;
+  return term.transpose() * term;
+}
 
-  Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
-
-  for (size_t i = 0; i < points.size(); i++) {
-    const Eigen::Vector3d point = points[i].homogeneous().normalized();
-    const Eigen::Matrix3x4d term =
-        proj_matrices[i] - point * point.transpose() * proj_matrices[i];
-    A += term.transpose() * term;
+// Solve the DLT system for the homogeneous point (smallest eigenvector of A).
+inline bool SolveTriangulationDlt(const Eigen::Matrix4d& A,
+                                  Eigen::Vector3d* xyz) {
+  const Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> eigen_solver(A);
+  if (eigen_solver.info() != Eigen::Success ||
+      eigen_solver.eigenvectors()(3, 0) == 0) {
+    return false;
   }
+  *xyz = eigen_solver.eigenvectors().col(0).hnormalized();
+  return true;
+}
 
-  Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> eigen_solver(A);
-
-  return eigen_solver.eigenvectors().col(0).hnormalized();
+bool TriangulateMultiViewPoint(
+    const std::vector<Eigen::Matrix3x4d>& cams_from_world,
+    const std::vector<Eigen::Vector2d>& cam_points,
+    Eigen::Vector3d* xyz) {
+  CHECK_EQ(cams_from_world.size(), cam_points.size());
+  Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
+  for (size_t i = 0; i < cam_points.size(); ++i) {
+    A += TriangulationDltTerm(cams_from_world[i],
+                              cam_points[i].homogeneous().normalized());
+  }
+  return SolveTriangulationDlt(A, xyz);
 }
 
 // Upstream parity (d3ccaf35 geometry/triangulation.cc): multi-view bearing
@@ -152,19 +165,9 @@ bool TriangulateMultiViewPoint(
   THROW_CHECK_NOTNULL(xyz);
   Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
   for (size_t i = 0; i < cam_rays.size(); ++i) {
-    const Eigen::Matrix3x4d term =
-        cams_from_world[i] -
-        cam_rays[i] * cam_rays[i].transpose() * cams_from_world[i];
-    A += term.transpose() * term;
+    A += TriangulationDltTerm(cams_from_world[i], cam_rays[i]);
   }
-
-  Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> eigen_solver(A);
-  if (eigen_solver.eigenvectors()(3, 0) == 0) {
-    return false;
-  }
-
-  *xyz = eigen_solver.eigenvectors().col(0).hnormalized();
-  return true;
+  return SolveTriangulationDlt(A, xyz);
 }
 
 Eigen::Vector3d TriangulateOptimalPoint(const Eigen::Matrix3x4d& proj_matrix1,
@@ -311,5 +314,4 @@ bool TriangulateMidPoint(const Rigid3d& cam2_from_cam1,
 
   return true;
 }
-
 }  // namespace colmap

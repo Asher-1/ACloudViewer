@@ -412,4 +412,38 @@ Rigid3d InterpolateCameraPoses(const Rigid3d& cam1_from_world,
           cam1_from_world.translation() + translation12 * t);
 }
 
+
+namespace {
+constexpr double kSmallAngleThreshold = 1e-10;
+}  // namespace
+
+Eigen::Quaterniond QuaternionFromAngleAxis(const Eigen::Vector3d& omega) {
+  const double theta = omega.norm();
+  if (theta < kSmallAngleThreshold) {
+    // First-order Taylor expansion preserving rotation direction.
+    return Eigen::Quaterniond(
+               1.0, 0.5 * omega.x(), 0.5 * omega.y(), 0.5 * omega.z())
+        .normalized();
+  }
+  return Eigen::Quaterniond(Eigen::AngleAxisd(theta, omega / theta));
+}
+
+Eigen::Matrix3d LeftJacobianFromAngleAxis(const Eigen::Vector3d& omega) {
+  const double theta = omega.norm();
+  if (theta < kSmallAngleThreshold) {
+    return Eigen::Matrix3d::Identity() + 0.5 * CrossProductMatrix(omega);
+  }
+  const Eigen::Vector3d a = omega / theta;
+  const Eigen::Matrix3d a_x = CrossProductMatrix(a);
+  const double sin_theta = std::sin(theta);
+  const double sinc_theta = sin_theta / theta;
+  return sinc_theta * Eigen::Matrix3d::Identity() +
+         (1.0 - sinc_theta) * a * a.transpose() +
+         ((1.0 - std::cos(theta)) / theta) * a_x;
+}
+
+Eigen::Matrix3d RightJacobianFromAngleAxis(const Eigen::Vector3d& omega) {
+  return LeftJacobianFromAngleAxis(-omega);
+}
+
 }  // namespace colmap
