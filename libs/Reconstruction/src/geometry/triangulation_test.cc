@@ -86,3 +86,52 @@ TEST(base_triangulation, TestCalculateTriangulationAngle) {
   EXPECT_NEAR(CalculateTriangulationAngles(
                         tvec1, tvec2, {Eigen::Vector3d(0, 0, 50)})[0], 0.019997333973, std::abs(0.019997333973) * (1e-8) / 100.0);
 }
+
+TEST(CalculateAngleBetweenVectors, ParallelVectors) {
+  const Eigen::Vector3d v1(1, 0, 0);
+  const Eigen::Vector3d v2(2, 0, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), 0.0, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, OppositeVectors) {
+  const Eigen::Vector3d v1(1, 0, 0);
+  const Eigen::Vector3d v2(-1, 0, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), EIGEN_PI, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, PerpendicularVectors) {
+  const Eigen::Vector3d v1(1, 0, 0);
+  const Eigen::Vector3d v2(0, 1, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), EIGEN_PI / 2, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, PerpendicularVectorsDifferentMagnitudes) {
+  const Eigen::Vector3d v1(3, 0, 0);
+  const Eigen::Vector3d v2(0, 5, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), EIGEN_PI / 2, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, ZeroVector) {
+  const Eigen::Vector3d v1(1, 0, 0);
+  const Eigen::Vector3d v2(0, 0, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), 0.0, 1e-10);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v2, v1), 0.0, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, BothZeroVectors) {
+  const Eigen::Vector3d v1(0, 0, 0);
+  const Eigen::Vector3d v2(0, 0, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), 0.0, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, FortyFiveDegrees) {
+  const Eigen::Vector3d v1(1, 0, 0);
+  const Eigen::Vector3d v2(1, 1, 0);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), EIGEN_PI / 4, 1e-10);
+}
+
+TEST(CalculateAngleBetweenVectors, IdenticalVectors) {
+  const Eigen::Vector3d v1(1, 2, 3);
+  const Eigen::Vector3d v2(1, 2, 3);
+  EXPECT_NEAR(CalculateAngleBetweenVectors(v1, v2), 0.0, 1e-10);
+}

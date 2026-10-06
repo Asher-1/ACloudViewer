@@ -1053,3 +1053,48 @@ split-variant 求解走稳定 kernel 路径;冷启动首解落在不同 kernel �
 
 pose_test 21/21、triangulation_test 2/2、gate 161/161 全绿(排除面:
 sift/opengl/caspar/loma——均为 GPU 环境性)。
+
+## 终局盘点:全仓对齐残余量化 + 测试缺口清单(2026-10-06)
+
+### 统计口径演进(三轮)
+
+1. 文件级(含版权头):575/605 diff——被版权头污染,无意义;
+2. 剥头 + 行首空白归一:559 diff——仍被折行位置与**结构重组**
+   (fork 的 inline 方法挪位、方法分组)污染,假阳性主导;
+3. **token 流归一**(去 include 路径/注释/预处理器,保标识符与字面量):
+   141/576 逐字同源 + 435 文件级差异——但抽样显示差异大头是
+   **fork 适配层惯用语**(LOG 风格/CHECK 宏/fork 特有功能接线)与
+   结构重组,文件级口径在重组模块上必然全 diff;
+4. **测试用例集合差(套件名归一)是唯一有意义的验收度量**:
+   - 套件名敏感口径:808 缺失(被 fork 类名映射假阳性放大,
+     如 IncrementalMapperController vs IncrementalPipeline);
+   - **用例名级口径:517 个 upstream 测试用例 fork 缺失**(94 个
+     test 文件),这是全面对齐的真实工作清单。
+
+### 缺口分布(top)
+
+sensor/bitmap 67(fork bitmap 重写,upstream 新 API 测试全套)、
+scene/reconstruction 45、util/threading 30、scene/camera 21、
+BA ceres 20、caspar 17、scene/image 17、triangulation 13、
+warp 13、misc 13、calibration 族(single_view_calibrator 13/
+single_view_calibration 11/anycalib 9/ray_fitting 6——**upstream
+新 calibration 模块整族未移植**)、onnx_test 8(排除)。
+
+### 本批落地(+19 用例)
+
+- pose.{h,cc}:补 AngleAxisToRotationMatrix(小角分支);
+- pose_test +11(QuaternionFromAngleAxis 三态/Left·Right Jacobian
+  五态/AngleAxisToRotationMatrix·YAxisAngle Roundtrip)——**32/32**;
+- triangulation_test +8(CalculateAngleBetweenVectors 边界族)——
+  **10/10**;
+- gate 161/161(GPU 环境性排除面不变)。
+
+### 剩余工作分批计划(按缺口规模)
+
+1. calibration 模块整族(anycalib/ray_fitting/single_view_calibrator,
+   含生产代码 + 测试 ~50 用例);
+2. sensor/bitmap(fork 重写面,需 fork API 适配的 67 用例);
+3. scene/reconstruction 45 + threading 30 + camera 21 + image 17;
+4. BA ceres/caspar 测试补全(37);
+5. feature/mvs/util/exe 残余;
+6. onnx_test 与 onnx_matchers 全族:按裁定排除(AICore ggml 替代)。
