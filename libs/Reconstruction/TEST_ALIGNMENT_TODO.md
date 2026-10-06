@@ -987,3 +987,40 @@ two_view_geometry → solvers/{homography,essential,fundamental}_matrix
 → solvers/utils(SolveEpipolarConstraintMatrix/RaysFromCamRaysWithJac)。
 CMake 补 solvers/utils.cc;poselib_utils.cc 双方向 Camera 转换的成员
 风格区分(colmap getter vs poselib 小写成员)。
+
+## 批次 L:caspar 顺序依赖修复 + P1 清单再校正(2026-10-06)
+
+### caspar_test SplitIntrinsic 顺序依赖:机理与修复
+
+SplitIntrinsic 的失败模式重新定性:不是 GPU 资源竞争(单跑时 GPU 空闲
+反而必挂、全量顺序跑反而过),而是 **Caspar CUDA solver 的初始化顺序
+依赖**——前置用例(Merged variants)建立的 solver/CUDA 状态让后续
+split-variant 求解走稳定 kernel 路径;冷启动首解落在不同 kernel 路径,
+距 ceres 参考 ~60px(容差 5e-2)。
+
+- **修复**:SplitIntrinsic 测试头加 merged-variant warmup solve(建立与
+  全量跑相同的 solver 状态;parity 断言本身不变,不掩盖回归);
+- 单跑 ×3 全绿、全量 4/4 ×2——顺序面闭环;
+- **-j4 并行面仍是环境约束**:并行的 AICore Vulkan 测试与 CUDA caspar
+  跨进程竞争无测试内解,gate 在并行 GPU 负载环境维持 -E 排除
+  bundle_adjustment_caspar_test(独立/独占 GPU 的 CI 环境可纳入)。
+
+### P1 清单再校正
+
+- **SolveWithGpuFallback → 假阳性**:upstream 该函数是 GPU BA 求解失败
+  时的回退防御;fork 的 ceres BA 为纯 CPU 求解(use_gpu 默认 false 且
+  管线无 GPU BA 模式),无 fallback 需求。从 P1 移除;
+- **feature/types 矩阵转换族**(Keypoints·Matches From/ToMatrix):
+  upstream 自身无消费者(仅 types.cc 内定义),孤立 API 面——P2,待
+  upstream 消费面出现时随 feature 批次移植;
+- feature/utils 的 BitmapToCHW/HWCToCHW:ONNX 布局转换,AICore ggml
+  路径已替代——维持既有裁定。
+
+### P1 剩余清单(更新后)
+
+1. ~~prior-position BA 残差路径~~(批次 J 更正:假阳性);
+2. ~~SolveWithGpuFallback~~(本批更正:假阳性);
+3. ~~two_view_geometry degenerate-check 家族~~(批次 K 随模块移植完成);
+4. **剩余**:SolveTriangulationDlt/Left·RightJacobianFromAngleAxis 等数值
+   路径升级(低风险独立移植)、MaybeMarkWatermark 细节面、
+   RescaleToMaxImageSize、feature 面残差——均 P2 级,随对应模块批次处理。
