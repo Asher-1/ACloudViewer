@@ -1070,6 +1070,68 @@ std::vector<std::pair<image_pair_t, FeatureMatches>> SqliteDatabase::ReadAllMatc
   return all_matches;
 }
 
+// Serialize a camera to a little-endian binary blob for storage in a single
+// BLOB column (upstream parity d3ccaf35; adapted to the fork's getter/setter
+// Camera API).
+std::string CameraToBlob(const Camera& camera) {
+  std::ostringstream stream(std::ios::binary);
+  WriteBinaryLittleEndian<camera_t>(&stream, camera.CameraId());
+  WriteBinaryLittleEndian<int>(&stream, static_cast<int>(camera.ModelId()));
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Width());
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Height());
+  WriteBinaryLittleEndian<uint8_t>(&stream,
+                                   camera.HasPriorFocalLength() ? 1 : 0);
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Params().size());
+  for (const double param : camera.Params()) {
+    WriteBinaryLittleEndian<double>(&stream, param);
+  }
+  return stream.str();
+}
+
+Camera CameraFromBlob(const void* data, const size_t num_bytes) {
+  const std::string bytes(static_cast<const char*>(data), num_bytes);
+  std::istringstream stream(bytes, std::ios::binary);
+  Camera camera;
+  camera.SetCameraId(ReadBinaryLittleEndian<camera_t>(&stream));
+  camera.SetModelId(
+      static_cast<CameraModelId>(ReadBinaryLittleEndian<int>(&stream)));
+  camera.SetWidth(ReadBinaryLittleEndian<uint64_t>(&stream));
+  camera.SetHeight(ReadBinaryLittleEndian<uint64_t>(&stream));
+  camera.SetPriorFocalLength(ReadBinaryLittleEndian<uint8_t>(&stream) != 0);
+  const uint64_t num_params = ReadBinaryLittleEndian<uint64_t>(&stream);
+  camera.Params().resize(num_params);
+  ReadBinaryLittleEndian<double>(&stream, &camera.Params());
+  return camera;
+}
+
+// Bind an optional camera to a statement column, writing NULL when unset. The
+// returned blob must outlive the sqlite3_step call (bound with SQLITE_STATIC).
+std::string WriteOptionalCamera(sqlite3_stmt* sql_stmt,
+                                const std::optional<Camera>& camera,
+                                const int col) {
+  if (!camera.has_value()) {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt, col));
+    return {};
+  }
+  std::string blob = CameraToBlob(*camera);
+  SQLITE3_CALL(sqlite3_bind_blob(sql_stmt,
+                                 col,
+                                 blob.data(),
+                                 static_cast<int>(blob.size()),
+                                 SQLITE_STATIC));
+  return blob;
+}
+
+std::optional<Camera> ReadOptionalCamera(sqlite3_stmt* sql_stmt,
+                                         const int col) {
+  if (sqlite3_column_type(sql_stmt, col) == SQLITE_NULL) {
+    return std::nullopt;
+  }
+  return CameraFromBlob(
+      sqlite3_column_blob(sql_stmt, col),
+      static_cast<size_t>(sqlite3_column_bytes(sql_stmt, col)));
+}
+
 TwoViewGeometry SqliteDatabase::ReadTwoViewGeometry(const image_t image_id1,
                                               const image_t image_id2) const {
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
@@ -1102,6 +1164,12 @@ TwoViewGeometry SqliteDatabase::ReadTwoViewGeometry(const image_t image_id1,
       Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
                                  qvec_legacy(2), qvec_legacy(3)),
               tvec_legacy);
+
+  // Read the estimated cameras if present (NULL means not set).
+  two_view_geometry.camera1 =
+      ReadOptionalCamera(sql_stmt_read_two_view_geometry_, 9);
+  two_view_geometry.camera2 =
+      ReadOptionalCamera(sql_stmt_read_two_view_geometry_, 10);
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_two_view_geometry_));
 
@@ -1181,6 +1249,10 @@ void SqliteDatabase::ReadTwoViewGeometries(
                                      qvec_legacy(2), qvec_legacy(3)),
                   tvec_legacy);
     }
+    two_view_geometry.camera1 =
+        ReadOptionalCamera(sql_stmt_read_two_view_geometries_, 10);
+    two_view_geometry.camera2 =
+        ReadOptionalCamera(sql_stmt_read_two_view_geometries_, 11);
     two_view_geometries->push_back(two_view_geometry);
   }
 
@@ -1518,6 +1590,17 @@ void SqliteDatabase::WriteTwoViewGeometry(
     WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
                           Eigen::MatrixXd(0, 0), 10);
   }
+
+  // Write NULL for camera1/camera2 if not set. The blob strings must outlive
+  // sqlite3_step because they are bound with SQLITE_STATIC.
+  const std::string camera1_blob =
+      WriteOptionalCamera(sql_stmt_write_two_view_geometry_,
+                          two_view_geometry_ptr->camera1,
+                          11);
+  const std::string camera2_blob =
+      WriteOptionalCamera(sql_stmt_write_two_view_geometry_,
+                          two_view_geometry_ptr->camera2,
+                          12);
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_write_two_view_geometry_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_write_two_view_geometry_));
@@ -1957,8 +2040,8 @@ void SqliteDatabase::PrepareSQLStatements() {
   sql_stmts_.push_back(sql_stmt_read_matches_all_);
 
   sql =
-      "SELECT rows, cols, data, config, F, E, H, qvec, tvec FROM "
-      "two_view_geometries WHERE pair_id = ?;";
+      "SELECT rows, cols, data, config, F, E, H, qvec, tvec, camera1, camera2 "
+      "FROM two_view_geometries WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_read_two_view_geometry_);
@@ -2026,7 +2109,8 @@ void SqliteDatabase::PrepareSQLStatements() {
   sql_stmts_.push_back(sql_stmt_write_matches_);
 
   sql = "INSERT INTO two_view_geometries(pair_id, rows, cols, data, config, F, "
-      "E, H, qvec, tvec) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "E, H, qvec, tvec, camera1, camera2) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+      "?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_write_two_view_geometry_);
@@ -2263,7 +2347,9 @@ void SqliteDatabase::CreateTwoViewGeometriesTable() const {
         "    E        BLOB,"
         "    H        BLOB,"
         "    qvec     BLOB,"
-        "    tvec     BLOB);";
+        "    tvec     BLOB,"
+        "    camera1  BLOB,"
+        "    camera2  BLOB);";
     SQLITE3_EXEC(database_, sql.c_str(), nullptr);
   }
 }
@@ -2330,6 +2416,20 @@ int SqliteDatabase::ReadUserVersion() const {
 }
 
 void SqliteDatabase::PostMigrateTables() const {
+    // Upstream parity (d3ccaf35): the estimated per-view cameras of the
+    // two-view geometries were added after the legacy fork schema; make sure
+    // pre-existing databases carry the columns before anything reads them.
+    if (!ExistsColumn("two_view_geometries", "camera1")) {
+        SQLITE3_EXEC(database_,
+                     "ALTER TABLE two_view_geometries ADD COLUMN camera1 BLOB;",
+                     nullptr);
+    }
+    if (!ExistsColumn("two_view_geometries", "camera2")) {
+        SQLITE3_EXEC(database_,
+                     "ALTER TABLE two_view_geometries ADD COLUMN camera2 BLOB;",
+                     nullptr);
+    }
+
     // Refuse databases written by a newer schema than this build supports.
     const int user_version = ReadUserVersion();
     if (user_version > GetDatabaseVersionNumber()) {

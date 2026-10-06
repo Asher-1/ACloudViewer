@@ -1,19 +1,13 @@
-// ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                  -
-// ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: MIT
-// ----------------------------------------------------------------------------
+// SPDX-License-Identifier: BSD-3-Clause
 
 #pragma once
-
-#include <ceres/ceres.h>
-
-#include <Eigen/Core>
 
 #include "estimators/cost_functions/quaternion_utils.h"
 #include "estimators/cost_functions/utils.h"
 #include "geometry/pose.h"
+
+#include <Eigen/Core>
+#include <ceres/ceres.h>
 
 namespace colmap {
 
@@ -22,14 +16,14 @@ namespace colmap {
 // scalar so it works under Ceres autodiff.
 template <typename T>
 Eigen::Matrix<T, 3, 3> EssentialMatrixFromPoseParams(
-        const T* const cam2_from_cam1) {
-    const Eigen::Matrix<T, 3, 3> R =
-            EigenQuaternionMap<T>(cam2_from_cam1).toRotationMatrix();
-    // Matrix representation of the cross product t x R.
-    Eigen::Matrix<T, 3, 3> t_x;
-    t_x << T(0), -cam2_from_cam1[6], cam2_from_cam1[5], cam2_from_cam1[6], T(0),
-            -cam2_from_cam1[4], -cam2_from_cam1[5], cam2_from_cam1[4], T(0);
-    return t_x * R;
+    const T* const cam2_from_cam1) {
+  const Eigen::Matrix<T, 3, 3> R =
+      EigenQuaternionMap<T>(cam2_from_cam1).toRotationMatrix();
+  // Matrix representation of the cross product t x R.
+  Eigen::Matrix<T, 3, 3> t_x;
+  t_x << T(0), -cam2_from_cam1[6], cam2_from_cam1[5], cam2_from_cam1[6], T(0),
+      -cam2_from_cam1[4], -cam2_from_cam1[5], cam2_from_cam1[4], T(0);
+  return t_x * R;
 }
 
 // Signed Sampson error under an essential/fundamental matrix. point1/point2 are
@@ -41,17 +35,18 @@ template <typename T>
 T SampsonError(const Eigen::Matrix<T, 3, 3>& E,
                const Eigen::Matrix<T, 2, 1>& point1,
                const Eigen::Matrix<T, 2, 1>& point2) {
-    const Eigen::Matrix<T, 3, 1> point2_homogeneous = point2.homogeneous();
-    const Eigen::Matrix<T, 3, 1> epipolar_line1 = E * point1.homogeneous();
-    const T num = point2_homogeneous.dot(epipolar_line1);
-    const Eigen::Matrix<T, 4, 1> denom(point2_homogeneous.dot(E.col(0)),
-                                       point2_homogeneous.dot(E.col(1)),
-                                       epipolar_line1.x(), epipolar_line1.y());
-    const T denom_norm = denom.norm();
-    if (denom_norm == static_cast<T>(0)) {
-        return static_cast<T>(0);
-    }
-    return num / denom_norm;
+  const Eigen::Matrix<T, 3, 1> point2_homogeneous = point2.homogeneous();
+  const Eigen::Matrix<T, 3, 1> epipolar_line1 = E * point1.homogeneous();
+  const T num = point2_homogeneous.dot(epipolar_line1);
+  const Eigen::Matrix<T, 4, 1> denom(point2_homogeneous.dot(E.col(0)),
+                                     point2_homogeneous.dot(E.col(1)),
+                                     epipolar_line1.x(),
+                                     epipolar_line1.y());
+  const T denom_norm = denom.norm();
+  if (denom_norm == static_cast<T>(0)) {
+    return static_cast<T>(0);
+  }
+  return num / denom_norm;
 }
 
 // Signed tangent Sampson error of one correspondence under E, in pixels, using
@@ -63,16 +58,46 @@ T TangentSampsonError(const Eigen::Matrix<T, 3, 3>& E,
                       const Eigen::Matrix<T, 3, 2>& J_ray1,
                       const Eigen::Matrix<T, 3, 1>& cam_ray2,
                       const Eigen::Matrix<T, 3, 2>& J_ray2) {
-    const Eigen::Matrix<T, 3, 1> Eray1 = E * cam_ray1;
-    const Eigen::Matrix<T, 3, 1> Etray2 = E.transpose() * cam_ray2;
-    const T num = cam_ray2.dot(Eray1);
-    Eigen::Matrix<T, 4, 1> denom;
-    denom << J_ray1.transpose() * Etray2, J_ray2.transpose() * Eray1;
-    const T denom_norm = denom.norm();
-    if (denom_norm == static_cast<T>(0)) {
-        return static_cast<T>(0);
-    }
-    return num / denom_norm;
+  const Eigen::Matrix<T, 3, 1> Eray1 = E * cam_ray1;
+  const Eigen::Matrix<T, 3, 1> Etray2 = E.transpose() * cam_ray2;
+  const T num = cam_ray2.dot(Eray1);
+  Eigen::Matrix<T, 4, 1> denom;
+  denom << J_ray1.transpose() * Etray2, J_ray2.transpose() * Eray1;
+  const T denom_norm = denom.norm();
+  if (denom_norm == static_cast<T>(0)) {
+    return static_cast<T>(0);
+  }
+  return num / denom_norm;
+}
+
+// Ambient 7-vector of a relative pose in the Rigid3d parameter layout
+// [qx, qy, qz, qw, tx, ty, tz], with the translation on the unit sphere. This
+// is the ambient space of the 5-DoF relative pose manifold (rotation on SO(3),
+// translation on S^2) that the Sampson refinement drivers optimize over; the
+// translation scale is unobservable there.
+using RelPoseParams = Eigen::Matrix<double, 7, 1>;
+
+// Pack a relative pose into its ambient 7-vector, projecting onto the manifold:
+// the quaternion is normalized to a unit rotation and the translation is
+// normalized onto the unit sphere. The input translation scale is intentionally
+// discarded, since the essential matrix only constrains the baseline direction.
+inline RelPoseParams RelPoseParamsFromRigid3d(const Rigid3d& cam2_from_cam1) {
+  RelPoseParams params;
+  params.head<4>() = cam2_from_cam1.rotation().normalized().coeffs();
+  params.tail<3>() = cam2_from_cam1.translation().normalized();
+  return params;
+}
+
+// Unpack a relative pose from its ambient 7-vector, normalizing the quaternion
+// to a unit rotation. The translation is taken as-is and is expected to
+// already be unit length, as maintained by the manifold-constrained solvers
+// that produce these vectors.
+inline Rigid3d Rigid3dFromRelPoseParams(const double* params) {
+  const Eigen::Quaterniond rotation =
+      Eigen::Map<const Eigen::Quaterniond>(params).normalized();
+  const Eigen::Vector3d translation =
+      Eigen::Map<const Eigen::Vector3d>(params + 4);
+  return Rigid3d(rotation, translation);
 }
 
 // Refines a relative pose by the Sampson error of image-plane point
@@ -83,22 +108,22 @@ T TangentSampsonError(const Eigen::Matrix<T, 3, 3>& E,
 // model.
 class SampsonErrorCostFunctor
     : public AutoDiffCostFunctor<SampsonErrorCostFunctor, 1, 7> {
-public:
-    SampsonErrorCostFunctor(const Eigen::Vector2d& point1,
-                            const Eigen::Vector2d& point2)
-        : point1_(point1), point2_(point2) {}
+ public:
+  SampsonErrorCostFunctor(const Eigen::Vector2d& point1,
+                          const Eigen::Vector2d& point2)
+      : point1_(point1), point2_(point2) {}
 
-    template <typename T>
-    bool operator()(const T* const cam2_from_cam1, T* residuals) const {
-        const Eigen::Matrix<T, 3, 3> E =
-                EssentialMatrixFromPoseParams(cam2_from_cam1);
-        residuals[0] = SampsonError<T>(E, point1_.cast<T>(), point2_.cast<T>());
-        return true;
-    }
+  template <typename T>
+  bool operator()(const T* const cam2_from_cam1, T* residuals) const {
+    const Eigen::Matrix<T, 3, 3> E =
+        EssentialMatrixFromPoseParams(cam2_from_cam1);
+    residuals[0] = SampsonError<T>(E, point1_.cast<T>(), point2_.cast<T>());
+    return true;
+  }
 
-private:
-    const Eigen::Vector2d point1_;
-    const Eigen::Vector2d point2_;
+ private:
+  const Eigen::Vector2d point1_;
+  const Eigen::Vector2d point2_;
 };
 
 // Refines a relative pose by the pixel-unit tangent Sampson error of calibrated
@@ -107,27 +132,28 @@ private:
 // model.
 class TangentSampsonErrorCostFunctor
     : public AutoDiffCostFunctor<TangentSampsonErrorCostFunctor, 1, 7> {
-public:
-    TangentSampsonErrorCostFunctor(const CamRayWithJac& cam_ray1_with_jac,
-                                   const CamRayWithJac& cam_ray2_with_jac)
-        : cam_ray1_with_jac_(cam_ray1_with_jac),
-          cam_ray2_with_jac_(cam_ray2_with_jac) {}
+ public:
+  TangentSampsonErrorCostFunctor(const CamRayWithJac& cam_ray1_with_jac,
+                                 const CamRayWithJac& cam_ray2_with_jac)
+      : cam_ray1_with_jac_(cam_ray1_with_jac),
+        cam_ray2_with_jac_(cam_ray2_with_jac) {}
 
-    template <typename T>
-    bool operator()(const T* const cam2_from_cam1, T* residuals) const {
-        const Eigen::Matrix<T, 3, 3> E =
-                EssentialMatrixFromPoseParams(cam2_from_cam1);
-        residuals[0] =
-                TangentSampsonError<T>(E, cam_ray1_with_jac_.ray.cast<T>(),
-                                       cam_ray1_with_jac_.jacobian.cast<T>(),
-                                       cam_ray2_with_jac_.ray.cast<T>(),
-                                       cam_ray2_with_jac_.jacobian.cast<T>());
-        return true;
-    }
+  template <typename T>
+  bool operator()(const T* const cam2_from_cam1, T* residuals) const {
+    const Eigen::Matrix<T, 3, 3> E =
+        EssentialMatrixFromPoseParams(cam2_from_cam1);
+    residuals[0] =
+        TangentSampsonError<T>(E,
+                               cam_ray1_with_jac_.ray.cast<T>(),
+                               cam_ray1_with_jac_.jacobian.cast<T>(),
+                               cam_ray2_with_jac_.ray.cast<T>(),
+                               cam_ray2_with_jac_.jacobian.cast<T>());
+    return true;
+  }
 
-private:
-    const CamRayWithJac cam_ray1_with_jac_;
-    const CamRayWithJac cam_ray2_with_jac_;
+ private:
+  const CamRayWithJac cam_ray1_with_jac_;
+  const CamRayWithJac cam_ray2_with_jac_;
 };
 
 }  // namespace colmap

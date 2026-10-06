@@ -68,6 +68,7 @@ COLMAP_ADD_SOURCES(
     solvers/fundamental_matrix.h solvers/fundamental_matrix.cc
     solvers/homography_matrix.h solvers/homography_matrix.cc
     solvers/poselib_utils.h solvers/poselib_utils.cc
+    solvers/utils.h solvers/utils.cc
     solvers/relpose_shared_focal.h solvers/relpose_shared_focal.cc
     solvers/translation_transform.h
 )

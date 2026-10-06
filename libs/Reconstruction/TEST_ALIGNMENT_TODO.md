@@ -944,3 +944,46 @@ SplitIntrinsic 子用例的 parity 数值在 GPU 被并行负载占用时系统�
 parity 容差边缘爆。gate 在有并行 GPU 负载的环境需 -E 排除
 bundle_adjustment_caspar_test(与 sift_test/opengl_utils_test 同类);
 无并行 GPU 负载的环境(如 CI)仍应纳入。
+
+## 批次 K:two_view_geometry 模块级移植 + db camera1/camera2 序列化(2026-10-02)
+
+### 范围(test-first 裁定)
+
+two_view_geometry 是 upstream 重构面(估计主流程重写 + degenerate-check
+防御族 + fisheye/panoramic/watermark/shared·one-sided-focal 扩展)。
+fork test 仅 4 用例 vs upstream 32+——按 test-first 原则整模块移植:
+
+- **生产 9 文件**:two_view_geometry.{h,cc}、solvers/{homography,essential,
+  fundamental}_matrix.{h,cc}、solvers/utils.{h,cc}(新)、
+  cost_functions/{sampson_error,tiny_manifold,tiny_sampson_error,
+  reprojection_error}.h——全部 upstream 逐字(include 映射 colmap/ 前缀
+  剥除)——移植前逐一验证 fork 无特有语义(符号集对比仅版权头差异);
+- **Camera API 适配**:upstream 的 public 成员风格(camera.width/
+  has_prior_focal_length)→ fork getter/setter 风格(Width()/
+  HasPriorFocalLength())——生产 19 处 + test 23 处,赋值形态改 Set 系;
+  poselib::Camera 的小写成员须区分保留(两方向转换函数各按其类型);
+- **db camera1/camera2 序列化移植**(MaybeDecomposeRelativePoses 用例
+  揭示的反向缺口):two_view_geometries 表加 camera1/camera2 BLOB 列
+  (新表 schema + PostMigrateTables 对旧库 ALTER ADD COLUMN 迁移)、
+  INSERT/SELECT 语句扩展、CameraToBlob/CameraFromBlob/
+  Write·ReadOptionalCamera 辅助(fork getter 版)、write/read 函数体
+  接线(SINGLE 与 vector 两路、SELECT * 列序 camera1=10/camera2=11)。
+
+### 验证
+
+- two_view_geometry_test **32/32**(含 degenerate 族/fisheye/panoramic/
+  watermark/SharedFocal/OneSidedFocal/MaybeDecomposeRelativePoses);
+- database_test 22/22、scene_two_view_geometry_test 2/2;
+- gate 162 测试中 160 绿;2 个 GPU 环境性失败与移植无关:
+  bundle_adjustment_caspar_test(前批已记录)与 feature/loma_test
+  (外部进程占 GPU 17GB 致 Vulkan 推理失败,AICore 路径与本模块
+  零代码交集)。
+
+### 依赖闭合链(级联记录)
+
+two_view_geometry → solvers/{homography,essential,fundamental}_matrix
+(RelPoseParams/CheiralityEstimator/闭式解)→ cost_functions/{sampson_error
+(RelPoseParams 定义),tiny_manifold(2-sphere 断言更新),tiny_sampson_error}
+→ solvers/utils(SolveEpipolarConstraintMatrix/RaysFromCamRaysWithJac)。
+CMake 补 solvers/utils.cc;poselib_utils.cc 双方向 Camera 转换的成员
+风格区分(colmap getter vs poselib 小写成员)。

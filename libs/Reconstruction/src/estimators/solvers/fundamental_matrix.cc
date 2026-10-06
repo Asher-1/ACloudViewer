@@ -1,40 +1,15 @@
-// Copyright (c), ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "estimators/solvers/fundamental_matrix.h"
 
 #include "estimators/cost_functions/tiny_manifold.h"
 #include "estimators/cost_functions/tiny_sampson_error.h"
+#include "estimators/solvers/utils.h"
 #include "geometry/essential_matrix.h"
 #include "geometry/normalization.h"
 #include "math/polynomial.h"
 #include "optim/tiny_solver.h"
+#include "util/eigen_alignment.h"
 #include "util/logging.h"
 
 #include <cfloat>
@@ -205,28 +180,7 @@ void FundamentalMatrixEightPointEstimator::Estimate(
         normed_points1[i].transpose().homogeneous();
   }
 
-  // Solve for the nullspace of the constraint matrix.
-  Eigen::Matrix3d Q;
-  if (points1.size() == 8) {
-    Eigen::Matrix<double, 9, 9> QQ =
-        A.transpose().householderQr().householderQ();
-    Q = Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(
-        QQ.col(8).data());
-  } else {
-    Eigen::JacobiSVD<Eigen::Matrix<double, Eigen::Dynamic, 9>> svd(
-        A, Eigen::ComputeFullV);
-    Q = Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(
-        svd.matrixV().col(8).data());
-  }
-
-  // Enforcing the internal constraint that two singular values must non-zero
-  // and one must be zero.
-  Eigen::JacobiSVD<Eigen::Matrix3d> svd(
-      Q, Eigen::ComputeFullU | Eigen::ComputeFullV);
-  Eigen::Vector3d singular_values = svd.singularValues();
-  singular_values(2) = 0.0;
-  const Eigen::Matrix3d F =
-      svd.matrixU() * singular_values.asDiagonal() * svd.matrixV().transpose();
+  const Eigen::Matrix3d F = SolveEpipolarConstraintMatrix(A);
 
   models->resize(1);
   (*models)[0] = normed_from_orig2.transpose() * F * normed_from_orig1;
@@ -286,9 +240,8 @@ bool RefineFundamentalMatrixSampson(const std::vector<Eigen::Vector2d>& points1,
   Solver solver;
   Solver::Options options;
   options.max_num_iterations = 25;
-  solver.Solve(functor, &params, options);
-
-  if (!params.allFinite()) {
+  if (solver.Solve(functor, &params, options).status ==
+      Solver::NUMERICAL_FAILURE) {
     return false;
   }
 

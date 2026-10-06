@@ -1,16 +1,11 @@
-// ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                  -
-// ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.cloudViewer.org
-// SPDX-License-Identifier: MIT
-// ----------------------------------------------------------------------------
+// SPDX-License-Identifier: BSD-3-Clause
 
 #pragma once
 
+#include "estimators/cost_functions/quaternion_utils.h"
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
-#include "estimators/cost_functions/quaternion_utils.h"
 
 namespace colmap {
 
@@ -35,72 +30,82 @@ namespace colmap {
 // Retraction: q_plus = normalize(q * ExpMap(delta)) (right multiplication),
 // matching how the previous tangent parameterization composed the increment.
 struct EigenQuaternionManifold {
-    static constexpr int kAmbientSize = 4;
-    static constexpr int kTangentSize = 3;
-    [[maybe_unused]] static constexpr bool kIsEuclidean = false;
+  static constexpr int kAmbientSize = 4;
+  static constexpr int kTangentSize = 3;
+  [[maybe_unused]] static constexpr bool kIsEuclidean = false;
 
-    void Plus(const double* x, const double* delta, double* x_plus) const {
-        double delta_q[4];
-        EigenQuaternionFromAngleAxis(delta, delta_q);
-        const EigenQuaternionMap<double> q(x);
-        const EigenQuaternionMap<double> dq(delta_q);
-        Eigen::Map<Eigen::Quaterniond> out(x_plus);
-        out = (q * dq).normalized();
-    }
+  void Plus(const double* x, const double* delta, double* x_plus) const {
+    double delta_q[4];
+    EigenQuaternionFromAngleAxis(delta, delta_q);
+    const EigenQuaternionMap<double> q(x);
+    const EigenQuaternionMap<double> dq(delta_q);
+    Eigen::Map<Eigen::Quaterniond> out(x_plus);
+    out = (q * dq).normalized();
+  }
 
-    void PlusJacobian(const double* x, double* jacobian) const {
-        // For the right-multiplication retraction q * ExpMap(delta), the
-        // Jacobian at delta = 0 is 0.5 * L(q) restricted to the imaginary
-        // columns, where L(q) is the quaternion left-multiplication matrix.
-        const EigenQuaternionMap<double> q_map(x);
-        const Eigen::Quaterniond q(q_map);
-        Eigen::Map<Eigen::Matrix<double, 4, 3, Eigen::RowMajor>> out(jacobian);
-        out = 0.5 * QuaternionLeftMultMatrix(q).leftCols<3>();
-    }
+  void PlusJacobian(const double* x, double* jacobian) const {
+    // For the right-multiplication retraction q * ExpMap(delta), the Jacobian
+    // at delta = 0 is 0.5 * L(q) restricted to the imaginary columns, where
+    // L(q) is the quaternion left-multiplication matrix.
+    const EigenQuaternionMap<double> q_map(x);
+    const Eigen::Quaterniond q(q_map);
+    Eigen::Map<Eigen::Matrix<double, 4, 3, Eigen::RowMajor>> out(jacobian);
+    out = 0.5 * QuaternionLeftMultMatrix(q).leftCols<3>();
+  }
 };
 
 // Unit-sphere manifold in R^N. Retraction:
 // x_plus = normalize(x + B * delta), where B is an orthonormal basis of the
-// tangent plane at x / ||x||. Only the 2-sphere (N = 3) is implemented, which
-// is all that is currently needed; the closed-form basis keeps the solver
-// allocation-free.
+// tangent plane at x / ||x||. N = 3 uses a closed-form basis; general N uses a
+// Householder reflection. Both keep the solver allocation-free.
 template <int N>
 struct SphereManifold {
-    // TODO: To generalize to N > 3, replace TangentBasis()'s R^3-specific
-    // closed form (unitOrthogonal + cross) with a (less efficient)
-    // QR/Householder orthonormalization of the tangent space.
-    static_assert(N == 3,
-                  "SphereManifold is only implemented for the 2-sphere.");
-    static constexpr int kAmbientSize = N;
-    static constexpr int kTangentSize = N - 1;
-    [[maybe_unused]] static constexpr bool kIsEuclidean = false;
+  static constexpr int kAmbientSize = N;
+  static constexpr int kTangentSize = N - 1;
+  [[maybe_unused]] static constexpr bool kIsEuclidean = false;
 
-    void Plus(const double* x, const double* delta, double* x_plus) const {
-        const Eigen::Map<const Eigen::Vector3d> xv(x);
-        const Eigen::Map<const Eigen::Vector2d> d(delta);
-        Eigen::Map<Eigen::Vector3d> out(x_plus);
-        out = (xv + TangentBasis(xv) * d).normalized();
-    }
+  void Plus(const double* x, const double* delta, double* x_plus) const {
+    const Eigen::Map<const Eigen::Matrix<double, N, 1>> xv(x);
+    const Eigen::Map<const Eigen::Matrix<double, N - 1, 1>> d(delta);
+    Eigen::Map<Eigen::Matrix<double, N, 1>> out(x_plus);
+    out = (xv + TangentBasis(xv) * d).normalized();
+  }
 
-    // Assumes x is (approximately) unit norm, as maintained by the solver's
-    // sphere retraction; the tangent basis equals the Plus Jacobian only at
-    // unit x.
-    void PlusJacobian(const double* x, double* jacobian) const {
-        const Eigen::Map<const Eigen::Vector3d> xv(x);
-        Eigen::Map<Eigen::Matrix<double, 3, 2, Eigen::RowMajor>> out(jacobian);
-        out = TangentBasis(xv);
-    }
+  // Assumes x is (approximately) unit norm, as maintained by the solver's
+  // sphere retraction; the tangent basis equals the Plus Jacobian only at unit
+  // x.
+  void PlusJacobian(const double* x, double* jacobian) const {
+    const Eigen::Map<const Eigen::Matrix<double, N, 1>> xv(x);
+    // A single-column Jacobian (N == 2) cannot be spelled RowMajor in Eigen,
+    // where storage order is immaterial for it anyway.
+    constexpr int kOrder = (N - 1 == 1) ? Eigen::ColMajor : Eigen::RowMajor;
+    Eigen::Map<Eigen::Matrix<double, N, N - 1, kOrder>> out(jacobian);
+    out = TangentBasis(xv);
+  }
 
-private:
-    // Orthonormal basis (3 x 2) of the tangent plane at x / ||x||.
-    static Eigen::Matrix<double, 3, 2> TangentBasis(const Eigen::Vector3d& x) {
-        const Eigen::Vector3d x_hat = x.normalized();
-        const Eigen::Vector3d b1 = x_hat.unitOrthogonal();
-        Eigen::Matrix<double, 3, 2> B;
-        B.col(0) = b1;
-        B.col(1) = x_hat.cross(b1);
-        return B;
+ private:
+  // Orthonormal basis (N x (N-1)) of the tangent plane at x / ||x||.
+  static Eigen::Matrix<double, N, N - 1> TangentBasis(
+      const Eigen::Matrix<double, N, 1>& x) {
+    const Eigen::Matrix<double, N, 1> x_hat = x.normalized();
+    if constexpr (N == 3) {
+      const Eigen::Vector3d b1 = x_hat.unitOrthogonal();
+      Eigen::Matrix<double, 3, 2> B;
+      B.col(0) = b1;
+      B.col(1) = x_hat.cross(b1);
+      return B;
+    } else {
+      // Householder reflection mapping e1 to a vector parallel to x_hat; its
+      // last N-1 columns span the tangent plane at x_hat. The sign choice
+      // keeps ||v||^2 >= 2, so this is well-defined for all unit x_hat.
+      Eigen::Matrix<double, N, 1> v = x_hat;
+      v(0) += (x_hat(0) >= 0 ? 1.0 : -1.0);
+      const Eigen::Matrix<double, N, N> H =
+          Eigen::Matrix<double, N, N>::Identity() -
+          (2.0 / v.squaredNorm()) * (v * v.transpose());
+      return H.rightCols(N - 1);
     }
+  }
 };
 
 // Product of one or more manifolds acting on adjacent parameter blocks, e.g.
@@ -114,71 +119,70 @@ struct ProductManifold;
 // Base case: a single manifold. The product degenerates to a thin wrapper.
 template <typename Manifold>
 struct ProductManifold<Manifold> {
-    static constexpr int kAmbientSize = Manifold::kAmbientSize;
-    static constexpr int kTangentSize = Manifold::kTangentSize;
-    [[maybe_unused]] static constexpr bool kIsEuclidean =
-            Manifold::kIsEuclidean;
+  static constexpr int kAmbientSize = Manifold::kAmbientSize;
+  static constexpr int kTangentSize = Manifold::kTangentSize;
+  [[maybe_unused]] static constexpr bool kIsEuclidean = Manifold::kIsEuclidean;
 
-    Manifold manifold;
+  Manifold manifold;
 
-    void Plus(const double* x, const double* delta, double* x_plus) const {
-        manifold.Plus(x, delta, x_plus);
-    }
+  void Plus(const double* x, const double* delta, double* x_plus) const {
+    manifold.Plus(x, delta, x_plus);
+  }
 
-    void PlusJacobian(const double* x, double* jacobian) const {
-        manifold.PlusJacobian(x, jacobian);
-    }
+  void PlusJacobian(const double* x, double* jacobian) const {
+    manifold.PlusJacobian(x, jacobian);
+  }
 };
 
 // Recursive case: split into the head manifold and the product of the rest.
 template <typename Head, typename... Tail>
 struct ProductManifold<Head, Tail...> {
-    using Rest = ProductManifold<Tail...>;
+  using Rest = ProductManifold<Tail...>;
 
-    static constexpr int kAmbientSize = Head::kAmbientSize + Rest::kAmbientSize;
-    static constexpr int kTangentSize = Head::kTangentSize + Rest::kTangentSize;
-    [[maybe_unused]] static constexpr bool kIsEuclidean =
-            Head::kIsEuclidean && Rest::kIsEuclidean;
+  static constexpr int kAmbientSize = Head::kAmbientSize + Rest::kAmbientSize;
+  static constexpr int kTangentSize = Head::kTangentSize + Rest::kTangentSize;
+  [[maybe_unused]] static constexpr bool kIsEuclidean =
+      Head::kIsEuclidean && Rest::kIsEuclidean;
 
-    Head head;
-    Rest rest;
+  Head head;
+  Rest rest;
 
-    void Plus(const double* x, const double* delta, double* x_plus) const {
-        head.Plus(x, delta, x_plus);
-        rest.Plus(x + Head::kAmbientSize, delta + Head::kTangentSize,
-                  x_plus + Head::kAmbientSize);
-    }
+  void Plus(const double* x, const double* delta, double* x_plus) const {
+    head.Plus(x, delta, x_plus);
+    rest.Plus(x + Head::kAmbientSize,
+              delta + Head::kTangentSize,
+              x_plus + Head::kAmbientSize);
+  }
 
-    void PlusJacobian(const double* x, double* jacobian) const {
-        // Row-major (kAmbientSize x kTangentSize), block-diagonal: the head
-        // block sits in the top-left, the rest block in the bottom-right. A
-        // row-major Eigen matrix with a single column is ill-formed, so
-        // single-tangent blocks are stored column-major (identical layout for
-        // one column).
-        constexpr int kOrder =
-                kTangentSize == 1 ? Eigen::ColMajor : Eigen::RowMajor;
-        Eigen::Map<Eigen::Matrix<double, kAmbientSize, kTangentSize, kOrder>> J(
-                jacobian);
-        J.setZero();
+  void PlusJacobian(const double* x, double* jacobian) const {
+    // Row-major (kAmbientSize x kTangentSize), block-diagonal: the head block
+    // sits in the top-left, the rest block in the bottom-right. The recursive
+    // case always combines at least two manifolds with at least one tangent
+    // dimension each, so there are always multiple columns. A row-major Eigen
+    // matrix with a single column is ill-formed, so single-tangent blocks
+    // below are stored column-major (identical layout for one column).
+    static_assert(kTangentSize > 1);
+    Eigen::Map<
+        Eigen::Matrix<double, kAmbientSize, kTangentSize, Eigen::RowMajor>>
+        J(jacobian);
+    J.setZero();
 
-        constexpr int kHeadOrder =
-                Head::kTangentSize == 1 ? Eigen::ColMajor : Eigen::RowMajor;
-        Eigen::Matrix<double, Head::kAmbientSize, Head::kTangentSize,
-                      kHeadOrder>
-                head_jacobian;
-        head.PlusJacobian(x, head_jacobian.data());
-        J.template topLeftCorner<Head::kAmbientSize, Head::kTangentSize>() =
-                head_jacobian;
+    constexpr int kHeadOrder =
+        Head::kTangentSize == 1 ? Eigen::ColMajor : Eigen::RowMajor;
+    Eigen::Matrix<double, Head::kAmbientSize, Head::kTangentSize, kHeadOrder>
+        head_jacobian;
+    head.PlusJacobian(x, head_jacobian.data());
+    J.template topLeftCorner<Head::kAmbientSize, Head::kTangentSize>() =
+        head_jacobian;
 
-        constexpr int kRestOrder =
-                Rest::kTangentSize == 1 ? Eigen::ColMajor : Eigen::RowMajor;
-        Eigen::Matrix<double, Rest::kAmbientSize, Rest::kTangentSize,
-                      kRestOrder>
-                rest_jacobian;
-        rest.PlusJacobian(x + Head::kAmbientSize, rest_jacobian.data());
-        J.template bottomRightCorner<Rest::kAmbientSize, Rest::kTangentSize>() =
-                rest_jacobian;
-    }
+    constexpr int kRestOrder =
+        Rest::kTangentSize == 1 ? Eigen::ColMajor : Eigen::RowMajor;
+    Eigen::Matrix<double, Rest::kAmbientSize, Rest::kTangentSize, kRestOrder>
+        rest_jacobian;
+    rest.PlusJacobian(x + Head::kAmbientSize, rest_jacobian.data());
+    J.template bottomRightCorner<Rest::kAmbientSize, Rest::kTangentSize>() =
+        rest_jacobian;
+  }
 };
 
 }  // namespace colmap
