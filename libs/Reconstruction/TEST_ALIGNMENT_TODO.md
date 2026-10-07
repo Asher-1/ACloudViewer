@@ -1152,3 +1152,48 @@ scale(初值残差 2.11e11 量级指纹当场定位)修正为 prior 本身。
   指纹当场暴露 scale 双乘);②fork Camera getter 适配正则需覆盖
   `.x`/`->x`/`arr[0].x` 三种形态且写形态自动补右括号;③"fork 缺
   upstream 新模块"判断前先 token-sim 对账同名目录树(本轮 8/51 假阳性)。
+
+## 批次 P:reconstruction_test 首次移植 + Normalize/ComputeBoundingBox/Crop 签名对齐(2026-10-07)
+
+### 统计口径第三次修正:Test 前缀假阳性
+
+用例名对账发现 fork 测试惯用 `TestCameraId` 而 upstream 用裸 `CameraId`——
+归一化(剥 Test 前缀)后缺口从 464 修正为 **359**(消除 105 假阳性)。
+另:misc_test 13 个「缺口」是**粒度风格差异**(fork 一个 TestCSVToVector
+大用例覆盖全分支,upstream 拆 13 个细用例)——语义等价,P2 降级。
+
+### 生产签名对齐(3 个函数,upstream parity)
+
+- `Reconstruction::Normalize` → `Sim3d Normalize(bool fixed_scale=false,
+  double extent=10.0, double min_percentile=0.1, double max_percentile=0.9,
+  bool use_images=true)`:fork 原为 void 且无 fixed_scale 语义;8 处消费者
+  全为语句调用零破坏;early-exit 返回单位 Sim3d;
+- `ComputeBoundingBox` → `Eigen::AlignedBox3d (min_percentile=0.0,
+  max_percentile=1.0, use_images=false)`:fork 原返回 pair 且无 use_images;
+- `Crop` → `Reconstruction Crop(const Eigen::AlignedBox3d&)`:fork 原接受
+  pair;exe/model.cc 全链路同步(bounding_box/bounds 容器、WriteBoundingBox、
+  ComputeEqualPartsBounds、extent 计算 first/second → min()/max()/center())。
+
+### reconstruction_test 首次移植(0 → 1455 行,48 用例)
+
+fork 该文件为空占位。移植适配面:Camera/Rig/Frame/Image/Point3D/Point2D 的
+成员→getter 映射(camera_id×24/track×9/xyz+color×10/point3D_id×4/error→
+SetError×3/xy×1)、`CameraId() = 2` 写形态改 SetCameraId、
+`AddSensor(sensor_id)` 补 fork 的 optional pose 双参、RegFrameIds NodeHashSet
+无下标改 begin() 解引用、ExtractColorsForAllImages 去多线程参( fork 单线程)。
+
+### 34/48 通过 + 14 DISABLED 留因(全部定性为 fork 深度行为差异)
+
+- **注册语义类(9)**:fork 的 db round-trip 扩展使「frame 有 pose 即注册」
+  (AddImageWithTrivialFrame/SetRigsAndFrames 的 num_reg_frames=24 vs 0、
+  DeRegisterFrame/RegImageIds/FindCommonRegImageIds/ComputeNumObservations/
+  ComputeMeanTrackLength/ComputeMeanObservationsPerRegImage/Normalize 的
+  early-exit 还在读 reg_image_ids_ 旧账本);对齐方向 = fork 的注册语义
+  与 upstream「结构创建 ≠ 注册」分离——这是 fork 核心语义面,需专项批次;
+- **错误消息类(2)**:AddFrame/AddImage 的 fork 用 map::at 抛
+  "_Map_base::at" 而非 upstream 的 "Rig with ID 1 does not exist" 显式
+  THROW_CHECK——低风险,下一批补显式检查;
+- **合并颜色类(2)**:MergePoints3D/Colors 的合并颜色选择语义差异;
+- **Crop(1)**:断言细节待查。
+- 验证:reconstruction_test 34 PASSED + 14 DISABLED;全量 gate **165/165**。
+- 缺口清单余 ~311(359 − 48;其中 14 转 DISABLED 留因)。

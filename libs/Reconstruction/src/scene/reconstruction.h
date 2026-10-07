@@ -225,18 +225,24 @@ public:
     // Scales scene such that the minimum and maximum camera centers are at the
     // given `extent`, whereas `p0` and `p1` determine the minimum and
     // maximum percentiles of the camera centers considered.
-    void Normalize(const double extent = 10.0,
-                   const double p0 = 0.1,
-                   const double p1 = 0.9,
-                   const bool use_images = true);
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): normalizes in place
+    // and returns the applied transform; `fixed_scale` keeps the current
+    // scale and only centers the scene.
+    Sim3d Normalize(bool fixed_scale = false,
+                    double extent = 10.0,
+                    double min_percentile = 0.1,
+                    double max_percentile = 0.9,
+                    bool use_images = true);
 
     // Compute the centroid of the 3D points
     Eigen::Vector3d ComputeCentroid(const double p0 = 0.1,
                                     const double p1 = 0.9) const;
 
     // Compute the bounding box corners of the 3D points
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> ComputeBoundingBox(
-            const double p0 = 0.0, const double p1 = 1.0) const;
+    Eigen::AlignedBox3d ComputeBoundingBox(
+            double min_percentile = 0.0,
+            double max_percentile = 1.0,
+            bool use_images = false) const;
 
     // Apply the 3D similarity transformation to all images and points.
     void Transform(const SimilarityTransform3& tform);
@@ -248,8 +254,7 @@ public:
     // of the bounding box containing the included 3D points of the new
     // reconstruction. Only the cameras and images of the included points are
     // registered.
-    Reconstruction Crop(
-            const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const;
+    Reconstruction Crop(const Eigen::AlignedBox3d& bbox) const;
 
     // Merge the given reconstruction into this reconstruction by registering
     // the images registered in the given but not in this reconstruction and by

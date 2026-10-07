@@ -560,32 +560,36 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
     frame.ResetPose();
 }
 
-void Reconstruction::Normalize(const double extent,
-                               const double p0,
-                               const double p1,
-                               const bool use_images) {
-    CHECK_GT(extent, 0);
+Sim3d Reconstruction::Normalize(const bool fixed_scale,
+                                const double extent,
+                                const double min_percentile,
+                                const double max_percentile,
+                                const bool use_images) {
+    THROW_CHECK_GT(extent, 0);
 
     if ((use_images && reg_image_ids_.size() < 2) ||
         (!use_images && points3D_.size() < 2)) {
-        return;
+        return Sim3d();
     }
 
-    auto bound = ComputeBoundsAndCentroid(p0, p1, use_images);
+    auto bound = ComputeBoundsAndCentroid(min_percentile, max_percentile,
+                                          use_images);
 
     // Calculate scale and translation, such that
     // translation is applied before scaling.
     const double old_extent = (std::get<1>(bound) - std::get<0>(bound)).norm();
-    double scale;
-    if (old_extent < std::numeric_limits<double>::epsilon()) {
-        scale = 1;
-    } else {
-        scale = extent / old_extent;
+    double scale = 1.;
+    if (!fixed_scale) {
+        if (old_extent >= std::numeric_limits<double>::epsilon()) {
+            scale = extent / old_extent;
+        }
     }
 
-    SimilarityTransform3 tform(scale, ComposeIdentityQuaternion(),
-                               -scale * std::get<2>(bound));
+    const Sim3d tform(scale, Eigen::Quaterniond::Identity(),
+                      -scale * std::get<2>(bound));
     Transform(tform);
+
+    return tform;
 }
 
 Eigen::Vector3d Reconstruction::ComputeCentroid(const double p0,
@@ -593,10 +597,16 @@ Eigen::Vector3d Reconstruction::ComputeCentroid(const double p0,
     return std::get<2>(ComputeBoundsAndCentroid(p0, p1, false));
 }
 
-std::pair<Eigen::Vector3d, Eigen::Vector3d> Reconstruction::ComputeBoundingBox(
-        const double p0, const double p1) const {
-    auto bound = ComputeBoundsAndCentroid(p0, p1, false);
-    return std::make_pair(std::get<0>(bound), std::get<1>(bound));
+Eigen::AlignedBox3d Reconstruction::ComputeBoundingBox(
+        const double min_percentile,
+        const double max_percentile,
+        const bool use_images) const {
+    auto bound = ComputeBoundsAndCentroid(min_percentile, max_percentile,
+                                          use_images);
+    Eigen::AlignedBox3d bbox;
+    bbox.extend(std::get<0>(bound));
+    bbox.extend(std::get<1>(bound));
+    return bbox;
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d>
@@ -733,8 +743,7 @@ void Reconstruction::Transform(const Sim3d& new_from_old_world) {
     }
 }
 
-Reconstruction Reconstruction::Crop(
-        const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const {
+Reconstruction Reconstruction::Crop(const Eigen::AlignedBox3d& bbox) const {
     // add all cameras and images. Only the registered images will be used.
     Reconstruction reconstruction;
     for (const auto& camera_el : cameras_) {
@@ -756,8 +765,8 @@ Reconstruction Reconstruction::Crop(
     }
     for (const auto& point_el : points3D_) {
         const auto& point = point_el.second;
-        if ((point.XYZ().array() >= bbox.first.array()).all() &&
-            (point.XYZ().array() <= bbox.second.array()).all()) {
+        if ((point.XYZ().array() >= bbox.min().array()).all() &&
+            (point.XYZ().array() <= bbox.max().array()).all()) {
             for (const auto& track_el : point.Track().Elements()) {
                 reconstruction.RegisterImage(track_el.image_id);
             }
