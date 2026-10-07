@@ -75,23 +75,15 @@ const std::vector<size_t>& Camera::ExtraParamsIdxs() const {
 }
 
 Eigen::Matrix3d Camera::CalibrationMatrix() const {
+  // Upstream parity (d3ccaf35): a thrown, catchable check (LOG(FATAL)
+  // aborts instead, and Spherical models must be able to probe this).
+  THROW_CHECK(IsPerspective())
+      << "CalibrationMatrix() only defined for perspective cameras.";
   Eigen::Matrix3d K = Eigen::Matrix3d::Identity();
-
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  if (idxs.size() == 1) {
-    K(0, 0) = params_[idxs[0]];
-    K(1, 1) = params_[idxs[0]];
-  } else if (idxs.size() == 2) {
-    K(0, 0) = params_[idxs[0]];
-    K(1, 1) = params_[idxs[1]];
-  } else {
-    LOG(FATAL)
-        << "Camera model must either have 1 or 2 focal length parameters.";
-  }
-
+  K(0, 0) = FocalLengthX();
+  K(1, 1) = FocalLengthY();
   K(0, 2) = PrincipalPointX();
   K(1, 2) = PrincipalPointY();
-
   return K;
 }
 
@@ -333,4 +325,18 @@ Camera Camera::CreateFromModelName(camera_t camera_id,
             camera_id, CameraModelNameToId(model_name), focal_length, width,
             height);
 }
+std::ostream& operator<<(std::ostream& stream, const Camera& camera) {
+  const bool valid_model = ExistsCameraModelWithId(camera.ModelId());
+  const std::string camera_id_str = camera.CameraId() != kInvalidCameraId
+                                        ? std::to_string(camera.CameraId())
+                                        : "Invalid";
+  const std::string params_info = valid_model ? camera.ParamsInfo() : "?";
+  const std::string model_name = valid_model ? camera.ModelName() : "Invalid";
+  stream << "Camera(camera_id=" << camera_id_str << ", model=" << model_name
+         << ", width=" << camera.Width() << ", height=" << camera.Height()
+         << ", params=[" << camera.ParamsToString() << "] (" << params_info
+         << "))";
+  return stream;
+}
+
 }  // namespace colmap

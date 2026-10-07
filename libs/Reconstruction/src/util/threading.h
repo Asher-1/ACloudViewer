@@ -20,6 +20,42 @@
 
 namespace colmap {
 
+// Upstream parity (d3ccaf35 util/threading.h): exception that aggregates
+// multiple exceptions from parallel tasks; thrown by ThreadPool::Wait()
+// when one or more tasks threw exceptions.
+class AggregateException : public std::exception {
+ public:
+  explicit AggregateException(std::vector<std::exception_ptr> excs)
+      // NOLINTNEXTLINE(bugprone-throw-keyword-missing)
+      : exceptions_(std::move(excs)) {
+    message_ =
+        std::to_string(exceptions_.size()) + " task(s) threw exception(s):\n";
+    for (size_t i = 0; i < exceptions_.size(); ++i) {
+      try {
+        std::rethrow_exception(exceptions_[i]);
+      } catch (const std::exception& e) {
+        message_ += e.what();
+      } catch (...) {
+        message_ += "Unknown exception";
+      }
+      if (i + 1 < exceptions_.size()) {
+        message_ += "\n";
+      }
+    }
+  }
+
+  const char* what() const noexcept override { return message_.c_str(); }
+
+  const std::vector<std::exception_ptr>& exceptions() const {
+    return exceptions_;
+  }
+
+ private:
+  std::vector<std::exception_ptr> exceptions_;
+  std::string message_;
+};
+
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wkeyword-macro"
@@ -180,7 +216,8 @@ public:
     // Add new task to the thread pool.
     template <class func_t, class... args_t>
     auto AddTask(func_t&& f, args_t&&... args)
-            -> std::future<typename std::result_of<func_t(args_t...)>::type>;
+            -> std::shared_future<
+                typename std::result_of<func_t(args_t...)>::type>;
 
     // Stop the execution of all workers.
     void Stop();
@@ -199,8 +236,11 @@ public:
 private:
     void WorkerFunc(const int index);
 
+    void CheckFinishedTasks();
+
     std::vector<std::thread> workers_;
-    std::queue<std::function<void()>> tasks_;
+    std::queue<std::function<std::function<void()>()>> tasks_;
+  std::vector<std::function<void()>> finished_task_checkers_;
 
     std::mutex mutex_;
     std::condition_variable task_condition_;
@@ -297,20 +337,26 @@ size_t ThreadPool::NumThreads() const { return workers_.size(); }
 
 template <class func_t, class... args_t>
 auto ThreadPool::AddTask(func_t&& f, args_t&&... args)
-        -> std::future<typename std::result_of<func_t(args_t...)>::type> {
+        -> std::shared_future<typename std::result_of<func_t(args_t...)>::type> {
     typedef typename std::result_of<func_t(args_t...)>::type return_t;
 
     auto task = std::make_shared<std::packaged_task<return_t()>>(
             std::bind(std::forward<func_t>(f), std::forward<args_t>(args)...));
 
-    std::future<return_t> result = task->get_future();
+    std::shared_future<return_t> result = task->get_future().share();
 
     {
         std::unique_lock<std::mutex> lock(mutex_);
         if (stopped_) {
             throw std::runtime_error("Cannot add task to stopped thread pool.");
         }
-        tasks_.emplace([task]() { (*task)(); });
+        // Upstream parity (d3ccaf35): the task returns a "checker" closure
+        // that re-reads the future on the main thread; Wait() replays all
+        // checkers and aggregates their exceptions into AggregateException.
+        tasks_.emplace([task = std::move(task), result]() {
+            (*task)();
+            return [result = std::move(result)]() { result.get(); };
+        });
     }
 
     task_condition_.notify_one();

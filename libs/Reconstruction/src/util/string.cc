@@ -130,6 +130,12 @@ bool IsNotWhiteSpace(const int character) {
 
 }  // namespace
 
+void SetFullPrecTextStream(std::ios& stream) {
+  stream.imbue(std::locale::classic());
+  // Ensure that we don't lose any precision by storing in text.
+  stream.precision(17);
+}
+
 double StringToDouble(const std::string& str) {
   std::istringstream iss(str);
   iss.imbue(std::locale::classic());

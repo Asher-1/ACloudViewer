@@ -284,4 +284,8 @@ bool Camera::operator==(const Camera& other) const {
 
 bool Camera::operator!=(const Camera& other) const { return !(*this == other); }
 
+// Upstream parity (d3ccaf35 scene/camera.cc): human-readable summary used
+// by logging and the Print test.
+std::ostream& operator<<(std::ostream& stream, const Camera& camera);
+
 }  // namespace colmap

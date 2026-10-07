@@ -149,11 +149,19 @@ bool VectorContainsDuplicateValues(const std::vector<T>& vector) {
 
 template <typename T>
 std::string VectorToCSV(const std::vector<T>& values) {
-    std::string string;
-    for (const T value : values) {
-        string += std::to_string(value) + ", ";
+    // Upstream parity (d3ccaf35 util/misc.h): stream formatting with full
+    // precision instead of std::to_string's fixed 6-decimal representation.
+    if (values.empty()) {
+        return "";
     }
-    return string.substr(0, string.length() - 2);
+    std::ostringstream stream;
+    SetFullPrecTextStream(stream);
+    for (const T& value : values) {
+        stream << value << ", ";
+    }
+    std::string buf = stream.str();
+    buf.resize(buf.size() - 2);
+    return buf;
 }
 
 template <typename T>

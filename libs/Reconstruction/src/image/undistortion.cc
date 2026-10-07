@@ -183,7 +183,7 @@ void COLMAPUndistorterImpl::Run() {
   reconstruction_->CreateImageDirs(output_path_ / "stereo/consistency_graphs");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   if (image_ids_.empty()) {
     for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
@@ -340,7 +340,7 @@ void PMVSUndistorterImpl::Run() {
   CreateDirIfNotExists(output_path_ / "pmvs/models");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
@@ -566,7 +566,7 @@ void CMPMVSUndistorterImpl::Run() {
   PrintHeading1("Image undistortion (CMP-MVS)");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
@@ -631,7 +631,7 @@ void PureImageUndistorterImpl::Run() {
   CreateDirIfNotExists(output_path_);
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   size_t num_images = image_names_and_cameras_.size();
   futures.reserve(num_images);
   for (size_t i = 0; i < num_images; ++i) {
@@ -691,7 +691,7 @@ void StereoImageRectifierImpl::Run() {
   PrintHeading1("Stereo rectification");
 
   ThreadPool thread_pool;
-  std::vector<std::future<void>> futures;
+  std::vector<std::shared_future<void>> futures;
   futures.reserve(stereo_pairs_.size());
   for (const auto& stereo_pair : stereo_pairs_) {
     futures.push_back(thread_pool.AddTask(&StereoImageRectifierImpl::Rectify, this,
