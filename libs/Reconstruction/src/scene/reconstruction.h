@@ -12,6 +12,7 @@
 // clang-format on
 
 #include <filesystem>
+#include <stdexcept>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -25,6 +26,7 @@
 #include "scene/database.h"
 #include "scene/frame.h"
 #include "scene/image.h"
+#include "util/string.h"
 #include "scene/point2d.h"
 #include "scene/point3d.h"
 #include "scene/rig.h"
@@ -100,7 +102,7 @@ public:
     // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
     // points after batch modifications.
     void UpdatePoint3DErrors();
-    inline const std::vector<image_t>& RegImageIds() const;
+    std::vector<image_t> RegImageIds() const;
     inline const NodeHashMap<point3D_t, class Point3D>& Points3D() const;
 
     // Identifiers of all 3D points.
@@ -390,13 +392,16 @@ private:
     NodeHashMap<point3D_t, class Point3D> points3D_;
 
 
-    // { image_id, ... } where `images_.at(image_id).registered == true`.
-    std::vector<image_t> reg_image_ids_;
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): the registered-image
+    // count is a frame-level counter maintained exclusively by
+    // RegisterFrame/DeRegisterFrame (not derived from an image-level cache),
+    // so it stays correct even when the frame's images have not been added
+    // (or have been removed) yet.
+    size_t num_reg_images_ = 0;
 
     // Upstream-parity (COLMAP 4.x scene/reconstruction.h): the explicit
-    // frame-level registration fact. Maintained in lockstep with
-    // `reg_image_ids_` by RegisterFrame/RegisterImage; AddFrame registers
-    // frames that carry a pose, as upstream does.
+    // frame-level registration fact; AddFrame registers frames that carry a
+    // pose, as upstream does.
     NodeHashSet<frame_t> reg_frame_ids_;
 
     // Total number of added 3D points, used to generate unique identifiers.
@@ -415,48 +420,101 @@ size_t Reconstruction::NumRigs() const { return rigs_.size(); }
 
 size_t Reconstruction::NumFrames() const { return frames_.size(); }
 
-size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
+size_t Reconstruction::NumRegImages() const { return num_reg_images_; }
 
 size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
 
 size_t Reconstruction::NumAddedPoints3D() const { return num_added_points3D_; }
 
 const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
-    return cameras_.at(camera_id);
+    try {
+        return cameras_.at(camera_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Camera with ID %d does not exist", camera_id));
+    }
 }
 
 const class Image& Reconstruction::Image(const image_t image_id) const {
-    return images_.at(image_id);
+    try {
+        return images_.at(image_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
 const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
-    return rigs_.at(rig_id);
+    try {
+        return rigs_.at(rig_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Rig with ID %d does not exist", rig_id));
+    }
 }
 
 const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
-    return frames_.at(frame_id);
+    try {
+        return frames_.at(frame_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Frame with ID %d does not exist", frame_id));
+    }
 }
 
-const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
-    return points3D_.at(point3D_id);
+const class Point3D& Reconstruction::Point3D(
+    const point3D_t point3D_id) const {
+    try {
+        return points3D_.at(point3D_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Point3D with ID %d does not exist", point3D_id));
+    }
 }
 
 class Camera& Reconstruction::Camera(const camera_t camera_id) {
-    return cameras_.at(camera_id);
+    try {
+        return cameras_.at(camera_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Camera with ID %d does not exist", camera_id));
+    }
 }
 
 class Image& Reconstruction::Image(const image_t image_id) {
-    return images_.at(image_id);
+    try {
+        return images_.at(image_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
-class Rig& Reconstruction::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+class Rig& Reconstruction::Rig(const rig_t rig_id) {
+    try {
+        return rigs_.at(rig_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Rig with ID %d does not exist", rig_id));
+    }
+}
 
 class Frame& Reconstruction::Frame(const frame_t frame_id) {
-    return frames_.at(frame_id);
+    try {
+        return frames_.at(frame_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Frame with ID %d does not exist", frame_id));
+    }
 }
 
 class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
-    return points3D_.at(point3D_id);
+    try {
+        return points3D_.at(point3D_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+            StringPrintf("Point3D with ID %d does not exist", point3D_id));
+    }
 }
 
 const NodeHashMap<camera_t, Camera>& Reconstruction::Cameras() const {
@@ -475,8 +533,25 @@ const NodeHashMap<frame_t, class Frame>& Reconstruction::Frames() const {
     return frames_;
 }
 
-const std::vector<image_t>& Reconstruction::RegImageIds() const {
-    return reg_image_ids_;
+// Upstream parity (d3ccaf35 scene/reconstruction.cc): derived from the
+// registered frames on demand, with an explicit consistency check - the
+// registered frames may reference images that have not been added yet.
+inline std::vector<image_t> Reconstruction::RegImageIds() const {
+    std::vector<image_t> reg_image_ids;
+    for (const frame_t frame_id : reg_frame_ids_) {
+        const class Frame& frame = Frame(frame_id);
+        // Fork note: the fork's Frame::ImageIds() yields plain image ids
+        // (upstream yields data_t sensor/id pairs).
+        for (const image_t image_id : frame.ImageIds()) {
+            THROW_CHECK(ExistsImage(image_id))
+                << "The reconstruction object is broken as image "
+                << image_id << " in frame " << frame.FrameId()
+                << " does not exist in the reconstruction. The most likely "
+                   "cause is missing AddImage(*) calls after adding frames.";
+            reg_image_ids.push_back(image_id);
+        }
+    }
+    return reg_image_ids;
 }
 
 const NodeHashMap<point3D_t, Point3D>& Reconstruction::Points3D() const {

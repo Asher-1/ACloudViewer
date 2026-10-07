@@ -225,14 +225,12 @@ TEST(Reconstruction, AddCameraWithTrivialRig) {
   EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
-TEST(Reconstruction, DISABLED_AddFrame) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, AddFrame) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   Camera camera =
       Camera::CreateFromModelId(1, CameraModelId::kSimplePinhole, 1, 1, 1);
@@ -299,14 +297,12 @@ TEST(Reconstruction, AddImageWrongFrameCorrespondence) {
   EXPECT_ANY_THROW(reconstruction.AddImage(image));
 }
 
-TEST(Reconstruction, DISABLED_AddImage) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, AddImage) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Camera camera =
       Camera::CreateFromModelId(1, CameraModelId::kSimplePinhole, 1, 1, 1);
   Rig rig;
@@ -377,14 +373,12 @@ TEST(Reconstruction, DISABLED_AddImage) {
   ExpectValidPtrs(reconstruction);
 }
 
-TEST(Reconstruction, DISABLED_AddImageWithTrivialFrame) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, AddImageWithTrivialFrame) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   Camera camera =
       Camera::CreateFromModelId(1, CameraModelId::kSimplePinhole, 1, 1, 1);
@@ -463,14 +457,12 @@ TEST(Reconstruction, AddImageWithTrivialFrameSetCamFromWorld) {
   ExpectValidPtrs(reconstruction);
 }
 
-TEST(Reconstruction, DISABLED_RegImageIds) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, RegImageIds) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
 
   const Camera camera =
@@ -591,14 +583,12 @@ TEST(Reconstruction, AddObservation) {
   EXPECT_EQ(reconstruction.Point3D(point3D_id).Track().Length(), 3);
 }
 
-TEST(Reconstruction, DISABLED_MergePoints3D) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, MergePoints3D) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(2, &reconstruction);
   const point3D_t point3D_id1 =
@@ -629,14 +619,12 @@ TEST(Reconstruction, DISABLED_MergePoints3D) {
             Eigen::Vector3ub(20, 20, 20));
 }
 
-TEST(Reconstruction, DISABLED_MergePoints3DColors) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, MergePoints3DColors) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(3, &reconstruction);
   const auto merged_color = [&reconstruction](const Eigen::Vector3ub& color1,
@@ -699,13 +687,19 @@ TEST(Reconstruction, DeleteObservation) {
 }
 
 TEST(Reconstruction, DISABLED_SetRigsAndFrames) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+  // Fork adjudication (batch Q): the registration flow now matches upstream
+  // (num_reg_frames==0 after the replay in both engines), but the fork's
+  // database round-trip persists frame poses, so the replayed frames carry
+  // db-round-tripped pose values while the original holds the in-memory
+  // synthetic ones - the ReconstructionEq/serialization comparison sees
+  // bit-level differences that upstream cannot have (its db does not store
+  // poses at all). Reconciling the persisted-pose precision is a dedicated
+  // db round-trip batch.
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   auto database = Database::Open(kInMemorySqliteDatabasePath);
   SyntheticDatasetOptions synthetic_dataset_options;
@@ -793,14 +787,12 @@ TEST(Reconstruction, RegisterFrame) {
   EXPECT_FALSE(reconstruction.Frame(1).HasPose());
 }
 
-TEST(Reconstruction, DISABLED_Normalize) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, Normalize) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(7, &reconstruction);
   for (const auto& [frame_id, _] : reconstruction.Frames()) {
@@ -813,9 +805,16 @@ TEST(Reconstruction, DISABLED_Normalize) {
   reconstruction.Frame(1).SetRigFromWorld(Rigid3d());
   reconstruction.Frame(2).SetRigFromWorld(Rigid3d());
   reconstruction.Frame(3).SetRigFromWorld(Rigid3d());
-  reconstruction.Frame(1).RigFromWorld().translation().z() = -20.0;
-  reconstruction.Frame(2).RigFromWorld().translation().z() = -10.0;
-  reconstruction.Frame(3).RigFromWorld().translation().z() = 0.0;
+  // Fork adaptation: the fork's RigFromWorld() composes and returns the
+  // pose by value (the storage is a qvec/tvec pair), so upstream's
+  // in-place component edit through the returned reference is a no-op
+  // here; write the full pose through SetRigFromWorld instead.
+  reconstruction.Frame(1).SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, -20)));
+  reconstruction.Frame(2).SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, -10)));
+  reconstruction.Frame(3).SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, 0)));
   reconstruction.RegisterFrame(1);
   reconstruction.RegisterFrame(2);
   reconstruction.RegisterFrame(3);
@@ -868,14 +867,14 @@ TEST(Reconstruction, DISABLED_Normalize) {
       reconstruction.Image(2).CamFromWorld().translation().z(), 0, 1e-6);
   EXPECT_NEAR(
       reconstruction.Image(3).CamFromWorld().translation().z(), 10, 1e-6);
-  reconstruction.Image(4).FramePtr()->SetRigFromWorld(Rigid3d());
-  reconstruction.Image(5).FramePtr()->SetRigFromWorld(Rigid3d());
-  reconstruction.Image(6).FramePtr()->SetRigFromWorld(Rigid3d());
-  reconstruction.Image(7).FramePtr()->SetRigFromWorld(Rigid3d());
-  reconstruction.Image(4).FramePtr()->RigFromWorld().translation().z() = -7.5;
-  reconstruction.Image(5).FramePtr()->RigFromWorld().translation().z() = -5.0;
-  reconstruction.Image(6).FramePtr()->RigFromWorld().translation().z() = 5.0;
-  reconstruction.Image(7).FramePtr()->RigFromWorld().translation().z() = 7.5;
+  reconstruction.Image(4).FramePtr()->SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, -7.5)));
+  reconstruction.Image(5).FramePtr()->SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, -5.0)));
+  reconstruction.Image(6).FramePtr()->SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, 5.0)));
+  reconstruction.Image(7).FramePtr()->SetRigFromWorld(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(0, 0, 7.5)));
   reconstruction.RegisterFrame(4);
   reconstruction.RegisterFrame(5);
   reconstruction.RegisterFrame(6);
@@ -930,14 +929,12 @@ TEST(Reconstruction, ComputeBoundsAndCentroid) {
   EXPECT_NEAR(bbox.max().z(), 3.0, 1e-6);
 }
 
-TEST(Reconstruction, DISABLED_Crop) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, Crop) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(3, &reconstruction);
   point3D_t point_id =
@@ -1002,14 +999,12 @@ TEST(Reconstruction, FindImageWithName) {
   EXPECT_TRUE(reconstruction.FindImageWithName("image3") == nullptr);
 }
 
-TEST(Reconstruction, DISABLED_FindCommonRegImageIds) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, FindCommonRegImageIds) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction1;
   GenerateReconstruction(5, &reconstruction1);
   Reconstruction reconstruction2;
@@ -1027,14 +1022,12 @@ TEST(Reconstruction, DISABLED_FindCommonRegImageIds) {
             reconstruction2.FindCommonRegImageIds(reconstruction1));
 }
 
-TEST(Reconstruction, DISABLED_ComputeNumObservations) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, ComputeNumObservations) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(2, &reconstruction);
   const point3D_t point3D_id1 =
@@ -1048,14 +1041,12 @@ TEST(Reconstruction, DISABLED_ComputeNumObservations) {
   EXPECT_EQ(reconstruction.ComputeNumObservations(), 3);
 }
 
-TEST(Reconstruction, DISABLED_ComputeMeanTrackLength) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, ComputeMeanTrackLength) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(2, &reconstruction);
   EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 0);
@@ -1070,14 +1061,12 @@ TEST(Reconstruction, DISABLED_ComputeMeanTrackLength) {
   EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 3);
 }
 
-TEST(Reconstruction, DISABLED_ComputeMeanObservationsPerRegImage) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, ComputeMeanObservationsPerRegImage) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(2, &reconstruction);
   EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 0);
@@ -1268,14 +1257,12 @@ TEST(Reconstruction, IsValid) {
   }
 }
 
-TEST(Reconstruction, DISABLED_DeRegisterFrame) {
-  // Fork adjudication: this case exposes a fork behavior difference, not a
-  // porting error. The fork's database round-trip extension makes frame
-  // registration follow pose persistence (a frame with a pose is registered)
-  // and its error paths use map::at instead of upstream's THROW_CHECK
-  // messages; upstream separates structural creation from registration and
-  // formats explicit error strings. Deferred until the fork's registration
-  // semantics are reconciled with upstream (see TEST_ALIGNMENT_TODO batch P).
+TEST(Reconstruction, DeRegisterFrame) {
+  // Upstream parity (d3ccaf35): unlocked after the registration bookkeeping
+  // was reconciled with upstream (batch Q) - the registered-image count is a
+  // frame-level counter, RegImageIds() derives from the registered frames
+  // with an explicit consistency check, de-registration clears observations,
+  // and the entity accessors throw upstream-formatted out_of_range messages.
   Reconstruction reconstruction;
   GenerateReconstruction(3, &reconstruction);
   Track track;

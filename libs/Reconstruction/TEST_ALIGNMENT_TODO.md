@@ -1197,3 +1197,66 @@ SetError×3/xy×1)、`CameraId() = 2` 写形态改 SetCameraId、
 - **Crop(1)**:断言细节待查。
 - 验证:reconstruction_test 34 PASSED + 14 DISABLED;全量 gate **165/165**。
 - 缺口清单余 ~311(359 − 48;其中 14 转 DISABLED 留因)。
+
+## 批次 Q:注册簿记 upstream 收敛 + 13/14 用例解锁(2026-10-07)
+
+### 根因分治(批次 P 的 14 个 DISABLED 逐类取证)
+
+四类根因逐个证伪/实锤:
+1. **错误消息(3 处)**:fork 的 10 个实体访问器(Camera/Image/Rig/Frame/Point3D
+   ×const/非 const)全部裸 `map::at`(抛 `_Map_base::at` 无上下文);upstream
+   是 try/catch out_of_range → StringPrintf("X with ID %d does not exist")。
+2. **注册簿记(8 个用例的共同根因)**:fork 用「image 级 reg_image_ids_ 缓存 +
+   条件 lockstep」,upstream 用「frame 级 reg_frame_ids_ (vector) + 无条件
+   num_reg_images_ 计数器 + 派生式 RegImageIds()(带 THROW_CHECK 一致性检查)」。
+   fork RegisterFrame 的 lockstep 在 image 不存在时跳过计数 → 注册帧后
+   NumRegImages=0;DeRegisterFrame 以 HasPose 为早退条件且不必然清观测。
+3. **Merge 颜色**:fork 无黑排除(把未提取的黑色卷入加权平均);
+   upstream 黑=未提取,排除后按 track 长度加权。
+4. **Crop**:fork 用 legacy TrivialFrame+SetRegistered(false) 结构(框外帧
+   保留 pose);upstream 复制全结构→框内点支持帧→框外帧 DeRegister(丢 pose)。
+
+### 生产收敛(全部 upstream parity)
+
+- reconstruction.h:10 访问器 try/catch+StringPrintf;NumRegImages() 改
+  num_reg_images_ 计数器;RegImageIds() 改派生式(遍历 reg_frame_ids_ +
+  THROW_CHECK ExistsImage);成员删 reg_image_ids_ 加 num_reg_images_。
+- reconstruction.cc:RegisterFrame 无条件计数(+ImageIds().size(),幂等守卫内);
+  DeRegisterFrame 以 reg_frame_ids_ 成员为早退条件、逐 image 无条件 --计数
+  +清观测(单账本路径 DeRegisterImage);RegisterImage/DeRegisterImage 降级为
+  fork legacy 标志辅助(计数器唯一维护点=frame 级);MergePoints3D 黑排除+
+  加权;Crop 重写为 upstream 结构(全结构复制→清观测→框内点→框外帧
+  DeRegisterFrame);Normalize 早退条件 NumRegFrames()<2;单参
+  AddImageWithTrivialFrame 删 legacy 播种(把默认 identity 镜像当 pose 假注册);
+  两参重载改 RegisterFrame(upstream parity);拷贝 ctor/operator= 同步。
+- sfm/observation_manager.cc:OM::RegisterFrame 尾部透传改 frame 级单次
+  (upstream 同款);OM::DeRegisterFrame 已是 frame 级 ✓。
+- 消费者帧级化:da3_depth_controller(删冗余 RegisterImage)、
+  rotation_averaging、global_mapper(帧级 RegisterFrame)。
+- fork 消费点 9 处改派生式(ComputeBoundsAndCentroid/FindCommonRegImageIds/
+  FilterObservationsWithNegativeDepth/ComputeNumObservations/
+  ComputeMeanObservationsPerRegImage/ExtractColorsForAllImages);
+  TranscribeImageIdsToDatabase 的 reg ids 重映射行删除(frame data_ids
+  已转录,派生式自动跟随)。
+
+### 测试适配与结果
+
+- reconstruction_test:13/14 解锁(AddFrame/AddImage/AddImageWithTrivialFrame/
+  RegImageIds/Merge×2/SetRigsAndFramesResetsNumRegImages/Normalize/
+  FindCommonRegImageIds/ComputeNumObservations/ComputeMeanTrackLength/
+  ComputeMeanObservationsPerRegImage/DeRegisterFrame),47 PASSED +
+  1 DISABLED;Normalize 的 in-place 位姿分量编辑改 SetRigFromWorld
+  (fork RigFromWorld() 返回组装值,引用编辑是 no-op)。
+- 留因 1:SetRigsAndFrames——注册流程已对齐(重放后 num_reg_frames=0 双方
+  一致),但 fork db round-trip 持久化帧位姿,重放帧带 db 精度位姿 vs 原始
+  内存位姿,ReconstructionEq/序列化对比见位级差(upstream db 不存 pose 无此面)。
+  留待 db round-trip 精度专项。
+- BA×2/undistortion 测试构造改两参显式 pose(旧构造依赖已删除的播种)。
+- gate 165/165;caspar SplitIntrinsic 复跑 3/3 过(此前失败为 GPU 环境瞬态)。
+
+### 遗留
+
+- SetRigsAndFrames(db round-trip 位姿精度专项);
+- exe/image.cc 的 FilterImages/DeRegisterImage 为 fork 特有工具语义
+  (计数器为 frame 级权威,图像级 deregister 后计数不减——工具随后丢弃
+  重建对象,边界可接受,已在注释注明)。

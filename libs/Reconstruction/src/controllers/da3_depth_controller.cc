@@ -609,7 +609,6 @@ bool WriteExifPlaceholderSparseModel(
             image.Qvec()(3));
         reconstruction.AddImageWithTrivialFrame(
             image, Rigid3d(cam_q, image.Tvec()));
-        reconstruction.RegisterImage(image.ImageId());
         ++registered;
     }
 

@@ -131,8 +131,14 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     image.Qvec() = ComposeIdentityQuaternion();
     image.Tvec() =
         Eigen::Vector3d(RandomReal(-1.0, 1.0), RandomReal(-1.0, 1.0), 10);
-    image.SetRegistered(true);
-    reconstruction->AddImageWithTrivialFrame(image);
+    // Upstream parity (d3ccaf35): pass the pose explicitly through the
+    // two-argument overload, which also registers the frame (the legacy
+    // seed-from-image-mirror path no longer fabricates a pose).
+    const Eigen::Quaterniond image_q(
+        image.Qvec()(0), image.Qvec()(1), image.Qvec()(2),
+        image.Qvec()(3));
+    reconstruction->AddImageWithTrivialFrame(
+        image, Rigid3d(image_q, image.Tvec()));
 
     const Eigen::Matrix3x4d proj_matrix = image.ProjectionMatrix();
 

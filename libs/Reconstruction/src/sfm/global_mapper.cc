@@ -765,11 +765,9 @@ bool GlobalMapper::Solve(const GlobalMapperOptions& options,
     if (!frame.HasPose()) {
       continue;
     }
-    for (const image_t image_id : frame.ImageIds()) {
-      if (!reconstruction_->IsImageRegistered(image_id)) {
-        reconstruction_->RegisterImage(image_id);
-      }
-    }
+    // Upstream parity (d3ccaf35): frame-level registration is idempotent
+    // and carries both the counter and the per-image flags.
+    reconstruction_->RegisterFrame(frame_id);
   }
 
   // Bundle adjustment

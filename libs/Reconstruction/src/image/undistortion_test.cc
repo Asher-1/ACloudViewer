@@ -196,8 +196,7 @@ TEST(base_undistortion, TestUndistortReconstruction) {
     image.SetName("image" + std::to_string(image_id));
     image.SetPoints2D(
         std::vector<Eigen::Vector2d>(kNumPoints2D, Eigen::Vector2d::Ones()));
-    reconstruction.AddImageWithTrivialFrame(image);
-    reconstruction.RegisterImage(image_id);
+    reconstruction.AddImageWithTrivialFrame(image, Rigid3d());
   }
 
   UndistortCameraOptions options;

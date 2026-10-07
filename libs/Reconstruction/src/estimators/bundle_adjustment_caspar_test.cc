@@ -67,8 +67,13 @@ Reconstruction CreatePinholeParityReconstruction() {
                                                        0.08 * y_noise));
     }
     image.SetPoints2D(points2D);
-    image.SetRegistered(true);
-    reconstruction.AddImageWithTrivialFrame(image);
+    // Upstream parity (d3ccaf35): explicit pose through the two-argument
+    // overload (registers the frame; no mirror-seeded pose).
+    const Eigen::Quaterniond image_q(
+        image.Qvec()(0), image.Qvec()(1), image.Qvec()(2),
+        image.Qvec()(3));
+    reconstruction.AddImageWithTrivialFrame(
+        image, Rigid3d(image_q, image.Tvec()));
     correspondence_graph.AddImage(image_id, points2D.size());
   }
 

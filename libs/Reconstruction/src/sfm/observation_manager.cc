@@ -604,11 +604,10 @@ void ObservationManager::RegisterFrame(const frame_t frame_id) {
       }
     }
   }
-  // Fork note: the fork registers images (legacy model); register every
-  // image of the frame.
-  for (const image_t image_id : frame.ImageIds()) {
-    reconstruction_.RegisterImage(image_id);
-  }
+  // Upstream parity (d3ccaf35 sfm/observation_manager.cc): the frame-level
+  // registration fact (and the registered-image counter) is forwarded to
+  // the reconstruction once, for the whole frame.
+  reconstruction_.RegisterFrame(frame_id);
 }
 
 void ObservationManager::DeRegisterFrame(const frame_t frame_id) {

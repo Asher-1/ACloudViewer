@@ -373,12 +373,9 @@ bool RotationEstimator::EstimateRotations(
   for (const image_t image_id : active_image_ids) {
     const frame_t frame_id = reconstruction.Image(image_id).FrameId();
     THROW_CHECK(reconstruction.Frame(frame_id).HasPose());
-    // Fork parity: image-level registration until W3-2b lands the
-    // frame-level RegisterFrame model.
-    for (const image_t registered_image_id :
-         reconstruction.Frame(frame_id).ImageIds()) {
-      reconstruction.RegisterImage(registered_image_id);
-    }
+    // Upstream parity (d3ccaf35): frame-level registration carries the
+    // counter and the per-image flags.
+    reconstruction.RegisterFrame(frame_id);
   }
 
   return true;

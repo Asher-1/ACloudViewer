@@ -59,7 +59,7 @@ Reconstruction::Reconstruction(const Reconstruction& other)
       rigs_(other.Rigs()),
       frames_(other.Frames()),
       points3D_(other.Points3D()),
-      reg_image_ids_(other.RegImageIds()),
+      num_reg_images_(other.num_reg_images_),
       reg_frame_ids_(other.reg_frame_ids_),
       num_added_points3D_(other.NumAddedPoints3D()) {
     RewireObjectPointers();
@@ -72,7 +72,7 @@ Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
         rigs_ = other.Rigs();
         frames_ = other.Frames();
         points3D_ = other.Points3D();
-        reg_image_ids_ = other.RegImageIds();
+        num_reg_images_ = other.num_reg_images_;
         reg_frame_ids_ = other.reg_frame_ids_;
         num_added_points3D_ = other.NumAddedPoints3D();
         RewireObjectPointers();
@@ -382,10 +382,22 @@ point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
             (point3D1.Track().Length() * point3D1.XYZ() +
              point3D2.Track().Length() * point3D2.XYZ()) /
             (point3D1.Track().Length() + point3D2.Track().Length());
-    const Eigen::Vector3d merged_rgb =
-            (point3D1.Track().Length() * point3D1.Color().cast<double>() +
-             point3D2.Track().Length() * point3D2.Color().cast<double>()) /
-            (point3D1.Track().Length() + point3D2.Track().Length());
+    // Upstream parity (d3ccaf35): black denotes a not-yet-extracted color,
+    // so it is excluded from averaging instead of pulling the merged color
+    // toward zero; both-black merges stay black.
+    const Eigen::Vector3ub kBlackColor = Eigen::Vector3ub::Zero();
+    Eigen::Vector3ub merged_color;
+    if (point3D1.Color() == kBlackColor) {
+        merged_color = point3D2.Color();
+    } else if (point3D2.Color() == kBlackColor) {
+        merged_color = point3D1.Color();
+    } else {
+        merged_color =
+                ((point3D1.Track().Length() * point3D1.Color().cast<double>() +
+                  point3D2.Track().Length() * point3D2.Color().cast<double>()) /
+                 (point3D1.Track().Length() + point3D2.Track().Length()))
+                    .cast<uint8_t>();
+    }
 
     Track merged_track;
     merged_track.Reserve(point3D1.Track().Length() + point3D2.Track().Length());
@@ -396,7 +408,7 @@ point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
     DeletePoint3D(point3D_id2);
 
     const point3D_t merged_point3D_id =
-            AddPoint3D(merged_xyz, merged_track, merged_rgb.cast<uint8_t>());
+            AddPoint3D(merged_xyz, merged_track, merged_color);
 
     return merged_point3D_id;
 }
@@ -450,35 +462,37 @@ void Reconstruction::DeleteAllPoints2DAndPoints3D() {
 
 void Reconstruction::RegisterFrame(const frame_t frame_id) {
   // Upstream parity (d3ccaf35 scene/reconstruction.cc L638): registration
-  // requires a pose and is idempotent. The fork keeps the image-level set in
-  // lockstep for the images that already exist (upstream counts
-  // num_reg_images_ here; the fork derives it from reg_image_ids_).
+  // requires a pose and is idempotent; the registered-image counter is
+  // advanced unconditionally by the frame's number of images, even when
+  // those images have not been added yet. The per-image registered flag is
+  // kept in lockstep for the images that already exist (fork legacy
+  // consumers read it via IsRegistered()).
   const class Frame& frame = Frame(frame_id);
   THROW_CHECK(frame.HasPose());
   if (reg_frame_ids_.insert(frame_id).second) {
+    num_reg_images_ += frame.ImageIds().size();
     for (const image_t image_id : frame.ImageIds()) {
-      if (ExistsImage(image_id) && !Image(image_id).IsRegistered()) {
+      if (ExistsImage(image_id)) {
         Image(image_id).SetRegistered(true);
-        reg_image_ids_.push_back(image_id);
       }
     }
   }
 }
 
 void Reconstruction::RegisterImage(const image_t image_id) {
-    class Image& image = Image(image_id);
-    if (!image.IsRegistered()) {
-        image.SetRegistered(true);
-        reg_image_ids_.push_back(image_id);
-        // Frame-level lockstep (upstream registers at frame level only).
-        if (image.HasFrameId() && ExistsFrame(image.FrameId()) &&
-            Frame(image.FrameId()).HasPose()) {
-            reg_frame_ids_.insert(image.FrameId());
-        }
-    }
+    // Fork legacy helper: only flips the per-image registered flag, for
+    // callers that add images after their frame was already registered
+    // (model IO readers). The frame-level registration fact and the
+    // num_reg_images_ counter are owned exclusively by RegisterFrame
+    // (upstream parity).
+    Image(image_id).SetRegistered(true);
 }
 
 void Reconstruction::DeRegisterImage(const image_t image_id) {
+    // Fork legacy helper: clears the image's observations (single-ledger
+    // path) and its registered flag. The frame-level registration fact and
+    // the num_reg_images_ counter are owned exclusively by
+    // DeRegisterFrame (upstream parity).
     class Image& image = Image(image_id);
 
     for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
@@ -489,24 +503,6 @@ void Reconstruction::DeRegisterImage(const image_t image_id) {
     }
 
     image.SetRegistered(false);
-
-    reg_image_ids_.erase(
-            std::remove(reg_image_ids_.begin(), reg_image_ids_.end(), image_id),
-            reg_image_ids_.end());
-    // Frame-level lockstep: drop the frame when none of its images is
-    // registered anymore.
-    if (image.HasFrameId() && ExistsFrame(image.FrameId())) {
-        bool any_image_registered = false;
-        for (const image_t other_id : Frame(image.FrameId()).ImageIds()) {
-            if (ExistsImage(other_id) && Image(other_id).IsRegistered()) {
-                any_image_registered = true;
-                break;
-            }
-        }
-        if (!any_image_registered) {
-            reg_frame_ids_.erase(image.FrameId());
-        }
-    }
 }
 
 void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
@@ -520,10 +516,12 @@ void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
   frames_.clear();
   frames_.reserve(frames.size());
   // Reset the registration state first, then rebuild it consistently: the
-  // imported frames carry poses and are registered on insertion (upstream
-  // parity; AddFrame registers posed frames), which also re-registers their
-  // existing images in lockstep.
-  reg_image_ids_.clear();
+  // imported frames carry poses (fork database round-trip) and are
+  // registered on insertion (upstream parity; AddFrame registers posed
+  // frames), so the end state of this call is the upstream one - an
+  // unregistered model whose registration is established explicitly
+  // afterwards (the fork's fresh-load-starts-unregistered semantics).
+  num_reg_images_ = 0;
   reg_frame_ids_.clear();
   for (auto& [image_id, image] : images_) {
     image.SetRegistered(false);
@@ -541,10 +539,19 @@ void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
     image.SetFrameId(image_to_frame_ids.at(image_id));
     image.SetFramePtr(&Frame(image.FrameId()));
   }
+  // Upstream parity (d3ccaf35): no extra reset here - AddFrame registered
+  // the imported frames that carry a pose, and the caller decides what
+  // registration means next (the fork's disk-read path calls
+  // ResetRegistrationState() itself for fresh-load-starts-unregistered).
 }
 
 void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
-    if (!ExistsFrame(frame_id) || !Frame(frame_id).HasPose()) {
+    // Upstream parity (d3ccaf35): de-registration is driven by the
+    // frame-level set; unregistered frames are ignored with a warning.
+    // Every image of the frame drops its observations (single-ledger path)
+    // and the counter is decremented unconditionally, even for images that
+    // were never added (upstream counts them at registration time).
+    if (reg_frame_ids_.count(frame_id) == 0) {
         LOG(WARNING) << "Ignoring de-registration of frame " << frame_id
                      << ", which is not registered.";
         return;
@@ -552,9 +559,10 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
 
     class Frame& frame = Frame(frame_id);
     for (const image_t image_id : frame.ImageIds()) {
-        if (ExistsImage(image_id) && Image(image_id).IsRegistered()) {
+        if (ExistsImage(image_id)) {
             DeRegisterImage(image_id);
         }
+        --num_reg_images_;
     }
     reg_frame_ids_.erase(frame_id);
     frame.ResetPose();
@@ -567,7 +575,7 @@ Sim3d Reconstruction::Normalize(const bool fixed_scale,
                                 const bool use_images) {
     THROW_CHECK_GT(extent, 0);
 
-    if ((use_images && reg_image_ids_.size() < 2) ||
+    if ((use_images && NumRegFrames() < 2) ||
         (!use_images && points3D_.size() < 2)) {
         return Sim3d();
     }
@@ -620,7 +628,7 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
     CHECK_LE(p0, p1);
 
     const size_t num_elements =
-            use_images ? reg_image_ids_.size() : points3D_.size();
+            use_images ? NumRegImages() : points3D_.size();
     if (num_elements == 0) {
         return std::make_tuple(Eigen::Vector3d(0, 0, 0),
                                Eigen::Vector3d(0, 0, 0),
@@ -642,7 +650,8 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
     coords_y.reserve(num_elements);
     coords_z.reserve(num_elements);
     if (use_images) {
-        for (const image_t im_id : reg_image_ids_) {
+        const std::vector<image_t> reg_image_ids = RegImageIds();
+        for (const image_t im_id : reg_image_ids) {
             const Eigen::Vector3d proj_center = Image(im_id).ProjectionCenter();
             coords_x.push_back(proj_center(0));
             coords_y.push_back(proj_center(1));
@@ -744,37 +753,50 @@ void Reconstruction::Transform(const Sim3d& new_from_old_world) {
 }
 
 Reconstruction Reconstruction::Crop(const Eigen::AlignedBox3d& bbox) const {
-    // add all cameras and images. Only the registered images will be used.
-    Reconstruction reconstruction;
-    for (const auto& camera_el : cameras_) {
-        reconstruction.AddCameraWithTrivialRig(camera_el.second);
+    // Upstream parity (d3ccaf35 scene/reconstruction.cc): copy the full
+    // structural state (cameras, rigs, frames with their poses - posed
+    // frames register on insertion), then strip observations from every
+    // copied image, keep only the points inside the box, and finally
+    // de-register every frame that has no in-box point support. Frames
+    // without in-box support lose their pose (HasPose() == false).
+    Reconstruction cropped_reconstruction;
+    for (const auto& [_, camera] : cameras_) {
+        cropped_reconstruction.AddCamera(camera);
     }
-    for (const auto& image_el : images_) {
-        // The copied image carries back pointers into *this* reconstruction;
-        // reset them so AddImage re-wires them into the cropped copy. The
-        // trivial frame is seeded from the image's legacy pose.
-        class Image image = image_el.second;
+    for (const auto& [_, rig] : rigs_) {
+        cropped_reconstruction.AddRig(rig);
+    }
+    for (auto [_, frame] : frames_) {
+        frame.ResetRigPtr();
+        cropped_reconstruction.AddFrame(std::move(frame));
+    }
+    for (auto [_, image] : images_) {
         image.ResetCameraPtr();
         image.ResetFramePtr();
-        reconstruction.AddImageWithTrivialFrame(image);
-        auto& cropped_image = reconstruction.Image(image_el.first);
-        cropped_image.SetRegistered(false);
-        for (point2D_t pid = 0; pid < cropped_image.NumPoints2D(); ++pid) {
-            cropped_image.ResetPoint3DForPoint2D(pid);
+        const auto num_points2D = image.NumPoints2D();
+        for (point2D_t point2D_idx = 0; point2D_idx < num_points2D;
+             ++point2D_idx) {
+            image.ResetPoint3DForPoint2D(point2D_idx);
         }
+        cropped_reconstruction.AddImage(std::move(image));
     }
-    for (const auto& point_el : points3D_) {
-        const auto& point = point_el.second;
-        if ((point.XYZ().array() >= bbox.min().array()).all() &&
-            (point.XYZ().array() <= bbox.max().array()).all()) {
-            for (const auto& track_el : point.Track().Elements()) {
-                reconstruction.RegisterImage(track_el.image_id);
+    NodeHashSet<frame_t> cropped_frame_ids;
+    for (const auto& [_, point3D] : points3D_) {
+        if (bbox.contains(point3D.XYZ())) {
+            for (const auto& track_el : point3D.Track().Elements()) {
+                cropped_frame_ids.insert(
+                    Image(track_el.image_id).FrameId());
             }
-            reconstruction.AddPoint3D(point.XYZ(), point.Track(),
-                                      point.Color());
+            cropped_reconstruction.AddPoint3D(
+                point3D.XYZ(), point3D.Track(), point3D.Color());
         }
     }
-    return reconstruction;
+    for (const auto& [frame_id, _] : cropped_reconstruction.Frames()) {
+        if (cropped_frame_ids.count(frame_id) == 0) {
+            cropped_reconstruction.DeRegisterFrame(frame_id);
+        }
+    }
+    return cropped_reconstruction;
 }
 
 bool Reconstruction::Merge(const Reconstruction& reconstruction,
@@ -893,7 +915,8 @@ const class Image* Reconstruction::FindImageWithName(
 std::vector<std::pair<image_t, image_t>> Reconstruction::FindCommonRegImageIds(
         const Reconstruction& other) const {
     std::vector<std::pair<image_t, image_t>> common_reg_image_ids;
-    for (const image_t image_id : reg_image_ids_) {
+    // Upstream parity (d3ccaf35): iterate the derived registered images.
+    for (const image_t image_id : RegImageIds()) {
         const class Image& image = Image(image_id);
         const class Image* other_image = other.FindImageWithName(image.Name());
         if (other_image != nullptr && other_image->HasPose()) {
@@ -951,10 +974,9 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
     // dereference throws (point_triangulator --clear_points crash).
     RewireObjectPointers();
 
-    for (auto& image_id : reg_image_ids_) {
-        image_id = old_to_new_image_ids.at(image_id);
-    }
-
+    // Upstream parity: the registered-image fact is derived from the
+    // frames, whose data ids were transcribed above - no separate
+    // image-id list to remap.
     for (auto& point3D : points3D_) {
         for (auto& track_el : point3D.second.Track().Elements()) {
             track_el.image_id = old_to_new_image_ids.at(track_el.image_id);
@@ -976,7 +998,7 @@ size_t Reconstruction::FilterPoints3D(
 
 size_t Reconstruction::FilterObservationsWithNegativeDepth() {
     size_t num_filtered = 0;
-    for (const auto image_id : reg_image_ids_) {
+    for (const image_t image_id : RegImageIds()) {
         const class Image& image = Image(image_id);
         const Eigen::Matrix3x4d proj_matrix = image.ProjectionMatrix();
         for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
@@ -1011,7 +1033,7 @@ std::vector<image_t> Reconstruction::FilterImages(
         }
     }
 
-    // Only de-register after iterating over reg_image_ids_ to avoid
+    // Only de-register after iterating over RegImageIds() to avoid
     // simultaneous iteration and modification of the vector.
     for (const image_t image_id : filtered_image_ids) {
         DeRegisterImage(image_id);
@@ -1021,8 +1043,9 @@ std::vector<image_t> Reconstruction::FilterImages(
 }
 
 size_t Reconstruction::ComputeNumObservations() const {
+    // Upstream parity (d3ccaf35): iterate the derived registered images.
     size_t num_obs = 0;
-    for (const image_t image_id : reg_image_ids_) {
+    for (const image_t image_id : RegImageIds()) {
         num_obs += Image(image_id).NumPoints3D();
     }
     return num_obs;
@@ -1037,11 +1060,12 @@ double Reconstruction::ComputeMeanTrackLength() const {
 }
 
 double Reconstruction::ComputeMeanObservationsPerRegImage() const {
-    if (reg_image_ids_.empty()) {
+    // Upstream parity (d3ccaf35): divide by the frame-level counter.
+    if (NumRegImages() == 0) {
         return 0.0;
     } else {
         return ComputeNumObservations() /
-               static_cast<double>(reg_image_ids_.size());
+               static_cast<double>(NumRegImages());
     }
 }
 
@@ -1239,8 +1263,9 @@ void Reconstruction::ExtractColorsForAllImages(
     NodeHashMap<point3D_t, Eigen::Vector3d> color_sums;
     NodeHashMap<point3D_t, size_t> color_counts;
 
-    for (size_t i = 0; i < reg_image_ids_.size(); ++i) {
-        const class Image& image = Image(reg_image_ids_[i]);
+    const std::vector<image_t> reg_image_ids = RegImageIds();
+    for (const image_t reg_image_id : reg_image_ids) {
+        const class Image& image = Image(reg_image_id);
         const std::filesystem::path image_path = path / image.Name();
 
         Bitmap bitmap;
@@ -1438,7 +1463,7 @@ NodeHashSet<frame_t> Reconstruction::RegFrameIds() const {
 
 void Reconstruction::ResetRegistrationState() {
   reg_frame_ids_.clear();
-  reg_image_ids_.clear();
+  num_reg_images_ = 0;
   for (auto& [image_id, image] : images_) {
     image.SetRegistered(false);
   }
@@ -1479,9 +1504,12 @@ void Reconstruction::AddImageWithTrivialFrame(class Image image) {
   } else {
     image.SetFrameId(frame.FrameId());
   }
-  // Seed the frame pose from the image's legacy qvec/tvec pose so the
-  // trivial frame mirrors the image-level pose of the legacy model.
-  frame.SetRigFromWorld(image.Qvec(), image.Tvec());
+  // Upstream parity (d3ccaf35): the single-argument overload creates a
+  // pose-less frame - no registration. The fork's legacy model seeded the
+  // frame from the image's default (identity) qvec/tvec mirror, which
+  // fabricated a pose and spuriously registered the frame; callers that
+  // have a pose must use the two-argument overload, which registers
+  // explicitly.
   AddFrame(std::move(frame));
   AddImage(std::move(image));
 }
@@ -1491,9 +1519,10 @@ void Reconstruction::AddImageWithTrivialFrame(class Image image,
   const frame_t frame_id = image.ImageId();
   AddImageWithTrivialFrame(std::move(image));
   Frame(frame_id).SetRigFromWorld(cam_from_world);
-  // Frame-level registration lands with W3-2b; image-level
-        // registration below keeps the legacy model.
-        RegisterImage(frame_id);
+  // Upstream parity (d3ccaf35): the pose-carrying overload registers the
+  // frame explicitly (frame-level registration; the counter and the
+  // per-image flag follow from there).
+  RegisterFrame(frame_id);
 }
 
 
