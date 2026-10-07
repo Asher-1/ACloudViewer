@@ -44,6 +44,7 @@ COLMAP_ADD_SOURCES(
     reconstruction_clustering.h reconstruction_clustering.cc
     texturing_controller.h texturing_controller.cc
     image_reader.h image_reader.cc
+    single_view_calibration.h single_view_calibration.cc
     option_manager.h option_manager.cc
     feature_extraction.h feature_extraction.cc
     pairing.h pairing.cc
@@ -55,6 +56,7 @@ COLMAP_ADD_SOURCES(
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
 
 COLMAP_ADD_TEST(global_pipeline_test global_pipeline_test.cc)
+COLMAP_ADD_TEST(single_view_calibration_test single_view_calibration_test.cc)
 # TEMP-DIAG: PRNG seed scan for the non-trivial-rig filtering variance;
 # DISABLED_ test, run manually with --gtest_also_run_disabled_tests.
 COLMAP_ADD_TEST(pipeline_rng_scan_test pipeline_rng_scan_test.cc)

@@ -321,7 +321,6 @@ Camera Camera::CreateFromModelId(camera_t camera_id,
     camera.SetHeight(height);
     camera.Params() = CameraModelInitializeParams(model_id, focal_length,
                                                  width, height);
-    camera.SetPriorFocalLength(true);
     return camera;
 }
 

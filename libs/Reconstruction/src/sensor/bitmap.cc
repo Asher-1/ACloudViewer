@@ -358,4 +358,60 @@ void Bitmap::SetJPEGQuality(int quality) {
 
 int Bitmap::JPEGQuality() const { return jpeg_quality_; }
 
+int Bitmap::Pitch() const { return width_ * channels_; }
+
+std::vector<uint8_t>& Bitmap::RowMajorData() { return data_->pixels; }
+
+const std::vector<uint8_t>& Bitmap::RowMajorData() const {
+  return data_->pixels;
+}
+
+// Upstream parity (d3ccaf35 sensor/bitmap.cc Rot90(int)): rotate by
+// `num_quarter_turns` counter-clockwise quarter turns. Delegates to the
+// boolean single-turn implementation (already validated by the bitmap
+// round-trip tests), always in the counter-clockwise direction so the
+// per-turn effects accumulate instead of cancelling.
+void Bitmap::Rot90(int num_quarter_turns) {
+  if (!data_) return;
+  int k = num_quarter_turns % 4;
+  if (k < 0) {
+    k += 4;
+  }
+  for (int turn = 0; turn < k; ++turn) {
+    Rot90(/*counterclockwise=*/true);
+  }
+}
+
+// Upstream parity (d3ccaf35 sensor/bitmap.cc Crop): crop the image in place
+// to the given rectangle. Cropping to the full image is a no-op.
+void Bitmap::Crop(const int left,
+                  const int top,
+                  const int width,
+                  const int height) {
+  THROW_CHECK_GE(left, 0);
+  THROW_CHECK_GE(top, 0);
+  THROW_CHECK_GT(width, 0);
+  THROW_CHECK_GT(height, 0);
+  THROW_CHECK_LE(left + width, width_);
+  THROW_CHECK_LE(top + height, height_);
+  if (!data_) return;
+  if (left == 0 && top == 0 && width == width_ && height == height_) {
+    return;
+  }
+
+  std::vector<uint8_t> cropped(static_cast<size_t>(width) * height *
+                               channels_);
+  for (int y = 0; y < height; ++y) {
+    const uint8_t* src_row =
+        data_->pixels.data() + (static_cast<size_t>(top + y) * width_ + left) *
+                                   channels_;
+    std::copy(src_row,
+              src_row + static_cast<size_t>(width) * channels_,
+              cropped.begin() + static_cast<size_t>(y) * width * channels_);
+  }
+  data_->pixels = std::move(cropped);
+  width_ = width;
+  height_ = height;
+}
+
 }  // namespace colmap

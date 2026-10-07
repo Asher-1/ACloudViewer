@@ -28,6 +28,15 @@ namespace colmap {
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
 
+// Upstream parity (d3ccaf35 util/misc.h): log headings for pipeline stages.
+#ifndef LOG_HEADING1
+#define LOG_HEADING1(message) LOG(INFO) << "=== " << (message) << " ===";
+#endif  // LOG_HEADING1
+
+#ifndef LOG_HEADING2
+#define LOG_HEADING2(message) LOG(INFO) << "--- " << (message) << " ---";
+#endif  // LOG_HEADING2
+
 // Join multiple paths into one path.
 // NOTE (fork): legacy string-join helper kept for the string-domain callers
 // inside this library (exe tools, controllers, mvs internals). The

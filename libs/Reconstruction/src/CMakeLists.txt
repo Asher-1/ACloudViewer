@@ -39,6 +39,7 @@ endif ()
 
 set_property(GLOBAL PROPERTY COLMAP_SOURCES "")
 
+add_subdirectory(calibration)
 add_subdirectory(controllers)
 add_subdirectory(estimators)
 add_subdirectory(geometry)
@@ -154,6 +155,17 @@ if(AICore_ENABLED AND TARGET AICore)
     # Propagate to ColmapLib translation units — PUBLIC link interface alone does not
     # always define AICore_ENABLED when compiling this static library's .cc files.
     target_compile_definitions(${COLMAP_LIB_NAME} PUBLIC AICore_ENABLED)
+endif()
+
+# Texturing/mvs integration consumes the C++ IO layer (AutoReadMesh) and
+# ccMesh geometry helpers (CV_DB). Both must be PUBLIC: ColmapLib is STATIC,
+# so its undefined symbols have to resolve in every executable that links
+# it (colmap_test binaries were failing with DSO-missing-linker errors).
+if(TARGET CV_IO_LIB)
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC CV_IO_LIB)
+endif()
+if(TARGET CV_DB_LIB)
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC CV_DB_LIB)
 endif()
 
 # PoseLib is enabled by default for reconstruction. Keep it scoped to ColmapLib

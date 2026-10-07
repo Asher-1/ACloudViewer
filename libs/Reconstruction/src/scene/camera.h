@@ -16,6 +16,15 @@
 
 namespace colmap {
 
+// Upstream parity (d3ccaf35 scene/camera.h): shared plausibility thresholds
+// for the incremental mapper, bundle adjustment, and single-view calibration
+// options as `HasBogusParams` thresholds. Focal length ratios are relative to
+// the maximum image dimension and correspond to opening angles of ~130 and ~5
+// degrees; distortion parameters are bounded in absolute value.
+constexpr double kDefaultMinFocalLengthRatio = 0.1;
+constexpr double kDefaultMaxFocalLengthRatio = 10.0;
+constexpr double kDefaultMaxExtraParam = 1.0;
+
 // Camera class that holds the intrinsic parameters. Cameras may be shared
 // between multiple images, e.g., if the same "physical" camera took multiple
 // pictures with the exact same lens and intrinsics (focal length, etc.).

@@ -1098,3 +1098,57 @@ single_view_calibration 11/anycalib 9/ray_fitting 6——**upstream
 4. BA ceres/caspar 测试补全(37);
 5. feature/mvs/util/exe 残余;
 6. onnx_test 与 onnx_matchers 全族:按裁定排除(AICore ggml 替代)。
+
+## 批次 O:calibration 模块整族移植(2026-10-07)
+
+### 缺口精确化(假阳性甄别先行)
+
+upstream calibration 生态名义 51 用例,对账后 fork **已有** view_graph_calibration
+(6/6,token sim 0.986-1.000)与 estimators/cost_functions/calibration(.h sim 1.000,
+2/2)——517 清单中此两项为假阳性;真实缺口 = `calibration/` 目录三件套
+(anycalib 12 + single_view_calibrator 13 + ray_fitting 7 = 32) +
+`controllers/single_view_calibration`(11)= **43 用例**。
+
+### 移植内容(逐字 + 最小适配)
+
+- **生产 7 文件**:calibration/{anycalib,single_view_calibrator,ray_fitting}.{h,cc}
+  + resources.h;controllers/single_view_calibration.{h,cc}。onnx 推理块
+  (`#ifdef COLMAP_ONNX_ENABLED`)双侧保留(裁定:ggml/AICore 替代 onnx),
+  `CreateAnyCalibCalibrator` 无 onnx 构建走 throw 分支;预处理
+  `PrepareAnyCalibInput`/坐标变换在 onnx 块外全量可用;
+- **依赖闭包增量**:sensor/bitmap.{h,cc} 补 `Rot90(int)`/`Crop`/
+  `Pitch`/`RowMajorData`(upstream parity,OIIO-free 手写与 fork Storage
+  布局对齐);scene/camera.h 补 3 个 `kDefault{Min,Max}FocalLengthRatio/
+  MaxExtraParam` 常量;util/file.h 补 `THROW_CHECK_DIR_EXISTS`;util/misc.h
+  补 `LOG_HEADING1/2`;
+- **Camera API 适配**(成员→getter/setter):7 处生产(anycalib 4 +
+  single_view_calibrator 13 处读写)+ 测试正则族(写形态 Set*/Params() 引用
+  赋值/指针 `->` 形态/下标 `cameras[0]` 形态,括号闭合两轮);
+- **行为对齐发现**:`Camera::CreateFromModelId` fork 多
+  `SetPriorFocalLength(true)`(upstream 无)——审计 3 处生产消费者无 prior
+  依赖后删除对齐;
+- **测试门控**(onnx 裁定):anycalib_test 3 个 TEST_F 的 SetUpTestSuite
+  try/catch + GTEST_SKIP;controllers IntegrationTestWithModel 沿用
+  upstream 自带 COLMAP_ANYCALIB_MODEL_PATH 环境变量门控。
+
+### ceres 2.2 NormalPrior 兼容缺陷(fork 环境实锤)
+
+upstream `ray_fitting.cc` 用非方阵 stiffness(1×num_params)构造
+`ceres::NormalPrior`:ceres 2.1 声明参数块大小 = `A_.cols()`(正确),ceres 2.2
+改为 `b_.rows()`(非方阵时 ≠ 实际参数块 num_params)→ Problem 析构
+NormalPrior 析构 double free(gdb 栈实锤)。fork 修复:行等价
+`FocalPriorCost` 模板 functor(全参数块 + 运行时 focal idx,数学恒等:
+residual_i = scale·(x[idx_i] − prior_i));首轮实现把 scaled_prior 多乘
+scale(初值残差 2.11e11 量级指纹当场定位)修正为 prior 本身。
+
+### 验证
+
+- ray_fitting_test **31/31**(TEST_P 全透视模型参数化展开);
+- single_view_calibrator_test **13/13**;anycalib_test **9 PASS + 3 SKIP**;
+- single_view_calibration_test **10 PASS + 1 SKIP**(upstream 环境门控);
+- 全量 gate **165/165**(161 + 4 个新测试目标),0 FAILED。
+- 新增用例数:落地 43 用例(66 个含参数化展开),517 缺口清单余 ~474。
+- 教训:①移植 functor 的代数必须与 upstream 逐项核对(初值 cost 量级
+  指纹当场暴露 scale 双乘);②fork Camera getter 适配正则需覆盖
+  `.x`/`->x`/`arr[0].x` 三种形态且写形态自动补右括号;③"fork 缺
+  upstream 新模块"判断前先 token-sim 对账同名目录树(本轮 8/51 假阳性)。

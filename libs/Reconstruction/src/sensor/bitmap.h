@@ -148,6 +148,24 @@ public:
     // rotation (counter-clockwise when counterclockwise=true).
     void Rot90(bool counterclockwise = false);
 
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): in-place rotation by
+    // `num_quarter_turns` counter-clockwise quarter turns (k % 4). Needed by
+    // the calibration module's gravity-based uprighting.
+    void Rot90(int num_quarter_turns);
+
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): crop the image in place to
+    // the given rectangle, which must lie within the image bounds. Cropping
+    // to the full image is a no-op.
+    void Crop(int left, int top, int width, int height);
+
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): bytes per image row and
+    // direct row-major pixel access (no padding; the fork's Storage keeps a
+    // contiguous row-major uint8 buffer). Needed by the calibration module's
+    // tensor packing.
+    int Pitch() const;
+    std::vector<uint8_t>& RowMajorData();
+    const std::vector<uint8_t>& RowMajorData() const;
+
     // Upstream parity: JPEG quality for subsequent Write() calls; values
     // in [0, 100], -1 keeps the caller-supplied flags untouched.
     void SetJPEGQuality(int quality);
