@@ -193,6 +193,12 @@ public:
     // Delete all 2D points of all images and all 3D points.
     void DeleteAllPoints2DAndPoints3D();
 
+    // Fork variant (batch S): clear all 3D points and their 2D->3D
+    // observation links while KEEPING the 2D keypoint coordinates - the
+    // input data a retriangulation pass needs. Unlike
+    // DeleteAllPoints2DAndPoints3D, images retain NumPoints2D() > 0.
+    void DeleteAllPoints3D();
+
     // Register an existing image.
     void RegisterImage(const image_t image_id);
 

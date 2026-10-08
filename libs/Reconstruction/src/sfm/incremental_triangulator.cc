@@ -86,7 +86,12 @@ size_t IncrementalTriangulator::TriangulateImage(const Options& options,
     }
 
     const Image& image = reconstruction_->Image(image_id);
-    if (!image.IsRegistered()) {
+
+    // Upstream parity (d3ccaf35): the gate is the frame pose, not the
+    // legacy per-image registered flag - the flag's maintenance window
+    // (EndReconstruction(discard) clears it) does not track the actual
+    // pose fact that triangulation depends on.
+    if (!image.HasPose()) {
         return num_tris;
     }
 
@@ -150,7 +155,11 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
     }
 
     const Image& image = reconstruction_->Image(image_id);
-    if (!image.IsRegistered()) {
+
+    // Upstream parity (d3ccaf35): gate on the frame pose (see
+    // TriangulateImage note); the legacy registered flag clears on
+    // EndReconstruction(discard) while the pose fact remains.
+    if (!image.HasPose()) {
         return num_tris;
     }
 
@@ -355,12 +364,14 @@ size_t IncrementalTriangulator::Retriangulate(const Options& options) {
         }
 
         const Image& image1 = reconstruction_->Image(image_id1);
-        if (!image1.IsRegistered()) {
+
+        // Upstream parity (d3ccaf35): gate on the frame pose.
+        if (!image1.HasPose()) {
             continue;
         }
 
         const Image& image2 = reconstruction_->Image(image_id2);
-        if (!image2.IsRegistered()) {
+        if (!image2.HasPose()) {
             continue;
         }
 

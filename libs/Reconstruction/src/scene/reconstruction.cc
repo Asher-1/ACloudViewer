@@ -460,6 +460,23 @@ void Reconstruction::DeleteAllPoints2DAndPoints3D() {
     }
 }
 
+void Reconstruction::DeleteAllPoints3D() {
+  // Fork variant (batch S): the retriangulation passes need the 2D
+  // keypoint coordinates as their input, so unlike
+  // DeleteAllPoints2DAndPoints3D only the 3D points and the 2D->3D
+  // observation links are cleared here; the coordinates stay in place.
+  // Callers must not hold an ObservationManager on this reconstruction
+  // across the call (the new manager is created afterwards and rebuilds
+  // its bookkeeping from the cleared state).
+  points3D_.clear();
+  for (auto& [_, image] : images_) {
+    for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+         ++point2D_idx) {
+      image.ResetPoint3DForPoint2D(point2D_idx);
+    }
+  }
+}
+
 void Reconstruction::RegisterFrame(const frame_t frame_id) {
   // Upstream parity (d3ccaf35 scene/reconstruction.cc L638): registration
   // requires a pose and is idempotent; the registered-image counter is

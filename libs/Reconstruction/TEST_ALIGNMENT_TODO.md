@@ -1319,3 +1319,44 @@ global_pipeline_test 等仍链接旧库副本)→ 批 Q 注册簿记收敛的行
 
 3 个批 Q 涟漪测试(含 8 个用例)回填 gate 待专项批次;其余测试移植面
 (bitmap_test 52,OIIO 重写面)按批次 O/P 的甄别方法推进。
+
+## 批次 S:批 Q 涟漪修复回填 gate + retriangulation 语义修复(2026-10-08)
+
+### 修复 1:retriangulation 清空粒度缺陷(fork 专有模块)
+
+global_mapper 的 IterativeRetriangulateAndRefine 先
+DeleteAllPoints2DAndPoints3D(连 2D 坐标一起清)再 TriangulateImage
+(遍历已清空的 2D)→ 零输入零产出。新增
+Reconstruction::DeleteAllPoints3D(清点 + 清 2D→3D 关联,**保留 2D
+keypoint 坐标**——三角化的输入数据),retriangulation 前置改用它。
+调用方约束:跨调用不得持有 OM(新 OM 在 BeginReconstruction 重建)。
+
+### 修复 2:三角化器门禁 IsRegistered → HasPose(upstream parity)
+
+批 Q 注册收敛后 image 的 legacy registered 标志维护窗口
+(EndReconstruction(discard) 清除)与位姿事实脱节——retriangulation 的
+重建帧 pose 在而标志为 false(插桩实证 reg=0/num2d=60)。upstream 的
+TriangulateImage/CompleteImage/Retriangulate 门禁全部是 `HasPose()`;
+fork 三处对齐。量级矛盾定位法再次命中(同一重建两处读数 60 vs 0)。
+
+### 结果
+
+- global_mapper_test:WithoutNoise/WithNoiseAndOutliers/
+  WithNonTrivialKnownRig 3 用例修复回填(global_pipeline_test 13/13 回填);
+- incremental_triangulator_test 回填(7 PASS + CompleteImage 留因 DISABLED:
+  Continue 对被删观测的补回语义与 upstream Find/Create 过滤不同——
+  100 vs 80,upstream Find 对已三角化对应的过滤语义需专项对照);
+- global_mapper_test 仅剩 WithoutNoiseWithNonTrivialUnknownRig 留因
+  DISABLED:retriangulation 在 trivial rig 下已修复,但 non-trivial rig
+  的合成 matches 是帧对粒度(C(14,2)=91 条 ref-ref 边),非 ref 相机的
+  2D 在对应图中无对应(Find 返回 corrs=0)——需要
+  DatabaseCache/CorrespondenceGraph 的 rig 感知展开,属核心基建专项;
+- **gate 165/165 全绿**(全部测试二进制已重链;排除面仅
+  caspar/loma/sift/opengl 四个 GPU/环境性用例)。
+
+### 遗留(下一批入口)
+
+- CompleteImage 的 Continue 补回语义(upstream Find 对已三角化对应的
+  过滤对照);
+- NonTrivialUnknownRig 的对应图 rig 感知展开(核心基建专项);
+- bitmap_test 52(OIIO 重写面)。
