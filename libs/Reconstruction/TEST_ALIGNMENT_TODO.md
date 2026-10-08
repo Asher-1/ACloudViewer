@@ -1360,3 +1360,65 @@ fork 三处对齐。量级矛盾定位法再次命中(同一重建两处读数 6
   过滤对照);
 - NonTrivialUnknownRig 的对应图 rig 感知展开(核心基建专项);
 - bitmap_test 52(OIIO 重写面)。
+
+批次 T:注册簿记容器对齐 + legacy 标志退役 + 两个 DISABLED 解锁(2026-10-08)
+
+### 修复 1:reg_frame_ids_ 容器对齐 upstream(std::vector,插入序)
+
+批 Q 把 reg_frame_ids_ 定为 NodeHashSet——枚举序是 hash 序,而
+upstream d3ccaf35 是 std::vector<frame_t>(std::find 幂等 + push_back,
+**注册插入序**)。RegImageIds()/RegFrameIds() 的枚举序是可观察 API 面:
+CompleteImage 用例 `.at(0)` 恰好敏感于该序——fork hash 序下 .at(0)=image 5
+而全部被删观测在 image 1(synthetic track 构造序的首图),CompleteImage
+对非删除图运行 Complete(track) 补回全部 20 个观测(100 vs 80);
+插入序下 .at(0)=image 1=被删图,观测全无 3D 点,Find 报
+num_triangulated>0 不补回——恰 upstream 的 80。探针实证:
+reg_image_ids 5,4,3,2,1 → 修复后 1,2,3,4,5;obs_after 100 → 80。
+**批 S 的「Continue 补回语义差异」假说被证伪**(fork Continue/Create 与
+upstream 逐行一致,upstream Find 也不过滤已三角化对应,仅计数)。
+reg_frame_ids_ 改 std::vector,RegFrameIds() 返回 const 引用;
+遍历中修改的站点(incremental_mapper BeginReconstruction、
+rotation_averaging)改为显式拷贝。
+
+### 修复 2:legacy per-image registered 标志门禁退役(HasPose 对齐)
+
+upstream d3ccaf35 的 Image **没有** registered 标志(注册态=帧位姿事实)。
+fork 的 lockstep 维护(RegisterFrame 内对已存在 image SetRegistered)
+有顺序缺口:**Load 按 rigs→frames→images 添加,AddFrame 自动注册时
+image 尚不存在 → SetRegistered 被跳过;后续 RegisterFrame 幂等跳过 →
+标志永远 false**(reg-dbg 桩实证:frame1 already=0 first_img_exists=0)。
+retriangulation 时 Find/Merge/Complete 内部残留的 IsRegistered() 门禁
+把全部对应过滤(corrs=41 → corrs_data=0)→ TriangulateImage 零产出、
+Retriangulate 把观测重建为 45 个 2-观测碎点(REC 95 点 vs GT 50)。
+修复:①AddImage 末尾对已注册帧补设标志(lockstep 补全);②三角化器
+Find/Merge/Complete 与 incremental_mapper 的 corr 门禁、
+incremental_mapper_impl 的 FindLocalBundle 断言全部对齐 upstream 的
+HasPose()。批 S 留因的「帧对粒度 matches」假说也被证伪:对应图已覆盖
+全部 42 图(探针 images_with_corr=42/42,每图 50/60 观测有对应)。
+
+### 结果
+
+- incremental_triangulator_test:8/8(CompleteImage 解锁,期望 80 精确);
+- global_mapper_test:5/5(WithoutNoiseWithNonTrivialUnknownRig 解锁——
+  REC 与 GT 完全一致:50 点 × 42 观测 = 2100 观测精确,sensor_from_rig
+  误差 1e-6 度);
+- hierarchical_pipeline_test 两个 non-trivial 用例留因更新:失败形态
+  前移到簇合并——MergeReconstruction/AddImageWithTrivialFrame 假设
+  1 帧 1 图("Frame 2 already exists"),non-trivial rig 的合并需要
+  rig-aware MergeReconstruction(真正的 rig 感知基建专项,下一批入口);
+- **gate 162/163**(ctest 163 行,唯一失败 caspar parity 为并行 GPU
+  92% 负载下的已知环境敏感项,与本批改动无关);
+- 附带:修复 test_qanylabeling_pointcloud 链接错误(并行会话给
+  PointCloudDocument 集成 cuboid sidecar 时漏把 PointCloudCuboid.cpp
+  加进测试源列表)。
+
+### 遗留(下一批入口)
+
+- rig-aware MergeReconstruction(hierarchical 簇合并,解锁 2 个
+  hierarchical 用例——真正的 rig 感知合并基建);
+- bitmap_test 移植:实测缺口 64 用例(非 52;upstream 67 vs fork 31),
+  需先补齐 fork Bitmap 的 API 面(Clone/CloneAsGrey/CloneAsRGB/
+  MetaData/Exif 族/Interpolate/Rescale/Rot90/RowMajorData/Thumbnail
+  等),独立子批;
+- exe/image.cc 的 image 级过滤(IsRegistered)在磁盘模型(标志 false)
+  下失效——对齐 upstream 的 FindFramesToFilter 帧级路径。

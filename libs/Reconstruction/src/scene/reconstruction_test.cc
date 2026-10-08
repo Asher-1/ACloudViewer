@@ -1317,8 +1317,6 @@ TEST(Reconstruction, TearDown) {
   // De-register one frame to create an unregistered frame
   const auto reg_frames_before = reconstruction.NumRegFrames();
   const auto frame_ids = reconstruction.RegFrameIds();
-  // Fork adaptation: RegFrameIds() returns the fork's NodeHashSet rather
-  // than upstream's vector, so pick an arbitrary registered frame.
   reconstruction.DeRegisterFrame(*frame_ids.begin());
   EXPECT_EQ(reconstruction.NumRegFrames(), reg_frames_before - 1);
 

@@ -91,8 +91,10 @@ public:
     inline const NodeHashMap<rig_t, class Rig>& Rigs() const;
     inline const NodeHashMap<frame_t, class Frame>& Frames() const;
 
-    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
-    NodeHashSet<frame_t> RegFrameIds() const;
+    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames, in
+    // registration order (upstream holds them in a std::vector; the
+    // enumeration order is part of the observable API surface).
+    const std::vector<frame_t>& RegFrameIds() const;
 
     // Fork: the database round-trip persists frame poses (a fork extension
     // absent upstream); a freshly loaded reconstruction starts unregistered.
@@ -405,10 +407,12 @@ private:
     // (or have been removed) yet.
     size_t num_reg_images_ = 0;
 
-    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): the explicit
-    // frame-level registration fact; AddFrame registers frames that carry a
-    // pose, as upstream does.
-    NodeHashSet<frame_t> reg_frame_ids_;
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): the explicit
+    // frame-level registration fact, held as a vector in registration
+    // order (batch T: the fork's earlier NodeHashSet enumerated in hash
+    // order, which diverged from upstream's observable RegImageIds()
+    // order and broke order-sensitive consumers/tests).
+    std::vector<frame_t> reg_frame_ids_;
 
     // Total number of added 3D points, used to generate unique identifiers.
     point3D_t num_added_points3D_;

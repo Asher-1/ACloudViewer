@@ -93,11 +93,15 @@ TEST(HierarchicalPipeline, DISABLED_WithoutNoise) {
 }
 
 TEST(HierarchicalPipeline, DISABLED_WithoutNoiseAndNonTrivialFrames) {
-  // Fork adjudication: two remaining blockers in the fork's incremental
-  // mapper on non-trivial cluster data - the SetObservationAsTriangulated
-  // duplicate-correspondence guard (num_tri_corrs > num_total_corrs) and a
-  // cache/cluster image-id consistency gap surfacing as map::at in
-  // hierarchical_pipeline.cc. Deferred until those are reconciled.
+  // Fork adjudication (updated batch T): with the vector registration order
+  // and the HasPose()-based triangulator gates (batch T), the cluster solve
+  // and retriangulation now run; the remaining blocker is the cluster merge
+  // path - MergeReconstruction/AddImageWithTrivialFrame assumes one frame
+  // per image ("AddImageWithTrivialFrame tried to add a frame with the same
+  // id as the image: Frame 2 already exists"), which is wrong for non-trivial
+  // rigs (1 frame, N cameras). A rig-aware merge (carry the frame/rig
+  // structure into the merged reconstruction, like upstream's
+  // MergeReconstruction) is the core-infra batch that unlocks this suite.
 
   const auto database_path = CreateTestDir() / "database.db";
 
@@ -139,11 +143,11 @@ TEST(HierarchicalPipeline, DISABLED_WithoutNoiseAndNonTrivialFrames) {
 }
 
 TEST(HierarchicalPipeline, DISABLED_WithoutNoiseAndPanoramicNonTrivialFrames) {
-  // Fork adjudication: two remaining blockers in the fork's incremental
-  // mapper on non-trivial cluster data - the SetObservationAsTriangulated
-  // duplicate-correspondence guard (num_tri_corrs > num_total_corrs) and a
-  // cache/cluster image-id consistency gap surfacing as map::at in
-  // hierarchical_pipeline.cc. Deferred until those are reconciled.
+  // Fork adjudication (updated batch T): same root cause as
+  // WithoutNoiseAndNonTrivialFrames above - the cluster merge path assumes
+  // one frame per image and aborts on non-trivial rigs
+  // (AddImageWithTrivialFrame "Frame 2 already exists"). Waiting for the
+  // rig-aware MergeReconstruction batch.
 
   const auto database_path = CreateTestDir() / "database.db";
 

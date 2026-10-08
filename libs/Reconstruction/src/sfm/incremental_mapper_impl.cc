@@ -387,7 +387,8 @@ std::vector<image_t> IncrementalMapperImpl::FindLocalBundle(
     CHECK(options.Check());
 
     const Image& image = reconstruction.Image(image_id);
-    CHECK(image.IsRegistered());
+    // Upstream parity (d3ccaf35): THROW_CHECK on the frame pose.
+    THROW_CHECK(image.HasPose());
 
     // Extract all images that have at least one 3D point with the query image
     // in common, and simultaneously count the number of common 3D points.

@@ -109,16 +109,23 @@ TEST(GlobalMapper, WithoutNoiseWithNonTrivialKnownRig) {
                                  /*num_obs_tolerance=*/0.03));
 }
 
-TEST(GlobalMapper, DISABLED_WithoutNoiseWithNonTrivialUnknownRig) {
-  // Fork adjudication (batch S): the retriangulation now works for trivial
-  // rigs (DeleteAllPoints3D keeps the 2D keypoints as TriangulateImage's
-  // input; triangulator gates aligned to upstream's HasPose), but this
-  // non-trivial-rig case still yields 50 points vs GT 95: the synthetic
-  // matches are frame-pair granular (C(14,2)=91 ref-ref edges), so the
-  // correspondence graph has no correspondences for the non-ref cameras'
-  // 2D observations and Find() returns empty for them (corrs=0). Fixing
-  // this requires rig-aware correspondence-graph expansion in
-  // DatabaseCache/CorrespondenceGraph - a core-infra batch of its own.
+TEST(GlobalMapper, WithoutNoiseWithNonTrivialUnknownRig) {
+  // Fork adjudication (batch T): the batch-S "frame-pair granular matches"
+  // hypothesis was disproven - the correspondence graph already covers all
+  // 42 images (probe: images_with_corr=42/42, every image 50/60 observations
+  // with correspondences). The real root cause was double:
+  // (1) reg_frame_ids_ was a NodeHashSet, so RegImageIds() enumerated in
+  //     hash order and the retriangulation loop started mid-model;
+  // (2) the legacy per-image registered flag stayed false for images added
+  //     after their frame was registered (the Load order adds frames before
+  //     images, and RegisterFrame is idempotent), so Find()/Merge()'s
+  //     IsRegistered() gates silently dropped EVERY correspondence - the
+  //     TriangulateImage loop produced zero points and Retriangulate
+  //     rebuilt them as 45 two-observation fragments (95 vs GT 50).
+  // With the vector registration order (upstream parity) and the
+  // HasPose()-based gates (upstream has no per-image flag at all), the
+  // reconstruction matches GT exactly: 50 points, 2100 observations,
+  // sensor_from_rig errors at 1e-6 degrees (probe evidence, batch T).
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);

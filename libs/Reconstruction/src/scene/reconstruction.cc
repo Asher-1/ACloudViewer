@@ -248,7 +248,17 @@ void Reconstruction::AddImage(class Image image) {
     image.SetFramePtr(&frame);
   }
   const image_t image_id = image.ImageId();
+  const frame_t frame_id = image.FrameId();
   THROW_CHECK(images_.emplace(image_id, std::move(image)).second);
+  // Fork: keep the legacy per-image registered flag in lockstep for images
+  // that are added after their frame was registered. The Load order adds
+  // frames before images, so RegisterFrame's flag pass saw no images and the
+  // flag would stay false forever for fully-posed loaded reconstructions
+  // (batch T: this silently emptied the retriangulation's Find() gates).
+  if (std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id) !=
+      reg_frame_ids_.end()) {
+    Image(image_id).SetRegistered(true);
+  }
 }
 
 void Reconstruction::AddRig(class Rig rig) {
@@ -486,7 +496,13 @@ void Reconstruction::RegisterFrame(const frame_t frame_id) {
   // consumers read it via IsRegistered()).
   const class Frame& frame = Frame(frame_id);
   THROW_CHECK(frame.HasPose());
-  if (reg_frame_ids_.insert(frame_id).second) {
+  // Upstream parity (d3ccaf35): the registration order is preserved in the
+  // vector; idempotency is a linear find (the enumeration order of
+  // RegImageIds()/RegFrameIds() is observable behavior).
+  const bool already = std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(),
+                                 frame_id) != reg_frame_ids_.end();
+  if (!already) {
+    reg_frame_ids_.push_back(frame_id);
     num_reg_images_ += frame.ImageIds().size();
     for (const image_t image_id : frame.ImageIds()) {
       if (ExistsImage(image_id)) {
@@ -568,7 +584,8 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
     // Every image of the frame drops its observations (single-ledger path)
     // and the counter is decremented unconditionally, even for images that
     // were never added (upstream counts them at registration time).
-    if (reg_frame_ids_.count(frame_id) == 0) {
+    if (std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id) ==
+        reg_frame_ids_.end()) {
         LOG(WARNING) << "Ignoring de-registration of frame " << frame_id
                      << ", which is not registered.";
         return;
@@ -581,7 +598,9 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
         }
         --num_reg_images_;
     }
-    reg_frame_ids_.erase(frame_id);
+    const auto erase_begin_it =
+            std::remove(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id);
+    reg_frame_ids_.erase(erase_begin_it, reg_frame_ids_.end());
     frame.ResetPose();
 }
 
@@ -1469,12 +1488,14 @@ size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
     return num_filtered;
 }
 
-NodeHashSet<frame_t> Reconstruction::RegFrameIds() const {
+const std::vector<frame_t>& Reconstruction::RegFrameIds() const {
   // Upstream d3ccaf35 semantics: registration is an explicit state held in
-  // reg_frame_ids_; AddFrame registers frames that carry a pose, and
-  // RegisterImage keeps the legacy image-level set in lockstep. The fork
-  // database round-trip persists poses (a fork extension), so the disk-read
-  // path calls ResetRegistrationState() to start unregistered.
+  // reg_frame_ids_ (a vector in registration order, like upstream; batch T
+  // replaced the fork's hash-set whose enumeration order diverged from
+  // upstream's observable API order); AddFrame registers frames that carry
+  // a pose. The fork database round-trip persists poses (a fork extension),
+  // so the disk-read path calls ResetRegistrationState() to start
+  // unregistered.
   return reg_frame_ids_;
 }
 

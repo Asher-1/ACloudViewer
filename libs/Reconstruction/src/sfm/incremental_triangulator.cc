@@ -495,7 +495,11 @@ size_t IncrementalTriangulator::Find(const Options& options,
         }
 
         const Image& corr_image = reconstruction_->Image(corr.image_id);
-        if (!corr_image.IsRegistered()) {
+        // Upstream parity (d3ccaf35): the gate is the frame pose; the fork's
+        // legacy per-image registered flag is not maintained for images that
+        // were added after their frame was registered (the Load order), so
+        // it reads false for fully-posed reconstructions.
+        if (!corr_image.HasPose()) {
             continue;
         }
 
@@ -682,7 +686,8 @@ size_t IncrementalTriangulator::Merge(const Options& options,
         for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
              corr < corrs.end; ++corr) {
             const auto& image = reconstruction_->Image(corr->image_id);
-            if (!image.IsRegistered()) {
+            // Upstream parity (d3ccaf35): gate on the frame pose (see Find).
+            if (!image.HasPose()) {
                 continue;
             }
 
@@ -797,7 +802,9 @@ size_t IncrementalTriangulator::Complete(const Options& options,
             for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
                  corr < corrs.end; ++corr) {
                 const Image& image = reconstruction_->Image(corr->image_id);
-                if (!image.IsRegistered()) {
+                // Upstream parity (d3ccaf35): gate on the frame pose (see
+                // Find).
+                if (!image.HasPose()) {
                     continue;
                 }
 

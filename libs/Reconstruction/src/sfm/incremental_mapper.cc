@@ -107,9 +107,12 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     CHECK(reconstruction_ == nullptr);
     reconstruction_ = reconstruction;
     // Snapshot the frames that already belong to a continued reconstruction
-    // before the cache load (batch C observation-bookkeeping fix).
-    const NodeHashSet<frame_t> pre_existing_frames =
-            reconstruction->RegFrameIds();
+    // before the cache load (batch C observation-bookkeeping fix). Batch T:
+    // RegFrameIds() now returns a reference to the fork's registration-order
+    // vector (upstream parity); copy into the hash set explicitly.
+    const NodeHashSet<frame_t> pre_existing_frames(
+            reconstruction->RegFrameIds().begin(),
+            reconstruction->RegFrameIds().end());
     reconstruction_->Load(*database_cache_);
     // Fork fix (surfaced by IncrementalMapperTest.EndReconstructionDiscard /
     // exe/sfm_test WritesInterruptedReconstruction): the fork database
@@ -124,7 +127,11 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     // the frames the load introduced, so incremental SfM re-establishes
     // registration and accounting together; frames of a continued
     // reconstruction (registered before the load) are kept.
-    for (const frame_t frame_id : reconstruction_->RegFrameIds()) {
+    // Batch T: de-registration mutates reg_frame_ids_, so iterate over a
+    // copy (the old NodeHashSet return was already a detached snapshot).
+    const std::vector<frame_t> post_load_reg_frames =
+            reconstruction_->RegFrameIds();
+    for (const frame_t frame_id : post_load_reg_frames) {
         if (pre_existing_frames.count(frame_id) == 0) {
             reconstruction_->DeRegisterFrame(frame_id);
         }
@@ -361,7 +368,8 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
             }
 
             const Image& corr_image = reconstruction_->Image(corr.image_id);
-            if (!corr_image.IsRegistered()) {
+            // Upstream parity (d3ccaf35): gate on the frame pose.
+            if (!corr_image.HasPose()) {
                 continue;
             }
 

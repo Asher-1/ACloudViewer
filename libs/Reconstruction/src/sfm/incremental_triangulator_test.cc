@@ -150,15 +150,21 @@ TEST(IncrementalTriangulator, TriangulateImage) {
             synthetic_options.num_points3D * reconstruction.NumRegImages());
 }
 
-TEST(IncrementalTriangulator, DISABLED_CompleteImage) {
-  // Fork adjudication (batch S): after the triangulator gates were aligned
-  // to upstream's HasPose semantics, this case still reports 100
-  // observations vs upstream's 80 - the fork's Continue reclaims the
-  // deleted observations (via the Complete(track)-corrs path) while
-  // upstream's Find/Create filtering leaves them out. The upstream Find
-  // filtering semantics for already-triangulated correspondences need a
-  // dedicated comparison batch; the gate-excluded state persists until
-  // then (the other 7 cases of this suite pass).
+TEST(IncrementalTriangulator, CompleteImage) {
+  // Fork adjudication (batch T): the batch-S "Continue reclaims deleted
+  // observations" hypothesis was disproven - upstream Find() does NOT
+  // filter already-triangulated correspondences (it only counts them),
+  // and the fork's Continue/Create are line-identical to upstream. The
+  // real root cause was the fork's reg_frame_ids_ being a NodeHashSet:
+  // RegImageIds() enumerated in hash order (5,4,3,2,1), so .at(0) picked
+  // image 5 while every deleted observation lives on image 1 (the first
+  // image in the synthetic track construction order). CompleteImage on a
+  // non-deleted image runs Complete(track) for all its 3D observations,
+  // which reclaims the 20 deleted observations (100 vs 80). Holding
+  // reg_frame_ids_ in upstream's std::vector registration order makes
+  // .at(0) = image 1 = the deleted image, so every observation of image0
+  // is untriangulated, Find() reports num_triangulated>0 and nothing is
+  // reclaimed - exactly upstream's 80 (probe evidence, batch T).
   auto database = Database::Open(kInMemorySqliteDatabasePath);
 
   Reconstruction reconstruction;
