@@ -903,6 +903,20 @@ void qLingbotMap::refilterResultClouds(double threshold) {
 
 namespace {
 
+// Engine-side eviction for ONE camera: drops its composite block (if
+// aggregated) and its dedicated wireframe/"#plane" face actors so the next
+// draw pass rebuilds the frustum from scratch — used when a scale write
+// cannot reach an already-baked channel (the two-sizes regression).
+void evictCameraChannels(ccHObject* cam, ecvGenericGLDisplay* fallback) {
+    if (!cam || !fallback) return;
+    CC_DRAW_CONTEXT ctx;
+    ctx.removeViewID = cam->getViewId();
+    ctx.removeEntityType = ENTITY_TYPE::ECV_SENSOR;
+    ctx.display = cam->getDisplay() ? cam->getDisplay() : fallback;
+    ctx.defaultViewPort = 0;
+    fallback->removeEntities(ctx);
+}
+
 // Engine-side reconcile for ONE camera: drives the hide/show channel
 // DIRECTLY so the composite per-block attributes (and the "#plane" face
 // actor) match the entity state immediately — not on the next redraw's
@@ -1059,6 +1073,12 @@ void qLingbotMap::applyDisplayState() {
                                                          sizePct);
                 if (std::abs(sensor->getGraphicScale() - targetScale) > 1e-9) {
                     sensor->setGraphicScale(targetScale);
+                    // Same baked-geometry rule as the streaming branch: a
+                    // scale write never reaches an existing composite block
+                    // or dedicated actor — evict + latch for a rebuild at
+                    // the new scale.
+                    evictCameraChannels(cam, display);
+                    cam->setForceRedraw(true);
                 }
             }
             reconcileCameraVisibility(cam, vis, display);
@@ -1118,6 +1138,14 @@ void qLingbotMap::applyDisplayState() {
                     static_cast<PointCoordinateType>(base * sizePct);
             if (std::abs(sensor->getGraphicScale() - targetScale) > 1e-9) {
                 sensor->setGraphicScale(targetScale);
+                // A frustum's geometry is BAKED at registration/creation:
+                // a scale write alone never reaches an existing composite
+                // block or dedicated actor — the trail then split into two
+                // sizes ("only the large cameras obey the size slider").
+                // Evict the stale channel and latch: the next draw pass
+                // rebuilds the frustum at the new scale.
+                evictCameraChannels(cam, display);
+                cam->setForceRedraw(true);
             }
         }
         reconcileCameraVisibility(cam, vis, display);
@@ -1385,12 +1413,10 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     if (m_lastSettings.liveViewMode == 2) {
         sensor->setVisible(false);
         // Hand the ride over: the previous frame's sensor becomes a normal
-        // (visible) historical frustum again (the next applyDisplayState
-        // pass re-applies the stride gate to it).
-        if (m_lastOnlineSensor && m_lastOnlineSensor != sensor) {
-            m_lastOnlineSensor->setVisible(true);
-        }
-        m_lastOnlineSensor = sensor;
+        // historical frustum again. NO unconditional setVisible(true) here —
+        // that bypassed every gate (folder enabled / Show / stride) and
+        // re-lit a camera the user had hidden; the per-frame governance pass
+        // below re-applies the formula instead.
     } else {
         m_lastOnlineSensor = nullptr;
     }
@@ -1401,13 +1427,21 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     if (ccHObject* cameras = ensureCamerasGroup()) {
         const int ordinal = static_cast<int>(cameras->getChildrenNumber());
         if (m_lastSettings.liveViewMode != 2) {
-            sensor->setVisible(m_resultShowCameras &&
+            // The folder-enabled veto MUST hold at birth too: without it,
+            // cameras born after the user unchecked the trail folder kept
+            // the trail visible no matter how often they re-checked/hid.
+            sensor->setVisible(cameras->isEnabled() && m_resultShowCameras &&
                                (ordinal % std::max(1, m_resultCamStride) == 0));
         }
         cameras->addChild(sensor);
     } else {
         delete sensor;
     }
+    // Per-frame streaming governance: the trail is re-governed by the SAME
+    // single writer on every streamed frame, so mid-stream DB-tree edits
+    // (uncheck the trail folder, slider commits) hold against the flood of
+    // newborn cameras instead of leaking visible ones past the gates.
+    applyDisplayState();
 }
 
 ccPointCloud* qLingbotMap::onlineFrameCloud(ccHObject* parent,
@@ -1452,11 +1486,25 @@ ccPointCloud* qLingbotMap::onlineFrameCloud(ccHObject* parent,
 }
 
 void qLingbotMap::disposeOnlineGroup() {
-    if (!m_app || !m_onlineGroup) return;
+    if (!m_app || !m_onlineGroup) {
+        CVLog::Print(QStringLiteral("[onlineDispose] skip: app=%1 group=%2")
+                             .arg(m_app != nullptr)
+                             .arg(m_onlineGroup != nullptr));
+        return;
+    }
     ccHObject* root = m_app->dbRootObject();
     if (root && root->find(m_onlineGroup->getUniqueID())) {
+        CVLog::Print(QStringLiteral(
+                             "[onlineDispose] removing group id=%1 children=%2")
+                             .arg(m_onlineGroup->getUniqueID())
+                             .arg(m_onlineGroup->getChildrenNumber()));
         m_app->removeFromDB(m_onlineGroup, /*autoDelete=*/true);
         m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);
+    } else {
+        CVLog::Print(QStringLiteral("[onlineDispose] group id=%1 NOT FOUND in "
+                                    "tree - actors "
+                                    "leaked!")
+                             .arg(m_onlineGroup->getUniqueID()));
     }
     m_onlineGroup = nullptr;
 }
@@ -1770,6 +1818,14 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     syncReplayStateToDialog();
     if (m_autoPlayAfterRun) {
         startPlayback();
+    } else {
+        // Deterministic first draw WITHOUT auto-play: addToDB's own refresh
+        // ran while the cameras were still INVISIBLE (visible only flips in
+        // the applyCameraDisplay call above), and the drawMeOnly of a sensor
+        // needs a forced pass or the escape latch — without this pass the
+        // materialized result window stayed empty (286 enabled cameras, zero
+        // frustums) until some unrelated forced refresh happened.
+        m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
     }
     return true;
 }

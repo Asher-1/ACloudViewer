@@ -69,6 +69,12 @@ public:
     /// Removes every group whose id starts with @a prefix. @returns the
     /// number of groups removed.
     int removeCompositeGroupsByPrefix(const std::string& prefix);
+    /// Enumerates the group ids whose key matches @a prefix — the caller
+    /// needs the IDS for a FULL teardown (group actor out of the renderer
+    /// + record destroy); a record-only delete leaves the actor rendering
+    /// as an uncontrollable ghost population.
+    std::vector<std::string> groupIdsWithPrefix(
+            const std::string& prefix) const;
     /// Drops the group and every leaf referencing it.
     void destroyGroup(const std::string& groupId);
     vtkActor* groupActor(const std::string& groupId) const;
@@ -131,6 +137,12 @@ public:
     bool hasLeafWorldAnchor(const std::string& leafId) const;
 
     // ---- per-leaf display control (no-ops for unknown leaves) ----
+    /** Change-detecting variant: returns false (and does NOT touch the
+     *  attribute map) when the leaf already carries exactly this visibility
+     *  — the steady redraw pass then stops churning the mapper/attributes
+     *  and the geometry-bounds dirty flag, which re-triggered full bound
+     *  recomputes on every pass for unchanged state. */
+    bool setLeafVisibilityIfChanged(const std::string& leafId, bool visible);
     void setLeafVisibility(const std::string& leafId, bool visible);
     void setLeafOpacity(const std::string& leafId, double opacity);
     /// Overrides the leaf color; pass @a color == nullptr to clear the

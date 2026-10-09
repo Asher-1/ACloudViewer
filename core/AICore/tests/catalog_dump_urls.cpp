@@ -18,6 +18,7 @@
 #include "aicore/gkd_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
+#include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/ocr_capi.h"
 #include "aicore/rfdetr_capi.h"
@@ -177,6 +178,13 @@ void emitRuntimeCatalogs() {
         if (e)
             emitAsset("lingbot", "lingbot_models", e->filename, e->download_url,
                       static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_map_anything_model_count(); ++i) {
+        const aicore_map_anything_model_entry* e =
+                aicore_map_anything_model_at(i);
+        if (e)
+            emitAsset("map_anything", "map_anything_models", e->filename,
+                      e->download_url, static_cast<long long>(e->size_bytes));
     }
 }
 

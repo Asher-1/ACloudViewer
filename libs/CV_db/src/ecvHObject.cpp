@@ -1625,13 +1625,14 @@ void ccHObject::resetDrawSelfProbe() {
 
 void ccHObject::logDrawSelfProbe() {
     if (g_pN == 0) return;
-    if (!CVLog::diagnosticsEnabled()) {
+    const double total = g_pPre + g_pDrawEnt + g_pHideShowBlk + g_pNameBlk +
+                         g_pChildren + g_pTail;
+    // Silent unless ACV_DIAGNOSTICS=1: rate-limited stage attribution for
+    // slow passes, kept out of normal interactive IO.
+    if (!CVLog::diagnosticsEnabled() || total < 100.0) {
         resetDrawSelfProbe();
         return;
     }
-    const double total = g_pPre + g_pDrawEnt + g_pHideShowBlk + g_pNameBlk +
-                         g_pChildren + g_pTail;
-    if (total < 100.0) return;
     CVLog::Print(
             "[selfProbe] N=%d pre=%.1f drawEnt=%.1f(dmo=%.1f) "
             "hideShowBlk=%.1f nameBlk=%.1f(walk=%.1f on=%.1f off=%.1f) "
@@ -1945,8 +1946,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     SelfProbeScope tailProbe(g_pTail);
 
     // if the entity is currently selected, we draw its bounding-box
+    // HIERARCHY_OBJECT excluded: a folder has no own geometry, and its BB
+    // is a RECURSIVE bound over the whole subtree — recomputed on every
+    // redraw pass while selected (~284ms for a 286-camera folder), which
+    // made folder selection in the DBTree visibly stutter.
     if (m_selected && draw3D && drawInThisContext &&
-        !MACRO_EntityPicking(context) && context.currentLODLevel == 0) {
+        !isA(CV_TYPES::HIERARCHY_OBJECT) && !MACRO_EntityPicking(context) &&
+        context.currentLODLevel == 0) {
         // Check if BoundingBox should be shown
         const ecvGui::ParamStruct& params = ecvGui::Parameters();
         bool shouldShowBB = params.showBBOnSelected;
@@ -2161,8 +2167,15 @@ void ccHObject::hideObject_recursive(bool recursive) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
             if (sensor) {
                 sensor->hideShowDrawings(context);
-                continue;
             }
+            // NO continue: fall through to the generic engine dispatch below.
+            // hideShowDrawings() only pushes to context.display, which comes
+            // from mergeDisplay(nullptr, <disabled node>) — NULL for pure
+            // container folders (they never get a display binding), so the
+            // push silently no-ops and camera frustums kept rendering after
+            // their folder was unchecked (point clouds hide, sensors don't:
+            // every other type reaches hideInAllViews' view-manager
+            // fallback). The extra dispatch is idempotent.
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH) {
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {

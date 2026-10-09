@@ -1,13 +1,17 @@
-// SPDX-License-Identifier: BSD-3-Clause
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "geometry/essential_matrix.h"
-#include "util/eigen_alignment.h"
-
+#include <Eigen/Core>
 #include <vector>
 
-#include <Eigen/Core>
+#include "geometry/essential_matrix.h"
+#include "util/eigen_alignment.h"
 
 namespace colmap {
 
@@ -19,31 +23,33 @@ namespace colmap {
 //    IEEE-T-PAMI, 26(6), 2004.
 //    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.86.8769
 class EssentialMatrixFivePointEstimator {
- public:
-  using X_t = Eigen::Vector3d;
-  using Y_t = Eigen::Vector3d;
-  using M_t = Eigen::Matrix3d;
+public:
+    using X_t = Eigen::Vector3d;
+    using Y_t = Eigen::Vector3d;
+    using M_t = Eigen::Matrix3d;
 
-  // The minimum number of samples needed to estimate a model.
-  static const int kMinNumSamples = 5;
+    // The minimum number of samples needed to estimate a model.
+    static const int kMinNumSamples = 5;
 
-  // Estimate up to 10 possible essential matrix solutions from a set of
-  // corresponding camera rays.
-  //
-  //  The number of corresponding rays must be at least 5.
-  //
-  // @param cam_rays1  First set of corresponding rays.
-  // @param cam_rays2  Second set of corresponding rays.
-  //
-  // @return           Up to 10 solutions as a vector of 3x3 essential matrices.
-  static void Estimate(const std::vector<X_t>& cam_rays1,
-                       const std::vector<Y_t>& cam_rays2,
-                       std::vector<M_t>* models);
+    // Estimate up to 10 possible essential matrix solutions from a set of
+    // corresponding camera rays.
+    //
+    //  The number of corresponding rays must be at least 5.
+    //
+    // @param cam_rays1  First set of corresponding rays.
+    // @param cam_rays2  Second set of corresponding rays.
+    //
+    // @return           Up to 10 solutions as a vector of 3x3 essential
+    // matrices.
+    static void Estimate(const std::vector<X_t>& cam_rays1,
+                         const std::vector<Y_t>& cam_rays2,
+                         std::vector<M_t>* models);
 
-  // NOTE: This minimal solver no longer provides a Residuals() method. Inlier
-  // scoring for essential matrices is done in pixel units by
-  // EssentialMatrixTangentSampsonEstimator. The former Sampson-on-unit-bearings
-  // Residuals (ComputeSquaredSampsonErrorWithCheirality) has been retired.
+    // NOTE: This minimal solver no longer provides a Residuals() method. Inlier
+    // scoring for essential matrices is done in pixel units by
+    // EssentialMatrixTangentSampsonEstimator. The former
+    // Sampson-on-unit-bearings Residuals
+    // (ComputeSquaredSampsonErrorWithCheirality) has been retired.
 };
 
 // Essential matrix estimator from corresponding normalized camera ray pairs.
@@ -52,26 +58,27 @@ class EssentialMatrixFivePointEstimator {
 //
 //    Hartley and Zisserman, Multiple View Geometry, algorithm 11.1, page 282.
 class EssentialMatrixEightPointEstimator {
- public:
-  using X_t = Eigen::Vector3d;
-  using Y_t = Eigen::Vector3d;
-  using M_t = Eigen::Matrix3d;
+public:
+    using X_t = Eigen::Vector3d;
+    using Y_t = Eigen::Vector3d;
+    using M_t = Eigen::Matrix3d;
 
-  // The minimum number of samples needed to estimate a model.
-  static const int kMinNumSamples = 8;
+    // The minimum number of samples needed to estimate a model.
+    static const int kMinNumSamples = 8;
 
-  // Estimate essential matrix solutions from set of corresponding camera rays.
+    // Estimate essential matrix solutions from set of corresponding camera
+    // rays.
 
-  //
-  // The number of corresponding rays must be at least 8.
-  //
-  // @param cam_rays1  First set of corresponding rays.
-  // @param cam_rays2  Second set of corresponding rays.
-  static void Estimate(const std::vector<X_t>& cam_rays1,
-                       const std::vector<Y_t>& cam_rays2,
-                       std::vector<M_t>* models);
+    //
+    // The number of corresponding rays must be at least 8.
+    //
+    // @param cam_rays1  First set of corresponding rays.
+    // @param cam_rays2  Second set of corresponding rays.
+    static void Estimate(const std::vector<X_t>& cam_rays1,
+                         const std::vector<Y_t>& cam_rays2,
+                         std::vector<M_t>* models);
 
-  // NOTE: Residuals() retired. See EssentialMatrixFivePointEstimator above.
+    // NOTE: Residuals() retired. See EssentialMatrixFivePointEstimator above.
 };
 
 // Essential matrix estimator scoring correspondences by the tangent Sampson
@@ -83,37 +90,37 @@ class EssentialMatrixEightPointEstimator {
 // the plain pixel threshold and needs no per-camera conversion via
 // Camera::CamFromImgThreshold. See ComputeSquaredTangentSampsonError.
 class EssentialMatrixTangentSampsonEstimator {
- public:
-  using X_t = CamRayWithJac;
-  using Y_t = CamRayWithJac;
-  using M_t = Eigen::Matrix3d;
+public:
+    using X_t = CamRayWithJac;
+    using Y_t = CamRayWithJac;
+    using M_t = Eigen::Matrix3d;
 
-  // The minimum number of samples needed to estimate a model.
-  static const int kMinNumSamples = 5;
+    // The minimum number of samples needed to estimate a model.
+    static const int kMinNumSamples = 5;
 
-  // Estimate up to 10 possible essential matrix solutions from a set of
-  // corresponding camera rays. The Jacobians are ignored here. They only
-  // affect scoring.
-  static void Estimate(const std::vector<X_t>& cam_rays1_with_jac,
+    // Estimate up to 10 possible essential matrix solutions from a set of
+    // corresponding camera rays. The Jacobians are ignored here. They only
+    // affect scoring.
+    static void Estimate(const std::vector<X_t>& cam_rays1_with_jac,
+                         const std::vector<Y_t>& cam_rays2_with_jac,
+                         std::vector<M_t>* models);
+
+    // Refine E in place by nonlinearly minimizing the pixel-unit tangent
+    // Sampson error over the given correspondences, starting from *E. This is
+    // the local optimizer used by LO-RANSAC (see SupportsRefineWithInitialModel
+    // in loransac.h). Returns false and leaves *E unchanged on a degenerate
+    // decomposition.
+    static bool Refine(const std::vector<X_t>& cam_rays1_with_jac,
                        const std::vector<Y_t>& cam_rays2_with_jac,
-                       std::vector<M_t>* models);
+                       M_t* E);
 
-  // Refine E in place by nonlinearly minimizing the pixel-unit tangent Sampson
-  // error over the given correspondences, starting from *E. This is the local
-  // optimizer used by LO-RANSAC (see SupportsRefineWithInitialModel in
-  // loransac.h). Returns false and leaves *E unchanged on a degenerate
-  // decomposition.
-  static bool Refine(const std::vector<X_t>& cam_rays1_with_jac,
-                     const std::vector<Y_t>& cam_rays2_with_jac,
-                     M_t* E);
-
-  // Calculate the residuals of a set of corresponding rays and a given
-  // essential matrix, as the squared tangent Sampson error in squared pixels,
-  // additionally enforcing the cheirality constraint.
-  static void Residuals(const std::vector<X_t>& cam_rays1_with_jac,
-                        const std::vector<Y_t>& cam_rays2_with_jac,
-                        const M_t& E,
-                        std::vector<double>* residuals);
+    // Calculate the residuals of a set of corresponding rays and a given
+    // essential matrix, as the squared tangent Sampson error in squared pixels,
+    // additionally enforcing the cheirality constraint.
+    static void Residuals(const std::vector<X_t>& cam_rays1_with_jac,
+                          const std::vector<Y_t>& cam_rays2_with_jac,
+                          const M_t& E,
+                          std::vector<double>* residuals);
 };
 
 }  // namespace colmap

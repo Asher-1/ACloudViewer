@@ -180,20 +180,16 @@ int RunImageFilterer(int argc, char** argv) {
 
   const size_t num_reg_images = reconstruction.NumRegImages();
 
-  reconstruction.FilterImages(min_focal_length_ratio, max_focal_length_ratio,
-                              max_extra_param);
-
-  std::vector<image_t> filtered_image_ids;
-  for (const auto& image : reconstruction.Images()) {
-    if (image.second.IsRegistered() &&
-        image.second.NumPoints3D() <
-                static_cast<size_t>(min_num_observations)) {
-      filtered_image_ids.push_back(image.first);
-    }
-  }
-
-  for (const auto image_id : filtered_image_ids) {
-    reconstruction.DeRegisterImage(image_id);
+  // Registration belongs to frames. In particular, models read from disk can
+  // have valid frame poses while the fork's legacy per-image flag is false.
+  const std::vector<frame_t> filtered_frame_ids =
+      ObservationManager(reconstruction)
+          .FindFramesToFilter(min_focal_length_ratio,
+                              max_focal_length_ratio,
+                              max_extra_param,
+                              min_num_observations);
+  for (const frame_t frame_id : filtered_frame_ids) {
+    reconstruction.DeRegisterFrame(frame_id);
   }
 
   const size_t num_filtered_images =
@@ -268,6 +264,9 @@ int RunImageRegistrator(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
+  Reconstruction reconstruction;
+  reconstruction.Read(input_path);
+
   PrintHeading1("Loading database");
 
   DatabaseCache database_cache;
@@ -282,6 +281,19 @@ int RunImageRegistrator(int argc, char** argv) {
     cache_options.ignore_watermarks = options.mapper->ignore_watermarks;
     cache_options.image_names = {options.mapper->image_names.begin(),
                                  options.mapper->image_names.end()};
+    // An explicit registration list selects images to add, not the complete
+    // existing model. The mapper also needs every already posed image because
+    // BeginReconstruction reloads the model against this cache.
+    if (!cache_options.image_names.empty()) {
+      for (const image_t image_id : reconstruction.RegImageIds()) {
+        cache_options.image_names.insert(
+            reconstruction.Image(image_id).Name());
+      }
+    }
+    // Registration may need an explicitly selected image with no remaining
+    // correspondence edge to an already posed image. Keep its keypoints in
+    // the cache, matching the upstream registrator's load contract.
+    cache_options.load_all_images = true;
     database_cache.Load(*database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
@@ -289,16 +301,16 @@ int RunImageRegistrator(int argc, char** argv) {
 
   std::cout << std::endl;
 
-  Reconstruction reconstruction;
-  reconstruction.Read(input_path);
-
   IncrementalMapper mapper(&database_cache);
   mapper.BeginReconstruction(&reconstruction);
 
   const auto mapper_options = options.mapper->Mapper();
 
   for (const auto& image : reconstruction.Images()) {
-    if (image.second.IsRegistered()) {
+    // Registration is a frame-pose fact. The legacy image flag can be stale
+    // after loading a fork model, so it must not schedule an already posed
+    // image for registration again.
+    if (image.second.HasPose()) {
       continue;
     }
 

@@ -1,9 +1,11 @@
-// SPDX-License-Identifier: BSD-3-Clause
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
-
-#include "calibration/single_view_calibrator.h"
-#include "util/threading.h"
 
 #include <filesystem>
 #include <functional>
@@ -11,13 +13,16 @@
 #include <string>
 #include <vector>
 
+#include "calibration/single_view_calibrator.h"
+#include "util/threading.h"
+
 namespace colmap {
 
 // Factory for the calibrator backend, injectable for testing. Defaults to
 // `SingleViewCalibrator::Create` when empty.
 using SingleViewCalibratorFactory =
-    std::function<std::unique_ptr<SingleViewCalibrator>(
-        const SingleViewCalibrationOptions& options)>;
+        std::function<std::unique_ptr<SingleViewCalibrator>(
+                const SingleViewCalibrationOptions& options)>;
 
 // Calibrate the selected images in the database with a learned single-view
 // calibrator and update the database cameras, replacing e.g. EXIF-based
@@ -29,10 +34,10 @@ using SingleViewCalibratorFactory =
 // failures are logged and either skip the affected image or fail the stage
 // without updating any camera.
 std::unique_ptr<Thread> CreateSingleViewCalibrationController(
-    const std::filesystem::path& database_path,
-    const std::filesystem::path& image_path,
-    const SingleViewCalibrationOptions& calibration_options,
-    const std::vector<std::string>& image_names = {},
-    SingleViewCalibratorFactory calibrator_factory = {});
+        const std::filesystem::path& database_path,
+        const std::filesystem::path& image_path,
+        const SingleViewCalibrationOptions& calibration_options,
+        const std::vector<std::string>& image_names = {},
+        SingleViewCalibratorFactory calibrator_factory = {});
 
 }  // namespace colmap

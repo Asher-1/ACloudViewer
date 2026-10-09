@@ -228,6 +228,13 @@ bool skyseg::load(const std::string &gguf_path, ggml_backend_t backend) {
         ggml_set_name(d, ggml_get_name(s));
     }
     p_->wbuf = ggml_backend_alloc_ctx_tensors(p_->dctx, backend);
+    // WEIGHTS usage tag: sched offload routing requires it (sam3d loader
+    // precedent); without it ops silently stay on the CPU secondary.
+    if (p_->wbuf) {
+        ggml_backend_buffer_set_usage(p_->wbuf,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
+
     if (!p_->wbuf) {
         error_ = "skyseg: failed to allocate weight buffer";
         return false;

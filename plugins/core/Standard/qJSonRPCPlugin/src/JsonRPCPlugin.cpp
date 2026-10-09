@@ -18,7 +18,15 @@
 #include <Neighbourhood.h>
 #include <ReferenceCloud.h>
 #include <ScalarFieldTools.h>
+#include <VtkVis.h>
+#include <cvHardwareSelector.h>
+#include <cvSelectionHighlighter.h>
+#include <cvSelectionPipeline.h>
+#include <cvSelectionToolController.h>
+#include <cvViewSelectionManager.h>
 #include <ecvColorScalesManager.h>
+#include <ecvDisplayCoordinates.h>
+#include <ecvDisplayTools.h>
 #include <ecvGenericGLDisplay.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvMainAppInterface.h>
@@ -28,6 +36,14 @@
 #include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
+#include <vtkActor.h>
+#include <vtkDataObject.h>
+#include <vtkGLView.h>
+#include <vtkIdTypeArray.h>
+#include <vtkInformation.h>
+#include <vtkProp.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
 
 #include <QApplication>
 #include <QDir>
@@ -40,7 +56,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMetaMethod>
+#include <QPointer>
 #include <QProcess>
+#include <QTimer>
 #include <QtGui>
 #include <algorithm>
 #include <cmath>
@@ -513,6 +531,8 @@ void JsonRPCPlugin::registerMethods() {
     // --- Generic UI drivers (agent-test integration; plugin-agnostic) ---
     reg("ui.triggerAction",  "Trigger a QAction by its text: {text}",
         [this](auto& p){ return rpcUiTriggerAction(p); });
+    reg("ui.listActions",    "List every triggerable QAction with text/objectName/enabled/checkable/shortcut",
+        [this](auto& p){ return rpcUiListActions(p); });
     reg("qt.invokeMethod",   "Qt-reflection invoke: {class_contains, method, ?args[0..3], ?object_contains} — the target method must be invokable (Q_INVOKABLE/slot) with QVariant parameters",
         [this](auto& p){ return rpcQtInvokeMethod(p); });
 
@@ -523,6 +543,15 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcViewSetOrientation(p); });
     reg("view.zoomFit",      "Zoom to fit: {?entity_id}",
         [this](auto& p){ return rpcViewZoomFit(p); });
+    // --- Pick-layer probes (agent-test integration): each call drives ONE
+    // layer of the real pick chain so a failing click can be attributed to
+    // event dispatch vs entity resolution vs octree point picking. ---
+    reg("view.pickEntity",  "Entity pick probe: {x, y} logical px -> pickObject/pickLeafViewId chain",
+        [this](auto& p){ return rpcViewPickEntity(p); });
+    reg("view.pickPoint",   "Point-pick probe: {x, y} logical px -> StartPicking(POINT_PICKING) octree chain",
+        [this](auto& p){ return rpcViewPickPoint(p); });
+    reg("view.selectRegion", "Selection-tools probe: {x1,y1,x2,y2} logical px (or single x,y point), field=points|cells -> cvViewSelectionManager hardware selection chain",
+        [this](auto& p){ return rpcViewSelectRegion(p); });
     reg("view.refresh",      "Force redraw",
         [this](auto& p){ return rpcViewRefresh(p); });
     reg("view.setPerspective","Perspective mode: {mode: object|viewer}",
@@ -655,7 +684,7 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcYoloTrack(p); });
     reg("sam3d.generate",    "Batch SAM 3D Objects image-to-3D (Gaussian PLY + optional FlexiCubes mesh, single model load): {images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}",
         [this](auto& p){ return rpcSam3dGenerate(p); });
-    reg("mapanything.reconstruct", "Multi-view metric 3D reconstruction (MapAnything family, single model load): {images[2..16], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?result_json, ?timeout_ms}",
+    reg("mapanything.reconstruct", "Multi-view metric 3D reconstruction (MapAnything family, single model load): {images[2..64], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?result_json, ?timeout_ms}",
         [this](auto& p){ return rpcMapAnythingReconstruct(p); });
     reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
         [this](auto& p){ return rpcProcessCsf(p); });
@@ -842,6 +871,17 @@ void JsonRPCPlugin::logResponse(const QString& method,
 
 JsonRPCResult JsonRPCPlugin::execute(QString method,
                                      QMap<QString, QVariant> params) {
+    // Dispatch-entry stamp: pairs with the handler-internal [rpcTiming]
+    // prints to split queueing from handler work (interaction-latency
+    // forensics).
+    const qint64 dispatchMs = QDateTime::currentMSecsSinceEpoch();
+    if (method == QStringLiteral("scene.select") ||
+        method == QStringLiteral("scene.setVisible")) {
+        CVLog::Print(QStringLiteral("[rpcDispatch] %1 @ %2")
+                             .arg(method)
+                             .arg(dispatchMs));
+    }
+
     logRequest(method, params);
     QElapsedTimer timer;
     timer.start();
@@ -1137,7 +1177,20 @@ JsonRPCResult JsonRPCPlugin::rpcSceneSetVisible(
                 D("entity_id", static_cast<qint64>(entityId)));
     }
     entity->setEnabled(visible);
-    redraw();
+    const qint64 t0 = QDateTime::currentMSecsSinceEpoch();
+    {
+        // Visibility is a STATE change: the pushes above already landed and
+        // the plain redraw pass re-evaluates draw gates. A FORCED pass here
+        // re-converted every entity's geometry (~250ms for 286 cameras) for
+        // zero fidelity gain.
+        ecvRedrawScope scope(false, false);
+    }
+    const qint64 t1 = QDateTime::currentMSecsSinceEpoch();
+    {
+        CVLog::Print(QStringLiteral("[rpcTiming] scene.setVisible: "
+                                    "setEnabled=0ms redraw=%1ms")
+                             .arg(t1 - t0));
+    }
     QJsonObject result;
     result["entity_id"] = static_cast<qint64>(entityId);
     result["visible"] = visible;
@@ -1194,6 +1247,45 @@ QList<QObject*> collectAllObjects() {
 }
 
 }  // namespace
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ui.listActions — enumerate every triggerable QAction so an agent can
+// discover the full plugin/menu surface without guessing texts.
+// ═══════════════════════════════════════════════════════════════════════════
+JsonRPCResult JsonRPCPlugin::rpcUiListActions(
+        const QMap<QString, QVariant>& params) {
+    Q_UNUSED(params);
+    if (!m_app) {
+        return JsonRPCResult::error(2, "App interface unavailable");
+    }
+    QJsonArray actions;
+    QSet<QObject*> seen;
+    const auto objects = collectAllObjects();
+    for (QObject* obj : objects) {
+        auto* action = qobject_cast<QAction*>(obj);
+        if (!action || action->text().isEmpty() || seen.contains(action))
+            continue;
+        seen.insert(action);
+        QJsonObject o;
+        o["text"] = action->text();
+        if (!action->objectName().isEmpty())
+            o["objectName"] = action->objectName();
+        o["enabled"] = action->isEnabled();
+        o["checkable"] = action->isCheckable();
+        if (action->isCheckable()) o["checked"] = action->isChecked();
+        if (!action->shortcut().isEmpty())
+            o["shortcut"] = action->shortcut().toString();
+        if (auto* parentWidget = qobject_cast<QWidget*>(action->parent()))
+            o["container"] = parentWidget->objectName().isEmpty()
+                                     ? parentWidget->metaObject()->className()
+                                     : parentWidget->objectName();
+        actions.append(o);
+    }
+    QJsonObject result;
+    result["count"] = static_cast<qint64>(actions.size());
+    result["actions"] = actions;
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
 
 JsonRPCResult JsonRPCPlugin::rpcUiTriggerAction(
         const QMap<QString, QVariant>& params) {
@@ -1416,6 +1508,7 @@ JsonRPCResult JsonRPCPlugin::rpcSceneSelect(
         const QMap<QString, QVariant>& params) {
     QList<QVariant> ids = params["entity_ids"].toList();
     QJsonArray selected;
+    const qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     for (const auto& v : ids) {
         unsigned id = v.toUInt();
         ccHObject* entity = findEntity(id);
@@ -1424,7 +1517,15 @@ JsonRPCResult JsonRPCPlugin::rpcSceneSelect(
             selected.append(static_cast<qint64>(id));
         }
     }
+    const qint64 t1 = QDateTime::currentMSecsSinceEpoch();
     m_app->updateUI();
+    const qint64 t2 = QDateTime::currentMSecsSinceEpoch();
+    {
+        CVLog::Print(QStringLiteral("[rpcTiming] scene.select: dbSelect=%1ms "
+                                    "updateUI=%2ms")
+                             .arg(t1 - t0)
+                             .arg(t2 - t1));
+    }
     QJsonObject result;
     result["selected"] = selected;
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
@@ -1511,9 +1612,245 @@ JsonRPCResult JsonRPCPlugin::rpcViewZoomFit(
 // view.refresh
 // ═══════════════════════════════════════════════════════════════════════════
 
+JsonRPCResult JsonRPCPlugin::rpcViewPickEntity(
+        const QMap<QString, QVariant>& params) {
+    const double x = params.value("x", -1.0).toDouble();
+    const double y = params.value("y", -1.0).toDouble();
+    ecvGenericGLDisplay* view = m_app ? m_app->getActiveGLDisplay() : nullptr;
+    if (!view) return JsonRPCResult::error(1, "no active view");
+    const QString viewID = view->pickObject(x, y);
+    QJsonObject result;
+    result["viewId"] = viewID;
+    bool ok = false;
+    const unsigned uid = viewID.toUInt(&ok);
+    if (ok && m_app && m_app->dbRootObject()) {
+        if (ccHObject* ent = m_app->dbRootObject()->find(uid)) {
+            result["entity_id"] = static_cast<qint64>(uid);
+            result["name"] = ent->getName();
+        }
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcViewPickPoint(
+        const QMap<QString, QVariant>& params) {
+    const int x = params.value("x", -1).toInt();
+    const int y = params.value("y", -1).toInt();
+    ecvDisplayTools* dt = ecvViewManager::instance().displayTools();
+    if (!dt) return JsonRPCResult::error(1, "no display tools");
+
+    ccHObject* picked = nullptr;
+    unsigned sub = 0;
+    CCVector3 P(0, 0, 0);
+    bool got = false;
+    QMetaObject::Connection conn = connect(
+            dt, &ecvDisplayTools::itemPicked, this,
+            [&](ccHObject* e, unsigned s, int, int, const CCVector3& p) {
+                got = true;
+                picked = e;
+                sub = s;
+                P = p;
+            },
+            Qt::DirectConnection);
+
+    ecvDisplayTools::PickingParameters pp(ecvGenericGLDisplay::POINT_PICKING, x,
+                                          y, 5, 5);
+    ecvDisplayTools::StartPicking(pp);
+    disconnect(conn);
+
+    QJsonObject result;
+    result["hit"] = got;
+    if (got && picked) {
+        result["entity_id"] = static_cast<qint64>(picked->getUniqueID());
+        result["name"] = picked->getName();
+        result["point_index"] = static_cast<qint64>(sub);
+        QJsonArray pt;
+        pt.append(static_cast<double>(P.x));
+        pt.append(static_cast<double>(P.y));
+        pt.append(static_cast<double>(P.z));
+        result["point"] = pt;
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
 JsonRPCResult JsonRPCPlugin::rpcViewRefresh(const QMap<QString, QVariant>&) {
     redraw();
     return JsonRPCResult::success(0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// view.selectRegion — Selection-tools hardware-selection probe (agent-test
+// integration). Drives the REAL cvViewSelectionManager chain the ParaView-
+// style selection tools use, so a failing tool click can be attributed to
+// hardware selection vs composite-block conversion vs highlight overlay.
+// Params: {x1,y1,x2,y2} Qt-logical px (top-left origin) or a single {x,y}
+// point pick; field: "points" (default) | "cells".
+// ═══════════════════════════════════════════════════════════════════════════
+JsonRPCResult JsonRPCPlugin::rpcViewSelectRegion(
+        const QMap<QString, QVariant>& params) {
+    const int x1 = params.value("x1", params.value("x", -1)).toInt();
+    const int y1 = params.value("y1", params.value("y", -1)).toInt();
+    const int x2 = params.value("x2", x1).toInt();
+    const int y2 = params.value("y2", y1).toInt();
+    const bool wantCells =
+            params.value("field", "points").toString() == "cells";
+
+    ecvGenericGLDisplay* view = m_app ? m_app->getActiveGLDisplay() : nullptr;
+    if (!view) return JsonRPCResult::error(1, "no active view");
+    QWidget* widget = view->asWidget();
+    if (!widget) return JsonRPCResult::error(1, "no view widget");
+
+    // Logical top-left Qt px -> VTK bottom-left PHYSICAL px. The hardware
+    // selector samples the GL framebuffer, whose size is the viewport widget
+    // size x DPR (this 4K env measures DPR ~1.43, offscreen render
+    // 3282x1752): feeding logical values made every probe coordinate land
+    // at ~0.7x of the intended position (fitted via selection_region_fit.py).
+    const qreal dpr = ecvDisplayCoordinates::dprOf(widget);
+    const int Hp = static_cast<int>(widget->height() * dpr);
+    int region[4] = {
+            static_cast<int>(x1 * dpr), Hp - 1 - static_cast<int>(y2 * dpr),
+            static_cast<int>(x2 * dpr), Hp - 1 - static_cast<int>(y1 * dpr)};
+
+    cvViewSelectionManager* mgr = cvViewSelectionManager::instance();
+    if (!mgr) return JsonRPCResult::error(1, "no selection manager");
+    // Bind to the ACTIVE VIEW's VtkVis (the renderer that actually paints).
+    // ecvDisplayTools::getVisualizer3D() returns the display-tools singleton's
+    // own VtkVis, whose renderer is NOT the viewport's — binding that made
+    // every hardware selection silently miss, even on dedicated actors.
+    // MainWindow's rebindToolsToActiveView() does the same for the GUI path.
+    if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
+        if (auto* vis = glView->getVisualizer3D()) {
+            mgr->setVisualizer(vis);
+        }
+    }
+
+    const cvSelectionPipeline::SelectionType type =
+            wantCells ? cvSelectionPipeline::SelectionType::SURFACE_CELLS
+                      : cvSelectionPipeline::SelectionType::SURFACE_POINTS;
+    // NOTE: cvGenericSelectionTool::getSelectionPipeline() is unusable here —
+    // it forwards to m_manager which is never set on the manager itself
+    // (the manager IS the pipeline owner). Use its own accessor.
+    cvSelectionPipeline* pipeline = mgr->getPipeline();
+    if (!pipeline) return JsonRPCResult::error(1, "no selection pipeline");
+    cvSelectionData sel;
+    QJsonArray pipelineNodeDetails;
+    if (vtkSmartPointer<vtkSelection> vtkSel =
+                pipeline->executeRectangleSelection(region, type)) {
+        sel = cvSelectionPipeline::convertToCvSelectionData(
+                vtkSel,
+                wantCells ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
+                          : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS);
+        // Dump the PIPELINE's own selection nodes for comparison with the
+        // raw pass above — any field that differs is what the converter
+        // filters on.
+        QJsonArray pnodes;
+        const unsigned pn = std::min<unsigned>(vtkSel->GetNumberOfNodes(), 6);
+        for (unsigned ni = 0; ni < pn; ++ni) {
+            vtkSelectionNode* node = vtkSel->GetNode(ni);
+            if (!node) continue;
+            QJsonObject o;
+            vtkInformation* props = node->GetProperties();
+            o["fieldType"] = node->GetFieldType();
+            o["hasProp"] = props && props->Has(vtkSelectionNode::PROP());
+            if (props && props->Has(vtkSelectionNode::PROP())) {
+                vtkActor* a = vtkActor::SafeDownCast(vtkProp::SafeDownCast(
+                        props->Get(vtkSelectionNode::PROP())));
+                o["propIsActor"] = (a != nullptr);
+            }
+            o["hasCompositeIndex"] =
+                    props && props->Has(vtkSelectionNode::COMPOSITE_INDEX());
+            if (o["hasCompositeIndex"].toBool()) {
+                o["compositeIndex"] = static_cast<qint64>(
+                        props->Get(vtkSelectionNode::COMPOSITE_INDEX()));
+            }
+            vtkIdTypeArray* lst =
+                    vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+            o["listSize"] = lst ? static_cast<qint64>(lst->GetNumberOfTuples())
+                                : static_cast<qint64>(-1);
+            pnodes.append(o);
+        }
+        pipelineNodeDetails = pnodes;
+    }
+    QJsonObject result;
+    result["pipelineNodes"] = pipelineNodeDetails;
+    // Layer-1 probe: raw hardware selection straight against the active
+    // view's renderer, bypassing the pipeline. rawNodes>0 with count==0
+    // means the break is in the conversion; rawNodes==0 means the GL
+    // selection pass itself sees nothing.
+    if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
+        if (auto* vis = glView->getVisualizer3D()) {
+            if (vtkRenderer* ren = vis->getCurrentRenderer()) {
+                cvHardwareSelector* raw = cvHardwareSelector::New();
+                raw->SetRenderer(ren);
+                raw->SetFieldAssociation(
+                        wantCells ? vtkDataObject::FIELD_ASSOCIATION_CELLS
+                                  : vtkDataObject::FIELD_ASSOCIATION_POINTS);
+                int rawRegion[4] = {region[0], region[1], region[2], region[3]};
+                vtkSmartPointer<vtkSelection> rawSel;
+                rawSel.TakeReference(raw->Select(rawRegion));
+                result["rawNodes"] =
+                        rawSel ? static_cast<qint64>(rawSel->GetNumberOfNodes())
+                               : static_cast<qint64>(-1);
+                // Dump per-node properties: PROP type, field type, selection
+                // list size and COMPOSITE_INDEX — the exact fields
+                // convertToCvSelectionData filters on.
+                QJsonArray nodes;
+                if (rawSel) {
+                    const unsigned n =
+                            std::min<unsigned>(rawSel->GetNumberOfNodes(), 6);
+                    for (unsigned ni = 0; ni < n; ++ni) {
+                        vtkSelectionNode* node = rawSel->GetNode(ni);
+                        if (!node) continue;
+                        QJsonObject o;
+                        vtkInformation* props = node->GetProperties();
+                        o["fieldType"] = node->GetFieldType();
+                        o["hasProp"] =
+                                props && props->Has(vtkSelectionNode::PROP());
+                        if (props && props->Has(vtkSelectionNode::PROP())) {
+                            vtkProp* p = vtkProp::SafeDownCast(
+                                    props->Get(vtkSelectionNode::PROP()));
+                            vtkActor* a = vtkActor::SafeDownCast(p);
+                            vtkActor* mapperHost = a;
+                            o["propIsActor"] = (a != nullptr);
+                            o["propIsCompositeMapper"] =
+                                    (mapperHost && mapperHost->GetMapper() &&
+                                     mapperHost->GetMapper()->IsA(
+                                             "vtkCompositePolyDataMapper2"));
+                        }
+                        o["hasCompositeIndex"] =
+                                props &&
+                                props->Has(vtkSelectionNode::COMPOSITE_INDEX());
+                        if (o["hasCompositeIndex"].toBool()) {
+                            o["compositeIndex"] = static_cast<
+                                    qint64>(props->Get(
+                                    vtkSelectionNode::COMPOSITE_INDEX()));
+                        }
+                        vtkIdTypeArray* lst = vtkIdTypeArray::SafeDownCast(
+                                node->GetSelectionList());
+                        o["listSize"] = lst ? static_cast<qint64>(
+                                                      lst->GetNumberOfTuples())
+                                            : static_cast<qint64>(-1);
+                        nodes.append(o);
+                    }
+                }
+                result["rawNodeDetails"] = nodes;
+                raw->Delete();
+            }
+        }
+    }
+    result["count"] = static_cast<qint64>(sel.count());
+    result["actorCount"] = static_cast<qint64>(sel.actorCount());
+    result["field"] = wantCells ? "cells" : "points";
+    QJsonArray infos;
+    for (const auto& info : sel.actorInfos()) {
+        QJsonObject o;
+        o["blockIndex"] = static_cast<qint64>(info.blockIndex);
+        o["ids"] = static_cast<qint64>(info.selectedIds.size());
+        o["hasPolyData"] = (info.polyData != nullptr);
+        infos.append(o);
+    }
+    result["actors"] = infos;
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -4036,10 +4373,17 @@ JsonRPCResult JsonRPCPlugin::rpcMapAnythingReconstruct(
     argList << "OUT_DIR" << outputDir;
 
     const QHash<QString, QString> optionKeys = {
-            {"model", "MODEL"},           {"device", "DEVICE"},
-            {"image_size", "IMAGE_SIZE"}, {"resize_mode", "RESIZE_MODE"},
-            {"min_conf", "MIN_CONF"},     {"threads", "THREADS"},
+            {"model", "MODEL"},
+            {"device", "DEVICE"},
+            {"image_size", "IMAGE_SIZE"},
+            {"resize_mode", "RESIZE_MODE"},
+            {"min_conf", "MIN_CONF"},
+            {"threads", "THREADS"},
             {"cloud_ply", "CLOUD_PLY"},
+            {"per_view", "PER_VIEW"},
+            {"raw_output_dir", "RAW_OUTPUT_DIR"},
+            {"stage_dump_dir", "STAGE_DUMP_DIR"},
+            {"gt_meta", "GT_META"},
     };
     for (auto it = optionKeys.constBegin(); it != optionKeys.constEnd(); ++it) {
         const QString value = params.value(it.key()).toString().trimmed();

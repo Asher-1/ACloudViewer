@@ -296,6 +296,28 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
     cloudViewer_set_targets_independent(${TARGET_NAME})
 
+    # The standalone COLMAP-compatible executable is also the L3 candidate.
+    # Its build-tree dependencies live outside the executable directory, so
+    # record their directories instead of requiring a caller-specific shell
+    # environment. Windows resolves deployed DLLs beside the executable and
+    # therefore intentionally does not receive Unix RPATH properties here.
+    if (UNIX)
+        set(_COLMAP_EXECUTABLE_BUILD_RPATH
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${CMAKE_BINARY_DIR}/external/lib")
+        cloudviewer_resolve_qt_lib_dir(_COLMAP_EXECUTABLE_QT_LIB_DIR)
+        if (_COLMAP_EXECUTABLE_QT_LIB_DIR)
+            string(APPEND _COLMAP_EXECUTABLE_BUILD_RPATH
+                   ":${_COLMAP_EXECUTABLE_QT_LIB_DIR}")
+        endif ()
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            BUILD_RPATH "${_COLMAP_EXECUTABLE_BUILD_RPATH}")
+        if (NOT APPLE)
+            # Linux RUNPATH does not apply to indirect dependencies such as
+            # OpenImageIO loaded through the static Reconstruction archive.
+            target_link_options(${TARGET_NAME} PRIVATE "-Wl,--disable-new-dtags")
+        endif ()
+    endif ()
+
     if (MSVC)
         # fix compiling error on windows platform
         target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")

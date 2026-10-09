@@ -5,13 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "tasks/facedetect/directconv.hpp"
+#include "common/blocked_conv.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -48,7 +50,8 @@
     __attribute__((target("avx512f,avx512bw,avx512vl")))
 #endif
 
-namespace fd {
+namespace aicore {
+namespace blk {
 namespace {
 
 // A/B knob for the stride>1 register-tiled flat downsample path. Default ON;
@@ -97,14 +100,18 @@ constexpr int OWB2 = FD_DCONV_OWB2;
 // ------------------------------------------------------------------------
 struct DConvState {
     int W = 0, H = 0, IC = 0, OC = 0, N = 0, pad = 0;
-    int stride = 1;  // spatial stride (1 or 2); used by the blocked path
-    int kind = 0;    // 0 = 3x3, 1 = 1x1 (blocked downsample)
-    int lane = 16;   // OC block width
-    int OCB = 0;     // OC / lane
+    int stride =
+            1;  // spatial stride along W (1 or 2); used by the blocked path
+    int stride1 = 1;  // spatial stride along H (depthwise kind; mirrors stride
+                      // otherwise)
+    int kind = 0;   // 0 = 3x3, 1 = 1x1 (blocked downsample), 2 = depthwise 3x3
+    int lane = 16;  // OC block width
+    int OCB = 0;    // OC / lane
     const void* wdata = nullptr;
     bool has_bias = false;     // fused bias add (bias is src[2])
     bool do_relu = false;      // fused ReLU after bias
-    std::vector<float> Wpack;  // 3x3: [OCB*KH*KW*IC*lane]; 1x1: [OCB*IC*lane]
+    std::vector<float> Wpack;  // 3x3: [OCB*KH*KW*IC*lane]; 1x1: [OCB*IC*lane];
+                               // dw: [OCB*KH*KW*lane]
     std::vector<float> Bpack;  // [OCB*lane] bias broadcast pack (if has_bias)
     std::once_flag once;
 };
@@ -1726,13 +1733,207 @@ static void badd_relu_compute(ggml_tensor* dst, int ith, int nth, void*) {
     }
 }
 
+// Depthwise 3x3 weight pack [OCB][KH][KW][lane]: the ggml depthwise kernel
+// ne = [kw, kh, 1, C] carries one per-channel kernel; channel c = cb*lane+l
+// reads w[((c*1 + 0)*kh + ky)*kw + kx] from the (kw,kh,1,C) layout:
+// w[(c*kh + ky)*kw + kx]. dst[((cb*3 + ky)*3 + kx)*lane + l].
+static void build_pack_dw(DConvState* st, const float* w) {
+    const int OC = st->OC, lane = st->lane, OCB = st->OCB;
+    st->Wpack.assign((size_t)OCB * 9 * lane, 0.0f);
+    for (int ocb = 0; ocb < OCB; ++ocb)
+        for (int ky = 0; ky < 3; ++ky)
+            for (int kx = 0; kx < 3; ++kx) {
+                float* dst = st->Wpack.data() +
+                             (((size_t)ocb * 3 + ky) * 3 + kx) * lane;
+                for (int l = 0; l < lane; ++l) {
+                    const int c = ocb * lane + l;
+                    dst[l] = (c < OC) ? w[((size_t)c * 3 + ky) * 3 + kx] : 0.0f;
+                }
+            }
+}
+
+// ========================================================================
+// Depthwise blocked compute: channel c (lane l of block cb) is convolved by
+// its own 3x3 kernel. Per (cb,ky,kx) the weight is ONE lane vector loaded
+// once and reused across the whole output row (lane-wise FMA against the
+// blocked input taps), so the kernel keeps the direct-conv cost structure
+// without any im2col. dst ne = [16,Wout,Hout,OCB].
+static void bdw_compute(ggml_tensor* dst, int ith, int nth, void* userdata) {
+    DConvState* st = (DConvState*)userdata;
+    const ggml_tensor* xt = dst->src[0];
+    const ggml_tensor* wt = dst->src[1];
+    const float* xb = (const float*)xt->data;
+    float* y = (float*)dst->data;
+    std::call_once(st->once, [&] {
+        build_pack_dw(st, (const float*)wt->data);
+        if (st->has_bias) build_pack_bias(st, (const float*)dst->src[2]->data);
+    });
+
+    const int W = st->W, H = st->H;
+    const int s0 = st->stride, s1 = st->stride1;
+    const int pad = st->pad, lane = st->lane, OCB = st->OCB;
+    const int Wout = (int)dst->ne[1], Hout = (int)dst->ne[2];
+    const float* Wpack = st->Wpack.data();
+    const float* Bpack = st->has_bias ? st->Bpack.data() : nullptr;
+    const int64_t total = (int64_t)OCB * Hout;
+    const int64_t beg = total * ith / nth, end = total * (ith + 1) / nth;
+    for (int64_t idx = beg; idx < end; ++idx) {
+        const int ocb = (int)(idx / Hout);
+        const int oh = (int)(idx % Hout);
+        float* orow = y + (((size_t)ocb * Hout + oh) * Wout) * lane;
+        const float* bvec = Bpack ? Bpack + (size_t)ocb * lane : nullptr;
+        for (int ow = 0; ow < Wout; ++ow) {
+            float acc[16];
+            for (int l = 0; l < lane; ++l) acc[l] = bvec ? bvec[l] : 0.0f;
+            for (int ky = 0; ky < 3; ++ky) {
+                const int iy = oh * s1 + ky - pad;
+                if (iy < 0 || iy >= H) continue;
+                for (int kx = 0; kx < 3; ++kx) {
+                    const int ix = ow * s0 + kx - pad;
+                    if (ix < 0 || ix >= W) continue;
+                    const float* xv =
+                            xb + (((size_t)ocb * H + iy) * W + ix) * lane;
+                    const float* wv =
+                            Wpack + (((size_t)ocb * 3 + ky) * 3 + kx) * lane;
+#if defined(FD_DCONV_HAVE_AVX512)
+                    if (lane == 16) {
+                        __m512 a = _mm512_loadu_ps(xv);
+                        __m512 w = _mm512_loadu_ps(wv);
+                        _mm512_storeu_ps(
+                                acc,
+                                _mm512_fmadd_ps(a, w, _mm512_loadu_ps(acc)));
+                        continue;
+                    }
+#endif
+                    for (int l = 0; l < lane; ++l) acc[l] += xv[l] * wv[l];
+                }
+            }
+            float* o = orow + (size_t)ow * lane;
+            for (int l = 0; l < lane; ++l) o[l] = acc[l];
+        }
+    }
+}
+
+// ---- blocked whole-buffer OCR activations ----------------------------------
+// hard_swish: y = x * clip(x + 3, 0, 6) / 6 (the PP-OCR graph's scale=6,
+// offset=3 form; the stock path builds a 6-node chain for it).
+static void bhswish_compute(ggml_tensor* dst, int ith, int nth, void*) {
+    const float* x = (const float*)dst->src[0]->data;
+    float* y = (float*)dst->data;
+    const int64_t n = ggml_nelements(dst);
+    const int64_t beg = n * ith / nth, end = n * (ith + 1) / nth;
+    for (int64_t i = beg; i < end; ++i) {
+        const float v = x[i];
+        float t = v + 3.0f;
+        t = t < 0.0f ? 0.0f : (t > 6.0f ? 6.0f : t);
+        y[i] = v * t * (1.0f / 6.0f);
+    }
+}
+
+// hard_sigmoid: y = clip(slope*x + offset, 0, 1). slope/offset travel
+// through a stable interned param block (the LCNet/MobileNet SE heads use
+// 1/6 + 0.5); ggml_set_op_params is not a public symbol on this pin.
+struct BlkParams {
+    float a, b;
+};
+static const BlkParams* intern_params(float a, float b) {
+    // deque: stable element addresses across appends; builds may run
+    // concurrently, so guard the growth.
+    static std::deque<BlkParams> params;
+    static std::mutex mu;
+    std::lock_guard<std::mutex> lk(mu);
+    for (const auto& p : params)
+        if (p.a == a && p.b == b) return &p;
+    params.push_back({a, b});
+    return &params.back();
+}
+static void bhsigmoid_compute(ggml_tensor* dst,
+                              int ith,
+                              int nth,
+                              void* userdata) {
+    const BlkParams* p = (const BlkParams*)userdata;
+    const float* x = (const float*)dst->src[0]->data;
+    float* y = (float*)dst->data;
+    const int64_t n = ggml_nelements(dst);
+    const int64_t beg = n * ith / nth, end = n * (ith + 1) / nth;
+    for (int64_t i = beg; i < end; ++i) {
+        float v = x[i] * p->a + p->b;
+        y[i] = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+    }
+}
+
+// silu/swish(beta=1): y = x * sigmoid(x).
+static void bsilu_compute(ggml_tensor* dst, int ith, int nth, void*) {
+    const float* x = (const float*)dst->src[0]->data;
+    float* y = (float*)dst->data;
+    const int64_t n = ggml_nelements(dst);
+    const int64_t beg = n * ith / nth, end = n * (ith + 1) / nth;
+    for (int64_t i = beg; i < end; ++i) y[i] = x[i] / (1.0f + expf(-x[i]));
+}
+
+// SE excitation: y = x * v[c]. v is either a [C] vector (per-lane broadcast)
+// or an already-blocked [16,1,1,CB] tensor (the SE head output). Padding
+// lanes (c >= C) pass through; they are never read by the conv kernels and
+// are dropped by reorder_out, so garbage in pad lanes is harmless.
+static void bmul_channel_compute(ggml_tensor* dst, int ith, int nth, void*) {
+    const ggml_tensor* xt = dst->src[0];
+    const ggml_tensor* vt = dst->src[1];
+    const float* xb = (const float*)xt->data;
+    const float* v = (const float*)vt->data;
+    float* y = (float*)dst->data;
+    const int W = (int)dst->ne[1], H = (int)dst->ne[2], CB = (int)dst->ne[3];
+    const bool blockedV =
+            ggml_n_dims(vt) == 4 && vt->ne[0] == BLK && vt->ne[3] == CB;
+    const int C = (int)ggml_nelements(vt);
+    const size_t HW = (size_t)H * W;
+    const int64_t beg = (int64_t)CB * ith / nth,
+                  end = (int64_t)CB * (ith + 1) / nth;
+    for (int64_t cb = beg; cb < end; ++cb) {
+        for (size_t p = 0; p < HW; ++p) {
+            const float* in = xb + ((size_t)cb * HW + p) * BLK;
+            float* o = y + ((size_t)cb * HW + p) * BLK;
+            if (blockedV) {
+                const float* vb = v + (size_t)cb * BLK;
+                for (int l = 0; l < BLK; ++l) o[l] = in[l] * vb[l];
+            } else {
+                for (int l = 0; l < BLK; ++l) {
+                    const int c = (int)cb * BLK + l;
+                    o[l] = (c < C) ? in[l] * v[c] : in[l];
+                }
+            }
+        }
+    }
+}
+
+// SE squeeze: global average pool over W,H. dst = [16,1,1,CB].
+static void bgap_compute(ggml_tensor* dst, int ith, int nth, void*) {
+    const ggml_tensor* xt = dst->src[0];
+    const float* xb = (const float*)xt->data;
+    float* y = (float*)dst->data;
+    const int W = (int)xt->ne[1], H = (int)xt->ne[2], CB = (int)xt->ne[3];
+    const size_t HW = (size_t)H * W;
+    const float inv = 1.0f / (float)HW;
+    const int64_t beg = (int64_t)CB * ith / nth,
+                  end = (int64_t)CB * (ith + 1) / nth;
+    for (int64_t cb = beg; cb < end; ++cb) {
+        float acc[BLK];
+        for (int l = 0; l < BLK; ++l) acc[l] = 0.0f;
+        for (size_t p = 0; p < HW; ++p) {
+            const float* in = xb + (size_t)cb * HW * BLK + p * BLK;
+            for (int l = 0; l < BLK; ++l) acc[l] += in[l];
+        }
+        float* o = y + (size_t)cb * BLK;
+        for (int l = 0; l < BLK; ++l) o[l] = acc[l] * inv;
+    }
+}
+
 struct StateKey {
     const void* wdata;
-    int W, H, IC, OC, N, pad, stride, kind, flags;
+    int W, H, IC, OC, N, pad, stride, stride1, kind, flags;
     bool operator==(const StateKey& o) const {
         return wdata == o.wdata && W == o.W && H == o.H && IC == o.IC &&
                OC == o.OC && N == o.N && pad == o.pad && stride == o.stride &&
-               kind == o.kind && flags == o.flags;
+               stride1 == o.stride1 && kind == o.kind && flags == o.flags;
     }
 };
 struct StateKeyHash {
@@ -1746,6 +1947,7 @@ struct StateKeyHash {
         mix(k.N);
         mix(k.pad);
         mix(k.stride);
+        mix(k.stride1);
         mix(k.kind);
         mix(k.flags);
         return h;
@@ -1798,11 +2000,12 @@ static DConvState* get_state_blocked(ggml_tensor* w,
                                      int stride,
                                      int kind,
                                      bool has_bias,
-                                     bool do_relu) {
+                                     bool do_relu,
+                                     int stride1 = 1) {
     const int W = (int)xb->ne[1], H = (int)xb->ne[2];
     const int IC = (int)w->ne[2], OC = (int)w->ne[3], N = 1;
     const int flags = (has_bias ? 1 : 0) | (do_relu ? 2 : 0);
-    StateKey key{w->data, W, H, IC, OC, N, pad, stride, kind, flags};
+    StateKey key{w->data, W, H, IC, OC, N, pad, stride, stride1, kind, flags};
     std::lock_guard<std::mutex> lk(g_states_mtx);
     auto it = g_states.find(key);
     if (it != g_states.end()) return it->second;
@@ -1814,6 +2017,7 @@ static DConvState* get_state_blocked(ggml_tensor* w,
     st->N = N;
     st->pad = pad;
     st->stride = stride;
+    st->stride1 = stride1;
     st->kind = kind;
     st->has_bias = has_bias;
     st->do_relu = do_relu;
@@ -1842,7 +2046,7 @@ ggml_tensor* directconv_conv3x3(ggml_context* ctx,
 
 // ---- blocked-island public ops --------------------------------------------
 
-bool directconv_blocked_available() {
+bool blocked_available() {
 #if defined(FD_DCONV_HAVE_AVX512)
     return dconv_use_avx512();  // the blocked island only has a zmm fast path;
 #else
@@ -1954,4 +2158,70 @@ ggml_tensor* blocked_prelu(ggml_context* ctx,
                           nullptr);
 }
 
-}  // namespace fd
+// ---- OCR island ops ---------------------------------------------------------
+
+ggml_tensor* blocked_conv3x3_dw(ggml_context* ctx,
+                                ggml_tensor* w,
+                                ggml_tensor* xb,
+                                int pad,
+                                int stride0,
+                                int stride1,
+                                ggml_tensor* bias) {
+    // Depthwise weight: ggml ne = [kw, kh, 1, C]; the "output channels" are
+    // the per-channel kernels themselves (ne[3]).
+    const int W = (int)xb->ne[1], H = (int)xb->ne[2];
+    const int C = (int)w->ne[3];
+    const int Wout = (W + 2 * pad - 3) / stride0 + 1;
+    const int Hout = (H + 2 * pad - 3) / stride1 + 1;
+    const int OCB = (C + BLK - 1) / BLK;
+    DConvState* st =
+            get_state_blocked(w, xb, pad, stride0, /*kind=*/2, bias != nullptr,
+                              /*do_relu=*/false, stride1);
+    ggml_tensor* args[3] = {xb, w, bias};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, BLK, Wout, Hout, OCB, args,
+                          bias ? 3 : 2, bdw_compute, GGML_N_TASKS_MAX, st);
+}
+
+ggml_tensor* blocked_hard_swish(ggml_context* ctx, ggml_tensor* xb) {
+    ggml_tensor* args[1] = {xb};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, xb->ne[0], xb->ne[1], xb->ne[2],
+                          xb->ne[3], args, 1, bhswish_compute, GGML_N_TASKS_MAX,
+                          nullptr);
+}
+
+ggml_tensor* blocked_hard_sigmoid(ggml_context* ctx,
+                                  ggml_tensor* xb,
+                                  float slope,
+                                  float offset) {
+    ggml_tensor* args[1] = {xb};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, xb->ne[0], xb->ne[1], xb->ne[2],
+                          xb->ne[3], args, 1, bhsigmoid_compute,
+                          GGML_N_TASKS_MAX,
+                          const_cast<BlkParams*>(intern_params(slope, offset)));
+}
+
+ggml_tensor* blocked_silu(ggml_context* ctx, ggml_tensor* xb) {
+    ggml_tensor* args[1] = {xb};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, xb->ne[0], xb->ne[1], xb->ne[2],
+                          xb->ne[3], args, 1, bsilu_compute, GGML_N_TASKS_MAX,
+                          nullptr);
+}
+
+ggml_tensor* blocked_mul_channel(ggml_context* ctx,
+                                 ggml_tensor* xb,
+                                 ggml_tensor* v) {
+    ggml_tensor* args[2] = {xb, v};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, xb->ne[0], xb->ne[1], xb->ne[2],
+                          xb->ne[3], args, 2, bmul_channel_compute,
+                          GGML_N_TASKS_MAX, nullptr);
+}
+
+ggml_tensor* blocked_gap(ggml_context* ctx, ggml_tensor* xb) {
+    const int CB = (int)xb->ne[3];
+    ggml_tensor* args[1] = {xb};
+    return ggml_custom_4d(ctx, GGML_TYPE_F32, BLK, 1, 1, CB, args, 1,
+                          bgap_compute, GGML_N_TASKS_MAX, nullptr);
+}
+
+}  // namespace blk
+}  // namespace aicore

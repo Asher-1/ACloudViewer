@@ -52,6 +52,7 @@
 #include "mvs/patch_match.h"
 #include "estimators/bundle_adjustment.h"
 #include "ui/render_options.h"
+#include "util/file.h"
 #include "util/misc.h"
 #include "math/random.h"
 #include "mvs/texture_mapping.h"
@@ -273,14 +274,22 @@ void OptionManager::AddExtractionOptions() {
     AddAndRegisterDefaultOption("ImageReader.camera_mask_path",
                                 &image_reader->camera_mask_path);
 
-    AddAndRegisterDefaultOption("SiftExtraction.num_threads",
+    // Latest upstream separates generic feature-extractor controls from the
+    // SIFT-specific controls. Bind its generic spellings to the existing
+    // storage so one public argv works for the fork and upstream.
+    AddAndRegisterDefaultOption("FeatureExtraction.num_threads",
                                 &sift_extraction->num_threads);
-    AddAndRegisterDefaultOption("SiftExtraction.use_gpu",
+    AddAndRegisterDefaultOption("FeatureExtraction.use_gpu",
                                 &sift_extraction->use_gpu);
-    AddAndRegisterDefaultOption("SiftExtraction.gpu_index",
+    AddAndRegisterDefaultOption("FeatureExtraction.gpu_index",
                                 &sift_extraction->gpu_index);
-    AddAndRegisterDefaultOption("SiftExtraction.max_image_size",
+    AddAndRegisterDefaultOption("FeatureExtraction.max_image_size",
                                 &sift_extraction->max_image_size);
+    AddOptionAlias("SiftExtraction.num_threads", &sift_extraction->num_threads);
+    AddOptionAlias("SiftExtraction.use_gpu", &sift_extraction->use_gpu);
+    AddOptionAlias("SiftExtraction.gpu_index", &sift_extraction->gpu_index);
+    AddOptionAlias("SiftExtraction.max_image_size",
+                   &sift_extraction->max_image_size);
     AddAndRegisterDefaultOption("SiftExtraction.max_num_features",
                                 &sift_extraction->max_num_features);
     AddAndRegisterDefaultOption("SiftExtraction.use_loma",
@@ -323,12 +332,21 @@ void OptionManager::AddMatchingOptions() {
     }
     added_match_options_ = true;
 
-    AddAndRegisterDefaultOption("SiftMatching.num_threads",
+    // Keep the fork's SIFT controls while accepting the generic latest
+    // upstream matcher controls used by cross-version CLI clients.
+    AddAndRegisterDefaultOption("FeatureMatching.num_threads",
                                 &sift_matching->num_threads);
-    AddAndRegisterDefaultOption("SiftMatching.use_gpu",
+    AddAndRegisterDefaultOption("FeatureMatching.use_gpu",
                                 &sift_matching->use_gpu);
-    AddAndRegisterDefaultOption("SiftMatching.gpu_index",
+    AddAndRegisterDefaultOption("FeatureMatching.gpu_index",
                                 &sift_matching->gpu_index);
+    AddAndRegisterDefaultOption("FeatureMatching.guided_matching",
+                                &sift_matching->guided_matching);
+    AddAndRegisterDefaultOption("FeatureMatching.max_num_matches",
+                                &sift_matching->max_num_matches);
+    AddOptionAlias("SiftMatching.num_threads", &sift_matching->num_threads);
+    AddOptionAlias("SiftMatching.use_gpu", &sift_matching->use_gpu);
+    AddOptionAlias("SiftMatching.gpu_index", &sift_matching->gpu_index);
     AddAndRegisterDefaultOption("SiftMatching.max_ratio",
                                 &sift_matching->max_ratio);
     AddAndRegisterDefaultOption("SiftMatching.max_distance",
@@ -337,8 +355,8 @@ void OptionManager::AddMatchingOptions() {
                                 &sift_matching->cross_check);
     AddAndRegisterDefaultOption("SiftMatching.max_error",
                                 &sift_matching->max_error);
-    AddAndRegisterDefaultOption("SiftMatching.max_num_matches",
-                                &sift_matching->max_num_matches);
+    AddOptionAlias("SiftMatching.max_num_matches",
+                   &sift_matching->max_num_matches);
     AddAndRegisterDefaultOption("SiftMatching.confidence",
                                 &sift_matching->confidence);
     AddAndRegisterDefaultOption("SiftMatching.max_num_trials",
@@ -349,8 +367,8 @@ void OptionManager::AddMatchingOptions() {
                                 &sift_matching->min_num_inliers);
     AddAndRegisterDefaultOption("SiftMatching.multiple_models",
                                 &sift_matching->multiple_models);
-    AddAndRegisterDefaultOption("SiftMatching.guided_matching",
-                                &sift_matching->guided_matching);
+    AddOptionAlias("SiftMatching.guided_matching",
+                   &sift_matching->guided_matching);
     AddAndRegisterDefaultOption("SiftMatching.use_loma",
                                 &sift_matching->use_loma);
     AddAndRegisterDefaultOption("SiftMatching.loma_matcher_model",
@@ -515,8 +533,32 @@ void OptionManager::AddBundleAdjustmentOptions() {
                                 &bundle_adjustment->use_caspar);
     AddAndRegisterDefaultOption("BundleAdjustment.caspar_gpu_index",
                                 &bundle_adjustment->caspar_gpu_index);
-    AddAndRegisterDefaultOption("BundleAdjustment.caspar_max_num_iterations",
+    AddOptionAlias("BundleAdjustment.caspar_max_num_iterations",
+                   &bundle_adjustment->caspar_max_num_iterations);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.solver_iter_max",
                                 &bundle_adjustment->caspar_max_num_iterations);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.pcg_iter_max",
+                                &bundle_adjustment->caspar_pcg_iter_max);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.diag_init",
+                                &bundle_adjustment->caspar_diag_init);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.diag_min",
+                                &bundle_adjustment->caspar_diag_min);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.diag_scaling_up",
+                                &bundle_adjustment->caspar_diag_scaling_up);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.diag_scaling_down",
+                                &bundle_adjustment->caspar_diag_scaling_down);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.diag_exit_value",
+                                &bundle_adjustment->caspar_diag_exit_value);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.score_exit_value",
+                                &bundle_adjustment->caspar_score_exit_value);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.pcg_rel_error_exit",
+                                &bundle_adjustment->caspar_pcg_rel_error_exit);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.pcg_rel_score_exit",
+                                &bundle_adjustment->caspar_pcg_rel_score_exit);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.pcg_rel_decrease_min",
+                                &bundle_adjustment->caspar_pcg_rel_decrease_min);
+    AddAndRegisterDefaultOption("BundleAdjustmentCaspar.solver_rel_decrease_min",
+                                &bundle_adjustment->caspar_solver_rel_decrease_min);
     AddAndRegisterDefaultOption("BundleAdjustment.use_gpu",
                                 &bundle_adjustment->use_gpu);
     AddAndRegisterDefaultOption("BundleAdjustment.gpu_index",
@@ -550,6 +592,8 @@ void OptionManager::AddMapperOptions() {
                                 &mapper->min_num_matches);
     AddAndRegisterDefaultOption("Mapper.ignore_watermarks",
                                 &mapper->ignore_watermarks);
+    AddAndRegisterDefaultOption("Mapper.image_list_path",
+                                &mapper_image_list_path_);
     AddAndRegisterDefaultOption("Mapper.multiple_models",
                                 &mapper->multiple_models);
     AddAndRegisterDefaultOption("Mapper.max_num_models",
@@ -567,6 +611,11 @@ void OptionManager::AddMapperOptions() {
     AddAndRegisterDefaultOption("Mapper.extract_colors",
                                 &mapper->extract_colors);
     AddAndRegisterDefaultOption("Mapper.num_threads", &mapper->num_threads);
+    // The mapper owns all stochastic reconstruction stages; expose the same
+    // seed key as upstream so command-line clients can reproduce both sides
+    // of an L3 comparison without a fork-only configuration channel.
+    AddAndRegisterDefaultOption("Mapper.random_seed",
+                                &mapper->mapper.random_seed);
     AddAndRegisterDefaultOption("Mapper.min_focal_length_ratio",
                                 &mapper->min_focal_length_ratio);
     AddAndRegisterDefaultOption("Mapper.max_focal_length_ratio",
@@ -677,6 +726,14 @@ void OptionManager::AddMapperOptions() {
                                 &mapper->triangulation.min_angle);
     AddAndRegisterDefaultOption("Mapper.tri_ignore_two_view_tracks",
                                 &mapper->triangulation.ignore_two_view_tracks);
+}
+
+void OptionManager::PostParse() {
+    if (!mapper_image_list_path_.empty()) {
+        const std::vector<std::string> image_names =
+            ReadTextFileLines(mapper_image_list_path_);
+        mapper->image_names.insert(image_names.begin(), image_names.end());
+    }
 }
 
 void OptionManager::AddGlobalMapperOptions() {

@@ -253,6 +253,64 @@ TEST(OptionManager, ParseWithOptions) {
   EXPECT_EQ(options.sift_extraction->max_num_features, 2048);
 }
 
+TEST(OptionManager, ParseLatestUpstreamFeatureOptionAliases) {
+  OptionManager options;
+  options.AddExtractionOptions();
+  options.AddMatchingOptions();
+
+  const std::vector<std::string> args = {
+      "colmap",
+      "--FeatureExtraction.use_gpu",
+      "0",
+      "--FeatureExtraction.max_image_size",
+      "1024",
+      "--FeatureMatching.use_gpu",
+      "0",
+      "--FeatureMatching.max_num_matches",
+      "2048",
+  };
+  std::vector<char*> argv;
+  argv.reserve(args.size());
+  for (auto& arg : args) {
+    argv.push_back(const_cast<char*>(arg.c_str()));
+  }
+
+  EXPECT_TRUE(options.Parse(argv.size(), argv.data()));
+  EXPECT_FALSE(options.sift_extraction->use_gpu);
+  EXPECT_EQ(options.sift_extraction->max_image_size, 1024);
+  EXPECT_FALSE(options.sift_matching->use_gpu);
+  EXPECT_EQ(options.sift_matching->max_num_matches, 2048);
+}
+
+TEST(OptionManager, ParseCasparSolverOptions) {
+  OptionManager options;
+  options.AddBundleAdjustmentOptions();
+
+  const std::vector<std::string> args = {
+      "colmap",
+      "--BundleAdjustmentCaspar.solver_iter_max",
+      "37",
+      "--BundleAdjustmentCaspar.pcg_iter_max",
+      "11",
+      "--BundleAdjustmentCaspar.diag_scaling_down",
+      "0.25",
+      "--BundleAdjustmentCaspar.solver_rel_decrease_min",
+      "0.5",
+  };
+  std::vector<char*> argv;
+  argv.reserve(args.size());
+  for (auto& arg : args) {
+    argv.push_back(const_cast<char*>(arg.c_str()));
+  }
+
+  EXPECT_TRUE(options.Parse(argv.size(), argv.data()));
+  EXPECT_EQ(options.bundle_adjustment->caspar_max_num_iterations, 37);
+  EXPECT_EQ(options.bundle_adjustment->caspar_pcg_iter_max, 11);
+  EXPECT_DOUBLE_EQ(options.bundle_adjustment->caspar_diag_scaling_down, 0.25);
+  EXPECT_DOUBLE_EQ(options.bundle_adjustment->caspar_solver_rel_decrease_min,
+                   0.5);
+}
+
 TEST(OptionManager, ParseWithProjectPath) {
   const auto test_dir = CreateTestDir();
   const auto config_path = test_dir / "config.ini";

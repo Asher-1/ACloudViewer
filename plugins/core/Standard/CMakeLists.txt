@@ -35,6 +35,7 @@ add_subdirectory( qGKD )
 add_subdirectory( qOCR )
 add_subdirectory( qLingbotMap )
 add_subdirectory( qAnyLabeling )
+add_subdirectory( qMapAnything )
 
 #plugins integrated as submodules
 set( submod_plugins

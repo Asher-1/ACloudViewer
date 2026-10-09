@@ -8,10 +8,12 @@
 #include "common/image_utils.hpp"
 
 #include <QImage>
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <thread>
 #include <utility>
 
 #include "common/capi_utils.hpp"
@@ -166,7 +168,11 @@ void cv_resize_linear_u8(
         ibeta[dy * 2] = sat_short((1.f - fy) * SCALE);
         ibeta[dy * 2 + 1] = sat_short(fy * SCALE);
     }
-    for (int dy = 0; dy < dh; ++dy) {
+    // Per-row fill: rows are independent (each reads a fixed two-row band
+    // of the source). Large outputs (det pre-process resizes 736-row images
+    // every frame) fill in parallel; small crops (rec, 48 rows) stay
+    // serial — the per-call thread pool costs more than the fill itself.
+    auto fillRow = [&](int dy) {
         const int sy0 = yofs[dy], sy1 = std::min(sy0 + 1, sh - 1);
         const int b0 = ibeta[dy * 2], b1 = ibeta[dy * 2 + 1];
         uint8_t* drow = dst + (size_t)dy * dw * cn;
@@ -183,6 +189,28 @@ void cv_resize_linear_u8(
                 drow[dx * cn + c] = (uint8_t)v;
             }
         }
+    };
+    const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
+    if (hw > 1 && dh >= 256 && (unsigned)dh > hw) {
+        std::atomic<int> nextRow{0};
+        std::vector<std::thread> pool;
+        pool.reserve(hw - 1);
+        for (unsigned i = 1; i < hw; ++i)
+            pool.emplace_back([&] {
+                for (;;) {
+                    const int dy = nextRow.fetch_add(1);
+                    if (dy >= dh) return;
+                    fillRow(dy);
+                }
+            });
+        for (;;) {
+            const int dy = nextRow.fetch_add(1);
+            if (dy >= dh) break;
+            fillRow(dy);
+        }
+        for (auto& t : pool) t.join();
+    } else {
+        for (int dy = 0; dy < dh; ++dy) fillRow(dy);
     }
 }
 

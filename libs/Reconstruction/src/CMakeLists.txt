@@ -267,6 +267,62 @@ if (TESTS_ENABLED)
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
         VERBATIM)
+
+    # L3 is deliberately opt-in: it needs a pinned fixture, an executable
+    # built from the exact upstream revision, and calibrated thresholds. An
+    # absent prerequisite is a configuration error, never a green no-op.
+    if (RECONSTRUCTION_L3_GATE_ENABLED)
+        # Use the fork's real command registry unless an external candidate was
+        # explicitly supplied. The target file generator expression selects
+        # the platform's executable suffix and macOS bundle layout correctly.
+        set(_L3_ACV_COLMAP "${RECONSTRUCTION_L3_ACV_COLMAP}")
+        if ("${_L3_ACV_COLMAP}" STREQUAL "")
+            if (APPLE)
+                set(_L3_ACV_COLMAP "$<TARGET_FILE:ColmapApp>")
+                set(_L3_ACV_TARGET ColmapApp)
+            else ()
+                set(_L3_ACV_COLMAP "$<TARGET_FILE:colmap_exe>")
+                set(_L3_ACV_TARGET colmap_exe)
+            endif ()
+        endif ()
+        set(_L3_RUNTIME_LIBRARY_ARGS
+            --runtime-library-dir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            --runtime-library-dir "${CMAKE_BINARY_DIR}/external/lib")
+        cloudviewer_resolve_qt_lib_dir(_L3_QT_LIBRARY_DIR)
+        if (_L3_QT_LIBRARY_DIR)
+            list(APPEND _L3_RUNTIME_LIBRARY_ARGS
+                 --runtime-library-dir "${_L3_QT_LIBRARY_DIR}")
+        endif ()
+
+        foreach (L3_REQUIRED_VAR
+                 RECONSTRUCTION_L3_IMAGES
+                 RECONSTRUCTION_L3_UPSTREAM_COLMAP
+                 RECONSTRUCTION_L3_UPSTREAM_SOURCE
+                 RECONSTRUCTION_L3_THRESHOLDS)
+            if ("${${L3_REQUIRED_VAR}}" STREQUAL "")
+                message(FATAL_ERROR
+                    "${L3_REQUIRED_VAR} is required when RECONSTRUCTION_L3_GATE_ENABLED=ON")
+            endif()
+        endforeach()
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        add_custom_target(reconstruction_l3_alignment_gate
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/run_loma_sfm_comparison.py
+                    --l3
+                    --images ${RECONSTRUCTION_L3_IMAGES}
+                    --output ${RECONSTRUCTION_L3_OUTPUT}
+                    --harness ${RECONSTRUCTION_L3_HARNESS}
+                    --acv-colmap ${_L3_ACV_COLMAP}
+                    ${_L3_RUNTIME_LIBRARY_ARGS}
+                    --upstream-colmap ${RECONSTRUCTION_L3_UPSTREAM_COLMAP}
+                    --upstream-source ${RECONSTRUCTION_L3_UPSTREAM_SOURCE}
+                    --upstream-revision a2bd15c2fbfa79ca3812f8b081708da5e47d5402
+                    --seed ${RECONSTRUCTION_L3_SEED}
+                    --l3-thresholds ${RECONSTRUCTION_L3_THRESHOLDS}
+            DEPENDS ${_L3_ACV_TARGET}
+            USES_TERMINAL
+            VERBATIM)
+    endif()
 endif()
 
 # Caspar is an optional CUDA backend. The gate intentionally only exists in a

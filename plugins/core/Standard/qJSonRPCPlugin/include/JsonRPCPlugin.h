@@ -70,6 +70,16 @@ private:
     /** Generic driver: trigger a QAction matched by its text (opens plugin
      *  dialogs etc.). Neutral — knows no concrete plugin type. */
     JsonRPCResult rpcUiTriggerAction(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcUiListActions(const QMap<QString, QVariant>& params);
+    /** Test/agent probe: resolve the entity under a viewport pixel through
+     *  the REAL entity-pick chain (pickObject -> pickLeafViewId, DPR-aware).
+     *  Params: {x, y} in Qt-logical pixels. Returns viewId/entity_id/name. */
+    JsonRPCResult rpcViewPickEntity(const QMap<QString, QVariant>& params);
+    /** Test/agent probe: drive the CPU point-picking (octree) chain through
+     *  the REAL StartPicking entry with a one-shot itemPicked capture.
+     *  Params: {x, y} in Qt-logical pixels. Returns hit/entity/point. */
+    JsonRPCResult rpcViewPickPoint(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcViewSelectRegion(const QMap<QString, QVariant>& params);
     /** Generic driver: Qt-reflection invoke — find the unique QObject whose
      *  class name contains \p class_contains and which declares an invokable
      *  \p method taking 0..3 QVariant parameters, and invoke it with \p args.

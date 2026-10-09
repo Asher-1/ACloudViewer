@@ -199,6 +199,13 @@ std::unique_ptr<GkdModel> load_gkd_model(const std::string& path,
 
     // Allocate one backend buffer for all weights.
     m->weight_buf = ggml_backend_alloc_ctx_tensors_from_buft(m->meta_ctx, buft);
+    // WEIGHTS usage tag: sched offload routing requires it (sam3d loader
+    // precedent); without it ops silently stay on the CPU secondary.
+    if (m->weight_buf) {
+        ggml_backend_buffer_set_usage(m->weight_buf,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
+
     if (!m->weight_buf) {
         GKD_LOG_ERROR("failed to allocate the weight buffer");
         return nullptr;

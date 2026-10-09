@@ -197,6 +197,14 @@ void HierarchicalMapperController::Run() {
   CHECK_EQ(reconstruction_managers.size(), 1);
   *reconstruction_manager_ = std::move(reconstruction_managers.begin()->second);
 
+  // Cluster filtering stores normalized/angular residuals in Point3D::Error.
+  // Publish the final model with pixel reprojection errors, matching the
+  // reconstruction contract consumed by model analysis and the upstream
+  // hierarchical pipeline.
+  for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
+    reconstruction_manager_->Get(i).UpdatePoint3DErrors();
+  }
+
   std::cout << std::endl;
   GetTimer().PrintMinutes();
 }

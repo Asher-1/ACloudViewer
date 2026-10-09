@@ -150,6 +150,37 @@ function(cloudviewer_set_bin_runtime_output_directory target)
     endif()
 endfunction()
 
+# Standard boilerplate for a plugin unit-test executable, shared by the
+# plugins' tests/ subdirectories: PIC objects everywhere, GNU ld -no-pie on
+# Linux (Apple ld64 warns "argument unused" for it), and the shared
+# bin/plugin_test/ runtime layout. Qt AUTOMOC/AUTORCC come from the global
+# directory settings in CMakeExternalLibs.cmake. Register the ctest row at
+# the call site (COMMAND may need wrappers such as xvfb-run or extra
+# arguments) and pair with cloudviewer_set_plugin_test_env[_offscreen] for
+# the runtime environment.
+function(cloudviewer_add_plugin_test target)
+    cmake_parse_arguments(PARG "" "" "SOURCES;LIBS;INCLUDES;DEFINES" ${ARGN})
+    add_executable(${target} ${PARG_SOURCES})
+    if(PARG_INCLUDES)
+        target_include_directories(${target} PRIVATE ${PARG_INCLUDES})
+    endif()
+    if(PARG_LIBS)
+        target_link_libraries(${target} PRIVATE ${PARG_LIBS})
+    endif()
+    if(PARG_DEFINES)
+        target_compile_definitions(${target} PRIVATE ${PARG_DEFINES})
+    endif()
+    if(NOT MSVC)
+        set_target_properties(${target} PROPERTIES
+            POSITION_INDEPENDENT_CODE ON)
+        target_compile_options(${target} PRIVATE -fPIC)
+        if(UNIX AND NOT APPLE)
+            target_link_options(${target} PRIVATE "-no-pie")
+        endif()
+    endif()
+    cloudviewer_set_bin_runtime_output_directory(${target})
+endfunction()
+
 
 # Batch C test-layout companion: ctest environment for tests relocated under
 # bin/plugin_test/ (PATH for MSVC DLLs; LD_LIBRARY_PATH for Linux/macOS with

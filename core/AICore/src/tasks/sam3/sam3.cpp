@@ -3314,6 +3314,12 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
 
     // ── Allocate backend buffer for all tensors ──────────────────────────
     model->buffer = ggml_backend_alloc_ctx_tensors(model->ctx, model->backend);
+    if (model->buffer) {
+        // WEIGHTS usage tag: sched offload routing requires it (sam3d loader
+        // precedent); without it ops silently stay on the CPU secondary.
+        ggml_backend_buffer_set_usage(model->buffer,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
     if (!model->buffer) {
         AICORE_LOG_ERROR("[sam3] ", "%s: failed to allocate tensor buffer\n",
                          __func__);

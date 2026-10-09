@@ -809,6 +809,39 @@ RESULT_JSON manifest (also embedded in the RPC response).
             "seed": 42, "device": "cuda"}}
 ```
 
+### mapanything.reconstruct
+
+Multi-view metric 3D reconstruction (MapAnything family: VGGT-Omega / VGGT /
+Pi3 / Pi3X / MapAnything / DUSt3R) via a headless
+`-SILENT -MAP_ANYTHING_RECONSTRUCT` child process (same offscreen pattern
+as `sam3d.generate`). One child process loads the model once and runs the
+AICore map_anything pipeline over 2..16 input images, exporting the merged
+world-frame colored point cloud (binary PLY) plus a RESULT_JSON manifest
+(also embedded in the RPC response). Batch inference on GPU-less machines:
+pass `?device=cpu`; the view cap (16) comes from the quadratic inter-frame
+attention cost.
+
+**Params:** `{images[2..16], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?result_json, ?timeout_ms}`
+
+- `images[]`: absolute input image paths (2..16 views; the child decodes
+  them through Qt and feeds borrowed `aicore_image_view`s).
+- `model` may be a GGUF path or a published catalog filename
+  (https://huggingface.co/Asher-1/map_anything_vggt); missing checkpoints
+  must be pre-downloaded through the qMapAnything dialog (headless runs
+  never trigger downloads).
+- `min_conf` default 0.5: normalized confidence floor (sigmoid for the pi3
+  family raw logits, conf-1 for the 1+exp families).
+
+**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, architecture, points, views, e2e_ms, ply}`.
+
+**Example:**
+
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "mapanything.reconstruct",
+ "params": {"images": ["/data/sacre_coeur1.jpg", "/data/sacre_coeur2.jpg"],
+            "output_dir": "/tmp/mapanything_out", "device": "cuda"}}
+```
+
 ### methods.list
 
 List all available RPC methods with descriptions. The method list is

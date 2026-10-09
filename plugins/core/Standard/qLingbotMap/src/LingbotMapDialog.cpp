@@ -768,7 +768,10 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
             tr("Rendered point size in pixels (official Point Size slider)."));
     m_resultCamSizeSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
     m_resultCamSizeSlider->setRange(25, 400);  // % of the auto baseline
-    m_resultCamSizeSlider->setValue(100);
+    // User-validated defaults (official-viewer parity on the courthouse
+    // demo): a 2.6x baseline frustum reads clearly at scene scale, and a
+    // stride of 3 keeps the trail legible without hiding the loop shape.
+    m_resultCamSizeSlider->setValue(260);
     m_resultCamSizeSlider->setToolTip(
             tr("Camera frustum size, % of the auto-computed baseline size "
                "(official Camera Size slider)."));
@@ -780,7 +783,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_resultShowCamsCheck->setChecked(true);
     m_resultCamStrideSlider = new QSlider(Qt::Horizontal, m_resultDisplayBox);
     m_resultCamStrideSlider->setRange(1, 50);
-    m_resultCamStrideSlider->setValue(1);
+    m_resultCamStrideSlider->setValue(3);
     m_resultCamStrideSlider->setToolTip(
             tr("Show one camera frustum every N frames (official Camera "
                "Downsample Factor slider)."));
@@ -1500,12 +1503,12 @@ void LingbotMapDialog::loadSettings() {
     m_resultPointSizeSlider->setValue(
             settings.value(QStringLiteral("resultPointSize"), 3).toInt());
     m_resultCamSizeSlider->setValue(
-            settings.value(QStringLiteral("resultCamSizePercent"), 100)
+            settings.value(QStringLiteral("resultCamSizePercent"), 260)
                     .toInt());
     m_resultShowCamsCheck->setChecked(
             settings.value(QStringLiteral("resultShowCameras"), true).toBool());
     m_resultCamStrideSlider->setValue(
-            settings.value(QStringLiteral("resultCamStride"), 1).toInt());
+            settings.value(QStringLiteral("resultCamStride"), 3).toInt());
     settings.endGroup();
 
     // Re-apply the test-scene defaults AFTER the persisted values land.

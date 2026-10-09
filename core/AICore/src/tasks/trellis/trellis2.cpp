@@ -404,6 +404,16 @@ trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);
@@ -1141,6 +1151,11 @@ trellis2_ss_dec_model *trellis2_ss_dec_load(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);
@@ -1463,6 +1478,11 @@ trellis2_dino_model *trellis2_dino_load(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);
@@ -2420,6 +2440,11 @@ trellis2_slat_flow_model *trellis2_slat_flow_load(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);
@@ -3064,6 +3089,11 @@ static trellis2_shape_dec_model *dec_load_impl(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);
@@ -3790,6 +3820,11 @@ trellis2_shape_enc_model *trellis2_shape_enc_load(const std::string &path,
         m->backend_lease = init_best_backend(m->backend_name, device);
         m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
+        if (m->weights_buf) {
+            ggml_backend_buffer_set_usage(m->weights_buf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
                                      m->backend_name);

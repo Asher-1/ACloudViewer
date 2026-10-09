@@ -26,12 +26,12 @@
 #include "scene/database.h"
 #include "scene/frame.h"
 #include "scene/image.h"
-#include "util/string.h"
 #include "scene/point2d.h"
 #include "scene/point3d.h"
 #include "scene/rig.h"
 #include "scene/track.h"
 #include "util/hash_containers.h"
+#include "util/string.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -46,7 +46,6 @@ class CorrespondenceGraph;
 // written to and read from disk.
 class Reconstruction {
 public:
-
     Reconstruction();
 
     // Copy construct/assign. Updates camera pointers.
@@ -249,10 +248,9 @@ public:
                                     const double p1 = 0.9) const;
 
     // Compute the bounding box corners of the 3D points
-    Eigen::AlignedBox3d ComputeBoundingBox(
-            double min_percentile = 0.0,
-            double max_percentile = 1.0,
-            bool use_images = false) const;
+    Eigen::AlignedBox3d ComputeBoundingBox(double min_percentile = 0.0,
+                                           double max_percentile = 1.0,
+                                           bool use_images = false) const;
 
     // Apply the 3D similarity transformation to all images and points.
     void Transform(const SimilarityTransform3& tform);
@@ -391,14 +389,11 @@ private:
                              const double p1,
                              const bool use_images) const;
 
-
-
     NodeHashMap<camera_t, class Camera> cameras_;
     NodeHashMap<image_t, class Image> images_;
     NodeHashMap<rig_t, class Rig> rigs_;
     NodeHashMap<frame_t, class Frame> frames_;
     NodeHashMap<point3D_t, class Point3D> points3D_;
-
 
     // Upstream parity (d3ccaf35 scene/reconstruction.h): the registered-image
     // count is a frame-level counter maintained exclusively by
@@ -441,7 +436,7 @@ const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
         return cameras_.at(camera_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Camera with ID %d does not exist", camera_id));
+                StringPrintf("Camera with ID %d does not exist", camera_id));
     }
 }
 
@@ -450,7 +445,7 @@ const class Image& Reconstruction::Image(const image_t image_id) const {
         return images_.at(image_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Image with ID %d does not exist", image_id));
+                StringPrintf("Image with ID %d does not exist", image_id));
     }
 }
 
@@ -459,7 +454,7 @@ const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
         return rigs_.at(rig_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Rig with ID %d does not exist", rig_id));
+                StringPrintf("Rig with ID %d does not exist", rig_id));
     }
 }
 
@@ -468,17 +463,16 @@ const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
         return frames_.at(frame_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Frame with ID %d does not exist", frame_id));
+                StringPrintf("Frame with ID %d does not exist", frame_id));
     }
 }
 
-const class Point3D& Reconstruction::Point3D(
-    const point3D_t point3D_id) const {
+const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
     try {
         return points3D_.at(point3D_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Point3D with ID %d does not exist", point3D_id));
+                StringPrintf("Point3D with ID %d does not exist", point3D_id));
     }
 }
 
@@ -487,7 +481,7 @@ class Camera& Reconstruction::Camera(const camera_t camera_id) {
         return cameras_.at(camera_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Camera with ID %d does not exist", camera_id));
+                StringPrintf("Camera with ID %d does not exist", camera_id));
     }
 }
 
@@ -496,7 +490,7 @@ class Image& Reconstruction::Image(const image_t image_id) {
         return images_.at(image_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Image with ID %d does not exist", image_id));
+                StringPrintf("Image with ID %d does not exist", image_id));
     }
 }
 
@@ -505,7 +499,7 @@ class Rig& Reconstruction::Rig(const rig_t rig_id) {
         return rigs_.at(rig_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Rig with ID %d does not exist", rig_id));
+                StringPrintf("Rig with ID %d does not exist", rig_id));
     }
 }
 
@@ -514,7 +508,7 @@ class Frame& Reconstruction::Frame(const frame_t frame_id) {
         return frames_.at(frame_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Frame with ID %d does not exist", frame_id));
+                StringPrintf("Frame with ID %d does not exist", frame_id));
     }
 }
 
@@ -523,7 +517,7 @@ class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
         return points3D_.at(point3D_id);
     } catch (const std::out_of_range&) {
         throw std::out_of_range(
-            StringPrintf("Point3D with ID %d does not exist", point3D_id));
+                StringPrintf("Point3D with ID %d does not exist", point3D_id));
     }
 }
 
@@ -554,10 +548,11 @@ inline std::vector<image_t> Reconstruction::RegImageIds() const {
         // (upstream yields data_t sensor/id pairs).
         for (const image_t image_id : frame.ImageIds()) {
             THROW_CHECK(ExistsImage(image_id))
-                << "The reconstruction object is broken as image "
-                << image_id << " in frame " << frame.FrameId()
-                << " does not exist in the reconstruction. The most likely "
-                   "cause is missing AddImage(*) calls after adding frames.";
+                    << "The reconstruction object is broken as image "
+                    << image_id << " in frame " << frame.FrameId()
+                    << " does not exist in the reconstruction. The most likely "
+                       "cause is missing AddImage(*) calls after adding "
+                       "frames.";
             reg_image_ids.push_back(image_id);
         }
     }

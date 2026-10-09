@@ -808,7 +808,7 @@ bool Sam3dWorker::loadPreviewMaskCache(QVector<QImage>& masks) {
     QFile file(previewMaskCachePath());
     if (!file.open(QIODevice::ReadOnly)) return false;
     QDataStream in(&file);
-    in.setVersion(QDataStream::Qt_5_15);
+    in.setVersion(qtCompatDataStreamVersion());
     QByteArray magic;
     quint32 version = 0;
     QByteArray fingerprint;
@@ -869,7 +869,7 @@ void Sam3dWorker::savePreviewMaskCache(const QVector<QImage>& masks) {
     QFile file(previewMaskCachePath());
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return;
     QDataStream out(&file);
-    out.setVersion(QDataStream::Qt_5_15);
+    out.setVersion(qtCompatDataStreamVersion());
     out << QByteArray("SAM3DMASK") << quint32(1)
         << previewMaskFingerprint(m_settings).toUtf8() << quint32(masks.size());
     for (const QImage& mask : masks) {

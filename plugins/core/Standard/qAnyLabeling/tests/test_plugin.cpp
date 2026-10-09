@@ -68,7 +68,11 @@ int main(int argc, char** argv) {
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
                        settingsDir.path());
     if (argc != 2) return 2;
-    QPluginLoader loader(QString::fromLocal8Bit(argv[1]));
+    // QPluginLoader's metadata pass rejects a non-normalized relative path
+    // with "The shared library was not found"; resolve to an absolute path
+    // so the harness works from any working directory.
+    QPluginLoader loader(
+            QFileInfo(QString::fromLocal8Bit(argv[1])).absoluteFilePath());
     QObject* pluginObject = loader.instance();
     if (!pluginObject) {
         std::fprintf(stderr, "Plugin load failed: %s\n",

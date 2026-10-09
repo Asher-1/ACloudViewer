@@ -14,6 +14,17 @@ if ( PLUGIN_STANDARD_QJSONRPC )
     # Note: Network and WebSockets are already found in CMakeExternalLibs.cmake
     target_link_libraries(${PROJECT_NAME} Qt::Core Qt::Network Qt::WebSockets)
 
+    # Selection-tools probes (view.selectRegion) drive cvViewSelectionManager
+    # from the VTK engine, the same link layout the main app uses.
+    if (TARGET QVTK_ENGINE_LIB)
+        target_include_directories( ${PROJECT_NAME}
+                                    PRIVATE
+                                    ${QVTK_ENGINE_LIB_SOURCE_DIR}
+                                    ${QVTK_ENGINE_LIB_SOURCE_DIR}/Tools/SelectionTools
+        )
+        target_link_libraries(${PROJECT_NAME} QVTK_ENGINE_LIB)
+    endif()
+
     add_subdirectory( include )
     add_subdirectory( src )
  

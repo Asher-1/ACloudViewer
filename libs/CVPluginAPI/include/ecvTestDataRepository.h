@@ -61,8 +61,25 @@ public:
          *  assets, no extraction): drive = N=1050 @ fps10 / auto kf=4,
          *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
          *  long_real campaign runs with the long-model GGUFs. */
-        LingbotMapDriveVideo,       ///< drive_frames.mp4 (long-model dataset)
-        LingbotMapLingboWorldVideo  ///< lingbo_world_frames.mp4 (long model)
+        LingbotMapDriveVideo,        ///< drive_frames.mp4 (long-model dataset)
+        LingbotMapLingboWorldVideo,  ///< lingbo_world_frames.mp4 (long model)
+        /** MapAnything / VGGT official ETH3D benchmark scenes (qMapAnything;
+         *  multi-view reconstruction inputs). All 13 scene zips come from the
+         *  map_anything_vggt_test_data release and land UNDER the
+         *  "map_anything_test_data" group directory. */
+        MapAnythingCourtyard,     ///< courtyard scene (multi-view set)
+        MapAnythingDeliveryArea,  ///< delivery_area scene
+        MapAnythingElectro,       ///< electro scene
+        MapAnythingFacade,        ///< facade scene
+        MapAnythingKicker,        ///< kicker scene
+        MapAnythingMeadow,        ///< meadow scene
+        MapAnythingOffice,        ///< office scene
+        MapAnythingPipes,         ///< pipes scene
+        MapAnythingPlayground,    ///< playground scene
+        MapAnythingRelief,        ///< relief scene
+        MapAnythingRelief2,       ///< relief_2 scene
+        MapAnythingTerrace,       ///< terrace scene
+        MapAnythingTerrains       ///< terrains scene
     };
 
     /** Dataset metadata. */
@@ -145,6 +162,15 @@ public:
      */
     bool extractDataset(Dataset kind);
 
+    /** Single-call readiness chain owning the full download->extract state
+     *  machine: already-extracted -> datasetReady(true) immediately;
+     *  verified zip cached -> extract; otherwise -> download, then extract.
+     *  Exactly one datasetReady(ok, kind) is emitted per accepted call
+     *  (a refused call while another preparation is in flight emits
+     *  datasetReady(false)). This is the preferred consumer API — plugins
+     *  must not re-implement the download->extract ordering themselves. */
+    void ensureDatasetReady(Dataset kind);
+
     /**
      * @brief Extract a zip file to a target directory with callback progress.
      * This is a static utility method for callers that need callback-based
@@ -222,6 +248,14 @@ public:
      */
     static QStringList getLingbotMapImages(const QString& bundleRoot);
 
+    /** @brief List the multi-view frames of a MapAnything scene bundle root
+     *  (recursive image scan, sorted case-insensitively — the WAI-format
+     *  scene zips keep their images in an inner directory).
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getMapAnythingSceneImages(const QString& bundleRoot);
+
 signals:
     /** Emitted during download with progress (0-100). */
     void downloadProgress(int percent, const QString& statusText);
@@ -239,6 +273,10 @@ signals:
      */
     void extractionFinished(bool success, Dataset kind);
 
+    /** Emitted by ensureDatasetReady() when the full download->extract
+     *  chain settles (success or failure). */
+    void datasetReady(bool success, Dataset kind);
+
 private slots:
     void onDownloaderProgress(qint64 received, qint64 total);
     void onDownloaderFinished(bool ok, const QString& destPath);
@@ -254,4 +292,16 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     Dataset m_currentDataset = Dataset::Monstree;
+
+    /** True when the extracted content is fully on disk (the first half of
+     *  isDatasetAvailable, WITHOUT the verified-zip fallback). */
+    bool isExtractedComplete(Dataset kind) const;
+    /** Central extractionFinished emitter: keeps the ensureDatasetReady
+     *  chain convergence in one place. */
+    void finishExtraction(Dataset kind, bool success);
+    /** ensureDatasetReady chain state (m_ensureKind valid only while
+     *  pending). Appended last: existing member offsets stay stable for
+     *  plugins compiled against the previous layout. */
+    bool m_ensurePending = false;
+    Dataset m_ensureKind = Dataset::Monstree;
 };

@@ -93,6 +93,21 @@
 //    - QImage::Format_BGR888 (Qt5.14+, Qt6) / not available on Qt5 < 5.14
 //    - Function: qtCompatQImageFormatBgr888()
 //
+// 16. QFont Family Fallback:
+//    - QFont::setFamilies(QStringList) (Qt5.13+, Qt6) / setFamily() only on
+//      Qt5.0-5.12
+//    - Function: qtCompatSetFontFamilies(QFont&, const QStringList&)
+//      (batch list on Qt5.13+/Qt6; first candidate + per-glyph fallback
+//      chain on older Qt5)
+//
+// 17. QDataStream Serialization Version:
+//    - no public API exposes the compiled default (Qt_DefaultCompiledVersion
+//      is \omitvalue; the official docs only suggest hardcoding an enum)
+//    - Function: qtCompatDataStreamVersion()
+//      (derives it via a default-constructed QDataStream + version(), the
+//      unified public path that resolves on every Qt version without any
+//      hardcoded enum literal)
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -1164,4 +1179,53 @@ constexpr QImage::Format qtCompatQImageFormatBgr888() noexcept {
 #else
     return QImage::Format_Invalid;
 #endif
+}
+
+// ----------------------------------------------------------------------------
+// QFont Family Fallback Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.12: QFont only has setFamily(QString) (single family; the font
+//   system's per-glyph fallback still resolves other scripts)
+// Qt5.13+/Qt6: setFamilies(QStringList) provides an ordered fallback list
+// ----------------------------------------------------------------------------
+
+#include <QFont>
+
+inline void qtCompatSetFontFamilies(QFont& font, const QStringList& families) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+    if (!families.isEmpty()) {
+        font.setFamilies(families);
+        return;
+    }
+#endif
+    if (!families.isEmpty()) {
+        font.setFamily(families.first());
+    }
+}
+
+// ----------------------------------------------------------------------------
+// QDataStream Serialization Version Compatibility
+// ----------------------------------------------------------------------------
+// There is no public API that exposes the compiled-in default version
+// (QDataStreamPrivate::DefaultVersion is a private header constant, and
+// Qt_DefaultCompiledVersion is an \omitvalue entry). The official docs only
+// recommend hardcoding an enum ("If you need both forward and backward
+// compatibility, you can hardcode the version number"), which cannot cover
+// future Qt releases.
+//
+// qtCompatDataStreamVersion() derives the value through the public contract
+// instead: a default-constructed QDataStream carries the compiled default
+// version, and version() reads it back - a single expression that resolves
+// to the correct enum on every Qt (5.12 ... 6.x and future majors) without
+// any hardcoded literal. Primitive encodings are identical across
+// Qt_5_12..Qt_5_15, so a cache written by one CI Qt still reads back on
+// another; files also carry their own magic + version fields and regenerate
+// on any decode failure.
+// ----------------------------------------------------------------------------
+
+#include <QDataStream>
+
+inline QDataStream::Version qtCompatDataStreamVersion() noexcept {
+    // Default-constructed stream: version() == the compiled-in default.
+    return static_cast<QDataStream::Version>(QDataStream().version());
 }

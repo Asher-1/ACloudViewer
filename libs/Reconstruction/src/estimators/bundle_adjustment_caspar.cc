@@ -767,8 +767,22 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
     if (device_id < 0) {
         cudaGetDevice(&device_id);
     }
+    // The generated solver has independent damping and PCG stopping controls.
+    // Passing only the iteration cap changes its numerical trajectory from the
+    // upstream contract, particularly for split-intrinsic factor pools.
     caspar::SolverParams<double> params;
     params.solver_iter_max = options.caspar_max_num_iterations;
+    params.pcg_iter_max = options.caspar_pcg_iter_max;
+    params.diag_init = options.caspar_diag_init;
+    params.diag_min = options.caspar_diag_min;
+    params.diag_scaling_up = options.caspar_diag_scaling_up;
+    params.diag_scaling_down = options.caspar_diag_scaling_down;
+    params.diag_exit_value = options.caspar_diag_exit_value;
+    params.score_exit_value = options.caspar_score_exit_value;
+    params.pcg_rel_error_exit = options.caspar_pcg_rel_error_exit;
+    params.pcg_rel_score_exit = options.caspar_pcg_rel_score_exit;
+    params.pcg_rel_decrease_min = options.caspar_pcg_rel_decrease_min;
+    params.solver_rel_decrease_min = options.caspar_solver_rel_decrease_min;
     auto solver = CreateSolver(params, simple_radial, pinhole, point_ids.size(),
                                device_id);
     if (!point_ids.empty()) {

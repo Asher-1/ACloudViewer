@@ -335,6 +335,34 @@ Options:
   --use-gpu                     # Enable GPU acceleration
 ```
 
+### Feed-Forward Multi-View Reconstruction (qMapAnything, no GUI)
+
+Headless MapAnything-family reconstruction (VGGT-Omega / VGGT / Pi3 / Pi3X /
+MapAnything / DUSt3R) — one child process, one model load, 2..64 views,
+merged world-frame colored PLY + RESULT_JSON. `RAW_OUTPUT_DIR` exports the
+unfiltered inference tensors and camera-to-world matrices for upstream parity;
+`GT_META` supplies benchmark camera centers so metric-frame alignment and the
+2 cm voxel stage use valid units. Batch-friendly on GPU-less machines via
+`DEVICE CPU`. Other AI plugin commands are indexed in
+[COMMAND-MAPPING.md](COMMAND-MAPPING.md).
+
+```bash
+ACloudViewer -SILENT -NO_TIMESTAMP -MAP_ANYTHING_RECONSTRUCT \
+    IMAGE img1.jpg IMAGE img2.jpg \          # repeat IMAGE 2..64 times
+    OUT_DIR /tmp/map_out \                   # output directory
+    MODEL vggt-omega-1b-512-q8_0.gguf \      # path OR published catalog name
+    DEVICE cuda \                            # auto|cpu|cuda|vulkan
+    IMAGE_SIZE 512 RESIZE_MODE balanced \    # balanced|max_size
+    MIN_CONF 0.5 \                           # confidence floor 0..0.99
+    RAW_OUTPUT_DIR raw \                     # pose/depth/conf/c2w parity data
+    STAGE_DUMP_DIR stages \                  # debug build: intermediate tensors
+    GT_META /data/courtyard/scene_meta.json \ # optional metric benchmark anchor
+    CLOUD_PLY cloud.ply RESULT_JSON result.json
+```
+
+Headless runs do NOT trigger model downloads — pre-fetch through the GUI or
+place the GGUF in `~/cloudViewer_data/extract/map_anything_models/`.
+
 ### Step-by-Step (Advanced)
 
 | Command | Description | Key Options |

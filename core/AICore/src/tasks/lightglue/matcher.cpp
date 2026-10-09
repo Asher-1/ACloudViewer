@@ -1075,6 +1075,10 @@ private:
             error_ = "failed to allocate device memory for model weights";
             return false;
         }
+        // WEIGHTS usage tag: sched offload routing requires it, otherwise
+        // every op silently stays on the CPU secondary.
+        ggml_backend_buffer_set_usage(weight_buffer_,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         for (int64_t i = 0; i < file_.TensorCount(); ++i) {
             const char *name = file_.TensorName(i);
             ggml_tensor *source = ggml_get_tensor(file_.Context(), name);

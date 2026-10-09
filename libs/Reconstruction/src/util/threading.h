@@ -24,37 +24,36 @@ namespace colmap {
 // multiple exceptions from parallel tasks; thrown by ThreadPool::Wait()
 // when one or more tasks threw exceptions.
 class AggregateException : public std::exception {
- public:
-  explicit AggregateException(std::vector<std::exception_ptr> excs)
-      // NOLINTNEXTLINE(bugprone-throw-keyword-missing)
-      : exceptions_(std::move(excs)) {
-    message_ =
-        std::to_string(exceptions_.size()) + " task(s) threw exception(s):\n";
-    for (size_t i = 0; i < exceptions_.size(); ++i) {
-      try {
-        std::rethrow_exception(exceptions_[i]);
-      } catch (const std::exception& e) {
-        message_ += e.what();
-      } catch (...) {
-        message_ += "Unknown exception";
-      }
-      if (i + 1 < exceptions_.size()) {
-        message_ += "\n";
-      }
+public:
+    explicit AggregateException(std::vector<std::exception_ptr> excs)
+        // NOLINTNEXTLINE(bugprone-throw-keyword-missing)
+        : exceptions_(std::move(excs)) {
+        message_ = std::to_string(exceptions_.size()) +
+                   " task(s) threw exception(s):\n";
+        for (size_t i = 0; i < exceptions_.size(); ++i) {
+            try {
+                std::rethrow_exception(exceptions_[i]);
+            } catch (const std::exception& e) {
+                message_ += e.what();
+            } catch (...) {
+                message_ += "Unknown exception";
+            }
+            if (i + 1 < exceptions_.size()) {
+                message_ += "\n";
+            }
+        }
     }
-  }
 
-  const char* what() const noexcept override { return message_.c_str(); }
+    const char* what() const noexcept override { return message_.c_str(); }
 
-  const std::vector<std::exception_ptr>& exceptions() const {
-    return exceptions_;
-  }
+    const std::vector<std::exception_ptr>& exceptions() const {
+        return exceptions_;
+    }
 
- private:
-  std::vector<std::exception_ptr> exceptions_;
-  std::string message_;
+private:
+    std::vector<std::exception_ptr> exceptions_;
+    std::string message_;
 };
-
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -217,7 +216,7 @@ public:
     template <class func_t, class... args_t>
     auto AddTask(func_t&& f, args_t&&... args)
             -> std::shared_future<
-                typename std::result_of<func_t(args_t...)>::type>;
+                    typename std::result_of<func_t(args_t...)>::type>;
 
     // Stop the execution of all workers.
     void Stop();
@@ -240,7 +239,7 @@ private:
 
     std::vector<std::thread> workers_;
     std::queue<std::function<std::function<void()>()>> tasks_;
-  std::vector<std::function<void()>> finished_task_checkers_;
+    std::vector<std::function<void()>> finished_task_checkers_;
 
     std::mutex mutex_;
     std::condition_variable task_condition_;
@@ -337,7 +336,8 @@ size_t ThreadPool::NumThreads() const { return workers_.size(); }
 
 template <class func_t, class... args_t>
 auto ThreadPool::AddTask(func_t&& f, args_t&&... args)
-        -> std::shared_future<typename std::result_of<func_t(args_t...)>::type> {
+        -> std::shared_future<
+                typename std::result_of<func_t(args_t...)>::type> {
     typedef typename std::result_of<func_t(args_t...)>::type return_t;
 
     auto task = std::make_shared<std::packaged_task<return_t()>>(

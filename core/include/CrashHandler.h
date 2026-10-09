@@ -24,15 +24,15 @@ namespace ecvCrashHandler {
 //!    (POSIX) BEFORE unwinding and written by logUnhandledException, so
 //!    even exceptions the app intercepts carry a full stack.
 //!
-//! On a crash the collector appends a header (reason + timestamp + the
-//! environment block captured at install time) and the captured stack to
-//! \p logFilePath, then restores the default handler so the process still
-//! dies the way the OS expects (cores, WER dumps, ... keep working).
+//! On an abnormal path the collector lazily creates \p logFilePath, then
+//! appends a header (reason + timestamp + the environment block captured at
+//! install time) and the captured stack before restoring the default handler
+//! so the process still dies the way the OS expects (cores, WER dumps, ...
+//! keep working). A normal session never creates a crash file.
 //!
-//! Signal handlers are async-signal-safe: the stack is written with
-//! backtrace_symbols_fd / write() on a descriptor opened ONCE at install
-//! time, and no allocation or locale-dependent formatting happens inside
-//! the handler on POSIX.
+//! Signal handlers use only preallocated UTF-8 path/environment bytes plus
+//! open()/backtrace_symbols_fd()/write() on POSIX; no Qt, allocation, or
+//! locale-dependent formatting occurs inside the handler.
 //!
 //! Re-installing replaces the previous collector; install() is NOT
 //! thread-safe with respect to itself (call it once from main()).

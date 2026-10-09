@@ -863,28 +863,56 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
         }
     }
 
-    // Register the missing images in this reconstruction.
-
+    // Register missing images while preserving their source frame. A frame may
+    // contain several camera data ids, so creating one trivial frame per image
+    // loses the rig topology and collides as soon as a second camera is copied.
     for (const auto image_id : missing_image_ids) {
-        auto reg_image = reconstruction.Image(image_id);
-        if (!ExistsCamera(reg_image.CameraId())) {
-            AddCameraWithTrivialRig(reconstruction.Camera(reg_image.CameraId()));
-        } else if (!ExistsRig(reg_image.CameraId())) {
-            class Rig rig;
-            rig.SetRigId(reg_image.CameraId());
-            rig.AddRefSensor(
-                sensor_t(SensorType::CAMERA, reg_image.CameraId()));
-            AddRig(std::move(rig));
+        const class Image& src_image = reconstruction.Image(image_id);
+        const class Frame& src_frame = reconstruction.Frame(src_image.FrameId());
+        const class Rig& src_rig = reconstruction.Rig(src_frame.RigId());
+
+        // AddRig validates every sensor, therefore all rig cameras must exist
+        // before copying a multi-camera rig.
+        for (const sensor_t& sensor_id : src_rig.SensorIds()) {
+            if (sensor_id.type == SensorType::CAMERA &&
+                !ExistsCamera(sensor_id.id)) {
+                AddCamera(reconstruction.Camera(sensor_id.id));
+            }
         }
-        // Reset the source reconstruction's back pointers so AddImage re-wires
-        // them here; the trivial frame is seeded from the legacy pose.
-        reg_image.ResetCameraPtr();
-        reg_image.ResetFramePtr();
-        reg_image.SetRegistered(false);
-        AddImageWithTrivialFrame(reg_image);
-        RegisterImage(image_id);
-        auto& image = Image(image_id);
-        tform.TransformPose(&image.Qvec(), &image.Tvec());
+        if (!ExistsRig(src_rig.RigId())) {
+            AddRig(src_rig);
+        }
+
+        if (!ExistsFrame(src_frame.FrameId())) {
+            // Frame pose is the registration authority. Transform it before
+            // insertion so AddFrame registers the complete frame once.
+            THROW_CHECK(src_frame.HasPose());
+            class Frame tgt_frame = src_frame;
+            tgt_frame.ResetRigPtr();
+            Eigen::Vector4d qvec = src_frame.RigFromWorldQvec();
+            Eigen::Vector3d tvec = src_frame.RigFromWorldTvec();
+            tform.TransformPose(&qvec, &tvec);
+            tgt_frame.SetRigFromWorld(qvec, tvec);
+            AddFrame(std::move(tgt_frame));
+        } else {
+            const class Frame& tgt_frame = Frame(src_frame.FrameId());
+            THROW_CHECK_EQ(tgt_frame.RigId(), src_frame.RigId());
+            THROW_CHECK(tgt_frame.DataIds() == src_frame.DataIds());
+        }
+
+        class Image tgt_image = src_image;
+        tgt_image.ResetCameraPtr();
+        tgt_image.ResetFramePtr();
+        tgt_image.SetRegistered(false);
+        AddImage(std::move(tgt_image));
+
+        // Keep the legacy image mirror in the one permitted direction:
+        // transformed frame pose -> image. Filtering still consumes qvec/tvec.
+        class Image& added_image = Image(image_id);
+        const Rigid3d cam_from_world = added_image.CamFromWorld();
+        const Eigen::Quaterniond& q = cam_from_world.rotation();
+        added_image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+        added_image.SetTvec(cam_from_world.translation());
     }
 
     // Merge the two point clouds using the following two rules:
@@ -931,8 +959,10 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
         }
     }
 
-    FilterPoints3DWithLargeReprojectionError(max_reproj_error, Point3DIds());
-
+    // Track conflicts are resolved above by construction. Filtering the merged
+    // cloud again changes the accepted merge result based on cluster-local
+    // refinement noise; upstream MergeReconstructions returns the unfiltered
+    // one-to-one track union here.
     return true;
 }
 

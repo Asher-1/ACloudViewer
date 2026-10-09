@@ -279,9 +279,37 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   weights in F32 (CPU mul_mat src1 must be F32; quantization lives on A)
   and the loader dequantizes F16/Q8_0 parameters; remaining q8 CPU edge:
   1x1 conv weights stored as native 2-D need a reshape-registry entry
-  (GPU matrix round will unify this). Remaining: probe_ocr ctest target
-  wiring, f16/q8_0 gates on GPU, CUDA/Vulkan/CPU matrix, det
-  post-process (DB binarize + unclip), then the workspace flip.
+  (GPU matrix round will unify this). Re-audited 2026-10-07:
+  DONE — the Vulkan backend rows for ocr (`validate_all --backend vulkan
+  --tasks ocr` runs det/rec/layout x f32/f16/q8_0 to verdict PASS after
+  the fixture pin chain was re-anchored to the regenerated cache files),
+  and the qAnyLabeling auto-label entry flip (the PaddleOCR toolbar entry
+  is live as AnnotationOpenPaddleOCR). Remaining: the q8 CPU 1x1-conv
+  reshape-registry edge, the det DBPostProcess parity-fixture gate in
+  validate_all (the postprocess itself was rewritten to match paddlex
+  semantics), and the rec semantic-divergence follow-up (paddle-anchored
+  gate exposes a systematic divergence; 79% exact on 98 valid rows).
+  Also DONE (2026-10-08): the fixture pin chain is fully closed — the 15
+  regenerated ocr_fixtures/*.npy were uploaded to the
+  Asher-1/cloudViewer_downloads `ocr-fixtures` release tag (replacing the
+  stale first-generation assets the user had partially uploaded) via the
+  GitHub API using the machine's own git credential store, and all 15
+  manifest URLs were rewired from the dead `PP-OCR` tag to
+  `ocr-fixtures`. A fresh-clone simulation (cache directory removed,
+  validate_all re-run) auto-downloaded all fixtures from the release and
+  reached verdict PASS 9/9 — every machine now self-provisions the
+  fixtures for testing.
+- [ ] rec semantic-divergence follow-up (re-baselined 2026-10-08): the
+  official ground-truth capture is unusable — the only saved official
+  dump (.qoder/tmp/real_official_pp.txt) is a corrupted capture (empty/
+  garbage texts) and the 550x345 medal-table source image is gone from
+  disk, so the remaining divergence cannot be quantified without
+  rebuilding the official comparison baseline (pick a dense-text image,
+  run paddleocr, save the per-box gold, re-run the matching analysis).
+  Current verified state: our output decodes 98/98 boxes with sensible
+  table text, two independent runs agree 100%, and the Vulkan build
+  agrees 90.8% with the CUDA build (cross-backend numeric noise on a
+  handful of boxes).
 - [ ] Vision-language captioning, VQA and document grounding: `florence2`,
   the video description/segmentation providers and chatbot models. Research
   verdict (2026-09): the ggml tensor library itself does not carry a VLM
@@ -445,15 +473,21 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   quantized-conv verification round would be needed first. Landing notes: spec node names must be
   the ONNX OUTPUT names (not node names), gguf-py reverses shapes on
   write (pass ONNX-shaped arrays), and ints arrays land as INT32.
-- [ ] Remaining special source pipelines such as `remote_server`,
-  `open_vision` and source-specific multi-model combinations are external
-  dependencies by design: `remote_server` delegates inference to an
-  HTTP/WebSocket service outside the process, and `open_vision` composes
-  provider-specific model runs that no AICore task contract expresses.
-  They stay disabled with their official names; mapping them onto AICore
-  would require defining an external-transport contract that violates the
-  ownership map (the plugin must not implement a private downloader,
-  backend, or scheduler).
+- [ ] `open_vision` and source-specific multi-model combinations are
+  external dependencies by design: `open_vision` composes provider-specific
+  model runs that no AICore task contract expresses, so it stays disabled
+  with its official name; mapping it onto AICore would require defining an
+  external-transport contract that violates the ownership map (the plugin
+  must not implement a private downloader, backend, or scheduler).
+  (remote_server was previously listed here but is fully landed — see the
+  remote-server parity entry below.)
+- [x] OCR fixture pin-chain repair (DONE 2026-10-08): the 15 regenerated
+  ocr_fixtures/*.npy were uploaded to the `ocr-fixtures` release tag via
+  the GitHub API (git credential store credentials), replacing the stale
+  first-generation assets, and all manifest URLs were rewired from the
+  dead `PP-OCR` tag to `ocr-fixtures`. Fresh-clone simulation (cache
+  removed, validate_all re-run) auto-downloaded every fixture and reached
+  verdict PASS 9/9 — every machine now self-provisions the fixtures.
 
 ## AICore-supported work still required in this plugin
 
@@ -662,10 +696,44 @@ These features must be implemented regardless of model coverage.
 - [x] Point-cloud class-configuration dirty-state prompts now cover close,
   frame changes and replacing a class file. Save/Discard/Cancel preserves
   point labels while keeping class IDs stable.
-- [ ] Point-cloud parity remaining: exact GPU surface-depth picking, renderer
-  tile acceleration, camera image
-  calibration, streaming frame loader, and source shortcut/theme details.
-  These remain manual UI/rendering tasks independent of model support.
+- [x] Point-cloud parity remaining, resolved 2026-10-07 (the four
+  "subtasks" split apart after upstream verification — two had no upstream
+  counterpart at all):
+  (1) Surface-depth picking — LANDED. The view already projected every
+  visible point and kept the closest per screen pixel; it now also matches
+  upstream selection.py's exact semantics: each point owns a
+  point_size²-pixel footprint (closest depth tracked per footprint
+  pixel) and the non-through filter keeps a point when any of its
+  footprint pixels lists it at the exact closest depth (float equality,
+  so equal-depth ties stay selectable together — the old 0.0001-tolerance
+  variant silently dropped them).
+  (2) Renderer tile acceleration — DROPPED, not a parity item: the
+  upstream viewport.py has no tile/chunk rendering (the only "tile" is
+  numpy.tile), and this view's pipeline is a single glDrawArrays over one
+  VBO that re-uploads only on visibility/color/frame changes — no
+  measured bottleneck exists to justify chunked draw ranges. Reopen only
+  with a profiling trace showing draw/upload time dominates.
+  (3) Camera image calibration — MATH KERNEL LANDED: the upstream
+  load_calibration strict schema (schema_version 1, pinhole, rigid
+  transform with det=+1 orthonormal rotation, opencv5 or none distortion),
+  project_points (far-to-near ordering, in-bounds filtering) and
+  project_cuboid (12 edges, near-plane clip with interpolation, 33-sample
+  subdivision under distortion, image-rect segment clipping) are ported
+  to PointCloudCamera.{h,cpp} and pinned by test_qanylabeling_pointcloud_camera
+  (valid/invalid schema, principal-point projection, depth sorting,
+  radial distortion direction, behind-camera rejection, rect clipping).
+  Still open: the 3D-viewport cuboid wireframe pass and interactive
+  rotation/resizing (the data model, .cuboids.json sidecar IO, the
+  Create-cuboid-from-selection operation and the camera-dock cuboid
+  overlay are all landed and tested — see PointCloudCuboid.{h,cpp} and
+  the pointcloud_camera fixture).
+  (4) Streaming frame loader — LANDED: selectFrame now serves neighboring
+  frames from a bounded background prefetch cache (QtConcurrent decode of
+  index±1/±2, four-entry cache, in-flight de-duplication), so stepping
+  through a folder skips the file decode entirely.
+  Also fixed a stash-merge conflict remnant in plugins/core/Standard/
+  CMakeLists.txt that had silently removed the qAnyLabeling
+  add_subdirectory registration.
 - [x] Image Navigator dock with viewport thumbnails and F9 toggle, plus a
   native Compare View with recursive basename matching, same-size validation,
   shared canvas zoom/pan, split slider, close/reset, and `Ctrl+Alt+C`. The
@@ -731,6 +799,19 @@ These features must be implemented regardless of model coverage.
   missing binding was `quit` (Ctrl+Q), now registered through the
   confirm-on-close path (the file-list checkbox default intentionally
   stays `true` because the checked-image workflow renders through it).
+- [x] Review-loop toast occlusion fix (root cause only): two earlier
+  positioning-only repairs were reverted back to the committed Popup
+  mechanism after the backtrace-probed real root cause proved unrelated to
+  coordinates — Qt children are visible-by-inheritance, so the
+  constructor-created toast was mapped at (0,0) over the menu bar by the
+  workspace's show(). The popup now starts hidden and showMessage() is the
+  only show path; the workspace became a top-level OS window (Qt::Window,
+  matching the source standalone window) instead of a frameless child
+  embedded in the main window, with the plugin's stale m_window pointer
+  reset on destroy. The offscreen end-to-end probe
+  (test_qanylabeling_popup_probe) pins open-time hidden, toast placement
+  and auto-close; on-screen screenshots confirm the titled standalone
+  window and an unobstructed menu bar.
 - [x] Interaction-logic parity round four: the source shape.* color group is
   fully wired into the canvas render path (color strategy auto/manual,
   default shape color, auto-color hue shift, line/fill/vertex/select-line/
@@ -745,13 +826,33 @@ These features must be implemented regardless of model coverage.
   inside their nested loops: the canvas context menu (filter submenu
   structure and population, plus SAM right-click suppression) and the
   modal label dialog (sort, completion filter, accept).
-- [ ] Remaining interaction parity: model hub is contract-owned by the
-  AICore catalog (no plugin-side download source switch), the adapter has
-  no logging subsystem for logger level, and the Qt image allocation limit
-  needs the Qt 6 build — all three are summarized in the settings dialog
-  TODO note; validate_label stays unexposed because the source default is
-  null; and exact diverging-default parity (file_list_checkbox_editable)
-  remains a conscious adapter decision.
+- [ ] Remaining interaction parity (re-audited 2026-10-07, split into
+  closable subtasks): (a) `validate_label` — DONE (2026-10-07): the
+  General settings page exposes the source (none)/"exact" choices, the
+  field persists, `AnnotationWindow::validateLabel` encodes the rule, and
+  the check is wired into the batch-edit dialog (editLabels) apply path —
+  under "exact" every replacement label is validated against the unique
+  label list before any file is written. (b) `logger_level`
+  — DONE (2026-10-08): the General page exposes the level field and all
+  14 plugin log sites route through the level-gated qany_log helper
+  (AnnotationLogging.h) — "warning" drops info lines, "error" keeps
+  only errors — before falling through to the repository's single-point
+  aicore_inference_log [Error]/[Warning] routing; the settings dialog
+  refreshes the cached level immediately on apply.
+  (c) `file_list_checkbox_editable` default stays intentionally divergent
+  (true: the checked-image workflow renders through it) and `model_hub`
+  stays contract-owned by the AICore catalog — both re-audited and
+  confirmed as conscious decisions, not work items; (d)
+  `qt_image_allocation_limit` stays blocked on a Qt 6 build.
+  Full-surface audit (2026-10-08): a feature-level diff of the upstream
+  label_widget action inventory (312 tr entries) against the plugin
+  found no missing interaction surface — the apparent gaps (Create
+  Cuboid/Circle/Rotation, Copy Object, Batch Edit, Copy Coordinates) are
+  wording differences over implemented features (canvas supports all
+  upstream shape types incl. cuboid/circle/rotation; copyShapes uses the
+  upstream clipboard MIME format; the batch edit dialog is the Label
+  change manager). The genuinely remaining items are visual-fixture
+  work and the large model-zoo/AICore-contract matrix tracked above.
 - [ ] Remaining image workflow: exact edit/settings action ordering beyond
   the now source-ordered File, View, Edit, Upload/Export menus and verified
   left toolbar sequence, selection visuals,
@@ -777,7 +878,20 @@ These features must be implemented regardless of model coverage.
   drawn as a binary silhouette filled with the shape color at the 0-255
   opacity (cached per shape/mask), verified by an image-level fixture —
   but exact overlay styling and remaining screenshot-level comparisons
-  stay open above.
+  stay open above. Settings-field diff (2026-10-07, CONVERGED): the
+  upstream schema is anylabeling/views/labeling/settings/schema.py
+  (SETTINGS_GENERAL_KEYS :353, SETTINGS_SHAPE_KEYS :365, SETTING_FIELD_MAP
+  through :1499, ~90 keys); the two key groups diff to 18 concrete
+  settings and all of them are now either implemented in the four-category
+  AnnotationSettings pages (General: auto-highlight, auto-switch-to-edit,
+  exif scan, file-list checkbox, system clipboard, font family,
+  logger_level, validate_label; Shape: default color, auto color shift,
+  line/fill/vertex/select-line/select-fill/hover-vertex colors, point
+  size, line width) or consciously owned (model_hub by the AICore
+  catalog, file_list_checkbox_editable default, qt_image_allocation_limit
+  pending a Qt 6 build). No settings-field work remains; what is left for
+  full parity is visual only — exact overlay styling and screenshot-level
+  layout comparison against docs/images/ fixtures.
 - [x] PPOCR Rec/KIE annotation stream import/export, including transcription,
   quadrilateral/polygon geometry, difficulty, labels, group IDs, and linking.
 - [x] PPOCR Rec directory export generates perspective-corrected `crop_img`
@@ -803,6 +917,85 @@ These features must be implemented regardless of model coverage.
   multiple documents and non-mapping roots stay rejected. Mixed-class
   and flow/indent/anchor fixtures verify identical YOLO pose text output
   against the canonical schema.
+- [x] Fixed the `test_qanylabeling_plugin` harness (2026-10-07). The
+  earlier "fails in Qt's metadata validation layer" diagnosis was a
+  measurement blind spot (strace was filtered to openat only). Two real
+  causes, both fixed: (1) QPluginLoader rejects a non-normalized relative
+  path with "The shared library was not found" — the test now resolves
+  argv[1] through QFileInfo::absoluteFilePath; (2) the ctest environment
+  lacked the dlopened plugin's dependency dirs — LD_LIBRARY_PATH (PATH on
+  Windows) is now injected with generator expressions, the same pattern
+  as test_qanylabeling_popup_probe. The probe remains in place pinning
+  the review-toast open-time-hidden contract end to end.
+- [ ] Remote-server auto-labeling parity (investigated 2026-10-07):
+  upstream `remote_server` (services/auto_labeling/remote_server.py,
+  879 lines) is an inference CLIENT — it POSTs base64 data-URI frames to
+  `{server_url}/v1/predict` (plus `/v1/models`, SAM3 and video-session
+  endpoints), parses the returned shapes, and is configured through
+  `remote_server_settings` {server_url, api_key, timeout} with an
+  XANYLABELING_SERVER_URL env override. Verdict: genuinely useful
+  (offloads heavy models to a remote inference service) and cheap in
+  dependencies — every transport piece maps onto Qt-native
+  QNetworkAccessManager/QImage/QJsonDocument, no new third-party library.
+  The earlier ownership-map objection (no private
+  downloader/backend/scheduler) does not apply: the remote service is the
+  inference backend by explicit user configuration, not a plugin-side
+  reimplementation of one.
+  P0 LANDED (2026-10-07): `RemoteServerClient` (transport + data-URI
+  framing + shape JSON parsing, upstream protocol parity), the
+  `RemoteServerDialog` connection dialog (URL/api-key/timeout with live
+  /v1/models fetch), the `Remote Server` pseudo-entry in the model picker,
+  and the `startRemoteInference` dispatch through onInference with
+  stale-generation discard. Settings persist under qAnyLabeling/
+  remoteServer{Url,ApiKey,Timeout,Model} with the XANYLABELING_SERVER_URL
+  env override. Verified by `test_qanylabeling_remote` (in-process
+  QTcpServer mock, models+predict round trips).
+  P1+P2 LANDED (2026-10-07): video-session endpoints
+  `/v1/video/init` (frame upload, timeout x2), `/v1/video/prompt` (text
+  prompts with upstream trailing-period strip; point prompts with
+  relative coords, 0/1 labels and the obj_id 10000 sentinel),
+  `/v1/video/propagate/stream` SSE parsing (started/progress/completed/
+  error events, no timeout as upstream, results keyed by frame index),
+  and `/v1/video/cleanup/{id}?model=` on session reset (local state
+  clears even if the POST fails). P2: `setResetTracker()` one-shot flag
+  riding the next predict params (upstream
+  set_auto_labeling_reset_tracker parity); upstream `unload()` is a
+  no-op (`pass`) with no server protocol, so no client API is needed.
+  All verified in `test_qanylabeling_remote` (keep-alive QTcpServer
+  mock: init/prompt/point-prompt/SSE propagation/cleanup round trips,
+  reset-tracker one-shot assertion).
+  VIDEO WIRING LANDED (2026-10-07): `AnnotationWindow::startRemoteInference`
+  now probes /v1/models first and routes by the server-declared
+  batch_processing_mode (upstream get_batch_processing_mode parity; a
+  single-task available_tasks entry may override the model-level mode).
+  default keeps the plain predict; video runs the full upstream session
+  flow in-window: frameDataUris packs the file-list frames (capped at
+  2000 before the base64 payload can exhaust the process), /v1/video/init
+  uploads them, the current frame is prompted with the text box or the
+  canvas points converted to relative coordinates (obj_id 10000), prompt
+  shapes land through the regular stale-checked inference path, and the
+  SSE propagation writes every frame's masks into its sidecar JSON
+  (saveRemoteShapesToSidecar preserves existing flags/tags/checked and
+  fills image dimensions via QImageReader headers). Progress reports
+  through the status line; the session is released on completion or
+  error. Remaining: the qAnyLabeling toolbar
+  `AnnotationTODO_open_paddleocr`-style automation mapping.
+- [x] Test-build layout refactor (2026-10-07): the 450-line monolithic
+  CMakeLists.txt is now split into the repository-standard form used by
+  every other tested plugin — the main file (138 lines) keeps only the
+  plugin target, and all 17 test executables moved to tests/CMakeLists.txt
+  built with the new repository-wide cloudviewer_add_plugin_test helper
+  (cmake/CloudViewerOutputDirectories.cmake) plus
+  cloudviewer_set_plugin_test_env_offscreen, replacing ~180 lines of
+  hand-copied PIC/-no-pie/output-directory/env boilerplate. The refactor
+  also fixed three latent defects: a stray ">" in the hand-written
+  LD_LIBRARY_PATH/PATH generator expressions, the canvas offscreen
+  property registered inside the sliced-detection block, and seven tests
+  that ran without any offscreen/library-path environment injection.
+  Note for the other tested plugins (qYOLO/qGKD/qRMBG/qTrellis/
+  qMapAnything/qRFDetr/qFaceDetect): their tests/CMakeLists.txt still
+  hand-write the same boilerplate and can adopt
+  cloudviewer_add_plugin_test incrementally.
 - [ ] Training UI, annotation quality/consistency tools, and workflows that
   depend on external services. Implement only after their data contracts and
   ownership are identified.

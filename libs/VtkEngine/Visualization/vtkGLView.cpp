@@ -382,10 +382,11 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
     m_deferredPickingTimer.setSingleShot(true);
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
-        if (auto rw = m_visualizer3D ? m_visualizer3D->getRenderWindow()
-                                     : nullptr) {
-            rw->Render();
-        }
+        // No forced Render() here: the interaction render loop already keeps
+        // the on-screen frame current, and the selection passes re-render
+        // with their own buffer capture. A full scene render per click on a
+        // 286-camera / multi-million-point scene stalled every pick by
+        // hundreds of milliseconds.
         syncVtkCameraToContext();
 
         m_displayTools->setPickingTargetView(this);
@@ -1401,6 +1402,7 @@ void vtkGLView::syncVtkCameraToContext() {
                 0, 0,
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
+        m_ctx.dpr = dpr;
     } else {
         const int* sz = ren->GetSize();
         m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
@@ -1829,6 +1831,11 @@ QString vtkGLView::pickObject(double x, double y) {
         if (m_vtkWidget) {
             int h = m_vtkWidget->height();
             double dpr = getDevicePixelRatio();
+            // params.centerX/centerY arrive ALREADY in PHYSICAL pixels
+            // (StartPicking converts once at the entry). vtkRenderWindow
+            // pixel space is physical too, so only the y-FLIP applies
+            // here — multiplying by dpr AGAIN double-scaled every pick
+            // on HiDPI (x shifted half a viewport right, y half up).
             vtkY = h * dpr - 1.0 - y;
             // Coordinate probe (ACV_DIAGNOSTICS=1): exposes DPR/flip
             // mismatches between the Qt click position and the VTK pixel

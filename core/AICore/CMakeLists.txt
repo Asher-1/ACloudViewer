@@ -15,6 +15,9 @@
 #   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
 #   src/tasks/trellis/    — TRELLIS image-to-3D generation
 #   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
+#   src/tasks/map_anything/ — universal feed-forward metric 3D reconstruction
+#                           (map-anything-ggml cpp_ggml port: VGGT-Omega / VGGT /
+#                            Pi3 / Pi3X / MapAnything / DUSt3R)
 #   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
 #   src/tasks/loma/       — LoMa feature extraction and matching
 #   src/tasks/reid/       — appearance embeddings for multi-object tracking
@@ -57,6 +60,7 @@ set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
 set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
+set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
 set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
 
@@ -98,6 +102,8 @@ set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/*.cpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
@@ -129,6 +135,9 @@ endif()
 if(NOT EXISTS ${AICORE_GKD_SRC_DIR}/gkd_graph.cpp)
     message(FATAL_ERROR "AICore: missing GKD module at ${AICORE_GKD_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp)
+    message(FATAL_ERROR "AICore: missing MapAnything module at ${AICORE_MAP_ANYTHING_SRC_DIR}")
+endif()
 if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
     message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
 endif()
@@ -144,6 +153,10 @@ endif()
 if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
     message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
 endif()
+
+option(MAP_ANYTHING_ENABLE_DUMP
+       "Compile qMapAnything parity stage dumps (debug-only, increases runtime I/O)"
+       OFF)
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
@@ -162,6 +175,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_GKD_SOURCES}
+    ${AICORE_MAP_ANYTHING_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
     ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
     ${AICORE_API_HEADERS}
@@ -182,6 +196,27 @@ set_source_files_properties(
     ${AICORE_LINGBOT_SRC_DIR}/lingbot_skyseg.cpp
     ${AICORE_LINGBOT_SRC_DIR}/lingbot_gguf_loader.cpp
     PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# MapAnything host-side floating-point parity: the reference implementation
+# (upstream map-anything-ggml cpp_ggml) compiles WITHOUT -march (x86-64
+# baseline, no FMA), while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to
+# this tree. With contraction enabled GCC fuses `a*b+c` into vfmadd inside
+# the graph-builder's host-side float math (RoPE cos/sin tables, mean/std
+# staging, DPT resample weight math), drifting 1-ULP through the 24
+# transformer blocks and visibly changing depth/pose output versus the
+# upstream parity feeds. Disabling contraction on the map_anything TUs
+# restores the reference bit-exact contract; ggml kernels are unaffected
+# (they are compiled in ext_ggml without -march).
+set_source_files_properties(
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_capi.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_gguf_loader.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_image_io.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+if(MAP_ANYTHING_ENABLE_DUMP)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MAP_ANYTHING_ENABLE_DUMP)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     POSITION_INDEPENDENT_CODE ON
@@ -240,6 +275,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
         ${AICORE_GKD_SRC_DIR}
+        ${AICORE_MAP_ANYTHING_SRC_DIR}
         ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
@@ -458,7 +494,7 @@ else()
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
             set_source_files_properties(
                 ${AICORE_COMMON_SRC_DIR}/winograd.cpp
-                ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
+                ${AICORE_COMMON_SRC_DIR}/blocked_conv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
     endif()
@@ -679,10 +715,17 @@ message(STATUS "AICore (SHARED): tasks=${_aicore_enabled_tasks_csv}; ggml linked
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
 
+# End-to-end OCR benchmark (det+rec per image, p50/p95); the official
+# PaddleOCR counterpart lives in scripts/bench_paddle_official.py.
+add_executable(bench_ocr tools/bench_ocr.cpp)
+target_link_libraries(bench_ocr PRIVATE AICore)
+
 add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
     # Winograd conv custom op (routed by the CPU-session graph build).
     src/common/winograd.cpp
+    # Blocked-layout island ops (routed by the CPU-session graph build).
+    src/common/blocked_conv.cpp
     # Backend discovery helpers referenced by the probe (dynamic-loader
     # backend registration lives in the env bridge).
     src/common/ggml_env_bridge.cpp)
@@ -702,6 +745,10 @@ set_target_properties(test_ocr_runtime PROPERTIES
     # every device except the caller's own registrations disappears.
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN")
+# Layout the probe under bin/aicore_tests/ together with the ggml backend
+# copies (batch C test-layout fix; the probe does not go through the
+# tests/CMakeLists.txt that already applies the layout function).
+cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()

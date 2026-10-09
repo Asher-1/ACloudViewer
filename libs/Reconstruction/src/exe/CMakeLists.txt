@@ -59,3 +59,4 @@ endif()
 
 # Batch 24 test alignment: exe-layer tests (upstream parity).
 COLMAP_ADD_TEST(exe_sfm_test sfm_test.cc)
+COLMAP_ADD_TEST(exe_image_test image_test.cc)

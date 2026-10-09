@@ -364,6 +364,9 @@ bool ModelLoader::offload_weights(Backend& be) {
         reset_device_storage();
         return false;
     }
+    // WEIGHTS usage tag: sched offload routing requires it; without it the
+    // offloaded weights never route ops to the GPU.
+    ggml_backend_buffer_set_usage(gpu_buf_, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (auto& pr : ups)
         ggml_backend_tensor_set(pr.first, pr.second, 0, ggml_nbytes(pr.first));
     // q4_k upload sources are temporary dequantized host buffers. Some

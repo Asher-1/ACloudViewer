@@ -1402,7 +1402,12 @@ void pybind_scene(py::module& m) {
                     "crop",
                     [](const Reconstruction& self,
                        const std::pair<Eigen::Vector3d, Eigen::Vector3d>&
-                               bbox) { return self.Crop(bbox); },
+                               bbox) {
+                        // Python API stays pair-based; the C++ side moved to
+                        // the upstream-parity AlignedBox3d Crop signature.
+                        return self.Crop(
+                                Eigen::AlignedBox3d(bbox.first, bbox.second));
+                    },
                     "bbox"_a,
                     "Crop the reconstruction to the given bounding box; "
                     "returns a new reconstruction.")

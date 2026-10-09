@@ -1,0 +1,10 @@
+{
+  "registered_images_relative_difference": 0.0,
+  "sparse_points_relative_difference": 0.026894865525672374,
+  "track_observations_relative_difference": 0.026273885350318476,
+  "mean_track_length_relative_difference": 0.002081844853543943,
+  "point_reprojection_rms_px_relative_difference": 0.017996921017563873,
+  "camera_center_p95": 0.006817476868414116,
+  "camera_rotation_p95_deg": 0.21605567027992031,
+  "point_nn_p95": 0.49580062596874597
+}

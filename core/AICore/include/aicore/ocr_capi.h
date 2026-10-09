@@ -98,6 +98,17 @@ typedef struct aicore_ocr_options {
     const char* device;
     /** CPU thread count for the CPU backend (<= 0 = backend default). */
     int32_t n_threads;
+    /** DB box-score filter: a candidate whose mean probability inside the
+     *  polygon falls below this is dropped (official PP-OCR det
+     *  box_thresh, default 0.6; <= 0 keeps the official default). Appended
+     *  in v1.1; callers with the older struct_size get the default. */
+    float det_box_score_thresh;
+    /** det resize mode: 0 = official PP-OCR default ("min": scale the
+     *  SHORT side up to det_max_side when it is below it, det_max_side
+     *  then acts as limit_side_len and defaults to 736), 1 = legacy
+     *  "max" cap (never upscale, long side <= det_max_side). Appended
+     *  in v1.1; 0 aligns the det recall with the official pipeline. */
+    int32_t det_limit_type;
 } aicore_ocr_options;
 
 #define AICORE_OCR_ABI_VERSION 1u
@@ -122,6 +133,40 @@ typedef struct aicore_ocr_relation {
     int32_t role;       /**< KIE role class id */
     float score;
 } aicore_ocr_relation;
+
+/** Optional OCR post-process breakdown for the last result. These wall-clock
+ *  intervals include parallel worker lifetime and are diagnostic/benchmark
+ *  evidence, not a replacement for aicore_pipeline_timings. */
+#define AICORE_OCR_POST_TIMINGS_ABI_VERSION 2u
+
+enum {
+    AICORE_OCR_POST_TIMING_DB_BOXES = 1u << 0,
+    AICORE_OCR_POST_TIMING_CROP_RESIZE_PACK = 1u << 1,
+    AICORE_OCR_POST_TIMING_CTC_DECODE = 1u << 2,
+    AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY = 1u << 3,
+    AICORE_OCR_POST_TIMING_OUTPUT_READBACK = 1u << 4,
+    AICORE_OCR_POST_TIMING_INPUT_UPLOAD = 1u << 5,
+    /** 独立图计算时间；用于定位 det 与 rec 的最大执行热点。 */
+    AICORE_OCR_POST_TIMING_DET_GRAPH_COMPUTE = 1u << 6,
+    AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE = 1u << 7,
+};
+
+typedef struct aicore_ocr_post_timing_breakdown {
+    uint32_t abi_version;
+    uint32_t valid_fields;
+    double db_boxes_ms;
+    double crop_resize_pack_ms;
+    double ctc_decode_ms;
+    double result_assembly_ms;
+    /** Device-to-host output transfer; graph compute remains in inference. */
+    double output_readback_ms;
+    /** Host-to-device graph-input transfer; excludes graph compute. */
+    double input_upload_ms;
+    /** DBNet 图计算时间；不包含传输或后处理。v2 追加字段。 */
+    double det_graph_compute_ms;
+    /** 所有 SVTR rec 图计算时间；不包含传输或 CTC。v2 追加字段。 */
+    double rec_graph_compute_ms;
+} aicore_ocr_post_timing_breakdown;
 
 typedef struct aicore_ocr_result aicore_ocr_result;
 typedef struct aicore_ocr_ctx aicore_ocr_ctx;
@@ -183,6 +228,11 @@ AICORE_CAPI void aicore_ocr_result_release(aicore_ocr_result* result);
 /** Common stage timings of the last run (valid_fields marks truth). */
 AICORE_CAPI aicore_pipeline_timings
 aicore_ocr_timings(const aicore_ocr_result* result);
+
+/** OCR post-process substage timings of the last run (valid_fields marks
+ *  available stages; NULL returns a zero-initialized breakdown). */
+AICORE_CAPI aicore_ocr_post_timing_breakdown
+aicore_ocr_post_timings(const aicore_ocr_result* result);
 
 /** Thread-local error string of the last failing call (never NULL). */
 AICORE_CAPI const char* aicore_ocr_last_error(void);

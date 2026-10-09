@@ -271,7 +271,6 @@ double YAxisAngleFromRotation(const Eigen::Matrix3d& rotation);
 // about the Y-axis (gravity direction).
 Eigen::Matrix3d RotationFromYAxisAngle(double angle);
 
-
 // Upstream parity (d3ccaf35 geometry/pose.h): quaternion from an angle-axis
 // vector, with a first-order small-angle expansion.
 Eigen::Quaterniond QuaternionFromAngleAxis(const Eigen::Vector3d& omega);

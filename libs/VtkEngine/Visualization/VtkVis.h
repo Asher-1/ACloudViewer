@@ -472,6 +472,20 @@ public:
                                const ccSensor* sensor,
                                const std::string& viewID,
                                int viewport);
+    /// Line-family aggregation (ccPolyline / ccLineSet): registers the
+    /// line geometry as a block of ONE group actor under its container,
+    /// split per resolved line width ("#plw" family — disjoint from the
+    /// sensor "#lw" family the replay suspension evicts, so static lines
+    /// keep aggregating through replays untouched). @returns false (caller
+    /// falls back to the dedicated-actor path) when VTK < 9, the line is in
+    /// 2D mode (its points resolve through the LIVE view camera on every
+    /// conversion — baking them would freeze camera-dependent geometry),
+    /// carries a per-entity state without a per-block equivalent, or the
+    /// container holds too few line leaves to be worth the bookkeeping.
+    bool aggregateLineEntity(const CC_DRAW_CONTEXT& context,
+                             ccHObject* entity,
+                             const std::string& viewID,
+                             int viewport);
     /// Clear any previously set GL user-transform on a VTK actor.
     void clearGLTransform(const std::string& viewID, int viewport);
     vtkSmartPointer<vtkTransform> getTransformation(
@@ -479,7 +493,9 @@ public:
     void updateNormals(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud);
     void updateShadingMode(const CC_DRAW_CONTEXT& context, ccPointCloud* cloud);
     bool removeEntities(const CC_DRAW_CONTEXT& context);
-    void hideShowActors(bool visibility,
+    /** @return true when a channel's visibility actually changed (drives
+     *  the once-per-change geometry-bounds invalidation). */
+    bool hideShowActors(bool visibility,
                         const std::string& viewID,
                         int viewport = 0);
     void hideShowWidgets(bool visibility,
@@ -1554,6 +1570,9 @@ protected:
     /// may hold both meshes and sensors, and the two gates must not read
     /// each other's counts).
     std::unordered_map<const ccHObject*, size_t> m_containerSensorCountCache;
+    /// Line-family counterpart: leaf line count per container (POLY_LINE +
+    /// LINESET), same positive-count caching rule as the sensor cache.
+    std::unordered_map<const ccHObject*, size_t> m_containerLineCountCache;
     /// Reconciliation signature for an aggregated leaf: every input that
     /// MeshToPolyData consumes, collected with O(1) getters. Redraws whose
     /// signature is unchanged skip the polydata re-conversion and block
@@ -1585,6 +1604,26 @@ protected:
         float sensorLineWidth = 0.0f;
         unsigned sensorFrameColor = 0;
         unsigned sensorPlaneColor = 0;
+        // The graphic scale is BAKED into the frustum polydata
+        // (m_scale enters the near-plane/focus geometry): it MUST be part of
+        // the signature or a scale change never re-registers the block and
+        // the camera stays frozen at its registration-time size while its
+        // sensor state claims otherwise (the "two camera sizes" regression).
+        float sensorScale = 0.0f;
+        // Polyline / LineSet aggregation (drawPolyline / drawLineSet): the
+        // entity identity, the O(1) point/segment count, the closed flag
+        // (changes segment topology WITHOUT changing the count), the
+        // resolved line width (a GROUP property — no per-block equivalent,
+        // must match the group) and the packed resolved color + scalar
+        // presence (per-block override for scalar-less lines). Geometry
+        // edits ride isRedraw(), so the count is only the cheap same-source
+        // discriminator, same contract as the mesh triCount.
+        const void* lineEntity = nullptr;
+        unsigned lineSegmentCount = 0;
+        bool lineClosed = false;
+        float lineLineWidth = 0.0f;
+        unsigned lineColor = 0;
+        bool lineHasColors = false;
         bool operator==(const CompositeLeafKey& o) const {
             return mesh == o.mesh && triCount == o.triCount &&
                    sfShown == o.sfShown && colorsShown == o.colorsShown &&
@@ -1596,7 +1635,12 @@ protected:
                    sensorPointCount == o.sensorPointCount &&
                    sensorLineWidth == o.sensorLineWidth &&
                    sensorFrameColor == o.sensorFrameColor &&
-                   sensorPlaneColor == o.sensorPlaneColor;
+                   sensorPlaneColor == o.sensorPlaneColor &&
+                   sensorScale == o.sensorScale && lineEntity == o.lineEntity &&
+                   lineSegmentCount == o.lineSegmentCount &&
+                   lineClosed == o.lineClosed &&
+                   lineLineWidth == o.lineLineWidth &&
+                   lineColor == o.lineColor && lineHasColors == o.lineHasColors;
         }
     };
     std::unordered_map<std::string, CompositeLeafKey> m_leafGeometryKey;

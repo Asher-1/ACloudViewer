@@ -92,6 +92,13 @@ Reconstruction CreatePinholeParityReconstruction() {
   reconstruction.Camera(camera.CameraId()).Params(3) -= 3.0;
   reconstruction.Image(1).Tvec() += Eigen::Vector3d(0.03, -0.02, 0.05);
   reconstruction.Image(2).Tvec() += Eigen::Vector3d(-0.03, 0.02, -0.04);
+  // A Frame owns the pose. Keep its trivial-rig pose synchronized with the
+  // legacy image mirror so Ceres and Caspar start from identical variables.
+  for (const image_t image_id : {image_t(1), image_t(2)}) {
+    const Image& image = reconstruction.Image(image_id);
+    reconstruction.Frame(image.FrameId())
+        .SetRigFromWorld(image.Qvec(), image.Tvec());
+  }
   for (size_t point_idx = 0; point_idx < point_ids.size(); ++point_idx) {
     reconstruction.Point3D(point_ids[point_idx]).SetXYZ(
         reconstruction.Point3D(point_ids[point_idx]).XYZ() +
@@ -291,27 +298,6 @@ TEST(optim_bundle_adjustment_caspar, TestCasparSplitIntrinsicFactorVariantsCeres
   int cuda_device_count = 0;
   ASSERT_EQ(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
   ASSERT_GT(cuda_device_count, 0);
-
-  // Warm-up: run one merged-variant solve so the first split-variant run
-  // sees the same solver/CUDA state as it does in the full-suite order
-  // (the split family is order-sensitive: a cold first solve lands on a
-  // different kernel path and lands ~60 px away from the ceres reference,
-  // which is an environment/order artifact, not a parity regression).
-  {
-    Reconstruction warmup = CreatePinholeParityReconstruction();
-    BundleAdjustmentConfig warmup_config;
-    warmup_config.AddImage(1);
-    warmup_config.AddImage(2);
-    warmup_config.SetConstantPose(1);
-    warmup_config.AddConstantPoint(1);
-    BundleAdjustmentOptions warmup_options = CreateParityOptions();
-    warmup_options.backend = BundleAdjustmentBackend::CASPAR;
-    ceres::Solver::Summary warmup_summary;
-    ASSERT_TRUE(SolveCasparBundleAdjustment(warmup_options,
-                                            warmup_config,
-                                            &warmup,
-                                            &warmup_summary));
-  }
 
   // These three runs cover every generated split factor.  Each run has a
   // fixed pose (image 1), a variable pose (image 2), a fixed point (point 1),

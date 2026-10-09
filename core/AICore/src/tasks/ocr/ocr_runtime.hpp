@@ -60,9 +60,20 @@ struct OcrProbeOptions {
  *  the shared Winograd custom op (common/winograd.hpp) instead of
  *  im2col+mul_mat; set it only when the session resolved to a CPU backend
  *  (the custom op is CPU-only — on a GPU session it would force a
- *  host<->device round trip per conv). */
+ *  host<->device round trip per conv). `blocked_island` routes eligible
+ *  conv/activation/SE chains through the shared blocked-layout (nChw16c)
+ *  island (common/blocked_conv.hpp) — CPU-only and only when the host
+ *  advertises the AVX-512 fast path (aicore::blk::blocked_available()). */
 struct OcrBuildOptions {
     bool cpu_conv = false;
+    bool blocked_island = false;
+    /** GPU-recognition-only direct convolution. The recognizer's direct
+     *  convolution and depthwise routes have the same decoded text as its
+     *  im2col path; detector convolutions intentionally remain im2col. */
+    bool gpu_rec_direct_conv = false;
+    /** Vulkan execution needs this to avoid the detector's unsupported direct
+     *  convolution route (see the conv2d route note in ocr_runtime.cpp). */
+    bool vk_single = false;
 };
 
 class OcrWeights {
@@ -129,6 +140,33 @@ public:
      *  discarded. */
     void resetFoldPool();
 
+    /** Mirror the CURRENT fold pool to a single device buffer (one bulk
+     *  upload) and repoint every fold tensor at it. Without this the
+     *  sched re-uploads the whole fold pool (~11 MB of BN-folded weights
+     *  and per-op vectors) on EVERY compute — measured at ~12 ms per rec
+     *  chunk, i.e. more than all rec kernels combined. Safe because fold
+     *  constants are never host-read after the build (BN folding already
+     *  happened) and never reused across builds (fresh pool per build);
+     *  the raw-pool mirror preserves view offsets exactly. */
+    bool realizeFoldPoolToDevice(ggml_backend_t backend, std::string* error);
+
+    /** Point every host-resident named weight leaf of `graphCtx` at its
+     *  device copy (see realizeToDevice) and re-derive view pointers. For
+     *  single-backend Vulkan there is no sched to re-upload or re-bind the
+     *  leafs: the graph was built against the HOST originals (BN folding
+     *  needs host dereference), so without this the VK dispatch reads host
+     *  pointers as device addresses. Idempotent; call after
+     *  realizeFoldPoolToDevice and before gallocr_alloc_graph. */
+    void retargetGraphToDevice(struct ggml_cgraph* graph);
+
+    /** Materialize only static mul_mat source views whose byte offset cannot
+     *  be represented by the backend's storage-buffer alignment. The copied
+     *  tensor preserves the view's exact logical byte interval and lives until
+     *  the current graph cache is discarded. */
+    bool materializeUnalignedStaticViews(struct ggml_cgraph* graph,
+                                         ggml_backend_t backend,
+                                         std::string* error);
+
     /** Per-build fold pool (null until the first resetFoldPool); the
      *  builder routes folded constants there. */
     ggml_context* foldContext() const { return foldCtx; }
@@ -138,8 +176,23 @@ private:
     ggml_backend_buffer_t hostConstBuf = nullptr;
     ggml_context* foldCtx = nullptr;          // per-build constants
     ggml_backend_buffer_t foldBuf = nullptr;  // host view for GPU frames
+    ggml_backend_buffer_t foldDeviceBuf = nullptr;  // device mirror of foldCtx
+    ggml_context* foldMirrorCtx = nullptr;  // aligned mirror tensor shapes
+    ggml_context* viewMirrorCtx = nullptr;  // cached static-view copies
+    ggml_backend_buffer_t viewMirrorBuf = nullptr;
     ggml_context* deviceCtx = nullptr;
     ggml_backend_buffer_t deviceBuf = nullptr;
+
+public:
+    /** WEIGHTS-usage tagging gate. Tagging the weight buffers is what lets
+     *  the backend sched offload conv/matmul ops to the GPU (the offload
+     *  routing requires usage == WEIGHTS); without it the whole graph
+     *  silently runs on the CPU secondary even for a GPU session. The
+     *  Vulkan path keeps this off for now: routing ops to ggml-vulkan
+     *  exposed an independent vk subbuffer fault on some det geometries
+     *  (352x544), so VK sessions keep the legacy all-CPU routing until
+     *  that backend issue is fixed. */
+    bool sched_gpu_tagging = true;
 };
 
 /** Build the ggml graph for the loaded program. `input` must be laid out

@@ -115,6 +115,17 @@ bool CompositeBlockRegistry::hasCompositeGroupWithPrefix(
     return false;
 }
 
+std::vector<std::string> CompositeBlockRegistry::groupIdsWithPrefix(
+        const std::string& prefix) const {
+    std::vector<std::string> ids;
+    for (const auto& kv : m_groups) {
+        if (groupKeyMatchesPrefix(kv.first, prefix)) {
+            ids.push_back(kv.first);
+        }
+    }
+    return ids;
+}
+
 int CompositeBlockRegistry::removeCompositeGroupsByPrefix(
         const std::string& prefix) {
     // Collect first, destroy second: destroying invalidates iterators.
@@ -484,6 +495,26 @@ void CompositeBlockRegistry::setLeafVisibility(const std::string& leafId,
     if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
         group.attributes->SetBlockVisibility(block, visible);
     }
+}
+
+bool CompositeBlockRegistry::setLeafVisibilityIfChanged(
+        const std::string& leafId, bool visible) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return false;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        // Unset blocks read back as visible (the attribute-map default), so a
+        // show push on a fresh leaf is correctly a no-op while a hide push
+        // always lands.
+        if (group.attributes->GetBlockVisibility(block) == visible) {
+            return false;
+        }
+        group.attributes->SetBlockVisibility(block, visible);
+        return true;
+    }
+    return false;
 }
 
 void CompositeBlockRegistry::setLeafOpacity(const std::string& leafId,

@@ -1714,6 +1714,11 @@ bool model::load(const std::string &path,
         }
         p_->weights =
                 ggml_backend_alloc_ctx_tensors(p_->device_ctx, p_->be.get());
+        if (p_->weights) {
+            ggml_backend_buffer_set_usage(p_->weights,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!p_->weights) {
             p_->error = "failed to allocate device weight tensors";
             return false;

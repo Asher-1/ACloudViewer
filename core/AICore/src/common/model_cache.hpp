@@ -64,4 +64,8 @@ inline std::string gkd_model_cache_dir() {
     return extract_model_dir("gkd_models");
 }
 
+inline std::string map_anything_model_cache_dir() {
+    return extract_model_dir("map_anything_models");
+}
+
 }  // namespace aicore

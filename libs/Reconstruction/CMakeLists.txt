@@ -87,6 +87,24 @@ option(RECONSTRUCTION_CASPAR_ENABLED
        "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
 option(RECONSTRUCTION_CASPAR_USE_DOUBLE
        "Use f64 generated Caspar kernels" OFF)
+option(RECONSTRUCTION_L3_GATE_ENABLED
+       "Enable the fixed-fixture candidate-versus-pinned-upstream L3 SfM gate" OFF)
+set(RECONSTRUCTION_L3_IMAGES "" CACHE PATH
+    "Fixed image fixture directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_ACV_COLMAP "" CACHE FILEPATH
+    "Candidate ACloudViewer COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_COLMAP "" CACHE FILEPATH
+    "latest pinned upstream COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_SOURCE "" CACHE PATH
+    "Source checkout at the pinned upstream revision used to build the L3 executable")
+set(RECONSTRUCTION_L3_THRESHOLDS "" CACHE FILEPATH
+    "Calibrated JSON thresholds for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_OUTPUT "${CMAKE_BINARY_DIR}/Testing/reconstruction_l3" CACHE PATH
+    "Fresh output directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_SEED "20261009" CACHE STRING
+    "Fixed mapper seed for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_HARNESS "cli-anything-acloudviewer" CACHE FILEPATH
+    "CLI harness executable for reconstruction_l3_alignment_gate")
 option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for Visual Studio / XCode development)" OFF)
 option(DOWNLOAD_ENABLED "Whether to enable (automatic) download of resources (requires Curl/OpenSSL)" ON)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})

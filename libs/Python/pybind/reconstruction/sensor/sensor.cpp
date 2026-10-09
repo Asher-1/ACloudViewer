@@ -202,8 +202,17 @@ void pybind_sensor(py::module& m) {
             .def("clone_as_rgb", &Bitmap::CloneAsRGB,
                  "Return an RGB copy of the image.")
             // Upstream pycolmap parity (d3ccaf35 sensor/bitmap.cc).
-            .def("rot90", &Bitmap::Rot90, "counterclockwise"_a = false,
+            // Rot90 is overloaded (bool counterclockwise / int quarter
+            // turns since the calibration module port) — disambiguate the
+            // bool form for this binding.
+            .def("rot90", static_cast<void (Bitmap::*)(bool)>(&Bitmap::Rot90),
+                 "counterclockwise"_a = false,
                  "Rotate the image in place by 90 degrees.")
+            .def("rot90_quarter_turns",
+                 static_cast<void (Bitmap::*)(int)>(&Bitmap::Rot90),
+                 "num_quarter_turns"_a,
+                 "Rotate the image in place by num_quarter_turns "
+                 "counter-clockwise quarter turns (k % 4).")
             .def("set_jpeg_quality", &Bitmap::SetJPEGQuality, "quality"_a,
                  "Set the JPEG quality (0-100) used by subsequent writes; "
                  "-1 keeps caller-supplied flags untouched.")

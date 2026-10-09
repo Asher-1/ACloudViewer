@@ -8,13 +8,16 @@
 #pragma once
 
 #include <QColor>
+#include <QHash>
 #include <QMainWindow>
 #include <QMap>
 #include <QPointer>
 #include <QSet>
 
+#include "PointCloudCamera.h"
 #include "PointCloudDocument.h"
 
+class QLabel;
 class QListWidget;
 class QComboBox;
 class QSpinBox;
@@ -37,6 +40,26 @@ private:
     void saveAs();
     bool confirmSaved();
     void applySelection(const QVector<int>& indices);
+    /** Background-load neighboring frames so switching is instant; the
+     *  cache holds a small bounded set of fully decoded frames. */
+    void schedulePrefetch(int index);
+    /** Camera panel: calibrated image sources with the current frame's
+     *  points projected on top (upstream pointcloud camera.py parity;
+     *  cuboid overlays land when a cuboid annotation model exists). */
+    struct CameraSource {
+        QString name;
+        QString directory;
+        QString calibrationPath;
+        PointCloudCalibration calibration;
+        QStringList images;
+    };
+    void addCamera();
+    void showCamera(int index);
+    void refreshCameras();
+    QString findCameraImage(const CameraSource& source,
+                            const QString& framePath) const;
+    void persistCameras() const;
+    void restoreCameras();
     void refresh();
     void updateVisibility();
     void loadClasses();
@@ -69,4 +92,12 @@ private:
     QMap<quint16, QColor> m_savedClassColors{
             {0, QColor(QStringLiteral("#808080"))}};
     QString m_classConfigPath;
+    // Streaming frame prefetch: decoded frames keyed by path, filled by
+    // background jobs (bounded set, arbitrary eviction past the limit).
+    QHash<QString, PointCloudFrame> m_prefetch;
+    QSet<QString> m_prefetching;
+    // Camera panel state.
+    QVector<CameraSource> m_cameras;
+    QListWidget* m_cameraList = nullptr;
+    QLabel* m_cameraImage = nullptr;
 };

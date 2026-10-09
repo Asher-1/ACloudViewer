@@ -11,6 +11,9 @@
 #include <QString>
 #include <QVector4D>
 #include <QVector>
+#include <utility>
+
+#include "PointCloudCuboid.h"
 
 struct PointCloudFrame {
     QString path;
@@ -18,6 +21,7 @@ struct PointCloudFrame {
     QVector<QVector4D> points;
     QVector<QColor> rgb;
     QVector<quint32> labels;
+    QVector<PointCloudCuboid> cuboids;
     bool hasIntensity = true;
     bool labelExists = false;
 };
@@ -37,10 +41,17 @@ public:
         CreateInstance,
         AddToInstance,
         RemoveFromInstance,
-        SplitInstance
+        SplitInstance,
+        CreateCuboid
     };
     void setFrame(PointCloudFrame frame);
     const PointCloudFrame& frame() const { return m_frame; }
+    /** Replace the frame's cuboid list (marks the document dirty; cuboids
+     *  are outside the point-label undo stack by design). */
+    void setCuboids(QVector<PointCloudCuboid> boxes) {
+        m_frame.cuboids = std::move(boxes);
+        m_dirty = true;
+    }
     void setLabelPath(const QString& path) {
         m_frame.labelPath = path;
         m_frame.labelExists = true;

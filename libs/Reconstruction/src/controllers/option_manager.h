@@ -65,6 +65,7 @@ public:
     void ModifyForExtremeQuality();
 
     void AddAllOptions() override;
+    void PostParse() override;
 
     // Fork legacy flag spellings (--log_to_stderr/--random_seed); the base
     // group entry points are virtual so these stay authoritative. The
@@ -163,6 +164,12 @@ private:
                                      const std::string& help_text = "") {
         BaseOptionManager::AddDefaultOption(name, option, help_text);
     }
+    template <typename T>
+    void AddOptionAlias(const std::string& name,
+                        T* option,
+                        const std::string& help_text = "") {
+        BaseOptionManager::AddAliasOption(name, option, help_text);
+    }
 
     bool added_extraction_options_ = false;
     bool added_match_options_ = false;
@@ -178,6 +185,7 @@ private:
     bool added_gravity_refiner_options_ = false;
     bool added_reconstruction_clusterer_options_ = false;
     bool added_mesh_texture_mapping_options_ = false;
+    std::filesystem::path mapper_image_list_path_;
     std::filesystem::path global_mapper_image_list_path_;
 
     bool added_patch_match_stereo_options_ = false;

@@ -162,6 +162,10 @@ bool model::realize_weights() {
         error = "device weight alloc failed (out of device memory?)";
         return false;
     }
+    // WEIGHTS usage tag: without it the sched keeps every op on the CPU
+    // secondary even when the CUDA/Vulkan backend is active.
+    ggml_backend_buffer_set_usage(weights_buf,
+                                  GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (ggml_tensor *s = ggml_get_first_tensor(file.ctx); s;
          s = ggml_get_next_tensor(file.ctx, s)) {
         ggml_tensor *d = ggml_get_tensor(device_ctx, ggml_get_name(s));

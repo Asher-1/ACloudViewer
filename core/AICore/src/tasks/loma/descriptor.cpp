@@ -380,6 +380,13 @@ public:
             }
         }
         device_weights = ggml_backend_alloc_ctx_tensors(device_context, be.be);
+        // WEIGHTS usage tag: sched offload routing requires it (sam3d loader
+        // precedent); without it ops silently stay on the CPU secondary.
+        if (device_weights) {
+            ggml_backend_buffer_set_usage(device_weights,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (!device_weights) {
             err = "failed to allocate DeDoDe weights on requested ggml backend";
             return false;

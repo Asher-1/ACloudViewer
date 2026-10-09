@@ -67,6 +67,12 @@ public:
     void AddDefaultOption(const std::string& name,
                           T* option,
                           const std::string& help_text = "");
+    // An alias must not install a default value: boost::program_options would
+    // otherwise overwrite an explicitly supplied sibling option during notify.
+    template <typename T>
+    void AddAliasOption(const std::string& name,
+                        T* option,
+                        const std::string& help_text = "");
     template <typename EnumT>
     void AddDefaultEnumOption(const std::string& name,
                               EnumT* option,
@@ -174,6 +180,14 @@ void BaseOptionManager::AddDefaultOption(const std::string& name,
                 help_text.c_str());
     }
     RegisterOption(name, option);
+}
+
+template <typename T>
+void BaseOptionManager::AddAliasOption(const std::string& name,
+                                       T* option,
+                                       const std::string& help_text) {
+    desc_->add_options()(name.c_str(), boost::program_options::value<T>(option),
+                         help_text.c_str());
 }
 
 template <typename T>

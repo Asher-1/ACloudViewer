@@ -464,28 +464,50 @@ void CopyRegisteredImage(image_t image_id,
                          const Reconstruction& src_reconstruction,
                          Reconstruction& tgt_reconstruction) {
   const Image& src_image = src_reconstruction.Image(image_id);
-  if (!tgt_reconstruction.ExistsCamera(src_image.CameraId())) {
-    tgt_reconstruction.AddCamera(
-        src_reconstruction.Camera(src_image.CameraId()));
+  const Frame& src_frame = src_reconstruction.Frame(src_image.FrameId());
+  const Rig& src_rig = src_reconstruction.Rig(src_frame.RigId());
+
+  // A frame may contain data from multiple cameras. Copy every camera before
+  // its rig so AddRig can validate the complete sensor topology.
+  for (const sensor_t& sensor_id : src_rig.SensorIds()) {
+    if (sensor_id.type == SensorType::CAMERA &&
+        !tgt_reconstruction.ExistsCamera(sensor_id.id)) {
+      tgt_reconstruction.AddCamera(src_reconstruction.Camera(sensor_id.id));
+    }
   }
-  if (!tgt_reconstruction.ExistsRig(src_image.FramePtr()->RigId())) {
-    tgt_reconstruction.AddRig(
-        src_reconstruction.Rig(src_image.FramePtr()->RigId()));
+  if (!tgt_reconstruction.ExistsRig(src_frame.RigId())) {
+    tgt_reconstruction.AddRig(src_rig);
   }
-  if (!tgt_reconstruction.ExistsFrame(src_image.FrameId())) {
-    Frame tgt_frame = src_reconstruction.Frame(src_image.FrameId());
+
+  if (!tgt_reconstruction.ExistsFrame(src_frame.FrameId())) {
+    // Registration and pose ownership are frame-level. Transform the single
+    // rig-from-world pose before insertion, then add all images in the frame
+    // individually; fabricating one trivial frame per image would lose the
+    // shared rig topology and collides for multi-camera captures.
+    Frame tgt_frame = src_frame;
     tgt_frame.ResetRigPtr();
+    THROW_CHECK(src_frame.HasPose());
+    tgt_frame.SetRigFromWorld(
+        TransformCameraWorld(tgt_from_src, src_frame.RigFromWorld()));
     tgt_reconstruction.AddFrame(std::move(tgt_frame));
-    const Rigid3d cam_from_tgt_world =
-        TransformCameraWorld(tgt_from_src, src_image.CamFromWorld());
-    tgt_reconstruction.Frame(src_image.FrameId())
-        .SetCamFromWorld(src_image.CameraId(), cam_from_tgt_world);
+  } else {
+    const Frame& tgt_frame = tgt_reconstruction.Frame(src_frame.FrameId());
+    THROW_CHECK_EQ(tgt_frame.RigId(), src_frame.RigId());
+    THROW_CHECK_EQ(tgt_frame.DataIds(), src_frame.DataIds());
   }
 
   Image tgt_image = src_image;
   tgt_image.ResetCameraPtr();
   tgt_image.ResetFramePtr();
   tgt_reconstruction.AddImage(std::move(tgt_image));
+
+  // The fork retains legacy image pose buffers for consumers that have not
+  // reached the frame API. Synchronize them from the transformed frame.
+  Image& added_image = tgt_reconstruction.Image(image_id);
+  const Rigid3d cam_from_world = added_image.CamFromWorld();
+  const Eigen::Quaterniond& q = cam_from_world.rotation();
+  added_image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+  added_image.SetTvec(cam_from_world.translation());
 }
 
 }  // namespace

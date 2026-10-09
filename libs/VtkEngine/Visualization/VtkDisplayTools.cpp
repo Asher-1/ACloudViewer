@@ -778,7 +778,10 @@ void VtkDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context,
                                   ccPolyline* polyline) {
     VtkVis* vis = resolveVisualizer(context.display);
     std::string viewID = CVTools::FromQString(context.viewID);
-    bool firstShow = !vis->contains(viewID);
+    // Composite leaves own no entry in the actor maps: without the
+    // isCompositeLeaf check they would be treated as first-show on every
+    // redraw (same rule as drawSensor / drawMesh).
+    bool firstShow = !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
     int viewport = context.defaultViewPort;
 
     if (polyline->isRedraw() || firstShow) {
@@ -799,7 +802,10 @@ void VtkDisplayTools::drawLines(const CC_DRAW_CONTEXT& context,
                                 cloudViewer::geometry::LineSet* lineset) {
     VtkVis* vis = resolveVisualizer(context.display);
     std::string viewID = CVTools::FromQString(context.viewID);
-    bool firstShow = !vis->contains(viewID);
+    // Composite leaves own no entry in the actor maps: without the
+    // isCompositeLeaf check they would be treated as first-show on every
+    // redraw (same rule as drawSensor / drawMesh).
+    bool firstShow = !vis->contains(viewID) && !vis->isCompositeLeaf(viewID);
     int viewport = context.defaultViewPort;
 
     if (lineset->isRedraw() || firstShow) {
@@ -1056,7 +1062,9 @@ bool VtkDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
 
 void VtkDisplayTools::logDrawProbe(const std::string& passLabel) {
     const double total = m_probeMeshMs + m_probeCloudMs + m_probeOtherMs;
-    if (total < 100.0 || !CVLog::diagnosticsEnabled()) {
+    // Silent unless ACV_DIAGNOSTICS=1: rate-limited per-bucket attribution
+    // for slow passes, kept out of normal interactive IO.
+    if (!CVLog::diagnosticsEnabled() || total < 100.0) {
         resetDrawProbe();
         return;
     }
@@ -1615,17 +1623,30 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
             }
         }
 
-        if (vis->contains(viewId) || vis->isCompositeLeaf(viewId)) {
-            vis->hideShowActors(context.visible, viewId,
-                                context.defaultViewPort);
+        // PRIMARY render channel: the entity's own geometry actor
+        // (dedicated or composite block). Derived overlay actors (the
+        // "#plane" face, "-normal") are secondary and never satisfy
+        // existence on their own.
+        const bool primaryExists =
+                vis->contains(viewId) || vis->isCompositeLeaf(viewId);
+
+        // Change-detecting batch: the geometry-bounds invalidation (and the
+        // VTK dirty churn it feeds) runs ONCE per ACTUAL change, not once
+        // per entity per pass — a steady redraw of 579 unchanged entities
+        // re-scheduled full bound recomputes for nothing.
+        bool anyChanged = false;
+
+        if (primaryExists) {
+            anyChanged |= vis->hideShowActors(context.visible, viewId,
+                                              context.defaultViewPort);
             found = true;
         }
 
         std::string normalViewId =
                 CVTools::FromQString(context.viewID + "-normal");
         if (vis->contains(normalViewId)) {
-            vis->hideShowActors(context.visible, normalViewId,
-                                context.defaultViewPort);
+            anyChanged |= vis->hideShowActors(context.visible, normalViewId,
+                                              context.defaultViewPort);
             found = true;
         }
 
@@ -1635,14 +1656,39 @@ bool VtkDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context) {
         // camera keeps rendering its red face.
         const std::string faceViewId = viewId + "#plane";
         if (vis->contains(faceViewId)) {
-            vis->hideShowActors(context.visible, faceViewId,
-                                context.defaultViewPort);
+            anyChanged |= vis->hideShowActors(context.visible, faceViewId,
+                                              context.defaultViewPort);
             found = true;
         }
 
-        if (found) {
-            // Visibility toggles change the visible-prop bounds: mark them
-            // dirty and let the pre-render ResetCameraClippingRangeEvent
+        // Diagnostic probe (ACV_DIAGNOSTICS=1): which channel took the
+        // per-camera hide/show — composite block, dedicated actor, #plane
+        // face — or NONE (the pick/hide dead-end signature).
+        if (CVLog::diagnosticsEnabled()) {
+            CVLog::Print(
+                    "[hideShow] '%s' vis=%d composite=%d actor=%d face=%d "
+                    "normal=%d found=%d",
+                    viewId.c_str(), context.visible ? 1 : 0,
+                    vis->isCompositeLeaf(viewId) ? 1 : 0,
+                    vis->contains(viewId) ? 1 : 0,
+                    vis->contains(faceViewId) ? 1 : 0,
+                    vis->contains(normalViewId) ? 1 : 0, found ? 1 : 0);
+        }
+
+        // Escape-path contract (ccHObject::draw): the return value answers
+        // "does this entity's PRIMARY render channel exist". A surviving
+        // derived actor (the "#plane" near-plane face) must NOT satisfy it —
+        // after the replay suspension evicts the composite groups the faces
+        // stay alive while the wireframes are gone; with found=true the
+        // forceRedraw latch was never consumed and the frustum wireframes
+        // never came back (replay showed faces only, gates flipped nothing).
+        if (context.hideShowEntityType == ENTITY_TYPE::ECV_SENSOR) {
+            return primaryExists;
+        }
+
+        if (anyChanged) {
+            // A real visibility flip changes the visible-prop bounds: mark
+            // them dirty and let the pre-render ResetCameraClippingRangeEvent
             // observer (resetCameraClippingCached) recompute ONCE per render.
             // A per-entity resetCameraClippingRange here ran
             // ComputeVisiblePropBounds over ALL actors for EVERY entity — an

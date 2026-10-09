@@ -1422,3 +1422,40 @@ HasPose()。批 S 留因的「帧对粒度 matches」假说也被证伪:对应�
   等),独立子批;
 - exe/image.cc 的 image 级过滤(IsRegistered)在磁盘模型(标志 false)
   下失效——对齐 upstream 的 FindFramesToFilter 帧级路径。
+
+## 批次 U:rig-aware MergeReconstruction(2026-10-09)
+
+- `Reconstruction::Merge` 不再为每个缺失 image 调
+  `AddImageWithTrivialFrame`。它按源 frame 复制完整 rig 的全部 cameras、
+  rig、frame data ids 与单一 frame pose，再逐 image 接线；因此一个 frame
+  可安全承载多个相机图像。
+- 相似变换先应用到 frame 的 `rig_from_world`，随后只做 frame→image 的
+  legacy qvec/tvec 镜像同步。移除了合并尾部的二次重投影过滤：一对一轨迹
+  冲突已在合并阶段解决，额外过滤会按簇局部优化噪声丢弃正确观测。
+- `hierarchical_pipeline_test` 的
+  `WithoutNoiseAndNonTrivialFrames` 与
+  `WithoutNoiseAndPanoramicNonTrivialFrames` 已解除 DISABLED 并经 ctest
+  通过。剩余入口：Bitmap API/64 个用例子批，以及 `exe/image.cc` 的帧级过滤。
+
+## 批次 V:hierarchical 误差收尾与 image registrator 位姿门禁(2026-10-09)
+
+- hierarchical cluster merge/filter 会暂存 normalized/angular residual；最终
+  `ReconstructionManager` 发布前现在逐模型调用 `UpdatePoint3DErrors()`，保证
+  `Point3D::Error()` 回到像素 reprojection error 契约。
+  `HierarchicalPipeline.WithoutNoise` 已解除 DISABLED，并验证发布值与显式
+  重算值一致。
+- `RunImageRegistrator` 的已注册判据从 legacy `IsRegistered()` 改为
+  `HasPose()`。指定 `Mapper.image_list_path` 时，cache 现在额外装入所有
+  已有 pose 的图；否则 `BeginReconstruction()` 重载已有模型时会访问被选择集
+  排除的 image/cache 映射并抛 `_Map_base::at`。同时对齐 upstream 的
+  `load_all_images=true` 与 image-list 选项解析。新增注册的 `exe_image_test`
+  已实测 **2/2 通过**（含断连已注册图回归）。
+- L3 双端 gate 已落地为 opt-in `reconstruction_l3_alignment_gate`：要求固定
+  图像清单 SHA-256、固定 mapper seed、候选二进制、d3ccaf35 源 checkout 与
+  二进制、校准阈值 JSON；脚本导出 TXT 模型，使用公共注册图 camera center 的
+  Sim3 规范化后比较注册图/点/观测/轨长/重投影 RMS、位姿与对称点云 NN 距离，
+  输出 verdict 与完整 provenance JSON。缺少 fixture、pinned upstream build、
+  harness 或阈值时配置/运行失败，不得报绿；本机尚未具备该执行前提，因而没有
+  L3 通过声明。
+- 仍待：Bitmap API/64 个用例、Caspar 冷启动/并行 GPU 稳定性矩阵，以及在具备
+  d3ccaf35 build 与固定 fixture 后实际运行 L3 并把阈值校准结果回填。

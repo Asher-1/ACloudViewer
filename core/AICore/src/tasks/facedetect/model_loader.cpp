@@ -151,6 +151,10 @@ bool ModelLoader::realize_weights(ggml_backend_t backend) {
         FD_LOG("realize_weights: alloc_ctx_tensors failed");
         return false;
     }
+    // WEIGHTS usage tag: without it the sched never offloads weight-consuming
+    // ops to the GPU and the whole graph silently runs on the CPU secondary.
+    ggml_backend_buffer_set_usage(weights_buf_,
+                                  GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (auto& pr : ups)
         ggml_backend_tensor_set(pr.first, pr.second, 0, ggml_nbytes(pr.first));
     tensors_.swap(devmap);

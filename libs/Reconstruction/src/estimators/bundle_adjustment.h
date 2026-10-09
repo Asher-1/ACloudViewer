@@ -220,7 +220,21 @@ struct BundleAdjustmentOptions {
     // directly. It is equivalent to backend == CASPAR.
     bool use_caspar = false;
     int caspar_gpu_index = -1;
+    // The legacy flat fields remain for existing callers. The full set below
+    // mirrors the generated Caspar solver contract and is registered under
+    // BundleAdjustmentCaspar.* by OptionManager.
     int caspar_max_num_iterations = 200;
+    int caspar_pcg_iter_max = 20;
+    double caspar_diag_init = 1.0;
+    double caspar_diag_min = 1e-12;
+    double caspar_diag_scaling_up = 2.0;
+    double caspar_diag_scaling_down = 0.333333;
+    double caspar_diag_exit_value = 1e3;
+    double caspar_score_exit_value = 0.0;
+    double caspar_pcg_rel_error_exit = 1e-4;
+    double caspar_pcg_rel_score_exit = -1.0;
+    double caspar_pcg_rel_decrease_min = -1.0;
+    double caspar_solver_rel_decrease_min = 1.0;
 
     // Optional cooperative cancellation hook, checked once per Ceres
     // iteration. Return true to abort the solve while keeping intermediate

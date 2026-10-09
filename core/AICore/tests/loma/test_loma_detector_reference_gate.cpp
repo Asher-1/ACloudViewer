@@ -146,10 +146,9 @@ int main() {
         ++true_positive;
         max_coordinate_error =
                 std::max(max_coordinate_error, std::sqrt(best_distance_sq));
-        max_score_error =
-                std::max(max_score_error,
-                         std::abs(output.scores[index] -
-                                  reference.scores[best]));
+        max_score_error = std::max(
+                max_score_error,
+                std::abs(output.scores[index] - reference.scores[best]));
     }
     const double precision = static_cast<double>(true_positive) / output.count;
     const double recall = static_cast<double>(true_positive) / reference.count;
@@ -162,8 +161,8 @@ int main() {
             max_coordinate_error, max_score_error);
     aicore_loma_detected_features_free(&output);
     aicore_loma_detector_free(detector);
-    if (precision < 0.995 || recall < 0.995 ||
-        max_coordinate_error > 2.0f || max_score_error > 1e-5f) {
+    if (precision < 0.995 || recall < 0.995 || max_coordinate_error > 2.0f ||
+        max_score_error > 1e-5f) {
         std::fprintf(stderr, "DaD real-image precision/recall gate failed\n");
         return 1;
     }

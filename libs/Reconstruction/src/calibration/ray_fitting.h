@@ -1,47 +1,52 @@
-// SPDX-License-Identifier: BSD-3-Clause
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "sensor/models.h"
-
+#include <Eigen/Core>
 #include <limits>
 #include <vector>
 
-#include <Eigen/Core>
+#include "sensor/models.h"
 
 namespace colmap {
 
 struct RayFittingOptions {
-  // Maximum number of Ceres solver iterations for nonlinear refinement.
-  // The solver terminates early on convergence; coupled models (e.g. EUCM)
-  // need the headroom.
-  int max_num_iterations = 50;
+    // Maximum number of Ceres solver iterations for nonlinear refinement.
+    // The solver terminates early on convergence; coupled models (e.g. EUCM)
+    // need the headroom.
+    int max_num_iterations = 50;
 
-  // Maximum number of 2D-3D correspondences used for fitting. Dense fields
-  // (AnyCalib predicts 322x322 rays) are stride-subsampled to this size: the
-  // dense refinement cost scales with the number of residuals while dense
-  // fields are smooth enough that uniform stride coverage suffices. Raise it
-  // for sparse or noisy correspondences.
-  int max_num_points = 16384;
+    // Maximum number of 2D-3D correspondences used for fitting. Dense fields
+    // (AnyCalib predicts 322x322 rays) are stride-subsampled to this size: the
+    // dense refinement cost scales with the number of residuals while dense
+    // fields are smooth enough that uniform stride coverage suffices. Raise it
+    // for sparse or noisy correspondences.
+    int max_num_points = 16384;
 
-  // Relative weight of the mean squared focal-length prior error compared to
-  // the mean squared pixel reprojection error. A value of zero disables the
-  // prior.
-  double prior_focal_length_weight = 0.0;
+    // Relative weight of the mean squared focal-length prior error compared to
+    // the mean squared pixel reprojection error. A value of zero disables the
+    // prior.
+    double prior_focal_length_weight = 0.0;
 
-  bool Check() const;
+    bool Check() const;
 };
 
 struct FittedCamera {
-  // Fitted parameters for the target model, in the frame of the input
-  // image coordinates.
-  std::vector<double> params;
-  // Whether fitting succeeded (valid initialization and refinement converged).
-  bool success = false;
-  // Mean squared objective before/after refinement, including the focal-length
-  // prior when enabled.
-  double initial_cost = std::numeric_limits<double>::infinity();
-  double final_cost = std::numeric_limits<double>::infinity();
+    // Fitted parameters for the target model, in the frame of the input
+    // image coordinates.
+    std::vector<double> params;
+    // Whether fitting succeeded (valid initialization and refinement
+    // converged).
+    bool success = false;
+    // Mean squared objective before/after refinement, including the
+    // focal-length prior when enabled.
+    double initial_cost = std::numeric_limits<double>::infinity();
+    double final_cost = std::numeric_limits<double>::infinity();
 };
 
 // Fit intrinsics of `model_id` to dense image-point/camera-ray correspondences,
@@ -72,11 +77,11 @@ struct FittedCamera {
 // An invalid prior (wrong size or non-positive/non-finite values) is ignored
 // with a warning instead of failing the fit.
 FittedCamera FitCameraFromRays(
-    CameraModelId model_id,
-    const std::vector<Eigen::Vector2d>& img_points,
-    const std::vector<Eigen::Vector3d>& cam_rays,
-    const RayFittingOptions& options,
-    const std::vector<double>& prior_focal_lengths = {});
+        CameraModelId model_id,
+        const std::vector<Eigen::Vector2d>& img_points,
+        const std::vector<Eigen::Vector3d>& cam_rays,
+        const RayFittingOptions& options,
+        const std::vector<double>& prior_focal_lengths = {});
 
 // Uniform stride indices subsampling `num_points` to at most `max_num_points`.
 std::vector<size_t> StrideSubsampleIndices(size_t num_points,

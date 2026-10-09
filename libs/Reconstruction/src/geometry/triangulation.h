@@ -75,9 +75,9 @@ std::vector<Eigen::Vector3d> TriangulatePoints(
 //
 // @return                    Estimated 3D point.
 bool TriangulateMultiViewPoint(
-    const std::vector<Eigen::Matrix3x4d>& cams_from_world,
-    const std::vector<Eigen::Vector2d>& cam_points,
-    Eigen::Vector3d* xyz);
+        const std::vector<Eigen::Matrix3x4d>& cams_from_world,
+        const std::vector<Eigen::Vector2d>& cam_points,
+        Eigen::Vector3d* xyz);
 
 // Triangulate 3D point from multiple camera-frame bearing vectors
 // (upstream parity, d3ccaf35: span-based; the fork passes std::vector, which

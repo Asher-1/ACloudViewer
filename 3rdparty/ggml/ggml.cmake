@@ -113,8 +113,11 @@ if(GGML_USE_CUDA)
     # selection and the masked-attention workspaces); the ss flow occupancy
     # collapses (58182 -> 4992 coords on the kidsroom fixture) because the
     # capture bakes the first call's internal scratch pointers into the
-    # replay. Keep graphs OFF until those ops route their scratch through the
-    # ggml allocator like upstream's do.
+    # replay. patches/cuda_graphs/0001 now excludes graphs containing those
+    # host-orchestrated custom ops from capture instead of disabling graphs
+    # globally, so standard-op graphs (OCR det/rec, layout, facedetect, ...)
+    # get capture/replay while sam3d keeps its per-call host logic.
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_GRAPHS=ON)
     set(_GGML_CUDA_ENABLED ON)
     message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ=${GGML_CUDA_FORCE_MMQ}, static cudart)")
 else()

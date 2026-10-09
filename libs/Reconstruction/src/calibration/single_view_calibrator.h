@@ -1,15 +1,20 @@
-// SPDX-License-Identifier: BSD-3-Clause
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "geometry/pose_prior.h"
 #include "scene/camera.h"
 #include "sensor/bitmap.h"
 #include "util/enum_utils.h"
-
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace colmap {
 
@@ -41,86 +46,86 @@ bool IsValidCalibration(const Camera& camera);
 // `camera` unmodified. The dimensions of `camera` must be those of the images
 // it was calibrated from.
 bool AggregateSingleViewCalibrations(
-    CameraModelId model_id,
-    const std::vector<std::vector<double>>& params_list,
-    Camera* camera);
+        CameraModelId model_id,
+        const std::vector<std::vector<double>>& params_list,
+        Camera* camera);
 
 struct SingleViewCalibrationTypeOptions {
-  SingleViewCalibrationTypeOptions();
+    SingleViewCalibrationTypeOptions();
 
-  std::shared_ptr<AnyCalibOptions> anycalib;
+    std::shared_ptr<AnyCalibOptions> anycalib;
 
-  SingleViewCalibrationTypeOptions(
-      const SingleViewCalibrationTypeOptions& other);
-  SingleViewCalibrationTypeOptions& operator=(
-      const SingleViewCalibrationTypeOptions& other);
-  SingleViewCalibrationTypeOptions(SingleViewCalibrationTypeOptions&& other) =
-      default;
-  SingleViewCalibrationTypeOptions& operator=(
-      SingleViewCalibrationTypeOptions&& other) = default;
+    SingleViewCalibrationTypeOptions(
+            const SingleViewCalibrationTypeOptions& other);
+    SingleViewCalibrationTypeOptions& operator=(
+            const SingleViewCalibrationTypeOptions& other);
+    SingleViewCalibrationTypeOptions(SingleViewCalibrationTypeOptions&& other) =
+            default;
+    SingleViewCalibrationTypeOptions& operator=(
+            SingleViewCalibrationTypeOptions&& other) = default;
 };
 
 struct SingleViewCalibrationOptions : public SingleViewCalibrationTypeOptions {
-  explicit SingleViewCalibrationOptions(
-      SingleViewCalibratorType type = SingleViewCalibratorType::ANYCALIB);
+    explicit SingleViewCalibrationOptions(
+            SingleViewCalibratorType type = SingleViewCalibratorType::ANYCALIB);
 
-  SingleViewCalibratorType type = SingleViewCalibratorType::ANYCALIB;
+    SingleViewCalibratorType type = SingleViewCalibratorType::ANYCALIB;
 
-  // Target COLMAP camera model for the fitted intrinsics. Any perspective
-  // model is supported; the fitting refines that model's parameters directly.
-  // Empty preserves each camera's existing model instead of converting it.
-  std::string camera_model;
+    // Target COLMAP camera model for the fitted intrinsics. Any perspective
+    // model is supported; the fitting refines that model's parameters directly.
+    // Empty preserves each camera's existing model instead of converting it.
+    std::string camera_model;
 
-  // Number of threads for calibration.
-  int num_threads = -1;
+    // Number of threads for calibration.
+    int num_threads = -1;
 
-  // Whether to use the GPU for neural-network inference.
+    // Whether to use the GPU for neural-network inference.
 #if defined(COLMAP_GPU_ENABLED) || defined(COLMAP_COREML_ENABLED)
-  bool use_gpu = true;
+    bool use_gpu = true;
 #else
-  bool use_gpu = false;
+    bool use_gpu = false;
 #endif
 
-  // Index of the GPU used for inference. Only a single GPU is supported.
-  std::string gpu_index = "-1";
+    // Index of the GPU used for inference. Only a single GPU is supported.
+    std::string gpu_index = "-1";
 
-  // Plausibility bounds on the calibrated intrinsics, shared with the
-  // incremental mapper defaults. A learned prediction can be perfectly
-  // self-consistent and still be far off, in which case the existing (e.g.
-  // EXIF) intrinsics are kept instead.
-  double min_focal_length_ratio = kDefaultMinFocalLengthRatio;
-  double max_focal_length_ratio = kDefaultMaxFocalLengthRatio;
-  // Maximum absolute value of any distortion parameter, shared with the
-  // incremental mapper default, so accepted calibrations also pass downstream
-  // checks. NOTE: this is a single bound for all coefficients of the target
-  // model, so high-order models with legitimately large coefficients (e.g. the
-  // rational denominator terms k4, k5, k6 of FULL_OPENCV) may require a larger
-  // value.
-  double max_extra_param = kDefaultMaxExtraParam;
+    // Plausibility bounds on the calibrated intrinsics, shared with the
+    // incremental mapper defaults. A learned prediction can be perfectly
+    // self-consistent and still be far off, in which case the existing (e.g.
+    // EXIF) intrinsics are kept instead.
+    double min_focal_length_ratio = kDefaultMinFocalLengthRatio;
+    double max_focal_length_ratio = kDefaultMaxFocalLengthRatio;
+    // Maximum absolute value of any distortion parameter, shared with the
+    // incremental mapper default, so accepted calibrations also pass downstream
+    // checks. NOTE: this is a single bound for all coefficients of the target
+    // model, so high-order models with legitimately large coefficients (e.g.
+    // the rational denominator terms k4, k5, k6 of FULL_OPENCV) may require a
+    // larger value.
+    double max_extra_param = kDefaultMaxExtraParam;
 
-  bool Check() const;
+    bool Check() const;
 };
 
 // Abstract single-view calibrator: estimates intrinsics for one image,
 // replacing e.g. EXIF-based initialization with a learned prediction.
 class SingleViewCalibrator {
- public:
-  virtual ~SingleViewCalibrator() = default;
+public:
+    virtual ~SingleViewCalibrator() = default;
 
-  // Create the calibrator backend selected by `options.type`. Throws if the
-  // options are invalid, the type is unknown, or the backend cannot be created
-  // (e.g. the network model cannot be loaded); never returns nullptr.
-  static std::unique_ptr<SingleViewCalibrator> Create(
-      const SingleViewCalibrationOptions& options);
+    // Create the calibrator backend selected by `options.type`. Throws if the
+    // options are invalid, the type is unknown, or the backend cannot be
+    // created (e.g. the network model cannot be loaded); never returns nullptr.
+    static std::unique_ptr<SingleViewCalibrator> Create(
+            const SingleViewCalibrationOptions& options);
 
-  // Calibrate the camera for `bitmap`, optionally using an existing focal
-  // length prior in `camera` and gravity in `pose_prior`, and write the
-  // target-model intrinsics at full image resolution into `camera` (model,
-  // dimensions, params, and focal length prior flag). Returns false if
-  // calibration fails, in which case `camera` is left unmodified.
-  virtual bool Calibrate(const Bitmap& bitmap,
-                         Camera* camera,
-                         const PosePrior& pose_prior = PosePrior()) const = 0;
+    // Calibrate the camera for `bitmap`, optionally using an existing focal
+    // length prior in `camera` and gravity in `pose_prior`, and write the
+    // target-model intrinsics at full image resolution into `camera` (model,
+    // dimensions, params, and focal length prior flag). Returns false if
+    // calibration fails, in which case `camera` is left unmodified.
+    virtual bool Calibrate(const Bitmap& bitmap,
+                           Camera* camera,
+                           const PosePrior& pose_prior = PosePrior()) const = 0;
 };
 
 }  // namespace colmap

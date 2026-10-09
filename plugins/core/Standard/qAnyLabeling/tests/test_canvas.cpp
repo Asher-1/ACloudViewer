@@ -61,11 +61,14 @@ int main(int argc, char** argv) {
     // Display adjustments are cache-only. They follow the upstream 0..150
     // slider mapping (50 is neutral), including the source 16-bit formula,
     // while the source image remains untouched for inference and export.
+    AnnotationCanvas display;
+    // Format_Grayscale16 requires Qt 5.13+; images can never carry that
+    // format on Qt 5.12 (Ubuntu focal), so skip the 16-bit cases there.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
     QImage gray16(2, 1, QImage::Format_Grayscale16);
     auto* grayRow = reinterpret_cast<quint16*>(gray16.scanLine(0));
     grayRow[0] = 1000;
     grayRow[1] = 3000;
-    AnnotationCanvas display;
     display.setImage(gray16);
     display.setBrightnessContrast(100, 75);  // brightness 2.0, contrast 1.5
     const auto* adjusted = reinterpret_cast<const quint16*>(
@@ -87,6 +90,7 @@ int main(int argc, char** argv) {
     if (!check(display.displayImage().constBits() == gray16.constBits(),
                "Neutral display adjustment must reuse the source image"))
         return 1;
+#endif
     QImage rgb(1, 1, QImage::Format_RGB32);
     rgb.setPixel(0, 0, qRgb(50, 75, 100));
     display.setImage(rgb);

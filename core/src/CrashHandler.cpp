@@ -9,6 +9,7 @@
 
 #include <QCoreApplication>
 #include <QSysInfo>
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <cstring>
@@ -33,14 +34,20 @@ namespace ecvCrashHandler {
 
 namespace {
 
-// POSIX: opened once at install (O_APPEND), used from the signal handler
-// with write()/backtrace_symbols_fd — both async-signal-safe on glibc.
+// A crash report is evidence of an abnormal path, not a session marker. Keep
+// only preallocated path/environment bytes at install; create the file lazily
+// on the first abnormal write. POSIX open()/write() use those bytes directly
+// from the fatal-signal path, without touching Qt or allocating memory.
 int s_logFd = -1;
+constexpr size_t kMaxCrashPathBytes = 4096;
+constexpr size_t kMaxEnvironmentBytes = 768;
+char s_logPath[kMaxCrashPathBytes] = {};
+char s_environment[kMaxEnvironmentBytes] = {};
+size_t s_environmentLen = 0;
 volatile sig_atomic_t s_inHandler = 0;
 #ifdef _WIN32
 volatile LONG s_inHandlerWin = 0;
 #endif
-QString s_logPath;
 
 #if defined(ECV_HAS_BACKTRACE)
 // Throw-site stack snapshot: __cxa_throw runs BEFORE any unwinding, so
@@ -54,11 +61,18 @@ void *s_throwSnap[kMaxThrowFrames] = {};
 int s_throwSnapCount = 0;
 #endif
 
+#ifndef _WIN32
+void ensureCrashLogOpen() {
+    if (s_logFd < 0 && s_logPath[0] != '\0') {
+        s_logFd = open(s_logPath, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    }
+}
+#endif
+
 void writeRaw(const char *text, size_t len) {
 #ifdef _WIN32
-    HANDLE h =
-            CreateFileA(s_logPath.toUtf8().constData(), FILE_APPEND_DATA, 0,
-                        nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE h = CreateFileA(s_logPath, FILE_APPEND_DATA, 0, nullptr, OPEN_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
         SetFilePointer(h, 0, nullptr, FILE_END);
         DWORD written = 0;
@@ -66,6 +80,7 @@ void writeRaw(const char *text, size_t len) {
         CloseHandle(h);
     }
 #else
+    ensureCrashLogOpen();
     if (s_logFd >= 0) {
         if (write(s_logFd, text, len) < 0) {
             // nothing sane to do inside a fatal-signal handler
@@ -77,6 +92,13 @@ void writeRaw(const char *text, size_t len) {
 void writeLine(const char *text) {
     writeRaw(text, strlen(text));
     writeRaw("\n", 1);
+}
+
+void writeEnvironmentBlock() {
+    if (s_environmentLen > 0) {
+        writeRaw(s_environment, s_environmentLen);
+        writeRaw("\n", 1);
+    }
 }
 
 // Signal-safe POSIX timestamp: time() IS async-signal-safe; snprintf is
@@ -162,6 +184,7 @@ extern "C" void posixSignalHandler(int sig) {
             break;
     }
     writeStampSignalSafe(name);
+    writeEnvironmentBlock();
 #if defined(ECV_HAS_BACKTRACE)
     // backtrace_symbols_fd is async-signal-safe on glibc (it writes to the
     // fd directly); the stack must be captured BEFORE any further fault.
@@ -191,6 +214,7 @@ void terminateHandler() {
     }
     s_inHandler = 1;
     writeStampSignalSafe("UNCAUGHT C++ EXCEPTION (std::terminate)");
+    writeEnvironmentBlock();
 #if defined(ECV_HAS_BACKTRACE)
     void *frames[64];
     const int n = backtrace(frames, 64);
@@ -205,7 +229,7 @@ void terminateHandler() {
 // Snapshot the CURRENT backtrace into the throw-site buffer (fixed-size,
 // allocation-free apart from backtrace()'s lazy unwind-table init).
 void snapshotThrowSite() {
-    if (s_logFd < 0) {
+    if (s_logPath[0] == '\0') {
         // Collector not installed: keep the interposition side-effect-free
         // for every other consumer of libCVCoreLib.
         return;
@@ -272,6 +296,7 @@ extern "C" __attribute__((visibility("default"))) void __cxa_throw(
 void logUnhandledException(const QString &what) {
 #ifdef _WIN32
     writeStampWindows("CAUGHT C++ EXCEPTION (top-level handler)");
+    writeEnvironmentBlock();
     writeLine(what.toUtf8().constData());
     writeLine(
             "(no stack: the exception was caught by the application and "
@@ -279,6 +304,7 @@ void logUnhandledException(const QString &what) {
     writeLine("===== END CRASH =====\n");
 #else
     writeStampSignalSafe("CAUGHT C++ EXCEPTION (top-level handler)");
+    writeEnvironmentBlock();
     writeLine(what.toUtf8().constData());
 #if defined(ECV_HAS_BACKTRACE)
     // The stack HAS unwound — but the interposer captured the throw site
@@ -294,7 +320,23 @@ void logUnhandledException(const QString &what) {
 }
 
 void install(const QString &logFilePath) {
-    s_logPath = logFilePath;
+    const QByteArray pathUtf8 = logFilePath.toUtf8();
+    std::snprintf(s_logPath, sizeof(s_logPath), "%s", pathUtf8.constData());
+    const QByteArray appName = QCoreApplication::applicationName().toUtf8();
+    const QByteArray osName = QSysInfo::prettyProductName().toUtf8();
+    const QByteArray productType = QSysInfo::productType().toUtf8();
+    const QByteArray cpuArch = QSysInfo::currentCpuArchitecture().toUtf8();
+    const QByteArray buildArch = QSysInfo::buildCpuArchitecture().toUtf8();
+    const int environmentLen = std::snprintf(
+            s_environment, sizeof(s_environment),
+            "app=%s | Qt=%s | OS=%s (%s) | arch=%s | build-abi=%s",
+            appName.constData(), qVersion(), osName.constData(),
+            productType.constData(), cpuArch.constData(),
+            buildArch.constData());
+    s_environmentLen = environmentLen > 0
+                               ? std::min(static_cast<size_t>(environmentLen),
+                                          sizeof(s_environment) - 1)
+                               : 0;
 
 #ifdef _WIN32
     // LPTOP_LEVEL_EXCEPTION_FILTER: unhandled SEH (access violations, ...).
@@ -307,6 +349,7 @@ void install(const QString &logFilePath) {
             return EXCEPTION_CONTINUE_SEARCH;
         }
         writeStampWindows("UNHANDLED SEH EXCEPTION");
+        writeEnvironmentBlock();
         writeWindowsStack();
         return EXCEPTION_CONTINUE_SEARCH;  // default handling (WER, ...)
     });
@@ -315,6 +358,7 @@ void install(const QString &logFilePath) {
     std::set_terminate([]() {
         if (InterlockedExchange(&s_inHandlerWin, 1) == 0) {
             writeStampWindows("UNCAUGHT C++ EXCEPTION (std::terminate)");
+            writeEnvironmentBlock();
             writeWindowsStack();
         }
         std::abort();
@@ -326,8 +370,6 @@ void install(const QString &logFilePath) {
         close(s_logFd);
         s_logFd = -1;
     }
-    s_logFd = open(logFilePath.toUtf8().constData(),
-                   O_WRONLY | O_CREAT | O_APPEND, 0644);
     std::signal(SIGSEGV, posixSignalHandler);
     std::signal(SIGBUS, posixSignalHandler);
     std::signal(SIGFPE, posixSignalHandler);
@@ -335,21 +377,6 @@ void install(const QString &logFilePath) {
     std::signal(SIGABRT, posixSignalHandler);
     std::set_terminate(terminateHandler);
 #endif
-
-    // Environment block, written ONCE at install time (Qt is safe here —
-    // this runs on the main thread before any crash). Gives every crash
-    // entry its app/OS/Qt context without touching Qt inside handlers.
-    writeLine("===== crash collector installed =====");
-    writeLine(QStringLiteral("app=%1 | Qt=%2 | OS=%3 (%4) | arch=%5 | "
-                             "build-abi=%6")
-                      .arg(QCoreApplication::applicationName())
-                      .arg(qVersion())
-                      .arg(QSysInfo::prettyProductName())
-                      .arg(QSysInfo::productType())
-                      .arg(QSysInfo::currentCpuArchitecture())
-                      .arg(QSysInfo::buildCpuArchitecture())
-                      .toUtf8()
-                      .constData());
 }
 
 }  // namespace ecvCrashHandler
