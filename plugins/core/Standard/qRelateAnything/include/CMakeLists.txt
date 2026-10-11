@@ -1,0 +1,7 @@
+target_sources(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/qRelateAnything.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingDialog.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingWorker.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingVideoWidget.h
+)

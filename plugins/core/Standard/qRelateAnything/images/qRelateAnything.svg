@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">RelateAnything scene relationship graph</title>
+  <desc id="desc">Connected objects and a relation label represent image and video scene understanding.</desc>
+  <defs>
+    <linearGradient id="background" x1="18" y1="12" x2="238" y2="246" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111d45"/>
+      <stop offset="1" stop-color="#24134d"/>
+    </linearGradient>
+    <linearGradient id="cyanNode" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#66e9ff"/>
+      <stop offset="1" stop-color="#2ca6e8"/>
+    </linearGradient>
+    <linearGradient id="violetNode" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#c18bff"/>
+      <stop offset="1" stop-color="#7655ed"/>
+    </linearGradient>
+    <linearGradient id="orangeNode" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffd37b"/>
+      <stop offset="1" stop-color="#f08a48"/>
+    </linearGradient>
+    <linearGradient id="relation" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#55e5be"/>
+      <stop offset="1" stop-color="#22a88d"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#05091c" flood-opacity=".45"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 8 4 0 8Z" fill="#7debd2"/>
+    </marker>
+  </defs>
+
+  <rect x="4" y="4" width="248" height="248" rx="42" fill="url(#background)"/>
+  <path d="M22 42C68 13 188 13 234 42" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/>
+  <circle cx="226" cy="31" r="4" fill="#55e5be"/>
+  <circle cx="211" cy="31" r="4" fill="#ffd37b"/>
+
+  <!-- A compact scene graph: detected objects connected by directed relations. -->
+  <g fill="none" stroke="#7debd2" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)">
+    <path d="M82 79 137 98"/>
+    <path d="M174 99 193 79"/>
+    <path d="M160 121 119 151"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="27" y="52" width="61" height="47" rx="13" fill="url(#cyanNode)"/>
+    <rect x="169" y="52" width="61" height="47" rx="13" fill="url(#violetNode)"/>
+    <rect x="91" y="145" width="61" height="47" rx="13" fill="url(#orangeNode)"/>
+  </g>
+
+  <!-- Simple object glyphs make the purpose legible even at small sizes. -->
+  <g fill="none" stroke="#0c1b3b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M41 86V65h25v21M45 70h17M48 78h11"/>
+    <path d="M184 84V66h30v18M190 72h18M190 78h12"/>
+    <path d="m105 175 10-17 10 17m-16-7h12M128 175v-18m0 0 8 8m-8-8-8 8"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="105" y="91" width="72" height="30" rx="15" fill="url(#relation)"/>
+  </g>
+  <text x="141" y="111" text-anchor="middle" fill="#071d2a" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="700">RELATES</text>
+
+  <g fill="#ffffff" font-family="DejaVu Sans, sans-serif" text-anchor="middle">
+    <text x="128" y="215" font-size="22" font-weight="700" letter-spacing=".1">RelateAnything</text>
+    <text x="128" y="234" fill="#aab9e8" font-size="10" letter-spacing="1.8">SCENE RELATIONS</text>
+  </g>
+</svg>

@@ -56,5 +56,8 @@
 #include "aicore/runtime_raii.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
+#include "aicore/tagging_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
+
+#include "aicore/relation_capi.h"

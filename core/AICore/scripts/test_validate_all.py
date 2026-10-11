@@ -21,6 +21,23 @@ SPEC.loader.exec_module(VALIDATE_ALL)
 
 
 class ValidateAllTests(unittest.TestCase):
+    def test_relation_summary_reaches_numeric_and_performance_gates(self):
+        report={"metrics": {"native_max_diff": 0.0,
+                            "performance_ratio": 1.06},
+                "fingerprint": "12345678901234567890",
+                "rows": [{"native_max_diff": 0.0},
+                         {"native_max_diff": 0.0}]}
+        parsed, hashes=VALIDATE_ALL.parse_output(
+            json.dumps(report), "relation", Path("/absent"))
+        self.assertEqual(parsed["native_max_diff"], 0.0)
+        self.assertEqual(hashes["relation_output"], report["fingerprint"])
+        gate={"require_metrics": ["native_max_diff", "performance_ratio"],
+              "checks": [{"metric": "performance_ratio", "op": "<=",
+                          "value": 1.05}]}
+        failures=VALIDATE_ALL.evaluate_accuracy_gate(gate, parsed)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("performance_ratio", failures[0])
+
     @staticmethod
     def report(rows):
         return {
@@ -56,6 +73,161 @@ class ValidateAllTests(unittest.TestCase):
                     else "LD_LIBRARY_PATH")
         self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
                          ["/tmp/aicore-build/bin", "/opt/qt/lib"])
+
+    def test_ram_dataset_and_caption_metrics_enforce_structured_gates(self):
+        report = {
+            "cross_f1": 0.995, "upstream_cross_f1": 1.0,
+            "latency_over_upstream": 1.06, "mAP": 0.21, "CP": 0.12,
+            "CR": 0.15, "caption_exact": 1.0, "caption_word_f1": 1.0,
+            "pytorch_caption_exact": 0.98, "pytorch_caption_word_f1": 0.99,
+            "datasets": [{"cross_f1": 0.995, "mAP": 0.21}],
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "probe.json"
+            path.write_text(json.dumps(report))
+            metrics, _ = VALIDATE_ALL.parse_output("RAM report ready", "generic", path)
+        gate = {"require_metrics": ["json0/mAP", "json0/CP", "json0/CR"],
+                "checks": [
+                    {"metric": "json0/latency_over_upstream", "op": "<=", "value": 1.05},
+                    {"metric": "json0/pytorch_caption_exact", "op": ">=", "value": 0.99},
+                ]}
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+        self.assertEqual(len(failures), 2)
+        self.assertIn("latency_over_upstream", failures[0])
+        self.assertIn("pytorch_caption_exact", failures[1])
+
+    def test_quantization_alignment_metrics_reach_the_accuracy_gate(self):
+        report = {
+            "pytorch_probability_max_error": 0.06,
+            "pytorch_probability_error_excess": 0.0,
+            "pytorch_cross_f1_drop": 0.0,
+            "pytorch_annotation_error_excess": 0.0,
+            "upstream_pytorch_cross_f1": 0.989,
+            "upstream_pytorch_probability_mae": 0.0005,
+            "upstream_pytorch_probability_max_error": 0.06,
+            "upstream_logit_max_error": 0.0,
+            "upstream_probability_max_error": 0.0,
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "probe.json"
+            path.write_text(json.dumps(report))
+            metrics, _ = VALIDATE_ALL.parse_output("probe complete", "generic", path)
+        for key, value in report.items():
+            self.assertEqual(metrics[f"json0/{key}"], value)
+        gate = {"require_metrics": [f"json0/{key}" for key in report],
+                "checks": [{"metric": "json0/pytorch_probability_error_excess",
+                            "op": "<=", "value": 1e-6}]}
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+        metrics["json0/pytorch_probability_error_excess"] = 0.001
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("probability_error_excess", failures[0])
+
+    def test_ram_cpu_q8_gate_keeps_independent_pytorch_probability_checks(self):
+        manifest = json.loads(MODULE_PATH.with_name("validation_manifest.json").read_text())
+        gate = next(row["accuracy"] for row in manifest["scenarios"]
+                    if row["id"] == "ram-upstream-demo1")
+        report = {"max_diff": 0.15, "mean_diff": 0.008,
+                  "accuracy_max_diff": 0.0, "upstream_cpu_max_diff": 0.0,
+                  "compatibility_accuracy_max_diff": 0.0,
+                  "cpu_arithmetic_probability_max_diff": 0.0,
+                  "cpu_arithmetic_probability_mean_diff": 0.0,
+                  "probability_max_diff": 0.03, "probability_mean_diff": 0.001}
+        metrics, _ = VALIDATE_ALL.parse_output(json.dumps(report), "generic", Path("/absent"))
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("probability_max_diff", failures[0])
+        report["probability_max_diff"] = 0.011
+        report["compatibility_accuracy_max_diff"] = 0.03
+        metrics, _ = VALIDATE_ALL.parse_output(json.dumps(report), "generic", Path("/absent"))
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("accuracy_max_diff", failures[0])
+
+    def test_ram_dataset_gate_rejects_upstream_matching_f1_below_original_truth_bound(self):
+        manifest = json.loads(MODULE_PATH.with_name("validation_manifest.json").read_text())
+        gate = next(row["accuracy"] for row in manifest["scenarios"]
+                    if row["id"] == "ram-upstream-datasets")
+        # Every other bound is met, including exact upstream agreement. That
+        # agreement cannot make a failed original-checkpoint F1 pass.
+        metrics = {key: 0.0 for key in gate["require_metrics"]}
+        metrics.update({"json0/cross_f1": 0.989010989010989,
+                        "json0/upstream_cross_f1": 1.0,
+                        "json0/compatibility_upstream_cross_f1": 1.0,
+                        "json0/latency_over_upstream": 1.0})
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(
+            gate, metrics, backend="cuda")
+        self.assertEqual(len(failures), 1)
+        self.assertIn("cross_f1", failures[0])
+        metrics["json0/cross_f1"] = 0.99
+        self.assertEqual(
+            VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, backend="cuda"), [])
+
+    def test_backend_specific_accuracy_check_only_applies_to_declared_backend(self):
+        gate = {
+            "require_metrics": [],
+            "checks": [{
+                "metric": "compatibility_upstream_logit_max_error",
+                "op": "<=",
+                "value": 1e-4,
+                "backends": ["cpu"],
+            }],
+        }
+        metrics = {"compatibility_upstream_logit_max_error": 0.05}
+        self.assertEqual(
+            VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, backend="cuda"), [])
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, backend="cpu")
+        self.assertEqual(len(failures), 1)
+        self.assertIn("compatibility_upstream_logit_max_error", failures[0])
+
+    def test_candidate_only_accuracy_check_is_observational_for_baseline(self):
+        gate = {
+            "require_metrics": ["new_contract_error"],
+            "checks": [{
+                "metric": "new_contract_error",
+                "op": "<=",
+                "value": 0.02,
+                "candidate_only": True,
+            }],
+        }
+        metrics = {"new_contract_error": 0.12}
+        self.assertEqual(
+            VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, baseline=True), [])
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("new_contract_error", failures[0])
+
+    def test_cpu_accuracy_improvement_cannot_hide_failed_upstream_compatibility(self):
+        manifest = json.loads(MODULE_PATH.with_name("validation_manifest.json").read_text())
+        gate = next(row["accuracy"] for row in manifest["scenarios"]
+                    if row["id"] == "ram-upstream-datasets")
+        metrics = {key: 0.0 for key in gate["require_metrics"]}
+        metrics.update({
+            "json0/cross_f1": 1.0,
+            "json0/compatibility_upstream_cross_f1": 1.0,
+            "json0/compatibility_upstream_probability_max_error": 0.0,
+            "json0/compatibility_pytorch_probability_error_excess": 0.0,
+            "json0/compatibility_pytorch_cross_f1_drop": 0.0,
+            "json0/compatibility_pytorch_annotation_error_excess": 0.0,
+            "json0/latency_over_upstream": 1.0,
+            "json0/compatibility_upstream_logit_max_error": 0.001,
+        })
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(
+            gate, metrics, backend="cpu")
+        self.assertEqual(len(failures), 1)
+        self.assertIn("compatibility_upstream_logit_max_error", failures[0])
+        metrics["json0/compatibility_upstream_logit_max_error"] = 0
+        metrics["json0/arithmetic_probability_max_error"] = .03
+        failures = VALIDATE_ALL.evaluate_accuracy_gate(
+            gate, metrics, backend="cpu")
+        self.assertEqual(len(failures), 1)
+        self.assertIn("arithmetic_probability_max_error", failures[0])
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "probe.json"
+            report = {key.removeprefix("json0/"): value for key, value in metrics.items()}
+            output.write_text(json.dumps(report))
+            parsed, _ = VALIDATE_ALL.parse_output("probe complete", "generic", output)
+        self.assertEqual(parsed, metrics)
 
     def test_fingerprint_stability_requires_every_attempt_to_match(self):
         Attempt = VALIDATE_ALL.Attempt
@@ -215,7 +387,47 @@ class ValidateAllTests(unittest.TestCase):
             spec, [VALIDATE_ALL.Attempt(
                 0, 1.0, metrics={"mask_iou": 0.8})], False)
         self.assertEqual(row["status"], "fail")
+        self.assertEqual(row["accuracy_failures"],
+                         ["accuracy gate failed: mask_iou 0.8 >= 0.9"])
+        self.assertIn("accuracy gate failed", row["error_summary"])
         self.assertTrue(any("accuracy gate failed" in item for item in failures))
+
+    def test_summary_checks_every_attempt_before_taking_medians(self):
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="s", task="demo", model_id="m", model_paths=(),
+            command=(), env={}, accuracy_gate="numeric", metric_parser="generic",
+            fingerprint_policy="none", require_fingerprint=False,
+            report_path=Path("/tmp/report"), accuracy={
+                "checks": [{"metric": "mask_iou", "op": ">=", "value": 0.9}],
+                "require_metrics": ["mask_iou"], "structured": True,
+            })
+        for bad_metrics in ({"mask_iou": 0.8}, {}):
+            with self.subTest(bad_metrics=bad_metrics):
+                attempts = [VALIDATE_ALL.Attempt(0, 1.0, metrics=value)
+                            for value in ({"mask_iou": 1.0}, bad_metrics,
+                                          {"mask_iou": 1.0})]
+                row, failures = VALIDATE_ALL.summarize_attempts(
+                    spec, attempts, False)
+                self.assertEqual(row["metrics"]["mask_iou"], 1.0)
+                self.assertEqual(row["status"], "fail")
+                self.assertIn("attempt 2:", row["error_summary"])
+                self.assertTrue(row["attempts"][1]["accuracy_failures"])
+                self.assertTrue(any("attempt 2:" in item for item in failures))
+
+    def test_summary_preserves_error_from_an_earlier_failed_attempt(self):
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="s", task="demo", model_id="m", model_paths=(),
+            command=(), env={}, accuracy_gate="probe", metric_parser="generic",
+            fingerprint_policy="none", require_fingerprint=False,
+            report_path=Path("/tmp/report"))
+        row, failures = VALIDATE_ALL.summarize_attempts(spec, [
+            VALIDATE_ALL.Attempt(1, 1.0, output_tail="FAIL native latency ratio"),
+            VALIDATE_ALL.Attempt(0, 1.0, output_tail="PASS"),
+        ], False)
+        self.assertEqual(row["status"], "fail")
+        self.assertEqual(row["error_summary"],
+                         "attempt 1: FAIL native latency ratio")
+        self.assertTrue(failures)
 
     def test_profile_defaults_and_release_baseline_requirement(self):
         with mock.patch.object(sys, "argv", ["validate_all.py"]):
@@ -496,6 +708,28 @@ class ValidateAllTests(unittest.TestCase):
             self.assertEqual(diagnostics["uncovered_assets"],
                              ["demo: demo_models/new.gguf"])
 
+    def test_same_model_in_multiple_scenarios_keeps_distinct_reports(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = root / "assets"
+            (assets / "demo_models").mkdir(parents=True)
+            (assets / "demo_models/model.gguf").write_bytes(b"model")
+            manifest = {"tasks": ["demo"], "scenarios": [
+                {"id": scenario, "task": "demo", "model_glob": "demo_models/*.gguf",
+                 "for_each_model": True, "executable": "python",
+                 "args": ["--output", "{scenario_report}"], "accuracy_gate": "demo"}
+                for scenario in ("tags", "caption")]}
+            args = SimpleNamespace(
+                tasks="", assets=assets, repo=root, build=root / "build",
+                backend="cpu", image="image", image2="image2", face_image="face",
+                sam_image="sam", yolo_image="yolo", threads=1, warmup_runs=1,
+                inference_runs=1, trellis_steps=1)
+            specs, _ = VALIDATE_ALL.expand_specs(manifest, args, root / "reports")
+            self.assertEqual(len(specs), 2)
+            self.assertNotEqual(specs[0].report_path, specs[1].report_path)
+            self.assertEqual(specs[0].report_path.parent.name, "tags")
+            self.assertEqual(specs[1].report_path.parent.name, "caption")
+
     # ------------------------------------------------------------------
     # Tiering: default light subset for tasks that declare one, --full
     # restores the complete matrix; preflight and coverage audit shrink
@@ -645,6 +879,23 @@ class ValidateAllTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             self.assertEqual(
                 VALIDATE_ALL.sweep_task_probe_outputs("demo", Path(temp)), 0)
+
+    def test_sweep_task_owned_scenarios_removes_raw_sidecars(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            scenario = root / "probes" / "demo" / "caption"
+            scenario.mkdir(parents=True)
+            (scenario / "demo-model.json").write_text("{}")
+            (scenario / "logits.f32").write_bytes(b"raw")
+            work = scenario / "raw-run"
+            work.mkdir()
+            (work / "timing.log").write_text("timing")
+            unrelated = root / "probes" / "other"
+            unrelated.mkdir()
+            (unrelated / "other-model.json").write_text("{}")
+            self.assertEqual(VALIDATE_ALL.sweep_task_probe_outputs("demo", root), 1)
+            self.assertFalse((root / "probes" / "demo").exists())
+            self.assertTrue((unrelated / "other-model.json").exists())
 
     # ------------------------------------------------------------------
     # Per-task cleanup: probe outputs and consumed model-cache files are
@@ -1072,12 +1323,26 @@ class ValidateAllTests(unittest.TestCase):
             "FAIL /path/test.cpp:47: depth != nullptr",
             "FAIL /path/test.cpp:48: height > 0 && width > 0",
             '{"suite":"aicore-validation","valid_fields":0}',
+            '"official_max_error": 0.0,',
+            '"official_error_excess": 0.0,',
         ])
         summary = VALIDATE_ALL.extract_error_summary(tail)
         self.assertIn("failed to load image", summary)
         self.assertIn("FAIL /path/test.cpp:48", summary)
         self.assertNotIn("ggml_cuda_init", summary)
         self.assertNotIn("suite", summary)
+        self.assertNotIn("official_", summary)
+
+    def test_gpu_audit_failure_summary_distinguishes_waiting_from_failure(self):
+        tail = "\n".join([
+            "waiting for transient GPU activity: [42]",
+            "Discarding GPU-overlapped sample [42]; audit: /tmp/sample.overlap-1.log",
+            "GPU overlap persisted after 4 attempts: /tmp/sample.log",
+        ])
+        self.assertEqual(VALIDATE_ALL.extract_error_summary(tail),
+                         "GPU overlap persisted after 4 attempts: /tmp/sample.log")
+        self.assertIn("/tmp/idle.log", VALIDATE_ALL.extract_error_summary(
+            "GPU did not become idle within 60s; audit: /tmp/idle.log"))
 
     def test_markdown_reports_totals_and_vram_section(self):
         report = self.report([

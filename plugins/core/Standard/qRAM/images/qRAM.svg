@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+ <rect x="2" y="2" width="60" height="60" rx="12" fill="#087f8c"/>
+ <path d="M14 14h24l12 12-22 22-14-14z" fill="#dbf5e9"/><circle cx="23" cy="23" r="4" fill="#087f8c"/>
+ <rect x="4" y="40" width="56" height="19" rx="5" fill="#12334b"/>
+ <text x="32" y="54" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="white">RAM++</text>
+</svg>

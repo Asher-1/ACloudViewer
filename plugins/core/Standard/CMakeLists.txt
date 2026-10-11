@@ -33,6 +33,8 @@ add_subdirectory( qSAM3D )
 add_subdirectory( qTrellis )
 add_subdirectory( qGKD )
 add_subdirectory( qOCR )
+add_subdirectory( qRAM )
+add_subdirectory( qRelateAnything )
 add_subdirectory( qLingbotMap )
 add_subdirectory( qAnyLabeling )
 

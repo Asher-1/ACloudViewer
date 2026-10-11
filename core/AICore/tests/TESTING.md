@@ -76,6 +76,9 @@ mismatch or download failure stops the gate before inference; it is never
 converted to a skip. The runner then executes each model or model bundle serially and writes
 JSON plus Markdown reports. A missing backend, exit 77, an uncovered new model,
 an accuracy failure, or unstable repeated output also makes a complete run fail.
+Structured accuracy checks are evaluated for every process repetition before
+metrics are summarized. The JSON `attempts` entries retain each repetition's
+metrics and failure evidence; a passing median cannot hide a failed inference.
 
 ```bash
 # Developer profile: two process repeats, one warmup, and two timed forwards.
@@ -132,6 +135,16 @@ inside the assets root), and shared models survive until their last
 referencing task finishes; deleting them means the next run re-downloads.
 Shared fixture archives under `~/cloudViewer_data/download` and their
 extracted consumed files are never deleted.
+
+RAM / RAM++ / Tag2Text use the `tagging` task. Its full tier includes all nine
+published GGUFs, all four upstream datasets, and all three caption models.
+The test-only `AICORE_TEST_RAM_UPSTREAM` checkout supplies original GGML and
+official PyTorch references. See [qRAM validation](../../../plugins/core/Standard/qRAM/README.md#validation)
+for reference preparation, numeric gates, shared sample provenance, and the
+real Qt image/video/device-switch workflow. Timing p50/p95 in its dataset
+reports describe per-image means of repeated forwards from two resident-model
+processes in ABBA order; they are distinct from the demo probe's individual
+forward percentiles.
 
 For an optimization gate, retain the before and after build directories and
 run the preferred controlled A/B form below. It alternates the old and new
@@ -266,3 +279,22 @@ ggml-side variables, translating explicit options into env before a backend
 instance is created). `tests/check_no_env_getenv.sh` enforces this whitelist
 and runs in CTest as `test_no_env_getenv` (label `capi`); a `getenv`/`setenv`
 in any other source file fails the guard.
+
+## RelateAnything
+
+`test_relation_capi_contract` checks the versioned public ABI and catalog without
+models. `test_relation_probe` consumes original-pixel regions from the pinned
+100-sample catalog and checks ownership, cancellation, stride, format, live
+shutdown and stable raw tensors. `test_relate_workflow --real --download-sample`
+checks the shared image/video autofill, detector/relation pipeline, exports,
+paced video and cancel/reopen lifecycle.
+
+For numeric and performance evidence, set `AICORE_TEST_RELATE_UPSTREAM` to the
+pinned upstream checkout and run `validate_all.py --tasks relation --full` on
+each enabled backend. The manifest consumes all twelve published GGUFs plus
+the pinned tokenizer and all declared archive members. The wrapper generates
+PyTorch truth from original checkpoints outside source control; native upstream
+runs bracket the candidate under identical weights, inputs and options.
+The LIGHT tier exercises upstream default arithmetic in 16 expanded rows;
+`--full` also runs the 16 strict-mode rows, including all text students,
+custom predicates and masks/scores/decomposition.

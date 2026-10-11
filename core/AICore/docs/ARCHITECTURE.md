@@ -68,11 +68,11 @@ flowchart TB
     end
 
     subgraph ABI["Public C ABI (stable boundary)"]
-        HDR["include/aicore/*.h<br/>16 task headers when SAM3D is enabled<br/>+ common contract headers"]
+        HDR["include/aicore/*.h<br/>17 task headers when SAM3D is enabled<br/>+ common contract headers"]
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/<br/>(16 tasks in the unified library)"]
+        subgraph TASKS["Task layer src/tasks/[task]/<br/>(17 tasks in the unified library)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end
@@ -128,8 +128,8 @@ core/AICore/
 │   ├── depth_image.h        Qt exception: QImage convenience layer (AICORE_CXX_API ImageDepth)
 │   ├── inference_log.h      CVLog logging convenience layer (depends on CVLog, hence not in the umbrella)
 │   ├── asset_digests.h      Generated file: SHA-256 anchor table for published model assets (Qt-free)
-│   └── <task>_capi.h × 16   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
-│                            gkd/lightglue/lingbot/loma/reid/rfdetr/rmbg/sam3/sam3d/trellis/yolo)
+│   └── <task>_capi.h × 17   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
+│                            gkd/lightglue/lingbot/loma/reid/rfdetr/rmbg/sam3/sam3d/tagging/trellis/yolo)
 ├── src/common/              Process service layer (devices, leases, cancellation, cache paths, logging, quantization)
 ├── src/tasks/<task>/        Task engines (loader/graph/preprocess/postprocess/capi.cpp)
 │   └── trellis/third_party/ xatlas · o-voxel-fdg · CuMesh (optional GPU chart clustering, see §11.1)
@@ -181,6 +181,8 @@ core/AICore/
 | `lingbot_capi.h` | LingBot-Map (GCT) streaming RGB-D reconstruction: depth/pose/native sky masking | `aicore_image_view` |
 | `reid_capi.h` | Appearance embeddings for detection boxes used by multi-object tracking | `aicore_image_view` + typed XYXY boxes |
 | `sam3d_capi.h` | SAM 3D Objects image-to-Gaussians generation with optional mesh decoding | `aicore_image_view` + optional stride-aware mask |
+| `tagging_capi.h` | RAM/RAM++ image tags, all logits/scores and Tag2Text captions | `aicore_image_view` |
+| `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
 
 > Shape rule: **new bitmap-consuming tasks must use `aicore_image_view`**. A few
 > tasks use their own typed structs because the input is not a bitmap (features,

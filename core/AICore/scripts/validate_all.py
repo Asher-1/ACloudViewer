@@ -17,6 +17,7 @@ import math
 import os
 import platform
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -75,6 +76,7 @@ class RunSpec:
     require_fingerprint: bool
     report_path: Path
     accuracy: dict[str, Any] = field(default_factory=dict)
+    backend: str = ""
     # VRAM budget: explicit working-set estimate in MiB, or model bytes plus
     # an activation/working-set overhead when the scenario does not declare
     # one. Only consulted for GPU backends; see vram_gate_decision().
@@ -735,6 +737,15 @@ def normalize_accuracy_gate(scenario: dict[str, Any]) -> dict[str, Any]:
             normalized["value"] = float(check["value"])
         if check.get("label"):
             normalized["label"] = str(check["label"])
+        backends = check.get("backends")
+        if backends is not None:
+            if (not isinstance(backends, list) or not backends or
+                    any(not isinstance(item, str) or not item
+                        for item in backends)):
+                raise ValueError(
+                    f"scenario {scenario.get('id', '<unknown>')} accuracy "
+                    f"check {metric} backends must be non-empty names")
+            normalized["backends"] = list(backends)
         normalized_checks.append(normalized)
     if any(not isinstance(item, str) or not item for item in required):
         raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
@@ -762,8 +773,15 @@ def resolve_metric(metrics: dict[str, float], name: str) -> float | None:
 
 
 def evaluate_accuracy_gate(gate: dict[str, Any],
-                           metrics: dict[str, float]) -> list[str]:
-    """Evaluate structured metric checks; legacy prose remains probe-owned."""
+                           metrics: dict[str, float],
+                           backend: str | None = None,
+                           baseline: bool = False) -> list[str]:
+    """Evaluate structured checks applicable to the selected backend.
+
+    ``candidate_only`` checks describe a newly introduced candidate contract.
+    A pre-change baseline retains the metric for diagnosis but is not required
+    to satisfy a capability it predates.
+    """
     failures: list[str] = []
     for name in gate.get("require_metrics", []):
         value = resolve_metric(metrics, name)
@@ -771,6 +789,12 @@ def evaluate_accuracy_gate(gate: dict[str, Any],
                 math.isfinite(float(value)):
             failures.append(f"required accuracy metric missing/non-finite: {name}")
     for check in gate.get("checks", []):
+        if baseline and check.get("candidate_only", False):
+            continue
+        check_backends = check.get("backends")
+        if (backend is not None and check_backends is not None and
+                backend not in check_backends):
+            continue
         name = check["metric"]
         value = resolve_metric(metrics, name)
         if value is None or not math.isfinite(float(value)):
@@ -1038,7 +1062,8 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
         rows: list[Path | None] = models if raw.get("for_each_model") else [None]
         for model in rows:
             model_id = model.name if model else raw["id"]
-            scenario_report = report_dir / "probes" / f"{task}-{model_id}.json"
+            scenario_report = (report_dir / "probes" / task / raw["id"] /
+                               f"{task}-{model_id}.json")
             values = {
                 "repo": str(args.repo),
                 "build": str(args.build),
@@ -1095,6 +1120,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                 require_fingerprint=raw.get("require_fingerprint", True),
                 report_path=scenario_report,
                 accuracy=normalize_accuracy_gate(raw),
+                backend=args.backend,
                 vram_estimate_mib=(float(vram_estimate)
                                    if vram_estimate is not None else None),
                 vram_overhead_mib=(float(vram_overhead)
@@ -1137,7 +1163,29 @@ def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[s
         if (is_timing and float(value) > 0.0) or leaf in {
                 "mask_iou", "box_error", "score_error", "worst_rel_mae",
                 "kpt_median_px", "descriptor_cosine_median",
-                "max_diff", "mean_diff", "argmax_match"}:
+                "max_diff", "mean_diff", "accuracy_max_diff", "upstream_cpu_max_diff", "probability_max_diff",
+                "compatibility_accuracy_max_diff", "cpu_arithmetic_probability_max_diff",
+                "cpu_arithmetic_probability_mean_diff",
+                "probability_mean_diff", "argmax_match", "cross_f1",
+                "cross_precision", "cross_recall", "upstream_cross_f1",
+                "latency_over_upstream", "pytorch_probability_mae",
+                "pytorch_probability_max_error", "pytorch_probability_error_excess",
+                "pytorch_cross_f1_drop", "pytorch_annotation_error_excess",
+                "upstream_pytorch_cross_f1", "upstream_pytorch_probability_mae",
+                "upstream_pytorch_probability_max_error", "upstream_logit_max_error",
+                "upstream_probability_max_error", "upstream_logit_mae",
+                "compatibility_upstream_cross_f1", "compatibility_upstream_logit_max_error",
+                "compatibility_upstream_probability_max_error",
+                "compatibility_pytorch_probability_error_excess", "compatibility_pytorch_cross_f1_drop",
+                "compatibility_pytorch_annotation_error_excess",
+                "arithmetic_probability_max_error", "arithmetic_probability_mae",
+                "upstream_probability_mae", "pipeline_images_per_second",
+                "upstream_images_per_second", "weighted_latency_over_upstream", "map", "cp", "cr",
+                "precision", "recall", "f1", "macro_precision", "macro_recall",
+                "upstream_map_delta", "upstream_cp_delta", "upstream_cr_delta",
+                "pytorch_map_delta", "pytorch_cp_delta", "pytorch_cr_delta",
+                "caption_exact", "caption_word_f1", "pytorch_caption_exact",
+                "pytorch_caption_word_f1"}:
             metrics[prefix] = float(value)
     elif isinstance(value, str):
         leaf = prefix.rsplit("/", 1)[-1].lower()
@@ -1168,7 +1216,19 @@ def parse_output(output: str, parser: str, report_path: Path) -> tuple[dict[str,
         metrics.update(parsed_metrics)
         fingerprints.update(parsed_fingerprints)
 
-    if parser == "rfdetr":
+    if parser == "relation":
+        # The relation probe keeps per-input diagnostics and exposes the worst
+        # input for each gate in one explicit summary. Avoid resolving an
+        # ambiguous leaf from several samples or silently dropping zero error.
+        for value in json_values:
+            if not isinstance(value, dict):
+                continue
+            for name, number in value.get("metrics", {}).items():
+                if isinstance(number, (int, float)) and not isinstance(number, bool):
+                    metrics[name] = float(number)
+            if isinstance(value.get("fingerprint"), str):
+                fingerprints["relation_output"] = value["fingerprint"]
+    elif parser == "rfdetr":
         for name, number in re.findall(
                 r"^\s*(forward \(A\+topK\+B\)|detect-total|detect-plugin-path)"
                 r"\s*:\s*([0-9.]+)", output, re.MULTILINE):
@@ -1227,7 +1287,17 @@ def sweep_task_probe_outputs(task: str, report_root: Path) -> int:
     removed = 0
     for directory in (report_root / "probes",
                       report_root / "baseline-probes"):
-        for path in directory.glob(f"{task}-*.json"):
+        owned = directory / task
+        if owned.is_dir():
+            reports = len(list(owned.rglob(f"{task}-*.json")))
+            try:
+                # Task-owned paths contain the reports and their raw sidecars.
+                shutil.rmtree(owned)
+                removed += reports
+            except OSError:
+                pass
+        # Also clean reports retained by the older flat/scenario-only layout.
+        for path in directory.rglob(f"{task}-*.json"):
             try:
                 path.unlink()
                 removed += 1
@@ -1415,12 +1485,13 @@ def extract_error_summary(output_tail: str, limit: int = 5) -> str:
     errors, tracebacks, SKIP reasons); this only surfaces the last distinct
     lines so the report explains *why* a row failed without opening the log.
     """
-    markers = ("FAIL", "failed", "error", "assert", "Traceback",
-               "TIMEOUT", "SKIP:")
+    markers = re.compile(
+        r"\b(?:FAIL|failed|error|assert\w*|Traceback|TIMEOUT|SKIP|[A-Za-z]*Error)\b"
+        r"|GPU overlap persisted|GPU did not become idle", re.IGNORECASE)
     evidence: list[str] = []
     for raw in output_tail.splitlines():
         line = raw.strip()
-        if not line or not any(marker in line for marker in markers):
+        if not line or not markers.search(line):
             continue
         if len(line) > 220:
             line = line[:217] + "..."
@@ -1430,7 +1501,8 @@ def extract_error_summary(output_tail: str, limit: int = 5) -> str:
 
 
 def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
-                       allow_incomplete: bool) -> tuple[dict[str, Any], list[str]]:
+                       allow_incomplete: bool,
+                       baseline: bool = False) -> tuple[dict[str, Any], list[str]]:
     failures: list[str] = []
     codes = [attempt.returncode for attempt in attempts]
     fingerprints, stability_failures = stable_fingerprints(attempts, spec)
@@ -1447,9 +1519,26 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
     if stability_failures:
         status = "unstable"
     metrics = median_metrics(attempts)
-    accuracy_failures = (evaluate_accuracy_gate(spec.accuracy, metrics)
-                         if status == "pass" else [])
-    if accuracy_failures:
+    accuracy_failures: list[str] = []
+    attempt_rows: list[dict[str, Any]] = []
+    error_summaries: list[str] = []
+    for index, attempt in enumerate(attempts, 1):
+        # A median is useful for timing, but must never hide a single bad
+        # inference or a missing required metric in a successful probe.
+        checks = (evaluate_accuracy_gate(
+            spec.accuracy, attempt.metrics, backend=spec.backend,
+            baseline=baseline) if attempt.returncode == 0 else [])
+        prefix = f"attempt {index}: " if len(attempts) > 1 else ""
+        accuracy_failures.extend(prefix + message for message in checks)
+        error = " | ".join(checks) or extract_error_summary(attempt.output_tail)
+        if error and (checks or attempt.returncode != 0):
+            error_summaries.append(prefix + error)
+        attempt_rows.append({
+            "index": index, "return_code": attempt.returncode,
+            "duration_ms": attempt.duration_ms, "metrics": attempt.metrics,
+            "accuracy_failures": checks, "error_summary": error,
+        })
+    if accuracy_failures and status in ("pass", "skipped"):
         status = "fail"
     if status != "pass" and not (allow_incomplete and status == "skipped"):
         failures.append(f"{spec.key}: {status}, return codes={codes}")
@@ -1464,14 +1553,16 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
         "model_assets": assets,
         "accuracy_gate": spec.accuracy_gate,
         "accuracy": spec.accuracy,
+        "accuracy_failures": accuracy_failures,
+        "backend": spec.backend,
         "fingerprint_policy": spec.fingerprint_policy,
         "status": status,
         "return_codes": codes,
+        "attempts": attempt_rows,
         "metrics": metrics,
         "fingerprints": fingerprints,
         "output_tail": attempts[-1].output_tail if attempts else "",
-        "error_summary": extract_error_summary(
-            attempts[-1].output_tail if attempts else ""),
+        "error_summary": " | ".join(error_summaries or stability_failures),
     }, failures
 
 
@@ -2086,7 +2177,8 @@ def main() -> int:
                 failures.append(f"{spec.key}: missing baseline build scenario")
             else:
                 baseline_row, baseline_row_failures = summarize_attempts(
-                    baseline_spec, baseline_attempts, args.allow_incomplete)
+                    baseline_spec, baseline_attempts, args.allow_incomplete,
+                    baseline=True)
                 baseline_results.append(baseline_row)
                 failures.extend(f"baseline: {failure}"
                                 for failure in baseline_row_failures)

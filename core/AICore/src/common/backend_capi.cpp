@@ -281,6 +281,16 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
             minimum = 128ull * 1024 * 1024;
             recommended = 512ull * 1024 * 1024;
             break;
+        case AICORE_MODEL_TAGGING:
+            // Swin-L tags, cached label projections and optional text beams.
+            minimum = 1024ull * 1024 * 1024;
+            recommended = 4ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_RELATION:
+            // ViT backbone, candidate-pair graph and optional text student.
+            minimum = 512ull * 1024 * 1024;
+            recommended = 2ull * 1024 * 1024 * 1024;
+            break;
         default:
             return false;
     }
@@ -395,6 +405,14 @@ AICORE_CAPI int aicore_model_device_info_query(
     if (!has_device(device)) {
         g_last_error = "requested AICore device is unavailable";
         return -1;
+    }
+    if (model == AICORE_MODEL_RELATION && device &&
+        ggml_common::to_lower(device) != "auto") {
+        const auto backend = resolved_backend_id(device);
+        if (backend != "cpu" && backend != "cuda" && backend != "vulkan") {
+            g_last_error = "RelateAnything supports CPU, CUDA and Vulkan";
+            return -1;
+        }
     }
     if (!FillModelDeviceInfo(model, out_info)) {
         g_last_error = "unknown AICore model kind";

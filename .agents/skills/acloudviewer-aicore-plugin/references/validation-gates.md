@@ -18,7 +18,9 @@ compatibility, but new scenarios must add:
   "reference": "cpu_reference|upstream|golden|probe_invariant",
   "reference_id": "stable probe or fixture identity",
   "checks": [
-    {"metric": "kpt_median_px", "op": "<=", "value": 0.005}
+    {"metric": "kpt_median_px", "op": "<=", "value": 0.005},
+    {"metric": "cpu_compatibility_error", "op": "<=", "value": 0.0001,
+     "backends": ["cpu"]}
   ],
   "require_metrics": ["kpt_median_px"]
 }
@@ -26,7 +28,11 @@ compatibility, but new scenarios must add:
 
 Supported operators are `<`, `<=`, `>`, `>=`, `==`, `!=`, and `finite`.
 Metric names may be complete flattened JSON paths or a unique leaf name. A
-missing or non-finite required metric fails the scenario. A legacy string is
+check may declare a non-empty `backends` list when the metric describes a mode
+that only exists on those backends; other backends skip that check but must
+still satisfy their independent correctness checks. Do not use `backends` to
+hide a failing metric that has the same semantics everywhere. A missing or
+non-finite required metric fails the scenario. A legacy string is
 reported as `probe_legacy`; it is accepted only by the developer profile, is
 not a numeric threshold, and must not be used as release or upstream-accuracy
 evidence.

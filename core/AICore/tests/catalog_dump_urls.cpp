@@ -1,3 +1,5 @@
+#include "aicore/tagging_capi.h"
+#include "aicore/relation_capi.h"
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
@@ -106,6 +108,16 @@ void emitFixedCatalogs() {
 }
 
 void emitRuntimeCatalogs() {
+    for (int i = 0; i < aicore_relation_model_count(); ++i) {
+        const auto* e = aicore_relation_model_at(i);
+        if (e->role != AICORE_RELATION_MODEL_TOKENIZER)
+            emitAsset("relation", "relation_models", e->filename, e->download_url, e->size_bytes);
+    }
+    for (int i = 0; i < aicore_tagging_model_count(); ++i) {
+        const auto* e = aicore_tagging_model_at(i);
+        emitAsset("tagging", "ram_models", e->filename, e->download_url, e->size_bytes);
+    }
+
     for (int i = 0; i < aicore_loma_model_count(); ++i) {
         const aicore_loma_model_entry* e = aicore_loma_model_at(i);
         if (e) emitAsset("loma", "loma_models", e->filename, e->download_url);

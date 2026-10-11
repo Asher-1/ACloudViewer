@@ -1,0 +1,17 @@
+add_executable(test_relate_workflow test_relate_workflow.cpp
+    ../src/RelateAnythingDialog.cpp ../src/RelateAnythingWorker.cpp
+    ../include/RelateAnythingDialog.h ../include/RelateAnythingWorker.h ../include/RelateAnythingVideoWidget.h)
+target_include_directories(test_relate_workflow PRIVATE ../include)
+target_link_libraries(test_relate_workflow PRIVATE CVPluginAPI AICore video_base)
+set_target_properties(test_relate_workflow PROPERTIES AUTOMOC ON)
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_relate_workflow PRIVATE -fPIC)
+    target_link_options(test_relate_workflow PRIVATE -no-pie -Wl,--allow-shlib-undefined)
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_relate_workflow)
+add_dependencies(test_relate_workflow QRELATEANYTHING_PLUGIN)
+add_test(NAME test_relate_workflow COMMAND test_relate_workflow --plugin-module $<TARGET_FILE:QRELATEANYTHING_PLUGIN>)
+set_tests_properties(test_relate_workflow PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+if(TARGET aicore-fast-tests)
+    add_dependencies(aicore-fast-tests test_relate_workflow)
+endif()

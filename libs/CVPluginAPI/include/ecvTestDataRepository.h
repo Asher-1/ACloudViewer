@@ -59,7 +59,9 @@ public:
          *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
          *  long_real campaign runs with the long-model GGUFs. */
         LingbotMapDriveVideo,       ///< drive_frames.mp4 (long-model dataset)
-        LingbotMapLingboWorldVideo  ///< lingbo_world_frames.mp4 (long model)
+        LingbotMapLingboWorldVideo, ///< lingbo_world_frames.mp4 (long model)
+        RAM,                      ///< Official Recognize Anything demo/evaluation data
+        RelateAnything            ///< Relation image and video demonstrations
     };
 
     /** Dataset metadata. */
@@ -84,13 +86,13 @@ public:
     /** Get metadata for a dataset. */
     static DatasetInfo getDatasetInfo(Dataset kind);
 
-    /** Returns the root data directory (~/cloudViewer_data). */
+    /** CLOUDVIEWER_DATA_ROOT, falling back to ~/cloudViewer_data. */
     static QString dataRoot();
 
-    /** Returns the download directory (~/cloudViewer_data/download). */
+    /** Returns the download directory below dataRoot(). */
     static QString downloadDir();
 
-    /** Returns the extract directory (~/cloudViewer_data/extract). */
+    /** Returns the extract directory below dataRoot(). */
     static QString extractDir();
 
     /** Returns the path where a dataset zip should be stored. */

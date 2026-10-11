@@ -553,6 +553,40 @@ aicore_add_deeplsd_capi_test(test_deeplsd_capi_contract)
 aicore_add_deeplsd_capi_test(test_deeplsd_capi_load)
 set_tests_properties(test_deeplsd_capi_load PROPERTIES LABELS "capi;model")
 
+# RAM / RAM++ / Tag2Text public ABI and real-asset matrix probe.
+add_executable(test_relation_capi_contract relation/test_relation_capi_contract.cpp)
+target_link_libraries(test_relation_capi_contract PRIVATE AICore)
+_aicore_capi_link(test_relation_capi_contract)
+_aicore_test_common(test_relation_capi_contract)
+set_tests_properties(test_relation_capi_contract PROPERTIES LABELS "capi")
+add_executable(test_relation_probe relation/test_relation_probe.cpp)
+target_link_libraries(test_relation_probe PRIVATE AICore Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+_aicore_capi_link(test_relation_probe)
+_aicore_test_common(test_relation_probe NO_CTEST)
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_relation_probe PRIVATE -fPIC)
+    target_link_options(test_relation_probe PRIVATE -no-pie)
+endif()
+
+add_executable(test_tagging_capi_contract tagging/test_tagging_capi_contract.cpp)
+target_link_libraries(test_tagging_capi_contract PRIVATE AICore)
+_aicore_capi_link(test_tagging_capi_contract)
+_aicore_test_common(test_tagging_capi_contract)
+set_tests_properties(test_tagging_capi_contract PROPERTIES LABELS "capi")
+add_executable(test_tagging_probe tagging/test_tagging_probe.cpp)
+target_link_libraries(test_tagging_probe PRIVATE AICore)
+_aicore_capi_link(test_tagging_probe)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(test_tagging_probe PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(test_tagging_probe PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_tagging_probe PRIVATE -fPIC)
+    target_link_options(test_tagging_probe PRIVATE -no-pie)
+endif()
+_aicore_test_common(test_tagging_probe NO_CTEST)
+
 aicore_add_gkd_capi_test(test_gkd_capi_contract)
 aicore_add_gkd_capi_test(test_gkd_capi_load)
 set_tests_properties(test_gkd_capi_load PROPERTIES LABELS "capi;model")
@@ -1088,6 +1122,8 @@ if(NOT WIN32)
 endif()
 
 set(_aicore_contract_targets
+    test_tagging_capi_contract
+    test_relation_capi_contract
     test_runtime_capi_contract
     test_pipeline_timing_contract
     test_depth_capi_contract
@@ -1356,6 +1392,8 @@ add_custom_target(aicore-model-tests
 # executes task-specific probes serially, and rejects missing coverage.
 if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set(_aicore_validation_targets
+        test_tagging_probe
+        test_relation_probe
         test_depth_capi_load
         test_gaussian_capi_load
         test_aliked_capi_parity
@@ -1418,6 +1456,25 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_tagging_timing_audit
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tagging/test_upstream_metrics_probe.py)
+    set_tests_properties(test_tagging_timing_audit PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_relation_upstream_audit
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_upstream_probe.py)
+    set_tests_properties(test_relation_upstream_audit PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_relation_dependency_closure
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_dependency_closure.py
+                --root ${CMAKE_SOURCE_DIR})
+    set_tests_properties(test_relation_dependency_closure PROPERTIES
         LABELS "fast;validation")
 
     add_test(NAME test_aicore_plugin_boundaries

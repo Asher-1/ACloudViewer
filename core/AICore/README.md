@@ -96,6 +96,8 @@ borrowed pixels + width/height + row stride + channel format
 | `rmbg_capi.h` | RMBG alpha matte and RGBA composition |
 | `sam3_capi.h` | SAM3 segmentation and tracking |
 | `sam3d_capi.h` | SAM 3D Objects image-to-3D generation (Gaussian PLY + FlexiCubes mesh) |
+| `tagging_capi.h` | RAM/RAM++ tags, logits and scores; Tag2Text captions |
+| `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
 | `trellis_capi.h` | TRELLIS image-to-3D generation |
 | `yolo_capi.h` | YOLO detection, segment, pose, OBB, semantic, classify, depth, and prompts |
 
@@ -151,7 +153,7 @@ cmake --build build_app --target AICore aicore-contract-tests -j4
 
 Use only `AICore_*` public options. Internal `GGML_*` cache entries are derived
 by `cmake/AICoreOptions.cmake`; do not pass them as user configuration.
-The unified library exposes all 16 tasks. Task-specific plugin switches only
+The unified library exposes all 17 tasks. Task-specific plugin switches only
 control their Qt consumers; they do not remove task contracts from AICore.
 
 ggml is an ExternalProject. Persistent modifications are ordered unified diff

@@ -17,7 +17,9 @@
   "yolo",
   "lingbot",
   "reid",
-  "ocr"
+  "ocr",
+  "tagging",
+  "relation"
  ],
  "input_assets": [
   {
@@ -253,9 +255,1534 @@
    "sha256": "2d291f29f7b9686ddf926b43f9d519aa0ea8a8f35bdd61def07567384b081a36",
    "size_bytes": 16768,
    "description": "PicoDet layout reference head 7"
+  },
+  {
+   "id": "ram-official-dataset",
+   "tasks": [
+    "tagging"
+   ],
+   "relative_path": "ram_datasets.zip",
+   "url": "https://huggingface.co/Asher-1/RAM_GGUF/resolve/main/ram_datasets.zip",
+   "sha256": "ee3060f41247895a7140162f8e217a51bf2dd46df8e16679157b8086f7490177",
+   "size_bytes": 21529289,
+   "archive": true,
+   "extracted_files": [
+    {
+     "relative_path": "ram_datasets/SELECTION_REPORT.md",
+     "sha256": "a628826582f476d2be7700cb199f620e7277bd0f451b0c2f1ef6135a288988d1",
+     "size_bytes": 11321
+    },
+    {
+     "relative_path": "ram_datasets/demo/demo1.jpg",
+     "sha256": "1b2906f4058a69936df49cb6156ec4cd117a286b420e1eb14764033bf8f3c05f",
+     "size_bytes": 5701095
+    },
+    {
+     "relative_path": "ram_datasets/demo/demo2.jpg",
+     "sha256": "5c5159bf7114d08967f95475176670043115b157bf700efa34190260cd917662",
+     "size_bytes": 1025438
+    },
+    {
+     "relative_path": "ram_datasets/demo/demo3.jpg",
+     "sha256": "c562fea3659c4b112f71cfecb4a57143124b8b734e1ca96144bbdda734e494d4",
+     "size_bytes": 1813320
+    },
+    {
+     "relative_path": "ram_datasets/demo/demo4.jpg",
+     "sha256": "5c71251326fb9ece01b5ce6334869861b3fce82eeb5cae45977e78e6332f4170",
+     "size_bytes": 165464
+    },
+    {
+     "relative_path": "ram_datasets/demo/ram_demo1_to_4.avi",
+     "sha256": "53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57ce944b202",
+     "size_bytes": 262706
+    },
+    {
+     "relative_path": "ram_datasets/hico/hico_600_annots.txt",
+     "sha256": "110bd5cc507721ddf15d3cfc983a0a65dcf0bec97a0a15513da34b213fd754fd",
+     "size_bytes": 581
+    },
+    {
+     "relative_path": "ram_datasets/hico/hico_600_taglist.txt",
+     "sha256": "9154ff557b7c3bd1d3589f5a0fdfa3774ebe8c6e1f205d93a5058f7426303938",
+     "size_bytes": 12850
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00000255.jpg",
+     "sha256": "b43f909ed2f1d5a78ab6a47fd0c7d9244017a9318afc88fb675c3af7e73a38b0",
+     "size_bytes": 86317
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00000374.jpg",
+     "sha256": "6460587fb8faa1a7f1f8ea0d440093e4864d0ef7d92b550a7ee2e7fc22cc5a95",
+     "size_bytes": 193288
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00000695.jpg",
+     "sha256": "ec63fa2341d7bb494848c32312cbaf4392843b9a26ae7f934a6f9dab0b3b85fd",
+     "size_bytes": 190602
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00001170.jpg",
+     "sha256": "11f1d6bd9b262ded9b4d3a1a27135d5586b2bb4e14039b81dea82df248d5da4b",
+     "size_bytes": 177466
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00002595.jpg",
+     "sha256": "eeee14a33387808a3bd0a96dc58822dae8c5d6dff3a25176b55ae1efbcf75cd0",
+     "size_bytes": 121724
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00002939.jpg",
+     "sha256": "cb6501a1b67adfd02ddc2f979611ef2de8888d4e01c8b6c791ca44aa44bdddd7",
+     "size_bytes": 137688
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00002990.jpg",
+     "sha256": "ceb72d6a621331595cd7b630bbf6e2404a96e08aa84f3bf7389310eb47da578e",
+     "size_bytes": 135694
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00003142.jpg",
+     "sha256": "37c9cb2bb37b414736af00de523ed376ffe2962e57c2da0d23952795886a2e52",
+     "size_bytes": 130781
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00003573.jpg",
+     "sha256": "3fd1ad002f6ff31e9e7f0846bc69a8e293b34fcde4b7532cc9c063fe3e789d8d",
+     "size_bytes": 94437
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00004867.jpg",
+     "sha256": "a73e486b9d225ccb7fd849c626588a9450d0919ee2246726ceb5c40164128676",
+     "size_bytes": 202276
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00007725.jpg",
+     "sha256": "9cff530652592efbf7cc1c8965eb96fc80df107ac827a69af911966a2b445ba1",
+     "size_bytes": 203618
+    },
+    {
+     "relative_path": "ram_datasets/hico/imgs/HICO_test2015_00008248.jpg",
+     "sha256": "6e1c1ef3c579c7f58196eb0ee403a8288a2845e9bfcd1a621740d1d9042cfb1b",
+     "size_bytes": 146422
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imagenet_multi_1000_annots.txt",
+     "sha256": "847ef26bf5058c3d97516153b186216f4d29e23bb5a1383821a3eed34e0cbd28",
+     "size_bytes": 684
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imagenet_multi_1000_taglist.txt",
+     "sha256": "571ae1c583b4be7da87519494c52bf405a46af05d5815627c7a0dee997068b60",
+     "size_bytes": 11813
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00000998.JPEG",
+     "sha256": "47cc3ae39853d0cf1e4dc77136aafdcb569260697a8bdbc225419d0ae79119a8",
+     "size_bytes": 575938
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00006540.JPEG",
+     "sha256": "1659824b65102ecb6c796fa2ca47df1e5e46efab16d0df13b60424e4c0934d94",
+     "size_bytes": 157008
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00007145.JPEG",
+     "sha256": "52b7dcfca889632f446c1e220f447dec63ebae5e19c80951ab04035432006d68",
+     "size_bytes": 103740
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00012625.JPEG",
+     "sha256": "7096d030f0879d87bfb415c8d6dfd4107fd9a05cfdbdac838d4c2e976a815f3c",
+     "size_bytes": 165022
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00015184.JPEG",
+     "sha256": "0758dfb2474d43897cc6f56407d8a1e3a323ff20250dcf8240d7855b43349543",
+     "size_bytes": 145999
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00017903.JPEG",
+     "sha256": "0d7f103db8771c704ecea9af6483880a949926fd5b056945b497522ebeb2b68f",
+     "size_bytes": 91317
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00018817.JPEG",
+     "sha256": "d64967ac0851b4f9975dd95fc9e19ee33133f791faffbd5792c09b46b46514bd",
+     "size_bytes": 172993
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00027015.JPEG",
+     "sha256": "26ab3efd59aaa2d88056a4001dfe7197d891261e425f045be3b44e5dd7b59884",
+     "size_bytes": 205655
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00029268.JPEG",
+     "sha256": "91cb9baee8884130c1a11f396b22cdcd429891e95ba5a66a416632e1a3e53f36",
+     "size_bytes": 211831
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00034982.JPEG",
+     "sha256": "bece5c45dca9a43556eaeb25f37e3bfadfbc0107c39b7a65b2ccf5b7ee7d3c53",
+     "size_bytes": 210402
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00036160.JPEG",
+     "sha256": "378f0ae2676bbc21096da468ca47c2da468629b5f5d66023a98460607c1be016",
+     "size_bytes": 149356
+    },
+    {
+     "relative_path": "ram_datasets/imagenet_multi/imgs/ILSVRC2012_val_00036499.JPEG",
+     "sha256": "72842e43381f810ddc16022a2973642edf205251c7c59ca2a4f0d5a8ad3d5ad7",
+     "size_bytes": 176874
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/1c11f389a2f2673a.jpg",
+     "sha256": "ca70233d8ebbae25da90c72566d5431cfa1f00cbcfc1a9ec8f4f7a4e38858328",
+     "size_bytes": 41922
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/2947f0ba0babf16b.jpg",
+     "sha256": "3700f2e91d0342bcb7d597d5acc7c6221e010ab75db3c403e0635ac6111e2595",
+     "size_bytes": 327892
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/48ad87161306a11e.jpg",
+     "sha256": "032616685aedf82755f90b2432d2ae509febac5f376b3bf5f77e58f5e482f97b",
+     "size_bytes": 859310
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/6d7433b4c9a6b24a.jpg",
+     "sha256": "16d10f85f4e0b75843fa72c31e4f3ca0275660c11e267eacdcb4d32a95c9e8d2",
+     "size_bytes": 127159
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/7c27063ed661f51c.jpg",
+     "sha256": "64bdc5f4d755434cc9e422f94084a6f49750d2971f8d45aa4e6a901aaba6d2b2",
+     "size_bytes": 130070
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/8af609f92f94eba4.jpg",
+     "sha256": "a2fc99203191f197811dc895c6ce17d77d4ea0fe90549f25c73587fc89b72a16",
+     "size_bytes": 482251
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/96116d2b916ade74.jpg",
+     "sha256": "639c94b45fbeb411fe352a013ad57eb4358a2f8539ef629487aa01fbfe63a6a1",
+     "size_bytes": 88940
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/b1d3c1ff18a2cc76.jpg",
+     "sha256": "a538cdac7030698758c766ba1e9e6a6f306fb2cb9bfa9374d69b814aa9be1682",
+     "size_bytes": 231914
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/b4bd159f5e631dc8.jpg",
+     "sha256": "3cdee4fa6cf7527255fc2033d05feb7199195333cb4088159bacd9727c8c1b39",
+     "size_bytes": 285792
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/bdcfc349991f0327.jpg",
+     "sha256": "cada68a0dabf746bffe3849e977a0f3c088d8d9baa65564ccee784196fff51b5",
+     "size_bytes": 269162
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/bfa8dd6b7a851d39.jpg",
+     "sha256": "9c06e00af3d86b3162ef2b87ff549a6c91054f0c4b76656eb2e77bf8dd88a5d8",
+     "size_bytes": 345067
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/c8a4b7bab0e293e5.jpg",
+     "sha256": "0e24ec327923120f328dbe8f6ec7e45dd6c3d42824f13ebe5e5316eab60a92d9",
+     "size_bytes": 53542
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/e6bd64a60bbef623.jpg",
+     "sha256": "8bd98530e37b7e2539bd7af846dec3a2b9e09f400d1d0517ad185789a17432e3",
+     "size_bytes": 322023
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/imgs/test/fc547a967d92bc53.jpg",
+     "sha256": "aee014d439b91ab311fd2ad66281828d261001496e71c5cb6e3c34bdacbf4625",
+     "size_bytes": 654311
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/openimages_common_214_ram_annots.txt",
+     "sha256": "aee48ce93dd1805c8a1987ccc736efe9eec26052b091ce0c9f47fd0c53e43c6d",
+     "size_bytes": 684
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/openimages_common_214_ram_taglist.txt",
+     "sha256": "3b2ec80fc92178b1e672a087a1e8c034ba3008dcb48dcfa5b2a38641077fc6cb",
+     "size_bytes": 1685
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/openimages_common_214_tag2text_idannots.txt",
+     "sha256": "e44845a662bcee8abe57b2fcb644b0aecc0a6453d2663f9eb683bffdb2643f85",
+     "size_bytes": 519
+    },
+    {
+     "relative_path": "ram_datasets/openimages_common_214/openimages_common_214_tag2text_tagidlist.txt",
+     "sha256": "7a5e3e2eb8f4d7ade79742057434c878af3f22de8a45f18b3d91813c61921000",
+     "size_bytes": 987
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/01122addafb07701.jpg",
+     "sha256": "422d1777d80edece90528f4f45b51eb71db0220f42cc116ce465192898735056",
+     "size_bytes": 438182
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/0c3240ecec541bfc.jpg",
+     "sha256": "5c14ecaaac8a2b9824cad137725b6534278832751c9621940501c81049753129",
+     "size_bytes": 234761
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/0fd72579946be783.jpg",
+     "sha256": "9fb1f77c81c35598fe6bd3826cdbe8b34f10f376c5722260133ba64ccce5389f",
+     "size_bytes": 288949
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/1cb4e916a7b86339.jpg",
+     "sha256": "8b62ba7f3f990c9ca40924ca9ad4635e52b34b5d308d18fbf95cf28c77588420",
+     "size_bytes": 158355
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/1d72539d0364e219.jpg",
+     "sha256": "f1e5e4df97e0e654d11cb6e919b339d192fa265d7fe429ea7c46057b123216b4",
+     "size_bytes": 112884
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/28493917194e1d24.jpg",
+     "sha256": "3d4675d166e0554186f354f2f1b6c3b965946600b98dc91022c0a72a8257c0a5",
+     "size_bytes": 123985
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/2fc1fc08190a3217.jpg",
+     "sha256": "77d59954978e75f29c4655c7917d4d7ab6ac43a76e00dcfc47339dba1c432720",
+     "size_bytes": 214095
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/32a70ecdbf132831.jpg",
+     "sha256": "9e54280ec62f1a2aeb965999dc2d92cd7e1eb15d7bd781e28034f8b67f34cbaa",
+     "size_bytes": 454458
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/585121ea3724ab63.jpg",
+     "sha256": "005a1b1beb0e9b75f89fccdadbb72253fe025c56cc51560158255ba4ba5b08da",
+     "size_bytes": 384625
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/63ba82a9b52b20da.jpg",
+     "sha256": "bf31e01854f948ea63a1404b93782173662ad03fa76b05e4c1d0863cb8db85d4",
+     "size_bytes": 254262
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/6805657a52d30677.jpg",
+     "sha256": "3c596b276af0cd04d9e4d5265bbddda79726009614cf8751bdd470f0a9ee142f",
+     "size_bytes": 542130
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/imgs/test/6bf13ba5d719c24a.jpg",
+     "sha256": "7549d3c3499bcad1e16b06fa24c637b325778b90473ec7f86588f4c1ee9960a3",
+     "size_bytes": 404048
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/openimages_rare_200_llm_tag_descriptions.json",
+     "sha256": "b65f1cdf4506df0efe987a8178f06c076e38ea5be5432355a00d12ac0db296e7",
+     "size_bytes": 3339350
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/openimages_rare_200_ram_annots.txt",
+     "sha256": "3ab72a2d982b61c869f9514fd33a6bfdc02361df438306de8c3dc934de769e48",
+     "size_bytes": 828
+    },
+    {
+     "relative_path": "ram_datasets/openimages_rare_200/openimages_rare_200_ram_taglist.txt",
+     "sha256": "8a173d0132907fa88451de2370d2dc4efee6807b952dfe6eeb9e77eeea2315cf",
+     "size_bytes": 2414
+    },
+    {
+     "relative_path": "ram_datasets/selection_manifest.json",
+     "sha256": "1d6567f190458042c4bf6e71b1fcbc904761bc0f1a5d5b1db1b580236eb4aebb",
+     "size_bytes": 36616
+    }
+   ]
+  },
+  {
+   "id": "relate-datasets",
+   "tasks": [
+    "relation"
+   ],
+   "relative_path": "relate_datasets.zip",
+   "url": "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/main/assets/relate_datasets.zip",
+   "sha256": "e0cf31c540dfa4ac8b122e7bc73c7d3070a5d385d17a7017229344a2b7895568",
+   "size_bytes": 119359470,
+   "archive": true,
+   "extracted_files": [
+    {
+     "relative_path": "relate_datasets/demo_images/bicycle.jpg",
+     "size_bytes": 211755,
+     "sha256": "1173a3bb48f4875064a73869bbeef7431c0c1c14a6ec751a75e8fbc7df4a8e18"
+    },
+    {
+     "relative_path": "relate_datasets/demo_images/catlaptop.jpg",
+     "size_bytes": 207115,
+     "sha256": "55da50d82845ad990c7a4ea377ef10bc0db0dd6076895ca14eb527775674d269"
+    },
+    {
+     "relative_path": "relate_datasets/demo_images/frisbee.jpg",
+     "size_bytes": 234814,
+     "sha256": "f52cbb5a26bda7c266e7e95fcda0b87f5b92f65829fd46896af2b30012c65d88"
+    },
+    {
+     "relative_path": "relate_datasets/demo_images/horse.jpg",
+     "size_bytes": 469827,
+     "sha256": "549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedecf29"
+    },
+    {
+     "relative_path": "relate_datasets/demo_images/skateboard.jpg",
+     "size_bytes": 233771,
+     "sha256": "6b5cb50eb4f13061528124f573ed9d433559f34bb8dae3e65cd970db787123e5"
+    },
+    {
+     "relative_path": "relate_datasets/demo_images/tennis.jpg",
+     "size_bytes": 444472,
+     "sha256": "5b5f10a29ba288bc792a676b3881e8d8f0b4e6bb3227bc6b8699cbeda66c5649"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/r3c_adoption_54729571599.webm",
+     "size_bytes": 32641680,
+     "sha256": "6ec4160dfb683cfb880375a118064acc3caa67707244f040f7d0316017c7c541"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/gof_a_gweithiwr_metrel_ray_burrell_metal_fabrica.webm",
+     "size_bytes": 3736282,
+     "sha256": "6f17d65d2012cba1a21513a436bfeababa7c043172aa0b615f804365872a9807"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/technical_hardtail_riding_all_mountain_enduro.webm",
+     "size_bytes": 17366970,
+     "sha256": "7e5f17cd3b682e6d58a9367ea6d4441ec7b642aeba9e42314ee3feae0d03afb3"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/jalebi_being_prepared_bangalore.webm",
+     "size_bytes": 11665054,
+     "sha256": "cec4667f1a037558bf8b02554629f829e0350f236e63e28be1118da8aa79478c"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/david_farmer_guitarist_at_copped_hall_open_day_a.webm",
+     "size_bytes": 37568246,
+     "sha256": "e1dbd6cff0c7efc1529f3171f6db33646446c87e62c44f39ee7e7f6970eef490"
+    },
+    {
+     "relative_path": "relate_datasets/demo_videos/fetch_demo_videos.sh",
+     "size_bytes": 2525,
+     "sha256": "8366304a89384e5bc078d9a55d006ca5e0fa1757c67ca7d419eb109f95656a86"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/245050.jpg",
+     "size_bytes": 39101,
+     "sha256": "91b836decd2cf067d6976f700b1bdb0b760b0e7902eee2b0a8d4b1426b7bed89"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/144846.jpg",
+     "size_bytes": 77750,
+     "sha256": "335dcf8d707020a1c150d7f8e5cc8ba111d9f9692aa861794c9442d4199ba891"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/266825.jpg",
+     "size_bytes": 128709,
+     "sha256": "52c091aa9a3ef0b37954e68893a5a17716929a25ad8d200456fd8c0f648489f5"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/91806.jpg",
+     "size_bytes": 127879,
+     "sha256": "c58e361689530d1ae66599546b57a9fde1e50acd4b6397bf31590be43907a2e5"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/300959.jpg",
+     "size_bytes": 65715,
+     "sha256": "1b27edff7cb7b757473d1651410fdf77ace31d951f31618c4d9372663518656e"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/11355.jpg",
+     "size_bytes": 112897,
+     "sha256": "12455bd3fe0fbff4e7710392e6de8d50938261f6fc30ebcda42064fa10693028"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/9282.jpg",
+     "size_bytes": 83625,
+     "sha256": "6f68010af1c8cc8b59aaaf3a5acbeeb1c8b775db78fb06db50ad54023e8617f0"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/27190.jpg",
+     "size_bytes": 50092,
+     "sha256": "c8ff8d1458e343805f61b2b7b9031ce46d51ef4e6f8ca8f48546629117cadbf4"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/129927.jpg",
+     "size_bytes": 136119,
+     "sha256": "83dec5a8cc71a1c27e2859a8a112c5ee214e3f1406b3d45069bc33a2f6afde38"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/172835.jpg",
+     "size_bytes": 35180,
+     "sha256": "7f04110b9059d83a171f2477819057cf2c19085e19d7f72bead0e64a7d976baa"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/231594.jpg",
+     "size_bytes": 47728,
+     "sha256": "cdcbc910e1c87ace4505660aa80f3de34bb92bc1862ec4ae5b088882846b71fd"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/52536.jpg",
+     "size_bytes": 50405,
+     "sha256": "1106c12f9bb80db5d269da975316e13901eba81baa3576e5814a1332dd13a474"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/162793.jpg",
+     "size_bytes": 79529,
+     "sha256": "2bcf19bf596de546f061f1c41a2d6b7e53a9d79a721979e767b55d9a17a863e0"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/104029.jpg",
+     "size_bytes": 40033,
+     "sha256": "c30bdb3bdba53e7bcd7dfe56496fdd4ac7cb1c60a56499573f576394ef718bb7"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/481986.jpg",
+     "size_bytes": 59646,
+     "sha256": "b3216f1ad4bcdc7206c3ffd38c15ead41a9ef2030961176a89187c72f1b88020"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/102063.jpg",
+     "size_bytes": 58519,
+     "sha256": "62cc76a6f62437ee3bbc5aae9052b2a2a572fd37ff79854bd6e845a64cad2641"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/198214.jpg",
+     "size_bytes": 56352,
+     "sha256": "a034fd65c8854cff22e33b0e7be8efafe9a75d68dccab0884c1a7534702eae27"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/16127.jpg",
+     "size_bytes": 94271,
+     "sha256": "d1e1fb42e23962e900950f4ee3c0eab255d524cbaeeacf4a69f8f8c61c7b2a72"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/471413.jpg",
+     "size_bytes": 48790,
+     "sha256": "e3e4df4bb3f34ea641f5e93be1be80c6654da1d3dda6979c09672fc802e15c9f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/358187.jpg",
+     "size_bytes": 84868,
+     "sha256": "f5a6d9256f7553cc763755e0a0500231db64c3c1621d79baf91ee6608327e195"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/122698.jpg",
+     "size_bytes": 16721,
+     "sha256": "4e8e743833430171bbcff9ccd1846055d40d7ac02613ed12f5fb06fbb9a6520b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/431358.jpg",
+     "size_bytes": 120896,
+     "sha256": "e0600bb951a6b57e7b215a0ba4b4678702812fdfd1931bdd974826fc6234139c"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/475063.jpg",
+     "size_bytes": 42415,
+     "sha256": "27da5b5b2dd599030ebfaafc2c6ffaa889db63f4ee80ce7bbb5f1a078c1bb893"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/465589.jpg",
+     "size_bytes": 32134,
+     "sha256": "3b1fabfb278d40f27d149f441bc65cf471319a700ff8f82a0d2a7a9999b59f8d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/228279.jpg",
+     "size_bytes": 108789,
+     "sha256": "227985b672c67d62d96cb139b1ee16750305be6376d50d2379b97cf647997bda"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/97855.jpg",
+     "size_bytes": 119275,
+     "sha256": "e9be25af7d62e6aa149ef28ad9ae192c73cf5025f1ad70963f1d3acdcc4c4c5f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/239442.jpg",
+     "size_bytes": 26595,
+     "sha256": "f1a193e480064b2463d4951561fb42d4f7f7bb897912d4fafe60bc8e11b1a088"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/14198.jpg",
+     "size_bytes": 37918,
+     "sha256": "844392e07b4bf9086509f76877be0f8f97442063b626f4e70d639d6ecf3bba29"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/19163.jpg",
+     "size_bytes": 89088,
+     "sha256": "73362219eb080b6f5ec5eb64d9b56583b8e64f0175c23ed9c030b0fbe0ed4699"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/71069.jpg",
+     "size_bytes": 78036,
+     "sha256": "67bcd8dde789be9a2bcf6cbeeb1c46f0fef15119786d07f6096e019978ce1166"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/81185.jpg",
+     "size_bytes": 96826,
+     "sha256": "f719f3d7899d7b1bee1f8a2d24e69d9996a845eb3ad04f07c9554e204ddbc8c7"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/372522.jpg",
+     "size_bytes": 124441,
+     "sha256": "099b37cc2b6ccbd37f6164aa8aa10c3c86b697648f01028c69fe1d4cda996a46"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/433188.jpg",
+     "size_bytes": 27202,
+     "sha256": "6f4adf523b94f5ee009aab91abbb4ea5e95c89d639ead307043225da9b134eb7"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/302113.jpg",
+     "size_bytes": 86083,
+     "sha256": "6ea5a38ad53ffcd9778f803f76b79269b4bccf411f9d6da8756a10fde42dd061"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/92254.jpg",
+     "size_bytes": 54843,
+     "sha256": "2c53b28c35e8614dc21abcd59f034a49541556b7c2b52dfbc0c3782612853dd7"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/115571.jpg",
+     "size_bytes": 87939,
+     "sha256": "3b8eb0fc6a31cb9aa70f07a83c233160443c7316abf6658f3c29e12fdd3cc0d0"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/495397.jpg",
+     "size_bytes": 38406,
+     "sha256": "a161ea7b056366eda251665cb575ad1636fcf9d6cc024933794792f92580c674"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/24757.jpg",
+     "size_bytes": 23897,
+     "sha256": "b7a8cc6d8052ccff974df8e69633d95a95b2681ea74483f759148ee3f5178c83"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/461572.jpg",
+     "size_bytes": 105137,
+     "sha256": "643309b6cd6695dbca50ef4354356ea44dc5c3566d16ac9502b33ec9ae0b6977"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/143376.jpg",
+     "size_bytes": 83958,
+     "sha256": "d6658d5ebe0abb1fcbb942644bfda2900f1c62b15dfd4df860fe94a7641ffb26"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/280716.jpg",
+     "size_bytes": 54390,
+     "sha256": "11e53a86f8c4484de9684dd94237cd2b24edd032e0829d0770ab33b9c5883a47"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/392539.jpg",
+     "size_bytes": 121923,
+     "sha256": "906b61d7bcfc8493b0c6db645cc9338fc2390a37f9717edf607fe4e79919926c"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/265747.jpg",
+     "size_bytes": 33851,
+     "sha256": "5ed8ee6b0b49f5ced017029bb3d1d9461942a52f64b53d2ab91223e9b47c3d4f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/143697.jpg",
+     "size_bytes": 84379,
+     "sha256": "c0cd242a72b72b76f5cbce255a5b694b8774761e6b7ccf1ce03155fa4f459c4f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/437629.jpg",
+     "size_bytes": 50104,
+     "sha256": "e21c0594558a4d67fbb3ccc9217813199959aa9b386fd55fff32960be6fc8aa9"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/55085.jpg",
+     "size_bytes": 58744,
+     "sha256": "243bd082aa95aee3927dbc11f3b6f81ed5060efefadd6ee12cf321b24851ddea"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/147904.jpg",
+     "size_bytes": 80693,
+     "sha256": "6dc55ce7ebba50cdf42a8ccbf87140c97fc592c213baecf666c6d4c6be65e9d0"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/149460.jpg",
+     "size_bytes": 66429,
+     "sha256": "fff16d85579d77cc017d347b8abff42d25f66a0d4dfa10582ddaef95f2d0faa8"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/323754.jpg",
+     "size_bytes": 72151,
+     "sha256": "d24de56e7730dbeda5cefd9a4579309db47f504d63778ff12a6031d744b90dc2"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/images/134453.jpg",
+     "size_bytes": 62252,
+     "sha256": "2644f2ecf2aeebce7a4771638ac3e3de12ca755bcf4829b3a8f762c79666e0b5"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/ra4m_50/manifest.json",
+     "size_bytes": 1013052,
+     "sha256": "521e4c874c51b5eb5a9fd1cea62745113b6a229fffe70b378477e4057c7ac225"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/README.md",
+     "size_bytes": 5704,
+     "sha256": "dde5114e79b517dbc804b13f5694957e77b3677e2d83a8af65fb333e1de3ccdb"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/categories.json",
+     "size_bytes": 15945,
+     "sha256": "7114db085993fb6f1ecfb96ab3e6b7e99458b1112bdcb4b8f87abc2bcfe040e1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/source_rows.json",
+     "size_bytes": 55444,
+     "sha256": "90cd1bb4bb817ffadaadfba7e2a53b91fce24290bf994d0e402865168b44b2eb"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/000_107907.jpg",
+     "size_bytes": 104269,
+     "sha256": "308f8e1930786f6bc1f7a42ac4c289bdc066ac649188ffcf18b5e3c410d87e67"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/001_107910.jpg",
+     "size_bytes": 62265,
+     "sha256": "3403dd87b554883a67663bbff571d8d437623693839b9358ad6fb569bf0f08e9"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/002_107912.jpg",
+     "size_bytes": 38111,
+     "sha256": "23633d35e790aecfcbddc070d2b8774f4ba05486e8f2880910bd29e3f9a61b07"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/003_107915.jpg",
+     "size_bytes": 30144,
+     "sha256": "15584e7b9489d99b821e98dccd4904a37ab097c7b220ce1d5cfd2d002eefbeb8"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/004_107947.jpg",
+     "size_bytes": 67162,
+     "sha256": "a2709546db2fa39586a079c3c9dcfa6af1f12b0054f6fd2cdd61a00a6e60554d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/005_1159300.jpg",
+     "size_bytes": 82759,
+     "sha256": "2d9cbf7518cdfd4d60f9ffe28e21ab46d20a1dbac63ef271b1e00428489e8a9c"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/006_1159321.jpg",
+     "size_bytes": 46722,
+     "sha256": "51f62ba6cfbe64e2a3861e5d1d3cb52ee66c9149f3f567bf153246af21e76e7b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/007_1159360.jpg",
+     "size_bytes": 86439,
+     "sha256": "08ac2f3701aef199ba38f14656e7b90e44748a573dc2f5f8cd21d118129d3347"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/008_1159414.jpg",
+     "size_bytes": 65618,
+     "sha256": "57f97ff184721acf2f8ea5edaa9638a47c685edfe95dc158eda3a98422f11c85"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/009_1159438.jpg",
+     "size_bytes": 56790,
+     "sha256": "2b28a68a1f73a20523c9190ca90a3512ede57fd36290f38a7128f33fcc2f3c3e"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/PSG/manifest.json",
+     "size_bytes": 41979,
+     "sha256": "937762da5ec1b6ae3a384dd5ab83c70147c52014b3bd06abe585f07a4097f638"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/categories.json",
+     "size_bytes": 10070,
+     "sha256": "0c0aced63775f7959b716ab3c330554fa7a72e68ce4447b9a108a736b476b370"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/README.md",
+     "size_bytes": 6744,
+     "sha256": "8fcfbcaffd23e596a6a1c5fb00d923211a3bc9bb66b4be48f0b119fa11c0623d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/source_rows.json",
+     "size_bytes": 60406,
+     "sha256": "0de1cba13f14c98ed3208c1cfb9b3aa42e4cf2889771a22b2c5f1edbcdd27ced"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/000_73306.jpg",
+     "size_bytes": 47414,
+     "sha256": "8fd0e0c23f848f7156e88e9fc674ef0f586426ea1f34bbcdb63405a0a4f8cbc9"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/001_73330.jpg",
+     "size_bytes": 46399,
+     "sha256": "a55516dee2f742a4f7d5e9a6c212c52bedc06601b8ddecaaaf04ec6382aabd83"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/002_73373.jpg",
+     "size_bytes": 36079,
+     "sha256": "7c5761753850f16461a7db7296f06a6ff77dce3eff8428107e0c9d8922e037a0"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/003_73377.jpg",
+     "size_bytes": 32258,
+     "sha256": "15f4ab5ddea06d2314112e74d8c22262c36254fb715c9295c2c4b1b07c96a2c6"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/004_73392.jpg",
+     "size_bytes": 33399,
+     "sha256": "640766cd3c8ef17c0edbbe0206942fd03811f070ad4cefa181d21740b104568b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/005_73395.jpg",
+     "size_bytes": 33043,
+     "sha256": "455963768cd8809bf423075b3c9c3d346b9e9bb1cc524ab9bfc9fa93feb550dc"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/006_73396.jpg",
+     "size_bytes": 32340,
+     "sha256": "06926b4028fcee62956d7e2bfda99539371b20bd5d0646fd735e5e9247eb8900"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/007_73416.jpg",
+     "size_bytes": 33525,
+     "sha256": "062bd14d613b894548057f859631e5f253fafe24aadf098a55e0cca25386841d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/008_73419.jpg",
+     "size_bytes": 26651,
+     "sha256": "95d1c92a798b906b0cfab706a064fbc8213856f7aa37c58dfb7b5172b5382a33"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/009_73424.jpg",
+     "size_bytes": 20608,
+     "sha256": "de2aa5b4774a57c83fb552789989c3e6c420482d435af99d66cbf7cf7fa6cc47"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/IndoorVG/manifest.json",
+     "size_bytes": 45612,
+     "sha256": "c23ce8af6f7fd870f638d56e0503abe7d3aca19c57769b289ec79607b7f642f1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/categories.json",
+     "size_bytes": 16561,
+     "sha256": "b822d63ae3819b17f5e3921663e55de72bf8d2254c90f02b2fd97625e28cd18d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/README.md",
+     "size_bytes": 8276,
+     "sha256": "6fe84d8666f6549d74c2b6d6884bc0de53fecec09e0a11cd9c5dfc958e6a5f15"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/source_rows.json",
+     "size_bytes": 50701,
+     "sha256": "a33451f86b203c07f8070ab6ddbd49bf0e5b522796dc1979758521db6c1386c5"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/000_2343729.jpg",
+     "size_bytes": 36152,
+     "sha256": "0afcf44d1a2455f84d9b3214ca6f35e4556d37cbffda9a44b762d8f2a46851dd"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/001_2343728.jpg",
+     "size_bytes": 40484,
+     "sha256": "d64d8d7ddc61c344924d4d5aa33ebb6a222fa5c7ec45900b0e116cdd807d5e75"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/002_2343727.jpg",
+     "size_bytes": 43874,
+     "sha256": "c5ff71f6e2ca26ea8af9547f71dfc9b9fc6d6525b43bb9c5e0fc404a9e406a2a"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/003_2343726.jpg",
+     "size_bytes": 86931,
+     "sha256": "e20e1bd21885325b691f8e19e3bdf0633320cad97c6b60a1004ef6423c4ed98f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/004_2343725.jpg",
+     "size_bytes": 35080,
+     "sha256": "a8232de2e895b3f0818b798d41e9a45363295d7e7955b59aa78872c808249ecf"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/005_2343724.jpg",
+     "size_bytes": 38354,
+     "sha256": "ca63d6c3ea0538322c23a186a37ce8da2e6f18b590f0871cc30ee648fda3eae5"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/006_2343723.jpg",
+     "size_bytes": 31154,
+     "sha256": "ebdcf07e145cadd01ebd79970aeda699ca91301fce0ad4641e5f3dc0f8475e1a"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/007_2343722.jpg",
+     "size_bytes": 30116,
+     "sha256": "575e1c29398be8b5b26e5097d238402963288fcff6d9fedab8934d06f3c20f91"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/008_2343721.jpg",
+     "size_bytes": 28344,
+     "sha256": "b8f6f345a8e6a2e680b046ae494b9af081dda0c2c200af9cea0f8dfdf3892725"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/009_2343720.jpg",
+     "size_bytes": 41325,
+     "sha256": "6100832af289b2a7b7c5fe702a8077f5778e16895d1d33b6e33190050d64e91c"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/VG150/manifest.json",
+     "size_bytes": 38197,
+     "sha256": "83295fb7e58317575ff9b6c388ffb1779669f5181f8a7017a1367f6a48ec261a"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/annotations.json",
+     "size_bytes": 5954904,
+     "sha256": "ae8f613ff1886e27e06f154cc01393c8a86025ae7f8f3664a7fd2308d771bf39"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_bathroom_0023_r-1315445972.824198-4196151840.png",
+     "size_bytes": 413690,
+     "sha256": "6c8306143a3bd57df5cda6b1444ee6b09c056bacb950906f00806214ca8b347b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_nyu_office_1_r-1294439283.377657-2381571548.png",
+     "size_bytes": 378884,
+     "sha256": "ebc069ab7f3de5e21beb01ef86b866192c7a1dd84e70d739859afca984dae292"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_bedroom_0125b_r-1315325995.179831-1337583258.png",
+     "size_bytes": 270897,
+     "sha256": "e9b443d3887a71af779acac116d657296a2002a53bbf000f7c855f1ddafae0bc"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0030a_r-1315431558.529628-1739222.png",
+     "size_bytes": 322407,
+     "sha256": "16fc35753604389947e8a7b877b0e5d6805c7cf3a1ad644b073914494b77b93c"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0006_r-1295148648.277565-3032432473.png",
+     "size_bytes": 328552,
+     "sha256": "9a15311a562240890f81509f87c5cc781d6807219c86d24e33a83934ab8eefc4"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_kitchen_0046_r-1315332905.382935-1180736781.png",
+     "size_bytes": 303472,
+     "sha256": "31aed4b7b122d822184b2590c9a057fe327f0d392bd8c8e3a384d081f8102452"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_bedroom_0068_r-1315170913.619402-1915728089.png",
+     "size_bytes": 346731,
+     "sha256": "b39945b6d0b899f0ec8f55eb7ac2f7e04a43901827f9eeb3bb885138d2575d4e"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_dining_room_0003_r-1315431450.634986-2118743464.png",
+     "size_bytes": 435094,
+     "sha256": "1906bced9ff8e28f65d27d1b9d2d90d7c3a0fce222cbc638958c4e03763ac917"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_home_storage_0001_r-1315167164.580889-88030301.png",
+     "size_bytes": 440534,
+     "sha256": "b4a9b245c34f6833614424ae304ab3f648d014ad5b2f3b2e4aa322543704534b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_classroom_0015_r-1315406686.219375-838785565.png",
+     "size_bytes": 400658,
+     "sha256": "6141128170e145f6a179630eaa2121ca42f3e6fedb8f5047a4401fafb67d5baa"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0048_r-1315168948.055965-523175474.png",
+     "size_bytes": 495114,
+     "sha256": "2f5e81cb493c3006f290e7d54350c75c452a681ff56441a2668d183277b7337a"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_office_0009_r-1294851157.595315-1631020159.png",
+     "size_bytes": 210979,
+     "sha256": "2c7ae227bad04eb86c732f72c1e9d1f5e82be0dc316915cff3e1cda9d2eb1a92"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_bedroom_0116_r-1315337533.797352-3740587621.png",
+     "size_bytes": 471102,
+     "sha256": "71846b739505575c1518f1180b6abce0fa19343b9836d7caf767c19be13f5b2f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_classroom_0009_r-1315406142.697306-2565833658.png",
+     "size_bytes": 438053,
+     "sha256": "759398a8721e4da35b2d241f982a14cd8af94575639664cba286a1696f8d4dd2"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0049b_r-1315170655.352972-3599370011.png",
+     "size_bytes": 351306,
+     "sha256": "45a47e04fcdb056207cd731120fe299048b04ea17b9c37ffcf979d2bfc134a50"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0083_r-1316568895.131279-3646253816.png",
+     "size_bytes": 374651,
+     "sha256": "212a7a18bf3e7a82bb07bf2e4ffa30deea2295bee178134559a1a193641b51ac"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_bedroom_0124_r-1315324273.716936-2525234601.png",
+     "size_bytes": 409763,
+     "sha256": "c771bd0a63f3970fb1c73dc25cd2d0a87b46627c3a8c803c91b85c48885f3aca"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_furniture_store_0001a_r-1313950337.743070-1601814829.png",
+     "size_bytes": 451382,
+     "sha256": "19b0453c63dd4ae205e58bb5627c65b7ac9b0ae333f4777bd824b75a7c062c68"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0002_r-1294890219.170877-2061183194.png",
+     "size_bytes": 392621,
+     "sha256": "d7ffcb85db705351ad59c42c5fe640449ca899c932f607124a3a70e7ad73c891"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/images/nyu_living_room_0082_r-1316566882.020164-1292891236.png",
+     "size_bytes": 389597,
+     "sha256": "4562df03fb418b5dd12914b46392fc2dccaefd131d98823225ce3b25b520b8da"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/record.json",
+     "size_bytes": 5691,
+     "sha256": "b17d3df9be0fb96801a49b15ee68547bd7146aebc1592cae4bf27dd5ececda76"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/SpatialSense-valid/categories.json",
+     "size_bytes": 501,
+     "sha256": "8d2ff174e36a43c47f5bf029cc4bfbe211fd2a1055e215615d717764ca253d8f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/SpatialSense-valid/manifest.json",
+     "size_bytes": 18114,
+     "sha256": "3f43124bda4b414e855cd4362b70338f07d406fde1ff1d6636b3bb6ecfc293cb"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/SpatialSense-test/categories.json",
+     "size_bytes": 501,
+     "sha256": "8d2ff174e36a43c47f5bf029cc4bfbe211fd2a1055e215615d717764ca253d8f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/metric_subsets/spatialsense/SpatialSense-test/manifest.json",
+     "size_bytes": 23390,
+     "sha256": "bd9eaf7c8046781d43ba805f4595d8ec8e70deb3ab91e612d7ef721b85576ce1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/trees/64829d57318dc8b32ac3e029ac84fbb9834a7700.json",
+     "size_bytes": 36969,
+     "sha256": "23933fc3ab35298c9ababc45fc78038feffc77f9a3f75c2cf0708392502f2cef"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/CACHEDIR.TAG",
+     "size_bytes": 191,
+     "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/.gitignore",
+     "size_bytes": 1,
+     "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/download/categories.json.metadata",
+     "size_bytes": 101,
+     "sha256": "3b0ea8072b6b183764d264b030df46b047380fd6c49798cefdbf40889d0022c3"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/download/README.md.metadata",
+     "size_bytes": 101,
+     "sha256": "e96e9157d9c4ba8db0d64fbef63cddbe74732f1e654fbb05532c68ca232c92b1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/download/clean_train_excluded.json.metadata",
+     "size_bytes": 100,
+     "sha256": "d69302416f04e6ec321559e047c5a7bbefe40ce36fcdcae8efaee8da3aa0dc51"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/download/export_stats.json.metadata",
+     "size_bytes": 100,
+     "sha256": "0fd91b166c4902ed379dbb983a3f4afdf6a0a8ae2d945b0dfb1109c2cb247553"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/.cache/huggingface/download/predicates.json.metadata",
+     "size_bytes": 101,
+     "sha256": "bc7647e7f844a25b586daa859063145414bbe4aec4857a0fd8916fed09b377fe"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/predicates.json",
+     "size_bytes": 537603,
+     "sha256": "6dfa7cd6f46dfcf317196e2f36f9b64a733e786e1d72795e345e6366f3dbed8f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/categories.json",
+     "size_bytes": 33608,
+     "sha256": "8743d4c6f5a82e178a5bacce4f0440beafdfc526822ef66c757e2e0a7a976d63"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/README.md",
+     "size_bytes": 7480,
+     "sha256": "8cdbd1babdc89b9bfe3270e62a7e4be56fb48d3977a652dbc94ef7207aacd594"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/clean_train_excluded.json",
+     "size_bytes": 178502,
+     "sha256": "400c269dac0081a8158e60c17b8e79674c9aefb0312710ada78748dcb614ce3f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_RA-4M/export_stats.json",
+     "size_bytes": 381,
+     "sha256": "bd222b4536784436bb22fff64ee9c2eccbfbd16d9426895dbb9353dd2905ce0f"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/.cache/huggingface/trees/ea6fb3a56a0876eee98165ea17792fc6ec8460e6.json",
+     "size_bytes": 7651,
+     "sha256": "4895873524fae559df3527096cb99a9e742351853e0452b0713d103677ecfe3b"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/.cache/huggingface/CACHEDIR.TAG",
+     "size_bytes": 191,
+     "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/.cache/huggingface/.gitignore",
+     "size_bytes": 1,
+     "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/.cache/huggingface/download/README.md.metadata",
+     "size_bytes": 100,
+     "sha256": "058363b1b10ed99d256745892f87d0f1806e527d83205f92f230771b0bc2fe02"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/.cache/huggingface/download/categories.json.metadata",
+     "size_bytes": 101,
+     "sha256": "dd2fcfb9a113546e451836b282b71d4ae252963773ef034e29c4724c5f091601"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/categories.json",
+     "size_bytes": 16561,
+     "sha256": "b822d63ae3819b17f5e3921663e55de72bf8d2254c90f02b2fd97625e28cd18d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_VG150-coco-format/README.md",
+     "size_bytes": 8276,
+     "sha256": "6fe84d8666f6549d74c2b6d6884bc0de53fecec09e0a11cd9c5dfc958e6a5f15"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/.cache/huggingface/trees/8a7e2f92840de2d267244c3ea26fa2daa0772120.json",
+     "size_bytes": 6379,
+     "sha256": "b3d29bbb53c989dc5d4d6dc2d0742388c6fc36d23c10c1d5c4851290bf542acb"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/.cache/huggingface/CACHEDIR.TAG",
+     "size_bytes": 191,
+     "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/.cache/huggingface/download/categories.json.metadata",
+     "size_bytes": 101,
+     "sha256": "464b854a30ef987a03d02d82304b2a7324e28cce334a81cedede94db6303eeec"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/.cache/huggingface/download/README.md.metadata",
+     "size_bytes": 100,
+     "sha256": "54cf7ab1641a5fdc6df0ed7a2ae4c16b4612e13bcd9a913dd3f328b327792c29"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/.cache/huggingface/.gitignore",
+     "size_bytes": 1,
+     "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/README.md",
+     "size_bytes": 5704,
+     "sha256": "dde5114e79b517dbc804b13f5694957e77b3677e2d83a8af65fb333e1de3ccdb"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_PSG-coco-format/categories.json",
+     "size_bytes": 15945,
+     "sha256": "7114db085993fb6f1ecfb96ab3e6b7e99458b1112bdcb4b8f87abc2bcfe040e1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/.cache/huggingface/trees/63105f42838e6ce0867f8ab9e2956c2dcec043fa.json",
+     "size_bytes": 2234,
+     "sha256": "18be0786fe46959b9d1f8871aa9462a43f7cda8c2b15b784cd3805d2fa758fb7"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/.cache/huggingface/CACHEDIR.TAG",
+     "size_bytes": 191,
+     "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/.cache/huggingface/download/README.md.metadata",
+     "size_bytes": 101,
+     "sha256": "1ef2ce0bb772a24564f8fe12baf36df4cdffdf108b46e1689d26223b762d5081"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/.cache/huggingface/download/categories.json.metadata",
+     "size_bytes": 100,
+     "sha256": "fb278bd32f1b6404c9cb555ebd645303a9963e39b47bf5b64555875d1555526e"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/.cache/huggingface/.gitignore",
+     "size_bytes": 1,
+     "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/categories.json",
+     "size_bytes": 10070,
+     "sha256": "0c0aced63775f7959b716ab3c330554fa7a72e68ce4447b9a108a736b476b370"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/official/maelic_IndoorVG-coco-format/README.md",
+     "size_bytes": 6744,
+     "sha256": "8fcfbcaffd23e596a6a1c5fb00d923211a3bc9bb66b4be48f0b119fa11c0623d"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/catalog.json",
+     "size_bytes": 565948,
+     "sha256": "215b1f30b00e3ca8c176f757e1d5fa5a1c2b129f70d5e995de4fe254901e5261"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/README.md",
+     "size_bytes": 1804,
+     "sha256": "e77b28f718f5a008cb808754b0127156fbb7c52b1c646bb1036e7421082d6565"
+    },
+    {
+     "relative_path": "relate_datasets/benchmark_samples/PACKAGE.md",
+     "size_bytes": 3467,
+     "sha256": "c7f7332239b5415768de357920597b6b5c7df7d98b00be2c98e89253b23c7e27"
+    },
+    {
+     "relative_path": "relate_datasets/manifest.json",
+     "size_bytes": 7444,
+     "sha256": "f9a025aa19b1e67b36217411964e227a7cac50f36ff61e36791b686aae921131"
+    },
+    {
+     "relative_path": "relate_datasets/README.md",
+     "size_bytes": 3716,
+     "sha256": "4204799fb303e7285b447f52c4dac8c933d19109f30d647603cf3b9118855fa1"
+    }
+   ]
+  },
+  {
+   "id": "relate-tokenizer",
+   "tasks": [
+    "relation"
+   ],
+   "relative_path": "relation_models/relateanything-tokenizer.json",
+   "url": "https://huggingface.co/maelic/relsgg-vits16/resolve/282652489584b156d533e704bdbf51bca66f3a90/tokenizer.json",
+   "sha256": "6d9109cc838977f3ca94a379eec36aecc7c807e1785cd729660ca2fc0171fb35",
+   "size_bytes": 3642073
   }
  ],
  "scenarios": [
+  {
+   "id": "ram-upstream-demo1",
+   "task": "tagging",
+   "owned_globs": [
+    "ram_models/*.gguf"
+   ],
+   "model_glob": "ram_models/*.gguf",
+   "light_globs": [
+    "ram_models/ram_plus_swin_large_14m-q8_0.gguf",
+    "ram_models/ram_swin_large_14m-q8_0.gguf",
+    "ram_models/tag2text_swin_14m-q8_0.gguf"
+   ],
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/tagging/demo_reference_probe.py",
+    "--probe",
+    "{binary:test_tagging_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--image",
+    "{assets}/ram_datasets/demo/demo1.jpg",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}"
+   ],
+   "env": {},
+   "accuracy_gate": "Every published GGUF is compared with official PyTorch using that GGUF's dequantized weights. Explicit upstream CPU Q8 arithmetic retains its raw-logit bound; AUTO CPU RAM Q8 additionally compares all-class sigmoid scores with an independent PyTorch implementation of its activation arithmetic. Original weight-only PyTorch sigmoid bounds remain mandatory for AUTO.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_cpu_q8",
+    "reference_id": "ram-demo1-per-model-gguf-pytorch-logits",
+    "checks": [
+     {
+      "metric": "compatibility_accuracy_max_diff",
+      "op": "<",
+      "value": 0.02,
+      "candidate_only": true
+     },
+     {
+      "metric": "probability_max_diff",
+      "op": "<",
+      "value": 0.02
+     },
+     {
+      "metric": "probability_mean_diff",
+      "op": "<",
+      "value": 0.002
+     },
+     {
+      "metric": "cpu_arithmetic_probability_max_diff",
+      "op": "<",
+      "value": 0.02,
+      "candidate_only": true
+     },
+     {
+      "metric": "cpu_arithmetic_probability_mean_diff",
+      "op": "<",
+      "value": 0.002,
+      "candidate_only": true
+     }
+    ],
+    "require_metrics": [
+     "max_diff",
+     "mean_diff",
+     "probability_max_diff",
+     "probability_mean_diff",
+     "accuracy_max_diff",
+     "compatibility_accuracy_max_diff",
+     "cpu_arithmetic_probability_max_diff",
+     "cpu_arithmetic_probability_mean_diff"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "ram-upstream-datasets",
+   "task": "tagging",
+   "model_glob": "ram_models/*.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/tagging/upstream_metrics_probe.py",
+    "--probe",
+    "{binary:test_tagging_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--assets",
+    "{assets}",
+    "--output",
+    "{scenario_report}",
+    "--threads",
+    "{threads}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}"
+   ],
+   "env": {},
+   "accuracy_gate": "All 50 pinned frames and official label spaces: CPU explicit upstream compatibility arithmetic preserves all-class logits/probabilities and adds no per-class probability, F1 or annotation error. Every backend independently meets original-checkpoint PyTorch cross F1 >= 0.99, probability MAE <= 0.002 and mAP/CP/CR deltas <= 0.01, plus the declared full-class arithmetic reference. Complete AUTO pipeline latency stays within 5 percent of the original upstream on every dataset. GPU reports retain upstream differences as observational metrics without claiming a nonexistent compatibility mode.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "ram-four-datasets-50-frames",
+    "checks": [
+     {
+      "metric": "json0/cross_f1",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "json0/compatibility_upstream_cross_f1",
+      "op": ">=",
+      "value": 0.999999,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/compatibility_upstream_logit_max_error",
+      "op": "<=",
+      "value": 0.0001,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/compatibility_upstream_probability_max_error",
+      "op": "<=",
+      "value": 1e-05,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/pytorch_probability_mae",
+      "op": "<=",
+      "value": 0.002
+     },
+     {
+      "metric": "json0/compatibility_pytorch_probability_error_excess",
+      "op": "<=",
+      "value": 1e-06,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/compatibility_pytorch_cross_f1_drop",
+      "op": "<=",
+      "value": 1e-06,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/compatibility_pytorch_annotation_error_excess",
+      "op": "<=",
+      "value": 1e-06,
+      "backends": [
+       "cpu"
+      ]
+     },
+     {
+      "metric": "json0/arithmetic_probability_max_error",
+      "op": "<=",
+      "value": 0.02
+     },
+     {
+      "metric": "json0/arithmetic_probability_mae",
+      "op": "<=",
+      "value": 0.002
+     },
+     {
+      "metric": "json0/pytorch_mAP_delta",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "json0/pytorch_CP_delta",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "json0/pytorch_CR_delta",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "json0/latency_over_upstream",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "json0/cross_f1",
+     "json0/mAP",
+     "json0/CP",
+     "json0/CR",
+     "json0/latency_over_upstream",
+     "json0/upstream_mAP_delta",
+     "json0/upstream_CP_delta",
+     "json0/upstream_CR_delta",
+     "json0/pytorch_mAP_delta",
+     "json0/pytorch_CP_delta",
+     "json0/pytorch_CR_delta",
+     "json0/upstream_cross_f1",
+     "json0/upstream_logit_max_error",
+     "json0/upstream_probability_max_error",
+     "json0/pytorch_probability_mae",
+     "json0/pytorch_probability_error_excess",
+     "json0/pytorch_cross_f1_drop",
+     "json0/pytorch_annotation_error_excess",
+     "json0/pytorch_probability_max_error",
+     "json0/upstream_pytorch_cross_f1",
+     "json0/upstream_pytorch_probability_mae",
+     "json0/upstream_pytorch_probability_max_error",
+     "json0/arithmetic_probability_max_error",
+     "json0/arithmetic_probability_mae"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "ram-upstream-caption",
+   "task": "tagging",
+   "model_glob": "ram_models/tag2text_*.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/tagging/upstream_metrics_probe.py",
+    "--probe",
+    "{binary:test_tagging_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--assets",
+    "{assets}",
+    "--output",
+    "{scenario_report}",
+    "--task",
+    "caption",
+    "--threads",
+    "{threads}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}"
+   ],
+   "env": {},
+   "accuracy_gate": "Tag2Text captions on all 50 frames: exact and word F1 agreement against the official PyTorch decoder and the same GGUF upstream decoder; complete pipeline latency within 5 percent of upstream.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "ram-tag2text-caption-50-frames",
+    "checks": [
+     {
+      "metric": "json0/caption_exact",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "json0/caption_word_f1",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "json0/pytorch_caption_exact",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "json0/pytorch_caption_word_f1",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "json0/latency_over_upstream",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "json0/caption_exact",
+     "json0/caption_word_f1",
+     "json0/pytorch_caption_exact",
+     "json0/pytorch_caption_word_f1"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "generic"
+  },
   {
    "id": "depth",
    "task": "depth",
@@ -2086,6 +3613,2864 @@
    },
    "accuracy_gate": "PicoDet layout heads match the paddle reference element-wise within the quantization tolerance.",
    "metric_parser": "generic"
+  },
+  {
+   "id": "relation-vitb16-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vitb16-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vitb16-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16plus-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16plus-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vits16plus-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-text-student",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/*text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "model_glob": "relation_models/*text-student-f32.gguf",
+   "required_globs": [
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--text",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}"
+   ],
+   "accuracy_gate": "Every published text student encodes English, Unicode, entity, truncated and empty prompts into 512 normalized values; compare the pinned native CLIP encoder and official student checkpoint.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-clip-student-eight-prompts",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.0002
+     },
+     {
+      "metric": "official_max_diff",
+      "op": "<=",
+      "value": 0.003
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "official_max_diff",
+     "official_mean_diff",
+     "performance_ratio",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-custom-vitb16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vitb16-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vitb16",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vitb16-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": false
+  },
+  {
+   "id": "relation-custom-vits16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vits16-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vits16",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vits16-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": false
+  },
+  {
+   "id": "relation-custom-vits16plus",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vits16plus-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vits16plus",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vits16plus-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": false
+  },
+  {
+   "id": "relation-masks-scores-decompose",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--regions",
+    "--decompose"
+   ],
+   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-masks-scores-decompose",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-vitb16-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vitb16-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vitb16-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16plus-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16plus-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-vits16plus-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-text-student-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/*text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "model_glob": "relation_models/*text-student-f32.gguf",
+   "required_globs": [
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--text",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Every published text student encodes English, Unicode, entity, truncated and empty prompts into 512 normalized values; compare the pinned native CLIP encoder and official student checkpoint. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-clip-student-eight-prompts",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.0002
+     },
+     {
+      "metric": "official_max_diff",
+      "op": "<=",
+      "value": 0.003
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "official_max_diff",
+     "official_mean_diff",
+     "performance_ratio",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-custom-vitb16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vitb16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vitb16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vitb16-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vitb16",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vitb16-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": true
+  },
+  {
+   "id": "relation-custom-vits16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vits16-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vits16",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vits16-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": true
+  },
+  {
+   "id": "relation-custom-vits16plus-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--custom",
+    "--student",
+    "{assets}/relation_models/relsgg-vits16plus-text-student-f32.gguf",
+    "--tokenizer",
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-custom-predicates-vits16plus",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "required_globs": [
+    "relation_models/relsgg-vits16plus-text-student-f32.gguf",
+    "relation_models/relateanything-tokenizer.json"
+   ],
+   "light": true
+  },
+  {
+   "id": "relation-masks-scores-decompose-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-vits16plus-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--regions",
+    "--decompose",
+    "--no-strict"
+   ],
+   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-masks-scores-decompose",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "typed_score_max_diff",
+      "op": "<=",
+      "value": 1e-05
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "typed_score_max_diff",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
   }
  ]
 }

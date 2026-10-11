@@ -117,6 +117,52 @@ components, `ecvTestDataRepository`, and the existing plugin interfaces. Add
 the normal `AddPlugin` target, `info.json`, resources, README, build/index rows,
 and existing JSON-RPC/CLI mappings when automation is in scope.
 
+### AICore plugin CMake closure
+
+Keep each AICore standard plugin structurally consistent with the maintained
+plugin targets: `AddPlugin(NAME ...)`, followed by `add_subdirectory(include)`
+and `add_subdirectory(src)`, with headers and implementation files registered
+through those two target-owned `CMakeLists.txt` files. Add the plugin's own
+`include/` directory privately and link every library that its sources consume
+directly. `AddPlugin` already closes the common `CVCoreLib`, `CVPluginAPI`, and
+`CVPluginStub` ABI dependencies, but a plugin that calls `CVPluginAPI` services
+directly should also list `CVPluginAPI` in its own `target_link_libraries` so
+the source-level dependency stays explicit and survives future changes to
+transitive links. Shared `video_base` remains optional and is linked only when
+the target exists; it must not be the hidden owner of the plugin's API or Qt
+dependencies.
+
+### Shared plugin sample data
+
+When a plugin has a "Use test data" / demo-fill action, register its dataset in
+`ecvTestDataRepository` and use that repository's shared archive download,
+SHA-256 verification, cache-under-`cloudViewer_data/download`, and extraction
+into `cloudViewer_data/extract` flow. Do not add a plugin downloader, private
+cache directory, or plugin-specific ZIP extraction. Prefer the upstream's
+recommended demo image as the deterministic first-fill choice, even when the
+archive also contains larger evaluation datasets. Pin the archive digest and
+the selected extracted member digest/size in the common validation manifest;
+have the plugin action select and display that same extracted file. Add focused
+coverage for cached/offline reuse, automatic fill, selected path, and missing
+or invalid data handling. This requirement applies to newly integrated AICore
+plugins as well as existing plugin workflows.
+
+Model and sample caches honor the same global `CLOUDVIEWER_DATA_ROOT` override,
+falling back to `~/cloudViewer_data`. Test a first download in an isolated empty
+data root; require the initial demo to be absent, then verify the retained ZIP,
+extracted member, and automatic UI fill. Do not count a warm default cache as
+evidence of a cold download.
+
+Reference inputs and truth data are external test assets, not source files.
+Declare a stable remote archive and its digest in the common asset manifest, or
+generate a transient reference under the build directory or `TMPDIR` from a
+pinned upstream revision. Tests must accept the resolved asset/reference path,
+fail clearly when it is unavailable, and record the revision and digest used.
+Never check in generated logits, model outputs, or machine-specific truth
+fixtures merely to make a local probe pass. A plugin may choose the upstream
+recommended demo member for its first-fill action, but that choice belongs in
+the plugin's manifest and documentation rather than in this general contract.
+
 ## Required Integration Surfaces
 
 | Classification | Required surfaces |
@@ -162,6 +208,20 @@ the structured `accuracy` object, and the release profile rejects every
 selected legacy-prose row. Distinguish upstream/golden correctness from
 CPU/backend parity. A quantized weight file does not prove lower activation,
 attention, or KV-cache allocation and does not imply lower latency.
+
+For quantized models, record both the error against the independent framework
+checkpoint and any error added relative to the same weights in upstream.
+Declare absolute numeric bounds and quantization allowances explicitly in the
+owning manifest. Preserve failing metrics in the report; agreement with an
+upstream quantized output alone cannot replace independent correctness checks.
+Check added error per output as well as aggregate scores so improvements in
+one class cannot hide a regression in another.
+When intentionally changing activation arithmetic, expose the choice through
+context options, identify both modes in reports, and verify the original mode's
+upstream compatibility separately. The new default must still meet its absolute
+independent-checkpoint accuracy and original-baseline performance bounds. Keep
+its per-output upstream differences visible; improved aggregate accuracy never
+proves that every output improved.
 
 Performance claims require same hardware, model, input, backend, build mode,
 and sampling protocol. Use p50/p95, repeated processes, warmups, and a

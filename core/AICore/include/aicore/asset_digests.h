@@ -37,6 +37,16 @@ struct AssetDigestEntry {
 
 // clang-format off
 inline constexpr AssetDigestEntry kAssetDigests[] = {
+        {"ram_datasets.zip", "ee3060f41247895a7140162f8e217a51bf2dd46df8e16679157b8086f7490177" },
+        {"ram_plus_swin_large_14m-f16.gguf", "7c683b1a0306b7b016ba56db3c9f6bcc1ba0935ae177cad5048780a658f37064" },
+        {"ram_plus_swin_large_14m-f32.gguf", "3c540973ad51803c2cf8cb0f383710aa8c8e62c226c9c939f21a19731fc7cd4a" },
+        {"ram_plus_swin_large_14m-q8_0.gguf", "08635cacabbc054d118df0cf932929332aaaaf9901665730f11e5524ce053d9d" },
+        {"ram_swin_large_14m-f16.gguf", "cdc38f3924b39605970d785bfa4c54ee6e41d4551c49bf5436a44e34331137b7" },
+        {"ram_swin_large_14m-f32.gguf", "95f9602087999a4d6ccbbeed8c2cfbc883425759d2b3f29b6cd3fea4a155c837" },
+        {"ram_swin_large_14m-q8_0.gguf", "0425a0d363958eaa4fb670644a27142e9cba3769c9147d68c37fa2f10231260d" },
+        {"tag2text_swin_14m-f16.gguf", "03ce272940f7254374b89ea3a0e5c8c1ce59df15c4e734ad263f42f7f2d54e51" },
+        {"tag2text_swin_14m-f32.gguf", "d242a323cd1463501d5b7e7c582160f6678b89347c3b3f5e4ceac9caca28407b" },
+        {"tag2text_swin_14m-q8_0.gguf", "70227c4bd98dd269077e35dd7035d9ef689a9d2264715f895847e6b336484f76" },
         {"README.md", "efc52273746e36cc1980655d978fbe2db9dda869352231aa00da5cc311e65795" },
         {"aliked-lightglue-f16.gguf", "e9b3dd3aecc2a2850b5a146ca282c2ca71114f8ff91992e0558190200c59570d" },
         {"aliked-lightglue-f32.gguf", "001ec073bddc592e8276106c79e58f2a0222fc614381a944389b550d801bbab5" },
@@ -503,6 +513,20 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"lingbot-map-skyseg-f16.gguf", "4e4ba738737a5f966950d24cc46b6fbdeb54c1598c081b01278b11f04d8fd211" },
         {"lingbot-map-skyseg-f32.gguf", "0409e16a891c59efbde1350e126241f83f3acc4b89c23fc5a9f8f98f83feeb7f" },
         {"lingbot-map-skyseg-q8_0.gguf", "759c2c0cc82e5493f48bfa7752c344c18bc13df5fa5fa36baaffe389f66dcb47" },
+        // RelateAnything published LFS oids and pinned official tokenizer.
+        {"relsgg-vitb16-f16.gguf", "61222e4099c277d5272524507721fc6d65649051bae23984a06fe5cacb8e0806"},
+        {"relsgg-vitb16-f32.gguf", "1537ba73ae9042b9553774269a4bf44ecfba7ea8776cac44acbea02090fe0934"},
+        {"relsgg-vitb16-q8_0.gguf", "61bc2a07233a1d0e189dbcab96736d38afa9f9ade8d8028b327e3aa7a12c3dd5"},
+        {"relsgg-vitb16-text-student-f32.gguf", "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"},
+        {"relsgg-vits16-f16.gguf", "e00c896a5ad816cdd6af285d63346baab27e5c002935dba59ab0a8e124828a59"},
+        {"relsgg-vits16-f32.gguf", "ce90fb86c08716a45b9ca85f0bbfe74787966bf17eb267c3ad23f91094ced081"},
+        {"relsgg-vits16-q8_0.gguf", "ee168035fa5fa2dc334e159c70ab4785e1bf9c4758427c1264b59878200fa429"},
+        {"relsgg-vits16-text-student-f32.gguf", "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"},
+        {"relsgg-vits16plus-f16.gguf", "4e5631450416ec2496623631b7f7e2bde9f399570fe747fad1dd9a5f20fbcb37"},
+        {"relsgg-vits16plus-f32.gguf", "996960494629efd0035379c2fa8ae7ca1ff0039b53d8ab61637e86b7e05ae52e"},
+        {"relsgg-vits16plus-q8_0.gguf", "bb70680859abf090bb3942871a5932aa07155f6236e87c6999218ed14400c8f9"},
+        {"relsgg-vits16plus-text-student-f32.gguf", "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"},
+        {"relateanything-tokenizer.json", "6d9109cc838977f3ca94a379eec36aecc7c807e1785cd729660ca2fc0171fb35"},
 };
 // clang-format on
 

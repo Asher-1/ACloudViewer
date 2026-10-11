@@ -97,6 +97,8 @@ file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RELATION_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/relation/*.cpp)
+file(GLOB AICORE_TAGGING_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/tagging/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
@@ -161,6 +163,8 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_REID_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
+    ${AICORE_RELATION_SOURCES}
+    ${AICORE_TAGGING_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
     ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
@@ -227,6 +231,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
+        ${AICORE_TASKS_SRC_DIR}/relation
         ${AICORE_SAM3D_SRC_DIR}
         ${EIGEN_INCLUDE_DIRS}
 )
@@ -234,6 +239,13 @@ target_include_directories(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
+# RelateAnything's official CLIP tokenizer performs Unicode NFC normalization,
+# root-locale lowercasing, and Unicode regular-expression matching. Those are
+# part of the model contract, so ICU is a real runtime dependency rather than
+# an optional test convenience. FindICU's imported targets keep this portable
+# across the supported Linux, macOS, and Windows toolchains.
+find_package(ICU REQUIRED COMPONENTS uc i18n)
+target_link_libraries(${PROJECT_NAME} PRIVATE ICU::uc ICU::i18n)
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer 3rdparty_jsoncpp)
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
@@ -552,7 +564,7 @@ endif()
 
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma reid
-    rfdetr rmbg sam3 sam3d trellis yolo)
+    rfdetr rmbg sam3 sam3d tagging relation trellis yolo)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -570,6 +582,8 @@ if(AICore_BUILD_TESTS)
             ${AICORE_YOLO_SOURCES}
             ${AICORE_SAM3_SOURCES}
             ${AICORE_TRELLIS_SOURCES}
+            ${AICORE_RELATION_SOURCES}
+            ${AICORE_TAGGING_SOURCES}
             ${AICORE_GKD_SOURCES}
             ${AICORE_LINGBOT_SOURCES}
             ${AICORE_REID_SOURCES}
@@ -611,6 +625,11 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
+        target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
+        # AICore_test is a static white-box archive containing full_model.cpp;
+        # keep its direct ICU dependency explicit so every test executable gets
+        # the same tokenizer implementation as the shared AICore target.
+        target_link_libraries(AICore_test PRIVATE ICU::uc ICU::i18n)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})

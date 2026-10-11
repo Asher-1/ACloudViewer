@@ -44,6 +44,8 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
 | **qGKD** | `PLUGIN_STANDARD_QGKD` | — | [qGKD/README.md](core/Standard/qGKD/README.md) |
 | **qLingbotMap** | `PLUGIN_STANDARD_QLINGBOTMAP` | — | [qLingbotMap/README.md](core/Standard/qLingbotMap/README.md) |
+| **qRAM** | `PLUGIN_STANDARD_QRAM` | [docs/guides/plugins/qRAM.md](../docs/guides/plugins/qRAM.md) | [qRAM/README.md](core/Standard/qRAM/README.md) |
+| **qRelateAnything** | `PLUGIN_STANDARD_QRELATEANYTHING` | [docs/guides/plugins/qRelateAnything.md](../docs/guides/plugins/qRelateAnything.md) | [qRelateAnything/README.md](core/Standard/qRelateAnything/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -67,6 +69,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QSAM3D=ON \
       -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QRAM=ON \
+      -DPLUGIN_STANDARD_QRELATEANYTHING=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

@@ -1,0 +1,17 @@
+add_executable(test_ram_workflow test_ram_workflow.cpp ../src/RAMDialog.cpp ../src/RAMWorker.cpp
+    ../include/RAMDialog.h ../include/RAMWorker.h ../include/RAMVideoWidget.h)
+target_include_directories(test_ram_workflow PRIVATE ../include)
+target_link_libraries(test_ram_workflow PRIVATE CVPluginAPI AICore video_base)
+set_target_properties(test_ram_workflow PROPERTIES AUTOMOC ON)
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_ram_workflow PRIVATE -fPIC)
+    target_link_options(test_ram_workflow PRIVATE -no-pie -Wl,--allow-shlib-undefined)
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_ram_workflow)
+add_dependencies(test_ram_workflow QRAM_PLUGIN)
+add_test(NAME test_ram_workflow COMMAND test_ram_workflow
+    --plugin-module $<TARGET_FILE:QRAM_PLUGIN>)
+set_tests_properties(test_ram_workflow PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+if(TARGET aicore-fast-tests)
+    add_dependencies(aicore-fast-tests test_ram_workflow)
+endif()

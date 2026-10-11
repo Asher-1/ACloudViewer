@@ -29,7 +29,7 @@ Run this for every AICore-dependent plugin touched by a change:
 
 ```bash
 python3 core/AICore/tests/check_plugin_aicore_boundaries.py \
-  --root . --plugin qRMBG --strict
+  --root . --strict
 ```
 
 The check rejects private ggml/task headers, environment-controlled production

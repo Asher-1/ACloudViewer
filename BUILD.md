@@ -260,6 +260,8 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qTrellis                | PLUGIN_STANDARD_QTRELLIS                 | OFF           | TRELLIS.2 — single image to PBR-textured mesh / GLB ([README](plugins/core/Standard/qTrellis/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/trellis`). |
 | qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR detection & instance masks with per-class allowlist ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
 | qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 background removal — transparent RGBA / alpha matte ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
+| qRAM                    | PLUGIN_STANDARD_QRAM                     | OFF           | Recognize Anything — RAM, RAM++, and Tag2Text image tagging/captions through all published F32/F16/Q8_0 GGUF models ([README](plugins/core/Standard/qRAM/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/tagging`). |
+| qRelateAnything | PLUGIN_STANDARD_QRELATEANYTHING | OFF | Scene relations for images/video, all 12 published relation/text GGUFs; public YOLO regions and shared cache ([README](plugins/core/Standard/qRelateAnything/README.md)). Requires `AICore_ENABLED=ON` and ICU. |
 | qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — **lives on the `qcalib` branch only** (one-click test data, ROS bag v2.0, BEV, LiDAR projection). Requires `BUILD_OPENCV=ON`. |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
@@ -355,9 +357,9 @@ cmake -DBUILD_CUDA_MODULE=ON \
 cmake --build . --config Release
 ```
 
-#### AICore Build (all AICore plugins: qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qSAM3 + qSAM3D + qYOLO + qTrellis + qRFDetr + qRMBG + qGKD + qLingbotMap)
+#### AICore Build (all AICore plugins: qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRAM + qSAM3 + qSAM3D + qYOLO + qTrellis + qRFDetr + qRMBG + qGKD + qLingbotMap)
 
-Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, SAM3, SAM 3D Objects, YOLO, Trellis, RF-DETR, RMBG, GKD, and LingbotMap) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RAM/RAM++/Tag2Text, SAM3, SAM 3D Objects, YOLO, Trellis, RF-DETR, RMBG, GKD, and LingbotMap) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -378,6 +380,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QOCR=ON \
       -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QRAM=ON \
+      -DPLUGIN_STANDARD_QRELATEANYTHING=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

@@ -1054,7 +1054,7 @@ public:
             descriptors.resize(static_cast<size_t>(count) * descriptor_dim_);
 #if defined(AICORE_VULKAN_ALIKED)
             if (backend_.IsVulkan()) {
-                FlushGpuPipeline(&backend_);
+                BarrierGpuPipeline(&backend_);
             }
 #endif
             if (count > 0) {
