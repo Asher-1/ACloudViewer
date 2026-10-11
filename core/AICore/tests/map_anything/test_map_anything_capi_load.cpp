@@ -15,6 +15,7 @@
 // IMAGE / AICORE_TEST_MAP_ANYTHING_IMAGE2 / AICORE_TEST_DEVICE (missing
 // assets -> exit 77 skip).
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -217,6 +218,81 @@ int main(int argc, char** argv) {
         AICORE_CHECK(pt.inference_ms > 0.0);
     }
 
+    // ---- borrowed-view contract: layout equivalence -------------------------
+    // Every supported layout of the same pixels must reach the model as the
+    // same RGB bytes, so the typed outputs are bit-identical (exact hash) to
+    // the tight RGB8 run above. Padded strides carry garbage in the padding.
+    if (first_hash != 0) {
+        constexpr size_t kPad = 13;  // odd: no accidental alignment
+        struct Layout {
+            aicore_image_format format;
+            int channels;
+            bool padded;
+        };
+        const auto pack = [&](const std::vector<uint8_t>& rgb, int w, int h,
+                              const Layout& l, std::vector<uint8_t>* buf) {
+            const size_t stride =
+                    (size_t)w * l.channels + (l.padded ? kPad : 0);
+            buf->assign(stride * h, 0xA5);
+            for (int y = 0; y < h; ++y) {
+                for (int x = 0; x < w; ++x) {
+                    const uint8_t* s = &rgb[((size_t)y * w + x) * 3];
+                    uint8_t* d = &(
+                            *buf)[(size_t)y * stride + (size_t)x * l.channels];
+                    const bool bgr = l.format == AICORE_IMAGE_BGR8 ||
+                                     l.format == AICORE_IMAGE_BGRA8;
+                    if (l.channels == 1) {
+                        d[0] = s[0];
+                        continue;
+                    }
+                    d[0] = s[bgr ? 2 : 0];
+                    d[1] = s[1];
+                    d[2] = s[bgr ? 0 : 2];
+                    if (l.channels == 4) d[3] = 0x3C;  // alpha is ignored
+                }
+            }
+            return aicore_image_view{buf->data(), w, h, stride, l.format};
+        };
+        const Layout pairs[2][2] = {
+                {{AICORE_IMAGE_BGR8, 3, false}, {AICORE_IMAGE_RGBA8, 4, true}},
+                {{AICORE_IMAGE_BGRA8, 4, true}, {AICORE_IMAGE_RGB8, 3, true}}};
+        for (const auto& pair : pairs) {
+            std::vector<uint8_t> b1, b2;
+            const aicore_image_view v[2] = {pack(rgb1, w1, h1, pair[0], &b1),
+                                            pack(rgb2, w2, h2, pair[1], &b2)};
+            AICORE_CHECK(aicore_map_anything_run_images(ctx, v, 2) == 0);
+            AICORE_CHECK(runHash(ctx) == first_hash);
+        }
+        // GRAY8 replicates the channel: equal to RGB8 of the replicated gray.
+        {
+            std::vector<uint8_t> g1, g2, r1((size_t)w1 * h1 * 3),
+                    r2((size_t)w2 * h2 * 3);
+            for (size_t i = 0; i < r1.size(); ++i) r1[i] = rgb1[i - i % 3];
+            for (size_t i = 0; i < r2.size(); ++i) r2[i] = rgb2[i - i % 3];
+            const aicore_image_view gv[2] = {
+                    pack(rgb1, w1, h1, {AICORE_IMAGE_GRAY8, 1, true}, &g1),
+                    pack(rgb2, w2, h2, {AICORE_IMAGE_GRAY8, 1, false}, &g2)};
+            AICORE_CHECK(aicore_map_anything_run_images(ctx, gv, 2) == 0);
+            const uint64_t gray_hash = runHash(ctx);
+            const aicore_image_view rv[2] = {
+                    {r1.data(), w1, h1, (size_t)w1 * 3, AICORE_IMAGE_RGB8},
+                    {r2.data(), w2, h2, (size_t)w2 * 3, AICORE_IMAGE_RGB8}};
+            AICORE_CHECK(aicore_map_anything_run_images(ctx, rv, 2) == 0);
+            AICORE_CHECK(runHash(ctx) == gray_hash);
+        }
+        // A stride below width * channels would read past the caller's
+        // buffer: contract error, nothing runs, the context stays usable.
+        aicore_image_view shortStride = views[0];
+        shortStride.row_stride_bytes = (size_t)w1 * 3 - 1;
+        const aicore_image_view sv[2] = {shortStride, views[1]};
+        AICORE_CHECK(aicore_map_anything_run_images(ctx, sv, 2) == -1);
+        aicore_image_view badFormat = views[0];
+        badFormat.format = (aicore_image_format)99;
+        const aicore_image_view fv[2] = {badFormat, views[1]};
+        AICORE_CHECK(aicore_map_anything_run_images(ctx, fv, 2) == -1);
+        AICORE_CHECK(aicore_map_anything_last_error(ctx) != nullptr);
+    }
+
     // ---- parity feed contract (run_frames shares the same session) ----------
     {
         // Re-run the preprocessed geometry through the f32 feed: the dense
@@ -237,7 +313,6 @@ int main(int argc, char** argv) {
                  std::strstr(json, "architecture") != nullptr);
     aicore_map_anything_free_buffer(json);
 
-    const aicore_pipeline_timings pt{};
     aicore_pipeline_timings timing{};
     if (aicore_map_anything_last_pipeline_timings(ctx, &timing) == 0) {
         aicore::test::printValidationResult("map_anything", device, first_hash,
@@ -261,6 +336,48 @@ int main(int argc, char** argv) {
         AICORE_CHECK(runHash(ctx2) == first_hash);
     }
     aicore_map_anything_free(ctx2);
+
+    // ---- resize-mode contract
+    // ------------------------------------------------ Unknown mode:
+    // fail-closed before any weight is touched.
+    opts = aicore_map_anything_options_new();
+    aicore_map_anything_options_set_device(opts, device);
+    aicore_map_anything_options_set_resize_mode(opts, "letterbox");
+    aicore_map_anything_ctx* bad = aicore_map_anything_load_opts(gguf, opts);
+    AICORE_CHECK(bad != nullptr && aicore_map_anything_is_ready(bad) == 0);
+    AICORE_CHECK(bad != nullptr &&
+                 aicore_map_anything_last_error(bad) != nullptr &&
+                 std::strstr(aicore_map_anything_last_error(bad),
+                             "letterbox") != nullptr);
+    aicore_map_anything_free(bad);
+    // "square" (original VGGT load_and_preprocess_images_square): square
+    // grid, content = the longer side resized to the grid, the shorter side
+    // proportionally, centered in a black pad.
+    aicore_map_anything_options_set_resize_mode(opts, "square");
+    aicore_map_anything_ctx* sq = aicore_map_anything_load_opts(gguf, opts);
+    aicore_map_anything_options_free(opts);
+    AICORE_CHECK(sq != nullptr && aicore_map_anything_is_ready(sq) == 1);
+    if (sq && aicore_map_anything_is_ready(sq)) {
+        AICORE_CHECK(aicore_map_anything_run_images(sq, views, 2) == 0);
+        const int32_t H = aicore_map_anything_result_height(sq);
+        const int32_t W = aicore_map_anything_result_width(sq);
+        AICORE_CHECK(H > 0 && H == W);
+        const int32_t sizes[2][2] = {{w1, h1}, {w2, h2}};
+        for (int v = 0; v < 2; ++v) {
+            int32_t vw = 0, vh = 0;
+            AICORE_CHECK(aicore_map_anything_result_view_valid_size(sq, v, &vw,
+                                                                    &vh) == 0);
+            const int32_t iw = sizes[v][0], ih = sizes[v][1];
+            const double shorter =
+                    (double)W * std::min(iw, ih) / std::max(iw, ih);
+            const int32_t longSide = iw >= ih ? vw : vh;
+            const int32_t shortSide = iw >= ih ? vh : vw;
+            AICORE_CHECK(longSide == W);
+            AICORE_CHECK(std::fabs(shortSide - shorter) <= 1.0);
+        }
+        std::fprintf(stderr, "square grid %dx%d\n", W, H);
+    }
+    aicore_map_anything_free(sq);
 
     aicore_map_anything_shutdown();
 

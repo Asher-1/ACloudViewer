@@ -100,6 +100,29 @@ TEST(base_undistortion, TestUndistortCamera) {
   EXPECT_EQ(undistorted_camera.PrincipalPointY(), 30);
 }
 
+TEST(base_undistortion, TestUndistortCameraMaxCamPointNorm) {
+  Camera distorted_camera;
+  distorted_camera.InitializeWithName("SIMPLE_FISHEYE", 130.0, 200, 100);
+  distorted_camera.SetPrincipalPointX(10.0);
+  distorted_camera.SetPrincipalPointY(50.0);
+
+  UndistortCameraOptions options;
+  options.blank_pixels = 1.0;
+  const Camera unbounded = UndistortCamera(options, distorted_camera);
+  EXPECT_EQ(unbounded.Width(),
+            distorted_camera.Width() * options.max_scale);
+  EXPECT_EQ(unbounded.Height(),
+            distorted_camera.Height() * options.max_scale);
+
+  options.max_cam_point_norm = 2.0;
+  const Camera bounded = UndistortCamera(options, distorted_camera);
+  EXPECT_LT(bounded.Width(), unbounded.Width());
+  EXPECT_LT(bounded.Height(), unbounded.Height());
+
+  options.max_cam_point_norm = 0.0;
+  EXPECT_ANY_THROW(UndistortCamera(options, distorted_camera));
+}
+
 TEST(base_undistortion, TestUndistortCameraBlankPixels) {
   UndistortCameraOptions options;
   options.blank_pixels = 1;
@@ -171,8 +194,8 @@ TEST(base_undistortion, TestUndistortCameraNoBlankPixels) {
       BitmapColor<uint8_t> color;
       EXPECT_TRUE(undistorted_image.GetPixel(x, y, &color));
       EXPECT_NE(color.r, 0);
-      EXPECT_EQ(color.g, 0);
-      EXPECT_EQ(color.b, 0);
+      EXPECT_EQ(color.g, color.r);
+      EXPECT_EQ(color.b, color.r);
     }
   }
 }
@@ -245,4 +268,42 @@ TEST(base_undistortion, TestRectifyStereoCameras) {
   Eigen::Matrix4d Q_ref;
   Q_ref << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, -2.67261, -0.5, -0.5, 1, 0;
   EXPECT_TRUE(Q.isApprox(Q_ref, 1e-5));
+}
+
+// Upstream parity (937064dd undistortion_test.cc).
+TEST(base_undistortion, MaxCamPointNorm) {
+  // Fisheye camera with off-center principal point: pixels far from (cx, cy)
+  // have theta close to pi/2, so CamFromImg returns very large values
+  // (|cam_point| = tan(theta)) that blow up the output dimensions.
+  Camera distorted_camera = Camera::CreateFromModelId(
+      1, CameraModelId::kSimpleFisheye, 130, 200, 100);
+  distorted_camera.SetPrincipalPointX(10);
+  distorted_camera.SetPrincipalPointY(50);
+
+  UndistortCameraOptions options;
+  // Exercise the path driven by extreme samples.
+  options.blank_pixels = 1.0;
+
+  // Default (max_cam_point_norm = -1): the extreme cam_points push the scale
+  // factor against max_scale, so the output is the maximum allowed size.
+  const Camera undistorted_camera_unbounded =
+      UndistortCamera(options, distorted_camera);
+  EXPECT_EQ(undistorted_camera_unbounded.Width(),
+            distorted_camera.Width() * options.max_scale);
+  EXPECT_EQ(undistorted_camera_unbounded.Height(),
+            distorted_camera.Height() * options.max_scale);
+
+  // With a finite threshold, extreme border samples are skipped, yielding
+  // a smaller output that is no longer hitting the max_scale clamp.
+  options.max_cam_point_norm = 2.0;
+  const Camera undistorted_camera_bounded =
+      UndistortCamera(options, distorted_camera);
+  EXPECT_LT(undistorted_camera_bounded.Width(),
+            undistorted_camera_unbounded.Width());
+  EXPECT_LT(undistorted_camera_bounded.Height(),
+            undistorted_camera_unbounded.Height());
+
+  // max_cam_point_norm = 0 is invalid (would skip every sample).
+  options.max_cam_point_norm = 0;
+  EXPECT_ANY_THROW(UndistortCamera(options, distorted_camera));
 }

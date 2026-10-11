@@ -48,6 +48,18 @@ public:
     void releaseContextOnMainThread();
     void requestTaskCancel();
 
+#ifdef AICore_ENABLED
+    /** Run one image through a loaded context (load, detect, masks,
+     *  annotation). Shared by run() and the headless -RFDETR_DETECT batch
+     *  command so both paths produce identical results. \p cancel may be
+     *  null. Returns false with \p error set on failure. */
+    static bool detectImage(aicore_rfdetr_ctx* ctx,
+                            const Settings& settings,
+                            aicore_cancel_token* cancel,
+                            RFDetrRunResult* result,
+                            QString* error);
+#endif
+
 signals:
     void logMessage(const QString& msg);
     void progressUpdate(int current, int total);

@@ -7,6 +7,7 @@
 
 #include "sensor/models.h"
 
+#include <ceres/jet.h>
 #include <gtest/gtest.h>
 
 namespace colmap {
@@ -203,6 +204,49 @@ TEST(SimplePinhole, Nominal) {
 
 TEST(Pinhole, Nominal) {
   TestModel<PinholeCameraModel>({651.123, 655.123, 386.123, 511.123});
+}
+
+TEST(SkewedPinhole, Nominal) {
+  TestModel<SkewedPinholeCameraModel>(
+      {651.123, 655.123, 386.123, 511.123, 0.0});
+  TestModel<SkewedPinholeCameraModel>(
+      {651.123, 655.123, 386.123, 511.123, 0.2});
+}
+
+TEST(SkewedPinhole, ProjectionAndUnprojection) {
+  const std::vector<double> params = {600.0, 500.0, 320.0, 240.0, 50.0};
+  double x = 0.0;
+  double y = 0.0;
+  ASSERT_TRUE(SkewedPinholeCameraModel::ImgFromCam(
+      params.data(), 1.0, 2.0, 1.0, &x, &y));
+  EXPECT_DOUBLE_EQ(x, 1020.0);
+  EXPECT_DOUBLE_EQ(y, 1240.0);
+
+  double u = 0.0;
+  double v = 0.0;
+  ASSERT_TRUE(
+      SkewedPinholeCameraModel::CamFromImg(params.data(), x, y, &u, &v));
+  EXPECT_DOUBLE_EQ(u, 1.0);
+  EXPECT_DOUBLE_EQ(v, 2.0);
+}
+
+TEST(SkewedPinhole, CamFromImgAutoDiff) {
+  const std::vector<double> params = {600.0, 500.0, 320.0, 240.0, 50.0};
+  using Jet = ceres::Jet<double, 2>;
+  Jet params_jet[SkewedPinholeCameraModel::num_params];
+  for (size_t i = 0; i < params.size(); ++i) params_jet[i] = Jet(params[i]);
+  const Jet x(1020.0, 0);
+  const Jet y(1240.0, 1);
+  Jet u;
+  Jet v;
+  ASSERT_TRUE(SkewedPinholeCameraModel::CamFromImg(
+      params_jet, x, y, &u, &v));
+  EXPECT_DOUBLE_EQ(u.a, 1.0);
+  EXPECT_DOUBLE_EQ(v.a, 2.0);
+  EXPECT_DOUBLE_EQ(u.v[0], 1.0 / 600.0);
+  EXPECT_DOUBLE_EQ(u.v[1], -50.0 / (600.0 * 500.0));
+  EXPECT_DOUBLE_EQ(v.v[0], 0.0);
+  EXPECT_DOUBLE_EQ(v.v[1], 1.0 / 500.0);
 }
 
 TEST(Spherical, Nominal) {

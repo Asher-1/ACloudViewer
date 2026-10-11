@@ -32,6 +32,7 @@
 #include <memory>
 #include <vector>
 
+#include "ecvAICoreBatchCommand.h"
 #include "tracking/tracker.hpp"
 
 #ifdef QYOLO_WITH_OPENCV
@@ -49,6 +50,32 @@ struct CommandYoloTrack : public ccCommandLineInterface::Command {
                                           COMMAND_YOLO_TRACK) {}
 
 #ifdef AICore_ENABLED
+
+    static const ecvAICoreBatch::OptionTable& options() {
+        static const ecvAICoreBatch::OptionTable table = {
+                {"MODEL", "path", "", "YOLO GGUF path (required)"},
+                {"VIDEO", "path", "",
+                 "Video source; exclusive with FRAMES_DIR"},
+                {"FRAMES_DIR", "path", "",
+                 "Image sequence directory; exclusive with VIDEO"},
+                {"TRACKER",
+                 "choice:bytetrack|botsort|ocsort|deepocsort|fasttrack|"
+                 "tracktrack",
+                 "tracktrack", "Tracker implementation"},
+                {"GMC", "string", "sparseOptFlow",
+                 "Global motion compensation"},
+                {"CONF", "float", "0.1", "Detection confidence in (0,1)"},
+                {"IOU", "float", "0.7", "NMS IoU in [0,1]"},
+                {"MAX_DET", "int", "0",
+                 "Maximum detections (0 = model default)"},
+                {"DEVICE", "string", "auto", "auto|cpu|cuda|vulkan|metal[:N]"},
+                {"THREADS", "int", "0", "CPU threads (0 = backend default)"},
+                {"REID", "bool", "0", "Enable detector-feature ReID"},
+                {"TRACKS_JSON", "path", "", "Per-frame JSONL track output"},
+                {"RESULT_JSON", "path", "", "Batch result manifest path"},
+        };
+        return table;
+    }
 
     static QStringList listFrameFiles(const QDir& dir) {
         QStringList files;
@@ -100,9 +127,15 @@ struct CommandYoloTrack : public ccCommandLineInterface::Command {
     }
 
     bool process(ccCommandLineInterface& cmd) override {
+        using ecvAICoreBatch::SchemaHelp;
+        const SchemaHelp help = ecvAICoreBatch::handleSchemaHelp(
+                cmd, COMMAND_YOLO_TRACK, QStringLiteral("yolo_track"),
+                QStringLiteral("YOLO multi-object tracking"), options());
+        if (help != SchemaHelp::NotRequested) return help == SchemaHelp::Done;
+
         cmd.print("[YOLO_TRACK]");
 
-        QString modelPath, videoPath, framesDir, tracksJson;
+        QString modelPath, videoPath, framesDir, tracksJson, resultJson;
         QString trackerType = QStringLiteral("tracktrack");
         QString gmcMethod = QStringLiteral("sparseOptFlow");
         QString device = QStringLiteral("auto");
@@ -143,6 +176,8 @@ struct CommandYoloTrack : public ccCommandLineInterface::Command {
                 reid = take().toInt() != 0;
             } else if (key == QStringLiteral("TRACKS_JSON")) {
                 tracksJson = take();
+            } else if (key == QStringLiteral("RESULT_JSON")) {
+                resultJson = take();
             } else {
                 return cmd.error(QObject::tr("Unknown argument after -%1: %2")
                                          .arg(COMMAND_YOLO_TRACK, key));
@@ -417,6 +452,27 @@ struct CommandYoloTrack : public ccCommandLineInterface::Command {
                                        ? QString()
                                        : QStringLiteral(", tracks JSONL: %1")
                                                  .arg(tracksJson)));
+        if (!resultJson.isEmpty()) {
+            const QString source = videoPath.isEmpty() ? framesDir : videoPath;
+            const QJsonObject item{{"input", source},
+                                   {"output", tracksJson},
+                                   {"frames", static_cast<qint64>(frameIndex)},
+                                   { "track_assignments",
+                                     static_cast<qint64>(totalTracks) }};
+            const QJsonObject report{{"schema", "acloudviewer.aicore.batch/1"},
+                                     {"task", "yolo_track"},
+                                     {"keyword", COMMAND_YOLO_TRACK},
+                                     {"succeeded", 1},
+                                     {"failed", 0},
+                                     { "items",
+                                       QJsonArray {
+                                           item
+                                       } }};
+            QString error;
+            if (!ecvAICoreBatch::saveJson(report, resultJson, &error)) {
+                return cmd.error(error);
+            }
+        }
         return true;
     }
 #else   // !AICore_ENABLED

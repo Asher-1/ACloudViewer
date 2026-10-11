@@ -10,6 +10,8 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 
 | CLI command / group | MCP tool(s) | JSON-RPC method(s) |
 |---------------------|-------------|---------------------|
+| `ai list`, `ai schema`, `ai run` | `list_ai_tasks`, `get_ai_schema`, `run_ai_batch` | `aicore.batch` **(B)** |
+| `plugin run` | `run_plugin_command` | — isolated binary subprocess **(H)** |
 | `info`, `formats`, `version` | `get_info`, `list_formats` | — **(H)** |
 | `convert` | `convert_format` | `file.convert` **(G)**; headless MCP uses binary **(H)** |
 | `batch-convert` | `batch_convert` | — **(H)** |
@@ -66,7 +68,30 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 
 \* The `sf` and `normals` CLI groups are **aliases** (same implementations as the matching `process …` subcommands); see [Scalar Field Commands](#scalar-field-commands) and [Normal Vector Commands](#normal-vector-commands).
 
-When the **MCP server** runs in **`--mode headless`**, tools invoke the **ACloudViewer binary** (`-SILENT` …) instead of RPC—there is no JSON-RPC method in that path. When **`--mode gui`**, GUI tools forward to the matching **`category.action`** RPC methods above.
+When the **MCP server** runs in **`--mode headless`**, tools invoke the **ACloudViewer binary** (`-SILENT` …) instead of RPC—there is no JSON-RPC method in that path. When **`--mode gui`**, GUI tools forward to the matching **`category.action`** RPC methods above. `run_plugin_command` always uses an isolated headless process; `run_ai_batch` uses `aicore.batch` in GUI mode and the same registered command directly in headless mode.
+
+## AICore Batch Registry
+
+| Task | Native command | Input shape |
+|------|----------------|-------------|
+| `rmbg` | `RMBG_REMOVE` | images |
+| `deeplsd` | `DEEPLSD_LINES` | images |
+| `rfdetr` | `RFDETR_DETECT` | images |
+| `yolo` / `yolo-track` | `YOLO_PREDICT` / `YOLO_TRACK` | images / video-or-frames |
+| `da3` | `DA3_DEPTH` | images-or-sets |
+| `face` / `gkd` / `ocr` | `FACE_DETECT` / `GKD_KEYPOINTS` / `OCR_RECOGNIZE` | images |
+| `sam3` | `SAM3_SEGMENT` | images |
+| `lightglue` | `LIGHTGLUE_MATCH` | image-pairs |
+| `freesplatter` | `FREESPLATTER_RECONSTRUCT` | image-sets |
+| `trellis` | `TRELLIS_GENERATE` | images |
+| `lingbot-map` | `LINGBOT_MAP_RECONSTRUCT` | sequence-or-video |
+| `anylabel` | `ANYLABEL_INFER` | images |
+| `map-anything` | `MAP_ANYTHING_RECONSTRUCT` | image-sets |
+| `sam3d` | `SAM3D_GENERATE` | images |
+
+Every native command must return `acloudviewer.aicore.batch/1` from
+`HELP RESULT_JSON <path>`. `ai schema` exposes that installed-binary contract;
+the Python registry stores only stable task identity and input shape.
 
 ## Plugin Processing Commands
 

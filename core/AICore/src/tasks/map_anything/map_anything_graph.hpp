@@ -94,6 +94,10 @@ class VGGTRuntime {
     // False when construction failed (unknown architecture / init error);
     // run() would return false as well.
     bool valid() const { return impl_ != nullptr; }
+    // When !valid(): true if the device could not hold this geometry (the
+    // caller may retry with fewer views), and the reason ("" if unknown).
+    bool out_of_memory() const { return out_of_memory_; }
+    const std::string& error() const { return error_; }
 
     int n_views() const { return s_; }
     int height() const { return h_; }
@@ -113,6 +117,8 @@ class VGGTRuntime {
    private:
     std::unique_ptr<Impl> impl_;
     int s_ = 0, h_ = 0, w_ = 0;
+    bool out_of_memory_ = false;
+    std::string error_;
 };
 
 }  // namespace map_anything

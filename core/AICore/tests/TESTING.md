@@ -158,6 +158,24 @@ stability only. A previously captured report can still be supplied with
 `--baseline report.json` for archival comparisons, but that mode cannot
 control for load changes between the two runs.
 
+### SAM 3D CUDA fast-math parity boundary
+
+`AICore_CUDA_FAST_MATH=ON` keeps the pristine CUDA default for MapAnything, while
+`sam3d_merged/0005-sam3d-precise-math-twins.patch` routes `sam3d_*` nodes through
+fast-math-free CUDA twins so they match the fast-math-OFF SAM 3D reference. The
+only valid exact gates for this boundary are the Gaussian count and the 352
+stage dumps that are deterministic in an OFF-vs-OFF control. Do not gate on
+`e2e_slat_feats` or Gaussian-decoder PLY properties: their atomic accumulation
+is non-deterministic even when both executions use the same OFF build.
+
+The route is intentionally explicit. When a SAM 3D graph starts using a
+transcendental operator implemented outside `unary.cu`, or a GQA/masked
+attention layout that reaches generic `fattn`, add the required precise twin
+and dispatch case to `sam3d-precise-dispatch.cu` (and expand the matching gate)
+before accepting the graph. Otherwise `compute_forward()` returns `false` and
+the node silently falls back to a fast-math kernel, invalidating the exact
+parity claim.
+
 YOLO text catalog models are separate scenarios: CLIP and M-CLIP are paired
 with a YOLO-World detector, while MobileCLIP is paired with YOLOE. Their first
 load/text-encoding latency and exact end-to-end output hash are both gated;

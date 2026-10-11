@@ -7,4 +7,6 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/YOLOLiveWidget.h
         ${CMAKE_CURRENT_LIST_DIR}/YOLOVisualPromptLabel.h
         ${CMAKE_CURRENT_LIST_DIR}/YOLODialog.h
+        ${CMAKE_CURRENT_LIST_DIR}/YOLOTrackCommand.h
+        ${CMAKE_CURRENT_LIST_DIR}/YOLOPredictCommand.h
 )

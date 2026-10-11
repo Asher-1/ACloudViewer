@@ -40,23 +40,20 @@ namespace {
 
 FeatureDescriptorsFloat CreateRandomFeatureDescriptors(
     const FeatureExtractorType type, const size_t num_features) {
-  // Fork adaptation: FeatureDescriptorsFloat is a bare Eigen alias here
-  // (upstream wraps it in a struct with .type/.data members).
-  FeatureDescriptorsFloat descriptors(num_features, 128);
+  FeatureDescriptorsFloatData data(num_features, 128);
   for (size_t i = 0; i < num_features; ++i) {
     for (size_t j = 0; j < 128; ++j) {
-      descriptors(i, j) = std::pow(RandomUniformReal(0.0f, 1.0f), 2);
+      data(i, j) = std::pow(RandomUniformReal(0.0f, 1.0f), 2);
     }
   }
-  descriptors = L2NormalizeFeatureDescriptors(descriptors);
+  L2NormalizeFeatureDescriptors(&data);
   if (type == FeatureExtractorType::SIFT) {
     // Mimic the real SIFT pipeline: convert to uint8 [0,255] then back to
     // float. This ensures values are integer-valued floats in [0, 255],
     // which is required for QT_8bit_direct quantization.
-    descriptors =
-        FeatureDescriptorsToUnsignedByte(descriptors).cast<float>();
+    data = FeatureDescriptorsToUnsignedByte(data).cast<float>();
   }
-  return descriptors;
+  return FeatureDescriptorsFloat(type, std::move(data));
 }
 
 struct FeatureDescriptorIndexTestParams {
@@ -84,55 +81,56 @@ TEST_P(ParameterizedFeatureDescriptorIndexTests, Nominal) {
       CreateRandomFeatureDescriptors(params.extractor_type,
                                      params.num_descriptors);
   const FeatureDescriptorsFloat& query_descriptors = index_descriptors;
-  index->Build(index_descriptors);
+  index->Build(index_descriptors.data);
 
   Eigen::RowMajorMatrixXi indices;
   Eigen::RowMajorMatrixXf distances;
-  index->Search(/*num_neighbors=*/1, query_descriptors, indices, distances);
+  index->Search(
+      /*num_neighbors=*/1, query_descriptors.data, indices, distances);
 
-  ASSERT_EQ(indices.rows(), query_descriptors.rows());
+  ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
   ASSERT_EQ(indices.cols(), 1);
-  ASSERT_EQ(distances.rows(), query_descriptors.rows());
+  ASSERT_EQ(distances.rows(), query_descriptors.data.rows());
   ASSERT_EQ(distances.cols(), 1);
 
-  for (int i = 0; i < query_descriptors.rows(); ++i) {
+  for (int i = 0; i < query_descriptors.data.rows(); ++i) {
     EXPECT_EQ(indices(i, 0), i);
     EXPECT_NEAR(distances(i, 0), 0, 1e-6);
   }
 
-  index->Search(/*num_neighbors=*/2, query_descriptors, indices, distances);
-  ASSERT_EQ(indices.rows(), query_descriptors.rows());
+  index->Search(
+      /*num_neighbors=*/2, query_descriptors.data, indices, distances);
+  ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
   ASSERT_EQ(indices.cols(), 2);
-  ASSERT_EQ(distances.rows(), query_descriptors.rows());
+  ASSERT_EQ(distances.rows(), query_descriptors.data.rows());
   ASSERT_EQ(distances.cols(), 2);
 
-  for (int i = 0; i < query_descriptors.rows(); ++i) {
+  for (int i = 0; i < query_descriptors.data.rows(); ++i) {
     EXPECT_EQ(indices(i, 0), i);
     EXPECT_NEAR(distances(i, 0), 0, 1e-6);
     EXPECT_NE(indices(i, 1), i);
     EXPECT_NEAR(distances(i, 1),
-                (query_descriptors.row(i) -
-                 index_descriptors.row(indices(i, 1)))
+                (query_descriptors.data.row(i) -
+                 index_descriptors.data.row(indices(i, 1)))
                     .squaredNorm(),
                 1e-6);
   }
 
-  index->Search(/*num_neighbors=*/index_descriptors.rows() + 1,
-                query_descriptors,
+  index->Search(/*num_neighbors=*/index_descriptors.data.rows() + 1,
+                query_descriptors.data,
                 indices,
                 distances);
-  ASSERT_EQ(indices.rows(), query_descriptors.rows());
-  ASSERT_EQ(indices.cols(), index_descriptors.rows());
-  ASSERT_EQ(distances.rows(), query_descriptors.rows());
-  ASSERT_EQ(distances.cols(), index_descriptors.rows());
+  ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
+  ASSERT_EQ(indices.cols(), index_descriptors.data.rows());
+  ASSERT_EQ(distances.rows(), query_descriptors.data.rows());
+  ASSERT_EQ(distances.cols(), index_descriptors.data.rows());
 }
 
 TEST(FeatureDescriptorIndexTests, TypeMismatch) {
-  // Fork adaptation: the fork's FeatureDescriptorsFloat is a bare Eigen
-  // alias without the upstream .type member, so the descriptor-type check
-  // inside FeatureDescriptorIndex is deferred to W18.3 (feature abstraction
-  // layer). Skip the mismatch case until then.
-  GTEST_SKIP() << "Type validation requires the upstream descriptor struct";
+  // The index is deliberately numeric-only: typed wrappers are enforced at
+  // storage and matcher boundaries, while this local index accepts its matrix
+  // payload explicitly. Cross-type rejection is therefore not its contract.
+  GTEST_SKIP() << "FeatureDescriptorIndex operates on descriptor data only";
   constexpr int kNumDescriptors = 100;
 
   std::unique_ptr<FeatureDescriptorIndex> index;
@@ -152,16 +150,16 @@ TEST(FeatureDescriptorIndexTests, TypeMismatch) {
       FeatureExtractorType::ALIKED_N16ROT, kNumDescriptors);
 
   // Build should throw when descriptor types are inconsistent.
-  index->Build(aliked_desc);
+  index->Build(aliked_desc.data);
 
   // Build correctly with SIFT so we can test Query mismatch.
-  index->Build(sift_desc);
+  index->Build(sift_desc.data);
 
   // Query should throw when descriptor types are inconsistent.
   Eigen::RowMajorMatrixXi indices;
   Eigen::RowMajorMatrixXf distances;
   EXPECT_THROW(index->Search(
-                   /*num_neighbors=*/1, aliked_desc, indices, distances),
+                   /*num_neighbors=*/1, aliked_desc.data, indices, distances),
                std::invalid_argument);
 }
 

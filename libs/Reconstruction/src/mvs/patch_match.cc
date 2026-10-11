@@ -185,6 +185,9 @@ void PatchMatchController::Run() {
   ReadGpuIndices();
 
   thread_pool_.reset(new ThreadPool(gpu_indices_.size()));
+  // Upstream parity (#4154): shared I/O pool for parallel input reads.
+  io_thread_pool_ = std::make_unique<ThreadPool>(
+      GetEffectiveNumThreads(options_.num_threads));
 
   // If geometric consistency is enabled, then photometric output must be
   // computed first for all images without filtering (unless DA3 priors replace
@@ -488,6 +491,7 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
     std::unique_lock<std::mutex> lock(workspace_mutex_);
 
     std::cout << "Reading inputs..." << std::endl;
+    std::vector<int> valid_image_idxs;
     std::vector<int> src_image_idxs;
     for (const auto image_idx : used_image_idxs) {
       std::string image_path = workspace_->GetBitmapPath(image_idx);
@@ -513,15 +517,28 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
         }
       }
 
+      valid_image_idxs.push_back(image_idx);
       if (image_idx != problem.ref_image_idx) {
         src_image_idxs.push_back(image_idx);
       }
-      images.at(image_idx).SetBitmap(workspace_->GetBitmap(image_idx));
-      if (options.geom_consistency) {
-        depth_maps.at(image_idx) = workspace_->GetDepthMap(image_idx);
-        normal_maps.at(image_idx) = workspace_->GetNormalMap(image_idx);
-      }
     }
+
+    // Read images in parallel using the shared I/O thread pool.
+    std::vector<std::shared_future<void>> futures;
+    futures.reserve(valid_image_idxs.size());
+    for (const auto image_idx : valid_image_idxs) {
+      futures.push_back(io_thread_pool_->AddTask([&, image_idx]() {
+        images.at(image_idx).SetBitmap(workspace_->GetBitmap(image_idx));
+        if (options.geom_consistency) {
+          depth_maps.at(image_idx) = workspace_->GetDepthMap(image_idx);
+          normal_maps.at(image_idx) = workspace_->GetNormalMap(image_idx);
+        }
+      }));
+    }
+    for (auto& future : futures) {
+      future.get();
+    }
+
     problem.src_image_idxs = src_image_idxs;
   }
 

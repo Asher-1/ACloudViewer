@@ -217,20 +217,34 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
   return true;
 }
 
-double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
-                                         const CamRayWithJac& cam_ray2,
+double ComputeSquaredTangentSampsonError(const Eigen::Vector3d& cam_ray1,
+                                         const Eigen::Matrix3x2d& J1,
+                                         const Eigen::Vector3d& cam_ray2,
+                                         const Eigen::Matrix3x2d& J2,
                                          const Eigen::Matrix3d& E) {
-  const Eigen::Vector3d e_ray1 = E * cam_ray1.ray;
-  const Eigen::Vector3d et_ray2 = E.transpose() * cam_ray2.ray;
-  const double residual = cam_ray2.ray.dot(e_ray1);
-  const Eigen::Vector2d grad1 = cam_ray1.jacobian.transpose() * et_ray2;
-  const Eigen::Vector2d grad2 = cam_ray2.jacobian.transpose() * e_ray1;
+  const Eigen::Vector3d e_ray1 = E * cam_ray1;
+  const Eigen::Vector3d et_ray2 = E.transpose() * cam_ray2;
+  const double residual = cam_ray2.dot(e_ray1);
+  // Chain the constraint gradients from ray space into pixel space. The
+  // gradient w.r.t. ray1 is E^T ray2 and w.r.t. ray2 is E ray1.
+  const Eigen::Vector2d grad1 = J1.transpose() * et_ray2;
+  const Eigen::Vector2d grad2 = J2.transpose() * e_ray1;
   const double denominator = grad1.squaredNorm() + grad2.squaredNorm();
   if (!(denominator > std::numeric_limits<double>::epsilon()) ||
       !std::isfinite(denominator)) {
     return std::numeric_limits<double>::max();
   }
   return residual * residual / denominator;
+}
+
+double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
+                                         const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E) {
+  return ComputeSquaredTangentSampsonError(cam_ray1.ray,
+                                           cam_ray1.jacobian,
+                                           cam_ray2.ray,
+                                           cam_ray2.jacobian,
+                                           E);
 }
 
 void ComputeSquaredTangentSampsonError(

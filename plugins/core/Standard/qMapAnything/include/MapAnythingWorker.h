@@ -133,22 +133,10 @@ protected:
 private:
 #ifdef AICore_ENABLED
     bool runInference();
-    /** Per-view cloud source decision (see MapAnythingGeometry.h). Returns
-     *  false when the view yields no usable geometry. */
-    /** Produce one view's world-frame cloud (filtered only by isfinite +
-     *  valid-rect + the optional depth-edge mask; conf filtering happens
-     *  SCENE-WIDE after all chunks land). chunkViewIdx indexes the ctx
-     *  tensors of the current chunk; globalViewIdx indexes sources/
-     *  imagePaths. Outputs are appended to the given buffers. */
-    bool appendViewCloud(int chunkViewIdx,
-                         int globalViewIdx,
-                         int height,
-                         int width,
-                         const QVector<QImage>& sources,
-                         std::vector<float>& outPts,
-                         std::vector<quint8>& outCols,
-                         std::vector<float>& outConf,
-                         const uint8_t* edgeMask);
+    /** Crop/colorize one view's depth, confidence and mask rasters from the
+     *  live chunk result. \p i indexes the chunk tensors, \p g the global
+     *  view (imagePaths). Called once per view by its first-cover chunk. */
+    void appendViewRasters(struct aicore_map_anything_ctx* ctx, int i, int g);
 #endif
 
     Settings m_settings;

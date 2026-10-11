@@ -10,7 +10,6 @@
 #include <QtCore>
 #include <QtWidgets>
 #include <filesystem>
-#include <unordered_map>
 
 #include "util/hash_containers.h"
 
@@ -28,34 +27,39 @@ public:
 
     QSpinBox* AddOptionInt(int* option,
                            const std::string& label_text,
-                           const int min = 0,
-                           const int max = static_cast<int>(1e7));
+                           int min = 0,
+                           int max = static_cast<int>(1e7));
+    // Like AddOptionInt, but for options whose "unlimited" sentinel
+    // (std::numeric_limits<int>::max()) is shown and edited as -1, displayed as
+    // "unlimited". A plain QSpinBox capped at INT_MAX overflows when stepped,
+    // so the editable range is capped below INT_MAX.
+    QSpinBox* AddOptionIntUnlimited(int* option,
+                                    const std::string& label_text,
+                                    int max = static_cast<int>(2e9));
     QDoubleSpinBox* AddOptionDouble(double* option,
                                     const std::string& label_text,
-                                    const double min = 0,
-                                    const double max = 1e7,
-                                    const double step = 0.01,
-                                    const int decimals = 2);
+                                    double min = 0,
+                                    double max = 1e7,
+                                    double step = 0.01,
+                                    int decimals = 2);
     QDoubleSpinBox* AddOptionDoubleLog(double* option,
                                        const std::string& label_text,
-                                       const double min = 0,
-                                       const double max = 1e7,
-                                       const double step = 0.01,
-                                       const int decimals = 2);
+                                       double min = 0,
+                                       double max = 1e7,
+                                       double step = 0.01,
+                                       int decimals = 2);
     QCheckBox* AddOptionBool(bool* option, const std::string& label_text);
     QLineEdit* AddOptionText(std::string* option,
                              const std::string& label_text);
-    QLineEdit* AddOptionFilePath(std::string* option,
-                                 const std::string& label_text);
-    QLineEdit* AddOptionDirPath(std::string* option,
-                                const std::string& label_text);
-    // Overloads for options whose path fields migrated to
-    // std::filesystem::path; the std::string* overloads remain for legacy
-    // string path fields. Pointer parameters cannot be built from string
-    // literals, so the two overloads never introduce ambiguity.
     QLineEdit* AddOptionFilePath(std::filesystem::path* option,
                                  const std::string& label_text);
     QLineEdit* AddOptionDirPath(std::filesystem::path* option,
+                                const std::string& label_text);
+    // Fork: path options that are still stored as std::string (DA3 model
+    // paths, texturing, undistortion output).
+    QLineEdit* AddOptionFilePath(std::string* option,
+                                 const std::string& label_text);
+    QLineEdit* AddOptionDirPath(std::string* option,
                                 const std::string& label_text);
 
     void AddSpacer();
@@ -85,12 +89,31 @@ protected:
     NodeHashMap<QLayout*, std::pair<QLabel*, QWidget*>> layout_rows_;
 
     std::vector<std::pair<QSpinBox*, int*>> options_int_;
+    std::vector<std::pair<QSpinBox*, int*>> options_int_unlimited_;
     std::vector<std::pair<QDoubleSpinBox*, double*>> options_double_;
     std::vector<std::pair<QDoubleSpinBox*, double*>> options_double_log_;
     std::vector<std::pair<QCheckBox*, bool*>> options_bool_;
     std::vector<std::pair<QLineEdit*, std::string*>> options_text_;
-    std::vector<std::pair<QLineEdit*, std::string*>> options_path_;
-    std::vector<std::pair<QLineEdit*, std::filesystem::path*>> options_fspath_;
+    std::vector<std::pair<QLineEdit*, std::filesystem::path*>> options_path_;
+
+private:
+    QLabel* CreateRowLabel(const std::string& label_text);
+    QLineEdit* AddOptionPath(std::filesystem::path* option,
+                             const std::string& label_text,
+                             bool directory);
+    QLineEdit* AddOptionPath(std::string* option,
+                             const std::string& label_text,
+                             bool directory);
+
+    template <typename Key>
+    static void SetRowVisible(
+            NodeHashMap<Key, std::pair<QLabel*, QWidget*>>& rows,
+            const Key& key,
+            bool visible) {
+        auto& row = rows.at(key);
+        row.first->setVisible(visible);
+        row.second->setVisible(visible);
+    }
 };
 
 }  // namespace colmap

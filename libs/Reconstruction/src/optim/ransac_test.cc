@@ -49,7 +49,8 @@ TEST(optim_ransac, TestOptions) {
   EXPECT_EQ(options.min_inlier_ratio, 0.1);
   EXPECT_EQ(options.confidence, 0.99);
   EXPECT_EQ(options.min_num_trials, 0);
-  EXPECT_EQ(options.max_num_trials, std::numeric_limits<size_t>::max());
+  EXPECT_EQ(options.max_num_trials, std::numeric_limits<int>::max());
+  EXPECT_EQ(options.num_threads, 1);
 }
 
 TEST(optim_ransac, TestReport) {
@@ -136,4 +137,78 @@ TEST(optim_ransac, TestSimilarityTransform) {
   const double matrix_diff =
       (orig_tform.Matrix().topLeftCorner<3, 4>() - report.model).norm();
   EXPECT_TRUE(std::abs(matrix_diff) < 1e-6);
+}
+
+TEST(optim_ransac, ParallelSimilarityTransform) {
+  SetPRNGSeed(0);
+  const size_t num_samples = 1000;
+  const size_t num_outliers = 400;
+  const SimilarityTransform3 orig_tform(2, ComposeIdentityQuaternion(),
+                                        Eigen::Vector3d(100, 10, 10));
+  std::vector<Eigen::Vector3d> src;
+  std::vector<Eigen::Vector3d> dst;
+  for (size_t i = 0; i < num_samples; ++i) {
+    src.emplace_back(i, std::sqrt(i) + 2, std::sqrt(2 * i + 2));
+    dst.push_back(src.back());
+    orig_tform.TransformPoint(&dst.back());
+  }
+  for (size_t i = 0; i < num_outliers; ++i) {
+    dst[i] = Eigen::Vector3d(RandomReal(-3000.0, -2000.0),
+                             RandomReal(-4000.0, -3000.0),
+                             RandomReal(-5000.0, -4000.0));
+  }
+
+  RANSACOptions options;
+  options.max_error = 10;
+  options.random_seed = kDefaultPRNGSeed;
+  options.num_threads = 4;
+  RANSAC<SimilarityTransformEstimator<3>> ransac(options);
+  const auto report = ransac.Estimate(src, dst);
+
+  ASSERT_TRUE(report.success);
+  EXPECT_GT(report.num_trials, 0);
+  EXPECT_EQ(report.support.num_inliers, num_samples - num_outliers);
+  const double matrix_diff =
+      (orig_tform.Matrix().topLeftCorner<3, 4>() - report.model).norm();
+  EXPECT_LT(matrix_diff, 1e-6);
+}
+
+TEST(optim_ransac, ReproducibilityWithRandomSeed) {
+  SetPRNGSeed(0);
+  const size_t num_samples = 1000;
+  const SimilarityTransform3 orig_tform(
+      2, Eigen::Vector4d::Random().normalized(),
+      Eigen::Vector3d(100, 10, 10));
+  std::vector<Eigen::Vector3d> src;
+  std::vector<Eigen::Vector3d> dst;
+  for (size_t i = 0; i < num_samples; ++i) {
+    src.emplace_back(i, std::sqrt(i) + 2, std::sqrt(2 * i + 2));
+    dst.push_back(src.back());
+    orig_tform.TransformPoint(&dst.back());
+  }
+  for (size_t i = 0; i < 400; ++i) {
+    dst[i] = Eigen::Vector3d(RandomReal(-3000.0, -2000.0),
+                             RandomReal(-4000.0, -3000.0),
+                             RandomReal(-5000.0, -4000.0));
+  }
+
+  RANSACOptions options;
+  options.max_error = 10;
+  options.random_seed = 42;
+  RANSAC<SimilarityTransformEstimator<3>> ransac1(options);
+  const auto report1 = ransac1.Estimate(src, dst);
+  RANSAC<SimilarityTransformEstimator<3>> ransac2(options);
+  const auto report2 = ransac2.Estimate(src, dst);
+
+  ASSERT_TRUE(report1.success);
+  ASSERT_TRUE(report2.success);
+  EXPECT_EQ(report1.support.num_inliers, report2.support.num_inliers);
+  EXPECT_EQ(report1.inlier_mask, report2.inlier_mask);
+  EXPECT_EQ((report1.model - report2.model).norm(), 0.0);
+
+  options.random_seed = 123;
+  RANSAC<SimilarityTransformEstimator<3>> ransac3(options);
+  const auto report3 = ransac3.Estimate(src, dst);
+  ASSERT_TRUE(report3.success);
+  EXPECT_GT((report1.model - report3.model).norm(), 0.0);
 }

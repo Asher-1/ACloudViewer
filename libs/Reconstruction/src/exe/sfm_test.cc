@@ -2,7 +2,7 @@
 //
 // Port of upstream MVS/colmap d3ccaf35 src/colmap/exe/sfm_test.cc (batch 24
 // test alignment); include paths mapped to the fork layout and the fork's
-// IncrementalMapperOptions / controller surfaces applied.
+// IncrementalPipelineOptions / controller surfaces applied.
 
 #include "exe/sfm.h"
 
@@ -34,7 +34,7 @@ TEST(PointTriangulator, IncludesRegisteredImagesOutsideImageList) {
   SynthesizeDataset(synthetic_options, reconstruction.get(), database.get());
 
   ASSERT_EQ(reconstruction->NumRegImages(), 3);
-  IncrementalMapperOptions options;
+  IncrementalPipelineOptions options;
   options.image_names = {reconstruction->Image(1).Name(),
                          reconstruction->Image(2).Name()};
   options.ba_global_max_refinements = 0;
@@ -70,7 +70,7 @@ TEST(PointTriangulator, WritesPartialReconstructionWhenCancelled) {
   const size_t num_points3D = reconstruction->NumPoints3D();
   const auto output_path = test_path / "output";
   CreateDirIfNotExists(output_path);
-  IncrementalMapperOptions options;
+  IncrementalPipelineOptions options;
   options.extract_colors = false;
   bool stop_checked = false;
   RunPointTriangulatorImpl(reconstruction,
@@ -115,7 +115,7 @@ TEST(PointTriangulator, DoesNotOverwriteInputWhenCancelledAfterClearingPoints) {
   CreateDirIfNotExists(model_path);
   reconstruction->Write(model_path);
 
-  IncrementalMapperOptions options;
+  IncrementalPipelineOptions options;
   options.extract_colors = false;
   RunPointTriangulatorImpl(reconstruction,
                            database_path,
@@ -156,7 +156,7 @@ TEST(IncrementalMapper, WritesInterruptedReconstruction) {
 
   const auto output_path = test_path / "output";
   CreateDirIfNotExists(output_path);
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->extract_colors = false;
   options->multiple_models = false;
   options->num_threads = 1;
@@ -202,7 +202,7 @@ TEST(IncrementalMapper, DISABLED_DiscardsInterruptBeforeInitialPair) {
 
   const auto output_path = test_path / "output";
   CreateDirIfNotExists(output_path);
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->extract_colors = false;
   options->multiple_models = false;
   options->num_threads = 1;

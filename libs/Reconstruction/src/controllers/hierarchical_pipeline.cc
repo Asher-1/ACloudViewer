@@ -69,27 +69,27 @@ void MergeClusters(
 
 }  // namespace
 
-bool HierarchicalMapperController::Options::Check() const {
+bool HierarchicalPipelineOptions::Check() const {
   CHECK_OPTION_GT(init_num_trials, -1);
+  CHECK_OPTION_GE(num_threads, -1);
   CHECK_OPTION_GE(num_workers, -1);
+  CHECK_OPTION(clustering_options.Check());
+  CHECK_OPTION(incremental_options.Check());
   return true;
 }
 
-HierarchicalMapperController::HierarchicalMapperController(
-    const Options& options, const SceneClustering::Options& clustering_options,
-    const IncrementalMapperOptions& mapper_options,
+HierarchicalPipeline::HierarchicalPipeline(
+    const HierarchicalPipelineOptions& options,
+    const std::filesystem::path& database_path,
     ReconstructionManager* reconstruction_manager)
     : options_(options),
-      clustering_options_(clustering_options),
-      mapper_options_(mapper_options),
+      database_path_(database_path),
       reconstruction_manager_(reconstruction_manager) {
   CHECK(options_.Check());
-  CHECK(clustering_options_.Check());
-  CHECK(mapper_options_.Check());
-  CHECK_EQ(clustering_options_.branching, 2);
+  CHECK_EQ(options_.clustering_options.branching, 2);
 }
 
-void HierarchicalMapperController::Run() {
+void HierarchicalPipeline::Run() {
   PrintHeading1("Partitioning the scene");
 
   //////////////////////////////////////////////////////////////////////////////
@@ -98,7 +98,7 @@ void HierarchicalMapperController::Run() {
 
   std::unordered_map<image_t, std::string> image_id_to_name;
 
-  auto database = Database::Open(options_.database_path);
+  auto database = Database::Open(database_path_);
 
   std::cout << "Reading images..." << std::endl;
   const auto images = database->ReadAllImages();
@@ -107,7 +107,7 @@ void HierarchicalMapperController::Run() {
   }
 
   SceneClustering scene_clustering =
-      SceneClustering::Create(clustering_options_, *database);
+      SceneClustering::Create(options_.clustering_options, *database);
 
   auto leaf_clusters = scene_clustering.GetLeafClusters();
 
@@ -128,17 +128,23 @@ void HierarchicalMapperController::Run() {
 
   PrintHeading1("Reconstructing clusters");
 
-  // Determine the number of workers and threads per worker.
-  const int kMaxNumThreads = -1;
-  const int num_eff_threads = GetEffectiveNumThreads(kMaxNumThreads);
+  // Determine the number of workers and threads per worker. The total thread
+  // budget is divided across workers to avoid oversubscription (upstream
+  // a2bd15c2 semantics: Mapper.num_threads is overridden per worker).
+  if (options_.incremental_options.num_threads > 0) {
+    LOG(WARNING)
+        << "Mapper.num_threads is ignored in hierarchical mapping. Use "
+           "num_threads to control the total thread budget instead.";
+  }
+  const int num_total_threads = GetEffectiveNumThreads(options_.num_threads);
   const int kDefaultNumWorkers = 8;
-  const int num_eff_workers =
-      options_.num_workers < 1
-          ? std::min(static_cast<int>(leaf_clusters.size()),
-                     std::min(kDefaultNumWorkers, num_eff_threads))
-          : options_.num_workers;
+  const int num_eff_workers = std::max(
+      1, std::min(static_cast<int>(leaf_clusters.size()),
+                  std::min(options_.num_workers < 1 ? kDefaultNumWorkers
+                                                    : options_.num_workers,
+                           num_total_threads)));
   const int num_threads_per_worker =
-      std::max(1, num_eff_threads / num_eff_workers);
+      std::max(1, num_total_threads / num_eff_workers);
 
   // Function to reconstruct one cluster using incremental mapping.
   auto ReconstructCluster = [&, this](
@@ -148,19 +154,17 @@ void HierarchicalMapperController::Run() {
       return;
     }
 
-    IncrementalMapperOptions custom_options = mapper_options_;
+    IncrementalPipelineOptions custom_options = options_.incremental_options;
     custom_options.max_model_overlap = 3;
     custom_options.init_num_trials = options_.init_num_trials;
-    if (custom_options.num_threads < 0) {
-      custom_options.num_threads = num_threads_per_worker;
-    }
+    custom_options.num_threads = num_threads_per_worker;
 
     for (const auto image_id : cluster.image_ids) {
-      custom_options.image_names.insert(image_id_to_name.at(image_id));
+      custom_options.image_names.push_back(image_id_to_name.at(image_id));
     }
 
-    IncrementalMapperController mapper(&custom_options, options_.image_path,
-                                       options_.database_path,
+    IncrementalPipeline mapper(&custom_options, options_.image_path,
+                                       database_path_,
                                        reconstruction_manager);
     mapper.Start();
     mapper.Wait();

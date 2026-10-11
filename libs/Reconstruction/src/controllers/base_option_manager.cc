@@ -33,14 +33,14 @@ BaseOptionManager::BaseOptionManager(bool add_project_options) {
     database_path = std::make_shared<std::filesystem::path>();
     image_path = std::make_shared<std::filesystem::path>();
 
-    // Upstream calls AddRandomOptions()/AddLogOptions() here; see the header
-    // deviation note - a derived manager's overrides must stay authoritative,
-    // so groups are added via AddAllOptions()/explicit calls instead.
     desc_ = std::make_shared<boost::program_options::options_description>();
     desc_->add_options()("help,h", "");
     if (add_project_options) {
         desc_->add_options()("project_path", config::value<std::string>());
     }
+
+    AddRandomOptions();
+    AddLogOptions();
 }
 
 bool BaseOptionManager::RegisterOptionGroupOnce(

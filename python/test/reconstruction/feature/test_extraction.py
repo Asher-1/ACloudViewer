@@ -20,9 +20,13 @@ import pytest
 
 
 def test_normalization_enum(feature):
-    normalization = feature.SiftExtractionOptions.NormalizationType
+    # upstream pycolmap: module-level ``Normalization`` on the feature
+    # submodule.
+    normalization = feature.Normalization
     assert normalization.L1_ROOT is not None
     assert normalization.L2 is not None
+    assert feature.SiftExtractionOptions(
+    ).normalization == normalization.L1_ROOT
 
 
 def test_sift_extraction_options_default_init(feature):
@@ -104,7 +108,7 @@ def test_feature_extraction_options_requires_rgb_by_type(recon):
 def test_feature_extraction_options_requires_opengl(recon):
     options = recon.FeatureExtractionOptions()
     options.use_gpu = False
-    result = options.requires_open_gl()
+    result = options.requires_opengl()
     assert isinstance(result, bool)
     assert result is False
 

@@ -7,6 +7,9 @@
 
 #pragma once
 
+// aicore-boundary: remote-inference-transport
+// QNetwork carries user-configured inference requests; it does not download
+// or own local model assets.
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QNetworkAccessManager>

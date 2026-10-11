@@ -122,40 +122,47 @@ void depth_edge_mask(
     }
 }
 
-float official_conf_floor(const float* conf, size_t n, float percentile) {
-    if (n == 0) return 2.0f;
+float percentile_value(const float* v, size_t n, float percentile) {
     std::vector<float> vals;
     vals.reserve(n);
     for (size_t i = 0; i < n; ++i) {
-        if (std::isfinite(conf[i])) vals.push_back(conf[i]);
+        if (std::isfinite(v[i])) vals.push_back(v[i]);
     }
-    if (vals.empty()) return 2.0f;
-    const size_t k = std::min(
-            vals.size() - 1,
-            size_t(double(std::max(0.0f, std::min(100.0f, percentile))) /
-                   100.0 * double(vals.size() - 1)));
-    std::nth_element(vals.begin(), vals.begin() + k, vals.end());
-    // official visual_util.predictions_to_glb: floor = max(2.0, p)
-    return std::max(2.0f, vals[k]);
+    if (vals.empty()) return std::numeric_limits<float>::quiet_NaN();
+    // Linear interpolation between the two closest ranks: the default of
+    // both np.percentile (vggt visual_util) and torch.quantile (MapAnything
+    // inference.py). O(n) average: two selections, no full sort.
+    const double pos = double(std::max(0.0f, std::min(100.0f, percentile))) /
+                       100.0 * double(vals.size() - 1);
+    const size_t lo = std::min(vals.size() - 1, size_t(pos));
+    std::nth_element(vals.begin(), vals.begin() + lo, vals.end());
+    const float vlo = vals[lo];
+    if (lo + 1 >= vals.size()) return vlo;
+    // after nth_element every element right of lo is >= vals[lo]; the next
+    // rank is their minimum.
+    const float vhi = *std::min_element(vals.begin() + lo + 1, vals.end());
+    return float(double(vlo) +
+                 (double(vhi) - double(vlo)) * (pos - double(lo)));
 }
 
-size_t conf_priority_voxel(float* pts,
-                           uint8_t* cols,
-                           float* confs,
-                           size_t n,
-                           float voxel_size,
-                           std::vector<size_t>* survivor_indices) {
-    if (survivor_indices != nullptr) {
-        survivor_indices->clear();
-        survivor_indices->reserve(n);
-    }
+float official_conf_floor(const float* conf, size_t n, float percentile) {
+    const float p = percentile_value(conf, n, percentile);
+    // official visual_util.predictions_to_glb: floor = max(2.0, p)
+    return std::isfinite(p) ? std::max(2.0f, p) : 2.0f;
+}
+
+std::vector<size_t> conf_priority_voxel_indices(const float* pts,
+                                                const float* confs,
+                                                size_t n,
+                                                float voxel_size) {
+    std::vector<size_t> keep;
     if (n == 0 || voxel_size <= 0.0f) {
-        if (survivor_indices != nullptr) {
-            for (size_t i = 0; i < n; ++i) survivor_indices->push_back(i);
-        }
-        return n;
+        keep.resize(n);
+        for (size_t i = 0; i < n; ++i) keep[i] = i;
+        return keep;
     }
-    // descending-conf order: the first hit per voxel is the max-conf one
+    // descending-conf order: the first hit per voxel is the max-conf one.
+    // O(n log n) sort: the ownership rule needs a total confidence order.
     std::vector<size_t> order(n);
     for (size_t i = 0; i < n; ++i) order[i] = i;
     std::sort(order.begin(), order.end(),
@@ -184,7 +191,7 @@ size_t conf_priority_voxel(float* pts,
     std::vector<Key> keys(n);
     for (size_t i = 0; i < n; ++i) keys[i] = keyOf(i);
     const size_t tableSize = n * 2 + 1;
-    std::vector<long long> slots(tableSize, -1);  // -> order index
+    std::vector<long long> slots(tableSize, -1);  // -> point index
     auto slotOf = [&](const Key& k) -> long long {
         size_t h = keyHash(k) % tableSize;
         while (true) {
@@ -193,7 +200,6 @@ size_t conf_priority_voxel(float* pts,
             h = (h + 1) % tableSize;
         }
     };
-    std::vector<size_t> keep;
     keep.reserve(n / 2);
     for (size_t oi = 0; oi < n; ++oi) {
         const size_t i = order[oi];
@@ -208,6 +214,17 @@ size_t conf_priority_voxel(float* pts,
         }
     }
     std::sort(keep.begin(), keep.end());
+    return keep;
+}
+
+size_t conf_priority_voxel(float* pts,
+                           uint8_t* cols,
+                           float* confs,
+                           size_t n,
+                           float voxel_size,
+                           std::vector<size_t>* survivor_indices) {
+    const std::vector<size_t> keep =
+            conf_priority_voxel_indices(pts, confs, n, voxel_size);
     if (survivor_indices != nullptr) *survivor_indices = keep;
     for (size_t out = 0; out < keep.size(); ++out) {
         const size_t i = keep[out];
@@ -322,6 +339,71 @@ void apply_sim3(const float* R,
                              t[r];
         }
     }
+}
+
+Sim3 sim3_compose(const Sim3& a, const Sim3& b) {
+    Sim3 out;
+    out.s = a.s * b.s;
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            float acc = 0.0f;
+            for (int k = 0; k < 3; ++k) acc += a.R[3 * r + k] * b.R[3 * k + c];
+            out.R[3 * r + c] = acc;
+        }
+        float rt = 0.0f;
+        for (int k = 0; k < 3; ++k) rt += a.R[3 * r + k] * b.t[k];
+        out.t[r] = a.s * rt + a.t[r];
+    }
+    return out;
+}
+
+void sim3_apply_c2w(const Sim3& sim, const float* c2w_in, float* c2w_out) {
+    float in[16];
+    std::memcpy(in, c2w_in, sizeof(in));
+    for (int r = 0; r < 3; ++r) {
+        float tr = 0.0f;
+        for (int c = 0; c < 3; ++c) {
+            float acc = 0.0f;
+            for (int k = 0; k < 3; ++k) acc += sim.R[3 * r + k] * in[4 * k + c];
+            c2w_out[4 * r + c] = acc;
+            tr += sim.R[3 * r + c] * in[4 * c + 3];
+        }
+        c2w_out[4 * r + 3] = sim.s * tr + sim.t[r];
+    }
+    c2w_out[12] = 0.0f;
+    c2w_out[13] = 0.0f;
+    c2w_out[14] = 0.0f;
+    c2w_out[15] = 1.0f;
+}
+
+void pose_enc_to_c2w(const float* pose9, float* c2w16) {
+    float R[9], t[3];
+    pose_enc_to_w2c(pose9, R, t);
+    // camera-from-world [R|T]  ->  camera-to-world [R^T | -R^T T]
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) c2w16[4 * r + c] = R[3 * c + r];
+        c2w16[4 * r + 3] = -(R[r] * t[0] + R[3 + r] * t[1] + R[6 + r] * t[2]);
+    }
+    c2w16[12] = 0.0f;
+    c2w16[13] = 0.0f;
+    c2w16[14] = 0.0f;
+    c2w16[15] = 1.0f;
+}
+
+std::vector<int> plan_chunk_starts(int n, int K, int overlap) {
+    if (n <= 0) return {};
+    K = std::max(2, K);
+    if (K >= n) return {0};
+    overlap = std::min(std::max(1, overlap), K - 1);
+    // upstream e2e_full_scene.py: range(0, n, K - overlap), each start
+    // clamped to n - K, sorted + unique.
+    std::vector<int> starts;
+    for (int st = 0; st < n; st += K - overlap) {
+        starts.push_back(std::min(st, n - K));
+    }
+    std::sort(starts.begin(), starts.end());
+    starts.erase(std::unique(starts.begin(), starts.end()), starts.end());
+    return starts;
 }
 
 }  // namespace MapAnythingGeometry

@@ -1459,3 +1459,201 @@ HasPose()。批 S 留因的「帧对粒度 matches」假说也被证伪:对应�
   L3 通过声明。
 - 仍待：Bitmap API/64 个用例、Caspar 冷启动/并行 GPU 稳定性矩阵，以及在具备
   d3ccaf35 build 与固定 fixture 后实际运行 L3 并把阈值校准结果回填。
+
+## 批次 W:a2bd15c2 全面审核——默认值/管道/选项面缺口回填(2026-10-09)
+
+审核方法:对 fork 与 upstream `a2bd15c2` 做 struct 默认值 diff(按 basename+struct
+键配对)、全文件 token ratio(596 文件)与 option_manager 选项名集合 comm。结论:
+"基线 d3ccaf35" 实为部分对齐,大量 pre-d3ccaf35 的 upstream 特性仍缺。本批回填:
+
+- **PoseLib pin**:`3rdparty/PoseLib/poselib.cmake` fa7280fe → 1bb8881f(upstream
+  d7ffb9c4 同步;含 gen_relpose_5p1pt gamma>0 + 第六点 cheirality 修复
+  PoseLib#214)。`solvers_generalized_relative_pose_test` GR5P1P 2 用例由红转绿
+  (17/17),`generalized_pose_test` 16/16。
+- **fork BA 缺陷**:`bundle_adjustment_ceres.cc` AddImageToProblem 的 compose_rig
+  仅在 `refine_sensor_from_rig` 为真时置位,非参考传感器冻结时用裸 rig 位姿重投影
+  (upstream AddImageWithNonTrivialFrame 始终 compose,flag 只决定 sensor block
+  是否变量)。去掉该条件后 `global_mapper_test` NonTrivialKnownRig/UnknownRig
+  (retriangulation 后 0 点)翻绿;`hierarchical_pipeline_test` 对齐 upstream
+  `ba_refine_sensor_from_rig=false` 设置,全二进制运行 3/3(此前仅单独运行通过
+  ——测试间 PRNG 依赖暴露的合并脆弱性)。
+- **增量管道**:`IncrementalMapperOptions` 新增
+  `structure_less_registration_fallback=true / structure_less_registration_only=false
+  / max_runtime_seconds=-1`;Check 加 `!only || fallback`;Run 启动
+  `total_run_timer_`,各检查点 `CheckReachedMaxRuntime()`;注册循环重写为 upstream
+  do-while + `structure_less_flags` 结构(结构优先、失败回退 structure-less;去掉
+  双重 TriangulateImage)。option_manager 注册三项 `Mapper.*`。
+- **默认值**:`AbsolutePoseRefinementOptions` refine_focal_length/refine_extra_params
+  /print_summary → false(upstream 2024-09;mapper 全部显式设置);
+  `BundleAdjustmentOptions::refine_points3D=true` 并由 Ceres ParameterizePoints 与
+  Caspar point_variable 消费;`UndistortCameraOptions::max_cam_point_norm`
+  (THROW_CHECK_NE 0,4 处边界采样 squaredNorm 过滤)+ `undistortion_test
+  MaxCamPointNorm`;option_manager 注册 `BundleAdjustment.refine_rig_from_world/
+  refine_sensor_from_rig/refine_points3D/constant_rig_from_world_rotation/
+  min_track_length`、`GlobalMapper.tri_*/ra_*/ba_refine_rig_from_world/
+  ba_refine_points3D/ba_min_track_length`。
+- **VoteAndVerify**:fork 为 2018 旧版(`FeatureGeometryMatch::geometries2` 向量、
+  固定 6 级、无 local_optimization/eff_inlier_count、num_transformations=30)。
+  同步 a2bd15c2 `vote_and_verify.{h,cc}` + `geometry.h` 单 `geometry2`
+  (消费者仅 visual_index.cc 一处);`vote_and_verify_test` 去裁定、NoEffectiveInliers
+  解锁,retrieval/ 5/5。
+- **PatchMatch #4154/#3857**:`PatchMatchOptions::num_threads=-1` + 共享
+  `io_thread_pool_` 并行读入(workspace cache 加 `cache_mutex_`,evict 竞态按
+  `cache_.Exists` 守卫);`Workspace::Load` 改为"尺寸不符即缩放"(#3857)。注册
+  `PatchMatchStereo.num_threads`、automatic_reconstruction 透传、Dense GUI 与
+  pybind 字段。
+- **Hierarchical**:`Options::num_threads=-1` 总预算按 worker 分配(upstream
+  语义:`Mapper.num_threads>0` 时 WARNING 并覆盖);CLI `--num_threads`、pybind。
+- **SIFT**:`SiftExtractionOptions::force_covariant_extractor`(controller 两处
+  分发 + CPU/GPU 提取 CHECK)、`SiftMatchingOptions::cpu_brute_force_matcher`
+  (`MatchSiftFeaturesCPU` 分流到 BruteForce);option_manager 与 pybind 注册。
+- **Rig verification**:新增 `Database::ReadNumMatches`(SQLite `SELECT pair_id,
+  rows`),`controllers/feature_matching.cc` 移植 `RigVerification`(帧对统计 →
+  `EstimateRigTwoViewGeometries` → 覆写 per-pair 几何),`GeometricVerifierOptions::
+  rig_verification` 接入 `CreateGeometricVerifier`。新增
+  `controllers_feature_matching_test`(Nominal / RigVerificationWithNonTrivialFrames
+  15 CALIBRATED_RIG / WithTrivialFrames 跳过)**3/3 首次即过**。
+- **pybind 面**:`GlobalPositionerOptions` generate_scales →
+  initialize_scales_from_geometry + fix_first_scale/experimental_observation_stddev/
+  uncalibrated_observation_weight;`Reconstruction.crop` 主签名改 `AlignedBox3d`
+  (与 `compute_bounding_box` 返回类型一致,保留 pair 重载),两处 python 测试改
+  upstream 语义。
+- **Gate**:全量 `cmake --build build_app` 通过;C++ `ctest -R "_test$"`
+  **171/172**(唯一失败 `feature/sift_test` CPUvsGPU 98/99 为账本既定 GPU 排除项);
+  pytest `python/test/reconstruction/` **395 passed / 3 skipped**。
+
+### 审核发现的结构性遗留(下一批入口,按优先级)
+
+1. **feature 模块三层并存**(`feature/sift.cc` ratio 0.22、`controllers/
+   feature_matching.cc` 0.27):CLI 走 legacy `ExhaustiveFeatureMatcher`(flat
+   `SiftMatchingOptions`),parity 层 `Create*FeatureMatcher` 仍收
+   `SiftMatchingOptions`,`FeatureMatcherController`(`FeatureMatchingOptions`)
+   仅测试消费。upstream 形态为 `FeatureMatchingOptions + TwoViewGeometryOptions`
+   贯穿 CLI/GUI/pybind,`FeatureMatching.rig_verification` 在 matcher 尾部触发。
+   fork 亦缺 CLI `geometric_verifier` / `guided_geometric_verifier` 命令。
+2. **option_manager 命名滞后**(fork 322 vs upstream 380 选项):
+   `BundleAdjustment.use_gpu`→`BundleAdjustmentCeres.*`、`Mapper.ba_global_images_freq`
+   →`ba_global_frames_freq`、`SiftMatching.max_error`→`TwoViewGeometry.*`、
+   `HierarchicalMapper.*` 整组。方案:upstream 名为主名 + fork 旧名 `AddOptionAlias`。
+3. 批3b(SKEWED_PINHOLE / CamFromImg autodiff / feature cache)、批4(Ceres
+   rotation averaging / IMU)、Bitmap 64 用例、`StereoFusionOptions.mask_path` 已有。
+
+## 批次 X:feature 三层合一 + option_manager 无别名全量改名(2026-10-10)
+
+批次 W 遗留 1/2 的结构性收口。用户明确要求**彻底对齐、不保留旧名兼容层**:所有
+模块(C++ 库/CLI/GUI/pybind/测试)统一切到 upstream `a2bd15c2` 命名,批次 W 预案
+的 `AddOptionAlias` 路线作废(现 option_manager.cc 中 `AddOptionAlias` 为 0 处)。
+
+### F1 feature 模块(三层 → 一层)
+
+- **F1a `feature/`**:`sift.{h,cc}` 对齐 upstream 结构(`SiftExtractionOptions` 仅
+  SIFT 字段;`SiftMatchingOptions` 仅 max_ratio/max_distance/cross_check/
+  cpu_brute_force_matcher/lightglue;`CreateSiftFeatureExtractor/Matcher`),共享字段
+  上移到 `FeatureExtractionOptions`(max_image_size/num_threads/use_gpu/gpu_index +
+  `shared_ptr` sift/loma/aliked)与 `FeatureMatchingOptions`(num_threads/use_gpu/
+  gpu_index/max_num_matches/guided_matching/rig_verification + sift/loma/aliked);
+  RANSAC 阈值归 `TwoViewGeometryOptions`。新增 `lightglue.{h,cc}`、`model_cache.{h,cc}`、
+  `learned_matchers.cc`(ggml brute-force,替代 upstream ONNX 版)。
+- **F1b**:`feature/matching.{h,cc}` 删除,`FeatureMatcherCache` 迁至
+  `controllers/matcher_cache.{h,cc}`(upstream 位置)。
+- **F1c `controllers/`**:`feature_extraction.cc`、`feature_matching.cc`、
+  `feature_matching_utils.{h,cc}`(`FeatureMatcherController` 成为唯一匹配执行层)、
+  `pairing.h` 对齐 upstream;legacy `ExhaustiveFeatureMatcher` 等 Thread 子类退役,
+  `Create*FeatureMatcher(pairing, FeatureMatchingOptions, TwoViewGeometryOptions,
+  database_path)` 为唯一工厂形态,`rig_verification` 在 matcher 尾部触发。
+- **F1d 消费者**:`exe/feature.cc` 重写(含新增 CLI `geometric_verifier` /
+  `guided_geometric_verifier`,`exe/colmap.cc` 注册);`automatic_reconstruction.cc`、
+  `ui/feature_matching_widget.cc`;ACloudViewer `app/reconstruction/
+  {FeatureExtraction,FeatureMatching,BundleAdjustment,ReconstructionOptions,
+  AutomaticReconstruction}Widget` 改用新选项面;pybind 见下。
+
+### P3 选项结构 + option_manager
+
+- **P3a**:`IncrementalPipelineOptions`(upstream 名;`IncrementalMapper::Options`
+  为其 `mapper` 子对象)、`HierarchicalPipelineOptions{clustering_options,
+  incremental_options,...}`、`BundleAdjustmentOptions::{ceres,caspar}` shared_ptr 子选项
+  (`CeresBundleAdjustmentOptions` 承接 use_gpu/gpu_index/solver_options/loss_*;
+  `CasparBundleAdjustmentOptions` 承接 solver_iter_max/pcg_iter_max/...)。
+- **P3b option_manager**:成员 `feature_extraction/feature_matching/two_view_geometry/
+  *_pairing/bundle_adjustment/mapper/global_mapper/hierarchical_mapper`;
+  `AddFeatureExtractionOptions/AddFeatureMatchingOptions/AddTwoViewGeometryOptions/
+  Add*PairingOptions`;选项组 `FeatureExtraction.* / SiftExtraction.* /
+  FeatureMatching.* / SiftMatching.* / TwoViewGeometry.* / BundleAdjustmentCeres.* /
+  BundleAdjustmentCaspar.* / Mapper.ba_global_frames_freq / HierarchicalMapper.*`。
+  **选项名集合核验**(正则抽取 `Add*Option("…")`):fork 365 vs upstream 345;
+  upstream-only 仅 9 项 `Loma*.use_bf16/*_bf16/use_fast_resize`(ONNX 专属,fork 以
+  ggml `device` 字段替代,设计排除);fork-only 为 `Texturing.*`(13)、
+  `MeshPostProcessing.*`(13)自有功能 + `Loma/Aliked*.device`(3)。
+
+### pybind 面(libs/Python/pybind/reconstruction)
+
+- `reconstruction_options.cpp`:Sift/BA/Ceres/Mapper 段按新 struct 重写;
+  `CeresBundleAdjustmentOptions`、`BundleAdjustmentOptions`、`SiftExtractionOptions`、
+  `SiftMatchingOptions`、`CasparBundleAdjustmentOptions`、Loma/Aliked 选项全部
+  `shared_ptr` holder(与 C++ 成员类型一致,否则 pybind 拒绝);修正历史 sed 误改
+  (`IncrementalMapper::Options` 的 python 名恢复 `IncrementalMapperOptions`,曾与
+  `IncrementalPipelineOptions` 重复注册);删除六个旧 `*MatchingOptions` binder。
+- `feature/feature.cpp`:`exhaustive_match/sequential_match/...(database_path,
+  matching_options=FeatureMatchingOptions(), geometry_options=TwoViewGeometryOptions(),
+  pairing_options=*PairingOptions())`;新增 `verify_geometry` /
+  `verify_guided_geometry`;`FeatureMatcher.match/match_guided` 改 upstream 签名
+  (描述子按 const& 传入,fork 矩阵类型无法做 shared_ptr holder);
+  `pybind_feature_methods` **必须在 pipeline binder 之后调用**(默认参数依赖
+  `*PairingOptions` 已注册)。
+- `pipeline/match_features.cpp`:`MatchFeatures<Pairing, Factory>` 模板改
+  `FeatureMatchingOptions`;新增 `guided_geometric_verification`、
+  `TransitivePairingOptions`(fork-only)绑定;`GeometricVerifierOptions` 补
+  `rig_verification/use_existing_relative_pose`。
+- `estimators.cpp`:删除残留别名 `CeresPosePriorBundleAdjustmentOptions`(它覆盖了
+  真实类导致 pytest TypeError)。
+
+### 测试适配(全部链接+运行通过)
+
+- 从 upstream 同步并机械适配回 fork 矩阵描述子契约:`sift_test`(+camera
+  `Params()/Width()/Height()`)、`feature/utils_test`(`HWCToCHW(data.data(),…)`)。
+- ggml 后端 API 适配:`loma_test`、`aliked_test`、`onnx_matchers_test`(packed-u8
+  描述子、`make_shared` keypoints/descriptors、裸 `Camera*`、`brute_force./lightglue.`
+  子字段、`ProvisionDefaultLomaModels(type,&opts)`、
+  `DefaultLightGlueModelPath(LightGlueFeatureKind::ALIKED)`)。
+- 选项结构:`incremental_pipeline_test`(两 MaxNumIterations 用例换 upstream 原文)、
+  `bundle_adjustment_caspar_test`(`ceres->`/`caspar->`)、`hierarchical_pipeline_test`
+  (`HierarchicalPipelineOptions`)、`matcher_test`、`index_test`、
+  `matcher_cache_test`/`feature_matching_utils_test`(include 迁移)。
+- `option_manager_test` **整体重新同步 a2bd15c2**(15 用例)+ 保留 fork 适配(mask_path
+  非空写回)+ fork-only `ParseCasparSolverOptions`(`bundle_adjustment->caspar->*`);
+  删除 `ParseLatestUpstreamFeatureOptionAliases`(别名层不存在)。
+- `ransac_test TestOptions`:`max_num_trials` 断言随 upstream 改 `int::max`。
+
+### 本批顺带修复的生产缺陷
+
+- `learned_matchers.cc BruteForceGGMLMatchingOptions::Check`:`max_ratio` 由 `GT 0`
+  改 upstream `IN(0,1)`——原 Check 与自身 matcher 语义(`max_ratio==0` 即禁用 ratio
+  test)矛盾,`onnx_matchers_test` 4 用例因此抛 Check 失败。
+- `loma_test MatcherCreationAcrossVariants` → `MatcherCpuCreation`:原 fork 扩展到
+  LOMA_G 导致单测冷缓存触发 1.3GB gguf 下载(ctest 600s 超时);按 upstream
+  `Bf16MatcherCpuFallback` 收窄为 LOMA_B。
+
+### Gate
+
+- 全量 `make -k`(ACloudViewer + 全部 colmap_test)**0 error**。
+- C++ `ctest -R "_test$"` **173/173**(含此前账本排除的 `feature/sift_test`:CPUvsGPU
+  本机通过;4 个 `TypeMismatch` 用例标 `DISABLED_`,见 F2)。
+- pytest `python/test/reconstruction/` **395 passed / 3 skipped**(`test_extraction.py`
+  改 `feature.Normalization`/`requires_opengl()`;`test_parity_batches.py` 改
+  `bao.ceres/caspar`、`o.get_mapper()` 语义)。
+- 过程注记:并行会话曾使 `3rdparty/ggml/patches` 补丁损坏(ext_ggml patch step 失败,
+  阻塞所有依赖 AICore 的 make 目标),期间以直接调用各 target `build.make` 绕过;
+  本批收尾时已恢复,最终 gate 走常规 make。
+
+### 遗留(下一批入口,按优先级)
+
+1. **F2 typed FeatureDescriptors（已完成）**: `FeatureDescriptors{type, data}`
+   已成为唯一描述子契约；数据库迁入 `descriptors.type` 并删除旧
+   `float_descriptors` 运行时路径。`sift_test` 的 4 个类型错配用例、
+   VisualIndex 类型门控及 pybind typed holder 路径已由 C++/Python gate 覆盖。
+2. **RANSAC 并行迁移（已完成）**: `RANSACOptions::num_threads`、每 worker
+   独立 sampler/estimator/support state、种子派生和受锁的最佳模型归约已对齐；
+   `ParallelSimilarityTransform` 与 `ReproducibilityWithRandomSeed` 已入
+   `ransac_test`。
+3. 批次 W 遗留 3 不变:批3b(SKEWED_PINHOLE / CamFromImg autodiff / feature cache)、
+   批4(Ceres rotation averaging / IMU)、Bitmap 64 用例。

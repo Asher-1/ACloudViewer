@@ -40,6 +40,35 @@ cli-anything-acloudviewer batch-convert ./scans/ ./out/ --format .ply
 cli-anything-acloudviewer batch-convert ./scans/ ./out/ -f .ply --filter-ext .las .laz
 ```
 
+### AICore Batch Inference
+
+```bash
+# Stable task registry; no model is loaded
+cli-anything-acloudviewer --json ai list
+
+# Query options from the installed plugin (the binary is the source of truth)
+cli-anything-acloudviewer --json --mode headless ai schema sam3
+
+# Repeat --image and --option for batch inputs and list-valued options
+cli-anything-acloudviewer --json --mode headless ai run sam3 \
+  --image frame-1.jpg --image frame-2.jpg --out-dir ./sam3-out \
+  --option MODE=pcs --option TEXT=person --option DEVICE=cpu
+
+# Ordinary/third-party plugin passthrough; --arg preserves legacy argv order
+cli-anything-acloudviewer --mode headless plugin run ANIMATION \
+  --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
+```
+
+`ai run` accepts common shortcuts (`--image`, `--input-dir`, `--input-list`,
+`--out-dir`, `--model`, `--device`, `--threads`, `--download`) and arbitrary
+typed `KEY=VALUE` pairs through repeated `--option`. A shortcut is valid only
+when `ai schema TASK` lists the same uppercase key (for example `yolo-track`
+takes `--option VIDEO=...`, not `--image`); native parsers reject unknown
+keys. JSON literals preserve booleans, numbers, and arrays. The 17
+registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
+FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
+AnyLabeling, MapAnything, and SAM3D.
+
 ---
 
 ## Processing Commands
@@ -338,8 +367,11 @@ Options:
 ### Feed-Forward Multi-View Reconstruction (qMapAnything, no GUI)
 
 Headless MapAnything-family reconstruction (VGGT-Omega / VGGT / Pi3 / Pi3X /
-MapAnything / DUSt3R) — one child process, one model load, 2..64 views,
-merged world-frame colored PLY + RESULT_JSON. `RAW_OUTPUT_DIR` exports the
+MapAnything / DUSt3R) — one child process, one model load, >= 2 views
+(single forward up to `MAX_FRAMES_PER_PASS`, default 64; larger sets stream
+Sim3-aligned overlap-2 chunks through the same driver as the GUI, and a pass
+the device cannot hold is halved automatically — `frames_per_pass` in the
+RESULT_JSON records what ran), merged world-frame colored PLY + RESULT_JSON. `RAW_OUTPUT_DIR` exports the
 unfiltered inference tensors and camera-to-world matrices for upstream parity;
 `GT_META` supplies benchmark camera centers so metric-frame alignment and the
 2 cm voxel stage use valid units. Batch-friendly on GPU-less machines via
@@ -348,12 +380,13 @@ unfiltered inference tensors and camera-to-world matrices for upstream parity;
 
 ```bash
 ACloudViewer -SILENT -NO_TIMESTAMP -MAP_ANYTHING_RECONSTRUCT \
-    IMAGE img1.jpg IMAGE img2.jpg \          # repeat IMAGE 2..64 times
+    IMAGE img1.jpg IMAGE img2.jpg \          # repeat IMAGE (>= 2)
     OUT_DIR /tmp/map_out \                   # output directory
     MODEL vggt-omega-1b-512-q8_0.gguf \      # path OR published catalog name
     DEVICE cuda \                            # auto|cpu|cuda|vulkan
-    IMAGE_SIZE 512 RESIZE_MODE balanced \    # balanced|max_size
-    MIN_CONF 0.5 \                           # confidence floor 0..0.99
+    IMAGE_SIZE 512 RESIZE_MODE balanced \    # balanced|max_size|square (default: catalog)
+    MAX_FRAMES_PER_PASS 64 \                 # views per forward (>= 2)
+    MIN_CONF 0.5 \                           # default: catalog entry
     RAW_OUTPUT_DIR raw \                     # pose/depth/conf/c2w parity data
     STAGE_DUMP_DIR stages \                  # debug build: intermediate tensors
     GT_META /data/courtyard/scene_meta.json \ # optional metric benchmark anchor

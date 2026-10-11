@@ -108,6 +108,9 @@ public:
     struct Settings {
         QString modelPath;   /**< LingBot-Map GGUF */
         QString imageFolder; /**< ordered image sequence */
+        /** Explicit ordered paths for headless callers. Non-empty replaces
+         *  imageFolder while videoPath retains upstream highest precedence. */
+        QStringList inputPaths;
         /** Upstream --video_path parity input (requires OpenCV at build
          *  time); when non-empty it replaces imageFolder, mirroring the
          *  upstream ggml_demo precedence. */

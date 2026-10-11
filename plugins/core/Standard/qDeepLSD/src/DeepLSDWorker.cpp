@@ -149,23 +149,81 @@ QImage make_line_visualization(
 
 }  // namespace
 
+bool DeepLSDWorker::extractImage(aicore_deeplsd_ctx* ctx,
+                                 const Settings& settings,
+                                 DeepLSDRunResult* result,
+                                 QString* error) {
+    const LoadedGray loaded =
+            load_gray_resized(settings.inputPath, kDefaultMaxResize);
+    if (loaded.processed.isNull()) {
+        *error = QStringLiteral("Failed to load image: %1")
+                         .arg(settings.inputPath);
+        return false;
+    }
+    QElapsedTimer timer;
+    timer.start();
+    float* df = nullptr;
+    float* ang = nullptr;
+    aicore_deeplsd_segment* segs = nullptr;
+    int32_t seg_count = 0;
+    int32_t ow = 0;
+    int32_t oh = 0;
+    if (aicore_deeplsd_extract_segments(
+                ctx, loaded.processed.constBits(), loaded.processed.width(),
+                loaded.processed.height(), loaded.processed.bytesPerLine(),
+                &segs, &seg_count, &df, &ang, &ow, &oh) != 0) {
+        const char* err = aicore_deeplsd_last_error(ctx);
+        *error = QStringLiteral("Extract failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : QStringLiteral("unknown"));
+        return false;
+    }
+
+    result->imagePath = settings.inputPath;
+    result->imageName = QFileInfo(settings.inputPath).completeBaseName();
+    result->width = ow;
+    result->height = oh;
+    result->originalWidth = loaded.original.width();
+    result->originalHeight = loaded.original.height();
+    result->segments.clear();
+    result->segments.reserve(static_cast<size_t>(seg_count));
+    for (int32_t i = 0; i < seg_count; ++i) {
+        DeepLSDLineSegment seg =
+                scale_segment(segs[i], loaded.scaleX, loaded.scaleY);
+        if (settings.minSegmentScore > 0.0f &&
+            seg.score < settings.minSegmentScore) {
+            continue;
+        }
+        result->segments.push_back(seg);
+    }
+    if (char* info = aicore_deeplsd_info_json(ctx)) {
+        const QJsonObject obj =
+                QJsonDocument::fromJson(QByteArray(info)).object();
+        aicore_deeplsd_free_buffer(info);
+        result->resolvedDevice = obj.value(QStringLiteral("device")).toString();
+    }
+    result->lineVisualization =
+            make_line_visualization(loaded.original, result->segments);
+    if (settings.computeDistanceOverlay) {
+        QImage procOverlay =
+                make_distance_overlay(loaded.processed, df, ow, oh);
+        result->distanceOverlay = procOverlay.scaled(loaded.original.size(),
+                                                     Qt::IgnoreAspectRatio,
+                                                     Qt::SmoothTransformation);
+    }
+    result->runtimeMs = timer.elapsed();
+
+    aicore_deeplsd_free_buffer(df);
+    aicore_deeplsd_free_buffer(ang);
+    aicore_deeplsd_free_buffer(segs);
+    return true;
+}
+
 bool DeepLSDWorker::runExtract() {
     if (m_settings.inputPath.isEmpty()) {
         emit logMessage("[Error] No input image.");
         return false;
     }
-
-    const LoadedGray loaded =
-            load_gray_resized(m_settings.inputPath, kDefaultMaxResize);
-    if (loaded.processed.isNull()) {
-        emit logMessage("[Error] Failed to load image.");
-        return false;
-    }
-    emit logMessage(QString("[DeepLSD] Processing %1×%2 (source %3×%4)")
-                            .arg(loaded.processed.width())
-                            .arg(loaded.processed.height())
-                            .arg(loaded.original.width())
-                            .arg(loaded.original.height()));
 
     QElapsedTimer timer;
     timer.start();
@@ -188,10 +246,12 @@ bool DeepLSDWorker::runExtract() {
         emit logMessage("[Error] Failed to create DeepLSD context.");
         return false;
     }
+    m_pendingCtx = ctx;
     if (const char* err = aicore_deeplsd_last_error(ctx)) {
-        emit logMessage(QString("[Error] %1").arg(err));
-        m_pendingCtx = ctx;
-        return false;
+        if (*err) {
+            emit logMessage(QString("[Error] %1").arg(err));
+            return false;
+        }
     }
     if (char* info = aicore_deeplsd_info_json(ctx)) {
         const QJsonObject obj =
@@ -203,63 +263,18 @@ bool DeepLSDWorker::runExtract() {
     }
 
     emit progressUpdate(30, 100);
-    float* df = nullptr;
-    float* ang = nullptr;
-    aicore_deeplsd_segment* segs = nullptr;
-    int32_t seg_count = 0;
-    int32_t ow = 0;
-    int32_t oh = 0;
-    if (aicore_deeplsd_extract_segments(
-                ctx, loaded.processed.constBits(), loaded.processed.width(),
-                loaded.processed.height(), loaded.processed.bytesPerLine(),
-                &segs, &seg_count, &df, &ang, &ow, &oh) != 0) {
-        emit logMessage(QString("[Error] Extract failed: %1")
-                                .arg(aicore_deeplsd_last_error(ctx)
-                                             ? aicore_deeplsd_last_error(ctx)
-                                             : "unknown"));
-        m_pendingCtx = ctx;
+    DeepLSDRunResult result;
+    QString error;
+    if (!extractImage(ctx, m_settings, &result, &error)) {
+        emit logMessage(QStringLiteral("[Error] ") + error);
         return false;
     }
-    (void)ang;
-
-    DeepLSDRunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).completeBaseName();
-    result.width = ow;
-    result.height = oh;
-    result.originalWidth = loaded.original.width();
-    result.originalHeight = loaded.original.height();
-    result.segments.reserve(static_cast<size_t>(seg_count));
-    for (int32_t i = 0; i < seg_count; ++i) {
-        DeepLSDLineSegment seg =
-                scale_segment(segs[i], loaded.scaleX, loaded.scaleY);
-        if (m_settings.minSegmentScore > 0.0f &&
-            seg.score < m_settings.minSegmentScore) {
-            continue;
-        }
-        result.segments.push_back(seg);
-    }
-    if (char* info = aicore_deeplsd_info_json(ctx)) {
-        const QJsonObject obj =
-                QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_deeplsd_free_buffer(info);
-        result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
-    }
-    result.lineVisualization =
-            make_line_visualization(loaded.original, result.segments);
-    if (m_settings.computeDistanceOverlay) {
-        QImage procOverlay =
-                make_distance_overlay(loaded.processed, df, ow, oh);
-        result.distanceOverlay = procOverlay.scaled(loaded.original.size(),
-                                                    Qt::IgnoreAspectRatio,
-                                                    Qt::SmoothTransformation);
-    }
     result.runtimeMs = timer.elapsed();
-
-    std::free(df);
-    std::free(ang);
-    std::free(segs);
-    m_pendingCtx = ctx;
+    emit logMessage(QString("[DeepLSD] Processed %1×%2 (source %3×%4)")
+                            .arg(result.width)
+                            .arg(result.height)
+                            .arg(result.originalWidth)
+                            .arg(result.originalHeight));
 
     emit progressUpdate(100, 100);
     aicore_inference_log::log_inference_done(

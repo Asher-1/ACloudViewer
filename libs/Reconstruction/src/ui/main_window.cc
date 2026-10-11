@@ -115,8 +115,8 @@ void MainWindow::CreateWidgets() {
   feature_matching_widget_ = new FeatureMatchingWidget(this, &options_);
   database_management_widget_ = new DatabaseManagementWidget(this, &options_);
   automatic_reconstruction_widget_ = new AutomaticReconstructionWidget(this);
-  reconstruction_options_widget_ =
-      new ReconstructionOptionsWidget(this, &options_);
+  reconstruction_options_widget_ = new ReconstructionOptionsWidget(
+      this, &options_, &mapper_type_, []() {});
   bundle_adjustment_widget_ = new BundleAdjustmentWidget(this, &options_);
   dense_reconstruction_widget_ = new DenseReconstructionWidget(this, &options_);
   render_options_widget_ =
@@ -534,29 +534,29 @@ void MainWindow::CreateControllers() {
     mapper_controller_->Wait();
   }
 
-  mapper_controller_.reset(new IncrementalMapperController(
+  mapper_controller_.reset(new IncrementalPipeline(
       options_.mapper.get(), *options_.image_path, *options_.database_path,
       &reconstruction_manager_));
   mapper_controller_->AddCallback(
-      IncrementalMapperController::INITIAL_IMAGE_PAIR_REG_CALLBACK, [this]() {
+      IncrementalPipeline::INITIAL_IMAGE_PAIR_REG_CALLBACK, [this]() {
         if (!mapper_controller_->IsStopped()) {
           action_render_now_->trigger();
         }
       });
   mapper_controller_->AddCallback(
-      IncrementalMapperController::NEXT_IMAGE_REG_CALLBACK, [this]() {
+      IncrementalPipeline::NEXT_IMAGE_REG_CALLBACK, [this]() {
         if (!mapper_controller_->IsStopped()) {
           action_render_->trigger();
         }
       });
   mapper_controller_->AddCallback(
-      IncrementalMapperController::LAST_IMAGE_REG_CALLBACK, [this]() {
+      IncrementalPipeline::LAST_IMAGE_REG_CALLBACK, [this]() {
         if (!mapper_controller_->IsStopped()) {
           action_render_now_->trigger();
         }
       });
   mapper_controller_->AddCallback(
-      IncrementalMapperController::FINISHED_CALLBACK, [this]() {
+      IncrementalPipeline::FINISHED_CALLBACK, [this]() {
         if (!mapper_controller_->IsStopped()) {
           action_render_now_->trigger();
           action_reconstruction_finish_->trigger();

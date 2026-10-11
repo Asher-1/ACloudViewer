@@ -35,7 +35,6 @@
 
 #include "scene/database.h"
 #include "exe/gui.h"
-#include "feature/matching.h"
 #include "feature/sift.h"
 #include "feature/utils.h"
 #include "retrieval/resources.h"
@@ -53,14 +52,14 @@ namespace {
 // subset of images are selected.
 // Takes std::filesystem::path (as stored by OptionManager): MSVC's path::value_type
 // is wchar_t, so there is no implicit conversion to std::string like on POSIX.
-FeatureDescriptors LoadRandomDatabaseDescriptors(
+FeatureDescriptorsFloat LoadRandomDatabaseDescriptors(
     const std::filesystem::path& database_path, const int max_num_images) {
   auto database = Database::Open(database_path);
   DatabaseTransaction database_transaction(database.get());
 
   const std::vector<Image> images = database->ReadAllImages();
 
-  FeatureDescriptors descriptors;
+  FeatureDescriptorsFloat descriptors;
 
   std::vector<size_t> image_idxs;
   size_t num_descriptors = 0;
@@ -81,16 +80,19 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
     }
   }
 
-  descriptors.resize(num_descriptors, 128);
+  descriptors.data.resize(num_descriptors, 128);
 
   size_t descriptor_row = 0;
   for (const auto image_idx : image_idxs) {
     const auto& image = images.at(image_idx);
     const FeatureDescriptors image_descriptors =
         database->ReadDescriptors(image.ImageId());
-    descriptors.block(descriptor_row, 0, image_descriptors.rows(), 128) =
-        image_descriptors;
-    descriptor_row += image_descriptors.rows();
+    THROW_CHECK_EQ(image_descriptors.type, FeatureExtractorType::SIFT);
+    descriptors.type = FeatureExtractorType::SIFT;
+    descriptors.data.block(descriptor_row, 0,
+                           image_descriptors.data.rows(), 128) =
+        image_descriptors.ToFloat().data;
+    descriptor_row += image_descriptors.data.rows();
   }
 
   CHECK_EQ(descriptor_row, num_descriptors);
@@ -143,11 +145,11 @@ int RunVocabTreeBuilder(int argc, char** argv) {
   std::cout << "Loading descriptors..." << std::endl;
   const auto descriptors =
       LoadRandomDatabaseDescriptors(*options.database_path, max_num_images);
-  std::cout << "  => Loaded a total of " << descriptors.rows() << " descriptors"
-            << std::endl;
+  std::cout << "  => Loaded a total of " << descriptors.data.rows()
+            << " descriptors" << std::endl;
 
   std::cout << "Building index for visual words..." << std::endl;
-  visual_index->Build(build_options, ToFloat(descriptors));
+  visual_index->Build(build_options, descriptors);
   std::cout << " => Quantized descriptor space using "
             << visual_index->NumVisualWords() << " visual words" << std::endl;
 
@@ -213,13 +215,14 @@ int RunVocabTreeRetriever(int argc, char** argv) {
 
     auto keypoints = database->ReadKeypoints(database_images[i].ImageId());
     auto descriptors = database->ReadDescriptors(database_images[i].ImageId());
-    if (max_num_features > 0 && descriptors.rows() > max_num_features) {
+    if (max_num_features > 0 &&
+        descriptors.data.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
 
     visual_index->Add(retrieval::VisualIndex::IndexOptions(),
                       database_images[i].ImageId(), keypoints,
-                      descriptors.cast<float>());
+                      descriptors.ToFloat());
 
     std::cout << StringPrintf(" in %.3fs", timer.ElapsedSeconds()) << std::endl;
   }
@@ -258,12 +261,13 @@ int RunVocabTreeRetriever(int argc, char** argv) {
 
     auto keypoints = database->ReadKeypoints(query_images[i].ImageId());
     auto descriptors = database->ReadDescriptors(query_images[i].ImageId());
-    if (max_num_features > 0 && descriptors.rows() > max_num_features) {
+    if (max_num_features > 0 &&
+        descriptors.data.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
 
     std::vector<retrieval::ImageScore> image_scores;
-    visual_index->Query(query_options, keypoints, descriptors.cast<float>(),
+    visual_index->Query(query_options, keypoints, descriptors.ToFloat(),
                         &image_scores);
 
     std::cout << StringPrintf(" in %.3fs", timer.ElapsedSeconds()) << std::endl;

@@ -369,16 +369,19 @@ void qMapAnything::onWorkerProgress(int current, int total) {
     if (!m_dialog) return;
     m_dialog->setProgress(current, total);
     const int pct = total > 0 ? (current * 100 / total) : 0;
-    // Step layout (see MapAnythingWorker): N decode + 1 model/inference +
-    // N cloud-assembly + N raster exports. Map stages at those boundaries
-    // so the label never disagrees with the bar.
+    // Step layout (see MapAnythingWorker::runInference): 1 model load,
+    // 1 decode, N per-view assembly (one per view, first-cover chunk),
+    // 1 scene filter. Map stages at those boundaries so the label never
+    // disagrees with the bar.
     QString stage;
     if (current <= 1) {
-        stage = tr("Loading GGUF model & running multi-view inference...");
-    } else if (pct <= 66) {
-        stage = tr("Assembling per-view clouds... (%1%)").arg(pct);
+        stage = tr("Loading GGUF model...");
+    } else if (current == 2) {
+        stage = tr("Decoding views & running multi-view inference...");
+    } else if (current < total) {
+        stage = tr("Inference & per-view assembly... (%1%)").arg(pct);
     } else {
-        stage = tr("Exporting depth/confidence rasters... (%1%)").arg(pct);
+        stage = tr("Scene-wide confidence filter... (%1%)").arg(pct);
     }
     m_dialog->setTaskStage(stage, pct);
 }

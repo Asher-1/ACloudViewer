@@ -352,6 +352,7 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QOCR=ON \
       -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QMAPANYTHING=ON \
       ..
 cmake --build . --config Release
 ```
@@ -379,6 +380,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QOCR=ON \
       -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QMAPANYTHING=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

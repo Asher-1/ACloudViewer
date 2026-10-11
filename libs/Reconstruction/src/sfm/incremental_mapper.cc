@@ -48,6 +48,7 @@
 
 #include "scene/projection.h"
 #include "geometry/triangulation.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "estimators/pose.h"
 #include "sensor/bitmap.h"
 #include "util/misc.h"
@@ -84,8 +85,8 @@ bool IncrementalMapper::Options::Check() const {
     CHECK_OPTION_GT(abs_pose_min_num_inliers, 0);
     CHECK_OPTION_GE(abs_pose_min_inlier_ratio, 0.0);
     CHECK_OPTION_LE(abs_pose_min_inlier_ratio, 1.0);
-    CHECK_OPTION_GE(local_ba_num_images, 2);
-    CHECK_OPTION_GE(local_ba_min_tri_angle, 0.0);
+    CHECK_OPTION_GE(ba_local_num_images, 2);
+    CHECK_OPTION_GE(ba_local_min_tri_angle, 0.0);
     CHECK_OPTION_GE(min_focal_length_ratio, 0.0);
     CHECK_OPTION_GE(max_focal_length_ratio, min_focal_length_ratio);
     CHECK_OPTION_GE(max_extra_param, 0.0);
@@ -623,8 +624,8 @@ IncrementalMapper::AdjustLocalBundle(
         }
 
         // Fix the existing frames, if option specified (the fork keeps the
-        // fix_existing_images option name for CLI compatibility).
-        if (options.fix_existing_images) {
+        // fix_existing_frames option name for CLI compatibility).
+        if (options.fix_existing_frames) {
             for (const frame_t frame_id : frame_ids) {
                 if (existing_frame_ids_.count(frame_id)) {
                     ba_config.SetConstantRigFromWorldPose(frame_id);
@@ -765,11 +766,12 @@ bool IncrementalMapper::AdjustGlobalBundle(
     const bool is_small_reconstruction =
         reconstruction_->NumRegFrames() < kMinNumRegFramesForFastBA;
     if (is_small_reconstruction) {
-        custom_ba_options.solver_options.function_tolerance /= 10;
-        custom_ba_options.solver_options.gradient_tolerance /= 10;
-        custom_ba_options.solver_options.parameter_tolerance /= 10;
-        custom_ba_options.solver_options.max_num_iterations *= 2;
-        custom_ba_options.solver_options.max_linear_solver_iterations = 200;
+        custom_ba_options.ceres->solver_options.function_tolerance /= 10;
+        custom_ba_options.ceres->solver_options.gradient_tolerance /= 10;
+        custom_ba_options.ceres->solver_options.parameter_tolerance /= 10;
+        custom_ba_options.ceres->solver_options.max_num_iterations *= 2;
+        custom_ba_options.ceres->solver_options.max_linear_solver_iterations =
+                200;
     }
 
     // Avoid degeneracies in bundle adjustment.
@@ -785,7 +787,7 @@ bool IncrementalMapper::AdjustGlobalBundle(
 
     // Fix the existing frames, if option specified (upstream d3ccaf35:
     // iterate registered frames directly).
-    if (options.fix_existing_images) {
+    if (options.fix_existing_frames) {
         for (const frame_t frame_id : reconstruction_->RegFrameIds()) {
             if (existing_frame_ids_.count(frame_id)) {
                 ba_config.SetConstantRigFromWorldPose(frame_id);
@@ -842,10 +844,10 @@ bool IncrementalMapper::AdjustGlobalBundle(
     } else {
         PosePriorBundleAdjustmentOptions prior_options;
         if (options.use_robust_loss_on_prior_position) {
-            prior_options.prior_position_loss_function_type =
-                    BundleAdjustmentOptions::LossFunctionType::CAUCHY;
+            prior_options.ceres->prior_position_loss_function_type =
+                    CeresLossFunctionType::CAUCHY;
         }
-        prior_options.prior_position_loss_scale =
+        prior_options.ceres->prior_position_loss_scale =
                 options.prior_position_loss_scale;
         prior_options.alignment_ransac_options.random_seed =
                 options.random_seed;
@@ -921,10 +923,10 @@ size_t IncrementalMapper::FilterFrames(const Options& options) {
 
     size_t num_filtered = 0;
     for (const frame_t frame_id : filter_frame_ids) {
-        // The fork keeps the fix_existing_images option name for CLI
+        // The fork keeps the fix_existing_frames option name for CLI
         // compatibility; the gate is frame-level (upstream
         // fix_existing_frames semantics).
-        if (!options.fix_existing_images ||
+        if (!options.fix_existing_frames ||
             existing_frame_ids_.count(frame_id) == 0) {
             obs_manager_->DeRegisterFrame(frame_id);
             DeRegisterFrameEvent(frame_id);
@@ -1056,8 +1058,8 @@ void IncrementalMapper::IterativeLocalRefinement(
             break;
         }
         // Only use robust cost function for first iteration.
-        custom_ba_options.loss_function_type =
-                BundleAdjustmentOptions::LossFunctionType::TRIVIAL;
+        custom_ba_options.ceres->loss_function_type =
+                CeresLossFunctionType::TRIVIAL;
     }
     ClearModifiedPoints3D();
 }
@@ -1440,9 +1442,9 @@ bool IncrementalMapper::RegisterNextStructureLessImage(
             options.abs_pose_min_inlier_ratio;
 
     BundleAdjustmentOptions abs_pose_refinement_options;
-    abs_pose_refinement_options.loss_function_type =
-            BundleAdjustmentOptions::LossFunctionType::CAUCHY;
-    abs_pose_refinement_options.solver_options.logging_type =
+    abs_pose_refinement_options.ceres->loss_function_type =
+            CeresLossFunctionType::CAUCHY;
+    abs_pose_refinement_options.ceres->solver_options.logging_type =
             ceres::LoggingType::SILENT;
     abs_pose_refinement_options.print_summary = false;
     if (reg_stats_.num_reg_images_per_camera[image.CameraId()] > 0) {

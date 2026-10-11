@@ -333,6 +333,38 @@ EXPECT_EQ(orig.Frames(), test.Frames());
   EXPECT_EQ(orig.Points3D(), test.Points3D());
 }
 
+TEST(ReconstructionIO, SkewedPinholeCameraTextAndBinaryRoundTrip) {
+  Camera camera = Camera::CreateFromModelName(
+      42, "SKEWED_PINHOLE", 600.0, 1280, 960);
+  camera.Params()[1] = 500.0;
+  camera.Params()[4] = 50.0;
+
+  Reconstruction source;
+  source.AddCamera(camera);
+  const auto assert_round_trip = [&camera](const Reconstruction& restored) {
+    ASSERT_EQ(restored.NumCameras(), 1);
+    const Camera& result = restored.Camera(camera.CameraId());
+    EXPECT_EQ(result, camera);
+    EXPECT_EQ(result.ModelName(), "SKEWED_PINHOLE");
+    const Eigen::Vector2d image_point(1020.0, 1240.0);
+    ASSERT_TRUE(result.CamFromImg(image_point).has_value());
+    EXPECT_EQ(*result.CamFromImg(image_point),
+              *camera.CamFromImg(image_point));
+  };
+
+  std::stringstream text_stream;
+  WriteCamerasText(source, text_stream);
+  Reconstruction text_result;
+  ReadCamerasText(text_result, text_stream);
+  assert_round_trip(text_result);
+
+  std::stringstream binary_stream;
+  WriteCamerasBinary(source, binary_stream);
+  Reconstruction binary_result;
+  ReadCamerasBinary(binary_result, binary_stream);
+  assert_round_trip(binary_result);
+}
+
 TEST_P(ParameterizedReaderWriterTests, LegacyWithoutRigsAndFrames) {
   std::unique_ptr<ReaderWriter> reader_writer = GetParam()();
 

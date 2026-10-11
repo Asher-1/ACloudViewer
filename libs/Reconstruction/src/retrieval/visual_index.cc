@@ -90,8 +90,12 @@ class FaissVisualIndex : public VisualIndex {
            int image_id,
            const FeatureKeypoints& keypoints,
            const FeatureDescriptorsFloat& descriptors) override {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
-    THROW_CHECK_EQ(keypoints.size(), descriptors.rows());
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
+    THROW_CHECK_EQ(keypoints.size(), descriptors.data.rows());
+    THROW_CHECK_EQ(descriptors.type, feature_type_)
+        << "Feature type mismatch: index was built with "
+        << FeatureExtractorTypeToString(feature_type_) << " but received "
+        << FeatureExtractorTypeToString(descriptors.type);
 
     // If the image is already indexed, do nothing.
     if (IsImageIndexed(image_id)) {
@@ -102,7 +106,7 @@ class FaissVisualIndex : public VisualIndex {
 
     prepared_ = false;
 
-    if (descriptors.rows() == 0) {
+    if (descriptors.data.rows() == 0) {
       return;
     }
 
@@ -111,8 +115,8 @@ class FaissVisualIndex : public VisualIndex {
                                          options.num_checks,
                                          options.num_threads);
 
-    for (Eigen::Index i = 0; i < descriptors.rows(); ++i) {
-      const auto& descriptor = descriptors.row(i);
+    for (Eigen::Index i = 0; i < descriptors.data.rows(); ++i) {
+      const auto& descriptor = descriptors.data.row(i);
 
       typename InvertedIndexType::GeomType geometry;
       geometry.x = keypoints[i].x;
@@ -136,7 +140,11 @@ class FaissVisualIndex : public VisualIndex {
   void Query(const QueryOptions& options,
              const FeatureDescriptorsFloat& descriptors,
              std::vector<ImageScore>* image_scores) const override {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.type, feature_type_)
+        << "Feature type mismatch: index was built with "
+        << FeatureExtractorTypeToString(feature_type_) << " but received "
+        << FeatureExtractorTypeToString(descriptors.type);
     Query(options, /*keypoints=*/{}, descriptors, image_scores);
   }
 
@@ -144,7 +152,11 @@ class FaissVisualIndex : public VisualIndex {
              const FeatureKeypoints& keypoints,
              const FeatureDescriptorsFloat& descriptors,
              std::vector<ImageScore>* image_scores) const override {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.type, feature_type_)
+        << "Feature type mismatch: index was built with "
+        << FeatureExtractorTypeToString(feature_type_) << " but received "
+        << FeatureExtractorTypeToString(descriptors.type);
 
     WordIds word_ids;
     QueryAndFindWordIds(options, descriptors, image_scores, &word_ids);
@@ -153,7 +165,7 @@ class FaissVisualIndex : public VisualIndex {
       return;
     }
 
-    THROW_CHECK_EQ(descriptors.rows(), keypoints.size());
+    THROW_CHECK_EQ(descriptors.data.rows(), keypoints.size());
 
     // Extract top-ranked images to verify.
     FlatHashSet<int> image_ids;
@@ -175,13 +187,13 @@ class FaissVisualIndex : public VisualIndex {
     std::vector<const EntryType*> word_matches;
 
     std::vector<EntryType> query_entries;  // Convert query features, too.
-    query_entries.reserve(descriptors.rows());
+    query_entries.reserve(descriptors.data.rows());
 
     // NOTE: Currently, we are redundantly computing the feature weighting.
     const HammingDistWeightFunctor<kEmbeddingDim> hamming_dist_weight_functor;
 
-    for (Eigen::Index i = 0; i < descriptors.rows(); ++i) {
-      const auto& descriptor = descriptors.row(i);
+    for (Eigen::Index i = 0; i < descriptors.data.rows(); ++i) {
+      const auto& descriptor = descriptors.data.row(i);
 
       EntryType query_entry;
       query_entry.feature_idx = i;
@@ -332,7 +344,7 @@ class FaissVisualIndex : public VisualIndex {
                 match_found = true;
                 FeatureGeometryMatch match;
                 match.geometry1 = entry2.second.first->geometry;
-                match.geometries2 = {entry2.second.second->geometry};
+                match.geometry2 = entry2.second.second->geometry;
                 matches.push_back(match);
 
                 handles2.erase(idx2);
@@ -398,11 +410,9 @@ class FaissVisualIndex : public VisualIndex {
 
   void Build(const BuildOptions& options,
              const FeatureDescriptorsFloat& descriptors) override {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
 
-    // Fork parity: descriptors are plain matrices without type metadata;
-    // the index feature type stays UNDEFINED (upstream reads it from the
-    // struct form planned for the W18.3 types.h batch).
+    feature_type_ = descriptors.type;
     const Eigen::RowMajorMatrixXf visual_words =
         Quantize(options, descriptors);
     THROW_CHECK_EQ(visual_words.cols(), kDescDim);
@@ -424,7 +434,7 @@ class FaissVisualIndex : public VisualIndex {
                                          kNumNeighbors,
                                          options.num_checks,
                                          options.num_threads);
-    inverted_index_.ComputeHammingEmbedding(descriptors, word_ids);
+    inverted_index_.ComputeHammingEmbedding(descriptors.data, word_ids);
     VLOG(2) << "Computed hamming embeddings";
   }
 
@@ -504,9 +514,9 @@ class FaissVisualIndex : public VisualIndex {
   Eigen::RowMajorMatrixXf Quantize(
       const BuildOptions& options,
       const FeatureDescriptorsFloat& descriptors) const {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
 
-    VLOG(2) << "Clustering " << descriptors.rows()
+    VLOG(2) << "Clustering " << descriptors.data.rows()
             << " descriptors using kmeans";
 
     faiss::Clustering clustering(kDescDim, options.num_visual_words);
@@ -515,7 +525,7 @@ class FaissVisualIndex : public VisualIndex {
     clustering.verbose = VLOG_IS_ON(3);
 
     faiss::IndexFlatL2 index(kDescDim);
-    clustering.train(descriptors.rows(), descriptors.data(), index);
+    clustering.train(descriptors.data.rows(), descriptors.data.data(), index);
 
     VLOG(2) << "Quantized into " << options.num_visual_words
             << " visual words with error "
@@ -532,9 +542,9 @@ class FaissVisualIndex : public VisualIndex {
                            std::vector<ImageScore>* image_scores,
                            WordIds* word_ids) const {
     THROW_CHECK(prepared_);
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
 
-    if (descriptors.rows() == 0) {
+    if (descriptors.data.rows() == 0) {
       image_scores->clear();
       return;
     }
@@ -543,7 +553,7 @@ class FaissVisualIndex : public VisualIndex {
                             options.num_neighbors,
                             options.num_checks,
                             options.num_threads);
-    inverted_index_.Query(descriptors, *word_ids, image_scores);
+    inverted_index_.Query(descriptors.data, *word_ids, image_scores);
 
     if (options.image_id_filter) {
       image_scores->erase(
@@ -582,13 +592,13 @@ class FaissVisualIndex : public VisualIndex {
                       int num_neighbors,
                       int num_checks,
                       int num_threads) const {
-    THROW_CHECK_EQ(descriptors.cols(), kDescDim);
-    THROW_CHECK_GT(descriptors.rows(), 0);
+    THROW_CHECK_EQ(descriptors.data.cols(), kDescDim);
+    THROW_CHECK_GT(descriptors.data.rows(), 0);
     THROW_CHECK_GT(num_neighbors, 0);
     THROW_CHECK_NOTNULL(index_);
 
-    WordIds word_ids(descriptors.rows(), num_neighbors);
-    Eigen::RowMajorMatrixXf distances(descriptors.rows(), num_neighbors);
+    WordIds word_ids(descriptors.data.rows(), num_neighbors);
+    Eigen::RowMajorMatrixXf distances(descriptors.data.rows(), num_neighbors);
 
     faiss::IVFSearchParameters search_params;
     search_params.nprobe = num_checks;
@@ -604,8 +614,8 @@ class FaissVisualIndex : public VisualIndex {
 #endif
 #endif
 
-      index_->search(descriptors.rows(),
-                     descriptors.data(),
+      index_->search(descriptors.data.rows(),
+                     descriptors.data.data(),
                      num_neighbors,
                      distances.data(),
                      word_ids.data(),

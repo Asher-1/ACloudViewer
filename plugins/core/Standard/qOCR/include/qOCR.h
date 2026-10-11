@@ -33,6 +33,8 @@ public:
     explicit qOCR(QObject* parent = nullptr);
 
     QList<QAction*> getActions() override;
+
+    void registerCommands(ccCommandLineInterface* cmd) override;
     void setMainAppInterface(ecvMainAppInterface* app) override;
 
 private slots:

@@ -9,13 +9,13 @@ style). Fork adaptation: the option classes live on recon.sfm."""
 
 
 def test_incremental_mapper_options_init(sfm):
-    assert sfm.IncrementalMapperOptions() is not None
+    assert sfm.IncrementalPipelineOptions() is not None
 
 
 def test_incremental_mapper_options_instantiation(sfm):
     # Fork adaptation: min_num_matches is not bound on the fork's
-    # IncrementalMapperOptions; assert construction instead.
-    assert sfm.IncrementalMapperOptions() is not None
+    # IncrementalPipelineOptions; assert construction instead.
+    assert sfm.IncrementalPipelineOptions() is not None
 
 
 def test_incremental_mapper_class_exists(sfm):

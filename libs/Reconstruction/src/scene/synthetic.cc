@@ -593,7 +593,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
           FeatureKeypoints keypoints;
           keypoints.reserve(points2D.size());
           FeatureDescriptors descriptors;
-          descriptors.resize(points2D.size(), desc_dim);
+          descriptors.type = FeatureExtractorType::SIFT;
+          descriptors.data.resize(points2D.size(), desc_dim);
           std::uniform_int_distribution<int> feature_distribution(0, 255);
           for (point2D_t point2D_idx = 0; point2D_idx < points2D.size();
                ++point2D_idx) {
@@ -606,8 +607,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
                                                ? point2D.Point3DId()
                                                : options.num_points3D +
                                                      (++total_num_descriptors));
-            for (int d = 0; d < descriptors.cols(); ++d) {
-              descriptors(point2D_idx, d) =
+            for (int d = 0; d < descriptors.data.cols(); ++d) {
+              descriptors.data(point2D_idx, d) =
                   feature_distribution(feature_generator);
             }
           }

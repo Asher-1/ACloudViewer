@@ -168,6 +168,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_QLINGBOTMAP=ON
                 -DPLUGIN_STANDARD_QSAM3D=ON
                 -DPLUGIN_STANDARD_QANYLABELING=ON
+                -DPLUGIN_STANDARD_QMAPANYTHING=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON

@@ -43,6 +43,7 @@ COLMAP_ADD_SOURCES(
     global_positioning.h global_positioning.cc
     pose.h pose.cc
     rotation_averaging.h rotation_averaging.cc
+    rotation_averaging_ceres.h rotation_averaging_ceres.cc
     rotation_averaging_impl.h rotation_averaging_impl.cc
     translation_transform.h
     triangulation.h triangulation.cc
@@ -89,7 +90,10 @@ COLMAP_ADD_TEST(estimators_utils_test utils_test.cc)
 COLMAP_ADD_TEST(global_positioning_test global_positioning_test.cc)
 COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc)
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)
+COLMAP_ADD_TEST(solvers_generalized_relative_pose_test
+                solvers/generalized_relative_pose_test.cc)
 COLMAP_ADD_TEST(rotation_averaging_test rotation_averaging_test.cc)
+COLMAP_ADD_TEST(rotation_averaging_ceres_test rotation_averaging_ceres_test.cc)
 COLMAP_ADD_TEST(translation_transform_test translation_transform_test.cc)
 COLMAP_ADD_TEST(solvers_essential_matrix_test solvers/essential_matrix_test.cc)
 COLMAP_ADD_TEST(solvers_fundamental_matrix_test solvers/fundamental_matrix_test.cc)

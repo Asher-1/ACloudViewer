@@ -33,12 +33,14 @@ set(FOLDER_NAME "feature")
 
 COLMAP_ADD_SOURCES(
     aliked.h aliked.cc
+    extractor.h extractor.cc
     index.h index.cc
+    learned_matchers.h learned_matchers.cc
+    lightglue.h lightglue.cc
     loma.h loma.cc
-    matching.h matching.cc
+    matcher.h matcher.cc
+    model_cache.h model_cache.cc
     sift.h sift.cc
-    extractor.cc
-    matcher.cc
     types.h types.cc
     utils.h utils.cc
 )

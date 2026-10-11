@@ -58,6 +58,19 @@ struct Image {
         if (channels == 1) return pixel[0];
         return pixel[bgr ? 2 - c : c];
     }
+    // Hoistable pieces of channel() for hot loops: `row(y)[x * channels +
+    // channel_index(c)]` is the same byte channel(x, y, c) returns, but the
+    // data()/stride()/channels/bgr branches are evaluated once per row (or
+    // once per call) instead of per sample. Writes through a raw `uint8_t*` /
+    // `float*` destination may alias this struct, so the compiler cannot do
+    // that hoisting on its own; the resize/pack/crop kernels ran 3-5x slower
+    // than the arithmetic warranted before the callers hoisted explicitly.
+    const uint8_t* row(int y) const {
+        return data() + static_cast<size_t>(y) * stride();
+    }
+    int channel_index(int c) const {
+        return channels == 1 ? 0 : (bgr ? 2 - c : c);
+    }
     bool empty() const {
         return width <= 0 || height <= 0 || data() == nullptr;
     }

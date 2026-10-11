@@ -11,11 +11,10 @@
 
 namespace colmap {
 
-// Upstream parity (d3ccaf35 estimators/bundle_adjustment_caspar.h): solver
-// parameters mirroring caspar::SolverParams, stored as double to round-trip
-// through OptionManager regardless of the float/double build. The fork keeps
-// the flat BundleAdjustmentOptions execution path; this aggregate is the
-// upstream-shaped data contract consumed by the pycolmap-parity bindings.
+// Upstream parity (estimators/bundle_adjustment_caspar.h): solver parameters
+// mirroring caspar::SolverParams, stored as double to round-trip through
+// OptionManager regardless of the float/double build. Bound as
+// BundleAdjustmentOptions::caspar and consumed by the Caspar backend.
 struct CasparBundleAdjustmentOptions {
     int solver_iter_max = 200;
     int pcg_iter_max = 20;

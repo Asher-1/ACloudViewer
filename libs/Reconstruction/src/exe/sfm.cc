@@ -388,12 +388,12 @@ void UpdateDatabasePosePriorsCovariance(
 }  // namespace
 
 // Upstream parity (d3ccaf35 exe/sfm.cc RunIncrementalMapperImpl), driving
-// the fork's IncrementalMapperController with the same contracts.
+// the fork's IncrementalPipeline with the same contracts.
 bool RunIncrementalMapperImpl(
     const std::filesystem::path& database_path,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
-    const std::shared_ptr<IncrementalMapperOptions>& mapper_options,
+    const std::shared_ptr<IncrementalPipelineOptions>& mapper_options,
     std::shared_ptr<ReconstructionManager>& reconstruction_manager,
     std::function<void()> initial_image_pair_callback,
     std::function<void()> next_image_callback,
@@ -401,7 +401,7 @@ bool RunIncrementalMapperImpl(
   const bool exists_input_reconstruction =
       reconstruction_manager->Size() > 0;
 
-  IncrementalMapperController mapper(mapper_options.get(), image_path,
+  IncrementalPipeline mapper(mapper_options.get(), image_path,
                                      database_path,
                                      reconstruction_manager.get());
   mapper.SetCheckIfStoppedFunc(std::move(check_if_stopped));
@@ -420,18 +420,18 @@ bool RunIncrementalMapperImpl(
     }
   };
   if (!exists_input_reconstruction) {
-    mapper.AddCallback(IncrementalMapperController::LAST_IMAGE_REG_CALLBACK,
+    mapper.AddCallback(IncrementalPipeline::LAST_IMAGE_REG_CALLBACK,
                        write_new_reconstructions);
   }
 
   if (initial_image_pair_callback) {
     mapper.AddCallback(
-        IncrementalMapperController::INITIAL_IMAGE_PAIR_REG_CALLBACK,
+        IncrementalPipeline::INITIAL_IMAGE_PAIR_REG_CALLBACK,
         std::move(initial_image_pair_callback));
   }
 
   if (next_image_callback) {
-    mapper.AddCallback(IncrementalMapperController::NEXT_IMAGE_REG_CALLBACK,
+    mapper.AddCallback(IncrementalPipeline::NEXT_IMAGE_REG_CALLBACK,
                        std::move(next_image_callback));
   }
 
@@ -462,14 +462,12 @@ bool RunIncrementalMapperImpl(
 int RunMapper(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
-  std::string image_list_path;
 
   OptionManager options;
   options.AddDatabaseOptions();
   options.AddImageOptions();
   options.AddDefaultOption("input_path", &input_path);
   options.AddRequiredOption("output_path", &output_path);
-  options.AddDefaultOption("image_list_path", &image_list_path);
   options.AddMapperOptions();
   if (!options.Parse(argc, argv)) {
     return EXIT_FAILURE;
@@ -478,12 +476,6 @@ int RunMapper(int argc, char** argv) {
   if (!ExistsDir(output_path)) {
     std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
     return EXIT_FAILURE;
-  }
-
-  if (!image_list_path.empty()) {
-    const auto image_names = ReadTextFileLines(image_list_path);
-    options.mapper->image_names =
-        std::unordered_set<std::string>(image_names.begin(), image_names.end());
   }
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
@@ -563,7 +555,7 @@ int RunPosePriorMapper(int argc, char** argv) {
     reconstruction_manager.Read(input_path);
   }
 
-  IncrementalMapperController mapper(options.mapper.get(), *options.image_path,
+  IncrementalPipeline mapper(options.mapper.get(), *options.image_path,
                                      *options.database_path,
                                      &reconstruction_manager);
   mapper.Start();
@@ -588,56 +580,59 @@ int RunPosePriorMapper(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
-// Upstream parity (d3ccaf35 exe/sfm.cc RunHierarchicalMapperImpl), driving
-// the fork's HierarchicalMapperController.
 bool RunHierarchicalMapperImpl(
-    const HierarchicalMapperController::Options& controller_options,
-    const SceneClustering::Options& clustering_options,
-    const IncrementalMapperOptions& mapper_options,
+    const std::filesystem::path& database_path,
+    const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
-    ReconstructionManager* reconstruction_manager) {
-  HierarchicalMapperController hierarchical_mapper(
-      controller_options, clustering_options, mapper_options,
-      reconstruction_manager);
+    const std::shared_ptr<HierarchicalPipelineOptions>& mapper_options,
+    std::shared_ptr<ReconstructionManager>& reconstruction_manager) {
+  HierarchicalPipelineOptions options = *mapper_options;
+  options.image_path = image_path;
+
+  HierarchicalPipeline hierarchical_mapper(
+      options, database_path, reconstruction_manager.get());
   hierarchical_mapper.Start();
   hierarchical_mapper.Wait();
-  return reconstruction_manager->Size() > 0;
+
+  if (reconstruction_manager->Size() == 0) {
+    LOG(ERROR) << "Failed to create sparse model";
+    return false;
+  }
+
+  reconstruction_manager->Write(output_path);
+  return true;
 }
 
 int RunHierarchicalMapper(int argc, char** argv) {
-  HierarchicalMapperController::Options hierarchical_options;
-  SceneClustering::Options clustering_options;
-  std::string output_path;
+  std::filesystem::path output_path;
 
   OptionManager options;
-  options.AddRequiredOption("database_path",
-                            &hierarchical_options.database_path);
-  options.AddRequiredOption("image_path", &hierarchical_options.image_path);
+  options.AddDatabaseOptions();
+  options.AddRequiredOption("image_path",
+                            &options.hierarchical_mapper->image_path);
   options.AddRequiredOption("output_path", &output_path);
-  options.AddDefaultOption("num_workers", &hierarchical_options.num_workers);
-  options.AddDefaultOption("image_overlap", &clustering_options.image_overlap);
-  options.AddDefaultOption("leaf_max_num_images",
-                           &clustering_options.leaf_max_num_images);
+  options.AddHierarchicalMapperOptions();
   options.AddMapperOptions();
   if (!options.Parse(argc, argv)) {
     return EXIT_FAILURE;
   }
 
   if (!ExistsDir(output_path)) {
-    std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
+    LOG(ERROR) << "`output_path` is not a directory.";
     return EXIT_FAILURE;
   }
 
-  ReconstructionManager reconstruction_manager;
-
-  if (!RunHierarchicalMapperImpl(hierarchical_options, clustering_options,
-                                 *options.mapper, output_path,
-                                 &reconstruction_manager)) {
-    std::cerr << "ERROR: failed to create sparse model" << std::endl;
+  options.hierarchical_mapper->incremental_options = *options.mapper;
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  if (!RunHierarchicalMapperImpl(*options.database_path,
+                                 options.hierarchical_mapper->image_path,
+                                 output_path,
+                                 options.hierarchical_mapper,
+                                 reconstruction_manager)) {
     return EXIT_FAILURE;
   }
 
-  reconstruction_manager.Write(output_path, &options);
+  options.Write(output_path / "project.ini");
 
   return EXIT_SUCCESS;
 }
@@ -688,7 +683,7 @@ void RunPointTriangulatorImpl(
     const std::filesystem::path& database_path,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
-    const IncrementalMapperOptions& options,
+    const IncrementalPipelineOptions& options,
     const bool clear_points,
     const bool refine_intrinsics,
     std::function<bool()> check_if_stopped) {
@@ -703,7 +698,7 @@ void RunPointTriangulatorImpl(
 
   // Upstream parity: triangulation operates on every registered image, not
   // only the configured image-list subset.
-  IncrementalMapperOptions mapper_options = options;
+  IncrementalPipelineOptions mapper_options = options;
   mapper_options.image_names.clear();
 
   PrintHeading1("Loading database");
@@ -749,7 +744,8 @@ void RunPointTriangulatorImpl(
     ba_options.refine_focal_length = refine_intrinsics;
     ba_options.refine_principal_point = false;
     ba_options.refine_extra_params = refine_intrinsics;
-    ba_options.refine_extrinsics = false;
+    ba_options.refine_rig_from_world = false;
+    ba_options.refine_sensor_from_rig = false;
 
     BundleAdjustmentConfig ba_config;
     for (const image_t image_id : reconstruction->RegImageIds()) {

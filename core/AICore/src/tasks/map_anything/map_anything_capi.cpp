@@ -32,6 +32,7 @@
 #include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
+#include "common/image_utils.hpp"
 #include "common/model_cache.hpp"
 #include "tasks/map_anything/map_anything_backend.hpp"
 #include "tasks/map_anything/map_anything_gguf_loader.hpp"
@@ -115,12 +116,14 @@ struct aicore_map_anything_ctx {
 
 namespace {
 
-// Ensures a runtime exists for (S, H, W). The rebuild re-stages the weights,
-// so resolution sweeps pay the staging cost per new geometry. The backend
-// lease lock must be held by the caller.
-bool ensure_runtime(aicore_map_anything_ctx* ctx, int s, int h, int w) {
+constexpr int kRunOutOfMemory = -3;  // see aicore_map_anything_run_images
+
+// Ensures a runtime exists for (S, H, W); returns 0, -2 or kRunOutOfMemory.
+// The rebuild re-stages the weights, so resolution sweeps pay the staging
+// cost per new geometry. The backend lease lock must be held by the caller.
+int ensure_runtime(aicore_map_anything_ctx* ctx, int s, int h, int w) {
     if (ctx->runtime && ctx->cur_s == s && ctx->cur_h == h && ctx->cur_w == w) {
-        return true;
+        return 0;
     }
     ctx->runtime.reset();
     ctx->cur_s = ctx->cur_h = ctx->cur_w = 0;
@@ -129,16 +132,21 @@ bool ensure_runtime(aicore_map_anything_ctx* ctx, int s, int h, int w) {
     ctx->runtime.reset(new map_anything::VGGTRuntime(*ctx->model, ctx->backend,
                                                      s, h, w, opts));
     if (!ctx->runtime->valid()) {
-        ctx->runtime.reset();
+        const bool oom = ctx->runtime->out_of_memory();
         ctx->last_error =
-                "runtime build failed for the requested geometry (see the "
-                "[MapAnything] log lines)";
-        return false;
+                !ctx->runtime->error().empty()
+                        ? ctx->runtime->error()
+                        : std::string(
+                                  "runtime build failed for the requested "
+                                  "geometry (see the [MapAnything] log "
+                                  "lines)");
+        ctx->runtime.reset();
+        return oom ? kRunOutOfMemory : -2;
     }
     ctx->cur_s = s;
     ctx->cur_h = h;
     ctx->cur_w = w;
-    return true;
+    return 0;
 }
 
 #ifdef MAP_ANYTHING_ENABLE_DUMP
@@ -181,8 +189,8 @@ int run_common(aicore_map_anything_ctx* ctx,
         return -2;
     }
     auto lease_lock = ctx->backend.lease.lock();
-    if (!ensure_runtime(ctx, s, h, w)) {
-        return -2;
+    if (const int rc = ensure_runtime(ctx, s, h, w); rc != 0) {
+        return rc;
     }
     map_anything::VGGTOutputs out;
     const double t_inf0 = steady_ms();
@@ -250,10 +258,11 @@ AICORE_CAPI void aicore_map_anything_options_set_image_size(
 
 AICORE_CAPI void aicore_map_anything_options_set_resize_mode(
         aicore_map_anything_options* opts, const char* mode) {
-    if (opts == nullptr || mode == nullptr) return;
-    const std::string want(mode);
-    if (want != "balanced" && want != "max_size") return;
-    opts->resize_mode = want;
+    if (opts == nullptr || mode == nullptr || mode[0] == '\0') return;
+    // Stored verbatim and validated by load_opts: silently dropping an
+    // unknown mode here made the catalog's "square" default run as
+    // "balanced" with no error anywhere.
+    opts->resize_mode = mode;
 }
 
 AICORE_CAPI void aicore_map_anything_options_set_log_level(
@@ -284,7 +293,12 @@ AICORE_CAPI aicore_map_anything_ctx* aicore_map_anything_load_opts(
     ctx->dump_dir = opts != nullptr ? opts->dump_dir : "";
     map_anything::set_log_level(
             log_level_from_int(opts != nullptr ? opts->log_level : 1));
-
+    if (ctx->resize_mode != "balanced" && ctx->resize_mode != "max_size" &&
+        ctx->resize_mode != "square") {
+        ctx->last_error = "unknown resize mode '" + ctx->resize_mode +
+                          "' (balanced|max_size|square)";
+        return ctx;  // not ready; last_error carries the reason
+    }
     // VRAM admission guard (same contract as gkd/yolo: a fatal backend
     // abort under memory pressure at inference time turns into a clean,
     // actionable load error here).
@@ -384,9 +398,15 @@ AICORE_CAPI int aicore_map_anything_run_images(aicore_map_anything_ctx* ctx,
         return -1;
     }
     for (int32_t i = 0; i < n_views; ++i) {
-        if (views[i].data == nullptr || views[i].width <= 0 ||
-            views[i].height <= 0) {
-            ctx->last_error = "run_images: invalid image view";
+        // Borrow-only check (no copy): data, dimensions, a known format and
+        // row_stride_bytes >= width * channels. A short stride would make the
+        // per-row reads run past the caller's buffer.
+        aicore::img::Image borrowed;
+        if (!aicore::img::image_from_view(views[i], borrowed)) {
+            ctx->last_error = "run_images: invalid image view " +
+                              std::to_string(i) +
+                              " (null data, non-positive size, unknown "
+                              "format or row stride < width * channels)";
             return -1;
         }
     }
@@ -465,7 +485,10 @@ aicore_map_anything_result_width(const aicore_map_anything_ctx* ctx) {
 
 AICORE_CAPI const char* aicore_map_anything_result_architecture(
         const aicore_map_anything_ctx* ctx) {
-    return ctx != nullptr && ctx->has_result ? ctx->architecture.c_str() : "";
+    // Header contract: the architecture of the LOADED GGUF ("" when not
+    // ready), available before the first run so callers can size inputs.
+    return ctx != nullptr && ctx->model ? ctx->model->meta.architecture.c_str()
+                                        : "";
 }
 
 AICORE_CAPI int aicore_map_anything_result_view_valid_size(
@@ -600,7 +623,9 @@ AICORE_CAPI char* aicore_map_anything_info_json(aicore_map_anything_ctx* ctx) {
     if (ctx == nullptr) return nullptr;
     std::ostringstream json;
     json << "{\"architecture\":\""
-         << json_escape(ctx->model ? ctx->architecture : std::string()) << "\"";
+         << json_escape(ctx->model ? ctx->model->meta.architecture
+                                   : std::string())
+         << "\"";
     json << ",\"device\":\"" << json_escape(ctx->resolved_device) << "\"";
     json << ",\"threads\":" << ctx->threads;
     json << ",\"patch_size\":"

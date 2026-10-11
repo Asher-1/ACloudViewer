@@ -16,6 +16,7 @@
 #include <FileIOFilter.h>
 #include <GeometricalAnalysisTools.h>
 #include <Neighbourhood.h>
+#include <QtCompat.h>
 #include <ReferenceCloud.h>
 #include <ScalarFieldTools.h>
 #include <VtkVis.h>
@@ -48,6 +49,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -58,7 +60,9 @@
 #include <QMetaMethod>
 #include <QPointer>
 #include <QProcess>
+#include <QRegularExpression>
 #include <QTimer>
+#include <QUuid>
 #include <QtGui>
 #include <algorithm>
 #include <cmath>
@@ -678,13 +682,15 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcMeshMerge(p); });
 
     // --- CLI Processing ---
+    reg("aicore.batch",     "Run a registered AICore plugin batch command in an isolated headless child: {command, options{}, ?result_json, ?timeout_ms}; list values repeat an option, HELP:1 returns its schema",
+        [this](auto& p){ return rpcAICoreBatch(p); });
     reg("process.run_cli",   "Run any CLI processing command: {input_path, output_path, args[], ?timeout_ms}",
         [this](auto& p){ return rpcProcessRunCli(p); });
     reg("yolo.track",        "Headless multi-object tracking (six official tracker modes): {model, ?video, ?frames_dir, ?tracker: bytetrack|botsort|ocsort|deepocsort|fasttrack|tracktrack, ?gmc, ?conf, ?iou, ?max_det, ?reid: 0|1, ?device, ?threads, tracks_json, ?timeout_ms}",
         [this](auto& p){ return rpcYoloTrack(p); });
     reg("sam3d.generate",    "Batch SAM 3D Objects image-to-3D (Gaussian PLY + optional FlexiCubes mesh, single model load): {images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}",
         [this](auto& p){ return rpcSam3dGenerate(p); });
-    reg("mapanything.reconstruct", "Multi-view metric 3D reconstruction (MapAnything family, single model load): {images[2..64], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?result_json, ?timeout_ms}",
+    reg("mapanything.reconstruct", "Multi-view metric 3D reconstruction (MapAnything family, single model load): {images[>=2], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device, ?image_size, ?resize_mode: balanced|max_size|square (default: catalog entry), ?min_conf (default: catalog entry), ?max_frames_per_pass (default 64; larger sets stream overlap-2 Sim3-aligned chunks, halved automatically when the device cannot hold a pass; same driver as the GUI), ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?result_json, ?timeout_ms}",
         [this](auto& p){ return rpcMapAnythingReconstruct(p); });
     reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
         [this](auto& p){ return rpcProcessCsf(p); });
@@ -4101,6 +4107,185 @@ JsonRPCResult JsonRPCPlugin::rpcColmapRun(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Typed AICore batch bridge (aicore.batch)
+// ═══════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
+        const QMap<QString, QVariant>& params) {
+    QString command = params.value("command").toString().trimmed().toUpper();
+    if (command.startsWith(QLatin1Char('-'))) command.remove(0, 1);
+    // This boundary intentionally exposes inference/export commands only.
+    // Arbitrary argv remains process.run_cli's separate, explicit contract.
+    static const QSet<QString> kCommands = {
+            "RMBG_REMOVE",      "DEEPLSD_LINES",
+            "RFDETR_DETECT",    "YOLO_PREDICT",
+            "YOLO_TRACK",       "DA3_DEPTH",
+            "FACE_DETECT",      "GKD_KEYPOINTS",
+            "OCR_RECOGNIZE",    "SAM3_SEGMENT",
+            "LIGHTGLUE_MATCH",  "FREESPLATTER_RECONSTRUCT",
+            "TRELLIS_GENERATE", "LINGBOT_MAP_RECONSTRUCT",
+            "ANYLABEL_INFER",   "MAP_ANYTHING_RECONSTRUCT",
+            "SAM3D_GENERATE"};
+    if (!kCommands.contains(command)) {
+        QJsonArray allowed;
+        QStringList sorted = kCommands.values();
+        sorted.sort();
+        for (const QString& value : sorted) allowed.append(value);
+        return JsonRPCResult::error(
+                -32602, "Unknown or non-AICore batch command",
+                QJsonObject{{"command", command}, {"allowed", allowed}});
+    }
+    if (!params.contains("options") ||
+        !qtCompatVariantIsMap(params.value("options"))) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameter: options (object)",
+                D("param", "options", "hint",
+                  "Use uppercase command options; arrays repeat an option"));
+    }
+    const QVariantMap options = params.value("options").toMap();
+    const QRegularExpression keyPattern(QStringLiteral("^[A-Z][A-Z0-9_]*$"));
+    auto scalar = [](const QVariant& value, QString* text) -> bool {
+        if (!value.isValid() || value.isNull() || qtCompatVariantIsMap(value) ||
+            qtCompatVariantIsList(value))
+            return false;
+        if (qtCompatVariantIsBool(value)) {
+            *text = value.toBool() ? QStringLiteral("1") : QStringLiteral("0");
+            return true;
+        }
+        if (qtCompatVariantIsString(value) || qtCompatVariantIsInt(value) ||
+            qtCompatVariantIsDouble(value)) {
+            *text = value.toString();
+            return true;
+        }
+        return false;
+    };
+
+    QStringList argList{"-SILENT", "-VERBOSE", "-NO_TIMESTAMP",
+                        QStringLiteral("-%1").arg(command)};
+    QString resultPath = params.value("result_json").toString();
+    bool temporaryResult = false;
+    for (auto it = options.constBegin(); it != options.constEnd(); ++it) {
+        const QString key = it.key().trimmed().toUpper();
+        if (!keyPattern.match(key).hasMatch()) {
+            return JsonRPCResult::error(
+                    -32602, "Invalid AICore option name",
+                    D("option", it.key(), "hint", "Use [A-Z][A-Z0-9_]*"));
+        }
+        const QVariant value = it.value();
+        // HELP is the command parser's sole flag (no following value).
+        if (key == QLatin1String("HELP") && qtCompatVariantIsBool(value)) {
+            if (value.toBool()) argList << "HELP";
+            continue;
+        }
+        const QVariantList values = qtCompatVariantIsList(value)
+                                            ? value.toList()
+                                            : QVariantList{value};
+        if (values.isEmpty()) {
+            return JsonRPCResult::error(-32602,
+                                        "AICore option array must not be empty",
+                                        D("option", key));
+        }
+        for (const QVariant& item : values) {
+            QString text;
+            if (!scalar(item, &text)) {
+                return JsonRPCResult::error(
+                        -32602, "AICore option values must be scalar",
+                        D("option", key, "hint",
+                          "Use string, number, boolean, or an array of them"));
+            }
+            if (key == QLatin1String("RESULT_JSON")) resultPath = text;
+            argList << key << text;
+        }
+    }
+    if (resultPath.isEmpty()) {
+        resultPath =
+                QDir(QDir::tempPath())
+                        .filePath(QStringLiteral("acv_aicore_rpc_%1.json")
+                                          .arg(QUuid::createUuid().toString(
+                                                  QUuid::Id128)));
+        temporaryResult = true;
+        argList << "RESULT_JSON" << resultPath;
+    } else if (!options.contains("RESULT_JSON") &&
+               !options.contains("result_json")) {
+        argList << "RESULT_JSON" << resultPath;
+    }
+
+    const int timeoutMs = params.value("timeout_ms", 1800000).toInt();
+    if (timeoutMs <= 0 || timeoutMs > 24 * 60 * 60 * 1000) {
+        return JsonRPCResult::error(-32602,
+                                    "timeout_ms must be in (0, 86400000]",
+                                    D("timeout_ms", timeoutMs));
+    }
+    QProcess process;
+    process.setProgram(QCoreApplication::applicationFilePath());
+    process.setArguments(argList);
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("QT_QPA_PLATFORM"),
+                       QStringLiteral("offscreen"));
+    process.setProcessEnvironment(environment);
+    process.start();
+    if (!process.waitForStarted(30000)) {
+        if (temporaryResult) QFile::remove(resultPath);
+        return JsonRPCResult::error(
+                3, "Unable to start ACloudViewer batch child",
+                D("command", command, "error", process.errorString()));
+    }
+    // RPC handlers run on the GUI thread. waitForFinished() would freeze
+    // rendering and stop WebSocket keepalive pongs for the whole batch, so
+    // wait in a local loop instead. User input stays excluded so the scene
+    // and plugin state cannot be changed underneath the pending reply.
+    if (process.state() != QProcess::NotRunning) {
+        QEventLoop loop;
+        QTimer deadline;
+        deadline.setSingleShot(true);
+        QObject::connect(
+                &process,
+                QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                &loop, &QEventLoop::quit);
+        QObject::connect(&deadline, &QTimer::timeout, &loop, &QEventLoop::quit);
+        deadline.start(timeoutMs);
+        loop.exec(QEventLoop::ExcludeUserInputEvents);
+    }
+    if (process.state() != QProcess::NotRunning) {
+        process.kill();
+        process.waitForFinished(5000);
+        if (temporaryResult) QFile::remove(resultPath);
+        return JsonRPCResult::error(
+                3, "AICore batch timed out",
+                D("command", command, "timeout_ms", timeoutMs));
+    }
+    const QString stdOut =
+            QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+    const QString stdErr =
+            QString::fromUtf8(process.readAllStandardError()).trimmed();
+    QJsonObject manifest;
+    QFile resultFile(resultPath);
+    if (resultFile.open(QIODevice::ReadOnly)) {
+        const QJsonDocument document =
+                QJsonDocument::fromJson(resultFile.readAll());
+        if (document.isObject()) manifest = document.object();
+    }
+    if (temporaryResult) QFile::remove(resultPath);
+
+    QJsonObject response{
+            {"command", command},
+            {"exit_code", process.exitCode()},
+            {"result_json", temporaryResult ? QString() : resultPath},
+            {"manifest", manifest},
+            {"stdout", stdOut.left(10000)},
+            {"stderr", stdErr.left(5000)}};
+    if (process.exitStatus() != QProcess::NormalExit ||
+        process.exitCode() != 0) {
+        return JsonRPCResult::error(3, "AICore batch failed", response);
+    }
+    if (manifest.isEmpty()) {
+        return JsonRPCResult::error(
+                3, "AICore batch returned no readable RESULT_JSON", response);
+    }
+    return JsonRPCResult::success(QJsonDocument(response).toVariant());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Generic CLI Processing (process.run_cli)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -4378,6 +4563,7 @@ JsonRPCResult JsonRPCPlugin::rpcMapAnythingReconstruct(
             {"image_size", "IMAGE_SIZE"},
             {"resize_mode", "RESIZE_MODE"},
             {"min_conf", "MIN_CONF"},
+            {"max_frames_per_pass", "MAX_FRAMES_PER_PASS"},
             {"threads", "THREADS"},
             {"cloud_ply", "CLOUD_PLY"},
             {"per_view", "PER_VIEW"},
@@ -4428,6 +4614,8 @@ JsonRPCResult JsonRPCPlugin::rpcMapAnythingReconstruct(
             result["views"] = doc.object().value("views").toInt();
             result["e2e_ms"] = doc.object().value("e2e_ms").toDouble();
             result["ply"] = doc.object().value("ply").toString();
+            result["frames_per_pass"] =
+                    doc.object().value("frames_per_pass").toInt();
         }
     }
 

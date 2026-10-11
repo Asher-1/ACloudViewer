@@ -37,12 +37,6 @@ struct always_false : std::false_type {};
 // OptionManager derives from it and adds the task-specific option groups.
 //
 // Fork deviations from upstream (documented where they occur):
-//  - The constructor does not invoke AddRandomOptions()/AddLogOptions(); a
-//    derived manager overrides these with its legacy flag spellings
-//    (--log_to_stderr/--random_seed), and calling virtuals from the base
-//    constructor would bind the base versions and poison the group guards.
-//    Groups are instead added through AddAllOptions()/explicit calls.
-//  - The four Add*Options entry points are virtual for the same reason.
 //  - The log options omit --log_severity/--log_color: the fork's glog build
 //    declares neither FLAGS_minloglevel nor a stdout color flag.
 class BaseOptionManager {
@@ -54,10 +48,10 @@ public:
     BaseOptionManager& operator=(BaseOptionManager&&) = default;
     virtual ~BaseOptionManager() = default;
 
-    virtual void AddRandomOptions();
-    virtual void AddLogOptions();
-    virtual void AddDatabaseOptions();
-    virtual void AddImageOptions();
+    void AddRandomOptions();
+    void AddLogOptions();
+    void AddDatabaseOptions();
+    void AddImageOptions();
 
     template <typename T>
     void AddRequiredOption(const std::string& name,
@@ -67,12 +61,6 @@ public:
     void AddDefaultOption(const std::string& name,
                           T* option,
                           const std::string& help_text = "");
-    // An alias must not install a default value: boost::program_options would
-    // otherwise overwrite an explicitly supplied sibling option during notify.
-    template <typename T>
-    void AddAliasOption(const std::string& name,
-                        T* option,
-                        const std::string& help_text = "");
     template <typename EnumT>
     void AddDefaultEnumOption(const std::string& name,
                               EnumT* option,
@@ -180,14 +168,6 @@ void BaseOptionManager::AddDefaultOption(const std::string& name,
                 help_text.c_str());
     }
     RegisterOption(name, option);
-}
-
-template <typename T>
-void BaseOptionManager::AddAliasOption(const std::string& name,
-                                       T* option,
-                                       const std::string& help_text) {
-    desc_->add_options()(name.c_str(), boost::program_options::value<T>(option),
-                         help_text.c_str());
 }
 
 template <typename T>

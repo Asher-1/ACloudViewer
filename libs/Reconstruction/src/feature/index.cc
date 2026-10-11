@@ -46,7 +46,7 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
   explicit FaissFeatureDescriptorIndex(int num_threads)
       : num_threads_(num_threads) {}
 
-  void Build(const FeatureDescriptorsFloat& index_descriptors) override {
+  void Build(const FeatureDescriptorsFloatData& index_descriptors) override {
     if (index_descriptors.rows() == 0) {
       index_ = nullptr;
       return;
@@ -101,7 +101,7 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
   }
 
   void Search(int num_neighbors,
-              const FeatureDescriptorsFloat& query_descriptors,
+              const FeatureDescriptorsFloatData& query_descriptors,
               Eigen::RowMajorMatrixXi& indices,
               Eigen::RowMajorMatrixXf& l2_dists) const override {
     if (num_neighbors <= 0 || index_ == nullptr) {

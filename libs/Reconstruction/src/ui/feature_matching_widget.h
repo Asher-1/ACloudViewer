@@ -11,7 +11,6 @@
 #include <QtWidgets>
 
 #include "controllers/option_manager.h"
-#include "util/misc.h"
 
 namespace colmap {
 

@@ -59,14 +59,16 @@ TEST(AlikedTest, Nominal) {
   FeatureExtractionOptions extraction_options = CreateExtractionOptions();
   auto extractor = FeatureExtractor::Create(extraction_options);
   FeatureKeypoints keypoints;
-  FeatureDescriptorsFloat descriptors;
+  FeatureDescriptors descriptors;
   ASSERT_TRUE(extractor->Extract(image, &keypoints, &descriptors));
 
   EXPECT_GT(keypoints.size(), 0);
   EXPECT_LE(keypoints.size(),
             static_cast<size_t>(extraction_options.aliked->max_num_features));
-  EXPECT_EQ(keypoints.size(), static_cast<size_t>(descriptors.rows()));
-  EXPECT_EQ(descriptors.cols(), 128);
+  EXPECT_EQ(descriptors.type, FeatureExtractorType::ALIKED_N16ROT);
+  EXPECT_EQ(keypoints.size(), static_cast<size_t>(descriptors.data.rows()));
+  // Packed float32 descriptors: 128 values x 4 bytes.
+  EXPECT_EQ(descriptors.data.cols(), 128 * sizeof(float));
 
   for (const auto& keypoint : keypoints) {
     EXPECT_GE(keypoint.x, 0);
@@ -79,12 +81,12 @@ TEST(AlikedTest, Nominal) {
   // Nominal case's matcher section.
   FeatureMatchingOptions matching_options(
       FeatureMatcherType::ALIKED_BRUTEFORCE);
-  matching_options.aliked->max_ratio = 0;
+  matching_options.aliked->brute_force.max_ratio = 0;
   auto matcher = FeatureMatcher::Create(matching_options);
   FeatureMatcher::Image image1;
   image1.image_id = 1;
-  image1.keypoints = keypoints;
-  image1.descriptors = descriptors;
+  image1.keypoints = std::make_shared<FeatureKeypoints>(keypoints);
+  image1.descriptors = std::make_shared<FeatureDescriptors>(descriptors);
   FeatureMatcher::Image image2 = image1;
   image2.image_id = 2;
   FeatureMatches matches;
@@ -107,7 +109,7 @@ TEST(AlikedTest, MaxNumFeatures) {
   FeatureExtractionOptions options_default = CreateExtractionOptions();
   auto extractor_default = FeatureExtractor::Create(options_default);
   FeatureKeypoints keypoints_default;
-  FeatureDescriptorsFloat descriptors_default;
+  FeatureDescriptors descriptors_default;
   ASSERT_TRUE(extractor_default->Extract(image, &keypoints_default,
                                          &descriptors_default));
 
@@ -115,7 +117,7 @@ TEST(AlikedTest, MaxNumFeatures) {
   options_limited.aliked->max_num_features = 100;
   auto extractor_limited = FeatureExtractor::Create(options_limited);
   FeatureKeypoints keypoints_limited;
-  FeatureDescriptorsFloat descriptors_limited;
+  FeatureDescriptors descriptors_limited;
   ASSERT_TRUE(extractor_limited->Extract(image, &keypoints_limited,
                                          &descriptors_limited));
 
@@ -135,14 +137,14 @@ TEST(AlikedTest, MinScore) {
   options_low.aliked->min_score = 0.0;
   auto extractor_low = FeatureExtractor::Create(options_low);
   FeatureKeypoints keypoints_low;
-  FeatureDescriptorsFloat descriptors_low;
+  FeatureDescriptors descriptors_low;
   ASSERT_TRUE(extractor_low->Extract(image, &keypoints_low, &descriptors_low));
 
   FeatureExtractionOptions options_high = CreateExtractionOptions();
   options_high.aliked->min_score = 0.9;
   auto extractor_high = FeatureExtractor::Create(options_high);
   FeatureKeypoints keypoints_high;
-  FeatureDescriptorsFloat descriptors_high;
+  FeatureDescriptors descriptors_high;
   ASSERT_TRUE(
           extractor_high->Extract(image, &keypoints_high, &descriptors_high));
 

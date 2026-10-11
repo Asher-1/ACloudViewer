@@ -10,8 +10,10 @@
 #include "feature/aliked.h"
 #include "feature/extractor.h"
 #include "feature/learned_matchers.h"
+#include "feature/lightglue.h"
 #include "feature/loma.h"
 #include "feature/matcher.h"
+#include "feature/sift.h"
 #include "feature/types.h"
 #include "pipelines/feature.h"
 #include "pybind/docstring.h"
@@ -39,15 +41,25 @@ static const std::unordered_map<std::string, std::string>
                  "PER_IMAGE = 3 }"},
                 {"match_list_path", "The matches list directories"},
                 {"match_type",
-                 "The match type supported {'pairs', 'raw', 'inliers'}"}};
+                 "The match type supported {'pairs', 'raw', 'inliers'}"},
+                {"input_path",
+                 "Path to the reconstruction whose poses guide the guided "
+                 "geometric verification"},
+                {"batch_size", "The number of image pairs verified per batch"},
+                {"num_threads", "The number of threads (-1 = all cores)"},
+                {"rig_verification",
+                 "Whether to verify image pairs jointly per rig frame"}};
 
 void pybind_feature_methods(py::module& m) {
+    // Default-argument values are converted at registration time, so this
+    // binder runs after the feature/estimators/pipeline option classes exist
+    // (see reconstruction.cpp).
     m.def("extract_feature", &ExtractFeature,
           py::call_guard<py::gil_scoped_release>(),
           "Function for the extraction of images feature", "database_path"_a,
-          "image_path"_a, "image_list_path"_a = "", "camera_mode"_a = 0,
+          "image_path"_a, "image_list_path"_a = "", "camera_mode"_a = -1,
           "image_reader_options"_a = colmap::ImageReaderOptions(),
-          "sift_extraction_options"_a = colmap::SiftExtractionOptions());
+          "extraction_options"_a = colmap::FeatureExtractionOptions());
     docstring::FunctionDocInject(m, "extract_feature",
                                  map_shared_argument_docstrings);
 
@@ -55,9 +67,9 @@ void pybind_feature_methods(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for the importation of images feature", "database_path"_a,
           "image_path"_a, "import_path"_a, "image_list_path"_a = "",
-          "camera_mode"_a = 0,
+          "camera_mode"_a = -1,
           "image_reader_options"_a = colmap::ImageReaderOptions(),
-          "sift_extraction_options"_a = colmap::SiftExtractionOptions());
+          "extraction_options"_a = colmap::FeatureExtractionOptions());
     docstring::FunctionDocInject(m, "import_feature",
                                  map_shared_argument_docstrings);
 
@@ -65,58 +77,81 @@ void pybind_feature_methods(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for the importation of image matches", "database_path"_a,
           "match_list_path"_a, "match_type"_a = "pairs",
-          "sift_matching_options"_a = colmap::SiftMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions());
     docstring::FunctionDocInject(m, "import_matches",
                                  map_shared_argument_docstrings);
 
     m.def("exhaustive_match", &ExhaustiveMatch,
           py::call_guard<py::gil_scoped_release>(),
           "Function for exhaustive image matches", "database_path"_a,
-          "sift_matching_options"_a = colmap::SiftMatchingOptions(),
-          "exhaustive_matching_options"_a =
-                  colmap::ExhaustiveMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "pairing_options"_a = colmap::ExhaustivePairingOptions());
     docstring::FunctionDocInject(m, "exhaustive_match",
                                  map_shared_argument_docstrings);
 
     m.def("sequential_match", &SequentialMatch,
           py::call_guard<py::gil_scoped_release>(),
           "Function for sequential image matches", "database_path"_a,
-          "sift_matching_options"_a = colmap::SiftMatchingOptions(),
-          "sequential_matching_options"_a =
-                  colmap::SequentialMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "pairing_options"_a = colmap::SequentialPairingOptions());
     docstring::FunctionDocInject(m, "sequential_match",
                                  map_shared_argument_docstrings);
 
     m.def("spatial_match", &SpatialMatch,
           py::call_guard<py::gil_scoped_release>(),
           "Function for spatial image matches", "database_path"_a,
-          "sift_matching_options"_a = colmap::SiftMatchingOptions(),
-          "spatial_matching_options"_a = colmap::SpatialMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "pairing_options"_a = colmap::SpatialPairingOptions());
     docstring::FunctionDocInject(m, "spatial_match",
                                  map_shared_argument_docstrings);
 
     m.def("transitive_match", &TransitiveMatch,
           py::call_guard<py::gil_scoped_release>(),
           "Function for transitive image matches", "database_path"_a,
-          "sift_matching_options"_a = colmap::SiftMatchingOptions(),
-          "transitive_matching_options"_a =
-                  colmap::TransitiveMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "pairing_options"_a = colmap::TransitivePairingOptions());
     docstring::FunctionDocInject(m, "transitive_match",
                                  map_shared_argument_docstrings);
 
     m.def("vocab_tree_match", &VocabTreeMatch,
           py::call_guard<py::gil_scoped_release>(),
           "Function for vocab_tree image matches", "database_path"_a,
-          "sift_matching_options"_a = colmap::SiftMatchingOptions(),
-          "vocab_tree_matching_options"_a = colmap::VocabTreeMatchingOptions());
+          "matching_options"_a = colmap::FeatureMatchingOptions(),
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "pairing_options"_a = colmap::VocabTreePairingOptions());
     docstring::FunctionDocInject(m, "vocab_tree_match",
+                                 map_shared_argument_docstrings);
+
+    m.def("verify_geometry", &VerifyGeometry,
+          py::call_guard<py::gil_scoped_release>(),
+          "Geometrically verify the raw matches already stored in the "
+          "database (upstream ``geometric_verifier``)",
+          "database_path"_a,
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "batch_size"_a = 1000, "num_threads"_a = -1,
+          "rig_verification"_a = false);
+    docstring::FunctionDocInject(m, "verify_geometry",
+                                 map_shared_argument_docstrings);
+
+    m.def("verify_guided_geometry", &VerifyGuidedGeometry,
+          py::call_guard<py::gil_scoped_release>(),
+          "Geometrically verify the raw matches guided by the poses of an "
+          "existing reconstruction (upstream ``guided_geometric_verifier``)",
+          "database_path"_a, "input_path"_a,
+          "geometry_options"_a = colmap::TwoViewGeometryOptions(),
+          "batch_size"_a = 1000, "num_threads"_a = -1);
+    docstring::FunctionDocInject(m, "verify_guided_geometry",
                                  map_shared_argument_docstrings);
 }
 
 void pybind_feature(py::module& m) {
     py::module m_submodule =
             m.def_submodule("feature", "Reconstruction Images Feature.");
-    pybind_feature_methods(m_submodule);
 
     // Upstream pycolmap parity (src/pycolmap/feature/types.cc): the feature
     // value types used by the retrieval and database surfaces.
@@ -127,140 +162,55 @@ void pybind_feature(py::module& m) {
     // descriptor block types. Upstream groups the matrix with its extractor
     // type in a struct; the fork engine stores plain row-major Eigen
     // matrices, whose transparent numpy caster would swallow a direct class
-    // registration. These binding-level wrappers preserve the upstream class
-    // surface over the fork storage.
-    struct PyFeatureDescriptorsBlock {
-        colmap::FeatureDescriptors data;
-    };
-    struct PyFeatureDescriptorsFloatBlock {
-        colmap::FeatureDescriptorsFloat data;
-    };
-
-    py::class_<PyFeatureDescriptorsBlock> feature_descriptors(
+    py::class_<colmap::FeatureDescriptors> feature_descriptors(
             m_submodule, "FeatureDescriptors",
-            "A row-major uint8 descriptor block (rows = features).");
+            "Descriptor bytes together with their extractor type.");
     feature_descriptors.def(py::init<>())
-            .def_property(
-                    "data",
-                    [](const PyFeatureDescriptorsBlock& self) {
-                        return py::cast(self.data);
-                    },
-                    [](PyFeatureDescriptorsBlock& self,
-                       const py::array_t<uint8_t, py::array::c_style |
-                                                          py::array::forcecast>&
-                               arr) {
-                        if (arr.ndim() != 2) {
-                            THROW_CHECK_EQ(arr.ndim(), 2);
-                        }
-                        self.data.resize(arr.shape(0), arr.shape(1));
-                        std::memcpy(self.data.data(), arr.data(),
-                                    sizeof(uint8_t) * arr.size());
-                    },
-                    "The uint8 matrix as a numpy view.")
-            .def_property_readonly(
-                    "shape",
-                    [](const PyFeatureDescriptorsBlock& self) {
-                        return py::make_tuple(self.data.rows(),
-                                              self.data.cols());
-                    },
-                    "(rows, cols) of the descriptor block.")
-            .def_static(
-                    "from_float",
-                    [](const PyFeatureDescriptorsFloatBlock& float_desc) {
-                        // Upstream semantics: reinterpret float32 bytes as
-                        // uint8 (row count unchanged, cols * 4).
-                        PyFeatureDescriptorsBlock out;
-                        out.data.resize(float_desc.data.rows(),
-                                        float_desc.data.cols() * 4);
-                        std::memcpy(out.data.data(), float_desc.data.data(),
-                                    sizeof(float) * float_desc.data.rows() *
-                                            float_desc.data.cols());
-                        return out;
-                    },
-                    "float_desc"_a,
-                    "Create from float descriptors by reinterpreting "
-                    "float32 data as uint8 bytes.")
-            .def(
-                    "to_float",
-                    [](const PyFeatureDescriptorsBlock& self) {
-                        if (self.data.cols() % 4 != 0) {
-                            THROW_CHECK_EQ(self.data.cols() % 4, 0);
-                        }
-                        PyFeatureDescriptorsFloatBlock out;
-                        out.data.resize(self.data.rows(), self.data.cols() / 4);
-                        std::memcpy(out.data.data(), self.data.data(),
-                                    sizeof(float) * self.data.rows() *
-                                            (self.data.cols() / 4));
-                        return out;
-                    },
-                    "Convert to float descriptors by reinterpreting uint8 "
-                    "data as float32.")
-            .def("__repr__", [](const PyFeatureDescriptorsBlock& self) {
-                return "FeatureDescriptors(shape=(" +
-                       std::to_string(self.data.rows()) + ", " +
+            .def(py::init<colmap::FeatureExtractorType,
+                          colmap::FeatureDescriptorsData>(),
+                 "type"_a, "data"_a)
+            .def_readwrite("type", &colmap::FeatureDescriptors::type)
+            .def_readwrite("data", &colmap::FeatureDescriptors::data)
+            .def_property_readonly("shape",
+                                   [](const colmap::FeatureDescriptors& self) {
+                                       return py::make_tuple(self.data.rows(),
+                                                             self.data.cols());
+                                   })
+            .def_static("from_float", &colmap::FeatureDescriptors::FromFloat,
+                        "float_desc"_a)
+            .def("to_float", &colmap::FeatureDescriptors::ToFloat)
+            .def("__repr__", [](const colmap::FeatureDescriptors& self) {
+                return "FeatureDescriptors(type=" +
+                       std::string(colmap::FeatureExtractorTypeToString(
+                               self.type)) +
+                       ", shape=(" + std::to_string(self.data.rows()) + ", " +
                        std::to_string(self.data.cols()) + "))";
             });
 
-    py::class_<PyFeatureDescriptorsFloatBlock> feature_descriptors_float(
+    py::class_<colmap::FeatureDescriptorsFloat> feature_descriptors_float(
             m_submodule, "FeatureDescriptorsFloat",
-            "A row-major float32 descriptor block (rows = features).");
+            "Float descriptor values together with their extractor type.");
     feature_descriptors_float.def(py::init<>())
-            .def_property(
-                    "data",
-                    [](const PyFeatureDescriptorsFloatBlock& self) {
-                        return py::cast(self.data);
-                    },
-                    [](PyFeatureDescriptorsFloatBlock& self,
-                       const py::array_t<float, py::array::c_style |
-                                                        py::array::forcecast>&
-                               arr) {
-                        if (arr.ndim() != 2) {
-                            THROW_CHECK_EQ(arr.ndim(), 2);
-                        }
-                        self.data.resize(arr.shape(0), arr.shape(1));
-                        std::memcpy(self.data.data(), arr.data(),
-                                    sizeof(float) * arr.size());
-                    },
-                    "The float32 matrix as a numpy view.")
+            .def(py::init<colmap::FeatureExtractorType,
+                          colmap::FeatureDescriptorsFloatData>(),
+                 "type"_a, "data"_a)
+            .def_readwrite("type", &colmap::FeatureDescriptorsFloat::type)
+            .def_readwrite("data", &colmap::FeatureDescriptorsFloat::data)
             .def_property_readonly(
                     "shape",
-                    [](const PyFeatureDescriptorsFloatBlock& self) {
+                    [](const colmap::FeatureDescriptorsFloat& self) {
                         return py::make_tuple(self.data.rows(),
                                               self.data.cols());
-                    },
-                    "(rows, cols) of the descriptor block.")
-            .def_static(
-                    "from_bytes",
-                    [](const PyFeatureDescriptorsBlock& byte_desc) {
-                        if (byte_desc.data.cols() % 4 != 0) {
-                            THROW_CHECK_EQ(byte_desc.data.cols() % 4, 0);
-                        }
-                        PyFeatureDescriptorsFloatBlock out;
-                        out.data.resize(byte_desc.data.rows(),
-                                        byte_desc.data.cols() / 4);
-                        std::memcpy(out.data.data(), byte_desc.data.data(),
-                                    sizeof(float) * byte_desc.data.rows() *
-                                            (byte_desc.data.cols() / 4));
-                        return out;
-                    },
-                    "byte_desc"_a,
-                    "Create from byte descriptors by reinterpreting uint8 "
-                    "data as float32.")
-            .def(
-                    "to_bytes",
-                    [](const PyFeatureDescriptorsFloatBlock& self) {
-                        PyFeatureDescriptorsBlock out;
-                        out.data.resize(self.data.rows(), self.data.cols() * 4);
-                        std::memcpy(out.data.data(), self.data.data(),
-                                    sizeof(float) * self.data.rows() *
-                                            self.data.cols());
-                        return out;
-                    },
-                    "Convert to byte descriptors by reinterpreting float32 "
-                    "data as uint8 bytes.")
-            .def("__repr__", [](const PyFeatureDescriptorsFloatBlock& self) {
-                return "FeatureDescriptorsFloat(shape=(" +
-                       std::to_string(self.data.rows()) + ", " +
+                    })
+            .def_static("from_bytes",
+                        &colmap::FeatureDescriptorsFloat::FromBytes,
+                        "byte_desc"_a)
+            .def("to_bytes", &colmap::FeatureDescriptorsFloat::ToBytes)
+            .def("__repr__", [](const colmap::FeatureDescriptorsFloat& self) {
+                return "FeatureDescriptorsFloat(type=" +
+                       std::string(colmap::FeatureExtractorTypeToString(
+                               self.type)) +
+                       ", shape=(" + std::to_string(self.data.rows()) + ", " +
                        std::to_string(self.data.cols()) + "))";
             });
 
@@ -439,7 +389,7 @@ void pybind_feature(py::module& m) {
             .def_readwrite("loma", &colmap::FeatureExtractionOptions::loma)
             .def_readwrite("aliked", &colmap::FeatureExtractionOptions::aliked)
             .def("requires_rgb", &colmap::FeatureExtractionOptions::RequiresRGB)
-            .def("requires_open_gl",
+            .def("requires_opengl",
                  &colmap::FeatureExtractionOptions::RequiresOpenGL)
             .def("eff_max_image_size",
                  &colmap::FeatureExtractionOptions::EffMaxImageSize)
@@ -447,8 +397,8 @@ void pybind_feature(py::module& m) {
 
     py::class_<colmap::FeatureExtractor>(
             m, "FeatureExtractor",
-            "The new-style feature extraction abstraction; Create() "
-            "dispatches to the fork SIFT (CPU) or LoMa (ggml) engine.")
+            "The feature extraction abstraction; Create() dispatches to the "
+            "SIFT (CPU/GPU) or the ggml ALIKED / LoMa engine.")
             .def_static("create", &colmap::FeatureExtractor::Create,
                         "options"_a)
             .def(
@@ -456,13 +406,13 @@ void pybind_feature(py::module& m) {
                     [](colmap::FeatureExtractor& self,
                        const colmap::Bitmap& bitmap) {
                         colmap::FeatureKeypoints keypoints;
-                        colmap::FeatureDescriptorsFloat descriptors;
+                        colmap::FeatureDescriptors descriptors;
                         THROW_CHECK(
                                 self.Extract(bitmap, &keypoints, &descriptors));
                         return py::make_tuple(keypoints, descriptors);
                     },
                     "bitmap"_a,
-                    "Extract keypoints and float descriptors from the image.");
+                    "Extract keypoints and descriptors from the image.");
 
     py::class_<colmap::FeatureMatchingOptions>(m, "FeatureMatchingOptions")
             .def(py::init<colmap::FeatureMatcherType>(),
@@ -490,62 +440,92 @@ void pybind_feature(py::module& m) {
             .def_readwrite("aliked", &colmap::FeatureMatchingOptions::aliked)
             .def("check", &colmap::FeatureMatchingOptions::Check);
 
-    py::class_<colmap::FeatureMatcher::Image>(
-            m, "FeatureMatcherImage",
-            "The per-image inputs of the new-style matcher (upstream nests "
-            "this as FeatureMatcher::Image).")
-            .def(py::init<>())
-            .def_readwrite("image_id", &colmap::FeatureMatcher::Image::image_id)
-            .def_readwrite("camera", &colmap::FeatureMatcher::Image::camera)
-            .def_readwrite("keypoints",
-                           &colmap::FeatureMatcher::Image::keypoints)
-            .def_readwrite("descriptors",
-                           &colmap::FeatureMatcher::Image::descriptors);
+    // FeatureMatcher::Image requires shared ownership-shaped inputs, while
+    // pybind invokes Match synchronously with Python-owned typed descriptors.
+    // Non-owning aliases preserve both type and data without an unnecessary
+    // copy; their lifetime is bounded by the call below.
+    const auto make_matcher_image =
+            [](const colmap::Camera* camera,
+               const colmap::FeatureKeypoints* keypoints,
+               const colmap::FeatureDescriptors& descriptors) {
+                colmap::FeatureMatcher::Image image;
+                image.camera = camera;
+                if (keypoints != nullptr) {
+                    image.keypoints =
+                            std::shared_ptr<const colmap::FeatureKeypoints>(
+                                    std::shared_ptr<void>(), keypoints);
+                }
+                image.descriptors =
+                        std::shared_ptr<const colmap::FeatureDescriptors>(
+                                std::shared_ptr<void>(), &descriptors);
+                return image;
+            };
 
     py::class_<colmap::FeatureMatcher>(m, "FeatureMatcher",
-                                       "The new-style in-memory feature "
-                                       "matching abstraction.")
+                                       "The in-memory feature matching "
+                                       "abstraction.")
             .def_static("create", &colmap::FeatureMatcher::Create, "options"_a)
             .def(
                     "match",
-                    [](colmap::FeatureMatcher& self,
-                       const colmap::FeatureMatcher::Image& image1,
-                       const colmap::FeatureMatcher::Image& image2) {
+                    [make_matcher_image](
+                            colmap::FeatureMatcher& self,
+                            const colmap::FeatureKeypoints* keypoints1,
+                            const colmap::FeatureDescriptors& descriptors1,
+                            const colmap::FeatureKeypoints* keypoints2,
+                            const colmap::FeatureDescriptors& descriptors2) {
+                        const colmap::FeatureMatcher::Image image1 =
+                                make_matcher_image(nullptr, keypoints1,
+                                                   descriptors1);
+                        const colmap::FeatureMatcher::Image image2 =
+                                make_matcher_image(nullptr, keypoints2,
+                                                   descriptors2);
                         colmap::FeatureMatches matches;
                         self.Match(image1, image2, &matches);
                         return matches;
                     },
-                    "image1"_a, "image2"_a,
-                    "Match two images and return the feature matches.")
+                    "keypoints1"_a, "descriptors1"_a, "keypoints2"_a,
+                    "descriptors2"_a,
+                    "Match features between two images. Keypoints are "
+                    "optional. Returns the feature matches.")
             .def(
                     "match_guided",
-                    [](colmap::FeatureMatcher& self, double max_error,
-                       const colmap::FeatureMatcher::Image& image1,
-                       const colmap::FeatureMatcher::Image& image2) {
-                        colmap::TwoViewGeometry two_view_geometry;
+                    [make_matcher_image](
+                            colmap::FeatureMatcher& self, double max_error,
+                            const colmap::FeatureKeypoints& keypoints1,
+                            const colmap::FeatureDescriptors& descriptors1,
+                            const colmap::Camera& camera1,
+                            const colmap::FeatureKeypoints& keypoints2,
+                            const colmap::FeatureDescriptors& descriptors2,
+                            const colmap::Camera& camera2,
+                            colmap::TwoViewGeometry& two_view_geometry) {
+                        const colmap::FeatureMatcher::Image image1 =
+                                make_matcher_image(&camera1, &keypoints1,
+                                                   descriptors1);
+                        const colmap::FeatureMatcher::Image image2 =
+                                make_matcher_image(&camera2, &keypoints2,
+                                                   descriptors2);
                         self.MatchGuided(max_error, image1, image2,
                                          &two_view_geometry);
-                        return two_view_geometry;
                     },
-                    "max_error"_a, "image1"_a, "image2"_a,
-                    "Match two images with the guided matcher and return the "
-                    "two-view geometry.");
+                    "max_error"_a, "keypoints1"_a, "descriptors1"_a,
+                    "camera1"_a, "keypoints2"_a, "descriptors2"_a, "camera2"_a,
+                    "two_view_geometry"_a,
+                    "Perform guided matching using existing two-view "
+                    "geometry. Updates the two_view_geometry in-place.");
 
-    // Fork-specific descriptor-type dispatch (consumed by
-    // LomaExtractionOptions and the database descriptor-type column).
-    py::enum_<colmap::FeatureDescriptorType>(m, "FeatureDescriptorType",
-                                             "The feature descriptor family "
-                                             "stored for an image.")
-            .value("kSift", colmap::FeatureDescriptorType::kSift)
-            .value("kLomaB", colmap::FeatureDescriptorType::kLomaB)
-            .value("kLomaB128", colmap::FeatureDescriptorType::kLomaB128)
-            .value("kLomaR", colmap::FeatureDescriptorType::kLomaR)
-            .value("kLomaL", colmap::FeatureDescriptorType::kLomaL)
-            .value("kLomaG", colmap::FeatureDescriptorType::kLomaG)
-            .export_values();
-
-    py::class_<colmap::LomaExtractionOptions>(m, "LomaExtractionOptions")
+    // The per-engine option structs are shared_ptr members of
+    // FeatureExtractionOptions / FeatureMatchingOptions, hence the
+    // shared_ptr holders. The fork runs ALIKED / LoMa / LightGlue on the
+    // ggml AICore backend; ``device`` replaces the upstream ONNX execution
+    // provider switches (use_bf16 / use_fast_resize).
+    py::class_<colmap::LomaExtractionOptions,
+               std::shared_ptr<colmap::LomaExtractionOptions>>(
+            m, "LomaExtractionOptions")
             .def(py::init<>())
+            .def_readwrite("max_num_features",
+                           &colmap::LomaExtractionOptions::max_num_features)
+            .def_readwrite("min_score",
+                           &colmap::LomaExtractionOptions::min_score)
             .def_readwrite("detector_model_path",
                            &colmap::LomaExtractionOptions::detector_model_path,
                            "Detector model path (ggml AICore catalog default "
@@ -553,21 +533,20 @@ void pybind_feature(py::module& m) {
             .def_readwrite(
                     "descriptor_model_path",
                     &colmap::LomaExtractionOptions::descriptor_model_path,
-                    "Descriptor model path (ggml AICore catalog default when "
-                    "empty).")
-            .def_readwrite("max_num_features",
-                           &colmap::LomaExtractionOptions::max_num_features)
-            .def_readwrite("min_score",
-                           &colmap::LomaExtractionOptions::min_score)
+                    "LOMA_B descriptor model path (ggml AICore catalog "
+                    "default when empty).")
+            .def_readwrite(
+                    "descriptor_b128_model_path",
+                    &colmap::LomaExtractionOptions::descriptor_b128_model_path,
+                    "LOMA_B128 descriptor model path (ggml AICore catalog "
+                    "default when empty).")
             .def_readwrite("device", &colmap::LomaExtractionOptions::device,
                            "ggml backend device selector (auto/cpu/gpu).")
-            .def_readwrite("num_threads",
-                           &colmap::LomaExtractionOptions::num_threads)
-            .def_readwrite("descriptor_type",
-                           &colmap::LomaExtractionOptions::descriptor_type)
             .def("check", &colmap::LomaExtractionOptions::Check);
 
-    py::class_<colmap::AlikedExtractionOptions>(m, "AlikedExtractionOptions")
+    py::class_<colmap::AlikedExtractionOptions,
+               std::shared_ptr<colmap::AlikedExtractionOptions>>(
+            m, "AlikedExtractionOptions")
             .def(py::init<>())
             .def_readwrite("max_num_features",
                            &colmap::AlikedExtractionOptions::max_num_features)
@@ -577,15 +556,9 @@ void pybind_feature(py::module& m) {
                            &colmap::AlikedExtractionOptions::n16rot_model_path)
             .def_readwrite("n32_model_path",
                            &colmap::AlikedExtractionOptions::n32_model_path)
+            .def_readwrite("device", &colmap::AlikedExtractionOptions::device,
+                           "ggml backend device selector (auto/cpu/gpu).")
             .def("check", &colmap::AlikedExtractionOptions::Check);
-
-    py::class_<colmap::AlikedMatchingOptions>(m, "AlikedMatchingOptions")
-            .def(py::init<>())
-            .def_readwrite("min_cossim",
-                           &colmap::AlikedMatchingOptions::min_cossim)
-            .def_readwrite("min_score",
-                           &colmap::AlikedMatchingOptions::min_score)
-            .def("check", &colmap::AlikedMatchingOptions::Check);
 
     // Upstream Python names; the C++ types carry the GGML backend name.
     py::class_<colmap::BruteForceGGMLMatchingOptions>(
@@ -608,28 +581,52 @@ void pybind_feature(py::module& m) {
                            &colmap::LightGlueGGMLMatchingOptions::min_score)
             .def_readwrite("model_path",
                            &colmap::LightGlueGGMLMatchingOptions::model_path)
+            .def_readwrite("device",
+                           &colmap::LightGlueGGMLMatchingOptions::device,
+                           "ggml backend device selector (auto/cpu/gpu).")
             .def("check", &colmap::LightGlueGGMLMatchingOptions::Check);
 
-    py::class_<colmap::LomaVariantMatcherOptions>(m,
-                                                  "LomaVariantMatcherOptions")
+    py::class_<colmap::AlikedMatchingOptions,
+               std::shared_ptr<colmap::AlikedMatchingOptions>>(
+            m, "AlikedMatchingOptions")
+            .def(py::init<>())
+            .def_readwrite("brute_force",
+                           &colmap::AlikedMatchingOptions::brute_force,
+                           "Brute-force matching options.")
+            .def_readwrite("lightglue",
+                           &colmap::AlikedMatchingOptions::lightglue,
+                           "LightGlue matching options.")
+            .def("check", &colmap::AlikedMatchingOptions::Check);
+
+    py::class_<colmap::LomaMatchingOptions::Variant>(
+            m, "LomaVariantMatcherOptions")
             .def(py::init<>())
             .def_readwrite("model_path",
-                           &colmap::LomaVariantMatcherOptions::model_path)
-            .def_readwrite("model_path_bf16",
-                           &colmap::LomaVariantMatcherOptions::model_path_bf16)
-            .def("check", &colmap::LomaVariantMatcherOptions::Check);
+                           &colmap::LomaMatchingOptions::Variant::model_path,
+                           "Matcher model path for this variant (ggml AICore "
+                           "catalog default when empty).");
 
-    py::class_<colmap::LomaMatchingOptions>(m, "LomaMatchingOptions")
+    py::class_<colmap::LomaMatchingOptions,
+               std::shared_ptr<colmap::LomaMatchingOptions>>(
+            m, "LomaMatchingOptions")
             .def(py::init<>())
-            .def_readwrite(
-                    "matcher_model_path",
-                    &colmap::LomaMatchingOptions::matcher_model_path,
-                    "Matcher model path (ggml AICore catalog default when "
-                    "empty).")
-            .def_readwrite("min_score", &colmap::LomaMatchingOptions::min_score)
-            .def_readwrite("device", &colmap::LomaMatchingOptions::device)
-            .def_readwrite("matcher_variant",
-                           &colmap::LomaMatchingOptions::matcher_variant)
+            .def_readwrite("min_score", &colmap::LomaMatchingOptions::min_score,
+                           "Matching filter, matches LG.")
+            .def_readwrite("b", &colmap::LomaMatchingOptions::b,
+                           "LOMA_B model paths.")
+            .def_readwrite("b128", &colmap::LomaMatchingOptions::b128,
+                           "LOMA_B128 model paths.")
+            .def_readwrite("r", &colmap::LomaMatchingOptions::r,
+                           "LOMA_R model paths.")
+            .def_readwrite("l", &colmap::LomaMatchingOptions::l,
+                           "LOMA_L model paths.")
+            .def_readwrite("g", &colmap::LomaMatchingOptions::g,
+                           "LOMA_G model paths.")
+            .def_readwrite("brute_force",
+                           &colmap::LomaMatchingOptions::brute_force,
+                           "Brute-force matching options.")
+            .def_readwrite("device", &colmap::LomaMatchingOptions::device,
+                           "ggml backend device selector (auto/cpu/gpu).")
             .def("check", &colmap::LomaMatchingOptions::Check);
 }
 

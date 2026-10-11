@@ -17,34 +17,35 @@
 // streams are identical, so weights load without permutation.
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "json/json.h"
-
-#include "ggml.h"
+#include "ggml-alloc.h"
 #include "ggml-backend.h"
+#include "ggml.h"
 #include "gguf.h"
+#include "json/json.h"
 
 namespace aicore {
 namespace ocr {
 
 struct GraphOp {
     struct OpInput {
-        std::string param;               // "X", "Filter", ... (may be empty)
-        std::vector<std::string> args;   // tensor names
+        std::string param;              // "X", "Filter", ... (may be empty)
+        std::vector<std::string> args;  // tensor names
     };
     std::string type;
     std::vector<OpInput> inputs;
-    std::vector<std::string> outputs;    // result tensor names, in order
-    Json::Value attrs;                   // parsed attribute object
+    std::vector<std::string> outputs;  // result tensor names, in order
+    Json::Value attrs;                 // parsed attribute object
 };
 
 struct OcrProgram {
     std::vector<GraphOp> ops;
     std::map<std::string, int> varRanks;  // static logical rank per tensor
     std::map<std::string, std::vector<int64_t>> staticShapes;  // VarDesc dims
-    std::string feedInput;    // "x"
+    std::string feedInput;                                     // "x"
     std::string fetchOutput;  // "save_infer_model/scale_0.tmp_0"
     bool parse(const std::string& json, std::string* error);
 };
@@ -52,7 +53,7 @@ struct OcrProgram {
 /** Probe-only knobs (parity tests): truncate the program after op K and
  *  optionally print every op's output shape. Not part of the runtime. */
 struct OcrProbeOptions {
-    int fetchAt = -1;      // program-order op index (0-based)
+    int fetchAt = -1;  // program-order op index (0-based)
     bool dumpShapes = false;
 };
 
@@ -67,13 +68,53 @@ struct OcrProbeOptions {
 struct OcrBuildOptions {
     bool cpu_conv = false;
     bool blocked_island = false;
-    /** GPU-recognition-only direct convolution. The recognizer's direct
-     *  convolution and depthwise routes have the same decoded text as its
-     *  im2col path; detector convolutions intentionally remain im2col. */
+    /** GPU dense direct convolution for the recognizer (A/B knob, off in
+     *  production). Decoded text matches the im2col route, but the batched
+     *  rec graph measured slower (29.3 vs 25.7 ms, CUDA f32, 100 boxes) and
+     *  its fixture max|diff| is 2.3x larger (0.0139 vs 0.0059). */
     bool gpu_rec_direct_conv = false;
+    /** GPU depthwise convolutions evaluate directly for every graph role.
+     *  The depthwise kernel has no cross-channel reduction (9 products per
+     *  output in a fixed order), so unlike the dense direct route it cannot
+     *  move the DB threshold edges; it removes the K^2*OH*OW*C*N im2col
+     *  expansion that dominated the det graph (14 im2col launches, ~27 ms
+     *  per 2560x1440 frame on CUDA, mostly memory traffic). */
+    bool gpu_dw_direct_conv = false;
     /** Vulkan execution needs this to avoid the detector's unsupported direct
      *  convolution route (see the conv2d route note in ocr_runtime.cpp). */
     bool vk_single = false;
+    /** Dense conv GEMMs request GGML_PREC_F32. The affine folding scales the
+     *  conv weights by the batch-norm gain and cancels the folded mean in the
+     *  bias, so the GEMM partial sums grow by that gain while the layer
+     *  output does not; an f16 accumulator (Vulkan's default F16xF32
+     *  pipeline) keeps the enlarged absolute error through the cancellation
+     *  and the f32 fixture gates fail (rec 0.016, layout 0.022 vs 0.003 /
+     *  0.010 on CUDA, whose cuBLAS 16F path keeps f32 k-tile partials).
+     *  F32 accumulation restores CUDA-level numerics. Vulkan only: on CUDA
+     *  PREC_F32 drops to strict SGEMM with no tensor cores and the default
+     *  route already passes every gate. */
+    bool conv_gemm_f32acc = false;
+};
+
+/** One graph build's folded constants and their device mirrors. The pool
+ *  is created by OcrWeights::resetFoldPool, filled by buildGraph (batch-norm
+ *  mul/add, metadata scalars, shape constants) and mirrored to the device by
+ *  prepareGraph; it is owned jointly by the weights (current build) and by
+ *  every cached graph that was built against it, and freed with the last
+ *  owner. The members are the host pool, its zero-copy CPU buffer view, the
+ *  aligned per-tensor device mirror and the unaligned static-view copies. */
+struct OcrFoldPool {
+    OcrFoldPool() = default;
+    ~OcrFoldPool();
+    OcrFoldPool(const OcrFoldPool&) = delete;
+    OcrFoldPool& operator=(const OcrFoldPool&) = delete;
+
+    ggml_context* ctx = nullptr;                // host constants (data)
+    ggml_backend_buffer_t hostBuf = nullptr;    // CPU buffer view of ctx
+    ggml_context* mirrorCtx = nullptr;          // aligned mirror shapes
+    ggml_backend_buffer_t deviceBuf = nullptr;  // device mirror of ctx
+    ggml_context* viewMirrorCtx = nullptr;      // static-view copies
+    ggml_backend_buffer_t viewMirrorBuf = nullptr;
 };
 
 class OcrWeights {
@@ -86,8 +127,12 @@ public:
     /** Load a rec/det GGUF. The model files are small enough to keep the
      *  weight memory in the host pool (no_alloc=false), which lets the CPU
      *  path run directly and constant folding (batch-norm) read tensors
-     *  without a backend round-trip. */
-    bool load(const std::string& path, std::string* error);
+     *  without a backend round-trip. `foldAffine` runs foldAffineChains on
+     *  the parsed program (production default); probes that bisect against
+     *  the unfolded numpy reference by op index pass false. */
+    bool load(const std::string& path,
+              std::string* error,
+              bool foldAffine = true);
 
     const ggml_tensor* weight(const std::string& name) const;
 
@@ -121,10 +166,10 @@ public:
      *  metadata scalar chains): tensors created here carry real data. */
     ggml_context* constCtx = nullptr;
     std::map<std::string, const ggml_tensor*> tensors;
-    std::string role;                       // "det" | "rec"
+    std::string role;  // "det" | "rec"
     std::string arch;
-    std::vector<std::string> dictionary;    // rec: embedded vocabulary
-    std::vector<std::string> labels;        // layout: embedded class table
+    std::vector<std::string> dictionary;  // rec: embedded vocabulary
+    std::vector<std::string> labels;      // layout: embedded class table
     OcrProgram program;
     // q8_0 folded kernels: gguf tensor name -> original numpy dims.
     std::map<std::string, std::vector<int64_t>> reshapedDims;
@@ -132,13 +177,19 @@ public:
     // the host pools outlive the device copies).
     std::map<std::string, const ggml_tensor*> hostTensors;
 
-    /** Reset the per-build folded-constant pool. Every buildGraph emits
-     *  fresh fold constants (batch-norm statistics, metadata scalars);
-     *  without a reset the load-time pool fills up after a few frames
-     *  and the new tensors come back with null data. Call before each
-     *  buildGraph; the previous graph must already be computed or
-     *  discarded. */
+    /** Start a fresh folded-constant pool for the next buildGraph. Every
+     *  build emits its own fold constants (batch-norm statistics, metadata
+     *  scalars) and the pool, its host view and its device mirrors belong
+     *  to THAT graph: the pool is reference-counted (foldPool()) so a
+     *  graph cache can keep several built graphs alive at once, each
+     *  holding the pool it was built against. The previous pool is
+     *  released here only if no graph still holds it. Call before each
+     *  buildGraph. */
     void resetFoldPool();
+
+    /** The pool the next/last buildGraph emitted into; a graph cache entry
+     *  stores this handle for as long as its graph is alive. */
+    std::shared_ptr<OcrFoldPool> foldPool() const { return fold; }
 
     /** Mirror the CURRENT fold pool to a single device buffer (one bulk
      *  upload) and repoint every fold tensor at it. Without this the
@@ -169,17 +220,16 @@ public:
 
     /** Per-build fold pool (null until the first resetFoldPool); the
      *  builder routes folded constants there. */
-    ggml_context* foldContext() const { return foldCtx; }
+    ggml_context* foldContext() const { return fold ? fold->ctx : nullptr; }
 
 private:
+    /** Load-time IR rewrite: absorb the affine ops adjacent to every conv
+     *  (batch_norm, per-channel/scalar elementwise add/mul) into the conv's
+     *  Filter and Bias. See the definition for the algebra and gates. */
+    void foldAffineChains();
     ggml_backend_buffer_t hostMetaBuf = nullptr;
     ggml_backend_buffer_t hostConstBuf = nullptr;
-    ggml_context* foldCtx = nullptr;          // per-build constants
-    ggml_backend_buffer_t foldBuf = nullptr;  // host view for GPU frames
-    ggml_backend_buffer_t foldDeviceBuf = nullptr;  // device mirror of foldCtx
-    ggml_context* foldMirrorCtx = nullptr;  // aligned mirror tensor shapes
-    ggml_context* viewMirrorCtx = nullptr;  // cached static-view copies
-    ggml_backend_buffer_t viewMirrorBuf = nullptr;
+    std::shared_ptr<OcrFoldPool> fold;  // current build's constants
     ggml_context* deviceCtx = nullptr;
     ggml_backend_buffer_t deviceBuf = nullptr;
 
@@ -198,24 +248,89 @@ public:
 /** Build the ggml graph for the loaded program. `input` must be laid out
  *  as ne={W,H,3,N}. Returns the fetch tensor. CPU-only folding of the
  *  metadata ops (shape/slice/fill_constant) is performed inline. */
-ggml_tensor* buildGraph(ggml_context* ctx, const OcrWeights& weights,
-                        ggml_tensor* input, std::string* error,
+ggml_tensor* buildGraph(ggml_context* ctx,
+                        const OcrWeights& weights,
+                        ggml_tensor* input,
+                        std::string* error,
                         const OcrProbeOptions* probe = nullptr,
                         std::vector<ggml_tensor*>* fetchList = nullptr,
                         const OcrBuildOptions* options = nullptr);
 
+/** Where an OCR graph executes and how it is allocated. One owner for the
+ *  CPU / mixed-sched / single-device decision so the production session
+ *  (ocr_capi) and the fixture probe (test_ocr_runtime) run the SAME graph:
+ *  a probe that allocates through a different route measures a graph that
+ *  never ships (and, on Vulkan, faults on host-buffered views). */
+struct OcrExecPlan {
+    ggml_backend_t gpu = nullptr;  // null for a CPU session
+    ggml_backend_t cpu = nullptr;  // session CPU backend or GPU secondary
+    bool cpuExecution = false;     // every node runs on `cpu`
+    bool singleBackend = false;    // whole graph in one device gallocr
+    bool vkSingle = false;         // Vulkan conv-route restriction
+};
+
+/** CUDA/Vulkan: single device. Other GPUs: mixed sched when the weights
+ *  tagging gate is open, else CPU execution. CPU backend: CPU execution. */
+OcrExecPlan makeExecPlan(ggml_backend_t gpu,
+                         ggml_backend_t cpu,
+                         bool schedGpuTagging);
+
+/** Production build options for the plan (conv routes, Vulkan flag,
+ *  blocked island on AVX-512 CPU hosts). */
+OcrBuildOptions execBuildOptions(const OcrExecPlan& plan);
+
+/** Allocation state of one prepared graph. */
+struct OcrGraphExec {
+    ggml_gallocr_t alloc = nullptr;
+    ggml_backend_sched_t sched = nullptr;
+    void free();
+};
+
+/** After buildGraph: realize host/device weights and the fold pool as the
+ *  plan requires, build the forward graph over `outputs`, allocate it and
+ *  (single device) retarget leafs and rebind every static view to device
+ *  storage. On failure `exec` is freed and `error` set. */
+bool prepareGraph(OcrWeights& weights,
+                  ggml_context* ctx,
+                  const OcrExecPlan& plan,
+                  const std::vector<ggml_tensor*>& outputs,
+                  ggml_cgraph** graph,
+                  OcrGraphExec& exec,
+                  std::string& error);
+
+/** Run a prepared graph on the backend the plan selected. */
+void computeGraph(const OcrExecPlan& plan,
+                  const OcrGraphExec& exec,
+                  ggml_cgraph* graph);
+
 /** CTC greedy decode over a (T, vocab) probability row set. Index 0 is the
  *  CTC blank, the last index is the word separator; repeated labels
  *  collapse. Returns UTF-8 text and the mean non-blank score. */
-std::string ctcGreedyDecode(const float* probs, int timeSteps, int vocab,
+std::string ctcGreedyDecode(const float* probs,
+                            int timeSteps,
+                            int vocab,
                             const std::vector<std::string>& dictionary,
                             float* meanScore);
+
+/** Same decode over a pre-reduced row set: `bestIndex[t]` is the argmax
+ *  class and `bestProb[t]` its probability (the two scalars the decoder
+ *  actually consumes), as produced by the in-graph argmax/get_rows head on
+ *  GPU sessions. Shares the collapse/dictionary logic with ctcGreedyDecode. */
+std::string ctcGreedyDecodeIndexed(const int32_t* bestIndex,
+                                   const float* bestProb,
+                                   int timeSteps,
+                                   int vocab,
+                                   const std::vector<std::string>& dictionary,
+                                   float* meanScore);
 
 /** Recognition preprocessing: resize the input to height 48 preserving
  *  aspect (clamped to `targetWidth`), normalize with the PP-OCR ImageNet
  *  statistics, and emit an NCHW float buffer. */
-std::vector<float> preprocessRec(const unsigned char* rgba, int width,
-                                 int height, int channels, int targetWidth,
+std::vector<float> preprocessRec(const unsigned char* rgba,
+                                 int width,
+                                 int height,
+                                 int channels,
+                                 int targetWidth,
                                  int* outW);
 }  // namespace ocr
 }  // namespace aicore

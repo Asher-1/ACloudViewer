@@ -6,4 +6,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/RFDetrLiveInferWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/RFDetrLiveWidget.h
         ${CMAKE_CURRENT_LIST_DIR}/RFDetrDialog.h
+        ${CMAKE_CURRENT_LIST_DIR}/RFDetrBatchCommand.h
 )

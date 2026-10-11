@@ -172,18 +172,28 @@ void cv_resize_linear_u8(
     // of the source). Large outputs (det pre-process resizes 736-row images
     // every frame) fill in parallel; small crops (rec, 48 rows) stay
     // serial — the per-call thread pool costs more than the fill itself.
+    // Source addressing is hoisted out of the pixel loop (see Image::row):
+    // same bytes as channel(x, y, c), without the per-sample branches.
+    const int scn = src.channels;
+    int cmap[4] = {0, 0, 0, 0};
+    for (int c = 0; c < cn && c < 4; ++c) cmap[c] = src.channel_index(c);
     auto fillRow = [&](int dy) {
         const int sy0 = yofs[dy], sy1 = std::min(sy0 + 1, sh - 1);
         const int b0 = ibeta[dy * 2], b1 = ibeta[dy * 2 + 1];
+        const uint8_t* srow0 = src.row(sy0);
+        const uint8_t* srow1 = src.row(sy1);
         uint8_t* drow = dst + (size_t)dy * dw * cn;
         for (int dx = 0; dx < dw; ++dx) {
             const int sx = xofs[dx], sx1 = std::min(sx + 1, sw - 1);
             const int a0 = ialpha[dx * 2], a1 = ialpha[dx * 2 + 1];
+            const uint8_t* s00 = srow0 + (size_t)sx * scn;
+            const uint8_t* s01 = srow0 + (size_t)sx1 * scn;
+            const uint8_t* s10 = srow1 + (size_t)sx * scn;
+            const uint8_t* s11 = srow1 + (size_t)sx1 * scn;
             for (int c = 0; c < cn; ++c) {
-                const int p0 = src.channel(sx, sy0, c) * a0 +
-                               src.channel(sx1, sy0, c) * a1;
-                const int p1 = src.channel(sx, sy1, c) * a0 +
-                               src.channel(sx1, sy1, c) * a1;
+                const int ci = cmap[c];
+                const int p0 = s00[ci] * a0 + s01[ci] * a1;
+                const int p1 = s10[ci] * a0 + s11[ci] * a1;
                 int v = ((int64_t)p0 * b0 + (int64_t)p1 * b1 + (1 << 21)) >> 22;
                 v = v < 0 ? 0 : (v > 255 ? 255 : v);
                 drow[dx * cn + c] = (uint8_t)v;

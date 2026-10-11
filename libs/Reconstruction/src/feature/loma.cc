@@ -1,4 +1,14 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "feature/loma.h"
+
+#include <sstream>
+#include <stdexcept>
 
 #include <algorithm>
 #include <chrono>
@@ -12,9 +22,8 @@
 
 #include "aicore/asset_digests.h"
 #include "aicore/loma_capi.h"
-#include "geometry/pose_prior.h"
-#include "scene/database.h"
-#include "scene/rig.h"
+#include "feature/utils.h"
+#include "util/logging.h"
 #include "util/download.h"
 #include "util/misc.h"
 
@@ -194,7 +203,7 @@ bool ExtractLomaFeaturesWithModels(const Bitmap& bitmap,
                                    aicore_loma_detector_ctx* detector,
                                    aicore_loma_descriptor_ctx* descriptor,
                                    FeatureKeypoints* keypoints,
-                                   FeatureDescriptorsFloat* descriptors) {
+                                   FeatureDescriptorsFloatData* descriptors) {
     CHECK_NOTNULL(keypoints);
     CHECK_NOTNULL(descriptors);
     if (detector == nullptr || descriptor == nullptr || bitmap.Width() <= 0 ||
@@ -224,7 +233,7 @@ bool ExtractLomaFeaturesWithModels(const Bitmap& bitmap,
                                        bitmap.Width(), bitmap.Height(),
                                        &described) == 0;
     if (describe_ok) {
-        Eigen::Map<const FeatureDescriptorsFloat> mapped(
+        Eigen::Map<const FeatureDescriptorsFloatData> mapped(
                 described.descriptors, described.count,
                 described.descriptor_dim);
         *descriptors = mapped;
@@ -265,169 +274,206 @@ std::string DefaultLomaModelPath(const aicore_loma_model_variant variant) {
     return model_path.string();
 }
 
-aicore_loma_model_variant DescriptorVariant(const FeatureDescriptorType type) {
-    return type == FeatureDescriptorType::kLomaB128
-                   ? AICORE_LOMA_MODEL_VARIANT_DEDODE_B
-                   : AICORE_LOMA_MODEL_VARIANT_DEDODE_G;
+aicore_loma_model_variant LomaDescriptorVariant(const FeatureExtractorType type) {
+    switch (type) {
+        case FeatureExtractorType::LOMA_B128:
+            return AICORE_LOMA_MODEL_VARIANT_DEDODE_B;
+        case FeatureExtractorType::LOMA_B:
+            return AICORE_LOMA_MODEL_VARIANT_DEDODE_G;
+        default:
+            LOG_FATAL_THROW(std::runtime_error)
+                    << "Not a LoMa feature extractor type: " << type;
+    }
+    return AICORE_LOMA_MODEL_VARIANT_DEDODE_G;
 }
 
-aicore_loma_model_variant MatcherVariant(const LomaMatcherVariant variant) {
-    switch (variant) {
-        case LomaMatcherVariant::kB128:
-            return AICORE_LOMA_MODEL_VARIANT_MATCHER_B128;
-        case LomaMatcherVariant::kR:
-            return AICORE_LOMA_MODEL_VARIANT_MATCHER_R;
-        case LomaMatcherVariant::kL:
-            return AICORE_LOMA_MODEL_VARIANT_MATCHER_L;
-        case LomaMatcherVariant::kG:
-            return AICORE_LOMA_MODEL_VARIANT_MATCHER_G;
-        case LomaMatcherVariant::kB:
+aicore_loma_model_variant LomaMatcherVariant(const FeatureMatcherType type) {
+    switch (type) {
+        case FeatureMatcherType::LOMA_B:
             return AICORE_LOMA_MODEL_VARIANT_MATCHER_B;
+        case FeatureMatcherType::LOMA_B128:
+            return AICORE_LOMA_MODEL_VARIANT_MATCHER_B128;
+        case FeatureMatcherType::LOMA_R:
+            return AICORE_LOMA_MODEL_VARIANT_MATCHER_R;
+        case FeatureMatcherType::LOMA_L:
+            return AICORE_LOMA_MODEL_VARIANT_MATCHER_L;
+        case FeatureMatcherType::LOMA_G:
+            return AICORE_LOMA_MODEL_VARIANT_MATCHER_G;
+        default:
+            LOG_FATAL_THROW(std::runtime_error)
+                    << "Not a dedicated LoMa matcher type: " << type;
     }
     return AICORE_LOMA_MODEL_VARIANT_MATCHER_B;
 }
 
-void ResolveDefaultLomaModelPaths(LomaExtractionOptions* options) {
+namespace {
+
+std::string& DescriptorModelPath(const FeatureExtractorType type,
+                                 LomaExtractionOptions* options) {
+    return type == FeatureExtractorType::LOMA_B128
+                   ? options->descriptor_b128_model_path
+                   : options->descriptor_model_path;
+}
+
+std::string& MatcherModelPath(const FeatureMatcherType type,
+                              LomaMatchingOptions* options) {
+    switch (type) {
+        case FeatureMatcherType::LOMA_B128:
+            return options->b128.model_path;
+        case FeatureMatcherType::LOMA_R:
+            return options->r.model_path;
+        case FeatureMatcherType::LOMA_L:
+            return options->l.model_path;
+        case FeatureMatcherType::LOMA_G:
+            return options->g.model_path;
+        default:
+            return options->b.model_path;
+    }
+}
+
+}  // namespace
+
+void ResolveDefaultLomaModelPaths(const FeatureExtractorType type,
+                                  LomaExtractionOptions* options) {
     CHECK_NOTNULL(options);
     if (options->detector_model_path.empty()) {
         options->detector_model_path =
                 DefaultLomaModelPath(AICORE_LOMA_MODEL_ROLE_DETECTOR);
     }
-    if (options->descriptor_model_path.empty()) {
-        options->descriptor_model_path = DefaultLomaModelPath(
-                DescriptorVariant(options->descriptor_type));
+    std::string& descriptor_path = DescriptorModelPath(type, options);
+    if (descriptor_path.empty()) {
+        descriptor_path = DefaultLomaModelPath(LomaDescriptorVariant(type));
     }
 }
 
-void ResolveDefaultLomaModelPaths(LomaMatchingOptions* options) {
+void ResolveDefaultLomaModelPaths(const FeatureMatcherType type,
+                                  LomaMatchingOptions* options) {
     CHECK_NOTNULL(options);
-    if (options->matcher_model_path.empty()) {
-        options->matcher_model_path =
-                DefaultLomaModelPath(MatcherVariant(options->matcher_variant));
+    if (type == FeatureMatcherType::LOMA_BRUTEFORCE) {
+        return;
+    }
+    std::string& matcher_path = MatcherModelPath(type, options);
+    if (matcher_path.empty()) {
+        matcher_path = DefaultLomaModelPath(LomaMatcherVariant(type));
     }
 }
 
-bool ProvisionDefaultLomaModels(LomaExtractionOptions* options) {
+bool ProvisionDefaultLomaModels(const FeatureExtractorType type,
+                                LomaExtractionOptions* options) {
     CHECK_NOTNULL(options);
+    const aicore_loma_model_variant descriptor_variant =
+            LomaDescriptorVariant(type);
     const std::string default_detector_path =
             DefaultLomaModelPath(AICORE_LOMA_MODEL_ROLE_DETECTOR);
-    const std::string default_descriptor_path = DefaultLomaModelPath(
-            DescriptorVariant(options->descriptor_type));
-    ResolveDefaultLomaModelPaths(options);
+    const std::string default_descriptor_path =
+            DefaultLomaModelPath(descriptor_variant);
+    ResolveDefaultLomaModelPaths(type, options);
     if (options->detector_model_path == default_detector_path &&
         !EnsureCachedLomaModel(
                 aicore_loma_model_by_role(AICORE_LOMA_MODEL_ROLE_DETECTOR),
                 &options->detector_model_path)) {
         return false;
     }
-    if (options->descriptor_model_path == default_descriptor_path &&
-        !EnsureCachedLomaModel(
-                aicore_loma_model_by_variant(
-                        DescriptorVariant(options->descriptor_type)),
-                &options->descriptor_model_path)) {
+    std::string& descriptor_path = DescriptorModelPath(type, options);
+    if (descriptor_path == default_descriptor_path &&
+        !EnsureCachedLomaModel(aicore_loma_model_by_variant(descriptor_variant),
+                               &descriptor_path)) {
         return false;
     }
     return true;
 }
 
-bool ProvisionDefaultLomaModels(LomaMatchingOptions* options) {
+bool ProvisionDefaultLomaModels(const FeatureMatcherType type,
+                                LomaMatchingOptions* options) {
     CHECK_NOTNULL(options);
-    const std::string default_matcher_path =
-            DefaultLomaModelPath(MatcherVariant(options->matcher_variant));
-    ResolveDefaultLomaModelPaths(options);
-    return options->matcher_model_path != default_matcher_path ||
-           EnsureCachedLomaModel(
-                   aicore_loma_model_by_variant(MatcherVariant(options->matcher_variant)),
-                   &options->matcher_model_path);
-}
-
-bool ParseLomaMatcherVariant(const std::string& value,
-                             LomaMatcherVariant* variant) {
-    CHECK_NOTNULL(variant);
-    if (value == "b") {
-        *variant = LomaMatcherVariant::kB;
-    } else if (value == "b128") {
-        *variant = LomaMatcherVariant::kB128;
-    } else if (value == "r") {
-        *variant = LomaMatcherVariant::kR;
-    } else if (value == "l") {
-        *variant = LomaMatcherVariant::kL;
-    } else if (value == "g") {
-        *variant = LomaMatcherVariant::kG;
-    } else {
-        return false;
+    if (type == FeatureMatcherType::LOMA_BRUTEFORCE) {
+        return true;
     }
-    return true;
+    const aicore_loma_model_variant matcher_variant = LomaMatcherVariant(type);
+    const std::string default_matcher_path =
+            DefaultLomaModelPath(matcher_variant);
+    ResolveDefaultLomaModelPaths(type, options);
+    std::string& matcher_path = MatcherModelPath(type, options);
+    return matcher_path != default_matcher_path ||
+           EnsureCachedLomaModel(aicore_loma_model_by_variant(matcher_variant),
+                                 &matcher_path);
 }
 
 bool LomaExtractionOptions::Check() const {
     CHECK_OPTION_GT(max_num_features, 0);
-    CHECK_OPTION_GE(min_score, 0.0f);
-    CHECK_OPTION_LE(min_score, 1.0f);
-    CHECK_OPTION(!detector_model_path.empty());
-    CHECK_OPTION(!descriptor_model_path.empty());
+    CHECK_OPTION_GE(min_score, 0.0);
+    CHECK_OPTION_LE(min_score, 1.0);
     return true;
 }
 
 bool LomaMatchingOptions::Check() const {
-    CHECK_OPTION_GE(min_score, 0.0f);
-    CHECK_OPTION_LE(min_score, 1.0f);
-    CHECK_OPTION(!matcher_model_path.empty());
-    return true;
+    CHECK_OPTION_GE(min_score, 0.0);
+    CHECK_OPTION_LE(min_score, 1.0);
+    return brute_force.Check();
 }
 
-bool ExtractLomaFeatures(const LomaExtractionOptions& options,
-                         const Bitmap& bitmap,
-                         FeatureKeypoints* keypoints,
-                         FeatureDescriptorsFloat* descriptors) {
-    LomaExtractionOptions resolved_options = options;
-    if (!ProvisionDefaultLomaModels(&resolved_options) ||
-        !resolved_options.Check() || bitmap.Width() <= 0 ||
-        bitmap.Height() <= 0) {
+namespace {
+
+bool LoadResolvedLomaFeatureModels(const FeatureExtractorType type,
+                                   const LomaExtractionOptions& options,
+                                   aicore_loma_detector_ctx** detector,
+                                   aicore_loma_descriptor_ctx** descriptor) {
+    LomaExtractionOptions resolved = options;
+    if (!ProvisionDefaultLomaModels(type, &resolved) || !resolved.Check()) {
         return false;
     }
-    aicore_loma_detector_ctx* detector = nullptr;
-    aicore_loma_descriptor_ctx* descriptor = nullptr;
-    if (!LoadLomaFeatureModels(resolved_options, &detector, &descriptor)) {
+    // The internal loader reads descriptor_model_path; point it at the
+    // descriptor the extractor type consumes.
+    resolved.descriptor_model_path = DescriptorModelPath(type, &resolved);
+    if (resolved.detector_model_path.empty() ||
+        resolved.descriptor_model_path.empty()) {
         return false;
     }
-    const bool describe_ok = ExtractLomaFeaturesWithModels(
-            bitmap, detector, descriptor, keypoints, descriptors);
-    aicore_loma_detector_free(detector);
-    aicore_loma_descriptor_free(descriptor);
-    return describe_ok;
+    return LoadLomaFeatureModels(resolved, detector, descriptor);
 }
 
-bool MatchLomaFeatures(const LomaMatchingOptions& options,
-                       const FeatureKeypoints& keypoints1,
-                       const FeatureDescriptorsFloat& descriptors1,
-                       const FeatureKeypoints& keypoints2,
-                       const FeatureDescriptorsFloat& descriptors2,
-                       int image_width1,
-                       int image_height1,
-                       int image_width2,
-                       int image_height2,
-                       FeatureMatches* matches) {
+aicore_loma_matcher_ctx* LoadResolvedLomaMatcher(
+        const FeatureMatcherType type, const LomaMatchingOptions& options) {
+    LomaMatchingOptions resolved = options;
+    if (!ProvisionDefaultLomaModels(type, &resolved) || !resolved.Check()) {
+        return nullptr;
+    }
+    const std::string& model_path = MatcherModelPath(type, &resolved);
+    if (model_path.empty()) {
+        return nullptr;
+    }
+    auto matcher_options = aicore_loma_matcher_options_new();
+    aicore_loma_matcher_options_set_device(matcher_options,
+                                           resolved.device.c_str());
+    aicore_loma_matcher_options_set_min_score(matcher_options,
+                                              resolved.min_score);
+    auto matcher = aicore_loma_matcher_load(model_path.c_str(), matcher_options);
+    aicore_loma_matcher_options_free(matcher_options);
+    if (matcher == nullptr || !aicore_loma_matcher_is_ready(matcher)) {
+        aicore_loma_matcher_free(matcher);
+        return nullptr;
+    }
+    return matcher;
+}
+
+bool RunLomaMatcher(aicore_loma_matcher_ctx* matcher,
+                    const FeatureKeypoints& keypoints1,
+                    const FeatureDescriptorsFloatData& descriptors1,
+                    const FeatureKeypoints& keypoints2,
+                    const FeatureDescriptorsFloatData& descriptors2,
+                    const int image_width1,
+                    const int image_height1,
+                    const int image_width2,
+                    const int image_height2,
+                    FeatureMatches* matches) {
     matches->clear();
-    LomaMatchingOptions resolved_options = options;
-    if (!ProvisionDefaultLomaModels(&resolved_options) ||
-        !resolved_options.Check() ||
-        descriptors1.rows() != static_cast<Eigen::Index>(keypoints1.size()) ||
+    if (descriptors1.rows() != static_cast<Eigen::Index>(keypoints1.size()) ||
         descriptors2.rows() != static_cast<Eigen::Index>(keypoints2.size()) ||
         descriptors1.cols() != descriptors2.cols()) {
         return false;
     }
-    auto matcher_options = aicore_loma_matcher_options_new();
-    aicore_loma_matcher_options_set_device(matcher_options,
-                                           resolved_options.device.c_str());
-    aicore_loma_matcher_options_set_min_score(matcher_options,
-                                              resolved_options.min_score);
-    auto matcher = aicore_loma_matcher_load(
-            resolved_options.matcher_model_path.c_str(), matcher_options);
-    aicore_loma_matcher_options_free(matcher_options);
-    if (matcher == nullptr || !aicore_loma_matcher_is_ready(matcher)) {
-        aicore_loma_matcher_free(matcher);
-        return false;
+    if (keypoints1.empty() || keypoints2.empty()) {
+        return true;
     }
     std::vector<aicore_loma_keypoint> kp1(keypoints1.size()),
             kp2(keypoints2.size());
@@ -455,68 +501,124 @@ bool MatchLomaFeatures(const LomaMatchingOptions& options,
         }
     }
     aicore_loma_free_matches(raw_matches);
-    aicore_loma_matcher_free(matcher);
     return ok;
 }
 
-LomaFeatureExtractor::LomaFeatureExtractor(
-        const ImageReaderOptions& reader_options,
-        const LomaExtractionOptions& loma_options)
-    : reader_options_(reader_options), loma_options_(loma_options) {
-    CHECK(reader_options_.Check());
-    CHECK(ProvisionDefaultLomaModels(&loma_options_));
-    CHECK(loma_options_.Check());
+class LomaFeatureExtractorShell : public FeatureExtractor {
+public:
+    explicit LomaFeatureExtractorShell(const FeatureExtractionOptions& options)
+        : options_(options) {
+        THROW_CHECK_NOTNULL(options_.loma);
+        if (!LoadResolvedLomaFeatureModels(options_.type, *options_.loma,
+                                           &detector_, &descriptor_)) {
+            throw std::runtime_error(
+                    "LoMa extractor model provisioning or initialization "
+                    "failed");
+        }
+    }
+
+    ~LomaFeatureExtractorShell() override {
+        aicore_loma_detector_free(detector_);
+        aicore_loma_descriptor_free(descriptor_);
+    }
+
+    bool Extract(const Bitmap& bitmap,
+                 FeatureKeypoints* keypoints,
+                 FeatureDescriptors* descriptors) override {
+        THROW_CHECK_NOTNULL(keypoints);
+        THROW_CHECK_NOTNULL(descriptors);
+        descriptors->type = options_.type;
+        descriptors->data.resize(0, 0);
+        FeatureDescriptorsFloat descriptors_float(
+                options_.type, FeatureDescriptorsFloatData());
+        if (bitmap.Width() <= 0 || bitmap.Height() <= 0 ||
+            !ExtractLomaFeaturesWithModels(bitmap, detector_, descriptor_,
+                                           keypoints, &descriptors_float.data)) {
+            return false;
+        }
+        *descriptors = descriptors_float.ToBytes();
+        return true;
+    }
+
+private:
+    const FeatureExtractionOptions options_;
+    aicore_loma_detector_ctx* detector_ = nullptr;
+    aicore_loma_descriptor_ctx* descriptor_ = nullptr;
+};
+
+class LomaFeatureMatcherShell : public FeatureMatcher {
+public:
+    explicit LomaFeatureMatcherShell(const FeatureMatchingOptions& options)
+        : options_(options) {
+        THROW_CHECK_NOTNULL(options_.loma);
+        THROW_CHECK(options_.loma->Check());
+        matcher_ = LoadResolvedLomaMatcher(options_.type, *options_.loma);
+        if (matcher_ == nullptr) {
+            throw std::runtime_error(
+                    "LoMa matcher model provisioning or initialization "
+                    "failed");
+        }
+    }
+
+    ~LomaFeatureMatcherShell() override { aicore_loma_matcher_free(matcher_); }
+
+    void Match(const Image& image1,
+               const Image& image2,
+               FeatureMatches* matches) override {
+        THROW_CHECK_NOTNULL(matches);
+        THROW_CHECK_NOTNULL(image1.keypoints);
+        THROW_CHECK_NOTNULL(image2.keypoints);
+        THROW_CHECK_NOTNULL(image1.descriptors);
+        THROW_CHECK_NOTNULL(image2.descriptors);
+        const FeatureDescriptorsFloat descriptors1 =
+                image1.descriptors->ToFloat();
+        const FeatureDescriptorsFloat descriptors2 =
+                image2.descriptors->ToFloat();
+        THROW_CHECK_NOTNULL(image1.camera);
+        THROW_CHECK_NOTNULL(image2.camera);
+        THROW_CHECK(RunLomaMatcher(
+                matcher_, *image1.keypoints, descriptors1.data,
+                *image2.keypoints, descriptors2.data,
+                static_cast<int>(image1.camera->Width()),
+                static_cast<int>(image1.camera->Height()),
+                static_cast<int>(image2.camera->Width()),
+                static_cast<int>(image2.camera->Height()), matches));
+        if (options_.max_num_matches > 0 &&
+            matches->size() > static_cast<size_t>(options_.max_num_matches)) {
+            matches->resize(options_.max_num_matches);
+        }
+    }
+
+    void MatchGuided(double,
+                     const Image&,
+                     const Image&,
+                     TwoViewGeometry*) override {
+        throw std::runtime_error(
+                "Guided matching is not supported by the LoMa matcher");
+    }
+
+private:
+    const FeatureMatchingOptions options_;
+    aicore_loma_matcher_ctx* matcher_ = nullptr;
+};
+
+}  // namespace
+
+std::unique_ptr<FeatureExtractor> CreateLomaFeatureExtractor(
+        const FeatureExtractionOptions& options) {
+    return std::make_unique<LomaFeatureExtractorShell>(options);
 }
 
-void LomaFeatureExtractor::Run() {
-    succeeded_ = false;
-    auto database = Database::Open(reader_options_.database_path);
-    ImageReader reader(reader_options_, database.get());
-    PrintHeading1("LoMa feature extraction");
-    aicore_loma_detector_ctx* detector = nullptr;
-    aicore_loma_descriptor_ctx* descriptor = nullptr;
-    if (!LoadLomaFeatureModels(loma_options_, &detector, &descriptor)) {
-        std::cerr << "ERROR: LoMa model load failed (detector="
-                  << loma_options_.detector_model_path
-                  << ", descriptor=" << loma_options_.descriptor_model_path
-                  << ")" << std::endl;
-        return;
+std::unique_ptr<FeatureMatcher> CreateLomaFeatureMatcher(
+        const FeatureMatchingOptions& options) {
+    THROW_CHECK_NOTNULL(options.loma);
+    if (options.type == FeatureMatcherType::LOMA_BRUTEFORCE) {
+        // DeDoDe descriptors are not unit-norm; normalize before cosine.
+        return CreateBruteForceGGMLFeatureMatcher(
+                options, options.loma->brute_force,
+                /*normalize_descriptors=*/true);
     }
-    succeeded_ = true;
-    while (reader.NextIndex() < reader.NumImages() && !IsStopped()) {
-        Rig rig;
-        Camera camera;
-        Image image;
-        PosePrior pose_prior;
-        Bitmap bitmap;
-        Bitmap mask;
-        const auto status =
-            reader.Next(&rig, &camera, &image, &pose_prior, &bitmap, &mask);
-        if (status == ImageReader::Status::IMAGE_EXISTS) continue;
-        if (status != ImageReader::Status::SUCCESS) {
-            std::cerr << "ERROR: LoMa could not read " << image.Name()
-                      << std::endl;
-            succeeded_ = false;
-            continue;
-        }
-        FeatureKeypoints keypoints;
-        FeatureDescriptorsFloat descriptors;
-        if (!ExtractLomaFeaturesWithModels(bitmap, detector, descriptor,
-                                           &keypoints, &descriptors)) {
-            std::cerr << "ERROR: LoMa extraction failed for " << image.Name()
-                      << std::endl;
-            succeeded_ = false;
-            continue;
-        }
-        DatabaseTransaction transaction(database.get());
-        if (image.ImageId() == kInvalidImageId)
-            image.SetImageId(database->WriteImage(image));
-        database->WriteKeypoints(image.ImageId(), keypoints);
-        database->WriteFloatDescriptors(image.ImageId(), descriptors,
-                                        loma_options_.descriptor_type);
-    }
-    aicore_loma_detector_free(detector);
-    aicore_loma_descriptor_free(descriptor);
+    return std::make_unique<LomaFeatureMatcherShell>(options);
 }
 
 }  // namespace colmap

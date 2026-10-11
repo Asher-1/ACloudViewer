@@ -17,6 +17,7 @@ Adaptations to the fork pybind surface:
   until that task lands the factory throws at create time, mirroring
   upstream's ONNX-disabled behavior.
 """
+import numpy as np
 import pytest
 
 
@@ -99,6 +100,15 @@ def test_feature_matching_options_check_loma_resolves_defaults(recon):
 def test_feature_matcher_create(recon):
     matcher = recon.FeatureMatcher.create(recon.FeatureMatchingOptions())
     assert matcher is not None
+
+
+def test_feature_matcher_match_lends_typed_descriptors(recon, feature):
+    descriptors = feature.FeatureDescriptors()
+    descriptors.type = recon.FeatureExtractorType.SIFT
+    descriptors.data = np.zeros((2, 128), dtype=np.uint8)
+    matcher = recon.FeatureMatcher.create(recon.FeatureMatchingOptions())
+    matches = matcher.match([], descriptors, [], descriptors)
+    assert matches is not None
 
 
 def test_feature_matcher_create_aliked_registered(recon):

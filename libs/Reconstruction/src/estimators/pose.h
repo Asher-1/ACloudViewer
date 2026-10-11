@@ -81,13 +81,15 @@ struct AbsolutePoseRefinementOptions {
     double loss_function_scale = 1.0;
 
     // Whether to refine the focal length parameter group.
-    bool refine_focal_length = true;
+    // Upstream parity (6b59bb74 estimators/pose.h): the estimator defaults
+    // are conservative; the incremental mapper sets all three explicitly.
+    bool refine_focal_length = false;
 
     // Whether to refine the extra parameter group.
-    bool refine_extra_params = true;
+    bool refine_extra_params = false;
 
     // Whether to print final summary.
-    bool print_summary = true;
+    bool print_summary = false;
 
     void Check() const {
         CHECK_GE(gradient_tolerance, 0.0);

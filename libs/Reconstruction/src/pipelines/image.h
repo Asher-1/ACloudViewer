@@ -38,8 +38,8 @@ int RegisterImage(
         const std::string& database_path,
         const std::string& input_path,
         const std::string& output_path,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options =
-                colmap::IncrementalMapperOptions());
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options =
+                colmap::IncrementalPipelineOptions());
 
 int UndistortImage(const std::string& image_path,
                    const std::string& input_path,

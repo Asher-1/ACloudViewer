@@ -17,6 +17,7 @@
 #include <cstring>
 
 #include "aicore/map_anything_capi.h"
+#include "common/capi_utils.hpp"
 #include "map_anything_common.hpp"
 
 namespace map_anything {
@@ -249,7 +250,9 @@ static bool preprocess_official(std::vector<ImageBuf>& ims,
     std::vector<Plane> planes;
 
     for (ImageBuf& im : ims) {
-        crop_to_supported_aspect(im);
+        // load_and_preprocess_images_square pads any aspect to the square
+        // and never crops; the aspect crop belongs to the other loaders.
+        if (mode != "square") crop_to_supported_aspect(im);
 
         const double ar = (double)im.h / (double)std::max(im.w, 1);
         // official _balanced_target_shape: w_patches = round(sqrt(T/ar)),
@@ -284,12 +287,15 @@ static bool preprocess_official(std::vector<ImageBuf>& ims,
         }
 
         if (mode == "square") {
-            // Official VGGT load_and_preprocess_images_square: center-pad
-            // the source to a square canvas (white) first, then resize the
-            // whole square to (R, R). The valid content rect keeps the
-            // original aspect centered in the square.
+            // Official VGGT load_and_preprocess_images_square: paste the
+            // source centered on a BLACK square canvas (Image.new("RGB",
+            // (max_dim, max_dim), (0, 0, 0))), then resize the whole square
+            // to (R, R). The valid content rect keeps the original aspect
+            // centered in the square. (demo_colmap loads at 1024 and
+            // bilinearly re-samples to 518; this resizes once, straight to
+            // R.)
             const int side = std::max(im.w, im.h);
-            std::vector<unsigned char> sq((size_t)side * side * 3, 255);
+            std::vector<unsigned char> sq((size_t)side * side * 3, 0);
             const int ox = (side - im.w) / 2, oy = (side - im.h) / 2;
             for (int y = 0; y < im.h; ++y) {
                 std::memcpy(sq.data() + ((size_t)(oy + y) * side + ox) * 3,
@@ -335,7 +341,9 @@ static bool preprocess_official(std::vector<ImageBuf>& ims,
         for (size_t i = 0; i < pl.px.size(); i++) pl.px[i] = out8[i] / 255.0f;
         planes.push_back(std::move(pl));
     }
-    if (valid_sizes != nullptr) {
+    // square already recorded each view's letterboxed content rect; the
+    // plane itself is the full (R, R) canvas.
+    if (valid_sizes != nullptr && mode != "square") {
         valid_sizes->clear();
         valid_sizes->reserve(planes.size());
         for (const auto& pl : planes) valid_sizes->emplace_back(pl.w, pl.h);
@@ -379,66 +387,16 @@ static bool preprocess_official(std::vector<ImageBuf>& ims,
 }
 
 // Convert one borrowed view (RGB8/RGBA8/GRAY8/BGR8/BGRA8, arbitrary stride)
-// into a packed RGB8 ImageBuf.
+// into a packed RGB8 ImageBuf through the shared AICore view converter (the
+// one owner of format/stride semantics; it rejects a short stride).
 static bool view_to_rgb(const aicore_image_view& v, ImageBuf& im) {
-    if (!v.data || v.width <= 0 || v.height <= 0) {
-        log_error("image view has no data or non-positive dimensions");
+    if (!aicore::capi::image_view_to_packed_rgb(v, im.px)) {
+        log_error("invalid image view (format %d, %dx%d, stride %zu)",
+                  (int)v.format, v.width, v.height, v.row_stride_bytes);
         return false;
     }
     im.w = v.width;
     im.h = v.height;
-    im.px.resize((size_t)v.width * v.height * 3);
-    const int w = v.width, h = v.height;
-    switch (v.format) {
-        case AICORE_IMAGE_RGB8:
-            for (int y = 0; y < h; y++)
-                memcpy(&im.px[(size_t)y * w * 3],
-                       v.data + (size_t)y * v.row_stride_bytes, (size_t)w * 3);
-            break;
-        case AICORE_IMAGE_RGBA8:
-            for (int y = 0; y < h; y++) {
-                const uint8_t* row = v.data + (size_t)y * v.row_stride_bytes;
-                for (int x = 0; x < w; x++) {
-                    im.px[((size_t)y * w + x) * 3 + 0] = row[x * 4 + 0];
-                    im.px[((size_t)y * w + x) * 3 + 1] = row[x * 4 + 1];
-                    im.px[((size_t)y * w + x) * 3 + 2] = row[x * 4 + 2];
-                }
-            }
-            break;
-        case AICORE_IMAGE_BGR8:
-            for (int y = 0; y < h; y++) {
-                const uint8_t* row = v.data + (size_t)y * v.row_stride_bytes;
-                for (int x = 0; x < w; x++) {
-                    im.px[((size_t)y * w + x) * 3 + 0] = row[x * 3 + 2];
-                    im.px[((size_t)y * w + x) * 3 + 1] = row[x * 3 + 1];
-                    im.px[((size_t)y * w + x) * 3 + 2] = row[x * 3 + 0];
-                }
-            }
-            break;
-        case AICORE_IMAGE_BGRA8:
-            for (int y = 0; y < h; y++) {
-                const uint8_t* row = v.data + (size_t)y * v.row_stride_bytes;
-                for (int x = 0; x < w; x++) {
-                    im.px[((size_t)y * w + x) * 3 + 0] = row[x * 4 + 2];
-                    im.px[((size_t)y * w + x) * 3 + 1] = row[x * 4 + 1];
-                    im.px[((size_t)y * w + x) * 3 + 2] = row[x * 4 + 0];
-                }
-            }
-            break;
-        case AICORE_IMAGE_GRAY8:
-            for (int y = 0; y < h; y++) {
-                const uint8_t* row = v.data + (size_t)y * v.row_stride_bytes;
-                for (int x = 0; x < w; x++) {
-                    im.px[((size_t)y * w + x) * 3 + 0] = row[x];
-                    im.px[((size_t)y * w + x) * 3 + 1] = row[x];
-                    im.px[((size_t)y * w + x) * 3 + 2] = row[x];
-                }
-            }
-            break;
-        default:
-            log_error("unknown image format %d", (int)v.format);
-            return false;
-    }
     return true;
 }
 

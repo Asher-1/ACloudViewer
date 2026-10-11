@@ -66,7 +66,11 @@ Eigen::Matrix3d ComputeClosestRotationMatrix(const Eigen::Matrix3d& matrix) {
       matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
   Eigen::Matrix3d R = svd.matrixU() * (svd.matrixV().transpose());
   if (R.determinant() < 0.0) {
-    R *= -1.0;
+    // Upstream parity (ad94f50c): negating R keeps the reflection; flip the
+    // last singular direction to obtain the closest proper rotation.
+    Eigen::Matrix3d U = svd.matrixU();
+    U.col(2) *= -1.0;
+    R = U * svd.matrixV().transpose();
   }
   return R;
 }
@@ -191,6 +195,16 @@ double CalculateAngularReprojectionError(const Eigen::Vector2d& point2D,
   }
   return std::acos(std::clamp(ray->dot(point_in_camera.normalized()),
                               -1.0, 1.0));
+}
+
+// Upstream parity (a2bd15c2 scene/projection.cc): bearing-vector form with
+// a Rigid3d pose, used by the triangulator to cache the reference ray.
+double CalculateAngularReprojectionError(const Eigen::Vector3d& cam_ray,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world) {
+  const Eigen::Vector3d point3D_in_cam = cam_from_world * point3D;
+  const double cos_angle = cam_ray.transpose() * point3D_in_cam.normalized();
+  return std::acos(std::clamp(cos_angle, -1.0, 1.0));
 }
 
 double CalculateAngularError(const Eigen::Vector2d& point2D,

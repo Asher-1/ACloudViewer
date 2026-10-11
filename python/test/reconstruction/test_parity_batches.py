@@ -253,13 +253,23 @@ def test_incremental_pipeline_options_surface():
     o.min_num_matches = 21
     assert o.min_num_matches == 21
     o.random_seed = 42
-    assert o.mapper.random_seed == 42
+    assert o.random_seed == 42
+    # upstream: the pipeline-level random_seed is propagated into the mapper
+    # sub options by Mapper().
+    assert o.get_mapper().random_seed == 42
     o.constant_rigs = [1, 2]
     assert set(o.constant_rigs) == {1, 2}
+    assert set(o.get_mapper().constant_rigs) == {1, 2}
     o.fix_existing_frames = True
-    assert o.fix_existing_images
+    assert o.fix_existing_frames
     o.snapshot_frames_freq = 5
-    assert o.snapshot_images_freq == 5
+    assert o.snapshot_frames_freq == 5
+    o.structure_less_registration_only = True
+    assert o.structure_less_registration_only
+    o.max_runtime_seconds = 30
+    assert o.max_runtime_seconds == 30
+    o.mapper.ba_local_num_images = 8
+    assert o.get_mapper().ba_local_num_images == 8
     assert o.get_mapper() is not None
     assert o.get_triangulation() is not None
     assert o.get_local_bundle_adjustment() is not None
@@ -434,7 +444,9 @@ def test_reconstruction_mutation_surface():
     rec.compute_mean_track_length()
     rec.compute_mean_reprojection_error()
     rec.compute_mean_observations_per_reg_image()
-    assert len(rec.compute_bounding_box()) == 2
+    # Upstream pycolmap: compute_bounding_box() returns an AlignedBox3d.
+    bbox = rec.compute_bounding_box()
+    assert len(bbox.min) == 3 and len(bbox.max) == 3
     assert len(rec.compute_centroid()) == 3
     rec.normalize()
     rec.tear_down()
@@ -465,6 +477,10 @@ def test_reconstruction_io_roundtrip(tmp_path):
                                     rotation_wxyz=[1, 0, 0, 0],
                                     translation=[0, 0, 0]))
     cropped = rec.crop(([-10, -10, -10], [10, 10, 10]))
+    assert isinstance(cropped, S.Reconstruction)
+    # Upstream signature: crop(AlignedBox3d), round-trip from
+    # compute_bounding_box().
+    cropped = rec.crop(rec.compute_bounding_box())
     assert isinstance(cropped, S.Reconstruction)
 
 
@@ -793,17 +809,30 @@ def test_ba_backend_family_surface():
     assert isinstance(adj2, E.BundleAdjuster)
     assert isinstance(E.CeresBundleAdjustmentSummary(),
                       E.BundleAdjustmentSummary)
-    assert E.CeresBundleAdjustmentOptions is E.BundleAdjustmentOptions
+    # upstream: the ceres / caspar solver configuration are their own
+    # option structs shared through BundleAdjustmentOptions.
+    bao = E.BundleAdjustmentOptions()
+    assert isinstance(bao.ceres, E.CeresBundleAdjustmentOptions)
+    assert isinstance(bao.caspar, E.CasparBundleAdjustmentOptions)
+    bao.ceres.loss_function_type = E.CeresLossFunctionType.CAUCHY
+    bao.ceres.loss_function_scale = 2.0
+    assert bao.ceres.loss_function_type == E.CeresLossFunctionType.CAUCHY
+    assert bao.ceres.loss_function_scale == 2.0
+    assert bao.backend == E.BundleAdjustmentBackend.CERES
+    assert pp.ceres.prior_position_loss_scale > 0
 
 
 def test_feature_descriptors_reinterpretation():
     F = _recon.feature
     src_float = np.arange(6, dtype=np.float32).reshape(2, 3)
     fb = F.FeatureDescriptorsFloat()
+    fb.type = _recon.FeatureExtractorType.ALIKED_N16ROT
     fb.data = src_float
     fd = F.FeatureDescriptors.from_float(fb)
+    assert fd.type == _recon.FeatureExtractorType.ALIKED_N16ROT
     assert fd.shape == (2, 12)
     back = fd.to_float()
+    assert back.type == _recon.FeatureExtractorType.ALIKED_N16ROT
     assert np.allclose(np.asarray(back.data), src_float)
     assert np.allclose(
         np.asarray(F.FeatureDescriptorsFloat.from_bytes(fd).data),

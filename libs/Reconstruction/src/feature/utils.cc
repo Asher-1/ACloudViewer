@@ -1,37 +1,14 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "feature/utils.h"
 
 #include "math/math.h"
+#include "sensor/bitmap.h"
 
 namespace colmap {
 
@@ -44,35 +21,24 @@ std::vector<Eigen::Vector2d> FeatureKeypointsToPointsVector(
   return points;
 }
 
-FeatureDescriptorsFloat L2NormalizeFeatureDescriptors(
-    const FeatureDescriptorsFloat& descriptors) {
-  return descriptors.rowwise().normalized();
+void L2NormalizeFeatureDescriptors(FeatureDescriptorsFloatData* descriptors) {
+  descriptors->rowwise().normalize();
 }
 
-FeatureDescriptorsFloat L1RootNormalizeFeatureDescriptors(
-    const FeatureDescriptorsFloat& descriptors) {
-  FeatureDescriptorsFloat descriptors_normalized(descriptors.rows(),
-                                                 descriptors.cols());
-  for (Eigen::Index r = 0; r < descriptors.rows(); ++r) {
-    const float norm = descriptors.row(r).lpNorm<1>();
-    // Upstream parity (d3ccaf35 feature/utils.cc): scale by the reciprocal of
-    // the norm (x * (1/n), two roundings) rather than dividing (x / n, one
-    // rounding) — the last-bit difference tipped a handful of uchar descriptor
-    // elements by ±1, which flipped nearest-neighbor matches, two-view
-    // geometry inlier sets and the mapper's registration order downstream.
-    descriptors_normalized.row(r) = descriptors.row(r) * (1 / norm);
-    descriptors_normalized.row(r) =
-        descriptors_normalized.row(r).array().sqrt();
+void L1RootNormalizeFeatureDescriptors(
+    FeatureDescriptorsFloatData* descriptors) {
+  for (Eigen::Index r = 0; r < descriptors->rows(); ++r) {
+    descriptors->row(r) *= 1 / descriptors->row(r).lpNorm<1>();
+    descriptors->row(r) = descriptors->row(r).array().sqrt();
   }
-  return descriptors_normalized;
 }
 
-FeatureDescriptors FeatureDescriptorsToUnsignedByte(
-    const FeatureDescriptorsFloat& descriptors) {
-  FeatureDescriptors descriptors_unsigned_byte(descriptors.rows(),
-                                               descriptors.cols());
-  for (Eigen::MatrixXf::Index r = 0; r < descriptors.rows(); ++r) {
-    for (Eigen::MatrixXf::Index c = 0; c < descriptors.cols(); ++c) {
+FeatureDescriptorsData FeatureDescriptorsToUnsignedByte(
+    const Eigen::Ref<const FeatureDescriptorsFloatData>& descriptors) {
+  FeatureDescriptorsData descriptors_unsigned_byte(descriptors.rows(),
+                                                   descriptors.cols());
+  for (Eigen::Index r = 0; r < descriptors.rows(); ++r) {
+    for (Eigen::Index c = 0; c < descriptors.cols(); ++c) {
       const float scaled_value = std::round(512.0f * descriptors(r, c));
       descriptors_unsigned_byte(r, c) =
           TruncateCast<float, uint8_t>(scaled_value);
@@ -84,37 +50,68 @@ FeatureDescriptors FeatureDescriptorsToUnsignedByte(
 void ExtractTopScaleFeatures(FeatureKeypoints* keypoints,
                              FeatureDescriptors* descriptors,
                              const size_t num_features) {
-  CHECK_EQ(keypoints->size(), descriptors->rows());
-  CHECK_GT(num_features, 0);
+  THROW_CHECK_EQ(keypoints->size(), descriptors->data.rows());
+  THROW_CHECK_GT(num_features, 0);
 
-  if (static_cast<size_t>(descriptors->rows()) <= num_features) {
+  if (static_cast<size_t>(descriptors->data.rows()) <= num_features) {
     return;
   }
 
-  FeatureKeypoints top_scale_keypoints;
-  FeatureDescriptors top_scale_descriptors;
-
   std::vector<std::pair<size_t, float>> scales;
-  scales.reserve(static_cast<size_t>(keypoints->size()));
+  scales.reserve(keypoints->size());
   for (size_t i = 0; i < keypoints->size(); ++i) {
     scales.emplace_back(i, (*keypoints)[i].ComputeScale());
   }
 
-  std::partial_sort(scales.begin(), scales.begin() + num_features, scales.end(),
-                    [](const std::pair<size_t, float> scale1,
-                       const std::pair<size_t, float> scale2) {
+  std::partial_sort(scales.begin(),
+                    scales.begin() + num_features,
+                    scales.end(),
+                    [](const std::pair<size_t, float>& scale1,
+                       const std::pair<size_t, float>& scale2) {
                       return scale1.second > scale2.second;
                     });
 
-  top_scale_keypoints.resize(num_features);
-  top_scale_descriptors.resize(num_features, descriptors->cols());
+  FeatureKeypoints top_scale_keypoints(num_features);
+  FeatureDescriptorsData top_scale_descriptors(
+          num_features, descriptors->data.cols());
   for (size_t i = 0; i < num_features; ++i) {
     top_scale_keypoints[i] = (*keypoints)[scales[i].first];
-    top_scale_descriptors.row(i) = descriptors->row(scales[i].first);
+    top_scale_descriptors.row(i) = descriptors->data.row(scales[i].first);
   }
 
-  *keypoints = top_scale_keypoints;
-  *descriptors = top_scale_descriptors;
+  *keypoints = std::move(top_scale_keypoints);
+  descriptors->data = std::move(top_scale_descriptors);
+}
+
+std::vector<float> HWCToCHW(const uint8_t* data,
+                            int width,
+                            int height,
+                            int pitch) {
+  THROW_CHECK_NOTNULL(data);
+  THROW_CHECK_GT(width, 0);
+  THROW_CHECK_GT(height, 0);
+  THROW_CHECK_GE(pitch, 3 * width);
+
+  const int num_pixels = width * height;
+  std::vector<float> chw(static_cast<size_t>(3) * num_pixels);
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      for (int c = 0; c < 3; ++c) {
+        constexpr float kImageNormalization = 1.0f / 255.0f;
+        chw[c * num_pixels + y * width + x] =
+            kImageNormalization * data[y * pitch + 3 * x + c];
+      }
+    }
+  }
+  return chw;
+}
+
+std::vector<float> BitmapToCHW(const Bitmap& bitmap) {
+  THROW_CHECK(bitmap.IsRGB());
+  return HWCToCHW(bitmap.RowMajorData().data(),
+                  bitmap.Width(),
+                  bitmap.Height(),
+                  bitmap.Pitch());
 }
 
 }  // namespace colmap

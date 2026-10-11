@@ -13,19 +13,17 @@
 #include "controllers/feature_matching.h"
 #include "estimators/two_view_geometry.h"
 #include "feature/matcher.h"
-#include "feature/matching.h"
+#include "util/opengl_utils.h"
 #include "util/threading.h"
 
 namespace colmap {
 
-// Upstream parity (d3ccaf35 controllers/feature_matching_utils.h): the
-// multi-threaded matching pipeline on top of the FeatureMatcherCache. The
-// fork reuses its internal::FeatureMatcherData payload and the engine-backed
-// FeatureMatcher::Create shells (batch A); the fork's FeatureMatcher::Image
-// is value-semantic without the upstream pose-prior slot, so the workers
-// carry the same data minus that optional field.
-
-using FeatureMatcherData = internal::FeatureMatcherData;
+struct FeatureMatcherData {
+    image_t image_id1 = kInvalidImageId;
+    image_t image_id2 = kInvalidImageId;
+    FeatureMatches matches;
+    TwoViewGeometry two_view_geometry;
+};
 
 class FeatureMatcherWorker : public Thread {
 public:
@@ -46,8 +44,15 @@ private:
     std::shared_ptr<FeatureMatcherCache> cache_;
     JobQueue<Input>* input_queue_;
     JobQueue<Output>* output_queue_;
+
+    std::unique_ptr<OpenGLContextManager> opengl_context_;
 };
 
+// Multi-threaded and multi-GPU SIFT feature matcher, which writes the computed
+// results to the database and skips already matched image pairs. To improve
+// performance of the matching by taking advantage of caching and database
+// transactions, pass multiple images to the `Match` function. Note that the
+// database should be in an active transaction while calling `Match`.
 class FeatureMatcherController {
 public:
     FeatureMatcherController(const FeatureMatchingOptions& matching_options,
@@ -56,19 +61,27 @@ public:
 
     ~FeatureMatcherController();
 
+    // Setup the matchers and return if successful.
     bool Setup();
 
+    // Match one batch of multiple image pairs.
     void Match(const std::vector<std::pair<image_t, image_t>>& image_pairs);
 
 private:
     FeatureMatchingOptions matching_options_;
     TwoViewGeometryOptions geometry_options_;
     std::shared_ptr<FeatureMatcherCache> cache_;
+
+    // Whether the matchers write directly to the output queue, bypassing the
+    // verifier queue. In this case, no verifier workers exist.
     bool skip_geometric_verification_;
+
     bool is_setup_;
+
     std::vector<std::unique_ptr<FeatureMatcherWorker>> matchers_;
     std::vector<std::unique_ptr<FeatureMatcherWorker>> guided_matchers_;
     std::vector<std::unique_ptr<Thread>> verifiers_;
+
     JobQueue<FeatureMatcherData> matcher_queue_;
     JobQueue<FeatureMatcherData> verifier_queue_;
     JobQueue<FeatureMatcherData> guided_matcher_queue_;
@@ -87,16 +100,21 @@ public:
 
     ~GeometricVerifierController();
 
+    // Setup the verifiers and return if successful.
     bool Setup();
 
+    // Verify one batch of multiple image pairs.
     void Verify(const std::vector<std::pair<image_t, image_t>>& image_pairs);
 
 private:
     TwoViewGeometryOptions geometry_options_;
     std::shared_ptr<FeatureMatcherCache> cache_;
     GeometricVerifierOptions options_;
+
     bool is_setup_;
+
     std::vector<std::unique_ptr<Thread>> verifiers_;
+
     JobQueue<FeatureMatcherData> verifier_queue_;
     JobQueue<FeatureMatcherData> output_queue_;
 };

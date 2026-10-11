@@ -81,8 +81,6 @@ public:
     virtual bool ExistsImageWithName(std::string name) const = 0;
     virtual bool ExistsKeypoints(const image_t image_id) const = 0;
     virtual bool ExistsDescriptors(const image_t image_id) const = 0;
-    // Fork-specific surface (float_descriptors local table, W1).
-    virtual bool ExistsFloatDescriptors(const image_t image_id) const = 0;
     virtual bool ExistsMatches(const image_t image_id1,
                                const image_t image_id2) const = 0;
     virtual bool ExistsInlierMatches(const image_t image_id1,
@@ -185,16 +183,14 @@ public:
     virtual FeatureKeypoints ReadKeypoints(const image_t image_id) const = 0;
     virtual FeatureDescriptors ReadDescriptors(
             const image_t image_id) const = 0;
-    // Fork-specific surface (float_descriptors local table, W1).
-    virtual FeatureDescriptorsFloat ReadFloatDescriptors(
-            const image_t image_id) const = 0;
-    virtual FeatureDescriptorType ReadDescriptorType(
-            const image_t image_id) const = 0;
 
     virtual FeatureMatches ReadMatches(const image_t image_id1,
                                        const image_t image_id2) const = 0;
     virtual std::vector<std::pair<image_pair_t, FeatureMatches>>
     ReadAllMatches() const = 0;
+    // Upstream parity: number of raw matches per pair without decoding blobs.
+    virtual std::vector<std::pair<image_pair_t, int>> ReadNumMatches()
+            const = 0;
 
     virtual TwoViewGeometry ReadTwoViewGeometry(
             const image_t image_id1, const image_t image_id2) const = 0;
@@ -244,11 +240,6 @@ public:
     virtual void WriteDescriptors(
             const image_t image_id,
             const FeatureDescriptors& descriptors) const = 0;
-    // Fork-specific surface (float_descriptors local table, W1).
-    virtual void WriteFloatDescriptors(
-            const image_t image_id,
-            const FeatureDescriptorsFloat& descriptors,
-            FeatureDescriptorType type) const = 0;
     virtual void WriteMatches(const image_t image_id1,
                               const image_t image_id2,
                               const FeatureMatches& matches) const = 0;

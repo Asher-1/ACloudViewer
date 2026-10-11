@@ -8,12 +8,10 @@
 #include "feature/matcher.h"
 
 #include "feature/aliked.h"
-#include "feature/extractor.h"
-#include "feature/matching.h"
+#include "feature/loma.h"
+#include "feature/sift.h"
 #include "util/logging.h"
 #include "util/misc.h"
-
-#include <cstring>
 
 #include <sstream>
 #include <stdexcept>
@@ -29,60 +27,40 @@ void ThrowUnknownFeatureMatcherType(FeatureMatcherType type) {
 
 }  // namespace
 
-FeatureMatchingOptions::FeatureMatchingOptions(FeatureMatcherType type)
-    : type(type) {
-  // Upstream parity (FeatureMatchingTypeOptions): every option group is
-  // allocated regardless of the selected type, so callers may switch `type`
-  // freely and mutate any group (see feature/matcher_test.cc).
-  sift = std::make_shared<SiftMatchingOptions>();
-  aliked = std::make_shared<AlikedMatchingOptions>();
-  loma = std::make_shared<LomaMatchingOptions>();
-}
+FeatureMatchingTypeOptions::FeatureMatchingTypeOptions()
+    : sift(std::make_shared<SiftMatchingOptions>()),
+      aliked(std::make_shared<AlikedMatchingOptions>()),
+      loma(std::make_shared<LomaMatchingOptions>()) {}
 
-FeatureMatchingOptions::FeatureMatchingOptions(
-        const FeatureMatchingOptions& other)
-    : type(other.type),
-      num_threads(other.num_threads),
-      use_gpu(other.use_gpu),
-      gpu_index(other.gpu_index),
-      max_num_matches(other.max_num_matches),
-      guided_matching(other.guided_matching),
-      skip_geometric_verification(other.skip_geometric_verification),
-      rig_verification(other.rig_verification),
-      skip_image_pairs_in_same_frame(other.skip_image_pairs_in_same_frame),
-      sift(CloneSharedPtr(other.sift)),
-      loma(CloneSharedPtr(other.loma)),
-      aliked(CloneSharedPtr(other.aliked)) {}
+FeatureMatchingTypeOptions::FeatureMatchingTypeOptions(
+    const FeatureMatchingTypeOptions& other)
+    : sift(CloneSharedPtr(other.sift)),
+      aliked(CloneSharedPtr(other.aliked)),
+      loma(CloneSharedPtr(other.loma)) {}
 
-FeatureMatchingOptions& FeatureMatchingOptions::operator=(
-        const FeatureMatchingOptions& other) {
+FeatureMatchingTypeOptions& FeatureMatchingTypeOptions::operator=(
+    const FeatureMatchingTypeOptions& other) {
   if (this == &other) {
     return *this;
   }
-  type = other.type;
-  num_threads = other.num_threads;
-  use_gpu = other.use_gpu;
-  gpu_index = other.gpu_index;
-  max_num_matches = other.max_num_matches;
-  guided_matching = other.guided_matching;
-  skip_geometric_verification = other.skip_geometric_verification;
-  rig_verification = other.rig_verification;
-  skip_image_pairs_in_same_frame = other.skip_image_pairs_in_same_frame;
   sift = CloneSharedPtr(other.sift);
-  loma = CloneSharedPtr(other.loma);
   aliked = CloneSharedPtr(other.aliked);
+  loma = CloneSharedPtr(other.loma);
   return *this;
 }
 
+FeatureMatchingOptions::FeatureMatchingOptions(FeatureMatcherType type)
+    : FeatureMatchingTypeOptions(), type(type) {}
+
 bool FeatureMatchingOptions::RequiresOpenGL() const {
   switch (type) {
-    case FeatureMatcherType::SIFT_BRUTEFORCE:
-#ifdef CUDA_ENABLED
-      // The CUDA SIFT matching path does not need an OpenGL context.
+    case FeatureMatcherType::SIFT_BRUTEFORCE: {
+#if defined(CUDA_ENABLED) || defined(HIP_ENABLED)
       return false;
 #else
       return use_gpu;
 #endif
+    }
     case FeatureMatcherType::SIFT_LIGHTGLUE:
     case FeatureMatcherType::ALIKED_BRUTEFORCE:
     case FeatureMatcherType::ALIKED_LIGHTGLUE:
@@ -100,108 +78,56 @@ bool FeatureMatchingOptions::RequiresOpenGL() const {
 }
 
 bool FeatureMatchingOptions::Check() const {
-  if (type == FeatureMatcherType::SIFT_BRUTEFORCE ||
-      type == FeatureMatcherType::SIFT_LIGHTGLUE) {
-    THROW_CHECK_NOTNULL(sift);
-    return sift->Check();
+  if (use_gpu) {
+    CHECK_OPTION_GT(CSVToVector<int>(gpu_index).size(), 0);
+#ifndef GPU_ENABLED
+    LOG(ERROR) << "Cannot use GPU feature matching without CUDA, HIP, or "
+                  "OpenGL support. Consider setting use_gpu to false.";
+    return false;
+#endif
   }
-  if (type == FeatureMatcherType::ALIKED_BRUTEFORCE ||
-      type == FeatureMatcherType::ALIKED_LIGHTGLUE) {
-    THROW_CHECK_NOTNULL(aliked);
-    return aliked->Check();
+  CHECK_OPTION_GE(max_num_matches, 0);
+  switch (type) {
+    case FeatureMatcherType::SIFT_BRUTEFORCE:
+    case FeatureMatcherType::SIFT_LIGHTGLUE:
+      return THROW_CHECK_NOTNULL(sift)->Check();
+    case FeatureMatcherType::ALIKED_BRUTEFORCE:
+    case FeatureMatcherType::ALIKED_LIGHTGLUE:
+      return THROW_CHECK_NOTNULL(aliked)->Check();
+    case FeatureMatcherType::LOMA_BRUTEFORCE:
+    case FeatureMatcherType::LOMA_B:
+    case FeatureMatcherType::LOMA_B128:
+    case FeatureMatcherType::LOMA_R:
+    case FeatureMatcherType::LOMA_L:
+    case FeatureMatcherType::LOMA_G:
+      return THROW_CHECK_NOTNULL(loma)->Check();
+    default:
+      LOG(ERROR) << "Unknown feature matcher type: " << type;
+      return false;
   }
-  THROW_CHECK_NOTNULL(loma);
-  // Default-constructed LoMa options carry an empty matcher model path by
-  // design; resolve the catalog-default path (no download) before
-  // validating, mirroring the MatchLomaFeatures production flow.
-  LomaMatchingOptions resolved = *loma;
-  ResolveDefaultLomaModelPaths(&resolved);
-  return resolved.Check();
+  return true;
 }
 
-namespace {
-
-class SiftFeatureMatcherShell : public FeatureMatcher {
- public:
-  explicit SiftFeatureMatcherShell(
-          std::shared_ptr<SiftMatchingOptions> options)
-      : options_(std::move(options)) {}
-
-  void Match(const Image& image1,
-             const Image& image2,
-             FeatureMatches* matches) override {
-    // The fork's in-memory SIFT matching consumes packed uint8 descriptors.
-    const FeatureDescriptors desc1 = ToPackedU8(image1.descriptors);
-    const FeatureDescriptors desc2 = ToPackedU8(image2.descriptors);
-    MatchSiftFeaturesCPU(*options_, desc1, desc2, matches);
-    if (matches->size() > static_cast<size_t>(options_->max_num_matches)) {
-      matches->resize(options_->max_num_matches);
-    }
-  }
-
-  void MatchGuided(double max_error,
-                   const Image& image1,
-                   const Image& image2,
-                   TwoViewGeometry* two_view_geometry) override {
-    auto options = *options_;
-    options.max_error = max_error;
-    const FeatureDescriptors desc1 = ToPackedU8(image1.descriptors);
-    const FeatureDescriptors desc2 = ToPackedU8(image2.descriptors);
-    MatchGuidedSiftFeaturesCPU(options, image1.keypoints, image2.keypoints,
-                               desc1, desc2, two_view_geometry);
-  }
-
- private:
-  std::shared_ptr<SiftMatchingOptions> options_;
-};
-
-class LomaFeatureMatcherShell : public FeatureMatcher {
- public:
-  explicit LomaFeatureMatcherShell(
-          std::shared_ptr<LomaMatchingOptions> options)
-      : options_(std::move(options)) {}
-
-  void Match(const Image& image1,
-             const Image& image2,
-             FeatureMatches* matches) override {
-    THROW_CHECK(image1.camera && image2.camera);
-    const Camera& camera1 = *image1.camera;
-    const Camera& camera2 = *image2.camera;
-    MatchLomaFeatures(*options_, image1.keypoints, image1.descriptors,
-                      image2.keypoints, image2.descriptors,
-                      static_cast<int>(camera1.Width()),
-                      static_cast<int>(camera1.Height()), static_cast<int>(camera2.Width()),
-                      static_cast<int>(camera2.Height()), matches);
-  }
-
-  void MatchGuided(double, const Image&, const Image&,
-                   TwoViewGeometry*) override {
-    throw std::runtime_error(
-            "Guided matching is not supported by the LoMa matcher");
-  }
-
- private:
-  std::shared_ptr<LomaMatchingOptions> options_;
-};
-
-}  // namespace
-
 std::unique_ptr<FeatureMatcher> FeatureMatcher::Create(
-        const FeatureMatchingOptions& options) {
-  THROW_CHECK(options.Check());
-  if (options.type == FeatureMatcherType::SIFT_BRUTEFORCE ||
-      options.type == FeatureMatcherType::SIFT_LIGHTGLUE) {
-    return std::make_unique<SiftFeatureMatcherShell>(options.sift);
+    const FeatureMatchingOptions& options) {
+  switch (options.type) {
+    case FeatureMatcherType::SIFT_BRUTEFORCE:
+    case FeatureMatcherType::SIFT_LIGHTGLUE:
+      return CreateSiftFeatureMatcher(options);
+    case FeatureMatcherType::ALIKED_BRUTEFORCE:
+    case FeatureMatcherType::ALIKED_LIGHTGLUE:
+      return CreateAlikedFeatureMatcher(options);
+    case FeatureMatcherType::LOMA_BRUTEFORCE:
+    case FeatureMatcherType::LOMA_B:
+    case FeatureMatcherType::LOMA_B128:
+    case FeatureMatcherType::LOMA_R:
+    case FeatureMatcherType::LOMA_L:
+    case FeatureMatcherType::LOMA_G:
+      return CreateLomaFeatureMatcher(options);
+    default:
+      ThrowUnknownFeatureMatcherType(options.type);
   }
-  if (options.type == FeatureMatcherType::ALIKED_BRUTEFORCE ||
-      options.type == FeatureMatcherType::ALIKED_LIGHTGLUE) {
-    // Upstream parity: the factory constructs the engine-backed matcher
-    // (upstream: onnxruntime model load; fork: AICore ggml LightGlue task
-    // or direct brute-force cosine matching). Provisioning failures throw
-    // at construction time.
-    return CreateAlikedFeatureMatcher(options);
-  }
-  return std::make_unique<LomaFeatureMatcherShell>(options.loma);
+  return nullptr;
 }
 
 }  // namespace colmap

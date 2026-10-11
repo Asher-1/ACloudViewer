@@ -555,7 +555,8 @@ jobs:
             exit 1
           }
 
-          # Run integration tests
+          # Run integration tests; a missing binary must fail, not skip
+          $env:ACV_REQUIRE_BINARY = "1"
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
           if ($LASTEXITCODE -ne 0) { exit 1 }
 

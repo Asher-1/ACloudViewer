@@ -244,7 +244,8 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
             }
 
             if (report.num_trials >= dyn_max_num_trials &&
-                report.num_trials >= options_.min_num_trials) {
+                report.num_trials >=
+                        static_cast<size_t>(options_.min_num_trials)) {
                 abort = true;
                 // Upstream parity (d3ccaf35): the trial counter also counts
                 // the aborted trial itself (trial_counter.load() after

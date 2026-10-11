@@ -35,6 +35,7 @@ COLMAP_ADD_SOURCES(
     database_cache.h database_cache.cc
     frame.h frame.cc
     image.h image.cc
+    imu.h imu.cc
     point2d.h point2d.cc
     point3d.h point3d.cc
     projection.h projection.cc
@@ -53,6 +54,7 @@ if (TESTS_ENABLED)
     COLMAP_ADD_TEST(database_test database_test.cc)
     COLMAP_ADD_TEST(frame_test frame_test.cc)
     COLMAP_ADD_TEST(image_test image_test.cc)
+    COLMAP_ADD_TEST(scene_imu_test imu_test.cc)
     COLMAP_ADD_TEST(point2d_test point2d_test.cc)
     COLMAP_ADD_TEST(point3d_test point3d_test.cc)
     COLMAP_ADD_TEST(projection_test projection_test.cc)

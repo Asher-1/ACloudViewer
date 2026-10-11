@@ -25,6 +25,7 @@ class AutomaticReconstructionController : public Thread {
 public:
     enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
     enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
+    enum class Feature { SIFT, ALIKED, LOMA, LOMA128 };
     enum class Mesher { POISSON, DELAUNAY, ADVANCING_FRONT };
 
     struct Options {
@@ -47,6 +48,9 @@ public:
 
         // Whether to perform low- or high-quality reconstruction.
         Quality quality = Quality::HIGH;
+
+        // The feature extractor/matcher family used for sparse mapping.
+        Feature feature = Feature::SIFT;
 
         // Whether to use shared intrinsics or not.
         bool single_camera = false;

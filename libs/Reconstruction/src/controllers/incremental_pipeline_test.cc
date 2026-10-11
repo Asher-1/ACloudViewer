@@ -22,7 +22,7 @@
 namespace colmap {
 namespace {
 
-TEST(IncrementalMapperController, WithoutNoise) {
+TEST(IncrementalPipeline, WithoutNoise) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -37,7 +37,7 @@ TEST(IncrementalMapperController, WithoutNoise) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(new IncrementalMapperOptions(), "", database_path,
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -49,7 +49,7 @@ TEST(IncrementalMapperController, WithoutNoise) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
+TEST(IncrementalPipeline, WithoutNoiseSphericalCameras) {
   // Batch C fix: the camera.cc abort was resolved by the missing
   // non-perspective guard in RegisterNextImage (spherical cameras now take
   // the camera-ray P3P branch of EstimateAbsolutePose).
@@ -72,7 +72,7 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(new IncrementalMapperOptions(), "", database_path,
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -86,7 +86,7 @@ TEST(IncrementalMapperController, WithoutNoiseSphericalCameras) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, WithoutNoiseAndWithNonTrivialFrames) {
+TEST(IncrementalPipeline, WithoutNoiseAndWithNonTrivialFrames) {
   // Upstream parity (d3ccaf35): unlocked after the third stale-mirror read
   // face was fixed - the track-extension images inside AddPointToProblem
   // built their constant-pose costs from the legacy per-image qvec/tvec
@@ -115,8 +115,8 @@ TEST(IncrementalMapperController, WithoutNoiseAndWithNonTrivialFrames) {
   // its single supported variant.
   for (const bool refine_sensor_from_rig : {true, false}) {
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-    auto options = std::make_shared<IncrementalMapperOptions>();
-    IncrementalMapperController mapper(options.get(), "", database_path,
+    auto options = std::make_shared<IncrementalPipelineOptions>();
+    IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -131,7 +131,7 @@ TEST(IncrementalMapperController, WithoutNoiseAndWithNonTrivialFrames) {
   }
 }
 
-TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
+TEST(IncrementalPipeline, UnknownSensorFromRigExitsGracefully) {
   // Batch C: the upstream HasUnknownSensorFromRig guard landed in the
   // controller's trial loop, so the unknown sensor_from_rig scene now
   // discards the reconstruction gracefully (Size == 0).
@@ -160,8 +160,8 @@ TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
   database->UpdateRig(rig);
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
-  IncrementalMapperController mapper(options.get(), "", database_path,
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -169,7 +169,7 @@ TEST(IncrementalMapperController, UnknownSensorFromRigExitsGracefully) {
   ASSERT_EQ(reconstruction_manager->Size(), 0);
 }
 
-TEST(IncrementalMapperController, WithNonTrivialFramesAndConstantRigsAndCameras) {
+TEST(IncrementalPipeline, WithNonTrivialFramesAndConstantRigsAndCameras) {
   // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
   // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); constant_rigs/
   // constant_cameras flow through the pre-existing BA config path.
@@ -193,10 +193,10 @@ TEST(IncrementalMapperController, WithNonTrivialFramesAndConstantRigsAndCameras)
   constexpr int kConstantCameraId = 1;
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->constant_rigs.insert(kConstantRigId);
   options->constant_cameras.insert(kConstantCameraId);
-  IncrementalMapperController mapper(options.get(), "", database_path,
+  IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -221,7 +221,7 @@ TEST(IncrementalMapperController, WithNonTrivialFramesAndConstantRigsAndCameras)
             gt_reconstruction.Camera(kConstantCameraId).Params());
 }
 
-TEST(IncrementalMapperController, WithoutNoiseAndWithPanoramicNonTrivialFrames) {
+TEST(IncrementalPipeline, WithoutNoiseAndWithPanoramicNonTrivialFrames) {
   // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
   // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); both
   // refine_sensor_from_rig variants complete deterministically.
@@ -246,8 +246,8 @@ TEST(IncrementalMapperController, WithoutNoiseAndWithPanoramicNonTrivialFrames) 
   // its single supported variant.
   for (const bool refine_sensor_from_rig : {true, false}) {
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-    auto options = std::make_shared<IncrementalMapperOptions>();
-    IncrementalMapperController mapper(options.get(), "", database_path,
+    auto options = std::make_shared<IncrementalPipelineOptions>();
+    IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -260,7 +260,7 @@ TEST(IncrementalMapperController, WithoutNoiseAndWithPanoramicNonTrivialFrames) 
   }
 }
 
-TEST(IncrementalMapperController, WithPriorFocalLength) {
+TEST(IncrementalPipeline, WithPriorFocalLength) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -275,7 +275,7 @@ TEST(IncrementalMapperController, WithPriorFocalLength) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(new IncrementalMapperOptions(), "", database_path,
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -287,7 +287,7 @@ TEST(IncrementalMapperController, WithPriorFocalLength) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, WithNoise) {
+TEST(IncrementalPipeline, WithNoise) {
   // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
   // visibility stats were retired (the post batch-C T2 fix had already
   // resolved the order-dependent tri-observation overflow).
@@ -307,7 +307,7 @@ TEST(IncrementalMapperController, WithNoise) {
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(new IncrementalMapperOptions(), "", database_path,
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -330,7 +330,7 @@ TEST(IncrementalMapperController, WithNoise) {
                    reconstruction.ComputeMeanReprojectionError());
 }
 
-TEST(IncrementalMapperController, IgnoreRedundantPoints3D) {
+TEST(IncrementalPipeline, IgnoreRedundantPoints3D) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -344,10 +344,10 @@ TEST(IncrementalMapperController, IgnoreRedundantPoints3D) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->mapper.ba_global_ignore_redundant_points3D = true;
   options->mapper.ba_global_ignore_redundant_points3D_min_coverage_gain = 0.5;
-  IncrementalMapperController mapper(options.get(), "", database_path,
+  IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -359,15 +359,15 @@ TEST(IncrementalMapperController, IgnoreRedundantPoints3D) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, StructureLessRegistrationOnly) {
+TEST(IncrementalPipeline, StructureLessRegistrationOnly) {
   GTEST_SKIP()
-      << "Fork adjudication: IncrementalMapperOptions has no "
+      << "Fork adjudication: IncrementalPipelineOptions has no "
          "structure_less_registration_only toggle; the structure-less "
          "registration mode is deferred until the fork adopts the upstream "
          "mapper option.";
 }
 
-TEST(IncrementalMapperController, MultiReconstruction) {
+TEST(IncrementalPipeline, MultiReconstruction) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -385,9 +385,9 @@ TEST(IncrementalMapperController, MultiReconstruction) {
       synthetic_dataset_options, &gt_reconstruction2, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto mapper_options = std::make_shared<IncrementalMapperOptions>();
+  auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
   mapper_options->min_model_size = 4;
-  IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -412,7 +412,7 @@ TEST(IncrementalMapperController, MultiReconstruction) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, FixExistingFrames) {
+TEST(IncrementalPipeline, FixExistingFrames) {
   // Unlocked: the legacy Reconstruction-side pair-stats layer has been
   // retired (upstream parity - all visibility bookkeeping lives in the
   // ObservationManager), so the test body's direct Reconstruction-level
@@ -432,7 +432,7 @@ TEST(IncrementalMapperController, FixExistingFrames) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   for (const bool fix_existing_frames : {false, true}) {
     if (fix_existing_frames) {
       ASSERT_EQ(reconstruction_manager->Size(), 1);
@@ -450,8 +450,8 @@ TEST(IncrementalMapperController, FixExistingFrames) {
         }
       }
     }
-    options->fix_existing_images = fix_existing_frames;
-    IncrementalMapperController mapper(options.get(), "", database_path,
+    options->fix_existing_frames = fix_existing_frames;
+    IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -464,7 +464,7 @@ TEST(IncrementalMapperController, FixExistingFrames) {
   }
 }
 
-TEST(IncrementalMapperController, ChainedMatches) {
+TEST(IncrementalPipeline, ChainedMatches) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -480,9 +480,9 @@ TEST(IncrementalMapperController, ChainedMatches) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->num_threads = 1;
-  IncrementalMapperController mapper(options.get(), "", database_path,
+  IncrementalPipeline mapper(options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -494,7 +494,7 @@ TEST(IncrementalMapperController, ChainedMatches) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
+TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoise) {
   // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
   // anchor port): no splitting or aborts; remaining gap is a small,
   // seed-dependent observation deficit after final filtering (~1901 vs 2000
@@ -517,12 +517,12 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
   synthetic_noise_options.prior_position_stddev = 0.0;
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
-  std::shared_ptr<IncrementalMapperOptions> mapper_options =
-      std::make_shared<IncrementalMapperOptions>();
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
   mapper_options->use_prior_position = true;
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -540,7 +540,7 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoise) {
                                  /*align=*/false));
 }
 
-TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
+TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
   // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
   // port): no splitting or aborts, but the case shares the seed-dependent
   // observation-count variance of the filtering-parity siblings and is
@@ -576,14 +576,14 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTr
     }
   }
 
-  std::shared_ptr<IncrementalMapperOptions> mapper_options =
-      std::make_shared<IncrementalMapperOptions>();
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
 
   mapper_options->use_prior_position = true;
   mapper_options->use_robust_loss_on_prior_position = true;
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -598,7 +598,7 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTr
                                  /*align=*/false));
 }
 
-TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
+TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithNoise) {
   // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
   // anchor port): no splitting or aborts; remaining gap is the same
   // seed-dependent observation deficit after final filtering, on the noisy
@@ -621,14 +621,14 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
   synthetic_noise_options.prior_position_stddev = 1.5;
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
-  std::shared_ptr<IncrementalMapperOptions> mapper_options =
-      std::make_shared<IncrementalMapperOptions>();
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
 
   mapper_options->use_prior_position = true;
   mapper_options->use_robust_loss_on_prior_position = true;
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -642,7 +642,7 @@ TEST(IncrementalMapperController, DISABLED_PriorBasedSfMWithNoise) {
                                  /*num_obs_tolerance=*/0.02));
 }
 
-TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
+TEST(IncrementalPipeline, DISABLED_GPSPriorBasedSfMWithNoise) {
   // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
   // anchor port): no splitting or aborts; remaining gap is the same
   // seed-dependent observation deficit after final filtering, on the GPS
@@ -668,14 +668,14 @@ TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
   synthetic_noise_options.prior_position_stddev = 1.5;
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
-  std::shared_ptr<IncrementalMapperOptions> mapper_options =
-      std::make_shared<IncrementalMapperOptions>();
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
 
   mapper_options->use_prior_position = true;
   mapper_options->use_robust_loss_on_prior_position = true;
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -689,7 +689,7 @@ TEST(IncrementalMapperController, DISABLED_GPSPriorBasedSfMWithNoise) {
                                  /*num_obs_tolerance=*/0.02));
 }
 
-TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
+TEST(IncrementalPipeline, SfMWithRandomSeedStability) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -707,13 +707,13 @@ TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
   auto run_mapper = [&](int num_threads, int random_seed) {
-    auto mapper_options = std::make_shared<IncrementalMapperOptions>();
+    auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
     mapper_options->use_prior_position = false;
     mapper_options->num_threads = num_threads;
     // Fork parity: the seed lives in the global PRNG (math/random.h).
     kDefaultPRNGSeed = random_seed;
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-    IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+    IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -731,7 +731,7 @@ TEST(IncrementalMapperController, SfMWithRandomSeedStability) {
               ReconstructionEq(reconstruction_manager1->Get(0)));
 }
 
-TEST(IncrementalMapperController, PriorBasedSfMWithRandomSeedStability) {
+TEST(IncrementalPipeline, PriorBasedSfMWithRandomSeedStability) {
   // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
   // visibility stats were retired.
 
@@ -753,13 +753,13 @@ TEST(IncrementalMapperController, PriorBasedSfMWithRandomSeedStability) {
   SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
 
   auto run_mapper = [&](int num_threads, int random_seed) {
-    auto mapper_options = std::make_shared<IncrementalMapperOptions>();
+    auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
     mapper_options->use_prior_position = true;
     mapper_options->num_threads = num_threads;
     // Fork parity: the seed lives in the global PRNG (math/random.h).
     kDefaultPRNGSeed = random_seed;
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-    IncrementalMapperController mapper(mapper_options.get(), "", database_path,
+    IncrementalPipeline mapper(mapper_options.get(), "", database_path,
                             reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
@@ -777,45 +777,54 @@ TEST(IncrementalMapperController, PriorBasedSfMWithRandomSeedStability) {
               ReconstructionEq(reconstruction_manager1->Get(0)));
 }
 
-TEST(IncrementalMapperOptions, PropagatesExplicitMaxNumIterations) {
+TEST(IncrementalPipelineOptions, PropagatesExplicitMaxNumIterations) {
   // Explicitly set iteration bounds must be forwarded to both backends,
   // including values that coincide with the previous compiled-in defaults.
-  IncrementalMapperOptions options;
+  IncrementalPipelineOptions options;
   options.ba_local_max_num_iterations = 25;
   options.ba_global_max_num_iterations = 50;
 
-  // Fork adaptation: the fork's BundleAdjustmentOptions merges the Ceres and
-  // Caspar backends behind use_caspar with one shared solver_options, so the
-  // per-backend assertions collapse to the shared surface.
   const BundleAdjustmentOptions local_options = options.LocalBundleAdjustment();
-  EXPECT_EQ(local_options.solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.ceres);
+  EXPECT_EQ(local_options.ceres->solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.caspar);
+  EXPECT_EQ(local_options.caspar->solver_iter_max, 25);
 
   const BundleAdjustmentOptions global_options =
       options.GlobalBundleAdjustment();
-  EXPECT_EQ(global_options.solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.ceres);
+  EXPECT_EQ(global_options.ceres->solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.caspar);
+  EXPECT_EQ(global_options.caspar->solver_iter_max, 50);
 }
 
-TEST(IncrementalMapperOptions, DefaultMaxNumIterationsUsesBackendDefaults) {
-  // Batch C: the fork adopted the upstream -1 sentinel and the Eff*_
-  // resolvers, so the upstream contract applies to the merged options
-  // surface (the factories resolve the sentinel into solver_options).
-  const IncrementalMapperOptions options;
+TEST(IncrementalPipelineOptions, DefaultMaxNumIterationsUsesBackendDefaults) {
+  // With the -1 sentinel default, each backend must keep its own default:
+  // Ceres the previous 25/50 mapper defaults, Caspar its own tuned
+  // solver_iter_max (see review discussion on #4382/PR #4527).
+  const IncrementalPipelineOptions options;
   ASSERT_EQ(options.ba_local_max_num_iterations, -1);
   ASSERT_EQ(options.ba_global_max_num_iterations, -1);
   const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
 
   const BundleAdjustmentOptions local_options = options.LocalBundleAdjustment();
-  EXPECT_EQ(local_options.solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.ceres);
+  EXPECT_EQ(local_options.ceres->solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.caspar);
+  EXPECT_EQ(local_options.caspar->solver_iter_max, caspar_default);
 
   const BundleAdjustmentOptions global_options =
       options.GlobalBundleAdjustment();
-  EXPECT_EQ(global_options.solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.ceres);
+  EXPECT_EQ(global_options.ceres->solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.caspar);
+  EXPECT_EQ(global_options.caspar->solver_iter_max, caspar_default);
 }
 
-TEST(IncrementalMapperOptions, EffBaMaxNumIterations) {
+TEST(IncrementalPipelineOptions, EffBaMaxNumIterations) {
   // Batch C: the Eff* resolvers landed (upstream d3ccaf35 parity); the fork
   // asserts them on the merged options surface (no per-backend slots).
-  IncrementalMapperOptions options;
+  IncrementalPipelineOptions options;
   const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
 
   // Sentinel resolves to the configured backend's default.

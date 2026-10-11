@@ -485,8 +485,31 @@
       "accuracy": {
         "reference": "cpu_reference",
         "reference_id": "test_depth_capi_backend_parity",
-        "checks": [],
-        "require_metrics": []
+        "checks": [
+          {
+            "metric": "depth_relative_mae",
+            "op": "<=",
+            "value": 0.015,
+            "label": "dense depth relative MAE vs CPU"
+          },
+          {
+            "metric": "pose_relative_mae",
+            "op": "<=",
+            "value": 0.02,
+            "label": "camera pose relative MAE vs CPU"
+          },
+          {
+            "metric": "intrinsics_relative_mae",
+            "op": "<=",
+            "value": 0.02,
+            "label": "intrinsics relative MAE vs CPU"
+          }
+        ],
+        "require_metrics": [
+          "depth_relative_mae",
+          "pose_relative_mae",
+          "intrinsics_relative_mae"
+        ]
       },
       "metric_parser": "generic"
     },
@@ -719,9 +742,9 @@
       "id": "facedetect-bnkps",
       "task": "facedetect",
       "owned_globs": [
-        "facedetect_models/scrfd_10g_bnkps.gguf"
+        "facedetect_models/scrfd_10g_bnkps-*.gguf"
       ],
-      "model_glob": "facedetect_models/scrfd_10g_bnkps.gguf",
+      "model_glob": "facedetect_models/scrfd_10g_bnkps-*.gguf",
       "for_each_model": true,
       "executable": "binary:test_facedetect_detect_only",
       "env": {
@@ -1523,7 +1546,7 @@
         "yolo_models/yolo26n-obb-1024-q8_0.gguf",
         "yolo_models/yolo26n-sem-1024-q8_0.gguf",
         "yolo_models/yolov8n-q8_0.gguf",
-        "yolo_models/yolov8s-worldv2-q8_0.gguf"
+        "yolo_models/yolov8s-world-q8_0.gguf"
       ],
       "required_globs": [
         "yolo_models/clip-ViT-B-32-f16.gguf",
@@ -2032,12 +2055,80 @@
         "{warmup_runs}"
       ],
       "env": {},
-      "accuracy_gate": "finite positive dense geometry, architecture-consistent camera layout (pose_enc FoV floor or c2w bottom row), and exact repeated-output hash",
+      "accuracy_gate": "image-path structural invariants: finite positive dense geometry, architecture-consistent camera layout (pose_enc FoV floor or c2w bottom row), exact repeated-output hash, borrowed-view layout equivalence (BGR8/RGBA8/BGRA8/padded RGB8 hash-equal to tight RGB8, GRAY8 equal to replicated RGB8, short stride / unknown format -> -1), resize-mode contract (unknown mode not-ready before load, square grid H == W with the long side spanning it); upstream truth is the map_anything-upstream-frames row",
       "accuracy": {
         "reference": "probe_invariant",
         "reference_id": "probe:map_anything",
         "checks": [],
         "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "map_anything-upstream-frames",
+      "task": "map_anything",
+      "owned_globs": [
+        "map_anything_models/*.gguf"
+      ],
+      "model_glob": "map_anything_models/*.gguf",
+      "light_globs": [
+        "map_anything_models/vggt-omega-1b-512-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_map_anything_upstream_parity.py",
+        "--probe",
+        "{binary:test_map_anything_upstream_frames}",
+        "--build",
+        "{build}",
+        "--model",
+        "{model}",
+        "--image",
+        "{image}",
+        "--image2",
+        "{image2}",
+        "--backend",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--views",
+        "3",
+        "--reference",
+        "{reference:map_anything_ggml}",
+        "--expect-revision",
+        "d76732e6bbaba1e1f9dc85cf5db7b705d8d48dea",
+        "--expect-ggml-revision",
+        "456172ec733a135778adcd32d00e576a58232e45",
+        "--expect-ggml-diff-sha256",
+        "d2206f3d9a47f3f0708cb0862d652f3311fa3c79421f50df3caab431635adf06",
+        "--out",
+        "{scenario_report}.upstream.d"
+      ],
+      "env": {},
+      "accuracy_gate": "bit-exact upstream truth: the same f32 (S,3,H,W) tensor through aicore_map_anything_run_frames and the pinned map-anything-ggml vggt-cli --bin on the same backend kind; every common typed output (pose/depth/conf/points/local_points/mask/scale/text_embedding) max_abs == 0, no uncompared candidate output",
+      "accuracy": {
+        "reference": "upstream_map_anything_ggml_cli",
+        "reference_id": "map-anything-ggml@d76732e6bbaba1e1f9dc85cf5db7b705d8d48dea cpp_ggml vggt-cli --bin, ggml v0.24.0 (456172ec) + local conv2d-transpose k==s CUDA kernel (working-tree diff sha256 d2206f3d...), build-<backend>; 3 views (dust3r 2) from sacre_coeur1/2, views>=3 mirrored",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<=",
+            "value": 0.0,
+            "label": "max |candidate - upstream| over all common raw outputs"
+          },
+          {
+            "metric": "raw_files_compared",
+            "op": ">=",
+            "value": 3,
+            "label": "typed outputs compared (pose/depth/conf at minimum)"
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "raw_files_compared"
+        ]
       },
       "fingerprint_policy": "exact",
       "metric_parser": "generic"
@@ -2061,7 +2152,7 @@
         "0.01"
       ],
       "env": {},
-      "accuracy_gate": "fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise.",
+      "accuracy_gate": "graph-level fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). This gate verifies converted weights and graph computation, not the complete det/box/crop/CTC pipeline. The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise. External unlabelled Paddle string agreement is diagnostic only. Release semantic evidence must run core/AICore/scripts/run_ocr_gt_matrix.py on an official labelled GT package pinned by SHA-256 and dataset revision; it reports Hmean/CER/WER for every Chinese/English det+rec quantization/backend row.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2102,7 +2193,7 @@
         "0.01"
       ],
       "env": {},
-      "accuracy_gate": "fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise.",
+      "accuracy_gate": "graph-level fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). This gate verifies converted weights and graph computation, not the complete det/box/crop/CTC pipeline. The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise. External unlabelled Paddle string agreement is diagnostic only. Release semantic evidence must run core/AICore/scripts/run_ocr_gt_matrix.py on an official labelled GT package pinned by SHA-256 and dataset revision; it reports Hmean/CER/WER for every Chinese/English det+rec quantization/backend row.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2145,7 +2236,7 @@
         "0.03"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical",
+      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2186,7 +2277,7 @@
         "0.03"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical",
+      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2229,7 +2320,7 @@
         "0.06"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical",
+      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2270,7 +2361,7 @@
         "0.06"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical",
+      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2313,7 +2404,7 @@
         "0.01"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3)",
+      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -2351,7 +2442,7 @@
         "0.08"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3)",
+      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -2389,7 +2480,7 @@
         "0.4"
       ],
       "env": {},
-      "accuracy_gate": "pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3)",
+      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -2440,7 +2531,7 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the paddle reference element-wise within the quantization tolerance.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
       "metric_parser": "generic",
       "light_globs": [
         "ocr_models/pplcnet-layout-f32.gguf"
@@ -2481,7 +2572,7 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the paddle reference element-wise within the quantization tolerance.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
       "metric_parser": "generic"
     },
     {
@@ -2519,7 +2610,7 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the paddle reference element-wise within the quantization tolerance.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
       "metric_parser": "generic"
     }
   ]

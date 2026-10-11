@@ -175,19 +175,22 @@ TEST(base_database, TestFloatDescriptorSqliteRoundTrip) {
 
   FeatureKeypoints keypoints = {FeatureKeypoint(10.5f, 20.25f),
                                 FeatureKeypoint(30.0f, 40.0f)};
-  FeatureDescriptorsFloat descriptors(2, 3);
-  descriptors << 0.125f, -3.5f, 1.0e-7f, 1.0f, 2.5f, -9.25f;
+  FeatureDescriptorsFloatData data(2, 3);
+  data << 0.125f, -3.5f, 1.0e-7f, 1.0f, 2.5f, -9.25f;
+  const FeatureDescriptorsFloat descriptors(FeatureExtractorType::LOMA_B,
+                                             std::move(data));
   database->WriteKeypoints(1, keypoints);
-  database->WriteFloatDescriptors(1, descriptors,
-                                 FeatureDescriptorType::kLomaG);
+  database->WriteDescriptors(1, descriptors.ToBytes());
 
-  EXPECT_TRUE(database->ExistsFloatDescriptors(1));
-  const auto loaded = database->ReadFloatDescriptors(1);
-  EXPECT_EQ(loaded.rows(), 2);
-  EXPECT_EQ(loaded.cols(), 3);
-  EXPECT_TRUE((loaded - descriptors).cwiseAbs().maxCoeff() == 0.0f);
-  EXPECT_TRUE(database->ReadDescriptorType(1) == FeatureDescriptorType::kLomaG);
-  EXPECT_FALSE(database->ExistsDescriptors(1));
+  const FeatureDescriptors loaded = database->ReadDescriptors(1);
+  EXPECT_EQ(loaded.type, FeatureExtractorType::LOMA_B);
+  const FeatureDescriptorsFloat loaded_float = loaded.ToFloat();
+  EXPECT_EQ(loaded_float.type, descriptors.type);
+  EXPECT_EQ(loaded_float.data.rows(), 2);
+  EXPECT_EQ(loaded_float.data.cols(), 3);
+  EXPECT_TRUE((loaded_float.data - descriptors.data).cwiseAbs().maxCoeff() ==
+              0.0f);
+  EXPECT_TRUE(database->ExistsDescriptors(1));
 }
 
 TEST(base_database, TestTransaction) {
@@ -247,6 +250,26 @@ TEST(base_database, TestImagePairToPairId) {
       }
     }
   }
+}
+
+TEST(base_database, TestSkewedPinholeCameraRoundTrip) {
+  auto database = Database::Open(kMemoryDatabasePath);
+  Camera camera;
+  camera.InitializeWithName("SKEWED_PINHOLE", 600.0, 1280, 960);
+  camera.Params()[1] = 500.0;
+  camera.Params()[4] = 50.0;
+  camera.SetCameraId(database->WriteCamera(camera));
+
+  const Camera restored = database->ReadCamera(camera.CameraId());
+  EXPECT_EQ(restored.ModelId(), CameraModelId::kSkewedPinhole);
+  EXPECT_EQ(restored.ModelName(), "SKEWED_PINHOLE");
+  EXPECT_EQ(restored.Params(), camera.Params());
+
+  const Eigen::Vector2d image_point(1020.0, 1240.0);
+  ASSERT_TRUE(camera.CamFromImg(image_point).has_value());
+  ASSERT_TRUE(restored.CamFromImg(image_point).has_value());
+  EXPECT_EQ(*restored.CamFromImg(image_point),
+            *camera.CamFromImg(image_point));
 }
 
 TEST(base_database, TestSwapImagePair) {
@@ -405,21 +428,24 @@ TEST(base_database, TestDescriptors) {
   image.SetImageId(database->WriteImage(image));
   EXPECT_EQ(database->NumDescriptors(), 0);
   EXPECT_EQ(database->NumDescriptorsForImage(image.ImageId()), 0);
-  const FeatureDescriptors descriptors = FeatureDescriptors::Random(10, 128);
+  const FeatureDescriptors descriptors(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData::Random(10, 128));
   database->WriteDescriptors(image.ImageId(), descriptors);
   const FeatureDescriptors descriptors_read =
       database->ReadDescriptors(image.ImageId());
-  EXPECT_EQ(descriptors.rows(), descriptors_read.rows());
-  EXPECT_EQ(descriptors.cols(), descriptors_read.cols());
-  for (FeatureDescriptors::Index r = 0; r < descriptors.rows(); ++r) {
-    for (FeatureDescriptors::Index c = 0; c < descriptors.cols(); ++c) {
-      EXPECT_EQ(descriptors(r, c), descriptors_read(r, c));
+  EXPECT_EQ(descriptors.type, descriptors_read.type);
+  EXPECT_EQ(descriptors.data.rows(), descriptors_read.data.rows());
+  EXPECT_EQ(descriptors.data.cols(), descriptors_read.data.cols());
+  for (FeatureDescriptorsData::Index r = 0; r < descriptors.data.rows(); ++r) {
+    for (FeatureDescriptorsData::Index c = 0; c < descriptors.data.cols(); ++c) {
+      EXPECT_EQ(descriptors.data(r, c), descriptors_read.data(r, c));
     }
   }
   EXPECT_EQ(database->NumDescriptors(), 10);
   EXPECT_EQ(database->MaxNumDescriptors(), 10);
   EXPECT_EQ(database->NumDescriptorsForImage(image.ImageId()), 10);
-  const FeatureDescriptors descriptors2 = FeatureDescriptors(20, 128);
+  const FeatureDescriptors descriptors2(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData(20, 128));
   image.SetName("test2");
   image.SetImageId(database->WriteImage(image));
   database->WriteDescriptors(image.ImageId(), descriptors2);
@@ -586,10 +612,14 @@ TEST(base_database, TestMerge) {
   auto keypoints4 = FeatureKeypoints(40);
   keypoints4[0].x = 400;
 
-  const auto descriptors1 = FeatureDescriptors::Random(10, 128);
-  const auto descriptors2 = FeatureDescriptors::Random(20, 128);
-  const auto descriptors3 = FeatureDescriptors::Random(30, 128);
-  const auto descriptors4 = FeatureDescriptors::Random(40, 128);
+  const FeatureDescriptors descriptors1(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData::Random(10, 128));
+  const FeatureDescriptors descriptors2(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData::Random(20, 128));
+  const FeatureDescriptors descriptors3(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData::Random(30, 128));
+  const FeatureDescriptors descriptors4(
+      FeatureExtractorType::SIFT, FeatureDescriptorsData::Random(40, 128));
 
   database1->WriteKeypoints(image_id1, keypoints1);
   database1->WriteKeypoints(image_id2, keypoints2);
@@ -624,14 +654,15 @@ TEST(base_database, TestMerge) {
   EXPECT_EQ(merged_database->ReadKeypoints(2)[0].x, 200);
   EXPECT_EQ(merged_database->ReadKeypoints(3)[0].x, 300);
   EXPECT_EQ(merged_database->ReadKeypoints(4)[0].x, 400);
-  EXPECT_EQ(merged_database->ReadDescriptors(1).size(),
-                    descriptors1.size());
-  EXPECT_EQ(merged_database->ReadDescriptors(2).size(),
-                    descriptors2.size());
-  EXPECT_EQ(merged_database->ReadDescriptors(3).size(),
-                    descriptors3.size());
-  EXPECT_EQ(merged_database->ReadDescriptors(4).size(),
-                    descriptors4.size());
+  EXPECT_EQ(merged_database->ReadDescriptors(1).type, descriptors1.type);
+  EXPECT_EQ(merged_database->ReadDescriptors(1).data.size(),
+            descriptors1.data.size());
+  EXPECT_EQ(merged_database->ReadDescriptors(2).data.size(),
+            descriptors2.data.size());
+  EXPECT_EQ(merged_database->ReadDescriptors(3).data.size(),
+            descriptors3.data.size());
+  EXPECT_EQ(merged_database->ReadDescriptors(4).data.size(),
+            descriptors4.data.size());
   EXPECT_TRUE(merged_database->ExistsMatches(1, 2));
   EXPECT_FALSE(merged_database->ExistsMatches(2, 3));
   EXPECT_FALSE(merged_database->ExistsMatches(2, 4));
@@ -666,6 +697,17 @@ void CreateLegacyForkDatabase(const std::string& path) {
       "    qvec     BLOB,"
       "    tvec     BLOB);";
   CHECK_EQ(sqlite3_exec(db, create_sql, nullptr, nullptr, nullptr), SQLITE_OK);
+  CHECK_EQ(sqlite3_exec(
+               db,
+               "CREATE TABLE descriptors (image_id INTEGER PRIMARY KEY NOT NULL, "
+               "rows INTEGER NOT NULL, cols INTEGER NOT NULL, data BLOB);"
+               "CREATE TABLE float_descriptors (image_id INTEGER PRIMARY KEY NOT NULL, "
+               "rows INTEGER NOT NULL, cols INTEGER NOT NULL, data BLOB, "
+               "type INTEGER NOT NULL);",
+               nullptr,
+               nullptr,
+               nullptr),
+           SQLITE_OK);
   sqlite3_stmt* stmt = nullptr;
   CHECK_EQ(sqlite3_prepare_v2(db,
                               "INSERT INTO two_view_geometries"
@@ -685,6 +727,45 @@ void CreateLegacyForkDatabase(const std::string& path) {
                     SQLITE_TRANSIENT);
   CHECK_EQ(sqlite3_step(stmt), SQLITE_DONE);
   sqlite3_finalize(stmt);
+
+  const FeatureDescriptorsData sift_bytes =
+      FeatureDescriptorsData::Constant(1, 2, 17);
+  CHECK_EQ(sqlite3_prepare_v2(
+               db,
+               "INSERT INTO descriptors(image_id, rows, cols, data) "
+               "VALUES(7, 1, 2, ?);",
+               -1,
+               &stmt,
+               nullptr),
+           SQLITE_OK);
+  CHECK_EQ(sqlite3_bind_blob(stmt,
+                             1,
+                             sift_bytes.data(),
+                             static_cast<int>(sift_bytes.size()),
+                             SQLITE_TRANSIENT),
+           SQLITE_OK);
+  CHECK_EQ(sqlite3_step(stmt), SQLITE_DONE);
+  sqlite3_finalize(stmt);
+
+  const FeatureDescriptorsFloatData loma_float =
+      FeatureDescriptorsFloatData::Constant(1, 2, 0.25f);
+  CHECK_EQ(sqlite3_prepare_v2(
+               db,
+               "INSERT INTO float_descriptors(image_id, rows, cols, data, type) "
+               "VALUES(8, 1, 2, ?, 1);",
+               -1,
+               &stmt,
+               nullptr),
+           SQLITE_OK);
+  CHECK_EQ(sqlite3_bind_blob(stmt,
+                             1,
+                             loma_float.data(),
+                             static_cast<int>(loma_float.size() * sizeof(float)),
+                             SQLITE_TRANSIENT),
+           SQLITE_OK);
+  CHECK_EQ(sqlite3_step(stmt), SQLITE_DONE);
+  sqlite3_finalize(stmt);
+
   CHECK_EQ(sqlite3_exec(
                db,
                StringPrintf("PRAGMA user_version = %d;",
@@ -750,6 +831,15 @@ TEST(base_database, TestMigrateLegacyForkDatabase) {
                     kLegacyForkDatabaseVersionNumber);
   {
     auto database = Database::Open(path);
+    const FeatureDescriptors sift_descriptors = database->ReadDescriptors(7);
+    EXPECT_EQ(sift_descriptors.type, FeatureExtractorType::SIFT);
+    EXPECT_TRUE(sift_descriptors.data.isApprox(
+        FeatureDescriptorsData::Constant(1, 2, 17)));
+    const FeatureDescriptors loma_descriptors = database->ReadDescriptors(8);
+    EXPECT_EQ(loma_descriptors.type, FeatureExtractorType::LOMA_B);
+    const FeatureDescriptorsFloat loma_float = loma_descriptors.ToFloat();
+    EXPECT_TRUE(loma_float.data.isApprox(
+        FeatureDescriptorsFloatData::Constant(1, 2, 0.25f)));
     database->Close();
   }
   // Identity/zero pose sentinels and the zero F matrix are migrated to NULL.
@@ -766,6 +856,17 @@ TEST(base_database, TestMigrateLegacyForkDatabase) {
   EXPECT_TRUE(sqlite3_column_type(stmt, 0) == SQLITE_NULL);
   EXPECT_TRUE(sqlite3_column_type(stmt, 1) == SQLITE_NULL);
   EXPECT_TRUE(sqlite3_column_type(stmt, 2) == SQLITE_NULL);
+  sqlite3_finalize(stmt);
+  CHECK_EQ(sqlite3_prepare_v2(
+               db,
+               "SELECT COUNT(*) FROM sqlite_master "
+               "WHERE type = 'table' AND name = 'float_descriptors';",
+               -1,
+               &stmt,
+               nullptr),
+           SQLITE_OK);
+  EXPECT_TRUE(sqlite3_step(stmt) == SQLITE_ROW);
+  EXPECT_EQ(sqlite3_column_int(stmt, 0), 0);
   sqlite3_finalize(stmt);
   sqlite3_close(db);
   EXPECT_EQ(ReadRawDatabaseUserVersion(path),

@@ -41,6 +41,23 @@ def test_camera_create_from_model_name(pinhole):
     assert pinhole.focal_length_y == 800.0
 
 
+def test_skewed_pinhole_binding_and_unprojection(scene):
+    camera = scene.Camera.create_from_model_name(42, "SKEWED_PINHOLE", 600.0,
+                                                 1280, 960)
+    params = camera.params
+    params[1] = 500.0
+    params[2] = 320.0
+    params[3] = 240.0
+    params[4] = 50.0
+    camera.params = params
+
+    assert camera.model_name == "SKEWED_PINHOLE"
+    assert list(camera.params) == [600.0, 500.0, 320.0, 240.0, 50.0]
+    assert camera.cam_from_img([1020.0, 1240.0]) == pytest.approx([1.0, 2.0])
+    assert camera.img_from_cam([1.0, 2.0,
+                                1.0]) == pytest.approx([1020.0, 1240.0])
+
+
 def test_camera_single_focal_length(scene):
     cam = scene.Camera.create_from_model_name(1, "SIMPLE_RADIAL", 800.0, 640,
                                               480)

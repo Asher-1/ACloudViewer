@@ -6,4 +6,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/RMBGLiveInferWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/RMBGLiveWidget.h
         ${CMAKE_CURRENT_LIST_DIR}/RMBGDialog.h
+        ${CMAKE_CURRENT_LIST_DIR}/RMBGBatchCommand.h
 )

@@ -611,10 +611,15 @@ void LingbotMapWorker::run() {
         }
 #endif
     } else {
-        streamBound = static_cast<int>(
-                listFrameFiles(m_settings.imageFolder,
-                               parseImageExtensions(m_settings.imageExt), 0, 1)
-                        .size());
+        streamBound =
+                m_settings.inputPaths.isEmpty()
+                        ? static_cast<int>(
+                                  listFrameFiles(m_settings.imageFolder,
+                                                 parseImageExtensions(
+                                                         m_settings.imageExt),
+                                                 0, 1)
+                                          .size())
+                        : m_settings.inputPaths.size();
     }
     // Same truncation/sampling order as runInference, applied to the bound.
     if (m_settings.maxFrames > 0 && streamBound > m_settings.maxFrames) {
@@ -844,9 +849,22 @@ bool LingbotMapWorker::runInference(QString* error) {
         }
     } else {
 #endif
-        files = listFrameFiles(m_settings.imageFolder,
-                               parseImageExtensions(m_settings.imageExt),
-                               m_settings.maxFrames, m_settings.frameStride);
+        if (m_settings.inputPaths.isEmpty()) {
+            files = listFrameFiles(m_settings.imageFolder,
+                                   parseImageExtensions(m_settings.imageExt),
+                                   m_settings.maxFrames,
+                                   m_settings.frameStride);
+        } else {
+            files = m_settings.inputPaths;
+            if (m_settings.maxFrames > 0 && files.size() > m_settings.maxFrames)
+                files = files.mid(0, m_settings.maxFrames);
+            if (m_settings.frameStride > 1) {
+                QStringList sampled;
+                for (int i = 0; i < files.size(); i += m_settings.frameStride)
+                    sampled.append(files[i]);
+                files = sampled;
+            }
+        }
 #ifdef HAS_OPENCV_FACE_CAPTURE
     }
 #else

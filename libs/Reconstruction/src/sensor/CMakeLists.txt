@@ -2,6 +2,7 @@ set(FOLDER_NAME "sensor")
 
 COLMAP_ADD_SOURCES(
     database.h database.cc
+    imu.h imu.cc
     models.h models.cc
     models/base.h
     models/pinhole.h
@@ -21,6 +22,7 @@ COLMAP_ADD_SOURCES(
 )
 
 COLMAP_ADD_TEST(sensor_database_test database_test.cc)
+COLMAP_ADD_TEST(imu_test imu_test.cc)
 COLMAP_ADD_TEST(bitmap_test bitmap_test.cc)
 COLMAP_ADD_TEST(models_test models_test.cc)
 COLMAP_ADD_TEST(jacobian_test models/jacobian_test.cc)

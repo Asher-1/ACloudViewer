@@ -353,6 +353,15 @@ else ()
     message(STATUS "Disabling OpenGL support")
 endif ()
 
+# Upstream parity (cmake/FindDependencies.cmake GPU_ENABLED): SiftGPU-based
+# feature extraction/matching is available whenever OpenGL or CUDA is.
+set(GPU_ENABLED OFF)
+if (OPENGL_ENABLED OR CUDA_ENABLED)
+    add_compile_definitions(GPU_ENABLED)
+    set(GPU_ENABLED ON)
+    message(STATUS "Enabling GPU support (OpenGL: ${OPENGL_ENABLED}, CUDA: ${CUDA_ENABLED})")
+endif ()
+
 if (PROFILING_ENABLED)
     message(STATUS "Enabling profiling support")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lprofiler -ltcmalloc")

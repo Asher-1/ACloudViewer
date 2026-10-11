@@ -494,6 +494,11 @@ aicore_add_capi_test(test_deeplsd_capi_load deeplsd LABELS capi;model)
 aicore_add_capi_test(test_gkd_capi_contract gkd)
 aicore_add_capi_test(test_gkd_capi_load gkd LABELS capi;model)
 aicore_add_capi_test(test_map_anything_capi_load map_anything LABELS capi;model)
+# Candidate half of the upstream cpp_ggml frames parity gate (NOT a ctest: it
+# needs the external vggt-cli reference; driven by the manifest row
+# map_anything-upstream-frames via run_map_anything_upstream_parity.py).
+aicore_add_capi_tool(test_map_anything_upstream_frames
+    map_anything/test_map_anything_upstream_frames.cpp)
 
 aicore_add_capi_test(test_lingbot_capi_contract lingbot)
 aicore_add_capi_test(test_lingbot_capi_load lingbot LABELS capi;model)
@@ -1059,6 +1064,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         bench_sam3_backend_acceptance
         test_gkd_capi_load
         test_map_anything_capi_load
+        test_map_anything_upstream_frames
         test_lingbot_capi_load
         test_reid_capi_load
         test_yolo_capi_performance
@@ -1089,6 +1095,15 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         list(APPEND _aicore_validation_runtime_env
              "AICORE_CUDA_LIBRARY_DIR=${_aicore_cuda_lib_dir}")
     endif()
+    # External truth programs for {reference:NAME} manifest rows, e.g.
+    # "map_anything_ggml=/path/to/map-anything-ggml". Rows whose reference is
+    # not configured are reported skipped, which fails the gate.
+    set(AICORE_VALIDATION_REFERENCES "" CACHE STRING
+        "Semicolon list of NAME=PATH upstream references for aicore-validate-all")
+    set(_aicore_validation_reference_args)
+    foreach(_aicore_reference IN LISTS AICORE_VALIDATION_REFERENCES)
+        list(APPEND _aicore_validation_reference_args --reference "${_aicore_reference}")
+    endforeach()
     add_custom_target(aicore-validate-all
         COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
                 ${Python3_EXECUTABLE}
@@ -1098,6 +1113,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 --backend ${AICORE_TEST_DEVICE}
                 --tasks ${_aicore_enabled_tasks_csv}
                 --timeout 14400
+                ${_aicore_validation_reference_args}
                 --output ${CMAKE_BINARY_DIR}/Testing/aicore_validation.json
         DEPENDS test_catalog_dump_urls ${_aicore_validation_targets}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -1111,6 +1127,18 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
         LABELS "fast;validation")
+
+    add_test(NAME test_map_anything_upstream_parity_runner
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_run_map_anything_upstream_parity.py)
+    set_tests_properties(test_map_anything_upstream_parity_runner PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_ocr_gt_eval
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_gt_eval.py)
+    set_tests_properties(test_ocr_gt_eval PROPERTIES
+        LABELS "fast;validation;ocr")
 
     add_test(NAME test_aicore_plugin_boundaries
         COMMAND ${Python3_EXECUTABLE}

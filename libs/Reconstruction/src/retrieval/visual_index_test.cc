@@ -16,14 +16,11 @@ namespace colmap {
 namespace retrieval {
 namespace {
 
-// Helper to create random descriptors with a given type. Fork parity: the
-// descriptor type is a plain matrix (no type metadata), so only the shape is
-// materialized here.
 FeatureDescriptorsFloat CreateRandomDescriptors(int num_rows,
                                                 int desc_dim,
                                                 FeatureExtractorType type) {
-  (void)type;
-  return FeatureDescriptorsFloat::Random(num_rows, desc_dim);
+  return FeatureDescriptorsFloat(
+      type, FeatureDescriptorsFloatData::Random(num_rows, desc_dim));
 }
 
 class ParameterizedVisualIndexTests
@@ -54,8 +51,7 @@ TEST_P(ParameterizedVisualIndexTests, Nominal) {
     build_options.num_visual_words = 5;
     visual_index->Build(build_options, descriptors);
     EXPECT_EQ(visual_index->NumVisualWords(), 5);
-    EXPECT_EQ(visual_index->FeatureType(),
-          FeatureExtractorType::UNDEFINED);  // fork: no type metadata
+    EXPECT_EQ(visual_index->FeatureType(), FeatureExtractorType::SIFT);
   }
 
   {
@@ -141,8 +137,7 @@ TEST_P(ParameterizedVisualIndexTests, ReadWrite) {
   build_options.num_visual_words = 5;
   visual_index->Build(build_options, descriptors);
   EXPECT_EQ(visual_index->NumVisualWords(), 5);
-  EXPECT_EQ(visual_index->FeatureType(),
-          FeatureExtractorType::UNDEFINED);  // fork: no type metadata
+  EXPECT_EQ(visual_index->FeatureType(), FeatureExtractorType::SIFT);
 
   VisualIndex::IndexOptions index_options;
   FeatureKeypoints keypoints1(50);
@@ -279,13 +274,10 @@ TEST_P(ParameterizedVisualIndexTests, TypeMismatch) {
       CreateRandomDescriptors(100, desc_dim, FeatureExtractorType::SIFT);
   auto visual_index = VisualIndex::Create(desc_dim, embedding_dim);
   visual_index->Build(build_options, sift_descriptors);
-  EXPECT_EQ(visual_index->FeatureType(),
-          FeatureExtractorType::UNDEFINED);  // fork: no type metadata
+  EXPECT_EQ(visual_index->FeatureType(), FeatureExtractorType::SIFT);
 
-  // Adding descriptors with mismatched type should throw. Fork parity: the
-  // plain-matrix descriptors carry no type metadata, so the mismatch check
-  // is not exercisable until the W18.3 types.h batch lands.
-  GTEST_SKIP() << "fork: descriptor type metadata not available";
+  // Adding descriptors with a mismatched type must reject the index rather
+  // than treating different descriptor encodings as interchangeable.
   VisualIndex::IndexOptions index_options;
   FeatureKeypoints keypoints(10);
   auto undefined_descriptors =
@@ -335,7 +327,7 @@ TEST(VisualIndex, Print) {
   stream << *visual_index;
   EXPECT_EQ(stream.str(),
             "VisualIndex(num_visual_words=10, num_images=2, desc_dim=128, "
-            "embedding_dim=64, feature_type=UNDEFINED)");
+            "embedding_dim=64, feature_type=SIFT)");
 }
 
 INSTANTIATE_TEST_SUITE_P(VisualIndexTests,

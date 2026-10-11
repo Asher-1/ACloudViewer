@@ -6,15 +6,21 @@ on:
     branches: [main]
     paths:
       - 'agent-integration/**'
-      - 'plugins/core/Standard/qJSonRPCPlugin/**'
+      - 'core/AICore/**'
+      - 'libs/CVPluginAPI/include/ecvAICoreBatchCommand.h'
+      - 'plugins/core/Standard/**'
       - '.agents/mcp.json'
+      - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
       - 'agent-integration/**'
-      - 'plugins/core/Standard/qJSonRPCPlugin/**'
+      - 'core/AICore/**'
+      - 'libs/CVPluginAPI/include/ecvAICoreBatchCommand.h'
+      - 'plugins/core/Standard/**'
       - '.agents/mcp.json'
+      - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
 
 concurrency:
@@ -64,6 +70,10 @@ jobs:
       - name: Level 1 — C++ plugin source verification
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level1 and not builds"
+
+      - name: Level 1 — AICore plugin ownership boundary
+        run: |
+          python core/AICore/tests/check_plugin_aicore_boundaries.py --root . --strict
 
       - name: Level 2 — CLI harness tests
         run: |

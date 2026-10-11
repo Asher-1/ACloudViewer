@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "aicore/facedetect_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -176,12 +177,17 @@ int main() {
                             0.95 * static_cast<double>(elapsed.size()))) -
                     1];
     const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE");
+    // output_hash: byte fingerprint of the typed detections, so the runner's
+    // exact policy also proves cross-process determinism and baseline drift.
+    const uint64_t output_hash = aicore::test::fnv1a(
+            reference.flat.data(), reference.flat.size() * sizeof(float));
     std::printf(
             "{\"suite\":\"aicore\",\"task\":\"facedetect\","
             "\"device\":\"%s\",\"faces\":%d,\"sum\":%.4f,"
             "\"p50_ms\":%.2f,\"p95_ms\":%.2f,\"warmups\":%d,"
-            "\"iterations\":%d,\"max_abs_diff\":%.7f}\n",
+            "\"iterations\":%d,\"max_abs_diff\":%.7f,"
+            "\"output_hash\":\"%016llx\"}\n",
             device ? device : "auto", reference.count, sum, p50, p95, warmups,
-            runs, worst);
+            runs, worst, static_cast<unsigned long long>(output_hash));
     return 0;
 }

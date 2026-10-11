@@ -400,6 +400,11 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
                     ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_COLMAP_QT_LIB_DIR}:${CMAKE_BINARY_DIR}/external/lib:${COLMAP_TEST_RUNTIME_DIR}:$ENV{LD_LIBRARY_PATH}")
         endif ()
+        # Tests are build-tree diagnostics, not release artifacts. Skipping
+        # the post-link strip avoids a second writer touching the executable
+        # while highly parallel Make builds finalize test targets.
+        set_property(TARGET ${TARGET_NAME} PROPERTY
+                     CLOUDVIEWER_SKIP_POST_BUILD_STRIP TRUE)
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})

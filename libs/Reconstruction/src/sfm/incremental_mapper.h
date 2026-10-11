@@ -77,11 +77,11 @@ public:
         bool abs_pose_refine_extra_params = true;
 
         // Number of images to optimize in local bundle adjustment.
-        int local_ba_num_images = 6;
+        int ba_local_num_images = 6;
 
         // Minimum triangulation for images to be chosen in local bundle
         // adjustment.
-        double local_ba_min_tri_angle = 6.0;
+        double ba_local_min_tri_angle = 6.0;
 
         // Thresholds for bogus camera parameters. Images with bogus camera
         // parameters are filtered and ignored in triangulation.
@@ -99,7 +99,7 @@ public:
         int max_reg_trials = 3;
 
         // If reconstruction is provided as input, fix the existing image poses.
-        bool fix_existing_images = false;
+        bool fix_existing_frames = false;
 
         // List of rigs for which to fix the sensor_from_rig transformation,
         // independent of ba_refine_sensor_from_rig (upstream d3ccaf35,
@@ -256,7 +256,7 @@ public:
     // Filter frames (and their images) whose pose or camera parameters are
     // unreliable. Filtering and bookkeeping happen at frame granularity
     // (upstream d3ccaf35 FilterFrames; the fork keeps the
-    // fix_existing_images option name for CLI compatibility).
+    // fix_existing_frames option name for CLI compatibility).
     size_t FilterFrames(const Options& options);
     size_t FilterPoints(const Options& options);
 

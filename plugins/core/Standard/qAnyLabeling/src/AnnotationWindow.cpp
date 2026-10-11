@@ -9048,9 +9048,7 @@ void AnnotationWindow::startRemoteInference() {
     RemoteServerClient::Settings remote;
     remote.serverUrl =
             settings.value(QStringLiteral("qAnyLabeling/remoteServerUrl"),
-                           qEnvironmentVariable(
-                                   "XANYLABELING_SERVER_URL",
-                                   QStringLiteral("http://127.0.0.1:8000")))
+                           QStringLiteral("http://127.0.0.1:8000"))
                     .toString();
     remote.apiKey =
             settings.value(QStringLiteral("qAnyLabeling/remoteServerApiKey"))
@@ -9364,9 +9362,7 @@ void AnnotationWindow::openRemoteServerSettings() {
     RemoteServerClient::Settings remote;
     remote.serverUrl =
             settings.value(QStringLiteral("qAnyLabeling/remoteServerUrl"),
-                           qEnvironmentVariable(
-                                   "XANYLABELING_SERVER_URL",
-                                   QStringLiteral("http://127.0.0.1:8000")))
+                           QStringLiteral("http://127.0.0.1:8000"))
                     .toString();
     remote.apiKey =
             settings.value(QStringLiteral("qAnyLabeling/remoteServerApiKey"))

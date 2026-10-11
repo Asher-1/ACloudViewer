@@ -1271,8 +1271,32 @@ void pybind_estimators(py::module& m) {
             .def(py::init<>());
 
     // Upstream pycolmap parity: options for pose-prior-regularized bundle
-    // adjustment. The upstream also embeds a ceres solver options member
-    // (embedded-ceres subproject, not bound here).
+    // adjustment, split into solver-agnostic and Ceres-specific parts.
+    py::enum_<colmap::CeresLossFunctionType>(
+            m_estimators, "CeresLossFunctionType",
+            "Robust loss function used by the Ceres bundle adjuster.")
+            .value("TRIVIAL", colmap::CeresLossFunctionType::TRIVIAL)
+            .value("SOFT_L1", colmap::CeresLossFunctionType::SOFT_L1)
+            .value("CAUCHY", colmap::CeresLossFunctionType::CAUCHY)
+            .value("HUBER", colmap::CeresLossFunctionType::HUBER);
+
+    py::class_<colmap::CeresPosePriorBundleAdjustmentOptions,
+               std::shared_ptr<colmap::CeresPosePriorBundleAdjustmentOptions>>(
+            m_estimators, "CeresPosePriorBundleAdjustmentOptions",
+            "Ceres-specific pose prior bundle adjustment options.")
+            .def(py::init<>())
+            .def_readwrite("prior_position_loss_function_type",
+                           &colmap::CeresPosePriorBundleAdjustmentOptions::
+                                   prior_position_loss_function_type,
+                           "Loss function for prior position loss.")
+            .def_readwrite("prior_position_loss_scale",
+                           &colmap::CeresPosePriorBundleAdjustmentOptions::
+                                   prior_position_loss_scale,
+                           "Threshold on the residual for the robust loss "
+                           "(chi2 for 3DOF at 95% = 7.815).")
+            .def("check",
+                 &colmap::CeresPosePriorBundleAdjustmentOptions::Check);
+
     py::class_<colmap::PosePriorBundleAdjustmentOptions> pose_prior_ba_options(
             m_estimators, "PosePriorBundleAdjustmentOptions",
             "Options for pose-prior-regularized bundle adjustment.");
@@ -1288,11 +1312,10 @@ void pybind_estimators(py::module& m) {
                             alignment_ransac_options,
                     "RANSAC options for aligning the reconstruction to the "
                     "priors before the adjustment.")
-            .def_readwrite(
-                    "prior_position_loss_scale",
-                    &colmap::PosePriorBundleAdjustmentOptions::
-                            prior_position_loss_scale,
-                    "Scale of the robust loss on the prior position terms.")
+            .def_readwrite("ceres",
+                           &colmap::PosePriorBundleAdjustmentOptions::ceres,
+                           "Ceres-specific pose prior bundle adjustment "
+                           "options.")
             .def("check", &colmap::PosePriorBundleAdjustmentOptions::Check,
                  "Validate the option values.");
 
@@ -1578,14 +1601,17 @@ void pybind_estimators(py::module& m) {
             .def_readwrite(
                     "generate_random_points",
                     &colmap::GlobalPositionerOptions::generate_random_points)
-            .def_readwrite("generate_scales",
-                           &colmap::GlobalPositionerOptions::generate_scales)
+            .def_readwrite("initialize_scales_from_geometry",
+                           &colmap::GlobalPositionerOptions::
+                                   initialize_scales_from_geometry)
             .def_readwrite("optimize_positions",
                            &colmap::GlobalPositionerOptions::optimize_positions)
             .def_readwrite("optimize_points",
                            &colmap::GlobalPositionerOptions::optimize_points)
             .def_readwrite("optimize_scales",
                            &colmap::GlobalPositionerOptions::optimize_scales)
+            .def_readwrite("fix_first_scale",
+                           &colmap::GlobalPositionerOptions::fix_first_scale)
             .def_readwrite(
                     "refine_sensor_from_rig",
                     &colmap::GlobalPositionerOptions::refine_sensor_from_rig)
@@ -1603,6 +1629,12 @@ void pybind_estimators(py::module& m) {
             .def_readwrite(
                     "loss_function_scale",
                     &colmap::GlobalPositionerOptions::loss_function_scale)
+            .def_readwrite("experimental_observation_stddev",
+                           &colmap::GlobalPositionerOptions::
+                                   experimental_observation_stddev)
+            .def_readwrite("uncalibrated_observation_weight",
+                           &colmap::GlobalPositionerOptions::
+                                   uncalibrated_observation_weight)
             .def_readwrite("use_parameter_block_ordering",
                            &colmap::GlobalPositionerOptions::
                                    use_parameter_block_ordering)
@@ -2118,10 +2150,11 @@ void pybind_estimators(py::module& m) {
                            REPROJECTION_ERROR)
             .export_values();
 
-    // Upstream parity (estimators/bundle_adjustment_caspar.h): the aggregate
-    // caspar solver-parameter contract; the fork execution still runs through
-    // the flat BundleAdjustmentOptions path.
-    py::class_<colmap::CasparBundleAdjustmentOptions>(
+    // Upstream parity (estimators/bundle_adjustment_caspar.h): the caspar
+    // solver-parameter contract, shared with BundleAdjustmentOptions::caspar
+    // (shared_ptr holder).
+    py::class_<colmap::CasparBundleAdjustmentOptions,
+               std::shared_ptr<colmap::CasparBundleAdjustmentOptions>>(
             m_estimators, "CasparBundleAdjustmentOptions")
             .def(py::init<>())
             .def_readwrite(
@@ -2181,11 +2214,6 @@ void pybind_estimators(py::module& m) {
             .def_readonly(
                     "initial_score",
                     &colmap::CasparBundleAdjustmentSummary::initial_score);
-
-    // Upstream name of the pose-prior BA options (the fork type is registered
-    // above under the pre-unification name).
-    m_estimators.attr("CeresPosePriorBundleAdjustmentOptions") =
-            m_estimators.attr("PosePriorBundleAdjustmentOptions");
 
     m_estimators.attr("__docstring__") = map_shared_argument_docstrings;
 }

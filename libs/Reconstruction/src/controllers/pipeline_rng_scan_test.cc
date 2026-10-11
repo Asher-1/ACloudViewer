@@ -38,13 +38,13 @@ TEST(PipelineRngScan, DISABLED_ScanSeeds) {
         synthetic_dataset_options, &gt_reconstruction, database.get());
 
     auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-    auto options = std::make_shared<IncrementalMapperOptions>();
+    auto options = std::make_shared<IncrementalPipelineOptions>();
     options->random_seed = static_cast<int>(k);
     // TEMP-DIAG(batch-I): pin single-threaded BA so the ceres reduction
     // order is deterministic; multi-threaded runs fork the pipeline at
     // bit-level jitter and mask the per-seed pipeline quality question.
     options->num_threads = 1;
-    IncrementalMapperController mapper(options.get(), "", database_path,
+    IncrementalPipeline mapper(options.get(), "", database_path,
                                        reconstruction_manager.get());
     mapper.Start();
     mapper.Wait();
@@ -117,9 +117,9 @@ TEST(PipelineRngScan, DISABLED_SeedDetail) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  auto options = std::make_shared<IncrementalMapperOptions>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
   options->random_seed = static_cast<int>(kSeed);
-  IncrementalMapperController mapper(options.get(), "", database_path,
+  IncrementalPipeline mapper(options.get(), "", database_path,
                                      reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();

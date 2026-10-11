@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// Port of upstream MVS/colmap d3ccaf35
-// src/colmap/controllers/hierarchical_pipeline_test.cc (batch C alignment).
-// The fork's HierarchicalMapperController takes three separate option
-// objects and is Thread-based (Start/Wait instead of a synchronous Run()).
+// Port of upstream MVS/colmap a2bd15c2
+// src/colmap/controllers/hierarchical_pipeline_test.cc.
+// The fork's HierarchicalPipeline consumes the upstream
+// HierarchicalPipelineOptions but is Thread-based (Start/Wait instead of a
+// synchronous Run()).
 
 #include "controllers/hierarchical_pipeline.h"
 
@@ -60,15 +61,11 @@ TEST(HierarchicalPipeline, WithoutNoise) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  HierarchicalMapperController::Options controller_options;
-  controller_options.database_path = database_path;
-  SceneClustering::Options clustering_options;
-  IncrementalMapperOptions mapper_options;
-  clustering_options.leaf_max_num_images = 5;
-  clustering_options.image_overlap = 3;
-  HierarchicalMapperController mapper(controller_options,
-                                      clustering_options, mapper_options,
-                                      reconstruction_manager.get());
+  HierarchicalPipelineOptions mapper_options;
+  mapper_options.clustering_options.leaf_max_num_images = 5;
+  mapper_options.clustering_options.image_overlap = 3;
+  HierarchicalPipeline mapper(mapper_options, database_path,
+                              reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
 
@@ -108,19 +105,17 @@ TEST(HierarchicalPipeline, WithoutNoiseAndNonTrivialFrames) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  HierarchicalMapperController::Options controller_options;
-  controller_options.database_path = database_path;
-  SceneClustering::Options clustering_options;
-  IncrementalMapperOptions mapper_options;
-  clustering_options.leaf_max_num_images = 10;
-  clustering_options.image_overlap = 3;
+  HierarchicalPipelineOptions mapper_options;
+  mapper_options.clustering_options.leaf_max_num_images = 10;
+  mapper_options.clustering_options.image_overlap = 3;
   // Note that the hierarchical mapper does not work well when the
   // sensor_from_rig poses are inconsistently refined in different clusters,
   // because then the merging does not work well.
-  // Fork adjudication: no per-sensor-from-rig BA refinement knob.
-  HierarchicalMapperController mapper(controller_options,
-                                      clustering_options, mapper_options,
-                                      reconstruction_manager.get());
+  // Upstream parity (a2bd15c2): the knob is honoured now that the Ceres BA
+  // composes non-reference sensors independent of refine_sensor_from_rig.
+  mapper_options.incremental_options.ba_refine_sensor_from_rig = false;
+  HierarchicalPipeline mapper(mapper_options, database_path,
+                              reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
 
@@ -151,19 +146,17 @@ TEST(HierarchicalPipeline, WithoutNoiseAndPanoramicNonTrivialFrames) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  HierarchicalMapperController::Options controller_options;
-  controller_options.database_path = database_path;
-  SceneClustering::Options clustering_options;
-  IncrementalMapperOptions mapper_options;
-  clustering_options.leaf_max_num_images = 10;
-  clustering_options.image_overlap = 3;
+  HierarchicalPipelineOptions mapper_options;
+  mapper_options.clustering_options.leaf_max_num_images = 10;
+  mapper_options.clustering_options.image_overlap = 3;
   // Note that the hierarchical mapper does not work well when the
   // sensor_from_rig poses are inconsistently refined in different clusters,
   // because then the merging does not work well.
-  // Fork adjudication: no per-sensor-from-rig BA refinement knob.
-  HierarchicalMapperController mapper(controller_options,
-                                      clustering_options, mapper_options,
-                                      reconstruction_manager.get());
+  // Upstream parity (a2bd15c2): the knob is honoured now that the Ceres BA
+  // composes non-reference sensors independent of refine_sensor_from_rig.
+  mapper_options.incremental_options.ba_refine_sensor_from_rig = false;
+  HierarchicalPipeline mapper(mapper_options, database_path,
+                              reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
 
@@ -199,15 +192,11 @@ TEST(HierarchicalPipeline, DISABLED_MultiReconstruction) {
       synthetic_dataset_options, &gt_reconstruction2, database.get());
 
   auto reconstruction_manager = std::make_shared<ReconstructionManager>();
-  HierarchicalMapperController::Options controller_options;
-  controller_options.database_path = database_path;
-  SceneClustering::Options clustering_options;
-  IncrementalMapperOptions mapper_options;
-  clustering_options.leaf_max_num_images = 5;
-  clustering_options.image_overlap = 3;
-  HierarchicalMapperController mapper(controller_options,
-                                      clustering_options, mapper_options,
-                                      reconstruction_manager.get());
+  HierarchicalPipelineOptions mapper_options;
+  mapper_options.clustering_options.leaf_max_num_images = 5;
+  mapper_options.clustering_options.image_overlap = 3;
+  HierarchicalPipeline mapper(mapper_options, database_path,
+                              reconstruction_manager.get());
   mapper.Start();
   mapper.Wait();
 

@@ -25,7 +25,9 @@ compatibility, but new scenarios must add:
 ```
 
 Supported operators are `<`, `<=`, `>`, `>=`, `==`, `!=`, and `finite`.
-Metric names may be complete flattened JSON paths or a unique leaf name. A
+Metric names may be complete flattened JSON paths or a unique leaf name. Any
+numeric leaf a row's own `checks`/`require_metrics` name is collected as a
+metric; no runner whitelist entry is needed. A
 missing or non-finite required metric fails the scenario. A legacy string is
 reported as `probe_legacy`; it is accepted only by the developer profile, is
 not a numeric threshold, and must not be used as release or upstream-accuracy
@@ -38,6 +40,19 @@ those conditions in its output and tests. All other references must declare at
 least one `checks` or `require_metrics` entry. A `probe_invariant` row may leave
 both lists empty only when a nonzero probe exit code enforces the named
 conditions; it proves structural correctness, not upstream semantic accuracy.
+
+An `upstream` row that executes an external reference program pins the
+program's source identity (revision, clean tree, submodule revision and the
+sha256 of any submodule working-tree diff) and fails when the reference
+binary is older than any file it is compiled from: a source pin over a stale
+binary certifies a different program (`run_map_anything_upstream_parity.py`).
+
+Every model glob of a selected task (`model_glob`, `owned_globs`,
+`covered_globs`, `required_globs`, `light_globs`) must match at least one
+`test_catalog_dump_urls --json` row; the preflight fails closed on a pattern
+that names an unpublished file (`local_only` rows excepted). Under the default
+`exact` fingerprint policy a probe must print at least one string leaf whose
+name contains `hash`/`sha`/`digest` (a byte hash of its typed outputs).
 
 ## Profiles and Claims
 
@@ -77,6 +92,8 @@ implicit local-cache discovery.
 4. Real checkpoint execution on every claimed backend and quantization.
 5. Controlled release-profile A/B for performance changes.
 6. Plugin still/live/cancel/stale/error/teardown workflow tests.
+7. Agent automation closure: native HELP schema, RPC whitelist, exact CLI
+   registry, MCP tools, and installed-plugin L3 checks on all three platforms.
 
 Parity is not upstream truth. A stable output hash is not semantic accuracy.
 Weight quantization is not evidence of lower activation/KV memory or lower
@@ -89,3 +106,16 @@ dump, probe target, structured manifest rows, and runner tests together. Add
 negative tests for bad downloads, missing coverage, malformed accuracy checks,
 and incomplete filtering. Preserve the JSON and Markdown report from the exact
 revision and dirty state used for the claim.
+
+## Automation Gate
+
+A new AICore plugin or command is incomplete until all of these identities are
+the same: native command keyword, JSON-RPC `aicore.batch` whitelist, Python AI
+registry, CLI output, and MCP task resolution. Option metadata has one runtime
+owner: the native `HELP RESULT_JSON` schema. Python must not duplicate defaults.
+
+Run L1/L2/L5 without a binary, then L3 against the packaged binary. L3 queries
+every registry task, requires a non-empty option list containing `RESULT_JSON`,
+and requires schema `acloudviewer.aicore.batch/1`. Linux CPU/CUDA, macOS, and
+Windows installer jobs are separate evidence; success on one platform does not
+cover another. Missing plugins and unknown commands fail rather than skip.

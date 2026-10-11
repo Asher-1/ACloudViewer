@@ -302,5 +302,7 @@ jobs:
           echo "OK: $PLUGIN has no dynamic libcudart dependency"
 
       - name: Level 3 — Headless processing tests
+        env:
+          ACV_REQUIRE_BINARY: "1"
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"

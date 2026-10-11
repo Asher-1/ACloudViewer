@@ -1,41 +1,22 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ui/feature_extraction_widget.h"
 
-#include "sensor/models.h"
 #include "controllers/feature_extraction.h"
+#include "feature/aliked.h"
+#include "feature/loma.h"
+#include "feature/sift.h"
+#include "sensor/models.h"
 #include "ui/options_widget.h"
-#include "ui/qt_utils.h"
 #include "ui/thread_control_widget.h"
+#include "util/file.h"
+
+#include <filesystem>
 
 namespace colmap {
 
@@ -46,6 +27,13 @@ class ExtractionWidget : public OptionsWidget {
   virtual void Run() = 0;
 
  protected:
+  void AddSharedOptions();
+  QComboBox* AddModelVariantRow(
+      const std::string& label_text,
+      std::initializer_list<std::pair<const char*, FeatureExtractorType>>
+          variants);
+  void RunExtraction();
+
   OptionManager* options_;
   ThreadControlWidget* thread_control_widget_;
 };
@@ -64,7 +52,27 @@ class ImportFeaturesWidget : public ExtractionWidget {
   void Run() override;
 
  private:
-  std::string import_path_;
+  std::filesystem::path import_path_;
+};
+
+class AlikedExtractionWidget : public ExtractionWidget {
+ public:
+  AlikedExtractionWidget(QWidget* parent, OptionManager* options);
+
+  void Run() override;
+
+ private:
+  QComboBox* model_variant_cb_;
+};
+
+class LomaExtractionWidget : public ExtractionWidget {
+ public:
+  LomaExtractionWidget(QWidget* parent, OptionManager* options);
+
+  void Run() override;
+
+ private:
+  QComboBox* model_variant_cb_;
 };
 
 ExtractionWidget::ExtractionWidget(QWidget* parent, OptionManager* options)
@@ -72,50 +80,74 @@ ExtractionWidget::ExtractionWidget(QWidget* parent, OptionManager* options)
       options_(options),
       thread_control_widget_(new ThreadControlWidget(this)) {}
 
-SIFTExtractionWidget::SIFTExtractionWidget(QWidget* parent,
-                                           OptionManager* options)
-    : ExtractionWidget(parent, options) {
-  AddOptionDirPath(&options->image_reader->mask_path, "mask_path");
-  AddOptionFilePath(&options->image_reader->camera_mask_path,
+void ExtractionWidget::AddSharedOptions() {
+  AddOptionDirPath(&options_->image_reader->mask_path, "mask_path");
+  AddOptionFilePath(&options_->image_reader->camera_mask_path,
                     "camera_mask_path");
 
-  AddOptionInt(&options->sift_extraction->max_image_size, "max_image_size");
-  AddOptionInt(&options->sift_extraction->max_num_features, "max_num_features");
-  AddOptionInt(&options->sift_extraction->first_octave, "first_octave", -5);
-  AddOptionInt(&options->sift_extraction->num_octaves, "num_octaves");
-  AddOptionInt(&options->sift_extraction->octave_resolution,
-               "octave_resolution");
-  AddOptionDouble(&options->sift_extraction->peak_threshold, "peak_threshold",
-                  0.0, 1e7, 0.00001, 5);
-  AddOptionDouble(&options->sift_extraction->edge_threshold, "edge_threshold");
-  AddOptionBool(&options->sift_extraction->estimate_affine_shape,
-                "estimate_affine_shape");
-  AddOptionInt(&options->sift_extraction->max_num_orientations,
-               "max_num_orientations");
-  AddOptionBool(&options->sift_extraction->upright, "upright");
-  AddOptionBool(&options->sift_extraction->domain_size_pooling,
-                "domain_size_pooling");
-  AddOptionDouble(&options->sift_extraction->dsp_min_scale, "dsp_min_scale",
-                  0.0, 1e7, 0.00001, 5);
-  AddOptionDouble(&options->sift_extraction->dsp_max_scale, "dsp_max_scale",
-                  0.0, 1e7, 0.00001, 5);
-  AddOptionInt(&options->sift_extraction->dsp_num_scales, "dsp_num_scales", 1);
-
-  AddOptionInt(&options->sift_extraction->num_threads, "num_threads", -1);
-  AddOptionBool(&options->sift_extraction->use_gpu, "use_gpu");
-  AddOptionText(&options->sift_extraction->gpu_index, "gpu_index");
+  AddOptionInt(&options_->feature_extraction->max_image_size, "max_image_size");
+  AddOptionInt(&options_->feature_extraction->num_threads, "num_threads", -1);
+  AddOptionBool(&options_->feature_extraction->use_gpu, "use_gpu");
+  AddOptionText(&options_->feature_extraction->gpu_index, "gpu_index");
 }
 
-void SIFTExtractionWidget::Run() {
+QComboBox* ExtractionWidget::AddModelVariantRow(
+    const std::string& label_text,
+    std::initializer_list<std::pair<const char*, FeatureExtractorType>>
+        variants) {
+  QComboBox* combo_box = new QComboBox(this);
+  for (const auto& [label, type] : variants) {
+    combo_box->addItem(label, static_cast<int>(type));
+  }
+  AddWidgetRow(label_text, combo_box);
+  return combo_box;
+}
+
+void ExtractionWidget::RunExtraction() {
   WriteOptions();
 
   ImageReaderOptions reader_options = *options_->image_reader;
-  reader_options.database_path = *options_->database_path;
   reader_options.image_path = *options_->image_path;
+  reader_options.as_rgb = options_->feature_extraction->RequiresRGB();
 
-  Thread* extractor =
-      new SiftFeatureExtractor(reader_options, *options_->sift_extraction);
-  thread_control_widget_->StartThread("Extracting...", true, extractor);
+  auto extractor = CreateFeatureExtractorController(
+      *options_->database_path, reader_options, *options_->feature_extraction);
+  thread_control_widget_->StartThread(
+      "Extracting...", true, std::move(extractor));
+}
+
+SIFTExtractionWidget::SIFTExtractionWidget(QWidget* parent,
+                                           OptionManager* options)
+    : ExtractionWidget(parent, options) {
+  AddSharedOptions();
+
+  SiftExtractionOptions& sift_options = *options->feature_extraction->sift;
+  AddOptionInt(&sift_options.max_num_features, "sift.max_num_features");
+  AddOptionInt(&sift_options.first_octave, "sift.first_octave", -5);
+  AddOptionInt(&sift_options.num_octaves, "sift.num_octaves");
+  AddOptionInt(&sift_options.octave_resolution, "sift.octave_resolution");
+  AddOptionDouble(&sift_options.peak_threshold,
+                  "sift.peak_threshold",
+                  0.0,
+                  1e7,
+                  0.00001,
+                  5);
+  AddOptionDouble(&sift_options.edge_threshold, "sift.edge_threshold");
+  AddOptionBool(&sift_options.estimate_affine_shape,
+                "sift.estimate_affine_shape");
+  AddOptionInt(&sift_options.max_num_orientations, "sift.max_num_orientations");
+  AddOptionBool(&sift_options.upright, "sift.upright");
+  AddOptionBool(&sift_options.domain_size_pooling, "sift.domain_size_pooling");
+  AddOptionDouble(
+      &sift_options.dsp_min_scale, "sift.dsp_min_scale", 0.0, 1e7, 0.00001, 5);
+  AddOptionDouble(
+      &sift_options.dsp_max_scale, "sift.dsp_max_scale", 0.0, 1e7, 0.00001, 5);
+  AddOptionInt(&sift_options.dsp_num_scales, "sift.dsp_num_scales", 1);
+}
+
+void SIFTExtractionWidget::Run() {
+  options_->feature_extraction->type = FeatureExtractorType::SIFT;
+  RunExtraction();
 }
 
 ImportFeaturesWidget::ImportFeaturesWidget(QWidget* parent,
@@ -133,19 +165,73 @@ void ImportFeaturesWidget::Run() {
   }
 
   ImageReaderOptions reader_options = *options_->image_reader;
-  reader_options.database_path = *options_->database_path;
   reader_options.image_path = *options_->image_path;
 
-  Thread* importer = new FeatureImporter(reader_options, import_path_);
-  thread_control_widget_->StartThread("Importing...", true, importer);
+  auto importer = CreateFeatureImporterController(
+      *options_->database_path, reader_options, import_path_);
+  thread_control_widget_->StartThread(
+      "Importing...", true, std::move(importer));
+}
+
+AlikedExtractionWidget::AlikedExtractionWidget(QWidget* parent,
+                                               OptionManager* options)
+    : ExtractionWidget(parent, options) {
+  AddSharedOptions();
+
+  model_variant_cb_ =
+      AddModelVariantRow("aliked.model_variant",
+                         {{"n16rot", FeatureExtractorType::ALIKED_N16ROT},
+                          {"n32", FeatureExtractorType::ALIKED_N32}});
+
+  AlikedExtractionOptions& aliked_options =
+      *options->feature_extraction->aliked;
+  AddOptionInt(&aliked_options.max_num_features, "aliked.max_num_features");
+  AddOptionDouble(&aliked_options.min_score, "aliked.min_score", 0.0, 1.0);
+  AddOptionText(&aliked_options.n16rot_model_path, "aliked.n16rot_model_path");
+  AddOptionText(&aliked_options.n32_model_path, "aliked.n32_model_path");
+  // Fork: ggml engine placement (upstream uses use_gpu/gpu_index).
+  AddOptionText(&aliked_options.device, "aliked.device");
+}
+
+void AlikedExtractionWidget::Run() {
+  options_->feature_extraction->type = static_cast<FeatureExtractorType>(
+      model_variant_cb_->currentData().toInt());
+  RunExtraction();
+}
+
+LomaExtractionWidget::LomaExtractionWidget(QWidget* parent,
+                                           OptionManager* options)
+    : ExtractionWidget(parent, options) {
+  AddSharedOptions();
+
+  model_variant_cb_ = AddModelVariantRow(
+      "loma.model_variant",
+      {{"B (dedode_g)", FeatureExtractorType::LOMA_B},
+       {"B128 (dedode_b)", FeatureExtractorType::LOMA_B128}});
+
+  LomaExtractionOptions& loma_options = *options->feature_extraction->loma;
+  AddOptionInt(&loma_options.max_num_features, "loma.max_num_features");
+  AddOptionDouble(&loma_options.min_score, "loma.min_score", 0.0, 1.0);
+  // Fork: ggml engine placement (upstream uses use_gpu/gpu_index).
+  AddOptionText(&loma_options.device, "loma.device");
+  AddOptionText(&loma_options.detector_model_path, "loma.detector_model_path");
+  AddOptionText(&loma_options.descriptor_model_path,
+                "loma.descriptor_model_path");
+  AddOptionText(&loma_options.descriptor_b128_model_path,
+                "loma.descriptor_b128_model_path");
+}
+
+void LomaExtractionWidget::Run() {
+  options_->feature_extraction->type = static_cast<FeatureExtractorType>(
+      model_variant_cb_->currentData().toInt());
+  RunExtraction();
 }
 
 FeatureExtractionWidget::FeatureExtractionWidget(QWidget* parent,
                                                  OptionManager* options)
     : parent_(parent), options_(options) {
-  // Do not change flag, to make sure feature database is not accessed from
-  // multiple threads
-  setWindowFlags(Qt::Window);
+  setWindowFlags(Qt::Dialog);
+  setWindowModality(Qt::ApplicationModal);
   setWindowTitle("Feature extraction");
 
   QGridLayout* grid = new QGridLayout(this);
@@ -154,20 +240,25 @@ FeatureExtractionWidget::FeatureExtractionWidget(QWidget* parent,
 
   tab_widget_ = new QTabWidget(this);
 
-  QScrollArea* extraction_widget = new QScrollArea(this);
-  extraction_widget->setAlignment(Qt::AlignHCenter);
-  extraction_widget->setWidget(new SIFTExtractionWidget(this, options));
-  tab_widget_->addTab(extraction_widget, tr("Extract"));
+  auto AddTab = [this](QWidget* widget, const char* title) {
+    QScrollArea* scroll_area = new QScrollArea(this);
+    scroll_area->setAlignment(Qt::AlignHCenter);
+    scroll_area->setWidget(widget);
+    tab_widget_->addTab(scroll_area, tr(title));
+  };
 
-  QScrollArea* import_widget = new QScrollArea(this);
-  import_widget->setAlignment(Qt::AlignHCenter);
-  import_widget->setWidget(new ImportFeaturesWidget(this, options));
-  tab_widget_->addTab(import_widget, tr("Import"));
+  AddTab(new SIFTExtractionWidget(this, options), "SIFT");
+  AddTab(new ImportFeaturesWidget(this, options), "SIFT (Import)");
+
+  AddTab(new AlikedExtractionWidget(this, options), "ALIKED");
+  AddTab(new LomaExtractionWidget(this, options), "LoMa");
 
   grid->addWidget(tab_widget_);
 
   QPushButton* extract_button = new QPushButton(tr("Extract"), this);
-  connect(extract_button, &QPushButton::released, this,
+  connect(extract_button,
+          &QPushButton::released,
+          this,
           &FeatureExtractionWidget::Extract);
   grid->addWidget(extract_button, grid->rowCount(), 0);
 }
@@ -222,11 +313,16 @@ QGroupBox* FeatureExtractionWidget::CreateCameraModelBox() {
   SelectCameraModel(camera_model_cb_->currentIndex());
 
   connect(camera_model_cb_,
-          (void (QComboBox::*)(int)) & QComboBox::currentIndexChanged, this,
+          (void (QComboBox::*)(int))&QComboBox::currentIndexChanged,
+          this,
           &FeatureExtractionWidget::SelectCameraModel);
-  connect(camera_params_exif_rb_, &QRadioButton::clicked, camera_params_text_,
+  connect(camera_params_exif_rb_,
+          &QRadioButton::clicked,
+          camera_params_text_,
           &QLineEdit::setDisabled);
-  connect(camera_params_custom_rb_, &QRadioButton::clicked, camera_params_text_,
+  connect(camera_params_custom_rb_,
+          &QRadioButton::clicked,
+          camera_params_text_,
           &QLineEdit::setEnabled);
 
   return box;
@@ -243,10 +339,10 @@ void FeatureExtractionWidget::hideEvent(QHideEvent* event) {
 }
 
 void FeatureExtractionWidget::ReadOptions() {
-  const auto camera_code =
+  const CameraModelId model_id =
       CameraModelNameToId(options_->image_reader->camera_model);
   for (size_t i = 0; i < camera_model_ids_.size(); ++i) {
-    if (static_cast<CameraModelId>(camera_model_ids_[i]) == camera_code) {
+    if (camera_model_ids_[i] == static_cast<int>(model_id)) {
       SelectCameraModel(i);
       camera_model_cb_->setCurrentIndex(i);
       break;
@@ -260,8 +356,8 @@ void FeatureExtractionWidget::ReadOptions() {
 }
 
 void FeatureExtractionWidget::WriteOptions() {
-  options_->image_reader->camera_model = CameraModelIdToName(
-      static_cast<CameraModelId>(
+  options_->image_reader->camera_model =
+      CameraModelIdToName(static_cast<CameraModelId>(
           camera_model_ids_[camera_model_cb_->currentIndex()]));
   options_->image_reader->single_camera = single_camera_cb_->isChecked();
   options_->image_reader->single_camera_per_folder =
@@ -271,11 +367,11 @@ void FeatureExtractionWidget::WriteOptions() {
 }
 
 void FeatureExtractionWidget::SelectCameraModel(const int idx) {
-  const int code = camera_model_ids_[idx];
-  const auto model_id = static_cast<CameraModelId>(code);
-  camera_params_info_->setText(QString::fromStdString(StringPrintf(
-      "<small>Parameters: %s</small>",
-      CameraModelParamsInfo(model_id).c_str())));
+  const CameraModelId model_id =
+      static_cast<CameraModelId>(camera_model_ids_[idx]);
+  camera_params_info_->setText(QString::fromStdString(
+      StringPrintf("<small>Parameters: %s</small>",
+                   CameraModelParamsInfo(model_id).c_str())));
 }
 
 void FeatureExtractionWidget::Extract() {

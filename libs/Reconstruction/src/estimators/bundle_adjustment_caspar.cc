@@ -15,6 +15,7 @@
 #include "sensor/models.h"
 #include "util/cuda.h"
 #include "util/logging.h"
+#include "util/misc.h"
 
 #ifdef CASPAR_USE_DOUBLE
 #include "solver.h"
@@ -331,7 +332,7 @@ bool IsRepresentable(const BundleAdjustmentOptions& options,
     // SimpleRadial. A partial update would have no equivalent generated
     // factor, so retain Ceres for that semantic instead of silently changing
     // the requested parameter set.
-    if (!options.refine_extrinsics ||
+    if (!options.refine_rig_from_world ||
         options.refine_focal_length != options.refine_extra_params ||
         !config.VariablePoints().empty()) {
         return false;
@@ -649,7 +650,8 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
                                         ? simple_radial
                                         : pinhole;
         const bool pose_variable =
-                !config.HasConstantPose(image_id) && options.refine_extrinsics;
+                !config.HasConstantPose(image_id) &&
+                options.refine_rig_from_world;
         const unsigned char intrinsic_variable_mask =
                 data.intrinsic_variable_masks.at(image.CameraId());
         const bool focal_and_extra_variable = intrinsic_variable_mask & 1;
@@ -681,7 +683,10 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
                 continue;
             }
             const point3D_t point_id = point2D.Point3DId();
-            const bool point_variable = !config.HasConstantPoint(point_id);
+            // Upstream parity (a2bd15c2 IsPointVariable): refine_points3D
+            // freezes every point, independent of the per-point config.
+            const bool point_variable = options.refine_points3D &&
+                                        !config.HasConstantPoint(point_id);
             if (!pose_variable && !focal_and_extra_variable &&
                 !principal_point_variable && !point_variable) {
                 // A fully constant residual cannot influence this solve and
@@ -762,7 +767,12 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
         return false;
     }
 
-    int device_id = options.caspar_gpu_index;
+    const CasparBundleAdjustmentOptions& caspar_options =
+            *THROW_CHECK_NOTNULL(options.caspar);
+    // Caspar takes one device; "-1" selects the best available device.
+    const std::vector<int> gpu_indices =
+            CSVToVector<int>(caspar_options.gpu_index);
+    int device_id = gpu_indices.empty() ? -1 : gpu_indices.front();
     SetBestCudaDevice(device_id);
     if (device_id < 0) {
         cudaGetDevice(&device_id);
@@ -771,18 +781,18 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
     // Passing only the iteration cap changes its numerical trajectory from the
     // upstream contract, particularly for split-intrinsic factor pools.
     caspar::SolverParams<double> params;
-    params.solver_iter_max = options.caspar_max_num_iterations;
-    params.pcg_iter_max = options.caspar_pcg_iter_max;
-    params.diag_init = options.caspar_diag_init;
-    params.diag_min = options.caspar_diag_min;
-    params.diag_scaling_up = options.caspar_diag_scaling_up;
-    params.diag_scaling_down = options.caspar_diag_scaling_down;
-    params.diag_exit_value = options.caspar_diag_exit_value;
-    params.score_exit_value = options.caspar_score_exit_value;
-    params.pcg_rel_error_exit = options.caspar_pcg_rel_error_exit;
-    params.pcg_rel_score_exit = options.caspar_pcg_rel_score_exit;
-    params.pcg_rel_decrease_min = options.caspar_pcg_rel_decrease_min;
-    params.solver_rel_decrease_min = options.caspar_solver_rel_decrease_min;
+    params.solver_iter_max = caspar_options.solver_iter_max;
+    params.pcg_iter_max = caspar_options.pcg_iter_max;
+    params.diag_init = caspar_options.diag_init;
+    params.diag_min = caspar_options.diag_min;
+    params.diag_scaling_up = caspar_options.diag_scaling_up;
+    params.diag_scaling_down = caspar_options.diag_scaling_down;
+    params.diag_exit_value = caspar_options.diag_exit_value;
+    params.score_exit_value = caspar_options.score_exit_value;
+    params.pcg_rel_error_exit = caspar_options.pcg_rel_error_exit;
+    params.pcg_rel_score_exit = caspar_options.pcg_rel_score_exit;
+    params.pcg_rel_decrease_min = caspar_options.pcg_rel_decrease_min;
+    params.solver_rel_decrease_min = caspar_options.solver_rel_decrease_min;
     auto solver = CreateSolver(params, simple_radial, pinhole, point_ids.size(),
                                device_id);
     if (!point_ids.empty()) {
@@ -820,7 +830,7 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
     }
     solver.finish_indices();
     const caspar::SolveResult result = solver.solve(
-            options.solver_options.minimizer_progress_to_stdout, false);
+            options.print_summary && VLOG_IS_ON(2), false);
     if (!point_ids.empty()) {
         solver.GetPointNodesToStackedHost(points.data(), 0, point_ids.size());
     }

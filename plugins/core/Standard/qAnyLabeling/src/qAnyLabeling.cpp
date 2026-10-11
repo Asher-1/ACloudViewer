@@ -12,6 +12,7 @@
 #include <QSettings>
 
 #include "AnnotationWindow.h"
+#include "AnyLabelingBatchCommand.h"
 
 qAnyLabeling::qAnyLabeling(QObject* parent)
     : QObject(parent),
@@ -58,3 +59,11 @@ void qAnyLabeling::setMainAppInterface(ecvMainAppInterface* app) {
 }
 
 QList<QAction*> qAnyLabeling::getActions() { return {m_action}; }
+
+void qAnyLabeling::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandAnyLabelInfer));
+}

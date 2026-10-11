@@ -167,14 +167,15 @@ bool Backend::SchedRunGraph(ggml_cgraph *graph,
 }
 
 bool Backend::IsCpu() const {
+    // dev_type_cached: ggml-cuda's get_type queries the driver per call.
     return handle != nullptr &&
-           ggml_backend_dev_type(ggml_backend_get_device(handle)) ==
+           ggml_common::dev_type_cached(ggml_backend_get_device(handle)) ==
                    GGML_BACKEND_DEVICE_TYPE_CPU;
 }
 
 bool Backend::IsGpu() const {
     return handle != nullptr &&
-           ggml_backend_dev_type(ggml_backend_get_device(handle)) ==
+           ggml_common::dev_type_cached(ggml_backend_get_device(handle)) ==
                    GGML_BACKEND_DEVICE_TYPE_GPU;
 }
 

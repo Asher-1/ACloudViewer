@@ -9,6 +9,9 @@
 
 #include <Logging.h>
 
+#include "controllers/pairing.h"
+#include "estimators/bundle_adjustment_ceres.h"
+#include "feature/sift.h"
 #include "mvs/delaunay_meshing.h"
 #include "mvs/mesh_postprocessing.h"
 #include "mvs/mesh_simplification.h"
@@ -117,7 +120,18 @@ void pybind_image_reader_options(py::module& m) {
 }
 
 void pybind_sift_extraction_options(py::module& m) {
-    // cloudViewer.reconstruction.options.SiftExtractionOptions
+    // upstream pycolmap feature/extraction.cc: SiftExtractionOptions only
+    // carries the SIFT-specific detector/descriptor parameters; the shared
+    // num_threads / use_gpu / gpu_index / max_image_size live on
+    // FeatureExtractionOptions.
+    py::native_enum<colmap::SiftExtractionOptions::Normalization>(
+            m, "Normalization", "enum.Enum", "Descriptor normalization types.")
+            .value("L1_ROOT",
+                   colmap::SiftExtractionOptions::Normalization::L1_ROOT)
+            .value("L2", colmap::SiftExtractionOptions::Normalization::L2)
+            .export_values()
+            .finalize();
+
     py::class_<colmap::SiftExtractionOptions,
                std::shared_ptr<colmap::SiftExtractionOptions>>
             sift_extraction_options(m, "SiftExtractionOptions",
@@ -125,24 +139,6 @@ void pybind_sift_extraction_options(py::module& m) {
     sift_extraction_options.def(py::init<>())
             .def("check", &colmap::SiftExtractionOptions::Check,
                  "Check parameters validation.")
-            .def_readwrite("num_threads",
-                           &colmap::SiftExtractionOptions::num_threads,
-                           "int (Default ``-1``) Number of threads for feature "
-                           "extraction.")
-            .def_readwrite("use_gpu", &colmap::SiftExtractionOptions::use_gpu,
-                           "bool: (Default ``True``) Whether to use the GPU "
-                           "for feature "
-                           "extraction.")
-            .def_readwrite(
-                    "gpu_index", &colmap::SiftExtractionOptions::gpu_index,
-                    "str: (Default ``-1``) Index of the GPU used for feature "
-                    "extraction. For multi-GPU extraction, you should separate "
-                    "multiple GPU indices by comma, e.g. ``0,1,2,3``.")
-            .def_readwrite(
-                    "max_image_size",
-                    &colmap::SiftExtractionOptions::max_image_size,
-                    "int: (Default ``3200``) Maximum image size, otherwise "
-                    "image will be down-scaled.")
             .def_readwrite(
                     "max_num_features",
                     &colmap::SiftExtractionOptions::max_num_features,
@@ -171,10 +167,8 @@ void pybind_sift_extraction_options(py::module& m) {
                     "estimate_affine_shape",
                     &colmap::SiftExtractionOptions::estimate_affine_shape,
                     "bool: (Default ``False``) Estimate affine shape of SIFT "
-                    "features "
-                    "in the form of oriented ellipses as opposed to original "
-                    "SIFT "
-                    "which estimates oriented disks.")
+                    "features in the form of oriented ellipses as opposed to "
+                    "original SIFT which estimates oriented disks.")
             .def_readwrite(
                     "max_num_orientations",
                     &colmap::SiftExtractionOptions::max_num_orientations,
@@ -188,24 +182,16 @@ void pybind_sift_extraction_options(py::module& m) {
                     "darkness_adaptivity",
                     &colmap::SiftExtractionOptions::darkness_adaptivity,
                     "bool: (Default ``False``) Whether to adapt the feature "
-                    "detection depending on the image darkness. "
-                    "Note that this feature is only available in the "
-                    "OpenGL SiftGPU version.")
+                    "detection depending on the image darkness. Note that this "
+                    "feature is only available in the OpenGL SiftGPU version.")
             .def_readwrite(
                     "domain_size_pooling",
                     &colmap::SiftExtractionOptions::domain_size_pooling,
-                    "bool: (Default ``False``) Domain-size pooling parameters."
-                    " Domain-size pooling computes an average SIFT descriptor "
-                    "across multiple scales around the "
+                    "bool: (Default ``False``) Domain-size pooling computes an "
+                    "average SIFT descriptor across multiple scales around the "
                     "detected scale. This was proposed in Domain-Size Pooling "
-                    "in Local Descriptors "
-                    "and Network Architectures, J. Dong and S. Soatto, CVPR "
-                    "2015. This "
-                    "has been shown to outperform other SIFT variants and "
-                    "learned descriptors "
-                    "in Comparative Evaluation of Hand-Crafted and Learned "
-                    "Local Features, "
-                    "Schönberger, Hardmeier, Sattler, Pollefeys, CVPR 2016.")
+                    "in Local Descriptors and Network Architectures, J. Dong "
+                    "and S. Soatto, CVPR 2015.")
             .def_readwrite("dsp_min_scale",
                            &colmap::SiftExtractionOptions::dsp_min_scale,
                            "float: (Default ``1.0 / 6.0``) min scale.")
@@ -216,47 +202,34 @@ void pybind_sift_extraction_options(py::module& m) {
                            &colmap::SiftExtractionOptions::dsp_num_scales,
                            "int: (Default ``10``) The number of scales.")
             .def_readwrite(
+                    "force_covariant_extractor",
+                    &colmap::SiftExtractionOptions::force_covariant_extractor,
+                    "bool: (Default ``False``) Whether to force usage of the "
+                    "covariant VLFeat implementation.")
+            .def_readwrite(
                     "normalization",
                     &colmap::SiftExtractionOptions::normalization,
-                    "Normalization: L1-normalizes each descriptor followed by "
-                    "element-wise square rooting. This normalization is "
-                    "usually "
-                    "better than standard L2-normalization. "
-                    "See ``Three things everyone should know to improve object "
-                    "retrieval``, "
-                    "Relja Arandjelovic and Andrew Zisserman, CVPR 2012.");
-
-    // cloudViewer.reconstruction.options.NormalizationType
-    py::native_enum<colmap::SiftExtractionOptions::Normalization>(
-            sift_extraction_options, "NormalizationType", "enum.Enum",
-            "Enum class for Reconstruction Normalization types.")
-            .value("L1_ROOT",
-                   colmap::SiftExtractionOptions::Normalization::L1_ROOT)
-            .value("L2", colmap::SiftExtractionOptions::Normalization::L2)
-            .export_values()
-            .finalize();
+                    "Normalization: (Default ``L1_ROOT``) L1-normalizes each "
+                    "descriptor followed by element-wise square rooting. This "
+                    "normalization is usually better than standard "
+                    "L2-normalization. See ``Three things everyone should know "
+                    "to improve object retrieval``, Relja Arandjelovic and "
+                    "Andrew Zisserman, CVPR 2012.");
 }
 
 void pybind_sift_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.SiftMatchingOptions
-    py::class_<colmap::SiftMatchingOptions> sift_matching_options(
-            m, "SiftMatchingOptions", "Sift Matching option class.");
+    // upstream pycolmap feature/matching.cc: SiftMatchingOptions only carries
+    // the SIFT descriptor-matching thresholds; the shared num_threads /
+    // use_gpu / gpu_index / max_num_matches / guided_matching live on
+    // FeatureMatchingOptions and the RANSAC thresholds on
+    // TwoViewGeometryOptions.
+    py::class_<colmap::SiftMatchingOptions,
+               std::shared_ptr<colmap::SiftMatchingOptions>>
+            sift_matching_options(m, "SiftMatchingOptions",
+                                  "Sift Matching option class.");
     sift_matching_options.def(py::init<>())
             .def("check", &colmap::SiftMatchingOptions::Check,
                  "Check parameters validation.")
-            .def_readwrite("num_threads",
-                           &colmap::SiftMatchingOptions::num_threads,
-                           "(Default ``-1``) Number of threads for feature "
-                           "extraction.")
-            .def_readwrite(
-                    "use_gpu", &colmap::SiftMatchingOptions::use_gpu,
-                    "(Default ``True``) Whether to use the GPU for feature "
-                    "extraction.")
-            .def_readwrite(
-                    "gpu_index", &colmap::SiftMatchingOptions::gpu_index,
-                    "(Default ``-1``) Index of the GPU used for feature "
-                    "extraction. For multi-GPU extraction, you should separate "
-                    "multiple GPU indices by comma, e.g. ``0,1,2,3``.")
             .def_readwrite("max_ratio", &colmap::SiftMatchingOptions::max_ratio,
                            "float: (Default ``0.8``) Maximum distance ratio "
                            "between first and second best match.")
@@ -268,236 +241,17 @@ void pybind_sift_matching_options(py::module& m) {
                            "bool: (Default ``True``) Whether to enable cross "
                            "checking in matching.")
             .def_readwrite(
-                    "max_num_matches",
-                    &colmap::SiftMatchingOptions::max_num_matches,
-                    "int: (Default ``32768``) Maximum number of matches.")
-            .def_readwrite("max_error", &colmap::SiftMatchingOptions::max_error,
-                           "float: (Default ``4.0``) Maximum epipolar error in "
-                           "pixels for geometric verification.")
-            .def_readwrite("confidence",
-                           &colmap::SiftMatchingOptions::confidence,
-                           "float: (Default ``0.999``) Confidence threshold "
-                           "for geometric verification.")
-
-            .def_readwrite("min_num_trials",
-                           &colmap::SiftMatchingOptions::min_num_trials,
-                           "int: (Default ``100``) Minimum number of RANSAC "
-                           "iterations. Note that this option "
-                           "overrules the min_inlier_ratio option.")
-            .def_readwrite("max_num_trials",
-                           &colmap::SiftMatchingOptions::max_num_trials,
-                           "int: (Default ``10000``) Maximum number of RANSAC "
-                           "iterations.")
-            .def_readwrite(
-                    "min_inlier_ratio",
-                    &colmap::SiftMatchingOptions::min_inlier_ratio,
-                    "float: (Default ``0.25``) A priori assumed minimum inlier "
-                    "ratio, which determines the maximum number of iterations.")
-            .def_readwrite(
-                    "min_num_inliers",
-                    &colmap::SiftMatchingOptions::min_num_inliers,
-                    "int: (Default ``15``) Minimum number of inliers for an "
-                    "image pair to be considered as geometrically verified.")
-            .def_readwrite("multiple_models",
-                           &colmap::SiftMatchingOptions::multiple_models,
-                           "bool: (Default ``False``) Whether to attempt to "
-                           "estimate multiple geometric models per image pair.")
-            .def_readwrite(
-                    "guided_matching",
-                    &colmap::SiftMatchingOptions::guided_matching,
-                    "bool: (Default ``False``) Whether to perform guided "
-                    "matching, if geometric verification succeeds.");
-}
-
-void pybind_exhaustive_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.ExhaustiveMatchingOptions
-    py::class_<colmap::ExhaustiveMatchingOptions> exhaustive_matching_options(
-            m, "ExhaustiveMatchingOptions",
-            "Exhaustive Matching option class.");
-    exhaustive_matching_options.def(py::init<>())
-            .def("check", &colmap::ExhaustiveMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite("block_size",
-                           &colmap::ExhaustiveMatchingOptions::block_size,
-                           "int: (Default ``50``) Block size, i.e. number of "
-                           "images to simultaneously load into memory.");
-}
-
-void pybind_sequential_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.SequentialMatchingOptions
-    py::class_<colmap::SequentialMatchingOptions> sequential_matching_options(
-            m, "SequentialMatchingOptions",
-            "Sequential Matching option class.");
-    sequential_matching_options.def(py::init<>())
-            .def("check", &colmap::SequentialMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite(
-                    "overlap", &colmap::SequentialMatchingOptions::overlap,
-                    "int: (Default ``10``) Number of overlapping image pairs.")
-            .def_readwrite(
-                    "quadratic_overlap",
-                    &colmap::SequentialMatchingOptions::quadratic_overlap,
-                    "bool: (Default ``True``) Whether to match images against "
-                    "their quadratic neighbors.")
-            .def_readwrite("loop_detection",
-                           &colmap::SequentialMatchingOptions::loop_detection,
-                           "bool: (Default ``False``) Whether to enable "
-                           "vocabulary tree based loop detection.")
-            .def_readwrite(
-                    "loop_detection_period",
-                    &colmap::SequentialMatchingOptions::loop_detection_period,
-                    "int: (Default ``10``) Loop detection is invoked every "
-                    "`loop_detection_period` images.")
-            .def_readwrite("loop_detection_num_images",
-                           &colmap::SequentialMatchingOptions::
-                                   loop_detection_num_images,
-                           "int: (Default ``50``) The number of images to "
-                           "retrieve in loop detection. "
-                           "This number should be significantly bigger than "
-                           "the sequential matching overlap.")
-            .def_readwrite(
-                    "loop_detection_min_index_distance",
-                    &colmap::SequentialMatchingOptions::
-                            loop_detection_min_index_distance,
-                    "int: (Default ``0``) Minimum sequential image-index "
-                    "distance for loop candidates. Zero disables filtering.")
-            .def_readwrite("loop_detection_num_nearest_neighbors",
-                           &colmap::SequentialMatchingOptions::
-                                   loop_detection_num_nearest_neighbors,
-                           "int: (Default ``1``) Number of nearest neighbors "
-                           "to retrieve per query feature.")
-            .def_readwrite("loop_detection_num_checks",
-                           &colmap::SequentialMatchingOptions::
-                                   loop_detection_num_checks,
-                           "int: (Default ``256``) Number of nearest-neighbor "
-                           "checks to use in retrieval.")
-            .def_readwrite("loop_detection_num_images_after_verification",
-                           &colmap::SequentialMatchingOptions::
-                                   loop_detection_num_images_after_verification,
-                           "int: (Default ``0``) How many images to return "
-                           "after spatial verification. "
-                           "Set to 0 to turn off spatial verification.")
-            .def_readwrite("loop_detection_max_num_features",
-                           &colmap::SequentialMatchingOptions::
-                                   loop_detection_max_num_features,
-                           "int: (Default ``-1``) The maximum number of "
-                           "features to use for indexing an image. "
-                           "If an image has more features, only the "
-                           "largest-scale features will be indexed.")
-            .def_readwrite("vocab_tree_path",
-                           &colmap::SequentialMatchingOptions::vocab_tree_path,
-                           "str: (Default ``"
-                           "``) Path to the vocabulary tree.");
-}
-
-void pybind_vocabtree_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.VocabTreeMatchingOptions
-    py::class_<colmap::VocabTreeMatchingOptions> vocabtree_matching_options(
-            m, "VocabTreeMatchingOptions", "VocabTree Matching option class.");
-    vocabtree_matching_options.def(py::init<>())
-            .def("check", &colmap::VocabTreeMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite("num_images",
-                           &colmap::VocabTreeMatchingOptions::num_images,
-                           "int: (Default ``100``) Number of images to "
-                           "retrieve for each query image.")
-            .def_readwrite(
-                    "num_nearest_neighbors",
-                    &colmap::VocabTreeMatchingOptions::num_nearest_neighbors,
-                    "int: (Default ``5``) Number of nearest neighbors to "
-                    "retrieve per query feature.")
-            .def_readwrite("num_checks",
-                           &colmap::VocabTreeMatchingOptions::num_checks,
-                           "int: (Default ``256``) Number of nearest-neighbor "
-                           "checks to use in retrieval.")
-            .def_readwrite("num_images_after_verification",
-                           &colmap::VocabTreeMatchingOptions::
-                                   num_images_after_verification,
-                           "int: (Default ``0``) How many images to return "
-                           "after spatial verification. Set to 0 to turn off "
-                           "spatial verification.")
-            .def_readwrite(
-                    "max_num_features",
-                    &colmap::VocabTreeMatchingOptions::max_num_features,
-                    "int: (Default ``-1``) The maximum number of features to "
-                    "use for indexing an image. If an image has more features, "
-                    "only the largest-scale features will be indexed.")
-            .def_readwrite("vocab_tree_path",
-                           &colmap::VocabTreeMatchingOptions::vocab_tree_path,
-                           "str: (Default ``''``) Path to the vocabulary tree.")
-            .def_readwrite("match_list_path",
-                           &colmap::VocabTreeMatchingOptions::match_list_path,
-                           "str: (Default ``''``) Optional path to file with "
-                           "specific image "
-                           "names to match.");
-}
-
-void pybind_spatial_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.SpatialMatchingOptions
-    py::class_<colmap::SpatialMatchingOptions> spatial_matching_options(
-            m, "SpatialMatchingOptions", "Spatial Matching option class.");
-    spatial_matching_options.def(py::init<>())
-            .def("check", &colmap::SpatialMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite(
-                    "is_gps", &colmap::SpatialMatchingOptions::is_gps,
-                    "bool: (Default ``True``) Whether the location priors in "
-                    "the database are GPS coordinates in the form of longitude "
-                    "and latitude coordinates in degrees.")
-            .def_readwrite("ignore_z",
-                           &colmap::SpatialMatchingOptions::ignore_z,
-                           "bool: (Default ``True``) Whether to ignore the "
-                           "Z-component of the location prior.")
-            .def_readwrite("max_num_neighbors",
-                           &colmap::SpatialMatchingOptions::max_num_neighbors,
-                           "int: (Default ``50``) The maximum number of "
-                           "nearest neighbors to match.")
-            .def_readwrite(
-                    "max_distance",
-                    &colmap::SpatialMatchingOptions::max_distance,
-                    "int: (Default ``100``) The maximum distance between the "
-                    "query and nearest neighbor. For GPS coordinates the unit "
-                    "is Euclidean distance in meters.");
-}
-
-void pybind_transitive_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.TransitiveMatchingOptions
-    py::class_<colmap::TransitiveMatchingOptions> transitive_matching_options(
-            m, "TransitiveMatchingOptions",
-            "Transitive Matching option class.");
-    transitive_matching_options.def(py::init<>())
-            .def("check", &colmap::TransitiveMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite("batch_size",
-                           &colmap::TransitiveMatchingOptions::batch_size,
-                           "int: (Default ``1000``) The maximum number of "
-                           "image pairs to process in one batch.")
-            .def_readwrite("num_iterations",
-                           &colmap::TransitiveMatchingOptions::num_iterations,
-                           "int: (Default ``3``) The number of transitive "
-                           "closure iterations.");
-}
-
-void pybind_imagepairs_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.ImagePairsMatchingOptions
-    py::class_<colmap::ImagePairsMatchingOptions> imagepairs_matching_options(
-            m, "ImagePairsMatchingOptions",
-            "ImagePairs Matching option class.");
-    imagepairs_matching_options.def(py::init<>())
-            .def("check", &colmap::ImagePairsMatchingOptions::Check,
-                 "Check parameters validation.")
-            .def_readwrite("block_size",
-                           &colmap::ImagePairsMatchingOptions::block_size,
-                           "int: (Default ``1225``) Number of image pairs to "
-                           "match in one batch.")
-            .def_readwrite("match_list_path",
-                           &colmap::ImagePairsMatchingOptions::match_list_path,
-                           "str: (Default ``''``) Optional path to file with "
-                           "specific image names to match.");
+                    "cpu_brute_force_matcher",
+                    &colmap::SiftMatchingOptions::cpu_brute_force_matcher,
+                    "bool: (Default ``False``) Whether to use brute-force "
+                    "instead of the nearest-neighbor index for CPU matching.")
+            .def_readwrite("lightglue", &colmap::SiftMatchingOptions::lightglue,
+                           "LightGlueONNXMatchingOptions: LightGlue matching "
+                           "options used by the SIFT_LIGHTGLUE matcher.");
 }
 
 void pybind_featurepairs_matching_options(py::module& m) {
-    // cloudViewer.reconstruction.options.FeaturePairsMatchingOptions
+    // cloudViewer.reconstruction.pipeline.FeaturePairsMatchingOptions
     py::class_<colmap::FeaturePairsMatchingOptions>
             featurepairs_matching_options(
                     m, "FeaturePairsMatchingOptions",
@@ -516,28 +270,99 @@ void pybind_featurepairs_matching_options(py::module& m) {
 }
 
 void pybind_bundle_adjustment_options(py::module& m) {
-    // cloudViewer.reconstruction.options.BundleAdjustmentOptions
-    py::class_<colmap::BundleAdjustmentOptions> bundle_adjustment_options(
-            m, "BundleAdjustmentOptions", "Bundle Adjustment option class.");
+    // upstream pycolmap estimators/bundle_adjustment.cc: the ceres-specific
+    // solver configuration is its own options struct, shared with the
+    // BundleAdjustmentOptions::ceres member (shared_ptr holder).
+    py::class_<colmap::CeresBundleAdjustmentOptions,
+               std::shared_ptr<colmap::CeresBundleAdjustmentOptions>>
+            ceres_options(m, "CeresBundleAdjustmentOptions",
+                          "Ceres bundle adjustment backend option class.");
+    ceres_options.def(py::init<>())
+            .def("check", &colmap::CeresBundleAdjustmentOptions::Check,
+                 "Check parameters validation.")
+            .def("create_solver_options",
+                 &colmap::CeresBundleAdjustmentOptions::CreateSolverOptions,
+                 "config"_a, "problem"_a,
+                 "Create the ceres solver options for the given problem.")
+            .def_readwrite(
+                    "loss_function_type",
+                    &colmap::CeresBundleAdjustmentOptions::loss_function_type,
+                    "CeresLossFunctionType: (Default ``TRIVIAL``) Loss "
+                    "function types: Trivial (non-robust) and Cauchy / "
+                    "Soft-L1 / Huber (robust) loss.")
+            .def_readwrite(
+                    "loss_function_scale",
+                    &colmap::CeresBundleAdjustmentOptions::loss_function_scale,
+                    "float: (Default ``1.0``) Scaling factor determines "
+                    "residual at which robustification takes place.")
+            .def_readwrite(
+                    "loss_function_weight",
+                    &colmap::CeresBundleAdjustmentOptions::loss_function_weight,
+                    "float: (Default ``1.0``) Weight applied to the loss "
+                    "function.")
+            .def_readwrite("use_gpu",
+                           &colmap::CeresBundleAdjustmentOptions::use_gpu,
+                           "bool: (Default ``False``) Whether to use Ceres' "
+                           "CUDA linear algebra library, if available.")
+            .def_readwrite("gpu_index",
+                           &colmap::CeresBundleAdjustmentOptions::gpu_index,
+                           "str: (Default ``-1``) Which GPU to use for solving "
+                           "the problem.")
+            .def_readwrite(
+                    "solver_options",
+                    &colmap::CeresBundleAdjustmentOptions::solver_options,
+                    "ceres.SolverOptions: Raw ceres solver options.")
+            .def_readwrite(
+                    "min_num_images_gpu_solver",
+                    &colmap::CeresBundleAdjustmentOptions::
+                            min_num_images_gpu_solver,
+                    "int: (Default ``50``) Minimum number of images to use the "
+                    "GPU solver.")
+            .def_readwrite(
+                    "min_num_residuals_for_cpu_multi_threading",
+                    &colmap::CeresBundleAdjustmentOptions::
+                            min_num_residuals_for_cpu_multi_threading,
+                    "int: (Default ``50000``) Minimum number of residuals to "
+                    "enable multi-threading. Note that single-threaded is "
+                    "typically better for small bundle adjustment problems due "
+                    "to the overhead of threading.")
+            .def_readwrite("max_num_images_direct_dense_cpu_solver",
+                           &colmap::CeresBundleAdjustmentOptions::
+                                   max_num_images_direct_dense_cpu_solver,
+                           "int: (Default ``50``) Threshold to switch between "
+                           "direct, sparse, and iterative solvers.")
+            .def_readwrite(
+                    "max_num_images_direct_sparse_cpu_solver",
+                    &colmap::CeresBundleAdjustmentOptions::
+                            max_num_images_direct_sparse_cpu_solver,
+                    "int: (Default ``1000``) Threshold to switch between "
+                    "direct, sparse, and iterative solvers.")
+            .def_readwrite("max_num_images_direct_dense_gpu_solver",
+                           &colmap::CeresBundleAdjustmentOptions::
+                                   max_num_images_direct_dense_gpu_solver,
+                           "int: (Default ``200``) Threshold to switch between "
+                           "direct, sparse, and iterative solvers.")
+            .def_readwrite(
+                    "max_num_images_direct_sparse_gpu_solver",
+                    &colmap::CeresBundleAdjustmentOptions::
+                            max_num_images_direct_sparse_gpu_solver,
+                    "int: (Default ``4000``) Threshold to switch between "
+                    "direct, sparse, and iterative solvers.")
+            .def_readwrite(
+                    "auto_select_solver_type",
+                    &colmap::CeresBundleAdjustmentOptions::
+                            auto_select_solver_type,
+                    "bool: (Default ``True``) Whether to automatically select "
+                    "the linear solver type from the problem size.");
+
+    // cloudViewer.reconstruction.estimators.BundleAdjustmentOptions
+    py::class_<colmap::BundleAdjustmentOptions,
+               std::shared_ptr<colmap::BundleAdjustmentOptions>>
+            bundle_adjustment_options(m, "BundleAdjustmentOptions",
+                                      "Bundle Adjustment option class.");
     bundle_adjustment_options.def(py::init<>())
             .def("check", &colmap::BundleAdjustmentOptions::Check,
                  "Check parameters validation.")
-            //     .def("create_loss_function",
-            //     &colmap::BundleAdjustmentOptions::CreateLossFunction)
-            //     .def("create_solver_options",
-            //     &colmap::BundleAdjustmentOptions::CreateSolverOptions,
-            //          "config"_a, "problem"_a)
-            .def_readwrite(
-                    "loss_function_type",
-                    &colmap::BundleAdjustmentOptions::loss_function_type,
-                    "LossFunctionType: (Default ``LossFunctionType::TRIVIAL``) "
-                    "Loss function types: Trivial (non-robust) and Cauchy "
-                    "(robust) loss.")
-            .def_readwrite(
-                    "loss_function_scale",
-                    &colmap::BundleAdjustmentOptions::loss_function_scale,
-                    "float: (Default ``1.0``) Scaling factor determines "
-                    "residual at which robustification takes place.")
             .def_readwrite(
                     "refine_focal_length",
                     &colmap::BundleAdjustmentOptions::refine_focal_length,
@@ -553,53 +378,6 @@ void pybind_bundle_adjustment_options(py::module& m) {
                     &colmap::BundleAdjustmentOptions::refine_extra_params,
                     "bool: (Default ``True``) Whether to refine the extra "
                     "parameter group.")
-            .def_readwrite("refine_extrinsics",
-                           &colmap::BundleAdjustmentOptions::refine_extrinsics,
-                           "bool: (Default ``True``) Whether to refine the "
-                           "extrinsic parameter group.")
-            .def_readwrite("print_summary",
-                           &colmap::BundleAdjustmentOptions::print_summary,
-                           "bool: (Default ``True``) Whether to print a final "
-                           "summary.")
-            .def_readwrite("use_gpu", &colmap::BundleAdjustmentOptions::use_gpu,
-                           "Whether to use Ceres' CUDA linear algebra library, "
-                           "if available.")
-            .def_readwrite("gpu_index",
-                           &colmap::BundleAdjustmentOptions::gpu_index,
-                           "Which GPU to use for solving the problem.")
-            .def_readwrite(
-                    "min_num_residuals_for_cpu_multi_threading",
-                    &colmap::BundleAdjustmentOptions::
-                            min_num_residuals_for_cpu_multi_threading,
-                    "int: (Default ``50000``) Minimum number of residuals to "
-                    "enable multi-threading. Note that single-threaded is "
-                    "typically better for small bundle adjustment problems due "
-                    "to the overhead of threading.")
-            .def_readwrite(
-                    "min_num_images_gpu_solver",
-                    &colmap::BundleAdjustmentOptions::min_num_images_gpu_solver,
-                    "Minimum number of images to use the GPU solver.")
-            .def_readwrite("max_num_images_direct_dense_cpu_solver",
-                           &colmap::BundleAdjustmentOptions::
-                                   max_num_images_direct_dense_cpu_solver,
-                           "Threshold to switch between direct, sparse, and "
-                           "iterative solvers.")
-            .def_readwrite("max_num_images_direct_sparse_cpu_solver",
-                           &colmap::BundleAdjustmentOptions::
-                                   max_num_images_direct_sparse_cpu_solver,
-                           "Threshold to switch between direct, sparse, and "
-                           "iterative solvers.")
-            .def_readwrite("max_num_images_direct_dense_gpu_solver",
-                           &colmap::BundleAdjustmentOptions::
-                                   max_num_images_direct_dense_gpu_solver,
-                           "Threshold to switch between direct, sparse, and "
-                           "iterative solvers.")
-            .def_readwrite("max_num_images_direct_sparse_gpu_solver",
-                           &colmap::BundleAdjustmentOptions::
-                                   max_num_images_direct_sparse_gpu_solver,
-                           "Threshold to switch between direct, sparse, and "
-                           "iterative solvers.")
-            // --- fork parity members absent from the historical binding ---
             .def_readwrite(
                     "refine_rig_from_world",
                     &colmap::BundleAdjustmentOptions::refine_rig_from_world,
@@ -617,51 +395,29 @@ void pybind_bundle_adjustment_options(py::module& m) {
                     "bool: (Default ``False``) Whether to keep the rotation "
                     "component of rig_from_world constant. Only takes effect "
                     "when refine_rig_from_world is true.")
+            .def_readwrite("refine_points3D",
+                           &colmap::BundleAdjustmentOptions::refine_points3D,
+                           "bool: (Default ``True``) Whether to refine the 3D "
+                           "points.")
             .def_readwrite(
                     "min_track_length",
                     &colmap::BundleAdjustmentOptions::min_track_length,
                     "int: (Default ``0``) Minimum track length for a 3D point "
                     "to be included in the optimization.")
+            .def_readwrite("print_summary",
+                           &colmap::BundleAdjustmentOptions::print_summary,
+                           "bool: (Default ``True``) Whether to print a final "
+                           "summary.")
             .def_readwrite(
                     "backend", &colmap::BundleAdjustmentOptions::backend,
                     "BundleAdjustmentBackend: (Default ``CERES``) Solver "
                     "backend to use for bundle adjustment.")
-            .def_readwrite(
-                    "use_caspar", &colmap::BundleAdjustmentOptions::use_caspar,
-                    "bool: (Default ``False``) Whether to use the CASPAR "
-                    "solver backend (legacy switch; prefer ``backend``).")
-            .def_readwrite(
-                    "caspar_gpu_index",
-                    &colmap::BundleAdjustmentOptions::caspar_gpu_index,
-                    "int: (Default ``-1``) Which GPU to use for the CASPAR "
-                    "backend.")
-            .def_readwrite(
-                    "caspar_max_num_iterations",
-                    &colmap::BundleAdjustmentOptions::caspar_max_num_iterations,
-                    "int: (Default ``200``) Maximum number of CASPAR "
-                    "iterations.");
-
-    // cloudViewer.reconstruction.options.LossFunctionType
-    py::native_enum<colmap::BundleAdjustmentOptions::LossFunctionType>(
-            bundle_adjustment_options, "LossFunctionType", "enum.Enum",
-            "Enum class for Reconstruction LossFunction types.")
-            .value("TRIVIAL",
-                   colmap::BundleAdjustmentOptions::LossFunctionType::TRIVIAL)
-            .value("SOFT_L1",
-                   colmap::BundleAdjustmentOptions::LossFunctionType::SOFT_L1)
-            .value("CAUCHY",
-                   colmap::BundleAdjustmentOptions::LossFunctionType::CAUCHY)
-            .export_values()
-            .finalize();
-
-    // Upstream pycolmap parity (src/pycolmap/estimators/bundle_adjustment.cc):
-    // the upstream CeresBundleAdjustmentOptions carries the ceres-specific
-    // solver configuration; the fork merges that surface into
-    // BundleAdjustmentOptions itself (backend member + caspar_* fields), so
-    // the upstream name is exposed as an alias. The only upstream-only
-    // member is the raw ceres::Solver::Options sub-struct, which belongs to
-    // the embedded-ceres binding subproject (recorded in the manifest).
-    m.attr("CeresBundleAdjustmentOptions") = m.attr("BundleAdjustmentOptions");
+            .def_readwrite("ceres", &colmap::BundleAdjustmentOptions::ceres,
+                           "CeresBundleAdjustmentOptions: Ceres backend "
+                           "options.")
+            .def_readwrite("caspar", &colmap::BundleAdjustmentOptions::caspar,
+                           "CasparBundleAdjustmentOptions: CASPAR backend "
+                           "options.");
 }
 
 void pybind_incremental_triangulator_options(py::module& m) {
@@ -750,9 +506,8 @@ void pybind_incremental_triangulator_options(py::module& m) {
 }
 
 void pybind_incremental_mapper_options(py::module& m) {
-    // Upstream pycolmap parity: the upstream class name is
-    // IncrementalMapperOptions (the sub-structure of the incremental
-    // pipeline options).
+    // upstream pycolmap sfm/incremental_mapper.cc: IncrementalMapperOptions
+    // is the per-stage IncrementalMapper::Options sub-structure.
     py::class_<colmap::IncrementalMapper::Options>
             incremental_mapper_sub_options(
                     m, "IncrementalMapperOptions",
@@ -812,13 +567,13 @@ void pybind_incremental_mapper_options(py::module& m) {
                            "bool: (Default ``True``) Whether to estimate the "
                            "extra parameters in absolute pose estimation.")
             .def_readwrite(
-                    "local_ba_num_images",
-                    &colmap::IncrementalMapper::Options::local_ba_num_images,
+                    "ba_local_num_images",
+                    &colmap::IncrementalMapper::Options::ba_local_num_images,
                     "int: (Default ``6``) Number of images to optimize in "
                     "local bundle adjustment.")
             .def_readwrite(
-                    "local_ba_min_tri_angle",
-                    &colmap::IncrementalMapper::Options::local_ba_min_tri_angle,
+                    "ba_local_min_tri_angle",
+                    &colmap::IncrementalMapper::Options::ba_local_min_tri_angle,
                     "float: (Default ``6.0``) Minimum triangulation for images "
                     "to be chosen in local bundle adjustment.")
             .def_readwrite(
@@ -856,19 +611,10 @@ void pybind_incremental_mapper_options(py::module& m) {
                            "int: (Default ``3``) Maximum number of trials to "
                            "register an image.")
             .def_readwrite(
-                    "fix_existing_images",
-                    &colmap::IncrementalMapper::Options::fix_existing_images,
-                    "bool: (Default ``False``) If reconstruction is provided "
-                    "as input, fix the existing image poses.")
-            .def_property(
                     "fix_existing_frames",
-                    [](const colmap::IncrementalMapper::Options& self) {
-                        return self.fix_existing_images;
-                    },
-                    [](colmap::IncrementalMapper::Options& self, bool value) {
-                        self.fix_existing_images = value;
-                    },
-                    "bool: Upstream name of ``fix_existing_images``.")
+                    &colmap::IncrementalMapper::Options::fix_existing_frames,
+                    "bool: (Default ``False``) If reconstruction is provided "
+                    "as input, fix the existing frame poses.")
             .def_property(
                     "constant_rigs",
                     [](const colmap::IncrementalMapper::Options& self) {
@@ -962,237 +708,257 @@ void pybind_incremental_mapper_options(py::module& m) {
             .export_values()
             .finalize();
 
-    // Upstream pycolmap parity: the upstream class name is
-    // IncrementalPipelineOptions; the historical cloudViewer name
-    // IncrementalMapperOptions remains as a module-level alias so that
-    // existing GUI/CLI callers keep working.
-    py::class_<colmap::IncrementalMapperOptions> incremental_mapper_options(
+    // upstream pycolmap sfm/incremental_mapper.cc: IncrementalPipelineOptions
+    // is the top-level pipeline options class.
+    py::class_<colmap::IncrementalPipelineOptions> incremental_mapper_options(
             m, "IncrementalPipelineOptions",
             "Options for the incremental mapping pipeline. The nested "
             "``mapper`` and ``triangulation`` members configure the "
             "per-stage IncrementalMapper and IncrementalTriangulator.");
     incremental_mapper_options.def(py::init<>())
-            .def("check", &colmap::IncrementalMapperOptions::Check,
+            .def("check", &colmap::IncrementalPipelineOptions::Check,
                  "Check parameters validation.")
-            .def("get_mapper", &colmap::IncrementalMapperOptions::Mapper,
+            .def("get_mapper", &colmap::IncrementalPipelineOptions::Mapper,
                  "Get Incremental Mapper sub options.")
             .def(
                     "is_initial_pair_provided",
-                    [](const colmap::IncrementalMapperOptions& self) {
+                    [](const colmap::IncrementalPipelineOptions& self) {
                         return self.init_image_id1 != -1 ||
                                self.init_image_id2 != -1;
                     },
                     "Whether an initial image pair was specified.")
             .def("get_triangulation",
-                 &colmap::IncrementalMapperOptions::Triangulation,
-                 "Get Incremental triangulator options.")
-            .def("get_incremental_triangulator_options",
-                 &colmap::IncrementalMapperOptions::Triangulation,
+                 &colmap::IncrementalPipelineOptions::Triangulation,
                  "Get Incremental triangulator options.")
             .def("get_local_bundle_adjustment",
-                 &colmap::IncrementalMapperOptions::LocalBundleAdjustment,
-                 "Get local BundleAdjustment options.")
-            .def("get_local_ba_options",
-                 &colmap::IncrementalMapperOptions::LocalBundleAdjustment,
+                 &colmap::IncrementalPipelineOptions::LocalBundleAdjustment,
                  "Get local BundleAdjustment options.")
             .def("get_global_bundle_adjustment",
-                 &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
-                 "Get global BundleAdjustment options.")
-            .def("get_global_ba_options",
-                 &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
+                 &colmap::IncrementalPipelineOptions::GlobalBundleAdjustment,
                  "Get global BundleAdjustment options.")
             .def_readwrite("min_num_matches",
-                           &colmap::IncrementalMapperOptions::min_num_matches,
+                           &colmap::IncrementalPipelineOptions::min_num_matches,
                            "int: (Default ``15``) The minimum number of "
                            "matches for inlier matches to be considered.")
-            .def_readwrite("ignore_watermarks",
-                           &colmap::IncrementalMapperOptions::ignore_watermarks,
-                           "bool: (Default ``False``) Whether to ignore the "
-                           "inlier matches of watermark image pairs.")
+            .def_readwrite(
+                    "ignore_watermarks",
+                    &colmap::IncrementalPipelineOptions::ignore_watermarks,
+                    "bool: (Default ``False``) Whether to ignore the "
+                    "inlier matches of watermark image pairs.")
             .def_readwrite("multiple_models",
-                           &colmap::IncrementalMapperOptions::multiple_models,
+                           &colmap::IncrementalPipelineOptions::multiple_models,
                            "bool: (Default ``True``) Whether to reconstruct "
                            "multiple sub-models.")
             .def_readwrite("max_num_models",
-                           &colmap::IncrementalMapperOptions::max_num_models,
+                           &colmap::IncrementalPipelineOptions::max_num_models,
                            "int: (Default ``50``) The number of sub-models to "
                            "reconstruct.")
             .def_readwrite(
                     "max_model_overlap",
-                    &colmap::IncrementalMapperOptions::max_model_overlap,
+                    &colmap::IncrementalPipelineOptions::max_model_overlap,
                     "int: (Default ``20``) The maximum number of overlapping "
                     "images between sub-models. If the current sub-models "
                     "shares more than this number of images with another "
                     "model, then the reconstruction is stopped.")
             .def_readwrite("min_model_size",
-                           &colmap::IncrementalMapperOptions::min_model_size,
+                           &colmap::IncrementalPipelineOptions::min_model_size,
                            "int: (Default ``10``) The minimum number of "
                            "registered images of a sub-model, otherwise the "
                            "sub-model is discarded.")
             .def_readwrite("init_image_id1",
-                           &colmap::IncrementalMapperOptions::init_image_id1,
+                           &colmap::IncrementalPipelineOptions::init_image_id1,
                            "int: (Default ``-1``) The image identifiers used "
                            "to initialize the reconstruction. "
                            "Note that only one or both image identifiers can "
                            "be specified. In the former case, the second image "
                            "is automatically determined.")
             .def_readwrite("init_image_id2",
-                           &colmap::IncrementalMapperOptions::init_image_id2,
+                           &colmap::IncrementalPipelineOptions::init_image_id2,
                            "int: (Default ``-1``) The image identifiers used "
                            "to initialize the reconstruction. "
                            "Note that only one or both image identifiers can "
                            "be specified. In the former case, the second image "
                            "is automatically determined.")
             .def_readwrite("init_num_trials",
-                           &colmap::IncrementalMapperOptions::init_num_trials,
+                           &colmap::IncrementalPipelineOptions::init_num_trials,
                            "int: (Default ``200``) The number of trials to "
                            "initialize the reconstruction.")
+            .def_readwrite("structure_less_registration_fallback",
+                           &colmap::IncrementalPipelineOptions::
+                                   structure_less_registration_fallback,
+                           "bool: (Default ``True``) Whether to fall back to "
+                           "structure-less registration when the structure-"
+                           "based registration of an image fails.")
+            .def_readwrite("structure_less_registration_only",
+                           &colmap::IncrementalPipelineOptions::
+                                   structure_less_registration_only,
+                           "bool: (Default ``False``) Whether to only use "
+                           "structure-less registration.")
             .def_readwrite("extract_colors",
-                           &colmap::IncrementalMapperOptions::extract_colors,
+                           &colmap::IncrementalPipelineOptions::extract_colors,
                            "bool: (Default ``True``) Whether to extract colors "
                            "for reconstructed points.")
             .def_readwrite("num_threads",
-                           &colmap::IncrementalMapperOptions::num_threads,
+                           &colmap::IncrementalPipelineOptions::num_threads,
                            "int: (Default ``-1``) The number of threads to use "
                            "during reconstruction.")
+            .def_readwrite("random_seed",
+                           &colmap::IncrementalPipelineOptions::random_seed,
+                           "int: (Default ``-1``) PRNG seed for all stochastic "
+                           "methods during reconstruction.")
             .def_readwrite(
                     "min_focal_length_ratio",
-                    &colmap::IncrementalMapperOptions::min_focal_length_ratio,
+                    &colmap::IncrementalPipelineOptions::min_focal_length_ratio,
                     "float: (Default ``0.1``) Thresholds for filtering images "
                     "with degenerate intrinsics.")
             .def_readwrite(
                     "max_focal_length_ratio",
-                    &colmap::IncrementalMapperOptions::max_focal_length_ratio,
+                    &colmap::IncrementalPipelineOptions::max_focal_length_ratio,
                     "float: (Default ``10.0``) Thresholds for filtering images "
                     "with degenerate intrinsics.")
             .def_readwrite("max_extra_param",
-                           &colmap::IncrementalMapperOptions::max_extra_param,
+                           &colmap::IncrementalPipelineOptions::max_extra_param,
                            "float: (Default ``1.0``) Thresholds for filtering "
                            "images with degenerate intrinsics.")
             .def_readwrite(
                     "ba_refine_focal_length",
-                    &colmap::IncrementalMapperOptions::ba_refine_focal_length,
+                    &colmap::IncrementalPipelineOptions::ba_refine_focal_length,
                     "bool: (Default ``True``) Which intrinsic parameters to "
                     "optimize during the reconstruction.")
             .def_readwrite("ba_refine_principal_point",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_refine_principal_point,
                            "bool: (Default ``False``) Which intrinsic "
                            "parameters to optimize during the reconstruction.")
             .def_readwrite(
                     "ba_refine_extra_params",
-                    &colmap::IncrementalMapperOptions::ba_refine_extra_params,
+                    &colmap::IncrementalPipelineOptions::ba_refine_extra_params,
                     "bool: (Default ``True``) Which intrinsic parameters to "
                     "optimize during the reconstruction.")
+            .def_readwrite(
+                    "ba_refine_sensor_from_rig",
+                    &colmap::IncrementalPipelineOptions::
+                            ba_refine_sensor_from_rig,
+                    "bool: (Default ``True``) Whether to optimize the "
+                    "sensor_from_rig transformations during reconstruction.")
             .def_readwrite("ba_min_num_residuals_for_cpu_multi_threading",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_min_num_residuals_for_cpu_multi_threading,
                            "int: (Default ``50000``) The minimum number of "
                            "residuals per bundle adjustment problem to enable "
                            "multi-threading solving of the problems.")
-            .def_readwrite(
-                    "ba_local_num_images",
-                    &colmap::IncrementalMapperOptions::ba_local_num_images,
-                    "int: (Default ``6``) The number of images to optimize in "
-                    "local bundle adjustment.")
             .def_readwrite("ba_local_function_tolerance",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_local_function_tolerance,
                            "float: (Default ``0.0``) Ceres solver function "
                            "tolerance for local bundle adjustment.")
             .def_readwrite("ba_local_max_num_iterations",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_local_max_num_iterations,
-                           "int: (Default ``25``) The maximum number of local "
-                           "bundle adjustment iterations.")
+                           "int: (Default ``-1``) The maximum number of local "
+                           "bundle adjustment iterations (-1 derives the "
+                           "backend default).")
             .def_readwrite(
-                    "ba_global_images_ratio",
-                    &colmap::IncrementalMapperOptions::ba_global_images_ratio,
+                    "ba_global_frames_ratio",
+                    &colmap::IncrementalPipelineOptions::ba_global_frames_ratio,
                     "float: (Default ``1.1``) The growth rates after which to "
                     "perform global bundle adjustment.")
             .def_readwrite(
                     "ba_global_points_ratio",
-                    &colmap::IncrementalMapperOptions::ba_global_points_ratio,
+                    &colmap::IncrementalPipelineOptions::ba_global_points_ratio,
                     "float: (Default ``1.1``) The growth rates after which to "
                     "perform global bundle adjustment.")
             .def_readwrite(
-                    "ba_global_images_freq",
-                    &colmap::IncrementalMapperOptions::ba_global_images_freq,
+                    "ba_global_frames_freq",
+                    &colmap::IncrementalPipelineOptions::ba_global_frames_freq,
                     "int: (Default ``500``) The growth rates after which to "
                     "perform global bundle adjustment.")
             .def_readwrite(
                     "ba_global_points_freq",
-                    &colmap::IncrementalMapperOptions::ba_global_points_freq,
+                    &colmap::IncrementalPipelineOptions::ba_global_points_freq,
                     "int: (Default ``250000``) The growth rates after which to "
                     "perform global bundle adjustment.")
             .def_readwrite("ba_global_function_tolerance",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_global_function_tolerance,
                            "float: (Default ``0.0``) Ceres solver function "
                            "tolerance for global bundle adjustment")
             .def_readwrite("ba_global_max_num_iterations",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_global_max_num_iterations,
-                           "int: (Default ``50``) The maximum number of global "
-                           "bundle adjustment iterations.")
+                           "int: (Default ``-1``) The maximum number of global "
+                           "bundle adjustment iterations (-1 derives the "
+                           "backend default).")
             .def_readwrite(
                     "ba_local_max_refinements",
-                    &colmap::IncrementalMapperOptions::ba_local_max_refinements,
+                    &colmap::IncrementalPipelineOptions::
+                            ba_local_max_refinements,
                     "int: (Default ``2``) The thresholds for iterative bundle "
                     "adjustment refinements.")
             .def_readwrite("ba_local_max_refinement_change",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_local_max_refinement_change,
                            "float: (Default ``0.001``) The thresholds for "
                            "iterative bundle adjustment refinements.")
             .def_readwrite("ba_global_max_refinements",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_global_max_refinements,
                            "int: (Default ``5``) The thresholds for iterative "
                            "bundle adjustment refinements.")
             .def_readwrite("ba_global_max_refinement_change",
-                           &colmap::IncrementalMapperOptions::
+                           &colmap::IncrementalPipelineOptions::
                                    ba_global_max_refinement_change,
                            "float: (Default ``0.0005``) The thresholds for "
                            "iterative bundle adjustment refinements.")
             .def_readwrite("ba_use_gpu",
-                           &colmap::IncrementalMapperOptions::ba_use_gpu,
+                           &colmap::IncrementalPipelineOptions::ba_use_gpu,
                            "Whether to use Ceres' CUDA sparse linear algebra "
                            "library, if available.")
             .def_readwrite("ba_gpu_index",
-                           &colmap::IncrementalMapperOptions::ba_gpu_index,
+                           &colmap::IncrementalPipelineOptions::ba_gpu_index,
                            "Index of CUDA GPU to use for BA, if available.")
             .def_readwrite("snapshot_path",
-                           &colmap::IncrementalMapperOptions::snapshot_path,
+                           &colmap::IncrementalPipelineOptions::snapshot_path,
                            "str: (Default ``''``) Path to a folder with "
                            "reconstruction snapshots during incremental "
                            "reconstruction. Snapshots will be saved according "
                            "to the specified frequency of registered images.")
             .def_readwrite(
-                    "snapshot_images_freq",
-                    &colmap::IncrementalMapperOptions::snapshot_images_freq,
+                    "snapshot_frames_freq",
+                    &colmap::IncrementalPipelineOptions::snapshot_frames_freq,
                     "int: (Default ``0``) The frequency of registered images.")
             .def_readwrite("image_names",
-                           &colmap::IncrementalMapperOptions::image_names,
-                           "set(str, ...): Which images to reconstruct. If no "
+                           &colmap::IncrementalPipelineOptions::image_names,
+                           "list(str, ...): Which images to reconstruct. If no "
                            "images are specified, all images will be "
                            "reconstructed by default.")
+            .def_readwrite("load_all_images",
+                           &colmap::IncrementalPipelineOptions::load_all_images,
+                           "bool: (Default ``False``) Whether to load all "
+                           "images into the database cache even when only a "
+                           "subset is reconstructed.")
             .def_readwrite(
-                    "fix_existing_images",
-                    &colmap::IncrementalMapperOptions::fix_existing_images,
+                    "fix_existing_frames",
+                    &colmap::IncrementalPipelineOptions::fix_existing_frames,
                     "bool: (Default ``False``) If reconstruction is provided "
-                    "as input, fix the existing image poses.")
-            .def_readwrite("mapper", &colmap::IncrementalMapperOptions::mapper,
-                           "IncrementalMapperOptions: Incremental mapper "
+                    "as input, fix the existing frame poses.")
+            .def_readwrite(
+                    "max_runtime_seconds",
+                    &colmap::IncrementalPipelineOptions::max_runtime_seconds,
+                    "int: (Default ``-1``) Maximum runtime in seconds after "
+                    "which the reconstruction stops (-1 disables the limit).")
+            .def_readwrite("mapper",
+                           &colmap::IncrementalPipelineOptions::mapper,
+                           "IncrementalPipelineOptions: Incremental mapper "
                            "sub options.")
             .def_readwrite("triangulation",
-                           &colmap::IncrementalMapperOptions::triangulation,
+                           &colmap::IncrementalPipelineOptions::triangulation,
                            "IncrementalTriangulatorOptions: Incremental "
                            "triangulator options.")
             // --- fork parity members absent from the historical binding ---
             .def_readwrite(
                     "ba_local_backend",
-                    &colmap::IncrementalMapperOptions::ba_local_backend,
+                    &colmap::IncrementalPipelineOptions::ba_local_backend,
                     "BundleAdjustmentBackend: (Default ``CERES``) The bundle "
                     "adjustment backend for local BA. CASPAR is only "
                     "available in builds with RECONSTRUCTION_CASPAR_ENABLED; "
@@ -1200,93 +966,58 @@ void pybind_incremental_mapper_options(py::module& m) {
                     "warning.")
             .def_readwrite(
                     "ba_global_backend",
-                    &colmap::IncrementalMapperOptions::ba_global_backend,
+                    &colmap::IncrementalPipelineOptions::ba_global_backend,
                     "BundleAdjustmentBackend: (Default ``CERES``) The bundle "
                     "adjustment backend for global BA.")
             .def_readwrite(
                     "use_prior_position",
-                    &colmap::IncrementalMapperOptions::use_prior_position,
+                    &colmap::IncrementalPipelineOptions::use_prior_position,
                     "bool: (Default ``False``) Whether to use position priors "
                     "for BA and convert them to a local ENU frame when "
                     "loading the database cache.")
             .def_readwrite(
                     "use_robust_loss_on_prior_position",
-                    &colmap::IncrementalMapperOptions::
+                    &colmap::IncrementalPipelineOptions::
                             use_robust_loss_on_prior_position,
                     "bool: (Default ``False``) Whether to use a robust loss "
                     "on the position prior residuals.")
             .def_readwrite(
                     "prior_position_loss_scale",
-                    &colmap::IncrementalMapperOptions::
+                    &colmap::IncrementalPipelineOptions::
                             prior_position_loss_scale,
                     "float: (Default ``7.815``) The scaling factor for the "
                     "position prior loss function.")
             .def_property(
-                    "random_seed",
-                    [](const colmap::IncrementalMapperOptions& self) {
-                        return self.mapper.random_seed;
-                    },
-                    [](colmap::IncrementalMapperOptions& self, int seed) {
-                        self.mapper.random_seed = seed;
-                    },
-                    "int: (Default ``-1``) PRNG seed for all stochastic "
-                    "methods during reconstruction (proxies the mapper sub "
-                    "options).")
-            .def_property(
                     "constant_rigs",
-                    [](const colmap::IncrementalMapperOptions& self) {
+                    [](const colmap::IncrementalPipelineOptions& self) {
                         return std::vector<colmap::rig_t>(
-                                self.mapper.constant_rigs.begin(),
-                                self.mapper.constant_rigs.end());
+                                self.constant_rigs.begin(),
+                                self.constant_rigs.end());
                     },
-                    [](colmap::IncrementalMapperOptions& self,
+                    [](colmap::IncrementalPipelineOptions& self,
                        const std::vector<colmap::rig_t>& rigs) {
-                        self.mapper.constant_rigs.clear();
-                        self.mapper.constant_rigs.insert(rigs.begin(),
-                                                         rigs.end());
+                        self.constant_rigs.clear();
+                        self.constant_rigs.insert(rigs.begin(), rigs.end());
                     },
                     "list(int, ...): Rigs for which to fix the "
-                    "sensor_from_rig transformation (proxies the mapper sub "
-                    "options).")
+                    "sensor_from_rig transformation, independent of "
+                    "ba_refine_sensor_from_rig.")
             .def_property(
                     "constant_cameras",
-                    [](const colmap::IncrementalMapperOptions& self) {
+                    [](const colmap::IncrementalPipelineOptions& self) {
                         return std::vector<colmap::camera_t>(
-                                self.mapper.constant_cameras.begin(),
-                                self.mapper.constant_cameras.end());
+                                self.constant_cameras.begin(),
+                                self.constant_cameras.end());
                     },
-                    [](colmap::IncrementalMapperOptions& self,
+                    [](colmap::IncrementalPipelineOptions& self,
                        const std::vector<colmap::camera_t>& cameras) {
-                        self.mapper.constant_cameras.clear();
-                        self.mapper.constant_cameras.insert(cameras.begin(),
-                                                            cameras.end());
+                        self.constant_cameras.clear();
+                        self.constant_cameras.insert(cameras.begin(),
+                                                     cameras.end());
                     },
                     "list(int, ...): Cameras whose intrinsic parameters stay "
-                    "fixed (proxies the mapper sub options).")
-            .def_property(
-                    "fix_existing_frames",
-                    [](const colmap::IncrementalMapperOptions& self) {
-                        return self.fix_existing_images;
-                    },
-                    [](colmap::IncrementalMapperOptions& self, bool value) {
-                        self.fix_existing_images = value;
-                    },
-                    "bool: Upstream name of ``fix_existing_images``.")
-            .def_property(
-                    "snapshot_frames_freq",
-                    [](const colmap::IncrementalMapperOptions& self) {
-                        return self.snapshot_images_freq;
-                    },
-                    [](colmap::IncrementalMapperOptions& self, int value) {
-                        self.snapshot_images_freq = value;
-                    },
-                    "int: (Default ``0``) Upstream name of "
-                    "``snapshot_images_freq``.");
-    // NOTE: the historical cloudViewer python name IncrementalMapperOptions
-    // referred to this top-level pipeline options class, but upstream
-    // pycolmap uses that name for the IncrementalMapper::Options sub
-    // structure; the upstream naming wins and the top-level class is exposed
-    // as IncrementalPipelineOptions. No python caller relied on the old name.
+                    "fixed independent of ba_refine_focal_length, "
+                    "ba_refine_principal_point, and ba_refine_extra_params.");
 }
 
 void pybind_patch_match_options(py::module& m) {
@@ -1305,6 +1036,10 @@ void pybind_patch_match_options(py::module& m) {
                     "str: (Default ``'-1'``) Index of the GPU used for patch "
                     "match. For multi-GPU usage, you should separate multiple "
                     "GPU indices by comma, e.g., ``0,1,2,3``.")
+            .def_readwrite("num_threads",
+                           &colmap::mvs::PatchMatchOptions::num_threads,
+                           "int: (Default ``-1``) Number of threads for "
+                           "processing. -1 uses all available threads.")
             // Upstream pycolmap parity (src/pycolmap/pipeline/mvs.cc): the
             // dense-pipeline entry point attached to its options class,
             // forwarding to the fork's StereoPatchMatch wrapper.
@@ -1659,15 +1394,9 @@ void pybind_reconstruction_options_early(py::module& m) {
     // these are default-argument values of the feature entry points)
     pybind_sift_extraction_options(m_feature);
     pybind_sift_matching_options(m_feature);
-    // upstream pipeline/match_features.cc (the pairing family; the fork
-    // binds its historical matching-option structs, which the feature
-    // binder's match_* entry points also use as default arguments)
-    pybind_exhaustive_matching_options(m_pipeline);
-    pybind_sequential_matching_options(m_pipeline);
-    pybind_vocabtree_matching_options(m_pipeline);
-    pybind_spatial_matching_options(m_pipeline);
-    pybind_transitive_matching_options(m_pipeline);
-    pybind_imagepairs_matching_options(m_pipeline);
+    // upstream pipeline/match_features.cc binds the *PairingOptions family
+    // in the pipeline binder; the fork-only FeaturePairsMatchingOptions
+    // (controllers/pairing.h) lands here.
     pybind_featurepairs_matching_options(m_pipeline);
     // upstream estimators/bundle_adjustment.cc and sfm/incremental_*.cc
     // (default-argument values of the image/sfm binder entry points)

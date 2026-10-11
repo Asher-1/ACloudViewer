@@ -13,6 +13,7 @@
 #include "ThreadControlWidget.h"
 #include "controllers/bundle_adjustment.h"
 #include "controllers/option_manager.h"
+#include "estimators/bundle_adjustment_ceres.h"
 
 namespace cloudViewer {
 
@@ -28,21 +29,21 @@ BundleAdjustmentWidget::BundleAdjustmentWidget(
       thread_control_widget_(new ThreadControlWidget(this)) {
     setWindowTitle("Bundle adjustment");
 
-    AddOptionInt(&options->bundle_adjustment->solver_options.max_num_iterations,
+    // Ceres is the only backend exposed here: the Caspar GPU solver is a
+    // private ColmapLib build option and selecting it without support is a
+    // hard error in the engine.
+    CeresBundleAdjustmentOptions& ceres = *options->bundle_adjustment->ceres;
+    AddOptionInt(&ceres.solver_options.max_num_iterations,
                  "max_num_iterations");
-    AddOptionInt(&options->bundle_adjustment->solver_options
-                          .max_linear_solver_iterations,
+    AddOptionInt(&ceres.solver_options.max_linear_solver_iterations,
                  "max_linear_solver_iterations");
 
-    AddOptionDoubleLog(
-            &options->bundle_adjustment->solver_options.function_tolerance,
-            "function_tolerance [10eX]", -1000, 1000);
-    AddOptionDoubleLog(
-            &options->bundle_adjustment->solver_options.gradient_tolerance,
-            "gradient_tolerance [10eX]", -1000, 1000);
-    AddOptionDoubleLog(
-            &options->bundle_adjustment->solver_options.parameter_tolerance,
-            "parameter_tolerance [10eX]", -1000, 1000);
+    AddOptionDoubleLog(&ceres.solver_options.function_tolerance,
+                       "function_tolerance [10eX]", -1000, 1000);
+    AddOptionDoubleLog(&ceres.solver_options.gradient_tolerance,
+                       "gradient_tolerance [10eX]", -1000, 1000);
+    AddOptionDoubleLog(&ceres.solver_options.parameter_tolerance,
+                       "parameter_tolerance [10eX]", -1000, 1000);
 
     AddOptionBool(&options->bundle_adjustment->refine_focal_length,
                   "refine_focal_length");
@@ -50,8 +51,12 @@ BundleAdjustmentWidget::BundleAdjustmentWidget(
                   "refine_principal_point");
     AddOptionBool(&options->bundle_adjustment->refine_extra_params,
                   "refine_extra_params");
-    AddOptionBool(&options->bundle_adjustment->refine_extrinsics,
-                  "refine_extrinsics");
+    AddOptionBool(&options->bundle_adjustment->refine_rig_from_world,
+                  "refine_rig_from_world");
+    AddOptionBool(&options->bundle_adjustment->refine_sensor_from_rig,
+                  "refine_sensor_from_rig");
+    AddOptionBool(&options->bundle_adjustment->refine_points3D,
+                  "refine_points3D");
 
     QPushButton* run_button = new QPushButton(tr("Run"), this);
     grid_layout_->addWidget(run_button, grid_layout_->rowCount(), 1);

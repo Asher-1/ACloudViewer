@@ -13,7 +13,12 @@
 // needs no codec of its own.
 //
 // usage: bench_ocr <image> <det.gguf> <rec.gguf> <device> <threads>
-//                  <warmups> <iters> [layout.gguf]
+//                  <warmups> <iters> [layout.gguf] [--recognize-full-image]
+//
+// --recognize-full-image drives the public aicore_ocr_recognize ABI with the
+// whole input image as one quad. It exists for official cropped-word GT sets:
+// their labels exercise the published recognition model without pretending a
+// detector has produced a box for an already-cropped image.
 
 #include <algorithm>
 #include <chrono>
@@ -52,7 +57,19 @@ int main(int argc, char** argv) {
     const int threads = std::atoi(argv[5]);
     const int warmups = std::atoi(argv[6]);
     const int iters = std::atoi(argv[7]);
-    const char* layoutPath = argc > 8 ? argv[8] : nullptr;
+    const char* layoutPath = nullptr;
+    bool recognizeFullImage = false;
+    for (int i = 8; i < argc; ++i) {
+        if (std::string(argv[i]) == "--recognize-full-image")
+            recognizeFullImage = true;
+        else if (!layoutPath)
+            layoutPath = argv[i];
+        else {
+            std::fprintf(stderr, "bench_ocr: unexpected argument %s\n",
+                         argv[i]);
+            return 2;
+        }
+    }
 
     uint8_t* rgb = nullptr;
     int32_t w = 0, h = 0;
@@ -83,8 +100,21 @@ int main(int argc, char** argv) {
     view.format = AICORE_IMAGE_RGB8;
     view.row_stride_bytes = static_cast<size_t>(w) * 3;
 
+    const float fullImageQuad[8] = {0.0f,
+                                    0.0f,
+                                    static_cast<float>(w - 1),
+                                    0.0f,
+                                    static_cast<float>(w - 1),
+                                    static_cast<float>(h - 1),
+                                    0.0f,
+                                    static_cast<float>(h - 1)};
+    const auto runOnce = [&] {
+        return recognizeFullImage
+                       ? aicore_ocr_recognize(ctx, &view, fullImageQuad, 1)
+                       : aicore_ocr_run(ctx, &view);
+    };
     for (int i = 0; i < warmups; ++i) {
-        aicore_ocr_result* r = aicore_ocr_run(ctx, &view);
+        aicore_ocr_result* r = runOnce();
         if (r) aicore_ocr_result_release(r);
     }
     std::vector<double> e2e, det, inf, post, dbBoxes, cropResizePack, ctc,
@@ -93,7 +123,7 @@ int main(int argc, char** argv) {
     int boxes = 0;
     for (int i = 0; i < iters; ++i) {
         const auto t0 = std::chrono::steady_clock::now();
-        aicore_ocr_result* r = aicore_ocr_run(ctx, &view);
+        aicore_ocr_result* r = runOnce();
         const auto t1 = std::chrono::steady_clock::now();
         if (!r) {
             std::fprintf(stderr, "bench_ocr: run failed: %s\n",
@@ -144,6 +174,22 @@ int main(int argc, char** argv) {
                                             b->quad[3][1] - b->quad[0][1]);
                 std::printf("TEXT %d %.0f %.0f %.0fx%.0f %s\n", t, cx, cy, ew,
                             eh, b->text ? b->text : "");
+                std::printf("OCRBOX %d %.6f", t, b->score);
+                for (int k = 0; k < 4; ++k)
+                    std::printf(" %.3f,%.3f", b->quad[k][0], b->quad[k][1]);
+                std::printf("\t%s\n", b->text ? b->text : "");
+            }
+            // Layout regions (when a layout model is loaded): class, score and
+            // the axis-aligned box so backends can be diffed region-by-region.
+            const int regions = aicore_ocr_region_count(r);
+            for (int t = 0; t < regions; ++t) {
+                const aicore_ocr_region* g = aicore_ocr_region_at(r, t);
+                std::printf(
+                        "REGION %d cls=%d order=%d score=%.3f "
+                        "%.0f,%.0f %.0f,%.0f\n",
+                        t, g->class_id, g->reading_order, g->score,
+                        g->quad[0][0], g->quad[0][1], g->quad[2][0],
+                        g->quad[2][1]);
             }
             std::fflush(stdout);
         }

@@ -22,6 +22,7 @@
 #include <QTimer>
 #include <QUuid>
 
+#include "GKDBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -134,6 +135,14 @@ qGKD::qGKD(QObject* parent)
 }
 
 QList<QAction*> qGKD::getActions() { return {m_action}; }
+
+void qGKD::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandGkdKeypoints));
+}
 
 void qGKD::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

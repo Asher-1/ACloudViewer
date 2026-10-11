@@ -9,7 +9,7 @@
 
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "feature/matching.h"
+#include "controllers/matcher_cache.h"
 
 #include "scene/synthetic.h"
 #include "util/testing.h"
@@ -151,8 +151,8 @@ TEST(FeatureMatcherCache, Features) {
     auto cached_descriptors = cache.GetDescriptors(image.ImageId());
     FeatureDescriptors db_descriptors =
         data.database->ReadDescriptors(image.ImageId());
-    // Fork feature types are plain Eigen matrices without a type tag.
-    EXPECT_EQ(*cached_descriptors, db_descriptors);
+    EXPECT_EQ(cached_descriptors->type, db_descriptors.type);
+    EXPECT_EQ(cached_descriptors->data, db_descriptors.data);
   }
 }
 

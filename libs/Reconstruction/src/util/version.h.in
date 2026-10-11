@@ -23,9 +23,9 @@ constexpr int COLMAP_VERSION_PATCH = ${COLMAP_VERSION_PATCH};
 constexpr int COLMAP_VERSION_NUMBER = COLMAP_VERSION_MAJOR * 1000000 +
                                       COLMAP_VERSION_MINOR * 10000 +
                                       COLMAP_VERSION_PATCH * 100;
-// Bumped when the database schema gains new versioned migrations (e.g. the
-// pose_priors table landing with pose-prior alignment).
-constexpr int COLMAP_DATABASE_SCHEMA_REVISION = 0;
+// Bumped when the database schema gains new versioned migrations. Revision 1
+// merges the fork's float_descriptors table into descriptors.type.
+constexpr int COLMAP_DATABASE_SCHEMA_REVISION = 1;
 
 // Legacy fork-private database numbering written before the upstream
 // user_version migration machinery was adopted. Databases stamped with this

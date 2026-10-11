@@ -1398,19 +1398,21 @@ void pybind_scene(py::module& m) {
                         self.Transform(new_from_old);
                     },
                     "tform"_a, "Upstream name of ``sim3d_transform``.")
+            // Upstream pycolmap signature: crop(AlignedBox3d), matching the
+            // return type of compute_bounding_box().
+            .def("crop", &Reconstruction::Crop, "bbox"_a,
+                 "Crop the reconstruction to the given bounding box; "
+                 "returns a new reconstruction.")
+            // Legacy fork overload: accept a (min, max) pair as well.
             .def(
                     "crop",
                     [](const Reconstruction& self,
                        const std::pair<Eigen::Vector3d, Eigen::Vector3d>&
                                bbox) {
-                        // Python API stays pair-based; the C++ side moved to
-                        // the upstream-parity AlignedBox3d Crop signature.
                         return self.Crop(
                                 Eigen::AlignedBox3d(bbox.first, bbox.second));
                     },
-                    "bbox"_a,
-                    "Crop the reconstruction to the given bounding box; "
-                    "returns a new reconstruction.")
+                    "bbox"_a, "Legacy overload taking a ``(min, max)`` pair.")
             .def(
                     "merge",
                     [](Reconstruction& self, const Reconstruction& other,

@@ -69,32 +69,14 @@ std::vector<std::pair<image_t, image_t>> ReadImagePairsText(
 
 }  // namespace
 
+bool FeaturePairsMatchingOptions::Check() const { return true; }
+
 bool ExistingMatchedPairingOptions::Check() const {
   CHECK_OPTION_GT(batch_size, 1);
   return true;
 }
 
 
-namespace {
-
-// The fork tracks the per-image descriptor kind as FeatureDescriptorType
-// (an enum over the supported descriptor formats), while the default
-// vocabulary-tree lookup takes a FeatureExtractorType. Map the SIFT and
-// Loma formats onto their extractor types; every other format falls back
-// to SIFT (the only type with a bundled default vocabulary tree).
-FeatureExtractorType GetExtractorTypeForDescriptorType(
-    const FeatureDescriptorType descriptor_type) {
-  switch (descriptor_type) {
-    case FeatureDescriptorType::kLomaB:
-      return FeatureExtractorType::LOMA_B;
-    case FeatureDescriptorType::kLomaB128:
-      return FeatureExtractorType::LOMA_B128;
-    default:
-      return FeatureExtractorType::SIFT;
-  }
-}
-
-}  // namespace
 
 bool ExhaustivePairingOptions::Check() const {
   CHECK_OPTION_GT(block_size, 1);
@@ -183,7 +165,7 @@ ExhaustivePairGenerator::ExhaustivePairGenerator(
     : ExhaustivePairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void ExhaustivePairGenerator::Reset() {
   start_idx1_ = 0;
@@ -295,7 +277,7 @@ VocabTreePairGenerator::VocabTreePairGenerator(
     : VocabTreePairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(options.CacheSize(),
-                                                THROW_CHECK_NOTNULL(database).get()),
+                                                THROW_CHECK_NOTNULL(database)),
           query_image_ids,
           std::move(image_pair_filter)) {}
 
@@ -370,18 +352,16 @@ void VocabTreePairGenerator::IndexImages(
     if (visual_index_ == nullptr) {
       visual_index_ = retrieval::VisualIndex::Read(
           options_.vocab_tree_path.empty()
-              ? GetVocabTreeUriForFeatureType(
-                    GetExtractorTypeForDescriptorType(
-                        cache_->GetDescriptorType(image_ids[i])))
+              ? GetVocabTreeUriForFeatureType(descriptors.type)
               : options_.vocab_tree_path);
     }
     if (options_.max_num_features > 0 &&
-        descriptors.rows() > options_.max_num_features) {
+        descriptors.data.rows() > options_.max_num_features) {
       ExtractTopScaleFeatures(
           &keypoints, &descriptors, options_.max_num_features);
     }
     visual_index_->Add(
-        index_options, image_ids[i], keypoints, ToFloat(descriptors));
+        index_options, image_ids[i], keypoints, descriptors.ToFloat());
     LOG(INFO) << StringPrintf(" in %.3fs", timer.ElapsedSeconds());
   }
 
@@ -402,7 +382,7 @@ void VocabTreePairGenerator::Query(const image_t image_id) {
     auto keypoints = *cache_->GetKeypoints(image_id);
     auto descriptors = *cache_->GetDescriptors(image_id);
     if (options_.max_num_features > 0 &&
-        descriptors.rows() > options_.max_num_features) {
+        descriptors.data.rows() > options_.max_num_features) {
       ExtractTopScaleFeatures(
           &keypoints, &descriptors, options_.max_num_features);
     }
@@ -415,7 +395,7 @@ void VocabTreePairGenerator::Query(const image_t image_id) {
     }
     visual_index_->Query(query_options,
                          keypoints,
-                         ToFloat(descriptors),
+                         descriptors.ToFloat(),
                          &retrieval.image_scores);
   } catch (const std::exception& error) {
     LOG(ERROR) << "Failed to query image " << image_id
@@ -477,7 +457,7 @@ SequentialPairGenerator::SequentialPairGenerator(
     : SequentialPairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void SequentialPairGenerator::Reset() {
   image_idx_ = 0;
@@ -693,7 +673,7 @@ SpatialPairGenerator::SpatialPairGenerator(
     : SpatialPairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void SpatialPairGenerator::Reset() { current_idx_ = 0; }
 
@@ -814,7 +794,7 @@ TransitivePairGenerator::TransitivePairGenerator(
     : TransitivePairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void TransitivePairGenerator::Reset() {
   current_iteration_ = 0;
@@ -854,7 +834,7 @@ std::vector<std::pair<image_t, image_t>> TransitivePairGenerator::Next() {
 
   std::vector<std::pair<image_pair_t, int>> existing_pair_ids_and_num_inliers;
   cache_->AccessDatabase(
-      [&existing_pair_ids_and_num_inliers](const Database& database) {
+      [&existing_pair_ids_and_num_inliers](Database& database) {
         // Fork API: out-param form plus (image_t, image_t) pairs; rebuild
         // the upstream pair_id -> num_inliers mapping here.
         std::vector<std::pair<image_t, image_t>> image_pairs;
@@ -928,7 +908,7 @@ ImportedPairGenerator::ImportedPairGenerator(
     : ImportedPairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void ImportedPairGenerator::Reset() { pair_idx_ = 0; }
 
@@ -961,7 +941,7 @@ ExistingMatchedPairGenerator::ExistingMatchedPairGenerator(
     : options_(options) {
   THROW_CHECK(options.Check());
   LOG(INFO) << "Generating existing image pairs...";
-  cache->AccessDatabase([this](const Database& database) {
+  cache->AccessDatabase([this](Database& database) {
     // Fork API: ReadAllMatches returns the (pair_id, matches) vector.
     const auto all_matches = database.ReadAllMatches();
     image_pairs_.reserve(all_matches.size());
@@ -979,7 +959,7 @@ ExistingMatchedPairGenerator::ExistingMatchedPairGenerator(
     : ExistingMatchedPairGenerator(
           options,
           std::make_shared<FeatureMatcherCache>(
-              options.CacheSize(), THROW_CHECK_NOTNULL(database).get())) {}
+              options.CacheSize(), THROW_CHECK_NOTNULL(database))) {}
 
 void ExistingMatchedPairGenerator::Reset() { start_idx_ = 0; }
 

@@ -200,9 +200,19 @@ int main(int argc, char** argv) {
         }
     }
 
+    aicore::ocr::OcrProbeOptions probe;
+    if (argc > 5) probe.fetchAt = std::atoi(argv[5]);
+    if (argc > 6) probe.dumpShapes = std::string(argv[6]) == "shapes";
+    // Prefix bisection over the device under test: AICORE_OCR_FETCH_AT (test
+    // file only, never in production sources).
+    if (const char* fetchEnv = std::getenv("AICORE_OCR_FETCH_AT"))
+        probe.fetchAt = std::atoi(fetchEnv);
+
     aicore::ocr::OcrWeights weights;
     std::string error;
-    if (!weights.load(modelPath, &error)) {
+    // A bisection indexes the SOURCE program's ops, so the load-time affine
+    // folding (which removes ops) is skipped while fetchAt is set.
+    if (!weights.load(modelPath, &error, /*foldAffine=*/probe.fetchAt < 0)) {
         std::fprintf(stderr, "model load failed: %s\n", error.c_str());
         return 1;
     }
@@ -235,14 +245,6 @@ int main(int argc, char** argv) {
     // other leaf.
     ggml_set_input(input);
 
-    aicore::ocr::OcrProbeOptions probe;
-    if (argc > 5) probe.fetchAt = std::atoi(argv[5]);
-    if (argc > 6) probe.dumpShapes = std::string(argv[6]) == "shapes";
-    // Prefix bisection over the device under test: AICORE_OCR_FETCH_AT (test
-    // file only, never in production sources).
-    if (const char* fetchEnv = std::getenv("AICORE_OCR_FETCH_AT"))
-        probe.fetchAt = std::atoi(fetchEnv);
-
     // Dynamic-loader build: the backend .so must be registered first.
     ggml_common::load_backends_once();
     // The manifest device tokens are lowercase; the registry names are
@@ -267,19 +269,21 @@ int main(int argc, char** argv) {
     if (devLower != "cpu") {
         std::string resolved;
         backend = ggml_common::find_gpu_backend(backendName, 0, resolved);
-        if (backend)
-            std::fprintf(stderr, "[device] requested=%s resolved=%s\n",
-                         backendName.c_str(), resolved.c_str());
-    }
-    if (!backend) {
-        // Fall back to the device class: "cpu" resolves to the CPU backend;
-        // any unresolvable GPU token lands on the first GPU device (named
-        // per device, e.g. "CUDA0").
-        const bool wantsCpu = devLower == "cpu";
-        backend = ggml_backend_init_by_type(
-                wantsCpu ? GGML_BACKEND_DEVICE_TYPE_CPU
-                         : GGML_BACKEND_DEVICE_TYPE_GPU,
-                nullptr);
+        if (!backend) {
+            // Never measure a different device than the one requested: an
+            // unavailable GPU backend is a skip the runner must account for,
+            // not a silent CUDA0 row labelled "Vulkan".
+            std::fprintf(stderr,
+                         "probe_ocr: backend %s not available, skipping\n",
+                         backendName.c_str());
+            ggml_free(ctx);
+            return 77;
+        }
+        std::fprintf(stderr, "[device] requested=%s resolved=%s\n",
+                     backendName.c_str(), resolved.c_str());
+    } else {
+        backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                            nullptr);
     }
     if (!backend) {
         std::fprintf(stderr, "backend init failed: %s\n", registryName.c_str());
@@ -288,12 +292,24 @@ int main(int argc, char** argv) {
     }
     const bool isCpu = ggml_common::is_cpu_backend(backend);
 
-    // Build options mirror the production session: CPU sessions route
-    // 3x3 stride-1 convs through the shared Winograd custom op so the
-    // manifest gates measure the winograd parity and the CPU numbers
-    // reflect the production graph.
-    aicore::ocr::OcrBuildOptions buildOptions;
-    buildOptions.cpu_conv = isCpu;
+    // The probe executes exactly the graph that ships: routing (CPU gallocr
+    // / CUDA-Vulkan one-device / mixed sched), conv routes and allocation
+    // all come from the production owner (makeExecPlan / execBuildOptions /
+    // prepareGraph). A GPU probe needs the CPU secondary the session has.
+    ggml_backend_t cpuBackend = backend;
+    if (!isCpu) {
+        cpuBackend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                               nullptr);
+        if (!cpuBackend) {
+            std::fprintf(stderr, "cpu secondary backend init failed\n");
+            ggml_free(ctx);
+            return 1;
+        }
+    }
+    const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
+            isCpu ? nullptr : backend, cpuBackend, weights.sched_gpu_tagging);
+    aicore::ocr::OcrBuildOptions buildOptions =
+            aicore::ocr::execBuildOptions(plan);
     // Blocked-island A/B: default scope mirrors production (all three
     // graphs, CPU+AVX-512 hosts); AICORE_OCR_NO_ISLAND=1 disables it for
     // the controlled baseline; AICORE_OCR_FORCE_ISLAND=1 enables it on
@@ -305,6 +321,12 @@ int main(int argc, char** argv) {
                        !std::getenv("AICORE_OCR_NO_ISLAND")));
     ggml_tensor* output = nullptr;
     std::vector<ggml_tensor*> fetchList;
+    // Production contract: a fresh fold pool per build so the folded
+    // constants can be mirrored to the device (prepareGraph rejects a build
+    // without it on GPU plans). The build+prepare wall time is reported as
+    // build_ms: it is the cost of every graph-cache miss in the session.
+    const auto buildStart = std::chrono::steady_clock::now();
+    weights.resetFoldPool();
     if (layout) {
         output = aicore::ocr::buildGraph(ctx, weights, input, &error, &probe,
                                          &fetchList, &buildOptions);
@@ -318,47 +340,26 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    ggml_backend_t cpuBackend = backend;
-    ggml_backend_sched_t sched = nullptr;
-    ggml_gallocr_t alloc = nullptr;
-    if (!isCpu) {
-        cpuBackend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                               nullptr);
-        if (!cpuBackend) {
-            std::fprintf(stderr, "cpu secondary backend init failed\n");
-            ggml_free(ctx);
-            return 1;
-        }
-        if (!weights.realizeHostBuffers()) {
-            std::fprintf(stderr, "host buffer realization failed\n");
-            ggml_free(ctx);
-            return 1;
-        }
-        // After build: cover the folded constants emitted by buildGraph.
-        weights.tagHostLeafs();
-        if (!weights.realizeToDevice(backend, &error)) {
-            std::fprintf(stderr, "device weight realization failed: %s\n",
-                         error.c_str());
-            ggml_free(ctx);
-            return 1;
-        }
-        sched = ggml_common::new_gpu_sched({backend}, cpuBackend, 1u << 20);
-        if (!sched) {
-            std::fprintf(stderr, "backend scheduler init failed\n");
-            ggml_free(ctx);
-            return 1;
-        }
+    // Every PicoDet head must live in the graph, or its tensor stays
+    // unallocated and the readback aborts. Truncated builds expand the
+    // single fetch node instead.
+    std::vector<ggml_tensor*> outputs;
+    if (layout && probe.fetchAt < 0)
+        outputs = fetchList;
+    else
+        outputs.push_back(output);
+    aicore::ocr::OcrGraphExec exec;
+    ggml_cgraph* graph = nullptr;
+    if (!aicore::ocr::prepareGraph(weights, ctx, plan, outputs, &graph, exec,
+                                   error)) {
+        std::fprintf(stderr, "graph preparation failed: %s\n", error.c_str());
+        return 1;
     }
-    ggml_cgraph* graph = ggml_new_graph_custom(
-            ctx, 1u << 20, /*simple=*/false);  // depthwise expands wide
-    if (layout && probe.fetchAt < 0) {
-        // Every PicoDet head must live in the graph, or its tensor stays
-        // unallocated and the readback aborts. Truncated builds expand
-        // the single fetch node instead.
-        for (ggml_tensor* t : fetchList) ggml_build_forward_expand(graph, t);
-    } else {
-        ggml_build_forward_expand(graph, output);
-    }
+    std::fprintf(stderr, "[build] build_ms=%.2f nodes=%d\n",
+                 std::chrono::duration<double, std::milli>(
+                         std::chrono::steady_clock::now() - buildStart)
+                         .count(),
+                 ggml_graph_n_nodes(graph));
     if (!det && !layout) {
         // Batch-mode diagnostic: CUDA rejects IM2COL/MUL_MAT on
         // non-contiguous activations, which fragments the sched into
@@ -382,15 +383,6 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "[noncontig] total=%d / %d nodes\n", nonContig,
                      ggml_graph_n_nodes(graph));
     }
-    const bool allocated =
-            isCpu ? (alloc = ggml_gallocr_new(
-                             ggml_backend_get_default_buffer_type(backend)),
-                     ggml_gallocr_alloc_graph(alloc, graph))
-                  : ggml_backend_sched_alloc_graph(sched, graph);
-    if (!allocated) {
-        std::fprintf(stderr, "graph allocation failed\n");
-        return 1;
-    }
     // Upload the input, run, and read the result back. The compute pass
     // is timed over warmups + runs so the manifest can report p50/p95.
     ggml_backend_tensor_set(input, inputData.data(), 0,
@@ -405,10 +397,7 @@ int main(int argc, char** argv) {
         ggml_backend_tensor_set(input, inputData.data(), 0,
                                 sizeof(float) * inputData.size());
         const auto start = std::chrono::steady_clock::now();
-        if (isCpu)
-            ggml_backend_graph_compute(backend, graph);
-        else
-            ggml_backend_sched_graph_compute(sched, graph);
+        aicore::ocr::computeGraph(plan, exec, graph);
         const auto stop = std::chrono::steady_clock::now();
         if (run >= 0) {
             timings.push_back(
@@ -697,7 +686,7 @@ int main(int argc, char** argv) {
                 detSum / static_cast<double>(detCount), p50, p95);
         std::printf("perf: backend=%s device=%s p50=%.2fms p95=%.2fms\n",
                     registryName.c_str(), ggml_backend_name(backend), p50, p95);
-        ggml_gallocr_free(alloc);
+        exec.free();
         ggml_backend_free(backend);
         ggml_free(ctx);
         return ok ? 0 : 1;
@@ -789,7 +778,7 @@ int main(int argc, char** argv) {
                      gotSignature.c_str(), refSignature.c_str());
     }
 
-    ggml_gallocr_free(alloc);
+    exec.free();
     ggml_backend_free(backend);
     ggml_free(ctx);
     return (signatureMatch && withinTolerance && selfConsistent) ? 0 : 1;

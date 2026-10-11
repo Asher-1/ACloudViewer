@@ -31,14 +31,14 @@ public:
     };
 
     GlobalMapperController(const Options& options,
-                           const IncrementalMapperOptions& mapper_options,
+                           const IncrementalPipelineOptions& mapper_options,
                            ReconstructionManager* reconstruction_manager);
 
 private:
     void Run() override;
 
     const Options options_;
-    const IncrementalMapperOptions mapper_options_;
+    const IncrementalPipelineOptions mapper_options_;
     ReconstructionManager* reconstruction_manager_;
 };
 

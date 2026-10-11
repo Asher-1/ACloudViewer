@@ -59,6 +59,11 @@ def check_plugin_root(root: Path, plugin: str | None = None,
                 continue
             for path, text in text_by_file.items():
                 relative = path.relative_to(root)
+                # Explicit remote-inference clients may use Qt networking for
+                # request/response transport. They do not own or download
+                # local model assets; URLs/catalogs remain forbidden below.
+                remote_transport = (
+                    "aicore-boundary: remote-inference-transport" in text)
                 # Test fixtures intentionally use environment variables to
                 # select models; the production plugin sources do not get
                 # that exception.
@@ -74,8 +79,12 @@ def check_plugin_root(root: Path, plugin: str | None = None,
                     if (not is_test and not line.lstrip().startswith("//") and
                             ABSOLUTE_PATH.search(line)):
                         warnings.append(f"{relative}:{line_no}: developer absolute path")
+                    model_owner = PRIVATE_MODEL_OWNER.search(line)
+                    remote_network = remote_transport and (
+                        "QNetworkAccessManager" in line or
+                        "QNetworkReply" in line)
                     if (not is_test and not line.lstrip().startswith("//") and
-                            PRIVATE_MODEL_OWNER.search(line)):
+                            model_owner and not remote_network):
                         warnings.append(f"{relative}:{line_no}: plugin-owned model/cache/download symbol")
     if strict:
         issues.extend(warnings)

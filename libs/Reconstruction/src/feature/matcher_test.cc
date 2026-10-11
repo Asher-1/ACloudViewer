@@ -29,14 +29,14 @@ TEST(FeatureMatchingOptions, Copy) {
   FeatureMatchingOptions options;
   options.max_num_matches += 100;
   options.sift->max_ratio *= 0.1;
-  options.aliked->min_cossim *= 0.1;
+  options.aliked->brute_force.min_cossim *= 0.1;
 
   FeatureMatchingOptions copy = options;
 
   // Verify fields are copied
   EXPECT_EQ(copy.max_num_matches, options.max_num_matches);
   EXPECT_EQ(copy.sift->max_ratio, options.sift->max_ratio);
-  EXPECT_EQ(copy.aliked->min_cossim, options.aliked->min_cossim);
+  EXPECT_EQ(copy.aliked->brute_force.min_cossim, options.aliked->brute_force.min_cossim);
 
   // Verify deep copy of shared_ptr (different pointer instances)
   EXPECT_NE(options.sift.get(), copy.sift.get());
@@ -47,7 +47,7 @@ TEST(FeatureMatchingOptions, CopyAssignment) {
   FeatureMatchingOptions options;
   options.max_num_matches += 100;
   options.sift->max_ratio *= 0.1;
-  options.aliked->min_cossim *= 0.1;
+  options.aliked->brute_force.min_cossim *= 0.1;
 
   FeatureMatchingOptions assigned;
   assigned = options;
@@ -55,7 +55,7 @@ TEST(FeatureMatchingOptions, CopyAssignment) {
   // Verify fields are copied.
   EXPECT_EQ(assigned.max_num_matches, options.max_num_matches);
   EXPECT_EQ(assigned.sift->max_ratio, options.sift->max_ratio);
-  EXPECT_EQ(assigned.aliked->min_cossim, options.aliked->min_cossim);
+  EXPECT_EQ(assigned.aliked->brute_force.min_cossim, options.aliked->brute_force.min_cossim);
 
   // Verify deep copy (different pointer instances).
   EXPECT_NE(options.sift.get(), assigned.sift.get());

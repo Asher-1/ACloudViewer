@@ -199,43 +199,44 @@ void pybind_pipeline(py::module& m, py::module& m_root) {
                     "a leaf node cluster.");
 
     // ------------------------------------------------------------------
-    // HierarchicalPipelineOptions (fork: HierarchicalMapperController::Options
-    // + explicit clustering/mapper options in the controller constructor;
-    // upstream bundles them into one options struct)
+    // HierarchicalPipelineOptions (upstream
+    // controllers/hierarchical_pipeline.h)
     // ------------------------------------------------------------------
-    py::class_<colmap::HierarchicalMapperController::Options>
+    py::class_<colmap::HierarchicalPipelineOptions>
             hierarchical_pipeline_options(
                     m_sfm, "HierarchicalPipelineOptions",
-                    "Options for the hierarchical mapping pipeline. The fork "
-                    "engine takes the scene clustering options and the "
-                    "incremental pipeline options as separate constructor "
-                    "arguments (upstream bundles them as ``clustering`` and "
-                    "``mapper`` members).");
+                    "Options for the hierarchical mapping pipeline.");
     hierarchical_pipeline_options.def(py::init<>())
-            .def("check", &colmap::HierarchicalMapperController::Options::Check,
+            .def("check", &colmap::HierarchicalPipelineOptions::Check,
                  "Check parameters validation.")
-            .def_readwrite(
-                    "image_path",
-                    &colmap::HierarchicalMapperController::Options::image_path,
-                    "str: The path to the image folder which are used as "
-                    "input.")
-            .def_readwrite(
-                    "database_path",
-                    &colmap::HierarchicalMapperController::Options::
-                            database_path,
-                    "str: The path to the database file which is used as "
-                    "input.")
+            .def_readwrite("image_path",
+                           &colmap::HierarchicalPipelineOptions::image_path,
+                           "str: The image path at which to find the images to "
+                           "extract point colors. If not specified, all point "
+                           "colors will be black.")
             .def_readwrite(
                     "init_num_trials",
-                    &colmap::HierarchicalMapperController::Options::
-                            init_num_trials,
-                    "int: (Default ``10``) The maximum number of trials to "
-                    "initialize a cluster.")
+                    &colmap::HierarchicalPipelineOptions::init_num_trials,
+                    "int: (Default ``10``) The maximum number of trials "
+                    "to initialize a cluster.")
+            .def_readwrite("num_threads",
+                           &colmap::HierarchicalPipelineOptions::num_threads,
+                           "int: (Default ``-1``) The total number of threads "
+                           "for the hierarchical pipeline, divided across "
+                           "workers. incremental_options.num_threads is "
+                           "ignored in favor of this option.")
+            .def_readwrite("num_workers",
+                           &colmap::HierarchicalPipelineOptions::num_workers,
+                           "int: (Default ``-1``) The number of workers used "
+                           "to reconstruct clusters in parallel.")
             .def_readwrite(
-                    "num_workers",
-                    &colmap::HierarchicalMapperController::Options::num_workers,
-                    "int: (Default ``-1``) The number of workers used to "
-                    "reconstruct clusters in parallel.");
+                    "clustering_options",
+                    &colmap::HierarchicalPipelineOptions::clustering_options,
+                    "Options for clustering the scene graph.")
+            .def_readwrite(
+                    "incremental_options",
+                    &colmap::HierarchicalPipelineOptions::incremental_options,
+                    "Options used to reconstruct each cluster individually.");
 
     // ------------------------------------------------------------------
     // GlobalMapperOptions (fork: sfm/global_mapper.h; upstream
@@ -638,71 +639,64 @@ void pybind_pipeline(py::module& m, py::module& m_root) {
                                MODEL_UPDATE_CALLBACK)
                 .export_values();
 
-        py::enum_<colmap::IncrementalMapperController::CallbackType>(
+        py::enum_<colmap::IncrementalPipeline::CallbackType>(
                 m, "IncrementalPipelineCallback")
                 .value("INITIAL_IMAGE_PAIR_REG_CALLBACK",
-                       colmap::IncrementalMapperController::CallbackType::
+                       colmap::IncrementalPipeline::CallbackType::
                                INITIAL_IMAGE_PAIR_REG_CALLBACK)
                 .value("NEXT_IMAGE_REG_CALLBACK",
-                       colmap::IncrementalMapperController::CallbackType::
+                       colmap::IncrementalPipeline::CallbackType::
                                NEXT_IMAGE_REG_CALLBACK)
                 .value("LAST_IMAGE_REG_CALLBACK",
-                       colmap::IncrementalMapperController::CallbackType::
+                       colmap::IncrementalPipeline::CallbackType::
                                LAST_IMAGE_REG_CALLBACK)
                 .export_values();
 
-        // The fork controllers take raw option/manager pointers and keep
-        // neither alive, so the returned shared_ptr's deleter owns the
-        // materialized options and holds the manager shared_ptr until the
-        // controller is destroyed.
-        py::class_<colmap::HierarchicalMapperController,
-                   std::shared_ptr<colmap::HierarchicalMapperController>>(
+        // Upstream constructs from a Database object; the fork controller
+        // opens the database from the path (documented divergence). The
+        // controller keeps a raw manager pointer, so the returned shared_ptr
+        // deleter holds the manager alive until the controller is destroyed.
+        py::class_<colmap::HierarchicalPipeline,
+                   std::shared_ptr<colmap::HierarchicalPipeline>>(
                 m, "HierarchicalPipeline")
-                .def(py::init([](colmap::HierarchicalMapperController::Options
+                .def(py::init([](const colmap::HierarchicalPipelineOptions&
                                          options,
-                                 std::shared_ptr<colmap::Database> database,
+                                 const std::string& database_path,
                                  std::shared_ptr<colmap::ReconstructionManager>
                                          reconstruction_manager) {
-                    auto* options_ptr =
-                            new colmap::HierarchicalMapperController::Options(
-                                    std::move(options));
-                    auto* controller = new colmap::HierarchicalMapperController(
-                            *options_ptr, colmap::SceneClustering::Options(),
-                            colmap::IncrementalMapperOptions(),
-                            reconstruction_manager.get());
-                    return std::shared_ptr<
-                            colmap::HierarchicalMapperController>(
-                            controller,
-                            [options_ptr, reconstruction_manager](
-                                    colmap::HierarchicalMapperController* p) {
-                                delete options_ptr;
-                                delete p;
-                            });
-                }));
+                         auto* controller = new colmap::HierarchicalPipeline(
+                                 options, database_path,
+                                 reconstruction_manager.get());
+                         return std::shared_ptr<colmap::HierarchicalPipeline>(
+                                 controller,
+                                 [reconstruction_manager](
+                                         colmap::HierarchicalPipeline* p) {
+                                     delete p;
+                                 });
+                     }),
+                     "options"_a, "database_path"_a,
+                     "reconstruction_manager"_a);
 
         // Upstream constructs from a Database object; the fork controller
         // opens the database from paths (documented divergence).
-        py::class_<colmap::IncrementalMapperController,
-                   std::shared_ptr<colmap::IncrementalMapperController>>(
+        py::class_<colmap::IncrementalPipeline,
+                   std::shared_ptr<colmap::IncrementalPipeline>>(
                 m, "IncrementalPipeline")
-                .def(py::init([](colmap::IncrementalMapperOptions options,
+                .def(py::init([](colmap::IncrementalPipelineOptions options,
                                  const std::string& image_path,
                                  const std::string& database_path,
                                  std::shared_ptr<colmap::ReconstructionManager>
                                          reconstruction_manager) {
                          auto* options_ptr =
-                                 new colmap::IncrementalMapperOptions(
+                                 new colmap::IncrementalPipelineOptions(
                                          std::move(options));
-                         auto* controller =
-                                 new colmap::IncrementalMapperController(
-                                         options_ptr, image_path, database_path,
-                                         reconstruction_manager.get());
-                         return std::shared_ptr<
-                                 colmap::IncrementalMapperController>(
+                         auto* controller = new colmap::IncrementalPipeline(
+                                 options_ptr, image_path, database_path,
+                                 reconstruction_manager.get());
+                         return std::shared_ptr<colmap::IncrementalPipeline>(
                                  controller,
                                  [options_ptr, reconstruction_manager](
-                                         colmap::IncrementalMapperController*
-                                                 p) {
+                                         colmap::IncrementalPipeline* p) {
                                      delete options_ptr;
                                      delete p;
                                  });

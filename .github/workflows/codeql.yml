@@ -251,6 +251,7 @@ jobs:
             -DPLUGIN_STANDARD_QLINGBOTMAP=OFF \
             -DPLUGIN_STANDARD_QSAM3D=OFF \
             -DPLUGIN_STANDARD_QANYLABELING=OFF \
+            -DPLUGIN_STANDARD_QMAPANYTHING=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

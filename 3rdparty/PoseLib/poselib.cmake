@@ -1,12 +1,14 @@
 include(FetchContent)
 
-# Keep the exact revision used by the COLMAP one-sided focal solver. PoseLib is
-# populated by default with reconstruction so the one-sided focal solver has
-# the same pinned minimal-solver dependency as COLMAP.
+# Keep the exact revision pinned by COLMAP (a2bd15c2 src/thirdparty/CMakeLists.txt,
+# bumped in d7ffb9c4): it carries the gen_relpose_5p1pt gamma/cheirality fix
+# (PoseLib#214) that the GR5P1P fast path of the generalized relative pose
+# estimator relies on. PoseLib is populated by default with reconstruction so
+# the minimal solvers share the same pinned dependency as COLMAP.
 FetchContent_Declare(
     poselib
-    URL https://github.com/PoseLib/PoseLib/archive/fa7280fee27f97aff31ae7f98bab7f583fac7d08.zip
-    URL_HASH SHA256=5408d4ae8ce367cb2f076bc6c5f0f6f78abd3573d2c015304b04e46f23455f5b
+    URL https://github.com/PoseLib/PoseLib/archive/1bb8881f08e68f0b3d9b2ecc411fc15e7766ef1b.zip
+    URL_HASH SHA256=ee46322581c7901fe24e91434eeec27163f820d481cba5faa43d37651fabc8e8
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/poselib"
 )
 

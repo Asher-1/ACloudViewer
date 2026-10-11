@@ -41,7 +41,7 @@ void CreateRandomRgbImage(int width, int height, Bitmap* bitmap) {
 // the shared AICore cache has the catalog models.
 void SkipUnlessLomaModelsAvailable() {
   LomaExtractionOptions probe;
-  if (!ProvisionDefaultLomaModels(&probe)) {
+  if (!ProvisionDefaultLomaModels(FeatureExtractorType::LOMA_B, &probe)) {
     GTEST_SKIP() << "LoMa ggml models not provisioned (offline gate)";
   }
 }
@@ -56,14 +56,16 @@ TEST(LomaTest, Nominal) {
   extraction_options.loma->min_score = 0.0;
   auto extractor = FeatureExtractor::Create(extraction_options);
   FeatureKeypoints keypoints;
-  FeatureDescriptorsFloat descriptors;
+  FeatureDescriptors descriptors;
   ASSERT_TRUE(extractor->Extract(image, &keypoints, &descriptors));
 
   EXPECT_GT(keypoints.size(), 0);
-  EXPECT_EQ(keypoints.size(), descriptors.rows());
-  // Fork adaptation: the ggml LOMA_B engine outputs 256-dim descriptors
-  // (upstream ONNX exports 128-dim).
-  EXPECT_EQ(descriptors.cols(), 256);
+  EXPECT_EQ(descriptors.type, FeatureExtractorType::LOMA_B);
+  EXPECT_EQ(keypoints.size(), descriptors.data.rows());
+  // Fork adaptation: the ggml LOMA_B engine outputs 256-dim float
+  // descriptors (upstream ONNX exports 128-dim), carried through the byte
+  // descriptor stream as packed float32 (4 bytes per value).
+  EXPECT_EQ(descriptors.data.cols(), 256 * sizeof(float));
 
   for (const auto& keypoint : keypoints) {
     EXPECT_GE(keypoint.x, 0);
@@ -83,9 +85,9 @@ TEST(LomaTest, Nominal) {
 
   FeatureMatcher::Image image1;
   image1.image_id = 1;
-  image1.camera = camera;
-  image1.keypoints = keypoints;
-  image1.descriptors = descriptors;
+  image1.camera = camera.get();
+  image1.keypoints = std::make_shared<FeatureKeypoints>(keypoints);
+  image1.descriptors = std::make_shared<FeatureDescriptors>(descriptors);
   FeatureMatcher::Image image2 = image1;
   image2.image_id = 2;
 
@@ -114,7 +116,7 @@ TEST(LomaTest, MinScore) {
   options_low.loma->min_score = 0.0;
   auto extractor_low = FeatureExtractor::Create(options_low);
   FeatureKeypoints keypoints_low;
-  FeatureDescriptorsFloat descriptors_low;
+  FeatureDescriptors descriptors_low;
   ASSERT_TRUE(extractor_low->Extract(image, &keypoints_low, &descriptors_low));
 
   FeatureExtractionOptions options_high(FeatureExtractorType::LOMA_B);
@@ -122,7 +124,7 @@ TEST(LomaTest, MinScore) {
   options_high.loma->min_score = 0.9;
   auto extractor_high = FeatureExtractor::Create(options_high);
   FeatureKeypoints keypoints_high;
-  FeatureDescriptorsFloat descriptors_high;
+  FeatureDescriptors descriptors_high;
   ASSERT_TRUE(
       extractor_high->Extract(image, &keypoints_high, &descriptors_high));
 
@@ -140,7 +142,7 @@ TEST(LomaTest, DynamicNumKeypoints) {
   options_512.loma->max_num_features = 512;
   auto extractor_512 = FeatureExtractor::Create(options_512);
   FeatureKeypoints keypoints_512;
-  FeatureDescriptorsFloat descriptors_512;
+  FeatureDescriptors descriptors_512;
   ASSERT_TRUE(extractor_512->Extract(image, &keypoints_512, &descriptors_512));
 
   FeatureExtractionOptions options_2048(FeatureExtractorType::LOMA_B);
@@ -149,7 +151,7 @@ TEST(LomaTest, DynamicNumKeypoints) {
   options_2048.loma->max_num_features = 2048;
   auto extractor_2048 = FeatureExtractor::Create(options_2048);
   FeatureKeypoints keypoints_2048;
-  FeatureDescriptorsFloat descriptors_2048;
+  FeatureDescriptors descriptors_2048;
   ASSERT_TRUE(
       extractor_2048->Extract(image, &keypoints_2048, &descriptors_2048));
 
@@ -161,17 +163,15 @@ TEST(LomaTest, DynamicNumKeypoints) {
   EXPECT_LE(keypoints_2048.size(), 2048u);
 }
 
-TEST(LomaTest, MatcherCreationAcrossVariants) {
+TEST(LomaTest, MatcherCpuCreation) {
   // Upstream: Bf16MatcherCpuFallback creates a bf16-option matcher without a
   // GPU. The ggml engine has no bf16 switch; the equivalent contract is that
-  // every LoMa variant matcher resolves (model-path resolution only, no
-  // download at creation time).
-  for (const auto type : {FeatureMatcherType::LOMA_B,
-                          FeatureMatcherType::LOMA_G}) {
-    FeatureMatchingOptions options(type);
-    options.use_gpu = false;
-    EXPECT_NE(FeatureMatcher::Create(options), nullptr);
-  }
+  // the default LoMa_B matcher resolves on the CPU device. Creation loads the
+  // (cached) matcher model, so this intentionally stays on the small B
+  // variant like upstream rather than iterating the multi-GB G variant.
+  FeatureMatchingOptions options(FeatureMatcherType::LOMA_B);
+  options.use_gpu = false;
+  EXPECT_NE(FeatureMatcher::Create(options), nullptr);
 }
 
 }  // namespace

@@ -23,13 +23,14 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <climits>
 #include <cmath>
 #include <cstring>
 #include <deque>
 #include <map>
+#include <memory>
 #include <string>
 #include <thread>
-#include <unordered_set>
 #include <vector>
 
 #include "aicore/runtime_capi.h"
@@ -56,7 +57,27 @@ constexpr float kDetDefaultBoxThresh = 0.3f;
 constexpr float kDetDefaultBoxScoreThresh = 0.6f;
 constexpr float kDetDefaultUnclipRatio = 1.5f;
 constexpr int kRecHeight = 48;
+// Official rec_image_shape width (3, 48, 320): the FLOOR of the per-crop
+// padded width, not a cap. paddlex resize(): max_wh_ratio = max(320/48,
+// w/h); imgW = int(48 * max_wh_ratio); resized_w = ceil(48 * w/h) clipped
+// to imgW; the crop is never compressed below its aspect ratio until the
+// 3200 px limit (max_imgW). The historical clamp(round(48*w/h), 1, 320)
+// squeezed every line longer than 6.67:1 (a 254x15 body line by 2.5x) into
+// garbage on every backend.
 constexpr int kRecMaxWidth = 320;
+constexpr int kRecLimitWidth = 3200;  // paddlex ResizeNormImg.max_imgW
+// Padded chunk widths. Paddle pads each 6-row batch to its own max width;
+// one graph build per distinct width is the price of that exactness, so
+// the width is quantized to this ladder (every step a multiple of 32, the
+// rec backbone's stride lattice). A row wider than its chunk is never
+// produced: the crop picks the first bucket >= resized_w.
+constexpr int kRecWidthBuckets[] = {320,  480,  640,  960,
+                                    1280, 1920, 2560, kRecLimitWidth};
+// Distinct (width, rows) builds kept per rec session. A document frame
+// touches 2-4 buckets; the activation budget per build is held constant by
+// recRowsCapForWidth so the cache's device footprint is bounded by
+// capacity x one 48-row 320-wide build.
+constexpr size_t kRecGraphCacheCapacity = 6;
 constexpr int kDetAlign = 32;
 
 // PP-OCRv4 preprocessing constants (official DetPreProcess/RecPreProcess).
@@ -89,6 +110,19 @@ inline int64_t recChunkBatchCap(ggml_backend_t gpuBackend) {
     }
     return kRecChunkBatch;
 }
+// Row cap for a wider chunk: rows x width is held at cap x 320 so a 1280
+// wide chunk carries a quarter of the rows and the activation / im2col
+// workspace (both linear in rows x width) never exceeds the measured
+// 48x320 CUDA budget. Multiples of 4 keep the build key set small.
+inline int64_t recRowsCapForWidth(int64_t cap, int width) {
+    const int64_t rows = cap * kRecMaxWidth / width;
+    return std::max<int64_t>(4, rows / 4 * 4);
+}
+inline int recWidthBucket(int resizedW) {
+    for (int b : kRecWidthBuckets)
+        if (resizedW <= b) return b;
+    return kRecLimitWidth;
+}
 // Official rec pad (paddlex text_recognition/processors.py resize_norm_img
 // L61-62): padding_im = np.zeros((imgC, imgH, imgW)) in the NORMALIZED
 // domain, i.e. the fill is 0.0 = pixel 127.5 = (0.5 - mean) / std. A black
@@ -102,29 +136,94 @@ struct OcrGraph {
     ggml_cgraph* graph = nullptr;
     ggml_tensor* input = nullptr;
     ggml_tensor* output = nullptr;
-    ggml_gallocr_t alloc = nullptr;        // CPU gallocr fast path
-    ggml_backend_sched_t sched = nullptr;  // GPU scheduler (device-resident)
+    // Optional in-graph CTC reduction over `output` (rec graphs on GPU
+    // execution only): argmax class per (t, n) row and its probability.
+    ggml_tensor* argmaxIndex = nullptr;
+    ggml_tensor* argmaxProb = nullptr;
+    bool argmaxHead = false;
+    aicore::ocr::OcrGraphExec exec;  // gallocr (CPU / one device) or sched
+    // The folded-constant generation this build was emitted into. The
+    // build's constants (and their device mirrors) live in the pool, so the
+    // graph co-owns it: the weights move on to a fresh pool at the next
+    // build while every cached graph keeps its own generation alive.
+    std::shared_ptr<aicore::ocr::OcrFoldPool> fold;
     int64_t inputC = 0;
     int64_t inputH = 0;
     int64_t inputW = 0;
     int64_t inputN = 0;
+    uint64_t lastUse = 0;  // LRU clock (OcrGraphCache)
 
     bool matches(int64_t c, int64_t h, int64_t w) const {
         return graph && inputC == c && inputH == h && inputW == w;
     }
 
     void clear() {
-        if (alloc) ggml_gallocr_free(alloc);
-        if (sched) ggml_backend_sched_free(sched);
+        exec.free();
         if (ctx) ggml_free(ctx);
+        // After the exec (its allocations may alias fold mirrors) and the
+        // graph context; the pool frees the device mirrors when the last
+        // owner lets go.
+        fold.reset();
         ctx = nullptr;
         graph = nullptr;
         input = nullptr;
         output = nullptr;
-        alloc = nullptr;
-        sched = nullptr;
+        argmaxIndex = nullptr;
+        argmaxProb = nullptr;
+        argmaxHead = false;
         inputC = inputH = inputW = inputN = 0;
+        lastUse = 0;
     }
+};
+
+// Bounded set of cached builds keyed by (C, H, W, N, argmax head). The rec
+// graph needs one build per (width bucket, row count) actually used by a
+// frame — a document mixes short labels (320) with full-width body lines
+// (960-1280) — and a frame sequence revisits the same handful of keys, so a
+// small LRU replaces the historical single entry. Eviction clears the graph
+// (and releases its fold generation); the caller rebuilds into the slot.
+struct OcrGraphCache {
+    std::vector<OcrGraph> entries;
+    size_t capacity = 1;
+    uint64_t clock = 0;
+
+    OcrGraph& acquire(
+            int64_t c, int64_t h, int64_t w, int64_t n, bool argmaxHead) {
+        ++clock;
+        for (OcrGraph& g : entries) {
+            if (g.matches(c, h, w) && g.inputN == n &&
+                g.argmaxHead == argmaxHead) {
+                g.lastUse = clock;
+                return g;
+            }
+        }
+        if (entries.size() < capacity) {
+            entries.emplace_back();
+            entries.back().lastUse = clock;
+            return entries.back();
+        }
+        OcrGraph* victim = &entries.front();
+        for (OcrGraph& g : entries)
+            if (g.lastUse < victim->lastUse) victim = &g;
+        victim->clear();
+        victim->lastUse = clock;
+        return *victim;
+    }
+
+    void clear() {
+        for (OcrGraph& g : entries) g.clear();
+        entries.clear();
+    }
+};
+
+// Reduced rec output: the two scalars per timestep the CTC decoder consumes
+// (argmax class, its probability), laid out [t + T * n]. When `active` the
+// full (V, T, N) softmax was NOT read back. The vectors are frame-scratch
+// owned by the context.
+struct RecArgmaxOut {
+    std::vector<int32_t> index;
+    std::vector<float> prob;
+    bool active = false;
 };
 
 // --- Stage helpers (all pure functions over plain buffers) -----------------
@@ -163,14 +262,47 @@ void packNchwImageTo(const aicore::img::Image& img,
             for (int x = w; x < dstW; ++x) row[x] = padValue;
         }
     }
-    for (int ch = 0; ch < 3; ++ch) {
-        float* planePtr = nchw + static_cast<size_t>(ch) * plane;
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                planePtr[static_cast<size_t>(y) * dstW + x] =
-                        (img.channel(x, y, ch) * scale - mean) / stdDev;
-            }
+    // One image row -> three plane rows. The expression is kept verbatim
+    // so the packed floats are bit-identical to the historical serial loop;
+    // only the source addressing is hoisted (Image::row / channel_index).
+    const int scn = img.channels;
+    const int cmap[3] = {img.channel_index(0), img.channel_index(1),
+                         img.channel_index(2)};
+    const auto packRow = [&](int y) {
+        const uint8_t* srow = img.row(y);
+        for (int ch = 0; ch < 3; ++ch) {
+            const uint8_t* s = srow + cmap[ch];
+            float* row = nchw + static_cast<size_t>(ch) * plane +
+                         static_cast<size_t>(y) * dstW;
+            for (int x = 0; x < w; ++x)
+                row[x] = (s[static_cast<size_t>(x) * scn] * scale - mean) /
+                         stdDev;
         }
+    };
+    // Same gate as cv_resize_linear_u8: only the det/layout frame (h in the
+    // hundreds-to-thousands) fans out; rec crops (h = 48) stay serial because
+    // they are already packed from inside the per-box worker pool.
+    const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
+    if (hw > 1 && h >= 256 && static_cast<unsigned>(h) > hw) {
+        std::atomic<int> nextRow{0};
+        std::vector<std::thread> pool;
+        pool.reserve(hw - 1);
+        for (unsigned i = 1; i < hw; ++i)
+            pool.emplace_back([&] {
+                for (;;) {
+                    const int y = nextRow.fetch_add(1);
+                    if (y >= h) return;
+                    packRow(y);
+                }
+            });
+        for (;;) {
+            const int y = nextRow.fetch_add(1);
+            if (y >= h) break;
+            packRow(y);
+        }
+        for (auto& t : pool) t.join();
+    } else {
+        for (int y = 0; y < h; ++y) packRow(y);
     }
 }
 
@@ -180,7 +312,11 @@ void packNchwImage(const aicore::img::Image& img,
                    int dstW,
                    float padValue,
                    std::vector<float>& nchw) {
-    nchw.assign(static_cast<size_t>(3) * img.height * dstW, padValue);
+    // resize, not assign: packNchwImageTo writes every element (content and
+    // pad columns), so a pre-fill is a second full pass over the buffer.
+    // When the caller hands in a reused scratch vector of the same size the
+    // resize is a no-op and no page faults are taken.
+    nchw.resize(static_cast<size_t>(3) * img.height * dstW);
     packNchwImageTo(img, mean, stdDev, dstW, padValue, nchw.data());
 }
 
@@ -276,36 +412,56 @@ void rectToQuad(const RotRect& r, float quad[4][2]) {
 // (score_mode="fast" box_score_fast), and the min_size edge filter. The
 // unclip itself stays in unclipBox (Clipper-equivalent rect offset).
 // O(pixels) fill + O(hull^2) rect search (hulls are tens of points).
+// `mask` is caller-owned scratch (w*h bytes, reused across frames): the
+// historical fresh mask + int32 visited pair (17 MB on a 2560x1312 map)
+// page-faulted every frame and dominated this stage. A pixel is "visited"
+// the moment it is cleared from the mask, which is the same membership as
+// a separate visited array (every pixel is pushed exactly once).
 std::vector<DetBox> connectedComponentsBoxes(const float* prob,
                                              int w,
                                              int h,
-                                             float thresh) {
-    std::vector<uint8_t> mask(static_cast<size_t>(w) * h, 0);
-    for (int64_t i = 0; i < static_cast<int64_t>(w) * h; ++i)
-        mask[i] = prob[i] > thresh ? 1 : 0;
-    std::vector<int32_t> visited(static_cast<size_t>(w) * h, 0);
+                                             float thresh,
+                                             std::vector<uint8_t>& mask) {
+    const int64_t total = static_cast<int64_t>(w) * h;
+    mask.resize(static_cast<size_t>(total));
+    for (int64_t i = 0; i < total; ++i) mask[i] = prob[i] > thresh ? 1 : 0;
     std::vector<DetBox> boxes;
     std::vector<int32_t> stack;
     std::vector<std::pair<float, float>> pts;
+    // Per-row x extremes of the current component. Only a row's leftmost
+    // and rightmost pixel can be a hull vertex (every other pixel of that
+    // row is an interior point of the segment between them), and the hull
+    // pops collinear points (cross <= 0, exact on integer coordinates), so
+    // the hull vertex set is identical to the one over every pixel while
+    // the sort shrinks from the component area to <= 2 points per row
+    // (measured 9.4 ms -> sub-ms per frame on the 100-box bench image).
+    std::vector<int> rowMin(static_cast<size_t>(h), INT_MAX);
+    std::vector<int> rowMax(static_cast<size_t>(h), INT_MIN);
+    std::vector<int> touchedRows;
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             const size_t idx = static_cast<size_t>(y) * w + x;
-            if (!mask[idx] || visited[idx]) continue;
+            if (!mask[idx]) continue;
             // Flood fill the 8-connected component, collecting every pixel
             // coordinate (the cv2 contour's convex hull equals the hull of
             // the full component for solid blobs, without depending on any
             // boundary-extraction detail).
             stack.clear();
-            pts.clear();
+            touchedRows.clear();
+            size_t pixelCount = 0;
             stack.push_back(static_cast<int32_t>(idx));
-            visited[idx] = 1;
+            mask[idx] = 0;
             while (!stack.empty()) {
                 const int32_t cur = stack.back();
                 stack.pop_back();
                 const int cy = cur / w;
                 const int cx = cur % w;
-                pts.emplace_back(static_cast<float>(cx),
-                                 static_cast<float>(cy));
+                ++pixelCount;
+                if (cx < rowMin[cy]) {
+                    if (rowMin[cy] == INT_MAX) touchedRows.push_back(cy);
+                    rowMin[cy] = cx;
+                }
+                if (cx > rowMax[cy]) rowMax[cy] = cx;
                 constexpr int kDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
                 constexpr int kDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
                 for (int d = 0; d < 8; ++d) {
@@ -313,13 +469,23 @@ std::vector<DetBox> connectedComponentsBoxes(const float* prob,
                     const int ny = cy + kDy[d];
                     if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
                     const size_t nIdx = static_cast<size_t>(ny) * w + nx;
-                    if (mask[nIdx] && !visited[nIdx]) {
-                        visited[nIdx] = 1;
+                    if (mask[nIdx]) {
+                        mask[nIdx] = 0;
                         stack.push_back(static_cast<int32_t>(nIdx));
                     }
                 }
             }
-            if (pts.size() < 3) continue;  // noise specks
+            pts.clear();
+            for (const int ry : touchedRows) {
+                pts.emplace_back(static_cast<float>(rowMin[ry]),
+                                 static_cast<float>(ry));
+                if (rowMax[ry] != rowMin[ry])
+                    pts.emplace_back(static_cast<float>(rowMax[ry]),
+                                     static_cast<float>(ry));
+                rowMin[ry] = INT_MAX;
+                rowMax[ry] = INT_MIN;
+            }
+            if (pixelCount < 3) continue;  // noise specks
             const auto hull = convexHull(pts);
             if (hull.size() < 2) continue;
             // Minimum-area rectangle by brute force over hull edge
@@ -461,23 +627,23 @@ DetBox unclipBox(const DetBox& box, float ratio) {
 // whose width is the longer text edge. Bilinear sampling keeps the crop
 // dependency-free; the rec head is robust to the cubic-vs-linear
 // interpolation delta.
-void cropQuadRgb(const std::vector<uint8_t>& rgb,
-                 int imgW,
-                 int imgH,
+void cropQuadRgb(const aicore::img::Image& src,
                  const float quad[4][2],
                  int cropW,
                  int cropH,
                  std::vector<uint8_t>& dst) {
+    const int imgW = src.width;
+    const int imgH = src.height;
     // Solve the 3x3 homography mapping (0,0)(w,0)(w,h)(0,h) -> quad by
     // the standard 8-unknown linear system through adjugate inversion.
-    const float src[4][2] = {
+    const float corners[4][2] = {
             {0, 0},
             {static_cast<float>(cropW), 0},
             {static_cast<float>(cropW), static_cast<float>(cropH)},
             {0, static_cast<float>(cropH)}};
     double A[8][9] = {};
     for (int i = 0; i < 4; ++i) {
-        const double x = src[i][0], y = src[i][1];
+        const double x = corners[i][0], y = corners[i][1];
         const double X = quad[i][0], Y = quad[i][1];
         double* r1 = A[i * 2];
         double* r2 = A[i * 2 + 1];
@@ -499,6 +665,9 @@ void cropQuadRgb(const std::vector<uint8_t>& rgb,
     // component) must yield a zero-filled crop, never an empty buffer that
     // the downstream resize would dereference as null.
     dst.assign(static_cast<size_t>(cropW) * cropH * 3, 0);
+    const int scn = src.channels;
+    const int cmap[3] = {src.channel_index(0), src.channel_index(1),
+                         src.channel_index(2)};
     double hInv[9] = {};
     for (int col = 0; col < 8; ++col) {
         int piv = col;
@@ -528,16 +697,20 @@ void cropQuadRgb(const std::vector<uint8_t>& rgb,
             if (x0 < 0 || y0 < 0 || x1 >= imgW || y1 >= imgH) continue;
             const float fx = static_cast<float>(sx - x0);
             const float fy = static_cast<float>(sy - y0);
-            auto sample = [&](int px, int py, int ch) {
-                return static_cast<float>(
-                        rgb[(static_cast<size_t>(py) * imgW + px) * 3 + ch]);
-            };
+            // Sample the borrowed view in place (stride / channel count /
+            // BGR handled by Image::row + channel_index): the historical
+            // packed-RGB flatten of the whole frame cost a full-resolution
+            // pass per frame (3.4 Mpx single-threaded) just to feed ~100
+            // crops.
+            const uint8_t* r0 = src.row(y0) + static_cast<size_t>(x0) * scn;
+            const uint8_t* r1 = src.row(y1) + static_cast<size_t>(x0) * scn;
             auto* out = &dst[(static_cast<size_t>(y) * cropW + x) * 3];
             for (int ch = 0; ch < 3; ++ch) {
-                const float v00 = sample(x0, y0, ch);
-                const float v10 = sample(x1, y0, ch);
-                const float v01 = sample(x0, y1, ch);
-                const float v11 = sample(x1, y1, ch);
+                const int ci = cmap[ch];
+                const float v00 = static_cast<float>(r0[ci]);
+                const float v10 = static_cast<float>(r0[scn + ci]);
+                const float v01 = static_cast<float>(r1[ci]);
+                const float v11 = static_cast<float>(r1[scn + ci]);
                 out[ch] = static_cast<uint8_t>(std::clamp(
                         v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) +
                                 v01 * (1 - fx) * fy + v11 * fx * fy,
@@ -616,74 +789,10 @@ bool ocrBatchedRecEnabled(ggml_backend_t gpuBackend, bool cpuExecution) {
 // for a stable input shape. The build (300+ op walk, folded constants,
 // allocation) costs far more than a steady-state compute and dominated real
 // images with dozens of rec crops, so the det graph is cached per geometry
-// and the rec graph (fixed 48x320) exactly once per context.
-// Backend routing: CPU keeps the plain gallocr path (verified bit-exact);
-// GPU runs through ggml_backend_sched with the weights realized after the
-// build (the measured-parity order; see the context_create note for why the
-// realize-before-build alternative was rejected).
-// CUDA and Vulkan OCR graphs are standard-op graphs with no CPU-only island.
-// Executing them through one device gallocr avoids scheduler split/capture
-// overhead. Vulkan additionally needs this path because a mixed CPU/Vulkan
-// graph can hand a host-buffered view to a Vulkan subbuffer. Keep the
-// Vulkan-only build flag separate: its direct convolution route excludes the
-// detector geometry that faults in the NVIDIA Vulkan driver.
-bool isVulkanBackend(ggml_backend_t backend) {
-    if (!backend || ggml_common::is_cpu_backend(backend)) return false;
-    const char* name = ggml_backend_name(backend);
-    return name && std::string(name).find("Vulkan") != std::string::npos;
-}
-
-bool ocrSingleBackendEnabled(ggml_backend_t backend) {
-    if (!backend || ggml_common::is_cpu_backend(backend)) return false;
-    const char* name = ggml_backend_name(backend);
-    if (!name) return false;
-    const std::string backendName(name);
-    return backendName.find("CUDA") != std::string::npos ||
-           backendName.find("Vulkan") != std::string::npos;
-}
-
-bool initializeSingleBackendViews(ggml_cgraph* graph, std::string& error) {
-    std::vector<ggml_tensor*> tensors;
-    std::unordered_set<ggml_tensor*> seen;
-    std::vector<ggml_tensor*> pending;
-    const auto push = [&](ggml_tensor* tensor) {
-        if (tensor && seen.insert(tensor).second) pending.push_back(tensor);
-    };
-    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
-        push(ggml_graph_node(graph, i));
-    while (!pending.empty()) {
-        ggml_tensor* tensor = pending.back();
-        pending.pop_back();
-        tensors.push_back(tensor);
-        push(tensor->view_src);
-        for (int i = 0; i < GGML_MAX_SRC; ++i) push(tensor->src[i]);
-    }
-    // gallocr allocates regular graph tensors but can encounter chained views
-    // before their base view has been initialized. Rebind after allocation in
-    // dependency order so every Vulkan descriptor derives from device storage.
-    for (size_t pass = 0; pass < tensors.size(); ++pass) {
-        bool advanced = false;
-        for (ggml_tensor* tensor : tensors) {
-            if (!tensor->view_src || tensor->buffer ||
-                !tensor->view_src->buffer)
-                continue;
-            if (ggml_backend_view_init(tensor) != GGML_STATUS_SUCCESS) {
-                error = "ocr: backend view initialization failed";
-                return false;
-            }
-            advanced = true;
-        }
-        if (!advanced) break;
-    }
-    for (ggml_tensor* tensor : tensors) {
-        if (tensor->view_src && !tensor->buffer) {
-            error = "ocr: graph contains an unbound device view";
-            return false;
-        }
-    }
-    return true;
-}
-
+// and the rec graph per (width bucket, rows) in a small LRU (OcrGraphCache).
+// Backend routing (CPU gallocr / mixed sched / single device) is owned by
+// aicore::ocr::makeExecPlan + prepareGraph, shared with the fixture probe so
+// the probe measures exactly the graph that ships.
 bool runGraphCached(aicore_ocr_ctx* session,
                     aicore::ocr::OcrWeights& weights,
                     OcrGraph& cached,
@@ -703,21 +812,25 @@ bool runGraphCached(aicore_ocr_ctx* session,
                     double& inferenceMs,
                     double& inputUploadMs,
                     double& outputReadbackMs,
-                    std::string& error) {
+                    std::string& error,
+                    RecArgmaxOut* argmaxOut = nullptr) {
     ggml_backend_t backend = gpuBackend ? gpuBackend : cpuBackend;
     if (!backend) {
         error = "ocr: no ggml backend available";
         return false;
     }
-    const bool isCpu = ggml_common::is_cpu_backend(backend);
-    // CUDA/Vulkan execute their standard-op OCR graphs on one device. The
-    // Vulkan build option remains narrower because only its conv route needs
-    // the detector direct-convolution exclusion.
-    const bool singleBackend = ocrSingleBackendEnabled(backend);
-    const bool vkSingle = isVulkanBackend(backend);
-    const bool cpuExecution =
-            isCpu || (!weights.sched_gpu_tagging && !singleBackend);
-    if (!cached.matches(c, h, w) || cached.inputN != n) {
+    const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
+            gpuBackend, cpuBackend, weights.sched_gpu_tagging);
+    const bool cpuExecution = plan.cpuExecution;
+    // In-graph CTC reduction, GPU execution only. The CTC decoder consumes
+    // two scalars per timestep (argmax class + its probability); reading the
+    // full (V, T, N) softmax back (51 MB per 100-box frame, ~10 ms D2H) to
+    // compute them on the host was the largest single post stage. ggml's
+    // CPU argmax is single-threaded (ith != 0 returns) and would regress a
+    // CPU session, which keeps the AVX2 host sweep.
+    const bool wantArgmaxHead = argmaxOut && !cpuExecution;
+    if (!cached.matches(c, h, w) || cached.inputN != n ||
+        cached.argmaxHead != wantArgmaxHead) {
         cached.clear();
         // Fresh fold pool per build: every build emits new constants and
         // the pool would exhaust; the previous graph is discarded above.
@@ -735,23 +848,8 @@ bool runGraphCached(aicore_ocr_ctx* session,
         // side and copies it before the first split; the gallocr path
         // simply allocates it like any other leaf.
         ggml_set_input(cached.input);
-        aicore::ocr::OcrBuildOptions buildOptions;
-        // Judge by where the graph EXECUTES, not the session backend: a
-        // Vulkan session with the sched_gpu_tagging gate closed runs every
-        // node on the CPU secondary, and the CPU conv paths (winograd /
-        // island / batched-GEMM) are ~2x faster there than the direct-op
-        // CPU kernel.
-        buildOptions.cpu_conv = cpuExecution;
-        buildOptions.gpu_rec_direct_conv =
-                !cpuExecution && weights.role == "rec";
-        buildOptions.vk_single = vkSingle;
-        // Blocked-island routing: CPU-executing graphs only, and only when
-        // the host advertises the AVX-512 fast path (the island has no AVX2
-        // kernel, mirroring the facedetect island gate). Fixture-proven for
-        // all three graphs (rec 3e-4 / det 3.6e-3 / layout 6.3e-3 max|diff|
-        // with the per-input-var routing; stock: 6.5e-3 / 3.6e-3 / 1.2e-2).
-        buildOptions.blocked_island =
-                cpuExecution && aicore::blk::blocked_available();
+        const aicore::ocr::OcrBuildOptions buildOptions =
+                aicore::ocr::execBuildOptions(plan);
         cached.output = aicore::ocr::buildGraph(cached.ctx, weights,
                                                 cached.input, &error, nullptr,
                                                 nullptr, &buildOptions);
@@ -759,78 +857,35 @@ bool runGraphCached(aicore_ocr_ctx* session,
             cached.clear();
             return false;
         }
-        if (cpuExecution) {
-            // Plain CPU execution: host buffers only (see the runGraph
-            // counterpart for why a gated-off Vulkan session must NOT use
-            // the mixed sched allocation).
-            cached.alloc = ggml_gallocr_new(
-                    ggml_backend_get_default_buffer_type(cpuBackend));
-        } else {
-            // Realize the host pools (zero-copy views) and the device
-            // weights once per weights object, then cover the folded
-            // constants emitted by this build; the scheduler routes the
-            // small per-compute host->device copies (weights + constants).
-            if (!weights.realizeHostBuffers()) {
-                error = "ocr: host buffer realization failed";
-                cached.clear();
-                return false;
-            }
-            weights.tagHostLeafs();
-            if (!weights.realizeToDevice(gpuBackend, &error)) {
-                error = "ocr: device weight realization failed: " + error;
-                cached.clear();
-                return false;
-            }
-            // Mirror the fresh fold pool to the device once per build —
-            // without this the sched re-uploads every fold constant on
-            // EVERY compute (measured ~12 ms per rec chunk, more than all
-            // rec kernels combined). Must run BEFORE sched_alloc_graph so
-            // the plan sees the device-resident buffers.
-            if (!weights.realizeFoldPoolToDevice(gpuBackend, &error)) {
-                error = "ocr: fold pool device realization failed: " + error;
-                cached.clear();
-                return false;
-            }
-            if (singleBackend) {
-                // CUDA/Vulkan standard-op graphs keep weights, folded
-                // constants and activations in one device allocation.
-                cached.alloc = ggml_gallocr_new(
-                        ggml_backend_get_default_buffer_type(gpuBackend));
-            } else {
-                cached.sched = ggml_common::new_gpu_sched({gpuBackend},
-                                                          cpuBackend, 1u << 20);
-                if (!cached.sched) {
-                    error = "ocr: backend scheduler init failed";
-                    cached.clear();
-                    return false;
-                }
-            }
+        std::vector<ggml_tensor*> outputs{cached.output};
+        if (wantArgmaxHead) {
+            // Rows are the V-wide class vectors of every (t, n): the rec
+            // fetch is ne={V, T, 1, N}, so a contiguous 2D view is [V, T*N].
+            // argmax -> i32 [T*N]; get_rows over the [1, V, T*N] view with
+            // the [1, T*N] index gathers p[argmax] per row -> f32 [1, 1, T*N].
+            ggml_tensor* out = cached.output;
+            if (!ggml_is_contiguous(out)) out = ggml_cont(cached.ctx, out);
+            const int64_t vocab = out->ne[0];
+            const int64_t rows = ggml_nelements(out) / vocab;
+            ggml_tensor* flat = ggml_reshape_2d(cached.ctx, out, vocab, rows);
+            cached.argmaxIndex = ggml_argmax(cached.ctx, flat);
+            cached.argmaxProb = ggml_get_rows(
+                    cached.ctx,
+                    ggml_reshape_3d(cached.ctx, out, 1, vocab, rows),
+                    ggml_reshape_2d(cached.ctx, cached.argmaxIndex, 1, rows));
+            ggml_set_output(cached.argmaxIndex);
+            ggml_set_output(cached.argmaxProb);
+            outputs.push_back(cached.argmaxIndex);
+            outputs.push_back(cached.argmaxProb);
         }
-        cached.graph = ggml_new_graph_custom(cached.ctx, 1u << 20, false);
-        ggml_build_forward_expand(cached.graph, cached.output);
-        if (singleBackend) {
-            weights.retargetGraphToDevice(cached.graph);
-        }
-        const bool allocated =
-                (cpuExecution || singleBackend)
-                        ? ggml_gallocr_alloc_graph(cached.alloc, cached.graph)
-                        : ggml_backend_sched_alloc_graph(cached.sched,
-                                                         cached.graph);
-        if (!allocated) {
-            error = "ocr: graph allocation failed";
+        cached.argmaxHead = wantArgmaxHead;
+        if (!aicore::ocr::prepareGraph(weights, cached.ctx, plan, outputs,
+                                       &cached.graph, cached.exec, error)) {
             cached.clear();
             return false;
         }
-        if (singleBackend && !weights.materializeUnalignedStaticViews(
-                                     cached.graph, gpuBackend, &error)) {
-            cached.clear();
-            return false;
-        }
-        if (singleBackend &&
-            !initializeSingleBackendViews(cached.graph, error)) {
-            cached.clear();
-            return false;
-        }
+        // Co-own this build's fold generation (see OcrGraph::fold).
+        cached.fold = weights.foldPool();
         cached.inputC = c;
         cached.inputH = h;
         cached.inputW = w;
@@ -843,17 +898,7 @@ bool runGraphCached(aicore_ocr_ctx* session,
                             std::chrono::steady_clock::now() - inputUploadStart)
                             .count();
     const auto start = std::chrono::steady_clock::now();
-    // cpuExecution (plain CPU session, or a gated-off Vulkan session whose
-    // nodes all land on the CPU secondary) runs the plain graph_compute:
-    // the sched would add split/copy overhead to a single-backend graph for
-    // no routing benefit.
-    if (cpuExecution)
-        ggml_backend_graph_compute(cpuBackend, cached.graph);
-    else if (singleBackend) {
-        ggml_backend_graph_compute(gpuBackend, cached.graph);
-    } else
-        ggml_backend_sched_graph_compute(cached.sched, cached.graph);
-
+    aicore::ocr::computeGraph(plan, cached.exec, cached.graph);
     const auto stop = std::chrono::steady_clock::now();
     inferenceMs =
             std::chrono::duration<double, std::milli>(stop - start).count();
@@ -861,10 +906,25 @@ bool runGraphCached(aicore_ocr_ctx* session,
     outH = cached.output->ne[1];
     outW = cached.output->ne[0];
     outN = cached.output->ne[3];
-    output.resize(static_cast<size_t>(ggml_nelements(cached.output)));
     const auto readbackStart = std::chrono::steady_clock::now();
-    ggml_backend_tensor_get(cached.output, output.data(), 0,
-                            sizeof(float) * output.size());
+    if (cached.argmaxHead) {
+        // Only the reduced head crosses the bus; `output` is left untouched
+        // (its stale contents are never read when argmaxOut->active).
+        const size_t rows =
+                static_cast<size_t>(ggml_nelements(cached.argmaxIndex));
+        argmaxOut->index.resize(rows);
+        argmaxOut->prob.resize(rows);
+        ggml_backend_tensor_get(cached.argmaxIndex, argmaxOut->index.data(), 0,
+                                sizeof(int32_t) * rows);
+        ggml_backend_tensor_get(cached.argmaxProb, argmaxOut->prob.data(), 0,
+                                sizeof(float) * rows);
+        argmaxOut->active = true;
+    } else {
+        if (argmaxOut) argmaxOut->active = false;
+        output.resize(static_cast<size_t>(ggml_nelements(cached.output)));
+        ggml_backend_tensor_get(cached.output, output.data(), 0,
+                                sizeof(float) * output.size());
+    }
     outputReadbackMs = std::chrono::duration<double, std::milli>(
                                std::chrono::steady_clock::now() - readbackStart)
                                .count();
@@ -895,21 +955,12 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
     ggml_set_input(input);
     // Fresh fold pool per frame (see runGraph).
     weights.resetFoldPool();
-    ggml_backend_t backend = gpuBackend ? gpuBackend : cpuBackend;
-    const bool isCpu = ggml_common::is_cpu_backend(backend);
-    // CUDA/Vulkan standard-op layout graphs follow the same one-device path
-    // as det/rec; only Vulkan needs the special direct-conv routing flag.
-    const bool singleBackend = ocrSingleBackendEnabled(backend);
-    const bool vkSingle = isVulkanBackend(backend);
-    const bool cpuExecution =
-            isCpu || ((backend != cpuBackend) || !weights.sched_gpu_tagging) &&
-                             !singleBackend;
-    aicore::ocr::OcrBuildOptions buildOptions;
-    buildOptions.cpu_conv = cpuExecution;
-    buildOptions.gpu_rec_direct_conv = !cpuExecution && weights.role == "rec";
-    buildOptions.vk_single = vkSingle;
-    buildOptions.blocked_island =
-            cpuExecution && aicore::blk::blocked_available();
+    // Same routing owner as det/rec (makeExecPlan): CUDA/Vulkan one-device,
+    // CPU gallocr, otherwise mixed sched behind the tagging gate.
+    const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
+            gpuBackend, cpuBackend, weights.sched_gpu_tagging);
+    const aicore::ocr::OcrBuildOptions buildOptions =
+            aicore::ocr::execBuildOptions(plan);
     std::vector<ggml_tensor*> fetchList;
     ggml_tensor* outputTensor = aicore::ocr::buildGraph(
             ctx, weights, input, &error, nullptr, &fetchList, &buildOptions);
@@ -918,75 +969,17 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
         ggml_free(ctx);
         return false;
     }
-    ggml_backend_sched_t sched = nullptr;
-    ggml_gallocr_t alloc = nullptr;
+    aicore::ocr::OcrGraphExec exec;
+    ggml_cgraph* graph = nullptr;
     bool ok = false;
     do {
-        if (cpuExecution) {
-            // Plain CPU execution (CPU session, or a gated-off Vulkan
-            // session): host buffers only, no device realization and no
-            // sched — the mixed sched allocation would leave activations in
-            // GPU memory that the direct graph_compute below cannot read.
-            alloc = ggml_gallocr_new(
-                    ggml_backend_get_default_buffer_type(cpuBackend));
-        } else {
-            if (!weights.realizeHostBuffers()) {
-                error = "ocr: host buffer realization failed";
-                break;
-            }
-            weights.tagHostLeafs();
-            if (!weights.realizeToDevice(backend, &error)) {
-                error = "ocr: device weight realization failed: " + error;
-                break;
-            }
-            // Fold-pool device mirror: same per-compute-copy elimination as
-            // runGraphCached (must precede sched_alloc_graph).
-            if (!weights.realizeFoldPoolToDevice(backend, &error)) {
-                error = "ocr: fold pool device realization failed: " + error;
-                break;
-            }
-            if (singleBackend) {
-                alloc = ggml_gallocr_new(
-                        ggml_backend_get_default_buffer_type(backend));
-            } else {
-                sched = ggml_common::new_gpu_sched({backend}, cpuBackend,
-                                                   1u << 20);
-                if (!sched) {
-                    error = "ocr: backend scheduler init failed";
-                    break;
-                }
-            }
-        }
-        ggml_cgraph* graph = ggml_new_graph_custom(ctx, 1u << 20, false);
-        for (ggml_tensor* t : fetchList) ggml_build_forward_expand(graph, t);
-        if (singleBackend) {
-            weights.retargetGraphToDevice(graph);
-        }
-        const bool allocated =
-                (cpuExecution || singleBackend)
-                        ? ggml_gallocr_alloc_graph(alloc, graph)
-                        : ggml_backend_sched_alloc_graph(sched, graph);
-        if (!allocated) {
-            error = "ocr: graph allocation failed";
+        if (!aicore::ocr::prepareGraph(weights, ctx, plan, fetchList, &graph,
+                                       exec, error))
             break;
-        }
-        if (singleBackend &&
-            !weights.materializeUnalignedStaticViews(graph, backend, &error))
-            break;
-        if (singleBackend && !initializeSingleBackendViews(graph, error)) break;
         ggml_backend_tensor_set(input, nchw.data(), 0,
                                 sizeof(float) * nchw.size());
         const auto start = std::chrono::steady_clock::now();
-        if (isCpu)
-            ggml_backend_graph_compute(backend, graph);
-        else if (singleBackend)
-            ggml_backend_graph_compute(backend, graph);
-        else if (cpuExecution)
-            // Gated-off Vulkan session: single-backend (CPU) graph, same
-            // rationale as the runGraphCached compute branch above.
-            ggml_backend_graph_compute(cpuBackend, graph);
-        else
-            ggml_backend_sched_graph_compute(sched, graph);
+        aicore::ocr::computeGraph(plan, exec, graph);
         const auto stop = std::chrono::steady_clock::now();
         inferenceMs =
                 std::chrono::duration<double, std::milli>(stop - start).count();
@@ -1000,8 +993,7 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
         }
         ok = true;
     } while (false);
-    if (sched) ggml_backend_sched_free(sched);
-    if (alloc) ggml_gallocr_free(alloc);
+    exec.free();
     ggml_free(ctx);
     return ok;
 }
@@ -1139,7 +1131,22 @@ struct aicore_ocr_ctx {
     int64_t detC = 0;
     int64_t detH = 0;
     int64_t detW = 0;
-    OcrGraph rec;
+    // Rec builds keyed by (width bucket, rows): see OcrGraphCache.
+    OcrGraphCache recGraphs{{}, kRecGraphCacheCapacity, 0};
+    // Frame scratch owned by the context (one owning thread, see the public
+    // header). The det input (10 MB u8 + 40 MB f32), det map (13 MB) and
+    // rec batch/output (19 MB / 51 MB) were fresh vectors every frame: the
+    // allocation page-faulted and the fill ran serially before any real
+    // work (measured 11.5 ms for the det NCHW alone against 2.9 ms for the
+    // resize that feeds it). Reusing the capacity makes only the first
+    // frame pay; a geometry change simply regrows the vectors.
+    std::vector<uint8_t> detRgbScratch;
+    std::vector<float> detNchwScratch;
+    std::vector<float> detOutputScratch;
+    std::vector<uint8_t> detMaskScratch;
+    std::vector<float> recBatchScratch;
+    std::vector<float> recOutputScratch;
+    RecArgmaxOut recArgmaxScratch;
     bool ready = false;
 };
 
@@ -1161,6 +1168,319 @@ struct aicore_ocr_result {
     // on push_back.
     std::deque<std::string> textStorage;
 };
+
+namespace {
+
+// ---- Rec crop geometry, chunk plan and batched forward (shared by the
+// det->rec frame path and the recognize-only quad path) ------------------
+
+// One rec crop under the official semantics: get_rotate_crop_image (int
+// truncated edge norms, perspective warp, rot90 when h/w >= 1.5) followed
+// by resize_norm_img (resized_w = ceil(48 * w/h), padded to the chunk
+// width with the normalized-zero fill).
+struct RecCropGeom {
+    float quad[4][2] = {};
+    int cropW = 0;
+    int cropH = 0;
+    bool rotate = false;
+    int recW = 0;    // resized content width
+    int chunkW = 0;  // padded chunk width (bucket)
+    int chunk = -1;  // slot assigned by planRecChunks
+    int row = -1;
+    float detScore = 0.f;
+    bool valid = false;
+};
+
+void recCropGeometry(RecCropGeom& g) {
+    const auto edgeLen = [](const float a[2], const float b[2]) {
+        const double dx = b[0] - a[0], dy = b[1] - a[1];
+        return std::sqrt(dx * dx + dy * dy);
+    };
+    // int() truncation like the official crop; the perspective target is
+    // exactly (img_crop_width, img_crop_height).
+    g.cropW = static_cast<int>(std::max(edgeLen(g.quad[0], g.quad[1]),
+                                        edgeLen(g.quad[3], g.quad[2])));
+    g.cropH = static_cast<int>(std::max(edgeLen(g.quad[0], g.quad[3]),
+                                        edgeLen(g.quad[1], g.quad[2])));
+    g.valid = g.cropW >= 3 && g.cropH >= 3;
+    if (!g.valid) return;
+    g.rotate = static_cast<double>(g.cropH) / g.cropW >= 1.5;
+    const int w = g.rotate ? g.cropH : g.cropW;
+    const int h = g.rotate ? g.cropW : g.cropH;
+    const double ratio = static_cast<double>(w) / h;
+    const double maxRatio =
+            std::max(static_cast<double>(kRecMaxWidth) / kRecHeight, ratio);
+    const int imgW = static_cast<int>(kRecHeight * maxRatio);
+    int resizedW = static_cast<int>(std::ceil(kRecHeight * ratio));
+    if (imgW > kRecLimitWidth)
+        resizedW = kRecLimitWidth;
+    else if (resizedW > imgW)
+        resizedW = imgW;
+    g.recW = std::max(1, resizedW);
+    g.chunkW = recWidthBucket(g.recW);
+}
+
+struct RecChunk {
+    int width = 0;
+    int64_t rows = 0;   // graph N (count + pad tail)
+    int count = 0;      // real crops
+    int first = 0;      // index into RecChunkPlan::order
+    size_t offset = 0;  // float offset of row 0 in the packed buffer
+};
+
+struct RecChunkPlan {
+    std::vector<RecChunk> chunks;
+    std::vector<int> order;  // valid crop indices grouped by chunk
+    size_t totalFloats = 0;
+};
+
+// Group the valid crops by chunk width and cut each group into chunks.
+// Batched: rows x width stays within the per-backend budget
+// (recRowsCapForWidth) and the row count is quantized so a stable box
+// count keeps hitting the same cached build. Per-crop (CPU execution):
+// one single-row chunk per crop, still bucketed so the build set is
+// bounded by the ladder.
+RecChunkPlan planRecChunks(std::vector<RecCropGeom>& geoms,
+                           int64_t cap,
+                           bool batched) {
+    RecChunkPlan plan;
+    plan.order.reserve(geoms.size());
+    for (size_t i = 0; i < geoms.size(); ++i)
+        if (geoms[i].valid) plan.order.push_back(static_cast<int>(i));
+    std::stable_sort(plan.order.begin(), plan.order.end(), [&](int a, int b) {
+        return geoms[a].chunkW < geoms[b].chunkW;
+    });
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    size_t pos = 0;
+    while (pos < plan.order.size()) {
+        const int width = geoms[plan.order[pos]].chunkW;
+        size_t end = pos;
+        while (end < plan.order.size() &&
+               geoms[plan.order[end]].chunkW == width)
+            ++end;
+        const int64_t groupCount = static_cast<int64_t>(end - pos);
+        int64_t rowsPerChunk = 1;
+        if (batched) {
+            const int64_t capW = recRowsCapForWidth(cap, width);
+            const int64_t chunksWanted = (groupCount + capW - 1) / capW;
+            const int64_t rows = (groupCount + chunksWanted - 1) / chunksWanted;
+            const int64_t q = capW >= 8 ? 8 : 4;
+            rowsPerChunk = std::min(capW, (rows + q - 1) / q * q);
+        }
+        for (size_t at = pos; at < end;) {
+            RecChunk c;
+            c.width = width;
+            c.rows = rowsPerChunk;
+            c.count = static_cast<int>(std::min<size_t>(
+                    end - at, static_cast<size_t>(rowsPerChunk)));
+            c.first = static_cast<int>(at);
+            c.offset = plan.totalFloats;
+            for (int r = 0; r < c.count; ++r) {
+                RecCropGeom& g = geoms[plan.order[at + r]];
+                g.chunk = static_cast<int>(plan.chunks.size());
+                g.row = r;
+            }
+            plan.totalFloats += static_cast<size_t>(c.rows) * rowFloats * width;
+            plan.chunks.push_back(c);
+            at += c.count;
+        }
+        pos = end;
+    }
+    return plan;
+}
+
+// Pad-tail fill for every chunk (rows [count, rows)). Content rows are
+// written in full by packNchwImageTo (content + right pad columns), so
+// this is the only fill the buffer needs; it is tiny next to the frame.
+void fillRecPadRows(const RecChunkPlan& plan, float* batch) {
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    for (const RecChunk& c : plan.chunks) {
+        if (c.count >= c.rows) continue;
+        const size_t planeSz = rowFloats * c.width;
+        std::fill(batch + c.offset + planeSz * c.count,
+                  batch + c.offset + planeSz * c.rows, kRecPadFill);
+    }
+}
+
+// Perspective crop + (rot90) + resize + BGR + normalized pack of one crop
+// straight into its chunk slot. Pure over the borrowed view; distinct
+// slots per crop keep the parallel callers race-free.
+void cropAndPackRec(const aicore::img::Image& src,
+                    const RecCropGeom& g,
+                    const RecChunkPlan& plan,
+                    float* batch) {
+    std::vector<uint8_t> quadRgb;
+    cropQuadRgb(src, g.quad, g.cropW, g.cropH, quadRgb);
+    aicore::img::Image warped;
+    warped.channels = 3;
+    if (g.rotate) {
+        // np.rot90: counter-clockwise, out(i, j) = in(j, W-1-i), shape
+        // (W, H) -> the text runs left-to-right again for the rec head.
+        const int W = g.cropW, H = g.cropH;
+        std::vector<uint8_t> rot(static_cast<size_t>(W) * H * 3);
+        for (int i = 0; i < W; ++i) {
+            uint8_t* orow = rot.data() + static_cast<size_t>(i) * H * 3;
+            for (int j = 0; j < H; ++j) {
+                const uint8_t* s =
+                        quadRgb.data() +
+                        (static_cast<size_t>(j) * W + (W - 1 - i)) * 3;
+                orow[j * 3 + 0] = s[0];
+                orow[j * 3 + 1] = s[1];
+                orow[j * 3 + 2] = s[2];
+            }
+        }
+        warped.width = H;
+        warped.height = W;
+        warped.rgb = std::move(rot);
+    } else {
+        warped.width = g.cropW;
+        warped.height = g.cropH;
+        warped.rgb = std::move(quadRgb);
+    }
+    aicore::img::Image cropImage;
+    cropImage.width = g.recW;
+    cropImage.height = kRecHeight;
+    cropImage.channels = 3;
+    cropImage.bgr = true;  // official cv2 channel order
+    cropImage.rgb.resize(static_cast<size_t>(g.recW) * kRecHeight * 3);
+    aicore::img::cv_resize_linear_u8(warped, cropImage.rgb.data(), g.recW,
+                                     kRecHeight, 3);
+    const RecChunk& c = plan.chunks[static_cast<size_t>(g.chunk)];
+    float* slot = batch + c.offset +
+                  static_cast<size_t>(g.row) * 3 * kRecHeight * c.width;
+    packNchwImageTo(cropImage, kRecMean, kRecStd, c.width, kRecPadFill, slot);
+}
+
+// Phase A driver: crop/pack every planned crop over a bounded pool.
+void cropAndPackAll(const aicore::img::Image& src,
+                    const std::vector<RecCropGeom>& geoms,
+                    const RecChunkPlan& plan,
+                    float* batch) {
+    const int count = static_cast<int>(plan.order.size());
+    if (count == 0) return;
+    unsigned hw = std::thread::hardware_concurrency();
+    if (hw == 0) hw = 1;
+    if (hw > static_cast<unsigned>(count)) hw = static_cast<unsigned>(count);
+    std::atomic<int> next{0};
+    auto worker = [&]() {
+        for (;;) {
+            const int k = next.fetch_add(1);
+            if (k >= count) return;
+            cropAndPackRec(src, geoms[static_cast<size_t>(plan.order[k])], plan,
+                           batch);
+        }
+    };
+    std::vector<std::thread> pool;
+    pool.reserve(hw - 1);
+    for (unsigned i = 1; i < hw; ++i) pool.emplace_back(worker);
+    worker();
+    for (auto& t : pool) t.join();
+}
+
+struct RecRunTimings {
+    double inferenceMs = 0.0;
+    double inputUploadMs = 0.0;
+    double outputReadbackMs = 0.0;
+    double ctcDecodeMs = 0.0;
+};
+
+// Phase B: one forward per chunk against the (width, rows) cached build,
+// then the per-row CTC decode in parallel. texts/scores are indexed by
+// crop (geoms index); unplanned crops are left untouched.
+bool runRecChunks(aicore_ocr_ctx* ctx,
+                  ggml_backend_t gpuBackend,
+                  ggml_backend_t cpuBackend,
+                  const std::vector<RecCropGeom>& geoms,
+                  const RecChunkPlan& plan,
+                  const float* batch,
+                  std::vector<std::string>& texts,
+                  std::vector<float>& scores,
+                  RecRunTimings& timings,
+                  std::string& error) {
+    const bool cpuExecution =
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
+    // Same gate as runGraphCached's wantArgmaxHead: the cache key must
+    // select the build that the call will produce.
+    const bool wantArgmaxHead = !cpuExecution;
+    std::vector<float> recOutput = std::move(ctx->recOutputScratch);
+    RecArgmaxOut& recArgmax = ctx->recArgmaxScratch;
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    for (const RecChunk& c : plan.chunks) {
+        OcrGraph& cached = ctx->recGraphs.acquire(3, kRecHeight, c.width,
+                                                  c.rows, wantArgmaxHead);
+        int64_t outC = 0, outT = 0, outV = 0, outN = 0;
+        double inferenceMs = 0.0, uploadMs = 0.0, readbackMs = 0.0;
+        if (!runGraphCached(ctx, ctx->recWeights, cached, gpuBackend,
+                            cpuBackend, 3, kRecHeight, c.width, c.rows,
+                            batch + c.offset,
+                            static_cast<size_t>(c.rows) * rowFloats * c.width,
+                            recOutput, outC, outT, outV, outN, inferenceMs,
+                            uploadMs, readbackMs, error, &recArgmax)) {
+            ctx->recOutputScratch = std::move(recOutput);
+            return false;
+        }
+        timings.inferenceMs += inferenceMs;
+        timings.inputUploadMs += uploadMs;
+        timings.outputReadbackMs += readbackMs;
+        // Per-row CTC decode in parallel: rows are independent pure
+        // functions over the chunk output; each worker writes ONLY its
+        // crop's slot. Worker cap 8: spawning hardware_concurrency threads
+        // per chunk costs more in pthread_create than the extra
+        // parallelism returns at these row counts.
+        const auto ctcStart = std::chrono::steady_clock::now();
+        std::atomic<int> nextRow{0};
+        const unsigned workers = std::min<unsigned>(
+                {8u, std::max(1u, std::thread::hardware_concurrency()),
+                 static_cast<unsigned>(c.count)});
+        auto decoder = [&]() {
+            for (;;) {
+                const int r = nextRow.fetch_add(1);
+                if (r >= c.count) return;
+                const int crop = plan.order[static_cast<size_t>(c.first + r)];
+                float meanScore = 0.0f;
+                if (recArgmax.active) {
+                    // Reduced head: rows are [t + T * n].
+                    const size_t rowBase =
+                            static_cast<size_t>(r) * static_cast<size_t>(outT);
+                    texts[crop] = aicore::ocr::ctcGreedyDecodeIndexed(
+                            recArgmax.index.data() + rowBase,
+                            recArgmax.prob.data() + rowBase,
+                            static_cast<int>(outT), static_cast<int>(outV),
+                            ctx->recWeights.dictionary, &meanScore);
+                } else {
+                    const float* rowBase = recOutput.data() +
+                                           static_cast<size_t>(r) *
+                                                   static_cast<size_t>(outV) *
+                                                   static_cast<size_t>(outT);
+                    texts[crop] = aicore::ocr::ctcGreedyDecode(
+                            rowBase, static_cast<int>(outT),
+                            static_cast<int>(outV), ctx->recWeights.dictionary,
+                            &meanScore);
+                }
+                scores[crop] = meanScore;
+            }
+        };
+        if (workers > 1) {
+            std::vector<std::thread> pool;
+            pool.reserve(workers - 1);
+            for (unsigned i = 1; i < workers; ++i) pool.emplace_back(decoder);
+            decoder();
+            for (auto& t : pool) t.join();
+        } else {
+            decoder();
+        }
+        timings.ctcDecodeMs +=
+                std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() - ctcStart)
+                        .count();
+    }
+    ctx->recOutputScratch = std::move(recOutput);
+    return true;
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -1327,7 +1647,7 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
 void aicore_ocr_context_destroy(aicore_ocr_ctx* ctx) {
     if (!ctx) return;
     ctx->det.clear();
-    ctx->rec.clear();
+    ctx->recGraphs.clear();
     // Release the leases after the graphs; the weights' device buffer is
     // released by the OcrWeights destructor and must outlive neither.
     ctx->cpuLease.reset();
@@ -1450,16 +1770,19 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     detImage.width = detW;
     detImage.height = detH;
     detImage.channels = 3;
+    detImage.rgb = std::move(ctx->detRgbScratch);
     detImage.rgb.resize(static_cast<size_t>(detW) * detH * 3);
     aicore::img::cv_resize_linear_u8(srcImage, detImage.rgb.data(), detW, detH,
                                      3);
     // The official pipeline feeds the networks BGR (cv2 order, never
     // converted); align the channel order here. Color-sensitive rec
-    // features and the det map both shift without this.
-    for (size_t i = 0; i + 2 < detImage.rgb.size(); i += 3)
-        std::swap(detImage.rgb[i], detImage.rgb[i + 2]);
-    std::vector<float> detNchw;
+    // features and the det map both shift without this. The flag makes
+    // Image::channel read plane 2-c, which is exactly what the historical
+    // in-place byte swap produced, minus one full pass over the frame.
+    detImage.bgr = true;
+    std::vector<float> detNchw = std::move(ctx->detNchwScratch);
     packNchwImage(detImage, kImageMean[0], kImageStd[0], detW, 0.f, detNchw);
+    ctx->detRgbScratch = std::move(detImage.rgb);
     const auto preprocessStop = std::chrono::steady_clock::now();
 
     // --- det inference: DB probability map (1,1,H,W). The graph time is
@@ -1473,7 +1796,7 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
                                         ? ctx->primaryLease.handle()
                                         : ctx->cpuLease.handle();
 
-    std::vector<float> detOutput;
+    std::vector<float> detOutput = std::move(ctx->detOutputScratch);
     int64_t detOutC = 0, detOutH = 0, detOutW = 0, detOutN = 0;
     double detInferenceMs = 0.0;
     double detInputUploadMs = 0.0;
@@ -1483,11 +1806,15 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // postprocess_ms excludes it.
     double recLayoutInferenceMs = 0.0;
     std::string error;
-    if (!runGraphCached(ctx, ctx->detWeights, ctx->det, gpuBackend, cpuBackend,
-                        3, detH, detW, 1, detNchw.data(),
-                        static_cast<size_t>(3) * detH * detW, detOutput,
-                        detOutC, detOutH, detOutW, detOutN, detInferenceMs,
-                        detInputUploadMs, detOutputReadbackMs, error)) {
+    const bool detOk = runGraphCached(
+            ctx, ctx->detWeights, ctx->det, gpuBackend, cpuBackend, 3, detH,
+            detW, 1, detNchw.data(), static_cast<size_t>(3) * detH * detW,
+            detOutput, detOutC, detOutH, detOutW, detOutN, detInferenceMs,
+            detInputUploadMs, detOutputReadbackMs, error);
+    // The input is uploaded synchronously inside runGraphCached, so its
+    // buffer can go back to the context right here (even on failure).
+    ctx->detNchwScratch = std::move(detNchw);
+    if (!detOk) {
         setLastError(error);
         return nullptr;
     }
@@ -1495,19 +1822,9 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // --- det post-process: threshold + components + unclip.
     const auto postStart = std::chrono::steady_clock::now();
     const auto dbBoxesStart = postStart;
-    if (getenv("AICORE_OCR_DUMP_DETMAP")) {
-        FILE* f = fopen("/tmp/our_detmap.f32", "wb");
-        if (f) {
-            fwrite(detOutput.data(), sizeof(float), detOutput.size(), f);
-            fclose(f);
-        }
-        printf("[detmap] %zdx%zdx%zdx%zd\n", (size_t)detOutN, (size_t)detOutC,
-               (size_t)detOutH, (size_t)detOutW);
-        fflush(stdout);
-    }
     const auto boxes = connectedComponentsBoxes(
             detOutput.data(), static_cast<int>(detOutW),
-            static_cast<int>(detOutH), ctx->boxThresh);
+            static_cast<int>(detOutH), ctx->boxThresh, ctx->detMaskScratch);
     const float mapToImageX =
             static_cast<float>(image->width) / static_cast<float>(detOutW);
     const float mapToImageY =
@@ -1525,312 +1842,94 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // is a downscaled working image; the official pipeline warps from the
     // original image).
     const auto cropResizePackStart = std::chrono::steady_clock::now();
-    std::vector<uint8_t> fullRgb(static_cast<size_t>(image->width) *
-                                 image->height * 3);
-    for (int y = 0; y < image->height; ++y) {
-        for (int x = 0; x < image->width; ++x) {
-            uint8_t* dst =
-                    &fullRgb[(static_cast<size_t>(y) * image->width + x) * 3];
-            dst[0] = srcImage.channel(x, y, 0);
-            dst[1] = srcImage.channel(x, y, 1);
-            dst[2] = srcImage.channel(x, y, 2);
-        }
-    }
-    // Two-phase batched recognition (same structure as the recognize
-    // phase): A) per-box unclip/map/crop/pack in parallel, B) ONE batched
-    // rec forward + per-row CTC decode.
+    // Two-phase batched recognition (shared with the recognize-only path):
+    //   A) per-box unclip/map + official crop geometry, chunk plan, then
+    //      parallel crop/pack straight into the planned slots;
+    //   B) one forward per (width, rows) chunk + per-row CTC decode.
     // Batched rec: automatic per execution side (see ocrBatchedRecEnabled).
-    // The chunk geometry must be known BEFORE Phase A: batched frames pack
-    // each crop straight into its chunk slot (slot index = box index).
     const bool recCpuExecution =
-            !gpuBackend || (!ctx->recWeights.sched_gpu_tagging &&
-                            !ocrSingleBackendEnabled(gpuBackend));
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
     const bool batchedRec = ocrBatchedRecEnabled(gpuBackend, recCpuExecution);
     // Batch chunking: measured single-forward scaling on the idle RTX 4090
     // is linear to N=72 (10/30/84/91/100/120 ms at N=4/16/48/56/64/72,
     // fixture-exact at every N) and collapses by N=96 (15.5 s) because the
     // depthwise im2col workspace pushes the gallocr buffer against VRAM
-    // (20.2/24.5 GiB) and every compute re-warms the CUDA graphs. Chunks
-    // are FIXED (tail padded) so the cache key never varies and one build
-    // serves every frame; pad rows are computed at full cost, so the cap
-    // trades linear-scaling gains against pad waste: for the 74-box bench
-    // frame a same-load A/B measured 48 rows at 215 ms e2e vs 64 rows at
-    // 257 ms (the 64-cap tail chunk runs 54/64 pad rows), so 48 stands.
-    const size_t planeSz = static_cast<size_t>(3) * kRecHeight * kRecMaxWidth;
-    std::vector<float> batchNchw;
-    // Batched chunk: ONE quantized chunk width per frame, computed once
-    // from the total box count — ceil(total/cap) chunks each carrying
-    // round8(ceil(total/chunks)) rows (tail pad only in the last chunk).
-    // This never computes more rows than the historical fixed-cap rule
-    // (same chunk count, each chunk ≤ cap) while eliminating the full-cap
-    // tail compute (a 2-row tail in a 48 build cost ~17 ms of pure pad
-    // compute on the 98-box bench frame). The single build per frame keeps
-    // the OcrGraph single-entry cache hit across frames with a stable box
-    // count, and N stays in the bounded {8,16,...,48} set. Determinism
-    // note: the historical "multi-N builds break decodes" correlation was
-    // the dangling-vector UAF in the result text storage (fixed: deque
-    // textStorage); mixed-N cached builds were re-verified bit-stable ×3
-    // after that fix. The pad fill happens ONCE per frame: the chunk loop
-    // overwrites every REAL row and pad rows are never decoded (skipped by
-    // the valid flag), so re-memsetting per chunk is pure waste.
-    size_t chunkN = 0;
-    if (batchedRec && !boxes.empty()) {
-        const int64_t chunkCap = recChunkBatchCap(gpuBackend);
-        const size_t totalBoxes = boxes.size();
-        const size_t chunksWanted =
-                (totalBoxes + (size_t)chunkCap - 1) / (size_t)chunkCap;
-        const size_t rowsPerChunk =
-                (totalBoxes + chunksWanted - 1) / chunksWanted;
-        chunkN = std::min<int64_t>(chunkCap,
-                                   (int64_t)((rowsPerChunk + 7) / 8) * 8);
-        // One UNIQUE slot per box (slot = box index) with the pad tail
-        // carried through the last chunk: chunk c then uploads the
-        // contiguous row range [c*chunkN, (c+1)*chunkN) straight from this
-        // buffer — no per-chunk staging copy at all.
-        batchNchw.assign(planeSz * chunksWanted * chunkN, kRecPadFill);
-    }
-    struct RecCrop {
-        std::vector<float> nchw;
-        float quad[4][2];
-        float detScore = 0.f;
-        bool valid = false;
-    };
-    std::vector<RecCrop> crops(boxes.size());
-    const auto cropOne = [&](size_t bi) {
+    // (20.2/24.5 GiB) and every compute re-warms the CUDA graphs. The 48
+    // row cap (at 320 wide; recRowsCapForWidth scales it down for wider
+    // chunks) stands on a same-load A/B: 48 rows at 215 ms e2e vs 64 rows
+    // at 257 ms for the 74-box bench frame. Pad rows are computed at full
+    // cost, so the row count is quantized (planRecChunks) rather than
+    // filled to the cap, and a stable box count hits the same build.
+    std::vector<RecCropGeom> geoms(boxes.size());
+    for (size_t bi = 0; bi < boxes.size(); ++bi) {
         const DetBox& raw = boxes[bi];
-        RecCrop& out = crops[bi];
-        DetBox region = unclipBox(raw, ctx->unclipRatio);
+        RecCropGeom& g = geoms[bi];
+        const DetBox region = unclipBox(raw, ctx->unclipRatio);
         // Map det-map coordinates back to full-resolution image pixels.
-        float quad[4][2];
         for (int i = 0; i < 4; ++i) {
-            quad[i][0] = std::clamp(region.quad[i][0] * mapToImageX, 0.0f,
-                                    static_cast<float>(image->width));
-            quad[i][1] = std::clamp(region.quad[i][1] * mapToImageY, 0.0f,
-                                    static_cast<float>(image->height));
+            g.quad[i][0] = std::clamp(region.quad[i][0] * mapToImageX, 0.0f,
+                                      static_cast<float>(image->width));
+            g.quad[i][1] = std::clamp(region.quad[i][1] * mapToImageY, 0.0f,
+                                      static_cast<float>(image->height));
         }
-        const auto edgeLen = [](const float a[2], const float b[2]) {
-            const float dx = b[0] - a[0], dy = b[1] - a[1];
-            return std::sqrt(dx * dx + dy * dy);
-        };
-        const float cropWidth =
-                std::max(edgeLen(quad[0], quad[1]), edgeLen(quad[3], quad[2]));
-        const float cropHeight =
-                std::max(edgeLen(quad[0], quad[3]), edgeLen(quad[1], quad[2]));
-        const int cropW = std::max(1, static_cast<int>(std::lround(cropWidth)));
-        const int cropH =
-                std::max(1, static_cast<int>(std::lround(cropHeight)));
-        if (cropW < 3 || cropH < 3) return;
-        const int recW = std::clamp(
-                static_cast<int>(
-                        std::lround(48.0f * cropW / static_cast<float>(cropH))),
-                1, kRecMaxWidth);
-        std::vector<uint8_t> quadRgb;
-        // Sample with quad in IMAGE pixel coordinates (the unclipped region
-        // mapped out of the det map). The det-map coordinate space is 2x the
-        // image under the official "min"/736 resize; sampling the full-res
-        // image with det-map coordinates produces edge-clamped garbage.
-        cropQuadRgb(fullRgb, image->width, image->height, quad, cropW, cropH,
-                    quadRgb);
-        aicore::img::Image warped;
-        warped.width = cropW;
-        warped.height = cropH;
-        warped.channels = 3;
-        warped.rgb = std::move(quadRgb);
-        std::vector<uint8_t> cropRgb(static_cast<size_t>(recW) * kRecHeight *
-                                     3);
-        aicore::img::cv_resize_linear_u8(warped, cropRgb.data(), recW,
-                                         kRecHeight, 3);
-        // Official BGR channel order (see the det note above).
-        for (size_t i = 0; i + 2 < cropRgb.size(); i += 3)
-            std::swap(cropRgb[i], cropRgb[i + 2]);
-        aicore::img::Image cropImage;
-        cropImage.width = recW;
-        cropImage.height = kRecHeight;
-        cropImage.channels = 3;
-        cropImage.rgb = std::move(cropRgb);
-        if (batchedRec) {
-            // Batched frames pack straight into this crop's UNIQUE slot
-            // (slot = box index; the buffer spans all chunks with the pad
-            // tail). No per-crop vector and no second copy in the chunk
-            // loop; distinct slots per worker keep parallel Phase A
-            // race-free (shared per-chunk slots would make the write order
-            // between same-slot boxes of different chunks depend on thread
-            // scheduling).
-            packNchwImageTo(cropImage, kRecMean, kRecStd, kRecMaxWidth,
-                            kRecPadFill, batchNchw.data() + bi * planeSz);
-        } else {
-            std::vector<float> recNchw;
-            packNchwImage(cropImage, kRecMean, kRecStd, kRecMaxWidth,
-                          kRecPadFill, recNchw);
-            out.nchw = std::move(recNchw);
-        }
-        std::memcpy(out.quad, quad, sizeof(out.quad));
-        out.detScore = raw.score;
-        out.valid = true;
-    };
-    {
-        const int cropCount = static_cast<int>(boxes.size());
-        unsigned hw = std::thread::hardware_concurrency();
-        if (hw == 0) hw = 1;
-        if (hw > static_cast<unsigned>(cropCount))
-            hw = static_cast<unsigned>(cropCount);
-        std::atomic<int> next{0};
-        auto worker = [&]() {
-            for (;;) {
-                const int bi = next.fetch_add(1);
-                if (bi >= cropCount) return;
-                cropOne(static_cast<size_t>(bi));
-            }
-        };
-        std::vector<std::thread> pool;
-        pool.reserve(hw - 1);
-        for (unsigned i = 1; i < hw; ++i) pool.emplace_back(worker);
-        worker();
-        for (auto& t : pool) t.join();
+        g.detScore = raw.score;
+        recCropGeometry(g);
     }
+    const RecChunkPlan recPlan =
+            planRecChunks(geoms, recChunkBatchCap(gpuBackend), batchedRec);
+    std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
+    // resize, not assign: every content row is written in full by the pack
+    // (content + right pad columns) and the pad tails by fillRecPadRows.
+    batchNchw.resize(recPlan.totalFloats);
+    fillRecPadRows(recPlan, batchNchw.data());
+    // Sample with quads in IMAGE pixel coordinates (the unclipped region
+    // mapped out of the det map). The det-map coordinate space is 2x the
+    // image under the official "min"/736 resize; sampling the full-res
+    // image with det-map coordinates produces edge-clamped garbage.
+    cropAndPackAll(srcImage, geoms, recPlan, batchNchw.data());
     const auto cropResizePackStop = std::chrono::steady_clock::now();
-    double ctcDecodeMs = 0.0;
-    double resultAssemblyMs = 0.0;
     double inputUploadMs = detInputUploadMs;
     double outputReadbackMs = detOutputReadbackMs;
-    std::vector<float> recOutput;
-    int64_t recOutC = 0, recOutT = 0, recOutW2 = 0, recOutN = 0;
-    double recInferenceMs = 0.0;
-    double recInputUploadMs = 0.0;
-    double recReadbackMs = 0.0;
-    for (size_t bi = 0; bi < boxes.size();) {
-        const RecCrop& c = crops[bi];
-        if (!batchedRec) {
-            // Legacy per-crop forward: run the graph once for this crop and
-            // decode from its single-row output.
-            std::vector<float> oneOutput;
-            int64_t oC = 0, oT = 0, oW = 0, oN = 0;
-            double oneMs = 0.0;
-            double oneInputUploadMs = 0.0;
-            double oneReadbackMs = 0.0;
-            if (!runGraphCached(
-                        ctx, ctx->recWeights, ctx->rec, gpuBackend, cpuBackend,
-                        3, kRecHeight, kRecMaxWidth, 1, c.nchw.data(),
-                        static_cast<size_t>(3) * kRecHeight * kRecMaxWidth,
-                        oneOutput, oC, oT, oW, oN, oneMs, oneInputUploadMs,
-                        oneReadbackMs, error)) {
-                setLastError(error);
-                delete result;
-                return nullptr;
-            }
-            recLayoutInferenceMs += oneMs;
-            inputUploadMs += oneInputUploadMs;
-            outputReadbackMs += oneReadbackMs;
-            float meanScore0 = 0.0f;
-            const auto ctcStart = std::chrono::steady_clock::now();
-            const std::string text0 = aicore::ocr::ctcGreedyDecode(
-                    oneOutput.data(), static_cast<int>(oT),
-                    static_cast<int>(oW), ctx->recWeights.dictionary,
-                    &meanScore0);
-            ctcDecodeMs += std::chrono::duration<double, std::milli>(
-                                   std::chrono::steady_clock::now() - ctcStart)
-                                   .count();
-            const auto assemblyStart = std::chrono::steady_clock::now();
-            aicore_ocr_box box{};
-            std::memcpy(box.quad, c.quad, sizeof(box.quad));
-            result->textStorage.push_back(text0);
-            box.text = result->textStorage.back().c_str();
-            box.score = meanScore0 > 0 ? meanScore0 : c.detScore;
-            std::strncpy(box.language, ctx->language.c_str(),
-                         sizeof(box.language) - 1);
-            result->boxes.push_back(box);
-            resultAssemblyMs +=
-                    std::chrono::duration<double, std::milli>(
-                            std::chrono::steady_clock::now() - assemblyStart)
-                            .count();
-            ++bi;
-            continue;
-        }
-        // Rows were packed straight into their chunk slots by Phase A (see
-        // cropOne — slot index = box index); pad rows were pre-filled once
-        // per frame and are never decoded, so there is nothing to copy.
-        const size_t chunkRows = std::min(boxes.size() - bi, chunkN);
-        if (!runGraphCached(
-                    ctx, ctx->recWeights, ctx->rec, gpuBackend, cpuBackend, 3,
-                    kRecHeight, kRecMaxWidth, static_cast<int64_t>(chunkN),
-                    batchNchw.data() + bi * planeSz, chunkN * planeSz,
-                    recOutput, recOutC, recOutT, recOutW2, recOutN,
-                    recInferenceMs, recInputUploadMs, recReadbackMs, error)) {
-            setLastError(error);
-            delete result;
-            return nullptr;
-        }
-        recLayoutInferenceMs += recInferenceMs;
-        inputUploadMs += recInputUploadMs;
-        outputReadbackMs += recReadbackMs;
-        // Per-row CTC decode in parallel: rows are independent pure
-        // functions over the chunk buffer and the argmax sweep (T*V per row)
-        // dominates the post stage. Each worker takes a row via the atomic
-        // counter and writes ONLY that slot of the pre-sized result vectors;
-        // the box fill below then runs serially so textStorage pushes stay
-        // ordered (the deque-backed box.text pointers never dangle).
-        std::vector<std::string> chunkTexts(chunkRows);
-        std::vector<float> chunkScores(chunkRows);
-        const auto ctcStart = std::chrono::steady_clock::now();
-        {
-            std::atomic<size_t> nextRow{0};
-            // Cap the worker count: spawning hardware_concurrency threads
-            // 2-3x per frame costs more in pthread_create than the extra
-            // parallelism returns at 18-48 rows per chunk (~3 ms/frame at
-            // hw=32; ~0.6 ms capped at 8, with the decode still >10x
-            // narrower than the serial sweep).
-            const unsigned workers = std::min<unsigned>(
-                    {8u, std::max(1u, std::thread::hardware_concurrency()),
-                     (unsigned)chunkRows});
-            auto decoder = [&]() {
-                for (;;) {
-                    const size_t r = nextRow.fetch_add(1);
-                    if (r >= chunkRows) return;
-                    const RecCrop& cc = crops[bi + r];
-                    if (!cc.valid) continue;
-                    const float* rowBase = recOutput.data() +
-                                           r * static_cast<size_t>(recOutW2) *
-                                                   static_cast<size_t>(recOutT);
-                    float meanScore = 0.0f;
-                    chunkTexts[r] = aicore::ocr::ctcGreedyDecode(
-                            rowBase, static_cast<int>(recOutT),
-                            static_cast<int>(recOutW2),
-                            ctx->recWeights.dictionary, &meanScore);
-                    chunkScores[r] = meanScore;
-                }
-            };
-            if (workers > 1) {
-                std::vector<std::thread> pool;
-                pool.reserve(workers - 1);
-                for (unsigned i = 1; i < workers; ++i)
-                    pool.emplace_back(decoder);
-                decoder();
-                for (auto& t : pool) t.join();
-            } else {
-                decoder();
-            }
-        }
-        ctcDecodeMs += std::chrono::duration<double, std::milli>(
-                               std::chrono::steady_clock::now() - ctcStart)
-                               .count();
-        const auto assemblyStart = std::chrono::steady_clock::now();
-        for (size_t r = 0; r < chunkRows; ++r, ++bi) {
-            const RecCrop& cc = crops[bi];
-            if (!cc.valid) continue;
-            aicore_ocr_box box{};
-            std::memcpy(box.quad, cc.quad, sizeof(box.quad));
-            result->textStorage.push_back(chunkTexts[r]);
-            box.text = result->textStorage.back().c_str();
-            box.score = chunkScores[r] > 0 ? chunkScores[r] : cc.detScore;
-            std::strncpy(box.language, ctx->language.c_str(),
-                         sizeof(box.language) - 1);
-            result->boxes.push_back(box);
-        }
-        resultAssemblyMs +=
-                std::chrono::duration<double, std::milli>(
-                        std::chrono::steady_clock::now() - assemblyStart)
-                        .count();
+    std::vector<std::string> recTexts(boxes.size());
+    std::vector<float> recScores(boxes.size(), 0.0f);
+    RecRunTimings recTimings;
+    if (!runRecChunks(ctx, gpuBackend, cpuBackend, geoms, recPlan,
+                      batchNchw.data(), recTexts, recScores, recTimings,
+                      error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
     }
+    recLayoutInferenceMs += recTimings.inferenceMs;
+    inputUploadMs += recTimings.inputUploadMs;
+    outputReadbackMs += recTimings.outputReadbackMs;
+    const double ctcDecodeMs = recTimings.ctcDecodeMs;
+    // Box fill in det order (the chunk plan reorders by width only for the
+    // forward); textStorage pushes stay ordered so the deque-backed
+    // box.text pointers never dangle.
+    const auto assemblyStart = std::chrono::steady_clock::now();
+    for (size_t bi = 0; bi < boxes.size(); ++bi) {
+        const RecCropGeom& g = geoms[bi];
+        if (!g.valid) continue;
+        aicore_ocr_box box{};
+        std::memcpy(box.quad, g.quad, sizeof(box.quad));
+        result->textStorage.push_back(recTexts[bi]);
+        box.text = result->textStorage.back().c_str();
+        box.score = recScores[bi] > 0 ? recScores[bi] : g.detScore;
+        std::strncpy(box.language, ctx->language.c_str(),
+                     sizeof(box.language) - 1);
+        result->boxes.push_back(box);
+    }
+    double resultAssemblyMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - assemblyStart)
+                    .count();
+    // Hand the frame buffers back to the context for the next frame (error
+    // returns above simply drop them; the next frame reallocates).
+    ctx->detOutputScratch = std::move(detOutput);
+    ctx->recBatchScratch = std::move(batchNchw);
 
     // --- optional layout stage: PicoDet CDLA heads -> regions.
     if (ctx->layoutLoaded) {
@@ -2029,27 +2128,9 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     srcImage.bgr = swapRB;
-    // cropQuadRgb reads a packed 3-channel buffer; flatten the (possibly
-    // strided, 4- or 1-channel, BGR) view into a packed RGB copy once.
+    // cropQuadRgb samples the borrowed view in place (stride / 1-, 3- or
+    // 4-channel / BGR all resolved by Image::channel) — no packed copy.
     const auto cropResizePackStart = std::chrono::steady_clock::now();
-    std::vector<uint8_t> flat(static_cast<size_t>(srcImage.width) *
-                              srcImage.height * 3);
-    for (int y = 0; y < srcImage.height; ++y) {
-        for (int x = 0; x < srcImage.width; ++x) {
-            uint8_t* dst =
-                    &flat[(static_cast<size_t>(y) * srcImage.width + x) * 3];
-            if (channels == 1) {
-                const uint8_t g = srcImage.channel(x, y, 0);
-                dst[0] = dst[1] = dst[2] = g;
-            } else {
-                dst[0] = srcImage.channel(x, y, 0);
-                dst[1] = srcImage.channel(x, y, 1);
-                dst[2] = srcImage.channel(x, y, 2);
-            }
-        }
-    }
-    const int imgW = srcImage.width;
-    const int imgH = srcImage.height;
     auto* result = new (std::nothrow) aicore_ocr_result();
     if (!result) {
         setLastError("ocr: result allocation failed");
@@ -2057,269 +2138,65 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     }
     result->boxes.reserve(static_cast<size_t>(count));
     const auto start = std::chrono::steady_clock::now();
-    double recInferenceMs = 0.0;
     std::string error;
-    // Two-phase batched recognition:
-    //   A) per-quad perspective crop + resize + pack — embarrassingly
-    //      parallel pure functions over the packed `flat` buffer;
-    //   B) ONE batched rec forward over all crops + per-row CTC decode
-    //      (the buildGraph batched-attention bypass makes N>1 legal).
-    struct RecCrop {
-        std::vector<float> nchw;
-        std::vector<float> quad;  // 8 floats, kept for the output box
-        bool valid = false;
-    };
-    std::vector<RecCrop> crops(static_cast<size_t>(count));
-    const auto cropOne = [&](int32_t q) {
-        RecCrop& out = crops[static_cast<size_t>(q)];
-        const float* quad = quads + static_cast<size_t>(q) * 8;
-        const auto edgeLen = [](const float* a, const float* b) {
-            const float dx = b[0] - a[0], dy = b[1] - a[1];
-            return std::sqrt(dx * dx + dy * dy);
-        };
-        const float cropWidth =
-                std::max(edgeLen(quad, quad + 2), edgeLen(quad + 6, quad + 4));
-        const float cropHeight =
-                std::max(edgeLen(quad, quad + 6), edgeLen(quad + 2, quad + 4));
-        const int cropW = std::max(1, static_cast<int>(std::lround(cropWidth)));
-        const int cropH =
-                std::max(1, static_cast<int>(std::lround(cropHeight)));
-        if (cropW < 3 || cropH < 3) return;
-        const int recW = std::clamp(
-                static_cast<int>(
-                        std::lround(48.0f * cropW / static_cast<float>(cropH))),
-                1, kRecMaxWidth);
-        std::vector<uint8_t> quadRgb;
-        const float(*quadPtr)[2] = reinterpret_cast<const float(*)[2]>(quad);
-        cropQuadRgb(flat, imgW, imgH, quadPtr, cropW, cropH, quadRgb);
-        aicore::img::Image warped;
-        warped.width = cropW;
-        warped.height = cropH;
-        warped.channels = 3;
-        warped.rgb = std::move(quadRgb);
-        std::vector<uint8_t> cropRgb(static_cast<size_t>(recW) * kRecHeight *
-                                     3);
-        aicore::img::cv_resize_linear_u8(warped, cropRgb.data(), recW,
-                                         kRecHeight, 3);
-        // Official BGR channel order (see the det note above).
-        for (size_t i = 0; i + 2 < cropRgb.size(); i += 3)
-            std::swap(cropRgb[i], cropRgb[i + 2]);
-        std::vector<float> recNchw;
-        aicore::img::Image cropImage;
-        cropImage.width = recW;
-        cropImage.height = kRecHeight;
-        cropImage.channels = 3;
-        cropImage.rgb = std::move(cropRgb);
-        packNchwImage(cropImage, kRecMean, kRecStd, kRecMaxWidth, kRecPadFill,
-                      recNchw);
-        out.nchw = std::move(recNchw);
-        out.quad.assign(quad, quad + 8);
-        out.valid = true;
-    };
-    {
-        unsigned hw = std::thread::hardware_concurrency();
-        if (hw == 0) hw = 1;
-        if (hw > static_cast<unsigned>(count))
-            hw = static_cast<unsigned>(count);
-        std::atomic<int> next{0};
-        auto worker = [&]() {
-            for (;;) {
-                const int q = next.fetch_add(1);
-                if (q >= count) return;
-                cropOne(q);
-            }
-        };
-        std::vector<std::thread> pool;
-        pool.reserve(hw - 1);
-        for (unsigned i = 1; i < hw; ++i) pool.emplace_back(worker);
-        worker();
-        for (auto& t : pool) t.join();
-    }
-    const auto cropResizePackStop = std::chrono::steady_clock::now();
-    double ctcDecodeMs = 0.0;
-    double resultAssemblyMs = 0.0;
-    double inputUploadMs = 0.0;
-    double outputReadbackMs = 0.0;
-
-    // Phase B: pack crops into fixed 48-row chunk inputs (tail padded) and
-    // run the rec graph once per chunk. The fixed chunk keeps the runGraph
-    // cache key constant; invalid (degenerate) crops occupy their slot with
-    // the pad fill and their boxes are simply not emitted below.
+    // Same two-phase recognition as the frame path (recCropGeometry /
+    // planRecChunks / cropAndPackAll / runRecChunks): official crop
+    // geometry, width-bucketed chunks, one forward per chunk, parallel CTC.
     ggml_backend_t gpuBackend =
             ctx->primaryLease.is_cpu() ? nullptr : ctx->primaryLease.handle();
-    const bool recCpuExecution =
-            !gpuBackend || (!ctx->recWeights.sched_gpu_tagging &&
-                            !ocrSingleBackendEnabled(gpuBackend));
-    const bool batchedRec = ocrBatchedRecEnabled(gpuBackend, recCpuExecution);
-    const size_t planeSz = static_cast<size_t>(3) * kRecHeight * kRecMaxWidth;
-    std::vector<float> batchNchw;
-    std::vector<float> recOutput;
-    int64_t recOutC = 0, recOutT = 0, recOutW2 = 0, recOutN = 0;
-    double recInputUploadMs = 0.0;
-    double recReadbackMs = 0.0;
-    // ONE quantized chunk width per frame — same rule and rationale as the
-    // run phase (bounded build space, no full-cap pad compute, single build
-    // per frame for the cache; pad fill once per frame since pad rows are
-    // never decoded).
-    int64_t chunkN = 0;
-    if (batchedRec && count > 0) {
-        const int64_t chunkCap = recChunkBatchCap(gpuBackend);
-        const int32_t totalCrops = count;
-        const int32_t chunksWanted =
-                (int32_t)((totalCrops + chunkCap - 1) / chunkCap);
-        const int32_t rowsPerChunk =
-                (totalCrops + chunksWanted - 1) / chunksWanted;
-        chunkN = std::min<int64_t>(chunkCap,
-                                   (int64_t)((rowsPerChunk + 7) / 8) * 8);
-        batchNchw.assign(planeSz * static_cast<size_t>(chunkN), kRecPadFill);
-    }
     ggml_backend_t cpuBackend = ctx->primaryLease.is_cpu()
                                         ? ctx->primaryLease.handle()
                                         : ctx->cpuLease.handle();
-    // The rec head is (vocab, T) per row: ne={vocab, T, 1, N}, so row n
-    // starts at n * vocab * T and successive t steps are vocab floats.
-    for (int32_t q = 0; q < count;) {
-        const RecCrop& c = crops[static_cast<size_t>(q)];
-        if (!batchedRec) {
-            std::vector<float> oneOutput;
-            int64_t oC = 0, oT = 0, oW = 0, oN = 0;
-            double oneMs = 0.0;
-            double oneInputUploadMs = 0.0;
-            double oneReadbackMs = 0.0;
-            if (!runGraphCached(
-                        ctx, ctx->recWeights, ctx->rec, gpuBackend, cpuBackend,
-                        3, kRecHeight, kRecMaxWidth, 1, c.nchw.data(),
-                        static_cast<size_t>(3) * kRecHeight * kRecMaxWidth,
-                        oneOutput, oC, oT, oW, oN, oneMs, oneInputUploadMs,
-                        oneReadbackMs, error)) {
-                setLastError(error);
-                delete result;
-                return nullptr;
-            }
-            recInferenceMs += oneMs;
-            inputUploadMs += oneInputUploadMs;
-            outputReadbackMs += oneReadbackMs;
-            float meanScore0 = 0.0f;
-            const auto ctcStart = std::chrono::steady_clock::now();
-            const std::string text0 = aicore::ocr::ctcGreedyDecode(
-                    oneOutput.data(), static_cast<int>(oT),
-                    static_cast<int>(oW), ctx->recWeights.dictionary,
-                    &meanScore0);
-            ctcDecodeMs += std::chrono::duration<double, std::milli>(
-                                   std::chrono::steady_clock::now() - ctcStart)
-                                   .count();
-            const auto assemblyStart = std::chrono::steady_clock::now();
-            aicore_ocr_box box{};
-            std::memcpy(box.quad, c.quad.data(), sizeof(box.quad));
-            result->textStorage.push_back(text0);
-            box.text = result->textStorage.back().c_str();
-            box.score = meanScore0;
-            std::strncpy(box.language, ctx->language.c_str(),
-                         sizeof(box.language) - 1);
-            result->boxes.push_back(box);
-            resultAssemblyMs +=
-                    std::chrono::duration<double, std::milli>(
-                            std::chrono::steady_clock::now() - assemblyStart)
-                            .count();
-            ++q;
-            continue;
-        }
-        // chunkN and the pad fill were computed once per frame above the
-        // loop (see the note there); pad rows are never decoded.
-        int32_t chunkRows = 0;
-        const int32_t remaining = count - q;
-        while (chunkRows < remaining && (int64_t)chunkRows < chunkN) {
-            const RecCrop& cc = crops[static_cast<size_t>(q + chunkRows)];
-            if (cc.valid)
-                std::copy(cc.nchw.begin(), cc.nchw.end(),
-                          batchNchw.begin() +
-                                  static_cast<size_t>(chunkRows) * planeSz);
-            ++chunkRows;
-        }
-        // Upload from the buffer head: this phase stages each chunk's rows
-        // into the single-chunk buffer from row 0 (the copy loop above), so
-        // the pointer is the buffer start — the historical global-crop
-        // offset (q * planeSz) read past the allocation from the second
-        // chunk on (the run phase was fixed by the unique-slot rewrite;
-        // this caller was missed).
-        if (!runGraphCached(ctx, ctx->recWeights, ctx->rec, gpuBackend,
-                            cpuBackend, 3, kRecHeight, kRecMaxWidth, chunkN,
-                            batchNchw.data(), chunkN * planeSz, recOutput,
-                            recOutC, recOutT, recOutW2, recOutN, recInferenceMs,
-                            recInputUploadMs, recReadbackMs, error)) {
-            setLastError(error);
-            delete result;
-            return nullptr;
-        }
-        inputUploadMs += recInputUploadMs;
-        outputReadbackMs += recReadbackMs;
-        // Per-row CTC decode in parallel: same structure as the run phase
-        // (atomic row take, exclusive slot writes, serial box fill). See the
-        // run-phase note for the ownership argument.
-        std::vector<std::string> chunkTexts(chunkRows);
-        std::vector<float> chunkScores(chunkRows);
-        const auto ctcStart = std::chrono::steady_clock::now();
-        {
-            std::atomic<int32_t> nextRow{0};
-            // Cap the worker count: spawning hardware_concurrency threads
-            // 2-3x per frame costs more in pthread_create than the extra
-            // parallelism returns at 18-48 rows per chunk (~3 ms/frame at
-            // hw=32; ~0.6 ms capped at 8, with the decode still >10x
-            // narrower than the serial sweep).
-            const unsigned workers = std::min<unsigned>(
-                    {8u, std::max(1u, std::thread::hardware_concurrency()),
-                     (unsigned)chunkRows});
-            auto decoder = [&]() {
-                for (;;) {
-                    const int32_t r = nextRow.fetch_add(1);
-                    if (r >= chunkRows) return;
-                    const RecCrop& cc = crops[static_cast<size_t>(q + r)];
-                    if (!cc.valid) continue;
-                    const float* rowBase =
-                            recOutput.data() +
-                            static_cast<size_t>(r) *
-                                    static_cast<size_t>(recOutW2) *
-                                    static_cast<size_t>(recOutT);
-                    float meanScore = 0.0f;
-                    chunkTexts[r] = aicore::ocr::ctcGreedyDecode(
-                            rowBase, static_cast<int>(recOutT),
-                            static_cast<int>(recOutW2),
-                            ctx->recWeights.dictionary, &meanScore);
-                    chunkScores[r] = meanScore;
-                }
-            };
-            if (workers > 1) {
-                std::vector<std::thread> pool;
-                pool.reserve(workers - 1);
-                for (unsigned i = 1; i < workers; ++i)
-                    pool.emplace_back(decoder);
-                decoder();
-                for (auto& t : pool) t.join();
-            } else {
-                decoder();
-            }
-        }
-        ctcDecodeMs += std::chrono::duration<double, std::milli>(
-                               std::chrono::steady_clock::now() - ctcStart)
-                               .count();
-        const auto assemblyStart = std::chrono::steady_clock::now();
-        for (int32_t r = 0; r < chunkRows; ++r, ++q) {
-            const RecCrop& cc = crops[static_cast<size_t>(q)];
-            if (!cc.valid) continue;
-            aicore_ocr_box box{};
-            std::memcpy(box.quad, cc.quad.data(), sizeof(box.quad));
-            result->textStorage.push_back(chunkTexts[r]);
-            box.text = result->textStorage.back().c_str();
-            box.score = chunkScores[r];
-            std::strncpy(box.language, ctx->language.c_str(),
-                         sizeof(box.language) - 1);
-            result->boxes.push_back(box);
-        }
-        resultAssemblyMs +=
-                std::chrono::duration<double, std::milli>(
-                        std::chrono::steady_clock::now() - assemblyStart)
-                        .count();
+    const bool recCpuExecution =
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
+    const bool batchedRec = ocrBatchedRecEnabled(gpuBackend, recCpuExecution);
+    std::vector<RecCropGeom> geoms(static_cast<size_t>(count));
+    for (int32_t q = 0; q < count; ++q) {
+        RecCropGeom& g = geoms[static_cast<size_t>(q)];
+        std::memcpy(g.quad, quads + static_cast<size_t>(q) * 8, sizeof(g.quad));
+        recCropGeometry(g);
     }
+    const RecChunkPlan recPlan =
+            planRecChunks(geoms, recChunkBatchCap(gpuBackend), batchedRec);
+    std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
+    batchNchw.resize(recPlan.totalFloats);
+    fillRecPadRows(recPlan, batchNchw.data());
+    cropAndPackAll(srcImage, geoms, recPlan, batchNchw.data());
+    const auto cropResizePackStop = std::chrono::steady_clock::now();
+    std::vector<std::string> recTexts(static_cast<size_t>(count));
+    std::vector<float> recScores(static_cast<size_t>(count), 0.0f);
+    RecRunTimings recTimings;
+    if (!runRecChunks(ctx, gpuBackend, cpuBackend, geoms, recPlan,
+                      batchNchw.data(), recTexts, recScores, recTimings,
+                      error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
+    }
+    ctx->recBatchScratch = std::move(batchNchw);
+    const double recInferenceMs = recTimings.inferenceMs;
+    const double inputUploadMs = recTimings.inputUploadMs;
+    const double outputReadbackMs = recTimings.outputReadbackMs;
+    const double ctcDecodeMs = recTimings.ctcDecodeMs;
+    const auto assemblyStart = std::chrono::steady_clock::now();
+    for (int32_t q = 0; q < count; ++q) {
+        const RecCropGeom& g = geoms[static_cast<size_t>(q)];
+        if (!g.valid) continue;
+        aicore_ocr_box box{};
+        std::memcpy(box.quad, g.quad, sizeof(box.quad));
+        result->textStorage.push_back(recTexts[static_cast<size_t>(q)]);
+        box.text = result->textStorage.back().c_str();
+        box.score = recScores[static_cast<size_t>(q)];
+        std::strncpy(box.language, ctx->language.c_str(),
+                     sizeof(box.language) - 1);
+        result->boxes.push_back(box);
+    }
+    const double resultAssemblyMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - assemblyStart)
+                    .count();
 
     const auto stop = std::chrono::steady_clock::now();
     result->timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;

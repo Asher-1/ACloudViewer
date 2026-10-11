@@ -56,9 +56,16 @@ claude mcp add cli-anything-acloudviewer -- cli-anything-acloudviewer-mcp
 }
 ```
 
-## Available Tools (178)
+## Available Tools (182)
 
-The MCP server registers **178 tools** covering headless CLI and GUI RPC operations. Below are the major categories — see `mcp_server.py` `list_tools()` for the full authoritative list.
+The MCP server registers **182 tools** covering headless CLI and GUI RPC operations. Below are the major categories — see `mcp_server.py` `list_tools()` for the full authoritative list.
+
+### AICore and Generic Plugins (4)
+- **`list_ai_tasks`**, **`get_ai_schema`**, **`run_ai_batch`**, **`run_plugin_command`**
+
+These tools expose the same native batch commands as the Click CLI. Query the
+installed plugin schema before inference; `run_plugin_command` preserves legacy
+plugin argv in an isolated headless subprocess.
 
 ### File I/O (5)
 - **`open_file`**, **`convert_format`**, **`batch_convert`**, **`list_formats`**, **`export_entity`**

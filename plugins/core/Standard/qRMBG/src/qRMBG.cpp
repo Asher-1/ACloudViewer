@@ -20,7 +20,9 @@
 #include <QSettings>
 #include <QTimer>
 #include <QUuid>
+#include <cassert>
 
+#include "RMBGBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -59,6 +61,15 @@ qRMBG::qRMBG(QObject* parent)
 }
 
 QList<QAction*> qRMBG::getActions() { return {m_action}; }
+
+void qRMBG::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandRmbgRemove));
+}
 
 void qRMBG::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

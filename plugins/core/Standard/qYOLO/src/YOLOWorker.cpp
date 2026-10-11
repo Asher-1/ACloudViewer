@@ -130,35 +130,7 @@ bool YOLOWorker::runInference() {
                    "task is running."));
         return false;
     }
-    // Warm up the backend on the UI thread is the caller's job; here we just
-    // create the model context and run.
-    aicore_yolo_options* opts = aicore_yolo_options_new();
-    if (!opts) {
-        emit logMessage(tr("[YOLO] Failed to allocate options."));
-        return false;
-    }
-    aicore_yolo_options_set_device(opts,
-                                   m_settings.device.toUtf8().constData());
-    aicore_yolo_options_set_threads(opts, m_settings.threads);
-    aicore_yolo_options_set_conf_thres(opts, m_settings.confThres);
-    aicore_yolo_options_set_iou_thres(opts, m_settings.iouThres);
-    aicore_yolo_options_set_top_k(opts, m_settings.topK);
-    // Open-vocabulary setup (world/yoloe): the class list rides into load;
-    // the text-model GGUF encodes it once per context. YOLOE visual prompts
-    // take precedence: the SAVPE encoder derives the class embeddings from
-    // the drawn boxes, so no class list and no text model apply.
     if (!m_settings.visualPrompts.isEmpty()) {
-        std::vector<float> boxes;
-        boxes.reserve(static_cast<size_t>(m_settings.visualPrompts.size()) * 4);
-        for (const QRectF& b : m_settings.visualPrompts) {
-            boxes.push_back(static_cast<float>(b.left()));
-            boxes.push_back(static_cast<float>(b.top()));
-            boxes.push_back(static_cast<float>(b.right()));
-            boxes.push_back(static_cast<float>(b.bottom()));
-        }
-        aicore_yolo_options_set_visual_prompts(
-                opts, boxes.data(),
-                static_cast<int32_t>(m_settings.visualPrompts.size()));
         const int named =
                 std::count_if(m_settings.visualPromptNames.cbegin(),
                               m_settings.visualPromptNames.cend(),
@@ -175,23 +147,6 @@ bool YOLOWorker::runInference() {
                                "click a box on the canvas to name it.")
                                     .arg(m_settings.visualPrompts.size())
                                     .arg(m_settings.visualPrompts.size() - 1));
-    } else if (!m_settings.classes.isEmpty()) {
-        std::vector<const char*> classPtrs;
-        classPtrs.reserve(static_cast<size_t>(m_settings.classes.size()));
-        QList<QByteArray> utf8;
-        utf8.reserve(m_settings.classes.size());
-        for (const QString& c : m_settings.classes) {
-            utf8.append(c.toUtf8());
-        }
-        for (const QByteArray& c : utf8) {
-            classPtrs.push_back(c.constData());
-        }
-        aicore_yolo_options_set_classes(opts, classPtrs.data(),
-                                        static_cast<int32_t>(classPtrs.size()));
-        if (!m_settings.textModelPath.isEmpty()) {
-            aicore_yolo_options_set_text_model(
-                    opts, m_settings.textModelPath.toUtf8().constData());
-        }
     }
 
     emit logMessage(tr("[YOLO] Loading model: %1 (device=%2, threads=%3)")
@@ -200,15 +155,10 @@ bool YOLOWorker::runInference() {
                             .arg(m_settings.threads));
     emit progressUpdate(0, 1);
 
-    m_pendingCtx = aicore_yolo_load_opts(
-            m_settings.modelPath.toUtf8().constData(), opts);
-    aicore_yolo_options_free(opts);
-    if (!m_pendingCtx || !aicore_yolo_is_ready(m_pendingCtx)) {
-        const char* err = m_pendingCtx ? aicore_yolo_last_error(m_pendingCtx)
-                                       : "context allocation failed";
-        emit logMessage(tr("[YOLO] Model load failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+    QString error;
+    m_pendingCtx = loadContext(m_settings, &error);
+    if (!error.isEmpty()) {
+        emit logMessage(tr("[YOLO] %1").arg(error));
         return false;
     }
 
@@ -242,16 +192,94 @@ bool YOLOWorker::runInference() {
         return false;
     }
 
-    // Single-image inference.
-    const QImage input(m_settings.inputPath);
+    emit progressUpdate(0, 1);
+    ImageResult out;
+    if (!inferImage(m_pendingCtx, m_settings, m_cancelToken, &out, &error)) {
+        emit logMessage(tr("[YOLO] %1").arg(error));
+        return false;
+    }
+    emit logMessage(tr("[YOLO] %1").arg(out.summary));
+    if (!out.hint.isEmpty()) emit logMessage(tr("[YOLO] %1").arg(out.hint));
+    if (out.isDepth) {
+        emit depthResultReady(out.depth);
+    } else {
+        emit resultReady(out.run);
+    }
+    emit progressUpdate(1, 1);
+    return true;
+}
+
+aicore_yolo_ctx* YOLOWorker::loadContext(const Settings& settings,
+                                         QString* error) {
+    aicore_yolo_options* opts = aicore_yolo_options_new();
+    if (!opts) {
+        *error = tr("Failed to allocate options.");
+        return nullptr;
+    }
+    aicore_yolo_options_set_device(opts, settings.device.toUtf8().constData());
+    aicore_yolo_options_set_threads(opts, settings.threads);
+    aicore_yolo_options_set_conf_thres(opts, settings.confThres);
+    aicore_yolo_options_set_iou_thres(opts, settings.iouThres);
+    aicore_yolo_options_set_top_k(opts, settings.topK);
+    // Open-vocabulary setup (world/yoloe): the class list rides into load;
+    // the text-model GGUF encodes it once per context. YOLOE visual prompts
+    // take precedence: the SAVPE encoder derives the class embeddings from
+    // the drawn boxes, so no class list and no text model apply.
+    if (!settings.visualPrompts.isEmpty()) {
+        std::vector<float> boxes;
+        boxes.reserve(static_cast<size_t>(settings.visualPrompts.size()) * 4);
+        for (const QRectF& b : settings.visualPrompts) {
+            boxes.push_back(static_cast<float>(b.left()));
+            boxes.push_back(static_cast<float>(b.top()));
+            boxes.push_back(static_cast<float>(b.right()));
+            boxes.push_back(static_cast<float>(b.bottom()));
+        }
+        aicore_yolo_options_set_visual_prompts(
+                opts, boxes.data(),
+                static_cast<int32_t>(settings.visualPrompts.size()));
+    } else if (!settings.classes.isEmpty()) {
+        std::vector<const char*> classPtrs;
+        classPtrs.reserve(static_cast<size_t>(settings.classes.size()));
+        QList<QByteArray> utf8;
+        utf8.reserve(settings.classes.size());
+        for (const QString& c : settings.classes) {
+            utf8.append(c.toUtf8());
+        }
+        for (const QByteArray& c : utf8) {
+            classPtrs.push_back(c.constData());
+        }
+        aicore_yolo_options_set_classes(opts, classPtrs.data(),
+                                        static_cast<int32_t>(classPtrs.size()));
+        if (!settings.textModelPath.isEmpty()) {
+            aicore_yolo_options_set_text_model(
+                    opts, settings.textModelPath.toUtf8().constData());
+        }
+    }
+
+    aicore_yolo_ctx* ctx = aicore_yolo_load_opts(
+            settings.modelPath.toUtf8().constData(), opts);
+    aicore_yolo_options_free(opts);
+    if (!ctx || !aicore_yolo_is_ready(ctx)) {
+        const char* err =
+                ctx ? aicore_yolo_last_error(ctx) : "context allocation failed";
+        *error = tr("Model load failed: %1")
+                         .arg(err && err[0] ? QString::fromUtf8(err)
+                                            : tr("unknown error"));
+    }
+    return ctx;
+}
+
+bool YOLOWorker::inferImage(aicore_yolo_ctx* ctx,
+                            const Settings& settings,
+                            aicore_cancel_token* cancel,
+                            ImageResult* out,
+                            QString* error) {
+    const QImage input(settings.inputPath);
     if (input.isNull()) {
-        emit logMessage(tr("[YOLO] Failed to load image: %1")
-                                .arg(m_settings.inputPath));
+        *error = tr("Failed to load image: %1").arg(settings.inputPath);
         return false;
     }
     const QImage rgb = inferenceImage(input);
-    emit progressUpdate(0, 1);
-
     // The loaded model decides the path: a detect GGUF yields boxes, a
     // segment GGUF yields boxes + instance masks, a depth GGUF yields a
     // metric depth map, pose/obb/semantic/classify GGUFs yield their typed
@@ -259,79 +287,84 @@ bool YOLOWorker::runInference() {
     // the model. World/YOLOE models are text-conditioned detect/segment
     // variants and flow through the same paths (the class vocabulary comes
     // from the tab's class list + text model).
-    const bool ok = (task == QStringLiteral("depth"))      ? runDepth(rgb)
-                    : (task == QStringLiteral("segment"))  ? runSegment(rgb)
-                    : (task == QStringLiteral("pose"))     ? runPose(rgb)
-                    : (task == QStringLiteral("obb"))      ? runObb(rgb)
-                    : (task == QStringLiteral("semantic")) ? runSemantic(rgb)
-                    : (task == QStringLiteral("classify")) ? runClassify(rgb)
-                                                           : runDetect(rgb);
-    emit progressUpdate(1, 1);
-    return ok;
+    const QString task = QString::fromUtf8(aicore_yolo_context_task(ctx));
+    using Fn = bool (*)(aicore_yolo_ctx*, const Settings&, aicore_cancel_token*,
+                        const QImage&, ImageResult*, QString*);
+    const Fn fn = (task == QStringLiteral("depth"))      ? &runDepth
+                  : (task == QStringLiteral("segment"))  ? &runSegment
+                  : (task == QStringLiteral("pose"))     ? &runPose
+                  : (task == QStringLiteral("obb"))      ? &runObb
+                  : (task == QStringLiteral("semantic")) ? &runSemantic
+                  : (task == QStringLiteral("classify")) ? &runClassify
+                                                         : &runDetect;
+    return fn(ctx, settings, cancel, rgb, out, error);
 }
 
-QString YOLOWorker::visualPromptName(uint32_t classId) const {
-    if (classId < static_cast<uint32_t>(m_settings.visualPromptNames.size())) {
-        return m_settings.visualPromptNames.at(static_cast<int>(classId));
+QString YOLOWorker::visualPromptName(const Settings& settings,
+                                     uint32_t classId) {
+    if (classId < static_cast<uint32_t>(settings.visualPromptNames.size())) {
+        return settings.visualPromptNames.at(static_cast<int>(classId));
     }
     return QString();
 }
 
-bool YOLOWorker::runDetect(const QImage& rgb) {
+bool YOLOWorker::runDetect(aicore_yolo_ctx* ctx,
+                           const Settings& settings,
+                           aicore_cancel_token* cancel,
+                           const QImage& rgb,
+                           ImageResult* out,
+                           QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    const int detectRc = aicore_yolo_detect_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    const int detectRc = aicore_yolo_detect_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (detectRc != 0) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Inference failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("detect");
     result.runtimeMs = ms;
     // Backend-resolved device (may differ from the request when the GPU
     // lease failed and yolo fell back to CPU).
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
-    result.end2end = aicore_yolo_context_end2end(m_pendingCtx) != 0;
-    const int detectionCount = aicore_yolo_detection_count(m_pendingCtx);
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
+    result.end2end = aicore_yolo_context_end2end(ctx) != 0;
+    const int detectionCount = aicore_yolo_detection_count(ctx);
     result.detections.reserve(detectionCount > 0 ? detectionCount : 0);
     for (int i = 0; i < detectionCount; ++i) {
-        const aicore_yolo_detection det =
-                aicore_yolo_detection_at(m_pendingCtx, i);
+        const aicore_yolo_detection det = aicore_yolo_detection_at(ctx, i);
         YOLODetection d;
         d.classId = static_cast<uint32_t>(det.class_id);
         // Backend class table (open-vocabulary class-list override or the
         // GGUF metadata); fall back to the deterministic label only when the
         // model declares no name for this class (same contract as the
         // segment/pose/obb typed results).
-        const char* name = aicore_yolo_detection_class_name(m_pendingCtx, i);
+        const char* name = aicore_yolo_detection_class_name(ctx, i);
         d.className = (name != nullptr && name[0] != '\0')
                               ? QString::fromUtf8(name)
                               : QStringLiteral("class %1").arg(det.class_id);
         // Visual-prompt naming: a user-assigned prompt name replaces the
         // positional class-N/objectN label (detections are labeled by the
         // prompt index in visual-prompt mode).
-        const QString promptName = visualPromptName(d.classId);
+        const QString promptName = visualPromptName(settings, d.classId);
         if (!promptName.isEmpty()) d.className = promptName;
         d.x1 = det.x1;
         d.y1 = det.y1;
@@ -345,59 +378,60 @@ bool YOLOWorker::runDetect(const QImage& rgb) {
     YOLOHelpers::drawDetections(&annotated, result.detections);
     result.annotatedImage = annotated;
 
-    emit logMessage(
-            tr("[YOLO] %1 object(s) in %2 ms (model=%3, conf=%4, iou=%5)")
-                    .arg(result.detections.size())
-                    .arg(ms, 0, 'f', 1)
-                    .arg(result.modelVariant)
-                    .arg(m_settings.confThres, 0, 'f', 2)
-                    .arg(m_settings.iouThres, 0, 'f', 2));
-    if (result.detections.isEmpty() && hasPhrasePrompt(m_settings.classes)) {
-        emit logMessage(
-                tr("[YOLO] Hint: descriptive phrase prompts (e.g. \"female "
-                   "in yellow hat\") score far below short categories on "
-                   "open-vocabulary heads — split into short nouns (person, "
-                   "hat) or lower Confidence to ~0.02."));
+    out->summary = (tr("%1 object(s) in %2 ms (model=%3, conf=%4, iou=%5)")
+                            .arg(result.detections.size())
+                            .arg(ms, 0, 'f', 1)
+                            .arg(result.modelVariant)
+                            .arg(settings.confThres, 0, 'f', 2)
+                            .arg(settings.iouThres, 0, 'f', 2));
+    if (result.detections.isEmpty() && hasPhrasePrompt(settings.classes)) {
+        out->hint =
+                (tr("Hint: descriptive phrase prompts (e.g. \"female "
+                    "in yellow hat\") score far below short categories on "
+                    "open-vocabulary heads — split into short nouns (person, "
+                    "hat) or lower Confidence to ~0.02."));
     }
-    emit resultReady(result);
+    out->run = result;
     return true;
 }
 
-bool YOLOWorker::runSegment(const QImage& rgb) {
+bool YOLOWorker::runSegment(aicore_yolo_ctx* ctx,
+                            const Settings& settings,
+                            aicore_cancel_token* cancel,
+                            const QImage& rgb,
+                            ImageResult* out,
+                            QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    aicore_yolo_segment_result* seg =
-            aicore_yolo_seg_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    aicore_yolo_segment_result* seg = aicore_yolo_seg_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!seg) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Segmentation failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Segmentation failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("segment");
     result.runtimeMs = ms;
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
-    result.end2end = aicore_yolo_context_end2end(m_pendingCtx) != 0;
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
+    result.end2end = aicore_yolo_context_end2end(ctx) != 0;
 
     // Typed segment result: detections + per-instance masks.
     const int n = aicore_yolo_seg_det_count(seg);
@@ -440,7 +474,7 @@ bool YOLOWorker::runSegment(const QImage& rgb) {
         // backend's positional objectN label (class_id = prompt index in
         // visual-prompt mode).
         const QString promptName =
-                visualPromptName(result.detections[i].classId);
+                visualPromptName(settings, result.detections[i].classId);
         if (!promptName.isEmpty()) {
             result.detections[i].className = promptName;
         }
@@ -453,48 +487,51 @@ bool YOLOWorker::runSegment(const QImage& rgb) {
     YOLOHelpers::drawSegmentation(&annotated, result.masks, result.detections);
     result.annotatedImage = annotated;
 
-    emit logMessage(
-            tr("[YOLO] %1 segment(s) in %2 ms (model=%3, conf=%4, iou=%5)")
-                    .arg(n)
-                    .arg(ms, 0, 'f', 1)
-                    .arg(result.modelVariant)
-                    .arg(m_settings.confThres, 0, 'f', 2)
-                    .arg(m_settings.iouThres, 0, 'f', 2));
-    if (n == 0 && hasPhrasePrompt(m_settings.classes)) {
-        emit logMessage(
-                tr("[YOLO] Hint: descriptive phrase prompts (e.g. \"female "
-                   "in yellow hat\") score far below short categories on "
-                   "open-vocabulary heads — split into short nouns (person, "
-                   "hat) or lower Confidence to ~0.02."));
+    out->summary = (tr("%1 segment(s) in %2 ms (model=%3, conf=%4, iou=%5)")
+                            .arg(n)
+                            .arg(ms, 0, 'f', 1)
+                            .arg(result.modelVariant)
+                            .arg(settings.confThres, 0, 'f', 2)
+                            .arg(settings.iouThres, 0, 'f', 2));
+    if (n == 0 && hasPhrasePrompt(settings.classes)) {
+        out->hint =
+                (tr("Hint: descriptive phrase prompts (e.g. \"female "
+                    "in yellow hat\") score far below short categories on "
+                    "open-vocabulary heads — split into short nouns (person, "
+                    "hat) or lower Confidence to ~0.02."));
     }
-    emit resultReady(result);
+    out->run = result;
     return true;
 }
 
-bool YOLOWorker::runDepth(const QImage& rgb) {
+bool YOLOWorker::runDepth(aicore_yolo_ctx* ctx,
+                          const Settings& settings,
+                          aicore_cancel_token* cancel,
+                          const QImage& rgb,
+                          ImageResult* out,
+                          QString* error) {
     QElapsedTimer timer;
     timer.start();
     int32_t depthW = 0, depthH = 0;
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    float* depth =
-            aicore_yolo_depth_image(m_pendingCtx, &image, &depthW, &depthH);
-    aicore_cancel_scope_end(m_cancelToken);
+    float* depth = aicore_yolo_depth_image(ctx, &image, &depthW, &depthH);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!depth || depthW <= 0 || depthH <= 0) {
         if (depth) aicore_yolo_free_buffer(depth);
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Depth inference failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Depth inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLODepthResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.runtimeMs = ms;
     result.width = depthW;
     result.height = depthH;
@@ -502,16 +539,15 @@ bool YOLOWorker::runDepth(const QImage& rgb) {
             depth, depth + static_cast<size_t>(depthW) * depthH);
     aicore_yolo_free_buffer(depth);
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
 
     aicore_yolo_depth_stats stats{};
-    if (aicore_yolo_last_depth_stats(m_pendingCtx, &stats) == 0) {
+    if (aicore_yolo_last_depth_stats(ctx, &stats) == 0) {
         result.stats.width = stats.depth_width;
         result.stats.height = stats.depth_height;
         result.stats.minDepth = stats.min_depth;
@@ -533,51 +569,54 @@ bool YOLOWorker::runDepth(const QImage& rgb) {
                                      result.stats.p95Depth);
     }
 
-    emit logMessage(tr("[YOLO] Depth %1x%2 in %3 ms (model=%4, range=%5-%6 m)")
+    out->summary = (tr("Depth %1x%2 in %3 ms (model=%4, range=%5-%6 m)")
                             .arg(depthW)
                             .arg(depthH)
                             .arg(ms, 0, 'f', 1)
                             .arg(result.modelVariant)
                             .arg(result.stats.minDepth, 0, 'f', 2)
                             .arg(result.stats.p95Depth, 0, 'f', 2));
-    emit depthResultReady(result);
+    out->isDepth = true;
+    out->depth = result;
     return true;
 }
 
-bool YOLOWorker::runPose(const QImage& rgb) {
+bool YOLOWorker::runPose(aicore_yolo_ctx* ctx,
+                         const Settings& settings,
+                         aicore_cancel_token* cancel,
+                         const QImage& rgb,
+                         ImageResult* out,
+                         QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    aicore_yolo_pose_result* pose =
-            aicore_yolo_pose_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    aicore_yolo_pose_result* pose = aicore_yolo_pose_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!pose) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Pose inference failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Pose inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("pose");
     result.runtimeMs = ms;
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
 
     const int n = aicore_yolo_pose_det_count(pose);
     result.kptCount = aicore_yolo_pose_kpt_count(pose);
@@ -609,48 +648,51 @@ bool YOLOWorker::runPose(const QImage& rgb) {
     YOLOHelpers::drawPose(&annotated, result.keypointSets);
     result.annotatedImage = annotated;
 
-    emit logMessage(tr("[YOLO] %1 pose(s) in %2 ms (model=%3, kpts=%4)")
+    out->summary = (tr("%1 pose(s) in %2 ms (model=%3, kpts=%4)")
                             .arg(n)
                             .arg(ms, 0, 'f', 1)
                             .arg(result.modelVariant)
                             .arg(result.kptCount));
-    emit resultReady(result);
+    out->run = result;
     return true;
 }
 
-bool YOLOWorker::runObb(const QImage& rgb) {
+bool YOLOWorker::runObb(aicore_yolo_ctx* ctx,
+                        const Settings& settings,
+                        aicore_cancel_token* cancel,
+                        const QImage& rgb,
+                        ImageResult* out,
+                        QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    aicore_yolo_obb_result* obb = aicore_yolo_obb_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    aicore_yolo_obb_result* obb = aicore_yolo_obb_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!obb) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] OBB inference failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("OBB inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("obb");
     result.runtimeMs = ms;
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
 
     const int n = aicore_yolo_obb_count(obb);
     result.obbBoxes.reserve(n > 0 ? n : 0);
@@ -677,54 +719,56 @@ bool YOLOWorker::runObb(const QImage& rgb) {
     YOLOHelpers::drawObb(&annotated, result.obbBoxes);
     result.annotatedImage = annotated;
 
-    emit logMessage(tr("[YOLO] %1 oriented box(es) in %2 ms (model=%3)")
+    out->summary = (tr("%1 oriented box(es) in %2 ms (model=%3)")
                             .arg(n)
                             .arg(ms, 0, 'f', 1)
                             .arg(result.modelVariant));
     if (n == 0) {
-        emit logMessage(
-                tr("[YOLO] OBB models are trained on DOTA aerial imagery — "
-                   "natural photos may legitimately yield 0 detections. Try "
-                   "an aerial/satellite image for this model family."));
+        out->hint =
+                (tr("OBB models are trained on DOTA aerial imagery — "
+                    "natural photos may legitimately yield 0 detections. Try "
+                    "an aerial/satellite image for this model family."));
     }
-    emit resultReady(result);
+    out->run = result;
     return true;
 }
 
-bool YOLOWorker::runSemantic(const QImage& rgb) {
+bool YOLOWorker::runSemantic(aicore_yolo_ctx* ctx,
+                             const Settings& settings,
+                             aicore_cancel_token* cancel,
+                             const QImage& rgb,
+                             ImageResult* out,
+                             QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    aicore_yolo_semantic_result* sem =
-            aicore_yolo_semantic_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    aicore_yolo_semantic_result* sem = aicore_yolo_semantic_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!sem) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Semantic inference failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Semantic inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("semantic");
     result.runtimeMs = ms;
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
 
     const aicore_yolo_plane_view view = aicore_yolo_semantic_class_map(sem);
     if (view.data != nullptr && view.width > 0 && view.height > 0) {
@@ -744,51 +788,52 @@ bool YOLOWorker::runSemantic(const QImage& rgb) {
                               result.semanticNumClasses);
     result.annotatedImage = annotated;
 
-    emit logMessage(
-            tr("[YOLO] Semantic map %1x%2 (%3 classes) in %4 ms (model=%5)")
-                    .arg(result.semanticWidth)
-                    .arg(result.semanticHeight)
-                    .arg(result.semanticNumClasses)
-                    .arg(ms, 0, 'f', 1)
-                    .arg(result.modelVariant));
-    emit resultReady(result);
+    out->summary = (tr("Semantic map %1x%2 (%3 classes) in %4 ms (model=%5)")
+                            .arg(result.semanticWidth)
+                            .arg(result.semanticHeight)
+                            .arg(result.semanticNumClasses)
+                            .arg(ms, 0, 'f', 1)
+                            .arg(result.modelVariant));
+    out->run = result;
     return true;
 }
 
-bool YOLOWorker::runClassify(const QImage& rgb) {
+bool YOLOWorker::runClassify(aicore_yolo_ctx* ctx,
+                             const Settings& settings,
+                             aicore_cancel_token* cancel,
+                             const QImage& rgb,
+                             ImageResult* out,
+                             QString* error) {
     QElapsedTimer timer;
     timer.start();
-    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_cancel_scope_begin(cancel);
     const aicore_image_view image = imageView(rgb);
-    aicore_yolo_classify_result* cls =
-            aicore_yolo_classify_image(m_pendingCtx, &image);
-    aicore_cancel_scope_end(m_cancelToken);
+    aicore_yolo_classify_result* cls = aicore_yolo_classify_image(ctx, &image);
+    aicore_cancel_scope_end(cancel);
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!cls) {
-        const char* err = aicore_yolo_last_error(m_pendingCtx);
-        emit logMessage(tr("[YOLO] Classification failed: %1")
-                                .arg(err ? QString::fromUtf8(err)
-                                         : tr("unknown error")));
+        const char* err = aicore_yolo_last_error(ctx);
+        *error = tr("Classification failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
         return false;
     }
 
     YOLORunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).fileName();
-    result.modelPath = m_settings.modelPath;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
     result.task = QStringLiteral("classify");
     result.runtimeMs = ms;
-    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    const char* resolvedDevice = aicore_yolo_context_device(ctx);
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
-                                    : m_settings.device;
+                                    : settings.device;
     result.modelVariant =
-            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
-    result.imageSize =
-            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
-    result.numClasses =
-            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+            QString::fromUtf8(aicore_yolo_context_model_name(ctx));
+    result.imageSize = static_cast<int>(aicore_yolo_context_image_size(ctx));
+    result.numClasses = static_cast<int>(aicore_yolo_context_num_classes(ctx));
 
     const int n = aicore_yolo_classify_count(cls);
     result.classifications.reserve(n > 0 ? n : 0);
@@ -809,11 +854,11 @@ bool YOLOWorker::runClassify(const QImage& rgb) {
     YOLOHelpers::drawClassifications(&annotated, result.classifications);
     result.annotatedImage = annotated;
 
-    emit logMessage(tr("[YOLO] %1 classes in %2 ms (model=%3)")
+    out->summary = (tr("%1 classes in %2 ms (model=%3)")
                             .arg(n)
                             .arg(ms, 0, 'f', 1)
                             .arg(result.modelVariant));
-    emit resultReady(result);
+    out->run = result;
     return true;
 }
 #endif

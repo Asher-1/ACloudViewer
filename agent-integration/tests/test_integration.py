@@ -26,6 +26,7 @@ Usage:
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -52,6 +53,31 @@ BUILD_DIR = Path(os.environ.get(
 PLUGIN_CPP = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/src/JsonRPCPlugin.cpp"
 PLUGIN_H = REPO_ROOT / "plugins/core/Standard/qJSonRPCPlugin/include/JsonRPCPlugin.h"
 SIBR_COMMANDS_H = REPO_ROOT / "plugins/core/Standard/qSIBR/include/qSIBRCommands.h"
+
+# One table gates the three automation layers: plugin source registration,
+# CLI registry exposure, and installed-binary HELP/schema discovery.
+AICORE_BATCH_COMMANDS = (
+    ("rmbg", "RMBG_REMOVE", "qRMBG/include/RMBGBatchCommand.h"),
+    ("deeplsd", "DEEPLSD_LINES", "qDeepLSD/include/DeepLSDBatchCommand.h"),
+    ("rfdetr", "RFDETR_DETECT", "qRFDetr/include/RFDetrBatchCommand.h"),
+    ("yolo", "YOLO_PREDICT", "qYOLO/include/YOLOPredictCommand.h"),
+    ("yolo-track", "YOLO_TRACK", "qYOLO/include/YOLOTrackCommand.h"),
+    ("da3", "DA3_DEPTH", "qDA3/include/DA3BatchCommand.h"),
+    ("face", "FACE_DETECT", "qFaceDetect/include/FaceDetectBatchCommand.h"),
+    ("gkd", "GKD_KEYPOINTS", "qGKD/include/GKDBatchCommand.h"),
+    ("ocr", "OCR_RECOGNIZE", "qOCR/include/OCRBatchCommand.h"),
+    ("sam3", "SAM3_SEGMENT", "qSAM3/include/SAM3BatchCommand.h"),
+    ("lightglue", "LIGHTGLUE_MATCH", "qLightGlue/include/LightGlueBatchCommand.h"),
+    ("freesplatter", "FREESPLATTER_RECONSTRUCT",
+     "qFreeSplatter/include/FreeSplatterBatchCommand.h"),
+    ("trellis", "TRELLIS_GENERATE", "qTrellis/include/TrellisBatchCommand.h"),
+    ("lingbot-map", "LINGBOT_MAP_RECONSTRUCT",
+     "qLingbotMap/include/LingbotMapBatchCommand.h"),
+    ("anylabel", "ANYLABEL_INFER", "qAnyLabeling/include/AnyLabelingBatchCommand.h"),
+    ("map-anything", "MAP_ANYTHING_RECONSTRUCT",
+     "qMapAnything/include/MapAnythingReconstructCommand.h"),
+    ("sam3d", "SAM3D_GENERATE", "qSAM3D/include/Sam3dGenerateCommand.h"),
+)
 
 
 def _read_repo_text(path: Path) -> str:
@@ -269,6 +295,71 @@ class TestLevel1_CppPlugin:
         assert "rpcFileConvert" in src
         for param in ["input", "output", "input_filter", "output_filter"]:
             assert param in src, f"file.convert missing param: {param}"
+
+    def test_level1_aicore_batch_contract_complete(self):
+        rpc_src = _read_repo_text(PLUGIN_CPP)
+        rpc_header = _read_repo_text(PLUGIN_H)
+        assert 'reg("aicore.batch"' in rpc_src
+        assert "rpcAICoreBatch" in rpc_src
+        assert "rpcAICoreBatch" in rpc_header
+        plugin_root = REPO_ROOT / "plugins/core/Standard"
+        expected_headers = {relative_header
+                            for _, _, relative_header in AICORE_BATCH_COMMANDS}
+        discovered_headers = {
+            path.relative_to(plugin_root).as_posix()
+            for path in plugin_root.rglob("*.h")
+            if b'"ecvAICoreBatchCommand.h"' in path.read_bytes()
+        }
+        assert discovered_headers == expected_headers, (
+            "Update AICORE_BATCH_COMMANDS and every automation surface when "
+            f"batch headers change: missing={expected_headers - discovered_headers}, "
+            f"unregistered={discovered_headers - expected_headers}")
+        for task, command, relative_header in AICORE_BATCH_COMMANDS:
+            header = plugin_root / relative_header
+            assert header.is_file(), f"{task}: missing {relative_header}"
+            source = _read_repo_text(header)
+            assert command in source, f"{task}: missing command {command}"
+            assert "ecvAICoreBatchCommand.h" in source, (
+                f"{task}: command must expose the shared HELP/schema contract")
+            assert f'"{command}"' in rpc_src, (
+                f"{task}: {command} missing from aicore.batch whitelist")
+
+        # The whitelist is an exact set: an extra entry would expose a
+        # command that no registry/test row describes.
+        block = re.search(r"kCommands\s*=\s*\{([^}]*)\}", rpc_src)
+        assert block, "aicore.batch whitelist (kCommands) not found"
+        whitelist = set(re.findall(r'"([A-Z][A-Z0-9_]*)"', block.group(1)))
+        assert whitelist == {command for _, command, _ in AICORE_BATCH_COMMANDS}
+
+    @pytest.mark.parametrize("task,command,relative_header", AICORE_BATCH_COMMANDS)
+    def test_level1_aicore_batch_command_registered(
+            self, task, command, relative_header):
+        """The header defines the keyword and its plugin registers the class."""
+        header = REPO_ROOT / "plugins/core/Standard" / relative_header
+        source = _read_repo_text(header)
+        assert re.search(r'#define\s+COMMAND_\w+\s+"%s"' % command, source), (
+            f"{task}: {relative_header} does not define keyword {command}")
+        classes = re.findall(
+            r"(?:struct|class)\s+(\w+)\s*:\s*public\s+ccCommandLineInterface::Command",
+            source)
+        assert len(classes) == 1, f"{task}: expected one command class"
+        plugin_sources = "".join(
+            _read_repo_text(path)
+            for path in sorted((header.parents[1] / "src").glob("*.cpp")))
+        assert re.search(r"registerCommand\s*\([^;]*new\s+%s\b" % classes[0],
+                         plugin_sources), (
+            f"{task}: {classes[0]} is not passed to registerCommand()")
+
+    def test_level1_documented_rpc_method_count(self):
+        """Documented RPC method totals equal the registered method set."""
+        methods = set(re.findall(r'reg\("([^"]+)"', _read_repo_text(PLUGIN_CPP)))
+        stale = []
+        for path in (REPO_ROOT / "README.md", REPO_ROOT / "agent-integration/README.md"):
+            for match in re.finditer(
+                    r"\*\*(\d+) (?:JSON-RPC )?methods\*\*", _read_repo_text(path)):
+                if int(match.group(1)) != len(methods):
+                    stale.append(f"{path.name}: {match.group(0)}")
+        assert not stale, f"{len(methods)} RPC methods registered; stale: {stale}"
 
     @_skip_sibr_on_macos
     def test_level1_sibr_commands_exist(self):
@@ -508,6 +599,37 @@ class TestLevel2_CLIHarness:
                            capture_output=True, text=True, timeout=10)
         assert r.returncode == 0
         assert "ACloudViewer" in r.stdout
+        assert "ai" in r.stdout
+        assert "plugin" in r.stdout
+
+    def test_level2_aicore_registry_complete(self):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "ai", "list"],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, r.stderr
+        rows = json.loads(r.stdout)
+        actual = {(row["name"], row["command"]) for row in rows}
+        expected = {(task, command)
+                    for task, command, _ in AICORE_BATCH_COMMANDS}
+        assert actual == expected
+
+    @pytest.mark.parametrize("command", [
+        ["ai", "--help"],
+        ["ai", "run", "--help"],
+        ["ai", "schema", "--help"],
+        ["plugin", "--help"],
+        ["plugin", "run", "--help"],
+    ])
+    def test_level2_generic_plugin_cli_help(self, command):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", *command],
+            capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, r.stderr
+        if command[:2] == ["ai", "run"]:
+            assert "--option" in r.stdout and "--image" in r.stdout
+        if command[:2] == ["plugin", "run"]:
+            assert "--option" in r.stdout and "--arg" in r.stdout
 
     @pytest.mark.parametrize("cmd", [
         "convert --help",
@@ -964,6 +1086,20 @@ def _build_env_for_binary(binary_path: str) -> dict[str, str]:
     return env
 
 
+def test_level3_required_binary_present():
+    """Installer CI sets ACV_REQUIRE_BINARY=1: a missing binary must fail.
+
+    Every other Level 3 class is skipif(not HAS_BINARY), which is right for a
+    developer checkout but would let a broken install silently skip the
+    whole AICore schema gate in CI.
+    """
+    if os.environ.get("ACV_REQUIRE_BINARY") != "1":
+        pytest.skip("ACV_REQUIRE_BINARY is not set")
+    assert HAS_BINARY, (
+        "ACloudViewer binary not found; ACV_BINARY="
+        f"{os.environ.get('ACV_BINARY', '')!r}")
+
+
 @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not found")
 class TestLevel3_HeadlessProcessing:
     """Test headless processing via ACloudViewer binary directly.
@@ -1203,6 +1339,34 @@ class TestLevel3_CLIHarness:
         ply_path = tmp_path / "test.ply"
         ply_path.write_text(_SAMPLE_PLY_HEADER + _SAMPLE_PLY_BODY)
         return str(ply_path)
+
+    @pytest.mark.parametrize("task,expected_command,_header", AICORE_BATCH_COMMANDS)
+    def test_level3_aicore_schema_from_installed_plugin(
+            self, task, expected_command, _header, cli_env):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "ai", "schema", task],
+            capture_output=True, text=True, timeout=60, env=cli_env)
+        assert r.returncode == 0, (
+            f"{task} schema failed:\nstdout: {r.stdout[-2000:]}\n"
+            f"stderr: {r.stderr[-2000:]}")
+        schema = json.loads(r.stdout)
+        assert schema["schema"] == "acloudviewer.aicore.batch/1"
+        assert schema["keyword"] == expected_command
+        assert schema["options"], f"{task}: empty option schema"
+        keys = {option["key"] for option in schema["options"]}
+        assert "RESULT_JSON" in keys
+
+    def test_level3_generic_plugin_passthrough(self, cli_env):
+        r = subprocess.run(
+            ["cli-anything-acloudviewer", "--json", "--mode", "headless",
+             "plugin", "run", "ANIMATION", "--arg=-FPS", "--arg=24",
+             "--arg=-TOTAL_FRAMES", "--arg=10"],
+            capture_output=True, text=True, timeout=60, env=cli_env)
+        assert r.returncode == 0, r.stderr
+        result = json.loads(r.stdout)
+        assert result["command"] == "ANIMATION"
+        assert result["exit_code"] == 0
 
     def test_level3_cli_subsample(self, sample_ply, tmp_path, cli_env):
         out = str(tmp_path / "sub.ply")
@@ -3513,6 +3677,33 @@ class TestLevel4_RPCColmap:
             assert "error" in err or "colmap" in err or "not found" in err
 
 
+# ── Level 4h: AICore batch RPC ─────────────────────────────────────────────
+
+@pytest.mark.skipif(not _rpc_available(), reason="ACloudViewer RPC not available")
+class TestLevel4_RPCAICoreBatch:
+    """aicore.batch resolves every registered task to its native HELP schema.
+
+    HELP loads no model, so this checks the RPC child-process path end to end
+    without test assets.
+    """
+
+    @pytest.mark.parametrize("task,command,_header", AICORE_BATCH_COMMANDS)
+    def test_level4_aicore_batch_help(self, task, command, _header):
+        result = _rpc_call("aicore.batch", {
+            "command": command, "options": {"HELP": True},
+            "timeout_ms": 60000}, timeout=90)
+        assert result["exit_code"] == 0, result.get("stderr")
+        schema = result["manifest"]
+        assert schema["schema"] == "acloudviewer.aicore.batch/1"
+        assert schema["keyword"] == command, task
+        assert "RESULT_JSON" in {option["key"] for option in schema["options"]}
+
+    def test_level4_aicore_batch_rejects_non_aicore_command(self):
+        with pytest.raises(RuntimeError):
+            _rpc_call("aicore.batch", {"command": "SS", "options": {}},
+                      timeout=10)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Level 5: MCP Server Tests
 # ═══════════════════════════════════════════════════════════════════════════
@@ -3525,6 +3716,72 @@ class TestLevel5_MCPServer:
             from mcp.server import Server
         except ImportError:
             pytest.skip("MCP SDK not installed")
+
+    def test_level5_aicore_and_plugin_tools(self):
+        try:
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            tools = asyncio.run(list_tools())
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+        by_name = {tool.name: tool for tool in tools}
+        for name in ("list_ai_tasks", "get_ai_schema", "run_ai_batch",
+                     "run_plugin_command"):
+            assert name in by_name, f"Missing MCP tool: {name}"
+        assert by_name["get_ai_schema"].inputSchema["required"] == ["task"]
+        assert set(by_name["run_ai_batch"].inputSchema["required"]) == {
+            "task", "options"}
+        assert by_name["run_plugin_command"].inputSchema["required"] == [
+            "command"]
+
+    def test_level5_documented_tool_counts_match_server(self):
+        """Every documented MCP tool count and OpenClaw category set equals
+        ``list_tools()``: the server is the only owner of the number."""
+        try:
+            import cli_anything.acloudviewer as harness_pkg
+            from cli_anything.acloudviewer.mcp_server import list_tools
+            import asyncio
+            names = {tool.name for tool in asyncio.run(list_tools())}
+        except (ImportError, SystemExit):
+            pytest.skip("MCP SDK or CLI harness not installed")
+        harness = Path(harness_pkg.__file__).resolve().parent
+        repo_docs = [
+            REPO_ROOT / "README.md",
+            REPO_ROOT / "agent-integration/README.md",
+            REPO_ROOT / "agent-integration/mcp/README.md",
+            REPO_ROOT / "agent-integration/openclaw/README.md",
+            REPO_ROOT / "agent-integration/tests/README.md",
+            REPO_ROOT / "agent-integration/openclaw/openclaw-skill.json",
+        ]
+        # Harness files are present for editable/source installs (CI uses -e).
+        harness_docs = [path for path in (
+            harness / "README.md", harness / "OPENCLAW.md",
+            harness / "skills/SKILL.md", harness / "tests/TEST.md",
+            harness / "openclaw-skill.json",
+            harness.parents[1] / "ACLOUDVIEWER.md") if path.is_file()]
+        # Three-digit totals only: per-category counts ("13 tools") are < 100.
+        pattern = re.compile(
+            r"(?<![\d.])(\d{3})\+?\s+(?:MCP\s+)?[Tt]ools\b|"
+            r"Tools \((\d{3})\)|\"tools_count\": (\d{3})")
+        stale = []
+        for path in repo_docs + harness_docs:
+            text = _read_repo_text(path)
+            for match in pattern.finditer(text):
+                value = int(next(group for group in match.groups() if group))
+                if value != len(names):
+                    line = text.count("\n", 0, match.start()) + 1
+                    stale.append(f"{path}:{line}: {value}")
+        assert not stale, (
+            f"MCP server has {len(names)} tools; stale counts: {stale}")
+        for manifest in (REPO_ROOT / "agent-integration/openclaw/openclaw-skill.json",
+                         harness / "openclaw-skill.json"):
+            if not manifest.is_file():
+                continue
+            categories = json.loads(_read_repo_text(manifest))["tool_categories"]
+            listed = {name for tools in categories.values() for name in tools}
+            assert listed == names, (
+                f"{manifest}: missing={sorted(names - listed)}, "
+                f"stale={sorted(listed - names)}")
 
     def test_level5_mcp_tool_count(self):
         try:

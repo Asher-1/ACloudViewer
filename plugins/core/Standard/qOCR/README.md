@@ -42,6 +42,34 @@ exposed by `test_catalog_dump_urls --json` for the shared download/cache
 pipeline. Recognition dictionaries are embedded in the rec GGUFs
 (`ocr.dictionary`), so a model file is self-contained.
 
+## 2026-10 端到端基线（当前权威记录）
+
+完整、可复现的矩阵、可视化、差异分类和已否决的优化实验见
+[`core/AICore/src/tasks/ocr/README.md`](../../../../core/AICore/src/tasks/ocr/README.md)。下面的历史性能叙述仅保留排障背景；若与本节冲突，以本节和任务 README 为准。
+
+同一 RTX 4090、同一 PNG、PaddleOCR 3.0.1 / paddlepaddle-gpu 3.0.0、3 warmups +
+10 timed runs；范围覆盖 det `{f32,f16,q8_0}` × rec `{f32,f16,q8_0}` 的九种组合，CUDA 与
+Vulkan 共 54 个端到端结果，全部低于 Paddle GPU p50：
+
+| 图像 | Paddle GPU p50 | CUDA p50 | Vulkan p50 |
+|---|---:|---:|---:|
+| ppocrv4，2566×1312 | 175.40 ms | 62.43–65.35 ms | 71.83–75.77 ms |
+| medal_table | 99.87 ms | 34.19–35.07 ms | 43.59–45.47 ms |
+| layout_doc_test | 125.96 ms | 53.44–55.02 ms | 68.28–92.35 ms |
+
+Paddle 字符串逐字相同率不是无标签图像的准确率：F32 图级数值/argmax 门验证的是
+转换和执行，而端到端差异还包括 box、crop 和两个 OCR pipeline 的 CTC 决策；layout
+样本中 Paddle 本身会漏句尾标点、错误切词，AICore 也存在真实错字。因此不得将这些
+相同率作为“与 Paddle 一致”或语义准确率发布宣称；需要逐框标签后才能计算 CER/WER。
+
+带官方 GT 的发布矩阵由
+[`run_ocr_gt_matrix.py`](../../../../core/AICore/scripts/run_ocr_gt_matrix.py) 和
+[`ocr_gt_eval.py`](../../../../core/AICore/scripts/ocr_gt_eval.py) 执行：它要求固定
+GT SHA-256、数据集 revision，并覆盖中文/英文 rec 的 3×3 quantization × CUDA/Vulkan。
+ICDAR2015 的官方下载需要注册；在已许可的 GT 包落入测试资产缓存前，该门不会伪装成
+“已通过”。Vulkan 性能运行可要求 `performance` governor，以记录/拒绝宿主状态而非由
+插件修改系统功耗策略。
+
 ## Runtime notes
 - **CUDA conv-kernel study (CORRECTED adjudication, <100 ms reached)** —
   the previous session's "direct conv breaks transcription parity" verdict

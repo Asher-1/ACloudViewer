@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "feature/aliked.h"
+#include "feature/lightglue.h"
 #include "feature/types.h"
 #include "feature/utils.h"
 #include "math/random.h"
@@ -36,8 +37,11 @@ FeatureDescriptorsFloat CreateRandomDescriptors(int num_descriptors,
                                                 bool normalize = true) {
   FeatureDescriptorsFloatData float_data =
       FeatureDescriptorsFloatData::Random(num_descriptors, kDescriptorDim);
-  // The fork's L2 normalization returns a new matrix by value.
-  return normalize ? L2NormalizeFeatureDescriptors(float_data) : float_data;
+  if (normalize) {
+    L2NormalizeFeatureDescriptors(&float_data);
+  }
+  return FeatureDescriptorsFloat(FeatureExtractorType::ALIKED_N16ROT,
+                                 std::move(float_data));
 }
 
 std::vector<FeatureKeypoint> CreateDummyKeypoints(int count) {
@@ -51,9 +55,9 @@ std::vector<FeatureKeypoint> CreateDummyKeypoints(int count) {
 
 AlikedMatchingOptions CreateBruteForceOptions() {
   AlikedMatchingOptions options;
-  options.min_cossim = 0.85;
-  options.max_ratio = 1.0;
-  options.cross_check = true;
+  options.brute_force.min_cossim = 0.85;
+  options.brute_force.max_ratio = 1.0;
+  options.brute_force.cross_check = true;
   return options;
 }
 
@@ -78,15 +82,20 @@ FeatureMatcher::Image MakeImage(image_t id,
   image.image_id = id;
   // Mirrors upstream's CreateCamera(): the LightGlue engine validates the
   // image dimensions carried by the camera.
-  image.camera = std::make_shared<Camera>(
-          Camera::CreateFromModelName(1, "SIMPLE_PINHOLE", 500.0, 100, 100));
-  image.keypoints = std::move(keypoints);
-  image.descriptors = std::move(descriptors);
+  static const Camera kCamera =
+          Camera::CreateFromModelName(1, "SIMPLE_PINHOLE", 500.0, 100, 100);
+  image.camera = &kCamera;
+  image.keypoints = std::make_shared<FeatureKeypoints>(std::move(keypoints));
+  // Learned float descriptors travel through the byte descriptor stream as
+  // packed float32 while retaining their extractor type.
+  image.descriptors = std::make_shared<FeatureDescriptors>(
+      descriptors.ToBytes());
   return image;
 }
 
 bool LightGlueModelAvailable() {
-  return std::filesystem::is_regular_file(DefaultAlikedLightGlueModelPath());
+  return std::filesystem::is_regular_file(
+          DefaultLightGlueModelPath(LightGlueFeatureKind::ALIKED));
 }
 
 
@@ -99,7 +108,7 @@ TEST_F(BruteForceMatcherTest, SelfMatching) {
   auto descriptors = CreateRandomDescriptors(kNumDescriptors);
 
   AlikedMatchingOptions bf_options = CreateBruteForceOptions();
-  bf_options.max_ratio = 0;  // Disable ratio test.
+  bf_options.brute_force.max_ratio = 0;  // Disable ratio test.
   auto matcher = CreateBruteForceMatcher(bf_options);
 
   FeatureMatcher::Image image1 = MakeImage(1, keypoints, descriptors);
@@ -124,14 +133,14 @@ TEST_F(BruteForceMatcherTest, RatioTest) {
   auto descriptors2 = CreateRandomDescriptors(kNumDescriptors);
 
   AlikedMatchingOptions bf_options_no_ratio = CreateBruteForceOptions();
-  bf_options_no_ratio.max_ratio = 0;     // Disable ratio test.
-  bf_options_no_ratio.cross_check = false;
-  bf_options_no_ratio.min_cossim = -1;   // Accept all.
+  bf_options_no_ratio.brute_force.max_ratio = 0;     // Disable ratio test.
+  bf_options_no_ratio.brute_force.cross_check = false;
+  bf_options_no_ratio.brute_force.min_cossim = -1;   // Accept all.
 
   AlikedMatchingOptions bf_options_ratio = CreateBruteForceOptions();
-  bf_options_ratio.max_ratio = 0.8;      // Enable ratio test.
-  bf_options_ratio.cross_check = false;
-  bf_options_ratio.min_cossim = -1;      // Accept all.
+  bf_options_ratio.brute_force.max_ratio = 0.8;      // Enable ratio test.
+  bf_options_ratio.brute_force.cross_check = false;
+  bf_options_ratio.brute_force.min_cossim = -1;      // Accept all.
 
   FeatureMatcher::Image image1 =
           MakeImage(1, keypoints1, descriptors1);
@@ -158,14 +167,14 @@ TEST_F(BruteForceMatcherTest, CrossCheck) {
   auto descriptors2 = CreateRandomDescriptors(kNumDescriptors);
 
   AlikedMatchingOptions bf_options_no_cross = CreateBruteForceOptions();
-  bf_options_no_cross.max_ratio = 0;
-  bf_options_no_cross.cross_check = false;
-  bf_options_no_cross.min_cossim = -1;
+  bf_options_no_cross.brute_force.max_ratio = 0;
+  bf_options_no_cross.brute_force.cross_check = false;
+  bf_options_no_cross.brute_force.min_cossim = -1;
 
   AlikedMatchingOptions bf_options_cross = CreateBruteForceOptions();
-  bf_options_cross.max_ratio = 0;
-  bf_options_cross.cross_check = true;
-  bf_options_cross.min_cossim = -1;
+  bf_options_cross.brute_force.max_ratio = 0;
+  bf_options_cross.brute_force.cross_check = true;
+  bf_options_cross.brute_force.min_cossim = -1;
 
   FeatureMatcher::Image image1 =
           MakeImage(1, keypoints1, descriptors1);
@@ -192,14 +201,14 @@ TEST_F(BruteForceMatcherTest, MinCossim) {
   auto descriptors2 = CreateRandomDescriptors(kNumDescriptors);
 
   AlikedMatchingOptions bf_options_low = CreateBruteForceOptions();
-  bf_options_low.max_ratio = 0;
-  bf_options_low.cross_check = false;
-  bf_options_low.min_cossim = -1;  // Accept all.
+  bf_options_low.brute_force.max_ratio = 0;
+  bf_options_low.brute_force.cross_check = false;
+  bf_options_low.brute_force.min_cossim = -1;  // Accept all.
 
   AlikedMatchingOptions bf_options_high = CreateBruteForceOptions();
-  bf_options_high.max_ratio = 0;
-  bf_options_high.cross_check = false;
-  bf_options_high.min_cossim = 0.9;  // Very strict.
+  bf_options_high.brute_force.max_ratio = 0;
+  bf_options_high.brute_force.cross_check = false;
+  bf_options_high.brute_force.min_cossim = 0.9;  // Very strict.
 
   FeatureMatcher::Image image1 =
           MakeImage(1, keypoints1, descriptors1);
@@ -281,7 +290,7 @@ TEST_F(AlikedLightGlueMatcherTest, SelfMatching) {
   auto descriptors = CreateRandomDescriptors(kNumDescriptors);
 
   AlikedMatchingOptions lightglue_options;
-  lightglue_options.min_score = 0.1;
+  lightglue_options.lightglue.min_score = 0.1;
   auto matcher = CreateLightGlueMatcher(lightglue_options);
 
   FeatureMatcher::Image image1 = MakeImage(1, keypoints, descriptors);
@@ -309,7 +318,7 @@ TEST_F(AlikedLightGlueMatcherTest, EmptyKeypoints) {
   auto descriptors2 = CreateRandomDescriptors(10);
 
   AlikedMatchingOptions lightglue_options;
-  lightglue_options.min_score = 0.1;
+  lightglue_options.lightglue.min_score = 0.1;
   auto matcher = CreateLightGlueMatcher(lightglue_options);
 
   FeatureMatcher::Image image1 =

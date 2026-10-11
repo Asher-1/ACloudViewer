@@ -1,7 +1,9 @@
-// SPDX-License-Identifier: BSD-3-Clause
-//
-// Ported from upstream MVS/colmap d3ccaf35 (batch 24 test alignment);
-// include paths mapped to the fork layout.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #define _USE_MATH_DEFINES
 
@@ -40,19 +42,15 @@ SyntheticData SynthesizeData(size_t num_inliers, size_t num_outliers) {
     match.geometry1.orientation = RandomUniformReal<float>(0, 2 * M_PI);
     match.geometry1.x = RandomUniformReal<float>(-100, 100);
     match.geometry1.y = RandomUniformReal<float>(-100, 100);
-    // The fork's FeatureGeometryMatch carries a vector of correspondences;
-    // upstream's single geometry2 maps to a one-element vector here.
-    FeatureGeometry geometry2;
-    geometry2.scale = data.img2_from_img1.scale * match.geometry1.scale;
-    geometry2.orientation =
+    match.geometry2.scale = data.img2_from_img1.scale * match.geometry1.scale;
+    match.geometry2.orientation =
         data.img2_from_img1.angle + match.geometry1.orientation;
-    geometry2.x =
+    match.geometry2.x =
         data.img2_from_img1.scale *
         (cos_angle * match.geometry1.x - sin_angle * match.geometry1.y);
-    geometry2.y =
+    match.geometry2.y =
         data.img2_from_img1.scale *
         (sin_angle * match.geometry1.x + cos_angle * match.geometry1.y);
-    match.geometries2 = {geometry2};
   }
 
   for (size_t i = 0; i < num_outliers; ++i) {
@@ -61,12 +59,10 @@ SyntheticData SynthesizeData(size_t num_inliers, size_t num_outliers) {
     match.geometry1.orientation = RandomUniformReal<float>(0, 2 * M_PI);
     match.geometry1.x = RandomUniformReal<float>(-100, 100);
     match.geometry1.y = RandomUniformReal<float>(-100, 100);
-    FeatureGeometry geometry2;
-    geometry2.scale = RandomUniformReal<float>(0.5, 2);
-    geometry2.orientation = RandomUniformReal<float>(0, 2 * M_PI);
-    geometry2.x = RandomUniformReal<float>(-100, 100);
-    geometry2.y = RandomUniformReal<float>(-100, 100);
-    match.geometries2 = {geometry2};
+    match.geometry2.scale = RandomUniformReal<float>(0.5, 2);
+    match.geometry2.orientation = RandomUniformReal<float>(0, 2 * M_PI);
+    match.geometry2.x = RandomUniformReal<float>(-100, 100);
+    match.geometry2.y = RandomUniformReal<float>(-100, 100);
   }
 
   return data;
@@ -76,15 +72,22 @@ TEST(VoteAndVerify, NoMatches) {
   EXPECT_EQ(VoteAndVerify(VoteAndVerifyOptions(), {}), 0);
 }
 
-// Fork adjudication: the eff_inlier_count option behind this case is not
-// bound on the fork's VoteAndVerifyOptions; deferred until bound.
+TEST(VoteAndVerify, NoEffectiveInliers) {
+  const size_t kNumInliers = 100;
+  const size_t kNumOutliers = 50;
+  const auto data = SynthesizeData(kNumInliers, kNumOutliers);
+  VoteAndVerifyOptions options;
+  options.eff_inlier_count = false;
+  const int num_inliers = VoteAndVerify(options, data.matches);
+  EXPECT_EQ(num_inliers, kNumInliers);
+}
 
 TEST(VoteAndVerify, EffectiveInliers) {
   const size_t kNumInliers = 100;
   const size_t kNumOutliers = 50;
   const auto data = SynthesizeData(kNumInliers, kNumOutliers);
   VoteAndVerifyOptions options;
-  // Fork: eff_inlier_count is not bound on the fork's options.
+  options.eff_inlier_count = true;
   const int num_inliers = VoteAndVerify(options, data.matches);
   EXPECT_GT(num_inliers, 0.8 * kNumInliers);
 }

@@ -95,10 +95,7 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
     CHECK_NOTNULL(reconstruction);
     CHECK(!problem_) << "Cannot use the same BundleAdjuster multiple times";
 
-    const bool use_caspar =
-            options_.use_caspar ||
-            options_.backend == BundleAdjustmentBackend::CASPAR;
-    if (use_caspar) {
+    if (options_.backend == BundleAdjustmentBackend::CASPAR) {
 #if defined(CASPAR_ENABLED)
         if (SolveCasparBundleAdjustment(options_, config_, reconstruction,
                                         &summary_)) {
@@ -123,7 +120,7 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
 
     problem_.reset(new ceres::Problem());
 
-    ceres::LossFunction* loss_function = options_.CreateLossFunction();
+    ceres::LossFunction* loss_function = options_.ceres->CreateLossFunction();
     SetUp(reconstruction, loss_function);
 
     if (problem_->NumResiduals() == 0) {
@@ -131,7 +128,7 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
     }
 
     ceres::Solver::Options solver_options =
-            options_.CreateSolverOptions(config_, *problem_);
+            options_.ceres->CreateSolverOptions(config_, *problem_);
 
     // Cooperative cancellation: check_if_stopped is evaluated once per
     // iteration; a true return aborts the minimizer while all accepted
@@ -467,7 +464,6 @@ void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
                 // Cover corner case when ReprojErrorConstantPoseCostFunctor
                 // is used.
                 if (config_.HasConstantSensorFromRigPose(sensor_id) ||
-                    !options_.refine_extrinsics ||
                     !options_.refine_sensor_from_rig) {
                     return true;
                 }
@@ -564,15 +560,20 @@ namespace {
 
 ceres::LossFunction* CreatePosePriorLossFunction(
         const PosePriorBundleAdjustmentOptions& options) {
-    switch (options.prior_position_loss_function_type) {
-        case BundleAdjustmentOptions::LossFunctionType::TRIVIAL:
+    const CeresPosePriorBundleAdjustmentOptions& ceres_options =
+            *THROW_CHECK_NOTNULL(options.ceres);
+    switch (ceres_options.prior_position_loss_function_type) {
+        case CeresLossFunctionType::TRIVIAL:
             return nullptr;
-        case BundleAdjustmentOptions::LossFunctionType::SOFT_L1:
-            return new ceres::SoftLOneLoss(options.prior_position_loss_scale);
-        case BundleAdjustmentOptions::LossFunctionType::CAUCHY:
-            return new ceres::CauchyLoss(options.prior_position_loss_scale);
-        case BundleAdjustmentOptions::LossFunctionType::HUBER:
-            return new ceres::HuberLoss(options.prior_position_loss_scale);
+        case CeresLossFunctionType::SOFT_L1:
+            return new ceres::SoftLOneLoss(
+                    ceres_options.prior_position_loss_scale);
+        case CeresLossFunctionType::CAUCHY:
+            return new ceres::CauchyLoss(
+                    ceres_options.prior_position_loss_scale);
+        case CeresLossFunctionType::HUBER:
+            return new ceres::HuberLoss(
+                    ceres_options.prior_position_loss_scale);
     }
     return nullptr;
 }
@@ -607,8 +608,15 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
                 GetOrCreateFrameBlock(image.FrameId(), frame.RigFromWorld());
         rig_from_world_block = &fb.rig_from_world;
         const Rig& rig = reconstruction->Rig(frame.RigId());
-        if (options_.refine_sensor_from_rig && rig.NumSensors() > 1 &&
-            rig.HasSensor(camera.SensorId()) &&
+        // Upstream parity (a2bd15c2 AddImageWithNonTrivialFrame): every
+        // non-reference sensor composes sensor_from_rig * rig_from_world,
+        // independent of refine_sensor_from_rig - that flag only decides
+        // whether the sensor block is variable (RigReprojError) or baked
+        // into the residual (RigReprojErrorConstantRig / constant pose).
+        // Gating the composition on the flag made a frozen non-reference
+        // image reproject through the bare rig pose, which corrupted every
+        // track it observed.
+        if (rig.NumSensors() > 1 && rig.HasSensor(camera.SensorId()) &&
             !rig.IsRefSensor(camera.SensorId()) &&
             rig.HasSensorFromRig(camera.SensorId())) {
             compose_rig = true;
@@ -666,13 +674,12 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
 
     // Upstream parity (d3ccaf35): per-image pose freezing is split into
     // rig-from-world and sensor-from-rig conditions (the fork's
-    // !refine_extrinsics freezes both).
+    // the config constant-pose sets freeze both).
     const bool constant_rig_from_world =
-            !options_.refine_extrinsics || !options_.refine_rig_from_world ||
+            !options_.refine_rig_from_world ||
             config_.HasConstantPose(image_id) ||
             config_.HasConstantRigFromWorldPose(image.FrameId());
     const bool constant_sensor_from_rig =
-            !options_.refine_extrinsics ||
             !options_.refine_sensor_from_rig ||
             config_.HasConstantSensorFromRigPose(rig_sensor_id);
 
@@ -953,8 +960,7 @@ void CeresBundleAdjuster::ParameterizeRigsAndFrames(
                                 CreateProductManifold(
                                         CreateEigenQuaternionManifold(),
                                         CreateEuclideanManifold<3>()));
-                    if (!options_.refine_extrinsics ||
-                        !options_.refine_sensor_from_rig ||
+                    if (!options_.refine_sensor_from_rig ||
                         config_.HasConstantSensorFromRigPose(sensor_id)) {
                         problem_->SetParameterBlockConstant(
                                 sensor_from_rig.params.data());
@@ -971,8 +977,7 @@ void CeresBundleAdjuster::ParameterizeRigsAndFrames(
                 // CostFunction assumes unit quaternions.
                 rig_from_world.rotation().normalize();
                 if (problem_->HasParameterBlock(rig_from_world.params.data())) {
-                    if (!options_.refine_extrinsics ||
-                        !options_.refine_rig_from_world ||
+                    if (!options_.refine_rig_from_world ||
                         config_.HasConstantRigFromWorldPose(image.FrameId())) {
                         problem_->SetParameterBlockConstant(
                                 rig_from_world.params.data());
@@ -1026,7 +1031,8 @@ void CeresBundleAdjuster::ParameterizeRigsAndFrames(
 void CeresBundleAdjuster::ParameterizePoints(Reconstruction* reconstruction) {
     for (const auto elem : point3D_num_observations_) {
         Point3D& point3D = reconstruction->Point3D(elem.first);
-        if (point3D.Track().Length() > elem.second) {
+        if (!options_.refine_points3D ||
+            point3D.Track().Length() > elem.second) {
             problem_->SetParameterBlockConstant(point3D.XYZ().data());
         }
     }
@@ -1054,23 +1060,101 @@ std::unique_ptr<BundleAdjuster> CreateDefaultBundleAdjuster(
 // merged BundleAdjustmentOptions base and Solve(Reconstruction*) entry.
 // ---------------------------------------------------------------------------
 
+CeresBundleAdjustmentOptions::CeresBundleAdjustmentOptions() {
+    solver_options.function_tolerance = 0.0;
+    solver_options.gradient_tolerance = 1e-4;
+    solver_options.parameter_tolerance = 0.0;
+    solver_options.logging_type = ceres::LoggingType::SILENT;
+    solver_options.minimizer_progress_to_stdout = false;
+    solver_options.max_num_iterations = 100;
+    solver_options.max_linear_solver_iterations = 200;
+    solver_options.max_num_consecutive_invalid_steps = 10;
+    solver_options.max_consecutive_nonmonotonic_steps = 10;
+    solver_options.num_threads = -1;
+#if CERES_VERSION_MAJOR < 2
+    solver_options.num_linear_solver_threads = -1;
+#endif  // CERES_VERSION_MAJOR
+}
+
+ceres::LossFunction* CeresBundleAdjustmentOptions::CreateLossFunction() const {
+    ceres::LossFunction* loss_function = nullptr;
+    switch (loss_function_type) {
+        case CeresLossFunctionType::TRIVIAL:
+            loss_function = new ceres::TrivialLoss();
+            break;
+        case CeresLossFunctionType::SOFT_L1:
+            loss_function = new ceres::SoftLOneLoss(loss_function_scale);
+            break;
+        case CeresLossFunctionType::CAUCHY:
+            loss_function = new ceres::CauchyLoss(loss_function_scale);
+            break;
+        case CeresLossFunctionType::HUBER:
+            loss_function = new ceres::HuberLoss(loss_function_scale);
+            break;
+    }
+    CHECK_NOTNULL(loss_function);
+    return loss_function;
+}
+
+bool CeresBundleAdjustmentOptions::Check() const {
+    CHECK_OPTION_GE(loss_function_scale, 0);
+    CHECK_OPTION_LT(max_num_images_direct_dense_cpu_solver,
+                    max_num_images_direct_sparse_cpu_solver);
+    CHECK_OPTION_LT(max_num_images_direct_dense_gpu_solver,
+                    max_num_images_direct_sparse_gpu_solver);
+    return true;
+}
+
 ceres::Solver::Options CeresBundleAdjustmentOptions::CreateSolverOptions(
         const BundleAdjustmentConfig& config,
         const ceres::Problem& problem) const {
-    BundleAdjustmentOptions base;
-    base.solver_options = solver_options;
-    base.use_gpu = use_gpu;
-    base.gpu_index = gpu_index;
-    base.min_num_images_gpu_solver = min_num_images_gpu_solver;
-    base.max_num_images_direct_dense_cpu_solver =
-            max_num_images_direct_dense_cpu_solver;
-    base.max_num_images_direct_sparse_cpu_solver =
-            max_num_images_direct_sparse_cpu_solver;
-    base.max_num_images_direct_dense_gpu_solver =
-            max_num_images_direct_dense_gpu_solver;
-    base.max_num_images_direct_sparse_gpu_solver =
-            max_num_images_direct_sparse_gpu_solver;
-    return base.CreateSolverOptions(config, problem);
+    ceres::Solver::Options custom_solver_options = solver_options;
+    if (VLOG_IS_ON(2)) {
+        custom_solver_options.minimizer_progress_to_stdout = true;
+        custom_solver_options.logging_type =
+                ceres::LoggingType::PER_MINIMIZER_ITERATION;
+    }
+
+    if (use_gpu) {
+        LOG_FIRST_N(WARNING, 1)
+                << "Ceres bundle adjustment is CPU-only in this build; "
+                   "use the independent Caspar backend for GPU BA.";
+    }
+
+    if (auto_select_solver_type) {
+        const int num_images = config.NumImages();
+        const bool has_sparse =
+                custom_solver_options.sparse_linear_algebra_library_type !=
+                ceres::NO_SPARSE;
+        if (num_images <= max_num_images_direct_dense_cpu_solver) {
+            custom_solver_options.linear_solver_type = ceres::DENSE_SCHUR;
+        } else if (has_sparse &&
+                   num_images <= max_num_images_direct_sparse_cpu_solver) {
+            custom_solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+        } else {  // Indirect sparse (preconditioned CG) solver.
+            custom_solver_options.linear_solver_type = ceres::ITERATIVE_SCHUR;
+            custom_solver_options.preconditioner_type = ceres::SCHUR_JACOBI;
+        }
+    }
+
+    if (problem.NumResiduals() < min_num_residuals_for_cpu_multi_threading) {
+        custom_solver_options.num_threads = 1;
+#if CERES_VERSION_MAJOR < 2
+        custom_solver_options.num_linear_solver_threads = 1;
+#endif  // CERES_VERSION_MAJOR
+    } else {
+        custom_solver_options.num_threads =
+                GetEffectiveNumThreads(custom_solver_options.num_threads);
+#if CERES_VERSION_MAJOR < 2
+        custom_solver_options.num_linear_solver_threads =
+                GetEffectiveNumThreads(
+                        custom_solver_options.num_linear_solver_threads);
+#endif  // CERES_VERSION_MAJOR
+    }
+
+    std::string solver_error;
+    CHECK(custom_solver_options.IsValid(&solver_error)) << solver_error;
+    return custom_solver_options;
 }
 
 void CeresBundleAdjuster::BindReconstruction(Reconstruction* reconstruction) {

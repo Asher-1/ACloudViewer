@@ -422,11 +422,8 @@ bool AlignReconstructionsViaPoints(const Reconstruction& src_reconstruction,
       }
       const Point2D& tgt_point2D = tgt_image.Point2D(track_el.point2D_idx);
       if (tgt_point2D.HasPoint3D()) {
-        if (counts.find(tgt_point2D.Point3DId()) != counts.end()) {
-          counts[tgt_point2D.Point3DId()]++;
-        } else {
-          counts[tgt_point2D.Point3DId()] = 0;
-        }
+        // Upstream parity (e769e95e): the first shared observation counts.
+        ++counts[tgt_point2D.Point3DId()];
       }
     }
     if (counts.empty()) {

@@ -36,6 +36,7 @@
 #include <cmath>
 #include <vector>
 
+#include "LingbotMapBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 namespace {
@@ -166,6 +167,14 @@ qLingbotMap::qLingbotMap(QObject* parent)
 }
 
 QList<QAction*> qLingbotMap::getActions() { return {m_action}; }
+
+void qLingbotMap::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandLingbotMapReconstruct));
+}
 
 void qLingbotMap::showDialog() {
     if (!m_dialog) {

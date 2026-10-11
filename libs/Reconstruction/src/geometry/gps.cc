@@ -102,9 +102,12 @@ std::vector<Eigen::Vector3d> GPSTransform::XYZToEll(
       const double sin_lat0 = sin(lat);
       const double N = a_ / sqrt(1 - e2_ * sin_lat0 * sin_lat0);
       const double prev_alt = alt;
-      alt = radius_xy / cos(lat) - N;
+      // Upstream parity (079e35eb): project onto the ellipsoid normal to
+      // avoid division by cos(lat), which is singular at the poles.
+      alt = radius_xy * cos(lat) + z * sin_lat0 -
+            N * (1 - e2_ * sin_lat0 * sin_lat0);
       const double prev_lat = lat;
-      lat = atan((z / radius_xy) * 1 / (1 - e2_ * N / (N + alt)));
+      lat = atan2(z, radius_xy * (1 - e2_ * N / (N + alt)));
 
       // Upstream parity (dbb41680 ECEFToEllipsoid): require both latitude and
       // altitude to settle before breaking out of the iteration.

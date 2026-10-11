@@ -14,10 +14,11 @@
 #include "sfm/incremental_mapper.h"
 #include "util/hash_containers.h"
 #include "util/threading.h"
+#include "util/timer.h"
 
 namespace colmap {
 
-struct IncrementalMapperOptions {
+struct IncrementalPipelineOptions {
 public:
     // The minimum number of matches for inlier matches to be considered.
     int min_num_matches = 15;
@@ -73,9 +74,6 @@ public:
     // enable multi-threading solving of the problems.
     int ba_min_num_residuals_for_cpu_multi_threading = 50000;
 
-    // The number of images to optimize in local bundle adjustment.
-    int ba_local_num_images = 6;
-
     // Ceres solver function tolerance for local bundle adjustment
     double ba_local_function_tolerance = 0.0;
 
@@ -90,18 +88,13 @@ public:
     BundleAdjustmentBackend ba_global_backend = BundleAdjustmentBackend::CERES;
 
     // The growth rates after which to perform global bundle adjustment.
-    double ba_global_images_ratio = 1.1;
+    double ba_global_frames_ratio = 1.1;
     double ba_global_points_ratio = 1.1;
-    int ba_global_images_freq = 500;
+    int ba_global_frames_freq = 500;
     int ba_global_points_freq = 250000;
 
     // Ceres solver function tolerance for global bundle adjustment
     double ba_global_function_tolerance = 0.0;
-
-    // Upstream parity: exclude redundant 3D points from the first global BA
-    // pass for reconstructions past the small-reconstruction threshold.
-    bool ba_global_ignore_redundant_points3D = false;
-    double ba_global_ignore_redundant_points3D_min_coverage_gain = 0.05;
 
     // The maximum number of global bundle adjustment iterations.
     int ba_global_max_num_iterations = -1;
@@ -120,14 +113,32 @@ public:
     // reconstruction. Snapshots will be saved according to the specified
     // frequency of registered images.
     std::filesystem::path snapshot_path;
-    int snapshot_images_freq = 0;
+    int snapshot_frames_freq = 0;
 
-    // Which images to reconstruct. If no images are specified, all images will
-    // be reconstructed by default.
-    std::unordered_set<std::string> image_names;
+    // Optional list of image names to reconstruct. If no images are
+    // specified, all images will be reconstructed by default.
+    std::vector<std::string> image_names;
+
+    // Whether to load all images from the database, including those without
+    // correspondences. Only useful for triangulation where all images are
+    // already registered and should retain their keypoints. Should not be
+    // enabled for incremental SfM.
+    bool load_all_images = false;
 
     // If reconstruction is provided as input, fix the existing image poses.
-    bool fix_existing_images = false;
+    bool fix_existing_frames = false;
+
+    // Upstream parity (a2bd15c2 IncrementalPipelineOptions): enable fallback
+    // to structure-less image registration using 2D-2D correspondences, if
+    // structure-based registration fails using 2D-3D correspondences.
+    bool structure_less_registration_fallback = true;
+
+    // Only use structure-less and skip structure-based image registration.
+    bool structure_less_registration_only = false;
+
+    // Maximum runtime in seconds for the reconstruction process.
+    // If set to a non-positive value, the process will run until completion.
+    int max_runtime_seconds = -1;
 
     // List of rigs for which to fix the sensor_from_rig transformation,
     // independent of ba_refine_sensor_from_rig (upstream parity;
@@ -167,7 +178,7 @@ public:
 
 // Class that controls the incremental mapping procedure by iteratively
 // initializing reconstructions from the same scene graph.
-class IncrementalMapperController : public Thread {
+class IncrementalPipeline : public Thread {
 public:
     // Upstream parity (d3ccaf35 IncrementalPipeline::CallbackType): named so
     // the binding layer can export it under the upstream top-level name
@@ -179,10 +190,10 @@ public:
         LAST_IMAGE_REG_CALLBACK,
     };
 
-    IncrementalMapperController(const IncrementalMapperOptions* options,
-                                const std::filesystem::path& image_path,
-                                const std::filesystem::path& database_path,
-                                ReconstructionManager* reconstruction_manager);
+    IncrementalPipeline(const IncrementalPipelineOptions* options,
+                        const std::filesystem::path& image_path,
+                        const std::filesystem::path& database_path,
+                        ReconstructionManager* reconstruction_manager);
 
     // Upstream parity (d3ccaf35 IncrementalPipeline::SetCheckIfStoppedFunc):
     // an external cancellation probe polled alongside the thread stop flag;
@@ -195,23 +206,27 @@ private:
     void Reconstruct(const IncrementalMapper::Options& init_mapper_options);
 
     bool ShouldStop();
+    // Upstream parity (a2bd15c2 IncrementalPipeline::CheckReachedMaxRuntime):
+    // polled alongside ShouldStop() at every checkpoint.
+    bool CheckReachedMaxRuntime() const;
 
-    const IncrementalMapperOptions* options_;
+    const IncrementalPipelineOptions* options_;
     const std::string image_path_;
     const std::string database_path_;
     ReconstructionManager* reconstruction_manager_;
     DatabaseCache database_cache_;
     std::function<bool()> check_if_stopped_func_;
+    Timer total_run_timer_;
 };
 
 // Globally filter points and images in mapper.
-size_t FilterPoints(const IncrementalMapperOptions& options,
+size_t FilterPoints(const IncrementalPipelineOptions& options,
                     IncrementalMapper* mapper);
-size_t FilterFrames(const IncrementalMapperOptions& options,
+size_t FilterFrames(const IncrementalPipelineOptions& options,
                     IncrementalMapper* mapper);
 
 // Globally complete and merge tracks in mapper.
-size_t CompleteAndMergeTracks(const IncrementalMapperOptions& options,
+size_t CompleteAndMergeTracks(const IncrementalPipelineOptions& options,
                               IncrementalMapper* mapper);
 
 }  // namespace colmap

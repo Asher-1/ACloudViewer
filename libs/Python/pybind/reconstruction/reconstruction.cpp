@@ -69,6 +69,13 @@ void pybind_reconstruction(py::module& m) {
     // runs AFTER those submodule owners were created, and receives the
     // root to reach them.
     pipeline::pybind_pipeline(m_pipeline, m_reconstruction);
+    // The feature entry points default to the *PairingOptions bound by the
+    // pipeline binder, so they register last.
+    {
+        py::module m_feature =
+                m_reconstruction.attr("feature").cast<py::module>();
+        feature::pybind_feature_methods(m_feature);
+    }
     vocab_tree::pybind_vocab_tree(m_reconstruction);
     gui::pybind_gui(m_reconstruction);
     util::pybind_util(m_reconstruction);

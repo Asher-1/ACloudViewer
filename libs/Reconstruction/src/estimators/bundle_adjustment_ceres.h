@@ -9,6 +9,7 @@
 
 #include <ceres/ceres.h>
 
+#include <cmath>
 #include <map>
 #include <memory>
 #include <optional>
@@ -16,11 +17,16 @@
 
 #include "estimators/bundle_adjustment.h"
 #include "geometry/pose_prior.h"
+#include "math/math.h"
 #include "optim/manifold.h"
+#include "util/enum_utils.h"
 
 namespace colmap {
 
-using CeresLossFunctionType = BundleAdjustmentOptions::LossFunctionType;
+// Loss function types: Trivial (non-robust) and Soft-L1/Cauchy/Huber (robust)
+// losses. HUBER is the upstream default for the global mapper.
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(
+        CeresLossFunctionType, 0, TRIVIAL, SOFT_L1, CAUCHY, HUBER);
 
 // Ceres-specific bundle adjustment summary with access to full solver
 // details (upstream parity, d3ccaf35 bundle_adjustment_ceres.h). The fork
@@ -40,10 +46,22 @@ struct CeresBundleAdjustmentSummary : public BundleAdjustmentSummary {
 // configurations and provides best solution quality. The fork's CASPAR GPU
 // backend is dispatched first inside Solve() when requested, falling back to
 // Ceres for problems Caspar cannot represent.
-// Upstream parity (d3ccaf35 bundle_adjustment_ceres.h): the Ceres-specific
-// aggregate option contract. The fork keeps the flat BundleAdjustmentOptions
-// execution path; this aggregate mirrors the upstream field layout for the
-// pycolmap-parity bindings.
+struct CeresPosePriorBundleAdjustmentOptions {
+    // Loss function for the prior position residuals.
+    CeresLossFunctionType prior_position_loss_function_type =
+            CeresLossFunctionType::TRIVIAL;
+
+    // Threshold on the residual for the robust loss.
+    double prior_position_loss_scale = std::sqrt(kChiSquare95ThreeDof);
+
+    bool Check() const {
+        CHECK_OPTION_GE(prior_position_loss_scale, 0.0);
+        return true;
+    }
+};
+
+// Upstream parity (bundle_adjustment_ceres.h): the Ceres-specific option
+// group, bound as BundleAdjustmentOptions::ceres.
 struct CeresBundleAdjustmentOptions {
     CeresLossFunctionType loss_function_type = CeresLossFunctionType::TRIVIAL;
     double loss_function_scale = 1.0;
@@ -59,20 +77,19 @@ struct CeresBundleAdjustmentOptions {
     int max_num_images_direct_sparse_gpu_solver = 4000;
     bool auto_select_solver_type = true;
 
-    bool Check() const { return loss_function_scale > 0.0; }
+    CeresBundleAdjustmentOptions();
 
-    // Upstream parity (d3ccaf35): the solver-option derivation is exposed on
-    // the Ceres option struct; the fork keeps the implementation on the
-    // shared BundleAdjustmentOptions base and forwards.
+    // Create a new loss function based on the specified options. The caller
+    // takes ownership of the loss function.
+    ceres::LossFunction* CreateLossFunction() const;
+
+    // Create options tailored for given bundle adjustment config and problem.
     ceres::Solver::Options CreateSolverOptions(
             const BundleAdjustmentConfig& config,
             const ceres::Problem& problem) const;
-};
 
-// Upstream parity alias; the fork's PosePriorBundleAdjustmentOptions keeps
-// the fork-specific fallback-stddev / RANSAC-alignment fields as a semantic
-// superset of upstream's loss-function-only struct.
-using CeresPosePriorBundleAdjustmentOptions = PosePriorBundleAdjustmentOptions;
+    bool Check() const;
+};
 
 class CeresBundleAdjuster : public BundleAdjuster {
 public:

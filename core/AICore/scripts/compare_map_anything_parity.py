@@ -5,6 +5,23 @@ The candidate RAW_OUTPUT_DIR contains pose.bin, depth.bin, depth_conf.bin, and
 camera_to_world.bin.  Reference files may use the same names or the historical
 vggt-cli '<prefix>.<name>' layout.  This tool deliberately does not fit a new
 rigid/similarity transform: both exports must already use the benchmark frame.
+
+Two contracts exist against the upstream map-anything-ggml cpp_ggml reference
+(select with --profile):
+
+* ``frames`` -- both sides consume the same f32 CHW tensor
+  (aicore_map_anything_run_frames / cpp_ggml ``--bin``).  The ggml graph,
+  CUDA kernel selection (mapany_ node gating) and post-processing are
+  bit-identical, so every raw output and every stage tensor must match
+  exactly (atol 0).
+* ``images`` -- both sides decode and resample the same lossless image files
+  (aicore_image_view / cpp_ggml ``--images``).  The reference uses stb_image +
+  stb_image_resize2, AICore uses Qt decoding + its own separable Catmull-Rom;
+  the resamplers agree except for ~1e-4 of the samples that differ by one
+  8-bit LSB (floating-point summation order / 0.5 ties).  Thresholds are the
+  measured 2-view 518x518 ceilings with headroom.  JPEG inputs are NOT covered:
+  stb's built-in JPEG decoder and libjpeg disagree by up to +-3 LSB on a few
+  percent of the pixels, which the model amplifies beyond these bounds.
 """
 
 import argparse
@@ -15,8 +32,40 @@ from pathlib import Path
 import numpy as np
 
 
+# Per-profile defaults.  ``None`` keeps the explicit CLI value / legacy default.
+PROFILES = {
+    "frames": {
+        "raw_atol": {"*": 0.0},
+        # camera_to_world.bin is not an upstream export: the reference matrix
+        # is rebuilt here from the bit-identical pose.bin in float64 while
+        # AICore builds it in float32, so allow a few f32 ULPs at unit scale
+        # (measured 3.7e-9 / 1.5e-6 deg).
+        "c2w_matrix_atol": 1.0e-7,
+        "pose_center_atol": 1.0e-7,
+        "pose_angle_deg_max": 1.0e-5,
+        "stage_atol": 0.0,
+    },
+    "images": {
+        # Measured (lossless PNG, 2 views, vggt-omega-1b-512 q8_0, CUDA):
+        # pose 1.953e-3 (one f32 ULP of the FoV term), depth 2.28e-2,
+        # depth_conf 0.844, c2w center 2.4e-4, axes <= 0.0102 deg.
+        "raw_atol": {"pose.bin": 2.0e-3, "depth.bin": 3.0e-2,
+                     "depth_conf.bin": 1.0, "*": 3.0e-2},
+        "c2w_matrix_atol": 5.0e-4,
+        "pose_center_atol": 5.0e-4,
+        "pose_angle_deg_max": 2.0e-2,
+        # Stages diverge from the first conv on the image path; report only.
+        "stage_atol": float("inf"),
+    },
+}
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--profile", choices=sorted(PROFILES), default=None,
+                        help="Named upstream contract; overrides the threshold "
+                             "flags below unless they are given explicitly.")
     parser.add_argument("--candidate-raw", type=Path, required=True)
     parser.add_argument("--reference-raw", type=Path, required=True)
     parser.add_argument("--views", type=int, default=0)
@@ -31,17 +80,47 @@ def parse_args():
     parser.add_argument("--candidate-stages", type=Path)
     parser.add_argument("--reference-stages", type=Path)
     parser.add_argument("--report", type=Path, required=True)
-    parser.add_argument("--raw-atol", type=float, default=1.0e-5)
+    parser.add_argument("--raw-atol", type=float, default=None,
+                        help="Maximum absolute error for every raw tensor (legacy default 1e-5).")
     parser.add_argument("--pose-center-atol", type=float, default=None,
                         help="Maximum c2w camera-center absolute error; defaults to --raw-atol.")
-    parser.add_argument("--pose-angle-deg-max", type=float, default=1.0e-3,
-                        help="Maximum right/forward/renderer-up angular error in degrees.")
+    parser.add_argument("--pose-angle-deg-max", type=float, default=None,
+                        help="Maximum right/forward/renderer-up angular error in degrees "
+                             "(legacy default 1e-3).")
     parser.add_argument("--ply-rms-max", type=float, default=1.0e-4)
     parser.add_argument("--ply-p95-max", type=float, default=2.0e-4)
     parser.add_argument("--image-mae-max", type=float, default=0.0)
-    parser.add_argument("--stage-atol", type=float, default=1.0e-5)
+    parser.add_argument("--stage-atol", type=float, default=None,
+                        help="Maximum absolute error per stage tensor (legacy default 1e-5).")
     parser.add_argument("--sample-count", type=int, default=100000)
-    return parser.parse_args()
+    args = parser.parse_args()
+    resolve_thresholds(args)
+    return args
+
+
+def resolve_thresholds(args) -> None:
+    """Fold the profile into args; explicit CLI values always win."""
+    profile = PROFILES.get(args.profile, {})
+    scalar_raw = args.raw_atol
+    if scalar_raw is not None:
+        args.raw_atol_by_name = {"*": scalar_raw}
+    elif profile:
+        args.raw_atol_by_name = dict(profile["raw_atol"])
+    else:
+        args.raw_atol_by_name = {"*": 1.0e-5}
+    fallback_raw = args.raw_atol_by_name["*"]
+    if args.pose_center_atol is None:
+        args.pose_center_atol = profile.get("pose_center_atol", fallback_raw)
+    args.c2w_matrix_atol = (scalar_raw if scalar_raw is not None
+                            else profile.get("c2w_matrix_atol", fallback_raw))
+    if args.pose_angle_deg_max is None:
+        args.pose_angle_deg_max = profile.get("pose_angle_deg_max", 1.0e-3)
+    if args.stage_atol is None:
+        args.stage_atol = profile.get("stage_atol", 1.0e-5)
+
+
+def raw_atol_for(args, name: str) -> float:
+    return args.raw_atol_by_name.get(name, args.raw_atol_by_name["*"])
 
 
 def resolve_raw(directory: Path, name: str) -> Path:
@@ -241,7 +320,13 @@ def json_metadata(path: Path) -> dict:
 
 def main() -> int:
     args = parse_args()
-    report = {"pass": True, "raw": {}, "failures": []}
+    report = {"pass": True, "raw": {}, "failures": [],
+              "profile": args.profile,
+              "thresholds": {"raw_atol": args.raw_atol_by_name,
+                             "c2w_matrix_atol": args.c2w_matrix_atol,
+                             "pose_center_atol": args.pose_center_atol,
+                             "pose_angle_deg_max": args.pose_angle_deg_max,
+                             "stage_atol": args.stage_atol}}
     try:
         candidate_bins = {path.name: path for path in args.candidate_raw.glob("*.bin")}
         reference_bins = {}
@@ -268,25 +353,29 @@ def main() -> int:
             raw_values[name] = (candidate, reference)
             stats = tensor_stats(candidate, reference)
             report["raw"][name] = stats
-            if stats["max_abs"] > args.raw_atol:
+            atol = raw_atol_for(args, name)
+            if stats["max_abs"] > atol:
                 report["failures"].append(
-                        f"{name} max_abs {stats['max_abs']:.9g} > {args.raw_atol:.9g}")
+                        f"{name} max_abs {stats['max_abs']:.9g} > {atol:.9g}")
         if "camera_to_world.bin" in candidate_bins and "pose.bin" in raw_values:
             candidate_c2w = np.fromfile(candidate_bins["camera_to_world.bin"], dtype="<f4")
             reference_pose = raw_values["pose.bin"][1]
+            # Stride from the view count (c2w is 16/view), never from
+            # divisibility: 9 views of a stride-16 pose (144) are also % 9.
+            views = candidate_c2w.size // 16
+            stride = reference_pose.size // views if views > 0 else 0
             reference_c2w = (pose_to_c2w(reference_pose)
-                             if reference_pose.size % 9 == 0 else reference_pose)
-            if candidate_c2w.size != reference_c2w.size:
+                             if stride == 9 else reference_pose)
+            if candidate_c2w.size % 16 != 0 or stride not in (9, 16) or \
+                    candidate_c2w.size != reference_c2w.size:
                 report["failures"].append("camera_to_world.bin element count mismatch")
             else:
                 pose_stats = c2w_pose_stats(candidate_c2w, reference_c2w)
                 report["raw"]["camera_to_world.bin"] = pose_stats
-                center_atol = (args.raw_atol if args.pose_center_atol is None
-                               else args.pose_center_atol)
-                if pose_stats["matrix"]["max_abs"] > args.raw_atol:
+                if pose_stats["matrix"]["max_abs"] > args.c2w_matrix_atol:
                     report["failures"].append(
                             "camera_to_world.bin matrix differs from reference pose")
-                if pose_stats["camera_center"]["max_abs"] > center_atol:
+                if pose_stats["camera_center"]["max_abs"] > args.pose_center_atol:
                     report["failures"].append(
                             "camera center differs from reference pose")
                 for axis in ("right", "forward", "renderer_up"):

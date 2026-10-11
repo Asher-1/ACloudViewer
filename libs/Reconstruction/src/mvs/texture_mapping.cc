@@ -729,9 +729,12 @@ void BakeTexture(Bitmap* atlas,
               texture_inv_scale_factor;
 
           BitmapColor<float> color;
+          // Upstream parity (af89815f): projections are in continuous
+          // coordinates (pixel centers at integer + 0.5), while Bitmap
+          // sampling expects pixel centers at integers.
           if (!src_bmp.InterpolateBilinear(
-                  static_cast<double>(img_pos.x()),
-                  static_cast<double>(img_pos.y()),
+                  static_cast<double>(img_pos.x()) - 0.5,
+                  static_cast<double>(img_pos.y()) - 0.5,
                   &color)) {
             continue;
           }
@@ -857,10 +860,13 @@ void ApplyGlobalColorCorrection(
 
         BitmapColor<float> color_l;
         BitmapColor<float> color_r;
+        // Upstream parity (af89815f): projections are in continuous
+        // coordinates (pixel centers at integer + 0.5), while Bitmap
+        // sampling expects pixel centers at integers.
         if (!img_l.GetBitmap().InterpolateBilinear(
-                proj_l.x(), proj_l.y(), &color_l) ||
+                proj_l.x() - 0.5, proj_l.y() - 0.5, &color_l) ||
             !img_r.GetBitmap().InterpolateBilinear(
-                proj_r.x(), proj_r.y(), &color_r)) {
+                proj_r.x() - 0.5, proj_r.y() - 0.5, &color_r)) {
           continue;
         }
 

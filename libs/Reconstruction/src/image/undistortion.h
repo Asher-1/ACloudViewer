@@ -40,6 +40,15 @@ struct UndistortCameraOptions {
     double roi_max_x = 1.0;
     double roi_max_y = 1.0;
 
+    // Maximum norm of the undistorted camera-space point (= tan(theta) where
+    // theta is the angle from the optical axis) used when tracing border
+    // pixels to compute the output image dimensions. For fisheye cameras with
+    // off-center principal points, border pixels outside the valid fisheye
+    // circle can have theta approaching pi/2, causing tan(theta) to diverge
+    // and producing extreme output dimensions. Points with norm exceeding this
+    // threshold are skipped. Set to -1 to disable the check (default).
+    double max_cam_point_norm = -1;
+
     // Controls direct target-resolution warping for undistortion and stereo
     // rectification. The default avoids unnecessary source-resolution passes.
     WarpImageOptions warp_options;

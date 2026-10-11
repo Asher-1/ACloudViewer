@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <utility>
 #include <vector>
 
 #include "util/types.h"
@@ -71,6 +72,11 @@ struct FeatureKeypoint {
     void Rescale(const float scale);
     void Rescale(const float scale_x, const float scale_y);
 
+    // Rotate the feature location and shape by k * 90 degrees counter-clockwise
+    // around the image center. The width and height are the dimensions of the
+    // image the keypoint is currently defined on.
+    void Rot90(int k, int width, int height);
+
     // Compute similarity shape parameters from affine shape.
     float ComputeScale() const;
     float ComputeScaleX() const;
@@ -130,32 +136,45 @@ struct FeatureMatch {
     }
 };
 
-typedef std::vector<FeatureKeypoint> FeatureKeypoints;
-typedef Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        FeatureDescriptors;
-// Learned descriptors remain native float32 values and use a separate storage
-// protocol from legacy uint8 SIFT descriptors.
-typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        FeatureDescriptorsFloat;
-// Upstream parity (d3ccaf35 feature/types.h): alias used by the faiss-backed
-// retrieval layer; the fork keeps plain matrix descriptor types.
-using FeatureDescriptorsFloatData = FeatureDescriptorsFloat;
+using FeatureKeypoints = std::vector<FeatureKeypoint>;
+using FeatureDescriptorsData =
+        Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using FeatureDescriptorsFloatData =
+        Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-// Upstream parity (d3ccaf35 feature/types.h FeatureDescriptorsFloat::ToFloat):
-// convert uint8 descriptor blocks to the float representation consumed by the
-// faiss-backed retrieval layer.
-inline FeatureDescriptorsFloat ToFloat(const FeatureDescriptors& descriptors) {
-    return descriptors.cast<float>();
-}
+struct FeatureDescriptorsFloat;
 
-enum class FeatureDescriptorType : uint8_t {
-    kSift = 0,
-    kLomaB = 1,
-    kLomaB128 = 2,
-    kLomaR = 3,
-    kLomaL = 4,
-    kLomaG = 5,
+// The descriptor type and its bytes are one value. Storing them together
+// prevents an extractor's float32 byte representation from being consumed as
+// SIFT uint8 values after it crosses a database or matcher boundary.
+struct FeatureDescriptors {
+    FeatureDescriptors() = default;
+    FeatureDescriptors(const FeatureExtractorType type,
+                       FeatureDescriptorsData data)
+        : type(type), data(std::move(data)) {}
+
+    static FeatureDescriptors FromFloat(
+            const FeatureDescriptorsFloat& float_descriptors);
+    FeatureDescriptorsFloat ToFloat() const;
+
+    FeatureExtractorType type = FeatureExtractorType::UNDEFINED;
+    FeatureDescriptorsData data;
 };
+
+struct FeatureDescriptorsFloat {
+    FeatureDescriptorsFloat() = default;
+    FeatureDescriptorsFloat(const FeatureExtractorType type,
+                            FeatureDescriptorsFloatData data)
+        : type(type), data(std::move(data)) {}
+
+    static FeatureDescriptorsFloat FromBytes(
+            const FeatureDescriptors& byte_descriptors);
+    FeatureDescriptors ToBytes() const;
+
+    FeatureExtractorType type = FeatureExtractorType::UNDEFINED;
+    FeatureDescriptorsFloatData data;
+};
+
 typedef std::vector<FeatureMatch> FeatureMatches;
 
 }  // namespace colmap

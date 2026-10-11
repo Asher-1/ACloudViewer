@@ -25,6 +25,7 @@
 #include <unordered_set>
 
 #include "common/blocked_conv.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "common/winograd.hpp"
 
 namespace aicore {
@@ -314,15 +315,21 @@ bool OcrProgram::parse(const std::string& json, std::string* error) {
 // ---------------------------------------------------------------------------
 // OcrWeights
 
-OcrWeights::~OcrWeights() {
-    if (deviceBuf) ggml_backend_buffer_free(deviceBuf);
-    if (deviceCtx) ggml_free(deviceCtx);
+OcrFoldPool::~OcrFoldPool() {
     if (viewMirrorBuf) ggml_backend_buffer_free(viewMirrorBuf);
     if (viewMirrorCtx) ggml_free(viewMirrorCtx);
-    if (foldDeviceBuf) ggml_backend_buffer_free(foldDeviceBuf);
-    if (foldMirrorCtx) ggml_free(foldMirrorCtx);
-    if (foldBuf) ggml_backend_buffer_free(foldBuf);
-    if (foldCtx) ggml_free(foldCtx);
+    if (deviceBuf) ggml_backend_buffer_free(deviceBuf);
+    if (mirrorCtx) ggml_free(mirrorCtx);
+    if (hostBuf) ggml_backend_buffer_free(hostBuf);
+    if (ctx) ggml_free(ctx);
+}
+
+OcrWeights::~OcrWeights() {
+    // The fold pool may outlive this object inside a graph cache entry; the
+    // device weights below are ours alone.
+    fold.reset();
+    if (deviceBuf) ggml_backend_buffer_free(deviceBuf);
+    if (deviceCtx) ggml_free(deviceCtx);
     if (hostConstBuf) ggml_backend_buffer_free(hostConstBuf);
     if (hostMetaBuf) ggml_backend_buffer_free(hostMetaBuf);
     if (constCtx) ggml_free(constCtx);
@@ -331,37 +338,17 @@ OcrWeights::~OcrWeights() {
 }
 
 void OcrWeights::resetFoldPool() {
-    // Drop the previous build's fold constants (its graph is gone by the
-    // time the next frame builds) and start a fresh pool; otherwise the
-    // load-time pool fills after a few builds and every later tensor
-    // comes back with a null data pointer.
-    if (viewMirrorBuf) {
-        ggml_backend_buffer_free(viewMirrorBuf);
-        viewMirrorBuf = nullptr;
-    }
-    if (viewMirrorCtx) {
-        ggml_free(viewMirrorCtx);
-        viewMirrorCtx = nullptr;
-    }
-    if (foldDeviceBuf) {
-        ggml_backend_buffer_free(foldDeviceBuf);
-        foldDeviceBuf = nullptr;
-    }
-    if (foldMirrorCtx) {
-        ggml_free(foldMirrorCtx);
-        foldMirrorCtx = nullptr;
-    }
-    if (foldBuf) {
-        ggml_backend_buffer_free(foldBuf);
-        foldBuf = nullptr;
-    }
-    if (foldCtx) ggml_free(foldCtx);
-    foldCtx = ggml_init({96 * 1024 * 1024, nullptr, /*no_alloc=*/false});
+    // A fresh pool per build: the previous one is released here unless a
+    // cached graph still holds it (multi-entry graph caches keep several
+    // builds alive, each with the constants it was built against).
+    fold = std::make_shared<OcrFoldPool>();
+    fold->ctx = ggml_init({96 * 1024 * 1024, nullptr, /*no_alloc=*/false});
 }
 
 bool OcrWeights::realizeFoldPoolToDevice(ggml_backend_t backend,
                                          std::string* error) {
-    if (!foldCtx || foldDeviceBuf) return true;
+    if (!fold || !fold->ctx || fold->deviceBuf) return true;
+    ggml_context* foldCtx = fold->ctx;
     if (!backend) {
         if (error) *error = "null backend";
         return false;
@@ -391,10 +378,10 @@ bool OcrWeights::realizeFoldPoolToDevice(ggml_backend_t backend,
         foldTensors.push_back(t);
     }
     if (foldTensors.empty()) return true;
-    foldMirrorCtx =
+    fold->mirrorCtx =
             ggml_init({ggml_tensor_overhead() * (foldTensors.size() + 8),
                        nullptr, /*no_alloc=*/true});
-    if (!foldMirrorCtx) {
+    if (!fold->mirrorCtx) {
         if (error) *error = "fold mirror ctx init failed";
         return false;
     }
@@ -402,16 +389,16 @@ bool OcrWeights::realizeFoldPoolToDevice(ggml_backend_t backend,
     mirrors.reserve(foldTensors.size());
     for (ggml_tensor* t : foldTensors) {
         ggml_tensor* m =
-                ggml_new_tensor(foldMirrorCtx, t->type, GGML_MAX_DIMS, t->ne);
+                ggml_new_tensor(fold->mirrorCtx, t->type, GGML_MAX_DIMS, t->ne);
         mirrors.push_back(m);
     }
-    foldDeviceBuf = ggml_backend_alloc_ctx_tensors(foldMirrorCtx, backend);
-    if (!foldDeviceBuf) {
+    fold->deviceBuf = ggml_backend_alloc_ctx_tensors(fold->mirrorCtx, backend);
+    if (!fold->deviceBuf) {
         if (error) *error = "fold device pool alloc failed";
         return false;
     }
     if (sched_gpu_tagging) {
-        ggml_backend_buffer_set_usage(foldDeviceBuf,
+        ggml_backend_buffer_set_usage(fold->deviceBuf,
                                       GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     }
     for (size_t i = 0; i < foldTensors.size(); ++i) {
@@ -425,14 +412,16 @@ bool OcrWeights::realizeFoldPoolToDevice(ggml_backend_t backend,
         foldTensors[i]->view_src = nullptr;
         foldTensors[i]->view_offs = 0;
         foldTensors[i]->data = mirrors[i]->data;
-        foldTensors[i]->buffer = foldDeviceBuf;
+        foldTensors[i]->buffer = fold->deviceBuf;
     }
     return true;
 }
 bool OcrWeights::materializeUnalignedStaticViews(struct ggml_cgraph* graph,
                                                  ggml_backend_t backend,
                                                  std::string* error) {
-    if (!graph || !backend || viewMirrorBuf) return graph && backend;
+    if (!graph || !backend || !fold || fold->viewMirrorBuf)
+        return graph && backend && fold;
+    const ggml_backend_buffer_t foldDeviceBuf = fold->deviceBuf;
     const size_t alignment = ggml_backend_buft_get_alignment(
             ggml_backend_get_default_buffer_type(backend));
     if (alignment == 0 || (alignment & (alignment - 1)) != 0) return true;
@@ -493,17 +482,19 @@ bool OcrWeights::materializeUnalignedStaticViews(struct ggml_cgraph* graph,
     }
     if (pending.empty()) return true;
 
-    viewMirrorCtx = ggml_init({ggml_tensor_overhead() * (pending.size() + 8),
-                               nullptr, /*no_alloc=*/true});
-    if (!viewMirrorCtx) {
+    fold->viewMirrorCtx =
+            ggml_init({ggml_tensor_overhead() * (pending.size() + 8), nullptr,
+                       /*no_alloc=*/true});
+    if (!fold->viewMirrorCtx) {
         if (error) *error = "view mirror ctx init failed";
         return false;
     }
     for (PendingCopy& copy : pending)
-        copy.mirror = ggml_new_tensor(viewMirrorCtx, copy.source->type,
+        copy.mirror = ggml_new_tensor(fold->viewMirrorCtx, copy.source->type,
                                       GGML_MAX_DIMS, copy.source->ne);
-    viewMirrorBuf = ggml_backend_alloc_ctx_tensors(viewMirrorCtx, backend);
-    if (!viewMirrorBuf) {
+    fold->viewMirrorBuf =
+            ggml_backend_alloc_ctx_tensors(fold->viewMirrorCtx, backend);
+    if (!fold->viewMirrorBuf) {
         if (error) *error = "view mirror alloc failed";
         return false;
     }
@@ -513,7 +504,7 @@ bool OcrWeights::materializeUnalignedStaticViews(struct ggml_cgraph* graph,
         copy.source->view_src = nullptr;
         copy.source->view_offs = 0;
         copy.source->data = copy.mirror->data;
-        copy.source->buffer = viewMirrorBuf;
+        copy.source->buffer = fold->viewMirrorBuf;
     }
     return true;
 }
@@ -612,6 +603,21 @@ void OcrWeights::tagHostLeafs() {
         return p >= base &&
                p < base + static_cast<ptrdiff_t>(ggml_get_mem_size(pool));
     };
+    ggml_context* foldCtx = fold ? fold->ctx : nullptr;
+    // Lazily wrap the fold pool as a zero-copy CPU buffer. Fold constants
+    // (BN-fused conv weights) are what the graph consumes: tag the view
+    // WEIGHTS so the sched offloads conv/matmul ops to the GPU.
+    const auto foldHostBuf = [&]() -> ggml_backend_buffer_t {
+        if (!fold->hostBuf) {
+            fold->hostBuf = ggml_backend_cpu_buffer_from_ptr(
+                    ggml_get_mem_buffer(foldCtx), ggml_get_mem_size(foldCtx));
+            if (sched_gpu_tagging) {
+                ggml_backend_buffer_set_usage(
+                        fold->hostBuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+            }
+        }
+        return fold->hostBuf;
+    };
     for (auto& kv : tensors) {
         ggml_tensor* t = const_cast<ggml_tensor*>(kv.second);
         if (t->buffer) continue;
@@ -619,20 +625,8 @@ void OcrWeights::tagHostLeafs() {
             t->buffer = hostMetaBuf;
         else if (inPool(constCtx, t->data))
             t->buffer = hostConstBuf;
-        else if (inPool(foldCtx, t->data)) {
-            if (!foldBuf) {
-                foldBuf = ggml_backend_cpu_buffer_from_ptr(
-                        ggml_get_mem_buffer(foldCtx),
-                        ggml_get_mem_size(foldCtx));
-                // Fold constants are what the graph consumes: tag WEIGHTS so
-                // the sched can offload conv/matmul ops to the GPU.
-                if (sched_gpu_tagging) {
-                    ggml_backend_buffer_set_usage(
-                            foldBuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
-                }
-            }
-            t->buffer = foldBuf;
-        }
+        else if (inPool(foldCtx, t->data))
+            t->buffer = foldHostBuf();
     }
     if (hostConstBuf) {
         for (ggml_tensor* t = ggml_get_first_tensor(constCtx); t != nullptr;
@@ -644,20 +638,10 @@ void OcrWeights::tagHostLeafs() {
     // every one of them with the pool view (the tensors map only sees
     // the weight leaves).
     if (foldCtx) {
-        if (!foldBuf) {
-            foldBuf = ggml_backend_cpu_buffer_from_ptr(
-                    ggml_get_mem_buffer(foldCtx), ggml_get_mem_size(foldCtx));
-            // Fold constants (BN-fused conv weights) are what the graph
-            // actually consumes: tag the pool view WEIGHTS so the sched
-            // offloads conv/matmul ops to the GPU (copies are inserted).
-            if (sched_gpu_tagging) {
-                ggml_backend_buffer_set_usage(
-                        foldBuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
-            }
-        }
+        ggml_backend_buffer_t buf = foldHostBuf();
         for (ggml_tensor* t = ggml_get_first_tensor(foldCtx); t != nullptr;
              t = ggml_get_next_tensor(foldCtx, t)) {
-            if (!t->buffer) t->buffer = foldBuf;
+            if (!t->buffer) t->buffer = buf;
         }
     }
 }
@@ -722,7 +706,9 @@ const ggml_tensor* OcrWeights::hostWeight(const std::string& name) const {
     return weight(name);
 }
 
-bool OcrWeights::load(const std::string& path, std::string* error) {
+bool OcrWeights::load(const std::string& path,
+                      std::string* error,
+                      bool foldAffine) {
     ggml_context* metaCtx = nullptr;
     struct gguf_init_params params = {
             /*.no_alloc =*/false,  // small models: keep weights host-readable
@@ -813,9 +799,16 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
         // operands for binary ops, im2col and mul_mat's src1, so every
         // F16 and Q8_0 parameter is materialized as f32 at load time.
         // (Q8_0 block layout: one f16 scale per 32 int8 values.)
+        // The materialized tensor must carry the GGUF name: a graph built
+        // against the host pools is retargeted to the device mirrors by
+        // name (retargetGraphToDevice), and an unnamed leaf stays bound to
+        // host memory — Vulkan faults in the driver, CUDA silently reads it
+        // over PCIe on HMM hosts (the f16/q8_0 graphs measured 2.5-5x
+        // slower than f32 for that reason alone).
         if (t->type == GGML_TYPE_F16) {
             ggml_tensor* f32 =
                     ggml_new_tensor(constCtx, GGML_TYPE_F32, 4, t->ne);
+            ggml_set_name(f32, name);
             const auto* src = static_cast<const ggml_fp16_t*>(t->data);
             auto* dst = static_cast<float*>(f32->data);
             const int64_t n = ggml_nelements(t);
@@ -838,6 +831,7 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
             const int64_t n = ggml_nelements(t);
             const int64_t blocks = n / kBlock;
             ggml_tensor* f32 = ggml_new_tensor_1d(constCtx, GGML_TYPE_F32, n);
+            ggml_set_name(f32, name);
             const uint8_t* src = static_cast<const uint8_t*>(t->data);
             auto* dst = static_cast<float*>(f32->data);
             for (int64_t b = 0; b < blocks; ++b) {
@@ -858,7 +852,323 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
         }
         tensors[name] = t;
     }
+    if (foldAffine) foldAffineChains();
     return true;
+}
+
+// Load-time IR rewrite: absorb every affine op adjacent to a conv into the
+// conv's Filter/Bias, the way Paddle Inference's conv_bn/conv_affine fuse
+// passes rewrite the graph before it runs. The exported PPLCNetV3 graphs do
+// not carry batch_norm ops around the body convs; they carry the
+// LearnableAffineBlock chain already expanded into per-element passes
+//   conv -> add(b[C]) -> mul(s1) -> add(b1) -> hard_swish -> mul(s2)
+//        -> add(b2) -> next conv
+// i.e. five full-activation read/write passes per conv, none of which any
+// ggml backend can fuse into the conv GEMM (Vulkan's MUL_MAT+ADD fusion is
+// mat-vec only). On the Vulkan rec graph these passes were ~49% of kernel
+// time. Two rules run to a fixpoint on program.ops:
+//   OUT  conv(W)+Bias followed by a single-consumer add(k)/mul(k)/batch_norm
+//        on its output:  (conv(W)+b)*k = conv(kW)+kb,  conv(W)+b+k =
+//        conv(W)+(b+k) and batch_norm = mul(scale/sqrt(var+eps)) then
+//        add(beta-mean*m).
+//   IN   conv fed by a single-consumer scalar mul(k):  conv(W, k*h) = conv(kW,
+//   h);
+//        by a scalar add(k) on an UNPADDED conv:  conv(W, h+k) = conv(W, h) +
+//        k*sum(W[co,:]);  by add(ka) after mul(kq) on a padded conv: rewrite
+//        to add(ka/kq) then mul(kq) so the mul becomes adjacent and folds.
+//        That rewrite is numerically equivalent to Paddle's order: the f32
+//        rounding of (h + ka/kq) scaled by kq is eps*|kq*h + ka|, the same
+//        bound Paddle's (kq*h + ka) carries; only ka/kq adds one ulp.
+// Gates are structural: the conv output / affine input var has exactly one
+// consumer, the mutated Filter/Bias/constant weights have exactly one
+// consumer, k is a scalar or a [OC] channel vector with Paddle axis=1, and OC
+// is the slowest filter axis (conv2d [OC,IC,KH,KW], depthwise [C,1,KH,KW];
+// conv2d_transpose keeps OC second and is left alone). The folded program is
+// what the builder sees, so the removed ops no longer count toward the
+// probe fetchAt index (load with foldAffine=false to bisect the source
+// program). Complexity O(rewrites * ops) ~ 200 * 300: the index is rebuilt
+// after each rewrite because the simplest correct invariant is "fresh
+// use/producer maps", and this runs once per model load.
+void OcrWeights::foldAffineChains() {
+    std::vector<GraphOp>& ops = program.ops;
+    struct Index {
+        std::map<std::string, int> uses;
+        std::map<std::string, size_t> producer;  // var -> op index
+        std::map<std::string, size_t> consumer;  // var -> its only consumer
+    };
+    const auto buildIndex = [&]() {
+        Index ix;
+        for (size_t i = 0; i < ops.size(); ++i) {
+            for (const auto& io : ops[i].inputs)
+                for (const auto& arg : io.args) {
+                    ++ix.uses[arg];
+                    ix.consumer[arg] = i;
+                }
+            for (const auto& out : ops[i].outputs) ix.producer[out] = i;
+        }
+        return ix;
+    };
+    const auto isWeight = [&](const std::string& var) {
+        return tensors.count("ocr." + var) != 0;
+    };
+    const auto hostF32 = [&](const std::string& var) -> ggml_tensor* {
+        auto it = tensors.find("ocr." + var);
+        if (it == tensors.end() || it->second->type != GGML_TYPE_F32)
+            return nullptr;
+        return const_cast<ggml_tensor*>(it->second);
+    };
+    const auto argSlot = [](GraphOp& op, const char* param) -> std::string* {
+        for (auto& io : op.inputs)
+            if (io.param == param && !io.args.empty()) return &io.args[0];
+        return nullptr;
+    };
+    // Y of a batch_norm is its only non-weight output that is consumed
+    // (MeanOut/VarianceOut alias the statistics; Saved* are dead).
+    const auto bnOutput = [&](const GraphOp& bn, const Index& ix) {
+        std::string y;
+        for (const auto& out : bn.outputs)
+            if (!isWeight(out) && ix.uses.count(out)) y = out;
+        return y;
+    };
+
+    // Conv geometry from the filter (4-D after an f32/f16 load, 1-D for a
+    // q8_0 container whose numpy dims come from the pinned registry).
+    struct Conv {
+        ggml_tensor* w = nullptr;
+        float* wd = nullptr;
+        int64_t oc = 0, perOc = 0;
+        bool unpadded = false;
+    };
+    const auto convOf = [&](GraphOp& op, const Index& ix) -> Conv {
+        Conv c;
+        if (op.type != "conv2d" && op.type != "depthwise_conv2d") return c;
+        if (op.outputs.size() != 1) return c;
+        std::string* f = argSlot(op, "Filter");
+        if (!f || ix.uses.at(*f) != 1) return c;
+        ggml_tensor* w = hostF32(*f);
+        if (!w) return c;
+        const int64_t n = ggml_nelements(w);
+        int64_t oc = 0;
+        if (ggml_n_dims(w) == 4) {
+            oc = w->ne[3];
+        } else {
+            auto rit = reshapedDims.find("ocr." + *f);
+            if (rit == reshapedDims.end()) rit = reshapedDims.find(*f);
+            if (rit == reshapedDims.end() || rit->second.size() != 4) return c;
+            oc = rit->second[0];
+        }
+        if (oc <= 0 || n % oc != 0) return c;
+        if (std::string* b = argSlot(op, "Bias")) {
+            ggml_tensor* bt = hostF32(*b);
+            if (!bt || ix.uses.at(*b) != 1 || ggml_nelements(bt) != oc)
+                return c;
+        }
+        c.w = w;
+        c.wd = static_cast<float*>(w->data);
+        c.oc = oc;
+        c.perOc = n / oc;
+        const auto pads = attrInts(op.attrs, "paddings");
+        const std::string algo = attrString(op.attrs, "padding_algorithm");
+        c.unpadded = (algo.empty() || algo == "EXPLICIT") &&
+                     std::all_of(pads.begin(), pads.end(),
+                                 [](int64_t p) { return p == 0; });
+        return c;
+    };
+    // The conv's Bias data, created as a zero [OC] constant on first use.
+    const auto biasOf = [&](GraphOp& op, const Conv& c) -> float* {
+        if (std::string* b = argSlot(op, "Bias"))
+            return static_cast<float*>(hostF32(*b)->data);
+        const std::string var = *argSlot(op, "Filter") + ".fold_b";
+        ggml_tensor* t = ggml_new_tensor_1d(constCtx, GGML_TYPE_F32, c.oc);
+        ggml_set_name(t, ("ocr." + var).c_str());
+        std::memset(t->data, 0, ggml_nbytes(t));
+        tensors["ocr." + var] = t;
+        program.varRanks[var] = 1;
+        for (auto& io : op.inputs)
+            if (io.param == "Bias") {
+                io.args.assign(1, var);
+                return static_cast<float*>(t->data);
+            }
+        op.inputs.push_back({"Bias", {var}});
+        return static_cast<float*>(t->data);
+    };
+
+    // An elementwise add/mul with exactly one constant operand: a scalar
+    // (any axis) or, when `channels` > 0, a [channels] vector on Paddle
+    // axis 1 (the channel axis). `var` is the activation operand's slot.
+    struct Affine {
+        std::string* var = nullptr;
+        std::string constVar;
+        const float* k = nullptr;
+        bool scalar = false;
+    };
+    const auto affineOf = [&](GraphOp& op, int64_t channels) -> Affine {
+        Affine a;
+        if (op.type != "elementwise_add" && op.type != "elementwise_mul")
+            return a;
+        if (op.outputs.size() != 1) return a;
+        std::string* x = argSlot(op, "X");
+        std::string* y = argSlot(op, "Y");
+        if (!x || !y) return a;
+        std::string* c = isWeight(*x) ? x : (isWeight(*y) ? y : nullptr);
+        if (!c || isWeight(*x) == isWeight(*y)) return a;
+        ggml_tensor* k = hostF32(*c);
+        if (!k) return a;
+        const int64_t n = ggml_nelements(k);
+        if (n == 1) {
+            a.scalar = true;
+        } else if (channels > 0 && n == channels && ggml_n_dims(k) == 1 &&
+                   attrInt(op.attrs, "axis", -1) == 1) {
+            a.scalar = false;
+        } else {
+            return a;
+        }
+        a.var = (c == x) ? y : x;
+        a.constVar = *c;
+        a.k = static_cast<const float*>(k->data);
+        return a;
+    };
+
+    // OUT rule, to a fixpoint.
+    for (bool changed = true; changed;) {
+        changed = false;
+        const Index ix = buildIndex();
+        for (size_t ci = 0; ci < ops.size() && !changed; ++ci) {
+            const Conv c = convOf(ops[ci], ix);
+            if (!c.w) continue;
+            const std::string y = ops[ci].outputs[0];
+            auto uit = ix.uses.find(y);
+            if (uit == ix.uses.end() || uit->second != 1) continue;
+            const size_t ei = ix.consumer.at(y);
+            GraphOp& e = ops[ei];
+            if (e.type == "batch_norm") {
+                const std::string* xs = argSlot(e, "X");
+                const std::string out = bnOutput(e, ix);
+                if (!xs || *xs != y || out.empty()) continue;
+                const auto stat = [&](const char* param) -> ggml_tensor* {
+                    std::string* v = argSlot(e, param);
+                    return v ? hostF32(*v) : nullptr;
+                };
+                ggml_tensor* beta = stat("Bias");
+                ggml_tensor* scale = stat("Scale");
+                ggml_tensor* mean = stat("Mean");
+                ggml_tensor* var = stat("Variance");
+                if (!beta || !scale || !mean || !var ||
+                    ggml_nelements(scale) != c.oc)
+                    continue;
+                const double eps = attrFloat(e.attrs, "epsilon", 1e-5);
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    // Same scalar formula as the unfolded batch_norm branch
+                    // (double stdv, f32 m) so both agree to the last bit.
+                    const double stdv = std::sqrt(
+                            static_cast<const float*>(var->data)[co] + eps);
+                    const float m = static_cast<float>(
+                            static_cast<const float*>(scale->data)[co] / stdv);
+                    float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) row[j] *= m;
+                    b[co] = b[co] * m +
+                            (static_cast<const float*>(beta->data)[co] -
+                             static_cast<const float*>(mean->data)[co] * m);
+                }
+                ops[ci].outputs[0] = out;
+                ops.erase(ops.begin() + static_cast<ptrdiff_t>(ei));
+                changed = true;
+                continue;
+            }
+            const Affine a = affineOf(e, c.oc);
+            if (!a.var || *a.var != y) continue;
+            if (e.type == "elementwise_mul") {
+                float* b =
+                        argSlot(ops[ci], "Bias") ? biasOf(ops[ci], c) : nullptr;
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    const float m = a.scalar ? a.k[0] : a.k[co];
+                    float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) row[j] *= m;
+                    if (b) b[co] *= m;
+                }
+            } else {
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co)
+                    b[co] += a.scalar ? a.k[0] : a.k[co];
+            }
+            ops[ci].outputs[0] = e.outputs[0];
+            ops.erase(ops.begin() + static_cast<ptrdiff_t>(ei));
+            changed = true;
+        }
+    }
+
+    // IN rule, to a fixpoint (scalar constants only: the LAB chain feeds
+    // every body conv with scalar s2/b2).
+    for (bool changed = true; changed;) {
+        changed = false;
+        const Index ix = buildIndex();
+        for (size_t ci = 0; ci < ops.size() && !changed; ++ci) {
+            const Conv c = convOf(ops[ci], ix);
+            if (!c.w) continue;
+            std::string* in = argSlot(ops[ci], "Input");
+            if (!in) continue;
+            auto uit = ix.uses.find(*in);
+            auto pit = ix.producer.find(*in);
+            if (uit == ix.uses.end() || uit->second != 1 ||
+                pit == ix.producer.end())
+                continue;
+            const size_t pi = pit->second;
+            const Affine p = affineOf(ops[pi], 0);
+            if (!p.var || !p.scalar) continue;
+            const float k = p.k[0];
+            if (ops[pi].type == "elementwise_mul") {
+                const int64_t n = c.oc * c.perOc;
+                for (int64_t j = 0; j < n; ++j) c.wd[j] *= k;
+            } else if (c.unpadded) {
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    double sum = 0.0;
+                    const float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) sum += row[j];
+                    b[co] += static_cast<float>(k * sum);
+                }
+            } else {
+                // add(ka) after mul(kq) in front of a padded conv: commute
+                // to add(ka/kq) -> mul(kq) so the next pass folds the mul.
+                const std::string h = *p.var;
+                auto hu = ix.uses.find(h);
+                auto hp = ix.producer.find(h);
+                if (hu == ix.uses.end() || hu->second != 1 ||
+                    hp == ix.producer.end() || ix.uses.at(p.constVar) != 1)
+                    continue;
+                const size_t qi = hp->second;
+                if (ops[qi].type != "elementwise_mul") continue;
+                const Affine q = affineOf(ops[qi], 0);
+                if (!q.var || !q.scalar || q.k[0] == 0.f) continue;
+                ggml_tensor* ka = hostF32(p.constVar);
+                static_cast<float*>(ka->data)[0] = k / q.k[0];
+                // Rewire g -> add -> h -> mul -> x and keep program order.
+                const std::string g = *q.var;
+                *p.var = g;
+                ops[pi].outputs[0] = h;
+                *q.var = h;
+                ops[qi].outputs[0] = *in;
+                std::swap(ops[pi], ops[qi]);
+                changed = true;
+                continue;
+            }
+            *in = *p.var;
+            ops.erase(ops.begin() + static_cast<ptrdiff_t>(pi));
+            changed = true;
+        }
+    }
+
+    // Constants the removed ops consumed are dead: drop them from the
+    // name map so realizeToDevice does not mirror them.
+    const Index ix = buildIndex();
+    for (auto it = tensors.begin(); it != tensors.end();) {
+        const std::string var = it->first.substr(4);  // strip "ocr."
+        if (ix.uses.count(var) == 0)
+            it = tensors.erase(it);
+        else
+            ++it;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1402,7 +1712,26 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     // expansion's cuBLAS-backed GEMM order is the
                     // transcription-parity reference, so it is the
                     // production route until a kernel matches its numerics.
-                    result = ggml_conv_2d(ctx, w, x, s0, s1, p0, p1, d0, d1);
+                    // Spelled out op-for-op (ggml_conv_2d) so the GEMM node
+                    // is reachable for the accumulator precision request;
+                    // the graph is otherwise identical to the stock helper.
+                    ggml_tensor* cols =
+                            ggml_im2col(ctx, w, x, s0, s1, p0, p1, d0, d1, true,
+                                        GGML_TYPE_F16);
+                    ggml_tensor* mm = ggml_mul_mat(
+                            ctx,
+                            ggml_reshape_2d(
+                                    ctx, cols, cols->ne[0],
+                                    cols->ne[3] * cols->ne[2] * cols->ne[1]),
+                            ggml_reshape_2d(ctx, w,
+                                            w->ne[0] * w->ne[1] * w->ne[2],
+                                            w->ne[3]));
+                    if (options && options->conv_gemm_f32acc)
+                        ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
+                    result = ggml_reshape_4d(ctx, mm, cols->ne[1], cols->ne[2],
+                                             cols->ne[3], w->ne[3]);
+                    result = ggml_cont(ctx,
+                                       ggml_permute(ctx, result, 0, 1, 3, 2));
                 }
             } else if (op.type == "depthwise_conv2d") {
                 // Folded q8_0 kernels restore to {kw,kh,1,cin} from the
@@ -1447,9 +1776,10 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 const int64_t kMaxIm2colBytes = (options && options->cpu_conv)
                                                         ? kMaxIm2colBytesCpu
                                                         : kMaxIm2colBytesGpu;
-                if (options && options->gpu_rec_direct_conv) {
+                if (options && (options->gpu_rec_direct_conv ||
+                                options->gpu_dw_direct_conv)) {
                     // The depthwise kernel has no cross-channel reduction,
-                    // so its direct 3x3 evaluation preserves the recognizer
+                    // so its direct 3x3 evaluation preserves the graph
                     // result while avoiding the K^2*OH*OW*C*N im2col buffer.
                     result = ggml_conv_2d_dw_direct(ctx, w, x, s0, s1, p0, p1,
                                                     d0, d1);
@@ -1597,7 +1927,9 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             // Param names from the audited graph: Scale=w_0, Mean=w_1.
             // The four statistics are read on the CPU, so they resolve
             // through the host view (the main map may point into the
-            // device buffer after realizeToDevice).
+            // device buffer after realizeToDevice). (Only batch-norms that
+            // foldAffineChains could not rewrite into a conv bias reach
+            // this branch.)
             auto hostParam = [&](const char* param) -> const ggml_tensor* {
                 for (const auto& io : op.inputs) {
                     if (io.param == param && !io.args.empty())
@@ -2232,27 +2564,48 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 }
                 if (in.blocked) islandRebindOne(in.name);  // non-global pool
             }
-            const ggml_op_pool pool =
-                    poolType == "avg" ? GGML_OP_POOL_AVG : GGML_OP_POOL_MAX;
-            const int k0 =
-                    (global || adaptive)
-                            ? static_cast<int>(x->ne[0])
-                            : static_cast<int>(ksize.size() > 1 ? ksize[1] : 1);
-            const int k1 =
-                    (global || adaptive)
-                            ? static_cast<int>(x->ne[1])
-                            : static_cast<int>(ksize.empty() ? 1 : ksize[0]);
-            const int s0 =
-                    adaptive ? k0
-                             : static_cast<int>(strides.size() > 1 ? strides[1]
+            const bool squeeze1x1 = global || (adaptive && ksize.size() == 2 &&
+                                               ksize[0] == 1 && ksize[1] == 1);
+            if (squeeze1x1 && poolType == "avg") {
+                // SE squeeze (global average pool to 1x1) as a row mean over
+                // the flattened H*W plane. ggml_pool_2d with k=(W,H) runs ONE
+                // thread per output element on CUDA/Vulkan, each serially
+                // sweeping the whole plane (measured ~2 ms per call, ~37 ms
+                // per det frame on CUDA — the largest single kernel cost in
+                // the det graph). ggml_mean reduces each row in parallel and
+                // is numerically the same sum/(H*W). ggml_mean needs a
+                // contiguous source (reshape asserts it too).
+                ggml_tensor* xc = ggml_is_contiguous(x) ? x : ggml_cont(ctx, x);
+                ggml_tensor* rows = ggml_reshape_3d(
+                        ctx, xc, xc->ne[0] * xc->ne[1], xc->ne[2], xc->ne[3]);
+                ggml_tensor* m = ggml_mean(ctx, rows);
+                result = ggml_reshape_4d(ctx, m, 1, 1, xc->ne[2], xc->ne[3]);
+            } else {
+                const ggml_op_pool pool =
+                        poolType == "avg" ? GGML_OP_POOL_AVG : GGML_OP_POOL_MAX;
+                const int k0 =
+                        (global || adaptive)
+                                ? static_cast<int>(x->ne[0])
+                                : static_cast<int>(ksize.size() > 1 ? ksize[1]
+                                                                    : 1);
+                const int k1 = (global || adaptive)
+                                       ? static_cast<int>(x->ne[1])
+                                       : static_cast<int>(
+                                                 ksize.empty() ? 1 : ksize[0]);
+                const int s0 = adaptive ? k0
+                                        : static_cast<int>(strides.size() > 1
+                                                                   ? strides[1]
                                                                    : 1);
-            const int s1 = adaptive ? k1
-                                    : static_cast<int>(
-                                              strides.empty() ? 1 : strides[0]);
-            const int p0 =
-                    paddings.size() > 1 ? static_cast<int>(paddings[1]) : 0;
-            const int p1 = paddings.empty() ? 0 : static_cast<int>(paddings[0]);
-            result = ggml_pool_2d(ctx, x, pool, k0, k1, s0, s1, p0, p1);
+                const int s1 =
+                        adaptive ? k1
+                                 : static_cast<int>(
+                                           strides.empty() ? 1 : strides[0]);
+                const int p0 =
+                        paddings.size() > 1 ? static_cast<int>(paddings[1]) : 0;
+                const int p1 =
+                        paddings.empty() ? 0 : static_cast<int>(paddings[0]);
+                result = ggml_pool_2d(ctx, x, pool, k0, k1, s0, s1, p0, p1);
+            }
         } else if (op.type == "scale") {
             ggml_tensor* x = state.need(op, "X", "scale", error);
             if (!x) return nullptr;
@@ -2347,11 +2700,18 @@ ggml_tensor* buildGraph(ggml_context* ctx,
     return it->second;
 }
 
-std::string ctcGreedyDecode(const float* probs,
-                            int timeSteps,
-                            int vocab,
-                            const std::vector<std::string>& dictionary,
-                            float* meanScore) {
+namespace {
+
+// CTC collapse shared by both decode entry points. `pick(t, &prob)` yields
+// the argmax class of timestep t and its probability; everything after that
+// (blank, repeat collapse, dictionary layout) is identical whether the
+// argmax was reduced on the CPU or inside the graph.
+template <typename Pick>
+std::string ctcCollapse(int timeSteps,
+                        int vocab,
+                        const std::vector<std::string>& dictionary,
+                        float* meanScore,
+                        Pick&& pick) {
     std::string text;
     double scoreSum = 0.0;
     int scoreCount = 0;
@@ -2371,9 +2731,8 @@ std::string ctcGreedyDecode(const float* probs,
     const int64_t dictSize = static_cast<int64_t>(dictionary.size());
     const bool spaceTail = static_cast<int64_t>(vocab) - dictSize == 2;
     for (int t = 0; t < timeSteps; ++t) {
-        const float* row = probs + static_cast<size_t>(t) * vocab;
         float bestProb = 0.0f;
-        const int best = ctcArgmax(row, vocab, &bestProb);
+        const int best = pick(t, &bestProb);
         // 0 = CTC blank; collapse repeats, then map the class through the
         // layout above.
         if (best != 0 && best != previous) {
@@ -2396,6 +2755,38 @@ std::string ctcGreedyDecode(const float* probs,
         *meanScore =
                 scoreCount ? static_cast<float>(scoreSum / scoreCount) : 0.0f;
     return text;
+}
+
+}  // namespace
+
+std::string ctcGreedyDecode(const float* probs,
+                            int timeSteps,
+                            int vocab,
+                            const std::vector<std::string>& dictionary,
+                            float* meanScore) {
+    return ctcCollapse(timeSteps, vocab, dictionary, meanScore,
+                       [&](int t, float* bestProb) {
+                           return ctcArgmax(
+                                   probs + static_cast<size_t>(t) * vocab,
+                                   vocab, bestProb);
+                       });
+}
+
+std::string ctcGreedyDecodeIndexed(const int32_t* bestIndex,
+                                   const float* bestProb,
+                                   int timeSteps,
+                                   int vocab,
+                                   const std::vector<std::string>& dictionary,
+                                   float* meanScore) {
+    return ctcCollapse(timeSteps, vocab, dictionary, meanScore,
+                       [&](int t, float* prob) {
+                           *prob = bestProb[t];
+                           // Clamp defensively: a backend bug can only
+                           // degrade to "unknown class", never index out
+                           // of the dictionary.
+                           const int32_t idx = bestIndex[t];
+                           return (idx < 0 || idx >= vocab) ? 0 : idx;
+                       });
 }
 
 std::vector<float> preprocessRec(const unsigned char* rgb,
@@ -2425,6 +2816,233 @@ std::vector<float> preprocessRec(const unsigned char* rgb,
         }
     }
     return out;
+}
+
+// --- Execution plan ---------------------------------------------------------
+
+namespace {
+
+bool backendNameHas(ggml_backend_t backend, const char* needle) {
+    if (!backend || ggml_common::is_cpu_backend(backend)) return false;
+    const char* name = ggml_backend_name(backend);
+    return name && std::string(name).find(needle) != std::string::npos;
+}
+
+// gallocr allocates regular graph tensors but can encounter chained views
+// before their base view has been initialized. Rebind after allocation in
+// dependency order so every device descriptor derives from device storage.
+bool initializeSingleBackendViews(ggml_cgraph* graph, std::string& error) {
+    std::vector<ggml_tensor*> tensors;
+    std::unordered_set<ggml_tensor*> seen;
+    std::vector<ggml_tensor*> pending;
+    const auto push = [&](ggml_tensor* tensor) {
+        if (tensor && seen.insert(tensor).second) pending.push_back(tensor);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!pending.empty()) {
+        ggml_tensor* tensor = pending.back();
+        pending.pop_back();
+        tensors.push_back(tensor);
+        push(tensor->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(tensor->src[i]);
+    }
+    for (size_t pass = 0; pass < tensors.size(); ++pass) {
+        bool advanced = false;
+        for (ggml_tensor* tensor : tensors) {
+            if (!tensor->view_src || tensor->buffer ||
+                !tensor->view_src->buffer)
+                continue;
+            if (ggml_backend_view_init(tensor) != GGML_STATUS_SUCCESS) {
+                error = "ocr: backend view initialization failed";
+                return false;
+            }
+            advanced = true;
+        }
+        if (!advanced) break;
+    }
+    for (ggml_tensor* tensor : tensors) {
+        if (tensor->view_src && !tensor->buffer) {
+            error = "ocr: graph contains an unbound device view";
+            return false;
+        }
+    }
+    return true;
+}
+
+// One-device dispatch invariant: after retargeting, allocation and the view
+// mirrors, every tensor the graph touches must live in a device buffer. A
+// leaf that slipped through (unnamed weight, fold constant outside the per
+// build pool, stale view binding) is otherwise only discovered as a driver
+// segfault (Vulkan) or a silent PCIe-speed read (CUDA on HMM hosts).
+bool verifyDeviceResident(ggml_cgraph* graph, std::string& error) {
+    std::unordered_set<const ggml_tensor*> seen;
+    std::vector<const ggml_tensor*> stack;
+    const auto push = [&](const ggml_tensor* t) {
+        if (t && seen.insert(t).second) stack.push_back(t);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!stack.empty()) {
+        const ggml_tensor* t = stack.back();
+        stack.pop_back();
+        push(t->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(t->src[i]);
+        if (ggml_nbytes(t) == 0) continue;
+        if (!t->buffer || ggml_backend_buffer_is_host(t->buffer)) {
+            error = std::string("ocr: tensor '") + ggml_get_name(t) + "' (" +
+                    ggml_op_desc(t) + ") is not device-resident on a " +
+                    "one-device plan";
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+// CUDA and Vulkan OCR graphs are standard-op graphs with no CPU-only island.
+// Executing them through one device gallocr avoids scheduler split/capture
+// overhead. Vulkan additionally needs this path because a mixed CPU/Vulkan
+// graph can hand a host-buffered view to a Vulkan subbuffer. The Vulkan
+// build flag stays separate: its direct convolution route excludes the
+// detector geometry that faults in the NVIDIA Vulkan driver.
+OcrExecPlan makeExecPlan(ggml_backend_t gpu,
+                         ggml_backend_t cpu,
+                         bool schedGpuTagging) {
+    OcrExecPlan plan;
+    plan.gpu = (gpu && !ggml_common::is_cpu_backend(gpu)) ? gpu : nullptr;
+    plan.cpu = cpu;
+    plan.singleBackend = backendNameHas(plan.gpu, "CUDA") ||
+                         backendNameHas(plan.gpu, "Vulkan");
+    plan.vkSingle = backendNameHas(plan.gpu, "Vulkan");
+    // A GPU session with the tagging gate closed runs every node on the CPU
+    // secondary; judge conv routes by where the graph EXECUTES.
+    plan.cpuExecution = !plan.gpu || (!schedGpuTagging && !plan.singleBackend);
+    return plan;
+}
+
+OcrBuildOptions execBuildOptions(const OcrExecPlan& plan) {
+    OcrBuildOptions options;
+    options.cpu_conv = plan.cpuExecution;
+    // Dense convolutions stay on im2col+GEMM for every GPU role: the rec
+    // TF32 direct route measured slower on the batched rec graph (29.3 vs
+    // 25.7 ms per 100-box frame, CUDA) and 2.3x further from the fixture
+    // reference (max|diff| 0.0139 vs 0.0059, f32); it stays an A/B knob.
+    options.gpu_rec_direct_conv = false;
+    // Depthwise convolutions run direct on every GPU graph (det included):
+    // no cross-channel reduction, so the DB map stays within the im2col
+    // route's fixture bound while the det graph drops its dominant im2col
+    // traffic (44 -> 15 ms per 2560x1440 frame, CUDA).
+    options.gpu_dw_direct_conv = !plan.cpuExecution;
+    options.vk_single = plan.vkSingle;
+    // See OcrBuildOptions::conv_gemm_f32acc: the folded conv GEMMs need an
+    // f32 accumulator on Vulkan to match the CUDA/CPU numerics.
+    options.conv_gemm_f32acc = plan.vkSingle;
+    // Blocked-island routing: CPU-executing graphs only, and only when the
+    // host advertises the AVX-512 fast path (no AVX2 island kernel).
+    options.blocked_island =
+            plan.cpuExecution && aicore::blk::blocked_available();
+    return options;
+}
+
+void OcrGraphExec::free() {
+    if (alloc) ggml_gallocr_free(alloc);
+    if (sched) ggml_backend_sched_free(sched);
+    alloc = nullptr;
+    sched = nullptr;
+}
+
+bool prepareGraph(OcrWeights& weights,
+                  ggml_context* ctx,
+                  const OcrExecPlan& plan,
+                  const std::vector<ggml_tensor*>& outputs,
+                  ggml_cgraph** graph,
+                  OcrGraphExec& exec,
+                  std::string& error) {
+    exec.free();
+    *graph = nullptr;
+    if (plan.cpuExecution) {
+        // Plain CPU execution: host buffers only. A gated-off GPU session
+        // must NOT use the mixed sched allocation, which would leave
+        // activations in device memory the direct graph_compute cannot read.
+        exec.alloc = ggml_gallocr_new(
+                ggml_backend_get_default_buffer_type(plan.cpu));
+    } else {
+        // The builder routes folded constants into the per-build fold pool
+        // only when resetFoldPool preceded buildGraph; otherwise they land
+        // in the load-time host pool, which no device mirror covers, and a
+        // one-device dispatch dereferences host memory (Vulkan: segfault
+        // inside the driver). Fail loudly instead.
+        if (!weights.foldContext()) {
+            error = "ocr: buildGraph ran without resetFoldPool; folded "
+                    "constants are host-only";
+            return false;
+        }
+        // Realize the host pools (zero-copy views) and the device weights
+        // once per weights object, then cover the folded constants emitted
+        // by this build. The fold-pool mirror must precede allocation:
+        // without it the sched re-uploads every fold constant on EVERY
+        // compute (~12 ms per rec chunk, more than all rec kernels).
+        if (!weights.realizeHostBuffers()) {
+            error = "ocr: host buffer realization failed";
+            return false;
+        }
+        weights.tagHostLeafs();
+        if (!weights.realizeToDevice(plan.gpu, &error)) {
+            error = "ocr: device weight realization failed: " + error;
+            return false;
+        }
+        if (!weights.realizeFoldPoolToDevice(plan.gpu, &error)) {
+            error = "ocr: fold pool device realization failed: " + error;
+            return false;
+        }
+        if (plan.singleBackend) {
+            exec.alloc = ggml_gallocr_new(
+                    ggml_backend_get_default_buffer_type(plan.gpu));
+        } else {
+            exec.sched =
+                    ggml_common::new_gpu_sched({plan.gpu}, plan.cpu, 1u << 20);
+            if (!exec.sched) {
+                error = "ocr: backend scheduler init failed";
+                return false;
+            }
+        }
+    }
+    ggml_cgraph* g = ggml_new_graph_custom(ctx, 1u << 20, false);
+    for (ggml_tensor* t : outputs) ggml_build_forward_expand(g, t);
+    if (plan.singleBackend) weights.retargetGraphToDevice(g);
+    const bool allocated =
+            exec.alloc ? ggml_gallocr_alloc_graph(exec.alloc, g)
+                       : ggml_backend_sched_alloc_graph(exec.sched, g);
+    if (!allocated) {
+        error = "ocr: graph allocation failed";
+        exec.free();
+        return false;
+    }
+    if (plan.singleBackend &&
+        (!weights.materializeUnalignedStaticViews(g, plan.gpu, &error) ||
+         !initializeSingleBackendViews(g, error) ||
+         !verifyDeviceResident(g, error))) {
+        exec.free();
+        return false;
+    }
+    *graph = g;
+    return true;
+}
+
+void computeGraph(const OcrExecPlan& plan,
+                  const OcrGraphExec& exec,
+                  ggml_cgraph* graph) {
+    // CPU and single-device graphs run the plain graph_compute: the sched
+    // would add split/copy overhead to a single-backend graph for no
+    // routing benefit.
+    if (plan.cpuExecution)
+        ggml_backend_graph_compute(plan.cpu, graph);
+    else if (plan.singleBackend)
+        ggml_backend_graph_compute(plan.gpu, graph);
+    else
+        ggml_backend_sched_graph_compute(exec.sched, graph);
 }
 
 }  // namespace ocr

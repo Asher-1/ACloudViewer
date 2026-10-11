@@ -66,6 +66,9 @@ namespace colmap {
 // Unique identifier for cameras.
 typedef uint32_t camera_t;
 
+// Unique identifier for inertial measurement units.
+typedef uint32_t imu_t;
+
 // Unique identifier for images.
 typedef uint32_t image_t;
 
@@ -154,6 +157,7 @@ typedef uint64_t point3D_t;
 
 // Values for invalid identifiers or indices.
 const camera_t kInvalidCameraId = std::numeric_limits<camera_t>::max();
+const imu_t kInvalidImuId = std::numeric_limits<imu_t>::max();
 const image_t kInvalidImageId = std::numeric_limits<image_t>::max();
 const rig_t kInvalidRigId = std::numeric_limits<rig_t>::max();
 const frame_t kInvalidFrameId = std::numeric_limits<frame_t>::max();

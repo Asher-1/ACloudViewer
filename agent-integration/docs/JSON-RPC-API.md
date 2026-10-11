@@ -753,6 +753,40 @@ Convert normals to dip/dip-direction scalar fields.
 
 **Params:** `{entity_id}`
 
+### aicore.batch
+
+Run one whitelisted AICore plugin batch command in an isolated headless child.
+The child uses the same native command as `cli-anything-acloudviewer ai run`;
+models, preprocessing, inference, and export remain owned by AICore/the plugin.
+
+**Params:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `command` | string | yes | Stable native command such as `OCR_RECOGNIZE` |
+| `options` | object | yes | Uppercase command options; scalar arrays repeat a key |
+| `result_json` | string | no | Manifest path; a temporary path is created when omitted |
+| `timeout_ms` | int | no | Child timeout, maximum 86,400,000 ms |
+
+`HELP: true` is encoded as the valueless native `HELP` token. The returned
+object contains `command`, `exit_code`, `result_json`, `manifest`, `stdout`,
+and `stderr`. The manifest/schema identifier is
+`acloudviewer.aicore.batch/1`. Arbitrary commands are rejected; use the
+headless CLI/MCP `run_plugin_command` passthrough for ordinary plugins.
+
+Example:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "method": "aicore.batch",
+  "params": {
+    "command": "OCR_RECOGNIZE",
+    "options": {"HELP": true}
+  }
+}
+```
+
 ### process.run_cli
 
 Run any CLI processing command via the binary subprocess.
@@ -815,24 +849,31 @@ Multi-view metric 3D reconstruction (MapAnything family: VGGT-Omega / VGGT /
 Pi3 / Pi3X / MapAnything / DUSt3R) via a headless
 `-SILENT -MAP_ANYTHING_RECONSTRUCT` child process (same offscreen pattern
 as `sam3d.generate`). One child process loads the model once and runs the
-AICore map_anything pipeline over 2..16 input images, exporting the merged
+AICore map_anything pipeline over >= 2 input images, exporting the merged
 world-frame colored point cloud (binary PLY) plus a RESULT_JSON manifest
 (also embedded in the RPC response). Batch inference on GPU-less machines:
-pass `?device=cpu`; the view cap (16) comes from the quadratic inter-frame
-attention cost.
+pass `?device=cpu`. Chunking is the shared GUI/headless driver: up to
+`max_frames_per_pass` views run as one forward; larger sets stream
+overlap-2 windows aligned by a dense Sim3. When the device cannot hold a
+pass (AICore `run_images` returns -3 before running), the driver halves the
+pass size and re-plans; `frames_per_pass` and `memory_downshifts` in the
+manifest record what actually ran.
 
-**Params:** `{images[2..16], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size, ?min_conf, ?threads, ?cloud_ply, ?result_json, ?timeout_ms}`
+**Params:** `{images[>=2], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size|square, ?min_conf, ?max_frames_per_pass, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?result_json, ?timeout_ms}`
 
-- `images[]`: absolute input image paths (2..16 views; the child decodes
-  them through Qt and feeds borrowed `aicore_image_view`s).
+- `images[]`: absolute input image paths (the child decodes them through
+  Qt and feeds borrowed `aicore_image_view`s).
+- `resize_mode` / `min_conf` default to the catalog entry of the model
+  (`square` + normalized 0.5 for `vggt-1b`; unknown modes fail the load).
 - `model` may be a GGUF path or a published catalog filename
   (https://huggingface.co/Asher-1/map_anything_vggt); missing checkpoints
   must be pre-downloaded through the qMapAnything dialog (headless runs
   never trigger downloads).
-- `min_conf` default 0.5: normalized confidence floor (sigmoid for the pi3
-  family raw logits, conf-1 for the 1+exp families).
+- `min_conf`: per-architecture official rule (percentile per view for
+  mapanything, sigmoid for the pi3 family raw logits, floor max(2, p20) +
+  normalized (c-1)/c for the 1+exp families).
 
-**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, architecture, points, views, e2e_ms, ply}`.
+**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, architecture, points, views, e2e_ms, ply, frames_per_pass}`.
 
 **Example:**
 

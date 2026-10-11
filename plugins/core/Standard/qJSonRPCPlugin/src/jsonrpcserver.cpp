@@ -9,6 +9,7 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPointer>
 
 JsonRPCServer::JsonRPCServer(QObject *parent)
     : QObject(parent),
@@ -77,6 +78,9 @@ void JsonRPCServer::processTextMessage(QString message) {
     if (pClient == nullptr) {
         return;
     }
+    // A long handler (aicore.batch) runs a local event loop; the client may
+    // disconnect and be deleted before the reply is ready.
+    QPointer<QWebSocket> client(pClient);
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
     QJsonObject obj = doc.object();
     auto method = obj.value("method").toString();
@@ -111,7 +115,7 @@ void JsonRPCServer::processTextMessage(QString message) {
         response["result"] = QJsonValue::fromVariant(result.result);
     }
 
-    pClient->sendTextMessage(QJsonDocument(response).toJson());
+    if (client) client->sendTextMessage(QJsonDocument(response).toJson());
 }
 
 void JsonRPCServer::processBinaryMessage(QByteArray message) {

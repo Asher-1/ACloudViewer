@@ -57,6 +57,20 @@ public:
     void requestCancel();
     aicore_sam3_ctx* context() const { return m_ctx; }
 
+    /** Optional encode + one PVS (pcs=false) or PCS decode on an RGB888
+     *  image: the single per-image path of the dialog and -SAM3_SEGMENT.
+     *  NULL + \p error on failure; free with aicore_sam3_seg_result_free. */
+    static aicore_sam3_seg_result* segment(aicore_sam3_ctx* ctx,
+                                           const QImage& rgb,
+                                           const Prompt& prompt,
+                                           bool pcs,
+                                           bool encode,
+                                           QString* error);
+    /** Typed copy of \p segRes (boxes, scores, masks, overlay, timings). */
+    static SAM3WorkerResult buildResult(aicore_sam3_ctx* ctx,
+                                        aicore_sam3_seg_result* segRes,
+                                        const QImage& img);
+
 signals:
     void progressUpdate(int current, int total);
     void logMessage(const QString& msg);
@@ -70,8 +84,6 @@ private:
     bool runInference();
     aicore_sam3_seg_result* runPVS();
     aicore_sam3_seg_result* runPCS();
-    SAM3WorkerResult buildResult(aicore_sam3_seg_result* segRes,
-                                 const QImage& img);
 
     Settings m_settings;
     SAM3WorkerAction m_action = SAM3WorkerAction::None;

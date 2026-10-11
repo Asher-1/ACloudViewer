@@ -15,6 +15,8 @@ import pytest
 def _make_database(database,
                    utility,
                    scene,
+                   recon,
+                   feature,
                    tmp_path,
                    num_images=3,
                    seed=7,
@@ -38,7 +40,10 @@ def _make_database(database,
         desc = np.clip(base_desc.astype(int) + (noise if i else 0), 0,
                        255).astype(np.uint8)
         db.write_keypoints(image_id, kps)
-        db.write_descriptors(image_id, desc)
+        descriptors = feature.FeatureDescriptors()
+        descriptors.type = recon.FeatureExtractorType.SIFT
+        descriptors.data = desc
+        db.write_descriptors(image_id, descriptors)
     db.close()
     return db_path
 
@@ -156,8 +161,9 @@ def test_imported_pair_generator(pipeline, database, utility, scene, tmp_path):
     db.close()
 
 
-def test_match_exhaustive(pipeline, database, utility, scene, tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path)
+def test_match_exhaustive(pipeline, database, utility, scene, recon, feature,
+                          tmp_path):
+    db_path = _make_database(database, utility, scene, recon, feature, tmp_path)
     pipeline.match_exhaustive(db_path, device=pipeline.Device.CPU)
 
     db = database.Database.open(db_path)
@@ -166,8 +172,9 @@ def test_match_exhaustive(pipeline, database, utility, scene, tmp_path):
     db.close()
 
 
-def test_match_sequential(pipeline, database, utility, scene, tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path)
+def test_match_sequential(pipeline, database, utility, scene, recon, feature,
+                          tmp_path):
+    db_path = _make_database(database, utility, scene, recon, feature, tmp_path)
     pipeline.match_sequential(db_path, device=pipeline.Device.CPU)
 
     db = database.Database.open(db_path)
@@ -177,8 +184,14 @@ def test_match_sequential(pipeline, database, utility, scene, tmp_path):
 
 
 def test_match_sequential_quadratic_overlap(pipeline, database, utility, scene,
-                                            tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path, num_images=5)
+                                            recon, feature, tmp_path):
+    db_path = _make_database(database,
+                             utility,
+                             scene,
+                             recon,
+                             feature,
+                             tmp_path,
+                             num_images=5)
     opts = pipeline.SequentialPairingOptions()
     opts.quadratic_overlap = True
     pipeline.match_sequential(db_path,
@@ -189,8 +202,9 @@ def test_match_sequential_quadratic_overlap(pipeline, database, utility, scene,
     db.close()
 
 
-def test_verify_matches(pipeline, database, utility, scene, tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path)
+def test_verify_matches(pipeline, database, utility, scene, recon, feature,
+                        tmp_path):
+    db_path = _make_database(database, utility, scene, recon, feature, tmp_path)
     # Import matches first: use match_image_pairs on a pairs file.
     pairs_file = tmp_path / "pairs.txt"
     pairs_file.write_text("image0.jpg image1.jpg\n")
@@ -204,8 +218,8 @@ def test_verify_matches(pipeline, database, utility, scene, tmp_path):
 
 
 def test_match_image_pairs_missing_image(pipeline, database, utility, scene,
-                                         tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path)
+                                         recon, feature, tmp_path):
+    db_path = _make_database(database, utility, scene, recon, feature, tmp_path)
     pairs_file = tmp_path / "pairs.txt"
     pairs_file.write_text("missing0.jpg missing1.jpg\n")
     # Upstream behavior: unknown image names are reported and skipped.
@@ -220,8 +234,9 @@ def test_match_rejects_missing_database(pipeline, tmp_path):
         pipeline.match_exhaustive(str(tmp_path / "does_not_exist.db"))
 
 
-def test_geometric_verification(pipeline, database, utility, scene, tmp_path):
-    db_path = _make_database(database, utility, scene, tmp_path)
+def test_geometric_verification(pipeline, database, utility, scene, recon,
+                                feature, tmp_path):
+    db_path = _make_database(database, utility, scene, recon, feature, tmp_path)
     # Match first so that the database holds matches + two-view geometries.
     pipeline.match_exhaustive(db_path, device=pipeline.Device.CPU)
     # Re-run plain verification on the existing matched pairs.

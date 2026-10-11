@@ -44,7 +44,7 @@ bool GlobalMapperController::Options::Check() const {
 }
 
 GlobalMapperController::GlobalMapperController(
-    const Options& options, const IncrementalMapperOptions& mapper_options,
+    const Options& options, const IncrementalPipelineOptions& mapper_options,
     ReconstructionManager* reconstruction_manager)
     : options_(options),
       mapper_options_(mapper_options),
@@ -98,14 +98,14 @@ void GlobalMapperController::Run() {
     for (size_t component_idx = 0; component_idx < component_ids.size();
          ++component_idx) {
         pool.AddTask([&, component_idx] {
-            IncrementalMapperOptions options = mapper_options_;
+            IncrementalPipelineOptions options = mapper_options_;
             options.init_num_trials = options_.init_num_trials;
             options.multiple_models = false;
             options.image_names.clear();
             for (const image_t image_id : component_ids[component_idx]) {
-                options.image_names.insert(image_id_to_name.at(image_id));
+                options.image_names.push_back(image_id_to_name.at(image_id));
             }
-            IncrementalMapperController mapper(
+            IncrementalPipeline mapper(
                 &options, options_.image_path, options_.database_path,
                 &managers[component_idx]);
             mapper.Start();

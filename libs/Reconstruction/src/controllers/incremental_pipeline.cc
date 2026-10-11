@@ -13,6 +13,7 @@
 
 #include "estimators/alignment.h"
 #include "estimators/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "scene/projection.h"
 
 #include "util/misc.h"
@@ -20,7 +21,7 @@
 namespace colmap {
 namespace {
 
-size_t TriangulateImage(const IncrementalMapperOptions& options,
+size_t TriangulateImage(const IncrementalPipelineOptions& options,
                         const Image& image,
                         IncrementalMapper* mapper) {
     std::cout << "  => Continued observations: " << image.NumPoints3D()
@@ -36,7 +37,7 @@ size_t TriangulateImage(const IncrementalMapperOptions& options,
 // the original rig extrinsic scales; without this the BA gauge lets the
 // model drift away from the GT scale.
 void AlignReconstructionToPriorsOrRigScale(
-        const IncrementalMapperOptions& options,
+        const IncrementalPipelineOptions& options,
         const DatabaseCache& database_cache,
         Reconstruction* reconstruction) {
     if (options.use_prior_position) {
@@ -61,28 +62,14 @@ void AlignReconstructionToPriorsOrRigScale(
     AlignReconstructionToOrigRigScales(database_cache.Rigs(), reconstruction);
 }
 
-void AdjustGlobalBundle(const IncrementalMapperOptions& options,
+void AdjustGlobalBundle(const IncrementalPipelineOptions& options,
                         IncrementalMapper* mapper) {
-    BundleAdjustmentOptions custom_ba_options =
-            options.GlobalBundleAdjustment();
-
-    const size_t num_reg_images = mapper->GetReconstruction().NumRegImages();
-
-    // Use stricter convergence criteria for first registered images.
-    const size_t kMinNumRegImagesForFastBA = 10;
-    if (num_reg_images < kMinNumRegImagesForFastBA) {
-        custom_ba_options.solver_options.function_tolerance /= 10;
-        custom_ba_options.solver_options.gradient_tolerance /= 10;
-        custom_ba_options.solver_options.parameter_tolerance /= 10;
-        custom_ba_options.solver_options.max_num_iterations *= 2;
-        custom_ba_options.solver_options.max_linear_solver_iterations = 200;
-    }
-
     PrintHeading1("Global bundle adjustment");
-    mapper->AdjustGlobalBundle(options.Mapper(), custom_ba_options);
+    mapper->AdjustGlobalBundle(options.Mapper(),
+                               options.GlobalBundleAdjustment());
 }
 
-void IterativeLocalRefinement(const IncrementalMapperOptions& options,
+void IterativeLocalRefinement(const IncrementalPipelineOptions& options,
                               const image_t image_id,
                               IncrementalMapper* mapper) {
     // Upstream parity (d3ccaf35): the refinement loop lives in the mapper
@@ -95,7 +82,7 @@ void IterativeLocalRefinement(const IncrementalMapperOptions& options,
             image_id);
 }
 
-void IterativeGlobalRefinement(const IncrementalMapperOptions& options,
+void IterativeGlobalRefinement(const IncrementalPipelineOptions& options,
                                IncrementalMapper* mapper) {
     PrintHeading1("Retriangulation and Global bundle adjustment");
     // Upstream parity (d3ccaf35 incremental_pipeline.cc): the refinement
@@ -163,7 +150,7 @@ void WriteSnapshot(const Reconstruction& reconstruction,
 
 }  // namespace
 
-size_t FilterPoints(const IncrementalMapperOptions& options,
+size_t FilterPoints(const IncrementalPipelineOptions& options,
                     IncrementalMapper* mapper) {
     const size_t num_filtered_observations =
             mapper->FilterPoints(options.Mapper());
@@ -172,14 +159,14 @@ size_t FilterPoints(const IncrementalMapperOptions& options,
     return num_filtered_observations;
 }
 
-size_t FilterFrames(const IncrementalMapperOptions& options,
+size_t FilterFrames(const IncrementalPipelineOptions& options,
                     IncrementalMapper* mapper) {
     const size_t num_filtered_images = mapper->FilterFrames(options.Mapper());
     std::cout << "  => Filtered images: " << num_filtered_images << std::endl;
     return num_filtered_images;
 }
 
-size_t CompleteAndMergeTracks(const IncrementalMapperOptions& options,
+size_t CompleteAndMergeTracks(const IncrementalPipelineOptions& options,
                               IncrementalMapper* mapper) {
     const size_t num_completed_observations =
             mapper->CompleteTracks(options.Triangulation());
@@ -192,7 +179,7 @@ size_t CompleteAndMergeTracks(const IncrementalMapperOptions& options,
     return num_completed_observations + num_merged_observations;
 }
 
-IncrementalMapper::Options IncrementalMapperOptions::Mapper() const {
+IncrementalMapper::Options IncrementalPipelineOptions::Mapper() const {
     IncrementalMapper::Options options = mapper;
     options.abs_pose_refine_focal_length = ba_refine_focal_length;
     options.abs_pose_refine_extra_params = ba_refine_extra_params;
@@ -200,15 +187,10 @@ IncrementalMapper::Options IncrementalMapperOptions::Mapper() const {
     options.max_focal_length_ratio = max_focal_length_ratio;
     options.max_extra_param = max_extra_param;
     options.num_threads = num_threads;
-    options.local_ba_num_images = ba_local_num_images;
-    options.fix_existing_images = fix_existing_images;
+    options.fix_existing_frames = fix_existing_frames;
     options.constant_rigs = constant_rigs;
     options.constant_cameras = constant_cameras;
     options.random_seed = random_seed;
-    options.ba_global_ignore_redundant_points3D =
-            ba_global_ignore_redundant_points3D;
-    options.ba_global_ignore_redundant_points3D_min_coverage_gain =
-            ba_global_ignore_redundant_points3D_min_coverage_gain;
     options.use_prior_position = use_prior_position;
     options.use_robust_loss_on_prior_position =
             use_robust_loss_on_prior_position;
@@ -216,7 +198,7 @@ IncrementalMapper::Options IncrementalMapperOptions::Mapper() const {
     return options;
 }
 
-IncrementalTriangulator::Options IncrementalMapperOptions::Triangulation()
+IncrementalTriangulator::Options IncrementalPipelineOptions::Triangulation()
         const {
     IncrementalTriangulator::Options options = triangulation;
     options.min_focal_length_ratio = min_focal_length_ratio;
@@ -235,38 +217,53 @@ constexpr int kDefaultCeresGlobalMaxNumIterations = 50;
 
 }  // namespace
 
-BundleAdjustmentOptions IncrementalMapperOptions::LocalBundleAdjustment()
+BundleAdjustmentOptions IncrementalPipelineOptions::LocalBundleAdjustment()
         const {
     BundleAdjustmentOptions options;
-    options.solver_options.function_tolerance = ba_local_function_tolerance;
-    options.solver_options.gradient_tolerance = 10.0;
-    options.solver_options.parameter_tolerance = 0.0;
-    options.solver_options.max_num_iterations =
-            EffBaLocalMaxNumIterations();
-    options.solver_options.max_linear_solver_iterations = 100;
-    options.solver_options.minimizer_progress_to_stdout = false;
-    options.solver_options.num_threads = num_threads;
-#if CERES_VERSION_MAJOR < 2
-    options.solver_options.num_linear_solver_threads = num_threads;
-#endif  // CERES_VERSION_MAJOR
-    options.print_summary = true;
+    options.print_summary = false;
+    options.backend = ba_local_backend;
     options.refine_focal_length = ba_refine_focal_length;
     options.refine_principal_point = ba_refine_principal_point;
     options.refine_extra_params = ba_refine_extra_params;
     options.refine_sensor_from_rig = ba_refine_sensor_from_rig;
-    options.min_num_residuals_for_cpu_multi_threading =
-            ba_min_num_residuals_for_cpu_multi_threading;
-    options.loss_function_scale = 1.0;
-    options.loss_function_type =
-            BundleAdjustmentOptions::LossFunctionType::SOFT_L1;
-    options.use_gpu = ba_use_gpu;
-    options.gpu_index = ba_gpu_index;
-    options.backend = ba_local_backend;
+    if (options.ceres) {
+        options.ceres->solver_options.function_tolerance =
+                ba_local_function_tolerance;
+        options.ceres->solver_options.gradient_tolerance = 10.0;
+        options.ceres->solver_options.parameter_tolerance = 0.0;
+        options.ceres->solver_options.max_num_iterations =
+                (ba_local_max_num_iterations >= 0)
+                        ? ba_local_max_num_iterations
+                        : kDefaultCeresLocalMaxNumIterations;
+        options.ceres->solver_options.max_linear_solver_iterations = 100;
+        options.ceres->solver_options.logging_type =
+                ceres::LoggingType::SILENT;
+        options.ceres->solver_options.num_threads = num_threads;
+#if CERES_VERSION_MAJOR < 2
+        options.ceres->solver_options.num_linear_solver_threads = num_threads;
+#endif  // CERES_VERSION_MAJOR
+        options.ceres->min_num_residuals_for_cpu_multi_threading =
+                ba_min_num_residuals_for_cpu_multi_threading;
+        options.ceres->loss_function_scale = 1.0;
+        options.ceres->loss_function_type = CeresLossFunctionType::SOFT_L1;
+        options.ceres->use_gpu = ba_use_gpu;
+        options.ceres->gpu_index = ba_gpu_index;
+    }
+    if (options.caspar) {
+        // Only forward the iteration bound when the user explicitly set it
+        // (i.e. it is not the -1 sentinel), leaving Caspar's own tuned
+        // solver_iter_max default untouched otherwise, as Caspar has
+        // different dampening and convergence criteria than Ceres.
+        if (ba_local_max_num_iterations >= 0) {
+            options.caspar->solver_iter_max = ba_local_max_num_iterations;
+        }
+        options.caspar->gpu_index = ba_gpu_index;
+    }
     return options;
 }
 
 
-int IncrementalMapperOptions::EffBaLocalMaxNumIterations() const {
+int IncrementalPipelineOptions::EffBaLocalMaxNumIterations() const {
     if (ba_local_max_num_iterations >= 0) {
         return ba_local_max_num_iterations;
     }
@@ -276,7 +273,7 @@ int IncrementalMapperOptions::EffBaLocalMaxNumIterations() const {
     return kDefaultCeresLocalMaxNumIterations;
 }
 
-int IncrementalMapperOptions::EffBaGlobalMaxNumIterations() const {
+int IncrementalPipelineOptions::EffBaGlobalMaxNumIterations() const {
     if (ba_global_max_num_iterations >= 0) {
         return ba_global_max_num_iterations;
     }
@@ -286,36 +283,55 @@ int IncrementalMapperOptions::EffBaGlobalMaxNumIterations() const {
     return kDefaultCeresGlobalMaxNumIterations;
 }
 
-BundleAdjustmentOptions IncrementalMapperOptions::GlobalBundleAdjustment()
+BundleAdjustmentOptions IncrementalPipelineOptions::GlobalBundleAdjustment()
         const {
     BundleAdjustmentOptions options;
-    options.solver_options.function_tolerance = ba_global_function_tolerance;
-    options.solver_options.gradient_tolerance = 1.0;
-    options.solver_options.parameter_tolerance = 0.0;
-    options.solver_options.max_num_iterations =
-            EffBaGlobalMaxNumIterations();
-    options.solver_options.max_linear_solver_iterations = 100;
-    options.solver_options.minimizer_progress_to_stdout = true;
-    options.solver_options.num_threads = num_threads;
-#if CERES_VERSION_MAJOR < 2
-    options.solver_options.num_linear_solver_threads = num_threads;
-#endif  // CERES_VERSION_MAJOR
-    options.print_summary = true;
+    options.print_summary = false;
+    options.backend = ba_global_backend;
     options.refine_focal_length = ba_refine_focal_length;
     options.refine_principal_point = ba_refine_principal_point;
     options.refine_extra_params = ba_refine_extra_params;
     options.refine_sensor_from_rig = ba_refine_sensor_from_rig;
-    options.min_num_residuals_for_cpu_multi_threading =
-            ba_min_num_residuals_for_cpu_multi_threading;
-    options.loss_function_type =
-            BundleAdjustmentOptions::LossFunctionType::TRIVIAL;
-    options.use_gpu = ba_use_gpu;
-    options.gpu_index = ba_gpu_index;
-    options.backend = ba_global_backend;
+    if (options.ceres) {
+        options.ceres->solver_options.function_tolerance =
+                ba_global_function_tolerance;
+        options.ceres->solver_options.gradient_tolerance = 1.0;
+        options.ceres->solver_options.parameter_tolerance = 0.0;
+        options.ceres->solver_options.max_num_iterations =
+                (ba_global_max_num_iterations >= 0)
+                        ? ba_global_max_num_iterations
+                        : kDefaultCeresGlobalMaxNumIterations;
+        options.ceres->solver_options.max_linear_solver_iterations = 100;
+        options.ceres->solver_options.logging_type =
+                ceres::LoggingType::SILENT;
+        if (VLOG_IS_ON(2)) {
+            options.ceres->solver_options.minimizer_progress_to_stdout = true;
+            options.ceres->solver_options.logging_type =
+                    ceres::LoggingType::PER_MINIMIZER_ITERATION;
+        }
+        options.ceres->solver_options.num_threads = num_threads;
+#if CERES_VERSION_MAJOR < 2
+        options.ceres->solver_options.num_linear_solver_threads = num_threads;
+#endif  // CERES_VERSION_MAJOR
+        options.ceres->min_num_residuals_for_cpu_multi_threading =
+                ba_min_num_residuals_for_cpu_multi_threading;
+        options.ceres->loss_function_type = CeresLossFunctionType::TRIVIAL;
+        options.ceres->use_gpu = ba_use_gpu;
+        options.ceres->gpu_index = ba_gpu_index;
+    }
+    if (options.caspar) {
+        // See LocalBundleAdjustment(): only forward the iteration bound to
+        // the Caspar backend when the user explicitly set it, so Caspar's
+        // own tuned solver_iter_max default is preserved otherwise.
+        if (ba_global_max_num_iterations >= 0) {
+            options.caspar->solver_iter_max = ba_global_max_num_iterations;
+        }
+        options.caspar->gpu_index = ba_gpu_index;
+    }
     return options;
 }
 
-bool IncrementalMapperOptions::Check() const {
+bool IncrementalPipelineOptions::Check() const {
     CHECK_OPTION_GT(min_num_matches, 0);
     CHECK_OPTION_GT(max_num_models, 0);
     CHECK_OPTION_GT(max_model_overlap, 0);
@@ -324,12 +340,11 @@ bool IncrementalMapperOptions::Check() const {
     CHECK_OPTION_GT(min_focal_length_ratio, 0);
     CHECK_OPTION_GT(max_focal_length_ratio, 0);
     CHECK_OPTION_GE(max_extra_param, 0);
-    CHECK_OPTION_GE(ba_local_num_images, 2);
     // Upstream parity: -1 is the "backend default" sentinel and legal.
     CHECK_OPTION_GE(ba_local_max_num_iterations, -1);
-    CHECK_OPTION_GT(ba_global_images_ratio, 1.0);
+    CHECK_OPTION_GT(ba_global_frames_ratio, 1.0);
     CHECK_OPTION_GT(ba_global_points_ratio, 1.0);
-    CHECK_OPTION_GT(ba_global_images_freq, 0);
+    CHECK_OPTION_GT(ba_global_frames_freq, 0);
     CHECK_OPTION_GT(ba_global_points_freq, 0);
         // Upstream parity: -1 is the "backend default" sentinel and legal.
     CHECK_OPTION_GE(ba_global_max_num_iterations, -1);
@@ -337,14 +352,18 @@ bool IncrementalMapperOptions::Check() const {
     CHECK_OPTION_GE(ba_local_max_refinement_change, 0);
     CHECK_OPTION_GT(ba_global_max_refinements, 0);
     CHECK_OPTION_GE(ba_global_max_refinement_change, 0);
-    CHECK_OPTION_GE(snapshot_images_freq, 0);
+    CHECK_OPTION_GE(snapshot_frames_freq, 0);
+    // Upstream parity (a2bd15c2): structure-less-only registration implies
+    // the structure-less path is enabled.
+    CHECK_OPTION(!structure_less_registration_only ||
+                 structure_less_registration_fallback);
     CHECK_OPTION(Mapper().Check());
     CHECK_OPTION(Triangulation().Check());
     return true;
 }
 
-IncrementalMapperController::IncrementalMapperController(
-        const IncrementalMapperOptions* options,
+IncrementalPipeline::IncrementalPipeline(
+        const IncrementalPipelineOptions* options,
         const std::filesystem::path& image_path,
         const std::filesystem::path& database_path,
         ReconstructionManager* reconstruction_manager)
@@ -358,17 +377,29 @@ IncrementalMapperController::IncrementalMapperController(
     RegisterCallback(LAST_IMAGE_REG_CALLBACK);
 }
 
-void IncrementalMapperController::SetCheckIfStoppedFunc(
+void IncrementalPipeline::SetCheckIfStoppedFunc(
         std::function<bool()> func) {
     check_if_stopped_func_ = std::move(func);
 }
 
-bool IncrementalMapperController::ShouldStop() {
+bool IncrementalPipeline::ShouldStop() {
     return IsStopped() ||
            (check_if_stopped_func_ && check_if_stopped_func_());
 }
 
-void IncrementalMapperController::Run() {
+bool IncrementalPipeline::CheckReachedMaxRuntime() const {
+    if (options_->max_runtime_seconds > 0 &&
+        total_run_timer_.ElapsedSeconds() > options_->max_runtime_seconds) {
+        LOG(INFO) << "Reached maximum runtime of "
+                  << options_->max_runtime_seconds << " seconds.";
+        return true;
+    }
+    return false;
+}
+
+void IncrementalPipeline::Run() {
+    total_run_timer_.Start();
+
     if (!LoadDatabase()) {
         return;
     }
@@ -378,7 +409,8 @@ void IncrementalMapperController::Run() {
 
     const size_t kNumInitRelaxations = 2;
     for (size_t i = 0; i < kNumInitRelaxations; ++i) {
-        if (reconstruction_manager_->Size() > 0 || ShouldStop()) {
+        if (reconstruction_manager_->Size() > 0 || ShouldStop() ||
+            CheckReachedMaxRuntime()) {
             break;
         }
 
@@ -387,7 +419,8 @@ void IncrementalMapperController::Run() {
         init_mapper_options.init_min_num_inliers /= 2;
         Reconstruct(init_mapper_options);
 
-        if (reconstruction_manager_->Size() > 0 || ShouldStop()) {
+        if (reconstruction_manager_->Size() > 0 || ShouldStop() ||
+            CheckReachedMaxRuntime()) {
             break;
         }
 
@@ -401,30 +434,31 @@ void IncrementalMapperController::Run() {
     GetTimer().PrintMinutes();
 }
 
-bool IncrementalMapperController::LoadDatabase() {
+bool IncrementalPipeline::LoadDatabase() {
     PrintHeading1("Loading database");
 
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
+            static_cast<size_t>(options_->min_num_matches);
+    cache_options.ignore_watermarks = options_->ignore_watermarks;
+    cache_options.image_names = {options_->image_names.begin(),
+                                 options_->image_names.end()};
     // Make sure images of the given reconstruction are also included when
-    // manually specifying images for the reconstrunstruction procedure.
-    std::unordered_set<std::string> image_names = options_->image_names;
+    // manually specifying images for the reconstruction procedure.
     if (reconstruction_manager_->Size() == 1 &&
         !options_->image_names.empty()) {
         const Reconstruction& reconstruction = reconstruction_manager_->Get(0);
         for (const image_t image_id : reconstruction.RegImageIds()) {
             const auto& image = reconstruction.Image(image_id);
-            image_names.insert(image.Name());
+            cache_options.image_names.insert(image.Name());
         }
     }
+    cache_options.load_all_images = options_->load_all_images;
+    cache_options.convert_pose_priors_to_enu = options_->use_prior_position;
 
     auto database = Database::Open(database_path_);
     Timer timer;
     timer.Start();
-    DatabaseCache::Options cache_options;
-    cache_options.min_num_matches =
-            static_cast<size_t>(options_->min_num_matches);
-    cache_options.ignore_watermarks = options_->ignore_watermarks;
-    cache_options.image_names = {image_names.begin(), image_names.end()};
-    cache_options.convert_pose_priors_to_enu = options_->use_prior_position;
     database_cache_.Load(*database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
@@ -441,7 +475,7 @@ bool IncrementalMapperController::LoadDatabase() {
     return true;
 }
 
-void IncrementalMapperController::Reconstruct(
+void IncrementalPipeline::Reconstruct(
         const IncrementalMapper::Options& init_mapper_options) {
     const bool kDiscardReconstruction = true;
 
@@ -463,7 +497,7 @@ void IncrementalMapperController::Reconstruct(
     for (int num_trials = 0; num_trials < options_->init_num_trials;
          ++num_trials) {
         BlockIfPaused();
-        if (ShouldStop()) {
+        if (ShouldStop() || CheckReachedMaxRuntime()) {
             break;
         }
 
@@ -610,107 +644,141 @@ void IncrementalMapperController::Reconstruct(
         size_t ba_prev_num_reg_images = reconstruction.NumRegImages();
         size_t ba_prev_num_points = reconstruction.NumPoints3D();
 
+        // Upstream parity (a2bd15c2 ReconstructSubModel): always prefer
+        // structure-based registration first and, if that fails for every
+        // candidate, fall back to the (less reliable) structure-less
+        // registration with its own candidate ranking and trial budget.
+        std::vector<bool> structure_less_flags;
+        if (options_->structure_less_registration_only) {
+            structure_less_flags = {true};
+        } else if (options_->structure_less_registration_fallback) {
+            structure_less_flags = {false, true};
+        } else {
+            structure_less_flags = {false};
+        }
+
         bool reg_next_success = true;
         bool prev_reg_next_success = true;
-        while (reg_next_success) {
+        do {
             BlockIfPaused();
-            if (ShouldStop()) {
+            if (ShouldStop() || CheckReachedMaxRuntime()) {
                 break;
             }
 
+            prev_reg_next_success = reg_next_success;
             reg_next_success = false;
+            image_t next_image_id = kInvalidImageId;
 
-            const std::vector<image_t> next_images =
-                    mapper.FindNextImages(options_->Mapper());
+            for (const bool structure_less : structure_less_flags) {
+                const std::vector<image_t> next_images = mapper.FindNextImages(
+                        options_->Mapper(), /*structure_less=*/structure_less);
 
-            if (next_images.empty()) {
-                break;
-            }
+                for (size_t reg_trial = 0; reg_trial < next_images.size();
+                     ++reg_trial) {
+                    next_image_id = next_images[reg_trial];
 
-            for (size_t reg_trial = 0; reg_trial < next_images.size();
-                 ++reg_trial) {
-                const image_t next_image_id = next_images[reg_trial];
-                const Image& next_image = reconstruction.Image(next_image_id);
+                    PrintHeading1(StringPrintf(
+                            "Registering image #%d (%d)", next_image_id,
+                            reconstruction.NumRegImages() + 1));
 
-                PrintHeading1(StringPrintf("Registering image #%d (%d)",
-                                           next_image_id,
-                                           reconstruction.NumRegImages() + 1));
+                    std::cout << StringPrintf(
+                                       "  => Image sees %d / %d points",
+                                       mapper.ObservationManager()
+                                               .NumVisiblePoints3D(
+                                                       next_image_id),
+                                       mapper.ObservationManager()
+                                               .NumObservations(next_image_id))
+                              << std::endl;
 
-                std::cout << StringPrintf(
-                                   "  => Image sees %d / %d points",
-                                   mapper.ObservationManager()
-                                           .NumVisiblePoints3D(next_image_id),
-                                   mapper.ObservationManager().NumObservations(
-                                           next_image_id))
-                          << std::endl;
+                    if (structure_less) {
+                        std::cout << "  => Registering image with "
+                                     "structure-less fallback"
+                                  << std::endl;
+                        std::cout << StringPrintf(
+                                           "  => Image sees %d / %d "
+                                           "correspondences",
+                                           mapper.ObservationManager()
+                                                   .NumVisibleCorrespondences(
+                                                           next_image_id),
+                                           mapper.ObservationManager()
+                                                   .NumCorrespondences(
+                                                           next_image_id))
+                                  << std::endl;
+                        reg_next_success =
+                                mapper.RegisterNextStructureLessImage(
+                                        options_->Mapper(), next_image_id);
+                    } else {
+                        reg_next_success = mapper.RegisterNextImage(
+                                options_->Mapper(), next_image_id);
+                    }
 
-                reg_next_success = mapper.RegisterNextImage(options_->Mapper(),
-                                                            next_image_id);
-
-                // Upstream parity (d3ccaf35): structure-less fallback
-                // registration when structure-based registration fails.
-                if (!reg_next_success) {
-                    reg_next_success = mapper.RegisterNextStructureLessImage(
-                            options_->Mapper(), next_image_id);
                     if (reg_next_success) {
-                        TriangulateImage(*options_, next_image, &mapper);
-                        IterativeLocalRefinement(*options_, next_image_id,
-                                                 &mapper);
+                        break;
+                    } else {
+                        std::cout << "  => Could not register, trying another "
+                                     "image."
+                                  << std::endl;
+
+                        // If initial model fails to continue for some time,
+                        // abort and try different initial pair.
+                        const size_t kMinNumInitialRegTrials = 30;
+                        if (reg_trial >= kMinNumInitialRegTrials &&
+                            reconstruction.NumRegImages() <
+                                    static_cast<size_t>(
+                                            options_->min_model_size)) {
+                            break;
+                        }
                     }
                 }
 
                 if (reg_next_success) {
-                    TriangulateImage(*options_, next_image, &mapper);
-                    IterativeLocalRefinement(*options_, next_image_id, &mapper);
-
-                    if (reconstruction.NumRegImages() >=
-                                options_->ba_global_images_ratio *
-                                        ba_prev_num_reg_images ||
-                        reconstruction.NumRegImages() >=
-                                options_->ba_global_images_freq +
-                                        ba_prev_num_reg_images ||
-                        reconstruction.NumPoints3D() >=
-                                options_->ba_global_points_ratio *
-                                        ba_prev_num_points ||
-                        reconstruction.NumPoints3D() >=
-                                options_->ba_global_points_freq +
-                                        ba_prev_num_points) {
-                        IterativeGlobalRefinement(*options_, &mapper);
-                        ba_prev_num_points = reconstruction.NumPoints3D();
-                        ba_prev_num_reg_images = reconstruction.NumRegImages();
-                    }
-
-                    if (options_->extract_colors) {
-                        ExtractColors(image_path_, next_image_id,
-                                      &reconstruction);
-                    }
-
-                    if (options_->snapshot_images_freq > 0 &&
-                        reconstruction.NumRegImages() >=
-                                options_->snapshot_images_freq +
-                                        snapshot_prev_num_reg_images) {
-                        snapshot_prev_num_reg_images =
-                                reconstruction.NumRegImages();
-                        WriteSnapshot(reconstruction, options_->snapshot_path);
-                    }
-
-                    Callback(NEXT_IMAGE_REG_CALLBACK);
-
                     break;
-                } else {
-                    std::cout
-                            << "  => Could not register, trying another image."
-                            << std::endl;
+                }
+            }
 
-                    // If initial pair fails to continue for some time,
-                    // abort and try different initial pair.
-                    const size_t kMinNumInitialRegTrials = 30;
-                    if (reg_trial >= kMinNumInitialRegTrials &&
-                        reconstruction.NumRegImages() <
-                                static_cast<size_t>(options_->min_model_size)) {
+            if (reg_next_success) {
+                const Image& next_image = reconstruction.Image(next_image_id);
+                TriangulateImage(*options_, next_image, &mapper);
+                IterativeLocalRefinement(*options_, next_image_id, &mapper);
+
+                if (ShouldStop() || CheckReachedMaxRuntime()) {
+                    break;
+                }
+
+                if (reconstruction.NumRegImages() >=
+                            options_->ba_global_frames_ratio *
+                                    ba_prev_num_reg_images ||
+                    reconstruction.NumRegImages() >=
+                            options_->ba_global_frames_freq +
+                                    ba_prev_num_reg_images ||
+                    reconstruction.NumPoints3D() >=
+                            options_->ba_global_points_ratio *
+                                    ba_prev_num_points ||
+                    reconstruction.NumPoints3D() >=
+                            options_->ba_global_points_freq +
+                                    ba_prev_num_points) {
+                    IterativeGlobalRefinement(*options_, &mapper);
+                    if (ShouldStop() || CheckReachedMaxRuntime()) {
                         break;
                     }
+                    ba_prev_num_points = reconstruction.NumPoints3D();
+                    ba_prev_num_reg_images = reconstruction.NumRegImages();
                 }
+
+                if (options_->extract_colors) {
+                    ExtractColors(image_path_, next_image_id, &reconstruction);
+                }
+
+                if (options_->snapshot_frames_freq > 0 &&
+                    reconstruction.NumRegImages() >=
+                            options_->snapshot_frames_freq +
+                                    snapshot_prev_num_reg_images) {
+                    snapshot_prev_num_reg_images =
+                            reconstruction.NumRegImages();
+                    WriteSnapshot(reconstruction, options_->snapshot_path);
+                }
+
+                Callback(NEXT_IMAGE_REG_CALLBACK);
             }
 
             const size_t max_model_overlap =
@@ -723,15 +791,11 @@ void IncrementalMapperController::Reconstruct(
             // iterative bundle adjustment and try again to register one image.
             // If this fails once, then exit the incremental mapping.
             if (!reg_next_success && prev_reg_next_success) {
-                reg_next_success = true;
-                prev_reg_next_success = false;
                 IterativeGlobalRefinement(*options_, &mapper);
-            } else {
-                prev_reg_next_success = reg_next_success;
             }
-        }
+        } while (reg_next_success || prev_reg_next_success);
 
-        if (ShouldStop()) {
+        if (ShouldStop() || CheckReachedMaxRuntime()) {
             const bool kDiscardReconstruction = false;
             mapper.EndReconstruction(kDiscardReconstruction);
             AlignReconstructionToPriorsOrRigScale(

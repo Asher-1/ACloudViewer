@@ -124,9 +124,11 @@ TEST(SynthesizeDataset, Nominal) {
     EXPECT_THAT(image.Name(), testing::EndsWith(options.image_extension));
     image_names.insert(image.Name());
     EXPECT_EQ(image.NumPoints2D(), database->ReadKeypoints(image_id).size());
-    EXPECT_EQ(image.NumPoints2D(),
-              database->ReadDescriptors(image_id).rows());
-    EXPECT_EQ(database->ReadDescriptors(image_id).cols(), 128);
+    const FeatureDescriptors database_descriptors =
+        database->ReadDescriptors(image_id);
+    EXPECT_EQ(database_descriptors.type, FeatureExtractorType::SIFT);
+    EXPECT_EQ(image.NumPoints2D(), database_descriptors.data.rows());
+    EXPECT_EQ(database_descriptors.data.cols(), 128);
     EXPECT_EQ(image.NumPoints2D(),
               options.num_points3D + options.num_points2D_without_point3D);
     EXPECT_EQ(image.NumPoints3D(), options.num_points3D);
@@ -160,7 +162,7 @@ TEST(SynthesizeDataset, Nominal) {
     const FeatureDescriptors desc0 =
         database->ReadDescriptors(point3D.Track().Element(0).image_id);
     const auto descriptors =
-        desc0.row(point3D.Track().Element(0).point2D_idx);
+        desc0.data.row(point3D.Track().Element(0).point2D_idx);
 
     double max_tri_angle = 0;
     for (size_t i1 = 0; i1 < point3D.Track().Length(); ++i1) {
@@ -174,8 +176,9 @@ TEST(SynthesizeDataset, Nominal) {
       EXPECT_LE(squared_reproj_error, kMaxReprojError * kMaxReprojError);
       const FeatureDescriptors desc1 =
           database->ReadDescriptors(point3D.Track().Element(i1).image_id);
+      EXPECT_EQ(desc1.type, FeatureExtractorType::SIFT);
       EXPECT_EQ(descriptors,
-                desc1.row(point3D.Track().Element(i1).point2D_idx));
+                desc1.data.row(point3D.Track().Element(i1).point2D_idx));
 
       Eigen::Vector3d proj_center1;
       if (proj_centers.count(image_id1) == 0) {

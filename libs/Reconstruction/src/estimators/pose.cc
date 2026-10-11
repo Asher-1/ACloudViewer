@@ -75,16 +75,18 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
         }
         const std::vector<size_t> focal_length_idxs =
                 camera->FocalLengthIdxs();
-        RANSAC<P4PFEstimator> ransac(
-                options.ransac_options,
-                P4PFEstimator(/*share_focal_length=*/
-                              focal_length_idxs.size() == 1));
+        // Upstream parity (8f23d8ec): LORANSAC with TinySolver local
+        // refinement of the P4PF model.
+        const bool share_focal_length = focal_length_idxs.size() == 1;
+        LORANSAC<P4PFEstimator, P4PFEstimator> ransac(
+                options.ransac_options, P4PFEstimator(share_focal_length),
+                P4PFEstimator(share_focal_length));
         auto report = ransac.Estimate(points2D_centered, points3D);
         if (report.success) {
-            const Eigen::Quaterniond quat(
-                    report.model.cam_from_world.leftCols<3>());
+            const Eigen::Quaterniond quat =
+                    report.model.cam_from_world.rotation();
             *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
-            *tvec = report.model.cam_from_world.col(3);
+            *tvec = report.model.cam_from_world.translation();
             for (size_t k = 0; k < focal_length_idxs.size(); ++k) {
                 camera->Params(focal_length_idxs[k]) =
                         report.model.focal_lengths[k];
@@ -106,15 +108,17 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
                 [camera](const Eigen::Vector3d& cam_point) {
                     return camera->ImgFromCam(cam_point);
                 };
-        LORANSAC<P3PEstimator, EPNPEstimator> ransac(
+        // Upstream parity (95f05972): EPNP was replaced by TinySolver
+        // refinement inside P3PEstimator::Estimate for non-minimal samples.
+        LORANSAC<P3PEstimator, P3PEstimator> ransac(
                 options.ransac_options,
                 P3PEstimator(img_from_cam_func),
-                EPNPEstimator(img_from_cam_func));
+                P3PEstimator(img_from_cam_func));
         auto report = ransac.Estimate(points2D_with_rays, points3D);
         if (report.success) {
-            const Eigen::Quaterniond quat(report.model.leftCols<3>());
+            const Eigen::Quaterniond quat = report.model.rotation();
             *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
-            *tvec = report.model.col(3);
+            *tvec = report.model.translation();
             *num_inliers = report.support.num_inliers;
             *inlier_mask = std::move(report.inlier_mask);
             success = true;

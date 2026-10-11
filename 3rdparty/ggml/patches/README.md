@@ -55,3 +55,15 @@ single patch from a dirty ggml v0.18.1 reference tree with:
 ```
 
 Enable in AICore: `AICore_USE_VULKAN=ON` → defines `AICORE_VULKAN_ALIKED` when the patch is applied.
+
+## MapAnything (AICore / qMapAnything)
+
+| Patch | Purpose |
+|-------|---------|
+| `map_anything_merged/0001-map-anything-ggml-parity.patch` | Single map-anything-ggml parity patch: (A) CUDA k==s conv_transpose_2d direct-gather fast path, (B) `mapany_*` node-name gate keeping pristine CUDA kernel selection (F16 cuBLAS output, conv_transpose 2x2 path, F32 GEMM route, SiLU), (C) v0.24.0 batched CONV_TRANSPOSE_2D backport for CPU/Metal, (D) the same gate on Vulkan (F32-K/V flash-attention path, SAM3 2x2/s2 conv_transpose fast path, F32-weight conv_transpose coopmat module) |
+
+The former three-patch chain (A-C) was folded into this file; replaying the
+manifest on the extracted v0.21.0 archive yielded a tree byte-identical to the
+old chain (`diff -r` empty) before part (D) was added. Its manifest slot (after
+`cuda_igemm_tf32` and `lingbot_merged/0001`, before `sam3d_merged/0005`) is
+fixed by hunk context.

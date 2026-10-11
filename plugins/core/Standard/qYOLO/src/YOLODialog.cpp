@@ -71,13 +71,6 @@ bool taskHasThresholds(const QString& task) {
 bool taskHasText(const QString& task) {
     return task == QStringLiteral("world") || task == QStringLiteral("yoloe");
 }
-// Default text-encoder GGUF per open-vocabulary family (world detects with
-// CLIP embeddings; yoloe segments with MobileCLIP embeddings).
-QString defaultTextModelForTask(const QString& task) {
-    return task == QStringLiteral("yoloe")
-                   ? QStringLiteral("mobileclip2_b-f16.gguf")
-                   : QStringLiteral("clip-ViT-B-32-f16.gguf");
-}
 }  // namespace
 
 YOLODialog::YOLODialog(QWidget* parent) : QDialog(parent) {
@@ -829,7 +822,7 @@ void YOLODialog::selectDefaultTextModel(YOLOTaskPanel& panel) const {
     // Keep a valid explicit selection; only fill the default when nothing
     // (or a non-catalog entry) is selected.
     if (!panel.textModelCombo->currentData().toString().isEmpty()) return;
-    const QString preferred = defaultTextModelForTask(panel.task);
+    const QString preferred = YOLOHelpers::defaultTextModelForTask(panel.task);
     const int idx = panel.textModelCombo->findData(preferred);
     if (idx >= 0) panel.textModelCombo->setCurrentIndex(idx);
 }

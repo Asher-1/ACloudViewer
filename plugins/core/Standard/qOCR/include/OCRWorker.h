@@ -88,6 +88,16 @@ public:
     void releaseContextOnMainThread();
     void requestTaskCancel();
 
+    /** One image (settings.imagePath) through a loaded det+rec(+layout)
+     *  context: typed boxes, layout regions and stage timings. Shared by
+     *  run() and the headless -OCR_RECOGNIZE batch command so both paths
+     *  produce identical results. \p cancel may be null. */
+    static bool recognizeImage(aicore_ocr_ctx* ctx,
+                               const Settings& settings,
+                               aicore_cancel_token* cancel,
+                               OCRRunResult* result,
+                               QString* error);
+
 signals:
     void logMessage(const QString& msg);
     /** Stage progress; percent < 0 puts the progress bar into busy
@@ -104,3 +114,10 @@ private:
     struct aicore_ocr_ctx* m_pendingCtx = nullptr;
     aicore_cancel_token* m_cancelToken = nullptr;
 };
+
+namespace OCRRender {
+/** Official PaddleOCR draw_ocr visualization (polygons over a 600-px
+ *  long-side image + wrapped "index: text score" side panel). Shared by
+ *  the DB export and the batch command. Null for an empty source. */
+QImage officialVisualization(const OCRRunResult& result);
+}  // namespace OCRRender

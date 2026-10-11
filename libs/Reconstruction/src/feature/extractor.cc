@@ -13,7 +13,6 @@
 #include "util/logging.h"
 #include "util/misc.h"
 
-#include <cstring>
 #include <sstream>
 #include <stdexcept>
 
@@ -28,42 +27,30 @@ void ThrowUnknownFeatureExtractorType(FeatureExtractorType type) {
 
 }  // namespace
 
-FeatureExtractionOptions::FeatureExtractionOptions(FeatureExtractorType type)
-    : type(type) {
-  // Upstream parity (FeatureExtractionTypeOptions): every option group is
-  // allocated regardless of the selected type, so callers may switch `type`
-  // freely and mutate any group (see feature/extractor_test.cc).
-  sift = std::make_shared<SiftExtractionOptions>();
-  aliked = std::make_shared<AlikedExtractionOptions>();
-  loma = std::make_shared<LomaExtractionOptions>();
-}
+FeatureExtractionTypeOptions::FeatureExtractionTypeOptions()
+    : sift(std::make_shared<SiftExtractionOptions>()),
+      aliked(std::make_shared<AlikedExtractionOptions>()),
+      loma(std::make_shared<LomaExtractionOptions>()) {}
 
-FeatureExtractionOptions::FeatureExtractionOptions(
-        const FeatureExtractionOptions& other)
-    : type(other.type),
-      max_image_size(other.max_image_size),
-      num_threads(other.num_threads),
-      use_gpu(other.use_gpu),
-      gpu_index(other.gpu_index),
-      sift(CloneSharedPtr(other.sift)),
-      loma(CloneSharedPtr(other.loma)),
-      aliked(CloneSharedPtr(other.aliked)) {}
+FeatureExtractionTypeOptions::FeatureExtractionTypeOptions(
+    const FeatureExtractionTypeOptions& other)
+    : sift(CloneSharedPtr(other.sift)),
+      aliked(CloneSharedPtr(other.aliked)),
+      loma(CloneSharedPtr(other.loma)) {}
 
-FeatureExtractionOptions& FeatureExtractionOptions::operator=(
-        const FeatureExtractionOptions& other) {
+FeatureExtractionTypeOptions& FeatureExtractionTypeOptions::operator=(
+    const FeatureExtractionTypeOptions& other) {
   if (this == &other) {
     return *this;
   }
-  type = other.type;
-  max_image_size = other.max_image_size;
-  num_threads = other.num_threads;
-  use_gpu = other.use_gpu;
-  gpu_index = other.gpu_index;
   sift = CloneSharedPtr(other.sift);
-  loma = CloneSharedPtr(other.loma);
   aliked = CloneSharedPtr(other.aliked);
+  loma = CloneSharedPtr(other.loma);
   return *this;
 }
+
+FeatureExtractionOptions::FeatureExtractionOptions(FeatureExtractorType type)
+    : FeatureExtractionTypeOptions(), type(type) {}
 
 bool FeatureExtractionOptions::RequiresRGB() const {
   switch (type) {
@@ -81,112 +68,89 @@ bool FeatureExtractionOptions::RequiresRGB() const {
 }
 
 bool FeatureExtractionOptions::RequiresOpenGL() const {
-  // SiftGPU extraction requires an OpenGL context; the fork's default
-  // extraction path is CPU, matching upstream's CPU-first layout.
+  switch (type) {
+    case FeatureExtractorType::SIFT: {
+      // Sync with logic in CreateSiftFeatureExtractor().
+      if (sift->estimate_affine_shape || sift->domain_size_pooling ||
+          sift->force_covariant_extractor) {
+        return false;
+      }
+#if defined(CUDA_ENABLED) || defined(HIP_ENABLED)
+      return false;
+#else
+      return use_gpu;
+#endif
+    }
+    case FeatureExtractorType::ALIKED_N16ROT:
+    case FeatureExtractorType::ALIKED_N32:
+    case FeatureExtractorType::LOMA_B:
+    case FeatureExtractorType::LOMA_B128:
+      return false;
+    default:
+      ThrowUnknownFeatureExtractorType(type);
+  }
   return false;
 }
 
 int FeatureExtractionOptions::EffMaxImageSize() const {
   if (max_image_size > 0) {
     return max_image_size;
+  } else {
+    switch (type) {
+      case FeatureExtractorType::SIFT:
+        return 3200;
+      case FeatureExtractorType::ALIKED_N16ROT:
+      case FeatureExtractorType::ALIKED_N32:
+      case FeatureExtractorType::LOMA_B:
+      case FeatureExtractorType::LOMA_B128:
+        return 1600;
+      default:
+        ThrowUnknownFeatureExtractorType(type);
+    }
   }
-  // Upstream type defaults when max_image_size is non-positive.
-  switch (type) {
-    case FeatureExtractorType::SIFT:
-      return 3200;
-    case FeatureExtractorType::ALIKED_N16ROT:
-    case FeatureExtractorType::ALIKED_N32:
-    case FeatureExtractorType::LOMA_B:
-    case FeatureExtractorType::LOMA_B128:
-      return 1600;
-    default:
-      ThrowUnknownFeatureExtractorType(type);
-  }
-  return 1600;
+  return 0;
 }
 
 bool FeatureExtractionOptions::Check() const {
-  if (type == FeatureExtractorType::SIFT) {
-    THROW_CHECK_NOTNULL(sift);
-    return sift->Check();
+  CHECK_OPTION_GT(EffMaxImageSize(), 0);
+  if (use_gpu) {
+    CHECK_OPTION_GT(CSVToVector<int>(gpu_index).size(), 0);
+#if !defined(GPU_ENABLED)
+    LOG(ERROR) << "Cannot use GPU feature extraction without CUDA, HIP or "
+                  "OpenGL support. Consider setting use_gpu to false.";
+    return false;
+#endif
   }
-  if (type == FeatureExtractorType::ALIKED_N16ROT ||
-      type == FeatureExtractorType::ALIKED_N32) {
-    THROW_CHECK_NOTNULL(aliked);
-    return aliked->Check();
+  switch (type) {
+    case FeatureExtractorType::SIFT:
+      return THROW_CHECK_NOTNULL(sift)->Check();
+    case FeatureExtractorType::ALIKED_N16ROT:
+    case FeatureExtractorType::ALIKED_N32:
+      return THROW_CHECK_NOTNULL(aliked)->Check();
+    case FeatureExtractorType::LOMA_B:
+    case FeatureExtractorType::LOMA_B128:
+      return THROW_CHECK_NOTNULL(loma)->Check();
+    default:
+      LOG(ERROR) << "Unknown feature extractor type: " << type;
+      return false;
   }
-  THROW_CHECK_NOTNULL(loma);
-  // Default-constructed LoMa options carry empty model paths by design;
-  // resolve the catalog-default paths (no download) before validating,
-  // mirroring the ExtractLomaFeatures production flow.
-  LomaExtractionOptions resolved = *loma;
-  ResolveDefaultLomaModelPaths(&resolved);
-  return resolved.Check();
 }
 
-namespace {
-
-class SiftFeatureExtractorShell : public FeatureExtractor {
- public:
-  explicit SiftFeatureExtractorShell(
-          std::shared_ptr<SiftExtractionOptions> options)
-      : options_(std::move(options)) {}
-
-  bool Extract(const Bitmap& bitmap,
-               FeatureKeypoints* keypoints,
-               FeatureDescriptorsFloat* descriptors) override {
-    FeatureDescriptors descriptors_u8;
-    if (!ExtractSiftFeaturesCPU(*options_, bitmap, keypoints,
-                                &descriptors_u8)) {
-      return false;
-    }
-    // The fork's unified extraction surface reports float descriptors so
-    // SIFT and LoMa outputs share one downstream representation (packed
-    // uint8 -> float, 4 bytes per float, row-major memcpy).
-    const long rows = descriptors_u8.rows();
-    const long cols = descriptors_u8.cols() / 4;
-    *descriptors = FeatureDescriptorsFloat::Zero(rows, cols);
-    std::memcpy(descriptors->data(), descriptors_u8.data(),
-                sizeof(float) * rows * cols);
-    return true;
-  }
-
- private:
-  std::shared_ptr<SiftExtractionOptions> options_;
-};
-
-class LomaFeatureExtractorShell : public FeatureExtractor {
- public:
-  explicit LomaFeatureExtractorShell(
-          std::shared_ptr<LomaExtractionOptions> options)
-      : options_(std::move(options)) {}
-
-  bool Extract(const Bitmap& bitmap,
-               FeatureKeypoints* keypoints,
-               FeatureDescriptorsFloat* descriptors) override {
-    return ExtractLomaFeatures(*options_, bitmap, keypoints, descriptors);
-  }
-
- private:
-  std::shared_ptr<LomaExtractionOptions> options_;
-};
-
-}  // namespace
-
 std::unique_ptr<FeatureExtractor> FeatureExtractor::Create(
-        const FeatureExtractionOptions& options) {
-  THROW_CHECK(options.Check());
-  if (options.type == FeatureExtractorType::SIFT) {
-    return std::make_unique<SiftFeatureExtractorShell>(options.sift);
+    const FeatureExtractionOptions& options) {
+  switch (options.type) {
+    case FeatureExtractorType::SIFT:
+      return CreateSiftFeatureExtractor(options);
+    case FeatureExtractorType::ALIKED_N16ROT:
+    case FeatureExtractorType::ALIKED_N32:
+      return CreateAlikedFeatureExtractor(options);
+    case FeatureExtractorType::LOMA_B:
+    case FeatureExtractorType::LOMA_B128:
+      return CreateLomaFeatureExtractor(options);
+    default:
+      ThrowUnknownFeatureExtractorType(options.type);
   }
-  if (options.type == FeatureExtractorType::ALIKED_N16ROT ||
-      options.type == FeatureExtractorType::ALIKED_N32) {
-    // Upstream parity: the factory constructs the engine-backed shell
-    // (upstream: onnxruntime model load; fork: AICore ggml ALIKED task).
-    // Model provisioning failures throw at construction time.
-    return CreateAlikedFeatureExtractor(options);
-  }
-  return std::make_unique<LomaFeatureExtractorShell>(options.loma);
+  return nullptr;
 }
 
 }  // namespace colmap

@@ -32,6 +32,8 @@ public:
 
     QList<QAction*> getActions() override;
 
+    void registerCommands(ccCommandLineInterface* cmd) override;
+
     /** RPC/test driving (agent integration): thin Q_INVOKABLE forwards to
      *  the private replay/display-state entry points so the JSON-RPC
      *  driver can exercise the EXACT user-visible paths (start/pause/stop

@@ -68,8 +68,13 @@ AICORE_CAPI void aicore_map_anything_options_set_threads(
 AICORE_CAPI void aicore_map_anything_options_set_image_size(
         aicore_map_anything_options* opts, int image_size);
 /** Official preprocessing mode: "balanced" (center-crop extreme aspect
- *  ratios into [0.5, 2.0], patch-multiple target shape) or "max_size"
- *  (longest side = image size). NULL/empty keeps the current value. */
+ *  ratios into [0.5, 2.0], patch-multiple target shape), "max_size"
+ *  (longest side = image size) or "square" (original VGGT
+ *  load_and_preprocess_images_square: black center-pad to a square, no
+ *  aspect crop; result_view_valid_size reports the centered content
+ *  rect). NULL/empty keeps the current value; any other value makes
+ *  aicore_map_anything_load_opts return a not-ready context whose
+ *  last_error names the mode. */
 AICORE_CAPI void aicore_map_anything_options_set_resize_mode(
         aicore_map_anything_options* opts, const char* mode);
 /** Log level: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR (default 1). */
@@ -112,12 +117,17 @@ AICORE_CAPI int aicore_map_anything_load_path_rgb(const char* image_path,
 /** ---- typed inference ----
  *
  *  Multi-view inference from DECODED images. Every view must be non-NULL
- *  with positive dimensions; the official balanced/max_size preprocessing
- *  (including white padding of mixed sizes) runs inside. n_views >= 1;
+ *  with positive dimensions, a known format and row_stride_bytes >=
+ *  width * channels (else -1); the selected resize mode's preprocessing
+ *  (balanced/max_size: white padding of mixed sizes; square: black
+ *  center-pad) runs inside. n_views >= 1;
  *  the compute cost grows quadratically with the view count (full
  *  inter-frame attention), so keep batches modest. Returns 0 on success,
- *  -1 on contract/validation errors and -2 on runtime/inference errors
- *  (inspect aicore_map_anything_last_error).
+ *  -1 on contract/validation errors, -2 on runtime/inference errors and -3
+ *  when the device cannot hold this many views at this resolution (the
+ *  graph buffer or the estimated per-op backend scratch exceeds free device
+ *  memory; nothing ran, the context stays usable, so retrying with fewer
+ *  views is valid). Inspect aicore_map_anything_last_error.
  *
  *  The result is owned by the context and stays valid until the next run
  *  call or aicore_map_anything_free. All accessors below are borrowed,
@@ -151,11 +161,11 @@ aicore_map_anything_result_width(const aicore_map_anything_ctx* ctx);
 AICORE_CAPI const char* aicore_map_anything_result_architecture(
         const aicore_map_anything_ctx* ctx);
 
-/** Per-view RESIZED content size (w, h) BEFORE the centered white pad to
- *  the common grid. Pixels outside the valid rect are padded filler —
- *  consumers must skip them when unprojecting/fusing (the model sees
- *  white there and its predictions are not meaningful). Returns 0 on
- *  success; -1 on invalid arguments. */
+/** Per-view RESIZED content size (w, h) BEFORE the centered pad to the
+ *  common grid (white; black in "square" mode). Pixels outside the valid
+ *  rect are padded filler — consumers must skip them when
+ *  unprojecting/fusing (the model sees filler there and its predictions
+ *  are not meaningful). Returns 0 on success; -1 on invalid arguments. */
 AICORE_CAPI int aicore_map_anything_result_view_valid_size(
         const aicore_map_anything_ctx* ctx,
         int32_t view,
@@ -245,7 +255,7 @@ typedef struct aicore_map_anything_model_entry {
     const char* display_name;
     const char* quant_note;
     const char* license_note;
-    /** Model-variant grouping key shared by the 4 quantization rows of one
+    /** Model-variant grouping key shared by the quantization rows of one
      *  checkpoint family ("vggt-omega-1b-512", "mapanything", ...). The
      *  qMapAnything dialog renders one page per distinct variant, ordered by
      *  the catalog (first variant = the accuracy pick). */
@@ -265,7 +275,8 @@ typedef struct aicore_map_anything_model_entry {
     float default_min_conf;
 } aicore_map_anything_model_entry;
 
-/** Number of catalog entries (8 variants x 4 quantizations = 32). */
+/** Number of catalog entries (8 variants, 4-5 published quantizations each:
+ *  36 rows). */
 AICORE_CAPI int aicore_map_anything_model_count(void);
 /** Catalog entry at `index` (NULL when out of range). Returned pointers are
  *  stable for the process lifetime. */

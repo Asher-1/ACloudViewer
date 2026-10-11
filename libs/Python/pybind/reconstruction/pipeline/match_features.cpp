@@ -6,15 +6,8 @@
 // ----------------------------------------------------------------------------
 
 // Upstream pycolmap parity (src/pycolmap/pipeline/match_features.cc): the
-// pairing-driven feature matching surface. Engine-side classes come from the
-// ported fork controllers (controllers/pairing.h,
-// controllers/feature_matching.h). Divergences, all recorded in
-// colmap_alignment_manifest.json:
-//   - The upstream FeatureMatchingOptions parameter is the fork's
-//     SiftMatchingOptions (single SIFT/LoMa matcher family).
-//   - guided_geometric_verification has no fork implementation (upstream
-//     RunGuidedGeometricVerifierImpl) and is not bound.
-//   - GeometricVerifierOptions only carries num_threads (no rig modes).
+// pairing-driven feature matching surface over the fork controllers
+// (controllers/pairing.h, controllers/feature_matching.h, exe/feature.h).
 
 #include "pybind/reconstruction/pipeline/match_features.h"
 
@@ -27,9 +20,11 @@
 #include "controllers/feature_matching.h"
 #include "controllers/pairing.h"
 #include "estimators/two_view_geometry.h"
-#include "feature/sift.h"
+#include "exe/feature.h"
+#include "feature/matcher.h"
 #include "pybind/docstring.h"
 #include "scene/database.h"
+#include "scene/reconstruction.h"
 #include "util/cancellation.h"
 #include "util/file.h"
 #include "util/logging.h"
@@ -97,12 +92,12 @@ void CheckDatabasePath(const std::filesystem::path& database_path) {
 template <typename PairingOptions,
           std::unique_ptr<colmap::Thread> MatcherFactory(
                   const PairingOptions&,
-                  const colmap::SiftMatchingOptions&,
+                  const colmap::FeatureMatchingOptions&,
                   const colmap::TwoViewGeometryOptions&,
                   const std::filesystem::path&)>
 void MatchFeatures(
         const std::string& database_path_str,
-        colmap::SiftMatchingOptions matching_options,
+        colmap::FeatureMatchingOptions matching_options,
         const PairingOptions& pairing_options,
         const colmap::TwoViewGeometryOptions& verification_options,
         const Device device,
@@ -120,6 +115,10 @@ void MatchFeatures(
         if (!ex.matches(PyExc_AttributeError)) {
             throw;
         }
+    }
+    if (matching_options.use_gpu != IsGPU(device)) {
+        LOG(WARNING) << "FeatureMatchingOptions::use_gpu does not match "
+                        "device. FeatureMatchingOptions::use_gpu is ignored.";
     }
     matching_options.use_gpu = IsGPU(device);
     THROW_CHECK(matching_options.Check());
@@ -143,7 +142,7 @@ void VerifyMatches(
             << "Pairs file does not exist: " << pairs_path;
     py::gil_scoped_release release;  // matching is multi-threaded
 
-    colmap::SiftMatchingOptions matching_options;
+    colmap::FeatureMatchingOptions matching_options;
     matching_options.use_gpu = false;
 
     colmap::ImportedPairingOptions pairing_options;
@@ -171,6 +170,38 @@ void GeometricVerification(
             verifier_options, pairing_options, geometry_options, database_path);
     verifier->Start();
     PyWait(verifier.get(), cancellation_token);
+}
+
+void GuidedGeometricVerification(
+        const colmap::Reconstruction& reconstruction,
+        const std::string& database_path_str,
+        const colmap::ExistingMatchedPairingOptions& pairing_options,
+        const colmap::TwoViewGeometryOptions& geometry_options,
+        int num_threads,
+        const std::shared_ptr<colmap::CancellationToken>& cancellation_token) {
+    std::filesystem::path database_path(database_path_str);
+    CheckDatabasePath(database_path);
+
+    py::gil_scoped_release release;  // verification is multi-threaded
+    bool interrupted = false;
+    colmap::RunGuidedGeometricVerifierImpl(
+            reconstruction, database_path, pairing_options, geometry_options,
+            num_threads, [&]() {
+                if (cancellation_token && cancellation_token->IsCancelled()) {
+                    interrupted = true;
+                    return true;
+                }
+                py::gil_scoped_acquire acquire;
+                if (PyErr_CheckSignals() != 0) {
+                    PyErr_Clear();
+                    interrupted = true;
+                    return true;
+                }
+                return false;
+            });
+    if (interrupted) {
+        ThrowCancelled();
+    }
 }
 
 }  // namespace
@@ -382,19 +413,40 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     .def("check",
                          &colmap::ExistingMatchedPairingOptions::Check);
 
+    // Fork-only (upstream has no pycolmap transitive binding): the pairing
+    // options of the transitive matcher consumed by feature.transitive_match.
+    py::class_<colmap::TransitivePairingOptions>(m, "TransitivePairingOptions")
+            .def(py::init<>())
+            .def_readwrite("batch_size",
+                           &colmap::TransitivePairingOptions::batch_size,
+                           "The number of image pairs to match in one batch.")
+            .def_readwrite("num_iterations",
+                           &colmap::TransitivePairingOptions::num_iterations,
+                           "The number of transitive closure iterations.")
+            .def("check", &colmap::TransitivePairingOptions::Check);
+
     auto PyGeometricVerifierOptions =
             py::class_<colmap::GeometricVerifierOptions>(
                     m, "GeometricVerifierOptions",
-                    "Options for geometric verification. The fork verifies "
-                    "plain "
-                    "two-view geometry per pair; the upstream rig_verification "
-                    "and "
-                    "use_existing_relative_pose flags have no fork "
-                    "counterpart.")
+                    "Options for geometric verification of existing matches.")
                     .def(py::init<>())
                     .def_readwrite(
                             "num_threads",
-                            &colmap::GeometricVerifierOptions::num_threads);
+                            &colmap::GeometricVerifierOptions::num_threads)
+                    .def_readwrite(
+                            "rig_verification",
+                            &colmap::GeometricVerifierOptions::rig_verification,
+                            "Whether to perform rig verification at the end. "
+                            "Unnecessary when we have existing relative poses "
+                            "for each matched pair.")
+                    .def_readwrite(
+                            "use_existing_relative_pose",
+                            &colmap::GeometricVerifierOptions::
+                                    use_existing_relative_pose,
+                            "Whether to use the existing relative pose stored "
+                            "in TwoViewGeometry in the database. If no "
+                            "TwoViewGeometry is found we will fall back to "
+                            "geometric verification with RANSAC.");
 
     // ------------------------------------------------------------------
     // PairGenerator family (upstream pipeline/match_features.cc)
@@ -444,8 +496,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
           &MatchFeatures<colmap::ExhaustivePairingOptions,
                          colmap::CreateExhaustiveFeatureMatcher>,
           "database_path"_a,
-          py::arg_v("matching_options", colmap::SiftMatchingOptions(),
-                    "SiftMatchingOptions()"),
+          py::arg_v("matching_options", colmap::FeatureMatchingOptions(),
+                    "FeatureMatchingOptions()"),
           py::arg_v("pairing_options", colmap::ExhaustivePairingOptions(),
                     "ExhaustivePairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
@@ -457,8 +509,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
           &MatchFeatures<colmap::SpatialPairingOptions,
                          colmap::CreateSpatialFeatureMatcher>,
           "database_path"_a,
-          py::arg_v("matching_options", colmap::SiftMatchingOptions(),
-                    "SiftMatchingOptions()"),
+          py::arg_v("matching_options", colmap::FeatureMatchingOptions(),
+                    "FeatureMatchingOptions()"),
           py::arg_v("pairing_options", colmap::SpatialPairingOptions(),
                     "SpatialPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
@@ -470,8 +522,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
           &MatchFeatures<colmap::VocabTreePairingOptions,
                          colmap::CreateVocabTreeFeatureMatcher>,
           "database_path"_a,
-          py::arg_v("matching_options", colmap::SiftMatchingOptions(),
-                    "SiftMatchingOptions()"),
+          py::arg_v("matching_options", colmap::FeatureMatchingOptions(),
+                    "FeatureMatchingOptions()"),
           py::arg_v("pairing_options", colmap::VocabTreePairingOptions(),
                     "VocabTreePairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
@@ -483,8 +535,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
           &MatchFeatures<colmap::SequentialPairingOptions,
                          colmap::CreateSequentialFeatureMatcher>,
           "database_path"_a,
-          py::arg_v("matching_options", colmap::SiftMatchingOptions(),
-                    "SiftMatchingOptions()"),
+          py::arg_v("matching_options", colmap::FeatureMatchingOptions(),
+                    "FeatureMatchingOptions()"),
           py::arg_v("pairing_options", colmap::SequentialPairingOptions(),
                     "SequentialPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
@@ -496,8 +548,8 @@ void pybind_match_features(py::module& m, py::module& m_root) {
           &MatchFeatures<colmap::ImportedPairingOptions,
                          colmap::CreateImagePairsFeatureMatcher>,
           "database_path"_a,
-          py::arg_v("matching_options", colmap::SiftMatchingOptions(),
-                    "SiftMatchingOptions()"),
+          py::arg_v("matching_options", colmap::FeatureMatchingOptions(),
+                    "FeatureMatchingOptions()"),
           py::arg_v("pairing_options", colmap::ImportedPairingOptions(),
                     "ImportedPairingOptions()"),
           py::arg_v("verification_options", colmap::TwoViewGeometryOptions(),
@@ -521,6 +573,17 @@ void pybind_match_features(py::module& m, py::module& m_root) {
                     "TwoViewGeometryOptions()"),
           "cancellation_token"_a = py::none(),
           "Run geometric verification on all image pairs in the database");
+
+    m.def("guided_geometric_verification", &GuidedGeometricVerification,
+          "reconstruction"_a, "database_path"_a,
+          py::arg_v("pairing_options", colmap::ExistingMatchedPairingOptions(),
+                    "ExistingMatchedPairingOptions()"),
+          py::arg_v("two_view_geometry_options",
+                    colmap::TwoViewGeometryOptions(),
+                    "TwoViewGeometryOptions()"),
+          py::arg("num_threads") = -1, "cancellation_token"_a = py::none(),
+          "Run geometric verification given an existing colmap reconstruction "
+          "on all image pairs in the database");
 }
 
 }  // namespace pipeline

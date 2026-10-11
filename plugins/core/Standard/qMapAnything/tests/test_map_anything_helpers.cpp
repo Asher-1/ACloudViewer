@@ -13,11 +13,19 @@
 
 #include <QHash>
 #include <QSet>
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <vector>
 
 #include "MapAnythingGeometry.h"
 #include "MapAnythingModelCatalog.h"
+#include "MapAnythingReconstruction.h"
 
 using namespace MapAnythingGeometry;
 
@@ -265,8 +273,10 @@ TEST(QMapAnythingCatalog, OfficialPipelineDefaults) {
             // vggt-omega demo_gradio: balanced 512/16 + raw conf >= 3.0
             {"vggt-omega-1b-512-q8_0.gguf", "vggt-omega-1b-512", "balanced",
              "normalized", 0.67f},
-            // facebook/VGGT demo_colmap: center-pad square 518 + conf >= 5.0
-            {"vggt-1b-q8_0.gguf", "vggt-1b", "square", "normalized", 0.8f},
+            // Original VGGT preprocessing is black center-pad square 518.
+            // Reconstruction uses the upstream e2e floor max(2, p20): on the
+            // normalized (c-1)/c scale, 0.5 is exactly the c >= 2 floor.
+            {"vggt-1b-q8_0.gguf", "vggt-1b", "square", "normalized", 0.5f},
             // MapAnything gradio: balanced + conf percentile 3.0
             {"mapanything-q8_0.gguf", "mapanything", "balanced", "percentile",
              3.0f},
@@ -283,6 +293,236 @@ TEST(QMapAnythingCatalog, OfficialPipelineDefaults) {
         EXPECT_EQ(m->confFilter.toStdString(), e.filter) << e.filename;
         EXPECT_FLOAT_EQ(m->defaultMinConf, e.minConf) << e.filename;
     }
+}
+
+// ---- shared GUI/headless driver helpers ------------------------------------
+
+TEST(QMapAnythingGeometry, PercentileIsLinearInterpolated) {
+    // np.percentile / torch.quantile default (linear): rank p/100*(m-1).
+    const float v[] = {4.0f, 1.0f, NAN, 3.0f, 2.0f};
+    EXPECT_FLOAT_EQ(percentile_value(v, 5, 50.0f), 2.5f);
+    EXPECT_FLOAT_EQ(percentile_value(v, 5, 0.0f), 1.0f);
+    EXPECT_FLOAT_EQ(percentile_value(v, 5, 100.0f), 4.0f);
+    EXPECT_FLOAT_EQ(percentile_value(v, 5, 20.0f), 1.6f);
+    const float none[] = {NAN, INFINITY};
+    EXPECT_TRUE(std::isnan(percentile_value(none, 2, 50.0f)));
+}
+
+TEST(QMapAnythingGeometry, OfficialConfFloorClampsAtTwo) {
+    const float low[] = {1.0f, 1.1f, 1.2f};
+    EXPECT_FLOAT_EQ(official_conf_floor(low, 3, 20.0f), 2.0f);
+    const float high[] = {3.0f, 4.0f, 5.0f, 6.0f};
+    EXPECT_FLOAT_EQ(official_conf_floor(high, 4, 20.0f), 3.6f);
+}
+
+TEST(QMapAnythingGeometry, PlanChunkStartsMatchesUpstreamWindow) {
+    EXPECT_EQ(plan_chunk_starts(38, 64, 2), std::vector<int>({0}));
+    EXPECT_EQ(plan_chunk_starts(38, 38, 2), std::vector<int>({0}));
+    // range(0, 38, 14) -> 0, 14, 28 -> clamp 28 to 38-16 = 22.
+    EXPECT_EQ(plan_chunk_starts(38, 16, 2), std::vector<int>({0, 14, 22}));
+    EXPECT_EQ(plan_chunk_starts(20, 16, 2), std::vector<int>({0, 4}));
+    // Every later chunk shares >= overlap frames with its predecessor.
+    const std::vector<int> s = plan_chunk_starts(101, 7, 3);
+    for (size_t i = 1; i < s.size(); ++i) EXPECT_LE(s[i] - s[i - 1], 7 - 3);
+    EXPECT_EQ(s.back(), 101 - 7);
+    EXPECT_TRUE(plan_chunk_starts(0, 16, 2).empty());
+}
+
+namespace {
+void applySim3(const Sim3& s, const float* p, float* out) {
+    apply_sim3(s.R, s.t, s.s, p, 1, out);
+}
+Sim3 testSim3(float yaw, float scale, float tx, float ty, float tz) {
+    Sim3 s;
+    s.s = scale;
+    const float c = std::cos(yaw), si = std::sin(yaw);
+    const float R[9] = {c, -si, 0, si, c, 0, 0, 0, 1};
+    std::copy(R, R + 9, s.R);
+    s.t[0] = tx;
+    s.t[1] = ty;
+    s.t[2] = tz;
+    return s;
+}
+}  // namespace
+
+TEST(QMapAnythingGeometry, Sim3ComposeAppliesRightFirst) {
+    const Sim3 a = testSim3(0.3f, 2.0f, 1, -2, 0.5f);
+    const Sim3 b = testSim3(-1.1f, 0.5f, -3, 0.25f, 4);
+    const float p[3] = {0.7f, -1.3f, 2.2f};
+    float bp[3], abp[3], cp[3];
+    applySim3(b, p, bp);
+    applySim3(a, bp, abp);
+    applySim3(sim3_compose(a, b), p, cp);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(cp[k], abp[k], 1e-5f);
+}
+
+TEST(QMapAnythingGeometry, Sim3MovesCameraCenterAndKeepsRotation) {
+    const Sim3 s = testSim3(0.9f, 3.0f, 1, 2, 3);
+    const float s45 = 0.70710678f;
+    const float pose9[9] = {1, 2, 3, 0, s45, 0, s45, 1.0f, 1.0f};
+    float c2w[16], moved[16];
+    pose_enc_to_c2w(pose9, c2w);
+    sim3_apply_c2w(s, c2w, moved);
+    const float center[3] = {c2w[3], c2w[7], c2w[11]};
+    float expect[3];
+    applySim3(s, center, expect);
+    EXPECT_NEAR(moved[3], expect[0], 1e-5f);
+    EXPECT_NEAR(moved[7], expect[1], 1e-5f);
+    EXPECT_NEAR(moved[11], expect[2], 1e-5f);
+    // Rotation block stays orthonormal (scale acts on the position only).
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            float dot = 0.0f;
+            for (int k = 0; k < 3; ++k)
+                dot += moved[4 * k + i] * moved[4 * k + j];
+            EXPECT_NEAR(dot, i == j ? 1.0f : 0.0f, 1e-5f);
+        }
+    }
+    EXPECT_FLOAT_EQ(moved[15], 1.0f);
+}
+
+TEST(QMapAnythingGeometry, PoseEncC2wInvertsW2c) {
+    const float pose9[9] = {0.4f,  -1.0f,     2.5f, 0.1f, 0.2f,
+                            -0.3f, 0.927362f, 1.0f, 1.0f};
+    float R[9], t[3], c2w[16];
+    pose_enc_to_w2c(pose9, R, t);
+    pose_enc_to_c2w(pose9, c2w);
+    const float x[3] = {1.5f, -0.5f, 3.0f};
+    float cam[3], back[3];
+    for (int r = 0; r < 3; ++r) {
+        cam[r] = R[3 * r] * x[0] + R[3 * r + 1] * x[1] + R[3 * r + 2] * x[2] +
+                 t[r];
+    }
+    transform_by_c2w(c2w, cam, back);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(back[k], x[k], 1e-5f);
+}
+
+TEST(QMapAnythingGeometry, RobustSim3RecoversTransformDespiteOutlier) {
+    const Sim3 truth = testSim3(0.6f, 1.7f, -2, 0.5f, 3);
+    std::vector<float> src, dst;
+    for (int i = 0; i < 40; ++i) {
+        const float p[3] = {float(i % 5), float((i / 5) % 4) * 0.7f,
+                            float(i % 3) - 1.0f + 0.1f * i};
+        float q[3];
+        applySim3(truth, p, q);
+        if (i == 7) q[0] += 50.0f;  // gross outlier
+        src.insert(src.end(), p, p + 3);
+        dst.insert(dst.end(), q, q + 3);
+    }
+    Sim3 fit;
+    ASSERT_EQ(robust_sim3(src.data(), dst.data(), 40, &fit.s, fit.R, fit.t), 0);
+    EXPECT_NEAR(fit.s, truth.s, 1e-3f);
+    for (int k = 0; k < 9; ++k) EXPECT_NEAR(fit.R[k], truth.R[k], 1e-3f);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(fit.t[k], truth.t[k], 1e-2f);
+}
+
+namespace {
+namespace MR = MapAnythingReconstruction;
+// Cloud with one point per confidence, x = conf; population == the points.
+MR::Cloud makeCloud(const std::vector<std::vector<float>>& perView) {
+    MR::Cloud c;
+    c.populationOffset.push_back(0);
+    for (size_t v = 0; v < perView.size(); ++v) {
+        for (float conf : perView[v]) {
+            c.xyz.insert(c.xyz.end(), {conf, 0.0f, 0.0f});
+            c.rgb.insert(c.rgb.end(), {1, 2, 3});
+            c.conf.push_back(conf);
+            c.view.push_back((int32_t)v);
+            c.confPopulation.push_back(conf);
+        }
+        c.populationOffset.push_back(c.confPopulation.size());
+    }
+    return c;
+}
+}  // namespace
+
+TEST(QMapAnythingFilter, MapAnythingIsPerViewQuantileStrict) {
+    // Per-view p50 = 2.5 / 25: a scene-wide threshold (p50 = 7) would
+    // erase view 0 entirely - the old "0 points" defect class.
+    MR::Cloud c = makeCloud({{1, 2, 3, 4}, {10, 20, 30, 40}});
+    MR::FilterOptions o;
+    o.minConf = 50.0f;
+    const MR::FilterReport r = MR::filter_scene(c, "mapanything", o, true);
+    ASSERT_TRUE(r.ok);
+    EXPECT_EQ(r.rule, "percentile/view");
+    EXPECT_TRUE(std::isnan(r.confFloor));
+    EXPECT_EQ(r.input, 8U);
+    ASSERT_EQ(r.kept, 4U);
+    EXPECT_EQ(c.conf, std::vector<float>({3, 4, 30, 40}));
+    EXPECT_EQ(c.view, std::vector<int32_t>({0, 0, 1, 1}));
+    // Strict '>': p0 is the per-view minimum, which is itself dropped.
+    MR::Cloud c0 = makeCloud({{1, 2, 3, 4}, {10, 20, 30, 40}});
+    o.minConf = 0.0f;
+    EXPECT_EQ(MR::filter_scene(c0, "mapanything", o, false).kept, 6U);
+}
+
+TEST(QMapAnythingFilter, OneExpFamiliesUseSceneFloorThenNormalizedGate) {
+    MR::Cloud c = makeCloud({{1.5f, 2.5f}, {3.0f, 5.0f}});
+    MR::FilterOptions o;
+    o.minConf = 0.0f;
+    o.confPercentile = 20.0f;  // linear p20 = 2.1 > 2
+    const MR::FilterReport r = MR::filter_scene(c, "vggt_omega", o, false);
+    ASSERT_TRUE(r.ok);
+    EXPECT_EQ(r.rule, "floor+normalized");
+    EXPECT_NEAR(r.confFloor, 2.1f, 1e-6f);
+    EXPECT_EQ(r.kept, 3U);
+    EXPECT_FALSE(r.voxelApplied);  // learned frame: metric voxel is off
+    // (c-1)/c >= 0.7: only 5 (0.8) survives; 3 (0.667) does not.
+    MR::Cloud c2 = makeCloud({{1.5f, 2.5f}, {3.0f, 5.0f}});
+    o.minConf = 0.7f;
+    EXPECT_EQ(MR::filter_scene(c2, "dust3r", o, false).kept, 1U);
+}
+
+TEST(QMapAnythingFilter, Pi3UsesStrictSigmoidOnLogits) {
+    MR::Cloud c = makeCloud({{-1.0f, 0.0f, 2.0f}});
+    MR::FilterOptions o;
+    o.minConf = 0.5f;
+    const MR::FilterReport r = MR::filter_scene(c, "pi3x", o, false);
+    ASSERT_TRUE(r.ok);
+    EXPECT_EQ(r.rule, "sigmoid");
+    EXPECT_EQ(c.conf, std::vector<float>({2.0f}));
+}
+
+TEST(QMapAnythingFilter, UnknownArchitectureFailsClosed) {
+    MR::Cloud c = makeCloud({{1, 2}});
+    const MR::FilterReport r = MR::filter_scene(c, "mystery", {}, true);
+    EXPECT_FALSE(r.ok);
+    EXPECT_EQ(c.size(), 2U);  // untouched
+}
+
+TEST(QMapAnythingFilter, VoxelOnlyInMetricFrame) {
+    MR::Cloud c;
+    // Two points in one 0.02 voxel (first has the higher conf) + one apart.
+    c.xyz = {0.001f, 0, 0, 0.002f, 0, 0, 1.0f, 0, 0};
+    c.rgb = {1, 1, 1, 2, 2, 2, 3, 3, 3};
+    c.view = {0, 0, 0};
+    MR::FilterReport r = MR::filter_scene(c, "vggt", {}, false);
+    EXPECT_EQ(r.rule, "none");
+    EXPECT_FALSE(r.voxelApplied);
+    r = MR::filter_scene(c, "vggt", {}, true);
+    ASSERT_TRUE(r.voxelApplied);
+    EXPECT_EQ(r.fused.size(), 2U);
+    EXPECT_EQ(r.kept, 3U);
+}
+
+TEST(QMapAnythingFilter, WritePlyHeaderAndPayload) {
+    MR::Cloud c = makeCloud({{1, 2, 3}});
+    const std::string path =
+            ::testing::TempDir() + "qmapanything_write_ply_test.ply";
+    const std::vector<size_t> idx = {0, 2};
+    ASSERT_TRUE(MR::write_ply(path, c, &idx));
+    std::ifstream in(path, std::ios::binary);
+    const std::string bytes((std::istreambuf_iterator<char>(in)),
+                            std::istreambuf_iterator<char>());
+    const std::string marker = "end_header\n";
+    const size_t body = bytes.find(marker);
+    ASSERT_NE(body, std::string::npos);
+    EXPECT_NE(bytes.find("element vertex 2\n"), std::string::npos);
+    EXPECT_EQ(bytes.size() - body - marker.size(), 2U * (3 * 4 + 3));
+    float x1 = 0.0f;
+    std::memcpy(&x1, bytes.data() + body + marker.size() + 15, 4);
+    EXPECT_FLOAT_EQ(x1, 3.0f);  // second record is index 2
+    std::remove(path.c_str());
 }
 
 int main(int argc, char** argv) {

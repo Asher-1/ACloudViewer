@@ -165,6 +165,28 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(metrics,
                          {"graph_ms/p50": 12.0, "graph_ms/p90": 14.0})
 
+    def test_metrics_named_by_structured_gate_are_flattened(self):
+        gate = VALIDATE_ALL.normalize_accuracy_gate({
+            "id": "depth-backend-parity", "accuracy_gate": "prose",
+            "accuracy": {
+                "reference": "cpu_reference",
+                "reference_id": "probe",
+                "require_metrics": ["depth_relative_mae"],
+                "checks": [{"metric": "pose_relative_mae", "op": "<=",
+                            "value": 0.02}],
+            }})
+        line = ('{"cpu_output_hash":"ab","depth_relative_mae":0.001,'
+                '"pose_relative_mae":0.0001,"faces":6}')
+        bare, _ = VALIDATE_ALL.parse_output(line, "generic", Path("/nonexistent"))
+        self.assertEqual(bare, {})
+        metrics, fingerprints = VALIDATE_ALL.parse_output(
+            line, "generic", Path("/nonexistent"),
+            VALIDATE_ALL.gate_metric_names(gate))
+        self.assertEqual(metrics, {"json0/depth_relative_mae": 0.001,
+                                   "json0/pose_relative_mae": 0.0001})
+        self.assertEqual(fingerprints, {"json0/cpu_output_hash": "ab"})
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+
     def test_lingbot_parity_metrics_are_flattened(self):
         metrics, _ = VALIDATE_ALL.flatten_json({
             "pose_t_rmse": 3.3e-05,
@@ -349,6 +371,31 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(
             {str(asset.relative_path) for asset in assets},
             {"rmbg_models/rmbg.gguf"})
+
+    def test_manifest_pattern_naming_unpublished_asset_is_drift(self):
+        catalog = "\n".join(json.dumps({
+            "task": "yolo", "relative_path": f"yolo_models/{name}",
+            "url": "https://example.invalid/m.gguf",
+            "sha256": "a" * 64, "size_bytes": 0,
+        }) for name in ("yolov8s-world-q8_0.gguf", "clip-f16.gguf"))
+        manifest = {"scenarios": [
+            {"id": "yolo", "task": "yolo",
+             "owned_globs": ["yolo_models/yolo*.gguf"],
+             "light_globs": ["yolo_models/yolov8s-worldv2-q8_0.gguf"],
+             "required_globs": ["yolo_models/clip-f16.gguf"]},
+            {"id": "user", "task": "yolo", "local_only": True,
+             "model_glob": "yolo_models/private.gguf"},
+            {"id": "other", "task": "depth",
+             "model_glob": "da3_models/absent.gguf"},
+        ]}
+        self.assertEqual(
+            VALIDATE_ALL.manifest_catalog_drift(manifest, catalog, {"yolo"}),
+            ["yolo.light_globs: yolo_models/yolov8s-worldv2-q8_0.gguf"])
+        manifest["scenarios"][0]["light_globs"] = [
+            "yolo_models/yolov8s-world-q8_0.gguf"]
+        self.assertEqual(
+            VALIDATE_ALL.manifest_catalog_drift(manifest, catalog, {"yolo"}),
+            [])
 
     def test_missing_model_is_downloaded_to_task_cache_and_verified(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -662,6 +709,73 @@ class ValidateAllTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             self.assertEqual(
                 VALIDATE_ALL.sweep_task_probe_outputs("demo", Path(temp)), 0)
+
+    def test_sweep_task_probe_outputs_removes_probe_scratch_directories(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            scratch = root / "probes" / "demo-a.json.upstream.d"
+            (scratch / "ref").mkdir(parents=True)
+            (scratch / "ref" / "up.depth.bin").write_bytes(b"\0" * 4)
+            other = root / "probes" / "plain-a.json.upstream.d"
+            other.mkdir()
+            self.assertEqual(
+                VALIDATE_ALL.sweep_task_probe_outputs("demo", root), 1)
+            self.assertFalse(scratch.exists())
+            self.assertTrue(other.exists())
+
+    # ------------------------------------------------------------------
+    # External truth references: {reference:NAME} tokens resolve from
+    # --reference NAME=PATH; an unconfigured reference expands empty so the
+    # consuming probe exits 77 and the row fails unless --allow-incomplete.
+    # ------------------------------------------------------------------
+
+    def test_reference_token_resolves_configured_and_empties_missing(self):
+        build = Path("/nonexistent/build")
+        references = {"upstream": "/opt/upstream"}
+        self.assertEqual(VALIDATE_ALL.resolve_token(
+            "--reference={reference:upstream} --b {backend}",
+            {"backend": "cuda"}, build, references),
+            "--reference=/opt/upstream --b cuda")
+        self.assertEqual(VALIDATE_ALL.resolve_token(
+            "{reference:absent}", {}, build, references), "")
+        self.assertEqual(VALIDATE_ALL.resolve_token(
+            "{reference:upstream}", {}, build), "")
+
+    def test_parse_references_rejects_malformed_items(self):
+        parsed = VALIDATE_ALL.parse_references(["up=/tmp/x"])
+        self.assertEqual(parsed, {"up": str(Path("/tmp/x").resolve())})
+        for bad in ("up", "=/tmp/x", "up="):
+            with self.assertRaisesRegex(ValueError, "NAME=PATH"):
+                VALIDATE_ALL.parse_references([bad])
+
+    def test_reference_row_without_reference_is_a_gate_failure(self):
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="upstream", task="demo", model_id="m",
+            model_paths=(), command=(), env={}, accuracy_gate="bit-exact",
+            metric_parser="generic", fingerprint_policy="exact",
+            require_fingerprint=True, report_path=Path("/tmp/report"),
+            accuracy={"reference": "upstream_cli", "reference_id": "rev",
+                      "checks": [{"metric": "max_diff", "op": "<=",
+                                  "value": 0.0}],
+                      "require_metrics": ["raw_files_compared"],
+                      "structured": True})
+        skipped = [VALIDATE_ALL.Attempt(77, 1.0)]
+        row, failures = VALIDATE_ALL.summarize_attempts(spec, skipped, False)
+        self.assertEqual(row["status"], "skipped")
+        self.assertEqual(len(failures), 1)
+        _, failures = VALIDATE_ALL.summarize_attempts(spec, skipped, True)
+        self.assertEqual(failures, [])
+        # A passing probe that compared no files is not evidence.
+        empty = [VALIDATE_ALL.Attempt(0, 1.0, metrics={"max_diff": 0.0},
+                                      fingerprints={"output_hash": "1"})]
+        row, failures = VALIDATE_ALL.summarize_attempts(spec, empty, False)
+        self.assertEqual(row["status"], "fail")
+        self.assertTrue(any("raw_files_compared" in item for item in failures))
+        metrics, _ = VALIDATE_ALL.flatten_json(
+            {"upstream_parity": {"max_diff": 0.0, "raw_files_compared": 3,
+                                 "views": 3}})
+        self.assertEqual(metrics, {"upstream_parity/max_diff": 0.0,
+                                   "upstream_parity/raw_files_compared": 3.0})
 
     # ------------------------------------------------------------------
     # Per-task cleanup: probe outputs and consumed model-cache files are

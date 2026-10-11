@@ -160,6 +160,9 @@ private:
     JsonRPCResult rpcMeshVolume(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcMeshMerge(const QMap<QString, QVariant>& params);
     // --- CLI Processing ---
+    /** Typed bridge to registered AICore plugin batch commands. Spawns an
+     *  isolated headless child and returns its RESULT_JSON manifest. */
+    JsonRPCResult rpcAICoreBatch(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessRunCli(const QMap<QString, QVariant>& params);
     /** Spawns a headless ACloudViewer -SILENT -YOLO_TRACK child process
      *  (same offscreen pattern as rpcProcessRunCli). */

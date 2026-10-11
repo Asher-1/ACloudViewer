@@ -142,6 +142,9 @@ double CalculateNormalizedAngularError(const Eigen::Vector2d& point2D,
 // @param cam_from_world   Pose of the camera as 3x4 matrix.
 //
 // @return                 Angular error in radians.
+double CalculateAngularReprojectionError(const Eigen::Vector3d& cam_ray,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world);
 double CalculateAngularReprojectionError(
         const Eigen::Vector3d& cam_ray,
         const Eigen::Vector3d& point3D,

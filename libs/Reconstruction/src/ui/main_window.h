@@ -122,7 +122,7 @@ private:
     OptionManager options_;
 
     ReconstructionManager reconstruction_manager_;
-    std::unique_ptr<IncrementalMapperController> mapper_controller_;
+    std::unique_ptr<IncrementalPipeline> mapper_controller_;
 
     Timer timer_;
 
@@ -133,6 +133,9 @@ private:
     DatabaseManagementWidget* database_management_widget_;
     AutomaticReconstructionWidget* automatic_reconstruction_widget_;
     ReconstructionOptionsWidget* reconstruction_options_widget_;
+    // Selected by ReconstructionOptionsWidget; the fork GUI currently only
+    // runs the incremental mapper (hierarchical/global wiring pending).
+    MapperType mapper_type_ = MapperType::INCREMENTAL;
     BundleAdjustmentWidget* bundle_adjustment_widget_;
     DenseReconstructionWidget* dense_reconstruction_widget_;
     RenderOptionsWidget* render_options_widget_;

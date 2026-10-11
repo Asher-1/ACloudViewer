@@ -1,0 +1,608 @@
+diff --git a/src/ggml-cpu/ggml-cpu.c b/src/ggml-cpu/ggml-cpu.c
+index e02acf19ede929e5f80638de1bca653e2f0efe9b..2ab6f0b6d0439c962f9981fc3cfeb67085f9d403 100644
+--- a/src/ggml-cpu/ggml-cpu.c
++++ b/src/ggml-cpu/ggml-cpu.c
+@@ -3076,12 +3076,13 @@ struct ggml_cplan ggml_graph_plan(
+                         const int64_t ne10 = node->src[1]->ne[0]; // W
+                         const int64_t ne11 = node->src[1]->ne[1]; // H
+                         const int64_t ne12 = node->src[1]->ne[2]; // Channels In
++                        const int64_t ne13 = node->src[1]->ne[3]; // Batch
+ 
+                         GGML_ASSERT(node->src[0]->type == GGML_TYPE_F16 || node->src[0]->type == GGML_TYPE_F32);
+                         GGML_ASSERT(node->src[1]->type == GGML_TYPE_F32);
+ 
+                         cur += ggml_type_size(node->src[0]->type) * ne00 * ne01 * ne02 * ne03;
+-                        cur += ggml_type_size(node->src[0]->type) * ne10 * ne11 * ne12;
++                        cur += ggml_type_size(node->src[0]->type) * ne10 * ne11 * ne12 * ne13;
+ 
+                     } break;
+                 case GGML_OP_TOP_K:
+diff --git a/src/ggml-cpu/ops.cpp b/src/ggml-cpu/ops.cpp
+index 7843e6ae72871ba4805027583a3b0d3d203c361c..b0baf2c7b71e0301c6b7a08d93d1ea9550264630 100644
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -7386,18 +7386,21 @@ static void ggml_compute_forward_conv_transpose_2d_impl(
+             }
+         }
+ 
+-        // permute source data (src1) from (Sw x Sh x Cin) to (Cin x Sw x Sh)
++        // permute source data (src1) from (Sw x Sh x Cin) to (Cin x Sw x Sh), for all batches
+         {
+             kernel_t * const wdata = (kernel_t *) params->wdata + nk;
+-            for (int i12 = 0; i12 < ne12; i12++) {
+-                for (int i11 = 0; i11 < ne11; i11++) {
+-                    const float * const src = (float *)((char *) src1->data + i12*nb12 + i11*nb11);
+-                    kernel_t * dst_data = wdata + i11*ne10*ne12;
+-                    for (int i10 = 0; i10 < ne10; i10++) {
+-                        if constexpr (std::is_same_v<kernel_t, ggml_fp16_t>) {
+-                            dst_data[i10*ne12 + i12] = GGML_CPU_FP32_TO_FP16(src[i10]);
+-                        } else {
+-                            dst_data[i10*ne12 + i12] = src[i10];
++            for (int i13 = 0; i13 < ne13; i13++) {
++                kernel_t * const wdata_b = wdata + i13*ne10*ne11*ne12;
++                for (int i12 = 0; i12 < ne12; i12++) {
++                    for (int i11 = 0; i11 < ne11; i11++) {
++                        const float * const src = (float *)((char *) src1->data + i13*nb13 + i12*nb12 + i11*nb11);
++                        kernel_t * dst_data = wdata_b + i11*ne10*ne12;
++                        for (int i10 = 0; i10 < ne10; i10++) {
++                            if constexpr (std::is_same_v<kernel_t, ggml_fp16_t>) {
++                                dst_data[i10*ne12 + i12] = GGML_CPU_FP32_TO_FP16(src[i10]);
++                            } else {
++                                dst_data[i10*ne12 + i12] = src[i10];
++                            }
+                         }
+                     }
+                 }
+@@ -7424,24 +7427,27 @@ static void ggml_compute_forward_conv_transpose_2d_impl(
+     kernel_t * const wdata_src = wdata + nk;
+ 
+     for (int i2 = ip0; i2 < ip1; i2++) { // Cout
+-        float * dst_data = (float *)((char *) dst->data + i2*nb2);
+         kernel_t * wdata_kernel = wdata + i2*ne01*ne00*ne03;
+-        for (int i11 = 0; i11 < ne11; i11++) {
+-            for (int i10 = 0; i10 < ne10; i10++) {
+-                const int i1n = i11*ne10*ne12 + i10*ne12;
+-                for (int i01 = 0; i01 < ne01; i01++) {
+-                    for (int i00 = 0; i00 < ne00; i00++) {
+-                        float v = 0;
+-                        if constexpr (std::is_same_v<kernel_t, ggml_fp16_t>) {
+-                            ggml_vec_dot_f16(ne03, &v, 0,
+-                                    wdata_src + i1n, 0,
+-                                    wdata_kernel + i01*ne00*ne03 + i00*ne03, 0, 1);
+-                        } else {
+-                            ggml_vec_dot_f32(ne03, &v, 0,
+-                                    wdata_src + i1n, 0,
+-                                    wdata_kernel + i01*ne00*ne03 + i00*ne03, 0, 1);
++        for (int i3 = 0; i3 < ne3; i3++) { // batch
++            float * dst_data = (float *)((char *) dst->data + i3*nb3 + i2*nb2);
++            kernel_t * wdata_src_b = wdata_src + i3*ne10*ne11*ne12;
++            for (int i11 = 0; i11 < ne11; i11++) {
++                for (int i10 = 0; i10 < ne10; i10++) {
++                    const int i1n = i11*ne10*ne12 + i10*ne12;
++                    for (int i01 = 0; i01 < ne01; i01++) {
++                        for (int i00 = 0; i00 < ne00; i00++) {
++                            float v = 0;
++                            if constexpr (std::is_same_v<kernel_t, ggml_fp16_t>) {
++                                ggml_vec_dot_f16(ne03, &v, 0,
++                                        wdata_src_b + i1n, 0,
++                                        wdata_kernel + i01*ne00*ne03 + i00*ne03, 0, 1);
++                            } else {
++                                ggml_vec_dot_f32(ne03, &v, 0,
++                                        wdata_src_b + i1n, 0,
++                                        wdata_kernel + i01*ne00*ne03 + i00*ne03, 0, 1);
++                            }
++                            dst_data[(i11*stride + i01)*ne0 + i10*stride + i00] += v;
+                         }
+-                        dst_data[(i11*stride + i01)*ne0 + i10*stride + i00] += v;
+                     }
+                 }
+             }
+diff --git a/src/ggml-cuda/common.cuh b/src/ggml-cuda/common.cuh
+index 7c855ef90d229327396afd8449b38c4a7fc09836..dc36137c8811d29c9d0641758c489a7cbfcdf033 100644
+--- a/src/ggml-cuda/common.cuh
++++ b/src/ggml-cuda/common.cuh
+@@ -6,6 +6,7 @@
+ 
+ #include <cstdint>
+ #include <cstdlib>
++#include <cstring>
+ #include <memory>
+ #include <mutex>
+ 
+@@ -177,6 +178,19 @@ static int ggml_cuda_highest_compiled_arch(const int arch) {
+ 
+ #define GGML_CUDA_MAX_STREAMS 8
+ 
++// MapAnything parity contract: the map-anything-ggml reference runs on pristine
++// ggml CUDA numerics. The downstream precision overrides below (RMBG F32 GEMM
++// output on Ampere+, the SAM3 2x2/stride-2 conv_transpose cuBLAS fast path, the
++// cuBLAS route for F32 GEMMs that pristine ggml sends to MMF, the global
++// precise-math SiLU of sam3d_merged/0002) each perturb the result by ULPs that
++// the 24-block aggregator and the depth-confidence head amplify well past the
++// parity gate. The MapAnything graph builder names every matmul /
++// conv_transpose / SiLU output with this prefix so those nodes keep the
++// pristine kernel selection; every other task keeps the downstream defaults.
++static inline bool ggml_cuda_mapany_pristine_node(const char * name) {
++    return name != nullptr && strncmp(name, "mapany_", 7) == 0;
++}
++
+ [[noreturn]]
+ void ggml_cuda_error(const char * stmt, const char * func, const char * file, int line, const char * msg);
+ 
+diff --git a/src/ggml-cuda/conv2d-transpose.cu b/src/ggml-cuda/conv2d-transpose.cu
+index 81a3af237763c24817a6985cf1b7416588c4b91b..f99ef4a8cae6e17ba49de31166a42bc00af8e37b 100644
+--- a/src/ggml-cuda/conv2d-transpose.cu
++++ b/src/ggml-cuda/conv2d-transpose.cu
+@@ -194,6 +194,64 @@ static __global__ void conv2d_transpose_kernel(const input_t * __restrict__ inpu
+         ggml_cuda_cast<output_t>(accumulator);
+ }
+ 
++// k == s specialization (map_anything DPT upsampling, no-overlap
++// transpose): every output element (co, oh, ow, n) is fed by exactly one
++// input pixel (ih = oh/s, kh = oh%s, iw = ow/s, kw = ow%s), so the generic
++// stride-alignment search (modulo + bounds check per iteration, 4x of the
++// iterations discarded) collapses to a direct gather and the inner loop
++// becomes a plain c_in dot product with co-contiguous kernel reads.
++// F32-activation contract: input and dst must be GGML_TYPE_F32 — the
++// F16-input dispatch combos below keep the generic kernel.
++template <typename kernel_t>
++static __global__ void conv2d_transpose_ks_kernel(const float * __restrict__ input,
++                                                  const kernel_t * __restrict__ kernel,
++                                                  float * __restrict__ output,
++                                                  const int in_w,
++                                                  const int in_h,
++                                                  const int out_w,
++                                                  const int out_h,
++                                                  const int s,
++                                                  const int c_in,
++                                                  const int c_out,
++                                                  const int batches) {
++    const int global_idx = blockIdx.x * blockDim.x + threadIdx.x;
++
++    const int total_elements = out_w * out_h * c_out * batches;
++
++    if (global_idx >= total_elements) {
++        return;
++    }
++
++    const int ow = global_idx % out_w;
++    const int oh = (global_idx / out_w) % out_h;
++    const int co = (global_idx / (out_w * out_h)) % c_out;
++    const int n  = global_idx / (out_w * out_h * c_out);
++
++    const int iw = ow / s;
++    const int kw = ow % s;
++    const int ih = oh / s;
++    const int kh = oh % s;
++
++    const int    in_plane = in_w * in_h;              // pixels per image
++    const size_t k_plane   = (size_t) s * s * c_out;  // kernel values per c_in
++
++    // input ne {in_w, in_h, c_in, N}: linear = w + in_w*h + in_w*in_h*c + ...
++    const float * x  = input  + (size_t) n * in_plane * c_in +
++                       (size_t) ih * in_w + iw;
++    // kernel ne {kw, kh, c_out, c_in}: linear = kw + s*kh + s*s*co + ...
++    const kernel_t * wk = kernel + (size_t) kh * s + kw +
++                          (size_t) co * s * s;
++
++    float acc = 0.0f;
++    for (int ci = 0; ci < c_in; ci++) {
++        acc += x[(size_t) ci * in_plane] *
++               ggml_cuda_cast<float>(wk[(size_t) ci * k_plane]);
++    }
++
++    output[(out_w * out_h * c_out) * n + (out_w * out_h) * co +
++           (out_w) *oh + ow] = acc;
++}
++
+ 
+ //input is (W, H, C_in, N), Kernel is (W, H, C_out, C_in)
+ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+@@ -202,7 +260,10 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
+ 
+     // 2x2 kernel + stride 2: use the 4-phase cuBLAS path (10-50x faster than
+     // the generic kernel below for SAM3-style upsampling).
+-    if (kernel->ne[0] == 2 && kernel->ne[1] == 2 && dst->op_params[0] == 2) {
++    // The GEMM decomposition changes the f32 reduction order of the naive
++    // kernel; mapany_* nodes keep the pristine kernel for upstream parity.
++    if (kernel->ne[0] == 2 && kernel->ne[1] == 2 && dst->op_params[0] == 2 &&
++        !ggml_cuda_mapany_pristine_node(dst->name)) {
+         ggml_cuda_conv_2d_transpose_p0_fast(ctx, dst);
+         return;
+     }
+@@ -236,6 +297,25 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
+     const int total  = output_w * output_h * channels_out * batches;
+     const int blocks = (total + CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE - 1) / CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE;
+ 
++    if (kernel_w == stride && kernel_h == stride &&
++        input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
++        // no-overlap transpose (k == s): direct-gather kernel. The 2x2
++        // cuBLAS path above owns k == s == 2; this covers the rest
++        // (map_anything DPT heads upsample with s == k in {4, 8, 16}).
++        if (kernel->type == GGML_TYPE_F16) {
++            conv2d_transpose_ks_kernel<half><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++                (const float *) input->data, (const half *) kernel_data, (float *) dst->data,
++                input_w, input_h, output_w, output_h, stride, channels_in,
++                channels_out, batches);
++        } else {
++            conv2d_transpose_ks_kernel<float><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++                (const float *) input->data, (const float *) kernel_data, (float *) dst->data,
++                input_w, input_h, output_w, output_h, stride, channels_in,
++                channels_out, batches);
++        }
++        return;
++    }
++
+     if (input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_F16) {
+         conv2d_transpose_kernel<half, half, half><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
+             (const half *) input->data, (const half *) kernel_data, (half *) dst->data,
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index 4a5ab834a3243892421a4c33e78671b27609ecf2..f1a1b5bb82578951db3763a5af76bae61010f0ae 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1565,9 +1565,12 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
+         // F16-output path on Ampere, and its SS occupancy decoder flips 2 voxels
+         // on the F32-direct output (+32 gaussians). Nodes named sam3d_* keep
+         // the upstream numerics; every other task keeps the RMBG optimization.
++        // mapany_* nodes likewise keep the pristine F16-output path (see
++        // ggml_cuda_mapany_pristine_node in common.cuh).
+         prefer_f32_output = cc == GGML_CUDA_CC_VOLTA ||
+                             (cc >= GGML_CUDA_CC_AMPERE &&
+-                             !(dst->name && strncmp(dst->name, "sam3d_", 6) == 0)) ||
++                             !(dst->name && strncmp(dst->name, "sam3d_", 6) == 0) &&
++                             !ggml_cuda_mapany_pristine_node(dst->name)) ||
+                             GGML_CUDA_CC_IS_RDNA4(cc) || GGML_CUDA_CC_IS_CDNA(cc);
+     } else if (compute_type == GGML_TYPE_BF16) {
+         prefer_f32_output = !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
+diff --git a/src/ggml-cuda/mmf.cu b/src/ggml-cuda/mmf.cu
+index f2f02a257b0d718dbb58f1222423a7ab76fc8c48..be4b431b07ccc7bc19e7dac38b1a70b19b91710b 100644
+--- a/src/ggml-cuda/mmf.cu
++++ b/src/ggml-cuda/mmf.cu
+@@ -143,8 +143,9 @@ bool ggml_cuda_should_use_mmf(enum ggml_type type, int cc, int warp_size, const
+     // GEMMs inside sam3d graphs (DINO/PointPatch conditioning, SS flow) must
+     // reproduce TF32 operands for upstream parity. Every other task keeps the
+     // PyTorch-equivalent cuBLAS F32 route.
++    // mapany_* nodes follow the same pristine F32 MMF selection.
+     const bool sam3d_f32 = dst_name && strncmp(dst_name, "sam3d_", 6) == 0;
+-    if (type == GGML_TYPE_F32 && !sam3d_f32) {
++    if (type == GGML_TYPE_F32 && !sam3d_f32 && !ggml_cuda_mapany_pristine_node(dst_name)) {
+         return false;
+     }
+     if (ggml_is_quantized(type)) {
+diff --git a/src/ggml-cuda/unary.cu b/src/ggml-cuda/unary.cu
+index 4cb805fa60133267611c01c42c00ee389921621e..303ea4ecf7d0fe601d8a1ae16061eca0c1829776 100644
+--- a/src/ggml-cuda/unary.cu
++++ b/src/ggml-cuda/unary.cu
+@@ -37,6 +37,14 @@ static __device__ __forceinline__ float op_silu(float x) {
+     return ggml_cuda_op_silu_single(x);
+ }
+ 
++// Pristine ggml SiLU (the expression sam3d_merged/0002 replaces globally with
++// precise device math). mapany_* nodes keep it so MapAnything matches the
++// map-anything-ggml reference, which runs pristine ggml under -use_fast_math
++// (see ggml_cuda_mapany_pristine_node in common.cuh).
++static __device__ __forceinline__ float op_silu_pristine(float x) {
++    return x / (1.0f + expf(-x));
++}
++
+ static __device__ __forceinline__ float op_tanh(float x) {
+     return tanhf(x);
+ }
+@@ -183,6 +191,10 @@ void ggml_cuda_op_gelu_quick(ggml_backend_cuda_context & ctx, ggml_tensor * dst)
+ }
+ 
+ void ggml_cuda_op_silu(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    if (ggml_cuda_mapany_pristine_node(dst->name)) {
++        ggml_cuda_op_unary<op_silu_pristine>(ctx, dst);
++        return;
++    }
+     ggml_cuda_op_unary<op_silu>(ctx, dst);
+ }
+ 
+@@ -614,7 +626,11 @@ static void ggml_cuda_op_unary_mul_impl(ggml_backend_cuda_context & ctx, ggml_te
+ void ggml_cuda_op_unary_mul(ggml_backend_cuda_context & ctx, ggml_tensor * unary_node, ggml_tensor * mul_node) {
+     switch (ggml_get_unary_op(unary_node)) {
+         case GGML_UNARY_OP_SILU:
+-            ggml_cuda_op_unary_mul_impl<op_silu>(ctx, unary_node, mul_node);
++            if (ggml_cuda_mapany_pristine_node(unary_node->name)) {
++                ggml_cuda_op_unary_mul_impl<op_silu_pristine>(ctx, unary_node, mul_node);
++            } else {
++                ggml_cuda_op_unary_mul_impl<op_silu>(ctx, unary_node, mul_node);
++            }
+             break;
+         case GGML_UNARY_OP_SIGMOID:
+             ggml_cuda_op_unary_mul_impl<op_sigmoid>(ctx, unary_node, mul_node);
+diff --git a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
+index 0961d23faadd3f6aaa40e341348f6907a70edc67..b7288be8165bfeb804b98f89c9de2ee3c27c9ca0 100644
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -656,6 +656,7 @@ typedef struct {
+     uint64_t nb0;
+     uint64_t nb1;
+     uint64_t nb2;
++    uint64_t nb3;
+ } ggml_metal_kargs_conv_transpose_2d;
+ 
+ typedef struct {
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+index 937dcf42dcfa7334fff38a3cb2de0c22826120fa..0e278c73fe152478f38c23e20f6610bb5781212a 100644
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -4749,6 +4749,7 @@ int ggml_metal_op_conv_transpose_2d(ggml_metal_op_t ctx, int idx) {
+     const int32_t OW = op->ne[0];
+     const int32_t OH = op->ne[1];
+     const int32_t OC = op->ne[2];
++    const int32_t N  = op->src[1]->ne[3];
+ 
+     ggml_metal_kargs_conv_transpose_2d args = {
+         /*.IC  =*/ IC,
+@@ -4761,6 +4762,7 @@ int ggml_metal_op_conv_transpose_2d(ggml_metal_op_t ctx, int idx) {
+         /*.nb0 =*/ nb0,
+         /*.nb1 =*/ nb1,
+         /*.nb2 =*/ nb2,
++        /*.nb3 =*/ nb3,
+     };
+ 
+     auto pipeline = ggml_metal_library_get_pipeline_conv_transpose_2d(lib, op);
+@@ -4777,7 +4779,7 @@ int ggml_metal_op_conv_transpose_2d(ggml_metal_op_t ctx, int idx) {
+     const size_t smem = GGML_PAD(nth_ic * sizeof(float), 16);
+     ggml_metal_encoder_set_threadgroup_memory_size(enc, smem, 0);
+ 
+-    ggml_metal_encoder_dispatch_threadgroups(enc, OW, OH, OC, nth_ic, 1, 1);
++    ggml_metal_encoder_dispatch_threadgroups(enc, OW, OH, OC * N, nth_ic, 1, 1);
+ 
+     return 1;
+ }
+diff --git a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
+index 5ec75371aa69c2896d3f7ed8f694af2f547382ed..03f4b0b28ec8ba7a390cd198ffea3c91d148564c 100644
+--- a/src/ggml-metal/ggml-metal.metal
++++ b/src/ggml-metal/ggml-metal.metal
+@@ -6004,7 +6004,8 @@ kernel void kernel_conv_transpose_2d(
+ 
+     const int64_t out_x = tgpig[0];
+     const int64_t out_y = tgpig[1];
+-    const int64_t out_c = tgpig[2];
++    const int64_t batch = tgpig[2] / args.OC;
++    const int64_t out_c = tgpig[2] % args.OC;
+ 
+     const int64_t tid = tpitg[0];
+     const int64_t num_threads = ntg[0];
+@@ -6030,7 +6031,7 @@ kernel void kernel_conv_transpose_2d(
+ 
+                 if (in_x >= args.IW) continue;
+ 
+-                const int64_t input_idx = (args.IW * args.IH) * in_c + (args.IW) * in_y + in_x;
++                const int64_t input_idx = (args.IW * args.IH) * (args.IC * batch + in_c) + (args.IW) * in_y + in_x;
+                 const int64_t kernel_idx = (args.KH * args.KW * args.OC) * in_c + (args.KH * args.KW) * out_c + (args.KW) * kh + kw;
+ 
+                 v += (float)src0[kernel_idx] * src1[input_idx];
+@@ -6050,7 +6051,7 @@ kernel void kernel_conv_transpose_2d(
+     }
+ 
+     if (tid == 0) {
+-        device float * dst_ptr = (device float *) (dst + out_x*args.nb0 + out_y * args.nb1 + out_c*args.nb2);
++        device float * dst_ptr = (device float *) (dst + batch*args.nb3 + out_c*args.nb2 + out_y * args.nb1 + out_x*args.nb0);
+         dst_ptr[0] = shared_sum[0];
+     }
+ }
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index fc8161dfe6eea012fbeec2d84ef2390f83678ebb..139f818cabad7d722eb2ff44edcef7bf94ac2bd0 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -568,10 +568,14 @@ struct vk_fa_pipeline_state {
+     uint32_t limit_occupancy_shmem;
+     ggml_type k_type;
+     ggml_type v_type;
++    // map_anything: mapany_* FA nodes keep the pristine F32-K/V module choice
++    // (see ggml_vk_mapany_pristine_node); part of the key because it selects
++    // a different SPIR-V module for the same scalar tuning.
++    bool pristine;
+ 
+     bool operator<(const vk_fa_pipeline_state &b) const {
+-        return std::tie(HSK, HSV, Br, Bc, D_split, row_split, shmem_staging, path, workgroup_size, subgroup_size, aligned, f32acc, flags, limit_occupancy_shmem, k_type, v_type) <
+-               std::tie(b.HSK, b.HSV, b.Br, b.Bc, b.D_split, b.row_split, b.shmem_staging, b.path, b.workgroup_size, b.subgroup_size, b.aligned, b.f32acc, b.flags, b.limit_occupancy_shmem, b.k_type, b.v_type);
++        return std::tie(HSK, HSV, Br, Bc, D_split, row_split, shmem_staging, path, workgroup_size, subgroup_size, aligned, f32acc, flags, limit_occupancy_shmem, k_type, v_type, pristine) <
++               std::tie(b.HSK, b.HSV, b.Br, b.Bc, b.D_split, b.row_split, b.shmem_staging, b.path, b.workgroup_size, b.subgroup_size, b.aligned, b.f32acc, b.flags, b.limit_occupancy_shmem, b.k_type, b.v_type, b.pristine);
+     }
+ };
+ 
+@@ -1103,6 +1107,7 @@ struct vk_device_struct {
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16_f32_scalar[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f32[CONV_SHAPE_COUNT];
++    std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f32_mapany[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f16_f32[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f16[CONV_SHAPE_COUNT];
+     std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f32[CONV_SHAPE_COUNT];
+@@ -3983,11 +3988,12 @@ static vk_fa_tuning_params get_fa_tuning_params_coopmat2(const vk_device& device
+     return result;
+ }
+ 
+-static vk_fa_tuning_params get_fa_tuning_params(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc) {
++static vk_fa_tuning_params get_fa_tuning_params(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc, bool pristine = false) {
+     // The cooperative-matrix modules use F16/BF16 multiplicands.  F32 K/V is
+     // still useful for accuracy-sensitive attention, but must run through the
+     // scalar module whose packed-F32 decode path preserves those inputs.
+-    FaCodePath path = (k_type == GGML_TYPE_F32 || v_type == GGML_TYPE_F32) ? FA_SCALAR :
++    // map_anything: pristine nodes keep the upstream device-based path.
++    FaCodePath path = (!pristine && (k_type == GGML_TYPE_F32 || v_type == GGML_TYPE_F32)) ? FA_SCALAR :
+                       device->coopmat2 ? FA_COOPMAT2 :
+                       device->coopmat1_fa_support ? FA_COOPMAT1 : FA_SCALAR;
+ 
+@@ -4032,7 +4038,7 @@ static vk_fa_tuning_params get_fa_tuning_params(const vk_device& device, uint32_
+ }
+ 
+ static vk_fa_pipeline_state get_fa_pipeline_state(const vk_device& device, const vk_fa_tuning_params& params, uint32_t hsk, uint32_t hsv, bool aligned, bool f32acc,
+-                                                  bool use_mask, bool use_mask_opt, bool use_logit_softcap, ggml_type k_type, ggml_type v_type) {
++                                                  bool use_mask, bool use_mask_opt, bool use_logit_softcap, ggml_type k_type, ggml_type v_type, bool pristine = false) {
+     const bool old_amd_windows = device->vendor_id == VK_VENDOR_ID_AMD && device->driver_id == vk::DriverId::eAmdProprietary &&
+                                  (device->architecture == AMD_GCN || device->architecture == AMD_RDNA1 || device->architecture == AMD_RDNA2);
+ 
+@@ -4043,7 +4049,7 @@ static vk_fa_pipeline_state get_fa_pipeline_state(const vk_device& device, const
+ 
+     const uint32_t subgroup_size = params.disable_subgroups ? 0 : params.subgroup_size;
+ 
+-    return vk_fa_pipeline_state{hsk, hsv, params.block_rows, params.block_cols, params.d_split, params.row_split, params.shmem_staging, params.path, params.workgroup_size, subgroup_size, aligned, f32acc, flags, params.limit_occupancy_shmem, k_type, v_type};
++    return vk_fa_pipeline_state{hsk, hsv, params.block_rows, params.block_cols, params.d_split, params.row_split, params.shmem_staging, params.path, params.workgroup_size, subgroup_size, aligned, f32acc, flags, params.limit_occupancy_shmem, k_type, v_type, pristine};
+ }
+ 
+ static std::vector<uint32_t> get_fa_spec_constants(const vk_fa_pipeline_state& state) {
+@@ -4655,7 +4661,7 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+ #endif
+             name = aligned ? "flash_attn_f32_f16_aligned" : "flash_attn_f32_f16";
+         } else {
+-            if (fa.first.k_type == GGML_TYPE_F32 || fa.first.v_type == GGML_TYPE_F32) {
++            if (!fa.first.pristine && (fa.first.k_type == GGML_TYPE_F32 || fa.first.v_type == GGML_TYPE_F32)) {
+                 spv_data = flash_attn_f32_f16_fp32_data;
+                 spv_size = flash_attn_f32_f16_fp32_len;
+             } else if (device->fp16) {
+@@ -6318,8 +6324,33 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+ #define CREATE_F16_CONVS(spv_suffix) \
+         CREATE_CONV(conv2d, _f16_f32, spv_suffix) \
+         CREATE_CONV(conv_transpose_2d, _f16_f32, spv_suffix)
++// map_anything: F32-weight conv_transpose_2d for mapany_* nodes with the
++// module pristine ggml selects on this device (cooperative-matrix variant on
++// cm2/cm1), next to the lingbot scalar routing of the regular _f32 slot.
++#define CREATE_MAPANY_CONVT(spv_suffix) \
++        for (auto &c : device->pipeline_conv_transpose_2d_f32_mapany[s]) { \
++            const vk_conv2d_pipeline_state &state = c.first;  \
++            std::vector<uint32_t> spec_constants_cpy = spec_constants; \
++            spec_constants_cpy.push_back(state.s0); \
++            spec_constants_cpy.push_back(state.s1); \
++            spec_constants_cpy.push_back(state.p0); \
++            spec_constants_cpy.push_back(state.p1); \
++            spec_constants_cpy.push_back(state.d0); \
++            spec_constants_cpy.push_back(state.d1); \
++            spec_constants_cpy.push_back(state.KW); \
++            spec_constants_cpy.push_back(state.KH); \
++            spec_constants_cpy.push_back(state.aligned); \
++            spec_constants_cpy.push_back(conv2d_csh_store); \
++            spec_constants_cpy.push_back(conv2d_WM); \
++            spec_constants_cpy.push_back(conv2d_WN); \
++            ggml_vk_create_pipeline( \
++                device, c.second, "conv_transpose_2d_f32", \
++                conv_transpose_2d_f32##spv_suffix##_len, conv_transpose_2d_f32##spv_suffix##_data, "main", 4, \
++                sizeof(vk_op_conv2d_push_constants), wg_denoms, spec_constants_cpy, 1, true, use_collectives || conv2d_required_subgroup_size, conv2d_required_subgroup_size);    \
++        }
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+         if (device->coopmat2) {
++            CREATE_MAPANY_CONVT(_cm2)
+             CREATE_F16_CONVS(_cm2)
+             // lingbot patch: coopmat2 only ships the _f16_f32 conv variants,
+             // but GCT's DPT heads feed F32 weights and an F32 dst to conv2d
+@@ -6331,18 +6362,22 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+ #endif
+ #if defined(VK_KHR_cooperative_matrix) && defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+         if (conv2d_use_cm1) {
++            CREATE_MAPANY_CONVT(_cm1)
+             CREATE_F16_CONVS(_cm1)
+             CREATE_CONVS( )
+         } else
+ #endif
+         if (conv2d_UNROLL) {
++            CREATE_MAPANY_CONVT(_unroll)
+             CREATE_CONVS(_unroll)
+         } else {
++            CREATE_MAPANY_CONVT( )
+             CREATE_CONVS( )
+         }
+ #undef CREATE_CONV
+ #undef CREATE_CONVS
+ #undef CREATE_F16_CONVS
++#undef CREATE_MAPANY_CONVT
+ 
+ #define CREATE_SCALAR_CONV(type_suffix, spv_suffix) \
+         for (auto &c : device->pipeline_conv2d##type_suffix##_scalar[s]) { \
+@@ -9465,6 +9500,17 @@ static vk_pipeline ggml_vk_get_64b_indexing_pipeline(ggml_backend_vk_context * c
+     return pipeline;
+ }
+ 
++// MapAnything parity contract: the map-anything-ggml reference runs on
++// pristine ggml Vulkan dispatch. Three downstream overrides change the module
++// selected for its graph: the RMBG F32-K/V flash-attention scalar routing, the
++// SAM3 2x2/stride-2 conv_transpose fast path, and the lingbot scalar routing of
++// F32-weight conv_transpose_2d on cooperative-matrix devices. The MapAnything
++// graph builder names its flash-attention / conv_transpose outputs "mapany_*";
++// those nodes keep the pristine selection, every other task is unchanged.
++static bool ggml_vk_mapany_pristine_node(const ggml_tensor * t) {
++    return strncmp(t->name, "mapany_", 7) == 0;
++}
++
+ // First non-empty name found along the tensor's view chain (the RMBG graph
+ // builder marks its tensors at build time).
+ static std::string ggml_vk_rmbg_tensor_name(const ggml_tensor * tensor) {
+@@ -11253,7 +11299,8 @@ static void ggml_vk_flash_attn(ggml_backend_vk_context * ctx, vk_context& subctx
+ 
+     // For scalar/coopmat1 FA, we can use the "large" size to accommodate qga.
+     // For coopmat2 FA, we always use the small size (which is still pretty large for gqa).
+-    vk_fa_tuning_params tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, 512, KV, k_type_eff, v_type_eff, f32acc);
++    const bool mapany_pristine = ggml_vk_mapany_pristine_node(dst);
++    vk_fa_tuning_params tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, 512, KV, k_type_eff, v_type_eff, f32acc, mapany_pristine);
+     const uint32_t max_gqa = std::min(tuning_params.block_rows, 32u);
+ 
+     if (N <= 8 && qk_ratio > 1 && qk_ratio <= max_gqa &&
+@@ -11266,7 +11313,7 @@ static void ggml_vk_flash_attn(ggml_backend_vk_context * ctx, vk_context& subctx
+         workgroups_y /= gqa_ratio;
+     }
+ 
+-    tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, N, KV, k_type_eff, v_type_eff, f32acc);
++    tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, N, KV, k_type_eff, v_type_eff, f32acc, mapany_pristine);
+ 
+     const uint32_t q_stride = (uint32_t)(nbq1 / ggml_type_size(q->type));
+     uint32_t k_stride = (uint32_t)(nbk1 / ggml_type_size(k->type));
+@@ -11317,7 +11364,7 @@ static void ggml_vk_flash_attn(ggml_backend_vk_context * ctx, vk_context& subctx
+     bool use_mask_opt = mask && nem1 >= 32 && nem0 * nem1 > 32768 && nem0 >= tuning_params.block_cols * 16
+                         && (ctx->device->architecture != vk_device_architecture::AMD_GCN || HSK > 256 || HSV > 256);
+     vk_fa_pipeline_state fa_pipeline_state = get_fa_pipeline_state(ctx->device, tuning_params, HSK, HSV, aligned, f32acc,
+-                                                                   mask != nullptr, use_mask_opt, logit_softcap != 0, k_type_eff, v_type_eff);
++                                                                   mask != nullptr, use_mask_opt, logit_softcap != 0, k_type_eff, v_type_eff, mapany_pristine);
+ 
+     vk_pipeline pipeline = nullptr;
+ 
+@@ -12170,7 +12217,8 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+                 }
+             } else if (op == GGML_OP_CONV_TRANSPOSE_2D) {
+                 if (src0->type == GGML_TYPE_F32) {
+-                    pipelines = &ctx->device->pipeline_conv_transpose_2d_f32[shape];
++                    pipelines = ggml_vk_mapany_pristine_node(dst) ? &ctx->device->pipeline_conv_transpose_2d_f32_mapany[shape]
++                                                                  : &ctx->device->pipeline_conv_transpose_2d_f32[shape];
+                 } else if (src1->type == GGML_TYPE_F16) {
+                     pipelines = &ctx->device->pipeline_conv_transpose_2d_f16[shape];
+                 } else if (src0->type == GGML_TYPE_F16) {
+@@ -15070,6 +15118,7 @@ static void ggml_vk_conv_2d(ggml_backend_vk_context * ctx, vk_context & subctx,
+     if (transpose && src0->ne[0] == 2 && src0->ne[1] == 2 && dst->op_params[0] == 2 &&
+         src1->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32 &&
+         src1->ne[3] == 1 && ggml_is_contiguous(src0) && ggml_is_contiguous(src1) && ggml_is_contiguous(dst) &&
++        !ggml_vk_mapany_pristine_node(dst) &&
+         getenv("GGML_VK_DISABLE_SAM3_CONV_TRANSPOSE_FAST_PATH") == nullptr) {
+         ggml_vk_conv_transpose_2d_fast(ctx, subctx, src0, src1, dst);
+         return;
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 9cca17290546f7ce26b7595a2ed302397c9fe038..b109017d6e57132e766d80ec904525b3ef508fcf 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1107,17 +1107,22 @@ void process_shaders() {
+                 std::string name = std::string(transpose ? "conv_transpose_2d": "conv2d")
+                     + (a_f16 ? "_f16" : "") + (io_f16 ? "" : "_f32");
+                 string_to_spv(name + (unroll ? "_unroll" : ""), "conv2d_mm.comp", defines);
++                // map_anything: the pristine F32-weight conv_transpose_2d
++                // coopmat modules stay available for mapany_* nodes
++                // (pipeline_conv_transpose_2d_f32_mapany); the regular _f32
++                // slot keeps the scalar routing below.
++                [[maybe_unused]] const bool mapany_convt = transpose && io_type == 0;
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+                 // conv2d_mm uses float16 cooperative-matrix accumulators.
+                 // Do not select it for an explicit f32-weight convolution.
+-                if (unroll && a_f16) {
++                if (unroll && (a_f16 || mapany_convt)) {
+                     auto cm2_defines = defines;
+                     cm2_defines["COOPMAT2"] = "1";
+                     string_to_spv(name, "conv2d_mm.comp", cm2_defines, true, false, true);
+                 }
+ #endif
+ #if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+-                if (unroll && a_f16) {
++                if (unroll && (a_f16 || mapany_convt)) {
+                     auto cm1_defines = defines;
+                     cm1_defines["COOPMAT"] = "1";
+                     string_to_spv(name, "conv2d_mm.comp", cm1_defines, true, true, false);

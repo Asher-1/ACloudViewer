@@ -66,7 +66,8 @@ std::unique_ptr<retrieval::VisualIndex> CreateSyntheticVisualIndex() {
   // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.VirtualCall)
   visual_index->Build(
       build_options,
-      FeatureDescriptorsFloatData::Random(50, 128));
+      FeatureDescriptorsFloat(FeatureExtractorType::SIFT,
+                              FeatureDescriptorsFloatData::Random(50, 128)));
   return visual_index;
 }
 

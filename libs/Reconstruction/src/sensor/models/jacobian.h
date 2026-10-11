@@ -1528,4 +1528,48 @@ bool EquirectangularCameraModel::ImgFromCamWithJac(
     return true;
 }
 
+template <bool Enable, typename std::enable_if<Enable, int>::type>
+bool SkewedPinholeCameraModel::ImgFromCamWithJac(const double* params,
+                                                 const double& u,
+                                                 const double& v,
+                                                 const double& w,
+                                                 double* x,
+                                                 double* y,
+                                                 double* J_params,
+                                                 double* J_uvw,
+                                                 const bool check_cheirality) {
+    if (!HasProjectableDepth(w, check_cheirality)) return false;
+
+    const double inv_w = 1.0 / w;
+    const double uu = u * inv_w;
+    const double vv = v * inv_w;
+    const double fx = params[0];
+    const double fy = params[1];
+    const double skew = params[4];
+    *x = fx * uu + skew * vv + params[2];
+    *y = fy * vv + params[3];
+
+    if (J_uvw) {
+        J_uvw[0] = fx * inv_w;
+        J_uvw[1] = skew * inv_w;
+        J_uvw[2] = -inv_w * (fx * uu + skew * vv);
+        J_uvw[3] = 0.0;
+        J_uvw[4] = fy * inv_w;
+        J_uvw[5] = -fy * inv_w * vv;
+    }
+    if (J_params) {
+        J_params[0] = uu;
+        J_params[1] = 0.0;
+        J_params[2] = 1.0;
+        J_params[3] = 0.0;
+        J_params[4] = vv;
+        J_params[5] = 0.0;
+        J_params[6] = vv;
+        J_params[7] = 0.0;
+        J_params[8] = 1.0;
+        J_params[9] = 0.0;
+    }
+    return true;
+}
+
 }  // namespace colmap

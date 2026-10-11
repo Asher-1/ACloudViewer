@@ -16,6 +16,8 @@ caller is not an abstraction requirement.
 | Download transport/integrity/data root | AICore catalog + shared plugin services | Use `ecvModelDownloader` / `ecvAssetIntegrity`; do not implement transport |
 | UI, source selection, DB entities, rendering/export | Qt plugin | Adapt typed results to application objects |
 | Accuracy/stability/performance | probe + validation manifest | Add rows and consume report evidence |
+| Batch grammar/schema/manifest | `ecvAICoreBatchCommand.h` + native command | Supply task options and serialize typed results |
+| Stable task identity | native keyword + JSON-RPC whitelist + Python AI registry | Keep identities synchronized; read options from binary HELP |
 
 Do not create a plugin model source of truth, private downloader implementation,
 cache root, device lock, backend registry, JSON/file inference transport, or
@@ -65,3 +67,5 @@ source identity plus generation through every result.
 - Cancellation, stale-generation suppression, and teardown are tested.
 - A typed result reaches render, metadata, and export consumers without a
   placeholder label or a second semantic mapping.
+- Agent automation reuses the native command; JSON-RPC, Click, and MCP do not
+  implement model loading, preprocessing, or task option defaults.

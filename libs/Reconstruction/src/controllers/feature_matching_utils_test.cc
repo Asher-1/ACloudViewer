@@ -9,7 +9,7 @@
 
 #include "controllers/feature_matching_utils.h"
 
-#include "feature/matching.h"
+#include "controllers/matcher_cache.h"
 #include "scene/synthetic.h"
 #include "sensor/models.h"
 #include "util/testing.h"

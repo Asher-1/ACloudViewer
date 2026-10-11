@@ -87,6 +87,9 @@ struct PatchMatchOptions {
     // for pixel not to be filtered.
     int filter_min_num_consistent = 2;
 
+    // Number of threads for processing. -1 uses all available threads.
+    int num_threads = -1;
+
     // Maximum forward-backward reprojection error for pixel
     // to be geometrically consistent.
     double filter_geom_consistency_max_cost = 1.0f;
@@ -142,6 +145,7 @@ struct PatchMatchOptions {
         CHECK_OPTION_GE(filter_min_triangulation_angle, 0.0f);
         CHECK_OPTION_LE(filter_min_triangulation_angle, 180.0f);
         CHECK_OPTION_GE(filter_min_num_consistent, 0);
+        CHECK_OPTION_GE(num_threads, -1);
         CHECK_OPTION_GE(filter_geom_consistency_max_cost, 0.0f);
         CHECK_OPTION_GT(cache_size, 0);
         return true;

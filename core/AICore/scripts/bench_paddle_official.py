@@ -7,6 +7,7 @@ the AICore ocr GGUFs are converted from) on the same host/image/protocol:
 3 warmups + 10 timed predicts, wall-clock per call, p50/p95 reported.
 
 usage: bench_paddle_official.py <image> [warmups] [iters] [--cpu]
+                                [--language ch|en] [--recognize-full-image]
 Requires: pip install paddlepaddle-gpu==3.0.0 paddleocr==3.0.1
 """
 
@@ -15,6 +16,16 @@ import math
 import statistics
 import sys
 import time
+
+
+def emit_recognition_row(result):
+    """Emit one full-image quad for cropped-word GT recognition datasets."""
+    image = result["input_img"]
+    height, width = image.shape[:2]
+    text = result.get("rec_text", "")
+    score = float(result.get("rec_score", 0.0))
+    print(f"TEXT 0 {width / 2:.0f} {height / 2:.0f} {width}x{height} {text}")
+    print(f"OCRBOX 0 {score:.6f} 0,0 {width - 1},0 {width - 1},{height - 1} 0,{height - 1}\t{text}")
 
 
 def emit_text_rows(results):
@@ -34,6 +45,10 @@ def emit_text_rows(results):
             height = math.hypot(float(quad[3][0]) - float(quad[0][0]),
                                 float(quad[3][1]) - float(quad[0][1]))
             print(f"TEXT {row} {cx:.0f} {cy:.0f} {width:.0f}x{height:.0f} {text}")
+            quad_text = " ".join(
+                f"{float(point[0]):.3f},{float(point[1]):.3f}"
+                for point in quad[:4])
+            print(f"OCRBOX {row} 0.000000 {quad_text}\t{text}")
             row += 1
 
 
@@ -42,12 +57,21 @@ def main():
     warmups = int(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else 3
     iters = int(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith("-") else 10
     use_cpu = "--cpu" in sys.argv
+    recognize_full_image = "--recognize-full-image" in sys.argv
+    language = "ch"
+    if "--language" in sys.argv:
+        index = sys.argv.index("--language")
+        if index + 1 >= len(sys.argv) or sys.argv[index + 1] not in {"ch", "en"}:
+            raise SystemExit("--language expects ch or en")
+        language = sys.argv[index + 1]
 
     from paddleocr import PaddleOCR
 
     kwargs = dict(
         text_detection_model_name="PP-OCRv4_mobile_det",
-        text_recognition_model_name="PP-OCRv4_mobile_rec",
+        text_recognition_model_name=("PP-OCRv4_mobile_rec" if language == "ch"
+                                     else "en_PP-OCRv4_mobile_rec"),
+        lang=language,
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
@@ -55,32 +79,49 @@ def main():
     )
     if use_cpu:
         kwargs["device"] = "cpu"
-    ocr = PaddleOCR(**kwargs)
+    if recognize_full_image:
+        from paddleocr import TextRecognition
+        recognizer = TextRecognition(
+            model_name=("PP-OCRv4_mobile_rec" if language == "ch"
+                        else "en_PP-OCRv4_mobile_rec"))
+        predict = lambda: list(recognizer.predict(image))
+    else:
+        ocr = PaddleOCR(**kwargs)
+        predict = lambda: ocr.predict(image)
 
     # warmups (first call builds engines and downloads models)
     for _ in range(warmups):
-        ocr.predict(image)
+        predict()
 
     timings = []
     n_text = 0
     last_results = []
     for _ in range(iters):
         t0 = time.perf_counter()
-        results = ocr.predict(image)
+        results = predict()
         t1 = time.perf_counter()
         timings.append((t1 - t0) * 1000.0)
         last_results = results
-        for res in results:
-            texts = res.get("rec_texts", [])
-            n_text = max(n_text, len(texts))
+        if recognize_full_image:
+            n_text = 1 if results else 0
+        else:
+            for res in results:
+                texts = res.get("rec_texts", [])
+                n_text = max(n_text, len(texts))
 
     timings.sort()
     p50 = timings[len(timings) // 2]
     p95 = timings[int(0.95 * (len(timings) - 1))]
-    emit_text_rows(last_results)
+    if recognize_full_image:
+        if last_results:
+            emit_recognition_row(last_results[0])
+    else:
+        emit_text_rows(last_results)
     print(json.dumps({
         "pipeline": "paddleocr-official",
         "device": "cpu" if use_cpu else "gpu",
+        "language": language,
+        "recognize_full_image": recognize_full_image,
         "image": image,
         "e2e_p50_ms": round(p50, 2),
         "e2e_p95_ms": round(p95, 2),

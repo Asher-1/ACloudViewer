@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <functional>
 
-#include "feature/matching.h"  // FeatureMatcherCache (fork location)
+#include "controllers/matcher_cache.h"
 #include "retrieval/visual_index.h"
 #include "scene/database.h"
 #include "util/hash_containers.h"
@@ -191,6 +191,16 @@ struct ImportedPairingOptions {
     bool Check() const;
 
     inline size_t CacheSize() const { return block_size; }
+};
+
+struct FeaturePairsMatchingOptions {
+    // Whether to geometrically verify the given matches.
+    bool verify_matches = true;
+
+    // Path to the file with the matches.
+    std::filesystem::path match_list_path = "";
+
+    bool Check() const;
 };
 
 struct ExistingMatchedPairingOptions {

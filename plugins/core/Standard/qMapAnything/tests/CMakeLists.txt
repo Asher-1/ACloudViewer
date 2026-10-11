@@ -1,6 +1,7 @@
 add_executable( test_qmapanything_helpers test_map_anything_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingModelCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingGeometry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingReconstruction.cpp
 )
 
 target_include_directories( test_qmapanything_helpers PRIVATE
@@ -32,3 +33,38 @@ endif()
 cloudviewer_set_bin_runtime_output_directory( test_qmapanything_helpers )
 add_test( NAME test_qmapanything_helpers COMMAND test_qmapanything_helpers )
 cloudviewer_set_plugin_test_env(test_qmapanything_helpers)
+
+# GUI/headless closure harness: the REAL MapAnythingWorker (dialog thread)
+# writing the merged cloud in the headless CLOUD_PLY byte layout. Driven by
+# check_gui_headless_parity.py against -MAP_ANYTHING_RECONSTRUCT (needs a
+# GGUF + images, so not a ctest).
+add_executable( map_anything_worker_parity_harness worker_parity_harness.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/MapAnythingWorker.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingWorker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingModelCatalog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingGeometry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingReconstruction.cpp
+)
+set_target_properties( map_anything_worker_parity_harness PROPERTIES AUTOMOC ON )
+target_include_directories( map_anything_worker_parity_harness PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_SOURCE_DIR}/core/AICore/include
+    ${CMAKE_SOURCE_DIR}/libs/CVPluginAPI/include
+)
+target_compile_definitions( map_anything_worker_parity_harness PRIVATE AICore_ENABLED )
+target_link_libraries( map_anything_worker_parity_harness PRIVATE
+    AICore
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::Concurrent
+    Threads::Threads
+)
+if( NOT MSVC )
+    target_compile_options( map_anything_worker_parity_harness PRIVATE -Wall -Wextra -fPIC )
+    set_target_properties( map_anything_worker_parity_harness PROPERTIES
+        POSITION_INDEPENDENT_CODE ON )
+    if( UNIX AND NOT APPLE )
+        target_link_options( map_anything_worker_parity_harness PRIVATE "-no-pie" )
+    endif()
+endif()
+cloudviewer_set_bin_runtime_output_directory( map_anything_worker_parity_harness )

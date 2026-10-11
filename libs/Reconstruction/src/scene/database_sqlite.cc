@@ -319,7 +319,6 @@ class SqliteDatabase : public Database {
   bool ExistsImageWithName(std::string name) const override;
   bool ExistsKeypoints(const image_t image_id) const override;
   bool ExistsDescriptors(const image_t image_id) const override;
-  bool ExistsFloatDescriptors(const image_t image_id) const override;
   bool ExistsMatches(const image_t image_id1,
                      const image_t image_id2) const override;
   bool ExistsInlierMatches(const image_t image_id1,
@@ -356,14 +355,11 @@ class SqliteDatabase : public Database {
   std::vector<Image> ReadAllImages() const override;
   FeatureKeypoints ReadKeypoints(const image_t image_id) const override;
   FeatureDescriptors ReadDescriptors(const image_t image_id) const override;
-  FeatureDescriptorsFloat ReadFloatDescriptors(
-          const image_t image_id) const override;
-  FeatureDescriptorType ReadDescriptorType(
-          const image_t image_id) const override;
   FeatureMatches ReadMatches(const image_t image_id1,
                              const image_t image_id2) const override;
   std::vector<std::pair<image_pair_t, FeatureMatches>> ReadAllMatches()
           const override;
+  std::vector<std::pair<image_pair_t, int>> ReadNumMatches() const override;
   TwoViewGeometry ReadTwoViewGeometry(const image_t image_id1,
                                       const image_t image_id2)
           const override;
@@ -392,9 +388,6 @@ class SqliteDatabase : public Database {
   void WriteDescriptors(const image_t image_id,
                         const FeatureDescriptors& descriptors)
           const override;
-  void WriteFloatDescriptors(const image_t image_id,
-                             const FeatureDescriptorsFloat& descriptors,
-                             FeatureDescriptorType type) const override;
   void WriteMatches(const image_t image_id1,
                     const image_t image_id2,
                     const FeatureMatches& matches) const override;
@@ -463,7 +456,6 @@ class SqliteDatabase : public Database {
   void CreateImageTable() const;
   void CreateKeypointsTable() const;
   void CreateDescriptorsTable() const;
-  void CreateFloatDescriptorsTable() const;
   void CreateMatchesTable() const;
   void CreateTwoViewGeometriesTable() const;
   void CreatePosePriorsTable() const;
@@ -519,7 +511,6 @@ class SqliteDatabase : public Database {
   sqlite3_stmt* sql_stmt_exists_image_name_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_exists_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_two_view_geometry_ = nullptr;
 
@@ -540,10 +531,9 @@ class SqliteDatabase : public Database {
   sqlite3_stmt* sql_stmt_read_images_ = nullptr;
   sqlite3_stmt* sql_stmt_read_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_read_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_read_float_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_read_descriptor_type_ = nullptr;
   sqlite3_stmt* sql_stmt_read_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_read_matches_all_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_num_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometry_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometries_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometry_num_inliers_ = nullptr;
@@ -551,7 +541,6 @@ class SqliteDatabase : public Database {
   // write_*
   sqlite3_stmt* sql_stmt_write_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_write_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_write_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_write_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_write_two_view_geometry_ = nullptr;
 
@@ -569,7 +558,6 @@ class SqliteDatabase : public Database {
   sqlite3_stmt* sql_stmt_clear_cameras_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_images_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_clear_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_two_view_geometries_ = nullptr;
@@ -663,10 +651,6 @@ bool SqliteDatabase::ExistsKeypoints(const image_t image_id) const {
 
 bool SqliteDatabase::ExistsDescriptors(const image_t image_id) const {
   return ExistsRowId(sql_stmt_exists_descriptors_, image_id);
-}
-
-bool SqliteDatabase::ExistsFloatDescriptors(const image_t image_id) const {
-  return ExistsRowId(sql_stmt_exists_float_descriptors_, image_id);
 }
 
 bool SqliteDatabase::ExistsMatches(const image_t image_id1,
@@ -1000,37 +984,16 @@ FeatureDescriptors SqliteDatabase::ReadDescriptors(const image_t image_id) const
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_descriptors_, 1, image_id));
 
   const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_descriptors_));
-  const FeatureDescriptors descriptors =
-      ReadDynamicMatrixBlob<FeatureDescriptors>(sql_stmt_read_descriptors_, rc,
-                                                0);
+  FeatureDescriptors descriptors;
+  descriptors.data = ReadDynamicMatrixBlob<FeatureDescriptorsData>(
+          sql_stmt_read_descriptors_, rc, 0);
+  if (rc == SQLITE_ROW) {
+    descriptors.type = static_cast<FeatureExtractorType>(
+            sqlite3_column_int(sql_stmt_read_descriptors_, 3));
+  }
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_descriptors_));
-
   return descriptors;
-}
-
-FeatureDescriptorsFloat SqliteDatabase::ReadFloatDescriptors(
-    const image_t image_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_float_descriptors_, 1,
-                                  image_id));
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_float_descriptors_));
-  const FeatureDescriptorsFloat descriptors =
-      ReadDynamicMatrixBlob<FeatureDescriptorsFloat>(
-          sql_stmt_read_float_descriptors_, rc, 0);
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_float_descriptors_));
-  return descriptors;
-}
-
-FeatureDescriptorType SqliteDatabase::ReadDescriptorType(
-    const image_t image_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_descriptor_type_, 1,
-                                  image_id));
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_descriptor_type_));
-  const auto type = rc == SQLITE_ROW
-                        ? sqlite3_column_int(sql_stmt_read_descriptor_type_, 0)
-                        : static_cast<int>(FeatureDescriptorType::kSift);
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_descriptor_type_));
-  return static_cast<FeatureDescriptorType>(type);
 }
 
 FeatureMatches SqliteDatabase::ReadMatches(image_t image_id1,
@@ -1068,6 +1031,24 @@ std::vector<std::pair<image_pair_t, FeatureMatches>> SqliteDatabase::ReadAllMatc
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_matches_all_));
 
   return all_matches;
+}
+
+std::vector<std::pair<image_pair_t, int>> SqliteDatabase::ReadNumMatches()
+    const {
+  std::vector<std::pair<image_pair_t, int>> num_matches;
+
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_num_matches_)) ==
+         SQLITE_ROW) {
+    const image_pair_t pair_id = static_cast<image_pair_t>(
+        sqlite3_column_int64(sql_stmt_read_num_matches_, 0));
+    const int rows =
+        static_cast<int>(sqlite3_column_int64(sql_stmt_read_num_matches_, 1));
+    num_matches.emplace_back(pair_id, rows);
+  }
+
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_num_matches_));
+
+  return num_matches;
 }
 
 // Serialize a camera to a little-endian binary blob for storage in a single
@@ -1479,30 +1460,12 @@ void SqliteDatabase::WriteKeypoints(const image_t image_id,
 void SqliteDatabase::WriteDescriptors(const image_t image_id,
                                 const FeatureDescriptors& descriptors) const {
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_descriptors_, 1, image_id));
-  WriteDynamicMatrixBlob(sql_stmt_write_descriptors_, descriptors, 2);
+  WriteDynamicMatrixBlob(sql_stmt_write_descriptors_, descriptors.data, 2);
+  SQLITE3_CALL(sqlite3_bind_int(sql_stmt_write_descriptors_, 5,
+                                static_cast<int>(descriptors.type)));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_write_descriptors_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_write_descriptors_));
-}
-
-void SqliteDatabase::WriteFloatDescriptors(const image_t image_id,
-                                     const FeatureDescriptorsFloat& descriptors,
-                                     const FeatureDescriptorType type) const {
-  CHECK(descriptors.rows() >= 0 && descriptors.cols() >= 0);
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 1,
-                                  image_id));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 2,
-                                  descriptors.rows()));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 3,
-                                  descriptors.cols()));
-  SQLITE3_CALL(sqlite3_bind_int(sql_stmt_write_float_descriptors_, 4,
-                                static_cast<int>(type)));
-  SQLITE3_CALL(sqlite3_bind_blob(
-      sql_stmt_write_float_descriptors_, 5,
-      reinterpret_cast<const char*>(descriptors.data()),
-      static_cast<int>(descriptors.size() * sizeof(float)), SQLITE_STATIC));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_write_float_descriptors_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_write_float_descriptors_));
 }
 
 void SqliteDatabase::WriteMatches(const image_t image_id1, const image_t image_id2,
@@ -1839,8 +1802,6 @@ void SqliteDatabase::ClearImages() const {
 void SqliteDatabase::ClearDescriptors() const {
   SQLITE3_CALL(sqlite3_step(sql_stmt_clear_descriptors_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_descriptors_));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_clear_float_descriptors_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_float_descriptors_));
 }
 
 void SqliteDatabase::ClearKeypoints() const {
@@ -1909,11 +1870,6 @@ void SqliteDatabase::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_exists_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_exists_descriptors_);
-
-  sql = "SELECT 1 FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_exists_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_exists_float_descriptors_);
 
   sql = "SELECT 1 FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -2014,20 +1970,10 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_read_keypoints_, 0));
   sql_stmts_.push_back(sql_stmt_read_keypoints_);
 
-  sql = "SELECT rows, cols, data FROM descriptors WHERE image_id = ?;";
+  sql = "SELECT rows, cols, data, type FROM descriptors WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_read_descriptors_);
-
-  sql = "SELECT rows, cols, data, type FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_read_float_descriptors_);
-
-  sql = "SELECT type FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_descriptor_type_, 0));
-  sql_stmts_.push_back(sql_stmt_read_descriptor_type_);
 
   sql = "SELECT rows, cols, data FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -2038,6 +1984,11 @@ void SqliteDatabase::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_matches_all_, 0));
   sql_stmts_.push_back(sql_stmt_read_matches_all_);
+
+  sql = "SELECT pair_id, rows FROM matches WHERE rows > 0;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_num_matches_, 0));
+  sql_stmts_.push_back(sql_stmt_read_num_matches_);
 
   sql =
       "SELECT rows, cols, data, config, F, E, H, qvec, tvec, camera1, camera2 "
@@ -2093,15 +2044,10 @@ void SqliteDatabase::PrepareSQLStatements() {
   sql_stmts_.push_back(sql_stmt_update_pose_prior_);
 
   sql =
-      "INSERT INTO descriptors(image_id, rows, cols, data) VALUES(?, ?, ?, ?);";
+      "INSERT INTO descriptors(image_id, rows, cols, data, type) VALUES(?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_write_descriptors_);
-
-  sql = "INSERT OR REPLACE INTO float_descriptors(image_id, rows, cols, type, data) VALUES(?, ?, ?, ?, ?);";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_write_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_write_float_descriptors_);
 
   sql = "INSERT INTO matches(pair_id, rows, cols, data) VALUES(?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -2153,11 +2099,6 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_clear_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_clear_descriptors_);
 
-  sql = "DELETE FROM float_descriptors;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_clear_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_clear_float_descriptors_);
-
   sql = "DELETE FROM keypoints;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_clear_keypoints_, 0));
@@ -2196,7 +2137,6 @@ void SqliteDatabase::CreateTables() const {
   CreateImageTable();
   CreateKeypointsTable();
   CreateDescriptorsTable();
-  CreateFloatDescriptorsTable();
   CreateMatchesTable();
   CreateTwoViewGeometriesTable();
   CreatePosePriorsTable();
@@ -2302,20 +2242,9 @@ void SqliteDatabase::CreateDescriptorsTable() const {
       "    rows      INTEGER               NOT NULL,"
       "    cols      INTEGER               NOT NULL,"
       "    data      BLOB,"
-      "FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE CASCADE);";
-
-  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
-}
-
-void SqliteDatabase::CreateFloatDescriptorsTable() const {
-  const std::string sql =
-      "CREATE TABLE IF NOT EXISTS float_descriptors"
-      "   (image_id  INTEGER  PRIMARY KEY  NOT NULL,"
-      "    rows      INTEGER               NOT NULL,"
-      "    cols      INTEGER               NOT NULL,"
       "    type      INTEGER               NOT NULL,"
-      "    data      BLOB,"
       "FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE CASCADE);";
+
   SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
@@ -2416,6 +2345,52 @@ int SqliteDatabase::ReadUserVersion() const {
 }
 
 void SqliteDatabase::PostMigrateTables() const {
+    // F2: descriptors.type is the single persistent source of the extractor
+    // type. Old fork databases stored SIFT bytes in descriptors and learned
+    // float32 descriptors in a second table with a fork-private enum. Migrate
+    // once while the old table still exists, then remove the parallel source.
+    if (!ExistsColumn("descriptors", "type")) {
+        SQLITE3_EXEC(database_,
+                     "ALTER TABLE descriptors ADD COLUMN type INTEGER NOT NULL "
+                     "DEFAULT 0;",
+                     nullptr);
+    }
+    if (ExistsTable("float_descriptors")) {
+        sqlite3_stmt* invalid_type_stmt = nullptr;
+        SQLITE3_CALL(sqlite3_prepare_v2(
+                database_,
+                "SELECT COUNT(*) FROM float_descriptors "
+                "WHERE type NOT IN (0, 1, 2, 6, 7);",
+                -1, &invalid_type_stmt, nullptr));
+        const int invalid_rc = SQLITE3_CALL(sqlite3_step(invalid_type_stmt));
+        const int invalid_count =
+                invalid_rc == SQLITE_ROW
+                        ? sqlite3_column_int(invalid_type_stmt, 0)
+                        : 0;
+        SQLITE3_CALL(sqlite3_finalize(invalid_type_stmt));
+        if (invalid_count != 0) {
+            throw std::runtime_error(
+                    "Cannot migrate float_descriptors with an unsupported "
+                    "legacy descriptor type.");
+        }
+
+        // This is O(total descriptor bytes) because SQLite copies each blob;
+        // it runs once per legacy database and preserves raw float32 bytes.
+        SQLITE3_EXEC(
+                database_,
+                "INSERT OR REPLACE INTO descriptors(image_id, rows, cols, data, type) "
+                "SELECT image_id, rows, cols * 4, data, "
+                "CASE type "
+                "WHEN 0 THEN 0 "
+                "WHEN 1 THEN 3 "
+                "WHEN 2 THEN 4 "
+                "WHEN 6 THEN 1 "
+                "WHEN 7 THEN 2 END "
+                "FROM float_descriptors;",
+                nullptr);
+        SQLITE3_EXEC(database_, "DROP TABLE float_descriptors;", nullptr);
+    }
+
     // Upstream parity (d3ccaf35): the estimated per-view cameras of the
     // two-view geometries were added after the legacy fork schema; make sure
     // pre-existing databases carry the columns before anything reads them.

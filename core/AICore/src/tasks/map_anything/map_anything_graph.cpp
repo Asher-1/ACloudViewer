@@ -25,11 +25,14 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "ggml-alloc.h"
@@ -164,6 +167,78 @@ void build_dpt_uv_embed(int Hp, int Wp, int oc, std::vector<float>& out) {
     }
 }
 
+// Upstream-parity node naming. The map-anything-ggml reference runs on
+// pristine ggml; the ACloudViewer ggml chain carries CUDA precision overrides
+// (RMBG F32-direct F16 GEMM output, the SAM3 2x2/s2 conv_transpose cuBLAS
+// fast path, the cuBLAS route for small-N F32 GEMMs, the sam3d precise-math
+// SiLU) that perturb every stage from the patch embed onward. The CUDA
+// backend keeps the pristine kernel selection for nodes whose name starts
+// with "mapany_" (ggml_cuda_mapany_pristine_node, map_anything_merged/0001),
+// so every mul_mat / conv_transpose / SiLU output built here must carry that
+// prefix. The Vulkan backend does the same for its flash-attention and
+// conv_transpose overrides (RMBG F32-K/V scalar FA, SAM3 2x2/s2 fast path,
+// lingbot F32 conv_transpose scalar routing; ggml_vk_mapany_pristine_node,
+// same patch part D). The prefix is inert on CPU/Metal.
+constexpr const char* kMatmulName = "mapany_mm";
+constexpr const char* kConvTransposeName = "mapany_convT";
+constexpr const char* kSiluName = "mapany_silu";
+constexpr const char* kFlashAttnName = "mapany_fa";
+
+ggml_tensor* silu(ggml_context* ctx, ggml_tensor* x) {
+    ggml_tensor* r = ggml_silu(ctx, x);
+    ggml_set_name(r, kSiluName);
+    return r;
+}
+
+ggml_tensor* flash_attn(ggml_context* ctx,
+                        ggml_tensor* q,
+                        ggml_tensor* k,
+                        ggml_tensor* v,
+                        float scale) {
+    ggml_tensor* r =
+            ggml_flash_attn_ext(ctx, q, k, v, nullptr, scale, 0.0f, 0.0f);
+    ggml_set_name(r, kFlashAttnName);
+    return r;
+}
+
+// Same op decomposition as ggml_conv_2d (im2col -> mul_mat -> permute); the
+// only addition is the name on the inner mul_mat, which ggml_conv_2d does not
+// expose.
+ggml_tensor* mapany_conv_2d(ggml_context* ctx,
+                            ggml_tensor* a,
+                            ggml_tensor* b,
+                            int s0,
+                            int s1,
+                            int p0,
+                            int p1,
+                            int d0,
+                            int d1) {
+    ggml_tensor* im2col =
+            ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
+                        a->type == GGML_TYPE_BF16
+                                ? GGML_TYPE_F32
+                                : GGML_TYPE_F16);  // [N, OH, OW, IC*KH*KW]
+    ggml_tensor* result = ggml_mul_mat(
+            ctx,
+            ggml_reshape_2d(ctx, im2col, im2col->ne[0],
+                            im2col->ne[3] * im2col->ne[2] * im2col->ne[1]),
+            ggml_reshape_2d(ctx, a, a->ne[0] * a->ne[1] * a->ne[2], a->ne[3]));
+    ggml_set_name(result, kMatmulName);
+    result = ggml_reshape_4d(ctx, result, im2col->ne[1], im2col->ne[2],
+                             im2col->ne[3], a->ne[3]);  // [OC, N, OH, OW]
+    return ggml_cont(ctx,
+                     ggml_permute(ctx, result, 0, 1, 3, 2));  // [N, OC, OH, OW]
+}
+
+ggml_tensor* mapany_conv_transpose_2d_p0(ggml_context* ctx,
+                                         ggml_tensor* a,
+                                         ggml_tensor* b,
+                                         int stride) {
+    ggml_tensor* r = ggml_conv_transpose_2d_p0(ctx, a, b, stride);
+    ggml_set_name(r, kConvTransposeName);
+    return r;
+}
+
 }  // namespace
 
 // The vggt-omega builder: one implementation of the IGraphBuilder registry
@@ -230,6 +305,9 @@ struct VGGTRuntime::Impl : IGraphBuilder {
     mutable std::vector<std::string> dbg_names;
     mutable std::vector<ggml_tensor*> dbg_nodes_late;  // dumped after stage 3
     mutable std::vector<std::string> dbg_names_late;
+    // first attention of this graph only; per-Impl so one context's dump
+    // state never leaks into another context built later in the process
+    mutable bool dbg_attn_done = false;
 #endif
 
     ggml_tensor* w(const char* name) const {
@@ -275,6 +353,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         // activation casts outweigh the matmul gain at these shapes. Kept
         // F32 activations; only the weights stay F16 on GPU backends.
         ggml_tensor* r = ggml_mul_mat(ctx, w32, x2);  // {Cout, kn}
+        ggml_set_name(r, kMatmulName);
         ggml_tensor* out = ggml_reshape_4d(ctx, r, w32->ne[1], x->ne[1],
                                            x->ne[2], x->ne[3]);
         if (b) {
@@ -391,14 +470,12 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
         v = ggml_cont(ctx, ggml_permute(ctx, v, 0, 2, 1, 3));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
-        static bool dbg_attn = !MAP_DUMP_ACTIVE();
         ggml_tensor* v_p = v;
         ggml_tensor* q_p = q;
         ggml_tensor* k_p = k;
 #endif
         ggml_tensor* o =
-                ggml_flash_attn_ext(ctx, q, k, v, nullptr,
-                                    1.0f / std::sqrt((float)dh_l), 0.0f, 0.0f);
+                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l));
         // FA result ne is {dh, nh, T, B} (ggml returns it "permuted":
         // ne1=n_head, ne2=n_tokens, see ggml.c). Reshaping straight to {dim, T,
         // B} yields the head-major token vector (c = h*dh + d) — no extra
@@ -407,8 +484,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         ggml_tensor* attn_core [[maybe_unused]] = o;
         o = lin(ctx, o, wproj, bproj);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
-        if (!dbg_attn) {
-            dbg_attn = true;
+        if (MAP_DUMP_ACTIVE() && !dbg_attn_done) {
+            dbg_attn_done = true;
             const char* st = MAP_DUMP_DIR();
             auto dumpa = [&](ggml_tensor* t, const char* nm) {
                 ggml_set_output(t);
@@ -506,8 +583,9 @@ struct VGGTRuntime::Impl : IGraphBuilder {
     // Returns patch tokens {C, P, S} (x_norm_patchtokens).
     ggml_tensor* backbone(ggml_context* ctx, ggml_tensor* img) {
         const int ps = m->meta.patch_size;
-        ggml_tensor* x = ggml_conv_2d(ctx, w("bb.patch_embed.proj.weight"), img,
-                                      ps, ps, 0, 0, 1, 1);  // {Wp, Hp, C, S}
+        ggml_tensor* x =
+                mapany_conv_2d(ctx, w("bb.patch_embed.proj.weight"), img, ps,
+                               ps, 0, 0, 1, 1);  // {Wp, Hp, C, S}
         x = ggml_add(ctx, x, bias4(ctx, w("bb.patch_embed.proj.bias"), C));
         x = ggml_cont(ctx, ggml_permute(ctx, x, 1, 2, 0, 3));  // {C, Wp, Hp, S}
         x = ggml_reshape_3d(ctx, x, C, P, S);
@@ -763,8 +841,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                 ggml_relu(ctx, x);  // conv-path input AND residual base
         ggml_tensor* a = xr;
         a = ggml_add(ctx,
-                     ggml_conv_2d(ctx, w((p + ".conv1.weight").c_str()), a, 1,
-                                  1, 1, 1, 1, 1),
+                     mapany_conv_2d(ctx, w((p + ".conv1.weight").c_str()), a, 1,
+                                    1, 1, 1, 1, 1),
                      bias4(ctx, w((p + ".conv1.bias").c_str()), a->ne[2]));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (dump_tag && MAP_DUMP_ACTIVE()) {
@@ -776,8 +854,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
 #endif
         a = ggml_relu(ctx, a);
         a = ggml_add(ctx,
-                     ggml_conv_2d(ctx, w((p + ".conv2.weight").c_str()), a, 1,
-                                  1, 1, 1, 1, 1),
+                     mapany_conv_2d(ctx, w((p + ".conv2.weight").c_str()), a, 1,
+                                    1, 1, 1, 1, 1),
                      bias4(ctx, w((p + ".conv2.bias").c_str()), a->ne[2]));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (dump_tag && MAP_DUMP_ACTIVE()) {
@@ -820,8 +898,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         }
         return ggml_add(
                 ctx,
-                ggml_conv_2d(ctx, w((p + ".out_conv.weight").c_str()), x, 1, 1,
-                             0, 0, 1, 1),
+                mapany_conv_2d(ctx, w((p + ".out_conv.weight").c_str()), x, 1,
+                               1, 0, 0, 1, 1),
                 bias4(ctx, w((p + ".out_conv.bias").c_str()), x->ne[2]));
     }
 
@@ -829,7 +907,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                          const std::string& p,
                          ggml_tensor* x) const {
         ggml_tensor* kw = w((p + ".weight").c_str());
-        ggml_tensor* r = ggml_conv_2d(ctx, kw, x, 1, 1, 0, 0, 1, 1);
+        ggml_tensor* r = mapany_conv_2d(ctx, kw, x, 1, 1, 0, 0, 1, 1);
         return ggml_add(ctx, r, bias4(ctx, w((p + ".bias").c_str()), r->ne[2]));
     }
 
@@ -837,8 +915,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                          const std::string& p,
                          ggml_tensor* x,
                          bool has_bias) const {
-        ggml_tensor* r = ggml_conv_2d(ctx, w((p + ".weight").c_str()), x, 1, 1,
-                                      1, 1, 1, 1);
+        ggml_tensor* r = mapany_conv_2d(ctx, w((p + ".weight").c_str()), x, 1,
+                                        1, 1, 1, 1, 1);
         return has_bias ? ggml_add(ctx, r,
                                    bias4(ctx, w((p + ".bias").c_str()),
                                          r->ne[2]))
@@ -869,12 +947,15 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         const std::string prefix = "dp";
         ggml_tensor* taps[4];
 #ifdef MAP_ANYTHING_ENABLE_DUMP
-        const char* dmp = MAP_DUMP_DIR();
+        // gate on the active predicate, not the pointer: an empty dump_dir
+        // still yields a non-null c_str(), which would register outputs and
+        // force GPU readback + writes to "/<name>.bin"
         auto dmpn = [&](ggml_tensor* t, const char* nm) {
-            if (!dmp) return;
+            if (!MAP_DUMP_ACTIVE()) return;
             ggml_set_output(t);
             dbg_nodes_late.push_back(t);
-            dbg_names_late.push_back(std::string(dmp) + "/" + nm + ".bin");
+            dbg_names_late.push_back(std::string(MAP_DUMP_DIR()) + "/" + nm +
+                                     ".bin");
         };
 #else
         auto dmpn = [](ggml_tensor*, const char*) {};
@@ -899,6 +980,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                               .c_str()),
                     D2, oc_tap);           // gguf ne {1,1,ic,oc} -> (ic, oc)
             x = ggml_mul_mat(ctx, w2, x);  // {oc, P, S} (oc on ne[0])
+            ggml_set_name(x, kMatmulName);
             x = ggml_add(ctx, x,
                          ggml_reshape_4d(ctx,
                                          w((prefix + ".projects." +
@@ -925,17 +1007,17 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                 // ggml's 4-D views cannot express; revisit with a conversion-
                 // time weight repack + dedicated op (TODO P2).
                 x = ggml_add(ctx,
-                             ggml_conv_transpose_2d_p0(
+                             mapany_conv_transpose_2d_p0(
                                      ctx, w((rl + ".weight").c_str()), x, 4),
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             } else if (i == 1) {
                 x = ggml_add(ctx,
-                             ggml_conv_transpose_2d_p0(
+                             mapany_conv_transpose_2d_p0(
                                      ctx, w((rl + ".weight").c_str()), x, 2),
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             } else if (i == 3) {
-                x = ggml_conv_2d(ctx, w((rl + ".weight").c_str()), x, 2, 2, 1,
-                                 1, 1, 1);
+                x = mapany_conv_2d(ctx, w((rl + ".weight").c_str()), x, 2, 2, 1,
+                                   1, 1, 1);
                 x = ggml_add(ctx, x,
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             }  // i == 2: Identity
@@ -1014,6 +1096,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
             std::string d(MAP_DUMP_DIR());
             auto save = [&](const std::string& f, const std::vector<float>& v) {
                 FILE* fp = fopen((d + "/" + f).c_str(), "wb");
+                if (!fp) return;
                 fwrite(v.data(), 4, v.size(), fp);
                 fclose(fp);
             };
@@ -1152,10 +1235,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("vggt_omega")) return false;
 
         // static inputs are uploaded ONCE here (the gallocr-assigned device
         // addresses are reused every run); only in_images changes per run
@@ -1214,51 +1294,45 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         out.timing_ms["graph_compute"] = ms_between(t1, t2);
         out.timing_ms["inference_total"] = ms_between(t0, t2);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
-        // all dump reads happen after the single compute
-        for (size_t i = 0; i < dbg_nodes.size(); i++) {
-            std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
-            ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
-                                    tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
-            if (fp) {
-                fwrite(tmp.data(), 4, tmp.size(), fp);
-                fclose(fp);
-            }
-            log_info("dumped %s", dbg_names[i].c_str());
-        }
-        for (size_t i = 0; i < dbg_nodes_late.size(); i++) {
-            std::vector<float> tmp(ggml_nelements(dbg_nodes_late[i]));
-            ggml_backend_tensor_get(dbg_nodes_late[i], tmp.data(), 0,
-                                    tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names_late[i].c_str(), "wb");
-            if (fp) {
-                fwrite(tmp.data(), 4, tmp.size(), fp);
-                fclose(fp);
-            }
-            log_info("dumped %s", dbg_names_late[i].c_str());
-        }
+        // all dump reads happen after the single compute; the same active
+        // predicate gates registration above and every readback/write here
         if (MAP_DUMP_ACTIVE()) {
-            const char* dump_dir = MAP_DUMP_DIR();
-            std::string f = std::string(dump_dir) + "/cpp_patches.bin";
+            auto write_bin = [](const std::string& path, const float* data,
+                                size_t n) {
+                FILE* fp = fopen(path.c_str(), "wb");
+                if (!fp) {
+                    log_info("dump skipped (cannot open) %s", path.c_str());
+                    return;
+                }
+                fwrite(data, 4, n, fp);
+                fclose(fp);
+                log_info("dumped %s", path.c_str());
+            };
+            auto dump_nodes = [&](const std::vector<ggml_tensor*>& nodes,
+                                  const std::vector<std::string>& names) {
+                for (size_t i = 0; i < nodes.size(); i++) {
+                    std::vector<float> tmp(ggml_nelements(nodes[i]));
+                    ggml_backend_tensor_get(nodes[i], tmp.data(), 0,
+                                            tmp.size() * sizeof(float));
+                    write_bin(names[i], tmp.data(), tmp.size());
+                }
+            };
+            dump_nodes(dbg_nodes, dbg_names);
+            dump_nodes(dbg_nodes_late, dbg_names_late);
+            const std::string dump_dir = MAP_DUMP_DIR();
             std::vector<float> tmpP((size_t)C * P * S);
             ggml_backend_tensor_get(out_patches, tmpP.data(), 0,
                                     tmpP.size() * sizeof(float));
-            FILE* fp = fopen(f.c_str(), "wb");
-            fwrite(tmpP.data(), 4, tmpP.size(), fp);
-            fclose(fp);
-            log_info("dumped %s", f.c_str());
+            write_bin(dump_dir + "/cpp_patches.bin", tmpP.data(), tmpP.size());
             for (int i = 0; i < 4; i++) {
                 std::vector<float> tmpI((size_t)2 * C * Nagg * S);
                 ggml_backend_tensor_get(inter_nodes[i], tmpI.data(), 0,
                                         tmpI.size() * sizeof(float));
-                std::string fi = std::string(dump_dir) + "/cpp_inter" +
-                                 std::to_string(m->meta.cached_layer_idx[i]) +
-                                 ".bin";
-                FILE* fpi = fopen(fi.c_str(), "wb");
-                fwrite(tmpI.data(), 4, tmpI.size(), fpi);
-                fclose(fpi);
+                write_bin(dump_dir + "/cpp_inter" +
+                                  std::to_string(m->meta.cached_layer_idx[i]) +
+                                  ".bin",
+                          tmpI.data(), tmpI.size());
             }
-            log_info("dumped cached layers");
         }
 #endif
 
@@ -1348,6 +1422,7 @@ struct VGGTRuntime::Impl : IGraphBuilder {
             log_error("builder init failed");
             return false;
         }
+        if (!admit_device_scratch()) return false;
         build_ms = std::chrono::duration<double, std::milli>(
                            std::chrono::steady_clock::now() - build_t0)
                            .count();
@@ -1363,6 +1438,90 @@ struct VGGTRuntime::Impl : IGraphBuilder {
     // own backend buffer for the static graph inputs (see build_stage1_vggt)
     ggml_context* ictx = nullptr;
     ggml_backend_buffer_t ibuf = nullptr;
+
+    // Set when init failed because the device cannot hold this geometry
+    // (graph buffer allocation or the scratch admission below), so callers
+    // can shrink the view batch instead of treating it as a model error.
+    bool out_of_memory = false;
+    std::string init_error;
+
+    // Every builder allocates its graph through here: a failed gallocr
+    // reservation on a GPU is a capacity fact, not a malformed graph.
+    bool alloc_graph(const char* tag) {
+        if (ggml_gallocr_alloc_graph(galloc, graph)) return true;
+        out_of_memory = true;
+        char buf[192];
+        std::snprintf(buf, sizeof buf,
+                      "%s: compute graph for %d views at %dx%d does not fit "
+                      "in device memory",
+                      tag, S, H, W);
+        init_error = buf;
+        log_error("%s", buf);
+        return false;
+    }
+
+    // Device memory the CUDA backend takes from its op-scratch pool OUTSIDE
+    // the gallocr buffer, upper-bounded per node: an F16/quantized GEMM
+    // converts src1 (<= 2 B/elem: F16 or Q8_1), may stage an F16 dst and,
+    // on the cuBLAS route, an F16 dequantized src0; flash attention converts
+    // F32 Q/K/V to F16 and may keep F32 split-K partials of dst. Pool
+    // buffers are released when their op returns, so the requirement is
+    // the max over nodes, not the sum. O(nodes).
+    static size_t op_scratch_upper_bound(ggml_cgraph* g) {
+        size_t peak = 0;
+        for (int i = 0; i < ggml_graph_n_nodes(g); ++i) {
+            const ggml_tensor* n = ggml_graph_node(g, i);
+            size_t s = 0;
+            if (n->op == GGML_OP_MUL_MAT && n->src[0]->type != GGML_TYPE_F32) {
+                s = 2 * ggml_nelements(n->src[1]) + 2 * ggml_nelements(n);
+                if (ggml_is_quantized(n->src[0]->type))
+                    s += 2 * ggml_nelements(n->src[0]);
+            } else if (n->op == GGML_OP_FLASH_ATTN_EXT) {
+                s = 2 * (ggml_nelements(n->src[0]) + ggml_nelements(n->src[1]) +
+                         ggml_nelements(n->src[2])) +
+                    8 * ggml_nelements(n);
+            }
+            peak = std::max(peak, s);
+        }
+        return peak;
+    }
+
+    // Admission for the first compute: the gallocr buffer is already
+    // resident, but the backend's scratch pool grows during compute and the
+    // CUDA pool aborts the process when a growth fails. Refusing the
+    // geometry here turns that abort into a recoverable error. The fixed
+    // part covers cuBLAS handle/workspace and lazily loaded kernels.
+    bool admit_device_scratch() {
+        ggml_backend_dev_t dev = ggml_backend_get_device(be.handle);
+        if (dev == nullptr) return true;
+        const auto type = ggml_backend_dev_type(dev);
+        if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+            type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+            return true;
+        }
+        size_t free_b = 0, total_b = 0;
+        ggml_backend_dev_memory(dev, &free_b, &total_b);
+        if (total_b == 0) return true;  // backend reports no memory info
+        constexpr size_t kFixed = size_t{512} << 20;
+        const size_t scratch = op_scratch_upper_bound(graph);
+        const size_t need = scratch + kFixed;
+        const size_t graph_b = ggml_gallocr_get_buffer_size(galloc, 0);
+        log_info(
+                "device memory: weights %zu MiB, graph %zu MiB, op scratch "
+                "<= %zu MiB, free %zu MiB",
+                (wbuf ? ggml_backend_buffer_get_size(wbuf) : 0) >> 20,
+                graph_b >> 20, scratch >> 20, free_b >> 20);
+        if (free_b >= need) return true;
+        out_of_memory = true;
+        char buf[256];
+        std::snprintf(buf, sizeof buf,
+                      "%d views at %dx%d need ~%zu MiB of device scratch "
+                      "beyond the %zu MiB graph buffer, %zu MiB free",
+                      S, H, W, need >> 20, graph_b >> 20, free_b >> 20);
+        init_error = buf;
+        log_error("%s", buf);
+        return false;
+    }
 
     ~Impl() {
         if (galloc) ggml_gallocr_free(galloc);
@@ -1591,8 +1750,7 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
         }
 #endif
         ggml_tensor* o =
-                ggml_flash_attn_ext(ctx, q, k, v, nullptr,
-                                    1.0f / std::sqrt((float)dh_l), 0.0f, 0.0f);
+                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l));
         o = ggml_reshape_3d(ctx, o, dim, T, B);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE() && is_dump_block(p)) {
@@ -1653,7 +1811,7 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             ggml_tensor* x2 = ggml_cont(
                     ctx, ggml_view_3d(ctx, f, hid, f->ne[1], f->ne[2], f->nb[1],
                                       f->nb[2], hid * sizeof(float)));
-            f = ggml_mul(ctx, ggml_silu(ctx, x1), x2);
+            f = ggml_mul(ctx, silu(ctx, x1), x2);
             f = lin(ctx, f, w((p + ".mlp.w3.weight").c_str()),
                     w((p + ".mlp.w3.bias").c_str()));
         } else {
@@ -1683,8 +1841,8 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
     // slice patch tokens {C, P, S}.
     ggml_tensor* backbone_vggt(ggml_context* ctx, ggml_tensor* img) {
         const int ps = m->meta.patch_size;
-        ggml_tensor* x = ggml_conv_2d(ctx, w("bb.patch_embed.proj.weight"), img,
-                                      ps, ps, 0, 0, 1, 1);
+        ggml_tensor* x = mapany_conv_2d(ctx, w("bb.patch_embed.proj.weight"),
+                                        img, ps, ps, 0, 0, 1, 1);
         x = ggml_add(ctx, x, bias4(ctx, w("bb.patch_embed.proj.bias"), C));
         x = ggml_cont(ctx, ggml_permute(ctx, x, 1, 2, 0, 3));
         x = ggml_reshape_3d(ctx, x, C, P, S);
@@ -1823,7 +1981,7 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             }
             // poseLN_modulation = Sequential(SiLU, Linear): the modulation
             // input passes through SiLU before the Linear (index 1)
-            ggml_tensor* mod3 = lin(ctx, ggml_silu(ctx, module_input),
+            ggml_tensor* mod3 = lin(ctx, silu(ctx, module_input),
                                     w("cam.poseLN_modulation.1.weight"),
                                     w("cam.poseLN_modulation.1.bias"));
             // chunk(3) on ne[0]: each of shift/scale/gate is {D2, S}
@@ -1895,17 +2053,17 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
                     prefix + ".resize_layers." + std::to_string(i);
             if (i == 0) {
                 x = ggml_add(ctx,
-                             ggml_conv_transpose_2d_p0(
+                             mapany_conv_transpose_2d_p0(
                                      ctx, w((rl + ".weight").c_str()), x, 4),
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             } else if (i == 1) {
                 x = ggml_add(ctx,
-                             ggml_conv_transpose_2d_p0(
+                             mapany_conv_transpose_2d_p0(
                                      ctx, w((rl + ".weight").c_str()), x, 2),
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             } else if (i == 3) {
-                x = ggml_conv_2d(ctx, w((rl + ".weight").c_str()), x, 2, 2, 1,
-                                 1, 1, 1);
+                x = mapany_conv_2d(ctx, w((rl + ".weight").c_str()), x, 2, 2, 1,
+                                   1, 1, 1);
                 x = ggml_add(ctx, x,
                              bias4(ctx, w((rl + ".bias").c_str()), x->ne[2]));
             }  // i == 2: Identity
@@ -2268,10 +2426,7 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("vggt: graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("vggt")) return false;
         log_info("vggt: graph allocation done, uploading static inputs");
         ggml_backend_tensor_set(in_mean, m->meta.img_mean, 0,
                                 3 * sizeof(float));
@@ -2765,10 +2920,7 @@ struct VGGTRuntime::Pi3Impl : VGGTRuntime::VGGTImpl {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("pi3: graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("pi3")) return false;
         log_info("pi3: graph allocation done, uploading static inputs");
         ggml_backend_tensor_set(in_mean, m->meta.img_mean, 0,
                                 3 * sizeof(float));
@@ -2919,8 +3071,8 @@ struct VGGTRuntime::MapAnythingImpl final : VGGTRuntime::VGGTImpl {
     // (no final norm). Returns the full {C, 1+P, S} sequence.
     ggml_tensor* backbone_ma(ggml_context* ctx, ggml_tensor* img) {
         const int ps = m->meta.patch_size;
-        ggml_tensor* x = ggml_conv_2d(ctx, w("bb.patch_embed.proj.weight"), img,
-                                      ps, ps, 0, 0, 1, 1);
+        ggml_tensor* x = mapany_conv_2d(ctx, w("bb.patch_embed.proj.weight"),
+                                        img, ps, ps, 0, 0, 1, 1);
         x = ggml_add(ctx, x, bias4(ctx, w("bb.patch_embed.proj.bias"), C));
         x = ggml_cont(ctx, ggml_permute(ctx, x, 1, 2, 0, 3));
         x = ggml_reshape_3d(ctx, x, C, P, S);
@@ -2948,7 +3100,7 @@ struct VGGTRuntime::MapAnythingImpl final : VGGTRuntime::VGGTImpl {
         if (branch == 0 || branch == 1) {
             x = conv1x1(ctx, p + "0.0", x);
             x = ggml_add(ctx,
-                         ggml_conv_transpose_2d_p0(
+                         mapany_conv_transpose_2d_p0(
                                  ctx, w((p + "0.1.weight").c_str()), x,
                                  branch == 0 ? 4 : 2),
                          bias4(ctx, w((p + "0.1.bias").c_str()), x->ne[2]));
@@ -2958,8 +3110,8 @@ struct VGGTRuntime::MapAnythingImpl final : VGGTRuntime::VGGTImpl {
         } else {
             // act_4 = Sequential(Conv2d, Conv2d) -> keys 3.0.0 / 3.0.1
             x = conv1x1(ctx, p + "0.0", x);
-            x = ggml_conv_2d(ctx, w((p + "0.1.weight").c_str()), x, 2, 2, 1, 1,
-                             1, 1);
+            x = mapany_conv_2d(ctx, w((p + "0.1.weight").c_str()), x, 2, 2, 1,
+                               1, 1, 1);
             x = ggml_add(ctx, x,
                          bias4(ctx, w((p + "0.1.bias").c_str()), x->ne[2]));
         }
@@ -3252,10 +3404,7 @@ struct VGGTRuntime::MapAnythingImpl final : VGGTRuntime::VGGTImpl {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("mapanything: graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("mapanything")) return false;
         log_info("mapanything: graph allocation done, uploading static inputs");
         ggml_backend_tensor_set(in_mean, m->meta.img_mean, 0,
                                 3 * sizeof(float));
@@ -3523,8 +3672,7 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
         v = ggml_cont(ctx, ggml_permute(ctx, v, 0, 2, 1, 3));
         ggml_tensor* o =
-                ggml_flash_attn_ext(ctx, q, k, v, nullptr,
-                                    1.0f / std::sqrt((float)dh_l), 0.0f, 0.0f);
+                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l));
         o = ggml_reshape_3d(ctx, o, dim, T, B);
         return lin(ctx, o, w((p + ".attn.proj.weight").c_str()),
                    w((p + ".attn.proj.bias").c_str()));
@@ -3567,8 +3715,7 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
         v = ggml_cont(ctx, ggml_permute(ctx, v, 0, 2, 1, 3));
         ggml_tensor* o =
-                ggml_flash_attn_ext(ctx, q, k, v, nullptr,
-                                    1.0f / std::sqrt((float)dh_l), 0.0f, 0.0f);
+                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l));
         o = ggml_reshape_3d(ctx, o, Cd, Tq, B);
         return lin(ctx, o, w((p + ".cross_attn.proj.weight").c_str()),
                    w((p + ".cross_attn.proj.bias").c_str()));
@@ -3634,14 +3781,14 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
             x = conv1x1(ctx, p + ".0", x);
             if (i == 0 || i == 1) {
                 x = ggml_add(ctx,
-                             ggml_conv_transpose_2d_p0(
+                             mapany_conv_transpose_2d_p0(
                                      ctx, w((p + ".1.weight").c_str()), x,
                                      i == 0 ? 4 : 2),
                              bias4(ctx, w((p + ".1.bias").c_str()), x->ne[2]));
             } else if (i == 3) {
                 x = ggml_add(ctx,
-                             ggml_conv_2d(ctx, w((p + ".1.weight").c_str()), x,
-                                          2, 2, 1, 1, 1, 1),
+                             mapany_conv_2d(ctx, w((p + ".1.weight").c_str()),
+                                            x, 2, 2, 1, 1, 1, 1),
                              bias4(ctx, w((p + ".1.bias").c_str()), x->ne[2]));
             }
             x = conv3x3(ctx,
@@ -3728,9 +3875,9 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
                 ggml_div(gctx, ggml_sub(gctx, in_images, in_mean), in_std);
 
         // ---- siamese encoder (pair batched, B = S) ----
-        ggml_tensor* x = ggml_conv_2d(gctx, w("bb_patch.proj.weight"), img,
-                                      m->meta.patch_size, m->meta.patch_size, 0,
-                                      0, 1, 1);
+        ggml_tensor* x = mapany_conv_2d(gctx, w("bb_patch.proj.weight"), img,
+                                        m->meta.patch_size, m->meta.patch_size,
+                                        0, 0, 1, 1);
         x = ggml_add(gctx, x, bias4(gctx, w("bb_patch.proj.bias"), C));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE()) dump_node(x, "vg_d3_conv");
@@ -3839,10 +3986,7 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("dust3r: graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("dust3r")) return false;
         log_info("dust3r: graph allocation done, uploading static inputs");
         // static uploads (ggml_set_input only MARKS the tensors — pitfall #2)
         ggml_backend_tensor_set(in_mean, m->meta.img_mean, 0,
@@ -4043,8 +4187,8 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
                              ggml_tensor* x,
                              const std::string& p) {
         ggml_tensor* xp = ggml_cont(ctx, rep_pad2(ctx, x));
-        ggml_tensor* o = ggml_conv_2d(ctx, w((p + ".weight").c_str()), xp, 1, 1,
-                                      0, 0, 1, 1);
+        ggml_tensor* o = mapany_conv_2d(ctx, w((p + ".weight").c_str()), xp, 1,
+                                        1, 0, 0, 1, 1);
         return ggml_add(ctx, o, bias4(ctx, w((p + ".bias").c_str()), o->ne[2]));
     }
 
@@ -4107,7 +4251,7 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
             if (MAP_DUMP_ACTIVE()) dump_node(x, p + "_uv" + std::to_string(i));
 #endif
             x = ggml_add(ctx,
-                         ggml_conv_transpose_2d_p0(
+                         mapany_conv_transpose_2d_p0(
                                  ctx,
                                  w((p + ".upsample_blocks." +
                                     std::to_string(i) + ".0.0.weight")
@@ -4153,7 +4297,7 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
             ggml_tensor* o = conv3x3_rep(
                     ctx, x, p + ".output_block." + std::to_string(j) + ".0");
             o = ggml_relu(ctx, o);
-            o = ggml_conv_2d(
+            o = mapany_conv_2d(
                     ctx,
                     w((p + ".output_block." + std::to_string(j) + ".2.weight")
                               .c_str()),
@@ -4213,8 +4357,7 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
         }
 #endif
         ggml_tensor* o =
-                ggml_flash_attn_ext(ctx, qc, kc, vc, nullptr,
-                                    1.0f / std::sqrt((float)dh_l), 0.0f, 0.0f);
+                flash_attn(ctx, qc, kc, vc, 1.0f / std::sqrt((float)dh_l));
         o = ggml_reshape_3d(ctx, o, 512, 1, 1);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE()) dump_node(o, p + "_sdpa");
@@ -4406,10 +4549,7 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
         // allocated, so gallocr skips them (they must survive across runs)
         ibuf = ggml_backend_alloc_ctx_tensors(ictx, be.handle);
         if (!ibuf) return false;
-        if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("pi3x: graph allocation failed");
-            return false;
-        }
+        if (!alloc_graph("pi3x")) return false;
         log_info("pi3x: graph allocation done, uploading static inputs");
         ggml_backend_tensor_set(in_mean, m->meta.img_mean, 0,
                                 3 * sizeof(float));
@@ -4568,6 +4708,8 @@ VGGTRuntime::VGGTRuntime(const GGUFModel& model,
         return;
     }
     if (!impl_->init(model, backend, n_views, height, width, opts)) {
+        out_of_memory_ = impl_->out_of_memory;
+        error_ = impl_->init_error;
         impl_.reset();
     }
 }

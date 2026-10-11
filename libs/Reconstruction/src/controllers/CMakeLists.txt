@@ -47,6 +47,7 @@ COLMAP_ADD_SOURCES(
     single_view_calibration.h single_view_calibration.cc
     option_manager.h option_manager.cc
     feature_extraction.h feature_extraction.cc
+    matcher_cache.h matcher_cache.cc
     pairing.h pairing.cc
     feature_matching.h feature_matching.cc
     feature_matching_utils.h feature_matching_utils.cc
@@ -70,5 +71,6 @@ COLMAP_ADD_TEST(base_option_manager_test base_option_manager_test.cc)
 COLMAP_ADD_TEST(incremental_pipeline_test incremental_pipeline_test.cc)
 COLMAP_ADD_TEST(hierarchical_pipeline_test hierarchical_pipeline_test.cc)
 COLMAP_ADD_TEST(feature_matching_utils_test feature_matching_utils_test.cc)
+COLMAP_ADD_TEST(controllers_feature_matching_test feature_matching_test.cc)
 COLMAP_ADD_TEST(pairing_test pairing_test.cc)
 COLMAP_ADD_TEST(undistorters_test undistorters_test.cc)

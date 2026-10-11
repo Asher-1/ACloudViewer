@@ -26,6 +26,7 @@
 #include <QStandardPaths>
 #include <QTemporaryFile>
 
+#include "TrellisBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -58,6 +59,14 @@ qTrellis::qTrellis(QObject* parent)
 }
 
 QList<QAction*> qTrellis::getActions() { return {m_action}; }
+
+void qTrellis::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandTrellisGenerate));
+}
 
 void qTrellis::onNewSelection(const ccHObject::Container& selectedEntities) {
     // qTrellis works from a file path; nothing to sync here for now.

@@ -28,7 +28,7 @@ private:
 
     QGroupBox* CreateCameraModelBox();
 
-    void SelectCameraModel(const int code);
+    void SelectCameraModel(int code);
     void Extract();
 
     QWidget* parent_;

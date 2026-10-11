@@ -7,6 +7,7 @@
 
 #include "RemoteServerClient.h"
 
+// aicore-boundary: remote-inference-transport
 #include <QBuffer>
 #include <QEventLoop>
 #include <QFile>

@@ -95,8 +95,8 @@ def test_reconstruction_export_ply(rec, tmp_path):
 def test_reconstruction_normalize_and_centroid(rec):
     rec.normalize()
     assert rec.compute_centroid() is not None
-    lo, hi = rec.compute_bounding_box()
-    assert len(lo) == 3 and len(hi) == 3
+    bbox = rec.compute_bounding_box()
+    assert len(bbox.min) == 3 and len(bbox.max) == 3
 
 
 def test_reconstruction_repr(rec):

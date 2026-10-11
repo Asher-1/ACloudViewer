@@ -100,13 +100,7 @@ void Database::Merge(const Database& database1, const Database& database2,
     const auto keypoints = database1.ReadKeypoints(image.ImageId());
     const auto descriptors = database1.ReadDescriptors(image.ImageId());
     merged_database->WriteKeypoints(new_image_id, keypoints);
-    if (database1.ExistsFloatDescriptors(image.ImageId())) {
-      merged_database->WriteFloatDescriptors(
-          new_image_id, database1.ReadFloatDescriptors(image.ImageId()),
-          database1.ReadDescriptorType(image.ImageId()));
-    } else {
-      merged_database->WriteDescriptors(new_image_id, descriptors);
-    }
+    merged_database->WriteDescriptors(new_image_id, descriptors);
   }
 
   NodeHashMap<image_t, image_t> new_image_ids2;
@@ -121,13 +115,7 @@ void Database::Merge(const Database& database1, const Database& database2,
     const auto keypoints = database2.ReadKeypoints(image.ImageId());
     const auto descriptors = database2.ReadDescriptors(image.ImageId());
     merged_database->WriteKeypoints(new_image_id, keypoints);
-    if (database2.ExistsFloatDescriptors(image.ImageId())) {
-      merged_database->WriteFloatDescriptors(
-          new_image_id, database2.ReadFloatDescriptors(image.ImageId()),
-          database2.ReadDescriptorType(image.ImageId()));
-    } else {
-      merged_database->WriteDescriptors(new_image_id, descriptors);
-    }
+    merged_database->WriteDescriptors(new_image_id, descriptors);
   }
 
   // Merge the matches.

@@ -75,6 +75,20 @@ public:
     void releaseContextOnMainThread();
     void requestTaskCancel();
 
+#ifdef AICore_ENABLED
+    /** One image (settings.inputPath; Verify also secondInputPath) through
+     *  loaded detector (+ landmark head for DenseLandmarks) contexts: typed
+     *  faces, score filter and annotation. Shared by the dialog worker and
+     *  the headless -FACE_DETECT batch command. \p message receives the
+     *  human-readable summary line. */
+    static bool processImage(struct aicore_facedetect_ctx* ctx,
+                             struct aicore_facedetect_ctx* landmarkCtx,
+                             const Settings& settings,
+                             FaceDetectRunResult* result,
+                             QString* message,
+                             QString* error);
+#endif
+
 signals:
     void logMessage(const QString& msg);
     void progressUpdate(int current, int total);

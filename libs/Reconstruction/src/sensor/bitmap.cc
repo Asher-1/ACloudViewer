@@ -1,12 +1,14 @@
 #include "sensor/bitmap.h"
 
-#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/color.h>
 #include <OpenImageIO/imagebufalgo.h>
+#include <OpenImageIO/imageio.h>
 
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <regex>
+#include <string>
 
 #include "VLFeat/imopv.h"
 #include "sensor/database.h"
@@ -63,27 +65,83 @@ bool GetPointMetadata(const OIIO::ImageSpec& image_spec,
   return image_spec.getattribute(
       name, OIIO::TypeDesc(OIIO::TypeDesc::FLOAT, 3), value);
 }
+void SetImageSpecColorSpace(OIIO::ImageSpec& image_spec,
+                            const std::string& colorspace) {
+  if (colorspace.empty()) {
+    image_spec.erase_attribute("oiio:ColorSpace");
+  } else {
+    image_spec.attribute("oiio:ColorSpace", colorspace);
+  }
+}
+
+bool IsLinearColorSpace(const std::string& colorspace) {
+  return colorspace == "linear" || colorspace == "lin_srgb" ||
+         colorspace == "lin_rec709P";
+}
+
+std::vector<uint8_t> ConvertColorSpace(const uint8_t* src_data,
+                                       const int width,
+                                       const int height,
+                                       const int channels,
+                                       const std::string& from,
+                                       const std::string& to) {
+  const OIIO::ImageSpec spec(width, height, channels, OIIO::TypeDesc::UINT8);
+  OIIO::ImageBuf source(spec, const_cast<uint8_t*>(src_data));
+  std::vector<uint8_t> target_data(
+      static_cast<size_t>(width) * height * channels);
+  OIIO::ImageBuf target(spec, target_data.data());
+  THROW_CHECK(OIIO::ImageBufAlgo::colorconvert(target, source, from, to));
+  return target_data;
+}
 }  // namespace
 
 Bitmap::Bitmap() : data_(nullptr), width_(0), height_(0), channels_(0) {}
 Bitmap::~Bitmap() = default;
 Bitmap::Bitmap(const Bitmap& other) : Bitmap() {
   if (other.data_) data_ = std::make_unique<Storage>(*other.data_);
-  width_ = other.width_; height_ = other.height_; channels_ = other.channels_;
+  width_ = other.width_;
+  height_ = other.height_;
+  channels_ = other.channels_;
+  linear_colorspace_ = other.linear_colorspace_;
 }
 Bitmap::Bitmap(Bitmap&& other) noexcept
-    : data_(std::move(other.data_)), width_(other.width_), height_(other.height_), channels_(other.channels_) {
+    : data_(std::move(other.data_)),
+      width_(other.width_),
+      height_(other.height_),
+      channels_(other.channels_),
+      linear_colorspace_(other.linear_colorspace_) {
   other.width_ = other.height_ = other.channels_ = 0;
+  other.linear_colorspace_ = false;
 }
-Bitmap& Bitmap::operator=(const Bitmap& other) { if (this != &other) { Bitmap copy(other); *this = std::move(copy); } return *this; }
+Bitmap& Bitmap::operator=(const Bitmap& other) {
+  if (this != &other) {
+    Bitmap copy(other);
+    *this = std::move(copy);
+  }
+  return *this;
+}
 Bitmap& Bitmap::operator=(Bitmap&& other) noexcept {
-  if (this != &other) { data_ = std::move(other.data_); width_ = other.width_; height_ = other.height_; channels_ = other.channels_; other.width_ = other.height_ = other.channels_ = 0; }
+  if (this != &other) {
+    data_ = std::move(other.data_);
+    width_ = other.width_;
+    height_ = other.height_;
+    channels_ = other.channels_;
+    linear_colorspace_ = other.linear_colorspace_;
+    other.width_ = other.height_ = other.channels_ = 0;
+    other.linear_colorspace_ = false;
+  }
   return *this;
 }
 
-Bitmap::Bitmap(const int width, const int height, const bool as_rgb) {
+Bitmap::Bitmap(const int width,
+               const int height,
+               const bool as_rgb,
+               const bool linear_colorspace) {
   THROW_CHECK(Allocate(width, height, as_rgb))
       << "Failed to allocate bitmap of size " << width << "x" << height;
+  linear_colorspace_ = linear_colorspace;
+  SetImageSpecColorSpace(data_->image_spec,
+                         linear_colorspace_ ? "linear" : "sRGB");
 }
 
 bool Bitmap::Allocate(const int width, const int height, const bool as_rgb) {
@@ -92,9 +150,18 @@ bool Bitmap::Allocate(const int width, const int height, const bool as_rgb) {
   data_->pixels.resize(static_cast<size_t>(width) * height * data_->channels);
   data_->image_spec = OIIO::ImageSpec(width, height, data_->channels,
                                       OIIO::TypeDesc::UINT8);
-  width_ = width; height_ = height; channels_ = data_->channels; return true;
+  width_ = width;
+  height_ = height;
+  channels_ = data_->channels;
+  linear_colorspace_ = false;
+  SetImageSpecColorSpace(data_->image_spec, "sRGB");
+  return true;
 }
-void Bitmap::Deallocate() { data_.reset(); width_ = height_ = channels_ = 0; }
+void Bitmap::Deallocate() {
+  data_.reset();
+  width_ = height_ = channels_ = 0;
+  linear_colorspace_ = false;
+}
 size_t Bitmap::NumBytes() const { return data_ ? data_->pixels.size() : 0; }
 std::vector<uint8_t> Bitmap::ConvertToRawBits() const { return ConvertToRowMajorArray(); }
 std::vector<uint8_t> Bitmap::ConvertToRowMajorArray() const { return data_ ? data_->pixels : std::vector<uint8_t>(); }
@@ -106,8 +173,17 @@ std::vector<uint8_t> Bitmap::ConvertToColMajorArray() const {
 }
 bool Bitmap::GetPixel(const int x, const int y, BitmapColor<uint8_t>* color) const {
   if (!data_ || !color || x < 0 || x >= width_ || y < 0 || y >= height_) return false;
-  const uint8_t* p = &data_->pixels[(static_cast<size_t>(y) * width_ + x) * channels_]; color->r = p[0];
-  if (channels_ == 3) { color->g = p[1]; color->b = p[2]; } return true;
+  const uint8_t* p =
+      &data_->pixels[(static_cast<size_t>(y) * width_ + x) * channels_];
+  color->r = p[0];
+  if (channels_ == 3) {
+    color->g = p[1];
+    color->b = p[2];
+  } else {
+    color->g = p[0];
+    color->b = p[0];
+  }
+  return true;
 }
 std::optional<BitmapColor<uint8_t>> Bitmap::GetPixel(const int x,
                                                      const int y) const {
@@ -133,13 +209,20 @@ bool Bitmap::InterpolateBilinear(const double x, const double y, BitmapColor<flo
   return true;
 }
 
-bool Bitmap::Read(const std::filesystem::path& path, const bool as_rgb) {
+bool Bitmap::Read(const std::filesystem::path& path,
+                  const bool as_rgb,
+                  const bool linearize_colorspace) {
   if (!ExistsFile(path)) return false;
   OIIO::ImageSpec config;
   config["oiio:reorient"] = 0;
   config["oiio:UnassociatedAlpha"] = 1;
   auto input = OIIO::ImageInput::open(path.string(), &config);
-  if (!input) return false;
+  if (!input) {
+    // OIIO stores failures in thread-local pending state; consume it before
+    // returning so a later operation does not observe this stale error.
+    static_cast<void>(OIIO::geterror());
+    return false;
+  }
   const OIIO::ImageSpec spec = input->spec();
   if (spec.width <= 0 || spec.height <= 0 ||
       (spec.nchannels != 1 && spec.nchannels != 2 &&
@@ -162,7 +245,23 @@ bool Bitmap::Read(const std::filesystem::path& path, const bool as_rgb) {
   input->close();
   storage->image_spec = spec;
   storage->image_spec.nchannels = file_channels;
-  data_ = std::move(storage); width_ = spec.width; height_ = spec.height; channels_ = data_->channels;
+  data_ = std::move(storage);
+  width_ = spec.width;
+  height_ = spec.height;
+  channels_ = data_->channels;
+  const std::string colorspace =
+      data_->image_spec.get_string_attribute("oiio:ColorSpace");
+  linear_colorspace_ = linearize_colorspace;
+  if (linearize_colorspace && !colorspace.empty() &&
+      !IsLinearColorSpace(colorspace)) {
+    data_->pixels = ConvertColorSpace(data_->pixels.data(),
+                                      width_,
+                                      height_,
+                                      channels_,
+                                      colorspace,
+                                      "linear");
+    SetImageSpecColorSpace(data_->image_spec, "linear");
+  }
   // Upstream parity: honor the as_rgb request (the patch-match workspace
   // depends on as_rgb=false producing a grey bitmap).
   if (as_rgb && channels_ != 3) {
@@ -172,30 +271,51 @@ bool Bitmap::Read(const std::filesystem::path& path, const bool as_rgb) {
   }
   return true;
 }
-bool Bitmap::Write(const std::filesystem::path& path, const BitmapFormat format, const int flags) const {
+bool Bitmap::Write(const std::filesystem::path& path,
+                   const bool delinearize_colorspace) const {
   if (!data_) return false;
-  std::string filename = path.string();
-  if (format != BitmapFormat::kUnknown &&
-      path.extension().empty()) {
-    filename += format == BitmapFormat::kJpeg
-                    ? ".jpg"
-                    : format == BitmapFormat::kTiff ? ".tif" : ".png";
-  }
+  const std::string filename = path.string();
   OIIO::ImageSpec spec = data_->image_spec;
   spec.width = width_;
   spec.height = height_;
   spec.nchannels = channels_;
   spec.format = OIIO::TypeDesc::UINT8;
-  if (flags > 0 && format == BitmapFormat::kJpeg)
-    spec.attribute("Compression", "jpeg:" + std::to_string(std::min(100, flags)));
+  const std::string extension = path.extension().string();
+  const bool is_jpeg = extension == ".jpg" || extension == ".jpeg" ||
+                       extension == ".JPG" || extension == ".JPEG";
+  if (is_jpeg && jpeg_quality_ > 0) {
+    spec.attribute("Compression",
+                   "jpeg:" + std::to_string(std::min(100, jpeg_quality_)));
+  }
+  const uint8_t* output_data = data_->pixels.data();
+  std::vector<uint8_t> converted_output;
+  if (delinearize_colorspace && linear_colorspace_) {
+    std::string target_colorspace =
+        spec.get_string_attribute("oiio:ColorSpace");
+    if (target_colorspace.empty()) {
+      target_colorspace = "sRGB";
+      SetImageSpecColorSpace(spec, target_colorspace);
+    }
+    if (!IsLinearColorSpace(target_colorspace)) {
+      converted_output = ConvertColorSpace(data_->pixels.data(),
+                                           width_,
+                                           height_,
+                                           channels_,
+                                           "linear",
+                                           target_colorspace);
+      output_data = converted_output.data();
+    }
+  }
   auto output = OIIO::ImageOutput::create(filename);
   if (!output || !output->open(filename, spec)) return false;
-  const bool ok = output->write_image(OIIO::TypeDesc::UINT8, data_->pixels.data()) && output->close();
+  const bool ok = output->write_image(OIIO::TypeDesc::UINT8, output_data) &&
+                  output->close();
   return ok;
 }
 void Bitmap::Smooth(const float sigma_x, const float sigma_y) { if (!data_) return; std::vector<float> in(static_cast<size_t>(width_) * height_), out(in.size()); for (int d = 0; d < channels_; ++d) { for (int y=0;y<height_;++y) for(int x=0;x<width_;++x) in[static_cast<size_t>(y)*width_+x] = data_->pixels[(static_cast<size_t>(y)*width_+x)*channels_+d]; vl_imsmooth_f(out.data(), width_, in.data(), width_, height_, width_, sigma_x, sigma_y); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x) data_->pixels[(static_cast<size_t>(y)*width_+x)*channels_+d] = TruncateCast<float,uint8_t>(out[static_cast<size_t>(y)*width_+x]); } }
-void Bitmap::Rescale(const int new_width, const int new_height,
-                     const BitmapRescaleFilter filter) {
+void Bitmap::Rescale(const int new_width,
+                     const int new_height,
+                     const RescaleFilter filter) {
   if (!data_ || new_width <= 0 || new_height <= 0) return;
   const OIIO::ImageBuf source(
       OIIO::ImageSpec(width_, height_, channels_, OIIO::TypeDesc::UINT8),
@@ -205,7 +325,8 @@ void Bitmap::Rescale(const int new_width, const int new_height,
   OIIO::ImageBuf destination(
       OIIO::ImageSpec(new_width, new_height, channels_, OIIO::TypeDesc::UINT8),
       resized.data());
-  const char* filter_name = filter == BitmapRescaleFilter::kBox ? "box" : "triangle";
+  const char* filter_name =
+      filter == RescaleFilter::kBox ? "box" : "triangle";
 #if defined(OIIO_VERSION_MAJOR) && OIIO_VERSION_MAJOR >= 3
   const bool ok = OIIO::ImageBufAlgo::resize(
       destination, source, {{"filtername", filter_name}});
@@ -230,9 +351,50 @@ Bitmap Bitmap::CloneAsGrey() const { if (IsGrey()) return Clone(); Bitmap out; o
  // DoG responses downstream.
  out.SetPixel(x,y,BitmapColor<uint8_t>(static_cast<uint8_t>(.2126f*c.r+.7152f*c.g+.0722f*c.b+.5f))); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
 Bitmap Bitmap::CloneAsRGB() const { if (IsRGB()) return Clone(); Bitmap out; out.Allocate(width_,height_,true); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(c.r,c.r,c.r)); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
+void Bitmap::SetMetaData(const std::string_view name,
+                         const std::string_view type,
+                         const void* value) {
+  THROW_CHECK(data_ != nullptr);
+  THROW_CHECK_NE(type, "string");
+  OIIO::TypeDesc type_desc;
+  type_desc.fromstring(std::string(type));
+  THROW_CHECK_NE(type_desc, OIIO::TypeDesc::UNKNOWN);
+  data_->image_spec.attribute(std::string(name), type_desc, value);
+}
+
+void Bitmap::SetMetaData(const std::string_view name,
+                         const std::string_view value) {
+  THROW_CHECK(data_ != nullptr);
+  data_->image_spec.attribute(std::string(name), std::string(value));
+}
+
+bool Bitmap::GetMetaData(const std::string_view name,
+                         const std::string_view type,
+                         void* value) const {
+  if (!data_) return false;
+  THROW_CHECK_NE(type, "string");
+  OIIO::TypeDesc type_desc;
+  type_desc.fromstring(std::string(type));
+  THROW_CHECK_NE(type_desc, OIIO::TypeDesc::UNKNOWN);
+  return data_->image_spec.getattribute(std::string(name), type_desc, value);
+}
+
+std::optional<std::string> Bitmap::GetMetaData(
+    const std::string_view name) const {
+  if (!data_) return std::nullopt;
+  const OIIO::ParamValue* attribute =
+      data_->image_spec.find_attribute(std::string(name));
+  if (!attribute) return std::nullopt;
+  return attribute->get_string();
+}
+
 void Bitmap::CloneMetadata(Bitmap* target) const {
   CHECK_NOTNULL(target);
-  if (target->data_ && data_) target->data_->image_spec = data_->image_spec;
+  if (!target->data_ || !data_) return;
+  target->data_->image_spec = data_->image_spec;
+  target->data_->image_spec.width = target->width_;
+  target->data_->image_spec.height = target->height_;
+  target->data_->image_spec.nchannels = target->channels_;
 }
 bool Bitmap::ReadExifTag(const BitmapMetadataModel model, const std::string& tag_name,
                          std::string* result) const {
@@ -350,15 +512,31 @@ void Bitmap::Rot90(bool counterclockwise) {
   std::swap(width_, height_);
 }
 
-void Bitmap::SetJPEGQuality(int quality) {
-  if (quality >= 0 && quality <= 100) {
-    jpeg_quality_ = quality;
-  }
+void Bitmap::SetJPEGQuality(const int quality) {
+  THROW_CHECK_GT(quality, 0);
+  THROW_CHECK_LE(quality, 100);
+  jpeg_quality_ = quality;
 }
 
 int Bitmap::JPEGQuality() const { return jpeg_quality_; }
 
 int Bitmap::Pitch() const { return width_ * channels_; }
+
+bool Bitmap::IsEmpty() const { return width_ <= 0 || height_ <= 0; }
+
+double Bitmap::Thumbnail(const int max_image_size,
+                         const RescaleFilter filter) {
+    CHECK_GT(max_image_size, 0);
+    if (width_ <= max_image_size && height_ <= max_image_size) {
+        return 1.0;
+    }
+    // Fit the down-sampled version exactly into the max dimensions.
+    const double scale =
+            static_cast<double>(max_image_size) / std::max(width_, height_);
+    Rescale(static_cast<int>(std::round(width_ * scale)),
+            static_cast<int>(std::round(height_ * scale)), filter);
+    return scale;
+}
 
 std::vector<uint8_t>& Bitmap::RowMajorData() { return data_->pixels; }
 

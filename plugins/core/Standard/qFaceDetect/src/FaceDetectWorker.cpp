@@ -255,6 +255,191 @@ QImage draw_dense_annotations(const QImage& source,
 
 }  // namespace
 
+bool FaceDetectWorker::processImage(aicore_facedetect_ctx* ctx,
+                                    aicore_facedetect_ctx* landmark_ctx,
+                                    const Settings& settings,
+                                    FaceDetectRunResult* out,
+                                    QString* message,
+                                    QString* error) {
+    const QImage rgb = load_rgb_image(settings.inputPath);
+    if (rgb.isNull()) {
+        *error = QStringLiteral("Failed to load input image: %1")
+                         .arg(settings.inputPath);
+        return false;
+    }
+    FaceDetectRunResult& result = *out;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).completeBaseName();
+    result.secondImagePath = settings.secondInputPath;
+
+    if (char* info = aicore_facedetect_info_json(ctx)) {
+        const QJsonObject obj =
+                QJsonDocument::fromJson(QByteArray(info)).object();
+        aicore_facedetect_free_buffer(info);
+        result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
+    }
+
+    if (settings.mode == Mode::Verify) {
+        if (settings.secondInputPath.isEmpty()) {
+            *error = QStringLiteral("Verify mode requires a second image.");
+            return false;
+        }
+        const QImage secondRgb = load_rgb_image(settings.secondInputPath);
+        if (secondRgb.isNull()) {
+            *error = QStringLiteral("Failed to load second input image.");
+            return false;
+        }
+        const aicore_image_view firstView = imageView(rgb);
+        const aicore_image_view secondView = imageView(secondRgb);
+        const aicore_facedetect_verify_options verifyOptions{
+                settings.verifyThreshold, settings.minDetectionScore,
+                settings.antiSpoof ? 1 : 0};
+        aicore_facedetect_verify_result verifyResult{};
+        if (aicore_facedetect_verify_images(ctx, &firstView, &secondView,
+                                            &verifyOptions,
+                                            &verifyResult) != 0) {
+            *error = QString("Verify failed: %1")
+                             .arg(aicore_facedetect_last_error(ctx)
+                                          ? aicore_facedetect_last_error(ctx)
+                                          : "unknown");
+            return false;
+        }
+        const float dist = verifyResult.distance;
+        const int verified = verifyResult.verified;
+        result.verifyDistance = verifyResult.distance;
+        result.verifyMatched = verifyResult.verified;
+        result.mode = QStringLiteral("verify");
+
+        const bool antiSpoofVeto = verifyResult.anti_spoof_passed == 0;
+
+        {
+            QJsonObject root;
+            root.insert(QStringLiteral("mode"), result.mode);
+            root.insert(QStringLiteral("distance"), dist);
+            root.insert(QStringLiteral("verified"), verified != 0);
+            root.insert(QStringLiteral("threshold"), verifyResult.threshold);
+            root.insert(QStringLiteral("anti_spoof"), settings.antiSpoof);
+            if (settings.antiSpoof) {
+                root.insert(
+                        QStringLiteral("anti_spoof_passed"),
+                        verifyResult.anti_spoof_passed < 0
+                                ? QJsonValue()
+                                : QJsonValue(verifyResult.anti_spoof_passed !=
+                                             0));
+            }
+            root.insert(QStringLiteral("image_a"), settings.inputPath);
+            root.insert(QStringLiteral("image_b"), settings.secondInputPath);
+            result.resultJson =
+                    QJsonDocument(root).toJson(QJsonDocument::Indented);
+        }
+
+        QString verifyMsg;
+        if (verified) {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — MATCH "
+                                "(threshold %2)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(verifyResult.threshold, 0, 'f', 2);
+        } else if (antiSpoofVeto) {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — distance "
+                                "PASSED (threshold %2) but REJECTED by "
+                                "anti-spoof (liveness check failed)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(verifyResult.threshold, 0, 'f', 2);
+        } else {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — NO MATCH "
+                                "(threshold %2)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(verifyResult.threshold, 0, 'f', 2);
+        }
+        *message = verifyMsg;
+    } else {
+        const aicore_image_view view = imageView(rgb);
+        int inferenceStatus = -1;
+        if (settings.mode == Mode::DenseLandmarks) {
+            inferenceStatus = aicore_facedetect_dense_landmarks_image(
+                    ctx, landmark_ctx, &view, settings.minDetectionScore);
+            result.mode = QStringLiteral("dense_landmarks");
+        } else if (settings.mode == Mode::Analyze) {
+            inferenceStatus = aicore_facedetect_analyze_image(ctx, &view, 0.0f);
+            result.mode = QStringLiteral("analyze");
+        } else {
+            inferenceStatus = aicore_facedetect_detect_image(ctx, &view);
+            result.mode = QStringLiteral("detect");
+        }
+        if (inferenceStatus != 0) {
+            *error = QString("Inference failed: %1")
+                             .arg(aicore_facedetect_last_error(ctx)
+                                          ? aicore_facedetect_last_error(ctx)
+                                          : "unknown");
+            return false;
+        }
+
+        if (settings.mode == Mode::DenseLandmarks) {
+            const auto allFaces = read_typed_dense_landmarks(ctx);
+            result.totalDetected = static_cast<int>(allFaces.size());
+            result.faces = allFaces;
+            result.rejectedByScore = 0;
+            result.minDetectionScoreUsed = settings.minDetectionScore;
+            result.annotatedImage = draw_dense_annotations(
+                    rgb, allFaces, settings.minDetectionScore);
+        } else if (settings.mode == Mode::Analyze) {
+            const auto allFaces = read_typed_analysis(ctx);
+            result.totalDetected = static_cast<int>(allFaces.size());
+            result.minDetectionScoreUsed = settings.minDetectionScore;
+            result.faces = allFaces;
+            FaceDetectEmbed::filterFacesByScore(&result.faces,
+                                                settings.minDetectionScore);
+            result.rejectedByScore = result.totalDetected -
+                                     static_cast<int>(result.faces.size());
+            result.annotatedImage = FaceDetectEmbed::annotateAnalyze(
+                    rgb, allFaces, settings.minDetectionScore);
+        } else {
+            const auto allFaces = read_typed_detections(ctx);
+            result.totalDetected = static_cast<int>(allFaces.size());
+            result.minDetectionScoreUsed = settings.minDetectionScore;
+            result.faces = allFaces;
+            FaceDetectEmbed::filterFacesByScore(&result.faces,
+                                                settings.minDetectionScore);
+            result.rejectedByScore = result.totalDetected -
+                                     static_cast<int>(result.faces.size());
+            result.annotatedImage = FaceDetectEmbed::annotateDetect(
+                    rgb, allFaces, settings.minDetectionScore);
+        }
+        if (result.faces.empty()) {
+            if (settings.mode == Mode::DenseLandmarks) {
+                *message =
+                        (QString("[FaceDetect] No dense landmarks (min score "
+                                 "%1).")
+                                 .arg(settings.minDetectionScore, 0, 'f', 2));
+            } else {
+                *message =
+                        (QString("[FaceDetect] No faces passed min detection "
+                                 "score "
+                                 "%1 (detected %2, rejected %3).")
+                                 .arg(settings.minDetectionScore, 0, 'f', 2)
+                                 .arg(result.totalDetected)
+                                 .arg(result.rejectedByScore));
+            }
+        } else {
+            if (settings.mode == Mode::DenseLandmarks) {
+                *message =
+                        (QString("[FaceDetect] Dense landmarks on %1 face(s).")
+                                 .arg(result.faces.size()));
+            } else {
+                *message =
+                        (QString("[FaceDetect] %1 face(s) kept of %2 detected "
+                                 "(min score %3, rejected %4).")
+                                 .arg(result.faces.size())
+                                 .arg(result.totalDetected)
+                                 .arg(settings.minDetectionScore, 0, 'f', 2)
+                                 .arg(result.rejectedByScore));
+            }
+        }
+    }
+
+    return true;
+}
+
 bool FaceDetectWorker::runInference() {
     if (m_settings.inputPath.isEmpty()) {
         emit logMessage("[Error] No input image.");
@@ -270,8 +455,8 @@ bool FaceDetectWorker::runInference() {
         return false;
     }
 
-    const QImage rgb = load_rgb_image(m_settings.inputPath);
-    if (rgb.isNull()) {
+    // Header probe only; processImage decodes once.
+    if (!QImageReader(m_settings.inputPath).canRead()) {
         emit logMessage("[Error] Failed to load input image.");
         return false;
     }
@@ -337,193 +522,22 @@ bool FaceDetectWorker::runInference() {
         return false;
     }
 
-    FaceDetectRunResult result;
-    result.imagePath = m_settings.inputPath;
-    result.imageName = QFileInfo(m_settings.inputPath).completeBaseName();
-    result.secondImagePath = m_settings.secondInputPath;
-
-    if (char* info = aicore_facedetect_info_json(ctx)) {
-        const QJsonObject obj =
-                QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_facedetect_free_buffer(info);
-        result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
-        aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
-                                                  result.resolvedDevice);
-    }
-
-    emit progressUpdate(20, 100);
-
-    if (m_settings.mode == Mode::Verify) {
-        if (m_settings.secondInputPath.isEmpty()) {
-            emit logMessage("[Error] Verify mode requires a second image.");
-            m_pendingCtx = ctx;
-            m_pendingLandmarkCtx = landmark_ctx;
-            return false;
-        }
-        const QImage secondRgb = load_rgb_image(m_settings.secondInputPath);
-        if (secondRgb.isNull()) {
-            emit logMessage("[Error] Failed to load second input image.");
-            m_pendingCtx = ctx;
-            m_pendingLandmarkCtx = landmark_ctx;
-            return false;
-        }
-        const aicore_image_view firstView = imageView(rgb);
-        const aicore_image_view secondView = imageView(secondRgb);
-        const aicore_facedetect_verify_options verifyOptions{
-                m_settings.verifyThreshold, m_settings.minDetectionScore,
-                m_settings.antiSpoof ? 1 : 0};
-        aicore_facedetect_verify_result verifyResult{};
-        if (aicore_facedetect_verify_images(ctx, &firstView, &secondView,
-                                            &verifyOptions,
-                                            &verifyResult) != 0) {
-            emit logMessage(
-                    QString("[Error] Verify failed: %1")
-                            .arg(aicore_facedetect_last_error(ctx)
-                                         ? aicore_facedetect_last_error(ctx)
-                                         : "unknown"));
-            m_pendingCtx = ctx;
-            m_pendingLandmarkCtx = landmark_ctx;
-            return false;
-        }
-        const float dist = verifyResult.distance;
-        const int verified = verifyResult.verified;
-        result.verifyDistance = verifyResult.distance;
-        result.verifyMatched = verifyResult.verified;
-        result.mode = QStringLiteral("verify");
-
-        const bool antiSpoofVeto = verifyResult.anti_spoof_passed == 0;
-
-        {
-            QJsonObject root;
-            root.insert(QStringLiteral("mode"), result.mode);
-            root.insert(QStringLiteral("distance"), dist);
-            root.insert(QStringLiteral("verified"), verified != 0);
-            root.insert(QStringLiteral("threshold"), verifyResult.threshold);
-            root.insert(QStringLiteral("anti_spoof"), m_settings.antiSpoof);
-            if (m_settings.antiSpoof) {
-                root.insert(
-                        QStringLiteral("anti_spoof_passed"),
-                        verifyResult.anti_spoof_passed < 0
-                                ? QJsonValue()
-                                : QJsonValue(verifyResult.anti_spoof_passed !=
-                                             0));
-            }
-            root.insert(QStringLiteral("image_a"), m_settings.inputPath);
-            root.insert(QStringLiteral("image_b"), m_settings.secondInputPath);
-            result.resultJson =
-                    QJsonDocument(root).toJson(QJsonDocument::Indented);
-        }
-
-        QString verifyMsg;
-        if (verified) {
-            verifyMsg = QString("[FaceDetect] Cosine distance %1 — MATCH "
-                                "(threshold %2)")
-                                .arg(dist, 0, 'f', 4)
-                                .arg(verifyResult.threshold, 0, 'f', 2);
-        } else if (antiSpoofVeto) {
-            verifyMsg = QString("[FaceDetect] Cosine distance %1 — distance "
-                                "PASSED (threshold %2) but REJECTED by "
-                                "anti-spoof (liveness check failed)")
-                                .arg(dist, 0, 'f', 4)
-                                .arg(verifyResult.threshold, 0, 'f', 2);
-        } else {
-            verifyMsg = QString("[FaceDetect] Cosine distance %1 — NO MATCH "
-                                "(threshold %2)")
-                                .arg(dist, 0, 'f', 4)
-                                .arg(verifyResult.threshold, 0, 'f', 2);
-        }
-        emit logMessage(verifyMsg);
-    } else {
-        const aicore_image_view view = imageView(rgb);
-        int inferenceStatus = -1;
-        if (m_settings.mode == Mode::DenseLandmarks) {
-            inferenceStatus = aicore_facedetect_dense_landmarks_image(
-                    ctx, landmark_ctx, &view, m_settings.minDetectionScore);
-            result.mode = QStringLiteral("dense_landmarks");
-        } else if (m_settings.mode == Mode::Analyze) {
-            inferenceStatus = aicore_facedetect_analyze_image(ctx, &view, 0.0f);
-            result.mode = QStringLiteral("analyze");
-        } else {
-            inferenceStatus = aicore_facedetect_detect_image(ctx, &view);
-            result.mode = QStringLiteral("detect");
-        }
-        if (inferenceStatus != 0) {
-            emit logMessage(
-                    QString("[Error] Inference failed: %1")
-                            .arg(aicore_facedetect_last_error(ctx)
-                                         ? aicore_facedetect_last_error(ctx)
-                                         : "unknown"));
-            m_pendingCtx = ctx;
-            m_pendingLandmarkCtx = landmark_ctx;
-            return false;
-        }
-
-        if (m_settings.mode == Mode::DenseLandmarks) {
-            const auto allFaces = read_typed_dense_landmarks(ctx);
-            result.totalDetected = static_cast<int>(allFaces.size());
-            result.faces = allFaces;
-            result.rejectedByScore = 0;
-            result.minDetectionScoreUsed = m_settings.minDetectionScore;
-            result.annotatedImage = draw_dense_annotations(
-                    rgb, allFaces, m_settings.minDetectionScore);
-        } else if (m_settings.mode == Mode::Analyze) {
-            const auto allFaces = read_typed_analysis(ctx);
-            result.totalDetected = static_cast<int>(allFaces.size());
-            result.minDetectionScoreUsed = m_settings.minDetectionScore;
-            result.faces = allFaces;
-            FaceDetectEmbed::filterFacesByScore(&result.faces,
-                                                m_settings.minDetectionScore);
-            result.rejectedByScore = result.totalDetected -
-                                     static_cast<int>(result.faces.size());
-            result.annotatedImage = FaceDetectEmbed::annotateAnalyze(
-                    rgb, allFaces, m_settings.minDetectionScore);
-        } else {
-            const auto allFaces = read_typed_detections(ctx);
-            result.totalDetected = static_cast<int>(allFaces.size());
-            result.minDetectionScoreUsed = m_settings.minDetectionScore;
-            result.faces = allFaces;
-            FaceDetectEmbed::filterFacesByScore(&result.faces,
-                                                m_settings.minDetectionScore);
-            result.rejectedByScore = result.totalDetected -
-                                     static_cast<int>(result.faces.size());
-            result.annotatedImage = FaceDetectEmbed::annotateDetect(
-                    rgb, allFaces, m_settings.minDetectionScore);
-        }
-        if (result.faces.empty()) {
-            if (m_settings.mode == Mode::DenseLandmarks) {
-                emit logMessage(
-                        QString("[FaceDetect] No dense landmarks (min score "
-                                "%1).")
-                                .arg(m_settings.minDetectionScore, 0, 'f', 2));
-            } else {
-                emit logMessage(
-                        QString("[FaceDetect] No faces passed min detection "
-                                "score "
-                                "%1 (detected %2, rejected %3).")
-                                .arg(m_settings.minDetectionScore, 0, 'f', 2)
-                                .arg(result.totalDetected)
-                                .arg(result.rejectedByScore));
-            }
-        } else {
-            if (m_settings.mode == Mode::DenseLandmarks) {
-                emit logMessage(
-                        QString("[FaceDetect] Dense landmarks on %1 face(s).")
-                                .arg(result.faces.size()));
-            } else {
-                emit logMessage(
-                        QString("[FaceDetect] %1 face(s) kept of %2 detected "
-                                "(min score %3, rejected %4).")
-                                .arg(result.faces.size())
-                                .arg(result.totalDetected)
-                                .arg(m_settings.minDetectionScore, 0, 'f', 2)
-                                .arg(result.rejectedByScore));
-            }
-        }
-    }
-
-    result.runtimeMs = timer.elapsed();
     m_pendingCtx = ctx;
     m_pendingLandmarkCtx = landmark_ctx;
+    emit progressUpdate(20, 100);
+
+    FaceDetectRunResult result;
+    QString message;
+    QString error;
+    if (!processImage(ctx, landmark_ctx, m_settings, &result, &message,
+                      &error)) {
+        emit logMessage(QStringLiteral("[Error] ") + error);
+        return false;
+    }
+    if (!message.isEmpty()) emit logMessage(message);
+    aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
+                                              result.resolvedDevice);
+    result.runtimeMs = timer.elapsed();
     emit progressUpdate(100, 100);
     QString summary;
     if (m_settings.mode == Mode::Verify) {

@@ -140,6 +140,11 @@ int main(int argc, char** argv) {
                           kSupportsGracefulShutdown);
     commands.emplace_back("feature_importer", &RunFeatureImporter,
                           kSupportsGracefulShutdown);
+    commands.emplace_back("geometric_verifier", &RunGeometricVerifier,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("guided_geometric_verifier",
+                          &RunGuidedGeometricVerifier,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("hierarchical_mapper", &RunHierarchicalMapper);
     commands.emplace_back("global_mapper", &RunGlobalMapper);
     commands.emplace_back("rotation_averager", &RunRotationAverager);

@@ -845,6 +845,18 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
   // Scale the image such the the boundary of the undistorted image.
   if (roi_enabled || (camera.ModelId() != SimplePinholeCameraModel::model_id &&
                       camera.ModelId() != PinholeCameraModel::model_id)) {
+    // Upstream parity (937064dd): for fisheye cameras, CamFromImg returns
+    // perspective-normalized coords where |cam_point| = tan(theta). Near
+    // theta = pi/2, tan(theta) diverges: border pixels outside the valid
+    // fisheye circle (common with off-center principal points) produce
+    // extreme coordinates that blow up the output dimensions. Skip any
+    // cam_point whose norm exceeds the threshold.
+    THROW_CHECK_NE(options.max_cam_point_norm, 0);
+    const double max_cam_point_norm_sq =
+        options.max_cam_point_norm < 0
+            ? std::numeric_limits<double>::infinity()
+            : options.max_cam_point_norm * options.max_cam_point_norm;
+
     // Determine min/max coordinates along top / bottom image border.
 
     double left_min_x = std::numeric_limits<double>::max();
@@ -856,7 +868,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Left border.
       const std::optional<Eigen::Vector2d> cam_point1 =
           camera.CamFromImg(Eigen::Vector2d(0.5, y + 0.5));
-      if (cam_point1) {
+      if (cam_point1 && cam_point1->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point1 =
             undistorted_camera.ImgFromCam(cam_point1->homogeneous());
         if (undistorted_point1) {
@@ -867,7 +879,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Right border.
       const std::optional<Eigen::Vector2d> cam_point2 = camera.CamFromImg(
           Eigen::Vector2d(camera.Width() - 0.5, y + 0.5));
-      if (cam_point2) {
+      if (cam_point2 && cam_point2->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point2 =
             undistorted_camera.ImgFromCam(cam_point2->homogeneous());
         if (undistorted_point2) {
@@ -888,7 +900,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Top border.
       const std::optional<Eigen::Vector2d> cam_point1 =
           camera.CamFromImg(Eigen::Vector2d(x + 0.5, 0.5));
-      if (cam_point1) {
+      if (cam_point1 && cam_point1->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point1 =
             undistorted_camera.ImgFromCam(cam_point1->homogeneous());
         if (undistorted_point1) {
@@ -899,7 +911,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Bottom border.
       const std::optional<Eigen::Vector2d> cam_point2 = camera.CamFromImg(
           Eigen::Vector2d(x + 0.5, camera.Height() - 0.5));
-      if (cam_point2) {
+      if (cam_point2 && cam_point2->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point2 =
             undistorted_camera.ImgFromCam(cam_point2->homogeneous());
         if (undistorted_point2) {

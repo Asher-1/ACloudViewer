@@ -46,9 +46,22 @@ Keep heavy inference off the Qt GUI thread. Reuse `ecvAICoreRuntimeHelpers.h`,
 the existing plugin interface. Add `info.json`, resources, CMake registration,
 README, `BUILD.md` and plugin index rows incrementally.
 
-Agent access extends the existing JSON-RPC and `cli-anything-acloudviewer`
-mapping. Read `agent-integration/README.md` and the CLI quick reference; do
-not invent undocumented binary arguments.
+Agent access is mandatory for every AICore plugin, not a later UI follow-up:
+
+1. Register one native headless command and reuse the GUI's inference core.
+2. Use `ecvAICoreBatchCommand.h` for argument grammar, inputs, model/catalog
+   resolution, manifest, and `HELP RESULT_JSON` schema. An established command
+   may use `handleSchemaHelp()` while its runtime parser remains unchanged.
+3. Add the command to JSON-RPC `aicore.batch`'s whitelist and the Python
+   `ai_registry.py`; do not copy option defaults into Python.
+4. Verify Click `ai list/schema/run`, MCP `list_ai_tasks`, `get_ai_schema`,
+   `run_ai_batch`, and ordinary `run_plugin_command` passthrough.
+5. Update `agent-integration` command mapping, quick reference, and tests.
+
+The binary HELP schema is the option source of truth. The Python registry owns
+only stable task name, native command, summary, and input shape. Read
+`agent-integration/README.md` and the CLI quick reference; do not invent
+undocumented binary arguments.
 
 ## Workflow Acceptance
 
@@ -56,3 +69,13 @@ Verify the real headless probe first, then the plugin workflow for still,
 live, cancellation, stale generation, errors, and teardown. A contract test or
 synthetic output is not end-to-end evidence. Include the exact model digest,
 input fixture, backend/device, build revision, and report path in the result.
+
+Automation acceptance is fail-closed at three boundaries:
+
+- L1: command header, shared schema contract, RPC whitelist, and ownership check.
+- L2/L5: exact Python registry plus Click and MCP surfaces without a binary.
+- L3: every registry task resolves from each packaged Linux/macOS/Windows
+  binary and returns a non-empty `acloudviewer.aicore.batch/1` HELP schema.
+
+A missing packaged plugin, stale registry row, absent `RESULT_JSON`, or schema
+mismatch is a failure, not a skip.
