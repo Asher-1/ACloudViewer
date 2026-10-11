@@ -32,12 +32,24 @@ env:
 
 jobs:
   test-basic:
-    name: Level 1+2+5 (no binary needed)
-    runs-on: ubuntu-latest
+    name: Level 1+2+5 (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    # Path separators, line endings, default text encoding and subprocess
+    # quoting differ per OS; the Python axis is OS-independent, so macOS and
+    # Windows run only the newest supported interpreter.
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python-version: ['3.10', '3.11', '3.12']
+        include:
+          - os: macos-latest
+            python-version: '3.12'
+          - os: windows-latest
+            python-version: '3.12'
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout ACloudViewer

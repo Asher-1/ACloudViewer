@@ -83,4 +83,13 @@ private:
     std::vector<size_t> second_group_pos_;
 };
 
+// Upstream parity (a2bd15c2): the sampler draws from the thread-local PRNG,
+// so (LO-)RANSAC must seed it from `random_seed`, and every worker owns an
+// independent copy.
+template <>
+struct is_randomized_sampler<TwoGroupSampler> : std::true_type {};
+
+template <>
+struct is_parallel_safe_sampler<TwoGroupSampler> : std::true_type {};
+
 }  // namespace colmap

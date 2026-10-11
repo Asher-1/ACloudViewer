@@ -3,35 +3,53 @@
 #include "sensor/imu.h"
 
 #include <sstream>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 namespace colmap {
 namespace {
 
-ImuMeasurement Measurement(const timestamp_t timestamp) {
-  return ImuMeasurement(timestamp, Eigen::Vector3d::Zero(),
-                        Eigen::Vector3d::Zero());
+const Eigen::Vector3d kZero = Eigen::Vector3d::Zero();
+
+ImuMeasurement CreateMeasurement(timestamp_t t) {
+  return ImuMeasurement(t, kZero, kZero);
 }
 
-TEST(ImuCalibration, DefaultAndPrint) {
-  ImuCalibration calibration;
-  EXPECT_GT(calibration.imu_rate, 0.0);
-  EXPECT_GT(calibration.gravity_magnitude, 0.0);
-  calibration.gyro_noise_density = 1;
-  calibration.accel_noise_density = 2;
-  calibration.gravity_magnitude = 3;
+TEST(ImuCalibration, Default) {
+  const ImuCalibration calib;
+  EXPECT_GT(calib.imu_rate, 0.0);
+  EXPECT_GT(calib.gravity_magnitude, 0.0);
+}
+
+TEST(ImuCalibration, Print) {
+  ImuCalibration calib;
+  calib.gyro_noise_density = 1;
+  calib.accel_noise_density = 2;
+  calib.gravity_magnitude = 3;
   std::ostringstream stream;
-  stream << calibration;
+  stream << calib;
   EXPECT_EQ(stream.str(),
             "ImuCalibration(gyro_noise_density=1, accel_noise_density=2, "
             "gravity_magnitude=3)");
 }
 
-TEST(ImuMeasurement, DefaultConstructAndPrint) {
-  const ImuMeasurement empty;
-  EXPECT_EQ(empty.timestamp, kInvalidTimestamp);
-  EXPECT_EQ(empty.gyro, Eigen::Vector3d::Zero());
+TEST(ImuMeasurement, Default) {
+  const ImuMeasurement measurement;
+  EXPECT_EQ(measurement.timestamp, kInvalidTimestamp);
+  EXPECT_EQ(measurement.gyro, Eigen::Vector3d::Zero());
+  EXPECT_EQ(measurement.accel, Eigen::Vector3d::Zero());
+}
+
+TEST(ImuMeasurement, Construct) {
+  const ImuMeasurement measurement(
+      100, Eigen::Vector3d(1, 2, 3), Eigen::Vector3d(4, 5, 6));
+  EXPECT_EQ(measurement.timestamp, 100);
+  EXPECT_EQ(measurement.gyro, Eigen::Vector3d(1, 2, 3));
+  EXPECT_EQ(measurement.accel, Eigen::Vector3d(4, 5, 6));
+}
+
+TEST(ImuMeasurement, Print) {
   const ImuMeasurement measurement(
       100, Eigen::Vector3d(1, 2, 3), Eigen::Vector3d(4, 5, 6));
   std::ostringstream stream;
@@ -39,39 +57,191 @@ TEST(ImuMeasurement, DefaultConstructAndPrint) {
   EXPECT_EQ(stream.str(), "ImuMeasurement(t=100, gyro=[1 2 3], accel=[4 5 6])");
 }
 
-TEST(ImuMeasurements, SortedInsertMergeAndRemove) {
-  ImuMeasurements measurements;
-  measurements.Insert(Measurement(30));
-  measurements.Insert(Measurement(10));
-  measurements.Insert(Measurement(20));
-  ASSERT_EQ(measurements.Size(), 3);
-  EXPECT_EQ(measurements[0].timestamp, 10);
-  EXPECT_EQ(measurements[2].timestamp, 30);
-
-  measurements.InsertSorted({Measurement(15), Measurement(25)});
-  ASSERT_EQ(measurements.Size(), 5);
-  EXPECT_EQ(measurements[1].timestamp, 15);
-  EXPECT_EQ(measurements[3].timestamp, 25);
-  EXPECT_ANY_THROW(measurements.Insert(Measurement(25)));
-  measurements.Remove(Measurement(20));
-  EXPECT_EQ(measurements.Size(), 4);
-  EXPECT_ANY_THROW(measurements.Remove(Measurement(99)));
+TEST(ImuMeasurements, Default) {
+  ImuMeasurements ms;
+  EXPECT_TRUE(ms.Empty());
+  EXPECT_EQ(ms.Size(), 0);
 }
 
-TEST(ImuMeasurements, ExtractBracketingRange) {
-  ImuMeasurements measurements;
-  for (timestamp_t timestamp = 100; timestamp <= 500; timestamp += 100) {
-    measurements.Insert(Measurement(timestamp));
-  }
-  ImuMeasurements range;
-  measurements.ExtractMeasurementsInRange(150, 350, &range);
-  ASSERT_EQ(range.Size(), 4);
-  EXPECT_EQ(range.front().timestamp, 100);
-  EXPECT_EQ(range.back().timestamp, 400);
+TEST(ImuMeasurements, InsertSingle) {
+  ImuMeasurements ms;
+  ms.Insert(CreateMeasurement(30));
+  ms.Insert(CreateMeasurement(10));
+  ms.Insert(CreateMeasurement(20));
+  ASSERT_EQ(ms.Size(), 3);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[1].timestamp, 20);
+  EXPECT_EQ(ms[2].timestamp, 30);
+  EXPECT_EQ(ms.front().timestamp, 10);
+  EXPECT_EQ(ms.back().timestamp, 30);
 
-  measurements.ExtractMeasurementsInRange(50, 300, &range);
-  EXPECT_TRUE(range.Empty());
-  EXPECT_ANY_THROW(measurements.ExtractMeasurementsInRange(300, 200, &range));
+  ms.Clear();
+  ms.Insert(CreateMeasurement(10));
+  ms.Insert(CreateMeasurement(20));
+  ms.Insert(CreateMeasurement(30));
+  ASSERT_EQ(ms.Size(), 3);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[2].timestamp, 30);
+}
+
+TEST(ImuMeasurements, InsertVector) {
+  ImuMeasurements ms;
+  ms.Insert(std::vector<ImuMeasurement>{
+      CreateMeasurement(30), CreateMeasurement(10), CreateMeasurement(20)});
+  ASSERT_EQ(ms.Size(), 3);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[1].timestamp, 20);
+  EXPECT_EQ(ms[2].timestamp, 30);
+}
+
+TEST(ImuMeasurements, InsertMeasurements) {
+  ImuMeasurements ms;
+  ms.Insert(std::vector<ImuMeasurement>{
+      CreateMeasurement(10), CreateMeasurement(20), CreateMeasurement(30)});
+  ImuMeasurements other;
+  other.Insert(CreateMeasurement(15));
+  other.Insert(CreateMeasurement(25));
+  ms.Insert(other);
+  ASSERT_EQ(ms.Size(), 5);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[1].timestamp, 15);
+  EXPECT_EQ(ms[2].timestamp, 20);
+  EXPECT_EQ(ms[3].timestamp, 25);
+  EXPECT_EQ(ms[4].timestamp, 30);
+}
+
+TEST(ImuMeasurements, InsertSorted) {
+  ImuMeasurements ms;
+  ms.Insert(CreateMeasurement(10));
+  ms.InsertSorted({CreateMeasurement(20), CreateMeasurement(30)});
+  ASSERT_EQ(ms.Size(), 3);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[2].timestamp, 30);
+  ms.InsertSorted({CreateMeasurement(15), CreateMeasurement(25)});
+  ASSERT_EQ(ms.Size(), 5);
+  EXPECT_EQ(ms[1].timestamp, 15);
+  EXPECT_EQ(ms[3].timestamp, 25);
+}
+
+TEST(ImuMeasurements, Remove) {
+  ImuMeasurements ms;
+  ms.Insert(std::vector<ImuMeasurement>{
+      CreateMeasurement(10), CreateMeasurement(20), CreateMeasurement(30)});
+  ms.Remove(CreateMeasurement(20));
+  ASSERT_EQ(ms.Size(), 2);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[1].timestamp, 30);
+  EXPECT_ANY_THROW(ms.Remove(CreateMeasurement(99)));
+}
+
+TEST(ImuMeasurements, Copy) {
+  ImuMeasurements ms;
+  ms.Insert(std::vector<ImuMeasurement>{CreateMeasurement(10),
+                                        CreateMeasurement(20)});
+  const ImuMeasurements copy(ms);
+  ASSERT_EQ(copy.Size(), 2);
+  EXPECT_EQ(copy[0].timestamp, 10);
+  EXPECT_EQ(copy[1].timestamp, 20);
+}
+
+TEST(ImuMeasurements, ConstructFromVector) {
+  const ImuMeasurements ms(std::vector<ImuMeasurement>{CreateMeasurement(30),
+                                                       CreateMeasurement(10)});
+  ASSERT_EQ(ms.Size(), 2);
+  EXPECT_EQ(ms[0].timestamp, 10);
+  EXPECT_EQ(ms[1].timestamp, 30);
+}
+
+TEST(ImuMeasurements, Iterator) {
+  const ImuMeasurements ms(std::vector<ImuMeasurement>{CreateMeasurement(10),
+                                                       CreateMeasurement(30)});
+  std::vector<timestamp_t> timestamps;
+  for (const auto& m : ms) {
+    timestamps.push_back(m.timestamp);
+  }
+  EXPECT_EQ(timestamps, std::vector<timestamp_t>({10, 30}));
+}
+
+TEST(ImuMeasurements, DuplicateThrows) {
+  ImuMeasurements ms1;
+  ms1.Insert(CreateMeasurement(10));
+  EXPECT_ANY_THROW(ms1.Insert(CreateMeasurement(10)));
+
+  ImuMeasurements ms2;
+  ms2.Insert(CreateMeasurement(10));
+  ms2.Insert(CreateMeasurement(20));
+  EXPECT_ANY_THROW(ms2.Insert(CreateMeasurement(20)));
+
+  EXPECT_ANY_THROW(ImuMeasurements(std::vector<ImuMeasurement>{
+      CreateMeasurement(10), CreateMeasurement(10)}));
+
+  ImuMeasurements ms3;
+  ms3.Insert(CreateMeasurement(10));
+  EXPECT_ANY_THROW(
+      ms3.InsertSorted({CreateMeasurement(10), CreateMeasurement(20)}));
+
+  ImuMeasurements ms4;
+  ms4.Insert(CreateMeasurement(5));
+  EXPECT_ANY_THROW(
+      ms4.InsertSorted({CreateMeasurement(10), CreateMeasurement(10)}));
+
+  ImuMeasurements ms5;
+  EXPECT_ANY_THROW(
+      ms5.InsertSorted({CreateMeasurement(20), CreateMeasurement(10)}));
+}
+
+TEST(ImuMeasurements, ExtractMeasurementsInRange) {
+  ImuMeasurements ms;
+  for (timestamp_t t = 100; t <= 500; t += 100) {
+    ms.Insert(CreateMeasurement(t));
+  }
+
+  ImuMeasurements r;
+  ms.ExtractMeasurementsInRange(200, 400, &r);
+  ASSERT_EQ(r.Size(), 3);
+  EXPECT_EQ(r[0].timestamp, 200);
+  EXPECT_EQ(r[1].timestamp, 300);
+  EXPECT_EQ(r[2].timestamp, 400);
+
+  ms.ExtractMeasurementsInRange(100, 500, &r);
+  ASSERT_EQ(r.Size(), 5);
+  EXPECT_EQ(r[0].timestamp, 100);
+  EXPECT_EQ(r[4].timestamp, 500);
+
+  ms.ExtractMeasurementsInRange(150, 400, &r);
+  ASSERT_EQ(r.Size(), 4);
+  EXPECT_EQ(r[0].timestamp, 100);
+  EXPECT_EQ(r[3].timestamp, 400);
+
+  ms.ExtractMeasurementsInRange(200, 350, &r);
+  ASSERT_EQ(r.Size(), 3);
+  EXPECT_EQ(r[0].timestamp, 200);
+  EXPECT_EQ(r[1].timestamp, 300);
+  EXPECT_EQ(r[2].timestamp, 400);
+
+  ms.ExtractMeasurementsInRange(210, 290, &r);
+  ASSERT_EQ(r.Size(), 2);
+  EXPECT_EQ(r[0].timestamp, 200);
+  EXPECT_EQ(r[1].timestamp, 300);
+
+  ms.ExtractMeasurementsInRange(200, 300, &r);
+  ASSERT_EQ(r.Size(), 2);
+  EXPECT_EQ(r[0].timestamp, 200);
+  EXPECT_EQ(r[1].timestamp, 300);
+
+  ms.ExtractMeasurementsInRange(150, 350, &r);
+  ASSERT_EQ(r.Size(), 4);
+  EXPECT_EQ(r[0].timestamp, 100);
+  EXPECT_EQ(r[3].timestamp, 400);
+
+  ImuMeasurements empty;
+  EXPECT_ANY_THROW(empty.ExtractMeasurementsInRange(100, 200, &r));
+  EXPECT_ANY_THROW(ms.ExtractMeasurementsInRange(300, 200, &r));
+  EXPECT_ANY_THROW(ms.ExtractMeasurementsInRange(200, 200, &r));
+  ms.ExtractMeasurementsInRange(50, 300, &r);
+  EXPECT_TRUE(r.Empty());
+  ms.ExtractMeasurementsInRange(200, 600, &r);
+  EXPECT_TRUE(r.Empty());
 }
 
 }  // namespace

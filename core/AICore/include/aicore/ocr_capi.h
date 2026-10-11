@@ -105,9 +105,11 @@ typedef struct aicore_ocr_options {
     float det_box_score_thresh;
     /** det resize mode: 0 = official PP-OCR default ("min": scale the
      *  SHORT side up to det_max_side when it is below it, det_max_side
-     *  then acts as limit_side_len and defaults to 736), 1 = legacy
-     *  "max" cap (never upscale, long side <= det_max_side). Appended
-     *  in v1.1; 0 aligns the det recall with the official pipeline. */
+     *  then acts as limit_side_len and defaults to 736), 1 = "max" cap
+     *  (never upscale, long side <= det_max_side; with det_max_side 960
+     *  this is the text detection of the official table_recognition
+     *  pipeline). Appended in v1.1; 0 aligns the det recall with the
+     *  official OCR pipeline. */
     int32_t det_limit_type;
 } aicore_ocr_options;
 

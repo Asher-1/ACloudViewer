@@ -31,6 +31,8 @@
 
 #include "util/hash_containers.h"
 #include "sfm/incremental_triangulator.h"
+#include <cstdio>  // TEMP-DUMP
+#include <cstdlib>  // TEMP-DUMP
 
 #include "scene/projection.h"
 #include "sfm/observation_manager.h"
@@ -47,10 +49,10 @@ bool IncrementalTriangulator::Options::Check() const {
     CHECK_OPTION_GT(complete_max_reproj_error, 0);
     CHECK_OPTION_GE(complete_max_transitivity, 0);
     CHECK_OPTION_GT(re_max_angle_error, 0);
-    CHECK_OPTION_GE(re_min_ratio, 0);
-    CHECK_OPTION_LE(re_min_ratio, 1);
+    CHECK_OPTION_IN(re_min_ratio, 0, 1);
     CHECK_OPTION_GE(re_max_trials, 0);
     CHECK_OPTION_GT(min_angle, 0);
+    CHECK_OPTION_GE(random_seed, -1);
     return true;
 }
 
@@ -177,6 +179,9 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
     tri_options.residual_type =
             TriangulationEstimator::ResidualType::REPROJECTION_ERROR;
     tri_options.ransac_options.max_error = options.complete_max_reproj_error;
+    // Upstream parity (a2bd15c2): the triangulation RANSAC is seeded from the
+    // pipeline seed, so fixed-seed runs are reproducible.
+    tri_options.ransac_options.random_seed = options.random_seed;
 
     // Correspondence data for reference observation in given image. We iterate
     // over all observations of the image and each observation once becomes
@@ -272,7 +277,7 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
 
 size_t IncrementalTriangulator::CompleteTracks(
         const Options& options,
-        const NodeHashSet<point3D_t>& point3D_ids) {
+        const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_completed = 0;
@@ -302,7 +307,7 @@ size_t IncrementalTriangulator::CompleteAllTracks(const Options& options) {
 
 size_t IncrementalTriangulator::MergeTracks(
         const Options& options,
-        const NodeHashSet<point3D_t>& point3D_ids) {
+        const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_merged = 0;
@@ -450,16 +455,18 @@ void IncrementalTriangulator::AddModifiedPoint3D(const point3D_t point3D_id) {
     modified_point3D_ids_.insert(point3D_id);
 }
 
-const NodeHashSet<point3D_t>&
+const FlatHashSet<point3D_t>&
 IncrementalTriangulator::GetModifiedPoints3D() {
-    // First remove any missing 3D points from the set.
-    for (auto it = modified_point3D_ids_.begin();
-         it != modified_point3D_ids_.end();) {
-        if (reconstruction_->ExistsPoint3D(*it)) {
-            ++it;
-        } else {
-            modified_point3D_ids_.erase(it++);
+    // First remove any missing 3D points from the set. Erase by key: an
+    // open-addressing set may invalidate iterators on erase.
+    std::vector<point3D_t> missing_point3D_ids;
+    for (const point3D_t point3D_id : modified_point3D_ids_) {
+        if (!reconstruction_->ExistsPoint3D(point3D_id)) {
+            missing_point3D_ids.push_back(point3D_id);
         }
+    }
+    for (const point3D_t point3D_id : missing_point3D_ids) {
+        modified_point3D_ids_.erase(point3D_id);
     }
     return modified_point3D_ids_;
 }
@@ -471,6 +478,7 @@ void IncrementalTriangulator::ClearModifiedPoints3D() {
 void IncrementalTriangulator::ClearCaches() {
     camera_has_bogus_params_.clear();
     merge_trials_.clear();
+    found_corrs_.clear();
 }
 
 size_t IncrementalTriangulator::Find(const Options& options,
@@ -478,16 +486,15 @@ size_t IncrementalTriangulator::Find(const Options& options,
                                      const point2D_t point2D_idx,
                                      const size_t transitivity,
                                      std::vector<CorrData>* corrs_data) {
-    std::vector<CorrespondenceGraph::Correspondence> corrs;
     correspondence_graph_->ExtractTransitiveCorrespondences(
-            image_id, point2D_idx, transitivity, &corrs);
+            image_id, point2D_idx, transitivity, &found_corrs_);
 
     corrs_data->clear();
-    corrs_data->reserve(corrs.size());
+    corrs_data->reserve(found_corrs_.size());
 
     size_t num_triangulated = 0;
 
-    for (const CorrespondenceGraph::Correspondence corr : corrs) {
+    for (const auto& corr : found_corrs_) {
         if (!reconstruction_->ExistsImage(corr.image_id)) {
             std::cout << "[IncrementalTriangulator::Find] Image "
                       << corr.image_id << " does not exist" << std::endl;
@@ -575,6 +582,7 @@ size_t IncrementalTriangulator::Create(
             TriangulationEstimator::ResidualType::ANGULAR_ERROR;
     tri_options.ransac_options.max_error =
             DegToRad(options.create_max_angle_error);
+    tri_options.ransac_options.random_seed = options.random_seed;
 
     // Enforce exhaustive sampling for small track lengths.
     const size_t kExhaustiveSamplingThreshold = 15;
@@ -607,15 +615,19 @@ size_t IncrementalTriangulator::Create(
 
     // Add estimated point to reconstruction (through the observation
     // manager so the visibility statistics stay in sync).
+    const size_t track_length = track.Length();
     const point3D_t point3D_id = obs_manager_->AddPoint3D(xyz, track);
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { std::fprintf(stderr, "[dump] tri-create id=%llu n=%zu len=%zu xyz=%.17g %.17g %.17g els=", (unsigned long long)point3D_id, create_corrs_data.size(), track_length, xyz(0), xyz(1), xyz(2)); for (const auto& c : create_corrs_data) { const Eigen::Matrix3x4d M = c.image->CamFromWorld().ToMatrix(); const auto r = c.camera->CamRayFromImg(c.point2D->XY()); std::fprintf(stderr, "%u:%u P=%.17g xy=%.17g,%.17g r=%.17g ", (unsigned)c.image_id, (unsigned)c.point2D_idx, M.sum(), c.point2D->XY()(0), c.point2D->XY()(1), r ? r->sum() : 0.0); } std::fprintf(stderr, "\n"); }
+// TEMP-DUMP-END
     modified_point3D_ids_.insert(point3D_id);
 
     const size_t kMinRecursiveTrackLength = 3;
-    if (create_corrs_data.size() - track.Length() >= kMinRecursiveTrackLength) {
-        return track.Length() + Create(options, create_corrs_data);
+    if (create_corrs_data.size() - track_length >= kMinRecursiveTrackLength) {
+        return track_length + Create(options, create_corrs_data);
     }
 
-    return track.Length();
+    return track_length;
 }
 
 size_t IncrementalTriangulator::Continue(
@@ -706,18 +718,25 @@ size_t IncrementalTriangulator::Merge(const Options& options,
 
             const Point2D& corr_point2D = image.Point2D(corr->point2D_idx);
             if (!corr_point2D.HasPoint3D() ||
-                corr_point2D.Point3DId() == point3D_id ||
-                merge_trials_[point3D_id].count(corr_point2D.Point3DId()) > 0) {
+                corr_point2D.Point3DId() == point3D_id) {
+                continue;
+            }
+
+            // Canonical (min, max) pair so this merge is keyed identically
+            // regardless of which side of the pair we are visiting from.
+            const point3D_t corr_point3D_id = corr_point2D.Point3DId();
+            const std::pair<point3D_t, point3D_t> merge_trial_key =
+                    point3D_id < corr_point3D_id
+                            ? std::make_pair(point3D_id, corr_point3D_id)
+                            : std::make_pair(corr_point3D_id, point3D_id);
+            if (!merge_trials_.insert(merge_trial_key).second) {
                 continue;
             }
 
             // Try to merge the two 3D points.
 
             const Point3D& corr_point3D =
-                    reconstruction_->Point3D(corr_point2D.Point3DId());
-
-            merge_trials_[point3D_id].insert(corr_point2D.Point3DId());
-            merge_trials_[corr_point2D.Point3DId()].insert(point3D_id);
+                    reconstruction_->Point3D(corr_point3D_id);
 
             // Weighted average of point locations, depending on track length.
             const Eigen::Vector3d merged_xyz =
@@ -795,25 +814,37 @@ size_t IncrementalTriangulator::Complete(const Options& options,
 
     const Point3D& point3D = reconstruction_->Point3D(point3D_id);
 
-    std::vector<TrackElement> queue = point3D.Track().Elements();
+    // Upstream parity (a2bd15c2): member-held BFS scratch buffers, LIFO
+    // expansion within a level, and a visited set seeded with the existing
+    // track so shared correspondences are evaluated once. The expansion
+    // order determines the order of the added track elements.
+    complete_curr_queue_ = point3D.Track().Elements();
+    complete_next_queue_.clear();
+    complete_visited_.clear();
+    for (const TrackElement& el : complete_curr_queue_) {
+        complete_visited_.insert(std::make_pair(el.image_id, el.point2D_idx));
+    }
 
     const int max_transitivity = options.complete_max_transitivity;
-    for (int transitivity = 0; transitivity < max_transitivity;
+    for (int transitivity = 1; transitivity <= max_transitivity;
          ++transitivity) {
-        if (queue.empty()) {
-            break;
-        }
+        while (!complete_curr_queue_.empty()) {
+            const TrackElement queue_elem = complete_curr_queue_.back();
+            complete_curr_queue_.pop_back();
 
-        const auto prev_queue = queue;
-        queue.clear();
-
-        for (const TrackElement queue_elem : prev_queue) {
             const CorrespondenceGraph::CorrespondenceRange corrs =
                     correspondence_graph_->FindCorrespondences(
                             queue_elem.image_id, queue_elem.point2D_idx);
 
             for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
                  corr < corrs.end; ++corr) {
+                if (!complete_visited_
+                             .insert(std::make_pair(corr->image_id,
+                                                    corr->point2D_idx))
+                             .second) {
+                    continue;
+                }
+
                 const Image& image = reconstruction_->Image(corr->image_id);
                 // Upstream parity (d3ccaf35): gate on the frame pose (see
                 // Find).
@@ -845,13 +876,20 @@ size_t IncrementalTriangulator::Complete(const Options& options,
                 modified_point3D_ids_.insert(point3D_id);
 
                 // Recursively complete track for this new correspondence.
-                if (transitivity < max_transitivity - 1) {
-                    queue.emplace_back(corr->image_id, corr->point2D_idx);
+                if (transitivity < max_transitivity) {
+                    complete_next_queue_.emplace_back(corr->image_id,
+                                                      corr->point2D_idx);
                 }
 
                 num_completed += 1;
             }
         }
+
+        if (complete_next_queue_.empty()) {
+            break;
+        }
+
+        std::swap(complete_curr_queue_, complete_next_queue_);
     }
 
     return num_completed;

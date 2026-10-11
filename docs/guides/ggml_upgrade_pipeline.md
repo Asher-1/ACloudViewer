@@ -56,6 +56,18 @@ python3 3rdparty/ggml/patches/apply_ggml_patches.py --verify   # or the script's
 
 **Criteria**: both replays pass completely.
 
+### Reference-version kernel twins
+
+Some tasks are calibrated bit-for-bit against an external reference that pins
+its own ggml. Where the result depends on the compiled kernel binary rather
+than on dispatch, the patch chain vendors the reference's kernel sources
+instead of gating dispatch:
+
+| Twin | Reference ggml | What it fixes | On upgrade |
+|---|---|---|---|
+| `map_anything_merged` (E), `src/ggml-cuda/mapany/ggml-v0.24.0/` | v0.24.0 (`456172ec`, map-anything-ggml) | CUDA flash-attention stream-k grid = occupancy of the compiled kernel; v0.21 vs v0.24 differ (127 vs 130 regs on sm_89), so pi3x diverged from 7 views on | Upgrading **to** 0.24.0: configure aborts; delete the `mapany/` hunks (the tree's own kernel is the reference). Upgrading to any other version: the twin must still compile against the new `common.cuh` and the CUDA upstream-frames rows (incl. pi3x S=8/16) must stay at max_diff 0. If the reference bumps its ggml, `run_map_anything_upstream_parity.py` fails until the three files are re-vendored. |
+| `sam3d_merged/0005` `precise/` | n/a (fast-math OFF contract) | per-TU `-use_fast_math` | Re-include list must follow upstream renames of the twinned TUs |
+
 ## Stage 3: Build + contract tier (fast gate)
 
 ```bash

@@ -5,9 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Upstream parity (a2bd15c2 optim/two_group_sampler_test.cc). The fork's
-// RANSAC is single-threaded, so the thread-propagation cases run with one
-// thread; the sampler copy semantics are still exercised.
+// Upstream parity (a2bd15c2 optim/two_group_sampler_test.cc).
 
 #define TEST_NAME "optim/two_group_sampler"
 #include "util/testing.h"
@@ -88,8 +86,7 @@ RANSACOptions CreateSampleStructureRANSACOptions(int num_threads) {
   options.max_error = 1;
   options.max_num_trials = 200;
   options.random_seed = 0;
-  // Fork RANSAC is single-threaded; num_threads is accepted but unused.
-  (void)num_threads;
+  options.num_threads = num_threads;
   return options;
 }
 
@@ -233,7 +230,7 @@ TEST(optim_two_group_sampler, RANSACPropagatesGroupsToThreads) {
   // and draw only 5+1 structured samples.
   std::vector<int> group_ids(20, 0);
   for (size_t i = 10; i < 20; ++i) group_ids[i] = 1;
-  for (const int num_threads : {1}) {
+  for (const int num_threads : {1, 4}) {
     const RANSACOptions options =
         CreateSampleStructureRANSACOptions(num_threads);
     std::atomic<int> num_samples(0);
@@ -255,7 +252,7 @@ TEST(optim_two_group_sampler, RANSACPropagatesGroupsToThreads) {
 TEST(optim_two_group_sampler, LORANSACPropagatesGroupsToThreads) {
   std::vector<int> group_ids(20, 0);
   for (size_t i = 10; i < 20; ++i) group_ids[i] = 1;
-  for (const int num_threads : {1}) {
+  for (const int num_threads : {1, 4}) {
     const RANSACOptions options =
         CreateSampleStructureRANSACOptions(num_threads);
     std::atomic<int> num_samples(0);
@@ -277,6 +274,78 @@ TEST(optim_two_group_sampler, LORANSACPropagatesGroupsToThreads) {
     EXPECT_EQ(num_samples, options.max_num_trials);
     EXPECT_EQ(num_structured_samples, options.max_num_trials);
   }
+}
+
+// Fork regression: the sampler draws from the thread-local PRNG, so a seeded
+// LORANSAC must re-seed it and produce the same samples regardless of the
+// ambient PRNG state (the missing sampler traits left it unseeded).
+class FirstSampleRecorder {
+ public:
+  using X_t = int;
+  using Y_t = int;
+  using M_t = int;
+
+  static const int kMinNumSamples = 6;
+
+  explicit FirstSampleRecorder(std::vector<int>* samples)
+      : samples_(samples) {}
+
+  void Estimate(const std::vector<X_t>& X,
+                const std::vector<Y_t>& /*Y*/,
+                std::vector<M_t>* /*models*/) const {
+    samples_->insert(samples_->end(), X.begin(), X.end());
+  }
+
+  void Residuals(const std::vector<X_t>& X,
+                 const std::vector<Y_t>& /*Y*/,
+                 const M_t& /*model*/,
+                 std::vector<double>* residuals) const {
+    residuals->assign(X.size(), 0.0);
+  }
+
+ private:
+  std::vector<int>* samples_;
+};
+
+TEST(optim_two_group_sampler, SeededLORANSACIgnoresAmbientPRNG) {
+  static_assert(is_randomized_sampler<TwoGroupSampler>::value);
+  static_assert(is_parallel_safe_sampler<TwoGroupSampler>::value);
+
+  std::vector<int> point_ids(20);
+  std::iota(point_ids.begin(), point_ids.end(), 0);
+  std::vector<int> group_ids(20, 0);
+  for (size_t i = 10; i < 20; ++i) group_ids[i] = 1;
+
+  RANSACOptions options;
+  options.max_error = 1;
+  options.max_num_trials = 20;
+  options.random_seed = 7;
+
+  auto run = [&](const unsigned ambient_seed) {
+    SetPRNGSeed(ambient_seed);
+    std::vector<int> samples;
+    const FirstSampleRecorder recorder(&samples);
+    LORANSAC<FirstSampleRecorder,
+             FirstSampleRecorder,
+             InlierSupportMeasurer,
+             TwoGroupSampler>
+        loransac(options,
+                 recorder,
+                 recorder,
+                 InlierSupportMeasurer(),
+                 TwoGroupSampler(FirstSampleRecorder::kMinNumSamples,
+                                 group_ids,
+                                 /*structured_prob=*/0.5,
+                                 /*num_first_group_samples=*/5));
+    loransac.Estimate(point_ids, point_ids);
+    return samples;
+  };
+
+  const std::vector<int> samples1 = run(1);
+  const std::vector<int> samples2 = run(12345);
+  EXPECT_EQ(samples1.size(),
+            options.max_num_trials * FirstSampleRecorder::kMinNumSamples);
+  EXPECT_EQ(samples1, samples2);
 }
 
 }  // namespace

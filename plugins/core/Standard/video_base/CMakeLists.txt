@@ -106,5 +106,13 @@ cloudviewer_set_bin_runtime_output_directory(test_video_base_gestures)
 # binary to the matching AICore tier — there is no cross-directory dependency
 # list to maintain. (The previous manual-contract design failed CI with ctest
 # "Could not find executable" / Not Run / gmake Error 8 when the attach was
-# forgotten or dropped.)
-aicore_register_test(NAME video_base_gestures TARGET test_video_base_gestures)
+# forgotten or dropped.) The helper only exists when the AICore test tree is
+# configured (AICore_ENABLED + AICore_BUILD_TESTS); video_base is built for
+# every Standard plugin set, so other configurations (e.g. the CodeQL
+# AICore-off build) register a plain ctest entry instead.
+if(COMMAND aicore_register_test)
+    aicore_register_test(NAME video_base_gestures
+        TARGET test_video_base_gestures)
+else()
+    add_test(NAME video_base_gestures COMMAND test_video_base_gestures)
+endif()

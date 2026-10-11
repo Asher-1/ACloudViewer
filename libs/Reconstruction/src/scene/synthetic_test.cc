@@ -95,17 +95,11 @@ TEST(SynthesizeDataset, Nominal) {
   for (const auto& [frame_id, frame] : reconstruction.Frames()) {
     Frame reconstruction_frame = frame;
     EXPECT_TRUE(reconstruction_frame.HasPose());
-    // Fork parity: the fork-legacy schema persists the frame pose
-    // (has_pose/qvec/tvec columns), so ReadFrame restores a posed frame;
-    // upstream compares ResetPose'd frames because its schema does not
-    // persist the pose. Compare the persisted fields directly instead.
+    reconstruction_frame.ResetPose();
     Frame database_frame = database->ReadFrame(frame_id);
     EXPECT_EQ(database_frame.DataIds(), reconstruction_frame.DataIds());
-    EXPECT_EQ(database_frame.HasPose(), reconstruction_frame.HasPose());
-    EXPECT_EQ(database_frame.RigFromWorldQvec(),
-              reconstruction_frame.RigFromWorldQvec());
-    EXPECT_EQ(database_frame.RigFromWorldTvec(),
-              reconstruction_frame.RigFromWorldTvec());
+    EXPECT_EQ(database_frame.RigId(), reconstruction_frame.RigId());
+    EXPECT_FALSE(database_frame.HasPose());
     EXPECT_EQ(reconstruction_frame.NumDataIds(),
               reconstruction_frame.RigPtr()->NumSensors());
   }

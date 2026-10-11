@@ -46,8 +46,9 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
   explicit FaissFeatureDescriptorIndex(int num_threads)
       : num_threads_(num_threads) {}
 
-  void Build(const FeatureDescriptorsFloatData& index_descriptors) override {
-    if (index_descriptors.rows() == 0) {
+  void Build(const FeatureDescriptorsFloat& index_descriptors) override {
+    type_ = index_descriptors.type;
+    if (index_descriptors.data.rows() == 0) {
       index_ = nullptr;
       return;
     }
@@ -61,16 +62,16 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
       omp_set_max_active_levels(1);
 #endif
 
-      if (index_descriptors.rows() >= 512) {
-        const int num_centroids = 4 * std::sqrt(index_descriptors.rows());
+      if (index_descriptors.data.rows() >= 512) {
+        const int num_centroids = 4 * std::sqrt(index_descriptors.data.rows());
         coarse_quantizer_ =
-            std::make_unique<faiss::IndexFlatL2>(index_descriptors.cols());
+            std::make_unique<faiss::IndexFlatL2>(index_descriptors.data.cols());
         if (type_ == FeatureExtractorType::SIFT) {
           // SIFT descriptors are natively uint8, so QT_8bit_direct
           // quantization is lossless and faster than flat indexing.
           index_ = std::make_unique<faiss::IndexIVFScalarQuantizer>(
               /*quantizer=*/coarse_quantizer_.get(),
-              /*d=*/index_descriptors.cols(),
+              /*d=*/index_descriptors.data.cols(),
               /*nlist=*/num_centroids,
               faiss::ScalarQuantizer::QT_8bit_direct,
               faiss::METRIC_L2,
@@ -81,37 +82,39 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
         } else {
           index_ = std::make_unique<faiss::IndexIVFFlat>(
               /*quantizer=*/coarse_quantizer_.get(),
-              /*d=*/index_descriptors.cols(),
+              /*d=*/index_descriptors.data.cols(),
               /*nlist=*/num_centroids,
               faiss::METRIC_L2);
           auto* index_impl = static_cast<faiss::IndexIVFFlat*>(index_.get());
           index_impl->cp.min_points_per_centroid = 1;
         }
-        index_->train(index_descriptors.rows(),
-                      index_descriptors.data());
-        index_->add(index_descriptors.rows(),
-                    index_descriptors.data());
+        index_->train(index_descriptors.data.rows(),
+                      index_descriptors.data.data());
+        index_->add(index_descriptors.data.rows(),
+                    index_descriptors.data.data());
       } else {
         index_ = std::make_unique<faiss::IndexFlatL2>(
-            /*d=*/index_descriptors.cols());
-        index_->add(index_descriptors.rows(),
-                    index_descriptors.data());
+            /*d=*/index_descriptors.data.cols());
+        index_->add(index_descriptors.data.rows(),
+                    index_descriptors.data.data());
       }
     }
   }
 
   void Search(int num_neighbors,
-              const FeatureDescriptorsFloatData& query_descriptors,
+              const FeatureDescriptorsFloat& query_descriptors,
               Eigen::RowMajorMatrixXi& indices,
               Eigen::RowMajorMatrixXf& l2_dists) const override {
+    THROW_CHECK_EQ(query_descriptors.type, type_);
+
     if (num_neighbors <= 0 || index_ == nullptr) {
       indices.resize(0, 0);
       l2_dists.resize(0, 0);
       return;
     }
 
-    THROW_CHECK_EQ(query_descriptors.cols(), index_->d);
-    const int64_t num_query_descriptors = query_descriptors.rows();
+    THROW_CHECK_EQ(query_descriptors.data.cols(), index_->d);
+    const int64_t num_query_descriptors = query_descriptors.data.rows();
     if (num_query_descriptors == 0) {
       return;
     }
@@ -135,7 +138,7 @@ class FaissFeatureDescriptorIndex : public FeatureDescriptorIndex {
       faiss::SearchParametersIVF search_params;
       search_params.nprobe = 8;
       index_->search(num_query_descriptors,
-                     query_descriptors.data(),
+                     query_descriptors.data.data(),
                      num_eff_neighbors,
                      l2_dists.data(),
                      indices_long.data(),

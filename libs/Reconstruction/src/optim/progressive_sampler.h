@@ -43,4 +43,9 @@ private:
     double T_n_p_;
 };
 
+// Upstream parity (a2bd15c2): draws from the thread-local PRNG, so RANSAC
+// seeds it from `random_seed`.
+template <>
+struct is_randomized_sampler<ProgressiveSampler> : std::true_type {};
+
 }  // namespace colmap

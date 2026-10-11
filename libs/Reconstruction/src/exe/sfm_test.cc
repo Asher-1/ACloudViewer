@@ -180,12 +180,62 @@ TEST(IncrementalMapper, WritesInterruptedReconstruction) {
   EXPECT_TRUE(ExistsFile(output_path / "0" / "points3D.bin"));
 }
 
-TEST(IncrementalMapper, DISABLED_DiscardsInterruptBeforeInitialPair) {
-  // Fork adjudication: the fork controller short-circuits the stop probe
-  // once a model exists (Size() > 0 || ShouldStop()), so the specific
-  // interrupt-before-initial-pair timing is not reproducible; the core
-  // cancellation semantics are covered by WritesInterruptedReconstruction.
+TEST(IncrementalMapper, FixExistingFramesRestoresInputCoordinateFrame) {
+  // Upstream a2bd15c2 RunIncrementalMapperImpl maps a continued, fixed-frame
+  // reconstruction back into its input coordinate frame after the pipeline's
+  // normalization passes.
+  const auto test_path = CreateTestDir();
+  const auto database_path = test_path / "database.db";
+  auto database = Database::Open(database_path);
 
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_options;
+  synthetic_options.num_rigs = 1;
+  synthetic_options.num_cameras_per_rig = 1;
+  synthetic_options.num_frames_per_rig = 7;
+  synthetic_options.num_points3D = 50;
+  synthetic_options.camera_has_prior_focal_length = false;
+  SynthesizeDataset(synthetic_options, &gt_reconstruction, database.get());
+  database.reset();
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  Reconstruction& input =
+      reconstruction_manager->Get(reconstruction_manager->Add());
+  input = gt_reconstruction;
+  // Place the input far from the normalized gauge so that a missing
+  // back-transform is observable.
+  input.Transform(Sim3d(
+      5,
+      Eigen::Quaterniond(Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ())),
+      Eigen::Vector3d(100, -50, 20)));
+  input.DeRegisterFrame(1);
+  std::vector<std::pair<image_t, Eigen::Vector3d>> fixed_centers;
+  for (const image_t image_id : input.RegImageIds()) {
+    fixed_centers.emplace_back(image_id,
+                               input.Image(image_id).ProjectionCenter());
+  }
+  ASSERT_GE(fixed_centers.size(), 3);
+
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->extract_colors = false;
+  options->num_threads = 1;
+  options->fix_existing_frames = true;
+  const auto output_path = test_path / "output";
+  CreateDirIfNotExists(output_path);
+  ASSERT_TRUE(RunIncrementalMapperImpl(
+      database_path, test_path, output_path, options, reconstruction_manager));
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  const Reconstruction& result = reconstruction_manager->Get(0);
+  for (const auto& [image_id, center] : fixed_centers) {
+    ASSERT_TRUE(result.IsImageRegistered(image_id)) << image_id;
+    EXPECT_LT((result.Image(image_id).ProjectionCenter() - center).norm(),
+              1e-6)
+        << image_id;
+  }
+}
+
+TEST(IncrementalMapper, DiscardsInterruptBeforeInitialPair) {
   // Batch C fix: see WritesInterruptedReconstruction above.
   const auto test_path = CreateTestDir();
   const auto database_path = test_path / "database.db";

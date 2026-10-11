@@ -16,8 +16,12 @@
 #include <ctime>
 
 #ifdef _WIN32
-#include <dbghelp.h>
+// dbghelp.h needs the Win32 types (CALLBACK, HANDLE, ...) from windows.h.
+// The style regroups and sorts includes across blank lines, so pin the order.
+// clang-format off
 #include <windows.h>
+#include <dbghelp.h>
+// clang-format on
 #else
 #include <fcntl.h>
 #include <unistd.h>

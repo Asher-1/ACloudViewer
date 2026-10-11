@@ -18,7 +18,8 @@
     "map_anything",
     "lingbot",
     "reid",
-    "ocr"
+    "ocr",
+    "table"
   ],
   "input_assets": [
     {
@@ -447,6 +448,699 @@
       "size_bytes": 15648,
       "relative_path": "ocr_fixtures/rec_en_reference.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_reference.npy"
+    },
+    {
+      "id": "table-fixture-0-input",
+      "release": "ocr-fixtures",
+      "path": "table_0_input.npy",
+      "sha256": "6b4a15e9fb559c8dffaaf22a731cb556cb5a36f2839dc6ef3f352224fc00caf8",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 0 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-0-probs",
+      "release": "ocr-fixtures",
+      "path": "table_0_probs.npy",
+      "sha256": "662d41835c55c64d7a8c793b6b3f50243e7f8248f34f1699b3e11237d1b589c2",
+      "size_bytes": 5128,
+      "description": "SLANet_plus fixture 0 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-0-loc",
+      "release": "ocr-fixtures",
+      "path": "table_0_loc.npy",
+      "sha256": "9d34f7e4f876a48948e973bfd8e39c4ba14a2ed41797a5e34f3435be42704e60",
+      "size_bytes": 928,
+      "description": "SLANet_plus fixture 0 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-input",
+      "release": "ocr-fixtures",
+      "path": "table_1_input.npy",
+      "sha256": "bb795685d59776f135cf4d34cb89af2a0ec03cd029b54088e90c286a795013da",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 1 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-probs",
+      "release": "ocr-fixtures",
+      "path": "table_1_probs.npy",
+      "sha256": "1498215c199046d6d5dc36e175ebc3764897856017210aa143c3eaab18e3d187",
+      "size_bytes": 15728,
+      "description": "SLANet_plus fixture 1 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-loc",
+      "release": "ocr-fixtures",
+      "path": "table_1_loc.npy",
+      "sha256": "e3be9ad9ddcc6d51cac283f9acab73dfe3870f4e54ba8d33fb49469649a2cc72",
+      "size_bytes": 2624,
+      "description": "SLANet_plus fixture 1 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-input",
+      "release": "ocr-fixtures",
+      "path": "table_2_input.npy",
+      "sha256": "d9bca855e1d1f83dd6a18c2c3140497263a25d69d33d06d981fb243242ce8105",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 2 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-probs",
+      "release": "ocr-fixtures",
+      "path": "table_2_probs.npy",
+      "sha256": "1b13d0b7aa315624ace868e2628b1da5dceee17cca6bfe61d70f53bb391ca8ae",
+      "size_bytes": 37128,
+      "description": "SLANet_plus fixture 2 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-loc",
+      "release": "ocr-fixtures",
+      "path": "table_2_loc.npy",
+      "sha256": "51a87a5a199ba67630435b122150e0bb56636cee9b60cb0922693a7f37092289",
+      "size_bytes": 6048,
+      "description": "SLANet_plus fixture 2 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixtures-index",
+      "release": "ocr-fixtures",
+      "path": "table_fixtures.json",
+      "sha256": "5e5088f42191aad769b29f48da4644c2a3f2361b5f0a0f62a0f21cac7bb0b09e",
+      "size_bytes": 1750,
+      "description": "SLANet_plus fixture index (source crops, steps, digests)",
+      "relative_path": "ocr_fixtures/table_fixtures.json",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_fixtures.json",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "ocr-layout-regions",
+      "release": "ocr-fixtures",
+      "path": "layout_regions.json",
+      "sha256": "1d3bb3926e041dae807ef76903e41fee0f41c00feb7c8aa5b9b67ea9e85327aa",
+      "size_bytes": 4602,
+      "description": "official PP-Structure CDLA regions on 3 pinned pages (run_paddle_layout_reference.py)",
+      "relative_path": "ocr_fixtures/layout_regions.json",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_regions.json",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ppocr-testdata",
+      "tasks": [
+        "ocr",
+        "table"
+      ],
+      "relative_path": "ppocr_testdata.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/PP-OCR/ppocr_testdata.zip",
+      "sha256": "9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484",
+      "size_bytes": 17317673,
+      "archive": true,
+      "description": "PaddleOCR test images + layout pages + real-document table crops (tables/) + PaddleX table_rec val GT (synthetic tables; MANIFEST.txt pins every member and its source)",
+      "extracted_files": [
+        {
+          "relative_path": "ppocr_testdata/test_files/table.jpg",
+          "sha256": "acd113bb3a89b488941ee0962776a28e45897fa2802cd306ec3bb68d9043115c",
+          "size_bytes": 16208
+        },
+        {
+          "relative_path": "ppocr_testdata/layout_doc_test.png",
+          "sha256": "852258f594b695d1e7421f052810f3a3ae405820e1d8351d60895395db29744f",
+          "size_bytes": 69009
+        },
+        {
+          "relative_path": "ppocr_testdata/layout/table_page_1.png",
+          "sha256": "4b6e3d1aef64cd90c92d5be3bed628f486affd4e4b2ce85f8da2695edb9069fc",
+          "size_bytes": 776050
+        },
+        {
+          "relative_path": "ppocr_testdata/layout/table_page_layout.jpg",
+          "sha256": "c05f6c65efc2cb1c6514537716e26e3488268f288f8cd54edf52e1c8c2e2f561",
+          "size_bytes": 687574
+        },
+        {
+          "relative_path": "ppocr_testdata/tables/ppstructure_table.jpg",
+          "sha256": "d754f91e263b0392708e48050971722f86a3a863c2497e73869802066b7dfc06",
+          "size_bytes": 59389
+        },
+        {
+          "relative_path": "ppocr_testdata/tables/table_recognition_v2.jpg",
+          "sha256": "c76d5cbeeb4466cb597f672182d1fc91c627038e877185843a3ae09489f7dc04",
+          "size_bytes": 70355
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/val.txt",
+          "sha256": "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+          "size_bytes": 802973
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_2945_L7MSRHBZRW6Y347G39O6.jpg",
+          "sha256": "a1c29bc33626bd3ce8c705ad1ef849fc75a04a9f186be66e99d5b08dea244fe1",
+          "size_bytes": 109317
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_4825_LH9WI6X104CP3VFXPSON.jpg",
+          "sha256": "cca1909e29fd4025ef49dd25d1e32216222a14d49feac01a441e03c387966d4a",
+          "size_bytes": 21040
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_16837_79KHWU9WDM9ZQHNBGQAL.jpg",
+          "sha256": "44e9a8acce8b02d9381bf9ac4b41ec981c9497ff36daa8a3abe59775503cf6cd",
+          "size_bytes": 69886
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_10107_9ENLLC29SQ6XI8WZY53E.jpg",
+          "sha256": "91bd3136fd6288420825d9b4f3d8da28b9cf58909c21512ba650e966f5085e1c",
+          "size_bytes": 41705
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_16668_JIS0YFDZKTKETZIEKCKX.jpg",
+          "sha256": "c60ffe7e9cad64eec903c2bc25dc689e5de4c8119963c88bb883e29d8bf483e1",
+          "size_bytes": 47345
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_18653_J9SSKHLFTRJD4J8W17OW.jpg",
+          "sha256": "571477b0b587811317c13769c8da83ae9bc8b10652310d26de89d962a9f2cf46",
+          "size_bytes": 32059
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8396_VJ3QJ3I0DP63P4JR77FE.jpg",
+          "sha256": "219d03e480092f2da3d302dbb57a2a754c7feba1c1c6fc3c3e6e793820ab0c1b",
+          "size_bytes": 26017
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9017_K2V7QBWSU2BA4R3AJSO7.jpg",
+          "sha256": "c4fb34018c56c575967ee759aa02b74789a66f32a5b0ea381dbcd5c23fa4b2ae",
+          "size_bytes": 51170
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_19494_SDFMWP92NOB2OT7109FI.jpg",
+          "sha256": "56d13c3f8bb7497dde4b5d4849a3a8bcf6dab0c1b6717edc4085fe9a1fe80e7c",
+          "size_bytes": 91200
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_288_6LK683JUCMOQ38V5BV29.jpg",
+          "sha256": "1cefdba21990747c5db8334d704156d66a3c0bd9f2fba407807873c788ff6fdb",
+          "size_bytes": 66194
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_15463_PF9RBVRNKZE869039D0R.jpg",
+          "sha256": "857657d7f047ceb467ddbc24299c3767944c3bd5a8ba0aad13293aeef90f0e0a",
+          "size_bytes": 31192
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_7845_SUB4GLYSCWHZYD5XMG5F.jpg",
+          "sha256": "7abcb44351552a279535ae9c4b13fd92277b24dc818b51f25bd62d66fdc514e3",
+          "size_bytes": 18692
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_8218_WXEN1YG5TBD13TG8IQRV.jpg",
+          "sha256": "c82db3ff9da528231d9715494beaeab5e12aead72e93040dbe6f7cdb09b4cd67",
+          "size_bytes": 89273
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_7419_H1E493INMIP9STVYRZC3.jpg",
+          "sha256": "0d101ae09f97cac05f48a73f96940dc555fd1f389d4edf9eac916b405c46f8f9",
+          "size_bytes": 84712
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_9873_KI0M97B4J0MGC11ICUB2.jpg",
+          "sha256": "bc8c200a9e29313a9a682bb9e7837deec14d2dfaacfecc3011fb1a839e3abbb2",
+          "size_bytes": 54133
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_19624_SU8OKUCYCI3IP9XSQEMD.jpg",
+          "sha256": "524b9a6f622cfb228cde3d9d4b0d8d616b368bb7fa61dfd517aa6411e166e121",
+          "size_bytes": 29588
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_5827_593WYP9J6BS5VIL08M9C.jpg",
+          "sha256": "fb3b21716c19b530c6cc13ef52310f2175f37f842abdcf25e048a7fc37aaf6b3",
+          "size_bytes": 21939
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_318_USPRK6YD0V9A5HZBXYYF.jpg",
+          "sha256": "675a07fa8c41fd8b85140c8b2ee1be355fa21569c49049c4ae2e271bdb123089",
+          "size_bytes": 20870
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_15527_UDCNC9UJQYT2YB8BGWIM.jpg",
+          "sha256": "65a161999d63b81e94cc3d6032f1a5c4837966f8b8a0d07e438fb0df422e848c",
+          "size_bytes": 16804
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_5626_HDUMPDCW3G35NF0XJ3X6.jpg",
+          "sha256": "3ddc82241bb66181b59d8946b372dbf99993b476c8a62711d3589c53f1c8df19",
+          "size_bytes": 38328
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_2593_ESRTK8YJE3QO7L37YYGG.jpg",
+          "sha256": "1561dbfe03e0f4b6da594b1a63b8ca63406206b514d0f35cefd7a4e37d2533b2",
+          "size_bytes": 58614
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_17510_QLZWGTYH521OXAWZ8JIW.jpg",
+          "sha256": "af839a50994901c6e73e6cf6ed804f03a32999c64684c87ef390ed48e3ea1a58",
+          "size_bytes": 23784
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_18309_8F9CXIKWIPXE56HUZWXQ.jpg",
+          "sha256": "4bc2fd4996b27de275465b28607c30832d1fc7b092395b49f61f4504d7ea504d",
+          "size_bytes": 57942
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_18685_OFXZ1U8UH1R9UNEB4JEZ.jpg",
+          "sha256": "f90938c02d9d9414f8f7be0473abc9c05e64c963f20b002c57ebcd88b894444d",
+          "size_bytes": 8422
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_10248_SWHFHH8YM91YHHOSDMAY.jpg",
+          "sha256": "2eedf2e9b07600c750652347b906ef45c6af037412916835fe73fb4e3a99f4f5",
+          "size_bytes": 35628
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_2125_IFPQTN9AQCJO9P8ZVAAR.jpg",
+          "sha256": "17cf2aef7446189987d0db453a6b84994c9e86b74c31c3f043e1951922059c90",
+          "size_bytes": 25650
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_4886_B6P4IVZP7AEHDDBTJ9YF.jpg",
+          "sha256": "a890d59e0db9c1f8f5e93e91386274881e568f29b463d196d184e0c324ccff5a",
+          "size_bytes": 34937
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_5385_QU3N173ATRWHKBSAJ00S.jpg",
+          "sha256": "5da253adda461c16cbf04feb875093b2202d86e3e2c3b2f55ea7e5906991b233",
+          "size_bytes": 68021
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_1236_BM93BBMF9I5IF5LFL7XX.jpg",
+          "sha256": "68e774ed46ad597c2c0cd4943b3ba0d007dcc3975d519d9d6d74016721ecdcc5",
+          "size_bytes": 55048
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_4390_LDQ0FXT4XUPG0A5PYQIN.jpg",
+          "sha256": "632d1a1cbcf54cab51a857a183aa6213151502e2dd4c5404475e52b7369c19d2",
+          "size_bytes": 55008
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_8935_WBWHYGPFSYJ55ML98XSI.jpg",
+          "sha256": "6e5bcb42afd33ec79efe6a1e91e3dcdc1ad5ed3857a88dacc167aad42b59a412",
+          "size_bytes": 45392
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_2132_UB0ULCG9NEF8Y14F8QXD.jpg",
+          "sha256": "200929e191bfe0123a853b73dc7da5390118fb9db8e289bb650a7ee046bc2931",
+          "size_bytes": 25198
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_7990_ZIOS48Z4Y7VIUJ3SS8DC.jpg",
+          "sha256": "5fe478b86e63282f4a45261f12254cb7dec79404d4380d119db9e4bf587221aa",
+          "size_bytes": 21782
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_1585_YZGRLI947Z5ICPSI3HAL.jpg",
+          "sha256": "57adca03e0aae323c69e1caf9219fc52f5f344d88e90854e8cc2473a1dd85bab",
+          "size_bytes": 36132
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_1565_AMZ0ZHLFUZX7C6LW0EJE.jpg",
+          "sha256": "0f90059fe5b92514a094c2d324346be8af032c8f643519eaf8f1ab8070a19523",
+          "size_bytes": 78687
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_6409_KURIIT2JIUSHID0XQIRJ.jpg",
+          "sha256": "72972470927f8d876b90bcff71c0e798fd933662e730d603d004893889ce2bb5",
+          "size_bytes": 83982
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_18833_XKIE52BLV7OLK79YD4SV.jpg",
+          "sha256": "4886ea1f1425833baec4121089da5d4fc051237520d65e51c3baf48d013828b8",
+          "size_bytes": 51711
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_18024_X8V1L8KNAGJNI3RHR9N2.jpg",
+          "sha256": "ad256d72543fe1c15b65f248e6f854a16eacea6090fc0db42d007d1fee2b70d5",
+          "size_bytes": 37766
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_9131_4XB305X9Y5GT994EBRP5.jpg",
+          "sha256": "a2c60cbde7847e1ea7f6df6060b9c2768046ba004b83469246cc59315c13bfac",
+          "size_bytes": 69944
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_10536_ZFT44INZNNQJ3ZH1244K.jpg",
+          "sha256": "b1feab9b031a7bc14c8ca651d5b806a4452d5bca69a9ee256d607ab3c3736c16",
+          "size_bytes": 10071
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_17389_FF0NN9ANTT48ODWYM6NW.jpg",
+          "sha256": "b7f709d8f4b8cc365917ebbdd16ad4303a45ef0f2ff55a268e6343f10849d78d",
+          "size_bytes": 25549
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_3281_PB0SP43UY168P5KOQ42G.jpg",
+          "sha256": "e00a5c983b4bebda023940be68d6c2f92d4697325408fda6882c0bf7455a9d30",
+          "size_bytes": 12034
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8026_3NVN480DKI2RWTKIJH98.jpg",
+          "sha256": "eacfadd8b7717d1d8ed3332716b706eb90602e4a0556c98e66f472f74dc0dd96",
+          "size_bytes": 17998
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_6893_H2KRNX7OC5YRN79ZN1AE.jpg",
+          "sha256": "182768f1c2df83ca49015ce7937f31167ae7b03bbb8fd30bdce8c3dd53bd9f50",
+          "size_bytes": 33258
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_3453_HHQ4U8CQQ3668KMP2QEP.jpg",
+          "sha256": "296f3bc436d2936f3bf4df2ad4539420de137e18b8f1a04d9ba3f6a13fd0e4ef",
+          "size_bytes": 27670
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19060_JJDP0XWILJIES84C8GJO.jpg",
+          "sha256": "14fef60e7ff79b7efba77f457780d9ea3e4866b87fc46c7e2641d7f3c9955d8b",
+          "size_bytes": 55600
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_17193_BZIEO4BUM371SWC3I477.jpg",
+          "sha256": "c808cf43a3085c4a7803bf81e823b342b4d2af49f83ae9eaf779051bdbe5e3a4",
+          "size_bytes": 104243
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8574_K55DTTMQV60KMKT73AQH.jpg",
+          "sha256": "488de8c0edc72dee541c53e9d64808ddf435d6a35c1a34eeaee4e238530d35cf",
+          "size_bytes": 32736
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_8153_QHEO97ME5DKQNLH2EHGO.jpg",
+          "sha256": "99be60c4df5d80fa89c7c54290858026f419d506b3bf2ba6d79feb4231949adc",
+          "size_bytes": 30682
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_7661_JD05P78F388NB9O6YVE7.jpg",
+          "sha256": "155e5a55cc5d1f7c39146727535cd16f3df8774ff0349be4f1353caf06fe8469",
+          "size_bytes": 18959
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_18508_NC47FH2P0Z0HWA248FL3.jpg",
+          "sha256": "35fbe53fa3892d33d0f5d903437f0439ba5300c9fb15342713b768b383bd1d8b",
+          "size_bytes": 30745
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_2946_8RXSG6FVVB21OW3EARF5.jpg",
+          "sha256": "b602cee66866192223da68604ea7a5d32f98467cdc7896a33a806446316e669f",
+          "size_bytes": 20074
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_6430_82HYEZ3KQB0PK04U1GGI.jpg",
+          "sha256": "1a509f814244e68094dfe6ac9807ea2d02af8fa772c131a6b08fe48e056ee8b0",
+          "size_bytes": 19366
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_14829_LMQZP4HT395QSH9RGTR3.jpg",
+          "sha256": "96cba7183b8250599751d1518152158a2ddf443499a5344492420343aeba5ed3",
+          "size_bytes": 109638
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_3574_PU6TOXTMK6AUG3XEQ8GK.jpg",
+          "sha256": "40abcad6f96277a6b8a01b7b41fbb565249c8cb1bb92066e72028b00eeca471f",
+          "size_bytes": 77869
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_8226_54SBE3ELNIUAKLO7D87C.jpg",
+          "sha256": "3069d43a4be7c64f50d5f56a5e9e326d466bb4259e2cebf9eca06f3b72b097df",
+          "size_bytes": 78756
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_10267_IKMLJKIRO20SSLHW3EBU.jpg",
+          "sha256": "444e2487f255b2d80edcd39b35a7d9d004b0c4eade3cf2cc65b8e4dd585d614c",
+          "size_bytes": 35633
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_4188_V3CAUWQ9MFZVXEM312N7.jpg",
+          "sha256": "40e046fd89a6672d5d90f202b14b2aa37bbb595a067035d42ffefd1e37cabb1e",
+          "size_bytes": 18414
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_16109_DL0OMPAIRTJ9CGBV4R96.jpg",
+          "sha256": "c26f04514b5b9608e383269cca3e2ff411c11bc0c5fbd6af95119849382627ff",
+          "size_bytes": 41321
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_10300_S7RRMKNVQQPDP76BS4QX.jpg",
+          "sha256": "870ca2c553bee84be082053d4be7167c9bb8039a2cf7c5a9e1068d8b8776a8ee",
+          "size_bytes": 77216
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_7140_NN5KWTYAXV7FLER4IVL5.jpg",
+          "sha256": "ada3f11b46e18d33ecf1f6d61db06ddeaad4c4807abfda5cbc581af05b9162a0",
+          "size_bytes": 45679
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_9976_XQ6WQUU4POE0ND53V2MN.jpg",
+          "sha256": "7371e8bfc0e1a3105eab7d2c97cad881012c6e38777d0e693956d861f078997f",
+          "size_bytes": 17020
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_19487_AZ1JNK1S4E9PIQTYK90L.jpg",
+          "sha256": "4b3a14d970866c1abb5c1759105d28d69ce507a929d39545ab2065aac0d8e09c",
+          "size_bytes": 29953
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_5294_T7KEXZBDE90DR9DQTZEB.jpg",
+          "sha256": "6137cc18ede5157263fec69fbbbbecbbba66ad717674836492aa73eaea74b98a",
+          "size_bytes": 30944
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19132_O1HHN7TRZQYE4XWVSV3M.jpg",
+          "sha256": "2853c0b284361dbae0f8f7e1bef25101e58117d7e2250762bd88081db8e9e463",
+          "size_bytes": 40681
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_18679_1P2E1R7O62PJMB5Y7QEZ.jpg",
+          "sha256": "9d61673c20f0b23b097983798e930fec38f9062044300e6c6429b8ff8b8a00ab",
+          "size_bytes": 41947
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_14373_HE411L6KO87L1WE1QBCS.jpg",
+          "sha256": "67cb39bde788e0bac8bc5a8e15813e71a157a8425062e75137a7fc849d8bf6ae",
+          "size_bytes": 25845
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_15920_MXR51HQYZ28ALV9DJJOO.jpg",
+          "sha256": "ad195e4846c7338a06522a7187af4d06bc5021f52d527540cb347d670db96216",
+          "size_bytes": 64416
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_15152_9R9IDOVI6EI5PPCPOV5I.jpg",
+          "sha256": "cbc6d42dff9dd3b8ca0f5fba37659d7f386685612136ac852c2429c6a9c41445",
+          "size_bytes": 15665
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_16029_O0T64GAVKGZJFWE5HDIG.jpg",
+          "sha256": "d852cfc832945466361c1556338bd9611531da23c11fcf04377a2a5b0ed78ee5",
+          "size_bytes": 18522
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_14338_Z5CU30JKD00GF89AYAY7.jpg",
+          "sha256": "1d28b3f001ae30dc86ad1209f426fe1e555f402cdabba957511352f55ba50cdf",
+          "size_bytes": 55615
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_10166_SYLWF6PYO544AVMOC63B.jpg",
+          "sha256": "425ec74d2cc410bec2d03560362d4370c6952b7a5ea348e389018dd4c13af4a2",
+          "size_bytes": 42413
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_13603_0V20QOPGCO910W0TZS92.jpg",
+          "sha256": "e7e43fc48732049f5e67422133c58ac1b99faaa48f80de8b0767c2218fd8ce78",
+          "size_bytes": 77354
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_15546_Y2MYRAAXTIP9XBDA83BT.jpg",
+          "sha256": "e940fc0ee1845eb9d004da87be304f2989312d3b0d5a76e2b913e0b533376c63",
+          "size_bytes": 23002
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_2100_W1A7ANSGRWITB94GYE36.jpg",
+          "sha256": "a448b334686c39855c0a12d89a6446f4bbb40e87bb9e8d8a3a9a9a9e4a7e785b",
+          "size_bytes": 49103
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9701_9SP40F16783XKG03SK8J.jpg",
+          "sha256": "15759082d53bdb0c985ddea96e925c9aed58cdde75cc5f12698e83a897d3a37f",
+          "size_bytes": 60343
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_15368_QKRXB5N3RHXGUHKDNJ18.jpg",
+          "sha256": "797a0996552401d2850e3c34c868466024716c528bc76b6b9af72a667a761e8d",
+          "size_bytes": 35602
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_510_7B66FBWJ1SL9IIHHLB43.jpg",
+          "sha256": "071b64a8f3bafac9cce1a618018a33889552cf7cacf0f18b0464faf9edf54ad5",
+          "size_bytes": 21710
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_783_ERZT8JDLENUPD577CBDB.jpg",
+          "sha256": "1a236d06cfcd4d88963f5b3d4f8e5c5eb756a36a37af2053f07d5551e7ef81bd",
+          "size_bytes": 55652
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_5578_B455Z7XBJYO5175AK31H.jpg",
+          "sha256": "58311d82ac68400c1512509451e6ca914d63e0b0f3193b3c438297ce780c74d6",
+          "size_bytes": 83236
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_3579_H4V4NDZTJ139V8AOLALV.jpg",
+          "sha256": "8c96c6a4a511e27e69010dcceec9bd27e680b340e60f451dbbdde5a9cbb001bb",
+          "size_bytes": 60385
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19742_PSLEB7ONEH4ER3TZ1TQ2.jpg",
+          "sha256": "251129f86f9e27e968e9de2500e60f7721b245caeed069fc4d60f4e4e9c6aed4",
+          "size_bytes": 82081
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_3391_3N2N0ZGM239C9TGANXVX.jpg",
+          "sha256": "1fce7173b2638b9e159298e8e69261a1c1d948cd08f3fb4a4c685bd52dea45a6",
+          "size_bytes": 27800
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_632_AQUOKM22MM4VFI3BC6DL.jpg",
+          "sha256": "ff86372d49737207fd6721c9577773305ebfc3187b9727abea92c9df9c767bf6",
+          "size_bytes": 120471
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_14858_KGO86GLPQ3MFI3KWEVZM.jpg",
+          "sha256": "024dbcc7fb1816d551a3b76f06eec07452c84708d310e274569a4d5204410374",
+          "size_bytes": 47018
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_14082_R1TFM9DHYARH8BB32M0P.jpg",
+          "sha256": "233c0a7323d4e03b6e88e9a895c4f4a74d66884afe0c477832697f56823da94e",
+          "size_bytes": 34661
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_6962_0DE4JHN1GX6QN7TGQISH.jpg",
+          "sha256": "39ea1b8943a816baa9732bd582c1474c8de895a055ef4e2eabf24014184d5cbc",
+          "size_bytes": 30469
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_4388_SXFJ006WE8WK5WPOWXF2.jpg",
+          "sha256": "fef1d75e3263b9ae120dfce7d30342720f3d9108f32bf988f18e3dbcd84c6b70",
+          "size_bytes": 98625
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_3256_J4BT6ATDYDCJTF92OY4X.jpg",
+          "sha256": "0383d979fbed2bc81163f8ecbf911051589e54028af8ca5c910302f33085379e",
+          "size_bytes": 34855
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9966_W9QXUK7HLZLJN51GLMJ5.jpg",
+          "sha256": "f41676d8ae516ca92d3ed3a8df349a5f1932935d38b55b3cb70129abb67b9c56",
+          "size_bytes": 33560
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_5337_KNVGX1VE2WIYSM7OXNGK.jpg",
+          "sha256": "c40ad0a11cf09f445ffd4c971184eb8f31ca09ddb895960c40d5f7948b52160e",
+          "size_bytes": 39821
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_5067_E3LFA3DKPLLZBQHG57JF.jpg",
+          "sha256": "03b5cb239d167305ee68f7a6b281e263c54946b10b09d5627241f645fbcfe57f",
+          "size_bytes": 32621
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_3949_BM9CEE8STL5WQI476X3C.jpg",
+          "sha256": "49cd44300ef14a84ff42d73e2a45972668c624d9e13535da30f4ab382d7c5c24",
+          "size_bytes": 44491
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_7131_QD2TLRSJX7VRLD82797C.jpg",
+          "sha256": "45c6daa3e0ac7818e416deaa1b7daf4f80f2113513873dbad159e70042cd12d8",
+          "size_bytes": 61053
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_2900_BYGU7MIZMZIPK867X5SE.jpg",
+          "sha256": "f86105c715323e7aaaa949cda312fa02f3c052a79c2154777f92f52efca0346a",
+          "size_bytes": 21586
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_1298_OT0BN1MDFP8H3SD93F7T.jpg",
+          "sha256": "00b670a4bd90b8b52fd7692f368285953621f4f596cce8f559f5c7e79d6003d0",
+          "size_bytes": 18238
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_4852_VR56QA1U7GMF9HQYMCY2.jpg",
+          "sha256": "d9cb4db28a607bcbc469ca563dc58e0dbaefc1cc93d30067f59e41a101b2e3cb",
+          "size_bytes": 65988
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_14935_UNYM9J2DIE2CN33NPISK.jpg",
+          "sha256": "a858be0ebbc674544685e9af4078d52853607dd3db9c5ef49dea560fc0f92f79",
+          "size_bytes": 35030
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_6349_1ASGR3V6J4P1ZEVKTJJM.jpg",
+          "sha256": "720db4e95525248b8fb027d13badfc4535077260d3267a23ebd5bc08dbb1f1c6",
+          "size_bytes": 42508
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_7250_B2WDCIIPVFXLTF3SKUIK.jpg",
+          "sha256": "9e39f85542ad8b9a511b853562ad957a24f52f3080bf02f574d6c111b083b8d5",
+          "size_bytes": 110018
+        }
+      ]
     }
   ],
   "scenarios": [
@@ -2531,7 +3225,7 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
       "metric_parser": "generic",
       "light_globs": [
         "ocr_models/pplcnet-layout-f32.gguf"
@@ -2572,7 +3266,7 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
       "metric_parser": "generic"
     },
     {
@@ -2610,7 +3304,831 @@
           "mean_diff"
         ]
       },
-      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance. This graph-level check is distinct from unlabelled end-to-end OCR string agreement. A layout release needs a separately pinned CDLA region-GT contract; it must not reuse text CER/WER.",
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-f32",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-f32.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.01",
+        "0.005"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-f16",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-f16.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.01",
+        "0.01"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.01
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-q8_0",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-q8_0.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.05",
+        "0.05"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.05
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.05
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-gt-f32",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f32",
+        "--ocr-quant",
+        "f32",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-page-gt-f32",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf",
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f32",
+        "--ocr-quant",
+        "f32",
+        "--layout-quant",
+        "f32",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure').",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5413327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-gt-f16",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f16",
+        "--ocr-quant",
+        "f16",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ]
+    },
+    {
+      "id": "table-page-gt-f16",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf",
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f16",
+        "--ocr-quant",
+        "f16",
+        "--layout-quant",
+        "f16",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure').",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5413327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf",
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ]
+    },
+    {
+      "id": "table-gt-q8_0",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "q8_0",
+        "--ocr-quant",
+        "q8_0",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-page-gt-q8_0",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf",
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "q8_0",
+        "--ocr-quant",
+        "q8_0",
+        "--layout-quant",
+        "q8_0",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure').",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5413327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-f32",
+      "task": "ocr",
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-f32.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-f32.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-f32.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--min-f1",
+        "1.0",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-f16",
+      "task": "ocr",
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-f16.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-f16.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-f16.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--min-f1",
+        "1.0",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-q8_0",
+      "task": "ocr",
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-q8_0.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-q8_0.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-q8_0.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--min-f1",
+        "0.95",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 0.95
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
       "metric_parser": "generic"
     }
   ]

@@ -21,6 +21,7 @@
 #include "aicore/ocr_capi.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <climits>
@@ -81,10 +82,14 @@ constexpr size_t kRecGraphCacheCapacity = 6;
 constexpr int kDetAlign = 32;
 
 // PP-OCRv4 preprocessing constants (official DetPreProcess/RecPreProcess).
+// NormalizeImage applies mean[c]/std[c] to channel c of the cv2 BGR frame
+// (the ImageNet RGB-order constants on BGR planes, exactly as upstream).
 constexpr float kImageMean[3] = {0.485f, 0.456f, 0.406f};
 constexpr float kImageStd[3] = {0.229f, 0.224f, 0.225f};
 constexpr float kRecMean = 0.5f;
 constexpr float kRecStd = 0.5f;
+constexpr float kRecMean3[3] = {kRecMean, kRecMean, kRecMean};
+constexpr float kRecStd3[3] = {kRecStd, kRecStd, kRecStd};
 // Fixed rec batch chunk (run- and recognize-phase): see the run-phase note
 // for the measured scaling curve and the A/B rationale. The linear segment
 // reaches N=72 (VRAM ~3 GiB); the cliff is between 72 and 96, where the
@@ -159,10 +164,15 @@ struct OcrGraph {
 
     void clear() {
         exec.free();
+        releaseGraph();
+    }
+
+    // Drops the build but keeps `exec`: the slot's next build reuses the
+    // gallocr and its compute buffer (see aicore::ocr::OcrGraphExec).
+    void releaseGraph() {
         if (ctx) ggml_free(ctx);
-        // After the exec (its allocations may alias fold mirrors) and the
-        // graph context; the pool frees the device mirrors when the last
-        // owner lets go.
+        // After the graph context; the pool frees the device mirrors when
+        // the last owner lets go.
         fold.reset();
         ctx = nullptr;
         graph = nullptr;
@@ -180,8 +190,9 @@ struct OcrGraph {
 // graph needs one build per (width bucket, row count) actually used by a
 // frame — a document mixes short labels (320) with full-width body lines
 // (960-1280) — and a frame sequence revisits the same handful of keys, so a
-// small LRU replaces the historical single entry. Eviction clears the graph
-// (and releases its fold generation); the caller rebuilds into the slot.
+// small LRU replaces the historical single entry. Eviction releases the
+// graph (and its fold generation) but keeps the slot's allocator; the caller
+// rebuilds into the slot.
 struct OcrGraphCache {
     std::vector<OcrGraph> entries;
     size_t capacity = 1;
@@ -205,7 +216,7 @@ struct OcrGraphCache {
         OcrGraph* victim = &entries.front();
         for (OcrGraph& g : entries)
             if (g.lastUse < victim->lastUse) victim = &g;
-        victim->clear();
+        victim->releaseGraph();
         victim->lastUse = clock;
         return *victim;
     }
@@ -231,21 +242,15 @@ struct RecArgmaxOut {
 // CHW f32 packing with the official PP-OCR normalization. dstW is the
 // packed row width: the rec path passes the fixed kRecMaxWidth so every row
 // is laid out as [content | right-side pad] exactly like the official
-// resize_norm_img (padding_im[:, :, 0:resized_w] = normalized). Appending
-// the pad after a w-wide pack would scramble channels/rows the moment
-// dstW > w (the packed (3,h,w) re-read as (3,h,dstW) interleaves planes) —
-// the root cause of the historical empty/garbled rec text on short crops.
-// CHW f32 packing with the official PP-OCR normalization. dstW is the
-// packed row width: the rec path passes the fixed kRecMaxWidth so every row
-// is laid out as [content | right-side pad] exactly like the official
 // resize_norm_img (padding_im[:, :, ..., w:] = 0 in normalized space). The
 // pack must emit the final stride IN one pass: appending the pad after a
 // w-wide pack would scramble channels/rows the moment dstW > w (the packed
 // (3,h,w) re-read as (3,h,dstW) interleaves planes) — the root cause of the
-// historical empty/garbled rec text on short crops.
+// historical empty/garbled rec text on short crops. mean/stdDev are per
+// packed plane (plane c reads Image channel c, BGR when img.bgr is set).
 void packNchwImageTo(const aicore::img::Image& img,
-                     float mean,
-                     float stdDev,
+                     const float (&mean)[3],
+                     const float (&stdDev)[3],
                      int dstW,
                      float padValue,
                      float* nchw) {
@@ -274,9 +279,9 @@ void packNchwImageTo(const aicore::img::Image& img,
             const uint8_t* s = srow + cmap[ch];
             float* row = nchw + static_cast<size_t>(ch) * plane +
                          static_cast<size_t>(y) * dstW;
+            const float m = mean[ch], sd = stdDev[ch];
             for (int x = 0; x < w; ++x)
-                row[x] = (s[static_cast<size_t>(x) * scn] * scale - mean) /
-                         stdDev;
+                row[x] = (s[static_cast<size_t>(x) * scn] * scale - m) / sd;
         }
     };
     // Same gate as cv_resize_linear_u8: only the det/layout frame (h in the
@@ -307,8 +312,8 @@ void packNchwImageTo(const aicore::img::Image& img,
 }
 
 void packNchwImage(const aicore::img::Image& img,
-                   float mean,
-                   float stdDev,
+                   const float (&mean)[3],
+                   const float (&stdDev)[3],
                    int dstW,
                    float padValue,
                    std::vector<float>& nchw) {
@@ -831,7 +836,7 @@ bool runGraphCached(aicore_ocr_ctx* session,
     const bool wantArgmaxHead = argmaxOut && !cpuExecution;
     if (!cached.matches(c, h, w) || cached.inputN != n ||
         cached.argmaxHead != wantArgmaxHead) {
-        cached.clear();
+        cached.releaseGraph();
         // Fresh fold pool per build: every build emits new constants and
         // the pool would exhaust; the previous graph is discarded above.
         weights.resetFoldPool();
@@ -935,6 +940,7 @@ bool runGraphCached(aicore_ocr_ctx* session,
 // (4 cls + 4 reg heads per FPN stride) is expanded into the graph and
 // read back as a flat vector.
 bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
+                    aicore::ocr::OcrGraphExec& exec,
                     ggml_backend_t gpuBackend,
                     ggml_backend_t cpuBackend,
                     int64_t c,
@@ -969,7 +975,6 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
         ggml_free(ctx);
         return false;
     }
-    aicore::ocr::OcrGraphExec exec;
     ggml_cgraph* graph = nullptr;
     bool ok = false;
     do {
@@ -993,19 +998,23 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
         }
         ok = true;
     } while (false);
-    exec.free();
+    if (!ok) exec.free();
     ggml_free(ctx);
     return ok;
 }
 
-// ---- PicoDet GFL decode + MultiClassNMS (PaddleDetection semantics) ----
+// ---- PicoDet GFL decode + per-class hard NMS (PP-Structure
+// PicoDetPostProcess, the layout -> table/OCR consumer of this model) ----
 
 constexpr int kLayoutSizeH = 800;  // official PicoDet layout input
 constexpr int kLayoutSizeW = 608;
 constexpr int kGflRegMax = 8;
-constexpr float kLayoutScoreThresh = 0.3f;
+// PP-Structure layout_score_threshold / layout_nms_threshold defaults.
+constexpr float kLayoutScoreThresh = 0.5f;
 constexpr float kLayoutNmsThresh = 0.5f;
-constexpr int kLayoutKeepTopK = 100;
+constexpr int kLayoutNmsTopK = 1000;       // per-stride pre-NMS anchors
+constexpr int kLayoutCandidateSize = 200;  // hard_nms candidate_size
+constexpr int kLayoutKeepTopK = 100;       // per class
 constexpr int kLayoutStrides[4] = {8, 16, 32, 64};
 
 struct LayoutRegion {
@@ -1014,88 +1023,112 @@ struct LayoutRegion {
     float x1, y1, x2, y2;
 };
 
-// DFL integral over the (4, reg_max) logits per anchor, then the anchor
-// center decode and the final clip.
+// Anchors surviving the per-stride top-K, with every class probability.
+struct LayoutCandidates {
+    int classes = 0;
+    std::vector<std::array<float, 4>> boxes;  // layout input pixels
+    std::vector<float> scores;                // boxes.size() x classes
+};
+
+// One stride: the exported cls head is already sigmoid-activated (the
+// upstream post-process thresholds it as-is), the reg head carries the
+// (4, reg_max) DFL logits. Keeps the kLayoutNmsTopK anchors with the
+// highest max-class probability, then decodes their boxes (no clip: the
+// reference clips only after NMS). O(A log A) for the top-K sort.
 void gflDecode(const std::vector<float>& clsHead,
                const std::vector<float>& regHead,
                int stride,
-               std::vector<LayoutRegion>& out) {
+               LayoutCandidates& out) {
     const int fh = (kLayoutSizeH + stride - 1) / stride;
     const int fw = (kLayoutSizeW + stride - 1) / stride;
     const int anchors = fh * fw;
     const int classes = static_cast<int>(clsHead.size()) / anchors;
+    out.classes = classes;
+    std::vector<float> best(anchors);
+    std::vector<int> order(anchors);
     for (int a = 0; a < anchors; ++a) {
-        const float* clsRow = &clsHead[static_cast<size_t>(a) * classes];
-        // Sigmoid class scores.
-        for (int cat = 0; cat < classes; ++cat) {
-            const float score = 1.0f / (1.0f + std::exp(-clsRow[cat]));
-            if (score <= kLayoutScoreThresh) continue;
-            const float* regRow =
-                    &regHead[static_cast<size_t>(a) * (4 * kGflRegMax)];
-            float dist[4] = {0.f, 0.f, 0.f, 0.f};
-            for (int edge = 0; edge < 4; ++edge) {
-                float maxv = -3e38f, sum = 0.f;
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    maxv = std::max(maxv, regRow[edge * kGflRegMax + bin]);
-                }
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    sum += std::exp(regRow[edge * kGflRegMax + bin] - maxv);
-                }
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    const float p =
-                            std::exp(regRow[edge * kGflRegMax + bin] - maxv) /
-                            sum;
-                    dist[edge] += p * bin;
-                }
-                dist[edge] *= stride;
+        const float* row = &clsHead[static_cast<size_t>(a) * classes];
+        best[a] = *std::max_element(row, row + classes);
+        order[a] = a;
+    }
+    std::stable_sort(order.begin(), order.end(),
+                     [&](int l, int r) { return best[l] > best[r]; });
+    order.resize(std::min(anchors, kLayoutNmsTopK));
+    for (const int a : order) {
+        const float* regRow =
+                &regHead[static_cast<size_t>(a) * (4 * kGflRegMax)];
+        float dist[4] = {0.f, 0.f, 0.f, 0.f};
+        for (int edge = 0; edge < 4; ++edge) {
+            const float* bins = regRow + edge * kGflRegMax;
+            const float maxv = *std::max_element(bins, bins + kGflRegMax);
+            float sum = 0.f, acc = 0.f;
+            for (int bin = 0; bin < kGflRegMax; ++bin) {
+                const float e = std::exp(bins[bin] - maxv);
+                sum += e;
+                acc += e * bin;
             }
-            const int ah = a / fw, aw = a % fw;
-            const float cx = (aw + 0.5f) * stride;
-            const float cy = (ah + 0.5f) * stride;
-            LayoutRegion r;
-            r.score = score;
-            r.classId = cat;
-            r.x1 = std::clamp(cx - dist[0], 0.0f,
-                              static_cast<float>(kLayoutSizeW));
-            r.y1 = std::clamp(cy - dist[1], 0.0f,
-                              static_cast<float>(kLayoutSizeH));
-            r.x2 = std::clamp(cx + dist[2], 0.0f,
-                              static_cast<float>(kLayoutSizeW));
-            r.y2 = std::clamp(cy + dist[3], 0.0f,
-                              static_cast<float>(kLayoutSizeH));
-            out.push_back(r);
+            dist[edge] = acc / sum * stride;
         }
+        const float cx = (a % fw + 0.5f) * stride;
+        const float cy = (a / fw + 0.5f) * stride;
+        out.boxes.push_back(
+                {cx - dist[0], cy - dist[1], cx + dist[2], cy + dist[3]});
+        const float* row = &clsHead[static_cast<size_t>(a) * classes];
+        out.scores.insert(out.scores.end(), row, row + classes);
     }
 }
 
-// MultiClassNMS across all classes (one global list, per-class filtering
-// happens through the score threshold in gflDecode).
-std::vector<LayoutRegion> layoutNms(std::vector<LayoutRegion> regions) {
-    std::sort(regions.begin(), regions.end(),
-              [](const LayoutRegion& a, const LayoutRegion& b) {
-                  return a.score > b.score;
-              });
+// picodet_postprocess iou_of: clipped extents, eps 1e-5.
+float layoutIou(const std::array<float, 4>& a, const std::array<float, 4>& b) {
+    const auto area = [](float x1, float y1, float x2, float y2) {
+        return std::max(0.f, x2 - x1) * std::max(0.f, y2 - y1);
+    };
+    const float inter = area(std::max(a[0], b[0]), std::max(a[1], b[1]),
+                             std::min(a[2], b[2]), std::min(a[3], b[3]));
+    return inter / (area(a[0], a[1], a[2], a[3]) +
+                    area(b[0], b[1], b[2], b[3]) - inter + 1e-5f);
+}
+
+// Per class: probability > threshold, hard NMS over the 200 best
+// candidates, at most kLayoutKeepTopK kept. Output is class-major, each
+// class in descending score order (the reference concatenation order).
+// O(C * K^2) with K <= kLayoutCandidateSize.
+std::vector<LayoutRegion> layoutNms(const LayoutCandidates& cand) {
     std::vector<LayoutRegion> keep;
-    std::vector<bool> removed(regions.size(), false);
-    for (size_t i = 0; i < regions.size(); ++i) {
-        if (removed[i]) continue;
-        keep.push_back(regions[i]);
-        if (static_cast<int>(keep.size()) >= kLayoutKeepTopK) break;
-        for (size_t j = i + 1; j < regions.size(); ++j) {
-            if (removed[j]) continue;
-            const float ix1 = std::max(regions[i].x1, regions[j].x1);
-            const float iy1 = std::max(regions[i].y1, regions[j].y1);
-            const float ix2 = std::min(regions[i].x2, regions[j].x2);
-            const float iy2 = std::min(regions[i].y2, regions[j].y2);
-            const float inter =
-                    std::max(0.f, ix2 - ix1) * std::max(0.f, iy2 - iy1);
-            const float areaI = (regions[i].x2 - regions[i].x1) *
-                                (regions[i].y2 - regions[i].y1);
-            const float areaJ = (regions[j].x2 - regions[j].x1) *
-                                (regions[j].y2 - regions[j].y1);
-            const float iou = inter / (areaI + areaJ - inter + 1e-9f);
-            if (iou > kLayoutNmsThresh) removed[j] = true;
+    const size_t n = cand.boxes.size();
+    for (int cat = 0; cat < cand.classes; ++cat) {
+        std::vector<size_t> idx;
+        for (size_t i = 0; i < n; ++i)
+            if (cand.scores[i * cand.classes + cat] > kLayoutScoreThresh)
+                idx.push_back(i);
+        const auto score = [&](size_t i) {
+            return cand.scores[i * cand.classes + cat];
+        };
+        std::stable_sort(idx.begin(), idx.end(), [&](size_t l, size_t r) {
+            return score(l) > score(r);
+        });
+        if (idx.size() > static_cast<size_t>(kLayoutCandidateSize))
+            idx.resize(kLayoutCandidateSize);
+        std::vector<bool> removed(idx.size(), false);
+        int kept = 0;
+        for (size_t i = 0; i < idx.size() && kept < kLayoutKeepTopK; ++i) {
+            if (removed[i]) continue;
+            const auto& box = cand.boxes[idx[i]];
+            keep.push_back(
+                    {score(idx[i]), cat, box[0], box[1], box[2], box[3]});
+            ++kept;
+            for (size_t j = i + 1; j < idx.size(); ++j)
+                if (!removed[j] &&
+                    layoutIou(box, cand.boxes[idx[j]]) > kLayoutNmsThresh)
+                    removed[j] = true;
         }
+    }
+    // warp_boxes: clip to the layout input before the image mapping.
+    for (LayoutRegion& r : keep) {
+        r.x1 = std::clamp(r.x1, 0.0f, static_cast<float>(kLayoutSizeW));
+        r.x2 = std::clamp(r.x2, 0.0f, static_cast<float>(kLayoutSizeW));
+        r.y1 = std::clamp(r.y1, 0.0f, static_cast<float>(kLayoutSizeH));
+        r.y2 = std::clamp(r.y2, 0.0f, static_cast<float>(kLayoutSizeH));
     }
     return keep;
 }
@@ -1133,6 +1166,9 @@ struct aicore_ocr_ctx {
     int64_t detW = 0;
     // Rec builds keyed by (width bucket, rows): see OcrGraphCache.
     OcrGraphCache recGraphs{{}, kRecGraphCacheCapacity, 0};
+    // Layout graphs are rebuilt per frame (fresh fold pool); the allocator
+    // persists so the fixed-size compute buffer is reused.
+    aicore::ocr::OcrGraphExec layoutExec;
     // Frame scratch owned by the context (one owning thread, see the public
     // header). The det input (10 MB u8 + 40 MB f32), det map (13 MB) and
     // rec batch/output (19 MB / 51 MB) were fresh vectors every frame: the
@@ -1348,7 +1384,7 @@ void cropAndPackRec(const aicore::img::Image& src,
     const RecChunk& c = plan.chunks[static_cast<size_t>(g.chunk)];
     float* slot = batch + c.offset +
                   static_cast<size_t>(g.row) * 3 * kRecHeight * c.width;
-    packNchwImageTo(cropImage, kRecMean, kRecStd, c.width, kRecPadFill, slot);
+    packNchwImageTo(cropImage, kRecMean3, kRecStd3, c.width, kRecPadFill, slot);
 }
 
 // Phase A driver: crop/pack every planned crop over a bounded pool.
@@ -1648,6 +1684,7 @@ void aicore_ocr_context_destroy(aicore_ocr_ctx* ctx) {
     if (!ctx) return;
     ctx->det.clear();
     ctx->recGraphs.clear();
+    ctx->layoutExec.free();
     // Release the leases after the graphs; the weights' device buffer is
     // released by the OcrWeights destructor and must outlive neither.
     ctx->cpuLease.reset();
@@ -1781,7 +1818,7 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // in-place byte swap produced, minus one full pass over the frame.
     detImage.bgr = true;
     std::vector<float> detNchw = std::move(ctx->detNchwScratch);
-    packNchwImage(detImage, kImageMean[0], kImageStd[0], detW, 0.f, detNchw);
+    packNchwImage(detImage, kImageMean, kImageStd, detW, 0.f, detNchw);
     ctx->detRgbScratch = std::move(detImage.rgb);
     const auto preprocessStop = std::chrono::steady_clock::now();
 
@@ -1942,14 +1979,17 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
                                kLayoutSizeH * 3);
         aicore::img::cv_resize_linear_u8(srcImage, layoutImage.rgb.data(),
                                          kLayoutSizeW, kLayoutSizeH, 3);
+        // PP-Structure LayoutPredictor: cv2 BGR frame, per-channel
+        // NormalizeImage (same planes as the det input).
+        layoutImage.bgr = true;
         std::vector<float> layoutNchw;
-        packNchwImage(layoutImage, kImageMean[0], kImageStd[0], kLayoutSizeW,
-                      0.f, layoutNchw);
+        packNchwImage(layoutImage, kImageMean, kImageStd, kLayoutSizeW, 0.f,
+                      layoutNchw);
         std::vector<std::vector<float>> heads;
         double layoutMs = 0.0;
         std::string layoutError;
         if (!runLayoutHeads(
-                    ctx->layoutWeights,
+                    ctx->layoutWeights, ctx->layoutExec,
                     ctx->primaryLease.is_cpu() ? nullptr
                                                : ctx->primaryLease.handle(),
                     ctx->primaryLease.is_cpu() ? ctx->primaryLease.handle()
@@ -1962,14 +2002,14 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
             setLastError("ocr: layout stage failed: " + layoutError);
         } else {
             recLayoutInferenceMs += layoutMs;
-            std::vector<LayoutRegion> regions;
+            LayoutCandidates candidates;
             for (int si = 0; si < 4; ++si) {
                 // Fetch order: transpose_0..7 = cls(8,16,32,64) then
                 // reg(8,16,32,64).
                 gflDecode(heads[si], heads[4 + si], kLayoutStrides[si],
-                          regions);
+                          candidates);
             }
-            for (LayoutRegion& r : layoutNms(std::move(regions))) {
+            for (const LayoutRegion& r : layoutNms(candidates)) {
                 aicore_ocr_region region{};
                 region.class_id = r.classId;
                 region.reading_order = -1;

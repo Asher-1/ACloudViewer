@@ -34,11 +34,6 @@
 // QT
 #include <QDir>
 #include <QFileInfo>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QSurfaceFormat>
-#else
-#include <QGLFormat>
-#endif
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -46,11 +41,13 @@
 #include <QPixmap>
 #include <QSplashScreen>
 #include <QStorageInfo>
+#include <QSurfaceFormat>
 #include <QSysInfo>
 #include <QTime>
 #include <QTimer>
 #include <QTranslator>
 #include <QtWidgets/QApplication>
+#include <cstdio>  // fprintf: fatal errors on unattended platforms
 #ifdef CC_GAMEPAD_SUPPORT
 #include <QGamepadManager>
 #endif
@@ -199,6 +196,18 @@ QString GetGPUInfo() {
     }
 
     return gpuInfo;
+}
+
+// offscreen/minimal platforms run unattended: a modal box would never be
+// dismissed and turn a startup failure into a hang.
+void ShowFatalError(const QString& message) {
+    const QString platform = QGuiApplication::platformName();
+    if (platform == QLatin1String("offscreen") ||
+        platform == QLatin1String("minimal")) {
+        fprintf(stderr, "Error: %s\n", qPrintable(message));
+        return;
+    }
+    QMessageBox::critical(nullptr, QObject::tr("Error"), message);
 }
 
 // Function to print all system hardware information
@@ -634,26 +643,23 @@ int main(int argc, char* argv[]) {
     QTimer splashTimer;
     // standard mode
     if (!commandLine) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        // One probe for Qt5 and Qt6: QOpenGLContext/QSurfaceFormat are QtGui
+        // API since Qt 5.0 (GetGPUInfo uses them unconditionally). The former
+        // Qt5 branch, QGLFormat::openGLVersionFlags(), dereferences a null
+        // context when none can be created (offscreen QPA without an X
+        // display). Desktop GL only, as that branch required: VTK is built
+        // for desktop OpenGL, so an ES context (ANGLE) is rejected here.
         QOpenGLContext context;
         QSurfaceFormat format;
         format.setVersion(2, 1);
         context.setFormat(format);
-        if (!context.create() || !context.isValid()) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("This application needs OpenGL "
-                                              "2.1 at least to run!"));
+        if (!context.create() || !context.isValid() || context.isOpenGLES() ||
+            context.format().version() < qMakePair(2, 1)) {
+            ShowFatalError(
+                    QObject::tr("This application needs OpenGL "
+                                "2.1 at least to run!"));
             return EXIT_FAILURE;
         }
-#else
-        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) ==
-            0) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("This application needs OpenGL "
-                                              "2.1 at least to run!"));
-            return EXIT_FAILURE;
-        }
-#endif
 
         // splash screen
         QPixmap pixmap(QString::fromUtf8(
@@ -696,9 +702,9 @@ int main(int argc, char* argv[]) {
         MainWindow* mainWindow = MainWindow::TheInstance();
 
         if (!mainWindow) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("Failed to initialize the main "
-                                              "application window?!"));
+            ShowFatalError(
+                    QObject::tr("Failed to initialize the main "
+                                "application window?!"));
             return EXIT_FAILURE;
         }
 

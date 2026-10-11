@@ -2,12 +2,16 @@
 """Official PaddleOCR end-to-end benchmark (the comparison baseline for
 core/AICore/tools/bench_ocr.cpp).
 
-Runs the official PP-OCRv4 mobile det+rec pipeline (the same upstream models
-the AICore ocr GGUFs are converted from) on the same host/image/protocol:
-3 warmups + 10 timed predicts, wall-clock per call, p50/p95 reported.
+Runs the official PP-OCRv4 mobile det+rec pipeline on the exact weights the
+AICore ocr GGUFs are converted from (``--det-gguf`` / ``--rec-gguf``,
+resolved and digest-verified by paddle_source_models.py; the PaddleX default
+PP-OCRv4_mobile_det is a different det checkpoint) on the same
+host/image/protocol: 3 warmups + 10 timed predicts, wall-clock per call,
+p50/p95 reported.
 
 usage: bench_paddle_official.py <image> [warmups] [iters] [--cpu]
                                 [--language ch|en] [--recognize-full-image]
+                                --det-gguf <det.gguf> --rec-gguf <rec.gguf>
 Requires: pip install paddlepaddle-gpu==3.0.0 paddleocr==3.0.1
 """
 
@@ -16,6 +20,9 @@ import math
 import statistics
 import sys
 import time
+from pathlib import Path
+
+SOURCE_CACHE = Path.home() / ".cache" / "aicore_paddle_sources"
 
 
 def emit_recognition_row(result):
@@ -65,12 +72,24 @@ def main():
             raise SystemExit("--language expects ch or en")
         language = sys.argv[index + 1]
 
+    def flag_path(name):
+        if name not in sys.argv or sys.argv.index(name) + 1 >= len(sys.argv):
+            raise SystemExit(f"{name} <gguf> is required (same-weight baseline)")
+        return Path(sys.argv[sys.argv.index(name) + 1])
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from paddle_source_models import source_model_dir
+    det_dir = str(source_model_dir(flag_path("--det-gguf"), SOURCE_CACHE))
+    rec_dir = str(source_model_dir(flag_path("--rec-gguf"), SOURCE_CACHE))
+
     from paddleocr import PaddleOCR
 
     kwargs = dict(
         text_detection_model_name="PP-OCRv4_mobile_det",
+        text_detection_model_dir=det_dir,
         text_recognition_model_name=("PP-OCRv4_mobile_rec" if language == "ch"
                                      else "en_PP-OCRv4_mobile_rec"),
+        text_recognition_model_dir=rec_dir,
         lang=language,
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
@@ -83,7 +102,8 @@ def main():
         from paddleocr import TextRecognition
         recognizer = TextRecognition(
             model_name=("PP-OCRv4_mobile_rec" if language == "ch"
-                        else "en_PP-OCRv4_mobile_rec"))
+                        else "en_PP-OCRv4_mobile_rec"),
+            model_dir=rec_dir)
         predict = lambda: list(recognizer.predict(image))
     else:
         ocr = PaddleOCR(**kwargs)

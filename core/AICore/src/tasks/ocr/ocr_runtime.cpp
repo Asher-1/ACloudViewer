@@ -933,6 +933,7 @@ void OcrWeights::foldAffineChains() {
 
     // Conv geometry from the filter (4-D after an f32/f16 load, 1-D for a
     // q8_0 container whose numpy dims come from the pinned registry).
+    const std::map<std::string, int> usedBefore = buildIndex().uses;
     struct Conv {
         ggml_tensor* w = nullptr;
         float* wd = nullptr;
@@ -1160,11 +1161,13 @@ void OcrWeights::foldAffineChains() {
     }
 
     // Constants the removed ops consumed are dead: drop them from the
-    // name map so realizeToDevice does not mirror them.
+    // name map so realizeToDevice does not mirror them. Only constants the
+    // fold orphaned are dropped; a container may carry parameters no
+    // program op reads (the table task's hand-written decoder weights).
     const Index ix = buildIndex();
     for (auto it = tensors.begin(); it != tensors.end();) {
         const std::string var = it->first.substr(4);  // strip "ocr."
-        if (ix.uses.count(var) == 0)
+        if (usedBefore.count(var) != 0 && ix.uses.count(var) == 0)
             it = tensors.erase(it);
         else
             ++it;
@@ -1550,8 +1553,15 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (op.type == "fetch") {
                 state.values["__fetch__"] = result;
                 // Multi-output programs (PicoDet layout exposes 8 heads)
-                // collect every fetch in program order.
-                if (fetchList) fetchList->push_back(result);
+                // collect every fetch in program order. Readers copy the
+                // fetch buffer flat in numpy C order, so a fetch that is
+                // still a view (the heads end in transpose2 = permute)
+                // is materialized; a raw permuted buffer reads as the
+                // (C, N) transpose of the (N, C) head.
+                if (fetchList)
+                    fetchList->push_back(ggml_is_contiguous(result)
+                                                 ? result
+                                                 : ggml_cont(ctx, result));
             }
         } else if (op.type == "split") {
             // GFL head channel split: axis is a numpy axis over the
@@ -1717,7 +1727,9 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     // the graph is otherwise identical to the stock helper.
                     ggml_tensor* cols =
                             ggml_im2col(ctx, w, x, s0, s1, p0, p1, d0, d1, true,
-                                        GGML_TYPE_F16);
+                                        w->type == GGML_TYPE_F32
+                                                ? GGML_TYPE_F32
+                                                : GGML_TYPE_F16);  // SCRATCH-AB
                     ggml_tensor* mm = ggml_mul_mat(
                             ctx,
                             ggml_reshape_2d(
@@ -2938,7 +2950,7 @@ OcrBuildOptions execBuildOptions(const OcrExecPlan& plan) {
     options.vk_single = plan.vkSingle;
     // See OcrBuildOptions::conv_gemm_f32acc: the folded conv GEMMs need an
     // f32 accumulator on Vulkan to match the CUDA/CPU numerics.
-    options.conv_gemm_f32acc = plan.vkSingle;
+    options.conv_gemm_f32acc = !plan.cpuExecution;  // SCRATCH-AB2
     // Blocked-island routing: CPU-executing graphs only, and only when the
     // host advertises the AVX-512 fast path (no AVX2 island kernel).
     options.blocked_island =
@@ -2950,6 +2962,7 @@ void OcrGraphExec::free() {
     if (alloc) ggml_gallocr_free(alloc);
     if (sched) ggml_backend_sched_free(sched);
     alloc = nullptr;
+    allocBuft = nullptr;
     sched = nullptr;
 }
 
@@ -2960,14 +2973,23 @@ bool prepareGraph(OcrWeights& weights,
                   ggml_cgraph** graph,
                   OcrGraphExec& exec,
                   std::string& error) {
-    exec.free();
     *graph = nullptr;
+    // Plain CPU execution: host buffers only. A gated-off GPU session must
+    // NOT use the mixed sched allocation, which would leave activations in
+    // device memory the direct graph_compute cannot read.
+    ggml_backend_buffer_type_t allocBuft = nullptr;
+    if (plan.cpuExecution)
+        allocBuft = ggml_backend_get_default_buffer_type(plan.cpu);
+    else if (plan.singleBackend)
+        allocBuft = ggml_backend_get_default_buffer_type(plan.gpu);
+    // Keep the slot's gallocr (and its compute buffer) for a same-type
+    // rebuild; anything else starts from a clean exec.
+    if (!allocBuft || exec.allocBuft != allocBuft || exec.sched) exec.free();
     if (plan.cpuExecution) {
-        // Plain CPU execution: host buffers only. A gated-off GPU session
-        // must NOT use the mixed sched allocation, which would leave
-        // activations in device memory the direct graph_compute cannot read.
-        exec.alloc = ggml_gallocr_new(
-                ggml_backend_get_default_buffer_type(plan.cpu));
+        if (!exec.alloc) {
+            exec.alloc = ggml_gallocr_new(allocBuft);
+            exec.allocBuft = allocBuft;
+        }
     } else {
         // The builder routes folded constants into the per-build fold pool
         // only when resetFoldPool preceded buildGraph; otherwise they land
@@ -2977,6 +2999,7 @@ bool prepareGraph(OcrWeights& weights,
         if (!weights.foldContext()) {
             error = "ocr: buildGraph ran without resetFoldPool; folded "
                     "constants are host-only";
+            exec.free();
             return false;
         }
         // Realize the host pools (zero-copy views) and the device weights
@@ -2986,20 +3009,25 @@ bool prepareGraph(OcrWeights& weights,
         // compute (~12 ms per rec chunk, more than all rec kernels).
         if (!weights.realizeHostBuffers()) {
             error = "ocr: host buffer realization failed";
+            exec.free();
             return false;
         }
         weights.tagHostLeafs();
         if (!weights.realizeToDevice(plan.gpu, &error)) {
             error = "ocr: device weight realization failed: " + error;
+            exec.free();
             return false;
         }
         if (!weights.realizeFoldPoolToDevice(plan.gpu, &error)) {
             error = "ocr: fold pool device realization failed: " + error;
+            exec.free();
             return false;
         }
         if (plan.singleBackend) {
-            exec.alloc = ggml_gallocr_new(
-                    ggml_backend_get_default_buffer_type(plan.gpu));
+            if (!exec.alloc) {
+                exec.alloc = ggml_gallocr_new(allocBuft);
+                exec.allocBuft = allocBuft;
+            }
         } else {
             exec.sched =
                     ggml_common::new_gpu_sched({plan.gpu}, plan.cpu, 1u << 20);

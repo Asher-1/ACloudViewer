@@ -231,7 +231,9 @@ def main() -> int:
             paddle_reports[language] = evaluate_commands(
                 images, args.image_root,
                 lambda image, language=language: [sys.executable, str(args.paddle_bench),
-                    str(image), str(args.warmups), str(args.iters), "--language", language] +
+                    str(image), str(args.warmups), str(args.iters), "--language", language,
+                    "--det-gguf", str(args.models_dir / "ppocr-det-ch-f32.gguf"),
+                    "--rec-gguf", str(args.models_dir / f"ppocr-rec-{language}-f32.gguf")] +
                     (["--recognize-full-image"] if args.recognize_full_image else []),
                 environment, args.output, f"paddle-{language}", args.iou,
                 args.case_sensitive)

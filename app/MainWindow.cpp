@@ -1172,14 +1172,17 @@ void MainWindow::connectActions() {
             &MainWindow::createPointCloudFromClipboard);
     // the 'Paste from clipboard' tool depends on the clipboard state
     {
+        // mimeData() is null when the platform has no clipboard (offscreen,
+        // minimal) or it is empty; capture by value, the local dies here.
         const QClipboard* clipboard = QApplication::clipboard();
         assert(clipboard);
-        m_ui->actionPasteCloudFromClipboard->setEnabled(
-                clipboard->mimeData()->hasText());
-        connect(clipboard, &QClipboard::dataChanged, [&]() {
+        auto updatePasteAction = [this, clipboard]() {
+            const QMimeData* mimeData = clipboard->mimeData();
             m_ui->actionPasteCloudFromClipboard->setEnabled(
-                    clipboard->mimeData()->hasText());
-        });
+                    mimeData && mimeData->hasText());
+        };
+        updatePasteAction();
+        connect(clipboard, &QClipboard::dataChanged, this, updatePasteAction);
     }
 
     // "Edit > Normals" menu

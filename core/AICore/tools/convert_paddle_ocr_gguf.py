@@ -53,6 +53,39 @@ def gguf_tensor_name(name: str) -> str:
     return "ocr." + name
 
 
+def table_metadata(model_dir: Path):
+    """SLANet structure vocabulary and decode constants from inference.yml.
+
+    The yml is the archive's own pre/post-process contract, so the runtime
+    reads the exact class order the logits were trained against instead of
+    a second hand-copied table: TableLabelDecode appends `<td></td>` and
+    drops `<td>` when merge_no_span_structure is set, then wraps the list in
+    `sos` / `eos`.
+    """
+    import yaml
+    config = yaml.safe_load((model_dir / "inference.yml").read_text(
+            encoding="utf-8"))
+    post = config["PostProcess"]
+    tokens = list(post["character_dict"])
+    if post.get("merge_no_span_structure", False):
+        if "<td></td>" not in tokens:
+            tokens.append("<td></td>")
+        if "<td>" in tokens:
+            tokens.remove("<td>")
+    tokens = ["sos"] + tokens + ["eos"]
+    ops = {next(iter(op)): next(iter(op.values())) or {}
+           for op in config["PreProcess"]["transform_ops"]}
+    encode = ops["TableLabelEncode"]
+    return {
+        "ocr.table.tokens": tokens,
+        # The exported while loop runs max_text_length + 1 steps.
+        "ocr.table.max_steps": int(encode["max_text_length"]) + 1,
+        "ocr.table.loc_reg_num": int(encode["loc_reg_num"]),
+        "ocr.table.max_len": int(ops["ResizeTableImage"]["max_len"]),
+        "ocr.table.pad_size": int(ops["PaddingTableImage"]["size"][0]),
+    }
+
+
 def quantized(name: str, tensor: np.ndarray, kind: str,
               reshaped, keep_f32=()):
     """Return (array, ggml_type) for the requested container quant."""
@@ -142,7 +175,7 @@ def main() -> None:
     parser.add_argument("output", type=Path, help="output F32 GGUF stem; "
                         "siblings get -f16/-q8_0 suffixes")
     parser.add_argument("--role", required=True,
-                        choices=["det", "rec", "layout"])
+                        choices=["det", "rec", "layout", "table"])
     parser.add_argument("--arch", required=True,
                         help="source architecture id, e.g. lcnetv3-db, "
                              "svtr-lcnet")
@@ -202,6 +235,10 @@ def main() -> None:
     if dictionary is not None:
         metadata["ocr.dictionary"] = dictionary
         metadata["ocr.dictionary.size"] = len(dictionary)
+    if args.role == "table":
+        metadata.update(table_metadata(args.model_dir))
+        metadata["general.name"] = f"slanet-table-{args.arch}"
+        print(f"table tokens: {len(metadata['ocr.table.tokens'])}")
     matmul_y_weights = set()
     if args.graph_json:
         graph = json.loads(args.graph_json.read_text(encoding="utf-8"))

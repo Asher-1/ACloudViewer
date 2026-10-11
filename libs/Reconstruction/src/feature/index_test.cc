@@ -40,20 +40,23 @@ namespace {
 
 FeatureDescriptorsFloat CreateRandomFeatureDescriptors(
     const FeatureExtractorType type, const size_t num_features) {
-  FeatureDescriptorsFloatData data(num_features, 128);
+  FeatureDescriptorsFloat descriptors;
+  descriptors.type = type;
+  descriptors.data.resize(num_features, 128);
   for (size_t i = 0; i < num_features; ++i) {
     for (size_t j = 0; j < 128; ++j) {
-      data(i, j) = std::pow(RandomUniformReal(0.0f, 1.0f), 2);
+      descriptors.data(i, j) = std::pow(RandomUniformReal(0.0f, 1.0f), 2);
     }
   }
-  L2NormalizeFeatureDescriptors(&data);
+  L2NormalizeFeatureDescriptors(&descriptors.data);
   if (type == FeatureExtractorType::SIFT) {
     // Mimic the real SIFT pipeline: convert to uint8 [0,255] then back to
     // float. This ensures values are integer-valued floats in [0, 255],
     // which is required for QT_8bit_direct quantization.
-    data = FeatureDescriptorsToUnsignedByte(data).cast<float>();
+    descriptors.data =
+        FeatureDescriptorsToUnsignedByte(descriptors.data).cast<float>();
   }
-  return FeatureDescriptorsFloat(type, std::move(data));
+  return descriptors;
 }
 
 struct FeatureDescriptorIndexTestParams {
@@ -81,12 +84,11 @@ TEST_P(ParameterizedFeatureDescriptorIndexTests, Nominal) {
       CreateRandomFeatureDescriptors(params.extractor_type,
                                      params.num_descriptors);
   const FeatureDescriptorsFloat& query_descriptors = index_descriptors;
-  index->Build(index_descriptors.data);
+  index->Build(index_descriptors);
 
   Eigen::RowMajorMatrixXi indices;
   Eigen::RowMajorMatrixXf distances;
-  index->Search(
-      /*num_neighbors=*/1, query_descriptors.data, indices, distances);
+  index->Search(/*num_neighbors=*/1, query_descriptors, indices, distances);
 
   ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
   ASSERT_EQ(indices.cols(), 1);
@@ -98,8 +100,7 @@ TEST_P(ParameterizedFeatureDescriptorIndexTests, Nominal) {
     EXPECT_NEAR(distances(i, 0), 0, 1e-6);
   }
 
-  index->Search(
-      /*num_neighbors=*/2, query_descriptors.data, indices, distances);
+  index->Search(/*num_neighbors=*/2, query_descriptors, indices, distances);
   ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
   ASSERT_EQ(indices.cols(), 2);
   ASSERT_EQ(distances.rows(), query_descriptors.data.rows());
@@ -117,7 +118,7 @@ TEST_P(ParameterizedFeatureDescriptorIndexTests, Nominal) {
   }
 
   index->Search(/*num_neighbors=*/index_descriptors.data.rows() + 1,
-                query_descriptors.data,
+                query_descriptors,
                 indices,
                 distances);
   ASSERT_EQ(indices.rows(), query_descriptors.data.rows());
@@ -127,10 +128,6 @@ TEST_P(ParameterizedFeatureDescriptorIndexTests, Nominal) {
 }
 
 TEST(FeatureDescriptorIndexTests, TypeMismatch) {
-  // The index is deliberately numeric-only: typed wrappers are enforced at
-  // storage and matcher boundaries, while this local index accepts its matrix
-  // payload explicitly. Cross-type rejection is therefore not its contract.
-  GTEST_SKIP() << "FeatureDescriptorIndex operates on descriptor data only";
   constexpr int kNumDescriptors = 100;
 
   std::unique_ptr<FeatureDescriptorIndex> index;
@@ -150,16 +147,16 @@ TEST(FeatureDescriptorIndexTests, TypeMismatch) {
       FeatureExtractorType::ALIKED_N16ROT, kNumDescriptors);
 
   // Build should throw when descriptor types are inconsistent.
-  index->Build(aliked_desc.data);
+  index->Build(aliked_desc);
 
   // Build correctly with SIFT so we can test Query mismatch.
-  index->Build(sift_desc.data);
+  index->Build(sift_desc);
 
   // Query should throw when descriptor types are inconsistent.
   Eigen::RowMajorMatrixXi indices;
   Eigen::RowMajorMatrixXf distances;
   EXPECT_THROW(index->Search(
-                   /*num_neighbors=*/1, aliked_desc.data, indices, distances),
+                   /*num_neighbors=*/1, aliked_desc, indices, distances),
                std::invalid_argument);
 }
 

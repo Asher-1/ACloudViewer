@@ -1,3 +1,5 @@
+#include "math/random.h"
+#include <random>
 // Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
@@ -111,7 +113,7 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     // before the cache load (batch C observation-bookkeeping fix). Batch T:
     // RegFrameIds() now returns a reference to the fork's registration-order
     // vector (upstream parity); copy into the hash set explicitly.
-    const NodeHashSet<frame_t> pre_existing_frames(
+    const FlatHashSet<frame_t> pre_existing_frames(
             reconstruction->RegFrameIds().begin(),
             reconstruction->RegFrameIds().end());
     reconstruction_->Load(*database_cache_);
@@ -129,7 +131,7 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     // registration and accounting together; frames of a continued
     // reconstruction (registered before the load) are kept.
     // Batch T: de-registration mutates reg_frame_ids_, so iterate over a
-    // copy (the old NodeHashSet return was already a detached snapshot).
+    // copy (the old hash-set return was already a detached snapshot).
     const std::vector<frame_t> post_load_reg_frames =
             reconstruction_->RegFrameIds();
     for (const frame_t frame_id : post_load_reg_frames) {
@@ -160,7 +162,7 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     }
 
     existing_frame_ids_ =
-            NodeHashSet<frame_t>(reconstruction->RegFrameIds().begin(),
+            FlatHashSet<frame_t>(reconstruction->RegFrameIds().begin(),
                                  reconstruction->RegFrameIds().end());
 
     filtered_frames_.clear();
@@ -272,6 +274,9 @@ bool IncrementalMapper::RegisterInitialImagePair(
     // former legacy qvec/tvec fallback branch was dead code and is retired).
     image1.SetCamFromWorld(Rigid3d());
     image2.SetCamFromWorld(cam2_from_cam1);
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { auto pr = [](const char* tag, const Rigid3d& T) { std::fprintf(stderr, "[dump] %s q=%.17g %.17g %.17g %.17g t=%.17g %.17g %.17g\n", tag, T.rotation().w(), T.rotation().x(), T.rotation().y(), T.rotation().z(), T.translation()(0), T.translation()(1), T.translation()(2)); }; std::fprintf(stderr, "[dump] reginit %u %u ref1=%d ref2=%d\n", (unsigned)image_id1, (unsigned)image_id2, (int)image1.IsRefInFrame(), (int)image2.IsRefInFrame()); pr("reginit-c2c1", cam2_from_cam1); pr("reginit-cfw1", image1.CamFromWorld()); pr("reginit-cfw2", image2.CamFromWorld()); pr("reginit-rfw2", image2.FramePtr()->RigFromWorld()); for (const auto& [sid, sfr] : image2.FramePtr()->RigPtr()->NonRefSensors()) { if (sfr) pr("reginit-sfr2", *sfr); } }
+// TEMP-DUMP-END
 
     // Upstream parity (d3ccaf35): registration and bookkeeping happen at
     // the frame level (every image of the frame joins the reconstruction).
@@ -294,6 +299,9 @@ bool IncrementalMapper::RegisterInitialImagePair(
 
 bool IncrementalMapper::RegisterNextImage(const Options& options,
                                           const image_t image_id) {
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-RegisterNextImage next=%u\n", (unsigned)c()); }
+// TEMP-DUMP-END
     CHECK_NOTNULL(reconstruction_);
     CHECK_GE(reconstruction_->NumRegImages(), 2);
 
@@ -359,7 +367,7 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
         correspondence_graph.ExtractTransitiveCorrespondences(
                 image_id, point2D_idx, kCorrTransitivity, &corrs);
 
-        NodeHashSet<point3D_t> point3D_ids;
+        FlatHashSet<point3D_t> point3D_ids;
 
         for (const auto corr : corrs) {
             if (!reconstruction_->ExistsImage(corr.image_id)) {
@@ -509,6 +517,9 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
         return false;
     }
 
+// TEMP-DUMP-BEGIN
+  if (std::getenv("SCAN_DUMP")) { double s2 = 0, s3 = 0; for (size_t di = 0; di < tri_points2D.size(); ++di) { s2 += tri_points2D[di].sum() * (di + 1); s3 += tri_points3D[di].sum() * (di + 1); } std::fprintf(stderr, "[dump] est img=%u n=%zu s2=%.17g s3=%.17g inl=%zu q=%.17g,%.17g,%.17g,%.17g t=%.17g,%.17g,%.17g\n", (unsigned)image_id, tri_points2D.size(), s2, s3, num_inliers, cam_qvec(0), cam_qvec(1), cam_qvec(2), cam_qvec(3), cam_tvec(0), cam_tvec(1), cam_tvec(2)); }
+// TEMP-DUMP-END
     if (num_inliers < static_cast<size_t>(options.abs_pose_min_num_inliers)) {
         return false;
     }
@@ -531,6 +542,9 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
         return false;
     }
 
+// TEMP-DUMP-BEGIN
+  if (std::getenv("SCAN_DUMP")) { double s2 = 0, s3 = 0; for (size_t di = 0; di < tri_points2D.size(); ++di) { s2 += tri_points2D[di].sum() * (di + 1); s3 += tri_points3D[di].sum() * (di + 1); } std::fprintf(stderr, "[dump] ref img=%u n=%zu s2=%.17g s3=%.17g inl=%zu q=%.17g,%.17g,%.17g,%.17g t=%.17g,%.17g,%.17g\n", (unsigned)image_id, tri_points2D.size(), s2, s3, num_inliers, cam_from_world.rotation().w(), cam_from_world.rotation().x(), cam_from_world.rotation().y(), cam_from_world.rotation().z(), cam_from_world.translation().x(), cam_from_world.translation().y(), cam_from_world.translation().z()); }
+// TEMP-DUMP-END
     if (image.HasFramePtr()) {
         image.SetCamFromWorld(cam_from_world);
     } else {
@@ -567,6 +581,9 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
 size_t IncrementalMapper::TriangulateImage(
         const IncrementalTriangulator::Options& tri_options,
         const image_t image_id) {
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-TriangulateImage next=%u\n", (unsigned)c()); }
+// TEMP-DUMP-END
     CHECK_NOTNULL(reconstruction_);
     return triangulator_->TriangulateImage(tri_options, image_id);
 }
@@ -595,7 +612,7 @@ IncrementalMapper::AdjustLocalBundle(
         const BundleAdjustmentOptions& ba_options,
         const IncrementalTriangulator::Options& tri_options,
         const image_t image_id,
-        const NodeHashSet<point3D_t>& point3D_ids) {
+        const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK_NOTNULL(reconstruction_);
     CHECK(options.Check());
 
@@ -615,7 +632,7 @@ IncrementalMapper::AdjustLocalBundle(
         // whole frame joins the local bundle so that multi-sensor rigs are
         // adjusted jointly; for single-sensor rigs this equals the old
         // per-image insertion).
-        NodeHashSet<frame_t> frame_ids;
+        FlatHashSet<frame_t> frame_ids;
         ba_config.AddImage(image_id);
         for (const image_t local_image_id : local_bundle) {
             const Image& local_image = reconstruction_->Image(local_image_id);
@@ -635,7 +652,7 @@ IncrementalMapper::AdjustLocalBundle(
 
         // Fix rig poses, if not all frames within the local bundle
         // (upstream d3ccaf35).
-        NodeHashMap<rig_t, size_t> num_frames_per_rig;
+        FlatHashMap<rig_t, size_t> num_frames_per_rig;
         num_frames_per_rig.reserve(frame_ids.size());
         for (const frame_t frame_id : frame_ids) {
             const Frame& frame = reconstruction_->Frame(frame_id);
@@ -657,7 +674,7 @@ IncrementalMapper::AdjustLocalBundle(
 
         // Determine which cameras to fix, when not all the registered images
         // are within the current local bundle.
-        NodeHashMap<camera_t, size_t> num_images_per_camera;
+        FlatHashMap<camera_t, size_t> num_images_per_camera;
         num_images_per_camera.reserve(ba_config.NumImages());
         for (const image_t config_image_id : ba_config.Images()) {
             const Image& config_image =
@@ -681,7 +698,7 @@ IncrementalMapper::AdjustLocalBundle(
         // include long track 3D points as they are usually already very stable
         // and adding to them to bundle adjustment and track merging/completion
         // would slow down the local bundle adjustment significantly.
-        NodeHashSet<point3D_t> variable_point3D_ids;
+        FlatHashSet<point3D_t> variable_point3D_ids;
         for (const point3D_t point3D_id : point3D_ids) {
             const Point3D& point3D = reconstruction_->Point3D(point3D_id);
             const size_t kMaxTrackLength = 15;
@@ -715,7 +732,7 @@ IncrementalMapper::AdjustLocalBundle(
     // there are no outlier points in the model. This results in duplicate work
     // as many of the provided 3D points may also be contained in the adjusted
     // images, but the filtering is not a bottleneck at this point.
-    NodeHashSet<image_t> filter_image_ids;
+    FlatHashSet<image_t> filter_image_ids;
     filter_image_ids.insert(image_id);
     filter_image_ids.insert(local_bundle.begin(), local_bundle.end());
     // Upstream parity (d3ccaf35 sfm/incremental_mapper.cc): the post-BA
@@ -749,23 +766,29 @@ size_t NumRegisteredPosePriors(const std::vector<PosePrior>& pose_priors,
     return num_registered_pose_priors;
 }
 
+// TEMP-DUMP-BEGIN
+namespace {
+struct ScanStateDump { const Reconstruction* r; const char* tag; void Print(const char* when) const { if (!std::getenv("SCAN_DUMP")) return; std::vector<point3D_t> pids; for (const auto& kv : r->Points3D()) pids.push_back(kv.first); std::sort(pids.begin(), pids.end()); double sp = 0; for (size_t i = 0; i < pids.size(); ++i) sp += r->Point3D(pids[i]).XYZ().sum() * (i + 1); std::vector<image_t> iids; for (const auto& kv : r->Images()) if (kv.second.HasPose()) iids.push_back(kv.first); std::sort(iids.begin(), iids.end()); double sc = 0; for (size_t i = 0; i < iids.size(); ++i) { const Rigid3d c = r->Image(iids[i]).CamFromWorld(); sc += (c.rotation().coeffs().sum() + c.translation().sum()) * (i + 1); } std::fprintf(stderr, "[dump] %s-%s pts=%zu imgs=%zu sp=%.17g sc=%.17g\n", tag, when, pids.size(), iids.size(), sp, sc); } ~ScanStateDump() { Print("out"); } };
+}  // namespace
+// TEMP-DUMP-END
 bool IncrementalMapper::AdjustGlobalBundle(
         const Options& options, const BundleAdjustmentOptions& ba_options) {
+// TEMP-DUMP-BEGIN
+    ScanStateDump scan_dump{reconstruction_, "gba"}; scan_dump.Print("in");
+if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-gba-entry next=%u\n", (unsigned)c()); }
+// TEMP-DUMP-END
     CHECK_NOTNULL(reconstruction_);
-
-    const std::vector<image_t>& reg_image_ids = reconstruction_->RegImageIds();
-
-    CHECK_GE(reg_image_ids.size(), 2) << "At least two images must be "
-                                         "registered for global "
-                                         "bundle-adjustment";
+    CHECK_NOTNULL(obs_manager_);
 
     BundleAdjustmentOptions custom_ba_options = ba_options;
     // Use stricter convergence criteria for first registered images
-    // (upstream parity, d3ccaf35 AdjustGlobalBundle).
+    // (upstream parity, a2bd15c2 AdjustGlobalBundle). Upstream only hands
+    // these stricter options to the pose-prior adjuster; the default and
+    // redundant-point adjusters below consume the caller's ba_options.
     constexpr size_t kMinNumRegFramesForFastBA = 10;
     const bool is_small_reconstruction =
         reconstruction_->NumRegFrames() < kMinNumRegFramesForFastBA;
-    if (is_small_reconstruction) {
+    if (is_small_reconstruction && custom_ba_options.ceres) {
         custom_ba_options.ceres->solver_options.function_tolerance /= 10;
         custom_ba_options.ceres->solver_options.gradient_tolerance /= 10;
         custom_ba_options.ceres->solver_options.parameter_tolerance /= 10;
@@ -781,8 +804,17 @@ bool IncrementalMapper::AdjustGlobalBundle(
 
     // Configure bundle adjustment.
     BundleAdjustmentConfig ba_config;
-    for (const image_t image_id : reg_image_ids) {
+    for (const image_t image_id : reconstruction_->RegImageIds()) {
         ba_config.AddImage(image_id);
+    }
+
+    // After filtering, the reconstruction may have fewer than 2 images, in
+    // which case global bundle adjustment is not possible (upstream
+    // a2bd15c2 reports this instead of aborting).
+    if (ba_config.NumImages() < 2) {
+        LOG(WARNING) << "At least two images must be registered for global "
+                        "bundle-adjustment";
+        return false;
     }
 
     // Fix the existing frames, if option specified (upstream d3ccaf35:
@@ -839,8 +871,7 @@ bool IncrementalMapper::AdjustGlobalBundle(
     std::unique_ptr<BundleAdjuster> bundle_adjuster;
     if (!use_prior_position) {
         ba_config.FixGauge(BundleAdjustmentGauge::TWO_CAMS_FROM_WORLD);
-        bundle_adjuster =
-                CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
+        bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
     } else {
         PosePriorBundleAdjustmentOptions prior_options;
         if (options.use_robust_loss_on_prior_position) {
@@ -866,8 +897,7 @@ bool IncrementalMapper::AdjustGlobalBundle(
     // rest of the reconstruction.
     if (!is_small_reconstruction &&
         options.ba_global_ignore_redundant_points3D) {
-        if (custom_ba_options.check_if_stopped &&
-            custom_ba_options.check_if_stopped()) {
+        if (ba_options.check_if_stopped && ba_options.check_if_stopped()) {
             return true;
         }
 
@@ -889,8 +919,7 @@ bool IncrementalMapper::AdjustGlobalBundle(
             }
         }
 
-        bundle_adjuster =
-                CreateDefaultBundleAdjuster(custom_ba_options, ba_config);
+        bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
         if (!bundle_adjuster->Solve(reconstruction_)) {
             return false;
         }
@@ -1014,7 +1043,7 @@ size_t IncrementalMapper::NumSharedRegImages() const {
     return reg_stats_.num_shared_reg_images;
 }
 
-const NodeHashSet<point3D_t>& IncrementalMapper::GetModifiedPoints3D() {
+const FlatHashSet<point3D_t>& IncrementalMapper::GetModifiedPoints3D() {
     return triangulator_->GetModifiedPoints3D();
 }
 
@@ -1058,8 +1087,10 @@ void IncrementalMapper::IterativeLocalRefinement(
             break;
         }
         // Only use robust cost function for first iteration.
-        custom_ba_options.ceres->loss_function_type =
-                CeresLossFunctionType::TRIVIAL;
+        if (custom_ba_options.ceres) {
+            custom_ba_options.ceres->loss_function_type =
+                    CeresLossFunctionType::TRIVIAL;
+        }
     }
     ClearModifiedPoints3D();
 }
@@ -1132,12 +1163,12 @@ void IncrementalMapper::DeRegisterFrameEvent(const frame_t frame_id) {
     }
 }
 
-const NodeHashMap<rig_t, size_t>&
+const FlatHashMap<rig_t, size_t>&
 IncrementalMapper::NumRegFramesPerRig() const {
     return reg_stats_.num_reg_frames_per_rig;
 }
 
-const NodeHashMap<camera_t, size_t>&
+const FlatHashMap<camera_t, size_t>&
 IncrementalMapper::NumRegImagesPerCamera() const {
     return reg_stats_.num_reg_images_per_camera;
 }
@@ -1152,11 +1183,11 @@ IncrementalTriangulator& IncrementalMapper::Triangulator() const {
     return *triangulator_;
 }
 
-const NodeHashSet<frame_t>& IncrementalMapper::FilteredFrames() const {
+const FlatHashSet<frame_t>& IncrementalMapper::FilteredFrames() const {
     return filtered_frames_;
 }
 
-const NodeHashSet<frame_t>& IncrementalMapper::ExistingFrameIds() const {
+const FlatHashSet<frame_t>& IncrementalMapper::ExistingFrameIds() const {
     return existing_frame_ids_;
 }
 

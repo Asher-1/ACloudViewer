@@ -23,6 +23,8 @@
 #include "util/timer.h"
 
 #include <algorithm>
+#include <cstdio>  // TEMP-DUMP
+#include <cstdlib>  // TEMP-DUMP
 
 #include <Eigen/Geometry>
 
@@ -64,17 +66,25 @@ FundamentalMatrixReport EstimateFundamentalMatrix(
     FundamentalMatrixDegensacOptions degensac_options;
     degensac_options.ransac = ransac_options;
     degensac_options.use_sampson_refinement = options.use_sampson_refinement;
-    return ToFundamentalMatrixReport(
+    // TEMP-DUMP-BEGIN
+    auto dump_report = ToFundamentalMatrixReport(
         EstimateFundamentalMatrixDegensac(points1, points2, degensac_options));
+    if (std::getenv("SCAN_DUMP")) { double hp = 0; for (size_t i = 0; i < points1.size(); ++i) hp += (i + 1) * (points1[i].x() + 3 * points1[i].y() + 5 * points2[i].x() + 7 * points2[i].y()); size_t ni = 0; double hm = 0; for (size_t i = 0; i < dump_report.inlier_mask.size(); ++i) if (dump_report.inlier_mask[i]) { ++ni; hm += i; } std::fprintf(stderr, "[dump] degensac n=%zu hp=%.17g seed=%d ok=%d trials=%zu inl=%zu hm=%.0f F=%.17g F00=%.17g\n", points1.size(), hp, ransac_options.random_seed, (int)dump_report.success, (size_t)dump_report.num_trials, ni, hm, dump_report.model.sum(), dump_report.model(0,0)); }
+    return dump_report;
+    // TEMP-DUMP-END
   }
   // The two local estimators differ only in how they refit the inlier set, so
   // both instantiations share the same report type, which depends on the
   // hypothesis estimator alone.
   if (options.use_sampson_refinement) {
-    return LORANSAC<FundamentalMatrixSevenPointEstimator,
+    // TEMP-DUMP-BEGIN
+    auto dump_report = LORANSAC<FundamentalMatrixSevenPointEstimator,
                     FundamentalMatrixSampsonEstimator,
                     MEstimatorSupportMeasurer>(ransac_options)
         .Estimate(points1, points2);
+    if (std::getenv("SCAN_DUMP")) { double hp = 0; for (size_t i = 0; i < points1.size(); ++i) hp += (i + 1) * (points1[i].x() + 3 * points1[i].y() + 5 * points2[i].x() + 7 * points2[i].y()); size_t ni = 0; double hm = 0; for (size_t i = 0; i < dump_report.inlier_mask.size(); ++i) if (dump_report.inlier_mask[i]) { ++ni; hm += i; } std::fprintf(stderr, "[dump] lo-sampson n=%zu hp=%.17g seed=%d ok=%d trials=%zu inl=%zu hm=%.0f rs=%.17g F=%.17g F00=%.17g\n", points1.size(), hp, ransac_options.random_seed, (int)dump_report.success, (size_t)dump_report.num_trials, ni, hm, dump_report.support.score, dump_report.model.sum(), dump_report.model(0,0)); }
+    return dump_report;
+    // TEMP-DUMP-END
   }
   return LORANSAC<FundamentalMatrixSevenPointEstimator,
                   FundamentalMatrixEightPointEstimator,

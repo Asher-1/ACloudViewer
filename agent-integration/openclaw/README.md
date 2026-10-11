@@ -88,7 +88,7 @@ Or copy `skills/cli-anything-acloudviewer/SKILL.md` into your project's skills d
 
 | Mode | Mechanism | When used |
 |------|-----------|-----------|
-| **GUI** | JSON-RPC WebSocket (`ws://localhost:6001`) | ACloudViewer running with qJSonRPC plugin |
+| **GUI** | JSON-RPC WebSocket (`ws://127.0.0.1:6001`) | ACloudViewer running with qJSonRPC plugin |
 | **Headless** | `ACloudViewer -SILENT -O …` subprocess | No GUI, or batch/CI |
 | **Auto** | Try GUI RPC, fall back to headless | Default for MCP and `--mode auto` |
 

@@ -279,7 +279,7 @@ Three machine-facing control surfaces over one runtime:
 
 | Interface | Transport | Entry point |
 |-----------|-----------|-------------|
-| **JSON-RPC plugin** | WebSocket `ws://localhost:6001` (verified: `JsonRPCPlugin.cpp`) | `plugins/core/Standard/qJSonRPCPlugin/` |
+| **JSON-RPC plugin** | WebSocket `ws://127.0.0.1:6001` (loopback only, Origin handshakes refused), `ACV_RPC_PORT` overrides (verified: `jsonrpcserver.cpp`, `JsonRPCPlugin.cpp`) | `plugins/core/Standard/qJSonRPCPlugin/` |
 | **CLI harness** | `cli-anything-acloudviewer` (Click CLI; headless mode invokes the binary directly) | `agent-integration/cli/` |
 | **MCP server** | `cli-anything-acloudviewer-mcp` (stdio) — wraps the CLI | `agent-integration/mcp/` |
 
@@ -420,7 +420,7 @@ app startup → ccPluginManager (CVAppCommon) scans bin/plugins/*.so|.dll
 Agent (Python / MCP client / shell)
   ├─ CLI harness (headless): cli-anything-acloudviewer … → spawns ACloudViewer binary directly
   ├─ MCP server (stdio):    cli-anything-acloudviewer-mcp → wraps the CLI
-  └─ JSON-RPC (GUI live):   ws://localhost:6001 → qJSonRPCPlugin → MainWindow actions
+  └─ JSON-RPC (GUI live):   ws://127.0.0.1:6001 → qJSonRPCPlugin → MainWindow actions
 ```
 
 ---

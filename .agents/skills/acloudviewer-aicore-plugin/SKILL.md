@@ -127,7 +127,7 @@ compatibility bridge while retaining their proven runtime parser.
 | Model variant | Catalog, stable URL/cache/digest, catalog dump, probe, structured manifest row, runner tests |
 | New task | Public header, task implementation, monolithic CMake/test closure, catalog/digest, probe, manifest, ABI tests |
 | New plugin | CMake option/registration, `info.json`, resources, README, focused worker/UI tests |
-| Automation | Native batch command + `HELP RESULT_JSON` schema, `aicore.batch` whitelist, Python AI registry/CLI, four generic MCP tools, L1/L2/L3/L5 tests, docs |
+| Automation | Native batch command + `HELP RESULT_JSON` schema, `aicore.batch` whitelist, Python AI registry/CLI, `AICORE_BATCH_COMMANDS` test row, four generic MCP tools, L1–L5 tests, docs; CLI-Anything lands first ([plugin-workflow.md](references/plugin-workflow.md#automation-delivery)) |
 
 Do not claim coverage when any row is absent. A catalog model is incomplete
 until it is exposed by `test_catalog_dump_urls --json` and consumed by an
@@ -148,6 +148,9 @@ python3 -m pytest agent-integration/tests/test_integration.py -v \
 # With the packaged binary and CLI harness installed:
 python3 -m pytest agent-integration/tests/test_integration.py -v \
   -k "level3_aicore_schema"
+# Against a running GUI (ACV_RPC_PORT on the GUI, ACV_RPC_URL on the client):
+ACV_RPC_URL=ws://127.0.0.1:6001 python3 -m pytest \
+  agent-integration/tests/test_integration.py -v -k "level4"
 ```
 
 For release, parity, or speed claims use the release profile with a same-host
@@ -195,5 +198,7 @@ clock or from different model/input/quantization rows.
       schema from the installed plugin on Linux, macOS, and Windows.
 - [ ] JSON-RPC `aicore.batch` and MCP list/schema/run surfaces are covered;
       ordinary plugin passthrough remains isolated in a headless child.
+- [ ] RPC handlers that spawn a child use `runChildProcess()`; none calls
+      `QProcess::waitForFinished()` on the GUI thread.
 - [ ] Documentation updates the owning source and links here rather than
       copying another long checklist.

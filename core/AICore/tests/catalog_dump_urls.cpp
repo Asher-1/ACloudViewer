@@ -25,6 +25,7 @@
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
+#include "aicore/table_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
 
@@ -129,6 +130,10 @@ void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_ocr_model_count(); ++i) {
         const aicore_ocr_model_entry* e = aicore_ocr_model_at(i);
         if (e) emitAsset("ocr", "ocr_models", e->filename, e->download_url);
+    }
+    for (int i = 0; i < aicore_table_model_count(); ++i) {
+        const aicore_table_model_entry* e = aicore_table_model_at(i);
+        if (e) emitAsset("table", "ocr_models", e->filename, e->download_url);
     }
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const aicore_sam3_model_entry* e = aicore_sam3_model_at(i);

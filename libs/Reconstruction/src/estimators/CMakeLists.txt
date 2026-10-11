@@ -48,7 +48,6 @@ COLMAP_ADD_SOURCES(
     translation_transform.h
     triangulation.h triangulation.cc
     two_view_geometry.h two_view_geometry.cc
-    utils.h utils.cc
     view_graph_calibration.h view_graph_calibration.cc
     gravity_refinement.h gravity_refinement.cc
 
@@ -86,7 +85,6 @@ COLMAP_ADD_TEST(relpose_one_sided_focal_test
 COLMAP_ADD_TEST(absolute_pose_test solvers/absolute_pose_test.cc)
 COLMAP_ADD_TEST(solvers_affine_transform_test solvers/affine_transform_test.cc)
 COLMAP_ADD_TEST(coordinate_frame_test coordinate_frame_test.cc)
-COLMAP_ADD_TEST(estimators_utils_test utils_test.cc)
 COLMAP_ADD_TEST(global_positioning_test global_positioning_test.cc)
 COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc)
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)

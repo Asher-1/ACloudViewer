@@ -93,7 +93,8 @@ implicit local-cache discovery.
 5. Controlled release-profile A/B for performance changes.
 6. Plugin still/live/cancel/stale/error/teardown workflow tests.
 7. Agent automation closure: native HELP schema, RPC whitelist, exact CLI
-   registry, MCP tools, and installed-plugin L3 checks on all three platforms.
+   registry, MCP tools, installed-plugin L3 checks on all three platforms,
+   and L4 against the packaged GUI under the offscreen QPA.
 
 Parity is not upstream truth. A stable output hash is not semantic accuracy.
 Weight quantization is not evidence of lower activation/KV memory or lower
@@ -114,8 +115,17 @@ the same: native command keyword, JSON-RPC `aicore.batch` whitelist, Python AI
 registry, CLI output, and MCP task resolution. Option metadata has one runtime
 owner: the native `HELP RESULT_JSON` schema. Python must not duplicate defaults.
 
-Run L1/L2/L5 without a binary, then L3 against the packaged binary. L3 queries
+Run L1/L2/L5 without a binary (Linux, macOS, Windows), then L3 against the
+packaged binary. L3 queries
 every registry task, requires a non-empty option list containing `RESULT_JSON`,
 and requires schema `acloudviewer.aicore.batch/1`. Linux CPU/CUDA, macOS, and
 Windows installer jobs are separate evidence; success on one platform does not
 cover another. Missing plugins and unknown commands fail rather than skip.
+
+L4 runs on the Ubuntu installer job: the GUI starts under `offscreen` on
+Xvfb with software Mesa, must serve `ping` before the suite starts, and must
+still be alive after it. A GUI that cannot start (no GL context, port taken)
+exits or logs instead of crashing or waiting on a modal dialog; that is what
+makes an unattended start observable. The CLI-Anything change that a new
+registry row depends on must reach its default branch before the
+ACloudViewer change is pushed.

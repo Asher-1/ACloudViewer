@@ -71,12 +71,7 @@ std::unique_ptr<retrieval::VisualIndex> CreateSyntheticVisualIndex() {
   return visual_index;
 }
 
-// Fork adjudication: the vocab-tree query path crashes inside the fork's
-// retrieval worker (null rwlock on the shared visual index); the three
-// DISABLED cases below share that root cause and are deferred until the
-// fork's retrieval layer reconciles the index lifetime across threads.
-
-TEST(VocabTreePairGenerator, DISABLED_Nominal) {
+TEST(VocabTreePairGenerator, Nominal) {
   constexpr int kNumImages = 5;
   auto database = Database::Open(kMemoryDatabasePath);
   CreateSyntheticDatabase(kNumImages, *database);
@@ -116,7 +111,7 @@ TEST(VocabTreePairGenerator, DISABLED_Nominal) {
   }
 }
 
-TEST(VocabTreePairGenerator, DISABLED_DoesNotDeadlockOnFailedQuery) {
+TEST(VocabTreePairGenerator, DoesNotDeadlockOnFailedQuery) {
   constexpr int kNumImages = 5;
   auto database = Database::Open(kMemoryDatabasePath);
   CreateSyntheticDatabase(kNumImages, *database);
@@ -309,7 +304,7 @@ TEST(SequentialPairGenerator, Quadratic) {
   EXPECT_TRUE(generator.HasFinished());
 }
 
-TEST(SequentialPairGenerator, DISABLED_LoopDetectionMinIndexDistance) {
+TEST(SequentialPairGenerator, LoopDetectionMinIndexDistance) {
   constexpr int kNumImages = 6;
   auto database = Database::Open(kMemoryDatabasePath);
   CreateSyntheticDatabase(kNumImages, *database);

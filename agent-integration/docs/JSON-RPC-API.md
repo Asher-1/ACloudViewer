@@ -1,12 +1,22 @@
 # ACloudViewer JSON-RPC API Reference
 
-The `qJSonRPCPlugin` exposes a JSON-RPC 2.0 API over WebSocket on port 6001.
+The `qJSonRPCPlugin` exposes a JSON-RPC 2.0 API over WebSocket on port 6001
+(`ACV_RPC_PORT` overrides it).
 
 ## Connection
 
 ```
-ws://localhost:6001
+ws://127.0.0.1:6001
 ```
+
+The server listens on loopback only and refuses handshakes carrying an
+`Origin` header (browsers); see the plugin README. Methods that run a child
+process (`aicore.batch`, `process.*`, `colmap.*`, `yolo.track`,
+`sam3d.generate`, `mapanything.reconstruct`) answer when the child ends,
+bounded by `timeout_ms` in (0, 86400000]; meanwhile the server keeps serving
+other requests, including concurrent children. Malformed JSON is answered
+with `-32700` and a request without `method`/`jsonrpc` with `-32600`, both
+with `"id": null` when no id could be read; batch arrays are not supported.
 
 ## Protocol
 
@@ -859,7 +869,7 @@ pass (AICore `run_images` returns -3 before running), the driver halves the
 pass size and re-plans; `frames_per_pass` and `memory_downshifts` in the
 manifest record what actually ran.
 
-**Params:** `{images[>=2], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size|square, ?min_conf, ?max_frames_per_pass, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?result_json, ?timeout_ms}`
+**Params:** `{images[>=2], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size|square, ?min_conf, ?max_frames_per_pass, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?ref_images_path: COLMAP model_aligner text "<image_name> X Y Z" per line, ?ref_is_gps: 0|1 (required with ref_images_path), ?result_json, ?timeout_ms}`
 
 - `images[]`: absolute input image paths (the child decodes them through
   Qt and feeds borrowed `aicore_image_view`s).

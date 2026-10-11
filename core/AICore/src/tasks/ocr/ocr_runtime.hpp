@@ -279,9 +279,17 @@ OcrExecPlan makeExecPlan(ggml_backend_t gpu,
  *  blocked island on AVX-512 CPU hosts). */
 OcrBuildOptions execBuildOptions(const OcrExecPlan& plan);
 
-/** Allocation state of one prepared graph. */
+/** Allocation state of one prepared graph slot. The gallocr (CPU / one
+ *  device) outlives the graph it allocated: prepareGraph reuses it for the
+ *  next build of the slot, and ggml-alloc only reallocates a chunk that the
+ *  new graph outgrows, so the slot's compute buffer settles at its
+ *  high-water mark. A fresh buffer per rebuild is not free: Vulkan places
+ *  compute buffers in ReBAR (device-local, host-visible) memory, where the
+ *  first CPU write of the input faults every page of the new mapping in
+ *  (~5 ms/MB, 250 ms tails on 50 MB rec builds). */
 struct OcrGraphExec {
     ggml_gallocr_t alloc = nullptr;
+    ggml_backend_buffer_type_t allocBuft = nullptr;  // type `alloc` serves
     ggml_backend_sched_t sched = nullptr;
     void free();
 };
@@ -289,7 +297,8 @@ struct OcrGraphExec {
 /** After buildGraph: realize host/device weights and the fold pool as the
  *  plan requires, build the forward graph over `outputs`, allocate it and
  *  (single device) retarget leafs and rebind every static view to device
- *  storage. On failure `exec` is freed and `error` set. */
+ *  storage. An existing gallocr of the same buffer type is reused (see
+ *  OcrGraphExec). On failure `exec` is freed and `error` set. */
 bool prepareGraph(OcrWeights& weights,
                   ggml_context* ctx,
                   const OcrExecPlan& plan,

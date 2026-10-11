@@ -126,19 +126,26 @@ TEST(CeresRotationAverager, PreservesCalibratedRigRotation) {
                       images[i],
                       Edge(RelativeRotation(reconstruction, images[0], images[i])));
     }
-    const Image& non_ref = reconstruction.Image(images[1]);
-    ASSERT_FALSE(non_ref.IsRefInFrame());
+    const Image* non_ref = nullptr;
+    for (const image_t image_id : images) {
+        const Image& image = reconstruction.Image(image_id);
+        if (!image.IsRefInFrame()) {
+            non_ref = &image;
+            break;
+        }
+    }
+    ASSERT_NE(non_ref, nullptr);
     const Eigen::Vector4d calibration_before =
-            reconstruction.Rig(non_ref.FramePtr()->RigId())
-                    .CamFromRigQvec(non_ref.CameraId());
+            reconstruction.Rig(non_ref->FramePtr()->RigId())
+                    .CamFromRigQvec(non_ref->CameraId());
 
     CeresRotationAveragerOptions options;
     options.refine_sensor_from_rig = false;
     auto averager = CreateDefaultCeresRotationAverager(options, graph, reconstruction);
     ASSERT_TRUE(averager->Solve().IsSolutionUsable());
     const Eigen::Vector4d calibration_after =
-            reconstruction.Rig(non_ref.FramePtr()->RigId())
-                    .CamFromRigQvec(non_ref.CameraId());
+            reconstruction.Rig(non_ref->FramePtr()->RigId())
+                    .CamFromRigQvec(non_ref->CameraId());
     EXPECT_EQ(calibration_after, calibration_before);
 }
 

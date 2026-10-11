@@ -10,14 +10,44 @@ The **OCR Workspace** action opens the plugin dialog (a pure view in the
 shared AICore plugin shape, same split as qRMBG):
 
 - **Recognition language / Quantization** — picks the det/rec GGUF pair from
-  the published catalog (det is shared and script-agnostic).
+  the published catalog (det is shared and script-agnostic). One tier applies
+  to every enabled stage (det/rec/layout/table), the same uniform tier the
+  table GT gate measures.
+- **Layout regions / Tables (SLANet_plus)** — opt-in stages. Tables runs the
+  AICore `table` task after OCR: with layout enabled, one table per layout
+  `table` region; without it, the whole image is one table. Table mode uses
+  the official table-recognition text detection (`limit_type=max`, 960).
 - **Device / Threads** — the shared runtime row. Device entries come from
   `aicore_device_count()` ("auto" follows the platform order: CUDA → Vulkan →
   CPU on Linux/Windows, Metal → CPU on macOS); the request is passed through
   `aicore_ocr_options.device` and resolved by the AICore runtime lease
   registry. GPU-unavailable requests fall back to CPU with a console note.
-- **Try sample data** — one-click official PaddleOCR demo image through the
-  shared `ecvTestDataRepository` (Dataset::Ppocr).
+- **Image list** — a checkable list; **Run OCR** processes every checked
+  image in list order with one model load (one worker, one context), one
+  result and one DB overlay per image. A failed image is logged and skipped;
+  Cancel stops between images. **Add images…** appends any files (duplicates
+  are skipped), **Remove** drops the selected rows, **Check all / Uncheck
+  all** toggle the whole list. The list and its check state persist.
+- **Try sample data** — lists every image of the official PaddleOCR test
+  bundle (shared `ecvTestDataRepository`, Dataset::Ppocr; extracted or
+  downloaded when any recommended file is missing) and checks only the ones
+  recommended for the current mode; clicking again after a mode change
+  re-applies the checks. Your own images stay at the top with their state.
+
+  | Mode | Checked by default |
+  |---|---|
+  | Tables + layout | `layout/table_page_1.png`, `layout/table_page_layout.jpg` |
+  | Tables | `test_files/medal_table.png`, `tables/ppstructure_table.jpg`, `tables/table_recognition_v2.jpg` (real-document tables) |
+  | Layout | `layout/table_page_layout.jpg`, `layout/table_page_1.png` |
+  | Chinese | `scenes/ppocrv4.png`, `imgs/00006737.jpg`, `imgs_words_ch/word_1.jpg` |
+  | English | `test_files/textline.png`, `words_en/word_1.png` |
+
+  Synthetic bundle images are listed as `[test, synthetic]` and never
+  checked: `test_files/table.jpg` (PaddleOCR's own demo table, generated
+  cell text), the `table_rec/` PaddleX GT crops (labelled synthetic tables;
+  they drive the TEDS gate, not the demo) and `layout_doc_test.png` (an
+  AICore probe page). `MANIFEST.txt` in the bundle records every file's
+  upstream URL and SHA-256.
 - **Download missing models** — the unified `ecvModelDownloader` pipeline with
   pinned SHA-256 verification and the shared progress bar.
 - **Run OCR / Cancel** — the run executes on an `OCRWorker` thread: the
@@ -26,20 +56,68 @@ shared AICore plugin shape, same split as qRMBG):
   thread, and cooperative cancellation is bound for the run. Progress is
   stage-based with the busy (indeterminate) bar — the aligned fallback for
   backends without per-node progress — plus a 10 s heartbeat in the console.
-- **Add result to DB** — exports an annotated image (boxes + transcriptions
-  drawn over the source) to the DB tree with metadata (transcription list,
-  det/rec models, device, stage timings, source path); named through
+- **Add result to DB** — the single materialization choice. It adds a
+  source-size numbered overlay to the DB tree and attaches it to the active
+  render view when one exists; when unchecked, results remain only in the
+  workspace table. The overlay's number maps directly to the scrollable
+  `# / Text / Score / Language / Box / Layout` result row, avoiding the former
+  unbounded horizontal text panel. DB metadata retains the transcription list,
+  det/rec models, device, stage timings and source path; names go through
   `ecvPluginDbNaming` so repeated runs stay separable.
 
 All log output goes through the shared application console
 (`aicore_inference_log` → `CVLog`); the plugin embeds no private log widget.
+
+## Table reconstruction
+
+The **Result** selector lists the processed images of the last run
+(`n. name — x text, y table(s)`), with a summary line (regions, layout
+regions, stage timings) for the selected image; **Save all tables…** writes
+`<stem>_table<i>.html` / `.csv` for every table of every image into one
+folder (the batch naming below; a repeated stem gets `_2`, `_3`).
+The results area has **Text** and **Tables** tabs. Tables shows one entry
+per reconstructed table (`rows x cols`, cell count); the
+grid places every cell at its top-left slot with `setSpan`, so rowspan /
+colspan render as merged cells. **Save HTML** writes the task's
+`<table>` document; **Save CSV** writes RFC 4180 CSV with a UTF-8 BOM (a
+spanned cell's text sits in its top-left slot). The overlay draws cell
+polygons in blue over the red text boxes, and DB metadata carries
+`OCR/TableModel`, `TableCount`, `TableHTML`, `TableCSV` and `Table (ms)`.
+
+Headless batch (`-OCR_RECOGNIZE`) exposes the same chain:
+
+```bash
+ACloudViewer -SILENT -OCR_RECOGNIZE IMAGE page.png OUT_DIR out \
+  LAYOUT 1 TABLE 1 QUANT f16 DEVICE cuda
+```
+
+writing `<stem>_table<i>.html` / `.csv` per table and a `tables` array
+(box, layout region, rows/cols, structure score, HTML, cells) in
+`<stem>_ocr.json`; `TABLE_MODEL` overrides the catalog GGUF. Measured on
+the PaddleOCR samples: `table_page_1.png` → 2 tables (16×5, 80 cells and
+17×6, 98 cells), `table.jpg` → 4×4 with 13 cells (colspan-4 header).
+
+Accuracy evidence (graph parity, labelled TEDS / TEDS-S against the
+official PaddleX pipeline, composed layout → table pages) lives in the task
+README: [`core/AICore/src/tasks/table/README.md`](../../../../core/AICore/src/tasks/table/README.md).
+
+Cache paths: models in `~/cloudViewer_data/extract/ocr_models/`
+(`ppocr-*`, `pplcnet-layout-*`, `slanet-plus-table-*`), probe fixtures in
+`~/cloudViewer_data/extract/ocr_fixtures/`, test data in
+`~/cloudViewer_data/extract/ppocr_testdata/` (archive:
+`~/cloudViewer_data/download/ppocr_testdata.zip`, SHA-256
+`9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484`; adds
+`layout/table_page_1.png`, `layout/table_page_layout.jpg`, the real-document
+table crops `tables/ppstructure_table.jpg` and `tables/table_recognition_v2.jpg`,
+and the `table_rec/` labelled GT).
 
 ## Models
 
 Published at the [PP-OCR release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/PP-OCR)
 and pinned in `core/AICore/include/aicore/asset_digests.h`; every entry is
 exposed by `test_catalog_dump_urls --json` for the shared download/cache
-pipeline. Recognition dictionaries are embedded in the rec GGUFs
+pipeline. The table structure GGUFs (`slanet-plus-table-{f32,f16,q8_0}`)
+come from the AICore `table` catalog and share the `ocr_models` cache. Recognition dictionaries are embedded in the rec GGUFs
 (`ocr.dictionary`), so a model file is self-contained.
 
 ## 2026-10 端到端基线（当前权威记录）

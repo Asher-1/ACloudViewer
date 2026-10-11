@@ -19,7 +19,7 @@ cli-anything-acloudviewer-mcp
 cli-anything-acloudviewer-mcp --mode headless
 
 # Force GUI (requires running ACloudViewer with JSON-RPC plugin)
-cli-anything-acloudviewer-mcp --mode gui --rpc-url ws://localhost:6001
+cli-anything-acloudviewer-mcp --mode gui --rpc-url ws://127.0.0.1:6001
 ```
 
 ## Agent Framework Configuration

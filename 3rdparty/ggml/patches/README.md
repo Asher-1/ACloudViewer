@@ -33,6 +33,7 @@ variants — have been converted to `.patch` files.)
 | `msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch` | MSVC `__faststorefence` intrinsic compat |
 | `cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch` | Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI + apple_m4 SVE/SME behind compiler checks (inert when `GGML_CPU_ALL_VARIANTS=OFF`) |
 | `metal_merged/0001-metal-optimizations.patch` | Metal conv_transpose_2d IC-parallel tree reduction + flash-attn large-sequence support (inert when Metal OFF) |
+| `vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` | Do not treat a small (non-Resizable-BAR) DeviceLocal\|HostVisible heap as ReBAR: buffers stay device-local with staged uploads when that heap is < 1/2 of the largest VRAM heap (ReBAR/SAM and UMA unchanged; see the manifest note for the measured OCR+table upload collapse) |
 
 The CPU and Metal patches are inert on platforms where their feature is
 disabled, so the single unconditional manifest keeps the fetched tree

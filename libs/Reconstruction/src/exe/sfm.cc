@@ -33,6 +33,7 @@
 
 #include "controllers/global_pipeline.h"
 #include "controllers/rotation_averaging.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "estimators/view_graph_calibration.h"
 
 #include <boost/property_tree/json_parser.hpp>
@@ -369,6 +370,18 @@ int RunColorExtractor(int argc, char** argv) {
 
 namespace {
 
+std::pair<std::vector<image_t>, std::vector<Eigen::Vector3d>>
+ExtractExistingImages(const Reconstruction& reconstruction) {
+  std::vector<image_t> fixed_image_ids = reconstruction.RegImageIds();
+  std::vector<Eigen::Vector3d> orig_fixed_image_positions;
+  orig_fixed_image_positions.reserve(fixed_image_ids.size());
+  for (const image_t image_id : fixed_image_ids) {
+    orig_fixed_image_positions.push_back(
+        reconstruction.Image(image_id).ProjectionCenter());
+  }
+  return {std::move(fixed_image_ids), std::move(orig_fixed_image_positions)};
+}
+
 void UpdateDatabasePosePriorsCovariance(
     const std::filesystem::path& database_path,
     const Eigen::Matrix3d& covariance) {
@@ -398,8 +411,18 @@ bool RunIncrementalMapperImpl(
     std::function<void()> initial_image_pair_callback,
     std::function<void()> next_image_callback,
     std::function<bool()> check_if_stopped) {
+  // If fix_existing_frames is enabled, we store the initial positions of
+  // existing images in order to transform them back to the original coordinate
+  // frame, as the reconstruction is normalized multiple times for numerical
+  // stability.
+  std::vector<Eigen::Vector3d> orig_fixed_image_positions;
+  std::vector<image_t> fixed_image_ids;
   const bool exists_input_reconstruction =
       reconstruction_manager->Size() > 0;
+  if (mapper_options->fix_existing_frames && exists_input_reconstruction) {
+    std::tie(fixed_image_ids, orig_fixed_image_positions) =
+        ExtractExistingImages(reconstruction_manager->Get(0));
+  }
 
   IncrementalPipeline mapper(mapper_options.get(), image_path,
                                      database_path,
@@ -453,7 +476,32 @@ bool RunIncrementalMapperImpl(
   // In case the reconstruction is continued from an existing reconstruction,
   // do not create sub-folders but directly write the results.
   if (exists_input_reconstruction) {
-    reconstruction_manager->Get(0).Write(output_path);
+    auto& reconstruction = reconstruction_manager->Get(0);
+
+    // Transform the final reconstruction back to the original coordinate frame.
+    if (mapper_options->fix_existing_frames) {
+      if (fixed_image_ids.size() < 3) {
+        LOG(WARNING) << "Too few images to transform the reconstruction.";
+      } else {
+        std::vector<Eigen::Vector3d> new_fixed_image_positions;
+        new_fixed_image_positions.reserve(fixed_image_ids.size());
+        for (const image_t image_id : fixed_image_ids) {
+          new_fixed_image_positions.push_back(
+              reconstruction.Image(image_id).ProjectionCenter());
+        }
+        Sim3d orig_from_new;
+        if (EstimateSim3d(new_fixed_image_positions,
+                          orig_fixed_image_positions,
+                          orig_from_new)) {
+          reconstruction.Transform(orig_from_new);
+        } else {
+          LOG(WARNING) << "Failed to transform the reconstruction back "
+                          "to the input coordinate frame.";
+        }
+      }
+    }
+
+    reconstruction.Write(output_path);
   }
 
   return true;
@@ -491,6 +539,14 @@ int RunMapper(int argc, char** argv) {
                                 output_path, options.mapper,
                                 reconstruction_manager)) {
     return EXIT_FAILURE;
+  }
+
+  if (input_path.empty()) {
+    for (size_t i = 0; i < reconstruction_manager->Size(); ++i) {
+      const auto reconstruction_path =
+          std::filesystem::path(output_path) / std::to_string(i);
+      options.Write(reconstruction_path / "project.ini");
+    }
   }
 
   return EXIT_SUCCESS;

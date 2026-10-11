@@ -351,13 +351,44 @@ std::shared_ptr<DatabaseCache> DatabaseCache::CreateFromCache(
     auto cache = std::make_shared<DatabaseCache>();
 
     // Collect candidate image ids matching the name filter.
-    FlatHashSet<image_t> load_image_ids;
+    // Empty image_names means use all images.
+    FlatHashSet<image_t> candidate_image_ids;
     for (const auto& [image_id, image] : database_cache.Images()) {
         if (options.image_names.empty() ||
             options.image_names.count(image.Name()) > 0) {
-            load_image_ids.insert(image_id);
+            candidate_image_ids.insert(image_id);
         }
     }
+
+    const auto source_graph = database_cache.CorrespondenceGraph();
+
+    // Upstream parity (a2bd15c2): unless load_all_images is set, only images
+    // that participate in at least one valid pair among the candidates are
+    // loaded, matching the Load() semantics.
+    FlatHashSet<image_t> connected_image_ids;
+    if (!options.load_all_images) {
+        for (const auto& [pair_id, num_matches] :
+             source_graph->NumMatchesBetweenAllImages()) {
+            const auto [image_id1, image_id2] =
+                Database::PairIdToImagePair(pair_id);
+            if (candidate_image_ids.count(image_id1) == 0 ||
+                candidate_image_ids.count(image_id2) == 0) {
+                continue;
+            }
+            const TwoViewGeometry two_view_geometry =
+                source_graph->ExtractTwoViewGeometry(
+                    image_id1, image_id2, /*extract_inlier_matches=*/false);
+            if (!UseInlierMatchesCheck(options, two_view_geometry.config,
+                                       num_matches)) {
+                continue;
+            }
+            connected_image_ids.insert(image_id1);
+            connected_image_ids.insert(image_id2);
+        }
+    }
+
+    const FlatHashSet<image_t>& load_image_ids =
+        options.load_all_images ? candidate_image_ids : connected_image_ids;
 
     // Copy all images of filtered frames (not just the images matching the
     // name filter). This is needed for multi-camera rigs where the
@@ -416,7 +447,6 @@ std::shared_ptr<DatabaseCache> DatabaseCache::CreateFromCache(
     }
 
     // Copy correspondences between all image pairs in the cache.
-    const auto source_graph = database_cache.CorrespondenceGraph();
     for (const image_pair_t pair_id : source_graph->ImagePairs()) {
         const auto [image_id1, image_id2] =
             Database::PairIdToImagePair(pair_id);

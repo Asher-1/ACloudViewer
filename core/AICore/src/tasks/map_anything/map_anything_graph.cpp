@@ -168,11 +168,11 @@ void build_dpt_uv_embed(int Hp, int Wp, int oc, std::vector<float>& out) {
 }
 
 // Upstream-parity node naming. The map-anything-ggml reference runs on
-// pristine ggml; the ACloudViewer ggml chain carries CUDA precision overrides
-// (RMBG F32-direct F16 GEMM output, the SAM3 2x2/s2 conv_transpose cuBLAS
-// fast path, the cuBLAS route for small-N F32 GEMMs, the sam3d precise-math
-// SiLU) that perturb every stage from the patch embed onward. The CUDA
-// backend keeps the pristine kernel selection for nodes whose name starts
+// pristine ggml + its own k==s CUDA kernel (part A); our chain carries
+// overrides (RMBG F32-direct F16 GEMM output, the SAM3 2x2/s2 conv_transpose
+// cuBLAS fast path, the cuBLAS route for small-N F32 GEMMs, the sam3d
+// precise-math SiLU) that perturb every stage from the patch embed onward. The
+// CUDA backend keeps the pristine kernel selection for nodes whose name starts
 // with "mapany_" (ggml_cuda_mapany_pristine_node, map_anything_merged/0001),
 // so every mul_mat / conv_transpose / SiLU output built here must carry that
 // prefix. The Vulkan backend does the same for its flash-attention and

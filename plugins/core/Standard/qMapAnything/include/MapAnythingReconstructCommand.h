@@ -45,6 +45,7 @@
 #include <vector>
 
 #include "MapAnythingReconstruction.h"
+#include "MapAnythingSceneMeta.h"
 #include "ecvAICoreBatchCommand.h"
 #endif  // AICore_ENABLED
 
@@ -83,6 +84,13 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
                  "Optional debug graph-stage tensor directory"},
                 {"GT_META", "path", "",
                  "Optional metric benchmark camera metadata"},
+                {"REF_IMAGES_PATH", "path", "",
+                 "Optional known camera positions, COLMAP model_aligner "
+                 "text: '<image_name> X Y Z' per line"},
+                {"REF_IS_GPS", "bool", "",
+                 "Required with REF_IMAGES_PATH: 1 = WGS84 lat lon alt (to "
+                 "local ENU, model_aligner --alignment_type enu), 0 = "
+                 "cartesian X Y Z"},
                 {"MAX_FRAMES_PER_PASS", "int", "64",
                  "Views per forward before overlap-aligned chunking"},
         };
@@ -111,9 +119,11 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
         bool perView = false;   // PER_VIEW 1: one PLY per input view (large)
         QString cloudPly = QStringLiteral("map_anything_cloud.ply");
         QString resultJson;
-        QString rawOutputDir;  // RAW_OUTPUT_DIR: parity tensors/camera exports
-        QString stageDumpDir;  // STAGE_DUMP_DIR: debug graph stage tensors
-        QString gtMetaPath;    // GT_META: optional benchmark metric anchor
+        QString rawOutputDir;   // RAW_OUTPUT_DIR: parity tensors/camera exports
+        QString stageDumpDir;   // STAGE_DUMP_DIR: debug graph stage tensors
+        QString gtMetaPath;     // GT_META: optional benchmark metric anchor
+        QString refImagesPath;  // REF_IMAGES_PATH: user model_aligner file
+        QString refIsGpsToken;  // REF_IS_GPS: required with REF_IMAGES_PATH
         int threads = 0;
         int maxFramesPerPass = 64;  // same default as the GUI worker
 
@@ -156,6 +166,10 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
                 stageDumpDir = take();
             } else if (token == QStringLiteral("GT_META")) {
                 gtMetaPath = take();
+            } else if (token == QStringLiteral("REF_IMAGES_PATH")) {
+                refImagesPath = take();
+            } else if (token == QStringLiteral("REF_IS_GPS")) {
+                refIsGpsToken = take();
             } else if (token == QStringLiteral("MAX_FRAMES_PER_PASS")) {
                 maxFramesPerPass = take().toInt();
                 if (maxFramesPerPass < 2) {
@@ -206,6 +220,49 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
         if (!gtMetaPath.isEmpty() && QFileInfo(gtMetaPath).isRelative()) {
             gtMetaPath = QDir(outputDir).filePath(gtMetaPath);
         }
+        if (!refImagesPath.isEmpty() && QFileInfo(refImagesPath).isRelative()) {
+            refImagesPath = QDir(outputDir).filePath(refImagesPath);
+        }
+
+        // ---- reference cameras (read before the model: fail fast) ---------
+        // Same readers as the GUI worker. REF_IS_GPS has no default: COLMAP
+        // defaults --ref_is_gps to 1 (and ECEF), so silently assuming either
+        // value would misread a file copied from a COLMAP command line.
+        MapAnythingSceneMeta::ReferenceCenters reference;
+        bool refIsGps = false;
+        if (!refImagesPath.isEmpty()) {
+            if (!gtMetaPath.isEmpty()) {
+                return cmd.error(QObject::tr(
+                        "GT_META and REF_IMAGES_PATH are exclusive: give "
+                        "one reference frame"));
+            }
+            if (!ecvAICoreBatch::parseBool(refIsGpsToken, &refIsGps)) {
+                return cmd.error(QObject::tr(
+                        "REF_IMAGES_PATH needs REF_IS_GPS 0 (cartesian X Y "
+                        "Z) or 1 (WGS84 lat lon alt)"));
+            }
+            QString refError;
+            if (!MapAnythingSceneMeta::loadColmapReferences(
+                        refImagesPath, images, refIsGps, &reference,
+                        &refError)) {
+                return cmd.error(QObject::tr("Cannot use REF_IMAGES_PATH: %1")
+                                         .arg(refError));
+            }
+        } else if (!refIsGpsToken.isEmpty()) {
+            return cmd.error(QObject::tr("REF_IS_GPS needs REF_IMAGES_PATH"));
+        } else if (!gtMetaPath.isEmpty()) {
+            QString metaError;
+            if (!MapAnythingSceneMeta::loadCenters(
+                        gtMetaPath, images, &reference.centers, &metaError)) {
+                return cmd.error(
+                        QObject::tr("Cannot read GT_META: %1").arg(metaError));
+            }
+        }
+        const bool shifted = reference.offset[0] != 0.0 ||
+                             reference.offset[1] != 0.0 ||
+                             reference.offset[2] != 0.0;
+        // PLYs carry true coordinates in double when the frame is large.
+        const double* plyOffset = shifted ? reference.offset : nullptr;
 
         // ---- model resolution ----------------------------------------------
 
@@ -432,68 +489,24 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
             }
         }
 
-        // Optional benchmark-only metric anchor. Model outputs remain in
-        // their native learned frame by default; a 2 cm voxel is meaningful
-        // only after a caller supplies metric reference camera centers.
-        bool hasGtAlignment = false;
-        MapAnythingGeometry::Sim3 gt;
-        if (!gtMetaPath.isEmpty()) {
-            QFile metaFile(gtMetaPath);
-            if (!metaFile.open(QIODevice::ReadOnly)) {
+        // Optional reference frame. Model outputs remain in their native
+        // learned frame by default; a 2 cm voxel is meaningful only after a
+        // caller supplies metric reference camera centers. Same anchor as
+        // the GUI worker.
+        const QString referencePath =
+                !refImagesPath.isEmpty() ? refImagesPath : gtMetaPath;
+        bool anchored = false;
+        MapAnythingReconstruction::ReferenceAnchor anchor;
+        if (!referencePath.isEmpty()) {
+            std::string anchorError;
+            if (!MapAnythingReconstruction::anchor_to_reference(
+                        rec, reference.centers, &anchor, &anchorError)) {
                 return cmd.error(
-                        QObject::tr("Cannot read GT_META: %1").arg(gtMetaPath));
+                        QObject::tr("Reference-frame anchor (%1): %2")
+                                .arg(referencePath,
+                                     QString::fromStdString(anchorError)));
             }
-            const QJsonDocument metaDoc =
-                    QJsonDocument::fromJson(metaFile.readAll());
-            const QJsonArray frames =
-                    metaDoc.object().value("frames").toArray();
-            QHash<QString, QVector<float>> gtCenters;
-            for (const QJsonValue& value : frames) {
-                const QJsonObject frame = value.toObject();
-                const QJsonArray matrix =
-                        frame.value("transform_matrix").toArray();
-                if (matrix.size() < 3) continue;
-                QVector<float> center(3);
-                bool valid = true;
-                for (int r = 0; r < 3; ++r) {
-                    const QJsonArray row = matrix[r].toArray();
-                    if (row.size() < 4) {
-                        valid = false;
-                        break;
-                    }
-                    center[r] = static_cast<float>(row[3].toDouble());
-                }
-                if (valid)
-                    gtCenters.insert(frame.value("frame_name").toString(),
-                                     center);
-            }
-            // Camera centers from the driver's global-frame c2w (the
-            // translation column), so streamed and single-pass runs anchor
-            // identically and pi3-family poses count too.
-            std::vector<float> sourceCenters, targetCenters;
-            for (int v = 0; v < rec.views; ++v) {
-                const QVector<float> target = gtCenters.value(
-                        QFileInfo(images[v]).completeBaseName());
-                const float* M = rec.c2w.data() + (size_t)v * 16;
-                if (target.size() != 3 || !std::isfinite(M[3]) ||
-                    !std::isfinite(M[7]) || !std::isfinite(M[11])) {
-                    continue;
-                }
-                for (int r = 0; r < 3; ++r) {
-                    sourceCenters.push_back(M[r * 4 + 3]);
-                    targetCenters.push_back(target[r]);
-                }
-            }
-            if (sourceCenters.size() < 9 ||
-                MapAnythingGeometry::robust_sim3(
-                        sourceCenters.data(), targetCenters.data(),
-                        sourceCenters.size() / 3, &gt.s, gt.R, gt.t) != 0) {
-                return cmd.error(QObject::tr("GT_META has insufficient usable "
-                                             "camera centers: %1")
-                                         .arg(gtMetaPath));
-            }
-            MapAnythingReconstruction::transform_result(rec, gt);
-            hasGtAlignment = true;
+            anchored = true;
         }
 
         // ---- scene-wide official filter stack (shared with the GUI) --------
@@ -503,7 +516,7 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
         const MapAnythingReconstruction::FilterReport fr =
                 MapAnythingReconstruction::filter_scene(
                         cloud, rec.architecture, fo,
-                        hasGtAlignment || rec.hasMetricScale);
+                        anchored || rec.hasMetricScale);
         if (!fr.ok) {
             return cmd.error(QObject::tr("Scene filter: %1")
                                      .arg(QString::fromStdString(fr.rule)));
@@ -523,7 +536,7 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
         const QString plyPath = QDir(outputDir).absoluteFilePath(cloudPly);
         if (!MapAnythingReconstruction::write_ply(
                     plyPath.toStdString(), cloud,
-                    fr.voxelApplied ? &fr.fused : nullptr)) {
+                    fr.voxelApplied ? &fr.fused : nullptr, plyOffset)) {
             return cmd.error(QObject::tr("Cannot write %1").arg(plyPath));
         }
 
@@ -574,15 +587,41 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
                 { "voxel",
                   fr.voxelApplied ? QJsonValue(fo.voxelSize) : QJsonValue() }};
         if (!stageDumpDir.isEmpty()) report["stage_dump_dir"] = stageDumpDir;
-        if (hasGtAlignment) {
-            report["gt_meta"] = gtMetaPath;
+        if (anchored) {
+            const MapAnythingGeometry::Sim3& gt = anchor.sim3;
             QJsonArray rot, trans;
             for (float v : gt.R) rot.append(v);
             for (float v : gt.t) trans.append(v);
-            report["gt_sim3"] = QJsonObject{{"scale", gt.s},
-                                            {"rotation", rot},
-                                            { "translation",
-                                              trans }};
+            const QJsonObject sim3{
+                    {"scale", gt.s},
+                    {"rotation", rot},
+                    {"translation", trans},
+                    {"cameras", anchor.pairs},
+                    {"center_residual_median", anchor.residualMedian},
+                    { "cross_spread",
+                      anchor.crossSpread }};
+            if (refImagesPath.isEmpty()) {
+                report["gt_meta"] = gtMetaPath;
+                report["gt_sim3"] = sim3;
+            } else {
+                // Translation is in the local frame: true = local + offset.
+                QJsonObject ref = sim3;
+                ref["path"] = refImagesPath;
+                ref["coordinates"] = refIsGps ? QStringLiteral("gps_enu")
+                                              : QStringLiteral("xyz");
+                ref["matched_images"] = reference.matched;
+                ref["offset"] =
+                        QJsonArray{reference.offset[0], reference.offset[1],
+                                   reference.offset[2]};
+                if (refIsGps) {
+                    ref["enu_origin_lat_lon_alt"] = QJsonArray{
+                            reference.enuOrigin[0], reference.enuOrigin[1],
+                            reference.enuOrigin[2]};
+                }
+                report["reference_sim3"] = ref;
+            }
+            report["ply_xyz"] = shifted ? QStringLiteral("double")
+                                        : QStringLiteral("float");
         }
         if (rec.hasMetricScale) report["metric_scale"] = rec.metricScale;
         if (!rec.textEmbedding.empty()) {
@@ -617,8 +656,8 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
                 }
                 const QString vp = QDir(outputDir).absoluteFilePath(
                         QStringLiteral("map_anything_view_%1.ply").arg(v + 1));
-                if (!MapAnythingReconstruction::write_ply(vp.toStdString(),
-                                                          cloud, &idx)) {
+                if (!MapAnythingReconstruction::write_ply(
+                            vp.toStdString(), cloud, &idx, plyOffset)) {
                     return cmd.error(QObject::tr("Cannot write %1").arg(vp));
                 }
                 perViewList.append(vp);

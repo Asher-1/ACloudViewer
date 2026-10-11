@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "MapAnythingReconstructCommand.h"
+#include "MapAnythingSceneMeta.h"
 #include "aicore/inference_log.h"
 #include "ecvPersistentSettings.h"
 
@@ -345,6 +346,23 @@ void qMapAnything::executeTask(const MapAnythingDialog::Settings& settings) {
     ws.addPerViewClouds = workerSettings.addPerViewClouds;
     ws.responsiveStreaming = workerSettings.responsiveStreaming;
     ws.minConf = workerSettings.minConf;
+    if (!workerSettings.refImagesPath.isEmpty()) {
+        // The user's own camera positions (model_aligner text). Names are
+        // matched against the resolved paths, so DB-staged copies (random
+        // file names) are not matched and fail the run loudly.
+        ws.refImagesPath = workerSettings.refImagesPath;
+        ws.refIsGps = workerSettings.refIsGps;
+    } else if (workerSettings.anchorToReferenceFrame) {
+        // Resolved paths: DB-staged copies never sit in a benchmark scene.
+        ws.gtMetaPath = MapAnythingSceneMeta::discover(ws.imagePaths);
+        if (ws.gtMetaPath.isEmpty()) {
+            m_dialog->appendLog(
+                    tr("[MapAnything] Not a benchmark scene (no "
+                       "scene_meta.json beside images/) and no reference "
+                       "cameras file: the result keeps the model's official "
+                       "output frame and unit."));
+        }
+    }
 
     m_worker = new MapAnythingWorker(ws, this);
     connect(m_worker, &MapAnythingWorker::logMessage, m_dialog,
@@ -437,6 +455,13 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
         rootGroup->addChild(perViewFolder);
 
         dbStage = QStringLiteral("merged cloud");
+        // Reference frames with large coordinates (UTM, ECEF...): the
+        // entities hold local floats, the clouds carry the offset as their
+        // global shift (local = global + shift), so picking, measurement
+        // and export see the true coordinates.
+        const CCVector3d globalShift(-result.referenceOffset[0],
+                                     -result.referenceOffset[1],
+                                     -result.referenceOffset[2]);
         if (result.pointCount > 0) {
             const QString name = ecvPluginDbNaming::makeUnique(
                     QStringLiteral("MapAnything_%1_%2")
@@ -468,6 +493,15 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
                         static_cast<double>(m_currentSettings.minConf));
                 cloud->setMetaData(QStringLiteral("Runtime (ms)"),
                                    result.e2eMs);
+                cloud->setGlobalShift(globalShift);
+                if (!result.referenceFrame.isEmpty()) {
+                    cloud->setMetaData(
+                            QStringLiteral("MapAnything/ReferenceFrame"),
+                            result.referenceFrame);
+                    cloud->setMetaData(
+                            QStringLiteral("MapAnything/ReferenceScale"),
+                            static_cast<double>(result.referenceScale));
+                }
                 if (result.hasMetricScale) {
                     // mapanything only: multiply the local geometry by this to
                     // obtain metric units.
@@ -654,6 +688,7 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
             cloud->setMetaData(QStringLiteral("MapAnything"), true);
             cloud->setMetaData(QStringLiteral("MapAnything/View"),
                                static_cast<qlonglong>(i + 1));
+            cloud->setGlobalShift(globalShift);
             perViewFolder->addChild(cloud);
         }
 

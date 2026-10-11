@@ -104,12 +104,12 @@ public:
         // List of rigs for which to fix the sensor_from_rig transformation,
         // independent of ba_refine_sensor_from_rig (upstream d3ccaf35,
         // named fix_existing_frames there).
-        NodeHashSet<rig_t> constant_rigs;
+        FlatHashSet<rig_t> constant_rigs;
 
         // List of cameras for which to fix the camera parameters independent
         // of refine_focal_length, refine_principal_point, and
         // refine_extra_params (upstream d3ccaf35 parity).
-        NodeHashSet<camera_t> constant_cameras;
+        FlatHashSet<camera_t> constant_cameras;
 
         // If enabled, redundant 3D points are (temporally) excluded from the
         // global bundle adjustment and only used to compute their reprojection
@@ -247,7 +247,7 @@ public:
             const BundleAdjustmentOptions& ba_options,
             const IncrementalTriangulator::Options& tri_options,
             const image_t image_id,
-            const NodeHashSet<point3D_t>& point3D_ids);
+            const FlatHashSet<point3D_t>& point3D_ids);
 
     // Global bundle adjustment with the configured backend.
     bool AdjustGlobalBundle(const Options& options,
@@ -293,9 +293,9 @@ public:
     // keeps the fork's GetReconstruction name for API compatibility).
     class ObservationManager& ObservationManager() const;
     IncrementalTriangulator& Triangulator() const;
-    const NodeHashSet<frame_t>& FilteredFrames() const;
-    const NodeHashSet<frame_t>& ExistingFrameIds() const;
-    const NodeHashMap<camera_t, size_t>& NumRegImagesPerCamera() const;
+    const FlatHashSet<frame_t>& FilteredFrames() const;
+    const FlatHashSet<frame_t>& ExistingFrameIds() const;
+    const FlatHashMap<camera_t, size_t>& NumRegImagesPerCamera() const;
 
     // Number of images that are registered in at least on reconstruction.
     size_t NumTotalRegImages() const;
@@ -305,14 +305,14 @@ public:
     size_t NumSharedRegImages() const;
 
     // Number of registered frames per rig (upstream parity, d3ccaf35).
-    const NodeHashMap<rig_t, size_t>& NumRegFramesPerRig() const;
+    const FlatHashMap<rig_t, size_t>& NumRegFramesPerRig() const;
 
     // Upstream parity (d3ccaf35 sfm/incremental_mapper.h): clear the
     // initialization statistics (initial pairs and registration trials).
     void ResetInitializationStats();
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
-    const NodeHashSet<point3D_t>& GetModifiedPoints3D();
+    const FlatHashSet<point3D_t>& GetModifiedPoints3D();
 
     // Clear the collection of changed 3D points.
     void ClearModifiedPoints3D();
@@ -346,23 +346,23 @@ private:
 
         // Images and image pairs that have been used for initialization.
         // Each image and image pair is only tried once for initialization.
-        NodeHashMap<image_t, size_t> init_num_reg_trials;
-        NodeHashSet<image_pair_t> init_image_pairs;
+        FlatHashMap<image_t, size_t> init_num_reg_trials;
+        FlatHashSet<image_pair_t> init_image_pairs;
 
         // The number of registered frames/images per rig/camera. Used to
         // avoid duplicate refinement of rig/camera parameters and degradation
         // of already refined parameters in local bundle adjustment when
         // multiple frames share rigs or images share intrinsics.
-        NodeHashMap<rig_t, size_t> num_reg_frames_per_rig;
-        NodeHashMap<camera_t, size_t> num_reg_images_per_camera;
+        FlatHashMap<rig_t, size_t> num_reg_frames_per_rig;
+        FlatHashMap<camera_t, size_t> num_reg_images_per_camera;
 
         // The number of reconstructions in which images are registered.
-        NodeHashMap<image_t, size_t> num_registrations;
+        FlatHashMap<image_t, size_t> num_registrations;
 
         // Number of trials to register image in current reconstruction. Used
         // to set an upper bound to the number of trials to register an image.
-        NodeHashMap<image_t, size_t> num_reg_trials;
-        NodeHashMap<image_t, size_t> num_structure_less_reg_trials;
+        FlatHashMap<image_t, size_t> num_reg_trials;
+        FlatHashMap<image_t, size_t> num_structure_less_reg_trials;
     };
 
     // Class that holds all necessary data from database in memory.
@@ -382,12 +382,12 @@ private:
     RegistrationStatistics reg_stats_;
 
     // Frames that have been filtered in current reconstruction.
-    NodeHashSet<frame_t> filtered_frames_;
+    FlatHashSet<frame_t> filtered_frames_;
 
     // Frames that were registered before beginning the reconstruction.
     // This frame list will be non-empty, if the reconstruction is continued
     // from an existing reconstruction.
-    NodeHashSet<frame_t> existing_frame_ids_;
+    FlatHashSet<frame_t> existing_frame_ids_;
 };
 
 }  // namespace colmap

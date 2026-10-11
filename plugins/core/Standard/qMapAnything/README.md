@@ -51,7 +51,126 @@ into the shared cache root:
 
 The first run downloads (scenes are 224 MB – 1.6 GB); later runs load the
 cached scene instantly. After loading, the dialog fills the multi-view
-input list (capped at 16 views) and `Run` starts the reconstruction.
+input list (capped at 64 views) and `Run` starts the reconstruction.
+
+## Output frame
+
+No reference file is needed. Images alone determine the relative camera
+poses and the scene shape; they cannot determine where the world origin is
+or which way it faces. A scale-free model cannot determine the scale
+either (VGGT authors, facebookresearch/vggt#56: normalised training by
+design). Every family therefore outputs the frame its official release
+outputs, and AICore is bit-exact with upstream cpp_ggml there:
+
+| Family | Origin / orientation (official) | Unit |
+|---|---|---|
+| vggt, vggt-1b, vggt-omega | first camera = identity (VGGT paper, GT normalisation) | normalised (training GT scaled to mean point distance 1) |
+| mapanything | view 0 (`model.py`: "poses in the frame of the reference view 0") | metric (`metric_scaling_factor`) |
+| dust3r | view 1 | scale-free |
+| pi3 | reference-free: poses in a learned frame, view 0 is NOT identity (official README; the first-view re-expression in `demo_gradio.py` is commented out) | scale-free |
+| pi3x | as pi3 | approximate metric (official README) |
+
+Chunked runs express every chunk in chunk 0's frame. Measured on the
+courtyard (38 views, CUDA, budget 64; mapanything / pi3x / vggt-1b ran as
+19-view chunks), as the Sim3 scale needed to reach the metric GT frame:
+vggt-omega-1b-512-f16 11.34, vggt-1b-q8_0 8.64 (normalised units),
+mapanything-q8_0 0.915 and pi3x-q8_0 1.42 (metric models; 1.0 would be
+exact). Between chunks the boundary Sim3 scale is 1.03 for mapanything but
+2.37 for pi3x, so on this scene pi3x's "approximate metric" is per pass, not consistent
+across passes. pi3x camera 0 on the sacre_coeur pair is a general rotation
+(R00 = -0.64), as the reference-free design predicts.
+
+Placing the result in an external world (geodetic, site survey, a
+benchmark GT) needs external correspondences, the same as COLMAP's
+`model_aligner` (>= 3 known camera centers, Sim3). The plugin reads two such
+sources, both through `MapAnythingReconstruction::anchor_to_reference`: the
+WAI `scene_meta.json` of the benchmark scenes (below), and your own camera
+positions in the `model_aligner` text format (see *Your own camera
+positions*). The benchmark file comes first because the upstream
+map-anything-ggml e2e point clouds are expressed in it:
+
+The upstream e2e point clouds
+(`benchmarks/results/*/e2e_*/*.ply`, `scripts/e2e_full_scene.py` default
+`--align gt`) are NOT in the model frame: they are moved by one robust Horn Sim3
+from the predicted camera centers to the benchmark GT centers of
+`scene_meta.json` (courtyard: scale 11.34, metres). Overlaying an upstream PLY
+on a model-frame result therefore shows a rotated, ~11x smaller copy with
+identical inference underneath.
+
+When every input sits in one `<scene>/images/` directory next to
+`<scene>/scene_meta.json` (the WAI layout of the test scenes) and *Anchor to
+the benchmark frame* is checked (default), the dialog applies that same Sim3
+(`MapAnythingReconstruction::anchor_to_reference`, numpy-median robust Horn,
+2 iterations) to the cloud and the cameras, which also enables the 2 cm
+conf-priority voxel. Headless runs take the file explicitly (`GT_META`);
+inputs without a `scene_meta.json` stay in the official model frame above
+(with the 2 cm voxel only for the metric families). Measured
+(courtyard, 38 views, vggt-omega-1b-512-f16, CUDA): Sim3 scale 11.3405
+(numpy upstream `robust_sim3` on the same cameras: 11.340496), 4,794,314
+points vs upstream `cpp_f16single_global_38f.ply` 4,818,539, extent
+25.81 x 23.48 x 18.66 vs 25.79 x 23.48 x 18.68 m, nearest-neighbour distance to
+the upstream cloud median 1.15 cm / p95 2.29 cm (2 cm voxel; upstream's own
+cpp-vs-torch median is 1.54 cm). Without the anchor: extent 1.9 x 1.9 x
+2.3, median distance 0.25 m.
+
+All 13 *Use test data* zips ship `<scene>/scene_meta.json` beside
+`<scene>/images/` (checked against every release zip's central directory;
+each zip is SHA-256 pinned in `aicore/asset_digests.h`), so the benchmark
+anchor works on any machine that downloads them. Inputs without the file are
+not an error: they keep the official model frame.
+
+### Your own camera positions
+
+To put your own images in a real-world frame (GPS, a total-station survey,
+UTM / national-grid coordinates, a lab frame), give the known camera
+positions as the text file COLMAP's `model_aligner --ref_images_path` takes
+(a file prepared for COLMAP geo-registration works unchanged):
+
+```text
+# image_name X Y Z            (lines starting with '#' are skipped)
+DSC_0286.JPG 3.2501 -1.7002 1.5234
+seq1/DSC_0287.JPG 3.9102 -1.6511 1.5310
+```
+
+- GUI: *Reference cameras* (file + `X Y Z` / `GPS lat lon alt`); it wins
+  over a benchmark `scene_meta.json`. Headless: `REF_IMAGES_PATH` +
+  `REF_IS_GPS 0|1` (required: COLMAP defaults `--ref_is_gps` to 1, so no
+  value is assumed; exclusive with `GT_META`; relative paths resolve against
+  `OUT_DIR` like `GT_META`). JSON-RPC: `ref_images_path`, `ref_is_gps`.
+- `image_name` is matched against the input file path: the file name or a
+  trailing part of it. Lines naming no input are ignored (as in COLMAP); a
+  name matching two inputs, an input named twice, a malformed line or fewer
+  than 3 matched inputs fail the run before the model loads. DB-imported
+  images are staged under random names and are not matched.
+- `GPS lat lon alt`: WGS84 degrees / metres, converted to local
+  East-North-Up metres about the file's first line, exactly
+  `model_aligner --ref_is_gps 1 --alignment_type enu`.
+- Large cartesian coordinates (any axis of the first line >= 1e4) are
+  stored relative to that value truncated to hundreds
+  (`ecvGlobalShiftManager::BestShift`); the DB clouds carry it as their
+  global shift and the headless PLY switches to double xyz, so nothing is
+  lost to float (whose spacing at x = 500000 / y = 4100000 is 3.1 cm /
+  25 cm).
+- The Sim3 is refused when the centers are (nearly) collinear: their spread
+  across the main axis must exceed the median fit residual, otherwise the
+  rotation about a straight camera path is noise. Benchmark scenes have
+  0.29-2.6 m of such spread.
+
+Measured (meadow, 15 views, vggt-omega-1b-512-q8_0, CUDA; references taken
+from the scene's GT centers):
+
+| Reference file | Result |
+|---|---|
+| `X Y Z` = GT centers | PLY byte-identical to the `GT_META` run |
+| `X Y Z` + (500000.12, 4100000.46, 250) | per-view clouds = `GT_META` + shift within 3.4e-5 m; double PLY |
+| GPS lat/lon/alt of the same centers | per-view clouds = `GT_META` - first center within 2.9e-6 m |
+| all three, GUI worker vs headless | byte-identical |
+| COLMAP 4.3 `model_aligner` on the same model-frame cameras (`custom` and `--ref_is_gps 1 --alignment_type enu`) | camera centers within 1.29 cm median / 3.66 cm max of ours; residual to the references 5.37 cm (COLMAP) vs 5.28 cm (ours) |
+
+The fused cloud's 2 cm voxel grid is anchored at the frame origin, so a
+frame moved by a non-multiple of 2 cm (the ENU origin above) fuses slightly
+different survivors (1,567,409 vs 1,566,693 points); the hundreds-truncated
+offset keeps the grid aligned with your own frame.
 
 ## Model cache
 
@@ -91,8 +210,9 @@ per-pixel Sim3 into chunk 0's frame.
 
 Scene composition is not a bit-exact upstream contract (only the forward
 is). Upstream `scripts/e2e_full_scene.py` defaults to `--align gt`, which
-anchors each chunk to benchmark GT camera centers an application does not
-have; its legacy `--align chain` fits chunk i to chunk i-1's *unaligned*
+anchors each chunk independently to benchmark GT camera centers (available
+only for benchmark scenes; the driver anchors the composed scene once, see
+*Output frame*); its legacy `--align chain` fits chunk i to chunk i-1's *unaligned*
 points and never composes the transforms, so chunks >= 2 land in the wrong
 frame. The driver instead fits each chunk to the already-aligned copy of its
 shared frames (same robust Horn Sim3, median + 3 MAD, 2 iterations), i.e. the
@@ -148,12 +268,33 @@ Release matrix: `validate_all.py --full --tasks map_anything --reference
 map_anything_ggml=<map-anything-ggml checkout>` runs the `frames` gate for
 every published GGUF (36 rows) on the selected backend. Measured on RTX 4090
 (driver 580.95.05): CPU, CUDA and Vulkan each 36/36 with max |diff| 0 on every
-typed output. Metal is not measured (no macOS host) and bit-parity is **not**
+typed output (CUDA / Vulkan re-measured on revision 601806861b). Metal is not measured (no macOS host) and bit-parity is **not**
 claimed: statically, part C only adds the batch index to the downstream
 `metal_merged/0001` conv_transpose_2d kernel, whose IC-parallel tree reduction
 sums in a different order than pristine v0.24.0 (`kernels/conv.metal`: IC
 sequential per (kh, kw) thread, then serial across threads), and the Metal
 backend itself differs between v0.21.0 and v0.24.0.
+
+The gate runs S = 3 views. At larger S (`--views 16`, 10 models) CUDA and
+Vulkan are bit-exact too. Before `map_anything_merged/0001` part E, CUDA
+pi3x diverged from S = 7 on (S <= 6 exact; S = 8 max_diff 3.40e-3, S = 16
+4.37e-4: metric scale 0.3055448 vs 0.3055266, inherited by every depth /
+point / translation). Stage dumps put the first difference at
+`mtdec.blocks.0_sdpa` with bit-identical q / roped k inputs: the metric
+branch's single-query cross attention (`flash_attn_ext_f16<64,64,8,1>`,
+KV = 967*S), launched stream-k with grid `min(blocks_per_sm * nsm, ntiles)`.
+The v0.21 kernel compiles to 127 registers / 20608 B shared (4 blocks/SM),
+the v0.24 one (K/V smem swizzle) to 130 / 18560 B (3 blocks/SM), so the KV
+split and the fixup summation order differ (nsys, S = 7: grid 424 vs 384).
+That is a property of the kernel binary, so part E vendors the reference's
+own v0.24.0 flash-attention sources verbatim (namespace
+`ggml_cuda_mapany`, `mapany_*` FA nodes only, see the manifest note).
+Measured with it: twin instance 130 registers, pi3x S = 8 / 16 max_diff 0,
+CUDA full matrix 36/36 and S = 16 10/10 at 0; performance A/B (same host,
+interleaved, 3 rounds, p50) within +-1% at S = 2 and S = 16 for
+mapanything / pi3x / vggt-1b / vggt-omega. Upgrading ggml to 0.24.0 aborts
+configure until part E is dropped; a reference that moves its ggml fails the
+CUDA row until the twin is re-vendored (`docs/guides/ggml_upgrade_pipeline.md`).
 
 The `images` residual is entirely pre-model: AICore decodes with Qt and
 resamples with its own separable Catmull-Rom, upstream uses stb_image +

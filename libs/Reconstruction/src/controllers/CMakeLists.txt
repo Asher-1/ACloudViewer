@@ -61,6 +61,8 @@ COLMAP_ADD_TEST(single_view_calibration_test single_view_calibration_test.cc)
 # TEMP-DIAG: PRNG seed scan for the non-trivial-rig filtering variance;
 # DISABLED_ test, run manually with --gtest_also_run_disabled_tests.
 COLMAP_ADD_TEST(pipeline_rng_scan_test pipeline_rng_scan_test.cc)
+# TEMP-AUDIT: same-seed fork-vs-upstream pipeline scan (remove after audit).
+COLMAP_ADD_TEST(pipeline_seed_scan_test pipeline_seed_scan_test.cc)
 COLMAP_ADD_TEST(controllers_bundle_adjustment_test bundle_adjustment_test.cc)
 COLMAP_ADD_TEST(image_reader_test image_reader_test.cc)
 COLMAP_ADD_TEST(option_manager_test option_manager_test.cc)

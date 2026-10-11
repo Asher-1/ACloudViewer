@@ -78,6 +78,13 @@ public:
         bool addPerViewClouds = false;
         bool responsiveStreaming = false;
         float minConf = 0.5f;
+        // Use <scene>/scene_meta.json when the inputs sit in <scene>/images
+        // (MapAnythingSceneMeta::discover, resolved after DB staging).
+        bool anchorToReferenceFrame = true;
+        // Optional user reference cameras (COLMAP model_aligner text,
+        // "<image_name> X Y Z" per line); wins over scene_meta.json.
+        QString refImagesPath;
+        bool refIsGps = false;  // X Y Z are WGS84 lat lon alt
     };
 
     explicit MapAnythingDialog(QWidget* parent = nullptr);
@@ -110,6 +117,7 @@ private slots:
     void onClearImages();
     void onInputSelectionChanged();
     void onBrowseCustomModel();
+    void onBrowseReferenceCameras();
     void onUseTestData();
 
     void onModelDownloadProgress(qint64 received, qint64 total);
@@ -178,6 +186,9 @@ private:
 
     // Shared input block.
     QListWidget* m_imageList = nullptr;
+    QCheckBox* m_referenceFrameCheck = nullptr;
+    QLineEdit* m_refImagesEdit = nullptr;
+    QComboBox* m_refCoordsCombo = nullptr;  // 0 = X Y Z, 1 = GPS lat lon alt
     QPushButton* m_addImagesBtn = nullptr;
     QPushButton* m_removeImageBtn = nullptr;
     QPushButton* m_clearImagesBtn = nullptr;

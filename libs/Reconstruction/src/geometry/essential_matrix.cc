@@ -131,8 +131,13 @@ void FindOptimalImageObservations(const Eigen::Matrix3d& E,
   const double d = sqrt(b * b - a * c);
   double lambda = c / (b + d);
 
-  n1 -= E_tilde * lambda * n1;
-  n2 -= E_tilde.transpose() * lambda * n2;
+  // Upstream parity (1d7aec0f, "Fix optimal point algorithm"): each
+  // epipolar line is corrected by the step of the other image.
+  const Eigen::Vector2d delta1 = lambda * n1;
+  const Eigen::Vector2d delta2 = lambda * n2;
+
+  n1 -= E_tilde * delta2;
+  n2 -= E_tilde.transpose() * delta1;
 
   lambda *= (2.0 * d) / (n1.squaredNorm() + n2.squaredNorm());
 
@@ -331,6 +336,24 @@ double ComputeSquaredSampsonError(const Eigen::Vector3d& point1,
     return std::numeric_limits<double>::max();
   }
   return num * num / denom_sq_norm;
+}
+
+// Upstream parity (a2bd15c2): the 2D overload homogenizes the points and
+// reuses the single-point error, so both overloads share the operand order
+// and the zero-denominator guard. The fork previously kept a separate
+// expanded formula in estimators/utils.cc whose different summation order
+// perturbed RANSAC scores in the last bits.
+void ComputeSquaredSampsonError(const std::vector<Eigen::Vector2d>& points1,
+                                const std::vector<Eigen::Vector2d>& points2,
+                                const Eigen::Matrix3d& E,
+                                std::vector<double>* residuals) {
+  const size_t num_points1 = points1.size();
+  THROW_CHECK_EQ(num_points1, points2.size());
+  residuals->resize(num_points1);
+  for (size_t i = 0; i < num_points1; ++i) {
+    (*residuals)[i] = ComputeSquaredSampsonError(
+        points1[i].homogeneous(), points2[i].homogeneous(), E);
+  }
 }
 
 void ComputeSquaredSampsonError(const std::vector<Eigen::Vector3d>& points1,

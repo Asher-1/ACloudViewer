@@ -168,13 +168,7 @@ TEST(HierarchicalPipeline, WithoutNoiseAndPanoramicNonTrivialFrames) {
                              /*num_obs_tolerance=*/0);
 }
 
-TEST(HierarchicalPipeline, DISABLED_MultiReconstruction) {
-  // Fork adjudication: two remaining blockers in the fork's incremental
-  // mapper on non-trivial cluster data - the SetObservationAsTriangulated
-  // duplicate-correspondence guard (num_tri_corrs > num_total_corrs) and a
-  // cache/cluster image-id consistency gap surfacing as map::at in
-  // hierarchical_pipeline.cc. Deferred until those are reconciled.
-
+TEST(HierarchicalPipeline, MultiReconstruction) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);

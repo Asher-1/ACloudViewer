@@ -52,6 +52,13 @@ UPSTREAM_BACKEND_NAMES = {"cpu": "CPU", "cuda": "CUDA0", "vulkan": "Vulkan0",
 #   points_conf.bin -- original VGGT point-head confidence (AICore exposes
 #                      the depth-head confidence, compared as depth_conf.bin).
 UPSTREAM_ONLY_OUTPUTS = {"pose_raw.bin", "points_conf.bin"}
+# map_anything_merged vendors the reference ggml's flash-attention sources
+# for mapany_* nodes (src/ggml-cuda/mapany/mapany-fattn.cuh): CUDA stream-k
+# partitions by the compiled kernel's occupancy, so only the reference's own
+# kernel source reproduces its reduction order.
+MAPANY_PATCH = (SCRIPT_DIR.parents[2] / "3rdparty" / "ggml" / "patches" /
+                "map_anything_merged" / "0001-map-anything-ggml-parity.patch")
+MAPANY_TWIN_DIR = "src/ggml-cuda/mapany/ggml-v0.24.0/"
 
 
 def parse_args() -> argparse.Namespace:
@@ -110,6 +117,47 @@ def reference_identity(root: Path) -> dict:
     }
 
 
+def vendored_twin(patch: Path) -> dict[str, bytes]:
+    """Files the patch creates under MAPANY_TWIN_DIR, keyed by base name.
+
+    New-file hunks only ("@@ -0,0 +1,N @@"): the content is every '+' line
+    of the hunk. O(patch lines).
+    """
+    files: dict[str, bytes] = {}
+    current = None
+    for line in patch.read_bytes().splitlines(keepends=True):
+        if line.startswith(b"diff --git "):
+            current = None
+        elif line.startswith(b"+++ b/"):
+            path = line[6:].rstrip(b"\n").decode()
+            current = path[len(MAPANY_TWIN_DIR):] \
+                if path.startswith(MAPANY_TWIN_DIR) else None
+            if current is not None:
+                files[current] = b""
+        elif current is not None and line.startswith(b"+"):
+            files[current] += line[1:]
+        elif current is not None and line.startswith(b"\\ No newline"):
+            files[current] = files[current].removesuffix(b"\n")
+    return files
+
+
+def twin_drift(root: Path, patch: Path = MAPANY_PATCH) -> list[str]:
+    """Vendored twin files that are not the reference ggml's own bytes."""
+    twin = vendored_twin(patch)
+    if not twin:
+        return [f"{patch} vendors no {MAPANY_TWIN_DIR} sources"]
+    ggml = root / "cpp_ggml" / "third_party" / "ggml"
+    drift = []
+    for name, data in sorted(twin.items()):
+        try:
+            upstream = git(ggml, "show", f"HEAD:src/ggml-cuda/{name}")
+        except subprocess.CalledProcessError:
+            upstream = None
+        if upstream != data:
+            drift.append(name)
+    return drift
+
+
 def newer_source(root: Path, binary: Path) -> Path | None:
     """First reference source file modified after ``binary`` was linked.
 
@@ -138,27 +186,61 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def reference_env(build: Path) -> dict:
-    """Environment for vggt-cli without the candidate's libggml.
+def reference_env(build: Path, root: Path) -> dict:
+    """Environment for vggt-cli without any foreign libggml.
 
     vggt-cli resolves its own ggml through RUNPATH, but LD_LIBRARY_PATH takes
-    precedence; an entry inside the AICore build tree would load AICore's
-    patched libggml into the reference process (measured: segfault / a
-    different program).  Only those entries are dropped, so toolkit paths
-    such as the CUDA runtime remain visible.
+    precedence; an entry that provides another libggml (the AICore build
+    tree, or any copy of its libraries) loads that patched ggml into the
+    reference process (measured: GGML_ASSERT abort / a different program).
+    Entries inside the candidate build and entries holding a libggml* outside
+    the reference checkout are dropped, so toolkit paths such as the CUDA
+    runtime remain visible.
     """
     env = dict(os.environ)
     build = build.resolve()
+    root = root.resolve()
+
+    def foreign(entry: str) -> bool:
+        path = Path(entry).resolve()
+        if path.is_relative_to(build):
+            return True
+        return not path.is_relative_to(root) and path.is_dir() and \
+            any(path.glob("libggml*"))
+
     for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
         if key not in env:
             continue
-        kept = [entry for entry in env[key].split(os.pathsep) if entry and
-                not Path(entry).resolve().is_relative_to(build)]
+        kept = [entry for entry in env[key].split(os.pathsep)
+                if entry and not foreign(entry)]
         if kept:
             env[key] = os.pathsep.join(kept)
         else:
             del env[key]
     return env
+
+
+def foreign_ggml(cli: Path, env: dict, root: Path) -> list[str]:
+    """libggml* the dynamic loader would bind for ``cli`` outside ``root``.
+
+    Linux only (ldd); elsewhere the environment filter above is the guard.
+    """
+    ldd = shutil.which("ldd")
+    if ldd is None:
+        return []
+    out = subprocess.run([ldd, str(cli)], env=env, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, text=True).stdout
+    root = root.resolve()
+    bad = []
+    for line in out.splitlines():
+        name, _, target = line.strip().partition(" => ")
+        if not name.startswith("libggml"):
+            continue
+        resolved = target.split(" (")[0].strip()
+        if not resolved or resolved == "not found" or \
+                not Path(resolved).resolve().is_relative_to(root):
+            bad.append(f"{name} => {resolved or '?'}")
+    return bad
 
 
 def run(command: list, env: dict | None, log: Path, timeout: int) -> tuple[int, str]:
@@ -205,12 +287,24 @@ def main() -> int:
     if drift:
         return fail("reference source differs from the pinned truth: " +
                     "; ".join(drift))
+    if backend == "cuda":
+        stale_twin = twin_drift(root)
+        if stale_twin:
+            # The pinned reference moved its ggml (or the twin was edited):
+            # re-vendor the reference's files into map_anything_merged.
+            return fail("map_anything_merged flash-attention twin is not the "
+                        "reference ggml source: " + ", ".join(stale_twin))
     stale = newer_source(root, cli)
     if stale is not None:
         # The identity above pins the SOURCE; a binary built before its last
         # edit is a different program than the pinned one.
         return fail(f"reference build {cli} is older than its source {stale}; "
                     f"rebuild build-{backend}")
+    ref_env = reference_env(args.build, root)
+    foreign = foreign_ggml(cli, ref_env, root)
+    if foreign:
+        return fail("reference vggt-cli would bind a libggml outside the "
+                    f"reference checkout: {', '.join(foreign)}")
 
     # Thread count is resolved here so both programs use the same value
     # (both treat 0 as hardware concurrency, but only an explicit number is
@@ -237,7 +331,7 @@ def main() -> int:
                       "--H", str(geometry["H"]), "--W", str(geometry["W"]),
                       "--S", str(geometry["S"]), "--threads", str(threads),
                       "--out-prefix", str(out / "ref" / "up")],
-                     reference_env(args.build), out / "reference.log", args.timeout)
+                     ref_env, out / "reference.log", args.timeout)
     if code != 0:
         print(text[-4000:], file=sys.stderr)
         return fail(f"reference vggt-cli exit {code}")

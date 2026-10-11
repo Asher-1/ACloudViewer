@@ -55,8 +55,9 @@ MotImport importMot(const QByteArray& groundTruth,
     for (int i = 0; i < lines.size(); ++i) {
         const QString line = lines[i].trimmed();
         if (line.isEmpty()) continue;
-        const QStringList fields =
-                line.split(QLatin1Char(','), Qt::KeepEmptyParts);
+        // Default split behavior keeps empty parts (Qt 5.12 has no
+        // Qt::KeepEmptyParts).
+        const QStringList fields = line.split(QLatin1Char(','));
         if (fields.size() < 8) {
             result.error =
                     QStringLiteral("MOT line %1 needs at least eight fields")

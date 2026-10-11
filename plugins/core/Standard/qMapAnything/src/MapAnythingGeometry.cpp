@@ -279,6 +279,18 @@ int horn_sim3(const float* src,
     return 0;
 }
 
+float median(std::vector<float> v) {
+    if (v.empty()) return std::numeric_limits<float>::quiet_NaN();
+    // O(n) selection; numpy.median semantics: the mean of the two middle
+    // order statistics when the count is even.
+    const size_t h = v.size() / 2;
+    std::nth_element(v.begin(), v.begin() + h, v.end());
+    const float hi = v[h];
+    if (v.size() % 2 != 0) return hi;
+    const float lo = *std::max_element(v.begin(), v.begin() + h);
+    return 0.5f * (lo + hi);
+}
+
 int robust_sim3(const float* src,
                 const float* dst,
                 size_t n,
@@ -312,13 +324,10 @@ int robust_sim3(const float* src,
         for (size_t i = 0; i < n; ++i) {
             if (keep[i]) kept.push_back(res[i]);
         }
-        std::nth_element(kept.begin(), kept.begin() + kept.size() / 2,
-                         kept.end());
-        const float med = kept[kept.size() / 2];
+        const float med = median(kept);
         std::vector<float> dev;
         for (float r : kept) dev.push_back(std::abs(r - med));
-        std::nth_element(dev.begin(), dev.begin() + dev.size() / 2, dev.end());
-        const float mad = dev[dev.size() / 2] + 1e-12f;
+        const float mad = median(std::move(dev)) + 1e-12f;
         for (size_t i = 0; i < n; ++i)
             keep[i] = res[i] <= med + 3.0f * 1.4826f * mad ? 1 : 0;
     }

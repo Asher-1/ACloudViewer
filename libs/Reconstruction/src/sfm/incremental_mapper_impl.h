@@ -37,8 +37,8 @@ public:
             const IncrementalMapper::Options& options,
             const CorrespondenceGraph& correspondence_graph,
             const Reconstruction& reconstruction,
-            const NodeHashMap<image_t, size_t>& init_num_reg_trials,
-            const NodeHashMap<image_t, size_t>& num_registrations);
+            const FlatHashMap<image_t, size_t>& init_num_reg_trials,
+            const FlatHashMap<image_t, size_t>& num_registrations);
 
     // For a given first seed image, find other images that are connected to
     // the first image. Suitable second images have a large number of
@@ -48,7 +48,7 @@ public:
             image_t image_id1,
             const CorrespondenceGraph& correspondence_graph,
             const Reconstruction& reconstruction,
-            const NodeHashMap<image_t, size_t>& num_registrations);
+            const FlatHashMap<image_t, size_t>& num_registrations);
 
     // Result of selecting and/or estimating the initial image pair. On
     // success, `camera1`/`camera2` carry the intrinsics estimated for the
@@ -77,9 +77,9 @@ public:
             const IncrementalMapper::Options& options,
             const DatabaseCache& database_cache,
             const Reconstruction& reconstruction,
-            const NodeHashMap<image_t, size_t>& init_num_reg_trials,
-            const NodeHashMap<image_t, size_t>& num_registrations,
-            NodeHashSet<image_pair_t>& init_image_pairs,
+            const FlatHashMap<image_t, size_t>& init_num_reg_trials,
+            const FlatHashMap<image_t, size_t>& num_registrations,
+            FlatHashSet<image_pair_t>& init_image_pairs,
             image_t image_id1,
             image_t image_id2);
 
@@ -89,8 +89,8 @@ public:
     static std::vector<image_t> FindNextImages(
             const IncrementalMapper::Options& options,
             const ObservationManager& obs_manager,
-            const NodeHashSet<frame_t>& filtered_frames,
-            NodeHashMap<image_t, size_t>& num_reg_trials,
+            const FlatHashSet<frame_t>& filtered_frames,
+            FlatHashMap<image_t, size_t>& num_reg_trials,
             bool structure_less = false);
 
     // Implement IncrementalMapper::FindLocalBundle.

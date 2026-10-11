@@ -56,6 +56,7 @@ set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
 set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
 set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
 set(AICORE_OCR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr)
+set(AICORE_TABLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
@@ -97,6 +98,7 @@ file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DI
 file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_OCR_SOURCES CONFIGURE_DEPENDS ${AICORE_OCR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_TABLE_SOURCES CONFIGURE_DEPENDS ${AICORE_TABLE_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
@@ -170,6 +172,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_RFDETR_SOURCES}
     ${AICORE_RMBG_SOURCES}
     ${AICORE_OCR_SOURCES}
+    ${AICORE_TABLE_SOURCES}
     ${AICORE_YOLO_SOURCES}
     ${AICORE_REID_SOURCES}
     ${AICORE_SAM3_SOURCES}
@@ -271,6 +274,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_RFDETR_SRC_DIR}
         ${AICORE_RMBG_SRC_DIR}
         ${AICORE_OCR_SRC_DIR}
+        ${AICORE_TABLE_SRC_DIR}
         ${AICORE_YOLO_SRC_DIR}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
@@ -603,8 +607,8 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
 endif()
 
 set(_aicore_enabled_task_names
-    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma reid
-    rfdetr rmbg sam3 sam3d trellis yolo)
+    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
+    reid rfdetr rmbg sam3 sam3d table trellis yolo)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -720,6 +724,11 @@ target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
 add_executable(bench_ocr tools/bench_ocr.cpp)
 target_link_libraries(bench_ocr PRIVATE AICore)
 
+# Headless table reconstruction driver (OCR + table, one JSON line per
+# image); scripts/run_table_gt_matrix.py scores its HTML against GT.
+add_executable(bench_table tools/bench_table.cpp)
+target_link_libraries(bench_table PRIVATE AICore)
+
 add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
     # Winograd conv custom op (routed by the CPU-session graph build).
@@ -749,6 +758,35 @@ set_target_properties(test_ocr_runtime PROPERTIES
 # copies (batch C test-layout fix; the probe does not go through the
 # tests/CMakeLists.txt that already applies the layout function).
 cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
+
+# Table-structure parity probe: the SLANet encoder runs on the OCR
+# interpreter, so it compiles the same closure plus the table runtime.
+add_executable(test_table_runtime tests/test_table_runtime.cpp
+    src/tasks/table/table_runtime.cpp
+    src/tasks/ocr/ocr_runtime.cpp
+    src/common/winograd.cpp
+    src/common/blocked_conv.cpp
+    src/common/ggml_env_bridge.cpp)
+target_include_directories(test_table_runtime PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
+    ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(test_table_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+set_target_properties(test_table_runtime PROPERTIES
+    POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN")
+cloudviewer_set_aicore_test_runtime_layout(test_table_runtime)
+# The probe_ocr_* / probe_table CTests (tests/CMakeLists.txt, labels
+# capi;model) run these binaries, but tests/ is configured before they
+# exist, so the label-derived tier DEPENDS cannot see them: attach here.
+if(TARGET aicore-model-tests)
+    add_dependencies(aicore-model-tests test_ocr_runtime test_table_runtime)
+endif()
+if(TARGET aicore-contract-tests AND AICORE_TEST_ENABLE_MODEL_TESTS)
+    add_dependencies(aicore-contract-tests test_ocr_runtime test_table_runtime)
+endif()
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()

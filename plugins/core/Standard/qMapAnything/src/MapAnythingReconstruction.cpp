@@ -7,6 +7,7 @@
 
 #include "MapAnythingReconstruction.h"
 
+#include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -497,7 +498,7 @@ FilterReport filter_scene(Cloud& cloud,
     cloud.view.resize(w);
     rep.kept = w;
 
-    // 0.02 is a metric length: meaningless in a learned, scale-free frame.
+    // 0.02 is a metric length: meaningless in a normalised, scale-free frame.
     if (metricFrame && o.voxelSize > 0.0f && w > 0) {
         std::vector<float> zeros;
         const float* cf = cloud.conf.data();
@@ -524,29 +525,123 @@ void transform_result(Result& r, const Sim3& s) {
     }
 }
 
+bool anchor_to_reference(Result& r,
+                         const std::vector<float>& refCenters,
+                         ReferenceAnchor* anchor,
+                         std::string* error) {
+    auto fail = [error](const std::string& message) {
+        set_error(error, message);
+        return false;
+    };
+    std::vector<float> src, dst;
+    for (int v = 0; v < r.views; ++v) {
+        if ((size_t)v * 16 + 16 > r.c2w.size() ||
+            (size_t)v * 3 + 3 > refCenters.size())
+            break;
+        const float* M = &r.c2w[(size_t)v * 16];
+        const float* g = &refCenters[(size_t)v * 3];
+        if (!std::isfinite(M[3]) || !std::isfinite(M[7]) ||
+            !std::isfinite(M[11]) || !std::isfinite(g[0]) ||
+            !std::isfinite(g[1]) || !std::isfinite(g[2]))
+            continue;
+        const float c[3] = {M[3], M[7], M[11]};
+        src.insert(src.end(), c, c + 3);
+        dst.insert(dst.end(), g, g + 3);
+    }
+    const size_t m = src.size() / 3;
+    ReferenceAnchor a;
+    if (m < 3) {
+        return fail(std::to_string(m) +
+                    " posed views have a reference center; the Sim3 needs "
+                    "at least 3");
+    }
+    if (MapAnythingGeometry::robust_sim3(src.data(), dst.data(), m, &a.sim3.s,
+                                         a.sim3.R, a.sim3.t) != 0) {
+        return fail("degenerate reference-center fit");
+    }
+    std::vector<float> res(m);
+    for (size_t k = 0; k < m; ++k) {
+        float p[3];
+        MapAnythingGeometry::apply_sim3(a.sim3.R, a.sim3.t, a.sim3.s,
+                                        &src[k * 3], 1, p);
+        res[k] = std::sqrt((p[0] - dst[k * 3]) * (p[0] - dst[k * 3]) +
+                           (p[1] - dst[k * 3 + 1]) * (p[1] - dst[k * 3 + 1]) +
+                           (p[2] - dst[k * 3 + 2]) * (p[2] - dst[k * 3 + 2]));
+    }
+    a.pairs = (int)m;
+    a.residualMedian = MapAnythingGeometry::median(std::move(res));
+    // Centers fix the rotation about their principal axis only through
+    // their spread across it: sqrt(lambda2) of the reference covariance.
+    // When that spread is no larger than the fit residual (the noise of
+    // the centers), the roll about a near-straight trajectory is noise and
+    // the Sim3 would silently tilt the whole scene - refuse it.
+    {
+        Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+        for (size_t k = 0; k < m; ++k)
+            mean += Eigen::Vector3d(dst[k * 3], dst[k * 3 + 1], dst[k * 3 + 2]);
+        mean /= double(m);
+        Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+        for (size_t k = 0; k < m; ++k) {
+            const Eigen::Vector3d d =
+                    Eigen::Vector3d(dst[k * 3], dst[k * 3 + 1],
+                                    dst[k * 3 + 2]) -
+                    mean;
+            cov += d * d.transpose();
+        }
+        cov /= double(m);
+        // Ascending eigenvalues: [1] is the middle one (lambda2).
+        const Eigen::Vector3d ev =
+                Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d>(
+                        cov, Eigen::EigenvaluesOnly)
+                        .eigenvalues();
+        a.crossSpread = (float)std::sqrt(std::max(ev[1], 0.0));
+    }
+    if (!(a.crossSpread > a.residualMedian)) {
+        return fail(
+                "the reference centers are (nearly) collinear: spread "
+                "across their main axis " +
+                std::to_string(a.crossSpread) + " <= median fit residual " +
+                std::to_string(a.residualMedian) +
+                ", so the rotation about that axis is undetermined; "
+                "add reference positions off the line");
+    }
+    transform_result(r, a.sim3);
+    if (anchor != nullptr) *anchor = a;
+    return true;
+}
+
 bool write_ply(const std::string& path,
                const Cloud& cloud,
-               const std::vector<size_t>* indices) {
+               const std::vector<size_t>* indices,
+               const double* offset) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
     if (f == nullptr) return false;
     const size_t count = indices != nullptr ? indices->size() : cloud.size();
+    const char* type = offset != nullptr ? "double" : "float";
     const int hn = std::fprintf(f,
                                 "ply\n"
                                 "format binary_little_endian 1.0\n"
                                 "element vertex %zu\n"
-                                "property float x\n"
-                                "property float y\n"
-                                "property float z\n"
+                                "property %s x\n"
+                                "property %s y\n"
+                                "property %s z\n"
                                 "property uchar red\n"
                                 "property uchar green\n"
                                 "property uchar blue\n"
                                 "end_header\n",
-                                count);
+                                count, type, type, type);
     bool ok = hn > 0;
     for (size_t k = 0; ok && k < count; ++k) {
         const size_t i = indices != nullptr ? (*indices)[k] : k;
-        ok = std::fwrite(&cloud.xyz[i * 3], sizeof(float), 3, f) == 3 &&
-             std::fwrite(&cloud.rgb[i * 3], 1, 3, f) == 3;
+        if (offset != nullptr) {
+            const double p[3] = {cloud.xyz[i * 3] + offset[0],
+                                 cloud.xyz[i * 3 + 1] + offset[1],
+                                 cloud.xyz[i * 3 + 2] + offset[2]};
+            ok = std::fwrite(p, sizeof(double), 3, f) == 3;
+        } else {
+            ok = std::fwrite(&cloud.xyz[i * 3], sizeof(float), 3, f) == 3;
+        }
+        ok = ok && std::fwrite(&cloud.rgb[i * 3], 1, 3, f) == 3;
     }
     return std::fclose(f) == 0 && ok;
 }

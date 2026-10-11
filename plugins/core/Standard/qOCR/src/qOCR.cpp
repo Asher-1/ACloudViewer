@@ -91,7 +91,9 @@ void qOCR::executeTask(const OCRRunSettings& settings) {
     }
 
     if (!QFileInfo::exists(settings.detPath) ||
-        !QFileInfo::exists(settings.recPath)) {
+        !QFileInfo::exists(settings.recPath) ||
+        (!settings.tablePath.isEmpty() &&
+         !QFileInfo::exists(settings.tablePath))) {
         m_dialog->appendLog(tr("[Error] OCR models missing on disk."));
         return;
     }
@@ -116,7 +118,8 @@ void qOCR::executeTask(const OCRRunSettings& settings) {
     ws.detPath = settings.detPath;
     ws.recPath = settings.recPath;
     ws.layoutPath = settings.layoutPath;
-    ws.imagePath = settings.imagePath;
+    ws.tablePath = settings.tablePath;
+    ws.imagePaths = settings.imagePaths;
     ws.device = workerDevice;
     ws.threads = settings.threads;
 
@@ -141,12 +144,12 @@ void qOCR::cancelTask() {
 
 void qOCR::onResultReady(const OCRRunResult& result) {
     m_dialog->showResult(result);
-    if (m_currentSettings.addToDb || m_currentSettings.showInWindow) {
+    if (m_currentSettings.addToDb) {
         addResultToDb(result, m_currentSettings);
     } else {
         m_dialog->appendLog(
-                tr("[qOCR] Result display only (DB export and "
-                   "render-window overlay are off)."));
+                tr("[qOCR] Result remains in the workspace table only; "
+                   "nothing was added to the DB."));
     }
 }
 
@@ -175,6 +178,21 @@ void qOCR::addResultToDb(const OCRRunResult& result,
     img->setMetaData(QStringLiteral("OCR/Texts"), texts.join('\n'));
     img->setMetaData(QStringLiteral("OCR/DetModel"), result.detModel);
     img->setMetaData(QStringLiteral("OCR/RecModel"), result.recModel);
+    if (!result.tableModel.isEmpty()) {
+        // Reconstructed tables travel with the overlay: the structured HTML
+        // (cell spans) and the RFC 4180 CSV, one block per table.
+        QStringList html, csv;
+        for (const OCRTableResult& table : result.tables) {
+            html << table.html;
+            csv << QString::fromUtf8(table.csv);
+        }
+        img->setMetaData(QStringLiteral("OCR/TableModel"), result.tableModel);
+        img->setMetaData(QStringLiteral("OCR/TableCount"),
+                         result.tables.size());
+        img->setMetaData(QStringLiteral("OCR/TableHTML"), html.join('\n'));
+        img->setMetaData(QStringLiteral("OCR/TableCSV"), csv.join('\n'));
+        img->setMetaData(QStringLiteral("OCR/Table (ms)"), result.tableMs);
+    }
     img->setMetaData(QStringLiteral("Runtime (ms)"),
                      static_cast<double>(result.e2eMs));
     img->setMetaData(QStringLiteral("OCR/Preprocess (ms)"),
@@ -190,33 +208,22 @@ void qOCR::addResultToDb(const OCRRunResult& result,
     img->setMetaData(QStringLiteral("Model"),
                      QFileInfo(settings.recPath).fileName());
 
-    // Render-window overlay: a visible ccImage draws as a pixel-space
-    // foreground slice in its attached display. Attach to the currently
-    // active 3D view so the user sees the end-to-end annotated result
-    // without digging through the DB tree.
-    if (settings.showInWindow) {
-        if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
-            img->setDisplay(display);
-            img->setVisible(true);
-            img->setEnabled(true);
-        } else {
-            m_dialog->appendLog(
-                    tr("[qOCR] No active render window — the "
-                       "result stays in the DB tree only."));
-        }
+    // DB materialization always attempts to attach the visible overlay to the
+    // active render view. The single Add result to DB choice owns both actions.
+    if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+        img->setDisplay(display);
+        img->setVisible(true);
+        img->setEnabled(true);
+    } else {
+        m_dialog->appendLog(
+                tr("[qOCR] No active render window — result added to the DB "
+                   "tree without an immediate overlay."));
     }
 
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
-    if (settings.addToDb) {
-        m_dialog->appendLog(tr("[qOCR] Added annotated result '%1' to the DB "
-                               "tree.")
-                                    .arg(name));
-    } else {
-        m_dialog->appendLog(tr("[qOCR] Annotated result '%1' kept out of the "
-                               "DB tree (overlay only).")
-                                    .arg(name));
-    }
+    m_dialog->appendLog(
+            tr("[qOCR] Added numbered result '%1' to the DB tree.").arg(name));
 }
 
 void qOCR::onTaskFinished(bool success) {

@@ -687,16 +687,6 @@ TEST(Reconstruction, DeleteObservation) {
 }
 
 TEST(Reconstruction, SetRigsAndFrames) {
-  // Fork adaptation (batch R): colmap's database schema persists rigs,
-  // frames (including the fork's frame poses), and images, but NOT the
-  // reconstruction-level points3D or their observations - those live only
-  // in the in-memory Reconstruction. The upstream expectation (replay ==
-  // post-de-register state) holds because upstream's DeRegisterFrame also
-  // erases the points; the fork does the same, so the replay-vs-orig
-  // comparison below checks the two things the fork's db round-trip adds
-  // over upstream: every persisted pose comes back bit-exact, and the
-  // replayed frames are registered again (upstream's db stores no poses,
-  // so its replay leaves the model unregistered).
   Reconstruction reconstruction;
   auto database = Database::Open(kInMemorySqliteDatabasePath);
   SyntheticDatasetOptions synthetic_dataset_options;
@@ -706,33 +696,20 @@ TEST(Reconstruction, SetRigsAndFrames) {
   synthetic_dataset_options.num_frames_per_rig = 8;
   synthetic_dataset_options.num_points3D = 21;
   SynthesizeDataset(synthetic_dataset_options, &reconstruction, database.get());
-  const Reconstruction pre_unregister_reconstruction = reconstruction;
   for (const auto& [frame_id, _] : reconstruction.Frames()) {
     reconstruction.DeRegisterFrame(frame_id);
   }
-  // The de-registration wiped the points and observations (the db never
-  // had them) and cleared the registration; the pose storage survives
-  // behind the cleared flag.
-  ASSERT_EQ(reconstruction.NumPoints3D(), 0);
-  ASSERT_EQ(reconstruction.NumRegFrames(), 0);
+  const Reconstruction orig_reconstruction = reconstruction;
   reconstruction.SetRigsAndFrames(database->ReadAllRigs(),
                                   database->ReadAllFrames());
-  // Structural replay: same rigs/frames/images, no points3D.
-  EXPECT_EQ(reconstruction.NumRigs(), 3);
+  EXPECT_THAT(reconstruction, ReconstructionEq(orig_reconstruction));
+  // Upstream schema: the database persists no frame poses, so the replayed
+  // model stays unregistered.
   EXPECT_EQ(reconstruction.NumFrames(), 24);
   EXPECT_EQ(reconstruction.NumImages(), 24);
-  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
-  // The fork's db round-trip restores the persisted poses bit-exactly and
-  // re-registers the posed frames on insertion (upstream parity of the
-  // AddFrame contract).
-  EXPECT_EQ(reconstruction.NumRegFrames(), 24);
-  EXPECT_EQ(reconstruction.NumRegImages(), 24);
+  EXPECT_EQ(reconstruction.NumRegFrames(), 0);
   for (const auto& [frame_id, frame] : reconstruction.Frames()) {
-    ASSERT_TRUE(frame.HasPose());
-    EXPECT_TRUE(frame.RigFromWorld() ==
-                pre_unregister_reconstruction.Frame(frame_id)
-                    .RigFromWorld())
-        << "pose round-trip mismatch for frame " << frame_id;
+    EXPECT_FALSE(frame.HasPose()) << frame_id;
   }
 }
 

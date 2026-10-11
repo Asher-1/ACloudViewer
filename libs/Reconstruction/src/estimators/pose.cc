@@ -1,3 +1,7 @@
+#include <cstdio>
+#include <random>
+#include "math/random.h"
+#include <cstdlib>
 // Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
@@ -114,7 +118,13 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
                 options.ransac_options,
                 P3PEstimator(img_from_cam_func),
                 P3PEstimator(img_from_cam_func));
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-before-p3p has=%d next=%u seed_opt=%d\n", (int)(PRNG != nullptr), (unsigned)c(), options.ransac_options.random_seed); }
+// TEMP-DUMP-END
         auto report = ransac.Estimate(points2D_with_rays, points3D);
+// TEMP-DUMP-BEGIN
+if (std::getenv("SCAN_DUMP")) { double sr = 0; for (size_t di = 0; di < points2D_with_rays.size(); ++di) sr += points2D_with_rays[di].camera_ray.sum() * (di + 1); std::fprintf(stderr, "[dump] p3p rays=%.17g ok=%d trials=%zu inl=%zu rsum=%.17g cam=%.17g\n", sr, (int)report.success, (size_t)report.num_trials, (size_t)report.support.num_inliers, report.support.residual_sum, Eigen::Map<const Eigen::VectorXd>(camera->ParamsData(), camera->NumParams()).sum()); }
+// TEMP-DUMP-END
         if (report.success) {
             const Eigen::Quaterniond quat = report.model.rotation();
             *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());

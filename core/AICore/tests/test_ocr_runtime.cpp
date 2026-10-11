@@ -89,7 +89,31 @@ bool readNpyF32(const std::string& path,
     data->resize(count);
     const size_t read = fread(data->data(), sizeof(float), count, f);
     fclose(f);
-    return read == count;
+    if (read != count) return false;
+    // np.save of a transposed view (the PicoDet heads end in transpose2)
+    // writes 'fortran_order': True, i.e. the first axis is fastest. The
+    // probes compare in C order, so reorder; reading the bytes as C order
+    // silently compares against the transpose.
+    if (dict.find("'fortran_order': True") != std::string::npos &&
+        shape->size() > 1) {
+        const size_t rank = shape->size();
+        std::vector<float> c(count);
+        std::vector<int64_t> idx(rank, 0);
+        for (size_t linear = 0; linear < count; ++linear) {
+            size_t fortran = 0, stride = 1;
+            for (size_t a = 0; a < rank; ++a) {
+                fortran += static_cast<size_t>(idx[a]) * stride;
+                stride *= static_cast<size_t>((*shape)[a]);
+            }
+            c[linear] = (*data)[fortran];
+            for (size_t a = rank; a-- > 0;) {  // C-order odometer
+                if (++idx[a] < (*shape)[a]) break;
+                idx[a] = 0;
+            }
+        }
+        *data = std::move(c);
+    }
+    return true;
 }
 
 std::string argmaxSignature(const float* probs, int timeSteps, int vocab) {
@@ -521,6 +545,11 @@ int main(int argc, char** argv) {
     // The last timed run's output stays in `output`; no extra compute.
     std::vector<float> got(static_cast<size_t>(ggml_nelements(output)));
     ggml_backend_tensor_get(output, got.data(), 0, sizeof(float) * got.size());
+    if (const char* tmpDump = std::getenv("TMP_SCRATCH_DUMP")) {  // SCRATCH
+        FILE* f = fopen(tmpDump, "wb");
+        fwrite(got.data(), sizeof(float), got.size(), f);
+        fclose(f);
+    }
 
     const int64_t timeSteps = output->ne[1];
     const int64_t vocab = output->ne[0];
@@ -599,9 +628,11 @@ int main(int argc, char** argv) {
             // numpy (1,N,C) is C-order over (n,c); the ggml head ne={C,N}
             // keeps ne[0]=C as the fastest axis, so element (n,c) sits at
             // n*C + c in both buffers and the flat comparison is direct.
-            // (The historical got[c*N + n] read transposed the ggml buffer
-            // and compared every head against its own transpose —
-            // unfound since the fixtures had never been published.)
+            // Both sides must really be C order: the fetch is materialized
+            // by buildGraph (a raw permuted view is the (C,N) transpose)
+            // and readNpyF32 reorders the Fortran-order head files. The
+            // two transposes once cancelled here and hid a production
+            // layout decode that read every head transposed.
             const int64_t C = t->ne[0], N = t->ne[1];
             for (int64_t n = 0; n < N; ++n)
                 for (int64_t c = 0; c < C; ++c) {
@@ -778,8 +809,75 @@ int main(int argc, char** argv) {
                      gotSignature.c_str(), refSignature.c_str());
     }
 
+    // Slot-reuse contract (OcrGraphExec): rebuilding into the same exec
+    // keeps its gallocr, grows the compute buffer only for a larger graph,
+    // keeps the very same buffer for a smaller one (no fresh ReBAR mapping
+    // to fault in on Vulkan), and the rebuilt graph reproduces the first
+    // run bit for bit.
+    bool slotReuse = true;
+    if (probe.fetchAt < 0 && tileN == 1 && exec.alloc) {
+        const ggml_gallocr_t firstAlloc = exec.alloc;
+        const size_t firstSize = ggml_gallocr_get_buffer_size(exec.alloc, 0);
+        const auto rebuild = [&](int64_t rows, std::vector<float>* out,
+                                 ggml_backend_buffer_t* buffer) {
+            ggml_context* c = ggml_init({tensorSize * 2, nullptr,
+                                         /*no_alloc=*/true});
+            ggml_tensor* in =
+                    ggml_new_tensor_4d(c, GGML_TYPE_F32, inputShape[3],
+                                       inputShape[2], inputShape[1], rows);
+            ggml_set_input(in);
+            weights.resetFoldPool();
+            ggml_tensor* o = aicore::ocr::buildGraph(
+                    c, weights, in, &error, nullptr, nullptr, &buildOptions);
+            ggml_cgraph* g = nullptr;
+            const bool built =
+                    o && aicore::ocr::prepareGraph(weights, c, plan, {o}, &g,
+                                                   exec, error);
+            if (built) {
+                std::vector<float> batch;
+                for (int64_t r = 0; r < rows; ++r)
+                    batch.insert(batch.end(), inputData.begin(),
+                                 inputData.end());
+                ggml_backend_tensor_set(in, batch.data(), 0,
+                                        sizeof(float) * batch.size());
+                aicore::ocr::computeGraph(plan, exec, g);
+                *buffer = o->buffer;
+                if (out) {
+                    out->resize(static_cast<size_t>(ggml_nelements(o)));
+                    ggml_backend_tensor_get(o, out->data(), 0,
+                                            sizeof(float) * out->size());
+                }
+            }
+            ggml_free(c);
+            return built;
+        };
+        std::vector<float> again;
+        ggml_backend_buffer_t largeBuffer = nullptr, smallBuffer = nullptr;
+        const bool grown = rebuild(2, nullptr, &largeBuffer);
+        const size_t grownSize =
+                grown ? ggml_gallocr_get_buffer_size(exec.alloc, 0) : 0;
+        const bool rebuilt = grown && rebuild(1, &again, &smallBuffer);
+        const size_t finalSize =
+                rebuilt ? ggml_gallocr_get_buffer_size(exec.alloc, 0) : 0;
+        slotReuse = rebuilt && exec.alloc == firstAlloc &&
+                    grownSize > firstSize && finalSize == grownSize &&
+                    smallBuffer == largeBuffer && again.size() == got.size() &&
+                    std::memcmp(again.data(), got.data(),
+                                sizeof(float) * got.size()) == 0;
+        std::printf(
+                "slot reuse: %s (buffer %zu -> %zu -> %zu bytes, same "
+                "allocator %d, same buffer %d)\n",
+                slotReuse ? "YES" : "NO", firstSize, grownSize, finalSize,
+                exec.alloc == firstAlloc ? 1 : 0,
+                smallBuffer == largeBuffer ? 1 : 0);
+        if (!slotReuse && !error.empty())
+            std::fprintf(stderr, "slot reuse: %s\n", error.c_str());
+    }
+
     exec.free();
     ggml_backend_free(backend);
     ggml_free(ctx);
-    return (signatureMatch && withinTolerance && selfConsistent) ? 0 : 1;
+    return (signatureMatch && withinTolerance && selfConsistent && slotReuse)
+                   ? 0
+                   : 1;
 }

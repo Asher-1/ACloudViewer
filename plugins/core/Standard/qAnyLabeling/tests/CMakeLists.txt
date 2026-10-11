@@ -128,8 +128,10 @@ cloudviewer_add_plugin_test(test_qanylabeling_exporter
         ${QAL_DIR}/src/AnnotationOdvg.cpp
         ${QAL_DIR}/src/AnnotationVlm.cpp
         ${QAL_DIR}/src/AnnotationPpocr.cpp
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Gui)
+    # core/include: QtCompat.h (Qt 5.12 split behaviors); it pulls in
+    # QtWidgets headers, hence Widgets rather than Gui.
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
 if(TARGET 3rdparty_opencv)
     target_link_libraries(test_qanylabeling_exporter PRIVATE 3rdparty_opencv)
     target_compile_definitions(test_qanylabeling_exporter PRIVATE
@@ -216,7 +218,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_inference
         ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/include/AnnotationWorker.h
         ${QAL_DIR}/include/AnnotationCanvas.h
-    INCLUDES ${QAL_DIR}/include
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
     LIBS AICore Qt${QT_VERSION_MAJOR}::Widgets)
 
 cloudviewer_add_plugin_test(test_qanylabeling_semantic

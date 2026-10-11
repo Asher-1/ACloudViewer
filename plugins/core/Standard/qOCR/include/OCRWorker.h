@@ -10,11 +10,13 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QThread>
 #include <QVector>
 
 struct aicore_cancel_token;
 struct aicore_ocr_ctx;
+struct aicore_table_ctx;
 
 /** One recognized text region (typed mirror of aicore_ocr_box). */
 struct OCRBoxResult {
@@ -37,6 +39,24 @@ struct OCRRegionResult {
 
 Q_DECLARE_METATYPE(OCRRegionResult)
 
+/** One table cell (typed mirror of aicore_table_cell). */
+struct OCRTableCell {
+    float quad[4][2] = {};  ///< predicted cell polygon, source pixels
+    int row = 0, col = 0, rowSpan = 1, colSpan = 1;
+    QString text;
+};
+
+/** One reconstructed table (typed mirror of aicore_table). */
+struct OCRTableResult {
+    float box[4] = {};      ///< table region [xmin, ymin, xmax, ymax]
+    int layoutRegion = -1;  ///< source layout region, -1 = whole image
+    int rows = 0, cols = 0;
+    float structureScore = 0.0f;
+    QVector<OCRTableCell> cells;
+    QString html;
+    QByteArray csv;  ///< RFC 4180, UTF-8
+};
+
 /** Full single-image OCR outcome handed to the plugin over a queued
  *  connection. The source image travels along so the GUI thread can render
  *  the annotated DB entity without re-reading the file. */
@@ -45,6 +65,7 @@ struct OCRRunResult {
     QString imagePath;
     QVector<OCRBoxResult> boxes;
     QVector<OCRRegionResult> regions;  // empty without a layout model
+    QVector<OCRTableResult> tables;    // empty without a table model
     // Common stage timings (ms) from aicore_ocr_timings.
     double preprocessMs = 0.0;
     double inferenceMs = 0.0;
@@ -53,20 +74,23 @@ struct OCRRunResult {
     QString resolvedDevice;
     QString detModel;
     QString recModel;
-    QString layoutModel;  // empty without a layout model
+    QString layoutModel;   // empty without a layout model
+    QString tableModel;    // empty without a table model
+    double tableMs = 0.0;  // table stage e2e (aicore_table_timings)
 };
 
 Q_DECLARE_METATYPE(OCRRunResult)
 
-/** Background PP-OCR det+rec worker (single image).
+/** Background PP-OCR det+rec(+layout/table) worker over a list of images.
  *
  *  Lifecycle contract shared by every AICore plugin worker: the model
  *  context is created inside run() on the worker thread (after acquiring
- *  the device task queue) and released on the main thread via
- *  releaseContextOnMainThread() so GPU teardown never races the render
- *  thread. Progress is stage-based: the ocr C API exposes no per-node
- *  callback, so the dialog shows the aligned busy bar with stage labels
- *  (same fallback every other AICore plugin uses on CPU/Vulkan/CUDA). */
+ *  the device task queue) once for the whole list and released on the main
+ *  thread via releaseContextOnMainThread() so GPU teardown never races the
+ *  render thread. Each image emits resultReady as soon as it is done (a
+ *  failing image is logged and skipped); cancellation is checked between
+ *  images and inside each run. Progress is stage-based per image: the ocr C
+ *  API exposes no per-node callback. */
 class OCRWorker : public QThread {
     Q_OBJECT
 
@@ -75,7 +99,14 @@ public:
         QString detPath;
         QString recPath;
         QString layoutPath;  // empty = layout stage off
+        /** SLANet table GGUF; empty = table stage off. With a layout model
+         *  every "table" region is reconstructed, otherwise the whole
+         *  image is one table. */
+        QString tablePath;
+        /** Image of one recognizeImage call. */
         QString imagePath;
+        /** run(): images processed in order (empty = {imagePath}). */
+        QStringList imagePaths;
         QString device = QStringLiteral("auto");
         int threads = 0;  // 0 = backend default
     };
@@ -89,10 +120,12 @@ public:
     void requestTaskCancel();
 
     /** One image (settings.imagePath) through a loaded det+rec(+layout)
-     *  context: typed boxes, layout regions and stage timings. Shared by
-     *  run() and the headless -OCR_RECOGNIZE batch command so both paths
-     *  produce identical results. \p cancel may be null. */
+     *  context and, when \p tableCtx is set, the table stage: typed boxes,
+     *  layout regions, tables and stage timings. Shared by run() and the
+     *  headless -OCR_RECOGNIZE batch command so both paths produce
+     *  identical results. \p cancel and \p tableCtx may be null. */
     static bool recognizeImage(aicore_ocr_ctx* ctx,
+                               aicore_table_ctx* tableCtx,
                                const Settings& settings,
                                aicore_cancel_token* cancel,
                                OCRRunResult* result,
@@ -112,12 +145,14 @@ protected:
 private:
     Settings m_settings;
     struct aicore_ocr_ctx* m_pendingCtx = nullptr;
+    struct aicore_table_ctx* m_pendingTableCtx = nullptr;
     aicore_cancel_token* m_cancelToken = nullptr;
 };
 
 namespace OCRRender {
-/** Official PaddleOCR draw_ocr visualization (polygons over a 600-px
- *  long-side image + wrapped "index: text score" side panel). Shared by
- *  the DB export and the batch command. Null for an empty source. */
+/** Source-size OCR overlay: polygons plus stable index labels. The index
+ *  maps to the dialog's scrollable result table without creating a growing
+ *  text panel; reconstructed table cells are outlined in blue. Shared by DB
+ *  export and the batch command. */
 QImage officialVisualization(const OCRRunResult& result);
 }  // namespace OCRRender

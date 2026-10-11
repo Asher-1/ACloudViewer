@@ -1657,3 +1657,217 @@ HasPose()。批 S 留因的「帧对粒度 matches」假说也被证伪:对应�
    `ransac_test`。
 3. 批次 W 遗留 3 不变:批3b(SKEWED_PINHOLE / CamFromImg autodiff / feature cache)、
    批4(Ceres rotation averaging / IMU)、Bitmap 64 用例。
+
+## 批次 Y:Bitmap/相机/IMU/Ceres RA 移植 + Caspar 稳定性矩阵 + LORANSAC 种子回归修复(2026-10-11)
+
+基线:本地 upstream `a2bd15c2fbfa79ca3812f8b081708da5e47d5402`。
+
+### 本批落地
+
+- **Bitmap/OIIO**:metadata Set/Get/Clone、JPEG quality 实际写入、OIIO 线程局部
+  错误清理、linear colorspace 读写往返、灰度 `GetPixel` 三通道语义;删除
+  `BitmapFormat`/`BitmapRescaleFilter` 旧写入契约(改 `Bitmap::RescaleFilter`,
+  pybind 同步)。EXIF orientation 按基线 `oiio:reorient=0` 保留 tag、不自动旋转。
+- **SKEWED_PINHOLE**:model id 18、运行时分发、投影/反投影、Jet autodiff、解析
+  Jacobian;数据库、文本/二进制模型与 pybind 往返用例。
+- **IMU**:`sensor/imu.{h,cc}`、`scene/imu.{h,cc}`、`imu_t`/`kInvalidImuId`,
+  测试 `sensor/imu_test`、`scene/scene_imu_test`。
+- **Ceres rotation averaging**:`estimators/rotation_averaging_ceres.{h,cc}`
+  (WXYZ manifold、MST 初值、连通性校验、match-count 重权、calibrated rig 外参常量)。
+- **LORANSAC 种子回归(根因修复)**:先前 RANSAC 并行迁移把 `SetPRNGSeed` 从
+  `RANSAC` 构造函数移入 `RANSAC::Estimate`,而 `LORANSAC` 覆写 `Estimate`,
+  导致 LO 路径上 `random_seed` 失效,`two_view_geometry_test` 的 3 个
+  `*Deterministic` 用例稳定失败。`LORANSAC::Estimate` 按 upstream 移植为
+  per-worker 状态 + 种子派生 + 受锁归约(保留 fork 双形 estimator 适配),并补
+  upstream 的"内点集不足 LocalEstimator::kMinNumSamples 即停止递归"守卫。
+  test-first:新增 `LORANSAC.ReproducibilityWithRandomSeed` 在旧头文件下失败、
+  修复后通过;另移植 `ParallelSimilarityTransform`、
+  `RecursiveRefinementStopsBelowMinimumSampleCount`。
+  上文批次 X 遗留第 2 条"RANSAC 并行迁移已完成"据此更正:当时 LORANSAC 未覆盖。
+
+### Caspar 稳定性矩阵(实跑证据,撤销专项排除)
+
+- 环境:HEAD `601806861b`(工作树 dirty)、`bundle_adjustment_caspar_test`
+  sha256 `513cbf39…a2b389e1`、RTX 4090 / driver 580.95.05、Release、f32 kernels;
+  Ceres CPU `num_threads=1 max_iter=100`,Caspar `solver_iter_max=100`。
+- 冷启动:5 个用例各自独立进程 ×10 → 0/50 失败;完整二进制顺序子进程 ×10 → 0/10;
+  并发 4×3 轮 → 0/12;并发 8×3 轮 → 0/24。合计 **106 次 0 失败**。
+- 误差分布:SplitIntrinsic 三族逐次位级一致(pp-only Caspar rms 2.559e-4、
+  focal-only 4.850e-4、全固定 1.00104 vs Ceres 1.00027);pinhole parity 的
+  Caspar rms 跨次在 5.4e-5…3.5e-4 漂移(GPU 归约序),门限
+  `ceres*1.25+1e-3≈1.06e-3`,余量约 3×。
+- 结论:批次 W 前记录的 SplitIntrinsic 63.9px 失败签名在当前构建不可复现;
+  上文"有并行 GPU 负载需 -E 排除 bundle_adjustment_caspar_test"的裁定**撤销**,
+  默认 gate 纳入。矩阵脚本未入库(一次性证据采集,非 gate)。
+
+### Gate
+
+- 全量 `cmake --build build_app -j8` 通过。
+- C++ `ctest -R "_test$" -j4` **176/176**,零排除(含 caspar_test)。
+- pytest `python/test/reconstruction/` **397 passed / 3 skipped**。
+
+### 遗留(实测用例数 fork vs upstream,未完成)
+
+1. `sensor/bitmap_test` 47 vs 75。
+2. `estimators/rotation_averaging_ceres_test` 5 vs 11:fork 缺 upstream 的
+   `EstimatesUncalibratedRigs`、`RefinesCalibrationThroughPreparedProblem`
+   (prepared-problem API)、`MissingSensorRotation`、
+   `CalibratedRigWithDisconnectedImageGraph`、`RejectsUnconfiguredRotationBlocks`、
+   `AddsIndividualRelativeRotationResidual`、`SelectsMstOrSuppliedInitialization`
+   等行为面——属真实生产缺口。
+3. `sensor/imu_test` 4 vs 16、`scene/imu_test` 2 vs 5:upstream 无预积分用例;
+   差异是 fork 把 upstream 用例合并为粗粒度用例,`Iterator`/`Copy`/
+   `ConstructFromVector`/`DuplicateThrows`/`InsertVector` 等未按同名单独断言,
+   需逐名补齐以便符号级审计。
+4. ~~CLI-Anything `reconstruct sparse` mapper 参数透传与 L3 上游基线~~ → 见下节
+   (透传完成;L3 默认配置 PASS、带 mapper options 配置 FAIL,根因已定位)。
+5. **数据库 schema 与 upstream 双向不互通**(见下节,真实生产缺口,未修)。
+
+## 批次 Y-L3:CLI `reconstruct sparse` 透传 + L3 上游基线(2026-10-11)
+
+### 透传契约(harness `8c7ce21` + 本地未提交测试)
+
+- harness 已有 `_parse_mapper_options`(重复键/非 KEY=VALUE/空键/`-` 前缀键/
+  `--random-seed` 与 `Mapper.random_seed` 并存 → 运行前拒绝)与 backend
+  `_mapper_option_args`(逐字编码 `--KEY VALUE`),incremental 与 hierarchical
+  同一路径;本批新增 CLI 层 `TestReconstructSparse`(7 例,两种 method 的透传
+  与 5 类歧义输入 `assert_not_called`)。harness 四套件 `/usr/bin/python3`
+  **433 passed**(pyenv 3.12 缺 `mcp` SDK 会 INTERNALERROR,不能作 gate 解释器)。
+- 二进制侧实测:`build_app/bin/Colmap` 的 `mapper` 与 `hierarchical_mapper`
+  均注册 71 个 `Mapper.*` 键与 `Mapper.random_seed`;未知键 exit 1
+  `unrecognised option`,harness `_run` 转 `ColmapError`(fail-closed)。
+- L3 runner 调用的是 `~/.local` 非 editable 安装的 harness 3.1.0(与仓库
+  `acloudviewer_cli.py` 不同:缺 `ai` 命令组等);AST 比对
+  `_parse_mapper_options`/`reconstruct_sparse` 两函数**逐字相同**,故 L3 证据对
+  sparse 透传路径有效。
+- 快速参考 `agent-integration/docs/CLI-QUICK-REFERENCE.md` 增 3b 可复现示例。
+
+### L3 运行(fixture mini6,seed 20261009,SIFT CPU,max_features 2048,SIMPLE_RADIAL)
+
+- 输入 digest(sha256 前 16):IMG_1024 `6a4e1b819c25bfd7`、IMG_1026
+  `28116672a98a0038`、IMG_1028 `e75598533533028c`、IMG_1030 `5f98950105c1ac6f`、
+  IMG_1032 `cf8a9ac377293be8`、IMG_1040 `9ea83fe99843d48f`;无模型资产(SIFT)。
+- 二进制 sha256:candidate `e4b8771b378bf38d…`(rev `601806861b` dirty),
+  upstream `680fb50f0c78686e…`(`a2bd15c2`,工作树干净)。
+
+| 运行 | 配置 | reg | pts | obs | mtl | rms px | Sim3 center p95 | rot p95° | nn p95 | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|
+| l3-gate-3 cand | 默认 | 6 | 410 | 1255 | 3.0610 | 1.2929 | 1.6e-4 | 0.0096 | 0.0260 | PASS |
+| l3-gate-3 up | 默认 | 6 | 410 | 1253 | 3.0561 | 1.2886 | | | | |
+| l3-gate-4 cand | `num_threads=1`,`min_num_matches=20` | 6 | 406 | 1241 | 3.0567 | 1.2937 | 4.1e-4 | 0.0131 | 0.0275 | **FAIL** |
+| l3-gate-4 up | 同上 | 6 | 406 | 1237 | 3.0468 | 1.2845 | | | | |
+
+- 阶段秒(fe/match/map):gate-3 cand 23.23/1.29/1.07、up 22.69/1.72/0.73;
+  gate-4 cand 23.25/1.36/1.02、up 22.14/1.50/1.04。
+- 透传端到端证据:upstream `sparse/0/project.ini` 记录 `num_threads=1`、
+  `min_num_matches=20`、`random_seed=20261009`。candidate **不写 project.ini**
+  (upstream mapper 写出)——行为差异,待审计。
+- gate-4 唯一违例:`mean_track_length` 相对差 0.00323 > 阈值 0.00208。pts 相同,
+  故 mtl 差 ≡ obs 差 4/1237;阈值文件中 obs 阈值 0.0263 而 mtl 阈值 0.00208,
+  二者由 gate-2 观测差标定(棘轮),彼此不自洽。**未改阈值**,FAIL 如实保留。
+
+### gate-4 差异定位(逐级)
+
+- keypoints:6 图逐字节相同。descriptors:仅 IMG_1032 第 2048 行第 9 元素
+  38 vs 39(1 LSB),每个二进制跨运行逐字节稳定;该元素翻转 (1028,1032) 对
+  1 个内点(55 vs 54),级联为 4 个观测差。image_id 按完成序分配(upstream
+  跨运行亦变化),非差异源。
+- 源码:fork `feature/sift.cc`、`feature/utils.cc` 相对 upstream 仅 include/
+  宏名/`type` 赋值位置差异;VLFeat 源仅 host.h 宏行序、random.c 局部变量名差异;
+  upstream 额外链接 `OpenMP::OpenMP_C`(fork C_FLAGS 已含 `-fopenmp`)。
+- 假设 FMA(fork C++ `-march=x86-64-v3`,upstream 无 `-march`)**证伪**:仅
+  sift.cc/utils.cc 以 `-ffp-contract=off` 重编并重链,descriptors 与默认
+  candidate 逐字节相同、与 upstream 仍差同一元素;随后恢复,Colmap sha 回到
+  `e4b8771b…`。剩余差异在源码以下(VLFeat C 目标码或解码库;fork Colmap
+  额外动态加载系统 `libjpeg.so.8`,两者均静态含 build_app 的 OIIO 3.1.17),
+  未进一步二分,不属上游源码契约。
+- mapper 隔离实验(两二进制喂同一 DB)被下述 schema 缺口阻断。
+
+### 数据库 schema 双向不互通(真实缺口)
+
+- fork 打开 upstream 写出的 DB:`SQL logic error`(`database_sqlite.cc` 预编译
+  `INSERT INTO images(... prior_qw ... prior_tz)`,upstream images 表无这些列)。
+- upstream 打开 fork 写出的 DB:`no such column: corr_data_id` 后 abort(134)。
+- schema 差异(sqlite `.schema` 实测):fork 多 `frame_images`、`rig_cameras`
+  表;`images.prior_q*/t*`;`rigs.ref_camera_id`;`rig_sensors.qvec/tvec`
+  (upstream `sensor_from_rig` BLOB);`frames.has_pose/qvec/tvec`;
+  `pose_priors(data_id,sensor_id,sensor_type,…)`(upstream `corr_*` + 唯一索引);
+  `descriptors` 列序(upstream `type` 在第 2 列);upstream 用 UNIQUE INDEX 而
+  fork 用表内 PRIMARY KEY/UNIQUE。upstream 迁移只覆盖 upstream 自身历史 schema
+  (inlier_matches 改名、`pose_priors.image_id`、two_view_geometries 补列、
+  `descriptors.type`、identity→NULL 位姿),不含 fork-legacy 表。
+- fork vs upstream `database_sqlite.cc` 差异行 4435;库外仅 `scene/rig.cc` 引用
+  legacy 名。
+
+## 批次 Y-DB/L3 收口:upstream schema 迁移、双向互通与阈值重标定(2026-10-11)
+
+本节以本轮实跑结果**取代**上节“数据库 schema 双向不互通/mapper 隔离被阻断”
+的旧结论。基线仍为 upstream
+`a2bd15c2fbfa79ca3812f8b081708da5e47d5402`。
+
+### DB test-first 失败集与最小移植
+
+- 生产代码修复前，新增 schema/互通测试中 6 个 database 用例失败；另有
+  `SynthesizeDataset.Nominal` 与 `Reconstruction.SetRigsAndFrames` 失败。
+  `TestOpenUpstreamDatabase` 为 `SQL logic error`；
+  `TestRigWritesUpstreamSensorEncoding` 为 `frame_images` 外键约束失败；
+  two-view 缺失字段被写为零 blob 而非 NULL。
+- fresh schema 按 upstream 4.3.0 对齐：`rigs/rig_sensors/frames/frame_data/images/
+  pose_priors`、索引、FK、`sensor_from_rig` 7-double 小端 blob、two-view NULL
+  语义与 `user_version=4030000`。descriptor 旧库沿用 upstream 自身的追加
+  `type` 迁移，故物理列序可不同但按列名双向互通。
+- fork-legacy 一次性迁移按表结构检测，不依赖私有新版本号；事务中保留
+  rigs/sensors/frames/frame_data/images/pose priors/features/matches，丢弃 upstream
+  不持久化的 frame pose 与 image prior。`legacy_alter_table=ON` 且临时关闭 FK，
+  避免 SQLite 3.32.3 在 RENAME/DROP 时改写引用或级联删数据；失败抛错并回滚。
+- 覆盖用例：`TestFreshSchemaMatchesUpstream`、`TestOpenUpstreamDatabase`、
+  `TestRigWritesUpstreamSensorEncoding`、`TestTwoViewGeometryAbsentFieldsWriteNull`、
+  `TestMigrateForkLegacyRigFrameSchema`、`TestMigrateImageKeyedPosePriors`。
+  最后一项与生产移植同时落地，用于覆盖从代码审计发现的旧 upstream
+  `pose_priors(image_id,...)` 改名后未回填风险，不声明为先红后绿证据。
+- 最终审计补出 `ClearAllTables` 漏清 pose priors：先在 `TestMerge` 写入 prior，
+  实跑得到 `NumPosePriors()==1` 的失败；随后复用 `ClearPosePriors()` 并将其
+  const 性与本 fork 其余 clear API 对齐。`database_test` 最终 **29/29**。
+
+### 双二进制 DB 互通实测
+
+- case A：旧 fork DB(4030001)复制件 → 新 fork mapper 自动迁移 → upstream
+  mapper；两段均 exit 0、均生成 sparse/0。迁移后 6 images、6 keypoints、
+  6 descriptors、15 matches、15 two-view、0 FK violation，版本 4030000。
+- case B：upstream DB(4030000)复制件 → 新 fork mapper → upstream mapper；两段
+  均 exit 0、均生成 sparse/0，数据计数与 FK 检查不变。
+- 两个方向均不再出现 `SQL logic error`、`no such column: corr_data_id` 或
+  constraint 错误。旧 descriptor 表仅有列物理顺序差异，无 SQL/数据行为差异。
+
+### RunMapper 与 L3 收口
+
+- `RunMapper` 已按 upstream 写出 `project.ini`；`fix_existing_frames` 在归一化
+  Sim3 下求解、导出前做逆 Sim3 回变换，新增测试先暴露缺口后修复。
+- DB 移植后以 mini6、SIFT CPU、seed 20261009、`Mapper.num_threads=1`、
+  `Mapper.min_num_matches=20` 连跑 3 次 calibration；所有非时间指标逐位一致。
+  candidate 均为 reg=6、pts=406、obs=1241、mtl=3.0566502463、rms=1.2936505193；
+  upstream 均为 6、406、1237、3.0467980296、1.2844693154。
+- Sim3 后三次均为 center p95=0.0004135192351、rotation p95=0.01313247384°、
+  symmetric point-NN p95=0.02749293910。阈值文件据三次实测最大值重标定；
+  reg 与 points 维持 0 差异，obs/mtl/rms 阈值分别为 0.0032336297494、
+  0.0032336297494、0.0071478577161。
+- 最终正式 L3：candidate sha256 `7dc2349cc9f7a08d…`，upstream sha256
+  `680fb50f0c78686e…`，`verdict=PASS`、`violations=[]`；输入 6 图完整 sha256
+  记录于 `build_app/Testing/l3-db-port-final/comparison.json`。
+
+### 回归与最终目录审计
+
+- 公共头变化后全量 `cmake --build build_app -j8` exit 0；C++
+  `ctest -R '_test$' -j4` **176/176**；Python reconstruction **397 passed / 3 skipped**。
+  首轮全量 gate 的 `loma_test` 曾失败，单进程 6 次及与 Caspar/ALIKED 三轮并发
+  均通过，完整 gate 重跑 176/176，判为非 DB 回归的瞬态外部后端失败。
+- IMU 测试已按 upstream 细分到 `sensor/imu_test` **16/16**、
+  `scene/scene_imu_test` **5/5**；fork 保留大写 accessor 命名适配。
+- CMake 注册审计：本批新增/修改测试均由既有 `database_test`、`imu_test`、
+  `scene_imu_test` 目标覆盖，无孤立测试文件或漏注册 target。
+- 仍保留且不在本批扩张修复的差异：`rotation_averaging_ceres_test` 5 vs upstream
+  11（prepared-problem/未标定 rig 等行为面）；`bitmap_test` 47 vs 75（当前生产
+  契约已由现有色彩/metadata/JPEG/crop/rotation 用例覆盖，但测试名未逐一同步）；
+  DB 管理 GUI 的 image prior 编辑不再持久化（upstream schema 无 image prior 列）；
+  `SQLITE3_CALL` 仍以进程退出而非异常报告约束错误，故重复唯一键契约不能用
+  同进程 `EXPECT_THROW`；`Database` 抽象 API 形态仍非 upstream 逐字同构。

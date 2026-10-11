@@ -11,8 +11,12 @@
 
 #include <gtest/gtest.h>
 
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QHash>
 #include <QSet>
+#include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -20,12 +24,14 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <vector>
 
 #include "MapAnythingGeometry.h"
 #include "MapAnythingModelCatalog.h"
 #include "MapAnythingReconstruction.h"
+#include "MapAnythingSceneMeta.h"
 
 using namespace MapAnythingGeometry;
 
@@ -522,6 +528,285 @@ TEST(QMapAnythingFilter, WritePlyHeaderAndPayload) {
     float x1 = 0.0f;
     std::memcpy(&x1, bytes.data() + body + marker.size() + 15, 4);
     EXPECT_FLOAT_EQ(x1, 3.0f);  // second record is index 2
+    std::remove(path.c_str());
+}
+
+TEST(QMapAnythingGeometry, MedianIsNumpyMedian) {
+    EXPECT_FLOAT_EQ(median({3, 1, 2}), 2.0f);
+    EXPECT_FLOAT_EQ(median({4, 1, 3, 2}), 2.5f);  // mean of the two middles
+    EXPECT_TRUE(std::isnan(median({})));
+}
+
+TEST(QMapAnythingAnchor, MapsCamerasAndCloudIntoReferenceFrame) {
+    // Model frame = reference frame seen through `truth`^-1: the anchor must
+    // recover `truth` from the camera centers alone and move the cloud and
+    // every camera with it. View 2 has no reference (NaN) and is skipped.
+    const Sim3 truth = testSim3(0.4f, 11.3f, 4, -5.6f, 1.7f);
+    MR::Result r;
+    r.views = 5;
+    r.c2w.assign(5 * 16, 0.0f);
+    std::vector<float> ref(5 * 3);
+    const float centers[5][3] = {
+            {0, 0, 0}, {1, 0, 0.2f}, {2, 0.5f, 0}, {0.3f, 1, 1}, {1, 1, 2}};
+    for (int v = 0; v < 5; ++v) {
+        float* M = &r.c2w[(size_t)v * 16];
+        M[0] = M[5] = M[10] = M[15] = 1.0f;
+        M[3] = centers[v][0];
+        M[7] = centers[v][1];
+        M[11] = centers[v][2];
+        applySim3(truth, centers[v], &ref[(size_t)v * 3]);
+    }
+    ref[6] = std::numeric_limits<float>::quiet_NaN();
+    r.cloud.xyz = {0.5f, 0.5f, 0.5f};
+    float expect[3];
+    applySim3(truth, r.cloud.xyz.data(), expect);
+
+    MR::ReferenceAnchor a;
+    ASSERT_TRUE(MR::anchor_to_reference(r, ref, &a));
+    EXPECT_EQ(a.pairs, 4);
+    EXPECT_NEAR(a.sim3.s, truth.s, 1e-3f);
+    EXPECT_LT(a.residualMedian, 1e-3f);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(r.cloud.xyz[k], expect[k], 1e-3f);
+    float c2[3];
+    applySim3(truth, centers[2], c2);  // unreferenced view moves too
+    EXPECT_NEAR(r.c2w[2 * 16 + 3], c2[0], 1e-3f);
+    EXPECT_NEAR(r.c2w[2 * 16 + 7], c2[1], 1e-3f);
+    EXPECT_NEAR(r.c2w[2 * 16 + 11], c2[2], 1e-3f);
+
+    // < 3 usable pairs: refused, result untouched.
+    MR::Result few = r;
+    std::vector<float> sparse(5 * 3, std::numeric_limits<float>::quiet_NaN());
+    std::copy(ref.begin(), ref.begin() + 6, sparse.begin());
+    EXPECT_FALSE(MR::anchor_to_reference(few, sparse, nullptr));
+    EXPECT_EQ(few.cloud.xyz, r.cloud.xyz);
+}
+
+TEST(QMapAnythingAnchor, SceneMetaDiscoveryAndCenters) {
+    QTemporaryDir tmp;
+    ASSERT_TRUE(tmp.isValid());
+    const QDir root(tmp.path());
+    ASSERT_TRUE(root.mkpath(QStringLiteral("images")));
+    ASSERT_TRUE(root.mkpath(QStringLiteral("other")));
+    const QStringList images = {root.filePath("images/DSC_1.png"),
+                                root.filePath("images/DSC_2.v2.png")};
+    // No scene_meta.json yet -> model frame.
+    EXPECT_TRUE(MapAnythingSceneMeta::discover(images).isEmpty());
+    QFile meta(root.filePath("scene_meta.json"));
+    ASSERT_TRUE(meta.open(QIODevice::WriteOnly));
+    meta.write(R"({"frames":[
+        {"frame_name":"DSC_1","transform_matrix":[[1,0,0,1.5],[0,1,0,-2],[0,0,1,3],[0,0,0,1]]},
+        {"frame_name":"DSC_9","transform_matrix":[[1,0,0,9],[0,1,0,9],[0,0,1,9],[0,0,0,1]]},
+        {"frame_name":"DSC_2.v2","transform_matrix":[[1,0,0,4],[0,1,0,5],[0,0,1,6],[0,0,0,1]]}]})");
+    meta.close();
+    const QString found = MapAnythingSceneMeta::discover(images);
+    EXPECT_EQ(QFileInfo(found).canonicalFilePath(),
+              QFileInfo(meta.fileName()).canonicalFilePath());
+    // Mixed directories or a directory not named images/ -> no discovery.
+    EXPECT_TRUE(MapAnythingSceneMeta::discover(
+                        {images[0], root.filePath("other/DSC_3.png")})
+                        .isEmpty());
+    EXPECT_TRUE(MapAnythingSceneMeta::discover({root.filePath("other/a.png")})
+                        .isEmpty());
+
+    std::vector<float> c;
+    QString error;
+    const QStringList three =
+            images + QStringList{root.filePath("images/x.png")};
+    ASSERT_TRUE(MapAnythingSceneMeta::loadCenters(found, three, &c, &error));
+    ASSERT_EQ(c.size(), 9U);
+    EXPECT_EQ(std::vector<float>(c.begin(), c.begin() + 6),
+              std::vector<float>({1.5f, -2, 3, 4, 5, 6}));
+    EXPECT_TRUE(std::isnan(c[6]));  // frame absent from the meta
+    EXPECT_FALSE(MapAnythingSceneMeta::loadCenters(
+            root.filePath("missing.json"), images, &c, &error));
+    EXPECT_FALSE(error.isEmpty());
+}
+
+namespace {
+
+QString writeText(const QDir& dir, const QString& name, const char* text) {
+    QFile f(dir.filePath(name));
+    f.open(QIODevice::WriteOnly | QIODevice::Truncate);
+    f.write(text);
+    return f.fileName();
+}
+
+}  // namespace
+
+TEST(QMapAnythingAnchor, Wgs84MatchesColmapGpsTransform) {
+    // COLMAP src/colmap/geometry/gps_test.cc EllipsoidToECEFWGS84 vectors.
+    const double lla[2][3] = {{48 + 8. / 60 + 51.70361 / 3600,
+                               11 + 34. / 60 + 10.51777 / 3600, 561.1851},
+                              {48 + 8. / 60 + 52.40575 / 3600,
+                               11 + 34. / 60 + 11.77179 / 3600, 561.1509}};
+    const double ecef[2][3] = {
+            {4.177239709042750e6, 0.855153779923415e6, 4.728267404769168e6},
+            {4.177218660452103e6, 0.855175931344048e6, 4.728281850382507e6}};
+    for (int i = 0; i < 2; ++i) {
+        double xyz[3];
+        MapAnythingSceneMeta::wgs84ToEcef(lla[i], xyz);
+        for (int k = 0; k < 3; ++k) EXPECT_NEAR(xyz[k], ecef[i][k], 1e-6);
+    }
+    // ENU about point 0 (COLMAP EllipsoidToENUWGS84): the rotated ECEF
+    // difference, and the origin maps to zero.
+    double enu[3];
+    MapAnythingSceneMeta::wgs84ToEnu(lla[0], lla[0], enu);
+    for (double e : enu) EXPECT_NEAR(e, 0.0, 1e-9);
+    MapAnythingSceneMeta::wgs84ToEnu(lla[1], lla[0], enu);
+    const double d[3] = {ecef[1][0] - ecef[0][0], ecef[1][1] - ecef[0][1],
+                         ecef[1][2] - ecef[0][2]};
+    EXPECT_NEAR(std::sqrt(enu[0] * enu[0] + enu[1] * enu[1] + enu[2] * enu[2]),
+                std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]), 1e-6);
+    EXPECT_GT(enu[0], 0.0);  // point 1 lies east (larger longitude) ...
+    EXPECT_GT(enu[1], 0.0);  // ... and north (larger latitude)
+}
+
+TEST(QMapAnythingAnchor, ColmapReferenceFileContract) {
+    QTemporaryDir tmp;
+    ASSERT_TRUE(tmp.isValid());
+    const QDir root(tmp.path());
+    ASSERT_TRUE(root.mkpath(QStringLiteral("a")));
+    ASSERT_TRUE(root.mkpath(QStringLiteral("b")));
+    const QStringList images = {
+            root.filePath("a/f1.jpg"), root.filePath("a/f2.jpg"),
+            root.filePath("b/f1.jpg"), root.filePath("a/f3.jpg")};
+    MapAnythingSceneMeta::ReferenceCenters r;
+    QString error;
+
+    // Bare names, trailing paths, comments, blank lines, trailing tokens and
+    // unknown images (ignored, as in COLMAP).
+    const QString ok = writeText(root, "ok.txt",
+                                 "# name X Y Z\n"
+                                 "\n"
+                                 "a/f1.jpg 1 2 3\n"
+                                 "f2.jpg  4\t5 6 extra\n"
+                                 "b/f1.jpg -1 -2 -3\n"
+                                 "other.jpg 9 9 9\n");
+    ASSERT_TRUE(MapAnythingSceneMeta::loadColmapReferences(ok, images, false,
+                                                           &r, &error))
+            << error.toStdString();
+    EXPECT_EQ(r.matched, 3);
+    ASSERT_EQ(r.centers.size(), 12U);
+    EXPECT_EQ(std::vector<float>(r.centers.begin(), r.centers.begin() + 9),
+              std::vector<float>({1, 2, 3, 4, 5, 6, -1, -2, -3}));
+    EXPECT_TRUE(std::isnan(r.centers[9]));
+    EXPECT_EQ(r.offset[0], 0.0);
+
+    // Fail closed: ambiguous name, duplicate image, malformed, < 3 matched,
+    // GPS out of range.
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            writeText(root, "amb.txt", "f1.jpg 1 2 3\n"), images, false, &r,
+            &error));
+    EXPECT_TRUE(error.contains(QStringLiteral("matches both")));
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            writeText(root, "dup.txt",
+                      "a/f1.jpg 1 2 3\nf2.jpg 1 2 3\na/f1.jpg 1 2 3\n"),
+            images, false, &r, &error));
+    EXPECT_TRUE(error.contains(QStringLiteral("already has")));
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            writeText(root, "bad.txt", "a/f1.jpg 1 two 3\n"), images, false, &r,
+            &error));
+    EXPECT_TRUE(error.contains(QStringLiteral(":1:")));
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            writeText(root, "few.txt", "a/f1.jpg 1 2 3\nf2.jpg 1 2 3\n"),
+            images, false, &r, &error));
+    EXPECT_TRUE(error.contains(QStringLiteral("at least 3")));
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            writeText(root, "gpsbad.txt",
+                      "a/f1.jpg 4000000 2 3\nf2.jpg 1 2 3\nf3.jpg 1 2 3\n"),
+            images, true, &r, &error));
+    EXPECT_FALSE(MapAnythingSceneMeta::loadColmapReferences(
+            root.filePath("missing.txt"), images, false, &r, &error));
+
+    // Large cartesian coordinates (UTM-like): per-axis offset from the FIRST
+    // line, truncated to hundreds; locals keep sub-mm precision.
+    const QString utm = writeText(root, "utm.txt",
+                                  "a/f1.jpg 500123.4567 4100987.6543 12.5\n"
+                                  "f2.jpg 500124.4567 4100988.6543 13.5\n"
+                                  "f3.jpg 500125.0 4100986.0 14.0\n");
+    ASSERT_TRUE(MapAnythingSceneMeta::loadColmapReferences(utm, images, false,
+                                                           &r, &error));
+    EXPECT_EQ(r.offset[0], 500100.0);
+    EXPECT_EQ(r.offset[1], 4100900.0);
+    EXPECT_EQ(r.offset[2], 0.0);  // below the threshold: kept as given
+    EXPECT_NEAR(r.centers[0], 23.4567f, 1e-5f);
+    EXPECT_NEAR(r.centers[1], 87.6543f, 1e-5f);
+    EXPECT_NEAR(r.centers[3 * 3 + 0], 25.0f, 1e-5f);
+
+    // GPS: local ENU about the first line (COLMAP --alignment_type enu).
+    const QString gps = writeText(root, "gps.txt",
+                                  "f3.jpg 48.0 11.0 500\n"
+                                  "a/f1.jpg 48.001 11.0 500\n"
+                                  "f2.jpg 48.0 11.001 510\n");
+    ASSERT_TRUE(MapAnythingSceneMeta::loadColmapReferences(gps, images, true,
+                                                           &r, &error));
+    EXPECT_TRUE(r.gps);
+    EXPECT_EQ(r.enuOrigin[0], 48.0);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(r.centers[9 + k], 0.0f, 1e-6f);
+    EXPECT_NEAR(r.centers[0], 0.0f, 1e-3f);   // due north: no east
+    EXPECT_NEAR(r.centers[1], 111.2f, 0.3f);  // 0.001 deg lat ~ 111.2 m
+    EXPECT_NEAR(r.centers[3], 74.6f, 0.3f);   // 0.001 deg lon * cos(48)
+    EXPECT_NEAR(r.centers[5], 10.0f, 0.01f);  // altitude difference
+}
+
+TEST(QMapAnythingAnchor, RefusesCollinearReferenceCenters) {
+    // Cameras along a straight walk (x axis) with centimetre jitter across
+    // it, noisier predictions: the roll about x is unobservable.
+    MR::Result r;
+    r.views = 8;
+    r.c2w.assign(8 * 16, 0.0f);
+    std::vector<float> ref(8 * 3);
+    for (int v = 0; v < 8; ++v) {
+        float* M = &r.c2w[(size_t)v * 16];
+        M[0] = M[5] = M[10] = M[15] = 1.0f;
+        const float jitter = (v % 2 ? 0.01f : -0.01f);
+        M[3] = (float)v;
+        M[7] = (v % 3 - 1) * 0.05f;
+        M[11] = ((v + 1) % 3 - 1) * 0.05f;
+        ref[(size_t)v * 3] = (float)v;
+        ref[(size_t)v * 3 + 1] = jitter;
+        ref[(size_t)v * 3 + 2] = -jitter;
+    }
+    r.cloud.xyz = {0.5f, 0.5f, 0.5f};
+    const MR::Result before = r;
+    MR::ReferenceAnchor a;
+    std::string error;
+    EXPECT_FALSE(MR::anchor_to_reference(r, ref, &a, &error));
+    EXPECT_NE(error.find("collinear"), std::string::npos) << error;
+    EXPECT_EQ(r.cloud.xyz, before.cloud.xyz);  // untouched
+
+    // The same path bent sideways by 1 m is well posed.
+    for (int v = 0; v < 8; ++v) {
+        const float bend = (v % 4 < 2 ? 0.0f : 1.0f);
+        r.c2w[(size_t)v * 16 + 7] = bend;
+        r.c2w[(size_t)v * 16 + 11] = 0.0f;
+        ref[(size_t)v * 3 + 1] = bend;
+        ref[(size_t)v * 3 + 2] = 0.0f;
+    }
+    ASSERT_TRUE(MR::anchor_to_reference(r, ref, &a, &error)) << error;
+    EXPECT_GT(a.crossSpread, 0.4f);
+    EXPECT_LT(a.residualMedian, 1e-4f);
+}
+
+TEST(QMapAnythingReconstruction, WritePlyDoubleWithOffset) {
+    MR::Cloud c = makeCloud({{1, 2, 3}});
+    const std::string path =
+            ::testing::TempDir() + "qmapanything_write_ply_offset.ply";
+    const double offset[3] = {500100.0, 4100900.0, 0.0};
+    ASSERT_TRUE(MR::write_ply(path, c, nullptr, offset));
+    std::ifstream in(path, std::ios::binary);
+    const std::string bytes((std::istreambuf_iterator<char>(in)),
+                            std::istreambuf_iterator<char>());
+    const std::string marker = "end_header\n";
+    const size_t body = bytes.find(marker);
+    ASSERT_NE(body, std::string::npos);
+    EXPECT_NE(bytes.find("property double x\n"), std::string::npos);
+    EXPECT_EQ(bytes.size() - body - marker.size(), c.size() * (3 * 8 + 3));
+    double p[3];
+    std::memcpy(p, bytes.data() + body + marker.size(), sizeof(p));
+    EXPECT_EQ(p[0], double(c.xyz[0]) + offset[0]);
+    EXPECT_EQ(p[1], double(c.xyz[1]) + offset[1]);
+    EXPECT_EQ(p[2], double(c.xyz[2]));
     std::remove(path.c_str());
 }
 

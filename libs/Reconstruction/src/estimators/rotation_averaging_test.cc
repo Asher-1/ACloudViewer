@@ -518,11 +518,7 @@ TEST(RotationAveraging, MultiImageRigFrameDeregisterDoesNotCrashOnSecondVisit) {
   data.reconstruction.Frame(isolated_frame_id)
       .SetRigFromWorld(
           data.gt_reconstruction.Frame(isolated_frame_id).RigFromWorld());
-  // Fork parity: image-level registration until W3-2b.
-  for (const image_t registered_image_id :
-       data.reconstruction.Frame(isolated_frame_id).ImageIds()) {
-    data.reconstruction.RegisterImage(registered_image_id);
-  }
+  data.reconstruction.RegisterFrame(isolated_frame_id);
 
   RotationEstimatorOptions options = CreateRATestOptions();
   options.max_rotation_error_deg = 1.0;

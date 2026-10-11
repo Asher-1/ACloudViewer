@@ -52,16 +52,50 @@ Agent access is mandatory for every AICore plugin, not a later UI follow-up:
 2. Use `ecvAICoreBatchCommand.h` for argument grammar, inputs, model/catalog
    resolution, manifest, and `HELP RESULT_JSON` schema. An established command
    may use `handleSchemaHelp()` while its runtime parser remains unchanged.
-3. Add the command to JSON-RPC `aicore.batch`'s whitelist and the Python
-   `ai_registry.py`; do not copy option defaults into Python.
-4. Verify Click `ai list/schema/run`, MCP `list_ai_tasks`, `get_ai_schema`,
+3. Add the command to JSON-RPC `aicore.batch`'s whitelist (`kCommands` in
+   `rpcAICoreBatch`, `qJSonRPCPlugin/src/JsonRPCMethodsAI.cpp`) and the Python
+   `cli_anything/acloudviewer/core/ai_registry.py`; do not copy option
+   defaults into Python.
+4. Add one `(task, COMMAND, header)` row to `AICORE_BATCH_COMMANDS` in
+   `agent-integration/tests/test_integration.py`. That table is the reference
+   the gates compare against: L1 requires the header define, a registered
+   command class and set-equality with `kCommands`; L2/L5 require
+   set-equality with `ai_registry.py`; L3/L4 query each row's HELP schema.
+   A row that is missing anywhere fails; nothing is generated.
+5. Verify Click `ai list/schema/run`, MCP `list_ai_tasks`, `get_ai_schema`,
    `run_ai_batch`, and ordinary `run_plugin_command` passthrough.
-5. Update `agent-integration` command mapping, quick reference, and tests.
+6. Update `agent-integration` command mapping, quick reference, and tests.
+   Adding an MCP tool or RPC method changes counts that L1/L5 compare with
+   every README, OpenClaw manifest, and harness doc; update them together.
 
 The binary HELP schema is the option source of truth. The Python registry owns
 only stable task name, native command, summary, and input shape. Read
 `agent-integration/README.md` and the CLI quick reference; do not invent
 undocumented binary arguments.
+
+An RPC handler that runs a child process (CLI, batch, Colmap) returns
+`jsonrpc::runChildProcess()`'s deferred result
+(`qJSonRPCPlugin/src/JsonRPCChildProcess.h`); its `finish` callback builds the
+answer when the child ends. The handler never waits on the GUI thread:
+`QProcess::waitForFinished()` freezes the GUI, and a nested `QEventLoop`
+re-enters the dispatcher so the outer reply and deadline wait for any inner
+child. ACloudViewer children take `headlessChildEnvironment()`
+(platform-correct `QT_QPA_PLATFORM`); `timeout_ms` is bounded by
+`childTimeout()`.
+
+### Automation delivery
+
+The harness lives in a separate repository, and every ACloudViewer workflow
+checks out `Asher-1/CLI-Anything` at its default branch. Order matters:
+
+1. In CLI-Anything, edit `acloudviewer/agent-harness/.../skills/SKILL.md`
+   only, then run `python3 .github/scripts/sync_root_skills.py`; the root
+   `skills/cli-anything-acloudviewer/SKILL.md` is a generated mirror checked
+   by `validate_root_skills.py`.
+2. Run the harness suite (`pytest cli_anything/acloudviewer/tests`), then
+   merge/push CLI-Anything.
+3. Only then push the ACloudViewer change whose L1/L2/L5 rows expect the new
+   registry entry; pushing it first turns every agent-integration job red.
 
 ## Workflow Acceptance
 
@@ -70,12 +104,15 @@ live, cancellation, stale generation, errors, and teardown. A contract test or
 synthetic output is not end-to-end evidence. Include the exact model digest,
 input fixture, backend/device, build revision, and report path in the result.
 
-Automation acceptance is fail-closed at three boundaries:
+Automation acceptance is fail-closed at four boundaries:
 
 - L1: command header, shared schema contract, RPC whitelist, and ownership check.
-- L2/L5: exact Python registry plus Click and MCP surfaces without a binary.
+- L2/L5: exact Python registry plus Click and MCP surfaces without a binary,
+  on Linux, macOS, and Windows.
 - L3: every registry task resolves from each packaged Linux/macOS/Windows
   binary and returns a non-empty `acloudviewer.aicore.batch/1` HELP schema.
+- L4: the packaged GUI runs under the offscreen QPA (Linux CI, Xvfb + Mesa)
+  and serves `aicore.batch` HELP for every row while staying responsive.
 
 A missing packaged plugin, stale registry row, absent `RESULT_JSON`, or schema
 mismatch is a failure, not a skip.

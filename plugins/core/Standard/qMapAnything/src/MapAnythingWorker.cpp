@@ -16,6 +16,7 @@
 #include "MapAnythingGeometry.h"
 #include "MapAnythingModelCatalog.h"
 #include "MapAnythingReconstruction.h"
+#include "MapAnythingSceneMeta.h"
 #include "ecvAICoreRuntimeHelpers.h"
 
 #ifdef AICore_ENABLED
@@ -205,6 +206,31 @@ bool MapAnythingWorker::runInference() {
             return false;
         }
     }
+    // Reference cameras are read BEFORE the model: a bad file must fail in
+    // milliseconds, not after minutes of inference. The user's model_aligner
+    // file wins over a discovered benchmark scene_meta.json.
+    MapAnythingSceneMeta::ReferenceCenters reference;
+    QString referencePath;
+    if (!m_settings.refImagesPath.isEmpty()) {
+        referencePath = m_settings.refImagesPath;
+        QString refError;
+        if (!MapAnythingSceneMeta::loadColmapReferences(
+                    referencePath, m_settings.imagePaths, m_settings.refIsGps,
+                    &reference, &refError)) {
+            emit logMessage(tr("[Error] Reference cameras: %1").arg(refError));
+            return false;
+        }
+    } else if (!m_settings.gtMetaPath.isEmpty()) {
+        referencePath = m_settings.gtMetaPath;
+        QString metaError;
+        if (!MapAnythingSceneMeta::loadCenters(
+                    referencePath, m_settings.imagePaths, &reference.centers,
+                    &metaError)) {
+            emit logMessage(tr("[Error] Reference cameras: %1").arg(metaError));
+            return false;
+        }
+    }
+
     // Steps: 1 model load, 1 decode, one per view (emitted by the shared
     // driver's first-cover hook, so overlap frames never count twice), 1
     // scene filter.
@@ -363,6 +389,54 @@ bool MapAnythingWorker::runInference() {
                                 .arg(c.residualMedian, 0, 'g', 4));
     }
 
+    // Reference frame (benchmark scene_meta.json: upstream e2e_full_scene.py
+    // --align gt, the frame of the published upstream e2e PLYs; or the
+    // user's model_aligner file). Before the cameras and the cloud are
+    // copied out, so every output shares it.
+    bool anchored = false;
+    if (!referencePath.isEmpty()) {
+        MapAnythingReconstruction::ReferenceAnchor anchor;
+        std::string anchorError;
+        if (!MapAnythingReconstruction::anchor_to_reference(
+                    rec, reference.centers, &anchor, &anchorError)) {
+            emit logMessage(tr("[Error] Reference-frame anchor (%1): %2")
+                                    .arg(referencePath,
+                                         QString::fromStdString(anchorError)));
+            return false;
+        }
+        anchored = true;
+        m_result.referenceFrame = referencePath;
+        m_result.referenceScale = anchor.sim3.s;
+        for (int k = 0; k < 3; ++k)
+            m_result.referenceOffset[k] = reference.offset[k];
+        emit logMessage(tr("[MapAnything] Anchored to the reference frame "
+                           "(%1): Sim3 scale %2 from %3 cameras, median "
+                           "camera-center residual %4 (spread across the "
+                           "camera path %5).")
+                                .arg(referencePath)
+                                .arg(anchor.sim3.s, 0, 'f', 4)
+                                .arg(anchor.pairs)
+                                .arg(anchor.residualMedian, 0, 'g', 4)
+                                .arg(anchor.crossSpread, 0, 'g', 4));
+        if (reference.gps) {
+            emit logMessage(tr("[MapAnything] GPS references -> local "
+                               "East-North-Up metres, origin lat %1 lon %2 "
+                               "alt %3 (the file's first line).")
+                                    .arg(reference.enuOrigin[0], 0, 'f', 8)
+                                    .arg(reference.enuOrigin[1], 0, 'f', 8)
+                                    .arg(reference.enuOrigin[2], 0, 'f', 3));
+        }
+        if (reference.offset[0] != 0.0 || reference.offset[1] != 0.0 ||
+            reference.offset[2] != 0.0) {
+            emit logMessage(tr("[MapAnything] Large reference coordinates: "
+                               "stored relative to (%1, %2, %3), carried as "
+                               "the cloud's global shift.")
+                                    .arg(reference.offset[0], 0, 'f', 1)
+                                    .arg(reference.offset[1], 0, 'f', 1)
+                                    .arg(reference.offset[2], 0, 'f', 1));
+        }
+    }
+
     m_result.viewCount = viewCount;
     m_result.architecture = QString::fromStdString(rec.architecture);
     m_result.resolvedDevice = QString::fromStdString(rec.device);
@@ -395,8 +469,9 @@ bool MapAnythingWorker::runInference() {
     fo.confPercentile = m_settings.confPercentile;
     fo.voxelSize = m_settings.voxelSize;
     const MapAnythingReconstruction::FilterReport fr =
-            MapAnythingReconstruction::filter_scene(cloud, rec.architecture, fo,
-                                                    rec.hasMetricScale);
+            MapAnythingReconstruction::filter_scene(
+                    cloud, rec.architecture, fo,
+                    rec.hasMetricScale || anchored);
     if (!fr.ok) {
         emit logMessage(tr("[Error] Scene filter: %1")
                                 .arg(QString::fromStdString(fr.rule)));

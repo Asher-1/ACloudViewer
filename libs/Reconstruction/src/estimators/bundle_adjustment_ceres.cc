@@ -110,8 +110,10 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
 #else
         // Upstream parity (bundle_adjustment.cc CreateBundleAdjuster):
         // selecting the CASPAR backend without CASPAR_ENABLED is a hard
-        // construction error.
-        LOG(FATAL_THROW)
+        // construction error. Upstream LOG(FATAL_THROW) relies on a glog
+        // severity this tree does not define; LOG_FATAL_THROW is the local
+        // equivalent (std::invalid_argument, same as upstream's default).
+        LOG_FATAL_THROW(std::invalid_argument)
                 << "Caspar BA backend selected but COLMAP was built without "
                    "RECONSTRUCTION_CASPAR_ENABLED; rebuild with "
                    "-DRECONSTRUCTION_CASPAR_ENABLED=ON to use it";

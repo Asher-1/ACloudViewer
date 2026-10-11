@@ -1098,13 +1098,13 @@ class SiftCPUFeatureMatcher : public FeatureMatcher {
 
     THROW_CHECK_NOTNULL(index2)->Search(
         /*num_neighbors=*/2,
-        image1.descriptors->ToFloat().data,
+        image1.descriptors->ToFloat(),
         indices_1to2,
         l2_dists_1to2);
     if (options_.sift->cross_check) {
       THROW_CHECK_NOTNULL(index1)->Search(
           /*num_neighbors=*/2,
-          image2.descriptors->ToFloat().data,
+          image2.descriptors->ToFloat(),
           indices_2to1,
           l2_dists_2to1);
     }

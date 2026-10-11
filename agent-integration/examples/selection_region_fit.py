@@ -27,7 +27,10 @@ from websocket import create_connection
 
 
 def connect(host, port):
-    return create_connection(f"ws://{host}:{port}", timeout=60)
+    # The server refuses handshakes carrying Origin (browser pages);
+    # websocket-client sends one unless suppressed.
+    return create_connection(f"ws://{host}:{port}", timeout=60,
+                             suppress_origin=True)
 
 
 def call(ws, method, params=None, timeout=45.0):

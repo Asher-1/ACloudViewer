@@ -4,6 +4,7 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingModelCatalog.h
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingGeometry.h
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingReconstruction.h
+        ${CMAKE_CURRENT_LIST_DIR}/MapAnythingSceneMeta.h
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/MapAnythingReconstructCommand.h

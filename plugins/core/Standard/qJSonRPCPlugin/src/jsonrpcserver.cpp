@@ -9,7 +9,35 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonParseError>
 #include <QPointer>
+#include <QWebSocketCorsAuthenticator>
+
+namespace {
+
+void sendResponse(QWebSocket *client,
+                  const QJsonValue &id,
+                  const JsonRPCResult &result) {
+    QJsonObject response;
+    response["jsonrpc"] = "2.0";
+    response["id"] = id;
+    if (result.isError) {
+        QJsonObject error;
+        error["code"] = result.error_code;
+        if (!result.error_message.isEmpty()) {
+            error["message"] = result.error_message;
+        }
+        if (!result.error_data.isNull() && result.error_data.isValid()) {
+            error["data"] = QJsonValue::fromVariant(result.error_data);
+        }
+        response["error"] = error;
+    } else {
+        response["result"] = QJsonValue::fromVariant(result.result);
+    }
+    client->sendTextMessage(QJsonDocument(response).toJson());
+}
+
+}  // namespace
 
 JsonRPCServer::JsonRPCServer(QObject *parent)
     : QObject(parent),
@@ -20,6 +48,8 @@ JsonRPCServer::JsonRPCServer(QObject *parent)
                 &JsonRPCServer::onNewConnection);
         connect(ws_server, &QWebSocketServer::closed, this,
                 &JsonRPCServer::onClosed);
+        connect(ws_server, &QWebSocketServer::originAuthenticationRequired,
+                this, &JsonRPCServer::onOriginAuthenticationRequired);
     }
 }
 
@@ -30,15 +60,25 @@ JsonRPCServer::~JsonRPCServer() {
     }
 }
 
-void JsonRPCServer::listen(unsigned int port) {
+bool JsonRPCServer::listen(quint16 port) {
     qDebug() << "JsonRPCServer::listen";
     if (ws_server == nullptr) {
-        return;
+        return false;
     }
     if (ws_server->isListening()) {
         ws_server->close();
     }
-    ws_server->listen(QHostAddress::Any, port);
+    // Loopback only: the methods open/export arbitrary paths and run child
+    // programs (process.run_cli, colmap.run), with no authentication.
+    return ws_server->listen(QHostAddress::LocalHost, port);
+}
+
+bool JsonRPCServer::isListening() const {
+    return ws_server && ws_server->isListening();
+}
+
+QString JsonRPCServer::errorString() const {
+    return ws_server ? ws_server->errorString() : QString();
 }
 
 void JsonRPCServer::close() {
@@ -78,44 +118,39 @@ void JsonRPCServer::processTextMessage(QString message) {
     if (pClient == nullptr) {
         return;
     }
-    // A long handler (aicore.batch) runs a local event loop; the client may
-    // disconnect and be deleted before the reply is ready.
-    QPointer<QWebSocket> client(pClient);
-    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
-    QJsonObject obj = doc.object();
-    auto method = obj.value("method").toString();
-    auto params = obj.value("params").toVariant().toMap();
-    // check invalid JSON RPC
-    JsonRPCResult result;
-    if (!method.isEmpty() && !obj.value("jsonrpc").toString().isEmpty()) {
-        // perform the RPC
-        result = emit execute(method, params);
-    } else {
-        result = JsonRPCResult::error(-32600, "Invalid Request");
-    }
-    // now build JSON response
-    if (!doc.object().contains("id")) {
-        // abort here, on notification there is NO RESPONSE
+    QJsonParseError parseError;
+    const QJsonDocument doc =
+            QJsonDocument::fromJson(message.toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        sendResponse(pClient, QJsonValue::Null,
+                     JsonRPCResult::error(-32700, "Parse error",
+                                          parseError.errorString()));
         return;
     }
-    QJsonObject response;
-    response["jsonrpc"] = "2.0";
-    response["id"] = obj.value("id");
-    if (result.isError) {
-        QJsonObject error;
-        error["code"] = result.error_code;
-        if (!result.error_message.isEmpty()) {
-            error["message"] = result.error_message;
-        }
-        if (!result.error_data.isNull() && result.error_data.isValid()) {
-            error["data"] = QJsonValue::fromVariant(result.error_data);
-        }
-        response["error"] = error;
-    } else {
-        response["result"] = QJsonValue::fromVariant(result.result);
+    const QJsonObject obj = doc.object();
+    const QJsonValue id = obj.value("id");
+    const QString method = obj.value("method").toString();
+    if (!doc.isObject() || method.isEmpty() ||
+        obj.value("jsonrpc").toString().isEmpty()) {
+        // Batch arrays are not supported.
+        sendResponse(pClient, id.isUndefined() ? QJsonValue::Null : id,
+                     JsonRPCResult::error(-32600, "Invalid Request"));
+        return;
     }
-
-    if (client) client->sendTextMessage(QJsonDocument(response).toJson());
+    const JsonRPCResult result =
+            emit execute(method, obj.value("params").toVariant().toMap());
+    if (!obj.contains("id")) {
+        return;  // notification: no response, even for a deferred result
+    }
+    if (result.pending) {
+        // The client may disconnect (and be deleted) before the child ends.
+        QPointer<QWebSocket> client(pClient);
+        result.pending->onComplete([client, id](const JsonRPCResult &done) {
+            if (client) sendResponse(client, id, done);
+        });
+        return;
+    }
+    sendResponse(pClient, id, result);
 }
 
 void JsonRPCServer::processBinaryMessage(QByteArray message) {
@@ -124,6 +159,13 @@ void JsonRPCServer::processBinaryMessage(QByteArray message) {
     if (pClient) {
         pClient->sendBinaryMessage(message);
     }
+}
+
+void JsonRPCServer::onOriginAuthenticationRequired(
+        QWebSocketCorsAuthenticator *authenticator) {
+    // Browsers always send Origin and let any web page open ws:// to
+    // loopback; the agent clients (Python websockets, CLI, MCP) send none.
+    authenticator->setAllowed(authenticator->origin().isEmpty());
 }
 
 void JsonRPCServer::socketDisconnected() {

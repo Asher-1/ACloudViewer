@@ -2,6 +2,7 @@ add_executable( test_qmapanything_helpers test_map_anything_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingModelCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingGeometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingReconstruction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingSceneMeta.cpp
 )
 
 target_include_directories( test_qmapanything_helpers PRIVATE
@@ -44,6 +45,7 @@ add_executable( map_anything_worker_parity_harness worker_parity_harness.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingModelCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingGeometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingReconstruction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/MapAnythingSceneMeta.cpp
 )
 set_target_properties( map_anything_worker_parity_harness PROPERTIES AUTOMOC ON )
 target_include_directories( map_anything_worker_parity_harness PRIVATE

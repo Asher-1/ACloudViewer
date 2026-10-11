@@ -63,8 +63,13 @@ python3 core/AICore/scripts/run_ocr_gt_matrix.py \
   --output build_app/Testing/ocr_gt
 ```
 
-Layout 的 `pplcnet-layout` 是区域类别模型，不应被上述文本指标误评；它需要拥有类别
-标签和 region quad 的 CDLA GT 合约后再单独登记。
+Layout 的 `pplcnet-layout` 是区域类别模型，不应被上述文本指标误评。它的解码后区域由
+`ocr-layout-regions-{f32,f16,q8_0}` 单独门控：`check_layout_regions.py` 把 `aicore_ocr_run`
+返回的区域按同类别贪心 IoU 与官方 PP-Structure 输出（`run_paddle_layout_reference.py`
+运行上游 PicoDet CDLA 模型与上游 `picodet_postprocess.py`，固定于
+`ocr_fixtures/layout_regions.json`）匹配，要求 recall ≥ 1、F1 ≥ 1/1/0.95、mean IoU ≥ 0.99。
+实测 f32/f16 F1 = 1，q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见
+[`../table/README.md`](../table/README.md)。
 
 ## 端到端性能矩阵
 

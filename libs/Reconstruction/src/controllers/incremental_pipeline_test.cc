@@ -49,6 +49,40 @@ TEST(IncrementalPipeline, WithoutNoise) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
+// The cache-based constructor (used by the hierarchical mapper) must
+// reconstruct the same scene as the database-path constructor.
+TEST(IncrementalPipeline, WithoutNoiseFromDatabaseCache) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  std::shared_ptr<const DatabaseCache> database_cache =
+      DatabaseCache::Create(*database, DatabaseCache::Options());
+  database.reset();
+
+  IncrementalPipelineOptions options;
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(
+      &options, "", database_cache, reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
 TEST(IncrementalPipeline, WithoutNoiseSphericalCameras) {
   // Batch C fix: the camera.cc abort was resolved by the missing
   // non-perspective guard in RegisterNextImage (spherical cameras now take
@@ -360,11 +394,31 @@ TEST(IncrementalPipeline, IgnoreRedundantPoints3D) {
 }
 
 TEST(IncrementalPipeline, StructureLessRegistrationOnly) {
-  GTEST_SKIP()
-      << "Fork adjudication: IncrementalPipelineOptions has no "
-         "structure_less_registration_only toggle; the structure-less "
-         "registration mode is deferred until the fork adopts the upstream "
-         "mapper option.";
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->structure_less_registration_only = true;
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-3,
+                                 /*max_proj_center_error=*/1e-4));
 }
 
 TEST(IncrementalPipeline, MultiReconstruction) {
@@ -494,12 +548,7 @@ TEST(IncrementalPipeline, ChainedMatches) {
                                  /*max_proj_center_error=*/1e-4));
 }
 
-TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoise) {
-  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
-  // anchor port): no splitting or aborts; remaining gap is a small,
-  // seed-dependent observation deficit after final filtering (~1901 vs 2000
-  // observations). Deferred with the sibling filtering-parity cases.
-
+TEST(IncrementalPipeline, PriorBasedSfMWithoutNoise) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -540,12 +589,7 @@ TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoise) {
                                  /*align=*/false));
 }
 
-TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
-  // Fork adjudication (after the BA dual-track sync fix + rig-scale anchor
-  // port): no splitting or aborts, but the case shares the seed-dependent
-  // observation-count variance of the filtering-parity siblings and is
-  // kept disabled until that variance is reconciled.
-
+TEST(IncrementalPipeline, PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -598,12 +642,7 @@ TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithoutNoiseAndWithNonTrivialFra
                                  /*align=*/false));
 }
 
-TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithNoise) {
-  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
-  // anchor port): no splitting or aborts; remaining gap is the same
-  // seed-dependent observation deficit after final filtering, on the noisy
-  // prior variant. Deferred with the sibling filtering-parity cases.
-
+TEST(IncrementalPipeline, PriorBasedSfMWithNoise) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);
@@ -642,12 +681,7 @@ TEST(IncrementalPipeline, DISABLED_PriorBasedSfMWithNoise) {
                                  /*num_obs_tolerance=*/0.02));
 }
 
-TEST(IncrementalPipeline, DISABLED_GPSPriorBasedSfMWithNoise) {
-  // Fork adjudication (updated after the BA dual-track sync fix + rig-scale
-  // anchor port): no splitting or aborts; remaining gap is the same
-  // seed-dependent observation deficit after final filtering, on the GPS
-  // prior variant. Deferred with the sibling filtering-parity cases.
-
+TEST(IncrementalPipeline, GPSPriorBasedSfMWithNoise) {
   const auto database_path = CreateTestDir() / "database.db";
 
   auto database = Database::Open(database_path);

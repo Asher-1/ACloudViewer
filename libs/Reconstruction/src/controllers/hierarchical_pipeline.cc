@@ -7,7 +7,9 @@
 
 #include "controllers/hierarchical_pipeline.h"
 
+#include "scene/database_cache.h"
 #include "scene/scene_clustering.h"
+#include "sfm/observation_manager.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -36,7 +38,10 @@ void MergeClusters(
     for (size_t i = 0; i < reconstructions.size(); ++i) {
       for (size_t j = 0; j < i; ++j) {
         const double kMaxReprojError = 8.0;
-        if (reconstructions[i]->Merge(*reconstructions[j], kMaxReprojError)) {
+        // Upstream parity (a2bd15c2): merge j into i, then filter the merged
+        // points by reprojection error.
+        if (MergeAndFilterReconstructions(
+                kMaxReprojError, *reconstructions[j], *reconstructions[i])) {
           reconstructions.erase(reconstructions.begin() + j);
           merge_success = true;
           break;
@@ -96,18 +101,31 @@ void HierarchicalPipeline::Run() {
   // Cluster scene
   //////////////////////////////////////////////////////////////////////////////
 
+  // Upstream parity (1882ef4b #3926): load the database once into a cache
+  // shared by the clustering and every cluster worker.
+  std::shared_ptr<const DatabaseCache> database_cache;
+  {
+    std::cout << "Loading database" << std::endl;
+    Timer timer;
+    timer.Start();
+    DatabaseCache::Options database_cache_options;
+    database_cache_options.min_num_matches =
+        static_cast<size_t>(options_.incremental_options.min_num_matches);
+    database_cache_options.ignore_watermarks =
+        options_.incremental_options.ignore_watermarks;
+    auto database = Database::Open(database_path_);
+    database_cache = DatabaseCache::Create(*database, database_cache_options);
+    timer.PrintMinutes();
+  }
+
   std::unordered_map<image_t, std::string> image_id_to_name;
-
-  auto database = Database::Open(database_path_);
-
-  std::cout << "Reading images..." << std::endl;
-  const auto images = database->ReadAllImages();
-  for (const auto& image : images) {
-    image_id_to_name.emplace(image.ImageId(), image.Name());
+  image_id_to_name.reserve(database_cache->NumImages());
+  for (const auto& [image_id, image] : database_cache->Images()) {
+    image_id_to_name.emplace(image_id, image.Name());
   }
 
   SceneClustering scene_clustering =
-      SceneClustering::Create(options_.clustering_options, *database);
+      SceneClustering::Create(options_.clustering_options, *database_cache);
 
   auto leaf_clusters = scene_clustering.GetLeafClusters();
 
@@ -159,13 +177,19 @@ void HierarchicalPipeline::Run() {
     custom_options.init_num_trials = options_.init_num_trials;
     custom_options.num_threads = num_threads_per_worker;
 
+    // Create a filtered database cache for this cluster.
+    DatabaseCache::Options cluster_cache_options;
+    cluster_cache_options.min_num_matches =
+        static_cast<size_t>(options_.incremental_options.min_num_matches);
     for (const auto image_id : cluster.image_ids) {
-      custom_options.image_names.push_back(image_id_to_name.at(image_id));
+      cluster_cache_options.image_names.insert(image_id_to_name.at(image_id));
     }
+    std::shared_ptr<const DatabaseCache> cluster_database_cache =
+        DatabaseCache::CreateFromCache(*database_cache, cluster_cache_options);
 
     IncrementalPipeline mapper(&custom_options, options_.image_path,
-                                       database_path_,
-                                       reconstruction_manager);
+                               std::move(cluster_database_cache),
+                               reconstruction_manager);
     mapper.Start();
     mapper.Wait();
   };
@@ -194,9 +218,11 @@ void HierarchicalPipeline::Run() {
   // Merge clusters
   //////////////////////////////////////////////////////////////////////////////
 
-  PrintHeading1("Merging clusters");
+  if (leaf_clusters.size() > 1) {
+    PrintHeading1("Merging clusters");
 
-  MergeClusters(*scene_clustering.GetRootCluster(), &reconstruction_managers);
+    MergeClusters(*scene_clustering.GetRootCluster(), &reconstruction_managers);
+  }
 
   CHECK_EQ(reconstruction_managers.size(), 1);
   *reconstruction_manager_ = std::move(reconstruction_managers.begin()->second);

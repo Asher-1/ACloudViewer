@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <memory>
 
 #include "scene/reconstruction_manager.h"
 #include "sfm/incremental_mapper.h"
@@ -142,12 +143,12 @@ public:
 
     // List of rigs for which to fix the sensor_from_rig transformation,
     // independent of ba_refine_sensor_from_rig (upstream parity;
-    // fork consumes the same NodeHashSet type as the mapper options).
-    NodeHashSet<rig_t> constant_rigs;
+    // fork consumes the same FlatHashSet type as the mapper options).
+    FlatHashSet<rig_t> constant_rigs;
 
     // List of cameras for which to fix the camera parameters independent
     // of refine_focal_length, refine_principal_point, and refine_extra_params.
-    NodeHashSet<camera_t> constant_cameras;
+    FlatHashSet<camera_t> constant_cameras;
 
     // Random seed for randomized sub-steps (RANSAC in absolute pose
     // estimation and prior alignment); -1 leaves the default non-determinism.
@@ -190,9 +191,31 @@ public:
         LAST_IMAGE_REG_CALLBACK,
     };
 
+    // Upstream parity (a2bd15c2 IncrementalPipeline::Status): outcome of one
+    // reconstruction attempt, driving the discard/keep/retry state machine.
+    enum class Status {
+        SUCCESS,
+        INTERRUPTED,
+        CONTINUE,
+        STOP,
+        NO_INITIAL_PAIR,
+        BAD_INITIAL_PAIR,
+        UNKNOWN_SENSOR_FROM_RIG,
+    };
+
     IncrementalPipeline(const IncrementalPipelineOptions* options,
                         const std::filesystem::path& image_path,
                         const std::filesystem::path& database_path,
+                        ReconstructionManager* reconstruction_manager);
+
+    // Upstream parity (1882ef4b #3926): reconstruct from an already loaded
+    // database cache. The pipeline works on a filtered copy created with
+    // DatabaseCache::CreateFromCache, so callers such as the hierarchical
+    // mapper can share one cache across workers without re-reading the
+    // database.
+    IncrementalPipeline(const IncrementalPipelineOptions* options,
+                        const std::filesystem::path& image_path,
+                        std::shared_ptr<const DatabaseCache> database_cache,
                         ReconstructionManager* reconstruction_manager);
 
     // Upstream parity (d3ccaf35 IncrementalPipeline::SetCheckIfStoppedFunc):
@@ -200,23 +223,48 @@ public:
     // when it returns true the controller stops at the next checkpoint.
     void SetCheckIfStoppedFunc(std::function<bool()> func);
 
-private:
-    void Run();
-    bool LoadDatabase();
-    void Reconstruct(const IncrementalMapper::Options& init_mapper_options);
+    Status Reconstruct(IncrementalMapper& mapper,
+                       const IncrementalMapper::Options& mapper_options,
+                       bool continue_reconstruction);
 
-    bool ShouldStop();
+    Status ReconstructSubModel(IncrementalMapper& mapper,
+                               const IncrementalMapper::Options& mapper_options,
+                               Reconstruction& reconstruction);
+
+    Status InitializeReconstruction(
+            IncrementalMapper& mapper,
+            const IncrementalMapper::Options& mapper_options,
+            Reconstruction& reconstruction);
+
+    bool CheckRunGlobalRefinement(const Reconstruction& reconstruction,
+                                  size_t ba_prev_num_reg_frames,
+                                  size_t ba_prev_num_points) const;
+
     // Upstream parity (a2bd15c2 IncrementalPipeline::CheckReachedMaxRuntime):
     // polled alongside ShouldStop() at every checkpoint.
     bool CheckReachedMaxRuntime() const;
+
+private:
+    void Run();
+    bool LoadDatabase();
+
+    bool ShouldStop();
 
     const IncrementalPipelineOptions* options_;
     const std::string image_path_;
     const std::string database_path_;
     ReconstructionManager* reconstruction_manager_;
-    DatabaseCache database_cache_;
+    // Optional source cache; when set, LoadDatabase filters it instead of
+    // reading database_path_.
+    std::shared_ptr<const DatabaseCache> source_database_cache_;
+    std::shared_ptr<DatabaseCache> database_cache_;
     std::function<bool()> check_if_stopped_func_;
     Timer total_run_timer_;
+    // Upstream parity (a2bd15c2 CustomizeIncrementalPipelineOptions): the
+    // minimum model size capped at half of the loaded images. Upstream
+    // rewrites options->min_model_size in place; the fork's options are
+    // borrowed const, so the effective value lives here.
+    int min_model_size_ = 0;
 };
 
 // Globally filter points and images in mapper.

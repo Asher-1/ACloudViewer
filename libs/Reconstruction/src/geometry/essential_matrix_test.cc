@@ -32,11 +32,15 @@
 #define TEST_NAME "base/essential_matrix"
 #include "util/testing.h"
 
+#include <limits>
+
 #include <Eigen/Geometry>
 
 #include "geometry/essential_matrix.h"
 #include "geometry/pose.h"
+#include "math/random_eigen.h"
 #include "scene/projection.h"
+#include "util/eigen_matchers.h"
 
 using namespace colmap;
 
@@ -144,6 +148,32 @@ TEST(base_essential_matrix, TestFindOptimalImageObservations) {
   }
 }
 
+// Perfect projections satisfy the epipolar constraint trivially (lambda = 0),
+// so they cannot detect a wrong correction step. With noisy observations the
+// corrected points must satisfy x1^T E x2 = 0 (the function's convention) to
+// near machine precision; the pre-1d7aec0f update leaves ~1e-5 residual.
+TEST(base_essential_matrix, TestFindOptimalImageObservationsNoisy) {
+  const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0.1, 0.2, 0.3);
+  const Eigen::Vector3d t = Eigen::Vector3d(1, 0.2, 0.1).normalized();
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t).transpose();
+
+  const Eigen::Vector3d point3D(0.2, -0.1, 3);
+  const Eigen::Vector2d point1 =
+      point3D.hnormalized() + Eigen::Vector2d(0.01, -0.005);
+  const Eigen::Vector2d point2 =
+      (R * point3D + t).hnormalized() + Eigen::Vector2d(-0.004, 0.008);
+
+  Eigen::Vector2d optimal_point1;
+  Eigen::Vector2d optimal_point2;
+  FindOptimalImageObservations(E, point1, point2, &optimal_point1,
+                               &optimal_point2);
+  const double residual = optimal_point1.homogeneous().transpose() * E *
+                          optimal_point2.homogeneous();
+  EXPECT_NEAR(residual, 0, 1e-10);
+  EXPECT_LT((optimal_point1 - point1).norm(), 0.02);
+  EXPECT_LT((optimal_point2 - point2).norm(), 0.02);
+}
+
 TEST(base_essential_matrix, TestEpipoleFromEssentialMatrix) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Vector3d t = Eigen::Vector3d(0, 0, -1).normalized();
@@ -202,4 +232,82 @@ TEST(base_essential_matrix, TestRefineEssentialMatrix) {
                         std::vector<char>(points1.size(), true), &E_refined);
 
   EXPECT_LE((E - E_refined).norm(), (E - E_pertubated).norm());
+}
+
+// Ported from upstream a2bd15c2 geometry/essential_matrix_test.cc.
+TEST(FundamentalFromEssentialMatrix, Nominal) {
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(
+      Rigid3d(RandomEigenQuaterniond(), RandomEigenVectord<3>()));
+  const Eigen::Matrix3d K1 =
+      (Eigen::Matrix3d() << 2, 0, 1, 0, 3, 2, 0, 0, 1).finished();
+  const Eigen::Matrix3d K2 =
+      (Eigen::Matrix3d() << 3, 0, 2, 0, 4, 1, 0, 0, 1).finished();
+  const Eigen::Matrix3d F = FundamentalFromEssentialMatrix(K2, E, K1);
+  const Eigen::Vector3d x(3, 2, 1);
+  EXPECT_THAT(K2.transpose().inverse() * E * x,
+              EigenMatrixNear(Eigen::Vector3d(F * K1 * x)));
+  EXPECT_THAT(E * K1.inverse() * x,
+              EigenMatrixNear(Eigen::Vector3d(K2.transpose() * F * x)));
+}
+
+TEST(EssentialFromFundamentalMatrix, Nominal) {
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(
+      Rigid3d(RandomEigenQuaterniond(), RandomEigenVectord<3>()));
+  const Eigen::Matrix3d K1 =
+      (Eigen::Matrix3d() << 2, 0, 1, 0, 3, 2, 0, 0, 1).finished();
+  const Eigen::Matrix3d K2 =
+      (Eigen::Matrix3d() << 3, 0, 2, 0, 4, 1, 0, 0, 1).finished();
+  const Eigen::Matrix3d F = FundamentalFromEssentialMatrix(K2, E, K1);
+  EXPECT_THAT(EssentialFromFundamentalMatrix(K2, F, K1),
+              EigenMatrixNear(E, 1e-6));
+}
+
+TEST(ComputeSquaredSampsonError, Nominal) {
+  std::vector<Eigen::Vector2d> points1;
+  points1.emplace_back(0, 0);
+  points1.emplace_back(0, 0);
+  points1.emplace_back(0, 0);
+  std::vector<Eigen::Vector2d> points2;
+  points2.emplace_back(2, 0);
+  points2.emplace_back(2, 1);
+  points2.emplace_back(2, 2);
+
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(
+      Rigid3d(Eigen::Quaterniond::Identity(), Eigen::Vector3d(1, 0, 0)));
+
+  std::vector<double> residuals;
+  ComputeSquaredSampsonError(points1, points2, E, &residuals);
+
+  EXPECT_EQ(residuals.size(), 3);
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 0.5);
+  EXPECT_EQ(residuals[2], 2);
+}
+
+// Fork regression: the 2D overload must be bitwise identical to the
+// homogeneous single-point error (shared operand order), and a vanishing
+// denominator must yield the max residual instead of NaN/inf.
+TEST(ComputeSquaredSampsonError, VectorOverloadMatchesSinglePoint) {
+  const Eigen::Matrix3d F = Eigen::Matrix3d::Random();
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  for (int i = 0; i < 64; ++i) {
+    points1.push_back(1000 * Eigen::Vector2d::Random());
+    points2.push_back(1000 * Eigen::Vector2d::Random());
+  }
+  std::vector<double> residuals;
+  ComputeSquaredSampsonError(points1, points2, F, &residuals);
+  ASSERT_EQ(residuals.size(), points1.size());
+  for (size_t i = 0; i < points1.size(); ++i) {
+    EXPECT_EQ(residuals[i],
+              ComputeSquaredSampsonError(
+                  points1[i].homogeneous(), points2[i].homogeneous(), F));
+  }
+
+  ComputeSquaredSampsonError(std::vector<Eigen::Vector2d>{Eigen::Vector2d(0, 0)},
+                             std::vector<Eigen::Vector2d>{Eigen::Vector2d(0, 0)},
+                             Eigen::Matrix3d::Zero(),
+                             &residuals);
+  ASSERT_EQ(residuals.size(), 1);
+  EXPECT_EQ(residuals[0], std::numeric_limits<double>::max());
 }

@@ -305,7 +305,7 @@ public:
     virtual void ClearTwoViewGeometries() const = 0;
 
     // Upstream-parity pose-prior persistence (COLMAP 4.x).
-    virtual void ClearPosePriors() = 0;
+    virtual void ClearPosePriors() const = 0;
 
     // Merge two databases into a single, new database.
     static void Merge(const Database& database1,

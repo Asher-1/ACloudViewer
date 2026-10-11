@@ -8,6 +8,7 @@
 #include "qLingbotMap.h"
 
 #include <CVLog.h>
+#include <QtCompat.h>
 #include <ecvCameraSensor.h>
 #include <ecvCameraSensorDisplayUtils.h>
 #include <ecvColorTypes.h>
@@ -1393,7 +1394,7 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
         const CCVector3f curr = cameraCenter(c2w);
         m_onlineBaselines.push_back((curr - prev).norm());
     }
-    m_lastPreviewC2w = QVector<float>(c2w, c2w + 16);
+    m_lastPreviewC2w = qtCompatQVectorFromRange<float>(c2w, c2w + 16);
     const float med = medianBaseline(m_onlineBaselines);
     const float displaySize =
             med > 0.f ? med * kCameraBaselineFraction : kFallbackCameraSize;

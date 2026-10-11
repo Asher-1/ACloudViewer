@@ -117,8 +117,9 @@ QVector<QPointF> minimumAreaQuad(const QVector<QPointF>& points) {
                                           inverse.map(QPointF(maxX, maxY)),
                                           inverse.map(QPointF(minX, maxY))});
     }
-    return best.isEmpty() ? QVector<QPointF>()
-                          : QVector<QPointF>(best.begin(), best.end());
+    // QPolygonF is a QVector<QPointF> (Qt 5) / QList<QPointF> (Qt 6); copy
+    // the base rather than use the iterator-range ctor (Qt 5.14+).
+    return best.isEmpty() ? QVector<QPointF>() : QVector<QPointF>(best);
 }
 
 QVector<QPointF> normalizeQuad(QVector<QPointF> points,

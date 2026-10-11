@@ -105,8 +105,13 @@ int horn_sim3(const float* src,
               float* out_R,
               float* out_t);
 
+/** numpy.median: middle order statistic, or the mean of the two middle ones
+ *  for an even count; NaN when empty. */
+float median(std::vector<float> values);
+
 /** Robust Horn Sim3: 2 rejection rounds dropping residuals beyond
- *  median + 3*1.4826*MAD. Same contract as horn_sim3. */
+ *  median + 3*1.4826*MAD (numpy.median, as upstream e2e_full_scene.py).
+ *  Same contract as horn_sim3. */
 int robust_sim3(const float* src,
                 const float* dst,
                 size_t n,

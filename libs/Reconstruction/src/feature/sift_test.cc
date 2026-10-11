@@ -256,7 +256,7 @@ struct FeatureDescriptorIndexCacheHelper {
       : index_cache(100, [this](const image_t image_id) {
           auto index = FeatureDescriptorIndex::Create();
           const auto& desc = this->image_descriptors_.at(image_id);
-          index->Build(desc->ToFloat().data);
+          index->Build(desc->ToFloat());
           return index;
         }) {
     for (const auto& image : images) {

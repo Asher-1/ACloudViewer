@@ -7,10 +7,14 @@
 
 #pragma once
 
+#include <utility>
+#include <vector>
+
 #include "scene/database_cache.h"
 #include "scene/reconstruction.h"
 #include "util/alignment.h"
 #include "util/hash_containers.h"
+#include "util/types.h"
 
 namespace colmap {
 
@@ -100,7 +104,7 @@ public:
     // have failed to triangulate before due to inaccurate poses, etc.
     // Returns the number of completed observations.
     size_t CompleteTracks(const Options& options,
-                          const NodeHashSet<point3D_t>& point3D_ids);
+                          const FlatHashSet<point3D_t>& point3D_ids);
 
     // Complete tracks of all 3D points.
     // Returns the number of completed observations.
@@ -109,7 +113,7 @@ public:
     // Merge tracks of for specific 3D points.
     // Returns the number of merged observations.
     size_t MergeTracks(const Options& options,
-                       const NodeHashSet<point3D_t>& point3D_ids);
+                       const FlatHashSet<point3D_t>& point3D_ids);
 
     // Merge tracks of all 3D points.
     // Returns the number of merged observations.
@@ -127,7 +131,7 @@ public:
     void AddModifiedPoint3D(const point3D_t point3D_id);
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
-    const NodeHashSet<point3D_t>& GetModifiedPoints3D();
+    const FlatHashSet<point3D_t>& GetModifiedPoints3D();
 
     // Clear the collection of changed 3D points.
     void ClearModifiedPoints3D();
@@ -183,17 +187,29 @@ private:
     std::shared_ptr<class ObservationManager> obs_manager_;
 
     // Cache for cameras with bogus parameters.
-    NodeHashMap<camera_t, bool> camera_has_bogus_params_;
+    FlatHashMap<camera_t, bool> camera_has_bogus_params_;
 
-    // Cache for tried track merges to avoid duplicate merge trials.
-    NodeHashMap<point3D_t, NodeHashSet<point3D_t>> merge_trials_;
+    // Cache for tried track merges to avoid duplicate merge trials. Keyed on
+    // a canonical (min, max) pair of 3D-point ids so each attempted merge is
+    // recorded once in either direction (upstream a2bd15c2).
+    FlatHashSet<std::pair<point3D_t, point3D_t>, PairHash> merge_trials_;
+
+    // Cache for found correspondences in the graph.
+    std::vector<CorrespondenceGraph::Correspondence> found_corrs_;
+
+    // Reusable BFS scratch buffers for Complete() (upstream a2bd15c2).
+    std::vector<TrackElement> complete_curr_queue_;
+    std::vector<TrackElement> complete_next_queue_;
+    // Dedupes (image_id, point2D_idx) pairs reached by Complete()'s BFS so
+    // correspondences shared across parents are visited once.
+    FlatHashSet<std::pair<image_t, point2D_t>, PairHash> complete_visited_;
 
     // Number of trials to retriangulate image pair.
-    NodeHashMap<image_pair_t, int> re_num_trials_;
+    FlatHashMap<image_pair_t, int> re_num_trials_;
 
     // Changed 3D points, i.e. if a 3D point is modified (created, continued,
     // deleted, merged, etc.). Cleared once `ModifiedPoints3D` is called.
-    NodeHashSet<point3D_t> modified_point3D_ids_;
+    FlatHashSet<point3D_t> modified_point3D_ids_;
 };
 
 }  // namespace colmap

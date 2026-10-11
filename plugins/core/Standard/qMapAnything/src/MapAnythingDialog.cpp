@@ -131,6 +131,67 @@ void MapAnythingDialog::setupUi() {
     listBtnRow->addWidget(m_importDbBtn);
     listBtnRow->addStretch(1);
     listColumn->addLayout(listBtnRow);
+    m_referenceFrameCheck =
+            new QCheckBox(tr("Anchor to the benchmark frame (scene_meta.json "
+                             "beside images/)"),
+                          inputBox);
+    m_referenceFrameCheck->setChecked(true);
+    m_referenceFrameCheck->setToolTip(
+            tr("Optional, for benchmark scenes only; ordinary image sets need "
+               "no extra file. Every model reconstructs from the images alone "
+               "in the frame its official release uses (VGGT family / "
+               "MapAnything / DUSt3R: first camera at the origin; Pi3 / Pi3X: "
+               "reference-free frame) and unit (MapAnything metric, Pi3X "
+               "approximately metric, the others normalised). When the inputs "
+               "come from a WAI benchmark scene (<scene>/images + "
+               "<scene>/scene_meta.json, e.g. the ETH3D test scenes), fit a "
+               "robust Sim3 from the predicted camera centers to the "
+               "ground-truth ones and express the cloud and cameras in that "
+               "metric frame - the frame of the upstream map-anything-ggml "
+               "e2e point clouds. Other inputs are unaffected; to place your "
+               "own images in a real-world frame, give known camera "
+               "positions under Reference cameras."));
+    listColumn->addWidget(m_referenceFrameCheck);
+    // User reference cameras: the COLMAP model_aligner --ref_images_path
+    // format, so a file prepared for COLMAP geo-registration works as is.
+    auto* refRow = new QHBoxLayout();
+    refRow->addWidget(new QLabel(tr("Reference cameras:"), inputBox));
+    m_refImagesEdit = new QLineEdit(inputBox);
+    m_refImagesEdit->setObjectName(QStringLiteral("mapAnythingRefImages"));
+    m_refImagesEdit->setPlaceholderText(
+            tr("optional: \"<image_name> X Y Z\" per line (COLMAP "
+               "model_aligner)"));
+    m_refImagesEdit->setClearButtonEnabled(true);
+    const QString refTip = tr(
+            "Optional. Puts the result in YOUR coordinate frame and unit from "
+            "known camera positions, the same text file COLMAP model_aligner "
+            "takes (--ref_images_path): one \"<image_name> X Y Z\" line per "
+            "image, e.g. \"DSC_0286.JPG 3.25 -1.70 1.52\"; image_name is the "
+            "file name or a trailing path of it. At least 3 images, not all "
+            "on one straight line. A robust Sim3 from the predicted camera "
+            "centers to these positions moves the cloud and the cameras. "
+            "Wins over a benchmark scene_meta.json. Large coordinates "
+            "(UTM, national grids) are kept exact through the cloud's "
+            "global shift.");
+    m_refImagesEdit->setToolTip(refTip);
+    auto* refBrowse = new QToolButton(inputBox);
+    refBrowse->setText(QStringLiteral("..."));
+    refBrowse->setToolTip(refTip);
+    m_refCoordsCombo = new QComboBox(inputBox);
+    m_refCoordsCombo->addItem(tr("X Y Z"));
+    m_refCoordsCombo->addItem(tr("GPS lat lon alt"));
+    m_refCoordsCombo->setToolTip(
+            tr("X Y Z: cartesian coordinates, kept as given. GPS lat lon "
+               "alt: WGS84 latitude / longitude in degrees and altitude in "
+               "metres, converted to local East-North-Up metres about the "
+               "file's first line (model_aligner --ref_is_gps 1 "
+               "--alignment_type enu)."));
+    refRow->addWidget(m_refImagesEdit, 1);
+    refRow->addWidget(refBrowse);
+    refRow->addWidget(m_refCoordsCombo);
+    listColumn->addLayout(refRow);
+    connect(refBrowse, &QToolButton::clicked, this,
+            &MapAnythingDialog::onBrowseReferenceCameras);
     inputLayout->addLayout(listColumn, 2);
     auto* previewColumn = new QVBoxLayout();
     m_previewLabel = new ecvClickableImageLabel(inputBox);
@@ -451,6 +512,14 @@ void MapAnythingDialog::onBrowseCustomModel() {
     panel->explicitModelChoice = true;
 }
 
+void MapAnythingDialog::onBrowseReferenceCameras() {
+    const QString path = QFileDialog::getOpenFileName(
+            this, tr("Select reference camera positions"),
+            QFileInfo(m_refImagesEdit->text()).absolutePath(),
+            tr("Text files (*.txt *.csv);;All files (*)"));
+    if (!path.isEmpty()) m_refImagesEdit->setText(path);
+}
+
 void MapAnythingDialog::refreshModelList() {
     for (auto& panel : m_panels) {
         populateModelCombo(panel, panel.modelCombo->currentData().toString());
@@ -520,6 +589,14 @@ void MapAnythingDialog::onRun() {
     s.addPerViewClouds = panel->addPerViewCheck->isChecked();
     s.responsiveStreaming = panel->responsiveCheck->isChecked();
     s.minConf = (float)panel->minConfSpin->value();
+    s.anchorToReferenceFrame = m_referenceFrameCheck->isChecked();
+    s.refImagesPath = m_refImagesEdit->text().trimmed();
+    s.refIsGps = m_refCoordsCombo->currentIndex() == 1;
+    if (!s.refImagesPath.isEmpty() && !QFileInfo::exists(s.refImagesPath)) {
+        appendLog(tr("[Error] Reference cameras file not found: %1")
+                          .arg(s.refImagesPath));
+        return;
+    }
     saveSettings();
     emit runRequested(s);
 }
@@ -875,6 +952,13 @@ void MapAnythingDialog::loadSettings() {
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString());
     m_threads->setValue(settings.value(QStringLiteral("threads"), 0).toInt());
+    m_referenceFrameCheck->setChecked(
+            settings.value(QStringLiteral("anchorToReferenceFrame"), true)
+                    .toBool());
+    // The coordinate type is a habit; the file itself belongs to one image
+    // set and is deliberately not restored.
+    m_refCoordsCombo->setCurrentIndex(
+            settings.value(QStringLiteral("refIsGps"), false).toBool() ? 1 : 0);
     const QByteArray splitterState =
             settings.value(QStringLiteral("splitterState")).toByteArray();
     if (!splitterState.isEmpty()) {
@@ -899,6 +983,10 @@ void MapAnythingDialog::saveSettings() const {
     settings.beginGroup(QStringLiteral("qMapAnything"));
     settings.setValue(QStringLiteral("device"), m_deviceCombo->currentText());
     settings.setValue(QStringLiteral("threads"), m_threads->value());
+    settings.setValue(QStringLiteral("anchorToReferenceFrame"),
+                      m_referenceFrameCheck->isChecked());
+    settings.setValue(QStringLiteral("refIsGps"),
+                      m_refCoordsCombo->currentIndex() == 1);
     settings.setValue(QStringLiteral("splitterState"),
                       m_bodySplitter->saveState());
     if (m_modelList->currentItem() != nullptr) {

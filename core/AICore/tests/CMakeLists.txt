@@ -517,6 +517,27 @@ endif()
 aicore_add_capi_test(test_reid_capi_contract reid)
 aicore_add_capi_test(test_reid_capi_load reid LABELS capi;model)
 
+# --- table (C API / libAICore) ---
+aicore_add_capi_test(test_table_capi_contract table)
+# Real-model OCR + SLANet_plus (+ layout page) end-to-end; env wired in
+# aicore_configure_model_test_assets, exits 77 without the assets.
+aicore_add_capi_test(test_table_capi_e2e table LABELS capi;model;e2e)
+# Model-free post-process unit test: structure decode, span grid, OCR cell
+# assignment, HTML/CSV. table_postprocess.cpp is pure C++ over the task
+# headers (ggml headers only, no ggml call), so it is compiled directly.
+add_executable(test_table_postprocess table/test_table_postprocess.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/table/table_postprocess.cpp)
+target_include_directories(test_table_postprocess PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/table
+    ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(test_table_postprocess PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+set_target_properties(test_table_postprocess PROPERTIES
+    CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+_aicore_test_common(test_table_postprocess)
+set_tests_properties(test_table_postprocess PROPERTIES LABELS "capi;table")
+
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
 # per-frame binaries for the compare_lingbot_parity.py A/B against
 # lingbot-map-cli --stream-dir. Same compile setup as the capi tests, minus
@@ -810,7 +831,13 @@ function(aicore_configure_model_test_assets)
         "AICORE_TEST_RFDETR_GGUF=${_root}/rfdetr_models/rfdetr-base-f16.gguf"
         "AICORE_TEST_RMBG_GGUF=${_root}/rmbg_models/rmbg_f16.gguf"
         "AICORE_TEST_GKD_GGUF=${_root}/gkd_models/gkd_fullset-q4_K.gguf"
-        "AICORE_TEST_GKD_IMAGE=${_root}/objects_detection_data/images/bus.jpg")
+        "AICORE_TEST_GKD_IMAGE=${_root}/objects_detection_data/images/bus.jpg"
+        "AICORE_TEST_TABLE_GGUF=${_root}/ocr_models/slanet-plus-table-f32.gguf"
+        "AICORE_TEST_OCR_DET_GGUF=${_root}/ocr_models/ppocr-det-ch-f32.gguf"
+        "AICORE_TEST_OCR_REC_GGUF=${_root}/ocr_models/ppocr-rec-ch-f32.gguf"
+        "AICORE_TEST_OCR_LAYOUT_GGUF=${_root}/ocr_models/pplcnet-layout-f32.gguf"
+        "AICORE_TEST_TABLE_IMAGE=${_root}/ppocr_testdata/test_files/table.jpg"
+        "AICORE_TEST_TABLE_PAGE=${_root}/ppocr_testdata/layout/table_page_1.png")
     if(AICORE_TEST_AUTO_DOWNLOAD)
         # This fixture is only selected by asset-dependent CTests. It is not a
         # build dependency, so compiling ACloudViewer cannot trigger I/O.
@@ -835,7 +862,8 @@ function(aicore_configure_model_test_assets)
             test_facedetect_contexts_capi
             test_rmbg_capi_performance
             test_gkd_capi_load
-            test_map_anything_capi_load)
+            test_map_anything_capi_load
+            test_table_capi_e2e)
         if(TEST ${_test})
             set_tests_properties(${_test} PROPERTIES ENVIRONMENT "${_env}")
             if(AICORE_TEST_AUTO_DOWNLOAD)
@@ -902,8 +930,34 @@ function(aicore_configure_model_test_assets)
         TIMEOUT 1800
         LABELS "capi;model;ocr"
         ENVIRONMENT "${_env}")
+    # Layout heads (PicoDet CDLA) against the official Paddle inference
+    # fixtures; fetches are contiguous and the fixtures may be Fortran order.
+    add_test(
+        NAME probe_ocr_layout
+        COMMAND $<TARGET_FILE:test_ocr_runtime>
+                ${_root}/ocr_fixtures
+                ${_root}/ocr_models/pplcnet-layout-f32.gguf
+                layout
+                ${AICORE_TEST_DEVICE}
+                -1 -
+                0.02)
+    # SLANet_plus structure probs/loc on three official table crops
+    # (table_fixtures.json); token argmax must match the fixture exactly.
+    add_test(
+        NAME probe_table
+        COMMAND $<TARGET_FILE:test_table_runtime>
+                ${_root}/ocr_fixtures
+                ${_root}/ocr_models/slanet-plus-table-f32.gguf
+                ${AICORE_TEST_DEVICE}
+                0.01 0.005)
+    set_tests_properties(probe_ocr_layout probe_table PROPERTIES
+        SKIP_RETURN_CODE 77
+        TIMEOUT 1800
+        LABELS "capi;model;ocr"
+        ENVIRONMENT "${_env}")
     if(AICORE_TEST_AUTO_DOWNLOAD)
         set_tests_properties(probe_ocr_rec probe_ocr_det probe_ocr_rec_en
+            probe_ocr_layout probe_table
             PROPERTIES FIXTURES_REQUIRED aicore_model_assets)
     endif()
 

@@ -26,10 +26,12 @@ public:
     static std::unique_ptr<FeatureDescriptorIndex> Create(
             Type type = Type::DEFAULT, int num_threads = 1);
 
-    virtual void Build(const FeatureDescriptorsFloatData& descriptors) = 0;
+    // Upstream parity (a2bd15c2 feature/index.h): the index is typed; Build
+    // records the descriptor type and Search rejects a mismatching query.
+    virtual void Build(const FeatureDescriptorsFloat& descriptors) = 0;
 
     virtual void Search(int num_neighbors,
-                        const FeatureDescriptorsFloatData& query_descriptors,
+                        const FeatureDescriptorsFloat& query_descriptors,
                         Eigen::RowMajorMatrixXi& indices,
                         Eigen::RowMajorMatrixXf& l2_dists) const = 0;
 };

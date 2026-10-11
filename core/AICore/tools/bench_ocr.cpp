@@ -180,13 +180,15 @@ int main(int argc, char** argv) {
                 std::printf("\t%s\n", b->text ? b->text : "");
             }
             // Layout regions (when a layout model is loaded): class, score and
-            // the axis-aligned box so backends can be diffed region-by-region.
+            // the axis-aligned box so backends can be diffed region-by-region
+            // (sub-pixel: thin header/caption regions are ~10 px tall, where
+            // integer rounding alone costs several IoU points).
             const int regions = aicore_ocr_region_count(r);
             for (int t = 0; t < regions; ++t) {
                 const aicore_ocr_region* g = aicore_ocr_region_at(r, t);
                 std::printf(
                         "REGION %d cls=%d order=%d score=%.3f "
-                        "%.0f,%.0f %.0f,%.0f\n",
+                        "%.2f,%.2f %.2f,%.2f\n",
                         t, g->class_id, g->reading_order, g->score,
                         g->quad[0][0], g->quad[0][1], g->quad[2][0],
                         g->quad[2][1]);

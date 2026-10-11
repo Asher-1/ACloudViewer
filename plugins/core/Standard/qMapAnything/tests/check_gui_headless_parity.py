@@ -136,6 +136,17 @@ def ply_vertex_count(path: pathlib.Path):
     return -1
 
 
+def scene_meta(images):
+    """MapAnythingSceneMeta::discover (the dialog default): the WAI
+    <scene>/scene_meta.json when every image sits in one <scene>/images."""
+    dirs = {pathlib.Path(os.path.abspath(p)).parent for p in images}
+    if len(dirs) != 1:
+        return None
+    d = dirs.pop()
+    meta = d.parent / "scene_meta.json"
+    return meta if d.name == "images" and meta.is_file() else None
+
+
 def check_row(model_path, budget, images, args, env, out_dir):
     tag = f"{model_path.stem}-k{budget}"
     row_dir = out_dir / tag
@@ -180,6 +191,12 @@ def check_row(model_path, budget, images, args, env, out_dir):
     ]
     if budget != GUI_DEFAULT_BUDGET:
         head_cmd += ["MAX_FRAMES_PER_PASS", str(budget)]
+    # The GUI anchors to a discovered benchmark frame by default; the
+    # headless equivalent is the explicit GT_META.
+    meta = scene_meta(images)
+    if meta is not None:
+        head_cmd += ["GT_META", str(meta)]
+        row["gt_meta"] = str(meta)
     rc, _, ms, vram = run(head_cmd, env, row_dir / "headless.log", cuda)
     row["headless"] = {"rc": rc, "wall_ms": round(ms, 1), "peak_vram_mib": vram}
     head_ply = head_dir / "headless.ply"
@@ -200,6 +217,10 @@ def check_row(model_path, budget, images, args, env, out_dir):
                 f"implausibly sparse confidence result: kept/input "
                 f"{kept_points}/{input_points}={retention:.6f} < "
                 f"{args.min_retention_ratio:.6f}")
+        if meta is not None:
+            row["gt_sim3"] = rep.get("gt_sim3")
+            if not rep.get("gt_sim3"):
+                failures.append("GT_META given but no gt_sim3 in RESULT_JSON")
         row["chunks"] = rep.get("chunks", [])
         row["headless"]["frames_per_pass"] = rep.get("frames_per_pass")
         if rep.get("memory_downshifts"):

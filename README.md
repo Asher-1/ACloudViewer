@@ -72,7 +72,7 @@ or any MCP-compatible tool — through a unified integration layer with three in
 
 | Interface | Protocol | Typical Use |
 |-----------|----------|-------------|
-| **JSON-RPC Plugin** | WebSocket `ws://localhost:6001` | Real-time GUI control — load files, run algorithms, capture screenshots from agent code |
+| **JSON-RPC Plugin** | WebSocket `ws://127.0.0.1:6001` | Real-time GUI control — load files, run algorithms, capture screenshots from agent code |
 | **MCP Server** | Model Context Protocol (stdio) | Native integration with Cursor IDE, Claude Code, OpenClaw |
 | **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing, CI pipelines |
 

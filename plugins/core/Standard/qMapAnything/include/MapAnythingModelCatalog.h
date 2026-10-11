@@ -40,7 +40,7 @@ QVector<MapAnythingModelEntry> catalogModels();
  *  first tab — the vggt-omega best-accuracy checkpoint family). */
 QStringList catalogVariants();
 
-/** Rows of one variant, in catalog order (4 quantizations). */
+/** Rows of one variant, in catalog order (4-5 published quantizations). */
 QVector<MapAnythingModelEntry> modelsForVariant(const QString& variant);
 
 /** Index (within catalogModels()) of the catalog-declared default row

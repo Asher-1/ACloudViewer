@@ -197,6 +197,11 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"ppocr-rec-en-f16.gguf", "f05e08cbc81cd9863cddfc17621e788eb896278e3a36448cccecd5829c5729bf" },
         {"ppocr-rec-en-f32.gguf", "f38155dc785cbfc23f5fe37af2d6403b42cfb8fb73af130699a425834c2441dc" },
         {"ppocr-rec-en-q8_0.gguf", "7cf851b0c5733749765b4406fbfcf1dd03c327cac6ffa779824762ef9507e7ef" },
+        // SLANet_plus table structure (PaddleX paddle3.0b2 SLANet_plus_infer.tar,
+        // tar sha256 1c6ac146...ce971), same converter, `table` task.
+        {"slanet-plus-table-f32.gguf", "c93a3a24e39c30bd67294a8abb543e3e0ed7ef1f2c6d67505349dee77aa87bf4" },
+        {"slanet-plus-table-f16.gguf", "0eb25bd9a67d9eafc830df5400dd4b8bef8a5a506c067ce384f925a3a3abdf63" },
+        {"slanet-plus-table-q8_0.gguf", "7f8b52cd9852aea71774094914b53b51368ca24d1449ff3355d354244415dc25" },
         {"sam2.1_hiera_base_plus_f16.gguf", "d5e49d766e264986df630447750c99827f4a0f3d8428b15f4a5b089141ba737c" },
         {"sam2.1_hiera_base_plus_f32.gguf", "edff2c83f867919b134ee3f99e9ad2169378718b5ba1d864796c36d777198648" },
         {"sam2.1_hiera_base_plus_q4_0.gguf", "390278a55c14cf0a939f4554b95fe2fa6cdd997ad4f62bc2bb14d5b9dedcd36b" },

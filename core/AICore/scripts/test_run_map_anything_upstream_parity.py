@@ -57,5 +57,56 @@ class NewerSourceTest(unittest.TestCase):
             self.assertIsNone(PARITY.newer_source(Path(tmp), cli))
 
 
+class ReferenceEnvTest(unittest.TestCase):
+    def test_every_foreign_ggml_provider_is_dropped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            build, root = tmp / "snap", tmp / "ref"
+            copy = tmp / "aicore_build" / "external" / "lib"
+            toolkit = tmp / "cuda" / "lib64"
+            own = root / "cpp_ggml" / "build-cuda" / "lib"
+            for d in (build / "bin", copy, toolkit, own):
+                d.mkdir(parents=True)
+            (copy / "libggml-base.so.0").write_text("")
+            (own / "libggml-base.so.0").write_text("")
+            (toolkit / "libcudart.so.12").write_text("")
+            entries = [str(build / "bin"), str(copy), str(toolkit), str(own)]
+            saved = os.environ.get("LD_LIBRARY_PATH")
+            os.environ["LD_LIBRARY_PATH"] = os.pathsep.join(entries)
+            try:
+                env = PARITY.reference_env(build, root)
+            finally:
+                if saved is None:
+                    del os.environ["LD_LIBRARY_PATH"]
+                else:
+                    os.environ["LD_LIBRARY_PATH"] = saved
+            self.assertEqual(env["LD_LIBRARY_PATH"].split(os.pathsep),
+                             [str(toolkit), str(own)])
+
+
+class VendoredTwinTest(unittest.TestCase):
+    PATCH = (b"diff --git a/src/x.cu b/src/x.cu\n"
+             b"--- a/src/x.cu\n+++ b/src/x.cu\n@@ -1 +1,2 @@\n a\n+b\n"
+             b"diff --git a/src/ggml-cuda/mapany/ggml-v0.24.0/k.cuh "
+             b"b/src/ggml-cuda/mapany/ggml-v0.24.0/k.cuh\n"
+             b"new file mode 100644\n--- /dev/null\n"
+             b"+++ b/src/ggml-cuda/mapany/ggml-v0.24.0/k.cuh\n"
+             b"@@ -0,0 +1,2 @@\n+#pragma once\n+int k;\n"
+             b"\\ No newline at end of file\n")
+
+    def test_only_new_twin_files_are_extracted_byte_exact(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            patch = Path(tmp) / "p.patch"
+            patch.write_bytes(self.PATCH)
+            self.assertEqual(PARITY.vendored_twin(patch),
+                             {"k.cuh": b"#pragma once\nint k;"})
+
+    def test_repository_twin_extracts_the_three_flash_attention_sources(self):
+        twin = PARITY.vendored_twin(PARITY.MAPANY_PATCH)
+        self.assertEqual(sorted(twin), ["fattn-common.cuh", "fattn-mma-f16.cuh",
+                                        "fattn-swizzle.cuh"])
+        self.assertTrue(all(data.endswith(b"\n") for data in twin.values()))
+
+
 if __name__ == "__main__":
     unittest.main()

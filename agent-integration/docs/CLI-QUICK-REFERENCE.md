@@ -374,7 +374,14 @@ the device cannot hold is halved automatically — `frames_per_pass` in the
 RESULT_JSON records what ran), merged world-frame colored PLY + RESULT_JSON. `RAW_OUTPUT_DIR` exports the
 unfiltered inference tensors and camera-to-world matrices for upstream parity;
 `GT_META` supplies benchmark camera centers so metric-frame alignment and the
-2 cm voxel stage use valid units. Batch-friendly on GPU-less machines via
+2 cm voxel stage use valid units (the frame of the upstream map-anything-ggml
+e2e PLYs; the GUI applies it automatically for `<scene>/images` inputs next
+to `<scene>/scene_meta.json`, headless only when `GT_META` is given).
+`REF_IMAGES_PATH` + `REF_IS_GPS` place your own images in a real-world frame
+from known camera positions, in the COLMAP `model_aligner --ref_images_path`
+text format (`<image_name> X Y Z` per line, >= 3 images not on one line;
+`REF_IS_GPS 1` reads WGS84 lat/lon/alt into local ENU metres about the first
+line, `0` keeps cartesian X Y Z; large coordinates make the PLY xyz double). Batch-friendly on GPU-less machines via
 `DEVICE CPU`. Other AI plugin commands are indexed in
 [COMMAND-MAPPING.md](COMMAND-MAPPING.md).
 
@@ -392,6 +399,10 @@ ACloudViewer -SILENT -NO_TIMESTAMP -MAP_ANYTHING_RECONSTRUCT \
     GT_META /data/courtyard/scene_meta.json \ # optional metric benchmark anchor
     CLOUD_PLY cloud.ply RESULT_JSON result.json
 ```
+
+For your own images replace `GT_META` with, e.g.,
+`REF_IMAGES_PATH /data/site/cameras.txt REF_IS_GPS 1` (the two options are
+exclusive).
 
 Headless runs do NOT trigger model downloads — pre-fetch through the GUI or
 place the GGUF in `~/cloudViewer_data/extract/map_anything_models/`.
@@ -597,6 +608,15 @@ cli-anything-acloudviewer reconstruct match db.db --method exhaustive
 # 3. Sparse reconstruction
 cli-anything-acloudviewer reconstruct sparse -d db.db --image-path ./images/ -o ./sparse/
 
+# 3b. Reproducible sparse reconstruction (incremental or --method hierarchical).
+#     --mapper-option KEY=VALUE is repeatable and forwarded verbatim as --KEY VALUE;
+#     duplicate keys, malformed pairs, or --random-seed together with
+#     Mapper.random_seed are rejected before COLMAP runs, and COLMAP itself
+#     rejects unknown option names (non-zero exit).
+cli-anything-acloudviewer reconstruct sparse -d db.db --image-path ./images/ -o ./sparse/ \
+  --random-seed 17 --mapper-option Mapper.min_num_matches=32 \
+  --mapper-option Mapper.num_threads=1
+
 # 4. Undistort images
 cli-anything-acloudviewer reconstruct undistort --image-path ./images/ -i ./sparse/0 -o ./dense/
 
@@ -738,7 +758,7 @@ export ACV_BINARY=/path/to/ACloudViewer
 export ACV_CLI_MODE=headless
 
 # WebSocket URL (GUI mode)
-export ACV_RPC_URL=ws://localhost:6001
+export ACV_RPC_URL=ws://127.0.0.1:6001
 
 # Log level
 export ACV_LOG_LEVEL=DEBUG

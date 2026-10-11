@@ -7,6 +7,7 @@
 
 #include "AnnotationWindow.h"
 
+#include <QtCompat.h>
 #include <aicore/aliked_capi.h>
 
 #include <QAbstractItemModel>
@@ -110,6 +111,12 @@
 #include "ecvModelDownloader.h"
 
 namespace {
+// QSet's iterator-range constructor needs Qt 5.14; removeDuplicates() is
+// available on every supported Qt.
+bool hasDuplicateNames(QStringList names) {
+    return names.removeDuplicates() > 0;
+}
+
 const QStringList kImageFilters = {
         QStringLiteral("*.jpg"),  QStringLiteral("*.jpeg"),
         QStringLiteral("*.png"),  QStringLiteral("*.bmp"),
@@ -7405,9 +7412,7 @@ void AnnotationWindow::exportMot(bool segmentation) {
         const QString name = QString::fromUtf8(line).trimmed();
         if (!name.isEmpty()) classes.append(name);
     }
-    if (classes.isEmpty() ||
-        QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                classes.size()) {
+    if (classes.isEmpty() || hasDuplicateNames(classes)) {
         QMessageBox::warning(this, title,
                              tr("MOT classes must be nonempty and unique"));
         return;
@@ -7523,9 +7528,7 @@ void AnnotationWindow::exportOdvg() {
         const QString name = QString::fromUtf8(line).trimmed();
         if (!name.isEmpty()) classes.append(name);
     }
-    if (classes.isEmpty() ||
-        QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                classes.size()) {
+    if (classes.isEmpty() || hasDuplicateNames(classes)) {
         QMessageBox::warning(this, title,
                              tr("Classes must be nonempty and unique"));
         return;
@@ -7652,9 +7655,7 @@ void AnnotationWindow::exportVlm() {
             const QString name = QString::fromUtf8(line).trimmed();
             if (!name.isEmpty()) classes.append(name);
         }
-        if (classes.isEmpty() ||
-            QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                    classes.size()) {
+        if (classes.isEmpty() || hasDuplicateNames(classes)) {
             QMessageBox::warning(this, title,
                                  tr("Classes must be nonempty and unique"));
             return;
@@ -7996,7 +7997,9 @@ void AnnotationWindow::importImageFlags() {
     if (contents.isEmpty()) {
         m_imageFlagNames.clear();
     } else {
-        m_imageFlagNames = contents.split(QChar('\n'), Qt::KeepEmptyParts);
+        // Default split behavior keeps empty parts (Qt 5.12 has no
+        // Qt::KeepEmptyParts).
+        m_imageFlagNames = contents.split(QChar('\n'));
         if (contents.endsWith(QChar('\n'))) m_imageFlagNames.removeLast();
     }
     updateFlags();
@@ -8398,7 +8401,7 @@ void AnnotationWindow::unionSelectedShapes() {
     snapshot();
     QVector<AnnotationShape> shapes;
     shapes.reserve(source.size() - rows.size() + 1);
-    QSet<int> removed(rows.cbegin(), rows.cend());
+    const QSet<int> removed = qtCompatQSetFromVector(rows);
     for (int i = 0; i < source.size(); ++i)
         if (!removed.contains(i)) shapes.append(source[i]);
     shapes.append(merged);

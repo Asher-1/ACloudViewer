@@ -76,7 +76,6 @@ set(VTK_LIBRARIES
     vtkInteractionWidgets-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkIOCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkIOChemistry-${VTK_VERSION}${VTK_LIB_SUFFIX} # dependent by vtkPDBReader
-    vtkIOXML-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkIOPLY-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkIOImage-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkIOLSDyna-${VTK_VERSION}${VTK_LIB_SUFFIX}

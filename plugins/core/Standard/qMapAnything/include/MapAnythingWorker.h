@@ -64,6 +64,15 @@ struct MapAnythingResult {
     bool hasMetricScale = false;
     float metricScale = 1.0f;
 
+    // Settings::gtMetaPath / refImagesPath given: every output above is in
+    // that reference frame (Sim3 from the model frame, scale
+    // referenceScale), as local coordinates: true = local +
+    // referenceOffset (non-zero only for large cartesian references;
+    // the DB cloud carries it as its global shift).
+    QString referenceFrame;  // reference file path; empty = model frame
+    float referenceScale = 1.0f;
+    double referenceOffset[3] = {0.0, 0.0, 0.0};
+
     // vggt-omega-256-text variant only: L2-normalized language-aligned
     // embedding (textEmbeddingDim floats). No geometric meaning - exported
     // as a sidecar artifact, never as a DBTree entity.
@@ -109,6 +118,17 @@ public:
         int maxFramesPerPass = 64;  // > this: automatic chunked streaming
                                     // (~118 MiB/frame f16@512, VRAM-measured
                                     //  upstream: 38 frames peak at 8.75 GiB)
+        // Benchmark reference cameras (WAI scene_meta.json, same contract as
+        // the headless GT_META): non-empty -> the result is anchored into
+        // that metric frame (MapAnythingReconstruction::anchor_to_reference);
+        // an unusable file fails the run. Empty -> the model's own frame.
+        QString gtMetaPath;
+        // User reference cameras (COLMAP model_aligner --ref_images_path
+        // text, MapAnythingSceneMeta::loadColmapReferences; same contract
+        // as the headless REF_IMAGES_PATH / REF_IS_GPS). Takes precedence
+        // over gtMetaPath; an unusable file fails the run.
+        QString refImagesPath;
+        bool refIsGps = false;  // lat lon alt (WGS84) -> local ENU metres
     };
 
     explicit MapAnythingWorker(const Settings& settings,

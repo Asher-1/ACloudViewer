@@ -168,10 +168,38 @@ FilterReport filter_scene(Cloud& cloud,
 /** Move every global-frame output by \p s (cloud, cameras, chunk maps). */
 void transform_result(Result& result, const MapAnythingGeometry::Sim3& s);
 
-/** Binary little-endian PLY (float xyz + uchar rgb), all points or the
- *  given ascending indices. */
+struct ReferenceAnchor {
+    MapAnythingGeometry::Sim3 sim3;  // global (model) frame -> reference frame
+    int pairs = 0;                   // posed views with a reference center
+    float residualMedian = 0.0f;     // |ref - sim3(center)|, reference units
+    /** RMS spread of the reference centers across their main axis
+     *  (sqrt of the middle covariance eigenvalue), reference units. */
+    float crossSpread = 0.0f;
+};
+
+/** Reference-frame anchor: robust Horn Sim3 from each posed view's
+ *  global-frame camera center (c2w translation) to its reference center,
+ *  then transform_result. The benchmark scene_meta.json gives upstream
+ *  e2e_full_scene.py --align gt (the frame of its published e2e PLYs); a
+ *  COLMAP model_aligner file gives the user's GPS / surveyed frame.
+ *  \p refCenters holds views*3 floats, NaN where a view has no reference.
+ *  Refused (false + \p error, \p result untouched) on fewer than 3 usable
+ *  pairs, a degenerate fit, or (nearly) collinear centers whose spread
+ *  across their main axis does not exceed the median fit residual (the
+ *  roll about that axis would be noise). Without it the result stays in
+ *  the model's official frame and unit (chunk 0's frame; see README
+ *  "Output frame"). */
+bool anchor_to_reference(Result& result,
+                         const std::vector<float>& refCenters,
+                         ReferenceAnchor* anchor,
+                         std::string* error = nullptr);
+
+/** Binary little-endian PLY (xyz + uchar rgb), all points or the given
+ *  ascending indices. xyz is float, or double holding xyz + \p offset[3]
+ *  when \p offset is given (reference frames with large coordinates). */
 bool write_ply(const std::string& path,
                const Cloud& cloud,
-               const std::vector<size_t>* indices);
+               const std::vector<size_t>* indices,
+               const double* offset = nullptr);
 
 }  // namespace MapAnythingReconstruction

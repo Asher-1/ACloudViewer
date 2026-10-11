@@ -56,7 +56,9 @@ def main() -> int:
     args = parser.parse_args()
 
     paddle_output = run([sys.executable, str(SCRIPT_DIR / "bench_paddle_official.py"),
-                         str(args.image), str(args.warmups), str(args.iters)])
+                         str(args.image), str(args.warmups), str(args.iters),
+                         "--det-gguf", str(args.det_model),
+                         "--rec-gguf", str(args.rec_model)])
     paddle_rows = COMPARE.read_text_rows_from_output(paddle_output)
     results = {}
     failed = False

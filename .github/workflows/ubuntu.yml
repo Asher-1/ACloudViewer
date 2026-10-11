@@ -250,7 +250,7 @@ jobs:
             libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
             libxcb-xkb1 libxcb-xinput0 \
             libxkbcommon0 libxkbcommon-x11-0 \
-            libx11-xcb1
+            libx11-xcb1 xvfb
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
@@ -283,6 +283,46 @@ jobs:
           ACV_REQUIRE_BINARY: "1"
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+
+      # The full GUI under the offscreen QPA, as an unattended agent host runs
+      # it. offscreen gets its OpenGL context through GLX, so Xvfb supplies a
+      # display backed by Mesa's software rasterizer; nothing is shown.
+      - name: Level 4 — JSON-RPC tests against an offscreen GUI
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          ACV_RPC_PORT: "6001"
+          ACV_RPC_URL: ws://127.0.0.1:6001
+        run: |
+          GUI_LOG="$RUNNER_TEMP/acv-gui.log"
+          # Own process group: ACloudViewer.sh does not exec, so killing the
+          # group is what reaches the GUI and Xvfb.
+          setsid xvfb-run -a -s "-screen 0 1280x1024x24" "$ACV_BINARY" \
+            > "$GUI_LOG" 2>&1 &
+          GUI_PID=$!
+          ready=0
+          for _ in $(seq 1 90); do
+            if ! kill -0 "$GUI_PID" 2>/dev/null; then break; fi
+            if python -c "import json,sys; from websockets.sync.client import connect; ws=connect('$ACV_RPC_URL', open_timeout=2); ws.send(json.dumps({'jsonrpc':'2.0','id':1,'method':'ping','params':{}})); sys.exit(json.loads(ws.recv(timeout=5)).get('result')!='pong')" 2>/dev/null; then
+              ready=1; break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != 1 ]; then
+            echo "::error::Offscreen GUI did not serve JSON-RPC on $ACV_RPC_URL"
+            tail -n 100 "$GUI_LOG"
+            kill -- -"$GUI_PID" 2>/dev/null || true
+            exit 1
+          fi
+          status=0
+          python -m pytest agent-integration/tests/test_integration.py -v -k "level4" || status=$?
+          if ! kill -0 "$GUI_PID" 2>/dev/null; then
+            echo "::error::Offscreen GUI exited during Level 4"
+            tail -n 100 "$GUI_LOG"
+            status=1
+          fi
+          kill -- -"$GUI_PID" 2>/dev/null || true
+          exit "$status"
 
   # ---------------------------------------------------------------------------
   # AICore tiered tests — fast lane for hot-path changes

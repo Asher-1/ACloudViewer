@@ -13,7 +13,13 @@
 // cloud in the exact byte layout of the headless CLOUD_PLY. Driven by
 // tests/check_gui_headless_parity.py (not a ctest: needs GGUF + images).
 //
-//   worker_parity_harness MODEL DEVICE RESPONSIVE(0|1) OUT_PLY IMAGE...
+//   worker_parity_harness MODEL DEVICE RESPONSIVE(0|1) OUT_PLY
+//                         [--ref REF_IMAGES_PATH IS_GPS(0|1)] IMAGE...
+//
+// --ref feeds the user reference-camera path (the dialog's Reference
+// cameras field); without it a discovered scene_meta.json anchors, as in
+// the dialog. Large reference frames write double xyz like the headless
+// PLY.
 //
 // Exit: 0 ok, 1 worker failure, 2 usage, 77 model not in the catalog.
 
@@ -25,6 +31,7 @@
 #include <cstdlib>
 
 #include "MapAnythingModelCatalog.h"
+#include "MapAnythingSceneMeta.h"
 #include "MapAnythingWorker.h"
 
 int main(int argc, char** argv) {
@@ -41,11 +48,21 @@ int main(int argc, char** argv) {
     s.device = QString::fromLocal8Bit(argv[2]);
     s.responsiveStreaming = std::atoi(argv[3]) != 0;
     const QString outPly = QString::fromLocal8Bit(argv[4]);
-    for (int i = 5; i < argc; ++i)
+    int first = 5;
+    if (argc > 8 && QByteArray(argv[5]) == "--ref") {
+        s.refImagesPath = QString::fromLocal8Bit(argv[6]);
+        s.refIsGps = std::atoi(argv[7]) != 0;
+        first = 8;
+    }
+    for (int i = first; i < argc; ++i)
         s.imagePaths << QString::fromLocal8Bit(argv[i]);
     s.addPointCloud = true;
     s.addDepthRasters = false;  // display-only; no effect on the cloud
     s.addPerViewClouds = false;
+    // Dialog default: anchor to a discovered WAI benchmark frame unless a
+    // reference file is given (it wins, as in qMapAnything::executeTask).
+    if (s.refImagesPath.isEmpty())
+        s.gtMetaPath = MapAnythingSceneMeta::discover(s.imagePaths);
 
     MapAnythingModelEntry entry;
     if (!MapAnythingHelpers::findModelByFilename(
@@ -83,24 +100,33 @@ int main(int argc, char** argv) {
 
     QFile f(outPly);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) return 1;
+    const double* off = result.referenceOffset;
+    const bool shifted = off[0] != 0.0 || off[1] != 0.0 || off[2] != 0.0;
+    const QString type =
+            shifted ? QStringLiteral("double") : QStringLiteral("float");
     const QByteArray header = QStringLiteral(
                                       "ply\n"
                                       "format binary_little_endian 1.0\n"
                                       "element vertex %1\n"
-                                      "property float x\n"
-                                      "property float y\n"
-                                      "property float z\n"
+                                      "property %2 x\n"
+                                      "property %2 y\n"
+                                      "property %2 z\n"
                                       "property uchar red\n"
                                       "property uchar green\n"
                                       "property uchar blue\n"
                                       "end_header\n")
                                       .arg(result.pointCount)
+                                      .arg(type)
                                       .toUtf8();
     f.write(header);
     for (int k = 0; k < result.pointCount; ++k) {
-        f.write(reinterpret_cast<const char*>(result.points.constData() +
-                                              3 * k),
-                3 * sizeof(float));
+        const float* p = result.points.constData() + 3 * k;
+        if (shifted) {
+            const double q[3] = {p[0] + off[0], p[1] + off[1], p[2] + off[2]};
+            f.write(reinterpret_cast<const char*>(q), sizeof(q));
+        } else {
+            f.write(reinterpret_cast<const char*>(p), 3 * sizeof(float));
+        }
         f.write(reinterpret_cast<const char*>(result.colors.constData() +
                                               3 * k),
                 3);
