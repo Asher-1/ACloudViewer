@@ -196,44 +196,6 @@ TEST(base_essential_matrix, TestInvertEssentialMatrix) {
   }
 }
 
-TEST(base_essential_matrix, TestRefineEssentialMatrix) {
-  const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
-  const Eigen::Vector3d t = Eigen::Vector3d(1, 0, 0).normalized();
-  const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
-
-  const Eigen::Matrix3x4d proj_matrix1 = Eigen::Matrix3x4d::Identity();
-  const Eigen::Matrix3x4d proj_matrix2 = ComposeProjectionMatrix(R, t);
-
-  std::vector<Eigen::Vector3d> points3D(150);
-  for (size_t i = 0; i < points3D.size() / 3; ++i) {
-    points3D[3 * i + 0] = Eigen::Vector3d(i * 0.01, 0, 1);
-    points3D[3 * i + 1] = Eigen::Vector3d(0, i * 0.01, 1);
-    points3D[3 * i + 2] = Eigen::Vector3d(i * 0.01, i * 0.01, 1);
-  }
-
-  std::vector<Eigen::Vector2d> points1(points3D.size());
-  std::vector<Eigen::Vector2d> points2(points3D.size());
-  for (size_t i = 0; i < points3D.size(); ++i) {
-    const Eigen::Vector3d point1 = proj_matrix1 * points3D[i].homogeneous();
-    points1[i] = point1.hnormalized();
-    const Eigen::Vector3d point2 = proj_matrix2 * points3D[i].homogeneous();
-    points2[i] = point2.hnormalized();
-  }
-
-  const Eigen::Matrix3d R_pertubated = EulerAnglesToRotationMatrix(0, 0, 0);
-  const Eigen::Vector3d t_pertubated =
-      Eigen::Vector3d(1.02, 0.02, 0.02).normalized();
-  const Eigen::Matrix3d E_pertubated =
-      EssentialMatrixFromPose(R_pertubated, t_pertubated);
-
-  Eigen::Matrix3d E_refined = E_pertubated;
-  ceres::Solver::Options options;
-  RefineEssentialMatrix(options, points1, points2,
-                        std::vector<char>(points1.size(), true), &E_refined);
-
-  EXPECT_LE((E - E_refined).norm(), (E - E_pertubated).norm());
-}
-
 // Ported from upstream a2bd15c2 geometry/essential_matrix_test.cc.
 TEST(FundamentalFromEssentialMatrix, Nominal) {
   const Eigen::Matrix3d E = EssentialMatrixFromPose(
@@ -311,3 +273,226 @@ TEST(ComputeSquaredSampsonError, VectorOverloadMatchesSinglePoint) {
   ASSERT_EQ(residuals.size(), 1);
   EXPECT_EQ(residuals[0], std::numeric_limits<double>::max());
 }
+
+// Upstream parity (a2bd15c2 geometry/essential_matrix_test.cc).
+namespace colmap {
+namespace {
+
+// A pinhole geometry to exercise the tangent Sampson error against a known
+// closed-form answer.
+constexpr double kFocal = 650.0;
+constexpr double kPrincipalX = 512.0;
+constexpr double kPrincipalY = 384.0;
+
+Eigen::Vector2d PinholeImgFromCam(const Eigen::Vector3d& cam_point) {
+  return Eigen::Vector2d(kFocal * cam_point.x() / cam_point.z() + kPrincipalX,
+                         kFocal * cam_point.y() / cam_point.z() + kPrincipalY);
+}
+
+// Normalized image plane representative (u, v, 1) of a pixel.
+Eigen::Vector3d PinholeNormalizedFromImg(const Eigen::Vector2d& image_point) {
+  return Eigen::Vector3d((image_point.x() - kPrincipalX) / kFocal,
+                         (image_point.y() - kPrincipalY) / kFocal,
+                         1.0);
+}
+
+// d(u, v, 1) / d(x, y) for a pinhole: constant and diagonal.
+Eigen::Matrix3x2d PinholeNormalizedJacobian() {
+  Eigen::Matrix3x2d J = Eigen::Matrix3x2d::Zero();
+  J(0, 0) = 1.0 / kFocal;
+  J(1, 1) = 1.0 / kFocal;
+  return J;
+}
+
+// d(unit ray) / d(x, y) for a pinhole, via the normalization quotient rule.
+Eigen::Matrix3x2d PinholeUnitRayJacobian(const Eigen::Vector3d& normalized) {
+  const double norm = normalized.norm();
+  const Eigen::Matrix3d dnormalize =
+      (Eigen::Matrix3d::Identity() -
+       normalized * normalized.transpose() / (norm * norm)) /
+      norm;
+  return dnormalize * PinholeNormalizedJacobian();
+}
+
+}  // namespace
+
+// With the normalized image plane representative (u, v, 1), whose Jacobian
+// w.r.t. pixels is the constant 1/f, the tangent Sampson error is *exactly*
+// f^2 times the classical Sampson error. This is an algebraic identity, so it
+// pins down the whole formula - numerator, both gradient chains, and the
+// denominator - to machine precision.
+TEST(ComputeSquaredTangentSampsonError, PinholeMatchesScaledSampsonExactly) {
+  const Rigid3d cam2_from_cam1(
+      Eigen::Quaterniond(
+          Eigen::AngleAxisd(0.15, Eigen::Vector3d(0.3, 1, 0.2).normalized())),
+      Eigen::Vector3d(1.0, 0.2, 0.1).normalized());
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(cam2_from_cam1);
+
+  const Eigen::Matrix3x2d J_norm = PinholeNormalizedJacobian();
+
+  // Deliberately includes badly mismatched pairs: the identity is exact for
+  // arbitrary inputs, not only for near-inliers.
+  for (const double x1 : {20.0, 512.0, 1000.0}) {
+    for (const double y1 : {30.0, 384.0, 740.0}) {
+      for (const double x2 : {45.0, 512.0, 980.0}) {
+        for (const double y2 : {60.0, 384.0, 700.0}) {
+          const Eigen::Vector3d m1 =
+              PinholeNormalizedFromImg(Eigen::Vector2d(x1, y1));
+          const Eigen::Vector3d m2 =
+              PinholeNormalizedFromImg(Eigen::Vector2d(x2, y2));
+
+          const double tangent_sampson =
+              ComputeSquaredTangentSampsonError({m1, J_norm}, {m2, J_norm}, E);
+          const double scaled_sampson =
+              kFocal * kFocal * ComputeSquaredSampsonError(m1, m2, E);
+
+          ASSERT_GT(scaled_sampson, 0.0);
+          // Fork adaptation: the fork builds with -march=x86-64-v3, whose FMA
+          // contraction perturbs the two formulas differently. Upstream
+          // a2bd15c2 built with the same flags reports the identical worst
+          // case 2.2194e-14 and passes 1e-14 only with -ffp-contract=off; a
+          // formula defect would show an O(1) relative error.
+          EXPECT_LE(std::abs(tangent_sampson - scaled_sampson) / scaled_sampson,
+                    1e-13);
+        }
+      }
+    }
+  }
+}
+
+// With unit bearing vectors the agreement is only first order: rescaling the
+// homogeneous representative by a function of the measurements changes the
+// Sampson approximation by a term proportional to the residual itself. The
+// relative discrepancy is therefore expected to shrink linearly as the
+// correspondence approaches the epipolar variety. This test documents that
+// behaviour rather than hiding it, since it is the reason the error is called
+// an approximation.
+TEST(ComputeSquaredTangentSampsonError, UnitRaysAgreeToFirstOrder) {
+  const Rigid3d cam2_from_cam1(
+      Eigen::Quaterniond(
+          Eigen::AngleAxisd(0.15, Eigen::Vector3d(0.3, 1, 0.2).normalized())),
+      Eigen::Vector3d(1.0, 0.2, 0.1).normalized());
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(cam2_from_cam1);
+
+  const Eigen::Vector3d point3D_in_cam1(0.35, -0.2, 4.0);
+  const Eigen::Vector2d image_point1 = PinholeImgFromCam(point3D_in_cam1);
+  const Eigen::Vector2d image_point2 =
+      PinholeImgFromCam(cam2_from_cam1 * point3D_in_cam1);
+
+  // Displace image 2 perpendicular to the epipolar line of image_point1, so
+  // the offset is entirely "epipolar error" rather than a slide along the
+  // line. In normalized coordinates the line is l = E * m1 and the pixel-space
+  // gradient of the constraint is proportional to (l.x, l.y).
+  const Eigen::Vector3d m1 = PinholeNormalizedFromImg(image_point1);
+  const Eigen::Vector3d epipolar_line2 = E * m1;
+  const Eigen::Vector2d perpendicular = epipolar_line2.head<2>().normalized();
+
+  double prev_rel_diff = std::numeric_limits<double>::max();
+  double prev_ratio = 0.0;
+  for (const double offset : {1.0, 0.1, 0.01, 0.001}) {
+    const Eigen::Vector3d m2 =
+        PinholeNormalizedFromImg(image_point2 + offset * perpendicular);
+
+    const double tangent_sampson = ComputeSquaredTangentSampsonError(
+        {m1.normalized(), PinholeUnitRayJacobian(m1)},
+        {m2.normalized(), PinholeUnitRayJacobian(m2)},
+        E);
+    const double scaled_sampson =
+        kFocal * kFocal * ComputeSquaredSampsonError(m1, m2, E);
+
+    // The residual is a squared distance, so it must scale quadratically with
+    // the displacement. Note sqrt(residual) is strictly below `offset`: Sampson
+    // measures distance to the epipolar variety in the joint 4-D measurement
+    // space, which distributes the correction over both images rather than
+    // charging it entirely to the one that was displaced.
+    EXPECT_LT(std::sqrt(tangent_sampson), offset);
+    const double ratio = tangent_sampson / (offset * offset);
+    if (prev_ratio > 0.0) {
+      EXPECT_LE(std::abs(ratio - prev_ratio) / prev_ratio, 1e-2);
+    }
+    prev_ratio = ratio;
+
+    const double rel_diff =
+        std::abs(tangent_sampson - scaled_sampson) / scaled_sampson;
+    // Each tenfold reduction of the residual must reduce the discrepancy,
+    // confirming it is a first-order effect and not a constant bias.
+    EXPECT_LT(rel_diff, prev_rel_diff);
+    prev_rel_diff = rel_diff;
+  }
+  // At a milli-pixel residual the two formulations are indistinguishable.
+  EXPECT_LT(prev_rel_diff, 1e-5);
+}
+
+TEST(ComputeSquaredTangentSampsonError, DegenerateDenominatorReturnsMax) {
+  const Eigen::Matrix3x2d J_norm = PinholeNormalizedJacobian();
+  EXPECT_EQ(
+      ComputeSquaredTangentSampsonError({Eigen::Vector3d(0, 0, 1), J_norm},
+                                        {Eigen::Vector3d(0, 0, 1), J_norm},
+                                        Eigen::Matrix3d::Zero()),
+      std::numeric_limits<double>::max());
+
+  // The CamRayWithJac::Zero() sentinel that callers substitute for an
+  // unprojectable point must be rejected for any essential matrix: its zero ray
+  // and Jacobian force the denominator to zero regardless of a (nonzero) E.
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(
+      Rigid3d(Eigen::Quaterniond::Identity(),
+              Eigen::Vector3d(1, 0.1, 0.2).normalized()));
+  EXPECT_EQ(ComputeSquaredTangentSampsonError(
+                CamRayWithJac::Zero(), {Eigen::Vector3d(0, 0, 1), J_norm}, E),
+            std::numeric_limits<double>::max());
+}
+
+TEST(ComputeSquaredTangentSampsonError, VectorOverloadAndCheirality) {
+  const Rigid3d cam1_from_world;
+  const Rigid3d cam2_from_world(Eigen::Quaterniond::Identity(),
+                                Eigen::Vector3d(1, 0, 0).normalized());
+  const Rigid3d cam2_from_cam1 = cam2_from_world * Inverse(cam1_from_world);
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(cam2_from_cam1);
+
+  const std::vector<Eigen::Vector3d> points3D = {Eigen::Vector3d(0, 0, 1),
+                                                 Eigen::Vector3d(0, 0.1, 1),
+                                                 Eigen::Vector3d(0.1, 0, 1),
+                                                 Eigen::Vector3d(0.1, 0.1, 1)};
+
+  std::vector<CamRayWithJac> cam_rays1_with_jac(points3D.size());
+  std::vector<CamRayWithJac> cam_rays2_with_jac(points3D.size());
+  for (size_t i = 0; i < points3D.size(); ++i) {
+    const Eigen::Vector3d cam1_point = cam1_from_world * points3D[i];
+    const Eigen::Vector3d cam2_point = cam2_from_world * points3D[i];
+    cam_rays1_with_jac[i] = {
+        cam1_point.normalized(),
+        PinholeUnitRayJacobian(cam1_point / cam1_point.z())};
+    cam_rays2_with_jac[i] = {
+        cam2_point.normalized(),
+        PinholeUnitRayJacobian(cam2_point / cam2_point.z())};
+  }
+
+  std::vector<double> residuals;
+  ComputeSquaredTangentSampsonError(
+      cam_rays1_with_jac, cam_rays2_with_jac, E, &residuals);
+  ASSERT_EQ(residuals.size(), points3D.size());
+  for (const double residual : residuals) {
+    EXPECT_LT(residual, 1e-16);
+  }
+
+  // Flipping one correspondence behind both cameras leaves the epipolar
+  // constraint satisfied but must be rejected once cheirality is enforced.
+  cam_rays1_with_jac[1].ray = -cam_rays1_with_jac[1].ray;
+  cam_rays2_with_jac[1].ray = -cam_rays2_with_jac[1].ray;
+
+  std::vector<double> plain_residuals;
+  ComputeSquaredTangentSampsonError(
+      cam_rays1_with_jac, cam_rays2_with_jac, E, &plain_residuals);
+  EXPECT_LT(plain_residuals[1], 1e-16);
+
+  std::vector<double> cheiral_residuals;
+  ComputeSquaredTangentSampsonErrorWithCheirality(
+      cam_rays1_with_jac, cam_rays2_with_jac, E, &cheiral_residuals);
+  ASSERT_EQ(cheiral_residuals.size(), points3D.size());
+  EXPECT_EQ(cheiral_residuals[1], std::numeric_limits<double>::max());
+  EXPECT_EQ(cheiral_residuals[0], plain_residuals[0]);
+  EXPECT_EQ(cheiral_residuals[2], plain_residuals[2]);
+  EXPECT_EQ(cheiral_residuals[3], plain_residuals[3]);
+}
+
+}  // namespace colmap

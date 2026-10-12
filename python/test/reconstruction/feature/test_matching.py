@@ -97,8 +97,16 @@ def test_feature_matching_options_check_loma_resolves_defaults(recon):
     assert options.check()
 
 
+def _create_cpu_sift_matcher(recon):
+    # A CUDA-enabled wheel defaults to use_gpu=True even when the test host has
+    # no CUDA device. Keep these API contract tests hardware-independent.
+    options = recon.FeatureMatchingOptions()
+    options.use_gpu = False
+    return recon.FeatureMatcher.create(options)
+
+
 def test_feature_matcher_create(recon):
-    matcher = recon.FeatureMatcher.create(recon.FeatureMatchingOptions())
+    matcher = _create_cpu_sift_matcher(recon)
     assert matcher is not None
 
 
@@ -106,7 +114,7 @@ def test_feature_matcher_match_lends_typed_descriptors(recon, feature):
     descriptors = feature.FeatureDescriptors()
     descriptors.type = recon.FeatureExtractorType.SIFT
     descriptors.data = np.zeros((2, 128), dtype=np.uint8)
-    matcher = recon.FeatureMatcher.create(recon.FeatureMatchingOptions())
+    matcher = _create_cpu_sift_matcher(recon)
     matches = matcher.match([], descriptors, [], descriptors)
     assert matches is not None
 

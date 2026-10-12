@@ -20,6 +20,13 @@ Usage:
     python3 gen_ocr_fixtures.py --model <gguf> --out <dir> [--seed S]
                              [--stem rec_en]
 
+The published det/rec fixtures are NOT produced here any more: on a uniform
+random input the DB head is ~0 everywhere (max 0.0036) and the CTC head is
+blank at all 40 steps, so those gates could not fail. They are real official
+images through the Paddle Inference predictor of the GGUF source archive
+(core/AICore/tools/export_ocr_fixture.py). This script still serves the
+layout fixture and the --fetch-at bisection simulator.
+
 Default output layout mirrors the manifest relative paths:
     <out>/rec_ch_input.npy  <out>/rec_ch_reference.npy
     <out>/rec_en_input.npy  <out>/rec_en_reference.npy   (--stem rec_en)

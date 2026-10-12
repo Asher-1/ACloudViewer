@@ -279,10 +279,10 @@ TEST_F(IncrementalMapperLargeDatasetTest,
   mapper_->FilterFrames(options_);
   ASSERT_LT(reconstruction_->NumRegImages(), 2);
 
-  // Fork adaptation: the fork's GlobalBundleAdjustment aborts via glog CHECK
-  // on the registration precondition instead of returning false (upstream
-  // returns false), so the insufficient-frames contract asserts via death.
-  EXPECT_DEATH(mapper_->AdjustGlobalBundle(options_, /*ba_options=*/{}), "");
+  // Upstream parity (a2bd15c2): insufficient registered frames are a normal
+  // no-op condition reported as false, not a process-terminating
+  // precondition.
+  EXPECT_FALSE(mapper_->AdjustGlobalBundle(options_, /*ba_options=*/{}));
 }
 
 // Fork adjudication: the fork's EndReconstruction(discard=false) lifecycle

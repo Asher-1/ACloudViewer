@@ -600,12 +600,34 @@ struct CommandMapAnythingReconstruct : public ccCommandLineInterface::Command {
                     {"center_residual_median", anchor.residualMedian},
                     { "cross_spread",
                       anchor.crossSpread }};
+            // per_chunk: upstream --align gt (each chunk on its own; the
+            // top-level Sim3 is chunk 0's); scene: one Sim3 for the whole
+            // (chained) scene.
+            QJsonObject anchorReport = sim3;
+            anchorReport["mode"] = anchor.perChunk ? QStringLiteral("per_chunk")
+                                                   : QStringLiteral("scene");
+            if (anchor.perChunk) {
+                QJsonArray fits;
+                for (const auto& f : anchor.chunks) {
+                    fits.append(QJsonObject{
+                            {"scale", f.sim3.s},
+                            {"cameras", f.pairs},
+                            {"center_residual_median", f.residualMedian},
+                            { "cross_spread",
+                              f.crossSpread }});
+                }
+                anchorReport["chunks"] = fits;
+            }
+            if (!anchor.perChunkRefused.empty()) {
+                anchorReport["per_chunk_refused"] =
+                        QString::fromStdString(anchor.perChunkRefused);
+            }
             if (refImagesPath.isEmpty()) {
                 report["gt_meta"] = gtMetaPath;
-                report["gt_sim3"] = sim3;
+                report["gt_sim3"] = anchorReport;
             } else {
                 // Translation is in the local frame: true = local + offset.
-                QJsonObject ref = sim3;
+                QJsonObject ref = anchorReport;
                 ref["path"] = refImagesPath;
                 ref["coordinates"] = refIsGps ? QStringLiteral("gps_enu")
                                               : QStringLiteral("xyz");

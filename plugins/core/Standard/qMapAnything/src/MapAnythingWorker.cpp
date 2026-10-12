@@ -418,6 +418,22 @@ bool MapAnythingWorker::runInference() {
                                 .arg(anchor.pairs)
                                 .arg(anchor.residualMedian, 0, 'g', 4)
                                 .arg(anchor.crossSpread, 0, 'g', 4));
+        for (size_t ci = 0; ci < anchor.chunks.size(); ++ci) {
+            const auto& f = anchor.chunks[ci];
+            emit logMessage(tr("[MapAnything]   chunk %1 anchored on its "
+                               "own: scale %2 from %3 cameras, residual %4.")
+                                    .arg(ci)
+                                    .arg(f.sim3.s, 0, 'f', 4)
+                                    .arg(f.pairs)
+                                    .arg(f.residualMedian, 0, 'g', 4));
+        }
+        if (!anchor.perChunkRefused.empty()) {
+            emit logMessage(
+                    tr("[MapAnything]   whole chained scene anchored at once "
+                       "(a chunk cannot be anchored on its own: %1).")
+                            .arg(QString::fromStdString(
+                                    anchor.perChunkRefused)));
+        }
         if (reference.gps) {
             emit logMessage(tr("[MapAnything] GPS references -> local "
                                "East-North-Up metres, origin lat %1 lon %2 "

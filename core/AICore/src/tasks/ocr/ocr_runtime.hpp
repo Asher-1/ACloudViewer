@@ -90,9 +90,9 @@ struct OcrBuildOptions {
      *  pipeline) keeps the enlarged absolute error through the cancellation
      *  and the f32 fixture gates fail (rec 0.016, layout 0.022 vs 0.003 /
      *  0.010 on CUDA, whose cuBLAS 16F path keeps f32 k-tile partials).
-     *  F32 accumulation restores CUDA-level numerics. Vulkan only: on CUDA
-     *  PREC_F32 drops to strict SGEMM with no tensor cores and the default
-     *  route already passes every gate. */
+     *  F32 accumulation restores CUDA-level numerics. Vulkan only for
+     *  F16/Q8_0 weights; F32 weights request PREC_F32 on every backend
+     *  (see the conv2d GEMM route in ocr_runtime.cpp). */
     bool conv_gemm_f32acc = false;
 };
 

@@ -174,7 +174,8 @@ AICORE_CAPI int aicore_map_anything_result_view_valid_size(
 
 /** Dense depth [n*H*W] view-major. vggt family: the dedicated depth head
  *  (exp of logits). pi3 family: camera-frame z of the local points. dust3r:
- *  camera-frame z of the pointmaps. NULL until the first successful run. */
+ *  camera-frame z of the pointmaps. mapanything: metric distance ALONG the
+ *  ray (not z). NULL until the first successful run. */
 AICORE_CAPI const float* aicore_map_anything_result_depth(
         const aicore_map_anything_ctx* ctx);
 /** Confidence [n*H*W]. vggt family: depth_conf = 1+exp(logits) (>= 1).
@@ -183,7 +184,9 @@ AICORE_CAPI const float* aicore_map_anything_result_depth(
 AICORE_CAPI const float* aicore_map_anything_result_conf(
         const aicore_map_anything_ctx* ctx);
 /** Per-view local pointmaps [n*H*W*3] (camera frame, xyz); dust3r views
- *  live in view1's frame. pi3/pi3x/mapanything/dust3r only. */
+ *  live in view1's frame. mapanything: UNIT camera-frame ray directions
+ *  instead (upstream reuses the buffer; result_points = c2w applied to
+ *  ray * result_depth). pi3/pi3x/mapanything/dust3r only. */
 AICORE_CAPI const float* aicore_map_anything_result_local_points(
         const aicore_map_anything_ctx* ctx);
 /** World/common-frame pointmaps [n*H*W*3]. mapanything: the common-frame

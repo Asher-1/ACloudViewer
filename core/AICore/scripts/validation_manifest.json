@@ -272,10 +272,12 @@
         "ocr"
       ],
       "relative_path": "ocr_fixtures/rec_ch_input.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_input.npy",
-      "sha256": "6fde7fec9b48b966f523a21b0fbc847f7696ce48dd4885e12b8877067c8a9fdb",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_page_input.npy",
+      "sha256": "634b6c42cb75bb2fa93ae6a24a4985ff6a7871c1213fc3fb188ff6e95a56682e",
       "size_bytes": 184448,
-      "path": "rec_ch_input.npy"
+      "path": "rec_ch_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR rec fixture input (1,3,48,320): official imgs_words_ch/word_1.jpg through OCRReisizeNormImg"
     },
     {
       "id": "ocr-rec-reference",
@@ -283,10 +285,12 @@
         "ocr"
       ],
       "relative_path": "ocr_fixtures/rec_ch_reference.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_reference.npy",
-      "sha256": "4b2e804e9ae99c9cf6392defc5b19a2f31b4c055c99b8106a6f4a00222b99160",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_page_reference.npy",
+      "sha256": "6ae5c9d54a2206ae31f9a67212ff6d4893aafe3aaa7c78251bd1a5b4d95cef05",
       "size_bytes": 1060128,
-      "path": "rec_ch_reference.npy"
+      "path": "rec_ch_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR rec fixture reference (1,40,6625) softmax from the Paddle Inference predictor of ch_PP-OCRv4_rec_infer (4 non-blank CTC steps)"
     },
     {
       "id": "ocr-det-input",
@@ -294,10 +298,12 @@
         "ocr"
       ],
       "relative_path": "ocr_fixtures/det_ch_input.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_input.npy",
-      "sha256": "830e98233e90eb0acdda4bc498a936f3d368862854054c9861f33ab7a050effd",
-      "size_bytes": 5898368,
-      "path": "det_ch_input.npy"
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_page_input.npy",
+      "sha256": "0e9bedae1dc5c6c248f08222c002ecd0cf8027b02b86a69ab82a0639f2a65060",
+      "size_bytes": 5505152,
+      "path": "det_ch_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR det fixture input (1,3,512,896): official imgs/00006737.jpg through DetResizeForTest(max 960)+NormalizeImage (export_ocr_fixture.py)"
     },
     {
       "id": "ocr-det-reference",
@@ -305,10 +311,12 @@
         "ocr"
       ],
       "relative_path": "ocr_fixtures/det_ch_reference.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_reference.npy",
-      "sha256": "b5bfcfd7584cc8da4216f496249a720b1fe91dc490436e8156fa7ee6b745b925",
-      "size_bytes": 1966208,
-      "path": "det_ch_reference.npy"
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_page_reference.npy",
+      "sha256": "4ebf682711f8fd49732ce281041efb004fb9b472d5cf58becc9909384da61eb7",
+      "size_bytes": 1835136,
+      "path": "det_ch_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR det fixture reference (1,1,512,896) sigmoid map from the Paddle Inference predictor of ch_PP-OCRv4_det_infer (prob max 1.0, 7.6% text pixels)"
     },
     {
       "id": "ocr-layout-input",
@@ -432,22 +440,26 @@
       "tasks": [
         "ocr"
       ],
-      "path": "rec_en_input.npy",
-      "sha256": "6fde7fec9b48b966f523a21b0fbc847f7696ce48dd4885e12b8877067c8a9fdb",
+      "path": "rec_en_page_input.npy",
+      "sha256": "a1d582c6dd7cb69e41a583e536498cc9c5d8c474aa52b17b378eba7fb541c479",
       "size_bytes": 184448,
       "relative_path": "ocr_fixtures/rec_en_input.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_input.npy"
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR English rec fixture input (1,3,48,320): official words_en/word_1.png through OCRReisizeNormImg"
     },
     {
       "id": "ocr-rec-en-reference",
       "tasks": [
         "ocr"
       ],
-      "path": "rec_en_reference.npy",
-      "sha256": "09b40bd3fcb15fdb0b0132a2f32a1b6ac3a6f2bf6f9c92344c3aa6f10eb76e03",
+      "path": "rec_en_page_reference.npy",
+      "sha256": "11975a6b9ef84dccd3d9b52be4bf704ac3cc1216b629abab7c34db9e2ff686bb",
       "size_bytes": 15648,
       "relative_path": "ocr_fixtures/rec_en_reference.npy",
-      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_reference.npy"
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR English rec fixture reference (1,40,97) softmax from the Paddle Inference predictor of en_PP-OCRv4_rec_infer (5 non-blank CTC steps)"
     },
     {
       "id": "table-fixture-0-input",
@@ -2843,10 +2855,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.01"
+        "0.001"
       ],
       "env": {},
-      "accuracy_gate": "graph-level fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). This gate verifies converted weights and graph computation, not the complete det/box/crop/CTC pipeline. The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise. External unlabelled Paddle string agreement is diagnostic only. Release semantic evidence must run core/AICore/scripts/run_ocr_gt_matrix.py on an official labelled GT package pinned by SHA-256 and dataset revision; it reports Hmean/CER/WER for every Chinese/English det+rec quantization/backend row.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2859,7 +2871,7 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.01
+            "value": 0.001
           }
         ],
         "require_metrics": [
@@ -2884,13 +2896,13 @@
         "{backend}",
         "-1",
         "-",
-        "0.01"
+        "0.002"
       ],
       "env": {},
-      "accuracy_gate": "graph-level fixture argmax sequence match and element-wise max|diff| against the numpy PaddlePaddle-semantics reference (fixtures regenerated deterministically by core/AICore/scripts/gen_ocr_fixtures.py; the historical release .npy assets are gone). This gate verifies converted weights and graph computation, not the complete det/box/crop/CTC pipeline. The post-softmax reference amplifies few-ULP conv accumulation differences into isolated near-tie probability swings (stock CPU: 0.0065 max, 0.0136 percent of elements over 1e-3, p50 1.2e-8; blocked-island CPU: 2.1e-4 max), so the f32 bound is 0.01 with the CTC argmax sequence required identical; the F16/Q8_0 tolerances additionally carry weight-quantization noise. External unlabelled Paddle string agreement is diagnostic only. Release semantic evidence must run core/AICore/scripts/run_ocr_gt_matrix.py on an official labelled GT package pinned by SHA-256 and dataset revision; it reports Hmean/CER/WER for every Chinese/English det+rec quantization/backend row.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
-        "reference_id": "ocr-rec-reference",
+        "reference_id": "ocr-rec-en-reference",
         "checks": [
           {
             "metric": "argmax_match",
@@ -2900,7 +2912,7 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.01
+            "value": 0.002
           }
         ],
         "require_metrics": [
@@ -2927,10 +2939,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.03"
+        "0.001"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -2943,7 +2955,7 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.03
+            "value": 0.001
           }
         ],
         "require_metrics": [
@@ -2968,13 +2980,13 @@
         "{backend}",
         "-1",
         "-",
-        "0.03"
+        "0.003"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
-        "reference_id": "ocr-rec-reference",
+        "reference_id": "ocr-rec-en-reference",
         "checks": [
           {
             "metric": "argmax_match",
@@ -2984,7 +2996,7 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.03
+            "value": 0.003
           }
         ],
         "require_metrics": [
@@ -3011,10 +3023,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.06"
+        "0.005"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-rec-reference",
@@ -3027,7 +3039,7 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.06
+            "value": 0.005
           }
         ],
         "require_metrics": [
@@ -3052,13 +3064,13 @@
         "{backend}",
         "-1",
         "-",
-        "0.06"
+        "0.6"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture argmax sequence match and element-wise max|diff| against the PaddlePaddle-semantics reference; the F16/Q8_0 tolerances carry weight-quantization noise while the CTC argmax sequence stays identical. This is not an end-to-end semantic accuracy claim; release requires the pinned official-GT Hmean/CER/WER matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
       "accuracy": {
         "reference": "fixture",
-        "reference_id": "ocr-rec-reference",
+        "reference_id": "ocr-rec-en-reference",
         "checks": [
           {
             "metric": "argmax_match",
@@ -3068,7 +3080,12 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.06
+            "value": 0.6
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.001
           }
         ],
         "require_metrics": [
@@ -3095,10 +3112,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.01"
+        "0.03"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3106,7 +3123,12 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.01
+            "value": 0.03
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 3e-05
           }
         ],
         "require_metrics": [
@@ -3133,10 +3155,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.08"
+        "0.1"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3144,7 +3166,12 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.08
+            "value": 0.1
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.0001
           }
         ],
         "require_metrics": [
@@ -3171,10 +3198,10 @@
         "{backend}",
         "-1",
         "-",
-        "0.4"
+        "0.6"
       ],
       "env": {},
-      "accuracy_gate": "graph-level pinned-fixture element-wise max|diff| in the sigmoid domain against the regenerated official-preprocessing PaddlePaddle DBNet reference; F32 bit-near-exact, F16/Q8_0 carry weight-quantization noise well below the 0.3 DB binarization threshold (mean|diff| < 1e-3). Complete pipeline box/text agreement is separately diagnostic because the compared images have no published per-box text ground truth; release requires the pinned official-GT matrix from core/AICore/scripts/run_ocr_gt_matrix.py.",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3182,7 +3209,12 @@
           {
             "metric": "max_diff",
             "op": "<",
-            "value": 0.4
+            "value": 0.6
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.0005
           }
         ],
         "require_metrics": [
@@ -4019,6 +4051,13 @@
         "{backend}",
         "--threads",
         "{threads}",
+        "--optional-region",
+        "layout/table_page_1.png",
+        "5",
+        "69.621",
+        "318.138",
+        "706.748",
+        "357.105",
         "--min-f1",
         "1.0",
         "--min-recall",
@@ -4027,7 +4066,7 @@
         "0.99"
       ],
       "env": {},
-      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found except the table_page_1 table_caption whose upstream score is 0.50031 against the 0.5 threshold (the same Paddle graph with float16-rounded weights scores it 0.4998), which --optional-region exempts for the rounded-weight rows; Q8_0 may add near-threshold (score ~0.5) extras.",
       "accuracy": {
         "reference": "upstream_ppstructure_layout",
         "reference_id": "ocr-layout-regions",
@@ -4091,6 +4130,13 @@
         "{backend}",
         "--threads",
         "{threads}",
+        "--optional-region",
+        "layout/table_page_1.png",
+        "5",
+        "69.621",
+        "318.138",
+        "706.748",
+        "357.105",
         "--min-f1",
         "0.95",
         "--min-recall",
@@ -4099,7 +4145,7 @@
         "0.99"
       ],
       "env": {},
-      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found except the table_page_1 table_caption whose upstream score is 0.50031 against the 0.5 threshold (the same Paddle graph with float16-rounded weights scores it 0.4998), which --optional-region exempts for the rounded-weight rows; Q8_0 may add near-threshold (score ~0.5) extras.",
       "accuracy": {
         "reference": "upstream_ppstructure_layout",
         "reference_id": "ocr-layout-regions",

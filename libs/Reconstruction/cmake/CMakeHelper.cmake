@@ -302,12 +302,14 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # environment. Windows resolves deployed DLLs beside the executable and
     # therefore intentionally does not receive Unix RPATH properties here.
     if (UNIX)
+        # A CMake list: CMake joins it with ':' for GNU ld and emits one
+        # -rpath per entry for Apple ld64, which has no ':' list syntax.
         set(_COLMAP_EXECUTABLE_BUILD_RPATH
-            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${CMAKE_BINARY_DIR}/external/lib")
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" "${CMAKE_BINARY_DIR}/external/lib")
         cloudviewer_resolve_qt_lib_dir(_COLMAP_EXECUTABLE_QT_LIB_DIR)
         if (_COLMAP_EXECUTABLE_QT_LIB_DIR)
-            string(APPEND _COLMAP_EXECUTABLE_BUILD_RPATH
-                   ":${_COLMAP_EXECUTABLE_QT_LIB_DIR}")
+            list(APPEND _COLMAP_EXECUTABLE_BUILD_RPATH
+                 "${_COLMAP_EXECUTABLE_QT_LIB_DIR}")
         endif ()
         set_target_properties(${TARGET_NAME} PROPERTIES
             BUILD_RPATH "${_COLMAP_EXECUTABLE_BUILD_RPATH}")
@@ -353,20 +355,23 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # configure time (Qt, vendored opencv) into the build RPATH so the
         # relocated tests under bin/colmap_test/ stay runnable on all three
         # platforms without relying on the caller's shell environment.
-        set(_COLMAP_TEST_BUILD_RPATH "${CMAKE_BINARY_DIR}/external/lib:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+        # A CMake list (see COLMAP_ADD_EXECUTABLE): ':'-joined for GNU ld,
+        # one -rpath per entry for Apple ld64.
+        set(_COLMAP_TEST_BUILD_RPATH "${CMAKE_BINARY_DIR}/external/lib" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
         # Version-agnostic Qt runtime directory (Qt5/Qt6/unprefixed alias).
         cloudviewer_resolve_qt_lib_dir(_COLMAP_QT_LIB_DIR)
         if (_COLMAP_QT_LIB_DIR)
-            string(APPEND _COLMAP_TEST_BUILD_RPATH ":${_COLMAP_QT_LIB_DIR}")
+            list(APPEND _COLMAP_TEST_BUILD_RPATH "${_COLMAP_QT_LIB_DIR}")
         endif ()
         set_target_properties(${TARGET_NAME} PROPERTIES
                 BUILD_RPATH "${_COLMAP_TEST_BUILD_RPATH}"
                 INSTALL_RPATH "${_COLMAP_TEST_BUILD_RPATH}")
-        if (NOT MSVC)
+        if (UNIX AND NOT APPLE)
             # Emit DT_RPATH instead of DT_RUNPATH on Linux: RPATH is honored
             # for the whole dependency tree (indirect deps such as opencv
             # pulled in through CVCoreLib), while RUNPATH is not. macOS rpath
-            # lists already apply globally per executable.
+            # lists already apply globally per executable, and Apple ld64
+            # rejects the GNU-only --disable-new-dtags option.
             target_link_options(${TARGET_NAME} PRIVATE "-Wl,--disable-new-dtags")
         endif ()
 
@@ -438,6 +443,10 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
 
         add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
                  COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        # Needs a CUDA device and driver: the GPU-independent gates select
+        # their tests by name, so exclude this one explicitly by label.
+        set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                LABELS gpu)
         if (MSVC)
             # Same DLL-path guarantee as COLMAP_ADD_TEST above.
             set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
@@ -483,6 +492,9 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
         endif ()
 
         add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}" COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        # Needs a ROCm device; see COLMAP_ADD_CUDA_TEST.
+        set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
+                LABELS gpu)
         if (MSVC)
             # Same DLL-path guarantee as COLMAP_ADD_TEST above.
             set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES

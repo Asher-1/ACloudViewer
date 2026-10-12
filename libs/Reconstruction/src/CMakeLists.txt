@@ -201,6 +201,9 @@ if (TESTS_ENABLED)
     # All parity gates run ctest from the subtree where enable_testing() was
     # called: the build-tree root has no CTestTestfile.cmake, so a plain
     # ${CMAKE_BINARY_DIR} working directory would silently discover zero tests.
+    # Every gate also passes --no-tests=error: ctest otherwise exits 0 when its
+    # regex selects nothing, so a renamed or relocated test would turn the gate
+    # into a green no-op.
     # Unified C++ test gate for the whole reconstruction subtree: runs
     # every COLMAP_ADD_TEST gtest (scene/estimators/geometry/mvs/image/
     # sensor/optim/math/util/sfm/controllers/feature/retrieval) except the
@@ -208,20 +211,24 @@ if (TESTS_ENABLED)
     # context, which headless GPU-less CI runners do not have). The set is
     # pure CPU, passes in seconds locally, and satisfies the GitHub runner
     # timeout constraints. Conditional tests (caspar, PoseLib) are only in
-    # the collected list when they were actually registered.
+    # the collected list when they were actually registered. The name regex
+    # also matches device tests registered by COLMAP_ADD_CUDA_TEST /
+    # COLMAP_ADD_HIP_TEST (e.g. mvs/gpu_mat_test), so their "gpu" label is
+    # excluded to keep the selected set equal to the collected one.
     get_property(RECONSTRUCTION_ALL_TEST_TARGETS GLOBAL PROPERTY
                  COLMAP_RECONSTRUCTION_TESTS)
     add_custom_target(reconstruction_cpp_tests_gate
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
                 -R "^(scene|estimators|feature|geometry|image|math|mvs|optim|retrieval|sensor|sfm|util|controllers)/[a-z_0-9]+_test$"
                 -E "^(feature/sift_test|util/opengl_utils_test)$"
+                -LE "^gpu$"
         DEPENDS ${RECONSTRUCTION_ALL_TEST_TARGETS}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
         VERBATIM)
 
     add_custom_target(reconstruction_oiio_parity_gate
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
                 -R "^(sensor/bitmap_test|image/undistortion_test|mvs/texture_mapping_test)$"
         DEPENDS bitmap_test undistortion_test texture_mapping_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -249,7 +256,7 @@ if (TESTS_ENABLED)
     string(JOIN "|" RECONSTRUCTION_CAMERA_RIG_PARITY_REGEX
            ${RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS})
     add_custom_target(reconstruction_camera_rig_parity_gate
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
                 -R "^(${RECONSTRUCTION_CAMERA_RIG_PARITY_REGEX})$"
         DEPENDS ${RECONSTRUCTION_CAMERA_RIG_PARITY_DEPS}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -261,7 +268,7 @@ if (TESTS_ENABLED)
     # descriptors.type) and that databases written by a newer schema are
     # refused instead of being silently misread.
     add_custom_target(reconstruction_db_migration_gate
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
                 -R "^scene/database_test$"
         DEPENDS database_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -329,9 +336,11 @@ endif()
 # Caspar-enabled configuration, where it proves that the generated solver is
 # executed directly and remains numerically close to the Ceres reference.
 if (TESTS_ENABLED AND RECONSTRUCTION_CASPAR_ENABLED)
+    # The test is registered from estimators/ (COLMAP_ADD_TEST names tests
+    # after the registering directory), not from optim/.
     add_custom_target(reconstruction_caspar_parity_gate
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-                -R "^optim/bundle_adjustment_caspar_test$"
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                -R "^estimators/bundle_adjustment_caspar_test$"
         DEPENDS bundle_adjustment_caspar_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL

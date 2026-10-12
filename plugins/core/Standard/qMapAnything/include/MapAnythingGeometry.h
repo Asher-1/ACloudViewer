@@ -140,6 +140,9 @@ struct Sim3 {
 /** a o b (apply b first): s = sa*sb, R = Ra*Rb, t = sa*Ra*tb + ta. */
 Sim3 sim3_compose(const Sim3& a, const Sim3& b);
 
+/** a^-1: s' = 1/s, R' = R^T, t' = -R^T t / s. */
+Sim3 sim3_inverse(const Sim3& a);
+
 /** Move a row-major camera-to-world pose by a Sim3. The rotation stays a
  *  proper rotation (scale acts on the camera position only):
  *  R' = Rs*R, t' = s*Rs*t + ts. In-place safe. */

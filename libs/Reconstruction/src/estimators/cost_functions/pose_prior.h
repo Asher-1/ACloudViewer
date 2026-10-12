@@ -78,7 +78,11 @@ private:
 // [x, y, z, w, t] block). The residual is
 //   r = position_in_world_prior + R(q)^T * t
 // which is the negative position error of the sensor center in the world.
-struct AbsolutePosePositionPriorQvecTvecCostFunctor {
+struct AbsolutePosePositionPriorQvecTvecCostFunctor
+    : public AutoDiffCostFunctor<AbsolutePosePositionPriorQvecTvecCostFunctor,
+                                 3,
+                                 4,
+                                 3> {
 public:
     explicit AbsolutePosePositionPriorQvecTvecCostFunctor(
             const Eigen::Vector3d& position_in_world_prior)

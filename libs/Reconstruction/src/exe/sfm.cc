@@ -95,6 +95,7 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   AutomaticReconstructionController::Options reconstruction_options;
   std::string data_type = "individual";
   std::string quality = "high";
+  std::string mapper = "incremental";
   std::string mesher = "poisson";
 #if defined(AICore_ENABLED) && !defined(CUDA_ENABLED)
   std::string sparse_mode = "da3";
@@ -131,9 +132,12 @@ int RunAutomaticReconstructor(int argc, char** argv) {
                            "Generate surface mesh from fused point cloud");
   options.AddDefaultOption("texturing", &reconstruction_options.texturing,
                            "Texture the reconstructed mesh");
+  options.AddDefaultOption("mapper", &mapper,
+                           "{incremental, hierarchical, global}");
   options.AddDefaultOption("mesher", &mesher,
                            "{poisson, delaunay, advancing_front}");
   options.AddDefaultOption("num_threads", &reconstruction_options.num_threads);
+  options.AddDefaultOption("random_seed", &reconstruction_options.random_seed);
   options.AddDefaultOption("use_gpu", &reconstruction_options.use_gpu);
   options.AddDefaultOption("gpu_index", &reconstruction_options.gpu_index);
   options.AddDefaultOption("sparse_mode", &sparse_mode,
@@ -218,6 +222,20 @@ int RunAutomaticReconstructor(int argc, char** argv) {
     LOG(FATAL) << "Invalid quality provided";
   }
 
+  StringToLower(&mapper);
+  if (mapper == "incremental") {
+    reconstruction_options.mapper =
+        AutomaticReconstructionController::Mapper::INCREMENTAL;
+  } else if (mapper == "hierarchical") {
+    reconstruction_options.mapper =
+        AutomaticReconstructionController::Mapper::HIERARCHICAL;
+  } else if (mapper == "global") {
+    reconstruction_options.mapper =
+        AutomaticReconstructionController::Mapper::GLOBAL;
+  } else {
+    LOG(FATAL) << "Invalid mapper provided";
+  }
+
   StringToLower(&mesher);
   if (mesher == "poisson") {
     reconstruction_options.mesher =
@@ -240,6 +258,15 @@ int RunAutomaticReconstructor(int argc, char** argv) {
     reconstruction_options.sparse_mode = SparseModelMode::DA3_DEPTH_POSE;
   } else {
     LOG(FATAL) << "Invalid sparse_mode provided. Use 'colmap' or 'da3'.";
+  }
+  // The DA3 sparse mode estimates poses without a COLMAP mapper, so an
+  // explicit non-default mapper would be silently ignored.
+  if (reconstruction_options.sparse_mode == SparseModelMode::DA3_DEPTH_POSE &&
+      reconstruction_options.mapper !=
+          AutomaticReconstructionController::Mapper::INCREMENTAL) {
+    LOG(ERROR) << "--mapper " << mapper
+               << " requires --sparse_mode colmap.";
+    return EXIT_FAILURE;
   }
 
   // DA3 stereo pipeline mode

@@ -28,23 +28,36 @@ if (BUILD_RECONSTRUCTION)
     target_include_directories(pybind PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/lib)
-    # ABI parity with libColmapLib (see Reconstruction/CMakeLists.txt): the
-    # COLMAP subtree strips the fork-wide PCL-compatibility macro
-    # EIGEN_MAX_ALIGN_BYTES=0 so its TUs compile with compiler-default Eigen
-    # codegen. The binding TUs include the same engine headers and must see
-    # identical preprocessor state, or header-heavy types get ODR-divergent
-    # layouts between this extension and libColmapLib, which manifests as
-    # heap corruption ("free(): invalid pointer") whenever the engine
-    # mutates objects that the extension allocated. PCL is not part of the
-    # python module, so the workaround macro is not needed here.
-    get_directory_property(ACV_PYBIND_DIR_DEFS COMPILE_DEFINITIONS)
-    list(REMOVE_ITEM ACV_PYBIND_DIR_DEFS "EIGEN_MAX_ALIGN_BYTES=0")
-    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY
-                 COMPILE_DEFINITIONS "${ACV_PYBIND_DIR_DEFS}")
     if (DEFINED ACV_COLMAP_ENGINE_MACROS AND ACV_COLMAP_ENGINE_MACROS)
         target_compile_definitions(pybind PRIVATE ${ACV_COLMAP_ENGINE_MACROS})
     endif ()
     add_subdirectory(reconstruction)
+
+    # ABI parity has two different boundaries in this single extension:
+    # normal pybind sources exchange Eigen-bearing CloudViewer types with
+    # libraries built using the fork-wide EIGEN_MAX_ALIGN_BYTES=0 setting,
+    # while reconstruction sources exchange COLMAP types with libColmapLib,
+    # whose subtree deliberately removes that setting. Removing the macro
+    # from the whole pybind target makes e.g. io::rpc::SetMeshData interpret
+    # std::map<string, Eigen::Vector4f> with a different node layout and free
+    # an invalid pointer. Keep the CloudViewer ABI globally and undefine the
+    # macro only for reconstruction binding translation units.
+    if (MSVC)
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "/UEIGEN_MAX_ALIGN_BYTES")
+    else ()
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "-UEIGEN_MAX_ALIGN_BYTES")
+    endif ()
+    get_target_property(_ACV_PYBIND_SOURCES pybind SOURCES)
+    foreach (_ACV_PYBIND_SOURCE IN LISTS _ACV_PYBIND_SOURCES)
+        if (_ACV_PYBIND_SOURCE MATCHES "[/\\\\]reconstruction[/\\\\].*\\.cpp$")
+            set_property(SOURCE "${_ACV_PYBIND_SOURCE}" APPEND PROPERTY
+                         COMPILE_OPTIONS "${_ACV_PYBIND_EIGEN_UNDEFINE}")
+        endif ()
+    endforeach ()
+    unset(_ACV_PYBIND_EIGEN_UNDEFINE)
+    unset(_ACV_PYBIND_SOURCES)
+    unset(_ACV_PYBIND_SOURCE)
+
     # Some fixes for the Glog library.
     target_compile_definitions(pybind PRIVATE -DGLOG_NO_ABBREVIATED_SEVERITIES)
     target_compile_definitions(pybind PRIVATE -DGOOGLE_GLOG_DLL_DECL=)

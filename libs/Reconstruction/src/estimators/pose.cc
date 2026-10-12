@@ -1,7 +1,3 @@
-#include <cstdio>
-#include <random>
-#include "math/random.h"
-#include <cstdlib>
 // Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
@@ -33,15 +29,15 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "estimators/pose.h"
-
+#include "estimators/bundle_adjustment.h"
 #include "estimators/cost_functions/cost_functions.h"
 #include "estimators/cost_functions/manifold.h"
 #include "estimators/cost_functions/pose_prior.h"
 #include "estimators/cost_functions/reprojection_error.h"
+#include "estimators/cost_functions/sampson_error.h"
+#include "estimators/pose.h"
 #include "estimators/solvers/absolute_pose.h"
 #include "estimators/solvers/essential_matrix.h"
-#include "estimators/bundle_adjustment.h"
 #include "geometry/essential_matrix.h"
 #include "geometry/pose.h"
 #include "math/matrix.h"
@@ -77,8 +73,7 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
         for (size_t i = 0; i < points2D.size(); ++i) {
             points2D_centered[i] = points2D[i] - principal_point;
         }
-        const std::vector<size_t> focal_length_idxs =
-                camera->FocalLengthIdxs();
+        const std::vector<size_t> focal_length_idxs = camera->FocalLengthIdxs();
         // Upstream parity (8f23d8ec): LORANSAC with TinySolver local
         // refinement of the P4PF model.
         const bool share_focal_length = focal_length_idxs.size() == 1;
@@ -115,16 +110,9 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
         // Upstream parity (95f05972): EPNP was replaced by TinySolver
         // refinement inside P3PEstimator::Estimate for non-minimal samples.
         LORANSAC<P3PEstimator, P3PEstimator> ransac(
-                options.ransac_options,
-                P3PEstimator(img_from_cam_func),
+                options.ransac_options, P3PEstimator(img_from_cam_func),
                 P3PEstimator(img_from_cam_func));
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-before-p3p has=%d next=%u seed_opt=%d\n", (int)(PRNG != nullptr), (unsigned)c(), options.ransac_options.random_seed); }
-// TEMP-DUMP-END
         auto report = ransac.Estimate(points2D_with_rays, points3D);
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { double sr = 0; for (size_t di = 0; di < points2D_with_rays.size(); ++di) sr += points2D_with_rays[di].camera_ray.sum() * (di + 1); std::fprintf(stderr, "[dump] p3p rays=%.17g ok=%d trials=%zu inl=%zu rsum=%.17g cam=%.17g\n", sr, (int)report.success, (size_t)report.num_trials, (size_t)report.support.num_inliers, report.support.residual_sum, Eigen::Map<const Eigen::VectorXd>(camera->ParamsData(), camera->NumParams()).sum()); }
-// TEMP-DUMP-END
         if (report.success) {
             const Eigen::Quaterniond quat = report.model.rotation();
             *qvec = Eigen::Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
@@ -146,8 +134,7 @@ if (std::getenv("SCAN_DUMP")) { double sr = 0; for (size_t di = 0; di < points2D
     return true;
 }
 
-bool EstimateRelativePose(
-        const RANSACOptions& ransac_options,
+bool EstimateRelativePose(const RANSACOptions& ransac_options,
         const std::vector<CamRayWithJac>& cam_rays1_with_jac,
         const std::vector<CamRayWithJac>& cam_rays2_with_jac,
         Rigid3d* cam2_from_cam1,
@@ -176,11 +163,8 @@ bool EstimateRelativePose(
     }
 
     std::vector<int> valid_indices;
-    PoseFromEssentialMatrix(report.model,
-                            inlier_cam_rays1,
-                            inlier_cam_rays2,
-                            cam2_from_cam1,
-                            &valid_indices);
+    PoseFromEssentialMatrix(report.model, inlier_cam_rays1, inlier_cam_rays2,
+                            cam2_from_cam1, &valid_indices);
 
     if (cam2_from_cam1->rotation().coeffs().array().isNaN().any() ||
         cam2_from_cam1->translation().array().isNaN().any()) {
@@ -222,19 +206,17 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
         problem.AddResidualBlock(
                 CreateCameraCostFunction<ReprojErrorConstantPoint3DCostFunctor>(
                         camera->ModelId(), points2D[i], points3D[i]),
-                loss_function.get(),
-                cam_from_world->params.data(),
+                loss_function.get(), cam_from_world->params.data(),
                 camera->ParamsData());
     }
 
     if (options.use_position_prior) {
         problem.AddResidualBlock(
                 CovarianceWeightedCostFunctor<
-                        AbsolutePosePositionPriorCostFunctor>::Create(
-                        options.position_prior_covariance,
+                        AbsolutePosePositionPriorCostFunctor>::
+                        Create(options.position_prior_covariance,
                         options.position_prior_in_world),
-                nullptr,
-                cam_from_world->params.data());
+                nullptr, cam_from_world->params.data());
     }
 
     if (problem.NumResiduals() > 0) {
@@ -328,42 +310,90 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
 }
 
 bool RefineRelativePose(const ceres::Solver::Options& options,
-                        const std::vector<Eigen::Vector2d>& points1,
-                        const std::vector<Eigen::Vector2d>& points2,
-                        Eigen::Vector4d* qvec,
-                        Eigen::Vector3d* tvec) {
-    CHECK_EQ(points1.size(), points2.size());
+                        const std::vector<char>& inlier_mask,
+                        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                        Rigid3d* cam2_from_cam1) {
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), cam_rays2_with_jac.size());
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), inlier_mask.size());
 
     // CostFunction assumes unit quaternions.
-    *qvec = NormalizeQuaternion(*qvec);
+    cam2_from_cam1->rotation().normalize();
 
-    const double kMaxL2Error = 1.0;
-    ceres::LossFunction* loss_function = new ceres::CauchyLoss(kMaxL2Error);
-
+    // No robust loss: the observations are already RANSAC-gated inliers, so the
+    // refinement is plain least squares.
     ceres::Problem problem;
 
-    for (size_t i = 0; i < points1.size(); ++i) {
+    for (size_t i = 0; i < cam_rays1_with_jac.size(); ++i) {
+        // Skip outliers and unprojectable (zero) rays, which the residual
+        // scores as a perfect fit rather than rejecting.
+        if (!inlier_mask[i] || cam_rays1_with_jac[i].ray.isZero() ||
+            cam_rays2_with_jac[i].ray.isZero()) {
+            continue;
+        }
         ceres::CostFunction* cost_function =
-                RelativePoseCostFunction::Create(points1[i], points2[i]);
-        problem.AddResidualBlock(cost_function, loss_function, qvec->data(),
-                                 tvec->data());
+                TangentSampsonErrorCostFunctor::Create(cam_rays1_with_jac[i],
+                                                       cam_rays2_with_jac[i]);
+        problem.AddResidualBlock(cost_function,
+                                 /*loss_function=*/nullptr,
+                                 cam2_from_cam1->params.data());
     }
 
-    // ceres::LocalParameterization* quaternion_parameterization =
-    //         new ceres::QuaternionParameterization;
-    // problem.SetParameterization(qvec->data(), quaternion_parameterization);
-
-    // ceres::HomogeneousVectorParameterization* homogeneous_parameterization =
-    //         new ceres::HomogeneousVectorParameterization(3);
-    // problem.SetParameterization(tvec->data(), homogeneous_parameterization);
-
-    SetQuaternionManifoldWxyz(&problem, qvec->data());
-    SetSphereManifold<3>(&problem, tvec->data());
+    SetManifold(&problem, cam2_from_cam1->params.data(),
+                CreateProductManifold(CreateEigenQuaternionManifold(),
+                                      CreateSphereManifold<3>()));
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
     return summary.IsSolutionUsable();
+}
+
+bool RefineEssentialMatrix(const ceres::Solver::Options& options,
+                           const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                           const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                           const std::vector<char>& inlier_mask,
+                           Eigen::Matrix3d* E) {
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), cam_rays2_with_jac.size());
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), inlier_mask.size());
+
+    // Collect inliers. PoseFromEssentialMatrix needs the bare bearings. The
+    // refinement additionally needs their unprojection Jacobians.
+    std::vector<CamRayWithJac> inlier_cam_rays1_with_jac;
+    std::vector<CamRayWithJac> inlier_cam_rays2_with_jac;
+    std::vector<Eigen::Vector3d> inlier_rays1;
+    std::vector<Eigen::Vector3d> inlier_rays2;
+    for (size_t i = 0; i < inlier_mask.size(); ++i) {
+        if (inlier_mask[i]) {
+            inlier_cam_rays1_with_jac.push_back(cam_rays1_with_jac[i]);
+            inlier_cam_rays2_with_jac.push_back(cam_rays2_with_jac[i]);
+            inlier_rays1.push_back(cam_rays1_with_jac[i].ray);
+            inlier_rays2.push_back(cam_rays2_with_jac[i].ray);
+        }
+    }
+
+    // Extract relative pose from essential matrix.
+    Rigid3d cam2_from_cam1;
+    std::vector<int> valid_indices;
+    PoseFromEssentialMatrix(*E, inlier_rays1, inlier_rays2, &cam2_from_cam1,
+                            &valid_indices);
+
+    if (valid_indices.empty()) {
+        return false;
+    }
+
+    // Refine over all inliers (robustness came from the RANSAC selection).
+    if (!RefineRelativePose(
+                options,
+                std::vector<char>(inlier_cam_rays1_with_jac.size(), true),
+                inlier_cam_rays1_with_jac, inlier_cam_rays2_with_jac,
+                &cam2_from_cam1)) {
+        return false;
+    }
+
+    *E = EssentialMatrixFromPose(cam2_from_cam1);
+
+    return true;
 }
 
 }  // namespace colmap

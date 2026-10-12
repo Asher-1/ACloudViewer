@@ -1723,13 +1723,21 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     // transcription-parity reference, so it is the
                     // production route until a kernel matches its numerics.
                     // Spelled out op-for-op (ggml_conv_2d) so the GEMM node
-                    // is reachable for the accumulator precision request;
-                    // the graph is otherwise identical to the stock helper.
-                    ggml_tensor* cols =
-                            ggml_im2col(ctx, w, x, s0, s1, p0, p1, d0, d1, true,
-                                        w->type == GGML_TYPE_F32
-                                                ? GGML_TYPE_F32
-                                                : GGML_TYPE_F16);  // SCRATCH-AB
+                    // is reachable for the precision request.
+                    // F32 weights keep F32 columns and an F32 GEMM: the
+                    // stock helper's F16 im2col rounded every f32-model
+                    // activation to 11 bits before the GEMM (first conv
+                    // already 5e-4 relative off; det map 0.025 max|diff|
+                    // vs the Paddle predictor on a real page), which the
+                    // F32 route closes to 2e-5 on CPU. On CUDA PREC_F32
+                    // also selects strict SGEMM instead of TF32 (0.0204 ->
+                    // 0.0102, same det latency on the RTX 4090, whose
+                    // GeForce TF32 rate equals its FP32 rate). F16/Q8_0
+                    // weights keep the F16 columns (no extra rounding).
+                    const bool f32Weights = w->type == GGML_TYPE_F32;
+                    ggml_tensor* cols = ggml_im2col(
+                            ctx, w, x, s0, s1, p0, p1, d0, d1, true,
+                            f32Weights ? GGML_TYPE_F32 : GGML_TYPE_F16);
                     ggml_tensor* mm = ggml_mul_mat(
                             ctx,
                             ggml_reshape_2d(
@@ -1738,7 +1746,7 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                             ggml_reshape_2d(ctx, w,
                                             w->ne[0] * w->ne[1] * w->ne[2],
                                             w->ne[3]));
-                    if (options && options->conv_gemm_f32acc)
+                    if (f32Weights || (options && options->conv_gemm_f32acc))
                         ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
                     result = ggml_reshape_4d(ctx, mm, cols->ne[1], cols->ne[2],
                                              cols->ne[3], w->ne[3]);
@@ -2950,7 +2958,7 @@ OcrBuildOptions execBuildOptions(const OcrExecPlan& plan) {
     options.vk_single = plan.vkSingle;
     // See OcrBuildOptions::conv_gemm_f32acc: the folded conv GEMMs need an
     // f32 accumulator on Vulkan to match the CUDA/CPU numerics.
-    options.conv_gemm_f32acc = !plan.cpuExecution;  // SCRATCH-AB2
+    options.conv_gemm_f32acc = plan.vkSingle;
     // Blocked-island routing: CPU-executing graphs only, and only when the
     // host advertises the AVX-512 fast path (no AVX2 island kernel).
     options.blocked_island =

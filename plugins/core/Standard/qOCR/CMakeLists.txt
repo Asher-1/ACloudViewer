@@ -48,5 +48,10 @@ if( PLUGIN_STANDARD_QOCR )
         endif()
         cloudviewer_set_bin_runtime_output_directory(test_qocr)
         add_test(NAME test_qocr COMMAND test_qocr)
+        # Relocated under bin/plugin_test/: Qt and the vendored libraries
+        # reach it only indirectly (through AICore/CVPluginAPI), which the
+        # executable's RUNPATH does not cover; the test also constructs a
+        # QApplication, so it needs the offscreen platform on headless hosts.
+        cloudviewer_set_plugin_test_env_offscreen(test_qocr)
     endif()
 endif()

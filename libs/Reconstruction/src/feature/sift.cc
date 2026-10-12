@@ -1047,6 +1047,14 @@ class SiftCPUFeatureMatcher : public FeatureMatcher {
   explicit SiftCPUFeatureMatcher(const FeatureMatchingOptions& options)
       : options_(options) {
     THROW_CHECK(options_.Check());
+    // Pipeline controllers inject a shared FAISS index cache. Direct factory
+    // consumers (including Python) have no cache owner; dereferencing the
+    // default nullptr in Match() used to crash. Fall back to the self-contained
+    // brute-force path only for that direct-use case.
+    if (!options_.sift->cpu_brute_force_matcher &&
+        options_.sift->cpu_descriptor_index_cache == nullptr) {
+      options_.sift->cpu_brute_force_matcher = true;
+    }
   }
 
   static std::unique_ptr<FeatureMatcher> Create(

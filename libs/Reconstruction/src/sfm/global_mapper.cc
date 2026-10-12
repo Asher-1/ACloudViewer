@@ -301,9 +301,11 @@ BundleAdjustmentOptions GlobalMapperOptions::BundleAdjustment() const {
 }
 
 IncrementalTriangulator::Options GlobalMapperOptions::Retriangulation() const {
-  // Fork note: the fork's IncrementalTriangulator::Options has no random_seed
-  // field yet; the retriangulation stage inherits the pipeline PRNG state.
-  return retriangulation;
+  IncrementalTriangulator::Options opts = retriangulation;
+  if (random_seed >= 0) {
+    opts.random_seed = random_seed;
+  }
+  return opts;
 }
 
 GlobalMapper::GlobalMapper(

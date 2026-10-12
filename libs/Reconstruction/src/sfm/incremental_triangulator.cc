@@ -29,14 +29,12 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "util/hash_containers.h"
 #include "sfm/incremental_triangulator.h"
-#include <cstdio>  // TEMP-DUMP
-#include <cstdlib>  // TEMP-DUMP
 
+#include "estimators/triangulation.h"
 #include "scene/projection.h"
 #include "sfm/observation_manager.h"
-#include "estimators/triangulation.h"
+#include "util/hash_containers.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -248,12 +246,8 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
         // Estimate triangulation.
         Eigen::Vector3d xyz;
         std::vector<char> inlier_mask;
-        if (!EstimateTriangulation(tri_options,
-                                   tri_points,
-                                   tri_cams_from_world,
-                                   tri_cameras,
-                                   &inlier_mask,
-                                   &xyz)) {
+        if (!EstimateTriangulation(tri_options, tri_points, tri_cams_from_world,
+                                   tri_cameras, &inlier_mask, &xyz)) {
             continue;
         }
 
@@ -276,8 +270,7 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
 }
 
 size_t IncrementalTriangulator::CompleteTracks(
-        const Options& options,
-        const FlatHashSet<point3D_t>& point3D_ids) {
+        const Options& options, const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_completed = 0;
@@ -306,8 +299,7 @@ size_t IncrementalTriangulator::CompleteAllTracks(const Options& options) {
 }
 
 size_t IncrementalTriangulator::MergeTracks(
-        const Options& options,
-        const FlatHashSet<point3D_t>& point3D_ids) {
+        const Options& options, const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_merged = 0;
@@ -455,8 +447,7 @@ void IncrementalTriangulator::AddModifiedPoint3D(const point3D_t point3D_id) {
     modified_point3D_ids_.insert(point3D_id);
 }
 
-const FlatHashSet<point3D_t>&
-IncrementalTriangulator::GetModifiedPoints3D() {
+const FlatHashSet<point3D_t>& IncrementalTriangulator::GetModifiedPoints3D() {
     // First remove any missing 3D points from the set. Erase by key: an
     // open-addressing set may invalidate iterators on erase.
     std::vector<point3D_t> missing_point3D_ids;
@@ -594,12 +585,8 @@ size_t IncrementalTriangulator::Create(
     // Estimate triangulation.
     Eigen::Vector3d xyz;
     std::vector<char> inlier_mask;
-    if (!EstimateTriangulation(tri_options,
-                               tri_points,
-                               tri_cams_from_world,
-                               tri_cameras,
-                               &inlier_mask,
-                               &xyz)) {
+    if (!EstimateTriangulation(tri_options, tri_points, tri_cams_from_world,
+                               tri_cameras, &inlier_mask, &xyz)) {
         return 0;
     }
 
@@ -617,9 +604,6 @@ size_t IncrementalTriangulator::Create(
     // manager so the visibility statistics stay in sync).
     const size_t track_length = track.Length();
     const point3D_t point3D_id = obs_manager_->AddPoint3D(xyz, track);
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { std::fprintf(stderr, "[dump] tri-create id=%llu n=%zu len=%zu xyz=%.17g %.17g %.17g els=", (unsigned long long)point3D_id, create_corrs_data.size(), track_length, xyz(0), xyz(1), xyz(2)); for (const auto& c : create_corrs_data) { const Eigen::Matrix3x4d M = c.image->CamFromWorld().ToMatrix(); const auto r = c.camera->CamRayFromImg(c.point2D->XY()); std::fprintf(stderr, "%u:%u P=%.17g xy=%.17g,%.17g r=%.17g ", (unsigned)c.image_id, (unsigned)c.point2D_idx, M.sum(), c.point2D->XY()(0), c.point2D->XY()(1), r ? r->sum() : 0.0); } std::fprintf(stderr, "\n"); }
-// TEMP-DUMP-END
     modified_point3D_ids_.insert(point3D_id);
 
     const size_t kMinRecursiveTrackLength = 3;
@@ -683,8 +667,7 @@ size_t IncrementalTriangulator::Continue(
         const CorrData& corr_data = corrs_data[best_idx];
         const TrackElement track_el(ref_corr_data.image_id,
                                     ref_corr_data.point2D_idx);
-        obs_manager_->AddObservation(corr_data.point2D->Point3DId(),
-                                     track_el);
+        obs_manager_->AddObservation(corr_data.point2D->Point3DId(), track_el);
         modified_point3D_ids_.insert(corr_data.point2D->Point3DId());
         return 1;
     }
@@ -755,10 +738,11 @@ size_t IncrementalTriangulator::Merge(const Options& options,
                             reconstruction_->Camera(test_image.CameraId());
                     const Point2D& test_point2D =
                             test_image.Point2D(test_track_el.point2D_idx);
-                    // Upstream parity (d3ccaf35 IncrementalTriangulator::Merge):
-                    // evaluate through the rig-aware CamFromWorld() accessor, so
-                    // the check always sees the live pose after bundle adjustment
-                    // instead of the legacy shadow buffers.
+                    // Upstream parity (d3ccaf35
+                    // IncrementalTriangulator::Merge): evaluate through the
+                    // rig-aware CamFromWorld() accessor, so the check always
+                    // sees the live pose after bundle adjustment instead of the
+                    // legacy shadow buffers.
                     if (CalculateSquaredReprojectionError(
                                 test_point2D.XY(), merged_xyz,
                                 test_image.CamFromWorld(),
@@ -777,8 +761,7 @@ size_t IncrementalTriangulator::Merge(const Options& options,
                 const size_t num_merged = point3D.Track().Length() +
                                           corr_point3D.Track().Length();
 
-                const point3D_t merged_point3D_id =
-                        obs_manager_->MergePoints3D(
+                const point3D_t merged_point3D_id = obs_manager_->MergePoints3D(
                                 point3D_id, corr_point2D.Point3DId());
 
                 modified_point3D_ids_.erase(point3D_id);
@@ -864,9 +847,8 @@ size_t IncrementalTriangulator::Complete(const Options& options,
                 }
 
                 if (CalculateSquaredReprojectionError(
-                            point2D.XY(), point3D.XYZ(),
-                            image.CamFromWorld(), camera) >
-                    max_squared_reproj_error) {
+                            point2D.XY(), point3D.XYZ(), image.CamFromWorld(),
+                            camera) > max_squared_reproj_error) {
                     continue;
                 }
 

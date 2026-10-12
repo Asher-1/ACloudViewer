@@ -169,5 +169,38 @@ TEST(RigBATAPairwiseDirectionCostFunctor, Create) {
   ASSERT_NE(cost_function, nullptr);
 }
 
+
+// Upstream parity (a2bd15c2 estimators/cost_functions/motion_averaging_test.cc).
+TEST(RelativeRotationCostFunctor, RigParameterBlocks) {
+  const Eigen::Quaterniond rig1_from_world(
+      Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitX()));
+  const Eigen::Quaterniond rig2_from_world(
+      Eigen::AngleAxisd(-0.4, Eigen::Vector3d::UnitY()));
+  const Eigen::Quaterniond sensor1_from_rig(
+      Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
+  const Eigen::Quaterniond sensor2_from_rig(
+      Eigen::AngleAxisd(-0.1, Eigen::Vector3d::UnitX()));
+  const double* parameters[] = {rig1_from_world.coeffs().data(),
+                                rig2_from_world.coeffs().data(),
+                                sensor1_from_rig.coeffs().data(),
+                                sensor2_from_rig.coeffs().data()};
+  for (const bool same_frame : {false, true}) {
+    const Eigen::Quaterniond sensor1_from_world =
+        sensor1_from_rig * rig1_from_world;
+    const Eigen::Quaterniond sensor2_from_world =
+        sensor2_from_rig * (same_frame ? rig1_from_world : rig2_from_world);
+    const int sensor_offset = same_frame ? 0 : 2;
+    const RelativeRotationCostFunctor cost_functor{
+        sensor2_from_world * sensor1_from_world.conjugate(),
+        sensor_offset,
+        sensor_offset + 1,
+        same_frame};
+    Eigen::Vector3d residuals;
+    ASSERT_TRUE(cost_functor(same_frame ? parameters + 2 : parameters,
+                             residuals.data()));
+    EXPECT_THAT(residuals, EigenMatrixNear(Eigen::Vector3d(0, 0, 0), 1e-12));
+  }
+}
+
 }  // namespace
 }  // namespace colmap

@@ -4,7 +4,7 @@
   "track_observations_relative_difference": 0.0032336297493936943,
   "mean_track_length_relative_difference": 0.0032336297493936175,
   "point_reprojection_rms_px_relative_difference": 0.0071478577160549745,
-  "camera_center_p95": 0.0004135192350568138,
+  "camera_center_p95": 0.000414072916584144,
   "camera_rotation_p95_deg": 0.013132473835273616,
   "point_nn_p95": 0.027492939097103365
 }

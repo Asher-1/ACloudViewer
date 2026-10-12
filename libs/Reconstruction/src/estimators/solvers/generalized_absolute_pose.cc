@@ -119,7 +119,7 @@ class TinyRigCostFunctor {
 
 // Nonlinear refinement of a rig pose (rigid or scaled, selected by kScaled
 // with a matching Sim3d/Rigid3d model) with TinySolver. Returns false and
-// leaves *rig_from_world unchanged if the solve produces a non-finite result.
+// leaves *rig_from_world unchanged if the solve reports a numerical failure.
 template <bool kScaled, typename Model>
 bool RefineRigPoseWithTinySolver(
     const std::vector<GP3PEstimator::X_t>& points2D,
@@ -128,7 +128,7 @@ bool RefineRigPoseWithTinySolver(
     Model* rig_from_world) {
   if (residual_type != GP3PEstimator::ResidualType::ReprojectionError &&
       residual_type != GP3PEstimator::ResidualType::CosineDistance) {
-    LOG(FATAL) << "Invalid residual type";
+    LOG_FATAL_THROW(std::invalid_argument) << "Invalid residual type";
   }
 
   TinyRigCostFunctor<kScaled> functor(points2D, points3D, residual_type);
@@ -145,9 +145,7 @@ bool RefineRigPoseWithTinySolver(
   if constexpr (kScaled) {
     x[7] = std::log(rig_from_world->scale());
   }
-  solver.Solve(f, &x, options);
-
-  if (!x.allFinite()) {
+  if (solver.Solve(f, &x, options).status == Solver::NUMERICAL_FAILURE) {
     return false;
   }
 
@@ -214,7 +212,7 @@ void ComputeRayResiduals(const std::vector<GP3PEstimator::X_t>& points2D,
             ray.hnormalized() - point3D_in_cam.hnormalized();
         (*residuals)[i] = diff.squaredNorm();
       } else {
-        LOG(FATAL) << "Invalid residual type";
+        LOG_FATAL_THROW(std::invalid_argument) << "Invalid residual type";
       }
     } else {
       (*residuals)[i] = std::numeric_limits<double>::max();
@@ -350,7 +348,8 @@ bool GP4PSEstimator::Refine(const std::vector<X_t>& points2D,
   // parameterization below is undefined. Unlike the public refinement in
   // generalized_pose.h, which throws on such an input, this is a soft failure
   // that only skips the local optimization.
-  if (!(rig_from_world->scale() > 0)) {
+  if (rig_from_world->scale() <= 0.0 ||
+      !std::isfinite(rig_from_world->scale())) {
     return false;
   }
 

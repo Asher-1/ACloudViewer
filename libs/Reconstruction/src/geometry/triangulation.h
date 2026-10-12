@@ -115,6 +115,15 @@ Eigen::Vector3d TriangulateOptimalPoint(const Eigen::Matrix3x4d& proj_matrix1,
                                         const Eigen::Vector2d& point1,
                                         const Eigen::Vector2d& point2);
 
+// Upstream parity (a2bd15c2): optimal two-view triangulation with a success
+// flag. The legacy value-returning overload above yields NaN coordinates when
+// the triangulation is degenerate.
+bool TriangulateOptimalPoint(const Eigen::Matrix3x4d& cam1_from_world,
+                             const Eigen::Matrix3x4d& cam2_from_world,
+                             const Eigen::Vector2d& cam_point1,
+                             const Eigen::Vector2d& cam_point2,
+                             Eigen::Vector3d* xyz);
+
 // Triangulate multiple optimal 3D points from multiple image correspondences.
 std::vector<Eigen::Vector3d> TriangulateOptimalPoints(
         const Eigen::Matrix3x4d& proj_matrix1,

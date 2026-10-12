@@ -348,6 +348,8 @@ int run(aicore_map_anything_ctx* ctx,
         const size_t plane = (size_t)H * W;
         const int nextStart = ci + 1 < nc ? starts[(size_t)ci + 1] : n;
         const ChunkView cv{ctx, ci, nc, st, count};
+        const bool posed = pose != nullptr && (stride == 9 || stride == 16);
+        chunk.centers.assign((size_t)count * 3, kNaN);
         for (int i = 0; i < count; ++i) {
             const int g = st + i;
             const bool first = !covered[(size_t)g];
@@ -384,22 +386,43 @@ int run(aicore_map_anything_ctx* ctx,
                 }
                 cloud.populationOffset[(size_t)g + 1] =
                         cloud.confPopulation.size();
+            } else if (!first && options.buildCloud && conf != nullptr) {
+                const Rect r = valid_rect(ctx, i, H, W);
+                const float* vc = conf + (size_t)i * plane;
+                for (int y = r.y0; y < r.y0 + r.h; ++y) {
+                    for (int x = r.x0; x < r.x0 + r.w; ++x) {
+                        const float c = vc[(size_t)y * W + x];
+                        if (std::isfinite(c))
+                            cloud.overlapConfPopulation.push_back(c);
+                    }
+                }
             }
             if (wantAnchor) anchors[(size_t)g] = P;
+            // Chunk-frame pose of every view (shared ones too: the
+            // per-chunk reference anchor fits all of a chunk's centers).
+            float raw[16];
+            if (posed && stride == 9) {
+                MapAnythingGeometry::pose_enc_to_c2w(pose + (size_t)i * 9, raw);
+            } else if (posed) {
+                std::memcpy(raw, pose + (size_t)i * 16, 16 * sizeof(float));
+            }
+            if (posed) {
+                float* ctr = &chunk.centers[(size_t)i * 3];
+                ctr[0] = raw[3];
+                ctr[1] = raw[7];
+                ctr[2] = raw[11];
+            }
             if (!first) continue;
             covered[(size_t)g] = 1;
             float* c2w = &out->c2w[(size_t)g * 16];
-            if (pose != nullptr && stride == 9) {
+            if (posed && stride == 9) {
                 const float* row = pose + (size_t)i * 9;
-                MapAnythingGeometry::pose_enc_to_c2w(row, c2w);
                 float k[4];
                 MapAnythingGeometry::fov_to_intrinsics(row[7], row[8], W, H, k);
                 out->focalPx[(size_t)g] = k[0];
-            } else if (pose != nullptr && stride == 16) {
-                std::memcpy(c2w, pose + (size_t)i * 16, 16 * sizeof(float));
             }
-            if (pose != nullptr && (stride == 9 || stride == 16)) {
-                MapAnythingGeometry::sim3_apply_c2w(chunk.toGlobal, c2w, c2w);
+            if (posed) {
+                MapAnythingGeometry::sim3_apply_c2w(chunk.toGlobal, raw, c2w);
             }
             if (hook) hook(cv, i, g);
         }
@@ -456,8 +479,17 @@ FilterReport filter_scene(Cloud& cloud,
     } else if (arch == "vggt_omega" || arch == "vggt" || arch == "dust3r") {
         // 1+exp confidences: floor max(2, p) + normalized (c-1)/c gate.
         rep.rule = "floor+normalized";
-        const float floor = MapAnythingGeometry::official_conf_floor(
-                pop.data(), pop.size(), o.confPercentile);
+        float floor;
+        if (cloud.overlapConfPopulation.empty()) {
+            floor = MapAnythingGeometry::official_conf_floor(
+                    pop.data(), pop.size(), o.confPercentile);
+        } else {
+            std::vector<float> all(pop);
+            all.insert(all.end(), cloud.overlapConfPopulation.begin(),
+                       cloud.overlapConfPopulation.end());
+            floor = MapAnythingGeometry::official_conf_floor(
+                    all.data(), all.size(), o.confPercentile);
+        }
         rep.confFloor = floor;
         const float minConf = o.minConf;
         keep = [floor, minConf](float c, int32_t) {
@@ -525,51 +557,36 @@ void transform_result(Result& r, const Sim3& s) {
     }
 }
 
-bool anchor_to_reference(Result& r,
-                         const std::vector<float>& refCenters,
-                         ReferenceAnchor* anchor,
-                         std::string* error) {
-    auto fail = [error](const std::string& message) {
-        set_error(error, message);
-        return false;
-    };
-    std::vector<float> src, dst;
-    for (int v = 0; v < r.views; ++v) {
-        if ((size_t)v * 16 + 16 > r.c2w.size() ||
-            (size_t)v * 3 + 3 > refCenters.size())
-            break;
-        const float* M = &r.c2w[(size_t)v * 16];
-        const float* g = &refCenters[(size_t)v * 3];
-        if (!std::isfinite(M[3]) || !std::isfinite(M[7]) ||
-            !std::isfinite(M[11]) || !std::isfinite(g[0]) ||
-            !std::isfinite(g[1]) || !std::isfinite(g[2]))
-            continue;
-        const float c[3] = {M[3], M[7], M[11]};
-        src.insert(src.end(), c, c + 3);
-        dst.insert(dst.end(), g, g + 3);
-    }
+namespace {
+
+// One robust Horn Sim3 src -> dst (m pairs) plus its acceptance gate.
+bool fit_reference(const std::vector<float>& src,
+                   const std::vector<float>& dst,
+                   ReferenceAnchor::ChunkFit* fit,
+                   std::string* error) {
     const size_t m = src.size() / 3;
-    ReferenceAnchor a;
     if (m < 3) {
-        return fail(std::to_string(m) +
-                    " posed views have a reference center; the Sim3 needs "
-                    "at least 3");
+        set_error(error, std::to_string(m) +
+                                 " posed views have a reference center; the "
+                                 "Sim3 needs at least 3");
+        return false;
     }
-    if (MapAnythingGeometry::robust_sim3(src.data(), dst.data(), m, &a.sim3.s,
-                                         a.sim3.R, a.sim3.t) != 0) {
-        return fail("degenerate reference-center fit");
+    Sim3& s = fit->sim3;
+    if (MapAnythingGeometry::robust_sim3(src.data(), dst.data(), m, &s.s, s.R,
+                                         s.t) != 0) {
+        set_error(error, "degenerate reference-center fit");
+        return false;
     }
     std::vector<float> res(m);
     for (size_t k = 0; k < m; ++k) {
         float p[3];
-        MapAnythingGeometry::apply_sim3(a.sim3.R, a.sim3.t, a.sim3.s,
-                                        &src[k * 3], 1, p);
+        MapAnythingGeometry::apply_sim3(s.R, s.t, s.s, &src[k * 3], 1, p);
         res[k] = std::sqrt((p[0] - dst[k * 3]) * (p[0] - dst[k * 3]) +
                            (p[1] - dst[k * 3 + 1]) * (p[1] - dst[k * 3 + 1]) +
                            (p[2] - dst[k * 3 + 2]) * (p[2] - dst[k * 3 + 2]));
     }
-    a.pairs = (int)m;
-    a.residualMedian = MapAnythingGeometry::median(std::move(res));
+    fit->pairs = (int)m;
+    fit->residualMedian = MapAnythingGeometry::median(std::move(res));
     // Centers fix the rotation about their principal axis only through
     // their spread across it: sqrt(lambda2) of the reference covariance.
     // When that spread is no larger than the fit residual (the noise of
@@ -594,17 +611,138 @@ bool anchor_to_reference(Result& r,
                 Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d>(
                         cov, Eigen::EigenvaluesOnly)
                         .eigenvalues();
-        a.crossSpread = (float)std::sqrt(std::max(ev[1], 0.0));
+        fit->crossSpread = (float)std::sqrt(std::max(ev[1], 0.0));
     }
-    if (!(a.crossSpread > a.residualMedian)) {
-        return fail(
-                "the reference centers are (nearly) collinear: spread "
-                "across their main axis " +
-                std::to_string(a.crossSpread) + " <= median fit residual " +
-                std::to_string(a.residualMedian) +
-                ", so the rotation about that axis is undetermined; "
-                "add reference positions off the line");
+    if (!(fit->crossSpread > fit->residualMedian)) {
+        set_error(error,
+                  "the reference centers are (nearly) collinear: spread "
+                  "across their main axis " +
+                          std::to_string(fit->crossSpread) +
+                          " <= median fit residual " +
+                          std::to_string(fit->residualMedian) +
+                          ", so the rotation about that axis is "
+                          "undetermined; add reference positions off the "
+                          "line");
+        return false;
     }
+    return true;
+}
+
+// upstream e2e_full_scene.py --align gt: each chunk -> reference on its own.
+// All-or-nothing: false (result untouched, *why set) unless every chunk
+// passes fit_reference.
+bool anchor_per_chunk(Result& r,
+                      const std::vector<float>& refCenters,
+                      ReferenceAnchor* a,
+                      std::string* why) {
+    const size_t nc = r.chunks.size();
+    std::vector<ReferenceAnchor::ChunkFit> fits(nc);
+    for (size_t ci = 0; ci < nc; ++ci) {
+        const Chunk& c = r.chunks[ci];
+        std::vector<float> src, dst;
+        for (int i = 0; i < c.count; ++i) {
+            const size_t g = (size_t)(c.start + i);
+            if ((size_t)i * 3 + 3 > c.centers.size() ||
+                g * 3 + 3 > refCenters.size())
+                break;
+            const float* ctr = &c.centers[(size_t)i * 3];
+            const float* ref = &refCenters[g * 3];
+            if (!finite3(ctr) || !finite3(ref)) continue;
+            src.insert(src.end(), ctr, ctr + 3);
+            dst.insert(dst.end(), ref, ref + 3);
+        }
+        std::string error;
+        if (!fit_reference(src, dst, &fits[ci], &error)) {
+            *why = "chunk " + std::to_string(ci) + " (frames " +
+                   std::to_string(c.start) + ".." +
+                   std::to_string(c.start + c.count - 1) + "): " + error;
+            return false;
+        }
+    }
+    // Each view's cloud points and camera come from its first covering
+    // chunk, already moved by that chunk's toGlobal: re-base them through
+    // fit o toGlobal^-1 (chunk 0's toGlobal is the identity).
+    std::vector<int> owner((size_t)r.views, -1);
+    for (size_t ci = 0; ci < nc; ++ci) {
+        const Chunk& c = r.chunks[ci];
+        for (int i = 0; i < c.count; ++i) {
+            const size_t g = (size_t)(c.start + i);
+            if (g < owner.size() && owner[g] < 0) owner[g] = (int)ci;
+        }
+    }
+    std::vector<Sim3> rebase(nc);
+    for (size_t ci = 0; ci < nc; ++ci) {
+        rebase[ci] = MapAnythingGeometry::sim3_compose(
+                fits[ci].sim3,
+                MapAnythingGeometry::sim3_inverse(r.chunks[ci].toGlobal));
+    }
+    Cloud& cloud = r.cloud;
+    for (size_t k = 0; k < cloud.view.size(); ++k) {
+        const int32_t v = cloud.view[k];
+        if (v < 0 || (size_t)v >= owner.size() || owner[(size_t)v] < 0)
+            continue;
+        const Sim3& s = rebase[(size_t)owner[(size_t)v]];
+        float* p = &cloud.xyz[k * 3];
+        MapAnythingGeometry::apply_sim3(s.R, s.t, s.s, p, 1, p);
+    }
+    std::vector<float> res;
+    for (size_t g = 0; g < owner.size(); ++g) {
+        if (owner[g] < 0 || g * 16 + 16 > r.c2w.size()) continue;
+        float* M = &r.c2w[g * 16];
+        if (!std::isfinite(M[0])) continue;
+        MapAnythingGeometry::sim3_apply_c2w(rebase[(size_t)owner[g]], M, M);
+        if (g * 3 + 3 > refCenters.size()) continue;
+        const float* ref = &refCenters[g * 3];
+        if (!finite3(ref)) continue;
+        const float d[3] = {M[3] - ref[0], M[7] - ref[1], M[11] - ref[2]};
+        res.push_back(std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
+    }
+    for (size_t ci = 0; ci < nc; ++ci) r.chunks[ci].toGlobal = fits[ci].sim3;
+
+    a->perChunk = true;
+    a->chunks = fits;
+    a->sim3 = fits[0].sim3;
+    a->pairs = (int)res.size();
+    a->residualMedian = MapAnythingGeometry::median(std::move(res));
+    a->crossSpread = fits[0].crossSpread;
+    for (const ReferenceAnchor::ChunkFit& f : fits)
+        a->crossSpread = std::min(a->crossSpread, f.crossSpread);
+    return true;
+}
+
+}  // namespace
+
+bool anchor_to_reference(Result& r,
+                         const std::vector<float>& refCenters,
+                         ReferenceAnchor* anchor,
+                         std::string* error) {
+    ReferenceAnchor a;
+    if (r.chunks.size() > 1) {
+        if (anchor_per_chunk(r, refCenters, &a, &a.perChunkRefused)) {
+            if (anchor != nullptr) *anchor = a;
+            return true;
+        }
+    }
+    std::vector<float> src, dst;
+    for (int v = 0; v < r.views; ++v) {
+        if ((size_t)v * 16 + 16 > r.c2w.size() ||
+            (size_t)v * 3 + 3 > refCenters.size())
+            break;
+        const float* M = &r.c2w[(size_t)v * 16];
+        const float* g = &refCenters[(size_t)v * 3];
+        if (!std::isfinite(M[3]) || !std::isfinite(M[7]) ||
+            !std::isfinite(M[11]) || !finite3(g))
+            continue;
+        const float c[3] = {M[3], M[7], M[11]};
+        src.insert(src.end(), c, c + 3);
+        dst.insert(dst.end(), g, g + 3);
+    }
+    ReferenceAnchor::ChunkFit fit;
+    if (!fit_reference(src, dst, &fit, error)) return false;
+    a.sim3 = fit.sim3;
+    a.pairs = fit.pairs;
+    a.residualMedian = fit.residualMedian;
+    a.crossSpread = fit.crossSpread;
     transform_result(r, a.sim3);
     if (anchor != nullptr) *anchor = a;
     return true;

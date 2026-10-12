@@ -65,12 +65,20 @@ GT 为 PaddleX `table_rec_dataset_examples` 的 `val.txt`（100 张标注表格�
 `10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea`），打包在
 `ppocr_testdata.zip` 的 `table_rec/` 下。参照是同一上游模型的官方 PaddleX
 `table_recognition` 流水线（`run_paddle_table_baseline.py`，det `limit_type=max`/960），
-每行必须满足 `TEDS ≥ Paddle − 0.005` 且 `TEDS-S ≥ Paddle − 0.002`。
+det/rec 换成 GGUF 源归档的同一份权重（PaddleX 默认下载的 det 权重与 GGUF 源不同，会把
+两侧的 OCR 文本差异混进 TEDS），每行必须满足 `TEDS ≥ Paddle − 0.005` 且 `TEDS-S ≥ Paddle − 0.002`。
 
-| 场景 | Paddle | AICore（det/rec/layout/table 同一量化档，cpu/cuda/vulkan） |
+| 场景 | Paddle（同权重） | AICore f32 / f16 / q8_0（cuda；vulkan） |
 |---|---|---|
-| 裁剪表 `table-gt-*` | TEDS 0.96388 / TEDS-S 0.99592 | TEDS 0.96331–0.96512，TEDS-S 0.99592–0.99599，结构完全一致 94/100；全部通过 |
-| 组合页 `table-page-gt-*` | TEDS 0.54271 / TEDS-S 0.59263 / recall 0.64 | TEDS 0.54081–0.54592，TEDS-S 0.59205–0.59419，recall 0.64；全部通过 |
+| 裁剪表 `table-gt-*` | TEDS 0.96461 / TEDS-S 0.99592 | TEDS 0.96403 / 0.96358 / 0.96418（vulkan 0.96391 / 0.96347 / 0.96496），TEDS-S 0.99592–0.99599；全部通过 |
+| 组合页 `table-page-gt-*` | TEDS 0.54633 / TEDS-S 0.59263 / recall 0.64 | TEDS 0.54327 / 0.54502 / **0.54080**（vulkan 0.54607 / 0.54471 / **0.53926**），TEDS-S 0.5913–0.5926，recall 0.64；q8_0 未过（门 0.54133） |
+
+组合页 q8_0 的失败按阶段分解（cuda，每次只把一个阶段换回 f32）：全 q8_0 0.54080；table
+f32 0.54101（+0.0002）；layout f32 0.54115（+0.0004）；det/rec f32 0.54210（+0.0013）；全 f32
+0.54327。q8_0 各阶段的贡献都很小，主要缺口是 **f32 本身已比 Paddle 低 0.0031**：组合页 TEDS
+含 cell 文本，而 OCR 端到端文本与 Paddle 的差异来自 det 后处理框几何（见
+[`../ocr/README.md`](../ocr/README.md)「已确认的归因边界」），f32 余量只剩 0.0019，q8_0 的
+rec 字符差异便越过门限。修复方向是逐位移植 DB 后处理，而不是放宽门限；在此之前该行保持红。
 
 组合页由 `make_table_layout_pages.py` 确定性生成：每页按原分辨率嵌入一张 GT 表格，
 周围是标题、段落、图注等 CDLA 类别文本块，并记录粘贴框；评测选取与粘贴框 IoU 最大
@@ -79,7 +87,8 @@ GT 为 PaddleX `table_rec_dataset_examples` 的 `val.txt`（100 张标注表格�
 官方链路逐页一致；这是模型行为，不是移植缺陷，也不应通过降低 layout 阈值“修好”。
 
 layout 区域本身另有区域级门 `ocr-layout-regions-*`（`check_layout_regions.py` 对照
-`run_paddle_layout_reference.py` 固定的官方 PP-Structure 输出）：f32/f16 F1 = 1，
+`run_paddle_layout_reference.py` 固定的官方 PP-Structure 输出）：f32 27/27、F1 = 1；f16/q8_0
+豁免一个上游得分 0.50031 的阈值边界区域（Paddle 自己的 f16 舍入权重得 0.4998），其余全部找到；
 q8_0 recall = 1、F1 0.964（门限 0.95），mean IoU ≥ 0.99。
 
 ## 复现
@@ -100,11 +109,13 @@ python3 core/AICore/scripts/run_table_gt_matrix.py \
   --image-root "$HOME/cloudViewer_data/extract/ppocr_testdata/table_rec" \
   --bench build_app/bin/bench_table --models-dir "$HOME/cloudViewer_data/extract/ocr_models" \
   --quants f16 --ocr-quant f16 --backends cuda vulkan \
-  --paddle-teds 0.9638835 --paddle-teds-s 0.9959180 --output /tmp/table_gt
+  --paddle-teds 0.9646149 --paddle-teds-s 0.9959180 --output /tmp/table_gt
 ```
 
-当前 `validate_all --tasks ocr,table --full` 在 cuda、vulkan、cpu 上均为 24/24 PASS
-（developer profile，2 次进程重复）。
+当前 `validate_all --tasks ocr,table --full`（developer profile，2 次进程重复）在 cpu、cuda、vulkan
+上均为 23/24 PASS：唯一的红行是上节的 `table-page-gt-q8_0`（cpu/cuda 0.54080、vulkan 0.53926，
+门 0.54133）。`ocr-layout-regions-*` 三行在 `--optional-region` 修正后以 `--models 'ocr-layout-regions-*'`
+单独复跑，三个后端均 3/3 PASS。
 
 ## fixture 人工核验
 
@@ -131,22 +142,30 @@ python3 core/AICore/tools/inspect_table_fixture.py \
 ndarray，`bench_table` 计时前解码），warmup 3，3 遍 × 100 张 `table_rec` 图，同主机同输入。
 `structure` = 仅 SLANet；`pipeline` = det + rec + SLANet（det `limit_type=max`/960，三阶段
 同一量化档）。Paddle 为 paddlepaddle-gpu 官方 `SLANet_plus` / `table_recognition`。
-一致性列为 AICore 与 Paddle 逐图结构比较。RTX 4090，CPU governor `powersave`。
+一致性列为 AICore 与 Paddle 逐图结构比较。RTX 4090（未开 Resizable BAR），CPU governor `powersave`，
+含 `vulkan_small_bar` patch，2026-10-12 测量时宿主另有他人的编译任务（load 3–13）。
 
-| 口径 | Paddle GPU p50 / p95 (ms) | cuda f32 / f16 / q8_0 p50 | vulkan f32 / f16 / q8_0 p50 |
+| 口径 | Paddle GPU p50 / p95 (ms) | cuda f32 / f16 / q8_0 p50（p95） | vulkan f32 / f16 / q8_0 p50（p95） |
 |---|---|---|---|
-| structure | 29.98 / 61.29 | 7.97 / 7.04 / 7.06（3.8–4.3×） | 10.97 / 12.06 / 12.07（2.5–2.7×） |
-| pipeline | 174.33 / 634.8 | 30.94 / 30.91 / 35.07（5.0–5.6×） | 65.36 / 53.97 / 68.22（2.6–3.2×） |
+| structure | 18.91 / 36.91 | 6.29 / 6.26 / 6.39（≤ 10.2） | 10.91 / 10.86 / 10.73（≤ 18.4） |
+| pipeline | 123.06 / 412.31 | 27.23 / 27.44 / 27.50（≤ 52.7） | 37.34 / 37.25 / 37.51（≤ 78.2） |
 
-- 与 Paddle 的结构一致性：f32、f16 逐图 100% 相同；q8_0 96% 相同，TEDS-S 0.9968
-  （q8_0 的标签 TEDS 门见上节，已通过）。
-- 第二轮（测量期间另有外部 GPU 进程）结论方向一致：structure cuda 7.3–8.0 ms、vulkan
-  12.4–14.1 ms；pipeline cuda 30.6–31.9 ms，Paddle 205 ms。
-- cuda 的 p95 全部低于 Paddle。vulkan pipeline 的 p95 为 120–354 ms，低于 Paddle pipeline
-  p95（575–635 ms），但尾部明显：拆分后来自 OCR det/rec 阶段（table 阶段 p95 27–33 ms），
-  与文本框数相关性低（r = 0.16，cuda 为 0.66），关闭 coopmat2 更差（p95 307 ms）。这与
-  powersave 主机上 Vulkan fence 等待期间 CPU 降频的已知现象一致；vulkan 尾部数字须在
-  `performance` governor、GPU 空闲时复测后才能作为发布证据。
+- 与 Paddle 的结构一致性：f32、f16 逐图 100% 相同；q8_0 96% 相同，TEDS-S 0.9968（q8_0
+  的标签 TEDS 门见上节）。
+- 早先 vulkan pipeline 的 p95 为 120–354 ms，当时归因为 powersave 下 fence 等待导致 CPU 降频，
+  该归因是错的。根因是小 BAR 窗口饱和（246 MiB 的 DEVICE_LOCAL|HOST_VISIBLE heap 被当作 ReBAR
+  用于设备缓冲，接近填满后 CPU 向映射缓冲的 memmove 坍塌），证据与 patch 见
+  [`../ocr/README.md`](../ocr/README.md)「Vulkan 延迟离散性」。受控 A/B（同一主机、同一
+  `bench_table`/`libAICore`，只替换 `libggml-vulkan.so`，pipeline f16，每臂 300 样本，交替 2 轮）：
+
+  | 臂 | p50 (ms) | p95 (ms) | BAR1 峰值 |
+  |---|---|---|---|
+  | 无 patch | 150.28 / 148.10 | 355.55 / 356.81 | 226 MiB |
+  | `vulkan_small_bar` | 35.52 / 37.28 | 72.01 / 77.03 | 11–14 MiB |
+
+  两臂在 100 张图上的全部输出（OCR 框、文本、HTML）去掉计时字段后，f32/f16/q8_0 各 101/101 行
+  逐字节相同，精度不受影响。patch 后 vulkan 的 p95/p50 为 2.0，与 cuda 的 1.9 接近，不再存在
+  vulkan 特有的尾部。
 
 ```bash
 D=$HOME/cloudViewer_data/extract/ppocr_testdata/table_rec

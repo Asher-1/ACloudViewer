@@ -12,12 +12,12 @@
 
 #include "estimators/bundle_adjustment_ceres.h"
 
+#include <map>
+
 #include "estimators/alignment.h"
 #include "estimators/cost_functions/manifold.h"
 #include "estimators/cost_functions/pose_prior.h"
 #include "estimators/cost_functions/reprojection_error.h"
-
-#include <map>
 
 #if defined(CASPAR_ENABLED)
 #include "estimators/bundle_adjustment_caspar.h"
@@ -29,10 +29,10 @@
 #include <omp.h>
 #endif
 
-#include "sensor/models.h"
 #include "estimators/cost_functions/cost_functions.h"
-#include "scene/projection.h"
 #include "optim/manifold.h"
+#include "scene/projection.h"
+#include "sensor/models.h"
 #include "util/cuda.h"
 #include "util/misc.h"
 #include "util/threading.h"
@@ -68,35 +68,23 @@ private:
 // BundleAdjuster
 ////////////////////////////////////////////////////////////////////////////////
 
-CeresBundleAdjuster::CeresBundleAdjuster(
-        const BundleAdjustmentOptions& options,
+CeresBundleAdjuster::CeresBundleAdjuster(const BundleAdjustmentOptions& options,
         const BundleAdjustmentConfig& config)
     : BundleAdjuster(options, config) {
     CHECK(options_.Check());
 }
 bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
-    // W7: robustly align the reconstruction to the position priors before
-    // building the problem, so the prior residuals are expressed in the
-    // reconstruction's coordinate frame (upstream parity).
-    if (pose_prior_options_) {
-        Sim3d metric_from_orig;
-        if (!AlignReconstructionToPosePriors(
-                    *reconstruction,
-                    pose_priors_,
-                    pose_prior_options_->alignment_ransac_options,
-                    pose_prior_options_->prior_position_fallback_stddev,
-                    &metric_from_orig)) {
-            LOG(WARNING) << "Alignment w.r.t. prior positions failed";
-            return false;
-        }
-        reconstruction->Transform(metric_from_orig);
-    }
-
     CHECK_NOTNULL(reconstruction);
     CHECK(!problem_) << "Cannot use the same BundleAdjuster multiple times";
 
     if (options_.backend == BundleAdjustmentBackend::CASPAR) {
 #if defined(CASPAR_ENABLED)
+        // Upstream parity (a2bd15c2 CreatePosePriorBundleAdjuster): the
+        // Caspar backend has no pose prior residuals.
+        if (pose_prior_options_) {
+            LOG_FATAL_THROW(std::invalid_argument)
+                    << "Caspar BA backend does not support pose priors";
+        }
         if (SolveCasparBundleAdjustment(options_, config_, reconstruction,
                                         &summary_)) {
             return true;
@@ -122,10 +110,21 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
 
     problem_.reset(new ceres::Problem());
 
+    use_prior_position_ =
+            pose_prior_options_ && PreparePosePriors(reconstruction);
+    // Restores the metric frame on every exit once the reconstruction was
+    // normalized (upstream restores it only after a solve).
+    const auto restore_metric_frame = [&]() {
+        if (use_prior_position_) {
+            reconstruction->Transform(Inverse(normalized_from_metric_));
+        }
+    };
+
     ceres::LossFunction* loss_function = options_.ceres->CreateLossFunction();
     SetUp(reconstruction, loss_function);
 
     if (problem_->NumResiduals() == 0) {
+        restore_metric_frame();
         return false;
     }
 
@@ -152,6 +151,7 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
     }
 
     TearDown(reconstruction);
+    restore_metric_frame();
 
     return true;
 }
@@ -182,8 +182,7 @@ BundleAdjustmentTerminationType CeresTerminationTypeToTerminationType(
 std::shared_ptr<CeresBundleAdjustmentSummary>
 CeresBundleAdjustmentSummary::Create(ceres::Solver::Summary ceres_summary) {
     auto summary = std::make_shared<CeresBundleAdjustmentSummary>();
-    summary->termination_type =
-            CeresTerminationTypeToTerminationType(
+    summary->termination_type = CeresTerminationTypeToTerminationType(
                 ceres_summary.termination_type);
     summary->num_residuals = ceres_summary.num_residuals_reduced;
     summary->ceres_summary = std::move(ceres_summary);
@@ -280,6 +279,12 @@ void CeresBundleAdjuster::SetUp(Reconstruction* reconstruction,
             FixGaugeWithThreePoints(reconstruction);
             break;
     }
+
+    // WARNING: Do not move this above the parameterization; the prior may
+    // add constant pose blocks the reprojection residuals omitted.
+    if (use_prior_position_) {
+        AddPosePriorsToProblem(reconstruction);
+    }
 }
 
 void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
@@ -331,8 +336,7 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
         const sensor_t sensor_id =
                 reconstruction->Camera(image.CameraId()).SensorId();
         if (rig.NumSensors() > 1 && rig.HasSensor(sensor_id) &&
-            !rig.IsRefSensor(sensor_id) &&
-            rig.HasSensorFromRig(sensor_id)) {
+            !rig.IsRefSensor(sensor_id) && rig.HasSensorFromRig(sensor_id)) {
             cam_from_world = rig.SensorFromRig(sensor_id) * cam_from_world;
         }
         const Eigen::Quaterniond& q = cam_from_world.rotation();
@@ -343,8 +347,8 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
     // consumers; the next SetUp clears them (see the top of SetUp).
 }
 
-CeresBundleAdjuster::SensorPoseBlock& CeresBundleAdjuster::GetOrCreateSensorBlock(
-        const rig_t rig_id,
+CeresBundleAdjuster::SensorPoseBlock&
+CeresBundleAdjuster::GetOrCreateSensorBlock(const rig_t rig_id,
         const sensor_t sensor_id,
         const Rigid3d& sensor_from_rig) {
     const auto key = std::make_pair(rig_id, sensor_id);
@@ -448,14 +452,13 @@ void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
 
     // Check if a sensor is either a reference sensor, or a non-reference
     // sensor with sensor_from_rig fixed.
-    auto IsParameterizedConstSensor =
-            [this](const Image& image) {
+    auto IsParameterizedConstSensor = [this](const Image& image) {
                 const sensor_t sensor_id = image.CameraPtr()->SensorId();
                 if (image.FramePtr()->RigPtr()->IsRefSensor(sensor_id)) {
                     return true;
                 }
-                const auto sb_it = sensor_blocks_.find(
-                        {image.FramePtr()->RigId(), sensor_id});
+        const auto sb_it =
+                sensor_blocks_.find({image.FramePtr()->RigId(), sensor_id});
                 if (sb_it != sensor_blocks_.end() &&
                     problem_->HasParameterBlock(
                             sb_it->second.sensor_from_rig.params.data()) &&
@@ -498,8 +501,7 @@ void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
         const Rigid3d& rig_from_world = fb_it->second.rig_from_world;
         if (image1 == nullptr && IsParameterizedConstSensor(image)) {
             image1 = &image;
-        } else if (image1 != nullptr &&
-                   image1->FrameId() != image.FrameId() &&
+        } else if (image1 != nullptr && image1->FrameId() != image.FrameId() &&
                    IsParameterizedConstSensor(image) &&
                    problem_->HasParameterBlock(rig_from_world.params.data())) {
             // Check if one of the baseline dimensions is large enough and
@@ -535,14 +537,12 @@ void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
         auto fb2_it = frame_blocks_.find(image2->FrameId());
         Rigid3d& frame2_from_world = fb2_it->second.rig_from_world;
         if (options_.constant_rig_from_world_rotation) {
-            SetManifold(problem_.get(),
-                        frame2_from_world.params.data(),
+            SetManifold(
+                    problem_.get(), frame2_from_world.params.data(),
                         CreateSubsetManifold(
-                                7, {0, 1, 2, 3,
-                                    4 + frame2_from_world_fixed_dim}));
+                            7, {0, 1, 2, 3, 4 + frame2_from_world_fixed_dim}));
         } else {
-            SetManifold(problem_.get(),
-                        frame2_from_world.params.data(),
+            SetManifold(problem_.get(), frame2_from_world.params.data(),
                         CreateProductManifold(
                                 CreateEigenQuaternionManifold(),
                                 CreateSubsetManifold(
@@ -580,9 +580,168 @@ ceres::LossFunction* CreatePosePriorLossFunction(
     return nullptr;
 }
 
+// Upstream parity (a2bd15c2 CreatePositionPriorCostFunction): weights the
+// prior by its covariance, or by the isotropic fallback stddev when it has
+// none. An isotropic covariance stays isotropic under the similarity
+// transform, so the fallback only needs a scale.
+template <typename CostFunctor>
+ceres::CostFunction* CreatePositionPriorCostFunction(
+        const PosePrior& pose_prior,
+        const Sim3d& normalized_from_metric,
+        const double prior_position_fallback_stddev) {
+    const Eigen::Vector3d normalized_position =
+            normalized_from_metric * pose_prior.position;
+    if (pose_prior.HasPositionCov()) {
+        const Eigen::Matrix3d normalized_from_metric_scaled_rotation =
+                normalized_from_metric.scale() *
+                normalized_from_metric.rotation().toRotationMatrix();
+        return CovarianceWeightedCostFunctor<CostFunctor>::Create(
+                normalized_from_metric_scaled_rotation *
+                        pose_prior.position_covariance *
+                        normalized_from_metric_scaled_rotation.transpose(),
+                normalized_position);
+    }
+    return ScaleWeightedCostFunctor<CostFunctor>::Create(
+            normalized_from_metric.scale() * prior_position_fallback_stddev,
+            normalized_position);
+}
+
 }  // namespace
 
-void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
+bool CeresBundleAdjuster::PreparePosePriors(Reconstruction* reconstruction) {
+    THROW_CHECK(pose_prior_options_->Check());
+
+    // Filter irrelevant pose priors.
+    pose_priors_.erase(
+            std::remove_if(pose_priors_.begin(), pose_priors_.end(),
+                           [this](const PosePrior& pose_prior) {
+                               return !pose_prior.HasPosition() ||
+                                      pose_prior.corr_data_id.sensor_id.type !=
+                                              SensorType::CAMERA ||
+                                      !config_.HasImage(
+                                              pose_prior.corr_data_id.id);
+                           }),
+            pose_priors_.end());
+
+    normalized_from_metric_ = Sim3d();
+
+    bool aligned = false;
+    if (pose_priors_.size() >= 3) {
+        Sim3d metric_from_orig;
+        if (AlignReconstructionToPosePriors(
+                    *reconstruction, pose_priors_,
+                    pose_prior_options_->alignment_ransac_options,
+                    pose_prior_options_->prior_position_fallback_stddev,
+                    &metric_from_orig)) {
+            reconstruction->Transform(metric_from_orig);
+            aligned = true;
+        } else {
+            LOG(WARNING) << "Alignment w.r.t. prior positions failed";
+        }
+    }
+
+    // Fix 7-DOFs of the BA problem if the pose priors cannot constrain them.
+    if (!aligned) {
+        config_.FixGauge(BundleAdjustmentGauge::TWO_CAMS_FROM_WORLD);
+        return false;
+    }
+
+    // Normalize the reconstruction to avoid any numerical instability but do
+    // not transform the priors; they are transformed when added to the
+    // problem.
+    normalized_from_metric_ = reconstruction->Normalize(/*fixed_scale=*/true);
+    return true;
+}
+
+void CeresBundleAdjuster::AddPosePriorsToProblem(
+        Reconstruction* reconstruction) {
+    const double fallback_stddev =
+            pose_prior_options_->prior_position_fallback_stddev;
+    for (const PosePrior& pose_prior : pose_priors_) {
+        const image_t image_id = pose_prior.corr_data_id.id;
+        Image& image = reconstruction->Image(image_id);
+
+        // Legacy frameless-cache-image path (legacy fixtures only): the
+        // image-local qvec/tvec buffers are the pose parameter blocks.
+        if (!image.HasFrameId() ||
+            !reconstruction->ExistsFrame(image.FrameId())) {
+            double* qvec_data = image.Qvec().data();
+            double* tvec_data = image.Tvec().data();
+            if (!problem_->HasParameterBlock(qvec_data)) {
+                continue;
+            }
+            problem_->AddResidualBlock(
+                    CreatePositionPriorCostFunction<
+                            AbsolutePosePositionPriorQvecTvecCostFunctor>(
+                            pose_prior, normalized_from_metric_,
+                            fallback_stddev),
+                    CreatePosePriorLossFunction(*pose_prior_options_),
+                    qvec_data, tvec_data);
+            continue;
+        }
+
+        // Only consider parameterized images for pose priors. Notice that
+        // some images may be configured to be included in the BA problem but
+        // have no reprojection constraints, etc.
+        if (parameterized_image_ids_.count(image_id) == 0) {
+            continue;
+        }
+
+        const Frame& frame = reconstruction->Frame(image.FrameId());
+        const sensor_t sensor_id =
+                reconstruction->Camera(image.CameraId()).SensorId();
+        // A sensor shadow block exists exactly for the non-reference
+        // sensors whose residuals compose sensor_from_rig (see
+        // AddImageToProblem).
+        const auto sb_it = sensor_blocks_.find({frame.RigId(), sensor_id});
+        const bool is_ref_in_frame = sb_it == sensor_blocks_.end();
+
+        const bool constant_sensor_from_rig =
+                is_ref_in_frame || !options_.refine_sensor_from_rig ||
+                config_.HasConstantSensorFromRigPose(sensor_id);
+        const bool constant_rig_from_world =
+                !options_.refine_rig_from_world ||
+                config_.HasConstantPose(image_id) ||
+                config_.HasConstantRigFromWorldPose(image.FrameId());
+        if (constant_sensor_from_rig && constant_rig_from_world) {
+            continue;
+        }
+
+        double* rig_from_world_data =
+                frame_blocks_.at(image.FrameId()).rig_from_world.params.data();
+        if (is_ref_in_frame) {
+            problem_->AddResidualBlock(
+                    CreatePositionPriorCostFunction<
+                            AbsolutePosePositionPriorCostFunctor>(
+                            pose_prior, normalized_from_metric_,
+                            fallback_stddev),
+                    CreatePosePriorLossFunction(*pose_prior_options_),
+                    rig_from_world_data);
+        } else {
+            double* sensor_from_rig_data =
+                    sb_it->second.sensor_from_rig.params.data();
+            problem_->AddResidualBlock(
+                    CreatePositionPriorCostFunction<
+                            AbsoluteRigPosePositionPriorCostFunctor>(
+                            pose_prior, normalized_from_metric_,
+                            fallback_stddev),
+                    CreatePosePriorLossFunction(*pose_prior_options_),
+                    sensor_from_rig_data, rig_from_world_data);
+            // Reprojection residuals may omit constant poses, so the prior
+            // can add their parameter blocks after the default
+            // parameterization pass.
+            if (constant_sensor_from_rig) {
+                problem_->SetParameterBlockConstant(sensor_from_rig_data);
+            }
+        }
+        if (constant_rig_from_world) {
+            problem_->SetParameterBlockConstant(rig_from_world_data);
+        }
+    }
+}
+
+void CeresBundleAdjuster::AddImageToProblem(
+        const image_t image_id,
                                        Reconstruction* reconstruction,
                                        ceres::LossFunction* loss_function) {
     Image& image = reconstruction->Image(image_id);
@@ -623,8 +782,8 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
             rig.HasSensorFromRig(camera.SensorId())) {
             compose_rig = true;
             rig_sensor_id = camera.SensorId();
-            SensorPoseBlock& sb = GetOrCreateSensorBlock(
-                    frame.RigId(), rig_sensor_id,
+            SensorPoseBlock& sb =
+                    GetOrCreateSensorBlock(frame.RigId(), rig_sensor_id,
                     rig.SensorFromRig(rig_sensor_id));
             sensor_from_rig_block = &sb.sensor_from_rig;
         }
@@ -636,43 +795,8 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
         tvec_data = image.Tvec().data();
     }
 
-    // W7 pose-prior residual (upstream parity: single Rigid3d block functor;
-    // the legacy frameless path keeps the split qvec/tvec functor).
-    if (pose_prior_options_) {
-        for (const PosePrior& pose_prior : pose_priors_) {
-            if (pose_prior.corr_data_id.sensor_id.type ==
-                        SensorType::CAMERA &&
-                pose_prior.corr_data_id.id == image_id &&
-                pose_prior.HasPosition()) {
-                ceres::LossFunction* prior_loss =
-                        CreatePosePriorLossFunction(*pose_prior_options_);
-                if (frame_pose) {
-                    problem_->AddResidualBlock(
-                            new ceres::AutoDiffCostFunction<
-                                    AbsolutePosePositionPriorCostFunctor,
-                                    3,
-                                    7>(
-                                    new AbsolutePosePositionPriorCostFunctor(
-                                            pose_prior.position)),
-                            prior_loss,
-                            rig_from_world_block->params.data());
-                } else {
-                    problem_->AddResidualBlock(
-                            new ceres::AutoDiffCostFunction<
-                                    AbsolutePosePositionPriorQvecTvecCostFunctor,
-                                    3,
-                                    4,
-                                    3>(
-                                    new AbsolutePosePositionPriorQvecTvecCostFunctor(
-                                            pose_prior.position)),
-                            prior_loss,
-                            qvec_data,
-                            tvec_data);
-                }
-                break;
-            }
-        }
-    }
+    // Pose-prior residuals are added by AddPosePriorsToProblem() once the
+    // reprojection residuals are parameterized (upstream parity, a2bd15c2).
 
     // Upstream parity (d3ccaf35): per-image pose freezing is split into
     // rig-from-world and sensor-from-rig conditions (the fork's
@@ -721,9 +845,8 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
 
 #undef CAMERA_MODEL_CASE
             }
-            problem_->AddResidualBlock(cost_function, loss_function,
-                                       qvec_data, tvec_data,
-                                       point3D.XYZ().data(),
+            problem_->AddResidualBlock(cost_function, loss_function, qvec_data,
+                                       tvec_data, point3D.XYZ().data(),
                                        camera_params_data);
             continue;
         }
@@ -739,25 +862,22 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
                         CreateCameraCostFunction<
                                 ReprojErrorConstantPoseCostFunctor>(
                                 camera.ModelId(), point2D.XY(), cam_from_world),
-                        loss_function,
-                        point3D.XYZ().data(), camera_params_data);
-            } else if (!constant_rig_from_world &&
-                       constant_sensor_from_rig) {
+                        loss_function, point3D.XYZ().data(),
+                        camera_params_data);
+            } else if (!constant_rig_from_world && constant_sensor_from_rig) {
                 problem_->AddResidualBlock(
                         CreateCameraCostFunction<
                                 RigReprojErrorConstantRigCostFunctor>(
                                 camera.ModelId(), point2D.XY(),
                                 *sensor_from_rig_block),
-                        loss_function,
-                        point3D.XYZ().data(),
+                        loss_function, point3D.XYZ().data(),
                         rig_from_world_block->params.data(),
                         camera_params_data);
             } else {
                 problem_->AddResidualBlock(
                         CreateCameraCostFunction<RigReprojErrorCostFunctor>(
                                 camera.ModelId(), point2D.XY()),
-                        loss_function,
-                        point3D.XYZ().data(),
+                        loss_function, point3D.XYZ().data(),
                         sensor_from_rig_block->params.data(),
                         rig_from_world_block->params.data(),
                         camera_params_data);
@@ -769,14 +889,13 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
                                 ReprojErrorConstantPoseCostFunctor>(
                                 camera.ModelId(), point2D.XY(),
                                 *rig_from_world_block),
-                        loss_function,
-                        point3D.XYZ().data(), camera_params_data);
+                        loss_function, point3D.XYZ().data(),
+                        camera_params_data);
             } else {
                 problem_->AddResidualBlock(
                         CreateCameraCostFunction<ReprojErrorCostFunctor>(
                                 camera.ModelId(), point2D.XY()),
-                        loss_function,
-                        point3D.XYZ().data(),
+                        loss_function, point3D.XYZ().data(),
                         rig_from_world_block->params.data(),
                         camera_params_data);
             }
@@ -802,7 +921,8 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
     }
 }
 
-void CeresBundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
+void CeresBundleAdjuster::AddPointToProblem(
+        const point3D_t point3D_id,
                                        Reconstruction* reconstruction,
                                        ceres::LossFunction* loss_function) {
     if (config_.IsIgnoredPoint(point3D_id)) {
@@ -854,15 +974,14 @@ void CeresBundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
         // and would poison the BA start with hundreds-of-px residuals,
         // spiraling into divergence and mass observation filtering.
         const Rigid3d cam_from_world_ext = image.CamFromWorld();
-        const Eigen::Vector4d ext_qvec(
-                cam_from_world_ext.rotation().w(),
+        const Eigen::Vector4d ext_qvec(cam_from_world_ext.rotation().w(),
                 cam_from_world_ext.rotation().x(),
                 cam_from_world_ext.rotation().y(),
                 cam_from_world_ext.rotation().z());
         if (camera.ModelId() == EquirectangularCameraModel::model_id) {
             cost_function =
-                    EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
-                            ext_qvec, cam_from_world_ext.translation(),
+                    EquirectangularBundleAdjustmentConstantPoseCostFunction::
+                            Create(ext_qvec, cam_from_world_ext.translation(),
                             point2D.XY());
         } else {
             switch (camera.ModelId()) {
@@ -949,16 +1068,15 @@ void CeresBundleAdjuster::ParameterizeRigsAndFrames(
         const bool not_parameterized_before =
                 parameterized_sensor_ids.insert(sensor_id).second;
         if (not_parameterized_before) {
-            const auto sb_it = sensor_blocks_.find(
-                    {image.FramePtr()->RigId(), sensor_id});
+            const auto sb_it =
+                    sensor_blocks_.find({image.FramePtr()->RigId(), sensor_id});
             if (sb_it != sensor_blocks_.end()) {
                 Rigid3d& sensor_from_rig = sb_it->second.sensor_from_rig;
                 // CostFunction assumes unit quaternions.
                 sensor_from_rig.rotation().normalize();
                 if (problem_->HasParameterBlock(
                             sensor_from_rig.params.data())) {
-                    SetManifold(problem_.get(),
-                                sensor_from_rig.params.data(),
+                    SetManifold(problem_.get(), sensor_from_rig.params.data(),
                                 CreateProductManifold(
                                         CreateEigenQuaternionManifold(),
                                         CreateEuclideanManifold<3>()));
@@ -1048,7 +1166,6 @@ void CeresBundleAdjuster::ParameterizePoints(Reconstruction* reconstruction) {
 ////////////////////////////////////////////////////////////////////////////////
 // RigBundleAdjuster
 ////////////////////////////////////////////////////////////////////////////////
-
 
 std::unique_ptr<BundleAdjuster> CreateDefaultBundleAdjuster(
         const BundleAdjustmentOptions& options,

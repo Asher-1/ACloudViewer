@@ -101,7 +101,8 @@ When every input sits in one `<scene>/images/` directory next to
 `<scene>/scene_meta.json` (the WAI layout of the test scenes) and *Anchor to
 the benchmark frame* is checked (default), the dialog applies that same Sim3
 (`MapAnythingReconstruction::anchor_to_reference`, numpy-median robust Horn,
-2 iterations) to the cloud and the cameras, which also enables the 2 cm
+2 iterations; per chunk for streamed scenes, see *Scene driver*) to the
+cloud and the cameras, which also enables the 2 cm
 conf-priority voxel. Headless runs take the file explicitly (`GT_META`);
 inputs without a `scene_meta.json` stay in the official model frame above
 (with the 2 cm voxel only for the metric families). Measured
@@ -210,16 +211,45 @@ per-pixel Sim3 into chunk 0's frame.
 
 Scene composition is not a bit-exact upstream contract (only the forward
 is). Upstream `scripts/e2e_full_scene.py` defaults to `--align gt`, which
-anchors each chunk independently to benchmark GT camera centers (available
-only for benchmark scenes; the driver anchors the composed scene once, see
-*Output frame*); its legacy `--align chain` fits chunk i to chunk i-1's *unaligned*
-points and never composes the transforms, so chunks >= 2 land in the wrong
-frame. The driver instead fits each chunk to the already-aligned copy of its
-shared frames (same robust Horn Sim3, median + 3 MAD, 2 iterations), i.e. the
-chain composed into chunk 0. The filter population also differs by
-construction: upstream thresholds on the torch reference confidences and
-counts overlap frames once per chunk; the driver uses its own confidences
-and each view once.
+anchors each chunk independently to benchmark GT camera centers; its legacy
+`--align chain` fits chunk i to chunk i-1's *unaligned* points and never
+composes the transforms, so chunks >= 2 land in the wrong frame.
+
+- With reference cameras (benchmark `scene_meta.json`, `GT_META`,
+  `REF_IMAGES_PATH`) a streamed scene is anchored like `--align gt`: every
+  chunk gets its own robust Horn Sim3 from all of its views' camera centers
+  (shared ones included) and its views move by it, so the cross-chunk
+  scale drift of the model (courtyard, vggt-omega, K = 19: 8.87 / 11.99 /
+  12.19 per chunk) is absorbed instead of chained. Every chunk needs its
+  own >= 3 non-collinear references; otherwise the chained scene is anchored
+  as a whole and `per_chunk_refused` (RESULT_JSON) / the dialog log says
+  which chunk failed. RESULT_JSON `gt_sim3.mode` / `reference_sim3.mode` is
+  `per_chunk` or `scene`.
+- Without references the driver fits each chunk to the already-aligned copy
+  of its shared frames (same robust Horn Sim3, median + 3 MAD, 2
+  iterations), i.e. the chain composed into chunk 0.
+- The scene-wide confidence floor (1+exp families) is taken over every
+  chunk's confidences, shared frames once per covering chunk, as upstream.
+  Upstream thresholds on its torch reference confidences, which a ggml
+  runtime does not have; the driver uses its own.
+
+Measured against upstream `e2e_full_scene.py --chunk 19 --overlap 2 --align
+gt` (courtyard, 38 views, vggt-omega-1b-512-f16, CUDA, chunks 0/17/19):
+
+| | per-chunk scale | conf floor | points | NN to upstream cpp cloud median / p95 / max |
+|---|---|---|---|---|
+| upstream cpp | 8.8817 / 11.9902 / 12.1846 | 11.086 (torch) | 4,798,360 | - |
+| upstream torch | 8.8567 / 11.9739 / 12.1675 | 11.086 | 4,752,923 | 0.0155 / 0.0351 / 0.123 m |
+| driver, chained + one Sim3 (before) | - | 10.053 | 4,943,444 | 0.0813 / 0.3125 / 6.88 m |
+| driver, per chunk | 8.8692 / 11.9903 / 12.1853 | 10.906 | 4,796,406 | 0.0112 / 0.0246 / 0.545 m |
+
+The floor population alone accounts for 10.053 -> 10.904 (upstream's own cpp
+confidences over the same rule; the driver gives 10.906); torch vs ggml
+confidences for the rest. Single-pass results are byte-identical to the
+previous driver. mapanything / vggt-1b runs halved to 19 views per pass
+stay at ~1 m camera residual per chunk: those are the models' own poses on
+this scene (mapanything `--images` vs upstream `vggt-cli --images`, 8 views:
+pose relative median 4e-4, camera centers within 7 mm), not stitching.
 
 Before the first compute AICore checks that the gallocr graph buffer was
 allocated and that free device memory covers a per-node upper bound of the

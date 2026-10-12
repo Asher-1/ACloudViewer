@@ -581,6 +581,91 @@ TEST(QMapAnythingAnchor, MapsCamerasAndCloudIntoReferenceFrame) {
     EXPECT_EQ(few.cloud.xyz, r.cloud.xyz);
 }
 
+TEST(QMapAnythingGeometry, Sim3InverseUndoes) {
+    const Sim3 a = testSim3(0.7f, 2.5f, 1, -2, 3);
+    const Sim3 id = sim3_compose(sim3_inverse(a), a);
+    const float p[3] = {0.4f, -1.2f, 2.6f};
+    float q[3];
+    applySim3(id, p, q);
+    for (int k = 0; k < 3; ++k) EXPECT_NEAR(q[k], p[k], 1e-5f);
+}
+
+TEST(QMapAnythingAnchor, StreamedSceneAnchorsEachChunkOnItsOwn) {
+    // upstream e2e_full_scene.py --align gt: two chunks (views 0-2, 2-4)
+    // whose model frames differ by a 1.4x scale drift. The chain left
+    // chunk 1 in chunk 0's frame through an imperfect boundary fit
+    // (`chain`); the per-chunk anchor must still put every view exactly on
+    // its reference, which one Sim3 for the whole scene cannot.
+    const float ref[5][3] = {
+            {0, 0, 0}, {1, 0, 0.2f}, {2, 0.5f, 0}, {0.3f, 1, 1}, {1, 1, 2}};
+    const Sim3 toChunk[2] = {testSim3(0.3f, 0.1f, 1, 2, 3),
+                             testSim3(-0.5f, 0.14f, -1, 0, 2)};
+    // Boundary fit = true chunk1 -> chunk0 map, 5% / 0.02 rad off.
+    const Sim3 chain =
+            sim3_compose(testSim3(0.02f, 1.05f, 0.01f, 0, 0),
+                         sim3_compose(toChunk[0], sim3_inverse(toChunk[1])));
+    MR::Result r;
+    r.views = 5;
+    r.c2w.assign(5 * 16, 0.0f);
+    r.chunks.resize(2);
+    for (int ci = 0; ci < 2; ++ci) {
+        MR::Chunk& c = r.chunks[(size_t)ci];
+        c.start = ci * 2;
+        c.count = 3;
+        if (ci == 1) c.toGlobal = chain;
+        c.centers.resize(9);
+        for (int i = 0; i < 3; ++i)
+            applySim3(toChunk[ci], ref[c.start + i], &c.centers[(size_t)i * 3]);
+    }
+    // One cloud point per view at its camera, from its first chunk.
+    for (int g = 0; g < 5; ++g) {
+        const int ci = g < 3 ? 0 : 1;
+        const MR::Chunk& c = r.chunks[(size_t)ci];
+        float p[3];
+        applySim3(c.toGlobal, &c.centers[(size_t)(g - c.start) * 3], p);
+        float* M = &r.c2w[(size_t)g * 16];
+        M[0] = M[5] = M[10] = M[15] = 1.0f;
+        M[3] = p[0];
+        M[7] = p[1];
+        M[11] = p[2];
+        r.cloud.xyz.insert(r.cloud.xyz.end(), p, p + 3);
+        r.cloud.view.push_back(g);
+    }
+    std::vector<float> refs(&ref[0][0], &ref[0][0] + 15);
+
+    MR::Result scene = r;
+    MR::ReferenceAnchor a;
+    std::string error;
+    ASSERT_TRUE(MR::anchor_to_reference(r, refs, &a, &error)) << error;
+    EXPECT_TRUE(a.perChunk);
+    EXPECT_TRUE(a.perChunkRefused.empty());
+    ASSERT_EQ(a.chunks.size(), 2u);
+    EXPECT_EQ(a.chunks[0].pairs, 3);
+    EXPECT_NEAR(a.chunks[0].sim3.s, 10.0f, 1e-2f);
+    EXPECT_NEAR(a.chunks[1].sim3.s, 1.0f / 0.14f, 1e-2f);
+    EXPECT_EQ(a.pairs, 5);
+    EXPECT_LT(a.residualMedian, 1e-4f);
+    for (int g = 0; g < 5; ++g) {
+        for (int k = 0; k < 3; ++k) {
+            EXPECT_NEAR(r.c2w[(size_t)g * 16 + 3 + 4 * k], ref[g][k], 1e-4f);
+            EXPECT_NEAR(r.cloud.xyz[(size_t)g * 3 + k], ref[g][k], 1e-4f);
+        }
+    }
+    EXPECT_NEAR(r.chunks[1].toGlobal.s, a.chunks[1].sim3.s, 1e-6f);
+
+    // Chunk 1 with only 2 references: all-or-nothing -> one Sim3 for the
+    // chained scene, reason recorded; that fit cannot absorb the drift.
+    std::vector<float> partial = refs;
+    partial[4 * 3] = std::numeric_limits<float>::quiet_NaN();
+    ASSERT_TRUE(MR::anchor_to_reference(scene, partial, &a, &error)) << error;
+    EXPECT_FALSE(a.perChunk);
+    EXPECT_TRUE(a.chunks.empty());
+    EXPECT_NE(a.perChunkRefused.find("chunk 1 (frames 2..4)"),
+              std::string::npos)
+            << a.perChunkRefused;
+    EXPECT_GT(a.residualMedian, 1e-2f);
+}
+
 TEST(QMapAnythingAnchor, SceneMetaDiscoveryAndCenters) {
     QTemporaryDir tmp;
     ASSERT_TRUE(tmp.isValid());

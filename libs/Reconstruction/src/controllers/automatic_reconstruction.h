@@ -26,6 +26,7 @@ public:
     enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
     enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
     enum class Feature { SIFT, ALIKED, LOMA, LOMA128 };
+    enum class Mapper { INCREMENTAL, HIERARCHICAL, GLOBAL };
     enum class Mesher { POISSON, DELAUNAY, ADVANCING_FRONT };
 
     struct Options {
@@ -65,6 +66,11 @@ public:
         // AICore.
         bool dense = DefaultDenseReconstructionEnabled();
 
+        // The mapping algorithm to be used (upstream a2bd15c2). Only the
+        // native COLMAP sparse mode runs a mapper; the DA3 sparse mode
+        // estimates poses itself.
+        Mapper mapper = Mapper::INCREMENTAL;
+
         // The meshing algorithm to be used.
 #ifdef CGAL_ENABLED
         Mesher mesher = Mesher::DELAUNAY;
@@ -88,6 +94,10 @@ public:
 
         // The number of threads to use in all stages.
         int num_threads = -1;
+
+        // The random seed to use in all stages (upstream a2bd15c2; -1 keeps
+        // the ambient PRNG stream).
+        int random_seed = -1;
 
         // Whether to use the GPU in feature extraction and matching.
 #ifdef CUDA_ENABLED

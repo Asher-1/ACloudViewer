@@ -17,6 +17,7 @@
 
 #include "estimators/bundle_adjustment.h"
 #include "geometry/pose_prior.h"
+#include "geometry/sim3.h"
 #include "math/math.h"
 #include "optim/manifold.h"
 #include "util/enum_utils.h"
@@ -149,12 +150,24 @@ private:
     void ParameterizeRigsAndFrames(Reconstruction* reconstruction);
     void ParameterizePoints(Reconstruction* reconstruction);
 
+    // Upstream parity (a2bd15c2 PosePriorBundleAdjuster): filters the pose
+    // priors to the configured images, robustly aligns the reconstruction to
+    // them and normalizes it (fixed scale) for numerical stability. Falls
+    // back to two-camera gauge fixing when fewer than three priors remain or
+    // the alignment fails. Returns whether the priors constrain the problem.
+    bool PreparePosePriors(Reconstruction* reconstruction);
+    // Adds the covariance-weighted position prior of every parameterized
+    // image, after the reprojection residuals are parameterized.
+    void AddPosePriorsToProblem(Reconstruction* reconstruction);
+
     std::unique_ptr<ceres::Problem> problem_;
     ceres::Solver::Summary summary_;
     std::set<image_t> parameterized_image_ids_;
     std::unordered_set<camera_t> camera_ids_;
     std::optional<PosePriorBundleAdjustmentOptions> pose_prior_options_;
     std::vector<PosePrior> pose_priors_;
+    bool use_prior_position_ = false;
+    Sim3d normalized_from_metric_;
     std::unordered_map<point3D_t, size_t> point3D_num_observations_;
 
     // W3-2b step 5 (upstream parity, d3ccaf35): the pose parameter blocks

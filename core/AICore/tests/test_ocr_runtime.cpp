@@ -13,8 +13,6 @@
 
 #ifndef _WIN32
 #include <unistd.h>
-
-#include <map>
 #else
 #include <io.h>
 // POSIX access(path, R_OK) maps onto the MSVC CRT (mode 4 = read check).
@@ -28,6 +26,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -545,11 +544,6 @@ int main(int argc, char** argv) {
     // The last timed run's output stays in `output`; no extra compute.
     std::vector<float> got(static_cast<size_t>(ggml_nelements(output)));
     ggml_backend_tensor_get(output, got.data(), 0, sizeof(float) * got.size());
-    if (const char* tmpDump = std::getenv("TMP_SCRATCH_DUMP")) {  // SCRATCH
-        FILE* f = fopen(tmpDump, "wb");
-        fwrite(got.data(), sizeof(float), got.size(), f);
-        fclose(f);
-    }
 
     const int64_t timeSteps = output->ne[1];
     const int64_t vocab = output->ne[0];

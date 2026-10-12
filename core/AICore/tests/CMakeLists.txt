@@ -737,7 +737,7 @@ if(Python3_EXECUTABLE)
         SKIP_RETURN_CODE 77
         LABELS "matrix;performance;parity")
     add_custom_target(aicore-yolo-model-matrix
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
                 -R "^test_yolo_model_matrix$" -C $<CONFIG>
         DEPENDS test_yolo_capi_performance test_yolo_capi_parity
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -1025,13 +1025,15 @@ endif()
 # Contract tier: ctest -L capi, with -LE model|gpu|e2e when model tests are
 # disabled. The DEPENDS list is derived at the bottom of this file from the
 # registration registry + LABELS (the exact predicate ctest applies), so a
-# newly registered capi test needs no list edit here.
+# newly registered capi test needs no list edit here. Every tier passes
+# --no-tests=error: ctest exits 0 on an empty selection, which would turn a
+# relabeled or unregistered tier into a green no-op.
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
 endif()
 add_custom_target(aicore-contract-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error -L capi
             ${_aicore_contract_model_exclude}
             -j1
             -C $<CONFIG>
@@ -1080,7 +1082,8 @@ endif()
 # file: fast-classified binaries plus the contract-tier set (the fast ctest
 # -LE also runs the no-asset capi subset).
 add_custom_target(aicore-fast-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e|cvpluginapi"
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+            -LE "model|gpu|e2e|cvpluginapi"
             -j2
             -C $<CONFIG>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -1094,7 +1097,7 @@ add_custom_target(aicore-fast-tests
 # the fast/contract entry points; the ctest -L "model" selection also covers
 # the two parity variants that reuse the test_aliked_capi_parity binary.
 add_custom_target(aicore-model-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L "model"
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error -L "model"
             -j1
             -C $<CONFIG>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

@@ -23,7 +23,11 @@
 
 namespace colmap {
 
-// Return 1 if number is positive, -1 if negative, and 0 if the number is 0.
+// Return 1 if number is positive (including 0), -1 if negative.
+// Undefined behavior if the value is NaN.
+// Upstream parity (a2bd15c2 math/math.h): the homography decomposition
+// multiplies square roots by these signs, so a zero sign would erase a term
+// whenever a minor rounds to exactly 0.
 template <typename T>
 int SignOfNumber(const T val);
 
@@ -102,9 +106,10 @@ size_t NChooseK(const size_t n, const size_t k);
 template <typename T1, typename T2>
 T2 TruncateCast(const T1 value);
 
-// Compute the n-th percentile in the given sequence.
+// Compute the n-th percentile in the given sequence. Performs linear
+// interpolation between the closest ranks.
 template <typename T>
-T Percentile(const std::vector<T>& elems, const double p);
+double Percentile(const std::vector<T>& elems, const double p);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
@@ -154,7 +159,7 @@ bool NextCombination(Iterator first1,
 
 template <typename T>
 int SignOfNumber(const T val) {
-    return (T(0) < val) - (val < T(0));
+    return val >= 0 ? 1 : -1;
 }
 
 // Clamp the given value to a low and maximum value (upstream parity,
@@ -194,22 +199,9 @@ double RadToDeg(const double rad) {
 
 template <typename T>
 double Median(const std::vector<T>& elems) {
-    CHECK(!elems.empty());
-
-    const size_t mid_idx = elems.size() / 2;
-
-    std::vector<T> ordered_elems = elems;
-    std::nth_element(ordered_elems.begin(), ordered_elems.begin() + mid_idx,
-                     ordered_elems.end());
-
-    if (elems.size() % 2 == 0) {
-        const T mid_element1 = ordered_elems[mid_idx];
-        const T mid_element2 = *std::max_element(
-                ordered_elems.begin(), ordered_elems.begin() + mid_idx);
-        return (mid_element1 + mid_element2) / 2.0;
-    } else {
-        return ordered_elems[mid_idx];
-    }
+    // Upstream parity (b2cdd169 #3041): the median is the interpolated 50th
+    // percentile, accumulated in double so integer inputs cannot overflow.
+    return Percentile(elems, 50);
 }
 
 // Compute median absolute deviation (MAD) (upstream parity, dbb41680
@@ -230,21 +222,31 @@ std::pair<double, double> MedianAbsoluteDeviation(std::vector<T>&& elems) {
 }
 
 template <typename T>
-T Percentile(const std::vector<T>& elems, const double p) {
+double Percentile(const std::vector<T>& elems, const double p) {
     CHECK(!elems.empty());
     CHECK_GE(p, 0);
     CHECK_LE(p, 100);
 
-    const int idx = static_cast<int>(std::round(p / 100 * (elems.size() - 1)));
-    const size_t percentile_idx =
-            std::max(0, std::min(static_cast<int>(elems.size() - 1), idx));
+    // Upstream parity (b2cdd169 #3041): linear interpolation between the two
+    // closest ranks instead of rounding to the nearest rank. The fork keeps
+    // the const-reference signature, so it partitions a copy.
+    const double idx_double = p / 100. * (elems.size() - 1);
+    const double left_idx_double = std::floor(idx_double);
+    const size_t left_idx = static_cast<size_t>(left_idx_double);
+    const double right_idx_double = std::ceil(idx_double);
+    const size_t right_idx = static_cast<size_t>(right_idx_double);
 
     std::vector<T> ordered_elems = elems;
-    std::nth_element(ordered_elems.begin(),
-                     ordered_elems.begin() + percentile_idx,
+    std::nth_element(ordered_elems.begin(), ordered_elems.begin() + right_idx,
                      ordered_elems.end());
-
-    return ordered_elems.at(percentile_idx);
+    const double right = ordered_elems[right_idx];
+    if (left_idx == right_idx) {
+        return right;
+    }
+    const double left = *std::max_element(ordered_elems.begin(),
+                                          ordered_elems.begin() + right_idx);
+    return (right_idx_double - idx_double) * left +
+           (idx_double - left_idx_double) * right;
 }
 
 template <typename T>

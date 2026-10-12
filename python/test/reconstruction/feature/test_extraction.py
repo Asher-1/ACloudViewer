@@ -130,7 +130,12 @@ def test_feature_extraction_options_check(recon):
 
 
 def test_feature_extractor_create(recon):
-    extractor = recon.FeatureExtractor.create(recon.FeatureExtractionOptions())
+    # Factory construction is a hardware-independent contract test. A CUDA-
+    # enabled wheel defaults to use_gpu=True even on a hosted runner without a
+    # CUDA device, where the SiftGPU factory correctly cannot create a backend.
+    options = recon.FeatureExtractionOptions()
+    options.use_gpu = False
+    extractor = recon.FeatureExtractor.create(options)
     assert extractor is not None
 
 

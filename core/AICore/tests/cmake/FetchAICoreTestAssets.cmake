@@ -67,9 +67,25 @@ function(aicore_fetch_test_assets root)
     # carry GGUF weights (and the test-data zip) only. The minimum size is
     # per file class: the table decoder outputs and the JSON references are
     # only kilobytes.
-    foreach(asset IN ITEMS rec_ch_input.npy rec_ch_reference.npy
-            det_ch_input.npy det_ch_reference.npy
-            layout_input.npy table_0_input.npy table_1_input.npy
+    # The det/rec pairs are the real-image fixtures (export_ocr_fixture.py),
+    # published as <stem>_page_*.npy and stored under the probe's stable
+    # <stem>_*.npy names; their index is the sentinel that retires a cached
+    # synthetic pair of the same name.
+    if(NOT EXISTS "${root}/ocr_fixtures/ocr_page_fixtures.json")
+        foreach(stem IN ITEMS det_ch rec_ch rec_en)
+            file(REMOVE "${root}/ocr_fixtures/${stem}_input.npy"
+                        "${root}/ocr_fixtures/${stem}_reference.npy")
+        endforeach()
+    endif()
+    foreach(stem IN ITEMS det_ch rec_ch rec_en)
+        foreach(kind IN ITEMS input reference)
+            _aicore_fetch_asset("${root}" "ocr_fixtures/${stem}_${kind}.npy"
+                "${base}/ocr-fixtures/${stem}_page_${kind}.npy" 10000)
+        endforeach()
+    endforeach()
+    _aicore_fetch_asset("${root}" "ocr_fixtures/ocr_page_fixtures.json"
+        "${base}/ocr-fixtures/ocr_page_fixtures.json" 512)
+    foreach(asset IN ITEMS layout_input.npy table_0_input.npy table_1_input.npy
             table_2_input.npy)
         _aicore_fetch_asset("${root}" "ocr_fixtures/${asset}"
             "${base}/ocr-fixtures/${asset}" 100000)

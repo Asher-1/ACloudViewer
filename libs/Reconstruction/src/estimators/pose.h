@@ -178,11 +178,13 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
                         Camera* camera,
                         Eigen::Matrix6d* cam_from_world_cov = nullptr);
 
+// Upstream parity (a2bd15c2): tangent-Sampson refinement over calibrated
+// rays with their unprojection Jacobians.
 // Refine relative pose of two cameras.
 //
-// Minimizes the Sampson error between corresponding normalized points using
-// a robust cost function, i.e. the corresponding points need not necessarily
-// be inliers given a sufficient initial guess for the relative pose.
+// Minimizes the pixel-unit tangent Sampson error over the masked-in
+// correspondences as plain least squares (no robust loss): the inlier_mask must
+// already exclude outliers.
 //
 // Assumes that first camera pose has projection matrix P = [I | 0], and
 // pose of second camera is given as transformation from world to camera system.
@@ -191,17 +193,35 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
 // the translation up to an unknown scale (i.e. refined translation vector
 // is a unit vector again).
 //
-// @param options          Solver options.
-// @param points1          First set of corresponding points.
-// @param points2          Second set of corresponding points.
-// @param qvec             Unit Quaternion rotation coefficients (w, x, y, z).
-// @param tvec             3x1 translation vector.
+// @param options              Solver options.
+// @param inlier_mask          Inlier mask for 2D-2D correspondences.
+// @param cam_rays1_with_jac   First rays with their unprojection Jacobians.
+// @param cam_rays2_with_jac   Second rays with their unprojection Jacobians.
+// @param cam2_from_cam1       Refined relative pose between cameras.
 //
-// @return                 Flag indicating if solution is usable.
+// @return                     Flag indicating if solution is usable.
 bool RefineRelativePose(const ceres::Solver::Options& options,
-                        const std::vector<Eigen::Vector2d>& points1,
-                        const std::vector<Eigen::Vector2d>& points2,
-                        Eigen::Vector4d* qvec,
-                        Eigen::Vector3d* tvec);
+                        const std::vector<char>& inlier_mask,
+                        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                        Rigid3d* cam2_from_cam1);
+
+// Refine essential matrix.
+//
+// Decomposes the essential matrix into rotation and translation components
+// and refines the relative pose using the function `RefineRelativePose`.
+//
+// @param options              Solver options.
+// @param cam_rays1_with_jac   First rays with their unprojection Jacobians.
+// @param cam_rays2_with_jac   Second rays with their unprojection Jacobians.
+// @param inlier_mask          Inlier mask for corresponding rays.
+// @param E                    3x3 essential matrix (refined in-place).
+//
+// @return                     Flag indicating if solution is usable.
+bool RefineEssentialMatrix(const ceres::Solver::Options& options,
+                           const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                           const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                           const std::vector<char>& inlier_mask,
+                           Eigen::Matrix3d* E);
 
 }  // namespace colmap

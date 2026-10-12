@@ -29,11 +29,16 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "geometry/rigid3.h"
 #include "geometry/triangulation.h"
+
+#include <Eigen/Dense>
+#include <algorithm>
+#include <limits>
 
 #include "geometry/essential_matrix.h"
 #include "geometry/pose.h"
+#include "geometry/rigid3.h"
+#include "util/logging.h"
 
 namespace colmap {
 
@@ -70,6 +75,11 @@ bool TriangulatePoint(const Eigen::Matrix3x4d& cam1_from_world,
   A.row(3) = cam_point2(1) * cam2_from_world.row(2) - cam2_from_world.row(1);
 
   const Eigen::JacobiSVD<Eigen::Matrix4d> svd(A, Eigen::ComputeFullV);
+#if EIGEN_VERSION_AT_LEAST(3, 4, 0)
+  if (svd.info() != Eigen::Success) {
+    return false;
+  }
+#endif
 
   if (svd.matrixV()(3, 3) == 0) {
     return false;
@@ -97,6 +107,11 @@ bool TriangulatePoint(const Eigen::Matrix3x4d& cam1_from_world,
 
   const Eigen::JacobiSVD<Eigen::Matrix<double, 6, 4>> svd(
       A, Eigen::ComputeFullV);
+#if EIGEN_VERSION_AT_LEAST(3, 4, 0)
+  if (svd.info() != Eigen::Success) {
+    return false;
+  }
+#endif
 
   if (svd.matrixV()(3, 3) == 0) {
     return false;
@@ -123,6 +138,12 @@ std::vector<Eigen::Vector3d> TriangulatePoints(
   return points3D;
 }
 
+namespace {
+
+// Contribution of a single bearing observation to the projector-based DLT
+// normal-equation matrix. With unit bearing b and projection matrix
+// P = cam_from_world, the residual operator is term = P - b b^T P, and the
+// system accumulates term^T term.
 inline Eigen::Matrix4d TriangulationDltTerm(
     const Eigen::Matrix3x4d& cam_from_world, const Eigen::Vector3d& cam_ray) {
   const Eigen::Matrix3x4d term =
@@ -142,11 +163,14 @@ inline bool SolveTriangulationDlt(const Eigen::Matrix4d& A,
   return true;
 }
 
+}  // namespace
+
 bool TriangulateMultiViewPoint(
     const std::vector<Eigen::Matrix3x4d>& cams_from_world,
     const std::vector<Eigen::Vector2d>& cam_points,
     Eigen::Vector3d* xyz) {
-  CHECK_EQ(cams_from_world.size(), cam_points.size());
+  THROW_CHECK_EQ(cams_from_world.size(), cam_points.size());
+  THROW_CHECK_NOTNULL(xyz);
   Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
   for (size_t i = 0; i < cam_points.size(); ++i) {
     A += TriangulationDltTerm(cams_from_world[i],
@@ -170,20 +194,40 @@ bool TriangulateMultiViewPoint(
   return SolveTriangulationDlt(A, xyz);
 }
 
+// Upstream parity (70dea881 geometry/triangulation.cc): the essential matrix
+// is derived from the relative rigid pose and the result reports degeneracy.
+bool TriangulateOptimalPoint(const Eigen::Matrix3x4d& cam1_from_world_mat,
+                             const Eigen::Matrix3x4d& cam2_from_world_mat,
+                             const Eigen::Vector2d& cam_point1,
+                             const Eigen::Vector2d& cam_point2,
+                             Eigen::Vector3d* xyz) {
+  const Rigid3d cam1_from_world(
+      Eigen::Quaterniond(cam1_from_world_mat.leftCols<3>()),
+      cam1_from_world_mat.col(3));
+  const Rigid3d cam2_from_world(
+      Eigen::Quaterniond(cam2_from_world_mat.leftCols<3>()),
+      cam2_from_world_mat.col(3));
+  const Rigid3d cam1_from_cam2 = cam1_from_world * Inverse(cam2_from_world);
+  const Eigen::Matrix3d E = EssentialMatrixFromPose(cam1_from_cam2);
+
+  Eigen::Vector2d optimal_point1;
+  Eigen::Vector2d optimal_point2;
+  // The correction helper uses point1^T E point2 = 0.
+  FindOptimalImageObservations(E, cam_point1, cam_point2, &optimal_point1,
+                               &optimal_point2);
+
+  return TriangulatePoint(cam1_from_world_mat, cam2_from_world_mat,
+                          optimal_point1, optimal_point2, xyz);
+}
+
 Eigen::Vector3d TriangulateOptimalPoint(const Eigen::Matrix3x4d& proj_matrix1,
                                         const Eigen::Matrix3x4d& proj_matrix2,
                                         const Eigen::Vector2d& point1,
                                         const Eigen::Vector2d& point2) {
-  const Eigen::Matrix3d E =
-      EssentialMatrixFromAbsolutePoses(proj_matrix1, proj_matrix2);
-
-  Eigen::Vector2d optimal_point1;
-  Eigen::Vector2d optimal_point2;
-  FindOptimalImageObservations(E, point1, point2, &optimal_point1,
-                               &optimal_point2);
-
-  return TriangulatePoint(proj_matrix1, proj_matrix2, optimal_point1,
-                          optimal_point2);
+  Eigen::Vector3d xyz =
+      Eigen::Vector3d::Constant(std::numeric_limits<double>::quiet_NaN());
+  TriangulateOptimalPoint(proj_matrix1, proj_matrix2, point1, point2, &xyz);
+  return xyz;
 }
 
 std::vector<Eigen::Vector3d> TriangulateOptimalPoints(
@@ -191,74 +235,41 @@ std::vector<Eigen::Vector3d> TriangulateOptimalPoints(
     const Eigen::Matrix3x4d& proj_matrix2,
     const std::vector<Eigen::Vector2d>& points1,
     const std::vector<Eigen::Vector2d>& points2) {
+  THROW_CHECK_EQ(points1.size(), points2.size());
+
   std::vector<Eigen::Vector3d> points3D(points1.size());
 
   for (size_t i = 0; i < points3D.size(); ++i) {
-    points3D[i] =
-        TriangulatePoint(proj_matrix1, proj_matrix2, points1[i], points2[i]);
+    points3D[i] = TriangulateOptimalPoint(proj_matrix1, proj_matrix2,
+                                          points1[i], points2[i]);
   }
 
   return points3D;
 }
 
+// Upstream parity (a2bd15c2 geometry/triangulation.cc): the enclosing angle
+// is the angle between the two rays (clamped acos of the normalized dot
+// product), not the law of cosines, which loses precision for small angles.
 double CalculateTriangulationAngle(const Eigen::Vector3d& proj_center1,
                                    const Eigen::Vector3d& proj_center2,
                                    const Eigen::Vector3d& point3D) {
-  const double baseline_length_squared =
-      (proj_center1 - proj_center2).squaredNorm();
-
-  const double ray_length_squared1 = (point3D - proj_center1).squaredNorm();
-  const double ray_length_squared2 = (point3D - proj_center2).squaredNorm();
-
-  // Using "law of cosines" to compute the enclosing angle between rays.
-  const double denominator =
-      2.0 * std::sqrt(ray_length_squared1 * ray_length_squared2);
-  if (denominator == 0.0) {
-    return 0.0;
-  }
-  const double nominator =
-      ray_length_squared1 + ray_length_squared2 - baseline_length_squared;
-  const double angle = std::abs(std::acos(nominator / denominator));
-
+  const double angle = CalculateAngleBetweenVectors(point3D - proj_center1,
+                                                    point3D - proj_center2);
   // Triangulation is unstable for acute angles (far away points) and
   // obtuse angles (close points), so always compute the minimum angle
   // between the two intersecting rays.
-  return std::min(angle, M_PI - angle);
+  return std::min(angle, static_cast<double>(EIGEN_PI) - angle);
 }
 
 std::vector<double> CalculateTriangulationAngles(
     const Eigen::Vector3d& proj_center1, const Eigen::Vector3d& proj_center2,
     const std::vector<Eigen::Vector3d>& points3D) {
-  // Baseline length between camera centers.
-  const double baseline_length_squared =
-      (proj_center1 - proj_center2).squaredNorm();
-
   std::vector<double> angles(points3D.size());
 
   for (size_t i = 0; i < points3D.size(); ++i) {
-    // Ray lengths from cameras to point.
-    const double ray_length_squared1 =
-        (points3D[i] - proj_center1).squaredNorm();
-    const double ray_length_squared2 =
-        (points3D[i] - proj_center2).squaredNorm();
-
-    // Using "law of cosines" to compute the enclosing angle between rays.
-    const double denominator =
-        2.0 * std::sqrt(ray_length_squared1 * ray_length_squared2);
-    if (denominator == 0.0) {
-      angles[i] = 0.0;
-      continue;
+    angles[i] =
+        CalculateTriangulationAngle(proj_center1, proj_center2, points3D[i]);
     }
-    const double nominator =
-        ray_length_squared1 + ray_length_squared2 - baseline_length_squared;
-    const double angle = std::abs(std::acos(nominator / denominator));
-
-    // Triangulation is unstable for acute angles (far away points) and
-    // obtuse angles (close points), so always compute the minimum angle
-    // between the two intersecting rays.
-    angles[i] = std::min(angle, M_PI - angle);
-  }
-
   return angles;
 }
 

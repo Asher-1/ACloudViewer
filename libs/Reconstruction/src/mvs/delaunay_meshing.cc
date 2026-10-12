@@ -357,9 +357,9 @@ struct DelaunayMeshingEdgeWeightComputer {
 
     distance_sigma_ = distance_sigma_factor *
                       std::max(std::sqrt(edge_lengths.empty()
-                                               ? 1e-7f
+                                               ? 1e-7
                                                : Percentile(edge_lengths, 25)),
-                                1e-7f);
+                                1e-7);
     distance_threshold_ = 5 * distance_sigma_;
     distance_normalization_ = -0.5 / (distance_sigma_ * distance_sigma_);
   }

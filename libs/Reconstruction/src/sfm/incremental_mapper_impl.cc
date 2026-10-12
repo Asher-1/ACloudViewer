@@ -1,14 +1,14 @@
-#include "math/random.h"
-#include <random>
-#include <cstdio>
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "util/hash_containers.h"
-#include "sfm/incremental_mapper_impl.h"
+#include <algorithm>
+#include <cmath>
+#include <functional>
+#include <optional>
+#include <utility>
 
 #include "estimators/generalized_pose.h"
 #include "estimators/two_view_geometry.h"
@@ -17,14 +17,10 @@
 #include "math/math.h"
 #include "scene/correspondence_graph.h"
 #include "scene/rig.h"
+#include "sfm/incremental_mapper_impl.h"
+#include "util/hash_containers.h"
 #include "util/logging.h"
 #include "util/misc.h"
-
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <optional>
-#include <utility>
 
 namespace colmap {
 
@@ -55,8 +51,8 @@ std::vector<image_t> ExtractSortedImageIds(
     return image_ids;
 }
 
-float RankNextImageMaxVisiblePointsNum(
-        const image_t image_id, const ObservationManager& obs_manager) {
+float RankNextImageMaxVisiblePointsNum(const image_t image_id,
+                                       const ObservationManager& obs_manager) {
     return static_cast<float>(obs_manager.NumVisiblePoints3D(image_id));
 }
 
@@ -102,8 +98,8 @@ bool EstimateInitialGeneralizedTwoViewGeometry(
                         sensor_t(SensorType::CAMERA, camera.CameraId()))) {
                 cams_from_rig.push_back(Rigid3d());
             } else {
-                cams_from_rig.push_back(rig.SensorFromRig(sensor_t(
-                        SensorType::CAMERA, camera.CameraId())));
+                cams_from_rig.push_back(rig.SensorFromRig(
+                        sensor_t(SensorType::CAMERA, camera.CameraId())));
             }
         }
         return it->second;
@@ -123,10 +119,8 @@ bool EstimateInitialGeneralizedTwoViewGeometry(
             database_cache.CorrespondenceGraph()->ExtractMatchesBetweenImages(
                     image_id1, image_id2, matches);
             for (const auto& match : matches) {
-                points2D1.push_back(
-                        image1.Point2D(match.point2D_idx1).XY());
-                points2D2.push_back(
-                        image2.Point2D(match.point2D_idx2).XY());
+                points2D1.push_back(image1.Point2D(match.point2D_idx1).XY());
+                points2D2.push_back(image2.Point2D(match.point2D_idx2).XY());
                 camera_idxs1.push_back(camera_idx1);
                 camera_idxs2.push_back(camera_idx2);
             }
@@ -142,17 +136,10 @@ bool EstimateInitialGeneralizedTwoViewGeometry(
     std::optional<Rigid3d> maybe_pano2_from_pano1;
     size_t num_inliers;
     std::vector<char> inlier_mask;
-    if (!EstimateGeneralizedRelativePose(ransac_options,
-                                         points2D1,
-                                         points2D2,
-                                         camera_idxs1,
-                                         camera_idxs2,
-                                         cams_from_rig,
-                                         cameras,
-                                         &maybe_rig2_from_rig1,
-                                         &maybe_pano2_from_pano1,
-                                         &num_inliers,
-                                         &inlier_mask)) {
+    if (!EstimateGeneralizedRelativePose(
+                ransac_options, points2D1, points2D2, camera_idxs1,
+                camera_idxs2, cams_from_rig, cameras, &maybe_rig2_from_rig1,
+                &maybe_pano2_from_pano1, &num_inliers, &inlier_mask)) {
         return false;
     }
 
@@ -170,15 +157,13 @@ bool EstimateInitialGeneralizedTwoViewGeometry(
                                            : maybe_pano2_from_pano1.value();
 
     // Recompose the relative transformation between the original images.
-    const sensor_t orig_camera_id1(SensorType::CAMERA,
-                                   orig_image1.CameraId());
+    const sensor_t orig_camera_id1(SensorType::CAMERA, orig_image1.CameraId());
     Rigid3d orig_cam1_from_rig1;
     if (!rig1.IsRefSensor(orig_camera_id1)) {
         orig_cam1_from_rig1 = rig1.SensorFromRig(orig_camera_id1);
     }
 
-    const sensor_t orig_camera_id2(SensorType::CAMERA,
-                                   orig_image2.CameraId());
+    const sensor_t orig_camera_id2(SensorType::CAMERA, orig_image2.CameraId());
     Rigid3d orig_cam2_from_rig2;
     if (!rig2.IsRefSensor(orig_camera_id2)) {
         orig_cam2_from_rig2 = rig2.SensorFromRig(orig_camera_id2);
@@ -253,8 +238,7 @@ std::vector<image_t> IncrementalMapperImpl::FindFirstInitialImage(
 
         const class Camera& camera =
                 reconstruction.Camera(image.second.CameraId());
-        image_infos.push_back({image.first,
-                               camera.HasPriorFocalLength(),
+        image_infos.push_back({image.first, camera.HasPriorFocalLength(),
                                num_correspondences});
     }
 
@@ -273,9 +257,8 @@ std::vector<image_t> IncrementalMapperImpl::FindSecondInitialImage(
     FlatHashMap<image_t, point2D_t> num_correspondences;
     for (point2D_t point2D_idx = 0; point2D_idx < image1.NumPoints2D();
          ++point2D_idx) {
-        const auto corr_range =
-                correspondence_graph.FindCorrespondences(image_id1,
-                                                         point2D_idx);
+        const auto corr_range = correspondence_graph.FindCorrespondences(
+                image_id1, point2D_idx);
         for (const CorrespondenceGraph::Correspondence* corr = corr_range.beg;
              corr < corr_range.end; ++corr) {
             if (num_registrations.count(corr->image_id) == 0 ||
@@ -296,8 +279,7 @@ std::vector<image_t> IncrementalMapperImpl::FindSecondInitialImage(
             const class Image& image = reconstruction.Image(elem.first);
             const class Camera& camera =
                     reconstruction.Camera(image.CameraId());
-            image_infos.push_back({elem.first,
-                                   camera.HasPriorFocalLength(),
+            image_infos.push_back({elem.first, camera.HasPriorFocalLength(),
                                    static_cast<size_t>(elem.second)});
         }
     }
@@ -591,13 +573,9 @@ IncrementalMapperImpl::FindInitialImagePair(
         image_ids1.push_back(image_id2);
     } else {
         // No initial seed image provided.
-        image_ids1 =
-                IncrementalMapperImpl::FindFirstInitialImage(
-                        options,
-                        correspondence_graph,
-                        reconstruction,
-                        init_num_reg_trials,
-                        num_registrations);
+        image_ids1 = IncrementalMapperImpl::FindFirstInitialImage(
+                options, correspondence_graph, reconstruction,
+                init_num_reg_trials, num_registrations);
     }
 
     // Try to find good initial pair. The fork keeps the scan serial (A/A
@@ -605,15 +583,11 @@ IncrementalMapperImpl::FindInitialImagePair(
     for (const image_t seed_id1 : image_ids1) {
         const std::vector<image_t> image_ids2 =
                 IncrementalMapperImpl::FindSecondInitialImage(
-                        options,
-                        seed_id1,
-                        correspondence_graph,
-                        reconstruction,
+                        options, seed_id1, correspondence_graph, reconstruction,
                         num_registrations);
 
         for (const image_t seed_id2 : image_ids2) {
-            const image_pair_t pair_id =
-                    ImagePairToPairId(seed_id1, seed_id2);
+            const image_pair_t pair_id = ImagePairToPairId(seed_id1, seed_id2);
 
             // Try every pair only once.
             if (!init_image_pairs.emplace(pair_id).second) {
@@ -624,9 +598,6 @@ IncrementalMapperImpl::FindInitialImagePair(
                     IncrementalMapperImpl::EstimateInitialTwoViewGeometry(
                             options, database_cache, seed_id1, seed_id2);
             if (pair_init_info.has_value()) {
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-tvg-entry next=%u\n", (unsigned)c()); }
-// TEMP-DUMP-END
                 return pair_init_info;
             }
         }
@@ -653,9 +624,6 @@ IncrementalMapperImpl::EstimateInitialTwoViewGeometry(
     FeatureMatches matches;
     correspondence_graph.ExtractMatchesBetweenImages(image_id1, image_id2,
                                                      matches);
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { unsigned long long h = 1469598103934665603ull; for (const auto& m : matches) { h = (h ^ m.point2D_idx1) * 1099511628211ull; h = (h ^ m.point2D_idx2) * 1099511628211ull; } std::fprintf(stderr, "[dump] tvg-matches %u-%u n=%zu h=%llu\n", (unsigned)image_id1, (unsigned)image_id2, matches.size(), h); }
-// TEMP-DUMP-END
 
     std::vector<Eigen::Vector2d> points1;
     points1.reserve(image1.NumPoints2D());
@@ -679,37 +647,28 @@ if (std::getenv("SCAN_DUMP")) { unsigned long long h = 1469598103934665603ull; f
     // The upstream estimator folds the relative-pose decomposition into the
     // estimation, so cam2_from_cam1 carries what the legacy member call
     // EstimateRelativePose produced.
-    TwoViewGeometry two_view_geometry = EstimateTwoViewGeometry(
-            camera1, points1, camera2, points2, matches,
+    TwoViewGeometry two_view_geometry =
+            EstimateTwoViewGeometry(camera1, points1, camera2, points2, matches,
             two_view_geometry_options);
 
     // Upstream parity (d3ccaf35 sfm/incremental_mapper_impl.cc): the plain
     // estimation only classifies the configuration; the relative pose and
     // the triangulation angle are recovered by a dedicated decomposition
     // pass that must run before the initialization checks.
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { const auto& g = two_view_geometry; std::fprintf(stderr, "[dump] tvg-est %u-%u cfg=%d inl=%zu E=%.17g F=%.17g", (unsigned)image_id1, (unsigned)image_id2, (int)g.config, g.inlier_matches.size(), g.E ? g.E->sum() : 0.0, g.F ? g.F->sum() : 0.0); if (g.cam2_from_cam1) std::fprintf(stderr, " q=%.17g t=%.17g", g.cam2_from_cam1->rotation().coeffs().sum(), g.cam2_from_cam1->translation().sum()); std::fprintf(stderr, " ang=%.17g\n", g.tri_angle); }
-if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-after-tvg-est next=%u\n", (unsigned)c()); }
-// TEMP-DUMP-END
     if (!EstimateTwoViewGeometryPose(camera1, points1, camera2, points2,
                                      &two_view_geometry)) {
         return std::nullopt;
     }
-// TEMP-DUMP-BEGIN
-if (std::getenv("SCAN_DUMP")) { const auto& g = two_view_geometry; std::fprintf(stderr, "[dump] tvg-pose %u-%u cfg=%d inl=%zu E=%.17g F=%.17g", (unsigned)image_id1, (unsigned)image_id2, (int)g.config, g.inlier_matches.size(), g.E ? g.E->sum() : 0.0, g.F ? g.F->sum() : 0.0); if (g.cam2_from_cam1) std::fprintf(stderr, " q=%.17g t=%.17g", g.cam2_from_cam1->rotation().coeffs().sum(), g.cam2_from_cam1->translation().sum()); std::fprintf(stderr, " ang=%.17g\n", g.tri_angle); }
-if (std::getenv("SCAN_DUMP")) { std::mt19937 c = PRNG ? *PRNG : std::mt19937(0); std::fprintf(stderr, "[dump] prng-after-tvg-pose next=%u\n", (unsigned)c()); }
-// TEMP-DUMP-END
 
     if (!two_view_geometry.cam2_from_cam1) {
         return std::nullopt;
     }
 
-    VLOG(3) << "Initial image pair with config "
-            << two_view_geometry.config << ", "
-            << two_view_geometry.inlier_matches.size() << " inlier matches, "
+    VLOG(3) << "Initial image pair with config " << two_view_geometry.config
+            << ", " << two_view_geometry.inlier_matches.size()
+            << " inlier matches, "
             << two_view_geometry.cam2_from_cam1->translation().z()
-            << " z translation, "
-            << RadToDeg(two_view_geometry.tri_angle)
+            << " z translation, " << RadToDeg(two_view_geometry.tri_angle)
             << " deg triangulation angle";
     if (static_cast<int>(two_view_geometry.inlier_matches.size()) <
                 options.init_min_num_inliers ||

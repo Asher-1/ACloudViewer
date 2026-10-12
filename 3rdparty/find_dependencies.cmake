@@ -140,8 +140,11 @@ function(build_3rdparty_library name)
     if (arg_SOURCES)
         foreach (src IN LISTS arg_SOURCES)
             get_filename_component(abs_src "${src}" ABSOLUTE BASE_DIR "${arg_DIRECTORY}")
-            # Mark as generated to skip CMake's file existence checks
-            set_source_files_properties(${abs_src} PROPERTIES GENERATED TRUE)
+            # Every caller passes sources that exist at configure time (vendored
+            # or FetchContent-populated), so they are plain sources. Marking
+            # them GENERATED without a producing rule makes Ninja Multi-Config
+            # order the file after its own target, which closes a dependency
+            # cycle with the target's AUTOGEN step.
             target_sources(${name} PRIVATE ${abs_src})
         endforeach ()
         foreach (incl IN LISTS include_dirs)

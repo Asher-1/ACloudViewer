@@ -20,7 +20,13 @@
 // optional AICORE_TEST_OCR_LAYOUT_GGUF + AICORE_TEST_TABLE_PAGE. Exits 77
 // when the assets are not fetched.
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
+#define access _access
+#define R_OK 4
+#endif
 
 #include <cstdio>
 #include <cstdlib>

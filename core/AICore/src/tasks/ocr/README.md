@@ -18,6 +18,8 @@ caller-owned aicore_image_view
 
 `validation_manifest.json` 的 OCR 行是**图级数值门**：固定输入下，F32 GGUF 的 det/rec/layout 输出必须满足 Paddle 语义 numpy fixture 的 `max_diff` 门，并要求 rec CTC argmax 序列相同。它验证转换、图和后端计算，不等价于完整 OCR pipeline 的语义真值。
 
+det/rec fixture 是官方测试图（det `imgs/00006737.jpg`，rec `imgs_words_ch/word_1.jpg`、`words_en/word_1.png`）经官方预处理后送入 GGUF 源归档的 Paddle Inference 预测器得到的输出（`core/AICore/tools/export_ocr_fixture.py`，发布为 `ocr-fixtures` release 的 `*_page_*.npy`）。旧的均匀随机输入 fixture 是空门：DB 概率图最大值仅 0.0036（门限 0.01，全零输出也能通过），rec 参考 40/40 步全部是 blank。真实 fixture 首先暴露了一个移植缺陷：稠密卷积的 im2col 固定为 F16，f32 模型的激活在 GEMM 前被舍入（第一个 conv 相对误差已 5e-4，det 图 max\|diff\| 0.025）；F32 权重改为 F32 im2col + `GGML_PREC_F32` 后 CPU 降到 2e-5、CUDA 0.0102（剩余来自 2x2/stride-2 conv_transpose 快路径的 TF32）、Vulkan 0.0267（coopmat2 设备把 F32 GEMM 操作数转为 F16）。各档门限按 cpu/cuda/vulkan 实测最大值设定，并同时门控 `mean_diff`。
+
 端到端对照以 `core/AICore/scripts/run_ocr_official_alignment.py`、`bench_ocr` 与 `bench_paddle_official.py` 运行。它按中心距不超过 30 px 一对一匹配框，报告空间匹配、逐字符串相同率和 p50/p95。逐字符串相同率是**与 Paddle 输出的差异指标**，不是无标签图像上的准确率：Paddle 自身也会错字、丢标点或切分单词。
 
 ### 已确认的归因边界（2026-10）
@@ -27,6 +29,7 @@ caller-owned aicore_image_view
 - 端到端差异发生在图级门覆盖不到的区域：DB 后处理的框几何、旋转裁剪/resize 语义、以及两个 OCR pipeline 对小字和标点的不同贪心 CTC 结果。
 - `layout_doc_test` 的大量差异是 Paddle 缺少句尾 `.`、把 `Document` 切为 `Docume nt`、把 `placeholder` 切为 `place holder`；AICore 也有 `Bodly`、`0o/Oo` 等真实错字。没有逐框人工标签时，不能把任一侧字符串当作真值。
 - 为检验插值假设，曾把 AICore 透视 crop 临时替换为 PaddleX 的 cubic + replicate 语义；F32 字符串相同数分别从 `90→91`（ppocrv4）、`70→69`（medal）、`37→36`（layout），没有净收益，改动已撤销。该候选不是可接受的根因修复。
+- 2026-10-12 同权重分解（7 张 `ppocr_testdata/imgs`，CPU，诊断脚本未入库）：Paddle GPU 与 Paddle CPU 143/143 字符串相同；AICore cpu/cuda/vulkan 三者互相一致，因此差异不是数值问题。用 Python 复刻 PaddleX 的 `get_minarea_rect_crop` + cubic 透视 + 6 张一批的 rec，在 Paddle 自己的框上复现 286/286；把输入换成 **AICore 的框**、其余全部用 Paddle 语义，只有 252/286（88.1%），与 AICore 自身的 251/286 相当。主导因素是 det 后处理的框几何：其一，PaddleOCR 3.0.1 OCR 流水线实际使用 `limit_side_len=64, limit_type=min`（`text_det_params` 实测），而 AICore 默认 736/min（det 模块 `inference.yml` 的默认），短边 < 736 的图分辨率不同、连通域会合并或拆分；其二，即使两侧都用 736，框角点仍差 p50 0.64 px / max 2.3 px（Paddle 取整为 int，pyclipper 在整数坐标上做 unclip，AICore 全程浮点），亚像素裁剪差即可翻转小字。修复需要逐位移植 `boxes_from_bitmap` + `get_minarea_rect_crop` 语义并决定默认 det limit，属下一步工作。
 
 下一步若要声明语义准确率，必须为每张发布图提供逐框人工标签（文本和 quad），再分别计算 CER/WER 与空间 precision/recall；不得把 Paddle 的预测字符串包装成 ground truth。
 
@@ -68,8 +71,12 @@ Layout 的 `pplcnet-layout` 是区域类别模型，不应被上述文本指标�
 返回的区域按同类别贪心 IoU 与官方 PP-Structure 输出（`run_paddle_layout_reference.py`
 运行上游 PicoDet CDLA 模型与上游 `picodet_postprocess.py`，固定于
 `ocr_fixtures/layout_regions.json`）匹配，要求 recall ≥ 1、F1 ≥ 1/1/0.95、mean IoU ≥ 0.99。
-实测 f32/f16 F1 = 1，q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见
-[`../table/README.md`](../table/README.md)。
+参考里 `table_page_1.png` 的一个 `table_caption` 正好压在阈值上：上游 f32 得分 0.50031（阈值
+0.5），把同一 Paddle 图的权重舍入为 float16 后为 0.4998，即 Paddle 自己的 f16 权重也会丢掉它。
+因此 f16/q8_0 行用 `--optional-region` 豁免这一个区域（找到仍计入，漏掉记 `optional_missed`、
+移出 recall 分母），其余 26 个区域仍必须全部找到；f32 行不豁免。实测（cpu/cuda/vulkan）f32 27/27、
+F1 = 1；f16 在 cpu/cuda 上漏掉该区域（`optional_missed = 1`）、vulkan 找到，其余 26/26、F1 = 1；
+q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见 [`../table/README.md`](../table/README.md)。
 
 ## 端到端性能矩阵
 
@@ -97,9 +104,7 @@ Layout 的 `pplcnet-layout` 是区域类别模型，不应被上述文本指标�
 
 ## Vulkan 延迟离散性
 
-`layout_doc_test` 的 Vulkan 68–92 ms 双峰已重复观测到，且在慢样本中 det/rec GPU 图时间仍约为 6.2 / 48 ms，放大的是 CPU pre/post/upload。`intel_pstate` powersave 主机允许核心在 `ggml_vk_wait_for_fence()` 的长 `waitForFences` 内降频；CUDA 的同步路径更积极自旋，掩盖了该宿主效应。4 核负载能把 Vulkan 收敛到约 68–76 ms，但同时让 CUDA 从约 54 ms 退化到约 61 ms，说明它不是可接受的运行时修复。
-
-因此当前结论是：这是**基准宿主的频率状态依赖**，不是已证实的 OCR 或 Vulkan 数值缺陷。不会加入常驻保温线程或修改全局 ggml 等待策略；它们会改变其它任务的功耗/延迟。性能报告必须记录 governor、GPU 共用状态与 p50/p95。若产品需要低方差，应在部署层将指定 CPU governor 固定为 performance，并以独占主机重新做 A/B，而非在任务内隐式改变系统策略。
+根因（2026-10-12 更正）：不是 CPU 降频。RTX 4090 宿主未开启 Resizable BAR，Vulkan 的 DEVICE_LOCAL|HOST_VISIBLE heap 只有 246 MiB（nvidia-smi BAR1 256 MiB），而 ggml-vulkan 会把它当 ReBAR 优先用于设备缓冲。OCR + SLANet 同进程时 BAR1 占用涨到 238 MiB，窗口接近饱和后 CPU 向映射缓冲的 memmove 坍塌约 100 倍（upload p50 113 ms，perf 显示 73% 进程时间在 `ggml_backend_tensor_set` 的 memmove）；页错误、futex/poll/ioctl 耗时与 fence 等待在快慢两组间相同。`3rdparty/ggml/patches/vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` 在设备初始化时检测「最大 host-visible VRAM heap < 最大 device-local heap 的一半」，自动改用 device-local 缓冲 + staging 上传（等价于上游 `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM`，但由内存属性决定、不读环境变量）。同主机交替 3 轮 A/B：wall p50 134.6 → 22.0 ms，p95 约 325 → 49 ms，upload 113 → 1.47 ms，BAR1 238 → 10 MiB；1200 个输出哈希逐位一致，精度不受影响。在用户报告的完整表格 pipeline（det + rec + SLANet，100 张 `table_rec`，f16，每臂 300 样本，交替 2 轮，只替换 `libggml-vulkan.so`）上：p50 150.3/148.1 → 35.5/37.3 ms，p95 355.6/356.8 → 72.0/77.0 ms，BAR1 峰值 226 → 11–14 MiB，两臂输出逐字节相同（详见 [`../table/README.md`](../table/README.md)）。早先 `layout_doc_test` 68–92 ms 双峰与 powersave 归因均出自该问题之前的测量，不再作为结论。
 
 ## 复现
 

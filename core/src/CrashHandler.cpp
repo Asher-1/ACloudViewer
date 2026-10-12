@@ -48,9 +48,12 @@ constexpr size_t kMaxEnvironmentBytes = 768;
 char s_logPath[kMaxCrashPathBytes] = {};
 char s_environment[kMaxEnvironmentBytes] = {};
 size_t s_environmentLen = 0;
-volatile sig_atomic_t s_inHandler = 0;
+// Re-entrancy guard of the platform's fault path: sig_atomic_t (<csignal>)
+// for the POSIX signal handler, an Interlocked LONG for the Windows SEH filter.
 #ifdef _WIN32
 volatile LONG s_inHandlerWin = 0;
+#else
+volatile sig_atomic_t s_inHandler = 0;
 #endif
 
 #if defined(ECV_HAS_BACKTRACE)

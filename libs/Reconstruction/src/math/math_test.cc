@@ -37,10 +37,9 @@
 using namespace colmap;
 
 TEST(util_math, TestSignOfNumber) {
-  EXPECT_EQ(SignOfNumber(0), 0);
+  EXPECT_EQ(SignOfNumber(0), 1);
   EXPECT_EQ(SignOfNumber(-0.1), -1);
   EXPECT_EQ(SignOfNumber(0.1), 1);
-  EXPECT_EQ(SignOfNumber(std::numeric_limits<float>::quiet_NaN()), 0);
   EXPECT_EQ(SignOfNumber(std::numeric_limits<float>::infinity()), 1);
   EXPECT_EQ(SignOfNumber(-std::numeric_limits<float>::infinity()), -1);
 }
@@ -85,30 +84,51 @@ TEST(util_math, TestRadToDeg) {
   EXPECT_LT(std::abs(RadToDeg(M_PI) - 180.0), 1e-6);
 }
 
-TEST(util_math, TestMedian) {
+// Upstream parity (a2bd15c2): interpolated, overflow-safe median.
+TEST(Median, Nominal) {
   EXPECT_EQ(Median<int>({1, 2, 3, 4}), 2.5);
+  EXPECT_EQ(Median<int>({4, 1, 3, 2}), 2.5);
   EXPECT_EQ(Median<int>({1, 2, 3, 100}), 2.5);
   EXPECT_EQ(Median<int>({1, 2, 3, 4, 100}), 3);
+  EXPECT_EQ(Median<int>({4, 100, 1, 3, 2}), 3);
   EXPECT_EQ(Median<int>({-100, 1, 2, 3, 4}), 2);
   EXPECT_EQ(Median<int>({-1, -2, -3, -4}), -2.5);
+  EXPECT_EQ(Median<int>({-3, -1, -4, -2}), -2.5);
   EXPECT_EQ(Median<int>({-1, -2, 3, 4}), 1);
+  // Test integer overflow scenario.
+  EXPECT_EQ(Median<int8_t>({100, 115, 119, 127}), 117);
 }
 
-TEST(util_math, TestPercentile) {
-  EXPECT_EQ(Percentile<int>({0}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0}, 50), 0);
-  EXPECT_EQ(Percentile<int>({0}, 100), 0);
-  EXPECT_EQ(Percentile<int>({0, 1}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1}, 100), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 100), 2);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 33), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 66), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 100), 2);
+// Upstream parity (a2bd15c2): linearly interpolated percentile.
+TEST(Percentile, Nominal) {
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 50)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 100)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 50)), 0.5);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 50)), 0.5);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 100)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 100)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 50)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100. / 3.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 50)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100 / 3. * 2.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 2, 0, 1}, 100 / 3. * 2.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 2, 0, 1}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 1)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 50)), 50);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 50.1)), 50.1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 99)), 99);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 1)), 0.03);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 2)), 0.06);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 33)), 0.99);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 34)), 1.02);
+  EXPECT_EQ((Percentile(std::vector<int>{3, 0, 1, 2}, 34)), 1.02);
 }
 
 TEST(util_math, TestMean) {

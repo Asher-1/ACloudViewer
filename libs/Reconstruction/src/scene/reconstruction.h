@@ -377,6 +377,11 @@ public:
     void CreateImageDirs(const std::filesystem::path& path) const;
 
 private:
+    // Reset all reconstruction data and bookkeeping state, so that this
+    // object can be reused to load a replacement model (see ReadText and
+    // ReadBinary).
+    void Clear();
+
     size_t FilterPoints3DWithSmallTriangulationAngle(
             const double min_tri_angle,
             const NodeHashSet<point3D_t>& point3D_ids);

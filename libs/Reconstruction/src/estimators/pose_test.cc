@@ -135,9 +135,35 @@ TEST(EstimateAbsolutePose, EstimateFocalLength) {
   EXPECT_THAT(inlier_mask, testing::Each(testing::Eq(true)));
 }
 
-// Fork adjudication: the fork's EstimateAbsolutePose with separate focal
-// lengths (PINHOLE) returns a different rotation than upstream for this
-// synthetic setup; the dual-focal path is deferred until reconciled.
+// Upstream parity (a2bd15c2), adapted to the fork's qvec/tvec output.
+TEST(EstimateAbsolutePose, EstimateSeparateFocalLengths) {
+  const AbsolutePoseProblem problem =
+      CreateAbsolutePoseTestData(CameraModelId::kPinhole, {1280, 1000, 512, 384});
+
+  AbsolutePoseEstimationOptions options;
+  options.estimate_focal_length = true;
+  Eigen::Vector4d qvec;
+  Eigen::Vector3d tvec;
+  size_t num_inliers = 0;
+  std::vector<char> inlier_mask;
+  Camera camera = problem.camera;
+  EXPECT_TRUE(EstimateAbsolutePose(options,
+                                   problem.points2D,
+                                   problem.points3D,
+                                   &qvec,
+                                   &tvec,
+                                   &camera,
+                                   &num_inliers,
+                                   &inlier_mask));
+  const Rigid3d cam_from_world(
+      Eigen::Quaterniond(qvec(0), qvec(1), qvec(2), qvec(3)).normalized(),
+      tvec);
+  EXPECT_THAT(
+      cam_from_world,
+      Rigid3dNear(problem.image.CamFromWorld(), /*rtol=*/1e-3, /*ttol=*/1e-2));
+  EXPECT_NEAR(camera.FocalLengthX(), problem.camera.FocalLengthX(), 5);
+  EXPECT_NEAR(camera.FocalLengthY(), problem.camera.FocalLengthY(), 5);
+}
 
 TEST(EstimateRelativePose, Nominal) {
   const Camera camera = Camera::CreateFromModelId(
@@ -449,11 +475,15 @@ TEST(RefineEssentialMatrix, Nominal) {
   const Eigen::Matrix3d E_perturbed = EssentialMatrixFromPose(
       cam2_from_world_perturbed * Inverse(cam1_from_world));
 
-  // Fork adjudication: the fork's RefineEssentialMatrix operates on 2D
-  // pixel observations, not on the tangent-space ray/Jacobian pairs used by
-  // upstream d3ccaf35; the ray-based refinement smoke is deferred until the
-  // fork adopts the ray-based refinement signature, so no refinement
-  // assertion is made here.
+  Eigen::Matrix3d E_refined = E_perturbed;
+  ceres::Solver::Options options;
+  RefineEssentialMatrix(options,
+                        cam_rays1_with_jac,
+                        cam_rays2_with_jac,
+                        std::vector<char>(cam_rays1_with_jac.size(), true),
+                        &E_refined);
+
+  EXPECT_LE((E - E_refined).norm(), (E - E_perturbed).norm());
 }
 
 }  // namespace

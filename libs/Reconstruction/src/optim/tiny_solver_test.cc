@@ -670,5 +670,68 @@ TEST(EuclideanManifold, SingleDimensionPlusAndJacobian) {
   EXPECT_DOUBLE_EQ(jacobian[0], 1.0);
 }
 
+
+// Upstream parity (a2bd15c2 optim/tiny_solver_test.cc).
+TEST(TinySolver, CircleManifoldConvergesAndStaysOnManifold) {
+  CircleFitResidual functor;
+  functor.target = Eigen::Vector2d(0.3, -0.7);
+
+  using AutoDiff = ceres::TinySolverAutoDiffFunction<CircleFitResidual, 2, 2>;
+  AutoDiff f(functor);
+
+  using Solver = TinySolver<AutoDiff, SphereManifold<2>>;
+  Solver solver;
+  Solver::Options options;
+  options.gradient_tolerance = 0;
+  options.parameter_tolerance = 0;
+  options.function_tolerance = 0;
+  options.max_num_iterations = 100;
+  Eigen::Vector2d x = Eigen::Vector2d(1, 0);  // Unit seed.
+  solver.Solve(f, &x, options);
+
+  EXPECT_NEAR(x.norm(), 1.0, 1e-9);
+  EXPECT_LT((x - functor.target.normalized()).norm(), 1e-6);
+}
+
+TEST(TinySolver, CostChangeToleranceIsRelativeToCost) {
+  Eigen::Matrix<double, 3, 2> A;
+  A << 1, 0, 0, 1, 1, 1;
+  const Eigen::Vector3d b(1e9, 2e9, 4e9);
+  const Eigen::Vector2d expected =
+      (A.transpose() * A).ldlt().solve(A.transpose() * b);
+
+  TinySolver<ScaledLinearResidual> solver;
+  TinySolver<ScaledLinearResidual>::Options options;
+  // Isolate the function-tolerance check: with the other criteria disabled,
+  // only a cost change relative to the O(1e17) cost can terminate before the
+  // iteration limit.
+  options.gradient_tolerance = 0;
+  options.parameter_tolerance = 0;
+  options.function_tolerance = 1e-6;
+  options.cost_threshold = 0;
+  options.max_num_iterations = 3;
+  Eigen::Vector2d x(0, 0);
+  const auto summary = solver.Solve(ScaledLinearResidual(), &x, options);
+  EXPECT_EQ(summary.status,
+            TinySolver<ScaledLinearResidual>::COST_CHANGE_TOO_SMALL);
+  EXPECT_LT((x - expected).norm() / expected.norm(), 1e-6);
+}
+
+TEST(TinySolver, PostAcceptUpdateFailureReportsCostFunctionFailed) {
+  TinySolver<FailOnSecondJacobianEvalResidual> solver;
+  FailOnSecondJacobianEvalResidual functor;
+  Eigen::Vector2d x(0, 0);
+  const auto summary = solver.Solve(functor, &x);
+  EXPECT_EQ(summary.status,
+            TinySolver<FailOnSecondJacobianEvalResidual>::COST_FUNCTION_FAILED);
+  EXPECT_EQ(summary.iterations, 1);
+  EXPECT_TRUE(x.allFinite());
+  // The reported cost is the cost of the accepted point, not the stale cost
+  // from before the step.
+  Eigen::Vector2d residuals;
+  ASSERT_TRUE(functor(x.data(), residuals.data(), nullptr));
+  EXPECT_DOUBLE_EQ(summary.final_cost, 0.5 * residuals.squaredNorm());
+}
+
 }  // namespace
 }  // namespace colmap

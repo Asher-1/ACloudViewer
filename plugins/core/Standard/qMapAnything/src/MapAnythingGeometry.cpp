@@ -366,6 +366,20 @@ Sim3 sim3_compose(const Sim3& a, const Sim3& b) {
     return out;
 }
 
+Sim3 sim3_inverse(const Sim3& a) {
+    Sim3 out;
+    out.s = 1.0f / a.s;
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) out.R[3 * r + c] = a.R[3 * c + r];
+    }
+    for (int r = 0; r < 3; ++r) {
+        float rt = 0.0f;
+        for (int k = 0; k < 3; ++k) rt += out.R[3 * r + k] * a.t[k];
+        out.t[r] = -rt / a.s;
+    }
+    return out;
+}
+
 void sim3_apply_c2w(const Sim3& sim, const float* c2w_in, float* c2w_out) {
     float in[16];
     std::memcpy(in, c2w_in, sizeof(in));

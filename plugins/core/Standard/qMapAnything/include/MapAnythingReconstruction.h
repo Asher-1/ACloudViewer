@@ -63,6 +63,11 @@ struct Cloud {
      *  [populationOffset[g], populationOffset[g+1]). */
     std::vector<float> confPopulation;
     std::vector<size_t> populationOffset;  // views + 1
+    /** Streamed scenes: the same population of each view's LATER covering
+     *  chunks (shared frames emit no points there). upstream
+     *  e2e_full_scene.py takes the scene-wide floor percentile over every
+     *  chunk's confidences, shared frames once per covering chunk. */
+    std::vector<float> overlapConfPopulation;
     size_t size() const { return view.size(); }
 };
 
@@ -73,6 +78,10 @@ struct Chunk {
     size_t correspondences = 0;  // dense pixel pairs used by the fit
     float residualMedian = 0.0f;
     double e2eMs = 0.0;
+    /** count*3 camera centers of ALL the chunk's views (shared ones
+     *  included) in the chunk's own model frame, before toGlobal; NaN for
+     *  unposed views. The per-chunk reference anchor fits these. */
+    std::vector<float> centers;
 };
 
 struct Result {
@@ -175,14 +184,36 @@ struct ReferenceAnchor {
     /** RMS spread of the reference centers across their main axis
      *  (sqrt of the middle covariance eigenvalue), reference units. */
     float crossSpread = 0.0f;
+    /** Streamed scene anchored chunk by chunk: sim3 is chunk 0's fit,
+     *  residualMedian is over every view's final center, crossSpread the
+     *  smallest chunk's, and chunks[i] each chunk's own fit. */
+    bool perChunk = false;
+    struct ChunkFit {
+        MapAnythingGeometry::Sim3 sim3;  // chunk model frame -> reference
+        int pairs = 0;
+        float residualMedian = 0.0f;
+        float crossSpread = 0.0f;
+    };
+    std::vector<ChunkFit> chunks;
+    /** Streamed scene anchored as a whole: why one chunk could not be
+     *  anchored on its own (empty for a single pass). */
+    std::string perChunkRefused;
 };
 
-/** Reference-frame anchor: robust Horn Sim3 from each posed view's
- *  global-frame camera center (c2w translation) to its reference center,
- *  then transform_result. The benchmark scene_meta.json gives upstream
- *  e2e_full_scene.py --align gt (the frame of its published e2e PLYs); a
- *  COLMAP model_aligner file gives the user's GPS / surveyed frame.
- *  \p refCenters holds views*3 floats, NaN where a view has no reference.
+/** Reference-frame anchor: robust Horn Sim3 from posed camera centers
+ *  (c2w translation) to their reference centers. The benchmark
+ *  scene_meta.json gives upstream e2e_full_scene.py --align gt (the frame
+ *  of its published e2e PLYs); a COLMAP model_aligner file gives the
+ *  user's GPS / surveyed frame. \p refCenters holds views*3 floats, NaN
+ *  where a view has no reference.
+ *  - Single pass: one Sim3 for the whole result.
+ *  - Streamed (> 1 chunk): like --align gt, every chunk is fitted
+ *    INDEPENDENTLY from all its views' centers in its own model frame and
+ *    its views (cloud points and cameras, each from its first covering
+ *    chunk) move by that fit, so the chain's cross-chunk scale/pose drift
+ *    does not accumulate. Every chunk must pass the checks below on its
+ *    own; otherwise the chained scene is anchored as a whole and
+ *    perChunkRefused says why.
  *  Refused (false + \p error, \p result untouched) on fewer than 3 usable
  *  pairs, a degenerate fit, or (nearly) collinear centers whose spread
  *  across their main axis does not exceed the median fit residual (the

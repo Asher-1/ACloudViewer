@@ -276,5 +276,116 @@ TEST(AlignmentErrorSummary, Empty) {
 // Fork adjudication: depends on the same merge-behaviour divergence as
 // Alignment.MergeReconstructions above.
 
+
+// Upstream parity (a2bd15c2 estimators/alignment_test.cc).
+TEST(Alignment, AlignReconstructionsViaPointsMinCommonObservations) {
+  for (const size_t track_length : {2, 3, 4}) {
+    SCOPED_TRACE(track_length);
+    Reconstruction src_reconstruction;
+    SyntheticDatasetOptions options;
+    options.num_rigs = 1;
+    options.num_frames_per_rig = 5;
+    options.num_points3D = 10;
+    options.track_length = track_length;
+    SynthesizeDataset(options, &src_reconstruction);
+    for (const auto& [_, point3D] : src_reconstruction.Points3D()) {
+      ASSERT_EQ(point3D.Track().Length(), track_length);
+    }
+
+    Reconstruction tgt_reconstruction = src_reconstruction;
+    const Sim3d gt_tgt_from_src = TestSim3d();
+    tgt_reconstruction.Transform(gt_tgt_from_src);
+
+    for (size_t min_common_observations = 1;
+         min_common_observations <= track_length + 1;
+         ++min_common_observations) {
+      SCOPED_TRACE(min_common_observations);
+      Sim3d tgt_from_src;
+      const bool success =
+          AlignReconstructionsViaPoints(src_reconstruction,
+                                        tgt_reconstruction,
+                                        min_common_observations,
+                                        /*max_error=*/0.01,
+                                        /*min_inlier_ratio=*/0.9,
+                                        &tgt_from_src);
+      EXPECT_EQ(success, min_common_observations <= track_length);
+      if (success) {
+        ExpectEqualSim3d(gt_tgt_from_src, tgt_from_src);
+      }
+    }
+  }
+}
+
+TEST(Alignment, MergeReconstructions) {
+  // Synthesize a reconstruction which has at least two cameras
+  Reconstruction src_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 3;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 10;
+  synthetic_dataset_options.num_points3D = 50;
+  SynthesizeDataset(synthetic_dataset_options, &src_reconstruction);
+  Reconstruction orig_reconstruction = src_reconstruction;
+  Reconstruction tgt_reconstruction = src_reconstruction;
+
+  auto remove_rig_frames = [](Reconstruction& reconstruction, rig_t rig_id) {
+    const std::vector<frame_t> frame_ids = reconstruction.RegFrameIds();
+    for (const auto& frame_id : frame_ids) {
+      if (reconstruction.Frame(frame_id).RigId() == rig_id) {
+        reconstruction.DeRegisterFrame(frame_id);
+      }
+    }
+  };
+
+  remove_rig_frames(src_reconstruction, 1);
+  remove_rig_frames(tgt_reconstruction, 2);
+
+  // Remove all unregistered rigs/cameras/frames/images.
+  src_reconstruction.TearDown();
+  tgt_reconstruction.TearDown();
+  EXPECT_EQ(src_reconstruction.NumRigs(), 2);
+  EXPECT_EQ(src_reconstruction.NumCameras(), 2);
+  EXPECT_EQ(src_reconstruction.NumFrames(), 20);
+  EXPECT_EQ(src_reconstruction.NumRegFrames(), 20);
+  EXPECT_EQ(src_reconstruction.NumImages(), 20);
+  EXPECT_EQ(tgt_reconstruction.NumRigs(), 2);
+  EXPECT_EQ(tgt_reconstruction.NumCameras(), 2);
+  EXPECT_EQ(tgt_reconstruction.NumFrames(), 20);
+  EXPECT_EQ(tgt_reconstruction.NumRegFrames(), 20);
+  EXPECT_EQ(tgt_reconstruction.NumImages(), 20);
+
+  // Merge reconstructions.
+  ASSERT_TRUE(MergeReconstructions(
+      /*max_reproj_error=*/1e-4, src_reconstruction, tgt_reconstruction));
+  EXPECT_EQ(tgt_reconstruction.NumRigs(), 3);
+  EXPECT_EQ(tgt_reconstruction.NumCameras(), 3);
+  EXPECT_EQ(tgt_reconstruction.NumFrames(), 30);
+  EXPECT_EQ(tgt_reconstruction.NumRegFrames(), 30);
+  EXPECT_EQ(tgt_reconstruction.NumImages(), 30);
+  EXPECT_EQ(tgt_reconstruction.NumPoints3D(), 50);
+  EXPECT_EQ(tgt_reconstruction.ComputeNumObservations(),
+            orig_reconstruction.ComputeNumObservations());
+}
+
+TEST(AlignmentErrorSummary, MultipleErrors) {
+  std::vector<ImageAlignmentError> errors(5);
+  for (size_t i = 0; i < errors.size(); ++i) {
+    errors[i].rotation_error_deg = static_cast<double>(i + 1);
+    errors[i].proj_center_error = static_cast<double>(i + 1) * 0.1;
+  }
+  const AlignmentErrorSummary summary = AlignmentErrorSummary::Compute(errors);
+  EXPECT_NEAR(summary.rotation_errors_deg.min, 1.0, 1e-10);
+  EXPECT_NEAR(summary.rotation_errors_deg.max, 5.0, 1e-10);
+  EXPECT_NEAR(summary.rotation_errors_deg.mean, 3.0, 1e-10);
+  EXPECT_NEAR(summary.rotation_errors_deg.median, 3.0, 1e-10);
+  EXPECT_NEAR(summary.rotation_errors_deg.p90, 4.6, 1e-10);
+  EXPECT_NEAR(summary.rotation_errors_deg.p99, 4.96, 1e-10);
+  EXPECT_NEAR(summary.proj_center_errors.min, 0.1, 1e-10);
+  EXPECT_NEAR(summary.proj_center_errors.max, 0.5, 1e-10);
+  EXPECT_NEAR(summary.proj_center_errors.mean, 0.3, 1e-10);
+  EXPECT_NEAR(summary.proj_center_errors.p90, 0.46, 1e-10);
+  EXPECT_NEAR(summary.proj_center_errors.p99, 0.496, 1e-10);
+}
+
 }  // namespace
 }  // namespace colmap

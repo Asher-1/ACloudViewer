@@ -1533,5 +1533,91 @@ TEST(Reconstruction, ExtractColorsForAllImages) {
   }
 }
 
+
+// Upstream parity (c0a195a1 #4846).
+TEST(Reconstruction, CropPreservesPointErrors) {
+  Reconstruction reconstruction;
+  GenerateReconstruction(2, &reconstruction);
+
+  Track known_track;
+  known_track.AddElement(1, 0);
+  const point3D_t known_point3D_id =
+      reconstruction.AddPoint3D(Eigen::Vector3d(0, 0, 1), known_track);
+  reconstruction.Point3D(known_point3D_id).SetError(2.5);
+
+  Track unknown_track;
+  unknown_track.AddElement(2, 0);
+  reconstruction.AddPoint3D(Eigen::Vector3d(0, 0, 1), unknown_track);
+
+  const Reconstruction cropped = reconstruction.Crop(Eigen::AlignedBox3d(
+      Eigen::Vector3d(-1, -1, -1), Eigen::Vector3d(1, 1, 1)));
+  ASSERT_EQ(cropped.NumPoints3D(), 2);
+  EXPECT_DOUBLE_EQ(
+      cropped.Point3D(cropped.Image(1).Point2D(0).Point3DId()).Error(), 2.5);
+  EXPECT_DOUBLE_EQ(
+      cropped.Point3D(cropped.Image(2).Point2D(0).Point3DId()).Error(), -1.0);
+  EXPECT_DOUBLE_EQ(cropped.ComputeMeanReprojectionError(), 2.5);
+}
+
+
+// Upstream parity (826a1e55 #4842).
+class ReconstructionReadTest : public testing::TestWithParam<bool> {};
+
+TEST_P(ReconstructionReadTest, ReplacesExistingModel) {
+  const bool binary = GetParam();
+  const auto test_dir = CreateTestDir();
+  auto write = [&](const Reconstruction& reconstruction) {
+    if (binary) {
+      reconstruction.WriteBinary(test_dir);
+    } else {
+      reconstruction.WriteText(test_dir);
+    }
+  };
+  auto read = [&](Reconstruction& reconstruction) {
+    if (binary) {
+      reconstruction.ReadBinary(test_dir);
+    } else {
+      reconstruction.ReadText(test_dir);
+    }
+  };
+
+  Reconstruction loaded;
+  GenerateReconstruction(3, &loaded);
+  loaded.AddPoint3D(100, Point3D());
+
+  Reconstruction replacement;
+  SyntheticDatasetOptions options;
+  options.num_rigs = 1;
+  options.num_cameras_per_rig = 2;
+  options.num_frames_per_rig = 2;
+  options.num_points3D = 5;
+  SynthesizeDataset(options, &replacement);
+  replacement.AddPoint3D(7, Point3D());
+  write(replacement);
+  read(loaded);
+
+  EXPECT_THAT(loaded, ReconstructionEq(replacement));
+  EXPECT_EQ(loaded.NumRegFrames(), replacement.NumRegFrames());
+  EXPECT_EQ(loaded.NumRegImages(), replacement.NumRegImages());
+  EXPECT_THAT(loaded.RegFrameIds(),
+              testing::UnorderedElementsAreArray(replacement.RegFrameIds()));
+  EXPECT_TRUE(loaded.IsValid());
+  EXPECT_EQ(loaded.AddPoint3D(Eigen::Vector3d::Zero(), Track()), 8);
+  EXPECT_THAT(loaded.RegImageIds(),
+              testing::UnorderedElementsAreArray(replacement.RegImageIds()));
+
+  // An empty model must also replace all state from the previous read.
+  write(Reconstruction());
+  read(loaded);
+  EXPECT_EQ(loaded.NumRegFrames(), 0);
+  EXPECT_EQ(loaded.NumRegImages(), 0);
+  EXPECT_TRUE(loaded.IsValid());
+  EXPECT_EQ(loaded.AddPoint3D(Eigen::Vector3d::Zero(), Track()), 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(TextAndBinary,
+                         ReconstructionReadTest,
+                         testing::Bool());
+
 }  // namespace
 }  // namespace colmap

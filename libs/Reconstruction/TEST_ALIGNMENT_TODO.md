@@ -1871,3 +1871,246 @@ HasPose()。批 S 留因的「帧对粒度 matches」假说也被证伪:对应�
   DB 管理 GUI 的 image prior 编辑不再持久化（upstream schema 无 image prior 列）；
   `SQLITE3_CALL` 仍以进程退出而非异常报告约束错误，故重复唯一键契约不能用
   同进程 `EXPECT_THROW`；`Database` 抽象 API 形态仍非 upstream 逐字同构。
+
+## Batch Z: deterministic pipeline and pose-prior BA convergence (2026-10-11)
+
+### Root-cause fixes
+
+- `TwoGroupSampler` now declares both `is_randomized_sampler` and
+  `is_parallel_safe_sampler`; `ProgressiveSampler` declares
+  `is_randomized_sampler`. Seeded `(LO)RANSAC` therefore derives its sample
+  stream from `RANSACOptions::random_seed` instead of ambient process PRNG
+  state. The regression test runs 1/4-thread configurations and proves that
+  different ambient seeds produce the same seeded sample sequence.
+- `random_seed` now reaches initial generalized two-view geometry, next-frame
+  absolute pose, triangulator complete/create, global retriangulation,
+  automatic reconstruction, and the `sfm` CLI option surface.
+- `IncrementalTriangulator` was reconciled with upstream traversal and state:
+  BFS completion with a visited set, canonical image-pair merge trials,
+  owner-stable scratch storage, cached track length before moves, key-based
+  modified-point erasure, and `FlatHash*` containers across the mapper surface.
+- Pose-prior BA now filters priors to configured camera images, requires at
+  least three positions, robustly aligns or falls back to the two-camera
+  gauge, normalizes at fixed scale, restores metric coordinates on every
+  normalized exit, and rejects the unsupported Caspar+prior combination.
+  Priors are added after parameterization with covariance/fallback-stddev
+  whitening. Non-reference cameras use
+  `AbsoluteRigPosePositionPriorCostFunctor` over sensor and rig blocks rather
+  than incorrectly constraining the rig center. The covariance wrapper was
+  also restored to upstream's post-autodiff residual/Jacobian whitening order.
+- Upstream pose-prior tests were adapted for alignment outliers, insufficient
+  priors, missing covariance, constant non-reference sensor extrinsics,
+  robust optimization outliers, and Caspar rejection; all 8 Ceres BA tests
+  pass.
+- Triangulation now checks SVD status, computes ray angles through the clamped
+  normalized dot product, and uses corrected observations in the legacy batch
+  optimal API. A new rotated-pose test exposes a latent upstream bug in the
+  otherwise unconsumed optimal API: `FindOptimalImageObservations` requires
+  the transpose of the essential-matrix convention returned by
+  `EssentialMatrixFromPose`. The fork intentionally fixes that defect; all 23
+  triangulation tests pass.
+- Fresh databases again stamp upstream revision `4030000`; legacy fork table
+  layouts remain schema-detected and migrated without changing the fresh
+  schema version. The stale insufficient-frame mapper death test now asserts
+  upstream's normal `false` return.
+
+### Full-precision fork/upstream scan
+
+- The temporary probe ran five pipeline cases over seeds 0..29, one process
+  per row and one mapper thread: 150/150 rows passed on both fork and upstream,
+  with 0 crashes and identical model counts plus
+  `(frames, images, points, observations)` for every row.
+- The earlier `%.6f` statement was too strong. At `%.17g`, none of the five
+  cases is bit-identical for every row. Maximum relative differences
+  `(mean-reprojection-error, id-ordered point sum)` were:
+  `hier_multi=(1.15e-6,6.37e-9)`, `inc_multi=(5.55e-9,6.20e-14)`,
+  `inc_nontrivial=(1.05e-2,2.34e-6)`,
+  `inc_prior_nonoise=(4.20e-15,3.58e-13)`, and
+  `inc_prior_nontrivial=(1.49e-9,9.59e-13)`.
+- A controlled upstream-vs-upstream rebuild with only
+  `-ffp-contract=off` changed every case and reached
+  `inc_nontrivial=(1.05e-2,2.35e-6)`, matching the scale of the largest
+  fork/upstream residual. Therefore `%.17g` identity is not a valid
+  cross-build acceptance criterion; structural identity, shared pass verdicts,
+  and the real-data numeric gate are the supported evidence. All dump/scan
+  probes and their two CMake test registrations were removed after capture.
+
+### Final gates and L3 evidence
+
+- Full build: `make -j20`, exit 0.
+- C++: `ctest -R '_test$' -j4`, 174/174 passed after removing the two temporary
+  scan targets. Python reconstruction: 397 passed, 3 skipped.
+- L3 mini6 used seed 20261009, SIFT CPU, 2048 features, SIMPLE_RADIAL,
+  `Mapper.num_threads=1`, and `Mapper.min_num_matches=20`. Three recalibration
+  runs were non-time bit-stable, so the center-p95 threshold was updated from
+  `0.000413519235057` to the new intentional-angle result
+  `0.000414072916584` (a 0.13% shift); all other thresholds stayed unchanged.
+- Final report: `build_app/Testing/l3-colmap-alignment-final-v3/comparison.json`,
+  `verdict=PASS`, `violations=[]`. Candidate/upstream were respectively:
+  registered images `6/6`, sparse points `406/406`, observations `1241/1237`,
+  mean track length `3.0566502463/3.0467980296`, and reprojection RMS
+  `1.2936503027/1.2844693154` px. Sim3-normalized p95 metrics were camera center
+  `0.000414072916584`, rotation `0.01311550755 deg`, and symmetric point NN
+  `0.02732701861`. Candidate/baseline SHA-256 start with
+  `02e81db28a7f6bc2` / `680fb50f0c78686e`.
+
+### Remaining alignment gaps
+
+- The audit does not claim source- or test-inventory identity. Remaining
+  non-gated surfaces include automatic-reconstruction mapper selection,
+  relative-pose/Tangent-Sampson refinements, the historical upstream test-case
+  inventory gap, and the intentional Graclus/METIS dependency split.
+- These are separate API/coverage/dependency work items. No known divergence
+  remains in the fixed-seed L3 structural outcome or its documented numeric
+  acceptance envelope.
+
+## Mapper, relative-pose, test-inventory, and partitioner closure (2026-10-12)
+
+### First-principles decision record
+
+The irreducible contracts are: one `--mapper` value must select exactly one
+sparse pipeline; one relative-pose hypothesis must be scored in pixel units
+with the same tangent-Sampson formula as upstream; one test inventory row must
+identify one observable behavior; and one graph partition call must use a
+header/library pair with one `idx_t` ABI. No new abstraction layer was added.
+
+| Dimension | Selected minimal path | Rejected alternative | Reason |
+|---|---|---|---|
+| Mapper ownership | `AutomaticReconstructionController::Options::mapper` owns selection; the controller owns each pipeline lifetime | A mapper factory/registry | Three closed choices and one caller do not justify another owner |
+| Relative pose | Existing `geometry`, `estimators`, and solver owners | A fork-only estimator facade | Upstream APIs already express the required rays, Jacobians, model, and error |
+| Test inventory | File/test-name audit plus compiled behavioral gates | Treat equal file counts as coverage | File presence does not prove that a `TEST` behavior exists |
+| Partitioner | Keep Graclus until one ABI-consistent METIS target exists | Include bundled 64-bit `metis.h` and link system 32-bit `libmetis.so.5` | The mixed ABI returns corrupt labels while reporting success |
+| Chosen trade-off | Minimal direct dispatch and upstream-owned math; defer only the unsafe dependency swap | Broad reconstruction rewrite | Preserves ownership/lifetime and has executable evidence |
+
+### Automatic reconstruction mapper selection
+
+- Added `INCREMENTAL`, `HIERARCHICAL`, and `GLOBAL` to the controller options,
+  CLI `--mapper`, CLI-Anything backend/Click command, and MCP schema. The
+  controller directly owns each synchronous mapper lifetime; GLOBAL borrows the
+  caller-owned `ReconstructionManager` through a no-delete shared alias only
+  for the duration of `GlobalPipeline::Run()`.
+- DA3 sparse mode rejects hierarchical/global rather than silently selecting a
+  different path. CLI-Anything selects native COLMAP sparse mode when a
+  non-incremental mapper is requested.
+- `automatic_reconstruction_test` proves incremental/hierarchical scene parity
+  and GLOBAL dispatch/model output. GLOBAL deliberately does not assert every
+  frame is retained; upstream excludes it from the exact synthetic-scene gate
+  for the same filtering behavior.
+
+### Relative pose and tangent-Sampson
+
+- Ported the upstream one-sided/shared-focal and generalized-absolute local
+  refinements, ray/Jacobian `RefineRelativePose` and `RefineEssentialMatrix`,
+  cheirality scoring, exact-zero denominator rule, and explicit
+  `SquaredPixelGradientNorm` contraction.
+- Removed the superseded point-only refine APIs and an unbuilt duplicate
+  `estimators/relpose_one_sided_focal.{cc,h,_test.cc}` implementation. The
+  production owner is now exclusively `estimators/solvers/`.
+- Imported the upstream tangent-Sampson tests. Under the fork's
+  `-march=x86-64-v3`, the algebraic pinhole identity differs by
+  `2.2194168936644525e-14`; upstream built with the same flags has the identical
+  result and passes its `1e-14` bound only with `-ffp-contract=off`. The fork
+  therefore uses a `1e-13` bound, not a formula change.
+- Registered the previously orphaned `reprojection_error_test`. Upstream's
+  Ceres `GradientChecker` test crashes when a Ceres library built with Eigen
+  16-byte alignment fills a result destroyed by a `-march=x86-64-v3` 32-byte
+  caller. The fork compares analytical and autodiff residuals/Jacobians in the
+  same translation unit instead; all 19 cases pass.
+
+### Test inventory (upstream a2bd15c2 baseline)
+
+The audit counts `TEST`, `TEST_F`, `TEST_P`, and `TYPED_TEST` declarations and
+matches normalized suite/case names, with explicit aliases for moved files. It
+is a coverage inventory, not a semantic proof. Current totals are upstream
+`177 files / 1780 declarations`, fork `178 files`, with `1472` upstream cases
+matched and `308` still unmatched. This batch added/registered solver tests for
+generalized absolute pose, similarity transform, and solver utilities, plus
+low-coupling upstream cases for homography refinement, tiny manifolds/solver,
+alignment, motion averaging, Sim3 matching, texture sampling, polynomial
+roots, reprojection errors, normalization, reconstruction reload/crop, pose,
+and file extensions.
+
+Files entirely absent, ranked by impact:
+
+| Impact | Missing upstream file | Cases | Module / reason |
+|---|---|---:|---|
+| High | `inertial/preintegration_test.cc` | 16 | IMU integration and small-rate stability; owning module is absent |
+| High | `inertial/preintegration_cost_test.cc` | 7 | IMU optimization residual; owning module is absent |
+| Medium | `controllers/feature_extraction_test.cc` | 3 | extractor/importer controller integration |
+| Medium | `feature/lightglue_test.cc` | 8 | optional LightGlue/ONNX inference surface |
+| Low | `util/onnx_test.cc` | 9 | optional ONNX utility surface absent in this fork |
+
+Remaining partial files, ordered by unmatched declaration count:
+
+- High: `sensor/bitmap_test.cc` (50),
+  `estimators/bundle_adjustment_test.cc` (21),
+  `estimators/bundle_adjustment_caspar_test.cc` (17),
+  `scene/database_test.cc` (17), `estimators/bundle_adjustment_ceres_test.cc`
+  (15), `scene/frame_test.cc` (12), `scene/image_test.cc` (11), and
+  `estimators/rotation_averaging_ceres_test.cc` (10).
+- Medium: `util/misc_test.cc` (14), `geometry/pose_test.cc` (12),
+  `util/cache_test.cc` (12), `geometry/gps_test.cc` (8),
+  `feature/types_test.cc` (5), `mvs/advancing_front_meshing_test.cc` (5),
+  `scene/track_test.cc` (5), `image/undistortion_test.cc` (4),
+  `image/warp_test.cc` (4), `util/string_test.cc` (4), `feature/loma_test.cc`
+  (3), `feature/onnx_matchers_test.cc` (3), `sensor/rig_test.cc` (3),
+  `geometry/homography_matrix_test.cc` (2), `mvs/consistency_graph_test.cc`
+  (2), `scene/rig_test.cc` (2), `sfm/incremental_mapper_test.cc` (2), and
+  `sfm/incremental_triangulator_test.cc` (2).
+- Low: `math/random_test.cc` (2), `optim/support_measurement_test.cc` (2),
+  `scene/point2d_test.cc` (2), `scene/point3d_test.cc` (2),
+  `scene/projection_test.cc` (2), `util/opengl_utils_test.cc` (2),
+  `controllers/bundle_adjustment_test.cc` (1),
+  `controllers/feature_matching_test.cc` (1),
+  `estimators/gravity_refinement_test.cc` (1), `math/math_test.cc` (1),
+  `mvs/fusion_test.cc` (1), `sensor/models_test.cc` (1),
+  `sfm/observation_manager_test.cc` (1), and `util/types_test.cc` (1).
+
+### Graclus / METIS evidence and convergence plan
+
+- Fork runtime owner: `math/graph_cut.cc` calls Graclus `MLKKM_PartGraphKway`;
+  `lib/Graclus` is built and linked as `graclus`. Upstream calls METIS 5.1
+  `METIS_PartGraphKway` through `find_package(Metis)`.
+- The difference is algorithmic, not merely a build flag: Graclus performs
+  multilevel kernel k-means normalized cut, while METIS performs weighted k-way
+  edge-cut partitioning. It already changes an exact hierarchical
+  `scene_clustering_test` partition, although partitioner-independent coverage,
+  size, connectivity, and L3 reconstruction gates pass.
+- The current dependency graph is unsafe for a direct source replacement:
+  `build_app/external/include/metis.h` declares `IDXTYPEWIDTH=64`, whereas the
+  process loads Ubuntu METIS 5.1 with 32-bit `idx_t` through Ceres/CHOLMOD.
+  A probe compiled against the 64-bit header and linked to the 32-bit library
+  returned success but produced `edgecut=-4294967295` and corrupt partition
+  labels. Graclus also exports METIS-4-named symbols into `ACloudViewer`, so
+  keeping it while adding METIS 5 increases symbol-interposition risk.
+- Safe convergence is one owned migration: build/provide one METIS 5.1 target
+  with `IDXTYPEWIDTH=32` on every platform; make its generated header and binary
+  inseparable; compile `graph_cut.cc` against that target; remove Graclus from
+  `COLMAP_INTERNAL_LIBRARIES` and source collection; then require upstream
+  `graph_cut_test` and exact `scene_clustering_test` partitions, ASan/UBSan,
+  `ldd`/symbol checks, all 179 C++ tests, and L3. Do not add a runtime
+  Graclus/METIS option: it would create two semantics for one owner.
+
+### Additional upstream fixes captured during the audit
+
+- Ported: optimal-triangulation convention `70dea881`; crop error preservation
+  `c0a195a1`; reconstruction bookkeeping reset `826a1e55`; equal-percentile
+  bounding boxes `9b8efa9a`; unified small-angle cutoff `75b60a7f`; stable
+  small-angle rotation Jacobian `c60355a1`; case-insensitive file-extension
+  regression coverage `e7177347` (implementation was already equivalent).
+- `4a6d0cbe` polynomial coefficient-scale preservation remains a separate
+  numeric migration; this batch added only the a2bd15c2 polynomial inventory.
+  `9e653da3` (Ceres rotation averager), `f1ea91d0` (multiple calibrations per
+  camera), and `4490d95a` (inertial RK4) are architectural/absent-module work,
+  not safe leaf patches. Dependency/tooling/docs-only commits do not affect the
+  reconstruction runtime gate.
+
+### Verification
+
+- Full build: `make -j16`, exit 0.
+- C++: `ctest -R '_test$' --output-on-failure -j4 --timeout 900`, 179/179.
+- Python reconstruction: 397 passed, 3 skipped. CLI-Anything: 616 passed.
+- Fixed-seed L3: `build_app/Testing/l3-colmap-alignment-gap-audit-final/comparison.json`,
+  `verdict=PASS`, `violations=[]`; candidate/upstream retain 6/6 registered
+  images and 406/406 sparse points.
+- `git diff --check` passes; no `.orig`, `.rej`, or temporary dump marker remains.

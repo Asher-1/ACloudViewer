@@ -10,6 +10,9 @@
 #include "sensor/models.h"
 #include "util/eigen_matchers.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -90,32 +93,66 @@ TEST(AnalyticalReprojError, BehindCameraZeroesResidualsAndJacobians) {
   for (double v : j_params) EXPECT_EQ(v, 0);
 }
 
-// Helper that constructs a Ceres GradientChecker across Ceres versions.
-ceres::GradientChecker MakeGradientChecker(
-    ceres::CostFunction* cost_function,
-    const ceres::NumericDiffOptions& numeric_diff_options) {
-  return ceres::GradientChecker(
-      cost_function,
-#if CERES_VERSION_MAJOR >= 3 || \
-    (CERES_VERSION_MAJOR == 2 && CERES_VERSION_MINOR >= 1)
-      static_cast<const std::vector<const ceres::Manifold*>*>(nullptr),
-#else
-      static_cast<const std::vector<const ceres::LocalParameterization*>*>(
-          nullptr),
-#endif
-      numeric_diff_options);
+// Fork adaptation: ext_ceres is built without -march while this tree uses
+// -march=x86-64-v3, so Eigen's heap allocator differs across the libceres
+// boundary (EIGEN_MAX_ALIGN_BYTES 16 vs 32). A GradientChecker::ProbeResults
+// filled inside libceres and destroyed here frees a misaligned pointer
+// (SIGSEGV; upstream a2bd15c2 built with the same flags crashes identically).
+// The analytical Jacobians are therefore compared against the autodiff
+// Jacobians, both evaluated in this translation unit.
+void ExpectAnalyticalMatchesAutoDiff(ceres::CostFunction* analytical,
+                                     ceres::CostFunction* auto_diff,
+                                     double* const* parameter_blocks,
+                                     const double res_eps,
+                                     const double jac_eps) {
+  const std::vector<int32_t>& block_sizes = analytical->parameter_block_sizes();
+  ASSERT_EQ(block_sizes, auto_diff->parameter_block_sizes());
+  const int num_residuals = analytical->num_residuals();
+  ASSERT_EQ(num_residuals, auto_diff->num_residuals());
+
+  std::vector<std::vector<double>> analytical_jacobians;
+  std::vector<std::vector<double>> auto_diff_jacobians;
+  std::vector<double*> analytical_jacobian_ptrs;
+  std::vector<double*> auto_diff_jacobian_ptrs;
+  for (const int32_t block_size : block_sizes) {
+    analytical_jacobians.emplace_back(num_residuals * block_size);
+    auto_diff_jacobians.emplace_back(num_residuals * block_size);
+  }
+  for (size_t i = 0; i < block_sizes.size(); ++i) {
+    analytical_jacobian_ptrs.push_back(analytical_jacobians[i].data());
+    auto_diff_jacobian_ptrs.push_back(auto_diff_jacobians[i].data());
+  }
+
+  std::vector<double> analytical_residuals(num_residuals);
+  std::vector<double> auto_diff_residuals(num_residuals);
+  ASSERT_TRUE(analytical->Evaluate(parameter_blocks,
+                                   analytical_residuals.data(),
+                                   analytical_jacobian_ptrs.data()));
+  ASSERT_TRUE(auto_diff->Evaluate(parameter_blocks,
+                                  auto_diff_residuals.data(),
+                                  auto_diff_jacobian_ptrs.data()));
+  for (int r = 0; r < num_residuals; ++r) {
+    EXPECT_NEAR(analytical_residuals[r], auto_diff_residuals[r], res_eps);
+  }
+  for (size_t i = 0; i < block_sizes.size(); ++i) {
+    for (size_t k = 0; k < analytical_jacobians[i].size(); ++k) {
+      const double a = analytical_jacobians[i][k];
+      const double b = auto_diff_jacobians[i][k];
+      EXPECT_LE(std::abs(a - b),
+                jac_eps * std::max({1.0, std::abs(a), std::abs(b)}))
+          << "block " << i << " entry " << k;
+    }
+  }
 }
 
 // Validates the fully-variable analytical reprojection error cost function
-// against both the numeric Jacobian and the autodiff residual. The numeric
-// (Ridders) Jacobian comparison uses a looser tolerance than the residual
-// comparison, since finite differences on higher-order distortion models do
-// not reach full double precision; the exact analytical Jacobians are verified
-// separately against Ceres Jets in sensor/models_jacobian_test.
+// against the autodiff residual and Jacobians. Both Jacobians are exact, so
+// the relative tolerance is far tighter than upstream's numeric (Ridders)
+// 1e-4 (see ExpectAnalyticalMatchesAutoDiff for the fork adaptation).
 template <typename CameraModel>
 void TestAnalyticalReprojError(const std::vector<double>& camera_params) {
   SetPRNGSeed(42);
-  constexpr double kJacEps = 1e-4;
+  constexpr double kJacEps = 1e-9;
   constexpr double kResEps = 1e-9;
 
   const Eigen::Vector2d kPoint2D(200, 300);
@@ -149,32 +186,24 @@ void TestAnalyticalReprojError(const std::vector<double>& camera_params) {
         std::vector<double*> parameter_blocks{
             point3D.data(), cam_from_world.params.data(), params.data()};
 
-        Eigen::Vector2d auto_diff_residuals;
-        EXPECT_TRUE(auto_diff_cost_function->Evaluate(
-            parameter_blocks.data(), auto_diff_residuals.data(), nullptr));
-
-        ceres::NumericDiffOptions numeric_diff_options;
-        ceres::GradientChecker gradient_checker = MakeGradientChecker(
-            analytical_cost_function.get(), numeric_diff_options);
-        ceres::GradientChecker::ProbeResults results;
-        EXPECT_TRUE(
-            gradient_checker.Probe(parameter_blocks.data(), kJacEps, &results))
-            << results.error_log;
-        EXPECT_NEAR(results.residuals[0], auto_diff_residuals[0], kResEps);
-        EXPECT_NEAR(results.residuals[1], auto_diff_residuals[1], kResEps);
+        ExpectAnalyticalMatchesAutoDiff(analytical_cost_function.get(),
+                                        auto_diff_cost_function.get(),
+                                        parameter_blocks.data(),
+                                        kResEps,
+                                        kJacEps);
       }
     }
   }
 }
 
 // Validates the fixed-pose analytical reprojection error cost function against
-// both the numeric Jacobian and the autodiff residual. See
-// TestAnalyticalReprojError for the tolerance rationale.
+// the autodiff residual and Jacobians. See TestAnalyticalReprojError for the
+// tolerance rationale.
 template <typename CameraModel>
 void TestAnalyticalReprojErrorConstantPose(
     const std::vector<double>& camera_params) {
   SetPRNGSeed(42);
-  constexpr double kJacEps = 1e-4;
+  constexpr double kJacEps = 1e-9;
   constexpr double kResEps = 1e-9;
 
   const Eigen::Vector2d kPoint2D(200, 300);
@@ -208,19 +237,11 @@ void TestAnalyticalReprojErrorConstantPose(
 
         std::vector<double*> parameter_blocks{point3D.data(), params.data()};
 
-        Eigen::Vector2d auto_diff_residuals;
-        EXPECT_TRUE(auto_diff_cost_function->Evaluate(
-            parameter_blocks.data(), auto_diff_residuals.data(), nullptr));
-
-        ceres::NumericDiffOptions numeric_diff_options;
-        ceres::GradientChecker gradient_checker = MakeGradientChecker(
-            analytical_cost_function.get(), numeric_diff_options);
-        ceres::GradientChecker::ProbeResults results;
-        EXPECT_TRUE(
-            gradient_checker.Probe(parameter_blocks.data(), kJacEps, &results))
-            << results.error_log;
-        EXPECT_NEAR(results.residuals[0], auto_diff_residuals[0], kResEps);
-        EXPECT_NEAR(results.residuals[1], auto_diff_residuals[1], kResEps);
+        ExpectAnalyticalMatchesAutoDiff(analytical_cost_function.get(),
+                                        auto_diff_cost_function.get(),
+                                        parameter_blocks.data(),
+                                        kResEps,
+                                        kJacEps);
       }
     }
   }

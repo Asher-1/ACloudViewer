@@ -87,6 +87,11 @@ COLMAP_ADD_TEST(solvers_affine_transform_test solvers/affine_transform_test.cc)
 COLMAP_ADD_TEST(coordinate_frame_test coordinate_frame_test.cc)
 COLMAP_ADD_TEST(global_positioning_test global_positioning_test.cc)
 COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc)
+COLMAP_ADD_TEST(solvers_generalized_absolute_pose_test
+                solvers/generalized_absolute_pose_test.cc)
+COLMAP_ADD_TEST(solvers_similarity_transform_test
+                solvers/similarity_transform_test.cc)
+COLMAP_ADD_TEST(solvers_utils_test solvers/utils_test.cc)
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)
 COLMAP_ADD_TEST(solvers_generalized_relative_pose_test
                 solvers/generalized_relative_pose_test.cc)
@@ -125,6 +130,7 @@ COLMAP_ADD_TEST(estimators_cost_functions_alignment_test cost_functions/alignmen
 COLMAP_ADD_TEST(motion_averaging_test cost_functions/motion_averaging_test.cc)
 COLMAP_ADD_TEST(cost_functions_pose_prior_test cost_functions/pose_prior_test.cc)
 COLMAP_ADD_TEST(quaternion_utils_test cost_functions/quaternion_utils_test.cc)
+COLMAP_ADD_TEST(reprojection_error_test cost_functions/reprojection_error_test.cc)
 COLMAP_ADD_TEST(sampson_error_test cost_functions/sampson_error_test.cc)
 COLMAP_ADD_TEST(tiny_manifold_test cost_functions/tiny_manifold_test.cc)
 COLMAP_ADD_TEST(tiny_sampson_error_test cost_functions/tiny_sampson_error_test.cc)

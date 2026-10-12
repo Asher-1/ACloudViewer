@@ -40,8 +40,11 @@
 #include "image/undistortion.h"
 #include "scene/database.h"
 #include "controllers/da3_depth_controller.h"
+#include "controllers/global_pipeline.h"
+#include "controllers/hierarchical_pipeline.h"
 #include "controllers/incremental_pipeline.h"
 #include "controllers/texturing_controller.h"
+#include "estimators/view_graph_calibration.h"
 #include "controllers/feature_extraction.h"
 #include "controllers/feature_extraction.h"
 #include "controllers/feature_matching.h"
@@ -465,6 +468,21 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   option_manager_.patch_match_stereo->num_threads = options_.num_threads;
   option_manager_.poisson_meshing->num_threads = options_.num_threads;
 
+  // Upstream parity (a2bd15c2): one seed drives the geometric verification
+  // and mapper RANSAC stages.
+  option_manager_.two_view_geometry->ransac_options.random_seed =
+      options_.random_seed;
+  // Upstream parity (a2bd15c2): global mapping uses stricter two-view
+  // geometry thresholds and no guided matching, which currently degrades the
+  // global pipeline.
+  if (options_.mapper == Mapper::GLOBAL) {
+    option_manager_.two_view_geometry->ransac_options.max_error = 1.0;
+    option_manager_.two_view_geometry->min_num_inliers = 30;
+    option_manager_.two_view_geometry->min_inlier_ratio = 0.25;
+    option_manager_.feature_matching->guided_matching = false;
+  }
+  option_manager_.mapper->random_seed = options_.random_seed;
+
   ImageReaderOptions reader_options = *option_manager_.image_reader;
   reader_options.database_path = *option_manager_.database_path;
   reader_options.image_path = *option_manager_.image_path;
@@ -742,13 +760,55 @@ void AutomaticReconstructionController::RunSparseMapper() {
     }
   }
 
-  IncrementalPipeline mapper(
-      option_manager_.mapper.get(), *option_manager_.image_path,
-      *option_manager_.database_path, reconstruction_manager_);
-  active_thread_ = &mapper;
-  mapper.Start();
-  mapper.Wait();
-  active_thread_ = nullptr;
+  // Upstream parity (a2bd15c2 RunSparseMapper): dispatch on the selected
+  // mapper. The pipelines borrow the caller-owned reconstruction manager and
+  // database only for the duration of this call.
+  switch (options_.mapper) {
+    case Mapper::INCREMENTAL: {
+      IncrementalPipeline mapper(
+          option_manager_.mapper.get(), *option_manager_.image_path,
+          *option_manager_.database_path, reconstruction_manager_);
+      active_thread_ = &mapper;
+      mapper.Start();
+      mapper.Wait();
+      active_thread_ = nullptr;
+      break;
+    }
+    case Mapper::HIERARCHICAL: {
+      HierarchicalPipelineOptions hierarchical_options;
+      hierarchical_options.image_path = *option_manager_.image_path;
+      hierarchical_options.incremental_options = *option_manager_.mapper;
+      HierarchicalPipeline mapper(hierarchical_options,
+                                  *option_manager_.database_path,
+                                  reconstruction_manager_);
+      active_thread_ = &mapper;
+      mapper.Start();
+      mapper.Wait();
+      active_thread_ = nullptr;
+      break;
+    }
+    case Mapper::GLOBAL: {
+      std::shared_ptr<Database> database =
+          Database::Open(*option_manager_.database_path);
+      ViewGraphCalibrationOptions vgc_options;
+      vgc_options.random_seed = options_.random_seed;
+      vgc_options.solver_options.num_threads = options_.num_threads;
+      CalibrateViewGraph(vgc_options, database.get());
+      GlobalPipelineOptions global_options;
+      global_options.image_path = *option_manager_.image_path;
+      global_options.num_threads = options_.num_threads;
+      global_options.random_seed = options_.random_seed;
+      // The fork's GlobalPipeline takes a shared manager; the controller
+      // only borrows its manager, so the alias must not delete it.
+      GlobalPipeline mapper(
+          std::move(global_options), std::move(database),
+          std::shared_ptr<ReconstructionManager>(
+              reconstruction_manager_, [](ReconstructionManager*) {}));
+      mapper.SetCheckIfStoppedFunc([&]() { return IsStopped(); });
+      mapper.Run();
+      break;
+    }
+  }
 
   CreateDirIfNotExists(sparse_path);
   reconstruction_manager_->Write(sparse_path, &option_manager_);

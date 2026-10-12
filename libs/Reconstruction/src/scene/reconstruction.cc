@@ -823,8 +823,11 @@ Reconstruction Reconstruction::Crop(const Eigen::AlignedBox3d& bbox) const {
                 cropped_frame_ids.insert(
                     Image(track_el.image_id).FrameId());
             }
-            cropped_reconstruction.AddPoint3D(
+            // Upstream parity (c0a195a1 #4846): keep the reprojection error.
+            const point3D_t new_point3D_id = cropped_reconstruction.AddPoint3D(
                 point3D.XYZ(), point3D.Track(), point3D.Color());
+            cropped_reconstruction.Point3D(new_point3D_id)
+                    .SetError(point3D.Error());
         }
     }
     for (const auto& [frame_id, _] : cropped_reconstruction.Frames()) {
@@ -1171,12 +1174,21 @@ void Reconstruction::Write(const std::filesystem::path& path) const {
     WriteBinary(path);
 }
 
-void Reconstruction::ReadText(const std::filesystem::path& path) {
+// Upstream parity (826a1e55 #4842): reading a model also resets the
+// registration and point-id bookkeeping so a reused object is consistent.
+void Reconstruction::Clear() {
     cameras_.clear();
     rigs_.clear();
     frames_.clear();
     images_.clear();
     points3D_.clear();
+    reg_frame_ids_.clear();
+    num_reg_images_ = 0;
+    num_added_points3D_ = 0;
+}
+
+void Reconstruction::ReadText(const std::filesystem::path& path) {
+    Clear();
     ReadCamerasText(*this, path / "cameras.txt");
     const auto rigs_path = path / "rigs.txt";
     if (ExistsFile(rigs_path)) {
@@ -1191,11 +1203,7 @@ void Reconstruction::ReadText(const std::filesystem::path& path) {
 }
 
 void Reconstruction::ReadBinary(const std::filesystem::path& path) {
-    cameras_.clear();
-    rigs_.clear();
-    frames_.clear();
-    images_.clear();
-    points3D_.clear();
+    Clear();
     ReadCamerasBinary(*this, path / "cameras.bin");
     const auto rigs_path = path / "rigs.bin";
     if (ExistsFile(rigs_path)) {

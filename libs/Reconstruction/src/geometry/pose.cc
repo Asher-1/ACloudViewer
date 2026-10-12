@@ -38,6 +38,11 @@
 
 namespace colmap {
 
+namespace {
+// Cutoff below which so(3) exponentials use first-order Taylor expansions.
+constexpr double kSmallAngleThreshold = 1e-10;
+}  // namespace
+
 Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector) {
   Eigen::Matrix3d matrix;
   matrix << 0, -vector(2), vector(1), vector(2), 0, -vector(0), -vector(1),
@@ -353,11 +358,11 @@ Eigen::Vector3d RotationMatrixToAngleAxis(const Eigen::Matrix3d& R) {
   return aa.angle() * aa.axis();
 }
 
+// Upstream parity (75b60a7f #4844): one small-angle cutoff for all so(3)
+// exponentials.
 Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w) {
   const double angle = w.norm();
-  if (angle > 1e-12) {
-    return Eigen::AngleAxis<double>(angle, w / angle).toRotationMatrix();
-  } else {
+  if (angle < kSmallAngleThreshold) {
     // Small angle approximation: I + [w]_x.
     Eigen::Matrix3d R;
     R(0, 0) = 1;
@@ -371,6 +376,7 @@ Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w) {
     R(2, 2) = 1;
     return R;
   }
+  return Eigen::AngleAxis<double>(angle, w / angle).toRotationMatrix();
 }
 
 double YAxisAngleFromRotation(const Eigen::Matrix3d& rotation) {
@@ -413,10 +419,6 @@ Rigid3d InterpolateCameraPoses(const Rigid3d& cam1_from_world,
 }
 
 
-namespace {
-constexpr double kSmallAngleThreshold = 1e-10;
-}  // namespace
-
 Eigen::Quaterniond QuaternionFromAngleAxis(const Eigen::Vector3d& omega) {
   const double theta = omega.norm();
   if (theta < kSmallAngleThreshold) {
@@ -437,9 +439,12 @@ Eigen::Matrix3d LeftJacobianFromAngleAxis(const Eigen::Vector3d& omega) {
   const Eigen::Matrix3d a_x = CrossProductMatrix(a);
   const double sin_theta = std::sin(theta);
   const double sinc_theta = sin_theta / theta;
+  // Upstream parity (c60355a1 #4837): 1 - cos(theta) = 2 sin^2(theta / 2)
+  // avoids cancellation for small angles.
+  const double sin_half_theta = std::sin(theta / 2);
   return sinc_theta * Eigen::Matrix3d::Identity() +
          (1.0 - sinc_theta) * a * a.transpose() +
-         ((1.0 - std::cos(theta)) / theta) * a_x;
+         (2 * sin_half_theta * sin_half_theta / theta) * a_x;
 }
 
 Eigen::Matrix3d RightJacobianFromAngleAxis(const Eigen::Vector3d& omega) {

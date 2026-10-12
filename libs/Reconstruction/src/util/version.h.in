@@ -23,9 +23,11 @@ constexpr int COLMAP_VERSION_PATCH = ${COLMAP_VERSION_PATCH};
 constexpr int COLMAP_VERSION_NUMBER = COLMAP_VERSION_MAJOR * 1000000 +
                                       COLMAP_VERSION_MINOR * 10000 +
                                       COLMAP_VERSION_PATCH * 100;
-// Bumped when the database schema gains new versioned migrations. Revision 1
-// merges the fork's float_descriptors table into descriptors.type.
-constexpr int COLMAP_DATABASE_SCHEMA_REVISION = 1;
+// Upstream parity (a2bd15c2 util/version.cc kDatabaseSchemaRevision): fresh
+// databases stamp the same user_version as upstream so both binaries accept
+// each other's files. Fork-private layouts (float_descriptors, legacy
+// rigs/frames) are detected from the schema itself, not from a revision.
+constexpr int COLMAP_DATABASE_SCHEMA_REVISION = 0;
 
 // Legacy fork-private database numbering written before the upstream
 // user_version migration machinery was adopted. Databases stamped with this
