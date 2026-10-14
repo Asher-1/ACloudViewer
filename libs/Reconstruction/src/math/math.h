@@ -341,9 +341,9 @@ T2 TruncateCast(const T1 value) {
                          OutputLimits::digits <= InputLimits::digits) {
         // The integer bounds are exactly representable in the floating input
         // type.
-        return static_cast<T2>(std::clamp(
-                value, static_cast<T1>(OutputLimits::lowest()),
-                static_cast<T1>(OutputLimits::max())));
+        return static_cast<T2>(
+                std::clamp(value, static_cast<T1>(OutputLimits::lowest()),
+                           static_cast<T1>(OutputLimits::max())));
     } else {
         const long double input = static_cast<long double>(value);
         if (input <= static_cast<long double>(OutputLimits::lowest())) {
