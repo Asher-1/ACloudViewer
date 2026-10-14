@@ -179,10 +179,14 @@ find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
 # vendor closure and system Boost < 1.74 (Ubuntu 20.04 / Boost 1.71):
 # boost/core/serialization.hpp defining boost::serialization::nvp clashed
 # with the legacy serialization/nvp.hpp pulled by boost/graph ->
-# multi_index. Fixed at the root by forward-declaring nvp in the vendor
-# core/serialization.hpp (see the NOTE there), so every system Boost from
+# multi_index, AND a forward-declaration broke Boost >= 1.84 whose own
+# multi_index/serialization headers instantiate serialization::nvp from
+# core/serialization.hpp (macOS conda 1.84). Fixed at the root by the
+# guard handshake in the vendor core/serialization.hpp + noexcept-less
+# core/nvp.hpp make_nvp (see the NOTE there), so every system Boost from
 # 1.71 up compiles, links and runs the mixing probe
-# (.qoder/tmp/boost_mix_probe.cc; measured PASS on 1.71 and 1.74).
+# (.qoder/tmp/boost_mix_probe.cc; measured PASS on 1.71, 1.74 and the
+# 1.84 consumer pattern).
 # NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
 # They keep the fork-wide from-source build shared with the rest of the
 # project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;

@@ -78,10 +78,13 @@ target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 # closure does not include them, so system Boost resolves them everywhere
 # and no TU ever mixes 1.74 container/pair.hpp with 1.92 move detail traits
 # (the ODR redefinition that broke the CGAL TUs when the two trees were
-# mixed). The one intentional local deviation inside the closure is the nvp
-# forward declaration in core/serialization.hpp — without it the vendor
-# closure breaks system Boost < 1.74 (serialization/nvp redefinition,
-# measured on Ubuntu 20.04); see the NOTE in that header.
+# mixed). The one intentional local deviation inside the closure is the
+# serialization/nvp guard handshake in core/serialization.hpp (plus the
+# noexcept-less make_nvp in core/nvp.hpp): the vendor definition must yield
+# to the legacy system serialization/nvp.hpp on Boost < 1.74 while still
+# providing the complete nvp/make_nvp that Boost >= 1.84's own headers
+# (multi_index via core/serialization.hpp) instantiate — see the NOTE in
+# that header. Measured PASS on 1.71 (focal image), 1.74, 1.84.
 # Compiled Boost libraries stay on the system/ext_boost version; none of the
 # vendored libraries has a compiled component that ColmapLib uses. CUDA TUs
 # never include the aliases and keep their existing Boost resolution.

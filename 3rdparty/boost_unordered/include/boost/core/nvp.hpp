@@ -40,7 +40,13 @@ private:
 
 template<class T>
 inline const nvp<T>
-make_nvp(const char* n, T& v) BOOST_NOEXCEPT
+// NOTE (ACloudViewer): no BOOST_NOEXCEPT here. Boost < 1.74's
+// multiprecision/detail/number_base.hpp forward-declares this exact
+// function WITHOUT an exception specifier; declaring it noexcept in the
+// vendor tree makes the two declarations conflict (measured on Ubuntu
+// 20.04 / Boost 1.71). No system header declares it with noexcept, so the
+// unqualified form merges with every generation.
+make_nvp(const char* n, T& v)
 {
     return nvp<T>(n, v);
 }
