@@ -14,7 +14,18 @@
 // Utilities needed to implement serialization support
 // without including a Boost.Serialization header
 
-#include <boost/core/nvp.hpp>
+// NOTE (ACloudViewer): do NOT define boost::serialization::nvp from this
+// vendor tree. Boost < 1.74's boost/serialization/nvp.hpp defines its own
+// nvp class under a different include guard, so a vendor-defined nvp makes
+// any TU that later pulls the system header hit "redefinition of struct
+// boost::serialization::nvp" (measured on Ubuntu 20.04 / Boost 1.71 via
+// boost/graph -> multi_index -> serialization/nvp.hpp). Forward-declaring
+// the name keeps the serialize templates parseable without instantiating
+// them (no ColmapLib TU boost-serializes these containers), while on
+// Boost >= 1.74 the system serialization/nvp.hpp itself includes
+// <boost/core/nvp.hpp>, which still lands on the vendor copy and defines
+// the class exactly once.
+#include <boost/core/addressof.hpp>
 #include <cstddef>
 
 namespace boost
@@ -23,6 +34,7 @@ namespace boost
 namespace serialization
 {
 
+template<class T> class nvp;
 // Forward declarations (needed for specializations)
 
 template<class T> struct version;
@@ -49,7 +61,19 @@ namespace core
 // nvp
 
 using serialization::nvp;
-using serialization::make_nvp;
+
+// make_nvp is defined here directly instead of aliasing
+// serialization::make_nvp: that name is owned by whichever header defines
+// serialization::nvp for the system Boost in use (Boost < 1.74:
+// boost/serialization/nvp.hpp; Boost >= 1.74: boost/core/nvp.hpp), and a
+// duplicate declaration here would only make calls ambiguous. Constructing
+// serialization::nvp<T> needs a complete type, so this is instantiated only
+// on actual serialization use (none in ColmapLib).
+template<class T>
+inline const serialization::nvp<T> make_nvp(const char* name, T& value)
+{
+    return serialization::nvp<T>(name, value);
+}
 
 // split_free
 

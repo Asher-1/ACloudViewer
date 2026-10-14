@@ -72,6 +72,24 @@ python_unit_tests() {
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c '
         # The wheel images ship pytest; the CI images do not.
         python -m pip install --quiet pytest >/dev/null 2>&1 || true
+        # The CI images never pip-install the cloudViewer package: the GUI-app
+        # build assembles it (pybind target) under
+        # $ACLOUDVIEWER_BUILD/lib/python_package, which nothing puts on
+        # sys.path. Export it here. The wheel images have no build tree, so
+        # the pip-installed package keeps serving them untouched.
+        if [ -n "${ACLOUDVIEWER_BUILD:-}" ]; then
+            if [ -d "${ACLOUDVIEWER_BUILD}/lib/python_package/cloudViewer" ]; then
+                export PYTHONPATH="${ACLOUDVIEWER_BUILD}/lib/python_package${PYTHONPATH:+:$PYTHONPATH}"
+            else
+                echo "ERROR: assembled cloudViewer python package not found at ${ACLOUDVIEWER_BUILD}/lib/python_package/cloudViewer" >&2
+                exit 1
+            fi
+            # Whole-tree tests also need the runtime deps (numpy, plyfile,
+            # ...) and test-only deps (scipy, tensorboard, pillow, ...) that
+            # the wheel environments provide but the CI images do not.
+            python -m pip install --quiet -r python/requirements.txt \
+                -r python/requirements_test.txt || exit 1
+        fi
         # Check if ML ops should be tested by checking build configuration.
         pytest_args=""
         if ! python -c "import sys, cloudViewer; sys.exit(not (cloudViewer._build_config[\"BUILD_PYTORCH_OPS\"] or cloudViewer._build_config[\"BUILD_TENSORFLOW_OPS\"]))" 2>/dev/null; then

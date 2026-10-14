@@ -174,25 +174,15 @@ if (TESTS_ENABLED)
 endif ()
 find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
 # The vendored Boost 1.92 header subset (see src/CMakeLists.txt) shadows the
-# system Boost headers for every ColmapLib C++ TU. Mixing those headers with
-# system Boost < 1.74 breaks compilation — measured on Boost 1.71 (Ubuntu
-# 20.04): boost/graph adjacency_list.hpp fails with serialization/nvp
-# exception-specifier conflicts under the 1.92 config, while 1.74 and 1.83
-# compile, link and run the mixing probe (TEST_ALIGNMENT_TODO.md batches
-# AB/AC). Guard the supported surface instead of vendoring more modules.
-if(DEFINED Boost_VERSION_MACRO)
-    set(COLMAP_BOOST_VERSION_MACRO "${Boost_VERSION_MACRO}")
-else()
-    set(COLMAP_BOOST_VERSION_MACRO "${Boost_VERSION}")
-endif()
-if(COLMAP_BOOST_VERSION_MACRO VERSION_LESS 107400)
-    message(FATAL_ERROR
-            "System Boost ${Boost_VERSION} is too old for the vendored Boost "
-            "1.92 unordered headers: ColmapLib requires Boost >= 1.74 "
-            "(Ubuntu >= 22.04, or a conda environment with a matching Boost). "
-            "Measured failure on Boost 1.71: boost/graph adjacency_list.hpp "
-            "breaks under the vendored config.")
-endif()
+# system Boost headers for every ColmapLib C++ TU. The historical Boost >=
+# 1.74 floor came from a serialization/nvp double definition between the
+# vendor closure and system Boost < 1.74 (Ubuntu 20.04 / Boost 1.71):
+# boost/core/serialization.hpp defining boost::serialization::nvp clashed
+# with the legacy serialization/nvp.hpp pulled by boost/graph ->
+# multi_index. Fixed at the root by forward-declaring nvp in the vendor
+# core/serialization.hpp (see the NOTE there), so every system Boost from
+# 1.71 up compiles, links and runs the mixing probe
+# (.qoder/tmp/boost_mix_probe.cc; measured PASS on 1.71 and 1.74).
 # NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
 # They keep the fork-wide from-source build shared with the rest of the
 # project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;

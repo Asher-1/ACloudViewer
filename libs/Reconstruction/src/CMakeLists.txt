@@ -73,11 +73,15 @@ target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 # headers and their iteration order is observable SfM behavior (see
 # util/hash_containers.h), so every C++ consumer of ColmapLib must see the
 # same boost::unordered definition: the path is PUBLIC and searched BEFORE
-# the system Boost 1.74 headers. boost/move, boost/container and
-# boost/intrusive are deliberately NOT vendored: the unordered closure does
-# not include them, so system 1.74 resolves them everywhere and no TU ever
-# mixes 1.74 container/pair.hpp with 1.92 move detail traits (the ODR
-# redefinition that broke the CGAL TUs when the two trees were mixed).
+# the system Boost headers (supported floor: 1.71). boost/move, boost/
+# container and boost/intrusive are deliberately NOT vendored: the unordered
+# closure does not include them, so system Boost resolves them everywhere
+# and no TU ever mixes 1.74 container/pair.hpp with 1.92 move detail traits
+# (the ODR redefinition that broke the CGAL TUs when the two trees were
+# mixed). The one intentional local deviation inside the closure is the nvp
+# forward declaration in core/serialization.hpp — without it the vendor
+# closure breaks system Boost < 1.74 (serialization/nvp redefinition,
+# measured on Ubuntu 20.04); see the NOTE in that header.
 # Compiled Boost libraries stay on the system/ext_boost version; none of the
 # vendored libraries has a compiled component that ColmapLib uses. CUDA TUs
 # never include the aliases and keep their existing Boost resolution.
