@@ -74,14 +74,16 @@ python_unit_tests() {
         python -m pip install --quiet pytest >/dev/null 2>&1 || true
         # The CI images never pip-install the cloudViewer package: the GUI-app
         # build assembles it (pybind target) under
-        # $ACLOUDVIEWER_BUILD/lib/python_package, which nothing puts on
-        # sys.path. Export it here. The wheel images have no build tree, so
-        # the pip-installed package keeps serving them untouched.
-        if [ -n "${ACLOUDVIEWER_BUILD:-}" ]; then
-            if [ -d "${ACLOUDVIEWER_BUILD}/lib/python_package/cloudViewer" ]; then
-                export PYTHONPATH="${ACLOUDVIEWER_BUILD}/lib/python_package${PYTHONPATH:+:$PYTHONPATH}"
+        # $ACloudViewer_BUILD/lib/python_package (exact case as defined by
+        # Dockerfile.ci), which nothing puts on sys.path. Export it when the
+        # import would otherwise fail. The wheel images pip-install the
+        # package and wipe their build tree, so they take the first branch
+        # and stay untouched.
+        if ! python -c "import cloudViewer" 2>/dev/null; then
+            if [ -n "${ACloudViewer_BUILD:-}" ] && [ -d "${ACloudViewer_BUILD}/lib/python_package/cloudViewer" ]; then
+                export PYTHONPATH="${ACloudViewer_BUILD}/lib/python_package${PYTHONPATH:+:$PYTHONPATH}"
             else
-                echo "ERROR: assembled cloudViewer python package not found at ${ACLOUDVIEWER_BUILD}/lib/python_package/cloudViewer" >&2
+                echo "ERROR: cloudViewer not importable and no assembled package at ${ACloudViewer_BUILD:-<unset>}/lib/python_package/cloudViewer" >&2
                 exit 1
             fi
             # Whole-tree tests also need the runtime deps (numpy, plyfile,
