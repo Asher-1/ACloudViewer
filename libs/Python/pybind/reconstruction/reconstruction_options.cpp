@@ -18,6 +18,7 @@
 #include "pipelines/mvs.h"
 #include "pipelines/option_utils.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 
 namespace cloudViewer {
 namespace reconstruction {

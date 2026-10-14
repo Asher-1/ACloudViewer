@@ -217,6 +217,22 @@ set_source_files_properties(
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_image_io.cpp
     PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
 
+# OCR det/rec geometry parity: ocr_rec_crop.cpp and ocr_db_postprocess.cpp
+# port cv2.minAreaRect / contourArea / arcLength / warpPerspective(
+# INTER_CUBIC) from OpenCV's x86-64 baseline build and the Clipper offset
+# pyclipper ships, neither of which fuses a*b+c. A fused rotatingCalipers /
+# perspective-matrix product moves box corners by 1 ULP (628 of the 720 rec
+# crop golden boxes with -ffp-contract=fast) and flips cubic table cells, so
+# these TUs keep separate roundings (tests/ocr/test_ocr_rec_crop and
+# test_ocr_db_postprocess compare bytes). MSVC does not contract without
+# /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_OCR_SRC_DIR}/ocr_rec_crop.cpp
+        ${AICORE_OCR_SRC_DIR}/ocr_db_postprocess.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
 if(MAP_ANYTHING_ENABLE_DUMP)
     target_compile_definitions(${PROJECT_NAME} PRIVATE MAP_ANYTHING_ENABLE_DUMP)
 endif()

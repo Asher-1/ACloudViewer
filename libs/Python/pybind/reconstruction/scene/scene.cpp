@@ -12,6 +12,7 @@
 #include "geometry/sim3.h"
 #include "pybind/docstring.h"
 #include "pybind/reconstruction/enum_ctor.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "scene/camera.h"
 #include "scene/correspondence_graph.h"
 #include "scene/database.h"

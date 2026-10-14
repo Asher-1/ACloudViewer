@@ -24,6 +24,7 @@
 #include "scene/reconstruction.h"
 #include "util/alignment.h"
 #include "util/enum_utils.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -151,21 +152,23 @@ public:
     void RemoveConstantPoint(const point3D_t point3D_id);
 
     // Access configuration data.
-    const std::unordered_set<image_t>& Images() const;
-    const std::unordered_set<point3D_t>& VariablePoints() const;
-    const std::unordered_set<point3D_t>& ConstantPoints() const;
+    const FlatHashSet<image_t>& Images() const;
+    const FlatHashSet<point3D_t>& VariablePoints() const;
+    const FlatHashSet<point3D_t>& ConstantPoints() const;
     const std::vector<int>& ConstantTvec(const image_t image_id) const;
 
 private:
-    std::unordered_set<camera_t> constant_camera_ids_;
-    std::unordered_set<image_t> image_ids_;
-    std::unordered_set<point3D_t> ignored_point3D_ids_;
-    std::unordered_set<point3D_t> variable_point3D_ids_;
-    std::unordered_set<point3D_t> constant_point3D_ids_;
-    std::unordered_set<image_t> constant_poses_;
-    std::unordered_map<image_t, std::vector<int>> constant_tvecs_;
-    std::unordered_set<frame_t> constant_rig_from_world_poses_;
-    std::unordered_set<sensor_t> constant_sensor_from_rig_poses_;
+    // Upstream parity: the BA problem adds residual blocks in the iteration
+    // order of these sets, so they must be the same container as upstream.
+    FlatHashSet<camera_t> constant_camera_ids_;
+    FlatHashSet<image_t> image_ids_;
+    FlatHashSet<point3D_t> ignored_point3D_ids_;
+    FlatHashSet<point3D_t> variable_point3D_ids_;
+    FlatHashSet<point3D_t> constant_point3D_ids_;
+    FlatHashSet<image_t> constant_poses_;
+    FlatHashMap<image_t, std::vector<int>> constant_tvecs_;
+    FlatHashSet<frame_t> constant_rig_from_world_poses_;
+    FlatHashSet<sensor_t> constant_sensor_from_rig_poses_;
     BundleAdjustmentGauge fixed_gauge_ = BundleAdjustmentGauge::UNSPECIFIED;
 };
 
@@ -186,8 +189,10 @@ struct BundleAdjustmentBackendOptions {
             const BundleAdjustmentBackendOptions& other);
     BundleAdjustmentBackendOptions(BundleAdjustmentBackendOptions&& other) =
             default;
+    // Assignments copy/move into existing pointees: option widgets keep raw
+    // pointers to nested fields across OptionManager::ResetOptions().
     BundleAdjustmentBackendOptions& operator=(
-            BundleAdjustmentBackendOptions&& other) = default;
+            BundleAdjustmentBackendOptions&& other);
 };
 
 struct BundleAdjustmentOptions : public BundleAdjustmentBackendOptions {
@@ -244,7 +249,7 @@ struct PosePriorBundleAdjustmentBackendOptions {
     PosePriorBundleAdjustmentBackendOptions(
             PosePriorBundleAdjustmentBackendOptions&& other) = default;
     PosePriorBundleAdjustmentBackendOptions& operator=(
-            PosePriorBundleAdjustmentBackendOptions&& other) = default;
+            PosePriorBundleAdjustmentBackendOptions&& other);
 };
 
 struct PosePriorBundleAdjustmentOptions

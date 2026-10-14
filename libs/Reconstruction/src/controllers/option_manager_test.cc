@@ -5,9 +5,11 @@
 
 #include "controllers/option_manager.h"
 
+#include "controllers/global_pipeline.h"
 #include "controllers/image_reader.h"
 #include "controllers/incremental_pipeline.h"
 #include "estimators/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "feature/sift.h"
 #include "mvs/patch_match_options.h"
 #include "util/file.h"
@@ -387,6 +389,38 @@ TEST(OptionManager, WriteAfterResetOptions) {
 
   EXPECT_NO_THROW(options.Write(config_path));
   EXPECT_TRUE(ExistsFile(config_path));
+}
+
+// Fork addition: Qt option widgets (bundle_adjustment_widget.cc,
+// reconstruction_options_widget.cc) bind raw pointers into the nested backend
+// options once at construction, so ResetOptions() must keep those pointees.
+TEST(OptionManager, ResetOptionsPreservesNestedBackendOptions) {
+  OptionManager options;
+  options.AddAllOptions();
+  const auto* ba_ceres = options.bundle_adjustment->ceres.get();
+  const auto* ba_caspar = options.bundle_adjustment->caspar.get();
+  const auto* mapper_ba_ceres =
+      options.global_mapper->mapper.bundle_adjustment.ceres.get();
+  const auto* ra_ceres =
+      options.global_mapper->mapper.rotation_averaging.ceres.get();
+  const auto* ra_l1_irls =
+      options.global_mapper->mapper.rotation_averaging.l1_irls.get();
+  const int max_num_iterations =
+      options.bundle_adjustment->ceres->solver_options.max_num_iterations;
+  options.bundle_adjustment->ceres->solver_options.max_num_iterations += 7;
+
+  options.ResetOptions(/*reset_paths=*/false);
+
+  EXPECT_EQ(options.bundle_adjustment->ceres.get(), ba_ceres);
+  EXPECT_EQ(options.bundle_adjustment->caspar.get(), ba_caspar);
+  EXPECT_EQ(options.global_mapper->mapper.bundle_adjustment.ceres.get(),
+            mapper_ba_ceres);
+  EXPECT_EQ(options.global_mapper->mapper.rotation_averaging.ceres.get(),
+            ra_ceres);
+  EXPECT_EQ(options.global_mapper->mapper.rotation_averaging.l1_irls.get(),
+            ra_l1_irls);
+  EXPECT_EQ(options.bundle_adjustment->ceres->solver_options.max_num_iterations,
+            max_num_iterations);
 }
 
 }  // namespace

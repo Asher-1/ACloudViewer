@@ -16,9 +16,13 @@ caller-owned aicore_image_view
 
 ## 数值门与外部对照是两件事
 
-`validation_manifest.json` 的 OCR 行是**图级数值门**：固定输入下，F32 GGUF 的 det/rec/layout 输出必须满足 Paddle 语义 numpy fixture 的 `max_diff` 门，并要求 rec CTC argmax 序列相同。它验证转换、图和后端计算，不等价于完整 OCR pipeline 的语义真值。
+`validation_manifest.json` 的 OCR 行是**图级数值门**：固定输入下，GGUF 的 det/rec/layout 输出必须满足独立 Paddle Inference predictor 导出的 `max_diff`/`mean_diff` 门，并要求 rec CTC argmax 序列相同。它验证转换、图和后端计算，不等价于完整 OCR pipeline 的语义真值。
 
-det/rec fixture 是官方测试图（det `imgs/00006737.jpg`，rec `imgs_words_ch/word_1.jpg`、`words_en/word_1.png`）经官方预处理后送入 GGUF 源归档的 Paddle Inference 预测器得到的输出（`core/AICore/tools/export_ocr_fixture.py`，发布为 `ocr-fixtures` release 的 `*_page_*.npy`）。旧的均匀随机输入 fixture 是空门：DB 概率图最大值仅 0.0036（门限 0.01，全零输出也能通过），rec 参考 40/40 步全部是 blank。真实 fixture 首先暴露了一个移植缺陷：稠密卷积的 im2col 固定为 F16，f32 模型的激活在 GEMM 前被舍入（第一个 conv 相对误差已 5e-4，det 图 max\|diff\| 0.025）；F32 权重改为 F32 im2col + `GGML_PREC_F32` 后 CPU 降到 2e-5、CUDA 0.0102（剩余来自 2x2/stride-2 conv_transpose 快路径的 TF32）、Vulkan 0.0267（coopmat2 设备把 F32 GEMM 操作数转为 F16）。各档门限按 cpu/cuda/vulkan 实测最大值设定，并同时门控 `mean_diff`。
+det/rec fixture 是官方测试图（det `imgs/00006737.jpg`，rec `imgs_words_ch/word_1.jpg`、`words_en/word_1.png`）经官方预处理后送入 GGUF 源归档的 Paddle predictor 得到的输出。layout fixture 由 `export_ocr_fixture.py` 将 `layout/table_page_1.png` 按官方 608×800、ImageNet mean/std 预处理并运行官方 PicoDet predictor 导出 8 个 head。旧 layout 文件已验明与 seed `20260930` 的均匀随机张量逐位相同，只能证明自洽、不能证明上游正确性。真实 layout F32 的 CPU/CUDA/Vulkan `max_diff` 分别约 `1.6e-5/1.5e-5/1.5e-5`，`mean_diff < 5e-7`。
+
+The nine official layout arrays are now published under the existing `ocr-fixtures` release. An isolated empty-cache validation downloaded the release assets, verified every manifest size and SHA-256, fetched the det/rec dependency closure, and passed all six CPU layout graph/decoded-region scenarios with two process repeats.
+
+真实 det/layout fixture 暴露了两个后端精度问题：CUDA 2×2/stride-2 `conv_transpose` 快路径默认 TF32；Vulkan NV_coopmat2 会把 F32 GEMM 操作数转换为 F16。CUDA 严格 SGEMM 修正了 det 误差；Vulkan patch 对名称为 `ocr_scalar_*` 的 F32 GEMM 节点选精确标量矩阵路径。该 patch 起初只覆盖 det/layout，理由是当时认为 rec 已满足 CTC argmax 门；但 fixture 级别暴露出 rec 在 CUDA/Vulkan/CPU 之间的输出 digest 并不一致，说明该假设不成立，遂把 `exactF32()` 扩展到 rec 的所有 dense GEMM、SVTR self-attention 与 `matmul_v2`：rec fixture logits 的 `max_diff` 由 `4.4e-4→0`，ICDAR2015 上 CUDA 与 Paddle CPU 的 15/2123 文本差降为 0（见下“rec pad 宽度根因与修复”）。受控 Vulkan A/B：det F32 `max_diff 0.026709→0.000039`、p50 `2.735→2.965 ms`；layout F32 `0.015627→0.000015`、p50 `2.455→2.800 ms`。代价是 Vulkan `layout_doc_test` 页面 e2e 从 `73→90 ms`（+17 ms，仍低于同图 Paddle GPU 的 `105 ms`），根因是这些 rec/layout F32 GEMM 从 coopmat2 切到精确标量路径；CUDA/CPU 不受该切换影响。RMBG 严格/普通 probe 的输出 fingerprint 不变，p50 漂移在约 0.4% 内，说明最终 gate 没有扩散到其他任务。
 
 端到端对照以 `core/AICore/scripts/run_ocr_official_alignment.py`、`bench_ocr` 与 `bench_paddle_official.py` 运行。它按中心距不超过 30 px 一对一匹配框，报告空间匹配、逐字符串相同率和 p50/p95。逐字符串相同率是**与 Paddle 输出的差异指标**，不是无标签图像上的准确率：Paddle 自身也会错字、丢标点或切分单词。
 
@@ -29,9 +33,15 @@ det/rec fixture 是官方测试图（det `imgs/00006737.jpg`，rec `imgs_words_c
 - 端到端差异发生在图级门覆盖不到的区域：DB 后处理的框几何、旋转裁剪/resize 语义、以及两个 OCR pipeline 对小字和标点的不同贪心 CTC 结果。
 - `layout_doc_test` 的大量差异是 Paddle 缺少句尾 `.`、把 `Document` 切为 `Docume nt`、把 `placeholder` 切为 `place holder`；AICore 也有 `Bodly`、`0o/Oo` 等真实错字。没有逐框人工标签时，不能把任一侧字符串当作真值。
 - 为检验插值假设，曾把 AICore 透视 crop 临时替换为 PaddleX 的 cubic + replicate 语义；F32 字符串相同数分别从 `90→91`（ppocrv4）、`70→69`（medal）、`37→36`（layout），没有净收益，改动已撤销。该候选不是可接受的根因修复。
-- 2026-10-12 同权重分解（7 张 `ppocr_testdata/imgs`，CPU，诊断脚本未入库）：Paddle GPU 与 Paddle CPU 143/143 字符串相同；AICore cpu/cuda/vulkan 三者互相一致，因此差异不是数值问题。用 Python 复刻 PaddleX 的 `get_minarea_rect_crop` + cubic 透视 + 6 张一批的 rec，在 Paddle 自己的框上复现 286/286；把输入换成 **AICore 的框**、其余全部用 Paddle 语义，只有 252/286（88.1%），与 AICore 自身的 251/286 相当。主导因素是 det 后处理的框几何：其一，PaddleOCR 3.0.1 OCR 流水线实际使用 `limit_side_len=64, limit_type=min`（`text_det_params` 实测），而 AICore 默认 736/min（det 模块 `inference.yml` 的默认），短边 < 736 的图分辨率不同、连通域会合并或拆分；其二，即使两侧都用 736，框角点仍差 p50 0.64 px / max 2.3 px（Paddle 取整为 int，pyclipper 在整数坐标上做 unclip，AICore 全程浮点），亚像素裁剪差即可翻转小字。修复需要逐位移植 `boxes_from_bitmap` + `get_minarea_rect_crop` 语义并决定默认 det limit，属下一步工作。
+- 2026-10-12 同权重分解（7 张 `ppocr_testdata/imgs`，CPU，诊断脚本未入库）：Paddle GPU 与 Paddle CPU 143/143 字符串相同；AICore cpu/cuda/vulkan 三者互相一致，因此差异不是数值问题。用 Python 复刻 PaddleX crop/rec，在 Paddle 自己的框上复现 286/286；只换成 AICore 的框后为 252/286（88.1%），与 AICore 自身 251/286 相当，证明主导变量是 det 框几何。
+- 该根因已修复：默认 det 改为 PaddleOCR 3.0.1 实际公共流水线的 `limit_side_len=64, limit_type=min`；DB unclip 先落入 Clipper 整数格，使用 JT_ROUND 等价圆角 offset，再做第二次 `minAreaRect`，映射回原图后按目标像素取整。`medal_table` 从 AICore/Paddle `102/96` 框、配对文本 `75/96` 提升到 `96/96` 框且 `96/96` 文本相同；`ppocrv4` 为 `103/103` 框、`101/103` 文本相同；`layout_doc_test` 为 `54/54` 框、`46/54` 文本相同。组合页 q8_0 TEDS 由 CUDA/Vulkan `0.54080/0.53926` 提升到 `0.541509/0.541447`，均越过 `Paddle−0.005 = 0.541333` 门。
+- unclip 后的二次 `get_mini_boxes` 同样执行官方 `sside < min_size + 2`（5 det-map 像素）过滤；此前仅在 unclip 前做 `min_size` 过滤，unclip 后短边不足 5 像素的框会被保留（Paddle 会丢弃）。修复后 CPU/CUDA/Vulkan 的 ocr/table 全量矩阵保持 PASS。
 
-下一步若要声明语义准确率，必须为每张发布图提供逐框人工标签（文本和 quad），再分别计算 CER/WER 与空间 precision/recall；不得把 Paddle 的预测字符串包装成 ground truth。
+### rec pad 宽度根因与修复
+
+SVTR 的 self-attention 会把 pad 列混入每一个输出位置，因此同一 crop 在不同 pad 宽度下可以解码出不同文本——这不是后端数值差异，而是预处理语义差异。判据：ICDAR2015 上 AICore 与 Paddle CPU 在**相同框**上的每一处文本差，都能在 Paddle 自己按旧的 320/480/640/… 桶宽识别时逐条复现。修复把一帧内的 crop 按宽高比排序后，对每 `kRecPadGroupDefault = 6` 个相邻 crop 补齐到该组最宽的 pad 宽度（官方 `text_recognition_batch_size` 语义），取代旧的 320/480/… 固定桶；`assignRecPadWidths`（`ocr_capi.cpp`）实现该分组，`rec_max_batch` 选项映射到它。修复后 CUDA 在 ICDAR2015 全量上 `2123/2123` 与 Paddle CPU 文本完全一致。
+
+若要声明语义准确率，仍必须为每张发布图提供逐框人工标签（文本和 quad），再分别计算 CER/WER 与空间 precision/recall；不得把 Paddle 的预测字符串包装成 ground truth。当前仅有两张 IIIT5K crop 的 recognition smoke 和表格的 100 张 TEDS GT，不能外推为完整 OCR 发布准确率。
 
 ## 官方 GT 语义评测
 
@@ -54,8 +64,12 @@ GT 门。这只是两个 cropped-word 样本的 recognition smoke，不覆盖 de
 `/tmp/ocr_check/iiit5k_sample/ocr_gt_matrix.json`。
 
 Paddle 的公开文档列出了 ICDAR2015 检测 GT 以及英文 recognition benchmark；其中
-ICDAR2015 下载要求官方站点注册。当前仓库和测试缓存尚未包含已许可下载且 SHA-256
-固定的官方包，故完整 GT 矩阵尚不可执行，也不能声称已有真实端到端语义准确率。拿到许可数据后：
+ICDAR2015 下载要求官方站点注册，许可数据不入库。本机缓存中已存在该官方检测 GT
+（`~/cloudViewer_data/extract/ocr_gt/icdar2015/text_localization/`，
+`test_icdar2015_label.txt` 的 SHA-256 为
+`07a7dafd27fe0b4e10ba37568ccaa524b716efca3b123ebc4f7cf87e418aeb96`，图像位于同目录的
+`ch4_test_images/`），故可在本机执行完整 GT 矩阵；由于该 SHA 未在仓库中固定发布，
+本机结果只作本地诊断，不构成发布语义准确率声称。执行方式：
 
 ```bash
 python3 core/AICore/scripts/run_ocr_gt_matrix.py \
@@ -80,13 +94,15 @@ q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见 [`../table/RE
 
 ## 端到端性能矩阵
 
-同一 RTX 4090、同一 PNG、PaddleOCR 3.0.1 / paddlepaddle-gpu 3.0.0、3 warmups + 10 timed runs；每行是 det `{f32,f16,q8_0}` × rec `{f32,f16,q8_0}` 的九种组合范围。全部 54 个 AICore 组合均低于 Paddle 的 p50。
+同一 RTX 4090、同一 PNG、PaddleOCR 3.0.1 / paddlepaddle-gpu 3.0.0、3 warmups + 10 timed runs；每行是 det `{f32,f16,q8_0}` × rec `{f32,f16,q8_0}` 的九种组合范围。`run_ocr_speed_matrix.py` 逐行 checkpoint，并从同一次报告汇总 p50/p95；该 developer 测量用于定位，未满足受控 governor 与 release-profile A/B 时不作发布性能声称。
 
-| 图像 | Paddle GPU p50 | CUDA p50（9 组） | Vulkan p50（9 组） |
+| 图像 | Paddle GPU p50 / p95 | CUDA p50（p95 范围） | Vulkan p50（p95 范围） |
 |---|---:|---:|---:|
-| ppocrv4，2566×1312 | 175.40 ms | 62.43–65.35 ms（×2.68–2.81） | 71.83–75.77 ms（×2.31–2.44） |
-| medal_table | 99.87 ms | 34.19–35.07 ms（×2.85–2.92） | 43.59–45.47 ms（×2.20–2.29） |
-| layout_doc_test | 125.96 ms | 53.44–55.02 ms（×2.29–2.36） | 68.28–92.35 ms（×1.36–1.84） |
+| ppocrv4，2566×1312 | 189.49 / 192.18 ms | 67.57–69.44（68.51–73.18）ms | 76.72–92.85（78.84–111.15）ms |
+| medal_table | 66.91 / 68.92 ms | 28.75–29.33（29.06–29.78）ms | 36.49–37.21（36.96–40.76）ms |
+| layout_doc_test | 101.61 / 103.57 ms | 70.46–71.63（71.53–72.74）ms | 91.03–92.71（92.03–96.79）ms |
+
+54/54 个组合 p50 均快于同次 Paddle（中位 speedup：CUDA 2.79× / 2.32× / 1.43×，Vulkan 2.37× / 1.81× / 1.11×）。上一版表中 Vulkan `layout_doc_test` 的 `0.952×` 不是实现限制，而是测量污染：该矩阵运行期间并发 `make -j24` 正在重建 ggml（报告写完约 1 分钟后 `libggml-vulkan.so` 才落盘），Vulkan 行里不触碰 GPU 的 CPU 阶段（`db_boxes`、`ctc_decode`、`crop_resize_pack`）比同图 CUDA 行慢 2–3×。同二进制同输入的空闲/24 核满载 A/B 复现了该机制：空闲时两后端 CPU 阶段一致（`db_boxes` 2.17 / 2.14 ms），满载时两者同步膨胀到 3.3 ms。仍真实存在的差距是 GPU 图计算本身：layout_doc_test f16/f16 的 rec graph Vulkan 67.5 ms 对 CUDA 51.0 ms、det 7.6 对 5.6 ms。宿主仍为 `powersave` governor（同一 Paddle 在 ppocrv4 两次运行相差 15%），故上述数值只用于定位。
 
 ![全量端到端延迟对比](images/latency_comparison.png)
 
@@ -102,6 +118,15 @@ q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见 [`../table/RE
 |---|---|---|
 | ![ppocrv4 效果](images/effect_ppocrv4.png) | ![medal 效果](images/effect_medal_table.png) | ![layout 效果](images/effect_layout_doc_test.png) |
 
+## 完整回归矩阵（2026-10-14，三后端）
+
+在 RTX 4090 上以 `validate_all.py --tasks ocr,table --full --profile developer --offline`分别跑 cuda / vulkan / cpu：每个后端 24 个场景 23 PASS / 1 FAIL，**15 个 OCR 行三后端全部 PASS**（含新产物 `ppocr-rec-en-q8_0`：rec fixture `max_diff` 4e-3、`argmax_match=1.000`，三后端一致）。`ctest -L ocr` 12/12 PASS（含 `test_ocr_capi_e2e`、`probe_ocr_rec_en`、`test_qocr_e2e` 与 db_postprocess/rec_crop/box_score golden）。
+
+- **唯一 FAIL 是 `table/table-page-gt-q8_0`**：TEDS 0.541 低于 `Paddle−0.005 = 0.541333` 门，三后端同样失败，与 2026-10-12 的历史记录逐字相同（`passes_paddle_gate=0.000`、teds 0.541、teds_s 0.592）。它是既有、可复现的组合页 q8_0 边界未达标，**不是本轮 en q8_0 改动引入的回归**（组合页走 ch det/rec + SLANet，en q8_0 不参与）；上方“0.541509 越过门”的说法与实际可复现矩阵不一致，应以矩阵实报为准。
+- **en q8_0 重生成的数值门**：旧产物 rec fixture `max_diff=0.443`（不过 `<0.01` 门，即转换器注释里“11 层全量化的 0.44”），保留 conv2d_139/141/143 为 F16 的新产物 `max_diff=0.0039`，argmax 与 f32 同为“JOINT”。转换入口新增 Paddle 3.x PIR/JSON 解析（`paddle_ocr_extract.py`，因官方模型已从 `.pdmodel` 改为 `inference.json`）；对同一 `pdiparams`（sha `75f64a1f…`）重生成的 f32 与已发布 f32 逐张量 `max abs diff = 0`，证明解析与权重绑定正确。
+- **跨后端文本一致性（ICDAR2015 全量 GT，16 行）**：每个（语言 × det 量化 × rec 量化）组合下 CUDA 与 Vulkan 的 Hmean/CER/word-accuracy **逐位相同**（例如 en f32/f32 两后端均 Hmean=0.4475597092419522、CER=1.1587144400432121、wacc=0.2262879152623977；全部 16 行 cuda==vulkan），与图级 fixture 的 cuda==vulkan `max_diff=0` 互相印证。注意绝对 Hmean≈0.45 / CER>1 反映 ICDAR2015 难样本上严格 IoU 的端到端以检测召回为限，只作本地诊断（本机 ICDAR det GT 未在仓库固定 sha、powersave governor、未加 `--require-performance-governor`），不是发布语义准确率声称。
+- **稳定性**：`test_aliked_capi_parity_512` 在空闲 GPU 上 `--repeat until-fail:40` 全 40 次通过；之前报告的偶发失败在此环境下未复现，指向并发/显存压力等环境因素（见下“Vulkan 延迟离散性”），而非数值不稳定。
+
 ## Vulkan 延迟离散性
 
 根因（2026-10-12 更正）：不是 CPU 降频。RTX 4090 宿主未开启 Resizable BAR，Vulkan 的 DEVICE_LOCAL|HOST_VISIBLE heap 只有 246 MiB（nvidia-smi BAR1 256 MiB），而 ggml-vulkan 会把它当 ReBAR 优先用于设备缓冲。OCR + SLANet 同进程时 BAR1 占用涨到 238 MiB，窗口接近饱和后 CPU 向映射缓冲的 memmove 坍塌约 100 倍（upload p50 113 ms，perf 显示 73% 进程时间在 `ggml_backend_tensor_set` 的 memmove）；页错误、futex/poll/ioctl 耗时与 fence 等待在快慢两组间相同。`3rdparty/ggml/patches/vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` 在设备初始化时检测「最大 host-visible VRAM heap < 最大 device-local heap 的一半」，自动改用 device-local 缓冲 + staging 上传（等价于上游 `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM`，但由内存属性决定、不读环境变量）。同主机交替 3 轮 A/B：wall p50 134.6 → 22.0 ms，p95 约 325 → 49 ms，upload 113 → 1.47 ms，BAR1 238 → 10 MiB；1200 个输出哈希逐位一致，精度不受影响。在用户报告的完整表格 pipeline（det + rec + SLANet，100 张 `table_rec`，f16，每臂 300 样本，交替 2 轮，只替换 `libggml-vulkan.so`）上：p50 150.3/148.1 → 35.5/37.3 ms，p95 355.6/356.8 → 72.0/77.0 ms，BAR1 峰值 226 → 11–14 MiB，两臂输出逐字节相同（详见 [`../table/README.md`](../table/README.md)）。早先 `layout_doc_test` 68–92 ms 双峰与 powersave 归因均出自该问题之前的测量，不再作为结论。
@@ -114,7 +139,6 @@ ctest --test-dir build_app -R "probe_ocr|ocr" --output-on-failure
 
 # 单图与 Paddle 的端到端差异报告
 LD_LIBRARY_PATH="build_app/external/lib:build_app/bin:$LD_LIBRARY_PATH" \
-GGML_VK_DISABLE_COOPMAT2=1 \
 python3 core/AICore/scripts/run_ocr_official_alignment.py \
   build_app/bin/bench_ocr INPUT.png \
   "$HOME/cloudViewer_data/extract/ocr_models/ppocr-det-ch-f32.gguf" \

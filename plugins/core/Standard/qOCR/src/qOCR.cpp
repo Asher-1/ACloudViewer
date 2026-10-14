@@ -80,18 +80,19 @@ void qOCR::showDialog() {
 void qOCR::executeTask(const OCRRunSettings& settings) {
     if (m_worker && m_worker->isRunning()) return;
 
-    // A fresh worker per run (the shared AICore plugin lifecycle): the old
-    // worker's context is released on the main thread before replacement.
+    // A fresh worker per run. A finished worker has already released its
+    // contexts on its own inference thread.
     if (m_worker) {
         m_worker->disconnect(this);
         m_worker->disconnect(m_dialog);
-        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
 
     if (!QFileInfo::exists(settings.detPath) ||
         !QFileInfo::exists(settings.recPath) ||
+        (!settings.layoutPath.isEmpty() &&
+         !QFileInfo::exists(settings.layoutPath)) ||
         (!settings.tablePath.isEmpty() &&
          !QFileInfo::exists(settings.tablePath))) {
         m_dialog->appendLog(tr("[Error] OCR models missing on disk."));
@@ -157,7 +158,7 @@ void qOCR::addResultToDb(const OCRRunResult& result,
                          const OCRRunSettings& settings) {
     if (!m_app || result.sourceImage.isNull()) return;
 
-    const QImage annotated = OCRRender::officialVisualization(result);
+    const QImage annotated = OCRRender::overlayVisualization(result);
 
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
@@ -230,7 +231,6 @@ void qOCR::onTaskFinished(bool success) {
     m_inferenceHeartbeat->stop();
     m_dialog->setRunning(false);
     if (m_worker) {
-        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }

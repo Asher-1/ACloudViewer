@@ -14,6 +14,7 @@
 #include "estimators/bundle_adjustment_ceres.h"
 #include "estimators/covariance.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "scene/reconstruction.h"
 
 namespace cloudViewer {
@@ -59,13 +60,6 @@ struct PyCeresBundleAdjuster : public BundleAdjuster {
     }
 };
 
-// Opaque handle for the engine's ceres::Problem (the fork does not bind the
-// ceres API surface; the handle exists so a problem can be round-tripped
-// from the adjuster into estimate_ba_covariance_from_problem).
-struct PyCeresProblem {
-    ceres::Problem* problem = nullptr;
-};
-
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"options", "The covariance estimation options."},
@@ -76,6 +70,15 @@ void pybind_covariance(py::module& m) {
     py::class_<PyCeresProblem> ceres_problem(m, "CeresProblem",
                                              "Opaque engine ceres::Problem "
                                              "handle.");
+    ceres_problem
+            .def("num_parameter_blocks",
+                 [](const PyCeresProblem& self) {
+                     return THROW_CHECK_NOTNULL(self.problem)
+                             ->NumParameterBlocks();
+                 })
+            .def("num_residual_blocks", [](const PyCeresProblem& self) {
+                return THROW_CHECK_NOTNULL(self.problem)->NumResidualBlocks();
+            });
     // Upstream pycolmap parity (src/pycolmap/estimators/bundle_adjustment.cc):
     // the abstract BundleAdjuster base is exposed so the Ceres backend can
     // declare the inheritance relationship.

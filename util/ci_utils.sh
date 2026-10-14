@@ -679,6 +679,9 @@ build_gui_app() {
     )
     
     set -x # Echo commands on
+    if [[ "ninja_graph_check" =~ ^($options)$ ]]; then
+        check_ninja_build_graph "$(cd .. && pwd)" "${cmakeGuiOptions[@]}"
+    fi
     echo
     echo Running cmake "${cmakeGuiOptions[@]}" ..
     cmake "${cmakeGuiOptions[@]}" ..
@@ -692,6 +695,37 @@ build_gui_app() {
     ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
     popd                                           # PWD=ACloudViewer
+}
+
+# check_ninja_build_graph <source_dir> <cmake options...>
+#
+# Configures <source_dir>/build_ninja_check with Ninja Multi-Config (the
+# Windows CI generator) and the given options, checks the build graph with
+# util/check_ninja_graph.py, then deletes the tree. Ninja rejects a link input
+# that is missing and produced by no rule before it builds anything, while Make
+# never checks it, so the Make build alone cannot catch this. Only configures:
+# nothing is compiled. Problems in Windows-only branches still need a Windows
+# configure.
+check_ninja_build_graph() {
+    local source_dir="$1"
+    shift
+    local graph_dir="${source_dir}/build_ninja_check"
+    local status=0
+
+    echo "Checking the Ninja build graph in ${graph_dir}..."
+    rm -rf "${graph_dir}"
+    # Both configurations: some link paths carry a $<CONFIG:Debug> suffix.
+    # Besides the default target, the CI also builds these two explicitly.
+    if ! cmake -S "${source_dir}" -B "${graph_dir}" -G "Ninja Multi-Config" \
+            "$@" "-DCMAKE_CONFIGURATION_TYPES=Release;Debug"; then
+        echo "Ninja Multi-Config configure failed"
+        status=1
+    elif ! python "${source_dir}/util/check_ninja_graph.py" "${graph_dir}" \
+            --target aicore-contract-tests --target install; then
+        status=1
+    fi
+    rm -rf "${graph_dir}"
+    return "${status}"
 }
 
 build_pip_package() {

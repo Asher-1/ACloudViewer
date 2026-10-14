@@ -160,6 +160,25 @@ void numpyPermToGgml(const std::vector<int64_t>& perm, int k[4]) {
         k[n - 1 - static_cast<int>(perm[i])] = n - 1 - i;
 }
 
+// Exact F32 product for an F32 x F32 mul_mat (no-op for F16/quantized
+// operands): GGML_PREC_F32 plus the "ocr_scalar_" node-name gate that the
+// vulkan_prec_f32 patch reads. Vulkan NV_coopmat2 has no F32 shader and
+// rounds both F32 operands to F16 otherwise; on the rec graph that moved the
+// fixture logits by 4.4e-4 (CUDA 3e-6) and changed 15 of 2123 ICDAR2015
+// texts against Paddle CPU on identical boxes and pad widths. Every dense
+// rec/det/layout GEMM and the SVTR attention products go through here, so
+// the f32 models compute the same function on CPU, CUDA and Vulkan. Cost on
+// Vulkan: +17 ms on a 54-box document page (73 -> 90 ms e2e, Paddle GPU
+// 105 ms); CUDA and CPU unchanged.
+ggml_tensor* exactF32(ggml_tensor* mm) {
+    if (mm->src[0]->type == GGML_TYPE_F32 &&
+        mm->src[1]->type == GGML_TYPE_F32) {
+        ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
+        ggml_format_name(mm, "ocr_scalar_mm");
+    }
+    return mm;
+}
+
 ggml_tensor* scalarF32(ggml_context* ctx, float value) {
     ggml_tensor* t = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 1);
     static_cast<float*>(t->data)[0] = value;
@@ -1486,8 +1505,8 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 // the batched GEMMs they enable.
                 ggml_tensor* Kc = ggml_cont(ctx, Kdt);
                 ggml_tensor* Qc = ggml_cont(ctx, Qdt);
-                ggml_tensor* scores =
-                        ggml_scale(ctx, ggml_mul_mat(ctx, Kc, Qc), attnScale);
+                ggml_tensor* scores = ggml_scale(
+                        ctx, exactF32(ggml_mul_mat(ctx, Kc, Qc)), attnScale);
                 ggml_tensor* probs = ggml_soft_max(ctx, scores);
                 // ctx(d,t,h,n) = sum_s probs(s,t) V(d,s): V must enter
                 // with a contiguous s axis, so materialize (s,d) once.
@@ -1495,7 +1514,7 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                         ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
                                      15 * sizeof(float), nStride, 960);
                 ggml_tensor* Vsd = ggml_cont(ctx, ggml_transpose(ctx, Vdt));
-                ggml_tensor* attnCtx = ggml_mul_mat(ctx, Vsd, probs);
+                ggml_tensor* attnCtx = exactF32(ggml_mul_mat(ctx, Vsd, probs));
                 // Reorder (d,t,h,n) -> (d,h,t,n): after cont, the (h,d)
                 // composite h*15+d becomes the fastest axis with stride 1,
                 // which is exactly the block-tail contract out[n,t,h*15+d]
@@ -1746,7 +1765,11 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                             ggml_reshape_2d(ctx, w,
                                             w->ne[0] * w->ne[1] * w->ne[2],
                                             w->ne[3]));
-                    if (f32Weights || (options && options->conv_gemm_f32acc))
+                    // F32 columns x F32 weights: exact F32 on every backend
+                    // (exactF32). F16/Q8_0 weights only ask for the f32
+                    // accumulator on Vulkan (conv_gemm_f32acc).
+                    exactF32(mm);
+                    if (options && options->conv_gemm_f32acc)
                         ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
                     result = ggml_reshape_4d(ctx, mm, cols->ne[1], cols->ne[2],
                                              cols->ne[3], w->ne[3]);
@@ -1939,6 +1962,10 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             const auto strides = attrInts(op.attrs, "strides");
             const int s0 = static_cast<int>(strides.empty() ? 1 : strides[0]);
             result = ggml_conv_transpose_2d_p0(ctx, w, x, s0);
+            // Same contract as the dense conv GEMM: F32 kernels must not
+            // take the CUDA 2x2/stride-2 cuBLAS path's default TF32 math.
+            if (w->type == GGML_TYPE_F32)
+                ggml_conv_transpose_2d_p0_set_prec(result, GGML_PREC_F32);
             if (ggml_tensor* biasT = state.byParam(op, "Bias"))
                 result = addChk(ctx, result,
                                 state.broadcastChannel(ggml_reshape_1d(
@@ -2338,7 +2365,7 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             // ggml_mul_mat out ne = {src0.ne[1], src1.ne[1], batch...}:
             // with the weight on src0 (ne1 = N_out) the product lands
             // directly on the contract layout — no trailing transpose.
-            result = ggml_mul_mat(ctx, Wk, Ax);
+            result = exactF32(ggml_mul_mat(ctx, Wk, Ax));
         } else if (op.type == "transpose2") {
             ggml_tensor* x = state.need(op, "X", "transpose2", error);
             if (!x) return nullptr;

@@ -12,6 +12,7 @@
 
 #include "estimators/bundle_adjustment.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "scene/correspondence_graph.h"
 #include "scene/database_cache.h"
 #include "scene/reconstruction.h"
@@ -411,7 +412,7 @@ void pybind_mappers(py::module& m) {
                        const IncrementalTriangulator::Options& options,
                        const std::vector<colmap::point3D_t>& point3D_ids) {
                         return self.triangulator->CompleteTracks(
-                                options, std::unordered_set<colmap::point3D_t>(
+                                options, colmap::FlatHashSet<colmap::point3D_t>(
                                                  point3D_ids.begin(),
                                                  point3D_ids.end()));
                     },
@@ -429,7 +430,7 @@ void pybind_mappers(py::module& m) {
                        const IncrementalTriangulator::Options& options,
                        const std::vector<colmap::point3D_t>& point3D_ids) {
                         return self.triangulator->MergeTracks(
-                                options, std::unordered_set<colmap::point3D_t>(
+                                options, colmap::FlatHashSet<colmap::point3D_t>(
                                                  point3D_ids.begin(),
                                                  point3D_ids.end()));
                     },
@@ -634,7 +635,7 @@ void pybind_mappers(py::module& m) {
                        const std::vector<colmap::point3D_t>& point3D_ids) {
                         return self.mapper->AdjustLocalBundle(
                                 options, ba_options, tri_options, image_id,
-                                std::unordered_set<colmap::point3D_t>(
+                                colmap::FlatHashSet<colmap::point3D_t>(
                                         point3D_ids.begin(),
                                         point3D_ids.end()));
                     },

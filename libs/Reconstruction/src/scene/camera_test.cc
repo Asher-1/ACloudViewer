@@ -173,6 +173,17 @@ TEST(base_camera, TestPrincipalPoint) {
   EXPECT_EQ(camera.PrincipalPointY(), 2.0);
 }
 
+TEST(base_camera, TestSphericalPrincipalPointUnavailable) {
+  Camera camera;
+  camera.InitializeWithId(EquirectangularCameraModel::model_id, 0.0, 2048,
+                          1024);
+  ASSERT_TRUE(camera.IsSpherical());
+  EXPECT_THROW(camera.PrincipalPointX(), std::invalid_argument);
+  EXPECT_THROW(camera.PrincipalPointY(), std::invalid_argument);
+  EXPECT_THROW(camera.SetPrincipalPointX(1.0), std::invalid_argument);
+  EXPECT_THROW(camera.SetPrincipalPointY(1.0), std::invalid_argument);
+}
+
 TEST(base_camera, TestParamIdxs) {
   Camera camera;
   EXPECT_THROW(camera.FocalLengthIdxs(), std::domain_error);

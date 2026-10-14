@@ -33,6 +33,7 @@
 
 #include <algorithm>
 
+#include "util/hash_containers.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -413,7 +414,9 @@ void StereoFusion::Fuse(const int thread_id,
     std::vector<uint8_t> fused_point_r;
     std::vector<uint8_t> fused_point_g;
     std::vector<uint8_t> fused_point_b;
-    std::unordered_set<int> fused_point_visibility;
+    // Upstream parity: the set's iteration order is the written visibility
+    // order (fused.ply.vis), so it must be the upstream container.
+    FlatHashSet<int> fused_point_visibility;
 
     while (!fusion_queue.empty()) {
         const auto data = fusion_queue.back();

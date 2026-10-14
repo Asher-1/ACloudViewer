@@ -517,6 +517,55 @@ endif()
 aicore_add_capi_test(test_reid_capi_contract reid)
 aicore_add_capi_test(test_reid_capi_load reid LABELS capi;model)
 
+# --- OCR (C API / libAICore) ---
+aicore_add_capi_test(test_ocr_capi_contract ocr LABELS capi;ocr)
+# Real-model recognize-only ABI against the det path (feedback, order,
+# degenerate quads, BGR); env wired in aicore_configure_model_test_assets,
+# exits 77 without the assets.
+aicore_add_capi_test(test_ocr_capi_e2e ocr LABELS capi;ocr;model;e2e)
+# Model-free DB box-score rasterization parity: ocr_box_score.cpp is pure C++
+# and compiled directly; the golden mask/score rows come from PaddleX
+# box_score_fast + cv2.fillPoly (scripts/gen_db_box_score_golden.py).
+add_executable(test_ocr_box_score ocr/test_ocr_box_score.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr/ocr_box_score.cpp)
+target_include_directories(test_ocr_box_score PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set_target_properties(test_ocr_box_score PROPERTIES
+    CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(test_ocr_box_score PRIVATE
+    AICORE_OCR_BOX_SCORE_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/db_box_score_golden.txt")
+_aicore_test_common(test_ocr_box_score)
+set_tests_properties(test_ocr_box_score PROPERTIES LABELS "capi;ocr")
+# Model-free rec crop parity (minAreaRect re-fit + cubic warpPerspective)
+# against PaddleX CropByPolys + cv2 (scripts/gen_ocr_rec_crop_golden.py),
+# and DB post-process parity (findContours + get_mini_boxes + pyclipper
+# unclip + SortQuadBoxes) against PaddleX DBPostProcess
+# (scripts/gen_db_postprocess_golden.py). Same contraction rule as the
+# libAICore TUs (core/AICore/CMakeLists.txt).
+set(_ocr_geom_dir ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${_ocr_geom_dir}/ocr_rec_crop.cpp ${_ocr_geom_dir}/ocr_db_postprocess.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+add_executable(test_ocr_rec_crop ocr/test_ocr_rec_crop.cpp
+    ${_ocr_geom_dir}/ocr_rec_crop.cpp)
+add_executable(test_ocr_db_postprocess ocr/test_ocr_db_postprocess.cpp
+    ${_ocr_geom_dir}/ocr_db_postprocess.cpp ${_ocr_geom_dir}/ocr_rec_crop.cpp
+    ${_ocr_geom_dir}/ocr_box_score.cpp)
+foreach(_t test_ocr_rec_crop test_ocr_db_postprocess)
+    target_include_directories(${_t} PRIVATE ${_ocr_geom_dir}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${CMAKE_CURRENT_SOURCE_DIR}/..)
+    set_target_properties(${_t} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+    _aicore_test_common(${_t})
+    set_tests_properties(${_t} PROPERTIES LABELS "capi;ocr")
+endforeach()
+target_compile_definitions(test_ocr_rec_crop PRIVATE
+    AICORE_OCR_REC_CROP_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/rec_crop_golden.txt")
+target_compile_definitions(test_ocr_db_postprocess PRIVATE
+    AICORE_OCR_DB_POSTPROCESS_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/db_postprocess_golden.txt")
+
 # --- table (C API / libAICore) ---
 aicore_add_capi_test(test_table_capi_contract table)
 # Real-model OCR + SLANet_plus (+ layout page) end-to-end; env wired in
@@ -863,7 +912,8 @@ function(aicore_configure_model_test_assets)
             test_rmbg_capi_performance
             test_gkd_capi_load
             test_map_anything_capi_load
-            test_table_capi_e2e)
+            test_table_capi_e2e
+            test_ocr_capi_e2e)
         if(TEST ${_test})
             set_tests_properties(${_test} PROPERTIES ENVIRONMENT "${_env}")
             if(AICORE_TEST_AUTO_DOWNLOAD)

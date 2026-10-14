@@ -560,7 +560,16 @@ LingbotMapWorker::LingbotMapWorker(const Settings& settings, QObject* parent)
     qRegisterMetaType<LingbotAlignedPreview>("LingbotAlignedPreview");
 }
 
-LingbotMapWorker::~LingbotMapWorker() { releaseContextOnMainThread(); }
+LingbotMapWorker::~LingbotMapWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
+    releaseContextOnMainThread();
+}
 
 void LingbotMapWorker::releaseContextOnMainThread() {
     if (m_pendingCtx) {

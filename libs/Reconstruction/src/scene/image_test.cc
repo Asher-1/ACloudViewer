@@ -291,3 +291,34 @@ TEST(base_image, TestViewingDirection) {
   Image image;
   EXPECT_TRUE(image.ViewingDirection().isApprox(Eigen::Vector3d(0, 0, 1)));
 }
+
+TEST(Image, ResizePoints2DWith3D) {
+  // Upstream parity (6db3867f scene/image_test.cc): SetPoints2D must reset
+  // the associations of shrunken indices while preserving the associations
+  // of retained observations.
+  Image image;
+  image.SetPoints2D(std::vector<Eigen::Vector2d>(4, Eigen::Vector2d::Zero()));
+  image.SetPoint3DForPoint2D(0, 1);
+  image.SetPoint3DForPoint2D(2, 2);
+  image.SetPoint3DForPoint2D(3, 3);
+
+  image.SetPoints2D(std::vector<Eigen::Vector2d>(2, Eigen::Vector2d::Ones()));
+  EXPECT_EQ(image.NumPoints3D(), 1);
+  EXPECT_EQ(image.Point2D(0).Point3DId(), 1);
+  EXPECT_EQ(image.Point2D(0).XY(), Eigen::Vector2d::Ones());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+
+  image.SetPoints2D(std::vector<Eigen::Vector2d>(5, Eigen::Vector2d::Zero()));
+  EXPECT_EQ(image.NumPoints3D(), 1);
+  EXPECT_EQ(image.Point2D(0).Point3DId(), 1);
+  for (point2D_t point2D_idx = 1; point2D_idx < image.NumPoints2D();
+       ++point2D_idx) {
+    EXPECT_FALSE(image.Point2D(point2D_idx).HasPoint3D());
+  }
+
+  image.SetPoints2D(std::vector<Eigen::Vector2d>());
+  EXPECT_EQ(image.NumPoints2D(), 0);
+  EXPECT_EQ(image.NumPoints3D(), 0);
+  image.SetPoints2D(std::vector<Eigen::Vector2d>());
+  EXPECT_EQ(image.NumPoints3D(), 0);
+}

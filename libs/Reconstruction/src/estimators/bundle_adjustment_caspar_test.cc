@@ -372,3 +372,36 @@ TEST(optim_bundle_adjustment_caspar, TestCasparSplitIntrinsicFactorVariantsCeres
   check_variant_family(true, false);
   check_variant_family(false, false);
 }
+
+TEST(optim_bundle_adjustment_caspar, TestCasparIgnoresMinTrackLength) {
+  // The min_track_length filter lives in the Ceres problem builder
+  // (AddPointToProblem skips short tracks); the Caspar adapter has no
+  // equivalent hook, so the option must not change the Caspar solve.
+  const Reconstruction initial = CreatePinholeParityReconstruction();
+  BundleAdjustmentConfig config;
+  config.AddImage(1);
+  config.AddImage(2);
+
+  BundleAdjustmentOptions baseline_options = CreateParityOptions();
+  baseline_options.backend = BundleAdjustmentBackend::CASPAR;
+  baseline_options.min_track_length = 0;
+  Reconstruction baseline = initial;
+  ceres::Solver::Summary baseline_summary;
+  ASSERT_TRUE(SolveCasparBundleAdjustment(baseline_options, config, &baseline,
+                                          &baseline_summary));
+
+  BundleAdjustmentOptions filtered_options = baseline_options;
+  filtered_options.min_track_length = 100;  // every synthetic track is shorter
+  Reconstruction filtered = initial;
+  ceres::Solver::Summary filtered_summary;
+  ASSERT_TRUE(SolveCasparBundleAdjustment(filtered_options, config, &filtered,
+                                          &filtered_summary));
+
+  EXPECT_EQ(baseline.Point3DIds().size(), filtered.Point3DIds().size());
+  // The two problems are identical, so the remaining RMS difference is GPU
+  // reduction-order noise (same magnitude as the run-to-run drift recorded
+  // for the parity gate), not option semantics: the 1e-12 bit-exactness of
+  // a CPU solve does not hold across separate GPU kernel executions.
+  EXPECT_NEAR(ComputeRmsReprojectionError(baseline),
+              ComputeRmsReprojectionError(filtered), 1e-3);
+}

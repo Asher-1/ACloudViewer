@@ -70,15 +70,10 @@ det/rec 换成 GGUF 源归档的同一份权重（PaddleX 默认下载的 det �
 
 | 场景 | Paddle（同权重） | AICore f32 / f16 / q8_0（cuda；vulkan） |
 |---|---|---|
-| 裁剪表 `table-gt-*` | TEDS 0.96461 / TEDS-S 0.99592 | TEDS 0.96403 / 0.96358 / 0.96418（vulkan 0.96391 / 0.96347 / 0.96496），TEDS-S 0.99592–0.99599；全部通过 |
-| 组合页 `table-page-gt-*` | TEDS 0.54633 / TEDS-S 0.59263 / recall 0.64 | TEDS 0.54327 / 0.54502 / **0.54080**（vulkan 0.54607 / 0.54471 / **0.53926**），TEDS-S 0.5913–0.5926，recall 0.64；q8_0 未过（门 0.54133） |
+| 裁剪表 `table-gt-*` | TEDS 0.96461 / TEDS-S 0.99592 | TEDS 0.96466 / 0.96436 / 0.96574（vulkan 0.96444 / 0.96441 / 0.96572），TEDS-S 0.99592–0.99599；全部通过 |
+| 组合页 `table-page-gt-*` | TEDS 0.54633 / TEDS-S 0.59263 / recall 0.64 | TEDS 0.54332 / 0.54530 / **0.54151**（vulkan 0.54329 / 0.54532 / **0.54145**），TEDS-S 0.59130–0.59229，recall 0.64；全部通过 |
 
-组合页 q8_0 的失败按阶段分解（cuda，每次只把一个阶段换回 f32）：全 q8_0 0.54080；table
-f32 0.54101（+0.0002）；layout f32 0.54115（+0.0004）；det/rec f32 0.54210（+0.0013）；全 f32
-0.54327。q8_0 各阶段的贡献都很小，主要缺口是 **f32 本身已比 Paddle 低 0.0031**：组合页 TEDS
-含 cell 文本，而 OCR 端到端文本与 Paddle 的差异来自 det 后处理框几何（见
-[`../ocr/README.md`](../ocr/README.md)「已确认的归因边界」），f32 余量只剩 0.0019，q8_0 的
-rec 字符差异便越过门限。修复方向是逐位移植 DB 后处理，而不是放宽门限；在此之前该行保持红。
+旧 q8_0 红行的根因不是量化门限太严。分阶段替换曾显示 table/layout 量化各只贡献约 0.0002/0.0004，主缺口来自 det/rec 框几何。AICore 当时错误使用 736/min 默认，并在浮点坐标上 unclip；PaddleOCR 3.0.1 公共流水线实际使用 64/min，并让 pyclipper 在整数坐标上执行 JT_ROUND offset，最后把 quad 取整。修复这三处后，CUDA/Vulkan q8_0 TEDS 从 `0.54080/0.53926` 提升到 `0.541509/0.541447`，均高于 `Paddle−0.005 = 0.541333`；TEDS-S `0.592293` 也满足门。门限没有放宽，提升来自后处理语义对齐。
 
 组合页由 `make_table_layout_pages.py` 确定性生成：每页按原分辨率嵌入一张 GT 表格，
 周围是标题、段落、图注等 CDLA 类别文本块，并记录粘贴框；评测选取与粘贴框 IoU 最大
@@ -112,10 +107,9 @@ python3 core/AICore/scripts/run_table_gt_matrix.py \
   --paddle-teds 0.9646149 --paddle-teds-s 0.9959180 --output /tmp/table_gt
 ```
 
-当前 `validate_all --tasks ocr,table --full`（developer profile，2 次进程重复）在 cpu、cuda、vulkan
-上均为 23/24 PASS：唯一的红行是上节的 `table-page-gt-q8_0`（cpu/cuda 0.54080、vulkan 0.53926，
-门 0.54133）。`ocr-layout-regions-*` 三行在 `--optional-region` 修正后以 `--models 'ocr-layout-regions-*'`
-单独复跑，三个后端均 3/3 PASS。
+当前 `validate_all --tasks ocr,table --full --offline`（developer profile，2 次独立进程重复）在 cpu、cuda、vulkan 上均为 **24/24 PASS**。这 24 行同时覆盖 rec ch/en、det、真实 Paddle layout head、SLANet 图级门、100 张裁剪表 GT、100 张组合页 GT 和三档 layout 区域门；`table-page-gt-q8_0` 已在三个后端通过。报告分别为 `/tmp/ocr_table_{cpu,cuda,vulkan}_final.json`，均记录固定模型/输入 digest 与 dirty revision。
+
+The layout assets are now published and an isolated empty-cache run has verified their sizes, SHA-256 values, dependency closure, and CPU graph/region gates. The three full reports remain developer-profile evidence because the worktree was dirty and no controlled release-profile baseline was supplied.
 
 ## fixture 人工核验
 

@@ -84,10 +84,9 @@ Q_DECLARE_METATYPE(OCRRunResult)
 /** Background PP-OCR det+rec(+layout/table) worker over a list of images.
  *
  *  Lifecycle contract shared by every AICore plugin worker: the model
- *  context is created inside run() on the worker thread (after acquiring
- *  the device task queue) once for the whole list and released on the main
- *  thread via releaseContextOnMainThread() so GPU teardown never races the
- *  render thread. Each image emits resultReady as soon as it is done (a
+ *  contexts are created and destroyed inside run() on the worker thread while
+ *  the device task queue is held. Each image emits resultReady as soon as it
+ *  is done (a
  *  failing image is logged and skipped); cancellation is checked between
  *  images and inside each run. Progress is stage-based per image: the ocr C
  *  API exposes no per-node callback. */
@@ -114,9 +113,6 @@ public:
     explicit OCRWorker(const Settings& settings, QObject* parent = nullptr);
     ~OCRWorker() override;
 
-    /** Move the pending model context back to the main thread and free it.
-     *  Safe to call from the main thread while the worker is idle. */
-    void releaseContextOnMainThread();
     void requestTaskCancel();
 
     /** One image (settings.imagePath) through a loaded det+rec(+layout)
@@ -144,15 +140,13 @@ protected:
 
 private:
     Settings m_settings;
-    struct aicore_ocr_ctx* m_pendingCtx = nullptr;
-    struct aicore_table_ctx* m_pendingTableCtx = nullptr;
     aicore_cancel_token* m_cancelToken = nullptr;
 };
 
 namespace OCRRender {
-/** Source-size OCR overlay: polygons plus stable index labels. The index
- *  maps to the dialog's scrollable result table without creating a growing
- *  text panel; reconstructed table cells are outlined in blue. Shared by DB
- *  export and the batch command. */
+/** Source-size in-app overlay with indexed text quads and table cells. */
+QImage overlayVisualization(const OCRRunResult& result);
+/** PaddleOCR draw_ocr-style export: red quads, 600-px long-side image and
+ *  one or more white 600-px text panels with CJK-aware wrapping. */
 QImage officialVisualization(const OCRRunResult& result);
 }  // namespace OCRRender

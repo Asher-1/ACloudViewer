@@ -48,10 +48,14 @@ if( PLUGIN_STANDARD_QOCR )
         endif()
         cloudviewer_set_bin_runtime_output_directory(test_qocr)
         add_test(NAME test_qocr COMMAND test_qocr)
+        add_test(NAME test_qocr_e2e COMMAND test_qocr --require-e2e)
         # Relocated under bin/plugin_test/: Qt and the vendored libraries
         # reach it only indirectly (through AICore/CVPluginAPI), which the
-        # executable's RUNPATH does not cover; the test also constructs a
-        # QApplication, so it needs the offscreen platform on headless hosts.
+        # executable's RUNPATH does not cover; the tests also construct a
+        # QApplication, so they need the offscreen platform on headless hosts.
         cloudviewer_set_plugin_test_env_offscreen(test_qocr)
+        cloudviewer_set_plugin_test_env_offscreen(test_qocr_e2e)
+        set_tests_properties(test_qocr_e2e PROPERTIES
+                LABELS "e2e;ocr;table" SKIP_RETURN_CODE 77)
     endif()
 endif()

@@ -247,16 +247,16 @@ bool BundleAdjustmentConfig::HasConstantTvec(const image_t image_id) const {
     return constant_tvecs_.find(image_id) != constant_tvecs_.end();
 }
 
-const std::unordered_set<image_t>& BundleAdjustmentConfig::Images() const {
+const FlatHashSet<image_t>& BundleAdjustmentConfig::Images() const {
     return image_ids_;
 }
 
-const std::unordered_set<point3D_t>& BundleAdjustmentConfig::VariablePoints()
+const FlatHashSet<point3D_t>& BundleAdjustmentConfig::VariablePoints()
         const {
     return variable_point3D_ids_;
 }
 
-const std::unordered_set<point3D_t>& BundleAdjustmentConfig::ConstantPoints()
+const FlatHashSet<point3D_t>& BundleAdjustmentConfig::ConstantPoints()
         const {
     return constant_point3D_ids_;
 }
@@ -304,6 +304,31 @@ void BundleAdjustmentConfig::RemoveConstantPoint(const point3D_t point3D_id) {
 // BundleAdjustmentOptions
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace {
+
+// Assigns `src` into `dst`, reusing the existing pointee when both are set so
+// that raw pointers to nested fields (option widgets bound before
+// OptionManager::ResetOptions()) stay valid. Copies never alias the source.
+template <typename T>
+void AssignDeepCopy(std::shared_ptr<T>& dst, const std::shared_ptr<T>& src) {
+    if (src && dst) {
+        *dst = *src;
+    } else {
+        dst = src ? std::make_shared<T>(*src) : nullptr;
+    }
+}
+
+template <typename T>
+void AssignDeepMove(std::shared_ptr<T>& dst, std::shared_ptr<T>&& src) {
+    if (src && dst) {
+        *dst = std::move(*src);
+    } else {
+        dst = std::move(src);
+    }
+}
+
+}  // namespace
+
 BundleAdjustmentBackendOptions::BundleAdjustmentBackendOptions()
     : ceres(std::make_shared<CeresBundleAdjustmentOptions>()),
       caspar(std::make_shared<CasparBundleAdjustmentOptions>()) {}
@@ -320,13 +345,17 @@ BundleAdjustmentBackendOptions::BundleAdjustmentBackendOptions(
 BundleAdjustmentBackendOptions& BundleAdjustmentBackendOptions::operator=(
         const BundleAdjustmentBackendOptions& other) {
     if (this != &other) {
-        ceres = other.ceres ? std::make_shared<CeresBundleAdjustmentOptions>(
-                                      *other.ceres)
-                            : nullptr;
-        caspar = other.caspar
-                         ? std::make_shared<CasparBundleAdjustmentOptions>(
-                                   *other.caspar)
-                         : nullptr;
+        AssignDeepCopy(ceres, other.ceres);
+        AssignDeepCopy(caspar, other.caspar);
+    }
+    return *this;
+}
+
+BundleAdjustmentBackendOptions& BundleAdjustmentBackendOptions::operator=(
+        BundleAdjustmentBackendOptions&& other) {
+    if (this != &other) {
+        AssignDeepMove(ceres, std::move(other.ceres));
+        AssignDeepMove(caspar, std::move(other.caspar));
     }
     return *this;
 }
@@ -345,11 +374,16 @@ PosePriorBundleAdjustmentBackendOptions&
 PosePriorBundleAdjustmentBackendOptions::operator=(
         const PosePriorBundleAdjustmentBackendOptions& other) {
     if (this != &other) {
-        ceres = other.ceres
-                        ? std::make_shared<
-                                  CeresPosePriorBundleAdjustmentOptions>(
-                                  *other.ceres)
-                        : nullptr;
+        AssignDeepCopy(ceres, other.ceres);
+    }
+    return *this;
+}
+
+PosePriorBundleAdjustmentBackendOptions&
+PosePriorBundleAdjustmentBackendOptions::operator=(
+        PosePriorBundleAdjustmentBackendOptions&& other) {
+    if (this != &other) {
+        AssignDeepMove(ceres, std::move(other.ceres));
     }
     return *this;
 }

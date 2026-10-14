@@ -163,12 +163,15 @@ private:
     std::unique_ptr<ceres::Problem> problem_;
     ceres::Solver::Summary summary_;
     std::set<image_t> parameterized_image_ids_;
-    std::unordered_set<camera_t> camera_ids_;
+    // Upstream parity: ordered camera set and boost-backed observation counts;
+    // FixGaugeWithThreePoints iterates point3D_num_observations_, so its
+    // container determines the gauge points.
+    std::set<camera_t> camera_ids_;
     std::optional<PosePriorBundleAdjustmentOptions> pose_prior_options_;
     std::vector<PosePrior> pose_priors_;
     bool use_prior_position_ = false;
     Sim3d normalized_from_metric_;
-    std::unordered_map<point3D_t, size_t> point3D_num_observations_;
+    FlatHashMap<point3D_t, size_t> point3D_num_observations_;
 
     // W3-2b step 5 (upstream parity, d3ccaf35): the pose parameter blocks
     // are single Rigid3d blocks (Eigen::Vector7d params, [qx, qy, qz, qw,

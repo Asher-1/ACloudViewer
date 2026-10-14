@@ -105,7 +105,7 @@ double Camera::MeanFocalLength() const {
 
 double Camera::FocalLength() const {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 1);
+  THROW_CHECK_EQ(idxs.size(), 1);
   return params_[idxs[0]];
 }
 
@@ -130,51 +130,37 @@ void Camera::SetFocalLength(const double focal_length) {
 
 void Camera::SetFocalLengthX(const double focal_length_x) {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[0]] = focal_length_x;
 }
 
 void Camera::SetFocalLengthY(const double focal_length_y) {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[1]] = focal_length_y;
 }
 
 double Camera::PrincipalPointX() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  if (idxs.size() != 2) {
-    fprintf(stderr,
-            "[CAM] PPX empty, cam=%u model=%d w=%d h=%d ret=%p\n",
-            camera_id_, static_cast<int>(model_id_), width_, height_,
-            __builtin_return_address(0));
-    fflush(stderr);
-  }
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   return params_[idxs[0]];
 }
 
 double Camera::PrincipalPointY() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  if (idxs.size() != 2) {
-    fprintf(stderr,
-            "[CAM] PPY empty, cam=%u model=%d w=%d h=%d ret=%p\n",
-            camera_id_, static_cast<int>(model_id_), width_, height_,
-            __builtin_return_address(0));
-    fflush(stderr);
-  }
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   return params_[idxs[1]];
 }
 
 void Camera::SetPrincipalPointX(const double ppx) {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[0]] = ppx;
 }
 
 void Camera::SetPrincipalPointY(const double ppy) {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[1]] = ppy;
 }
 

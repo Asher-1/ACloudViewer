@@ -3,67 +3,96 @@
 #include "estimators/rotation_averaging_ceres.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <memory>
-#include <queue>
 #include <stdexcept>
 #include <vector>
 
-#include "estimators/cost_functions/motion_averaging.h"
 #include "optim/manifold.h"
 #include "scene/pose_graph.h"
 #include "scene/reconstruction.h"
 #include "util/logging.h"
+#include "util/threading.h"
 
 namespace colmap {
 namespace {
 
+// Upstream CreateCeresLossFunction (estimators/ceres_loss_function.cc)
+// semantics: `robust_scale` sets the residual at which robustification takes
+// place and `weight` multiplies the loss output through ceres::ScaledLoss.
 std::shared_ptr<ceres::LossFunction> CreateLoss(
         const CeresLossFunctionType type,
-        const double scale,
+        const double robust_scale,
         const double weight = 1.0) {
-    const double weighted_scale = scale * weight;
+    if (std::isnan(robust_scale) || robust_scale < 0.0 ||
+        !std::isfinite(weight) || weight <= 0.0) {
+        throw std::invalid_argument("invalid Ceres loss configuration");
+    }
+    std::unique_ptr<ceres::LossFunction> loss;
     switch (type) {
         case CeresLossFunctionType::TRIVIAL:
-            return std::make_shared<ceres::TrivialLoss>();
+            loss = std::make_unique<ceres::TrivialLoss>();
+            break;
         case CeresLossFunctionType::SOFT_L1:
-            return std::make_shared<ceres::SoftLOneLoss>(weighted_scale);
+            loss = std::make_unique<ceres::SoftLOneLoss>(robust_scale);
+            break;
         case CeresLossFunctionType::CAUCHY:
-            return std::make_shared<ceres::CauchyLoss>(weighted_scale);
+            loss = std::make_unique<ceres::CauchyLoss>(robust_scale);
+            break;
         case CeresLossFunctionType::HUBER:
-            return std::make_shared<ceres::HuberLoss>(weighted_scale);
+            loss = std::make_unique<ceres::HuberLoss>(robust_scale);
+            break;
     }
-    throw std::invalid_argument("unknown Ceres loss function");
+    if (!loss) throw std::invalid_argument("unknown Ceres loss function");
+    if (weight == 1.0) return loss;
+    return std::make_shared<ceres::ScaledLoss>(
+            loss.release(), weight, ceres::TAKE_OWNERSHIP);
 }
 
-double* MaybeGetSensorRotationBlock(Image& image) {
+double* MaybeGetSensorRotationBlock(const Image& image) {
     if (image.IsRefInFrame()) return nullptr;
-    Frame& frame = *image.FramePtr();
-    Rig& rig = *frame.RigPtr();
-    return rig.CamFromRigQvec(image.CameraId()).data();
+    return image.FramePtr()->RigPtr()->CamFromRigQvec(image.CameraId()).data();
 }
 
-struct RelativeRotationWxyzCostFunctor {
-    explicit RelativeRotationWxyzCostFunctor(
-            const Eigen::Quaterniond& cam2_from_cam1)
-        : cam2_from_cam1(cam2_from_cam1) {}
+template <typename T>
+Eigen::Quaternion<T> WxyzQuaternion(const T* q) {
+    return Eigen::Quaternion<T>(q[0], q[1], q[2], q[3]);
+}
 
+// Storage adapter of RelativeRotationCostFunctor
+// (cost_functions/motion_averaging.h): this fork stores frame and sensor
+// rotations as [w, x, y, z] qvecs, so the blocks are read in WXYZ order. The
+// residual is the same sensor-1-frame expression
+//   Log(prior^-1 * sensor2_from_world * sensor1_from_world^-1).
+struct RelativeRotationWxyzCostFunctor {
     template <typename T>
     bool operator()(const T* const rig1_from_world,
                     const T* const rig2_from_world,
                     T* residuals) const {
-        const Eigen::Quaternion<T> q1(rig1_from_world[0],
-                                      rig1_from_world[1],
-                                      rig1_from_world[2],
-                                      rig1_from_world[3]);
-        const Eigen::Quaternion<T> q2(rig2_from_world[0],
-                                      rig2_from_world[1],
-                                      rig2_from_world[2],
-                                      rig2_from_world[3]);
-        const Eigen::Quaternion<T> error =
-                q2.conjugate() * cam2_from_cam1.cast<T>() * q1;
-        const T error_wxyz[4] = {
-                error.w(), error.x(), error.y(), error.z()};
+        const T* parameters[] = {rig1_from_world, rig2_from_world};
+        return (*this)(parameters, residuals);
+    }
+
+    // For rigs, parameters[0] and [1] are rig1_from_world and rig2_from_world.
+    // sensor1_index and sensor2_index locate the sensor_from_rig blocks;
+    // -1 denotes identity, and shared sensors may use the same block.
+    // With same_frame=true, omit the rig_from_world blocks and index only
+    // the sensor_from_rig blocks.
+    template <typename T>
+    bool operator()(T const* const* parameters, T* residuals) const {
+        Eigen::Quaternion<T> error =
+                same_frame ? Eigen::Quaternion<T>::Identity()
+                           : WxyzQuaternion(parameters[1]) *
+                                     WxyzQuaternion(parameters[0]).conjugate();
+        if (sensor2_index >= 0) {
+            error = WxyzQuaternion(parameters[sensor2_index]) * error;
+        }
+        if (sensor1_index >= 0) {
+            error = error * WxyzQuaternion(parameters[sensor1_index]).conjugate();
+        }
+        error = sensor2_from_sensor1_prior.conjugate().cast<T>() * error;
+        const T error_wxyz[4] = {error.w(), error.x(), error.y(), error.z()};
         ceres::QuaternionToAngleAxis(error_wxyz, residuals);
         return true;
     }
@@ -71,58 +100,43 @@ struct RelativeRotationWxyzCostFunctor {
     static ceres::CostFunction* Create(
             const Eigen::Quaterniond& cam2_from_cam1) {
         return new ceres::AutoDiffCostFunction<RelativeRotationWxyzCostFunctor,
-                                               3,
-                                               4,
-                                               4>(
-                new RelativeRotationWxyzCostFunctor(cam2_from_cam1));
+                                               3, 4, 4>(
+                new RelativeRotationWxyzCostFunctor{cam2_from_cam1});
     }
 
-    Eigen::Quaterniond cam2_from_cam1;
-};
-
-struct RelativeRotationRigWxyzCostFunctor {
-    template <typename T>
-    bool operator()(T const* const* parameters, T* residuals) const {
-        Eigen::Quaternion<T> error = cam2_from_cam1.cast<T>();
-        if (sensor2_index >= 0) {
-            const T* sensor2 = parameters[sensor2_index];
-            error = Eigen::Quaternion<T>(sensor2[0], sensor2[1], sensor2[2], sensor2[3])
-                            .conjugate() *
-                    error;
-        }
-        if (sensor1_index >= 0) {
-            const T* sensor1 = parameters[sensor1_index];
-            error = error * Eigen::Quaternion<T>(sensor1[0], sensor1[1], sensor1[2], sensor1[3]);
-        }
-        if (!same_frame) {
-            const T* rig1 = parameters[0];
-            const T* rig2 = parameters[1];
-            error = Eigen::Quaternion<T>(rig2[0], rig2[1], rig2[2], rig2[3]).conjugate() *
-                    error * Eigen::Quaternion<T>(rig1[0], rig1[1], rig1[2], rig1[3]);
-        }
-        const T error_wxyz[4] = {error.w(), error.x(), error.y(), error.z()};
-        ceres::QuaternionToAngleAxis(error_wxyz, residuals);
-        return true;
-    }
-
-    Eigen::Quaterniond cam2_from_cam1;
+    Eigen::Quaterniond sensor2_from_sensor1_prior;
     int sensor1_index = -1;
     int sensor2_index = -1;
     bool same_frame = false;
 };
 
+const Rigid3d kUnknownTranslationIdentity(
+        Eigen::Quaterniond::Identity(),
+        Eigen::Vector3d::Constant(std::numeric_limits<double>::quiet_NaN()));
+
 }  // namespace
 
 CeresRotationAveragerOptions::CeresRotationAveragerOptions() {
     solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-    solver_options.logging_type = ceres::LoggingType::SILENT;
+    solver_options.max_num_iterations = 100;
+    solver_options.num_threads = -1;
 }
 
 CeresRotationAverager::CeresRotationAverager(
-        const CeresRotationAveragerOptions& options,
+        const RotationEstimatorOptions& options,
         const PoseGraph& pose_graph,
         Reconstruction& reconstruction)
-    : solver_options(options.solver_options), reconstruction_(reconstruction) {
+    : solver_options(THROW_CHECK_NOTNULL(options.ceres)->solver_options),
+      reconstruction_(reconstruction) {
+    const CeresRotationAveragerOptions& ceres_options = *options.ceres;
+    solver_options.num_threads =
+            GetEffectiveNumThreads(solver_options.num_threads);
+    if (VLOG_IS_ON(2)) {
+        solver_options.minimizer_progress_to_stdout = true;
+    }
+    std::shared_ptr<ceres::LossFunction> loss =
+            CreateLoss(ceres_options.loss_function_type,
+                       DegToRad(ceres_options.loss_function_scale));
     FlatHashSet<image_t> image_ids;
     int max_num_matches = 0;
     for (const auto& [pair_id, edge] : pose_graph.ValidEdges()) {
@@ -151,96 +165,87 @@ CeresRotationAverager::CeresRotationAverager(
 
     for (const auto& [pair_id, edge] : pose_graph.ValidEdges()) {
         if (options.reweighting == RotationAveragingReweighting::INLIER_MATCH_COUNT &&
-            max_num_matches > 0 && edge.num_matches == 0) {
-            continue;
+            max_num_matches > 0) {
+            if (edge.num_matches == 0) continue;
+            loss = CreateLoss(ceres_options.loss_function_type,
+                              DegToRad(ceres_options.loss_function_scale),
+                              static_cast<double>(edge.num_matches) /
+                                      max_num_matches);
         }
-        const double weight =
-                options.reweighting == RotationAveragingReweighting::INLIER_MATCH_COUNT &&
-                        max_num_matches > 0
-                    ? static_cast<double>(edge.num_matches) / max_num_matches
-                    : 1.0;
         const auto [image_id1, image_id2] = Database::PairIdToImagePair(pair_id);
         AddRelativeRotationResidual(
-                image_id1,
-                image_id2,
-                edge.cam2_from_cam1.rotation(),
-                CreateLoss(options.loss_function_type, options.loss_function_scale, weight));
+                image_id1, image_id2, edge.cam2_from_cam1.rotation(), loss);
     }
 }
 
 void CeresRotationAverager::InitializeRotations(
-        const CeresRotationAveragerOptions& options,
+        const RotationEstimatorOptions& options,
         const PoseGraph& pose_graph,
         const FlatHashSet<image_t>& image_ids) {
-    if (options.skip_initialization) return;
-
-    const image_t root_image_id = *std::min_element(image_ids.begin(), image_ids.end());
-    FlatHashSet<image_t> visited = {root_image_id};
-    reconstruction_.Frame(reconstruction_.Image(root_image_id).FrameId())
-            .SetRigFromWorld(Rigid3d());
-    std::queue<image_t> pending;
-    pending.push(root_image_id);
-    while (!pending.empty()) {
-        const image_t parent = pending.front();
-        pending.pop();
-        const Eigen::Quaterniond parent_rotation =
-                reconstruction_.Image(parent).CamFromWorld().rotation();
-        for (const auto& [pair_id, edge] : pose_graph.ValidEdges()) {
-            const auto [first, second] = Database::PairIdToImagePair(pair_id);
-            const bool parent_is_first = first == parent;
-            const image_t child = parent_is_first ? second : first;
-            if ((!parent_is_first && second != parent) || !image_ids.count(child) ||
-                visited.count(child)) {
-                continue;
-            }
-            const Eigen::Quaterniond child_rotation = parent_is_first
-                    ? edge.cam2_from_cam1.rotation() * parent_rotation
-                    : edge.cam2_from_cam1.rotation().inverse() * parent_rotation;
-            reconstruction_.Frame(reconstruction_.Image(child).FrameId())
-                    .SetRigFromWorld(Rigid3d(
-                            child_rotation,
-                            Eigen::Vector3d::Constant(
-                                    std::numeric_limits<double>::quiet_NaN())));
-            visited.insert(child);
-            pending.push(child);
+    // Validate fixed sensors before replacing invalid initial rotations, so a
+    // rejected configuration leaves the reconstruction untouched.
+    for (const image_t image_id : image_ids) {
+        const Image& image = reconstruction_.Image(image_id);
+        if (image.IsRefInFrame()) continue;
+        const std::optional<Rigid3d> pose =
+                image.FramePtr()->RigPtr()->MaybeSensorFromRig(
+                        image.CameraPtr()->SensorId());
+        const bool refine_sensor =
+                options.refine_sensor_from_rig &&
+                (!pose.has_value() || pose->translation().hasNaN());
+        if (!refine_sensor &&
+            (!pose.has_value() || !pose->rotation().coeffs().allFinite())) {
+            throw std::invalid_argument(
+                    "rotation averaging requires finite sensor rotations");
         }
+    }
+    for (const image_t image_id : image_ids) {
+        const Image& image = reconstruction_.Image(image_id);
+        if (image.IsRefInFrame()) continue;
+        Rig& rig = *image.FramePtr()->RigPtr();
+        const sensor_t sensor_id = image.CameraPtr()->SensorId();
+        if (rig.HasSensorFromRig(sensor_id) &&
+            !rig.SensorFromRigQvec(sensor_id).allFinite()) {
+            rig.ResetSensorFromRig(sensor_id);
+        }
+    }
+    if (!options.skip_initialization) {
+        InitializeFromMaximumSpanningTree(pose_graph,
+                                          image_ids,
+                                          reconstruction_,
+                                          options.refine_sensor_from_rig);
     }
 }
 
 void CeresRotationAverager::SetupParameterBlocks(
-        const CeresRotationAveragerOptions& options,
+        const RotationEstimatorOptions& options,
         const FlatHashSet<image_t>& image_ids) {
+    const auto add_rotation = [&](double* block) {
+        if (!problem_->HasParameterBlock(block)) {
+            problem_->AddParameterBlock(block, 4);
+            SetQuaternionManifoldWxyz(problem_.get(), block);
+        }
+        return block;
+    };
     for (const image_t image_id : image_ids) {
-        Image& image = reconstruction_.Image(image_id);
-        Frame& frame = reconstruction_.Frame(image.FrameId());
+        const Image& image = reconstruction_.Image(image_id);
+        Frame& frame = *image.FramePtr();
         if (!frame.HasPose()) {
-            frame.SetRigFromWorld(Rigid3d(
-                    Eigen::Quaterniond::Identity(),
-                    Eigen::Vector3d::Constant(std::numeric_limits<double>::quiet_NaN())));
+            frame.SetRigFromWorld(kUnknownTranslationIdentity);
         }
-        double* rotation = frame.RigFromWorldQvec().data();
-        if (!problem_->HasParameterBlock(rotation)) {
-            problem_->AddParameterBlock(rotation, 4);
-            SetQuaternionManifoldWxyz(problem_.get(), rotation);
-        }
+        add_rotation(frame.RigFromWorldQvec().data());
         if (!image.IsRefInFrame()) {
             Rig& rig = *frame.RigPtr();
-            const sensor_t sensor_id(SensorType::CAMERA, image.CameraId());
-            const bool known_sensor = rig.HasSensorFromRig(sensor_id);
-            if (!known_sensor) {
-                rig.SetSensorFromRig(
-                        sensor_id,
-                        Rigid3d(Eigen::Quaterniond::Identity(),
-                                Eigen::Vector3d::Constant(
-                                        std::numeric_limits<double>::quiet_NaN())));
+            const sensor_t sensor_id = image.CameraPtr()->SensorId();
+            if (!rig.HasSensorFromRig(sensor_id)) {
+                rig.SetSensorFromRig(sensor_id, kUnknownTranslationIdentity);
             }
-            double* sensor_rotation = MaybeGetSensorRotationBlock(image);
-            if (!problem_->HasParameterBlock(sensor_rotation)) {
-                problem_->AddParameterBlock(sensor_rotation, 4);
-                SetQuaternionManifoldWxyz(problem_.get(), sensor_rotation);
-            }
-            if (!options.refine_sensor_from_rig || known_sensor) {
-                problem_->SetParameterBlockConstant(sensor_rotation);
+            double* sensor = add_rotation(MaybeGetSensorRotationBlock(image));
+            // Fully calibrated sensors (finite translation) stay constant
+            // unless the caller flips them via Problem().
+            if (!options.refine_sensor_from_rig ||
+                !rig.SensorFromRigTvec(sensor_id).hasNaN()) {
+                problem_->SetParameterBlockConstant(sensor);
             }
         }
     }
@@ -296,7 +301,11 @@ void CeresRotationAverager::AddRelativeRotationResidual(
         throw std::invalid_argument("sensor rotation blocks have not been configured");
     }
     const bool same_frame = image1.FrameId() == image2.FrameId();
-    if (same_frame && sensor1 == sensor2) return;
+    if (same_frame && sensor1 == sensor2) {
+        LOG(WARNING) << "Skipping self-loop for image pair " << image_id1
+                     << ", " << image_id2;
+        return;
+    }
     ceres::LossFunction* loss = loss_function.get();
     if (loss != nullptr) losses_.try_emplace(loss, loss_function);
     if (sensor1 == nullptr && sensor2 == nullptr && !same_frame) {
@@ -315,8 +324,8 @@ void CeresRotationAverager::AddRelativeRotationResidual(
         blocks.push_back(sensor);
         return static_cast<int>(blocks.size() - 1);
     };
-    auto* cost = new ceres::DynamicAutoDiffCostFunction<RelativeRotationRigWxyzCostFunctor, 8>(
-            new RelativeRotationRigWxyzCostFunctor{
+    auto* cost = new ceres::DynamicAutoDiffCostFunction<RelativeRotationWxyzCostFunctor, 8>(
+            new RelativeRotationWxyzCostFunctor{
                     cam2_from_cam1, sensor_index(sensor1), sensor_index(sensor2), same_frame});
     for (size_t i = 0; i < blocks.size(); ++i) cost->AddParameterBlock(4);
     cost->SetNumResiduals(3);
@@ -324,7 +333,7 @@ void CeresRotationAverager::AddRelativeRotationResidual(
 }
 
 std::unique_ptr<CeresRotationAverager> CreateDefaultCeresRotationAverager(
-        const CeresRotationAveragerOptions& options,
+        const RotationEstimatorOptions& options,
         const PoseGraph& pose_graph,
         Reconstruction& reconstruction) {
     return std::make_unique<CeresRotationAverager>(options, pose_graph, reconstruction);

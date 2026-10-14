@@ -44,6 +44,7 @@ add_subdirectory(controllers)
 add_subdirectory(estimators)
 add_subdirectory(geometry)
 add_subdirectory(image)
+add_subdirectory(inertial)
 add_subdirectory(exe)
 add_subdirectory(feature)
 add_subdirectory(math)
@@ -65,22 +66,23 @@ COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
 target_link_libraries(${COLMAP_LIB_NAME} PUBLIC 3rdparty_meshoptimizer)
 target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 
-# Vendored boost::unordered header subset (1.92, header-only), injected for
-# mvs/patch_match.cc ONLY (per-source INCLUDE_DIRECTORIES below):
-# patch_match.cc must reproduce upstream's boost::unordered_flat_set
-# iteration order when rebuilding each problem's src_image_idxs
-# (hash-layout-dependent order feeds the patch_match layered cost
-# accumulation; a different order chaotically diverges the stereo result for
-# identical inputs). The include path must stay scoped to this single TU:
-# the 1.92 header closure conflicts with the system Boost 1.74 headers that
-# the CGAL-based meshing TUs of this same target require (container/move/
-# mpl redefinitions, see ../CMakeLists.txt). The compiled Boost libraries
-# stay on the system/ext_boost version; the scene/SfM hash container aliases
-# run on the std backend (COLMAP_HASH_BOOST is NOT defined).
-set_source_files_properties(
-        ${CMAKE_CURRENT_SOURCE_DIR}/mvs/patch_match.cc
-        PROPERTIES INCLUDE_DIRECTORIES
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/boost_unordered/include")
+# Vendored Boost 1.92 header-only subset = boost/unordered 1.92 plus its
+# measured include closure (assert/config/container_hash/core/cstdint/mp11/
+# predef/throw_exception/describe...) backing util/hash_containers.h. The
+# FlatHashMap/NodeHashMap aliases are data members of public scene/SfM
+# headers and their iteration order is observable SfM behavior (see
+# util/hash_containers.h), so every C++ consumer of ColmapLib must see the
+# same boost::unordered definition: the path is PUBLIC and searched BEFORE
+# the system Boost 1.74 headers. boost/move, boost/container and
+# boost/intrusive are deliberately NOT vendored: the unordered closure does
+# not include them, so system 1.74 resolves them everywhere and no TU ever
+# mixes 1.74 container/pair.hpp with 1.92 move detail traits (the ODR
+# redefinition that broke the CGAL TUs when the two trees were mixed).
+# Compiled Boost libraries stay on the system/ext_boost version; none of the
+# vendored libraries has a compiled component that ColmapLib uses. CUDA TUs
+# never include the aliases and keep their existing Boost resolution.
+target_include_directories(${COLMAP_LIB_NAME} BEFORE PUBLIC
+        "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/boost_unordered/include>")
 
 
 # Upstream-parity host math: the Image constructor computes P_/inv_P_ through
@@ -275,6 +277,12 @@ if (TESTS_ENABLED)
         USES_TERMINAL
         VERBATIM)
 
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(
+        NAME scripts/run_loma_sfm_comparison_test
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/run_loma_sfm_comparison_test.py)
+
     # L3 is deliberately opt-in: it needs a pinned fixture, an executable
     # built from the exact upstream revision, and calibrated thresholds. An
     # absent prerequisite is a configuration error, never a green no-op.
@@ -305,13 +313,13 @@ if (TESTS_ENABLED)
                  RECONSTRUCTION_L3_IMAGES
                  RECONSTRUCTION_L3_UPSTREAM_COLMAP
                  RECONSTRUCTION_L3_UPSTREAM_SOURCE
+                 RECONSTRUCTION_L3_UPSTREAM_REVISION
                  RECONSTRUCTION_L3_THRESHOLDS)
             if ("${${L3_REQUIRED_VAR}}" STREQUAL "")
                 message(FATAL_ERROR
                     "${L3_REQUIRED_VAR} is required when RECONSTRUCTION_L3_GATE_ENABLED=ON")
             endif()
         endforeach()
-        find_package(Python3 REQUIRED COMPONENTS Interpreter)
         add_custom_target(reconstruction_l3_alignment_gate
             COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/run_loma_sfm_comparison.py
@@ -323,8 +331,13 @@ if (TESTS_ENABLED)
                     ${_L3_RUNTIME_LIBRARY_ARGS}
                     --upstream-colmap ${RECONSTRUCTION_L3_UPSTREAM_COLMAP}
                     --upstream-source ${RECONSTRUCTION_L3_UPSTREAM_SOURCE}
-                    --upstream-revision a2bd15c2fbfa79ca3812f8b081708da5e47d5402
+                    --upstream-revision ${RECONSTRUCTION_L3_UPSTREAM_REVISION}
                     --seed ${RECONSTRUCTION_L3_SEED}
+                    # Fixture options of the committed thresholds; the runner
+                    # rejects a run whose configuration differs from them.
+                    --single-camera
+                    --mapper-option Mapper.num_threads=1
+                    --mapper-option Mapper.min_num_matches=20
                     --l3-thresholds ${RECONSTRUCTION_L3_THRESHOLDS}
             DEPENDS ${_L3_ACV_TARGET}
             USES_TERMINAL

@@ -17,6 +17,7 @@
 #include "feature/types.h"
 #include "pipelines/feature.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 
 namespace cloudViewer {

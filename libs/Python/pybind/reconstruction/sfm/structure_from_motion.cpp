@@ -16,6 +16,7 @@
 
 #include "pipelines/sfm.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 #include "pybind/reconstruction/sfm/mappers.h"
 

@@ -16,7 +16,8 @@ import pytest
 
 def test_rotation3d_default_init(geometry):
     r = geometry.Rotation3d()
-    assert r is not None
+    # Upstream Rotation3d() is the identity (Eigen leaves it uninitialized).
+    np.testing.assert_array_equal(list(r.quat), [0, 0, 0, 1])
 
 
 def test_rotation3d_init_xyzw(geometry):

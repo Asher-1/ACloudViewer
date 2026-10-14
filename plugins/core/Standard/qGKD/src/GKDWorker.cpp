@@ -102,6 +102,13 @@ GKDWorker::GKDWorker(const Settings& settings, QObject* parent)
 }
 
 GKDWorker::~GKDWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
     releaseContextOnMainThread();
 #ifdef AICore_ENABLED
     if (m_cancelToken) {

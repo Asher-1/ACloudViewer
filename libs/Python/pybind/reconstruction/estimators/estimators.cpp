@@ -20,6 +20,8 @@
 #include "estimators/gravity_refinement.h"
 #include "estimators/pose.h"
 #include "estimators/rotation_averaging.h"
+#include "estimators/rotation_averaging_ceres.h"
+#include "estimators/rotation_averaging_l1_irls.h"
 #include "estimators/solvers/affine_transform.h"
 #include "estimators/solvers/essential_matrix.h"
 #include "estimators/solvers/fundamental_matrix.h"
@@ -35,7 +37,9 @@
 #include "optim/ransac.h"
 #include "optim/support_measurement.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/enum_ctor.h"
 #include "pybind/reconstruction/estimators/covariance_bindings.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "scene/camera.h"
 #include "scene/pose_graph.h"
 #include "scene/rig.h"
@@ -1503,39 +1507,108 @@ void pybind_estimators(py::module& m) {
 
     // Upstream pycolmap parity (src/pycolmap/estimators/motion_averaging.cc):
     // the GLomap motion-averaging entry points.
-    py::enum_<colmap::RotationEstimatorOptions::WeightType> rot_weight(
+    using WeightType = colmap::L1IrlsRotationAveragerOptions::WeightType;
+    py::enum_<WeightType> rot_weight(
             m_estimators, "RotationWeightType",
             "Robust weight for rotation averaging IRLS.");
-    rot_weight
-            .value("GEMAN_MCCLURE",
-                   colmap::RotationEstimatorOptions::WeightType::GEMAN_MCCLURE)
-            .value("HALF_NORM",
-                   colmap::RotationEstimatorOptions::WeightType::HALF_NORM);
+    rot_weight.value("GEMAN_MCCLURE", WeightType::GEMAN_MCCLURE)
+            .value("HALF_NORM", WeightType::HALF_NORM);
+    AddStringToEnumConstructor(rot_weight);
+
+    py::enum_<colmap::RotationAveragingBackend> ra_backend(
+            m_estimators, "RotationAveragingBackend",
+            "Solver backend for rotation averaging.");
+    ra_backend.value("L1_IRLS", colmap::RotationAveragingBackend::L1_IRLS)
+            .value("CERES", colmap::RotationAveragingBackend::CERES);
+    AddStringToEnumConstructor(ra_backend);
+
+    py::class_<colmap::L1IrlsRotationAveragerOptions,
+               std::shared_ptr<colmap::L1IrlsRotationAveragerOptions>>(
+            m_estimators, "L1IrlsRotationAveragerOptions",
+            "L1-IRLS-specific rotation averaging options.")
+            .def(py::init<>())
+            .def_readwrite("max_num_l1_iterations",
+                           &colmap::L1IrlsRotationAveragerOptions::
+                                   max_num_l1_iterations,
+                           "Maximum number of L1 minimization iterations.")
+            .def_readwrite("l1_step_convergence_threshold",
+                           &colmap::L1IrlsRotationAveragerOptions::
+                                   l1_step_convergence_threshold,
+                           "Average step size threshold to terminate L1 "
+                           "minimization.")
+            .def_readwrite("max_num_irls_iterations",
+                           &colmap::L1IrlsRotationAveragerOptions::
+                                   max_num_irls_iterations,
+                           "Number of IRLS iterations to perform.")
+            .def_readwrite("irls_step_convergence_threshold",
+                           &colmap::L1IrlsRotationAveragerOptions::
+                                   irls_step_convergence_threshold,
+                           "Average step size threshold to terminate IRLS.")
+            .def_readwrite("irls_loss_parameter_sigma",
+                           &colmap::L1IrlsRotationAveragerOptions::
+                                   irls_loss_parameter_sigma,
+                           "Scale of the Geman-McClure IRLS weight "
+                           "(degrees). Unused by HALF_NORM.")
+            .def_readwrite(
+                    "ridge_regularization",
+                    &colmap::L1IrlsRotationAveragerOptions::
+                            ridge_regularization,
+                    "Tikhonov ridge added to the diagonal of the normal "
+                    "equations before each Cholesky factorization in the L1 "
+                    "and IRLS phases. Zero disables regularization.")
+            .def_readwrite("weight_type",
+                           &colmap::L1IrlsRotationAveragerOptions::weight_type,
+                           "Weight type for IRLS: GEMAN_MCCLURE or HALF_NORM.");
+
+    py::class_<colmap::CeresRotationAveragerOptions,
+               std::shared_ptr<colmap::CeresRotationAveragerOptions>>(
+            m_estimators, "CeresRotationAveragerOptions",
+            "Ceres-specific rotation averaging options.")
+            .def(py::init<>())
+            .def_readwrite(
+                    "loss_function_type",
+                    &colmap::CeresRotationAveragerOptions::loss_function_type,
+                    "Loss function for relative-rotation residuals.")
+            .def_readwrite(
+                    "loss_function_scale",
+                    &colmap::CeresRotationAveragerOptions::loss_function_scale,
+                    "Loss function scale in degrees.")
+            .def_readwrite("max_num_warm_start_iterations",
+                           &colmap::CeresRotationAveragerOptions::
+                                   max_num_warm_start_iterations,
+                           "Number of solver iterations of a Huber-loss "
+                           "warm-start (with the same loss scale) run by "
+                           "RotationEstimator before the main solve. Set to "
+                           "0 to disable.")
+            .def_readwrite(
+                    "solver_options",
+                    &colmap::CeresRotationAveragerOptions::solver_options,
+                    "pyceres.SolverOptions: Options for the Ceres solver.");
 
     py::class_<colmap::RotationEstimatorOptions> ra_options(
             m_estimators, "RotationEstimatorOptions",
             "Options for (GLomap-style) rotation averaging.");
     ra_options.def(py::init<>())
             .def_readwrite("random_seed",
-                           &colmap::RotationEstimatorOptions::random_seed)
-            .def_readwrite(
-                    "max_num_l1_iterations",
-                    &colmap::RotationEstimatorOptions::max_num_l1_iterations)
-            .def_readwrite("l1_step_convergence_threshold",
-                           &colmap::RotationEstimatorOptions::
-                                   l1_step_convergence_threshold)
-            .def_readwrite(
-                    "max_num_irls_iterations",
-                    &colmap::RotationEstimatorOptions::max_num_irls_iterations)
-            .def_readwrite("irls_step_convergence_threshold",
-                           &colmap::RotationEstimatorOptions::
-                                   irls_step_convergence_threshold)
-            .def_readwrite("irls_loss_parameter_sigma",
-                           &colmap::RotationEstimatorOptions::
-                                   irls_loss_parameter_sigma)
-            .def_readwrite(
-                    "ridge_regularization",
-                    &colmap::RotationEstimatorOptions::ridge_regularization)
+                           &colmap::RotationEstimatorOptions::random_seed,
+                           "PRNG seed. -1 for non-deterministic, >=0 for "
+                           "deterministic.")
+            .def_readwrite("backend",
+                           &colmap::RotationEstimatorOptions::backend,
+                           "Solver backend for rotation averaging: L1_IRLS "
+                           "or CERES. CERES falls back to L1_IRLS when "
+                           "use_gravity is set and gravity priors are given.")
+            .def_readwrite("l1_irls",
+                           &colmap::RotationEstimatorOptions::l1_irls,
+                           "L1-IRLS-specific rotation averaging options (used "
+                           "when backend == L1_IRLS and when CERES falls back "
+                           "to L1_IRLS for gravity priors).")
+            .def_readwrite("ceres", &colmap::RotationEstimatorOptions::ceres,
+                           "Ceres-specific rotation averaging options (only "
+                           "used when backend == CERES).")
+            .def_readwrite("gravity_dir",
+                           &colmap::RotationEstimatorOptions::gravity_dir,
+                           "Gravity direction vector.")
             .def_readwrite(
                     "skip_initialization",
                     &colmap::RotationEstimatorOptions::skip_initialization)
@@ -1552,8 +1625,10 @@ void pybind_estimators(py::module& m) {
             .def_readwrite(
                     "refine_sensor_from_rig",
                     &colmap::RotationEstimatorOptions::refine_sensor_from_rig)
-            .def_readwrite("weight_type",
-                           &colmap::RotationEstimatorOptions::weight_type)
+            .def_readwrite("reweighting",
+                           &colmap::RotationEstimatorOptions::reweighting,
+                           "Reweighting scheme for the relative-rotation "
+                           "constraints: UNIFORM or INLIER_MATCH_COUNT.")
             .def(
                     "run_rotation_averaging",
                     [](const colmap::RotationEstimatorOptions& options,
@@ -1590,6 +1665,49 @@ void pybind_estimators(py::module& m) {
             "reconstruction"_a,
             "Solve rotation averaging and register the frames with computed "
             "poses; returns True on success.");
+
+    // Upstream pycolmap parity (src/pycolmap/estimators/
+    // rotation_averaging_ceres.cc). Fork adaptations: the embedded pyceres
+    // surface binds no ceres::Problem / LossFunction, so `problem` is the
+    // opaque CeresProblem handle (block counts only) and residuals added from
+    // Python use the trivial loss.
+    py::class_<colmap::CeresRotationAverager>(
+            m_estimators, "CeresRotationAverager",
+            "Ceres rotation averaging problem that optimizes rotations "
+            "directly in the reconstruction.")
+            .def("solve", &colmap::CeresRotationAverager::Solve,
+                 py::call_guard<py::gil_scoped_release>(),
+                 "Optimize rotations in the reconstruction and return the "
+                 "solver summary.")
+            .def(
+                    "add_relative_rotation_residual",
+                    [](colmap::CeresRotationAverager& self,
+                       const colmap::image_t image_id1,
+                       const colmap::image_t image_id2,
+                       const Eigen::Quaterniond& cam2_from_cam1) {
+                        self.AddRelativeRotationResidual(
+                                image_id1, image_id2, cam2_from_cam1, nullptr);
+                    },
+                    "image_id1"_a, "image_id2"_a, "cam2_from_cam1"_a,
+                    "Add a trivial-loss relative-rotation residual between "
+                    "images whose frame and sensor rotations are configured "
+                    "in the problem.")
+            .def_property_readonly(
+                    "problem",
+                    [](colmap::CeresRotationAverager& self) {
+                        return PyCeresProblem{&self.Problem()};
+                    },
+                    py::keep_alive<0, 1>(),
+                    "Opaque handle of the Ceres problem.")
+            .def_readwrite("solver_options",
+                           &colmap::CeresRotationAverager::solver_options,
+                           "Ceres solver options.");
+
+    m_estimators.def("create_default_ceres_rotation_averager",
+                     &colmap::CreateDefaultCeresRotationAverager, "options"_a,
+                     "pose_graph"_a, "reconstruction"_a, py::keep_alive<0, 3>(),
+                     "Create a Ceres rotation averaging problem that "
+                     "optimizes rotations directly in the reconstruction.");
 
     py::class_<colmap::GlobalPositionerOptions> gp_options(
             m_estimators, "GlobalPositionerOptions",

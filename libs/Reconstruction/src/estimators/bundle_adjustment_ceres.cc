@@ -85,6 +85,14 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
             LOG_FATAL_THROW(std::invalid_argument)
                     << "Caspar BA backend does not support pose priors";
         }
+        // Upstream parity: min_track_length filtering is a Ceres
+        // problem-builder detail (AddPointToProblem skips short tracks);
+        // the Caspar adapter has no equivalent hook, so the option is
+        // ignored on this backend rather than silently changing results.
+        if (options_.min_track_length > 0) {
+            LOG(WARNING) << "Caspar BA backend ignores min_track_length ("
+                         << options_.min_track_length << ")";
+        }
         if (SolveCasparBundleAdjustment(options_, config_, reconstruction,
                                         &summary_)) {
             return true;
@@ -1056,9 +1064,9 @@ void CeresBundleAdjuster::ParameterizeCameras(Reconstruction* reconstruction) {
 
 void CeresBundleAdjuster::ParameterizeRigsAndFrames(
         Reconstruction* reconstruction) {
-    std::unordered_set<rig_t> parameterized_rig_ids;
-    std::unordered_set<sensor_t> parameterized_sensor_ids;
-    std::unordered_set<frame_t> parameterized_frame_ids;
+    FlatHashSet<rig_t> parameterized_rig_ids;
+    FlatHashSet<sensor_t> parameterized_sensor_ids;
+    FlatHashSet<frame_t> parameterized_frame_ids;
     for (const image_t image_id : parameterized_image_ids_) {
         Image& image = reconstruction->Image(image_id);
         parameterized_rig_ids.insert(image.FramePtr()->RigId());

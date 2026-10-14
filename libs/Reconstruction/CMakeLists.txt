@@ -39,16 +39,14 @@ string(REPLACE " -mno-avx512vpopcntdq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}"
 set(CMAKE_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
 
 # Hash containers: the scene/SfM containers use the FlatHashMap/NodeHashMap
-# aliases from util/hash_containers.h on the default std backend. The boost
-# backend (COLMAP_HASH_BOOST) was evaluated for upstream iteration-order
-# parity but is reverted: the upstream mapper is itself non-deterministic
-# (parallel initial-pair race, see docs/E2E_ALIGNMENT_TODO.md round 37), the
-# fork's mapper behavior was verified identical with and without the boost
-# backend, and the boost 1.92 header closure cannot coexist in the same
-# translation units with the fork's CGAL dependency (which requires the
-# system Boost 1.74 container/move/mpl ecosystem). The only boost::unordered
-# consumer kept is mvs/patch_match.cc (see src/CMakeLists.txt), whose
-# flat_set rebuild of src_image_idxs is a verified numeric contract.
+# aliases from util/hash_containers.h, backed by the vendored boost::unordered
+# 1.92 headers exactly as upstream (see src/CMakeLists.txt). The earlier std
+# backend was measured against the upstream 3e5c915c executable on the L3
+# mini6 fixture: keypoints, matches, and two-view geometries were identical,
+# yet the models diverged (1241 vs 1237 track observations), and upstream
+# rebuilt with std containers reproduced the fork's model to 1e-15. The
+# iteration order of these containers is therefore observable SfM behavior,
+# not an implementation detail.
 
 
 # The COLMAP engine version this inlined fork is aligned with. It drives the
@@ -97,6 +95,8 @@ set(RECONSTRUCTION_L3_UPSTREAM_COLMAP "" CACHE FILEPATH
     "latest pinned upstream COLMAP executable for reconstruction_l3_alignment_gate")
 set(RECONSTRUCTION_L3_UPSTREAM_SOURCE "" CACHE PATH
     "Source checkout at the pinned upstream revision used to build the L3 executable")
+set(RECONSTRUCTION_L3_UPSTREAM_REVISION "" CACHE STRING
+    "Immutable revision embedded in the upstream L3 executable")
 set(RECONSTRUCTION_L3_THRESHOLDS "" CACHE FILEPATH
     "Calibrated JSON thresholds for reconstruction_l3_alignment_gate")
 set(RECONSTRUCTION_L3_OUTPUT "${CMAKE_BINARY_DIR}/Testing/reconstruction_l3" CACHE PATH
@@ -173,6 +173,26 @@ if (TESTS_ENABLED)
     list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
 endif ()
 find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
+# The vendored Boost 1.92 header subset (see src/CMakeLists.txt) shadows the
+# system Boost headers for every ColmapLib C++ TU. Mixing those headers with
+# system Boost < 1.74 breaks compilation — measured on Boost 1.71 (Ubuntu
+# 20.04): boost/graph adjacency_list.hpp fails with serialization/nvp
+# exception-specifier conflicts under the 1.92 config, while 1.74 and 1.83
+# compile, link and run the mixing probe (TEST_ALIGNMENT_TODO.md batches
+# AB/AC). Guard the supported surface instead of vendoring more modules.
+if(DEFINED Boost_VERSION_MACRO)
+    set(COLMAP_BOOST_VERSION_MACRO "${Boost_VERSION_MACRO}")
+else()
+    set(COLMAP_BOOST_VERSION_MACRO "${Boost_VERSION}")
+endif()
+if(COLMAP_BOOST_VERSION_MACRO VERSION_LESS 107400)
+    message(FATAL_ERROR
+            "System Boost ${Boost_VERSION} is too old for the vendored Boost "
+            "1.92 unordered headers: ColmapLib requires Boost >= 1.74 "
+            "(Ubuntu >= 22.04, or a conda environment with a matching Boost). "
+            "Measured failure on Boost 1.71: boost/graph adjacency_list.hpp "
+            "breaks under the vendored config.")
+endif()
 # NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
 # They keep the fork-wide from-source build shared with the rest of the
 # project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;

@@ -322,9 +322,9 @@
       "id": "ocr-layout-input",
       "release": "ocr-fixtures",
       "path": "layout_input.npy",
-      "sha256": "07d3dd27210af1afa075e132df25bad327dcf6ffdda0a2322c71cf0872f3fbe6",
+      "sha256": "3c7b54af472b90f0ce88ec1aa4e1b9b73d37521024485ee23175ec096d630937",
       "size_bytes": 5836928,
-      "description": "PicoDet layout fixture input (1,3,800,608), paddle reference",
+      "description": "PicoDet layout fixture input: official table_page_1.png resized to 608x800 and ImageNet-normalized by export_ocr_fixture.py",
       "relative_path": "ocr_fixtures/layout_input.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_input.npy",
       "tasks": [
@@ -335,9 +335,9 @@
       "id": "ocr-layout-head0",
       "release": "ocr-fixtures",
       "path": "layout_head0.npy",
-      "sha256": "5e91d249164b82672f854634c08126cd5a81b9dfde15ce058582017dcc442b5d",
+      "sha256": "d278cbb640a1e1c5979af442c7b64a8f0ccee8d1c734cd70b056220aa1e9b9e7",
       "size_bytes": 304128,
-      "description": "PicoDet layout reference head 0",
+      "description": "PicoDet official Paddle predictor reference head 0 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head0.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head0.npy",
       "tasks": [
@@ -348,9 +348,9 @@
       "id": "ocr-layout-head1",
       "release": "ocr-fixtures",
       "path": "layout_head1.npy",
-      "sha256": "ae9a704a2da2cdcd2a72765b472931ba1b60d7cd579db53ba5d848bb5e909c25",
+      "sha256": "20d1e1ef87f6764c0aad0a1de0022d208280736b3d8dfe568b1cbdbb1713cf1b",
       "size_bytes": 76128,
-      "description": "PicoDet layout reference head 1",
+      "description": "PicoDet official Paddle predictor reference head 1 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head1.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head1.npy",
       "tasks": [
@@ -361,9 +361,9 @@
       "id": "ocr-layout-head2",
       "release": "ocr-fixtures",
       "path": "layout_head2.npy",
-      "sha256": "deb5af1f0a9113b4485887ed2070be20cc22bdab2dd4efdd6d158b01d02515b3",
+      "sha256": "dc9146bac11ce043d9100e130865bfd744d598e28a22514932c1bf9ddc9b79cb",
       "size_bytes": 19128,
-      "description": "PicoDet layout reference head 2",
+      "description": "PicoDet official Paddle predictor reference head 2 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head2.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head2.npy",
       "tasks": [
@@ -374,9 +374,9 @@
       "id": "ocr-layout-head3",
       "release": "ocr-fixtures",
       "path": "layout_head3.npy",
-      "sha256": "1467798cc6231cf25c8250f4a4612a5e0f57e91b7cf29dcaf7dcfc1ffe573bd8",
+      "sha256": "225df469295c565161cb746763e158674974036f740c50adec65c70d9e88f289",
       "size_bytes": 5328,
-      "description": "PicoDet layout reference head 3",
+      "description": "PicoDet official Paddle predictor reference head 3 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head3.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head3.npy",
       "tasks": [
@@ -387,9 +387,9 @@
       "id": "ocr-layout-head4",
       "release": "ocr-fixtures",
       "path": "layout_head4.npy",
-      "sha256": "fce5135e493f4b7e0698e0ff8836573613516c1b71695f79184d348d75e0b9ad",
+      "sha256": "0ee4882b230746b687208f70b15a79efdff81a1fb62ea200dc1fd607d106f0e8",
       "size_bytes": 972928,
-      "description": "PicoDet layout reference head 4",
+      "description": "PicoDet official Paddle predictor reference head 4 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head4.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head4.npy",
       "tasks": [
@@ -400,9 +400,9 @@
       "id": "ocr-layout-head5",
       "release": "ocr-fixtures",
       "path": "layout_head5.npy",
-      "sha256": "fdaa63759dec9105c27c6a93fc551469a1677463e62a06d0c96f1989c8cc4229",
+      "sha256": "0b371bb315a3496c950547ac59c63b39afe83cc4c8e03072038dfbaffff3e943",
       "size_bytes": 243328,
-      "description": "PicoDet layout reference head 5",
+      "description": "PicoDet official Paddle predictor reference head 5 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head5.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head5.npy",
       "tasks": [
@@ -413,9 +413,9 @@
       "id": "ocr-layout-head6",
       "release": "ocr-fixtures",
       "path": "layout_head6.npy",
-      "sha256": "78b43747d96476189765d6fa2ff332a8d1ecfeb88899d75dd40b5aaa5f282a19",
+      "sha256": "a192246c5ea363e90d6b006eb59b18dbf73ed59abfa4526bc3bc311f804975f9",
       "size_bytes": 60928,
-      "description": "PicoDet layout reference head 6",
+      "description": "PicoDet official Paddle predictor reference head 6 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head6.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head6.npy",
       "tasks": [
@@ -426,9 +426,9 @@
       "id": "ocr-layout-head7",
       "release": "ocr-fixtures",
       "path": "layout_head7.npy",
-      "sha256": "eb2e952fd92ea30fd9ade4295438906175ecfad7d185bf66e5162c52c0fa7270",
+      "sha256": "1cd2560fae4d2fb0a101e387c4426b8d857b0b61441c6b8137de36816b797000",
       "size_bytes": 16768,
-      "description": "PicoDet layout reference head 7",
+      "description": "PicoDet official Paddle predictor reference head 7 on table_page_1.png",
       "relative_path": "ocr_fixtures/layout_head7.npy",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head7.npy",
       "tasks": [
@@ -3115,7 +3115,7 @@
         "0.03"
       ],
       "env": {},
-      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3158,7 +3158,7 @@
         "0.1"
       ],
       "env": {},
-      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3201,7 +3201,7 @@
         "0.6"
       ],
       "env": {},
-      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). F32: CPU 2e-5; CUDA 0.0102 (TF32 in the 2x2/stride-2 conv_transpose fast path); Vulkan 0.0267 (coopmat2 converts F32 GEMM operands to F16). F16/Q8_0 carry weight-quantization noise at transition pixels (max|diff| 0.06-0.07 / 0.48) with mean|diff| 5e-5 / 2.7e-4. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "ocr-det-reference",
@@ -3228,6 +3228,17 @@
     {
       "id": "ocr-layout-f32",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
       "model_glob": "ocr_models/pplcnet-layout-f32.gguf",
       "for_each_model": true,
       "executable": "binary:test_ocr_runtime",
@@ -3250,6 +3261,11 @@
             "metric": "max_diff",
             "op": "<",
             "value": 0.02
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.000002
           }
         ],
         "require_metrics": [
@@ -3266,6 +3282,17 @@
     {
       "id": "ocr-layout-f16",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
       "model_glob": "ocr_models/pplcnet-layout-f16.gguf",
       "for_each_model": true,
       "executable": "binary:test_ocr_runtime",
@@ -3291,6 +3318,11 @@
             "metric": "max_diff",
             "op": "<",
             "value": 0.1
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.002
           }
         ],
         "require_metrics": [
@@ -3304,6 +3336,17 @@
     {
       "id": "ocr-layout-q8_0",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
       "model_glob": "ocr_models/pplcnet-layout-q8_0.gguf",
       "for_each_model": true,
       "executable": "binary:test_ocr_runtime",
@@ -3329,6 +3372,11 @@
             "metric": "max_diff",
             "op": "<",
             "value": 0.75
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.02
           }
         ],
         "require_metrics": [
@@ -3950,15 +3998,19 @@
     {
       "id": "ocr-layout-regions-f32",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
       "covered_globs": [
-        "ocr_models/pplcnet-layout-f32.gguf",
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ],
+      "required_globs": [
         "ocr_models/ppocr-det-ch-f32.gguf",
         "ocr_models/ppocr-rec-ch-f32.gguf"
       ],
       "light_globs": [
-        "ocr_models/pplcnet-layout-f32.gguf",
-        "ocr_models/ppocr-det-ch-f32.gguf",
-        "ocr_models/ppocr-rec-ch-f32.gguf"
+        "ocr_models/pplcnet-layout-f32.gguf"
       ],
       "executable": "python",
       "args": [
@@ -4022,15 +4074,19 @@
     {
       "id": "ocr-layout-regions-f16",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
       "covered_globs": [
-        "ocr_models/pplcnet-layout-f16.gguf",
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "required_globs": [
         "ocr_models/ppocr-det-ch-f16.gguf",
         "ocr_models/ppocr-rec-ch-f16.gguf"
       ],
       "light_globs": [
-        "ocr_models/pplcnet-layout-f16.gguf",
-        "ocr_models/ppocr-det-ch-f16.gguf",
-        "ocr_models/ppocr-rec-ch-f16.gguf"
+        "ocr_models/pplcnet-layout-f16.gguf"
       ],
       "executable": "python",
       "args": [
@@ -4101,15 +4157,19 @@
     {
       "id": "ocr-layout-regions-q8_0",
       "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
       "covered_globs": [
-        "ocr_models/pplcnet-layout-q8_0.gguf",
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "required_globs": [
         "ocr_models/ppocr-det-ch-q8_0.gguf",
         "ocr_models/ppocr-rec-ch-q8_0.gguf"
       ],
       "light_globs": [
-        "ocr_models/pplcnet-layout-q8_0.gguf",
-        "ocr_models/ppocr-det-ch-q8_0.gguf",
-        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+        "ocr_models/pplcnet-layout-q8_0.gguf"
       ],
       "executable": "python",
       "args": [

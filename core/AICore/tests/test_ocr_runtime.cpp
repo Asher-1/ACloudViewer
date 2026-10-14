@@ -225,7 +225,8 @@ int main(int argc, char** argv) {
 
     aicore::ocr::OcrProbeOptions probe;
     if (argc > 5) probe.fetchAt = std::atoi(argv[5]);
-    if (argc > 6) probe.dumpShapes = std::string(argv[6]) == "shapes";
+    const std::string probeOutput = argc > 6 ? argv[6] : std::string();
+    probe.dumpShapes = probeOutput == "shapes";
     // Prefix bisection over the device under test: AICORE_OCR_FETCH_AT (test
     // file only, never in production sources).
     if (const char* fetchEnv = std::getenv("AICORE_OCR_FETCH_AT"))
@@ -233,9 +234,12 @@ int main(int argc, char** argv) {
 
     aicore::ocr::OcrWeights weights;
     std::string error;
-    // A bisection indexes the SOURCE program's ops, so the load-time affine
-    // folding (which removes ops) is skipped while fetchAt is set.
-    if (!weights.load(modelPath, &error, /*foldAffine=*/probe.fetchAt < 0)) {
+    // A normal bisection indexes the SOURCE program's ops, so load-time
+    // affine folding is skipped. "fold-dump=" indexes the optimized program
+    // and permits a CPU/backend comparison of the production graph.
+    const bool fetchFolded = probeOutput.compare(0, 10, "fold-dump=") == 0;
+    if (!weights.load(modelPath, &error,
+                      /*foldAffine=*/probe.fetchAt < 0 || fetchFolded)) {
         std::fprintf(stderr, "model load failed: %s\n", error.c_str());
         return 1;
     }
@@ -554,6 +558,21 @@ int main(int argc, char** argv) {
         std::vector<float> got(ggml_nelements(output));
         ggml_backend_tensor_get(output, got.data(), 0,
                                 sizeof(float) * got.size());
+        const char* dumpPath = nullptr;
+        if (probeOutput.compare(0, 5, "dump=") == 0)
+            dumpPath = probeOutput.c_str() + 5;
+        else if (probeOutput.compare(0, 10, "fold-dump=") == 0)
+            dumpPath = probeOutput.c_str() + 10;
+        if (dumpPath) {
+            FILE* dump = std::fopen(dumpPath, "wb");
+            if (!dump || std::fwrite(got.data(), sizeof(float), got.size(),
+                                     dump) != got.size()) {
+                if (dump) std::fclose(dump);
+                std::fprintf(stderr, "failed to write fetch output\n");
+                return 1;
+            }
+            std::fclose(dump);
+        }
         double sum = 0.0;
         for (float v : got) sum += v;
         std::printf("[fetch] ne=%lld,%lld,%lld,%lld sum=%.6e\n",

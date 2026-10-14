@@ -44,7 +44,7 @@ COLMAP_ADD_SOURCES(
     pose.h pose.cc
     rotation_averaging.h rotation_averaging.cc
     rotation_averaging_ceres.h rotation_averaging_ceres.cc
-    rotation_averaging_impl.h rotation_averaging_impl.cc
+    rotation_averaging_l1_irls.h rotation_averaging_l1_irls.cc
     translation_transform.h
     triangulation.h triangulation.cc
     two_view_geometry.h two_view_geometry.cc

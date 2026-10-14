@@ -57,6 +57,27 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
                          ["/tmp/aicore-build/bin", "/opt/qt/lib"])
 
+    def test_runtime_library_path_recovers_qt_from_cmake_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            build = Path(temp) / "build"
+            qt_lib = Path(temp) / "qt/lib"
+            qt_core_dir = qt_lib / "cmake/Qt5Core"
+            qt_core_dir.mkdir(parents=True)
+            expected = qt_lib.parent / "bin" if VALIDATE_ALL.os.name == "nt" \
+                else qt_lib
+            expected.mkdir(parents=True, exist_ok=True)
+            build.mkdir()
+            (build / "CMakeCache.txt").write_text(
+                f"Qt5Core_DIR:PATH={qt_core_dir}\n", encoding="utf-8")
+            env = {}
+            VALIDATE_ALL.add_runtime_library_path(env, build)
+            variable = ("PATH" if VALIDATE_ALL.os.name == "nt" else
+                        "DYLD_LIBRARY_PATH"
+                        if VALIDATE_ALL.sys.platform == "darwin"
+                        else "LD_LIBRARY_PATH")
+            self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
+                             [str(build / "bin"), str(expected.resolve())])
+
     def test_fingerprint_stability_requires_every_attempt_to_match(self):
         Attempt = VALIDATE_ALL.Attempt
         stable, failures = VALIDATE_ALL.stable_fingerprints([
@@ -988,6 +1009,61 @@ class ValidateAllTests(unittest.TestCase):
                 output, {"demo", "plain"},
                 task_selection={
                     "demo": {"*/nothing"}, "plain": {"*/nothing"}})
+
+    def test_bundle_partial_selection_prefetches_fixed_dependencies(self):
+        manifest = {
+            "tasks": ["ocr"],
+            "scenarios": [{
+                "id": "ocr-layout-regions-f32", "task": "ocr",
+                "covered_globs": ["ocr_models/pplcnet-layout-f32.gguf"],
+                "required_globs": [
+                    "ocr_models/ppocr-det-ch-f32.gguf",
+                    "ocr_models/ppocr-rec-ch-f32.gguf",
+                ],
+            }],
+        }
+        selection = VALIDATE_ALL.model_selection_globs(
+            manifest, {"ocr"}, ["pplcnet-layout-f32"])
+        self.assertEqual(selection, {
+            "ocr_models/ppocr-det-ch-f32.gguf",
+            "ocr_models/ppocr-rec-ch-f32.gguf",
+        })
+
+    def test_input_assets_shrink_to_declared_selected_scenarios(self):
+        def input_row(asset_id):
+            return {
+                "id": asset_id, "tasks": ["ocr"],
+                "relative_path": f"fixtures/{asset_id}.npy",
+                "url": f"https://example.invalid/{asset_id}.npy",
+                "sha256": "a" * 64, "size_bytes": 1,
+            }
+
+        manifest = {
+            "tasks": ["ocr"],
+            "scenarios": [
+                {"id": "layout", "task": "ocr", "input_ids": ["layout"]},
+                {"id": "regions", "task": "ocr", "input_ids": ["regions"]},
+            ],
+            "input_assets": [input_row("layout"), input_row("regions")],
+        }
+        assets = VALIDATE_ALL.parse_input_assets(
+            manifest, {"ocr"}, {"layout"})
+        self.assertEqual([asset.asset_id for asset in assets], ["layout"])
+
+    def test_input_assets_keep_task_fallback_for_legacy_scenarios(self):
+        manifest = {
+            "tasks": ["ocr"],
+            "scenarios": [{"id": "legacy", "task": "ocr"}],
+            "input_assets": [{
+                "id": "fixture", "tasks": ["ocr"],
+                "relative_path": "fixtures/input.npy",
+                "url": "https://example.invalid/input.npy",
+                "sha256": "a" * 64, "size_bytes": 1,
+            }],
+        }
+        assets = VALIDATE_ALL.parse_input_assets(
+            manifest, {"ocr"}, {"legacy"})
+        self.assertEqual([asset.asset_id for asset in assets], ["fixture"])
 
     def test_light_yolo_matrix_receives_light_model_globs(self):
         assets = Path.home() / "cloudViewer_data" / "extract"

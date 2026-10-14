@@ -41,6 +41,13 @@ FaceDetectWorker::FaceDetectWorker(const Settings& settings, QObject* parent)
 }
 
 FaceDetectWorker::~FaceDetectWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
 #ifdef AICore_ENABLED
     aicore_cancel_token_free(m_cancelToken);
 #endif

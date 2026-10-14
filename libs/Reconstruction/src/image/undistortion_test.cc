@@ -307,3 +307,102 @@ TEST(base_undistortion, MaxCamPointNorm) {
   options.max_cam_point_norm = 0;
   EXPECT_ANY_THROW(UndistortCamera(options, distorted_camera));
 }
+
+TEST(base_undistortion, TestUndistortReconstructionRescalesAlreadyUndistorted) {
+  const size_t kNumImages = 3;
+
+  Reconstruction reconstruction;
+
+  // Already-undistorted (PINHOLE) camera at a high resolution. focal=100,
+  // width=height=100 => principal point at (50, 50).
+  Camera camera =
+      Camera::CreateFromModelId(1, CameraModelId::kPinhole, 100, 100, 100);
+  ASSERT_TRUE(camera.IsUndistorted());
+  reconstruction.AddCameraWithTrivialRig(camera);
+
+  const Eigen::Vector2d point_xy(60, 40);
+  for (image_t image_id = 1; image_id <= kNumImages; ++image_id) {
+    Image image;
+    image.SetImageId(image_id);
+    image.SetCameraId(1);
+    image.SetName("image" + std::to_string(image_id));
+    image.SetPoints2D(std::vector<Eigen::Vector2d>(1, point_xy));
+    reconstruction.AddImageWithTrivialFrame(image, Rigid3d());
+  }
+
+  UndistortCameraOptions options;
+  options.max_image_size = 50;
+  UndistortReconstruction(options, &reconstruction);
+
+  // The camera resolution and intrinsics are rescaled to match
+  // max_image_size (through the perspective undistortion path).
+  const Camera& undistorted_camera = reconstruction.Camera(1);
+  EXPECT_EQ(undistorted_camera.ModelName(), "PINHOLE");
+  EXPECT_EQ(undistorted_camera.Width(), 50);
+  EXPECT_EQ(undistorted_camera.Height(), 50);
+  EXPECT_NEAR(undistorted_camera.FocalLengthX(), 50, 1e-6);
+  EXPECT_NEAR(undistorted_camera.FocalLengthY(), 50, 1e-6);
+  EXPECT_NEAR(undistorted_camera.PrincipalPointX(), 25, 1e-6);
+  EXPECT_NEAR(undistorted_camera.PrincipalPointY(), 25, 1e-6);
+
+  // The observations are rescaled consistently with the camera: (60, 40)
+  // maps to normalized (0.1, -0.1) and back through the halved intrinsics
+  // to (0.1 * 50 + 25, -0.1 * 50 + 25) = (30, 20).
+  for (const auto& image : reconstruction.Images()) {
+    ASSERT_EQ(image.second.NumPoints2D(), 1);
+    EXPECT_NEAR(image.second.Point2D(0).XY().x(), 30, 1e-6);
+    EXPECT_NEAR(image.second.Point2D(0).XY().y(), 20, 1e-6);
+  }
+}
+
+TEST(base_undistortion, TestUndistortReconstructionRescalesSphericalCameras) {
+  const size_t kNumImages = 3;
+
+  Reconstruction reconstruction;
+
+  // Spherical (EQUIRECTANGULAR) camera at a high resolution. It has no
+  // pinhole plane to undistort to, but can still be resized to a smaller
+  // image of the same model.
+  Camera camera = Camera::CreateFromModelId(
+      1, CameraModelId::kEquirectangular, /*focal_length=*/0.0, 1000, 500);
+  ASSERT_TRUE(camera.IsSpherical());
+  reconstruction.AddCameraWithTrivialRig(camera);
+
+  // A front-hemisphere pixel (azimuth 36 deg) and a back-hemisphere pixel
+  // (azimuth -144 deg, behind the camera). The back-hemisphere observation
+  // has no forward normalized (CamFromImg) representation, so it must be
+  // handled by plain linear scaling rather than a bearing round-trip.
+  const std::vector<Eigen::Vector2d> points_xy = {Eigen::Vector2d(600, 200),
+                                                  Eigen::Vector2d(100, 400)};
+  for (image_t image_id = 1; image_id <= kNumImages; ++image_id) {
+    Image image;
+    image.SetImageId(image_id);
+    image.SetCameraId(1);
+    image.SetName("image" + std::to_string(image_id));
+    image.SetPoints2D(points_xy);
+    reconstruction.AddImageWithTrivialFrame(image, Rigid3d());
+  }
+
+  UndistortCameraOptions options;
+  options.max_image_size = 250;
+  UndistortReconstruction(options, &reconstruction);
+
+  // The camera keeps its model but is resized so its larger dimension
+  // (width) matches max_image_size: scale = 250 / 1000 = 0.25.
+  const Camera& undistorted_camera = reconstruction.Camera(1);
+  EXPECT_EQ(undistorted_camera.ModelName(), "EQUIRECTANGULAR");
+  EXPECT_EQ(undistorted_camera.Width(), 250);
+  EXPECT_EQ(undistorted_camera.Height(), 125);
+
+  // The observations are rescaled consistently with the camera: the
+  // fractional position within the image is preserved (a plain 0.25 scaling
+  // here), so both the front- and back-hemisphere points map through
+  // without loss.
+  for (const auto& image : reconstruction.Images()) {
+    ASSERT_EQ(image.second.NumPoints2D(), 2);
+    EXPECT_NEAR(image.second.Point2D(0).XY().x(), 150, 1e-6);
+    EXPECT_NEAR(image.second.Point2D(0).XY().y(), 50, 1e-6);
+    EXPECT_NEAR(image.second.Point2D(1).XY().x(), 25, 1e-6);
+    EXPECT_NEAR(image.second.Point2D(1).XY().y(), 100, 1e-6);
+  }
+}

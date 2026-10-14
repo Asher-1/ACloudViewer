@@ -15,6 +15,7 @@
 #include "aicore/lightglue_capi.h"
 #include "feature/model_cache.h"
 #include "feature/utils.h"
+#include "geometry/pose_prior.h"
 #include "util/logging.h"
 
 namespace colmap {
@@ -53,6 +54,9 @@ class LightGlueGGMLFeatureMatcher : public FeatureMatcher {
     THROW_CHECK(lg_options.Check());
 
     LightGlueGGMLMatchingOptions resolved = lg_options;
+    // use_gpu is the upstream-facing placement switch; the fork's device
+    // string only takes effect when the caller allows GPU placement.
+    if (!options.use_gpu) resolved.device = "cpu";
     if (!ProvisionDefaultLightGlueModel(kind_, &resolved)) {
       throw std::runtime_error(std::string(KindName(kind_)) +
                                " matcher model provisioning failed");
@@ -146,11 +150,37 @@ class LightGlueGGMLFeatureMatcher : public FeatureMatcher {
 
   Features PrepareFeatures(const Image& image) const {
     Features out;
-    const FeatureKeypoints& keypoints = *image.keypoints;
+    // Upstream parity (a2bd15c2 feature/lightglue.cc FeaturesFromImage): a
+    // gravity prior rotates the keypoints upright before matching, and the
+    // reported image size follows the rotation.
+    const int rot90 =
+            (image.pose_prior != nullptr && image.pose_prior->HasGravity())
+                    ? ComputeRot90FromGravity(image.pose_prior->gravity)
+                    : 0;
+    const int image_width =
+            image.camera != nullptr
+                    ? static_cast<int>(image.camera->Width())
+                    : 0;
+    const int image_height =
+            image.camera != nullptr
+                    ? static_cast<int>(image.camera->Height())
+                    : 0;
+    FeatureKeypoints rotated_keypoints;
+    const FeatureKeypoints* keypoints_to_use = image.keypoints.get();
+    if (rot90 != 0) {
+      rotated_keypoints = *image.keypoints;
+      for (auto& kp : rotated_keypoints) {
+        kp.Rot90(rot90, image_width, image_height);
+      }
+      keypoints_to_use = &rotated_keypoints;
+    }
+    const FeatureKeypoints& keypoints = *keypoints_to_use;
     out.keypoints.resize(keypoints.size());
     for (size_t i = 0; i < keypoints.size(); ++i) {
       const FeatureKeypoint& kp = keypoints[i];
-      out.keypoints[i] = {kp.x, kp.y, kp.ComputeScale(),
+      // COLMAP keypoints put the top-left pixel center at (0.5, 0.5); the
+      // AICore LightGlue ABI uses the LightGlue/OpenCV convention (0, 0).
+      out.keypoints[i] = {kp.x - 0.5f, kp.y - 0.5f, kp.ComputeScale(),
                           kp.ComputeOrientation()};
     }
     if (kind_ == LightGlueFeatureKind::SIFT) {
@@ -168,14 +198,11 @@ class LightGlueGGMLFeatureMatcher : public FeatureMatcher {
     out.features.n_keypoints = static_cast<int32_t>(out.keypoints.size());
     out.features.descriptors = out.descriptors.data();
     out.features.descriptor_dim = static_cast<int32_t>(out.descriptors.cols());
+    const bool swap_dims = rot90 % 2 != 0;
     out.features.image_width =
-            image.camera != nullptr
-                    ? static_cast<int32_t>(image.camera->Width())
-                    : 0;
+            static_cast<int32_t>(swap_dims ? image_height : image_width);
     out.features.image_height =
-            image.camera != nullptr
-                    ? static_cast<int32_t>(image.camera->Height())
-                    : 0;
+            static_cast<int32_t>(swap_dims ? image_width : image_height);
     return out;
   }
 

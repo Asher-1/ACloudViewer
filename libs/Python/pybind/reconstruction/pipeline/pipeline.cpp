@@ -26,6 +26,7 @@
 #include "image/undistortion.h"
 #include "image/warp.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/pipeline/match_features.h"
 #include "scene/database.h"
 #include "scene/scene_clustering.h"

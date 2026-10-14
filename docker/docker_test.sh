@@ -69,16 +69,16 @@ python_unit_tests() {
     echo "Running Python Unit Tests"
     echo "======================================================================"
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c '
         # The wheel images ship pytest; the CI images do not.
         python -m pip install --quiet pytest >/dev/null 2>&1 || true
-        # Check if ML ops should be tested by checking build configuration
+        # Check if ML ops should be tested by checking build configuration.
         pytest_args=""
-        if ! python -c \"import sys, cloudViewer; sys.exit(not (cloudViewer._build_config['BUILD_PYTORCH_OPS'] or cloudViewer._build_config['BUILD_TENSORFLOW_OPS']))\" 2>/dev/null; then
+        if ! python -c "import sys, cloudViewer; sys.exit(not (cloudViewer._build_config[\"BUILD_PYTORCH_OPS\"] or cloudViewer._build_config[\"BUILD_TENSORFLOW_OPS\"]))" 2>/dev/null; then
             pytest_args="--ignore python/test/ml_ops/"
         fi
-        python -W default -m pytest python/test \${pytest_args} -v
-    "
+        python -W default -m pytest python/test ${pytest_args} -v
+    '
 }
 
 cpp_test_only() {

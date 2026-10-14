@@ -71,6 +71,16 @@ def test_reconstruction_point3d_mutations(rec, scene):
     assert not rec.exists_point3D(pid + 100)
 
 
+def test_reconstruction_points3d_map_converts_hash_map(rec):
+    # Points3D() is a boost-backed NodeHashMap returned by value; it needs the
+    # explicit hash-container caster to become a Python dict.
+    points = rec.points3D_map
+    assert isinstance(points, dict)
+    pid = rec.point3D_ids()[0]
+    assert list(points) == [pid]
+    assert list(points[pid].xyz) == [0.0, 0.0, 5.0]
+
+
 def test_reconstruction_deepcopy(rec):
     r2 = copy.deepcopy(rec)
     assert r2.num_images == rec.num_images

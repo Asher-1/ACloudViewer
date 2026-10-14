@@ -7,10 +7,59 @@
 
 #include "util/eigen_matchers.h"
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
 namespace colmap {
 namespace {
+
+TEST(RelativeRotationCostFunctor, Create) {
+  const Eigen::Quaterniond sensor1_from_world(
+      Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitX()));
+  const Eigen::Quaterniond sensor2_from_world(
+      Eigen::AngleAxisd(-0.4, Eigen::Vector3d::UnitY()));
+  const Eigen::Quaterniond sensor2_from_sensor1 =
+      sensor2_from_world * sensor1_from_world.conjugate();
+  std::unique_ptr<ceres::CostFunction> cost_function(
+      RelativeRotationCostFunctor::Create(sensor2_from_sensor1));
+  const double* parameters[] = {sensor1_from_world.coeffs().data(),
+                                sensor2_from_world.coeffs().data()};
+  Eigen::Vector3d residuals;
+  ASSERT_TRUE(cost_function->Evaluate(parameters, residuals.data(), nullptr));
+  EXPECT_THAT(residuals, EigenMatrixNear(Eigen::Vector3d(0, 0, 0), 1e-12));
+
+  parameters[1] = parameters[0];
+  ASSERT_TRUE(cost_function->Evaluate(parameters, residuals.data(), nullptr));
+  EXPECT_NEAR(
+      residuals.norm(), Eigen::AngleAxisd(sensor2_from_sensor1).angle(), 1e-12);
+
+  // A right perturbation of sensor2_from_sensor1 (in sensor 1's frame) maps
+  // directly to the residual vector, and rotating the world frame leaves the
+  // 3D residual vector invariant.
+  const Eigen::Vector3d delta_in_sensor1(0.02, -0.03, 0.01);
+  const Eigen::Quaterniond delta_q(Eigen::AngleAxisd(
+      delta_in_sensor1.norm(), delta_in_sensor1.normalized()));
+  const Eigen::Quaterniond perturbed_sensor2_from_world =
+      sensor2_from_sensor1 * delta_q * sensor1_from_world;
+  parameters[0] = sensor1_from_world.coeffs().data();
+  parameters[1] = perturbed_sensor2_from_world.coeffs().data();
+  ASSERT_TRUE(cost_function->Evaluate(parameters, residuals.data(), nullptr));
+  EXPECT_THAT(residuals, EigenMatrixNear(delta_in_sensor1, 1e-12));
+
+  const Eigen::Quaterniond world_rotation(
+      Eigen::AngleAxisd(1.1, Eigen::Vector3d(1.0, 2.0, -1.0).normalized()));
+  const Eigen::Quaterniond rotated_sensor1_from_world =
+      sensor1_from_world * world_rotation;
+  const Eigen::Quaterniond rotated_sensor2_from_world =
+      perturbed_sensor2_from_world * world_rotation;
+  parameters[0] = rotated_sensor1_from_world.coeffs().data();
+  parameters[1] = rotated_sensor2_from_world.coeffs().data();
+  Eigen::Vector3d rotated_residuals;
+  ASSERT_TRUE(
+      cost_function->Evaluate(parameters, rotated_residuals.data(), nullptr));
+  EXPECT_THAT(rotated_residuals, EigenMatrixNear(residuals, 1e-12));
+}
 
 TEST(BATAPairwiseDirectionCostFunctor, ZeroResidual) {
   const Eigen::Vector3d pos1(1, 2, 3);

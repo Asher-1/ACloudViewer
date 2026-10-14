@@ -196,7 +196,7 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"ppocr-rec-ch-q8_0.gguf", "db7826692424a06464bb85263fedf910629b77c6fe11cc66510898da0d7dd55c" },
         {"ppocr-rec-en-f16.gguf", "f05e08cbc81cd9863cddfc17621e788eb896278e3a36448cccecd5829c5729bf" },
         {"ppocr-rec-en-f32.gguf", "f38155dc785cbfc23f5fe37af2d6403b42cfb8fb73af130699a425834c2441dc" },
-        {"ppocr-rec-en-q8_0.gguf", "7cf851b0c5733749765b4406fbfcf1dd03c327cac6ffa779824762ef9507e7ef" },
+        {"ppocr-rec-en-q8_0.gguf", "d336e48f4b53b756058fd4015270a8ae6ed10d03810fa976a558c9fd98f5bb42" },
         // SLANet_plus table structure (PaddleX paddle3.0b2 SLANet_plus_infer.tar,
         // tar sha256 1c6ac146...ce971), same converter, `table` task.
         {"slanet-plus-table-f32.gguf", "c93a3a24e39c30bd67294a8abb543e3e0ed7ef1f2c6d67505349dee77aa87bf4" },

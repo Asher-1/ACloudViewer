@@ -1,10 +1,44 @@
 {
   "registered_images_relative_difference": 0.0,
   "sparse_points_relative_difference": 0.0,
-  "track_observations_relative_difference": 0.0032336297493936943,
-  "mean_track_length_relative_difference": 0.0032336297493936175,
-  "point_reprojection_rms_px_relative_difference": 0.0071478577160549745,
-  "camera_center_p95": 0.000414072916584144,
-  "camera_rotation_p95_deg": 0.013132473835273616,
-  "point_nn_p95": 0.027492939097103365
+  "track_observations_relative_difference": 0.0,
+  "mean_track_length_relative_difference": 0.0,
+  "point_reprojection_rms_px_relative_difference": 8e-09,
+  "camera_center_p95": 7e-10,
+  "camera_rotation_p95_deg": 0.0001,
+  "point_nn_p95": 1e-08,
+  "configuration": {
+    "input_manifest_sha256": "4bcb9b883f732a50d60b9e8c52f617645fe26f2273a688f32c0e9dadd2a17f8c",
+    "max_features": 2048,
+    "camera_model": "SIMPLE_RADIAL",
+    "single_camera": true,
+    "sift_gpu": false,
+    "seed": 20261009,
+    "mapper_options": [
+      "Mapper.min_num_matches=20",
+      "Mapper.num_threads=1"
+    ]
+  },
+  "provenance": {
+    "fixture": "dataset_monstree/mini6 (configuration above, enforced by the runner). A seeded run also passes FeatureExtraction.num_threads 1 (sorted image ids) and TwoViewGeometry.random_seed.",
+    "upstream_revision": "3e5c915ca426e9661041d0696aff088dfc49fd90",
+    "rule": "Count metrics are discrete, so any difference is algorithmic and the threshold is 0. Each continuous threshold is the log-space midpoint sqrt(noise_floor * smallest_algorithmic_divergence), rounded to one significant digit, so it keeps the same number of decades of margin against both. It is never fitted to the candidate.",
+    "noise_floor": {
+      "method": "Upstream 3e5c915c default build versus the same source built with -ffp-contract=off, same host and inputs, through this runner; repeated runs of both pairs were bit-identical",
+      "point_reprojection_rms_px_relative_difference": 1e-14,
+      "camera_center_p95": 1.27e-15,
+      "camera_rotation_p95_deg": 9.06e-07,
+      "point_nn_p95": 4.44e-15,
+      "notes": "Counts were identical. The measured reprojection difference was exactly 0, so the double-precision relative resolution 1e-14 is used. The rotation floor equals the acos resolution near identity (acos(1 - 2^-53) = 8.5e-7 deg), not a pose difference."
+    },
+    "smallest_algorithmic_divergence": {
+      "method": "Same database, isolated mapper: ACloudViewer with std::unordered hash containers versus upstream boost::unordered 1.92 (iteration-order divergence of the SfM gauge and BA residual order)",
+      "track_observations_relative_difference": 0.00323,
+      "point_reprojection_rms_px_relative_difference": 0.00715,
+      "camera_center_p95": 0.000414,
+      "camera_rotation_p95_deg": 0.0131,
+      "point_nn_p95": 0.0274
+    },
+    "scope": "Same-host gate only. A different CPU, compiler, or BLAS can move the floating-point floor and requires re-measuring both inputs of the rule."
+  }
 }

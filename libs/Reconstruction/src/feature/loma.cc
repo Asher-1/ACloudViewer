@@ -143,12 +143,13 @@ bool MakeDescriptorInput(const Bitmap& source,
     return image->rgb != nullptr;
 }
 
-void ConvertKeypoints(const aicore_loma_detected_features& detected,
+void ConvertKeypoints(const aicore_loma_keypoint* keypoints_in,
+                      int32_t count,
                       FeatureKeypoints* keypoints) {
-    keypoints->resize(static_cast<size_t>(detected.count));
-    for (int i = 0; i < detected.count; ++i) {
-        (*keypoints)[static_cast<size_t>(i)] = FeatureKeypoint(
-                detected.keypoints[i].x, detected.keypoints[i].y);
+    keypoints->resize(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        (*keypoints)[static_cast<size_t>(i)] =
+                FeatureKeypoint(keypoints_in[i].x, keypoints_in[i].y);
     }
 }
 
@@ -202,6 +203,7 @@ bool LoadLomaFeatureModels(const LomaExtractionOptions& options,
 bool ExtractLomaFeaturesWithModels(const Bitmap& bitmap,
                                    aicore_loma_detector_ctx* detector,
                                    aicore_loma_descriptor_ctx* descriptor,
+                                   double min_score,
                                    FeatureKeypoints* keypoints,
                                    FeatureDescriptorsFloatData* descriptors) {
     CHECK_NOTNULL(keypoints);
@@ -222,14 +224,41 @@ bool ExtractLomaFeaturesWithModels(const Bitmap& bitmap,
     const bool detect_ok =
             aicore_loma_detector_run(detector, &detector_input, &detected) == 0;
     if (!detect_ok) {
+        const char* detect_error = aicore_loma_detector_last_error(detector);
+        std::cerr << "ERROR: LoMa detection failed: "
+                  << (detect_error != nullptr ? detect_error : "unknown")
+                  << std::endl;
         aicore_loma_detected_features_free(&detected);
         return false;
     }
-    ConvertKeypoints(detected, keypoints);
+    // Upstream MinScore semantics: the extraction threshold filters the
+    // detector output, and an empty filtered set is a legal successful
+    // extraction (the upstream ONNX engine yields empty-but-successful
+    // results; the ggml capi rejects count<=0, so the empty case is resolved
+    // here without entering the descriptor).
+    std::vector<aicore_loma_keypoint> filtered;
+    const aicore_loma_keypoint* describe_keypoints = detected.keypoints;
+    int32_t describe_count = detected.count;
+    if (min_score > 0.0 && detected.scores != nullptr) {
+        for (int32_t i = 0; i < detected.count; ++i) {
+            if (detected.scores[i] >= min_score) {
+                filtered.push_back(detected.keypoints[i]);
+            }
+        }
+        describe_keypoints = filtered.data();
+        describe_count = static_cast<int32_t>(filtered.size());
+    }
+    ConvertKeypoints(describe_keypoints, describe_count, keypoints);
+    if (describe_count <= 0) {
+        keypoints->clear();
+        descriptors->resize(0, 0);
+        aicore_loma_detected_features_free(&detected);
+        return true;
+    }
     aicore_loma_described_features described{};
     const bool describe_ok =
             aicore_loma_descriptor_run(descriptor, &descriptor_input,
-                                       detected.keypoints, detected.count,
+                                       describe_keypoints, describe_count,
                                        bitmap.Width(), bitmap.Height(),
                                        &described) == 0;
     if (describe_ok) {
@@ -238,6 +267,11 @@ bool ExtractLomaFeaturesWithModels(const Bitmap& bitmap,
                 described.descriptor_dim);
         *descriptors = mapped;
     } else {
+        const char* describe_error =
+                aicore_loma_descriptor_last_error(descriptor);
+        std::cerr << "ERROR: LoMa description failed: "
+                  << (describe_error != nullptr ? describe_error : "unknown")
+                  << std::endl;
         keypoints->clear();
         descriptors->resize(0, 0);
     }
@@ -509,7 +543,11 @@ public:
     explicit LomaFeatureExtractorShell(const FeatureExtractionOptions& options)
         : options_(options) {
         THROW_CHECK_NOTNULL(options_.loma);
-        if (!LoadResolvedLomaFeatureModels(options_.type, *options_.loma,
+        LomaExtractionOptions resolved = *options_.loma;
+        // use_gpu is the upstream-facing placement switch; the fork's device
+        // string only takes effect when the caller allows GPU placement.
+        if (!options_.use_gpu) resolved.device = "cpu";
+        if (!LoadResolvedLomaFeatureModels(options_.type, resolved,
                                            &detector_, &descriptor_)) {
             throw std::runtime_error(
                     "LoMa extractor model provisioning or initialization "
@@ -533,7 +571,8 @@ public:
                 options_.type, FeatureDescriptorsFloatData());
         if (bitmap.Width() <= 0 || bitmap.Height() <= 0 ||
             !ExtractLomaFeaturesWithModels(bitmap, detector_, descriptor_,
-                                           keypoints, &descriptors_float.data)) {
+                                           options_.loma->min_score, keypoints,
+                                           &descriptors_float.data)) {
             return false;
         }
         *descriptors = descriptors_float.ToBytes();
@@ -552,7 +591,9 @@ public:
         : options_(options) {
         THROW_CHECK_NOTNULL(options_.loma);
         THROW_CHECK(options_.loma->Check());
-        matcher_ = LoadResolvedLomaMatcher(options_.type, *options_.loma);
+        LomaMatchingOptions resolved = *options_.loma;
+        if (!options_.use_gpu) resolved.device = "cpu";
+        matcher_ = LoadResolvedLomaMatcher(options_.type, resolved);
         if (matcher_ == nullptr) {
             throw std::runtime_error(
                     "LoMa matcher model provisioning or initialization "

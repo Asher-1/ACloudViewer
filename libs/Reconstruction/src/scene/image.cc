@@ -98,11 +98,15 @@ Image& Image::operator=(const Image& other) {
 }
 
 void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
-    // Upstream parity (dbb41680 scene/image.cc): bulk-setting the 2D points
-    // is allowed on both empty and populated images (it clears any previous
-    // triangulation associations by replacing the container).
+    // Upstream parity (6db3867f scene/image.cc): reset the triangulation
+    // associations beyond the new size so shrinking cannot leave stale
+    // NumPoints3D() counters; retained observations keep their
+    // associations (only their xy is overwritten).
+    for (point2D_t point2D_idx = points.size(); point2D_idx < points2D_.size();
+         ++point2D_idx) {
+        ResetPoint3DForPoint2D(point2D_idx);
+    }
     points2D_.resize(points.size());
-    num_points3D_ = 0;
     for (point2D_t point2D_idx = 0; point2D_idx < points.size();
          ++point2D_idx) {
         points2D_[point2D_idx].SetXY(points[point2D_idx]);

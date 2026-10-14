@@ -182,6 +182,8 @@ def main() -> int:
                         default=("ch", "en"))
     parser.add_argument("--backends", nargs="+", choices=("cuda", "vulkan"),
                         default=("cuda", "vulkan"))
+    parser.add_argument("--quants", nargs="+", choices=QUANTS, default=QUANTS,
+                        help="det x rec quantizations; each image costs one process per pair")
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--iters", type=int, default=10)
@@ -194,6 +196,9 @@ def main() -> int:
     parser.add_argument("--require-performance-governor", action="store_true",
                         help="refuse an uncontrolled Vulkan latency run; never changes host state")
     parser.add_argument("--skip-paddle", action="store_true")
+    parser.add_argument("--paddle-cpu", action="store_true",
+                        help="run the Paddle reference on CPU: Paddle GPU det maps carry "
+                             "~2.6e-2 kernel noise against Paddle CPU, which moves boxes")
     parser.add_argument("--paddle-bench", type=Path,
                         default=SCRIPT_DIR / "bench_paddle_official.py")
     args = parser.parse_args()
@@ -234,17 +239,18 @@ def main() -> int:
                     str(image), str(args.warmups), str(args.iters), "--language", language,
                     "--det-gguf", str(args.models_dir / "ppocr-det-ch-f32.gguf"),
                     "--rec-gguf", str(args.models_dir / f"ppocr-rec-{language}-f32.gguf")] +
-                    (["--recognize-full-image"] if args.recognize_full_image else []),
+                    ((["--recognize-full-image"] if args.recognize_full_image else []) +
+                     (["--cpu"] if args.paddle_cpu else [])),
                 environment, args.output, f"paddle-{language}", args.iou,
                 args.case_sensitive)
     for language in args.languages:
         rec_stem = f"ppocr-rec-{language}"
         for backend in args.backends:
-            for det_quant in QUANTS:
+            for det_quant in args.quants:
                 det_model = args.models_dir / f"ppocr-det-ch-{det_quant}.gguf"
                 if not det_model.is_file():
                     raise FileNotFoundError(det_model)
-                for rec_quant in QUANTS:
+                for rec_quant in args.quants:
                     rec_model = args.models_dir / f"{rec_stem}-{rec_quant}.gguf"
                     if not rec_model.is_file():
                         raise FileNotFoundError(rec_model)
@@ -267,6 +273,7 @@ def main() -> int:
                         row["gate_failures"] = failures
                     results["rows"].append(row)
     results["paddle"] = paddle_reports
+    results["paddle_device"] = "cpu" if args.paddle_cpu else "gpu"
     report_path = args.output / "ocr_gt_matrix.json"
     report_path.write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")

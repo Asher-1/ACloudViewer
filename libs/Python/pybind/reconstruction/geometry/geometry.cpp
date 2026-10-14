@@ -49,7 +49,9 @@ void pybind_geometry(py::module& m) {
     py::class_<Eigen::Quaterniond> rotation3d(
             m_geometry, "Rotation3d",
             "A 3D rotation (quaternion, coeffs in [x, y, z, w] order).");
-    rotation3d.def(py::init<>())
+    // Eigen::Quaterniond's default constructor leaves the coefficients
+    // uninitialized; upstream Rotation3d() is the identity.
+    rotation3d.def(py::init([]() { return Eigen::Quaterniond::Identity(); }))
             .def(py::init([](const Eigen::Vector4d& xyzw) {
                      return Eigen::Quaterniond(xyzw(3), xyzw(0), xyzw(1),
                                                xyzw(2));

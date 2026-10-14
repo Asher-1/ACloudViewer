@@ -17,6 +17,7 @@
 
 #include <QApplication>
 #include <QAtomicInt>
+#include <QBuffer>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
@@ -79,6 +80,28 @@ int checkTableGrid() {
     return 0;
 }
 
+// JPEG copy of \p source tagged EXIF Orientation 6 (rotate 90 CW): an APP1
+// segment (big-endian TIFF, one SHORT entry) spliced in after SOI.
+bool writeRotatedExifJpeg(const QString& source, const QString& target) {
+    QByteArray jpeg;
+    QBuffer buffer(&jpeg);
+    if (!buffer.open(QIODevice::WriteOnly) ||
+        !QImage(source).save(&buffer, "JPG", 95) ||
+        !jpeg.startsWith("\xFF\xD8"))
+        return false;
+    static const char kApp1[] =
+            "\xFF\xE1\x00\x22"                  // APP1, length 34
+            "Exif\x00\x00"                      // EXIF header
+            "MM\x00\x2A\x00\x00\x00\x08"        // TIFF, IFD0 at 8
+            "\x00\x01"                          // one entry
+            "\x01\x12\x00\x03\x00\x00\x00\x01"  // Orientation, SHORT, 1
+            "\x00\x06\x00\x00"                  // value 6
+            "\x00\x00\x00\x00";                 // no next IFD
+    jpeg.insert(2, QByteArray(kApp1, sizeof(kApp1) - 1));
+    QFile file(target);
+    return file.open(QIODevice::WriteOnly) && file.write(jpeg) == jpeg.size();
+}
+
 // Real models: PaddleOCR table.jpg through det/rec + SLANet_plus on CPU,
 // whole image as one table (the AICore e2e anchor: 4 x 4, 13 cells,
 // colspan-4 header "CRuncover").
@@ -94,7 +117,7 @@ int checkHeadlessTable() {
         std::printf(
                 "qOCR headless table: models/test data not cached, "
                 "skipped\n");
-        return 0;
+        return 77;
     }
     const QByteArray detBytes = QFile::encodeName(det);
     const QByteArray recBytes = QFile::encodeName(rec);
@@ -143,12 +166,37 @@ int checkHeadlessTable() {
                          "qOCR headless table: unexpected reconstruction\n");
             failures = 1;
         } else {
-            // The overlay keeps the source geometry with the cells drawn.
-            const QImage vis = OCRRender::officialVisualization(result);
-            if (vis.size() != result.sourceImage.size()) failures = 1;
+            // The DB overlay preserves source geometry; the exported preview
+            // follows PaddleOCR draw_ocr and appends a 600-px text panel.
+            const QImage overlay = OCRRender::overlayVisualization(result);
+            const QImage official = OCRRender::officialVisualization(result);
+            if (overlay.size() != result.sourceImage.size() ||
+                official.isNull() || official.width() <= 600 ||
+                official.height() > 600 ||
+                official.size() == result.sourceImage.size())
+                failures = 1;
             std::printf("qOCR headless table: 4 x 4, 13 cells, %.0f ms\n",
                         result.tableMs);
         }
+        // EXIF orientation: OCR runs on the upright image ecvImage shows,
+        // so box coordinates match the DB image.
+        const QString rotated =
+                QDir::temp().filePath(QStringLiteral("qocr-exif-rot90.jpg"));
+        OCRWorker::Settings exif = settings;
+        exif.imagePath = rotated;
+        OCRRunResult upright;
+        if (!failures &&
+            (!writeRotatedExifJpeg(image, rotated) ||
+             !OCRWorker::recognizeImage(ocr, nullptr, exif, nullptr, &upright,
+                                        &error) ||
+             upright.sourceImage.size() !=
+                     result.sourceImage.size().transposed() ||
+             upright.boxes.isEmpty())) {
+            std::fprintf(stderr,
+                         "qOCR must apply EXIF orientation before OCR\n");
+            failures = 1;
+        }
+        QFile::remove(rotated);
     }
     if (tableCtx) aicore_table_context_destroy(tableCtx);
     if (ocr) aicore_ocr_context_destroy(ocr);
@@ -159,7 +207,10 @@ int checkHeadlessTable() {
     const QString crop = ecvTestDataRepository::findDatasetFile(
             ecvTestDataRepository::Dataset::Ppocr,
             QStringLiteral("border_bottom_18508_NC47FH2P0Z0HWA248FL3.jpg"));
-    if (crop.isEmpty()) return 0;
+    if (crop.isEmpty()) {
+        std::printf("qOCR worker batch: crop test image not cached, skipped\n");
+        return 77;
+    }
     OCRWorker::Settings batch;
     batch.detPath = det;
     batch.recPath = rec;
@@ -182,7 +233,6 @@ int checkHeadlessTable() {
             [&](bool ok) { finished = ok ? 1 : 0; }, Qt::DirectConnection);
     worker.start();
     worker.wait();
-    worker.releaseContextOnMainThread();
     if (finished.loadAcquire() != 1 || order != batch.imagePaths ||
         tables != QVector<int>{1, 1}) {
         std::fprintf(stderr,
@@ -192,6 +242,24 @@ int checkHeadlessTable() {
         return 1;
     }
     std::printf("qOCR worker batch: 2 images, 2 tables, one model load\n");
+
+    // Cancellation requested before start still loads and tears down contexts
+    // on the worker thread, then reports a non-successful completion once.
+    QAtomicInt cancelledFinished(-1);
+    OCRWorker cancelledWorker(batch);
+    QObject::connect(
+            &cancelledWorker, &OCRWorker::taskFinished, &cancelledWorker,
+            [&](bool ok) { cancelledFinished = ok ? 1 : 0; },
+            Qt::DirectConnection);
+    cancelledWorker.requestTaskCancel();
+    cancelledWorker.start();
+    cancelledWorker.wait();
+    if (cancelledFinished.loadAcquire() != 0) {
+        std::fprintf(stderr,
+                     "qOCR worker cancellation must finish exactly once as "
+                     "unsuccessful\n");
+        return 1;
+    }
     return 0;
 }
 
@@ -427,7 +495,11 @@ int main(int argc, char** argv) {
         table->setChecked(false);
         layoutCheck->setChecked(false);
     }
-    if (checkTableGrid() != 0 || checkHeadlessTable() != 0) return 1;
+    if (checkTableGrid() != 0) return 1;
+    if (app.arguments().contains(QStringLiteral("--require-e2e"))) {
+        const int status = checkHeadlessTable();
+        if (status != 0) return status;
+    }
 
     std::printf("qOCR workspace contract OK\n");
     return 0;

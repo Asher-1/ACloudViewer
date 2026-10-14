@@ -146,9 +146,9 @@ diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
 +        // equal byte counts, and the stale kernels then run with the wrong
 +        // shape. (The historical op_params[8..9] owner_id read a constant 0
 +        // for constructors that never write it and carried no information.)
-+        bool geometry_changed = plan->in_type != input->type ||
-+                                plan->w_type != kernel->type;
-+        for (int i = 0; i < 4 && !geometry_changed; ++i) {
++        bool geometry_changed = plan && (plan->in_type != input->type ||
++                                         plan->w_type != kernel->type);
++        for (int i = 0; plan && i < 4 && !geometry_changed; ++i) {
 +            geometry_changed = plan->in_ne[i] != input->ne[i] ||
 +                               plan->out_ne[i] != dst->ne[i] ||
 +                               plan->w_ne[i] != kernel->ne[i];

@@ -10,6 +10,7 @@
 #include "scene/projection.h"
 #include "geometry/triangulation.h"
 #include "estimators/rotation_averaging.h"
+#include "estimators/rotation_averaging_ceres.h"
 #include "math/union_find.h"
 #include "estimators/bundle_adjustment_caspar.h"
 #include "sfm/incremental_mapper.h"
@@ -271,6 +272,7 @@ size_t FilterTracksBySmallTriangulationAngle(
 RotationEstimatorOptions GlobalMapperOptions::RotationAveraging() const {
   RotationEstimatorOptions opts = rotation_averaging;
   opts.refine_sensor_from_rig = refine_sensor_from_rig;
+  opts.ceres->solver_options.num_threads = num_threads;
   if (random_seed >= 0) {
     opts.random_seed = random_seed;
   }

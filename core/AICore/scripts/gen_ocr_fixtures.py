@@ -1,48 +1,20 @@
 #!/usr/bin/env python3
-"""Generate the `ocr` task probe fixtures from a pinned F32 GGUF.
+"""Replay a pinned F32 OCR GGUF for operator-bisection diagnostics.
 
-The manifest's historical ocr_fixtures/*.npy release assets are gone (the
-PP-OCR release now ships only the model GGUFs plus the image bundle), so
-the det/rec/layout probes cannot run and the task has no numeric gate.
-This script rebuilds the fixtures locally and deterministically:
-
-1. Read the F32 GGUF (weights + embedded `ocr.graph.ops` topology).
-2. Replay the audited Paddle graph in plain numpy NCHW semantics.
-3. Feed a pinned, seed-stable synthetic input and save input + reference.
-
-The numpy replay is an independent implementation of the same source graph
-the C++ ggml builder executes: the probe's element-wise comparison against
-these references is therefore a true parity gate (graph semantics, layout
-mapping, activation formulas), not a self-check. Convert once per model
-and publish the .npy files alongside the GGUFs.
+Published OCR fixtures must come from real images and the independent Paddle
+Inference predictor via ``core/AICore/tools/export_ocr_fixture.py``. Synthetic
+random inputs previously made det/rec gates vacuous and made the layout gate a
+self-consistency check, because this numpy replay follows the same translated
+graph as the C++ runtime. This script remains useful only for deterministic
+``--fetch-at`` bisection against a GGUF graph; it must not publish fixtures.
 
 Usage:
     python3 gen_ocr_fixtures.py --model <gguf> --out <dir> [--seed S]
                              [--stem rec_en]
 
-The published det/rec fixtures are NOT produced here any more: on a uniform
-random input the DB head is ~0 everywhere (max 0.0036) and the CTC head is
-blank at all 40 steps, so those gates could not fail. They are real official
-images through the Paddle Inference predictor of the GGUF source archive
-(core/AICore/tools/export_ocr_fixture.py). This script still serves the
-layout fixture and the --fetch-at bisection simulator.
-
-Default output layout mirrors the manifest relative paths:
-    <out>/rec_ch_input.npy  <out>/rec_ch_reference.npy
-    <out>/rec_en_input.npy  <out>/rec_en_reference.npy   (--stem rec_en)
-    <out>/det_ch_input.npy  <out>/det_ch_reference.npy
-    <out>/layout_input.npy  <out>/layout_head0.npy .. layout_head7.npy
-
-Publishing: the manifest input_assets point at the PP-OCR release asset
-names below, so uploading the generated files under those exact names makes
-the runner's fetch path work on any host (no manifest edit needed):
-
-    gh release upload PP-OCR \\
-        rec_ch_input.npy rec_ch_reference.npy \\
-        rec_en_input.npy rec_en_reference.npy \\
-        det_ch_input.npy det_ch_reference.npy \\
-        layout_input.npy layout_head{0..7}.npy \\
-        --repo Asher-1/cloudViewer_downloads
+Normal fixture generation is intentionally rejected. Use
+``export_ocr_fixture.py {det,rec,layout}`` with the source Paddle model and a
+pinned real image; keep this script for ``--fetch-at`` only.
 """
 
 import argparse
@@ -728,65 +700,9 @@ def main():
         shape, total, name = sim.run_fetch_sum("x", x, args.fetch_at)
         print(f"[fetch-sim] {name} shape={shape} sum={total:.6e}")
         return
-    import os
-    out = args.out
-    if not out:
-        root = os.path.expanduser("~/cloudViewer_data/extract")
-        out = os.path.join(root, "ocr_fixtures")
-    os.makedirs(out, exist_ok=True)
-
-    gguf = Gguf(args.model)
-    role = gguf.kv.get("ocr.role", "")
-    ops_json = gguf.kv.get("ocr.graph.ops")
-    assert ops_json, "GGUF is missing ocr.graph.ops"
-    graph = json.loads(ops_json)
-    ops = graph["ops"] if isinstance(graph, dict) else graph
-    ranks = graph.get("ranks", {}) if isinstance(graph, dict) else {}
-    hist = Counter(o["type"] for o in ops)
-    print(f"{args.model}: role={role} ops={len(ops)} hist={dict(hist)}")
-
-    sim = Sim(gguf, ops, ranks)
-    if role == "rec":
-        stem = args.stem or "rec_ch"
-        x = pinned_input((1, 3, 48, 320), -1.0, 1.0, args.seed)
-        fetches = sim.run("x", x, 1)
-        ref = fetches[0]
-        # The rec fetch arrives as (T, vocab) for N=1; the probe consumes
-        # the numpy (1, T, vocab) reference shape.
-        if ref.ndim == 2:
-            ref = ref[np.newaxis, ...]
-        np.save(os.path.join(out, f"{stem}_input.npy"), x)
-        np.save(os.path.join(out, f"{stem}_reference.npy"), ref)
-        print(f"rec: input {x.shape} ref {ref.shape} stem={stem}")
-    elif role == "det":
-        x = pinned_input((1, 3, args.det_h, args.det_w), -2.5, 2.5,
-                         args.seed)
-        fetches = sim.run("x", x, 1)
-        ref = fetches[0]
-        if ref.ndim == 2:
-            ref = ref[np.newaxis, np.newaxis, ...]
-        elif ref.ndim == 3:
-            ref = ref[np.newaxis, ...]
-        np.save(os.path.join(out, "det_ch_input.npy"), x)
-        np.save(os.path.join(out, "det_ch_reference.npy"), ref)
-        print(f"det: input {x.shape} ref {ref.shape}")
-    elif role == "layout":
-        x = pinned_input((1, 3, 800, 608), -2.5, 2.5, args.seed)
-        np.save(os.path.join(out, "layout_input.npy"), x)
-        fetches = sim.run("x", x, 8)
-        for i, head in enumerate(fetches):
-            # PaddleDetection saves each head as (1, N, C).
-            if head.ndim == 2:
-                head = head[np.newaxis, ...]
-            np.save(os.path.join(out, f"layout_head{i}.npy"), head)
-            print(f"layout head{i}: {head.shape}")
-    else:
-        raise SystemExit(f"unsupported role: {role}")
-
-    for name in sorted(os.listdir(out)):
-        if name.endswith(".npy"):
-            p = os.path.join(out, name)
-            print(f"  {name}: sha256={sha256_file(p)}")
+    raise SystemExit(
+        "synthetic OCR fixtures are not publication evidence; use "
+        "core/AICore/tools/export_ocr_fixture.py with a real image")
 
 
 if __name__ == "__main__":

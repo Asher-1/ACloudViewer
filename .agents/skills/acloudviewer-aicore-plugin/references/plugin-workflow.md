@@ -23,6 +23,14 @@ must not tear down live contexts or the process backend registry. Keep source
 identity and generation with each request/result. Drop stale results before
 mutating DB/UI state.
 
+A `QThread` worker's completion signal is emitted from inside `run()`, so a
+queued `deleteLater()` can destroy the worker before `run()` returns, and
+`~QThread` aborts on a running thread. Every worker destructor that may run in
+that window starts with `if (isRunning()) { requestTaskCancel(); wait(); }`
+before releasing its cancel token or context, and scoped guards inside `run()`
+end before the completion signal. `check_plugin_aicore_boundaries.py --strict`
+reports QThread workers whose destructor does not wait.
+
 For live input, use a consumer-driven queue: at most one running frame and one
 latest pending frame. The producer never fetches a new frame before inference
 and rendering complete. Every completion path, including cancel, error, stale,

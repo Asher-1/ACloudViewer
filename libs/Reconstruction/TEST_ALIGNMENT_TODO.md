@@ -2114,3 +2114,704 @@ Remaining partial files, ordered by unmatched declaration count:
   `verdict=PASS`, `violations=[]`; candidate/upstream retain 6/6 registered
   images and 406/406 sparse points.
 - `git diff --check` passes; no `.orig`, `.rej`, or temporary dump marker remains.
+
+## Missing-file assessment, METIS root cause, and remaining upstream fixes (2026-10-12)
+
+### First-principles analysis
+
+The irreducible question for each missing test file is: does the owning
+production code exist in this fork's build? If not, the test has no subject.
+For the METIS ABI clash, the irreducible contract is: one `metis.h` declares
+one `idx_t` width, and the link-time library matches that width. For upstream
+commits, the irreducible question is: does the commit change observable
+behavior in a module the fork builds?
+
+### Gap 1 — missing upstream test files
+
+| File | Cases | Decision | Reason |
+|---|---:|---|---|
+| `inertial/preintegration_test.cc` | 30 | **Ported** | Added the `inertial/` module (preintegration.h/cc, cost.h) and two test files; 30+8 tests pass. Includes the 4490d95a RK4 small-rate stability fix. |
+| `inertial/preintegration_cost_test.cc` | 8 | **Ported** | See above. |
+| `controllers/feature_extraction_test.cc` | 3 | **Ported** | The fork builds `CreateFeatureExtractorController` / `CreateFeatureImporterController`; upstream test runs SIFT CPU extraction, mask filtering, and text import. All 3 pass. |
+| `feature/lightglue_test.cc` | 8 | **Ported** | Adapted from the upstream ONNX test suite to the fork's AICore ggml engine. Self-matching, min-score monotonicity, empty inputs, and cache tests exercise the same matcher contract. Models are on this machine; all 8 pass. |
+| `util/onnx_test.cc` | 9 | **Skip** | The fork replaces ONNX with AICore ggml; there is no `util/onnx.h`. The fork's `feature/onnx_utils_test.cc` covers the equivalent AICore session contract (load failure, shutdown idempotency, ABI version). |
+
+### Gap 1 — pixel-center convention alignment
+
+The LightGlue test exposed a latent pixel-convention mismatch:
+- COLMAP puts the top-left pixel center at (0.5, 0.5).
+- The AICore ABI uses the LightGlue/OpenCV convention (0, 0).
+
+Fixed by subtracting 0.5 in `LightGlueGGMLFeatureMatcher::PrepareFeatures`
+and adding 0.5 in `ConvertFeatures` (aliked.cc). Also ported the upstream
+gravity-upright keypoint rotation (Rot90) and swapped image dimensions into
+`PrepareFeatures`, which were previously missing from the fork's adapter.
+
+### Gap 2 — Graclus / METIS ABI root cause
+
+The root cause chain, traced from `suitesparse_build.cmake`:
+
+1. `ext_suitesparse` (ExternalProject) downloads `suitesparse-metis-for-windows`
+   which bundles METIS 5.1 with `IDXTYPEWIDTH=64` and builds it as a static
+   library (`libmetis.a`). The vendored `metis.h` is installed to
+   `build_app/external/include/metis.h`.
+2. `ext_ceres` (ExternalProject) depends on `3rdparty_suitesparse`. Its
+   `FindSuiteSparse.cmake` runs `find_package(METIS)` which resolves to
+   `/usr/lib/x86_64-linux-gnu/libmetis.so` and `/usr/include/metis.h`
+   (`IDXTYPEWIDTH=32`). Because `EIGENMETIS=OFF`, Ceres itself never calls
+   METIS, but `SuiteSparse_CHOLMOD_USES_METIS` is set, and
+   `METIS::METIS` is linked as an interface dependency of
+   `SuiteSparse::CHOLMOD`.
+3. Ceres is built as a shared library (`libceres.so.4`) with
+   `CMAKE_INSTALL_RPATH=$ORIGIN`; at runtime it loads the system
+   `libcholmod.so.3`, which loads the system `libmetis.so.5` (32-bit
+   `idx_t`). The static `libmetis.a` from step 1 is never linked into Ceres
+   or into ACloudViewer.
+4. The fork's `math/graph_cut.cc` links Graclus (not METIS), so there is no
+   direct build-time conflict today. But the process address space holds two
+   sets of METIS symbols: Graclus exports METIS-4-named symbols
+   (`METIS_PartGraphRecursive` at 64-bit width, statically linked into
+   ACloudViewer) while the system `libmetis.so.5` exports the same symbol at
+   32-bit width. A future `graph_cut.cc` migration to METIS 5 must not
+   compile against the vendored 64-bit header and link the system 32-bit
+   library.
+
+Convergence plan (unchanged from previous section): build one METIS 5.1
+target with `IDXTYPEWIDTH=32`, ensure its header and binary are inseparable,
+replace Graclus with METIS in `graph_cut.cc`, run symbol/ASan/L3 gates.
+
+### Gap 3 — remaining upstream commits
+
+| Commit | Subject | Status | Reason |
+|---|---|---|---|
+| `3e5c915c` | Preserve palette/CMYK in panorama | **Skip** | Image rendering only; no SfM/MVS impact. |
+| `4ae1aafb` | Reject seeded benchmark comparisons | **Skip** | Benchmark tooling, not production code. |
+| `b7d115e1` | Bump faiss to v1.15.1 | **Skip** | Dependency bump; the fork uses a separate faiss pin. |
+| `9e653da3` | CeresRotationAverager | **Ported (2026-10-13)** | See P1-ra section below. |
+| `f1ea91d0` | Multiple calibrations per camera | **Deferred** | Architectural: modifies the Database schema and Camera lifecycle. |
+| `4490d95a` | RK4 small-rate preintegration | **Ported** | Included in the inertial module port above. |
+| CI/docs/tooling | 6 commits | **Skip** | No production code changes. |
+
+### Verification
+
+- ColmapLib: builds clean (`make -j16 ColmapLib`, 0 errors).
+- Full build: the AICore OCR module has an unrelated error
+  (`ggml_conv_transpose_2d_p0_set_prec` undeclared — co-author's WIP). All
+  other targets including ACloudViewer build.
+- C++: `ctest -R '_test$'`, 183/183 (was 179; +4 new tests).
+- Python reconstruction: 397 passed, 3 skipped.
+- CLI-Anything: 617 passed.
+- Fixed-seed L3: `build_app/Testing/l3-colmap-gap2-final/comparison.json`,
+  `verdict=PASS`, `violations=[]`.
+- `git diff --check` passes; no `.orig`, `.rej`, or temp markers.
+
+## Ceres/SuiteSparse/METIS ABI fix and polynomial scale (2026-10-12)
+
+### First-principles analysis
+
+The irreducible contract is: every translation unit calling `METIS_*` must
+agree on the width of `idx_t`. A single CMake line broke this by letting
+`ext_ceres` discover system 32-bit METIS instead of the vendored 64-bit one.
+
+### Root cause
+
+`ext_ceres` is an ExternalProject with its own CMake configure scope. Its
+`FindSuiteSparse.cmake` (Ceres 2.2) tries `find_package(SuiteSparse NO_MODULE
+QUIET)` first; when that fails it falls back to `find_path`/`find_library`
+with **no HINTS**. The vendored install dir
+(`build_app/external/`) was never in the Ceres subproject's search path:
+
+- `-DSuiteSparse_DIR=.../suitesparse-4.5.0` was passed but the config mode
+  failed silently (the vendored `suitesparse-config.cmake` calls
+  `find_package(LAPACK CONFIG)` which has no search path in the child scope).
+- `-DSUITESPARSE_INCLUDE_DIR_HINTS` and `-DSUITESPARSE_LIBRARY_DIR_HINTS`
+  were from an older Ceres convention; Ceres 2.2 ignores them.
+- The fallback `find_path`/`find_library` found `/usr/include/suitesparse`
+  and `/usr/lib/x86_64-linux-gnu/lib*.so` (32-bit `idx_t`).
+- `libceres.so.4` got `NEEDED: libcholmod.so.3` → `libmetis.so.5` (32-bit).
+- The main executable's Graclus exported 64-bit METIS symbols.
+
+### Fix
+
+One-line addition to `3rdparty/ceres-solver/ceres_build.cmake`:
+```
+-DCMAKE_PREFIX_PATH=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+```
+
+This makes all `find_*` calls in the Ceres subproject search the vendored
+install dir first. After a clean reconfigure:
+- All SuiteSparse components resolve to vendored static `.a` (64-bit `idx_t`)
+- `METIS_LIBRARY` → `external/lib/libmetis.a`
+- `libceres.so.4` has zero DT_NEEDED for system cholmod/metis/suitesparse
+- All SuiteSparse symbols are embedded in the shared library
+
+| Dimension | Fix chosen | Alternative | Reason |
+|---|---|---|---|
+| Approach | `CMAKE_PREFIX_PATH` in build config | Patch FindSuiteSparse.cmake | Zero source mod; survives Ceres upgrades |
+| ABI | Vendored 64-bit idx_t → consistent with Graclus | System 32-bit | Eliminates ABI clash |
+| Runtime deps | Removed: cholmod.so, metis.so, spqr.so, amd.so, etc. | Present before | Self-contained libceres.so |
+
+### Polynomial coefficient-scale fix (4a6d0cbe #4838)
+
+Ported the upstream `frexp`/`scalbn` discriminant rescaling for
+`FindQuadraticPolynomialRoots`. The old naive `d = b*b - 4*a*c` loses
+precision when coefficients span wide scales (e.g. `1e-200 * (1, -3, 2)`
+gives wrong roots). The fix decomposes each coefficient into
+mantissa × 2^exponent, computes the discriminant in balanced exponent space,
+and reconstructs root ratios with `std::scalbn`.
+
+Added 3 parameterized + 2 direct tests (CoefficientScaleInvariance,
+WideCoefficientRange, OptionalOutputs). 24/24 polynomial tests pass.
+
+### Remaining 12 commits triage
+
+| Commit | Subject | Decision |
+|---|---|---|
+| `3e5c915c` | Panorama CMYK (Python only) | **Skip** — no C++ change |
+| `4a6d0cbe` | Polynomial scale | **Ported** |
+| `4ae1aafb` | Benchmark metrics rejection | **Skip** — tooling only |
+| `b7d115e1` | Bump faiss to v1.15.1 | **Skip** — not vendored |
+| `9e653da3` | CeresRotationAverager | **Ported (2026-10-13)** — see P1-ra section below |
+| `f1ea91d0` | Multiple camera calibrations/DB | **Defer** — DB schema change |
+| 6 × CI/docs/npm bumps | CI tooling | **Skip** |
+
+### Verification evidence
+
+- Full build: EXIT=0, 0 errors.
+- C++: 183/183 tests passed, 0 failed.
+- Python reconstruction: 397 passed, 3 skipped.
+- CLI-Anything: 617 passed.
+- Fixed-seed L3: `build_app/Testing/l3-ceres-fix-final/comparison.json`,
+  `verdict=PASS`, `violations=[]`.
+- `git diff --check` passes; no `.orig`, `.rej`, or temp markers.
+- `ldd libceres.so.4` shows zero system SuiteSparse/METIS dependencies.
+
+## P0: upstream L3 baseline rebuilt at 3e5c915c, hash backend root cause, deterministic gate (2026-10-12)
+
+This section **supersedes every earlier L3 PASS in this file**. Those runs used
+an upstream executable built from `86cca12e` while the runner recorded the
+source checkout's revision, and they were gated with thresholds calibrated from
+the candidate-vs-baseline gap itself (circular: the recorded
+`track_observations` threshold 0.00323 was exactly the 1241-vs-1237 gap). None
+of them is alignment evidence.
+
+### Baseline and provenance
+
+- Upstream worktree `.qoder/tmp/colmap-upstream-3e5` at
+  `3e5c915ca426e9661041d0696aff088dfc49fd90`, clean. `colmap version` prints
+  `Commit 3e5c915c`. Build: Release, Ninja, no GPU/GUI/MVS/CGAL, with the same
+  Ceres/glog/gflags as the fork (`colmap_prelude.cmake`, plus
+  `GLOG_INCLUDE_DIRS`, plus `FETCHCONTENT_SOURCE_DIR_BOOST` from the local
+  Boost 1.92 tarball, whose SHA-256 matches upstream's `URL_HASH`).
+- The runner checks both the source `HEAD` and the binary's embedded commit
+  against `--upstream-revision` (`colmap_binary_revision`, `revisions_match`).
+
+### Root cause of the remaining L3 gap
+
+The divergence (1241 vs 1237 observations) was isolated to the mapper. The
+databases had identical keypoints, matches, and two-view geometries. Bundle
+adjustment on the same snapshot agreed to 1e-9. Upstream was bit-reproducible
+and did not depend on the seed. The first divergence was the local BA after
+registering image #6, where the Jacobian sizes were 132240 vs 132144 bytes.
+
+| Experiment (same database) | Observations | Focal |
+|---|---|---|
+| Upstream 3e5c915c (boost::unordered 1.92) | 1237 | 3296.4373575605 |
+| Upstream 3e5c915c built with std::unordered | **1241** | 3295.66715295010 |
+| Fork with std::unordered (before) | 1241 | 3295.66715295010 |
+| Fork, boost aliases only in `util/hash_containers.h` | 1241 | 3295.66961375116 |
+| Fork, plus BA config / Ceres adjuster aliases (after) | **1237** | 3296.4373575604986 |
+
+Iteration order of the hash containers is observable SfM behavior:
+`FixGaugeWithThreePoints` iterates `point3D_num_observations_`, and
+`CeresBundleAdjuster::SetUp` adds residual blocks in the iteration order of
+`BundleAdjustmentConfig::Images()/VariablePoints()/ConstantPoints()`.
+
+### Fix
+
+- `util/hash_containers.h` is boost-only (no selectable backend). The aliases
+  are data members of public headers, so a per-consumer backend would also be an
+  ODR violation.
+- `3rdparty/boost_unordered` additionally vendors Boost 1.92 `boost/container`.
+  CGAL's `advancing_front_meshing.cc` includes it, and the 1.74 container
+  headers over the 1.92 move headers redefine `move_detail` traits. ColmapLib
+  puts the vendored path first as a PUBLIC, C++-only include. The patch_match
+  per-TU include hack is gone.
+- `BundleAdjustmentConfig` sets/maps, `CeresBundleAdjuster::point3D_num_observations_`
+  (FlatHashMap), `camera_ids_` (std::set, as upstream
+  `parameterized_camera_ids_`), and the `ParameterizeRigsAndFrames` locals now
+  use the same containers as upstream. `mvs/fusion.cc`
+  `fused_point_visibility` (its order is the written `.vis` order) and
+  `scene_clustering.cc` `related_images` were aligned too.
+- Consumers that used `std::unordered_*` for alias-typed values were changed:
+  `ModelViewerWidget.h` members and pybind `mappers.cpp`.
+  `pybind/reconstruction/hash_container_casters.h` provides the map/set casters
+  for the boost aliases. For example, `Reconstruction.points3D_map` returns a
+  NodeHashMap by value; it is now covered by
+  `test_reconstruction_points3d_map_converts_hash_map`.
+- Not changed, because the iteration order does not affect results:
+  - `Reconstruction::Point3DIds()` returns NodeHashSet, not FlatHashSet. Every
+    filter consumer decides per point.
+  - The `hierarchical_pipeline.cc` maps are keyed by pointer (address order in
+    both implementations) or used for lookup only.
+  - The Caspar maps are rewritten by the P2 Caspar work.
+
+### Determinism of the gate itself
+
+Two sources of run-to-run variation were measured and pinned:
+
+1. Unseeded two-view geometry RANSAC (`TwoViewGeometry.random_seed=-1`).
+   Harness `reconstruct match --random-seed` (and MCP `random_seed`) now passes
+   `--TwoViewGeometry.random_seed`.
+2. Image ids follow extraction completion order. One run assigned
+   IMG_1024/IMG_1026 the ids 4/3, the next run 3/4, which changes pair
+   orientation and therefore the RANSAC result. Harness
+   `reconstruct extract-features --num-threads` (and MCP `num_threads`) now
+   passes `FeatureExtraction.num_threads`. With 1 thread, both binaries assign
+   the sorted ids 1..6 in every run (3 runs each).
+
+The runner passes both whenever `--seed` is given. A seeded run is now
+bit-identical across repeats: 3 gate runs and 2 noise runs.
+
+### Thresholds (not fitted to the candidate)
+
+`l3_mini6_thresholds.json`:
+
+- Count metrics: 0.
+- Each continuous metric: `sqrt(noise_floor × smallest_algorithmic_divergence)`,
+  rounded to one significant digit.
+- Noise floor: upstream default build vs the same source with
+  `-ffp-contract=off`, through the runner.
+  - Camera center p95: 1.27e-15.
+  - Point NN p95: 4.44e-15.
+  - Rotation p95: 9.06e-7 deg (the acos resolution).
+  - Reprojection: 0, so the 1e-14 resolution is used.
+- Smallest algorithmic divergence: the std-vs-boost hash isolation above.
+  - Camera center p95: 4.14e-4.
+  - Point NN p95: 0.0274.
+  - Rotation p95: 0.0131 deg.
+  - Reprojection: 7.15e-3.
+  - Observations: 3.23e-3.
+- Resulting thresholds:
+  - Camera center p95: 7e-10.
+  - Point NN p95: 1e-8.
+  - Rotation p95: 1e-4 deg.
+  - Reprojection: 8e-9.
+
+The file also carries a machine-readable `configuration`: the input-manifest
+SHA-256, features, camera model, seed, and mapper options. The runner refuses
+to gate any run whose configuration differs. The CMake
+`reconstruction_l3_alignment_gate` target passes the same fixture options.
+`run_loma_sfm_comparison_test.py` (13 tests) proves:
+
+- The thresholds separate the two measured populations.
+- They follow the stated rule.
+- The configuration binding fails closed.
+- A seeded run pins extraction threads, the matching seed, and the mapper seed.
+
+### Evidence
+
+- `build_app/Testing/l3-p0-official2/comparison.json`: verdict `PASS`,
+  `violations=[]`.
+  - Baseline revision `3e5c915c…` (source and binary).
+  - Candidate sha256 `abcefc93c939…`, baseline sha256 `12342b3e1536…`.
+  - Counts identical: 6 images, 1240 observations.
+  - Reprojection RMS bit-identical.
+  - Camera center p95 4.5e-15, rotation p95 2.1e-6 deg, point NN p95 5.9e-14.
+- The CMake target `reconstruction_l3_alignment_gate` also returned PASS with
+  the L3 cache variables set; the cache was then restored to OFF.
+- C++ ctest (reconstruction and plugin subset, AICore/model labels excluded):
+  237/237 passed, 1 skipped.
+- Python reconstruction: 397 passed, 3 skipped, plus the new `points3D_map`
+  test.
+- CLI-Anything harness tests: all passed.
+
+## P1-ra — Ceres rotation averager port of `9e653da3` (2026-10-13)
+
+### What was ported
+
+- `estimators/rotation_averaging_ceres.{h,cc}`: full rewrite to upstream
+  semantics — MST initialization, sensor-constant condition
+  (`!translation.hasNaN()`), `ScaledLoss` wrapping (not scale-on-residual),
+  `Huber` warm start with `skip_initialization=true`.
+- `estimators/rotation_averaging.{h,cc}`: `RotationAveragingBackend`
+  `{L1_IRLS, CERES}` enum; `RotationEstimatorBackendOptions` holding
+  `shared_ptr` to L1 / Ceres options with deep copy/move; free function
+  `InitializeFromMaximumSpanningTree` with `refine_sensor_from_rig` flag;
+  `MaybeFilterPoseGraphToActiveImages` (anonymous namespace).
+- `estimators/rotation_averaging_l1_irls.{h,cc}`: extracted
+  `L1IrlsRotationAveragerOptions` from the old monolithic
+  `RotationEstimatorOptions`.
+- `estimators/rotation_averaging_ceres_test.cc`: full rewrite — 13 tests.
+- `estimators/rotation_averaging_test.cc`: added `CERES` backend branch.
+- `controllers/option_manager.cc`: new CLI options for
+  `GlobalMapper.ra_backend`, `ra_max_num_l1_iterations`,
+  `ra_max_num_irls_iterations`, `ra_irls_loss_parameter_sigma`,
+  `ra_ceres_loss_function_type` (enum), `ra_ceres_loss_function_scale`,
+  `ra_ceres_max_num_warm_start_iterations`, `ra_ceres_max_num_iterations`.
+- `controllers/rotation_averaging.cc` and `sfm/global_mapper.cc`: propagate
+  `options.num_threads` into `ceres->solver_options.num_threads`.
+- `controllers/automatic_reconstruction.cc`: instantiate
+  `GlobalPipelineOptions` from `option_manager_.global_mapper`.
+- `estimators/bundle_adjustment.{h,cc}`: new `AssignDeepCopy` /
+  `AssignDeepMove` templates; copy/move-assign write into the existing
+  pointee so raw pointers held by Qt widgets survive
+  `OptionManager::ResetOptions()`.
+- `pybind/reconstruction/estimators/estimators.cpp`: new bindings for
+  `RotationWeightType`, `RotationAveragingBackend`,
+  `L1IrlsRotationAveragerOptions`, `CeresRotationAveragerOptions`, extended
+  `RotationEstimatorOptions`, `CeresRotationAverager` class with `solve()`,
+  `add_relative_rotation_residual()`, `problem` property, and
+  `create_default_ceres_rotation_averager` factory.
+- `pybind/reconstruction/estimators/covariance_bindings.{h,cpp}`: moved
+  `PyCeresProblem` definition to header; added `num_parameter_blocks()` and
+  `num_residual_blocks()`.
+- `pybind/reconstruction/geometry/geometry.cpp`: `Rotation3d()` default
+  constructor now returns identity (Eigen's default leaves coefficients
+  uninitialized — root cause of order-dependent pytest failure).
+- `python/test/reconstruction/estimators/test_motion_averaging.py`: 7 new
+  tests (backend enum, default init, reweighting, L1/Ceres readwrite, Ceres
+  averager residual+solve, Ceres backend recovers rotations).
+- `python/test/reconstruction/geometry/test_eigen.py`: `Rotation3d()`
+  default-init asserts identity.
+- `controllers/option_manager_test.cc`: new
+  `ResetOptionsPreservesNestedBackendOptions` test.
+
+### ACV-specific adaptations
+
+- WXYZ quaternion functor (`WxyzQuaternion`) because ACV stores qvec as
+  WXYZ, while upstream uses XYZW.
+- No pybind for `ceres::Problem` / `LossFunction`; the fork exposes an
+  opaque `PyCeresProblem` handle. `add_relative_rotation_residual` uses
+  `nullptr` (trivial loss) — a fork accommodation for the missing loss
+  binding.
+- No implicit string-to-enum conversion; `AddStringToEnumConstructor` adds
+  a string constructor only.
+
+### Deviations from upstream fixed to match upstream semantics
+
+1. **MST initialization**: the old ACV Ceres averager used BFS; now uses
+   upstream's maximum-spanning-tree with sensor-constant validation.
+2. **Sensor-constant condition**: old code used `known_sensor`; now uses
+   upstream's `!translation.hasNaN()`.
+3. **Loss application**: old code multiplied `scale * weight` into the
+   residual; now uses upstream's `ScaledLoss` wrapping.
+
+### Pointer-stability fix
+
+`BaseOptionManager::ResetOptions` re-registers all options, so the option
+registry is safe. But Qt widgets (`bundle_adjustment_widget.cc`,
+`reconstruction_options_widget.cc`) cache raw pointers to
+`bundle_adjustment->ceres` / `->caspar` / `rotation_averaging->ceres` /
+`->l1_irls`. The old `*x = T()` move-assign replaced the pointee, leaving
+those pointers dangling. Fixed by `AssignDeepCopy` / `AssignDeepMove`
+which write into the existing pointee. Evidence:
+`option_manager_test.ResetOptionsPreservesNestedBackendOptions`.
+
+### Verification evidence
+
+- Full build: EXIT=0.
+- ctest: 350/350 passed (including `rotation_averaging_test`,
+  `rotation_averaging_ceres_test` (13), `option_manager_test`,
+  `bundle_adjustment_*`, `motion_averaging_test`, `global_mapper_test`,
+  `controllers_rotation_averaging_test`).
+- pytest reconstruction: 404 passed, 3 skipped.
+- L3 gate (`build_app/Testing/l3-p1ra-gate`): verdict `PASS`.
+  - Camera center p95 3.1e-15, rotation p95 2.1e-6 deg, point NN p95
+    5.9e-14.
+  - Baseline revision `3e5c915c…` (source and binary).
+
+### Pending follow-ups from P1-ra
+
+- **L3 gate for global mapper with CERES backend**: the current L3 runner
+  only drives the incremental mapper. The global-mapper path (which is the
+  only consumer of `RotationAveragingBackend::CERES` in production) has no
+  L3 coverage yet. Need a separate runner invocation or a `--pipeline
+  global` flag on `run_loma_sfm_comparison.py`.
+
+## P1-db — DB schema 4030001 and migration of `f1ea91d0` (PENDING)
+
+Port the upstream commit that introduces multiple calibrations per camera:
+new DB schema version 4030001, migration script, `Camera` lifecycle changes.
+
+## P2 — Undistortion and Caspar `min_track_length` (完成 2026-10-14,见下方批次记录)
+
+1. Undistortion: `keep_unchanged` flag and spherical camera model support.
+2. Caspar BA: ignore `min_track_length` (match upstream behavior).
+
+## P3 — CLI/Options surface and runtime consumers (PENDING)
+
+Fill out the remaining CLI options and their runtime consumers so the
+fork's option surface matches upstream.
+
+## AnyCalib — AICore task, plugin consumer surface, validation matrix (PENDING)
+
+Turn AnyCalib into a first-class AICore task: public header, task
+implementation under `src/tasks/`, monolithic CMake/test closure, catalog/
+digest, probe, manifest, ABI tests. Plugin consumer surface and validation
+matrix.
+
+## Deps — PoissonRecon / METIS upgrade justification (PENDING)
+
+Provide evidence-based justification before upgrading PoissonRecon or
+migrating to METIS. No change without a named problem that the upgrade
+solves.
+
+## Verify — Full gates and incremental TEST_ALIGNMENT_TODO recording (完成 2026-10-13)
+
+Run the full gate suite (ctest, pytest reconstruction, CLI-Anything, L3)
+and record any new alignment findings in this document.
+
+### 全量 gate 复验(工作树 = P0/P1-ra/inertial/calibration 全部未提交改动,2026-10-13)
+
+环境:HEAD `dd911968bb`(工作树 dirty,306 文件改动),pyenv 3.12 + `/opt/Qt5.14.2`,
+RTX 4090,CUDA 12.6,Release/Unix Makefiles,`make -j20`。上游基线 worktree
+`.qoder/tmp/colmap-upstream-3e5`(`3e5c915c`,源码与内嵌 commit 均校验)。
+
+- **全量构建**:`make -j20` 到 100%,0 error(Colmap/libAICore.so/pybind/QANYLABELING_PLUGIN
+  均重链;Eigen ODR "note" 为无害告警)。
+- **C++ gate**:`ctest -R '_test$' -j4 --timeout 900` **183/184**,唯一失败
+  `feature/loma_test`(见下)。
+- **pytest reconstruction**:`python/test/reconstruction/` **404 passed / 3 skipped**
+  (与 P1-ra 记录一致;3 skip = P2 dataclass/timestamp 留因 + 既有 skip)。
+  运行需 `LD_LIBRARY_PATH` 含 Qt5.14.2/gcc_64/lib + cuda lib + build_app/bin
+  (pybind 经 conftest dlopen 依赖 libQt5Concurrent,RUNPATH 对 dlopen 非传递)。
+- **CLI-Anything harness**:`/usr/bin/python3 -m pytest cli_anything/acloudviewer/tests/`
+  **631 passed**(较 P1-ra 的 617 增长来自 sparse 透传用例;须用系统 python,
+  pyenv 3.12 缺 `mcp` SDK)。
+- **L3 fixed-seed**:`build_app/Testing/l3-verify-20261013/comparison.json`
+  **verdict=PASS / violations=[]**。candidate 与 baseline **全部计数逐位一致**:
+  registered 6/6、sparse_points 407/407、track_observations 1240/1240、
+  mean_track_length 3.0466830466830466/3.0466830466830466、
+  point_reprojection_rms_px 1.2839597799584896/1.2839597799584896
+  —— 相对差全为 0.0(较旧记录 1241-vs-1237 观测缺口,P0 boost-hash 对齐已
+  **彻底消除该分歧**)。Sim3 归一化 p95:center 4.52e-15、rotation 2.09e-6°、
+  point-NN 5.95e-14,均远低于阈值(7e-10 / 1e-4° / 1e-8)。
+  candidate sha256 `b85ada0dd1bb2dcc…`,baseline sha256 `12342b3e15360a81…`。
+
+### feature/loma_test 确定性失败定性与裁定(更正既有"瞬态"记录)
+
+- 现象:`LomaTest.MinScore`(loma_test.cc:128)与 `LomaTest.DynamicNumKeypoints`
+  (:155)在 `use_gpu=false` 的 **CPU ggml 路径**上 **隔离 3/3 稳定失败**
+  (`ASSERT_TRUE(extractor->Extract(...))` 返回 false),非并行 GPU 竞争——
+  与批次 Y-DB"外部进程占 GPU 的瞬态后端失败"裁定不符,予以更正。
+- 通过项:`LomaTest.Nominal`、`MatcherCpuCreation`(min_score=0.0/默认特征数)正常。
+- 根因链(源码实证,非簿记/对齐缺口):
+  1. MinScore 用随机噪声 512×512 + `min_score=0.9` → 检测器无过阈关键点,
+     aicore loma `Extract` 对空结果返回 false;测试假设"高阈仍返回 true"
+     与 fork 引擎的"空即失败"契约矛盾。
+  2. DynamicNumKeypoints 的 `max_num_features=2048` 触及
+     `core/AICore/src/tasks/loma/detector.cpp:42` 的 `kMaxGraphNodes=2048` / 默认
+     `max_keypoints=2048` 边界,2048 图节点需求撞上上限 → Extract false
+     (同测试的 512 档返回 true,证明是容量边界而非数值错误)。
+- **归属裁定**:失败落 CPU LoMa 抽取路径,其 owning 代码
+  (`feature/loma.{cc,h}`、`core/AICore/src/tasks/loma/`)在本工作树**未改动**
+  (`git status` 干净),且本批对齐 diff 只含 Vulkan/CUDA ggml patch 与
+  aliked/lightglue 匹配器像素中心约定(匹配侧,不在此抽取路径)。
+  故**非 P0/P1-ra 回归**,而是 LoMa ggml 引擎的既有行为/资产边界间隙。
+- **恢复条件(独立 AICore/LoMa 批次)**:二选一并对齐 upstream 语义——
+  ①抽取对空检测结果返回 true(空 keypoints/descriptors)而非 false;
+  ②或将 `kMaxGraphNodes` 抬到能容纳 `max_num_features=2048` 并复核检测器
+  在随机图高阈下的期望;测试断言随引擎契约一并校准。不作为 reconstruction
+  gate 回归处理,保持 `feature/loma_test` 在 gate 记账为环境/引擎面已知项。
+
+### 收口判定
+
+四路 gate 与固定种子 L3 全绿(reconstruction C++ 183/184,唯一失败为
+AICore/LoMa CPU 引擎面既有间隙,非本对齐工程回归)。**结构对齐证据成立**:
+候选与 `3e5c915c` 基线在 mini6 上计数逐位一致且数值指标亚阈值 8 个数量级。
+
+## 批次 AA:编译错根修 + loma_test 根因正向修复 + P2 两项(2026-10-14)
+
+### 0. CGAL TU 编译报错根修(vendored boost/container 补全)
+
+- 现象:`mvs/advancing_front_meshing.cc` 编译失败——system Boost 1.74 的
+  `container/detail/pair.hpp` 与 vendored Boost 1.92 的 `move/detail/type_traits.hpp`
+  对 `move_detail::is_class_or_union<std::pair>` 等特化**双重定义**。
+- 根因:vendored `3rdparty/boost_unordered/include`(1373 文件,官方模块依赖集)
+  在重构时**移除了 `boost/container/` 子树**,导致 CGAL 拉的
+  `boost/container/flat_map.hpp` 回落 system 1.74,与 vendored 1.92 move 头在同一
+  TU 混载——正是 src/CMakeLists.txt 注释记载的设计意图(“boost/container is
+  vendored too because CGAL … redefines move_detail traits”)被破坏。
+- 修复:从本机 `3rdparty_downloads/boost/boost-1.92.0-cmake.tar.xz` 恢复完整
+  `boost/container` 子树(164 hpp;依赖自洽扫描 0 缺失)进 vendor;3 个 CGAL TU
+  (advancing_front/delaunay/texture_mapping)强制重编全过,ColmapLib 100%。
+- 假设攻击记录:“vendor 缩到官方依赖集更干净”在必须同时存在 system-1.74
+  (CGAL/ptree/bind)与 vendor-1.92(unordered 迭代序语义)的约束下不成立——
+  同名特化只能靠“同模块头单世界解析”消除,补全是唯一不动调用点的根修。
+
+### 1. feature/loma_test 根因正向修复(推翻本台账 10-13 的容量上限假说)
+
+- **取证更正**:shell 补错误透出后引擎自报真根因——`failed to allocate
+  DeDoDe-G graph`;前一天的 `kMaxGraphNodes=2048 容量上限` 假说**证伪**
+  (Detect 的 SelectKeypoints 恒返回 top-count,与 min_score/图节点无关)。
+- 根因链(三层):
+  1. **`use_gpu=false` 从未映射到 device**:三 shell(loma extractor/matcher、
+     aliked、lightglue)只透传 `device`(默认 `"auto"` → 解析到 Vulkan/CUDA),
+     测试/调用方的 use_gpu=false 无效;
+  2. LOMA_B 描述器按设计就是 **DeDoDe-G**(C API 头注释:默认三元组
+     DaD + DeDoDe-G + LoMa-B;784×784 DINOv2,图池 GB 级);
+  3. GPU 被并行进程占用 16.4/24.5GB 时,同进程后续 ctx 的
+     `ggml_gallocr_alloc_graph` 分配失败 → Extract false。这同时解释了
+     批次 Y-DB 的“外部进程占 GPU 17GB 时 loma_test 失败”历史记录——**非瞬态**,
+     是映射缺失 + 大图 VRAM 需求,两处旧裁定一并更正。
+  - 附带发现:`LomaExtractionOptions::min_score` 在抽取路径无消费者(upstream
+    MinScore 语义空转);capi `descriptor_run count<=0 → -1` 使“合法空抽取”不可表达。
+- 修复(全部 upstream 语义对齐):
+  1. 三 shell 补 `if (!options.use_gpu) resolved.device = "cpu";`(loma.cc 两处、
+     aliked.cc、lightglue.cc);use_gpu=true 保持 device 字段语义;
+  2. loma 抽取壳补 min_score 过滤(detector scores ≥ min_score),过滤后空集
+     跳过描述、返回 true(upstream 空抽取合法;ggml capi 不动);
+  3. 失败路径透出 `aicore_*_last_error()`(与文件内模型加载失败打印风格一致);
+  4. 测试断言随语义校准(高阈→更少特征,双方 Extract 均须 true)。
+- 结果:`loma_test` 4/4(**在 GPU 被占 16GB 时**验证,已钉 CPU);aliked/lightglue/
+  onnx_matchers 回归全绿(aliked 模型资产缺失的 3 skip 为既有合规 skip)。
+- 代价记录:CPU 上 DINOv2-G 更慢(Nominal 14s/DynNumKeypoints 22s,原本 3s 级)
+  ——use_gpu=false 本就语义为 CPU;生产默认 use_gpu=true 仍走 GPU。
+
+### 2. P2-1:Caspar `min_track_length` 显式忽略 + 测试钉住
+
+- 定性:upstream 的 min_track_length 过滤是 Ceres 问题构建器细节
+  (AddPointToProblem,默认 0,fork 已 parity);Caspar 适配器无等价钩子,
+  现状为**静默忽略**——同一选项在两后端产生不同问题且无任何提示。
+- 修复:CASPAR 分派分支(CeresBundleAdjuster::Solve)对 min_track_length>0
+  补 `LOG(WARNING)`;新增 `TestCasparIgnoresMinTrackLength`(同问题
+  min_track_length=0 vs 100:点集一致 + RMS 噪声包络 1e-3 内一致——容差依据
+  批次 Y 记录的 GPU 归约序漂移量级,不用 CPU 位级容差)3/3 稳定。
+
+### 3. P2-2:UndistortReconstruction keep_unchanged + spherical(upstream parity)
+
+- fork 原实现无条件改写全部相机 + 观测——球面相机(EQUIRECT)没有针孔像平面
+  可畸变到,后球面观测无正向 CamFromImg 表示,round-trip 语义错误。
+- 移植 upstream 形状:`keep_unchanged = IsUndistorted() && max_image_size<0`
+  (相机与观测同步跳过);球面 + max_image_size 走 `RescaleToMaxImageSize`
+  (新增 helper)原地缩放 + 观测线性缩放(等距柱状投影像素↔角度对尺寸线性);
+  其余走 UndistortCamera(其内联 max_image_size 逻辑已存在)。
+- 测试:移植 upstream `RescalesAlreadyUndistortedCameras` /
+  `RescalesSphericalCameras` 两用例(fork helper 适配:
+  AddCameraWithTrivialRig/AddImageWithTrivialFrame),9/9 全绿。
+
+### 本批最终验证(2026-10-14)
+
+- 全量构建 0 error;C++ `ctest -R '_test$' -j4 --timeout 900` **184/184**;
+  pytest reconstruction **404 passed / 3 skipped**;CLI-Anything **631 passed**;
+  L3 fixed-seed `build_app/Testing/l3-verify-20261014/comparison.json`
+  **PASS / violations=[]**,candidate 与 baseline 计数逐位一致
+  (6/407/1240/rms 1.2839597799584896,相对差全 0)。
+- 临时探针 `.qoder/tmp/loma_probe.cc`(gitignored)留存:AICore C API 边界
+  复现工具,后续 LoMa 批次可复用。
+- 剩余 PENDING:L3 global-mapper 运行器(P1-ra follow-up)、P1-db(4030001)、
+  P3 选项面、AnyCalib AICore task、METIS/PoissonRecon 论证。
+
+## 批次 AB:vendor 死闭包删除——container/move/intrusive 三件套移除(2026-10-14)
+
+用户质询命中:"boost/container 到底还依赖不?不依赖就删"。闭包测量推翻
+批次 AA 的补全裁定,追溯更正如下。
+
+### 闭包测量(非推理,全 grep 实证)
+
+- boost/unordered 1.92 真实传递依赖 = `assert、config、container_hash、core、
+  cstdint、mp11、predef、throw_exception`(+ container_hash→describe);
+  **不含 move/container/intrusive**;
+- vendor 内引 boost/move 的 = 仅 container/* 与 intrusive/*;引
+  boost/intrusive 的 = 仅 container/*;引 boost/container 的 = **0**;
+- 工程源码(libs/core/app/plugins)对三件套零直接 include;
+  hash_containers.h 只引 4 个 unordered 头;
+- 三件套 = 自包含死闭包:container 164 文件(未跟踪,AA 批补入)、move 48 +
+  intrusive 98(已跟踪)。
+
+### 裁定演进(诚实记录)
+
+- AA 批在无闭包测量下选择保守补全(container 1.92 配平 move 1.92,验证成本低);
+- AB 批测量后确认正确根修 = **删除 {container, move, intrusive} 死闭包**:
+  三件套全部回落 system 1.74,CGAL TU 变成纯 system 世界(vendor 引入之前的
+  历史状态),1.74/1.92 混载从结构上不可能再发生,"container 必须与 move
+  同世界"的永久耦合约束消除,vendor 缩小 ~5.4MB 只剩真实依赖集。
+
+### 执行与验证
+
+- container 直接删(未跟踪;源 tarball 可再生);move+intrusive 走 `git rm`
+  (146 文件,可恢复);CMakeLists vendor 注释同步重写(闭包定义 + 为何
+  三件套不 vendor);
+- 清 ColmapLib depfile 强制全量重编(删头不在 .d 依赖里,stale .o 会假绿);
+  全量 make 100%、0 error,3 个 CGAL TU 重编通过;
+- **C++ gate 184/184;pytest 404/3;CLI-Anything 631;L3 fixed-seed
+  `build_app/Testing/l3-verify-deletedeps/comparison.json` PASS / violations=[]**,
+  candidate 与 baseline 计数逐位一致,且与 AA 批候选结果完全相同
+  (407/1240/mtl 3.0466830466830466/rms 1.2839597799584896)——hash 迭代序
+  语义零变化(P0 对齐面未受影响)。
+- 教训入档:vendor 树变更必须先测 include 闭包再定方向("补全 vs 删除"是
+  同一根因的两个相反解,选择依据是闭包事实而非修复便利)。
+
+## 批次 AC:vendor boost 跨 Ubuntu 兼容性实证 + 上游 5 提交对齐(2026-10-14)
+
+### 1. Ubuntu 20.04/22.04/24.04 兼容性(docker 混载探针实证)
+
+探针 `.qoder/tmp/boost_mix_probe.cc` 复刻 ColmapLib 的真实 TU 混载面:
+vendor-first unordered 闭包 + system 编译库消费者(program_options/graph/
+ptree/variant/lexical…)+ CGAL advancing-front include 集(历史冲突现场);
+在项目依赖镜像 cloudviewer-deps:develop-ubuntu{20.04,24.04} 内编译+链接+运行。
+
+| 平台 | system Boost | 结果 |
+|---|---|---|
+| 22.04(本机) | 1.74 | **PASS**(全量 gate 长期绿) |
+| 24.04 镜像 | 1.83 | **PASS**(编译+链接+运行) |
+| 20.04 镜像 | 1.71 | **FAIL**:`boost/graph adjacency_list.hpp`(1.71)→serialization 链 `nvp.hpp:81` 定义与 `multiprecision/detail/number_base.hpp:62` 前置声明在 vendor config 1.92 宏下得出**不同 exception specifier** |
+
+二分定位:纯 system 1.71 PASS(自洽);去 CGAL 仍 FAIL;单头二分唯一爆点 =
+graph(其余 system 头全部 PASS)。**结论:vendor 引入(P0)即在 20.04 上破坏
+ColmapLib 编译,与瘦身无关;瘦身(删死闭包)反而把 20.04 的混载面从
+vendor-move×system-container 缩小为 vendor-config×system-serialization。**
+
+- **收敛裁定**:不为此递归 vendor serialization(EOL 平台无底洞,重蹈
+  AA/AB 覆辙);实施 `libs/Reconstruction/CMakeLists.txt` 版本守卫——system
+  Boost < 1.74 对 reconstruction 配置 FATAL_ERROR,错误信息含实测失败签名与
+  支持面说明(Ubuntu >= 22.04 或 conda 环境 Boost >= 1.74;conda 路线的
+  boost 版本待专项验证)。
+- 探针与镜像结果留存:20.04/24.04 依赖镜像为后续 CI 矩阵的现成执行器。
+
+### 2. 上游对齐:colmap 3e5c915c → 6db3867f(5 提交全量移植)
+
+用户提供的 upstream checkout `/home/asher/develop/code/github/MVS/colmap`
+(origin/main 6db3867f)。5 提交全部叶子级,生产 diff 逐字 + 测试 fork 适配:
+
+1. **6db3867f** `Image::SetPoints2D(vector<Vector2d>)`:尾部索引
+   `ResetPoint3DForPoint2D` 后再 resize,保留保留项关联。fork 原实现为
+   dbb41680 部分移植(计数清零但 resize 保留项的 point3D_id 残留——
+   计数/状态分叉缺陷),本批收敛 upstream 语义。测试:image_test 新增
+   `Image.ResizePoints2DWith3D`;reconstruction_test
+   `DeleteAllPoints2DAndPoints3D` 扩展 ComputeNumObservations/IsValid/重建
+   track 断言。
+2. **133bf3c4** `reconstruction_io_text.cc`:NAME 取行剩余部分
+   (`std::getline(line_stream1 >> std::ws, image.Name())`,名称含空格)。
+   测试:`ParameterizedReaderWriterTests.RoundtripImageNamesWithWhitespace`
+   (4 变体参数化全过)。
+3. **9e32193d** `math/math.h TruncateCast`:编译期整数符号/位宽分支 +
+   `lowest()` 下界 + 浮点→整型端点饱和(旧实现 destination-bounds 回转
+   T1 会回绕,如 uint16_t→int16_t(1234) = -32768)。测试:Signedness/
+   Widening/FloatingDestination/FloatingIntegerEndpoints/
+   PreserveIntegerPrecision 5 用例。
+4. **a4ac57b3** `geometry/triangulation.cc CalculateAngleBetweenVectors`:
+   常规角保留 acos;近平行/反向(isnormal 门控 + |cos|≥1-1e-8)改用分量
+   重缩放 + atan2(交叉积 stableNorm, 点积)。fork 三角化角辅助函数自动
+   继承。测试:SmallAngles/ScaleInvariance/CalculateTriangulationAngle
+   ScaleInvariance 3 用例(81 组独立缩放)。
+5. **08c03ec3** `geometry/gps.cc`:UTM `N0(bool is_north)` + 正向调用点
+   `lla[0] >= 0`——赤道使用北偏移(旧实现 latitude 0 落南伪偏移,往返后
+   纬度 ~89.98°)。测试:`GPS.UTMHemisphereNorthing`(两椭球 × ±0 × 3 中央
+   经线带 + 南编码赤道反演);顺带更正"未移植 EllipsoidToUTM"的过时注释。
+
+### 本批最终验证
+
+- 受影响测试**首次即过**:image 22、reconstruction 51、reconstruction_io 24、
+  math 23、triangulation 28、gps 11;
+- 全量 make 0 error;C++ gate **184/184**;pytest reconstruction
+  **404 passed / 3 skipped**;L3 fixed-seed `build_app/Testing/
+  l3-verify-upstream6db/comparison.json` **PASS / violations=[]**
+  (6/407/1240/rms 1.2839597799584896,与 AC 前候选逐位一致——
+  SetPoints2D 语义变化对增量重建管线零回归)。
+- 基线事实:本批后 fork 语义基线 = upstream 6db3867f;L3 runner 的
+  `--upstream-revision` 仍钉 3e5c915c(5 提交中无增量管线路径改动,
+  计数逐位一致佐证),升级基线 worktree 到 6db3867f 属独立小批。
+
+

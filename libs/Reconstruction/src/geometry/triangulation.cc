@@ -276,14 +276,34 @@ std::vector<double> CalculateTriangulationAngles(
 
 double CalculateAngleBetweenVectors(const Eigen::Vector3d& v1,
                                     const Eigen::Vector3d& v2) {
+    // Upstream parity (a4ac57b3 geometry/triangulation.cc): acos loses
+    // accuracy near parallel/opposite vectors and the squared-norm product
+    // can overflow or underflow, which made small/scale-invariant angles
+    // collapse to zero. Ordinary angles keep the original acos path; near
+    // the cosine endpoints the vectors are rescaled by their largest
+    // component and the angle is computed via atan2 of the stable
+    // cross-product norm.
     const double squared_norm1 = v1.squaredNorm();
     const double squared_norm2 = v2.squaredNorm();
-    if (squared_norm1 == 0.0 || squared_norm2 == 0.0) {
+    const double squared_norm_product = squared_norm1 * squared_norm2;
+    if (std::isnormal(squared_norm_product) &&
+        std::min(squared_norm1, squared_norm2) >=
+                std::numeric_limits<double>::min()) {
+        const double cosine = v1.dot(v2) / std::sqrt(squared_norm_product);
+        constexpr double kAcosCosineThreshold = 1.0 - 1e-8;
+        if (std::abs(cosine) < kAcosCosineThreshold) {
+            return std::acos(cosine);
+        }
+    }
+    const double scale1 = v1.cwiseAbs().maxCoeff();
+    const double scale2 = v2.cwiseAbs().maxCoeff();
+    if (scale1 == 0.0 || scale2 == 0.0) {
         return 0.0;
     }
-    return std::acos(std::clamp(
-            v1.dot(v2) / std::sqrt(squared_norm1 * squared_norm2), -1.0,
-            1.0));
+    const Eigen::Vector3d scaled_v1 = v1 / scale1;
+    const Eigen::Vector3d scaled_v2 = v2 / scale2;
+    return std::atan2(scaled_v1.cross(scaled_v2).stableNorm(),
+                      scaled_v1.dot(scaled_v2));
 }
 
 bool TriangulateMidPoint(const Rigid3d& cam2_from_cam1,

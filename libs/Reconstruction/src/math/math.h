@@ -315,9 +315,45 @@ T ScaleSigmoid(T x, const T alpha, const T x0) {
 
 template <typename T1, typename T2>
 T2 TruncateCast(const T1 value) {
-    return std::min(
-            static_cast<T1>(std::numeric_limits<T2>::max()),
-            std::max(static_cast<T1>(std::numeric_limits<T2>::min()), value));
+    using InputLimits = std::numeric_limits<T1>;
+    using OutputLimits = std::numeric_limits<T2>;
+    // Upstream parity (9e32193d math/math.h): the previous helper converted
+    // the destination bounds to the source type, which wraps for out-of-range
+    // values (e.g. TruncateCast<uint16_t, int16_t>(1234) returned -32768) and
+    // used min() as the wrong lower bound for floating destinations.
+    if constexpr (InputLimits::is_integer && OutputLimits::is_integer) {
+        if constexpr (InputLimits::is_signed && !OutputLimits::is_signed) {
+            if (value < 0) {
+                return OutputLimits::lowest();
+            }
+        }
+        if constexpr (InputLimits::digits > OutputLimits::digits) {
+            if (value > static_cast<T1>(OutputLimits::max())) {
+                return OutputLimits::max();
+            }
+            if constexpr (InputLimits::is_signed && OutputLimits::is_signed) {
+                if (value < static_cast<T1>(OutputLimits::lowest())) {
+                    return OutputLimits::lowest();
+                }
+            }
+        }
+    } else if constexpr (OutputLimits::is_integer &&
+                         OutputLimits::digits <= InputLimits::digits) {
+        // The integer bounds are exactly representable in the floating input
+        // type.
+        return static_cast<T2>(std::clamp(
+                value, static_cast<T1>(OutputLimits::lowest()),
+                static_cast<T1>(OutputLimits::max())));
+    } else {
+        const long double input = static_cast<long double>(value);
+        if (input <= static_cast<long double>(OutputLimits::lowest())) {
+            return OutputLimits::lowest();
+        }
+        if (input >= static_cast<long double>(OutputLimits::max())) {
+            return OutputLimits::max();
+        }
+    }
+    return static_cast<T2>(value);
 }
 
 // 95% chi-square quantile for 3 degrees of freedom. Upstream COLMAP

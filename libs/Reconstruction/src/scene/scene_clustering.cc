@@ -243,7 +243,7 @@ void SceneClustering::PartitionFlatCluster(
             });
 
   // For each image find all related images with their weights
-  std::unordered_map<int, std::vector<std::pair<int, int>>> related_images;
+  NodeHashMap<int, std::vector<std::pair<int, int>>> related_images;
   for (size_t i = 0; i < edges.size(); ++i) {
     related_images[edges[i].first].emplace_back(edges[i].second, weights[i]);
     related_images[edges[i].second].emplace_back(edges[i].first, weights[i]);

@@ -83,6 +83,13 @@ FreeSplatterWorker::FreeSplatterWorker(const Settings& settings,
 }
 
 FreeSplatterWorker::~FreeSplatterWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
 #ifdef AICore_ENABLED
     aicore_cancel_token_free(m_cancelToken);
 #endif
@@ -101,22 +108,24 @@ void FreeSplatterWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
-    if (!inferenceGuard.locked()) {
-        emit taskFinished(false);
-        return;
-    }
     bool ok = false;
-    switch (m_settings.mode) {
-        case Mode::Reconstruct:
-            ok = runReconstruct();
-            break;
-        case Mode::ModelInfo:
-            ok = runModelInfo();
-            break;
-        default:
-            emit logMessage("[Error] Unknown mode.");
-            break;
+    {
+        // Released before taskFinished: the receiver may delete the worker
+        // (and its cancel token) or start the next device task right away.
+        AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
+        if (inferenceGuard.locked()) {
+            switch (m_settings.mode) {
+                case Mode::Reconstruct:
+                    ok = runReconstruct();
+                    break;
+                case Mode::ModelInfo:
+                    ok = runModelInfo();
+                    break;
+                default:
+                    emit logMessage("[Error] Unknown mode.");
+                    break;
+            }
+        }
     }
     emit taskFinished(ok);
 #endif

@@ -23,6 +23,7 @@
 #include "exe/feature.h"
 #include "feature/matcher.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "scene/database.h"
 #include "scene/reconstruction.h"
 #include "util/cancellation.h"

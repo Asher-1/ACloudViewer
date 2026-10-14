@@ -14,9 +14,8 @@
 //   crop -> 48xH rec batch -> rec interpreter -> CTC greedy decode ->
 //   typed aicore_ocr_box{quad, text, score}.
 //
-// The DB post-process is hand-written (no OpenCV in the AICore tree). The
-// first release uses per-component bounding boxes with the DB offset
-// formula; polygon-accurate unclip is deferred to the det-eval round.
+// The DB post-process is hand-written (no OpenCV in the AICore tree) and
+// mirrors Paddle's integer Clipper/JT_ROUND unclip plus final pixel rounding.
 
 #include "aicore/ocr_capi.h"
 
@@ -24,7 +23,6 @@
 #include <array>
 #include <atomic>
 #include <chrono>
-#include <climits>
 #include <cmath>
 #include <cstring>
 #include <deque>
@@ -41,6 +39,8 @@
 #include "common/image_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
+#include "ocr_db_postprocess.hpp"
+#include "ocr_rec_crop.hpp"
 #include "ocr_runtime.hpp"
 
 namespace {
@@ -49,13 +49,23 @@ thread_local std::string g_lastError;
 
 void setLastError(const std::string& message) { g_lastError = message; }
 
+bool hasOptionField(const aicore_ocr_options* options,
+                    size_t offset,
+                    size_t size) {
+    return options && options->struct_size >= offset + size;
+}
+
+constexpr size_t kOcrOptionsInitialSize = offsetof(aicore_ocr_options, device);
 constexpr float kDetDefaultMaxSide = 960.0f;
-// Official PP-OCR det defaults (the inference.yml of PP-OCRv4_mobile_det
-// plus the paddlex DetResizeForTest constructor defaults).
-constexpr float kDetOfficialLimitSide = 736.0f;
+// PaddleOCR 3.0.1's public OCR pipeline resolves the PP-OCRv4 mobile det
+// parameters to limit_type="min", limit_side_len=64. The model inference.yml
+// describes engine profiles, not the pipeline's runtime default.
+constexpr float kDetOfficialLimitSide = 64.0f;
 constexpr float kDetOfficialMaxSideLimit = 4000.0f;
 constexpr float kDetDefaultBoxThresh = 0.3f;
-constexpr float kDetDefaultBoxScoreThresh = 0.6f;
+// Upstream box_thresh is the Python double 0.6, compared against cv2.mean's
+// double; 0.6f would move the gate to 0.60000002.
+constexpr double kDetDefaultBoxScoreThresh = 0.6;
 constexpr float kDetDefaultUnclipRatio = 1.5f;
 constexpr int kRecHeight = 48;
 // Official rec_image_shape width (3, 48, 320): the FLOOR of the per-crop
@@ -67,17 +77,20 @@ constexpr int kRecHeight = 48;
 // garbage on every backend.
 constexpr int kRecMaxWidth = 320;
 constexpr int kRecLimitWidth = 3200;  // paddlex ResizeNormImg.max_imgW
-// Padded chunk widths. Paddle pads each 6-row batch to its own max width;
-// one graph build per distinct width is the price of that exactness, so
-// the width is quantized to this ladder (every step a multiple of 32, the
-// rec backbone's stride lattice). A row wider than its chunk is never
-// produced: the crop picks the first bucket >= resized_w.
-constexpr int kRecWidthBuckets[] = {320,  480,  640,  960,
-                                    1280, 1920, 2560, kRecLimitWidth};
-// Distinct (width, rows) builds kept per rec session. A document frame
-// touches 2-4 buckets; the activation budget per build is held constant by
-// recRowsCapForWidth so the cache's device footprint is bounded by
-// capacity x one 48-row 320-wide build.
+// Official text_recognition_batch_size (PaddleX OCR pipeline config). The
+// pipeline sorts a frame's crops by aspect ratio and pads every group of
+// this many consecutive crops to the group's widest padded width. The pad
+// width is observable: the SVTR self-attention mixes the pad columns into
+// every output position, so a crop recognized at another pad width can
+// decode to another text (measured on ICDAR2015: every text difference
+// against Paddle CPU on identical boxes was reproduced by Paddle itself at
+// the former 320/480/640/... bucket widths).
+constexpr int kRecPadGroupDefault = 6;
+// Distinct (width, rows) builds kept per rec session. Crops with an aspect
+// ratio up to 320/48 share the 320 build; only wider lines add builds. The
+// activation budget per build is held constant by recRowsCapForWidth so the
+// cache's device footprint is bounded by capacity x one 48-row 320-wide
+// build.
 constexpr size_t kRecGraphCacheCapacity = 6;
 constexpr int kDetAlign = 32;
 
@@ -122,11 +135,6 @@ inline int64_t recChunkBatchCap(ggml_backend_t gpuBackend) {
 inline int64_t recRowsCapForWidth(int64_t cap, int width) {
     const int64_t rows = cap * kRecMaxWidth / width;
     return std::max<int64_t>(4, rows / 4 * 4);
-}
-inline int recWidthBucket(int resizedW) {
-    for (int b : kRecWidthBuckets)
-        if (resizedW <= b) return b;
-    return kRecLimitWidth;
 }
 // Official rec pad (paddlex text_recognition/processors.py resize_norm_img
 // L61-62): padding_im = np.zeros((imgC, imgH, imgW)) in the NORMALIZED
@@ -187,9 +195,9 @@ struct OcrGraph {
 };
 
 // Bounded set of cached builds keyed by (C, H, W, N, argmax head). The rec
-// graph needs one build per (width bucket, row count) actually used by a
+// graph needs one build per (pad width, row count) actually used by a
 // frame — a document mixes short labels (320) with full-width body lines
-// (960-1280) — and a frame sequence revisits the same handful of keys, so a
+// (wider groups) — and a frame sequence revisits the same handful of keys, so a
 // small LRU replaces the historical single entry. Eviction releases the
 // graph (and its fold generation) but keeps the slot's allocator; the caller
 // rebuilds into the slot.
@@ -325,450 +333,6 @@ void packNchwImage(const aicore::img::Image& img,
     packNchwImageTo(img, mean, stdDev, dstW, padValue, nchw.data());
 }
 
-struct DetBox {
-    // Corner polygon in det-map pixel coordinates, ordered clockwise from
-    // the top-left corner (Paddle order_points_clockwise). Rotated text
-    // yields a genuinely non-axis-aligned quad.
-    float quad[4][2];
-    float score;  // component mean probability
-};
-
-// Official DB component gate (det_db_box_thresh in the upstream det
-// pipeline): components whose mean probability sits below it are dropped
-// before the unclip expands them.
-constexpr float kComponentScoreThresh = 0.6f;
-
-// Andrew monotone chain convex hull over the component boundary points.
-// O(n log n); the hull feeds the minimum-area rectangle below.
-std::vector<std::pair<float, float>> convexHull(
-        std::vector<std::pair<float, float>> pts) {
-    std::sort(pts.begin(), pts.end());
-    pts.erase(std::unique(pts.begin(), pts.end()), pts.end());
-    const int n = static_cast<int>(pts.size());
-    if (n < 3) return pts;
-    std::vector<std::pair<float, float>> h(2 * n);
-    int k = 0;
-    auto cross = [](const std::pair<float, float>& o,
-                    const std::pair<float, float>& a,
-                    const std::pair<float, float>& b) {
-        return (a.first - o.first) * (b.second - o.second) -
-               (a.second - o.second) * (b.first - o.first);
-    };
-    for (int i = 0; i < n; ++i) {
-        while (k >= 2 && cross(h[k - 2], h[k - 1], pts[i]) <= 0) --k;
-        h[k++] = pts[i];
-    }
-    for (int i = n - 2, t = k + 1; i >= 0; --i) {
-        while (k >= t && cross(h[k - 2], h[k - 1], pts[i]) <= 0) --k;
-        h[k++] = pts[i];
-    }
-    h.resize(k - 1);
-    return h;
-}
-
-// Corner-center form of the minimum-area rectangle.
-struct RotRect {
-    float cx = 0, cy = 0;  // center
-    float ux = 1, uy = 0;  // width direction (unit)
-    float vx = 0, vy = 1;  // height direction (unit)
-    float halfW = 0, halfH = 0;
-};
-
-// Rectangle corners -> clockwise-from-top-left quad (Paddle
-// order_points_clockwise: min(x+y), max(x-y), max(x+y), min(x-y)).
-void rectToQuad(const RotRect& r, float quad[4][2]) {
-    const float corners[4][2] = {
-            {r.cx + r.halfW * r.ux + r.halfH * r.vx,
-             r.cy + r.halfW * r.uy + r.halfH * r.vy},
-            {r.cx + r.halfW * r.ux - r.halfH * r.vx,
-             r.cy + r.halfW * r.uy - r.halfH * r.vy},
-            {r.cx - r.halfW * r.ux - r.halfH * r.vx,
-             r.cy - r.halfW * r.uy - r.halfH * r.vy},
-            {r.cx - r.halfW * r.ux + r.halfH * r.vx,
-             r.cy - r.halfW * r.uy + r.halfH * r.vy},
-    };
-    int order[4] = {0, 1, 2, 3};
-    float sums[4], diffs[4];
-    int iMinSum = 0, iMaxDiff = 0, iMaxSum = 0, iMinDiff = 0;
-    for (int i = 0; i < 4; ++i) {
-        sums[i] = corners[i][0] + corners[i][1];
-        diffs[i] = corners[i][0] - corners[i][1];
-    }
-    for (int i = 1; i < 4; ++i) {
-        if (sums[i] < sums[iMinSum]) iMinSum = i;
-        if (sums[i] > sums[iMaxSum]) iMaxSum = i;
-        if (diffs[i] > diffs[iMaxDiff]) iMaxDiff = i;
-        if (diffs[i] < diffs[iMinDiff]) iMinDiff = i;
-    }
-    order[0] = iMinSum;
-    order[1] = iMaxDiff;
-    order[2] = iMaxSum;
-    order[3] = iMinDiff;
-    for (int i = 0; i < 4; ++i) {
-        quad[i][0] = corners[order[i]][0];
-        quad[i][1] = corners[order[i]][1];
-    }
-}
-// Official DBPostProcess boxes_from_bitmap semantics (paddlex
-// text_detection/processors.py): 8-connected components over the binarized
-// map (cv2.findContours RETR_LIST is 8-connected), a minimum-area rectangle
-// over each component's convex hull (cv2.minAreaRect), the box_thresh gate
-// measured as the mean probability over the raw rect region
-// (score_mode="fast" box_score_fast), and the min_size edge filter. The
-// unclip itself stays in unclipBox (Clipper-equivalent rect offset).
-// O(pixels) fill + O(hull^2) rect search (hulls are tens of points).
-// `mask` is caller-owned scratch (w*h bytes, reused across frames): the
-// historical fresh mask + int32 visited pair (17 MB on a 2560x1312 map)
-// page-faulted every frame and dominated this stage. A pixel is "visited"
-// the moment it is cleared from the mask, which is the same membership as
-// a separate visited array (every pixel is pushed exactly once).
-std::vector<DetBox> connectedComponentsBoxes(const float* prob,
-                                             int w,
-                                             int h,
-                                             float thresh,
-                                             std::vector<uint8_t>& mask) {
-    const int64_t total = static_cast<int64_t>(w) * h;
-    mask.resize(static_cast<size_t>(total));
-    for (int64_t i = 0; i < total; ++i) mask[i] = prob[i] > thresh ? 1 : 0;
-    std::vector<DetBox> boxes;
-    std::vector<int32_t> stack;
-    std::vector<std::pair<float, float>> pts;
-    // Per-row x extremes of the current component. Only a row's leftmost
-    // and rightmost pixel can be a hull vertex (every other pixel of that
-    // row is an interior point of the segment between them), and the hull
-    // pops collinear points (cross <= 0, exact on integer coordinates), so
-    // the hull vertex set is identical to the one over every pixel while
-    // the sort shrinks from the component area to <= 2 points per row
-    // (measured 9.4 ms -> sub-ms per frame on the 100-box bench image).
-    std::vector<int> rowMin(static_cast<size_t>(h), INT_MAX);
-    std::vector<int> rowMax(static_cast<size_t>(h), INT_MIN);
-    std::vector<int> touchedRows;
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            const size_t idx = static_cast<size_t>(y) * w + x;
-            if (!mask[idx]) continue;
-            // Flood fill the 8-connected component, collecting every pixel
-            // coordinate (the cv2 contour's convex hull equals the hull of
-            // the full component for solid blobs, without depending on any
-            // boundary-extraction detail).
-            stack.clear();
-            touchedRows.clear();
-            size_t pixelCount = 0;
-            stack.push_back(static_cast<int32_t>(idx));
-            mask[idx] = 0;
-            while (!stack.empty()) {
-                const int32_t cur = stack.back();
-                stack.pop_back();
-                const int cy = cur / w;
-                const int cx = cur % w;
-                ++pixelCount;
-                if (cx < rowMin[cy]) {
-                    if (rowMin[cy] == INT_MAX) touchedRows.push_back(cy);
-                    rowMin[cy] = cx;
-                }
-                if (cx > rowMax[cy]) rowMax[cy] = cx;
-                constexpr int kDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
-                constexpr int kDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
-                for (int d = 0; d < 8; ++d) {
-                    const int nx = cx + kDx[d];
-                    const int ny = cy + kDy[d];
-                    if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-                    const size_t nIdx = static_cast<size_t>(ny) * w + nx;
-                    if (mask[nIdx]) {
-                        mask[nIdx] = 0;
-                        stack.push_back(static_cast<int32_t>(nIdx));
-                    }
-                }
-            }
-            pts.clear();
-            for (const int ry : touchedRows) {
-                pts.emplace_back(static_cast<float>(rowMin[ry]),
-                                 static_cast<float>(ry));
-                if (rowMax[ry] != rowMin[ry])
-                    pts.emplace_back(static_cast<float>(rowMax[ry]),
-                                     static_cast<float>(ry));
-                rowMin[ry] = INT_MAX;
-                rowMax[ry] = INT_MIN;
-            }
-            if (pixelCount < 3) continue;  // noise specks
-            const auto hull = convexHull(pts);
-            if (hull.size() < 2) continue;
-            // Minimum-area rectangle by brute force over hull edge
-            // directions: exact cv2.minAreaRect semantics without relying
-            // on rotating-calipers invariants. The hull of a text blob is
-            // small, so the quadratic scan is trivially cheap.
-            RotRect best;
-            float bestArea = std::numeric_limits<float>::max();
-            const int hn = static_cast<int>(hull.size());
-            for (int e = 0; e < hn; ++e) {
-                const auto& a = hull[e];
-                const auto& b = hull[(e + 1) % hn];
-                float dx = b.first - a.first, dy = b.second - a.second;
-                const float len = std::sqrt(dx * dx + dy * dy);
-                if (len < 1e-6f) continue;
-                const float ux = dx / len, uy = dy / len;
-                const float vx = -uy, vy = ux;
-                float minU = 0, maxU = 0, minV = 0, maxV = 0;
-                bool first = true;
-                for (const auto& p : hull) {
-                    const float pu = p.first * ux + p.second * uy;
-                    const float pv = p.first * vx + p.second * vy;
-                    if (first) {
-                        minU = maxU = pu;
-                        minV = maxV = pv;
-                        first = false;
-                    } else {
-                        minU = std::min(minU, pu);
-                        maxU = std::max(maxU, pu);
-                        minV = std::min(minV, pv);
-                        maxV = std::max(maxV, pv);
-                    }
-                }
-                const float area = (maxU - minU) * (maxV - minV);
-                if (area < bestArea) {
-                    bestArea = area;
-                    best.ux = ux;
-                    best.uy = uy;
-                    best.vx = vx;
-                    best.vy = vy;
-                    best.halfW = (maxU - minU) / 2;
-                    best.halfH = (maxV - minV) / 2;
-                    const float cu = (minU + maxU) / 2;
-                    const float cv = (minV + maxV) / 2;
-                    best.cx = cu * ux + cv * vx;
-                    best.cy = cu * uy + cv * vy;
-                }
-            }
-            // Official min_size filter: both rect edges must reach 3 px.
-            if (best.halfW * 2 < 3 || best.halfH * 2 < 3) continue;
-            DetBox box;
-            rectToQuad(best, box.quad);
-            // box_score_fast: mean probability over the raw rect region
-            // (pixel centers inside the rotated rect), applied BEFORE the
-            // unclip expands the box.
-            float probSum = 0.f;
-            int64_t probCount = 0;
-            const int bx0 = std::max(
-                    0, static_cast<int>(std::floor(
-                               best.cx - (std::abs(best.ux) * best.halfW +
-                                          std::abs(best.vx) * best.halfH))));
-            const int bx1 = std::min(
-                    w - 1,
-                    static_cast<int>(std::ceil(
-                            best.cx + (std::abs(best.ux) * best.halfW +
-                                       std::abs(best.vx) * best.halfH))));
-            const int by0 = std::max(
-                    0, static_cast<int>(std::floor(
-                               best.cy - (std::abs(best.uy) * best.halfW +
-                                          std::abs(best.vy) * best.halfH))));
-            const int by1 = std::min(
-                    h - 1,
-                    static_cast<int>(std::ceil(
-                            best.cy + (std::abs(best.uy) * best.halfW +
-                                       std::abs(best.vy) * best.halfH))));
-            for (int py = by0; py <= by1; ++py) {
-                for (int px = bx0; px <= bx1; ++px) {
-                    const float rx =
-                            (px - best.cx) * best.ux + (py - best.cy) * best.uy;
-                    const float ry =
-                            (px - best.cx) * best.vx + (py - best.cy) * best.vy;
-                    if (std::abs(rx) <= best.halfW &&
-                        std::abs(ry) <= best.halfH) {
-                        probSum += prob[static_cast<size_t>(py) * w + px];
-                        ++probCount;
-                    }
-                }
-            }
-            if (probCount == 0) continue;
-            box.score = probSum / static_cast<float>(probCount);
-            // Official DB component gate (det_db_box_thresh).
-            if (box.score < kComponentScoreThresh) continue;
-            boxes.push_back(std::move(box));
-        }
-    }
-    return boxes;
-}
-
-// DB unclip on the minimum-area rectangle: the Vatti offset from the
-// paper reduces to a uniform outward expansion of area * unclip_ratio /
-// perimeter for rectangles, applied along both rect axes.
-DetBox unclipBox(const DetBox& box, float ratio) {
-    const float width = std::sqrt((box.quad[1][0] - box.quad[0][0]) *
-                                          (box.quad[1][0] - box.quad[0][0]) +
-                                  (box.quad[1][1] - box.quad[0][1]) *
-                                          (box.quad[1][1] - box.quad[0][1]));
-    const float height = std::sqrt((box.quad[3][0] - box.quad[0][0]) *
-                                           (box.quad[3][0] - box.quad[0][0]) +
-                                   (box.quad[3][1] - box.quad[0][1]) *
-                                           (box.quad[3][1] - box.quad[0][1]));
-    const float area = width * height;
-    const float perimeter = 2.0f * (width + height);
-    DetBox out = box;
-    if (perimeter <= 0) return out;
-    const float offset = area * ratio / perimeter;
-    const float cx = (box.quad[0][0] + box.quad[2][0]) / 2;
-    const float cy = (box.quad[0][1] + box.quad[2][1]) / 2;
-    // Rebuild the rect axes from the ordered corners, grow both halves by
-    // the offset, and re-emit the corner order.
-    RotRect r;
-    r.cx = cx;
-    r.cy = cy;
-    const float wux = box.quad[1][0] - box.quad[0][0];
-    const float wuy = box.quad[1][1] - box.quad[0][1];
-    const float wLen = std::sqrt(wux * wux + wuy * wuy);
-    if (wLen < 1e-6f) return out;
-    r.ux = wux / wLen;
-    r.uy = wuy / wLen;
-    r.vx = -r.uy;
-    r.vy = r.ux;
-    r.halfW = width / 2 + offset;
-    r.halfH = height / 2 + offset;
-    rectToQuad(r, out.quad);
-    return out;
-}
-
-// Perspective crop of an ordered quad out of an RGB buffer (the official
-// get_rotate_crop_image): the quad is warped onto an upright rectangle
-// whose width is the longer text edge. Bilinear sampling keeps the crop
-// dependency-free; the rec head is robust to the cubic-vs-linear
-// interpolation delta.
-void cropQuadRgb(const aicore::img::Image& src,
-                 const float quad[4][2],
-                 int cropW,
-                 int cropH,
-                 std::vector<uint8_t>& dst) {
-    const int imgW = src.width;
-    const int imgH = src.height;
-    // Solve the 3x3 homography mapping (0,0)(w,0)(w,h)(0,h) -> quad by
-    // the standard 8-unknown linear system through adjugate inversion.
-    const float corners[4][2] = {
-            {0, 0},
-            {static_cast<float>(cropW), 0},
-            {static_cast<float>(cropW), static_cast<float>(cropH)},
-            {0, static_cast<float>(cropH)}};
-    double A[8][9] = {};
-    for (int i = 0; i < 4; ++i) {
-        const double x = corners[i][0], y = corners[i][1];
-        const double X = quad[i][0], Y = quad[i][1];
-        double* r1 = A[i * 2];
-        double* r2 = A[i * 2 + 1];
-        r1[0] = x;
-        r1[1] = y;
-        r1[2] = 1;
-        r1[6] = -X * x;
-        r1[7] = -X * y;
-        r1[8] = X;
-        r2[3] = x;
-        r2[4] = y;
-        r2[5] = 1;
-        r2[6] = -Y * x;
-        r2[7] = -Y * y;
-        r2[8] = Y;
-    }
-    // Gauss elimination with partial pivoting.
-    // Size the destination up front: a singular quad (degenerate
-    // component) must yield a zero-filled crop, never an empty buffer that
-    // the downstream resize would dereference as null.
-    dst.assign(static_cast<size_t>(cropW) * cropH * 3, 0);
-    const int scn = src.channels;
-    const int cmap[3] = {src.channel_index(0), src.channel_index(1),
-                         src.channel_index(2)};
-    double hInv[9] = {};
-    for (int col = 0; col < 8; ++col) {
-        int piv = col;
-        for (int r = col + 1; r < 8; ++r)
-            if (std::abs(A[r][col]) > std::abs(A[piv][col])) piv = r;
-        if (std::abs(A[piv][col]) < 1e-12) return;
-        if (piv != col)
-            for (int c = col; c < 9; ++c) std::swap(A[col][c], A[piv][c]);
-        for (int r = 0; r < 8; ++r) {
-            if (r == col) continue;
-            const double f = A[r][col] / A[col][col];
-            for (int c = col; c < 9; ++c) A[r][c] -= f * A[col][c];
-        }
-    }
-    for (int i = 0; i < 8; ++i) hInv[i] = A[i][8] / A[i][i];
-    hInv[8] = 1.0;
-    for (int y = 0; y < cropH; ++y) {
-        for (int x = 0; x < cropW; ++x) {
-            const double denom = hInv[6] * x + hInv[7] * y + hInv[8];
-            if (std::abs(denom) < 1e-12) continue;
-            const double sx = (hInv[0] * x + hInv[1] * y + hInv[2]) / denom;
-            const double sy = (hInv[3] * x + hInv[4] * y + hInv[5]) / denom;
-            const int x0 = static_cast<int>(std::floor(sx));
-            const int y0 = static_cast<int>(std::floor(sy));
-            const int x1 = x0 + 1;
-            const int y1 = y0 + 1;
-            if (x0 < 0 || y0 < 0 || x1 >= imgW || y1 >= imgH) continue;
-            const float fx = static_cast<float>(sx - x0);
-            const float fy = static_cast<float>(sy - y0);
-            // Sample the borrowed view in place (stride / channel count /
-            // BGR handled by Image::row + channel_index): the historical
-            // packed-RGB flatten of the whole frame cost a full-resolution
-            // pass per frame (3.4 Mpx single-threaded) just to feed ~100
-            // crops.
-            const uint8_t* r0 = src.row(y0) + static_cast<size_t>(x0) * scn;
-            const uint8_t* r1 = src.row(y1) + static_cast<size_t>(x0) * scn;
-            auto* out = &dst[(static_cast<size_t>(y) * cropW + x) * 3];
-            for (int ch = 0; ch < 3; ++ch) {
-                const int ci = cmap[ch];
-                const float v00 = static_cast<float>(r0[ci]);
-                const float v10 = static_cast<float>(r0[scn + ci]);
-                const float v01 = static_cast<float>(r1[ci]);
-                const float v11 = static_cast<float>(r1[scn + ci]);
-                out[ch] = static_cast<uint8_t>(std::clamp(
-                        v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) +
-                                v01 * (1 - fx) * fy + v11 * fx * fy,
-                        0.0f, 255.0f));
-            }
-        }
-    }
-}
-
-// Crop an axis-aligned rectangle out of an RGB buffer with bilinear
-// sampling into (cropW, cropH).
-void cropResizeRgb(const std::vector<uint8_t>& rgb,
-                   int imgW,
-                   int imgH,
-                   float x0,
-                   float y0,
-                   float x1,
-                   float y1,
-                   int cropW,
-                   int cropH,
-                   std::vector<uint8_t>& dst) {
-    dst.assign(static_cast<size_t>(cropW) * cropH * 3, 0);
-    for (int y = 0; y < cropH; ++y) {
-        const float fy = y0 + (y + 0.5f) * (y1 - y0) / cropH - 0.5f;
-        const int sy0 =
-                std::clamp(static_cast<int>(std::floor(fy)), 0, imgH - 1);
-        const int sy1 = std::min(imgH - 1, sy0 + 1);
-        const float ly = std::clamp(fy - sy0, 0.0f, 1.0f);
-        for (int x = 0; x < cropW; ++x) {
-            const float fx = x0 + (x + 0.5f) * (x1 - x0) / cropW - 0.5f;
-            const int sx0 =
-                    std::clamp(static_cast<int>(std::floor(fx)), 0, imgW - 1);
-            const int sx1 = std::min(imgW - 1, sx0 + 1);
-            const float lx = std::clamp(fx - sx0, 0.0f, 1.0f);
-            for (int ch = 0; ch < 3; ++ch) {
-                const float v00 =
-                        rgb[(static_cast<size_t>(sy0) * imgW + sx0) * 3 + ch];
-                const float v01 =
-                        rgb[(static_cast<size_t>(sy0) * imgW + sx1) * 3 + ch];
-                const float v10 =
-                        rgb[(static_cast<size_t>(sy1) * imgW + sx0) * 3 + ch];
-                const float v11 =
-                        rgb[(static_cast<size_t>(sy1) * imgW + sx1) * 3 + ch];
-                const float top = v00 + (v01 - v00) * lx;
-                const float bottom = v10 + (v11 - v10) * lx;
-                dst[(static_cast<size_t>(y) * cropW + x) * 3 + ch] =
-                        static_cast<uint8_t>(std::clamp(
-                                top + (bottom - top) * ly, 0.0f, 255.0f));
-            }
-        }
-    }
-}
-
 // Batched-rec enablement: automatic per execution side. Sessions whose
 // graphs execute on a GPU run the chunked batch — CUDA (2.6x dense-image
 // e2e, fixture-exact at every measured N with per-slab bitwise
@@ -794,7 +358,7 @@ bool ocrBatchedRecEnabled(ggml_backend_t gpuBackend, bool cpuExecution) {
 // for a stable input shape. The build (300+ op walk, folded constants,
 // allocation) costs far more than a steady-state compute and dominated real
 // images with dozens of rec crops, so the det graph is cached per geometry
-// and the rec graph per (width bucket, rows) in a small LRU (OcrGraphCache).
+// and the rec graph per (pad width, rows) in a small LRU (OcrGraphCache).
 // Backend routing (CPU gallocr / mixed sched / single device) is owned by
 // aicore::ocr::makeExecPlan + prepareGraph, shared with the fixture probe so
 // the probe measures exactly the graph that ships.
@@ -1146,9 +710,9 @@ struct aicore_ocr_ctx {
     float detMaxSide = kDetOfficialLimitSide;
     int detLimitType = 0;  // 0 = official "min" resize, 1 = legacy "max" cap
     float boxThresh = kDetDefaultBoxThresh;
-    float boxScoreThresh = kDetDefaultBoxScoreThresh;
+    double boxScoreThresh = kDetDefaultBoxScoreThresh;
     float unclipRatio = kDetDefaultUnclipRatio;
-    int recMaxBatch = 8;
+    int recPadGroup = kRecPadGroupDefault;
     // Session-owned physical backends, acquired once from the process-wide
     // runtime lease registry (GPU/auto primary + CPU secondary for the
     // scheduler, or a single CPU lease) and reused by every runGraph call;
@@ -1164,7 +728,7 @@ struct aicore_ocr_ctx {
     int64_t detC = 0;
     int64_t detH = 0;
     int64_t detW = 0;
-    // Rec builds keyed by (width bucket, rows): see OcrGraphCache.
+    // Rec builds keyed by (pad width, rows): see OcrGraphCache.
     OcrGraphCache recGraphs{{}, kRecGraphCacheCapacity, 0};
     // Layout graphs are rebuilt per frame (fresh fold pool); the allocator
     // persists so the fixed-size compute buffer is reused.
@@ -1179,7 +743,7 @@ struct aicore_ocr_ctx {
     std::vector<uint8_t> detRgbScratch;
     std::vector<float> detNchwScratch;
     std::vector<float> detOutputScratch;
-    std::vector<uint8_t> detMaskScratch;
+    std::vector<int8_t> detContourScratch;  // findContours bordered image
     std::vector<float> recBatchScratch;
     std::vector<float> recOutputScratch;
     RecArgmaxOut recArgmaxScratch;
@@ -1210,35 +774,41 @@ namespace {
 // ---- Rec crop geometry, chunk plan and batched forward (shared by the
 // det->rec frame path and the recognize-only quad path) ------------------
 
-// One rec crop under the official semantics: get_rotate_crop_image (int
-// truncated edge norms, perspective warp, rot90 when h/w >= 1.5) followed
-// by resize_norm_img (resized_w = ceil(48 * w/h), padded to the chunk
-// width with the normalized-zero fill).
+// One rec crop under the official semantics: CropByPolys("quad")
+// get_minarea_rect_crop (minAreaRect re-fit of the int32 polygon,
+// get_rotate_crop_image at int() float32 edge norms, cubic warp, rot90 when
+// h/w >= 1.5) followed by resize_norm_img (resized_w = ceil(48 * w/h),
+// padded to the chunk width with the normalized-zero fill).
 struct RecCropGeom {
-    float quad[4][2] = {};
+    float quad[4][2] = {};  // reported box (det box / caller quad)
+    float box[4][2] = {};   // re-fit crop box the warp samples
     int cropW = 0;
     int cropH = 0;
     bool rotate = false;
-    int recW = 0;    // resized content width
-    int chunkW = 0;  // padded chunk width (bucket)
-    int chunk = -1;  // slot assigned by planRecChunks
+    double ratio = 0.0;  // w / h after the rot90, the official sort key
+    int padW = 0;        // own padded width: int(48 * max(320/48, ratio))
+    int recW = 0;        // resized content width
+    int chunkW = 0;      // padded width of the crop's ratio group
+    int chunk = -1;      // slot assigned by planRecChunks
     int row = -1;
     float detScore = 0.f;
     bool valid = false;
 };
 
-void recCropGeometry(RecCropGeom& g) {
-    const auto edgeLen = [](const float a[2], const float b[2]) {
-        const double dx = b[0] - a[0], dy = b[1] - a[1];
-        return std::sqrt(dx * dx + dy * dy);
-    };
-    // int() truncation like the official crop; the perspective target is
-    // exactly (img_crop_width, img_crop_height).
-    g.cropW = static_cast<int>(std::max(edgeLen(g.quad[0], g.quad[1]),
-                                        edgeLen(g.quad[3], g.quad[2])));
-    g.cropH = static_cast<int>(std::max(edgeLen(g.quad[0], g.quad[3]),
-                                        edgeLen(g.quad[1], g.quad[2])));
-    g.valid = g.cropW >= 3 && g.cropH >= 3;
+// `poly` is the crop source in image pixels, finite and inside the int32
+// range (both callers clamp it to the image).
+void recCropGeometry(RecCropGeom& g, const float poly[4][2]) {
+    int pts[4][2];
+    for (int i = 0; i < 4; ++i) {
+        // np.array(points).astype(np.int32): truncation toward zero.
+        pts[i][0] = static_cast<int>(poly[i][0]);
+        pts[i][1] = static_cast<int>(poly[i][1]);
+    }
+    aicore::ocr::minAreaRectBox(pts, 4, g.box);
+    aicore::ocr::rotateCropSize(g.box, &g.cropW, &g.cropH);
+    // Upstream warps any non-empty size (an empty dsize would make cv2 fall
+    // back to the source size, which no det box reaches).
+    g.valid = g.cropW >= 1 && g.cropH >= 1;
     if (!g.valid) return;
     g.rotate = static_cast<double>(g.cropH) / g.cropW >= 1.5;
     const int w = g.rotate ? g.cropH : g.cropW;
@@ -1252,8 +822,32 @@ void recCropGeometry(RecCropGeom& g) {
         resizedW = kRecLimitWidth;
     else if (resizedW > imgW)
         resizedW = imgW;
+    g.ratio = ratio;
+    g.padW = std::min(imgW, kRecLimitWidth);
     g.recW = std::max(1, resizedW);
-    g.chunkW = recWidthBucket(g.recW);
+    g.chunkW = g.padW;
+}
+
+// The official batch pad (pipeline sorted(key=w/h), stable; ToBatch pads
+// each group of `group` consecutive crops to its widest padW). Rows are
+// independent inside a forward, so only the width has to match; crops of
+// different groups with the same width still share a chunk.
+// O(n log n) for the sort.
+void assignRecPadWidths(std::vector<RecCropGeom>& geoms, int group) {
+    std::vector<int> order;
+    order.reserve(geoms.size());
+    for (size_t i = 0; i < geoms.size(); ++i)
+        if (geoms[i].valid) order.push_back(static_cast<int>(i));
+    std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+        return geoms[a].ratio < geoms[b].ratio;
+    });
+    for (size_t at = 0; at < order.size(); at += group) {
+        const size_t end = std::min(order.size(), at + group);
+        int width = 0;
+        for (size_t k = at; k < end; ++k)
+            width = std::max(width, geoms[order[k]].padW);
+        for (size_t k = at; k < end; ++k) geoms[order[k]].chunkW = width;
+    }
 }
 
 struct RecChunk {
@@ -1274,11 +868,12 @@ struct RecChunkPlan {
 // Batched: rows x width stays within the per-backend budget
 // (recRowsCapForWidth) and the row count is quantized so a stable box
 // count keeps hitting the same cached build. Per-crop (CPU execution):
-// one single-row chunk per crop, still bucketed so the build set is
-// bounded by the ladder.
+// one single-row chunk per crop at its group width.
 RecChunkPlan planRecChunks(std::vector<RecCropGeom>& geoms,
+                           int padGroup,
                            int64_t cap,
                            bool batched) {
+    assignRecPadWidths(geoms, padGroup);
     RecChunkPlan plan;
     plan.order.reserve(geoms.size());
     for (size_t i = 0; i < geoms.size(); ++i)
@@ -1345,8 +940,9 @@ void cropAndPackRec(const aicore::img::Image& src,
                     const RecCropGeom& g,
                     const RecChunkPlan& plan,
                     float* batch) {
-    std::vector<uint8_t> quadRgb;
-    cropQuadRgb(src, g.quad, g.cropW, g.cropH, quadRgb);
+    std::vector<uint8_t> quadRgb(static_cast<size_t>(g.cropW) * g.cropH * 3);
+    aicore::ocr::warpPerspectiveCubicReplicate(src, g.box, g.cropW, g.cropH,
+                                               quadRgb.data());
     aicore::img::Image warped;
     warped.channels = 3;
     if (g.rotate) {
@@ -1521,7 +1117,7 @@ bool runRecChunks(aicore_ocr_ctx* ctx,
 extern "C" {
 
 aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
-    if (!options || options->struct_size < sizeof(aicore_ocr_options)) {
+    if (!options || options->struct_size < kOcrOptionsInitialSize) {
         setLastError("ocr: invalid options (struct_size)");
         return nullptr;
     }
@@ -1531,6 +1127,10 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
     }
     if (!options->det_model_path || !options->rec_model_path) {
         setLastError("ocr: det/rec model paths are required");
+        return nullptr;
+    }
+    if (options->kie_model_path && options->kie_model_path[0]) {
+        setLastError("ocr: KIE models are not supported by this ABI version");
         return nullptr;
     }
     auto* ctx = new (std::nothrow) aicore_ocr_ctx();
@@ -1574,12 +1174,16 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
         if (dash != std::string::npos) tail = tail.substr(0, dash);
         if (!tail.empty()) ctx->language = tail;
     }
-    // det_limit_type 0 (default) aligns with the official PP-OCR
-    // pipeline: "min"-type resize with limit_side_len 736, so small
-    // images are UPSCALED to keep small text legible (this is what the
-    // official recall depends on). det_max_side overrides the 736 limit
-    // side; 1 restores the legacy never-upscale long-side cap.
-    ctx->detLimitType = options->det_limit_type;
+    // det_limit_type 0 (default) aligns with PaddleOCR 3.0.1's public OCR
+    // pipeline: "min"-type resize with limit_side_len 64. det_max_side
+    // overrides that limit; 1 selects the table pipeline's long-side cap.
+    const bool hasDetLimitType = hasOptionField(
+            options, offsetof(aicore_ocr_options, det_limit_type),
+            sizeof(options->det_limit_type));
+    const bool hasBoxScoreThreshold = hasOptionField(
+            options, offsetof(aicore_ocr_options, det_box_score_thresh),
+            sizeof(options->det_box_score_thresh));
+    ctx->detLimitType = hasDetLimitType ? options->det_limit_type : 0;
     ctx->detMaxSide =
             ctx->detLimitType == 0
                     ? (options->det_max_side > 0
@@ -1590,12 +1194,14 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
                                : kDetDefaultMaxSide);
     ctx->boxThresh = options->det_box_thresh > 0 ? options->det_box_thresh
                                                  : kDetDefaultBoxThresh;
-    ctx->boxScoreThresh = options->det_box_score_thresh > 0
-                                  ? options->det_box_score_thresh
-                                  : kDetDefaultBoxScoreThresh;
+    ctx->boxScoreThresh =
+            hasBoxScoreThreshold && options->det_box_score_thresh > 0
+                    ? options->det_box_score_thresh
+                    : kDetDefaultBoxScoreThresh;
     ctx->unclipRatio = options->det_unclip_ratio > 0 ? options->det_unclip_ratio
                                                      : kDetDefaultUnclipRatio;
-    ctx->recMaxBatch = options->rec_max_batch > 0 ? options->rec_max_batch : 8;
+    ctx->recPadGroup = options->rec_max_batch > 0 ? options->rec_max_batch
+                                                  : kRecPadGroupDefault;
     // One backend pair for the whole context, resolved from the caller's
     // device request. load_backends_once() is mandatory in GGML_BACKEND_DL
     // builds: without it no device is registered and every init silently
@@ -1603,13 +1209,21 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
     // CPU on Linux/Windows, Metal -> CPU on macOS) and already includes the
     // CPU fallback; an explicit unavailable request is an honest failure.
     ggml_common::load_backends_once();
+    const bool hasDevice =
+            hasOptionField(options, offsetof(aicore_ocr_options, device),
+                           sizeof(options->device));
+    const bool hasThreads =
+            hasOptionField(options, offsetof(aicore_ocr_options, n_threads),
+                           sizeof(options->n_threads));
     const std::string deviceRequest =
-            (options->device && options->device[0]) ? options->device : "auto";
+            (hasDevice && options->device && options->device[0])
+                    ? options->device
+                    : "auto";
     // The OCR graphs are hundreds of small nodes; beyond a handful of CPU
     // threads the per-node pool barrier dominates (measured: rec graph
     // 94 ms at 32 threads vs 61 ms at 8). Cap the default like the
     // facedetect runtime does; an explicit options->n_threads still wins.
-    int nThreads = options->n_threads;
+    int nThreads = hasThreads ? options->n_threads : 0;
     if (nThreads <= 0) {
         unsigned hw = std::thread::hardware_concurrency();
         if (hw == 0) hw = 4;
@@ -1751,11 +1365,9 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     srcImage.bgr = swapRB;  // BGR/BGRA views are channel-swapped on read
-    // Upstream DetResizeForTest. det_limit_type 0 (default) replicates
-    // the official PP-OCR default (limit_type="min", limit_side_len=736,
-    // max_side_limit=4000): the SHORT side is scaled UP to the limit when
-    // it is below it, which is what the official det recall on small-text
-    // images depends on. det_limit_type 1 restores the historical
+    // Upstream DetResizeForTest. det_limit_type 0 (default) replicates the
+    // PaddleOCR 3.0.1 OCR pipeline (limit_type="min", limit_side_len=64,
+    // max_side_limit=4000). det_limit_type 1 selects the table pipeline's
     // never-upscale long-side cap. Either way each side TRUNCATES to int,
     // then rounds to the nearest multiple of 32 with a floor at 32 (the
     // network needs 32-stride alignment); the historical ceil() overshoot
@@ -1856,16 +1468,20 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
         return nullptr;
     }
 
-    // --- det post-process: threshold + components + unclip.
+    // --- det post-process: DBPostProcess.boxes_from_bitmap + SortQuadBoxes
+    // (exact ports, ocr_db_postprocess.cpp): integer boxes in image pixels,
+    // in the official reading order.
     const auto postStart = std::chrono::steady_clock::now();
     const auto dbBoxesStart = postStart;
-    const auto boxes = connectedComponentsBoxes(
+    aicore::ocr::DbParams dbParams;
+    dbParams.thresh = ctx->boxThresh;
+    dbParams.boxThresh = ctx->boxScoreThresh;
+    dbParams.unclipRatio = ctx->unclipRatio;
+    auto boxes = aicore::ocr::dbBoxesFromBitmap(
             detOutput.data(), static_cast<int>(detOutW),
-            static_cast<int>(detOutH), ctx->boxThresh, ctx->detMaskScratch);
-    const float mapToImageX =
-            static_cast<float>(image->width) / static_cast<float>(detOutW);
-    const float mapToImageY =
-            static_cast<float>(image->height) / static_cast<float>(detOutH);
+            static_cast<int>(detOutH), image->width, image->height, dbParams,
+            ctx->detContourScratch);
+    aicore::ocr::sortQuadBoxes(boxes);
     const auto dbBoxesStop = std::chrono::steady_clock::now();
 
     auto* result = new (std::nothrow) aicore_ocr_result();
@@ -1901,21 +1517,16 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // filled to the cap, and a stable box count hits the same build.
     std::vector<RecCropGeom> geoms(boxes.size());
     for (size_t bi = 0; bi < boxes.size(); ++bi) {
-        const DetBox& raw = boxes[bi];
         RecCropGeom& g = geoms[bi];
-        const DetBox region = unclipBox(raw, ctx->unclipRatio);
-        // Map det-map coordinates back to full-resolution image pixels.
         for (int i = 0; i < 4; ++i) {
-            g.quad[i][0] = std::clamp(region.quad[i][0] * mapToImageX, 0.0f,
-                                      static_cast<float>(image->width));
-            g.quad[i][1] = std::clamp(region.quad[i][1] * mapToImageY, 0.0f,
-                                      static_cast<float>(image->height));
+            g.quad[i][0] = static_cast<float>(boxes[bi].quad[i][0]);
+            g.quad[i][1] = static_cast<float>(boxes[bi].quad[i][1]);
         }
-        g.detScore = raw.score;
-        recCropGeometry(g);
+        g.detScore = static_cast<float>(boxes[bi].score);
+        recCropGeometry(g, g.quad);
     }
-    const RecChunkPlan recPlan =
-            planRecChunks(geoms, recChunkBatchCap(gpuBackend), batchedRec);
+    const RecChunkPlan recPlan = planRecChunks(
+            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
     std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
     // resize, not assign: every content row is written in full by the pack
     // (content + right pad columns) and the pad tails by fillRecPadRows.
@@ -2112,7 +1723,7 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     result->postTimings.input_upload_ms = inputUploadMs;
     // 将总 inference 拆回两个图，避免仅凭总数猜测应优化 det 还是 rec。
     result->postTimings.det_graph_compute_ms = detInferenceMs;
-    result->postTimings.rec_graph_compute_ms = recLayoutInferenceMs;
+    result->postTimings.rec_graph_compute_ms = recTimings.inferenceMs;
     return result;
 }
 
@@ -2168,8 +1779,8 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     srcImage.bgr = swapRB;
-    // cropQuadRgb samples the borrowed view in place (stride / 1-, 3- or
-    // 4-channel / BGR all resolved by Image::channel) — no packed copy.
+    // The crop samples the borrowed view in place (stride / 1-, 3- or
+    // 4-channel / BGR all resolved by Image::row + channel_index).
     const auto cropResizePackStart = std::chrono::steady_clock::now();
     auto* result = new (std::nothrow) aicore_ocr_result();
     if (!result) {
@@ -2181,7 +1792,8 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     std::string error;
     // Same two-phase recognition as the frame path (recCropGeometry /
     // planRecChunks / cropAndPackAll / runRecChunks): official crop
-    // geometry, width-bucketed chunks, one forward per chunk, parallel CTC.
+    // geometry, official ratio-group pad widths, one forward per chunk,
+    // parallel CTC.
     ggml_backend_t gpuBackend =
             ctx->primaryLease.is_cpu() ? nullptr : ctx->primaryLease.handle();
     ggml_backend_t cpuBackend = ctx->primaryLease.is_cpu()
@@ -2196,10 +1808,23 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     for (int32_t q = 0; q < count; ++q) {
         RecCropGeom& g = geoms[static_cast<size_t>(q)];
         std::memcpy(g.quad, quads + static_cast<size_t>(q) * 8, sizeof(g.quad));
-        recCropGeometry(g);
+        // Same crop as the det path, so recognize(run(img) quads) reproduces
+        // run(img). Caller quads are clipped to the image like det boxes
+        // (bounds the crop size); a non-finite quad stays invalid.
+        float poly[4][2];
+        bool finite = true;
+        for (int i = 0; i < 4; ++i) {
+            finite = finite && std::isfinite(g.quad[i][0]) &&
+                     std::isfinite(g.quad[i][1]);
+            poly[i][0] = std::clamp(g.quad[i][0], 0.0f,
+                                    static_cast<float>(image->width));
+            poly[i][1] = std::clamp(g.quad[i][1], 0.0f,
+                                    static_cast<float>(image->height));
+        }
+        if (finite) recCropGeometry(g, poly);
     }
-    const RecChunkPlan recPlan =
-            planRecChunks(geoms, recChunkBatchCap(gpuBackend), batchedRec);
+    const RecChunkPlan recPlan = planRecChunks(
+            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
     std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
     batchNchw.resize(recPlan.totalFloats);
     fillRecPadRows(recPlan, batchNchw.data());
@@ -2223,12 +1848,14 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     const auto assemblyStart = std::chrono::steady_clock::now();
     for (int32_t q = 0; q < count; ++q) {
         const RecCropGeom& g = geoms[static_cast<size_t>(q)];
-        if (!g.valid) continue;
+        // One box per input quad, in input order: callers map results back
+        // by index, so a degenerate quad yields an empty text, score 0.
         aicore_ocr_box box{};
         std::memcpy(box.quad, g.quad, sizeof(box.quad));
-        result->textStorage.push_back(recTexts[static_cast<size_t>(q)]);
+        result->textStorage.push_back(g.valid ? recTexts[static_cast<size_t>(q)]
+                                              : std::string());
         box.text = result->textStorage.back().c_str();
-        box.score = recScores[static_cast<size_t>(q)];
+        box.score = g.valid ? recScores[static_cast<size_t>(q)] : 0.0f;
         std::strncpy(box.language, ctx->language.c_str(),
                      sizeof(box.language) - 1);
         result->boxes.push_back(box);
@@ -2249,7 +1876,8 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
                                        AICORE_OCR_POST_TIMING_CTC_DECODE |
                                        AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY |
                                        AICORE_OCR_POST_TIMING_OUTPUT_READBACK |
-                                       AICORE_OCR_POST_TIMING_INPUT_UPLOAD;
+                                       AICORE_OCR_POST_TIMING_INPUT_UPLOAD |
+                                       AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE;
     result->postTimings.crop_resize_pack_ms =
             std::chrono::duration<double, std::milli>(cropResizePackStop -
                                                       cropResizePackStart)
@@ -2258,6 +1886,7 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     result->postTimings.result_assembly_ms = resultAssemblyMs;
     result->postTimings.output_readback_ms = outputReadbackMs;
     result->postTimings.input_upload_ms = inputUploadMs;
+    result->postTimings.rec_graph_compute_ms = recInferenceMs;
     return result;
 }
 

@@ -391,13 +391,32 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         task_light_patterns=None if full else light_patterns)
 
 
-def parse_input_assets(manifest: dict[str, Any], selected: set[str]
+def parse_input_assets(manifest: dict[str, Any], selected: set[str],
+                       scenario_ids: set[str] | None = None
                        ) -> list[InputAsset]:
+    selected_scenarios = [
+        scenario for scenario in manifest["scenarios"]
+        if scenario["task"] in selected and
+        (scenario_ids is None or scenario["id"] in scenario_ids)]
+    scoped_input_ids: set[str] | None = None
+    if selected_scenarios and all("input_ids" in scenario
+                                  for scenario in selected_scenarios):
+        scoped_input_ids = {
+            str(asset_id) for scenario in selected_scenarios
+            for asset_id in scenario.get("input_ids", [])}
+    known_input_ids = {
+        str(raw.get("id", "")) for raw in manifest.get("input_assets", [])}
+    unknown_input_ids = (scoped_input_ids or set()) - known_input_ids
+    if unknown_input_ids:
+        raise ValueError("scenario input_ids name unknown assets: " +
+                         ", ".join(sorted(unknown_input_ids)))
+
     assets: list[InputAsset] = []
     for index, raw in enumerate(manifest.get("input_assets", []), 1):
         asset_id = str(raw.get("id", ""))
         tasks = frozenset(str(task) for task in raw.get("tasks", []))
-        if not tasks & selected:
+        if not tasks & selected or (scoped_input_ids is not None and
+                                    asset_id not in scoped_input_ids):
             continue
         relative = PurePosixPath(str(raw.get("relative_path", "")))
         url = str(raw.get("url", ""))
@@ -433,8 +452,6 @@ def parse_input_assets(manifest: dict[str, Any], selected: set[str]
     if not assets:
         input_tokens = ("{image}", "{image2}", "{face_image}", "{sam_image}",
                         "{yolo_image}")
-        selected_scenarios = [scenario for scenario in manifest["scenarios"]
-                              if scenario["task"] in selected]
         needs_input = any(
             any(token in value for token in input_tokens)
             for scenario in selected_scenarios
@@ -1415,6 +1432,41 @@ def runtime_env(spec: RunSpec, args: argparse.Namespace) -> dict[str, str]:
     return env
 
 
+def configured_qt_library_dir(build: Path) -> Path | None:
+    """Recover the configured Qt runtime directory for direct CLI runs.
+
+    CTest injects AICORE_QT_LIBRARY_DIR, but users also invoke this script
+    directly. Reading CMakeCache keeps the spawned catalog/probe binaries on
+    the same Qt major/minor build instead of mixing the host Qt with the one
+    linked into AICore.
+    """
+    cache = build / "CMakeCache.txt"
+    try:
+        lines = cache.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    cmake_dirs: list[Path] = []
+    prefixes: list[Path] = []
+    for line in lines:
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        variable = key.split(":", 1)[0]
+        if variable in ("Qt5Core_DIR", "Qt6Core_DIR") and value:
+            cmake_dirs.append(Path(value))
+        elif variable == "CMAKE_PREFIX_PATH":
+            prefixes.extend(Path(item) for item in value.split(";") if item)
+    candidates: list[Path] = []
+    for directory in cmake_dirs:
+        if len(directory.parents) >= 2:
+            qt_lib = directory.parents[1]
+            candidates.extend(([qt_lib.parent / "bin", qt_lib]
+                               if os.name == "nt" else [qt_lib]))
+    for prefix in prefixes:
+        candidates.append(prefix / ("bin" if os.name == "nt" else "lib"))
+    return next((path.resolve() for path in candidates if path.is_dir()), None)
+
+
 def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
     if os.name == "nt":
         variable = "PATH"
@@ -1424,6 +1476,9 @@ def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
         variable = "LD_LIBRARY_PATH"
     parts = [str(build / "bin")]
     qt_library_dir = env.get("AICORE_QT_LIBRARY_DIR")
+    if not qt_library_dir:
+        configured_qt = configured_qt_library_dir(build)
+        qt_library_dir = str(configured_qt) if configured_qt else ""
     if qt_library_dir:
         parts.append(qt_library_dir)
     # Same rationale as the ctest AICORE_TEST_ENV_EXTRA plumbing: a dlopen'ed
@@ -2042,7 +2097,9 @@ def main() -> int:
             catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
             jobs=args.download_jobs)
-        input_catalog = parse_input_assets(manifest, selected)
+        specs, diagnostics = expand_specs(manifest, args, args.output.parent)
+        input_catalog = parse_input_assets(
+            manifest, selected, {spec.scenario_id for spec in specs})
         input_summary, input_failures = ensure_input_assets(
             input_catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
@@ -2073,7 +2130,6 @@ def main() -> int:
           f"{input_summary['verified_cached']} cached, "
           f"{input_summary['downloaded']} downloaded",
           flush=True)
-    specs, diagnostics = expand_specs(manifest, args, args.output.parent)
     if args.allow_incomplete and cache_summary["unavailable"]:
         diagnostics["skipped_model_assets"].extend(
             cache_summary["unavailable"])

@@ -9,6 +9,7 @@
 
 #include "pipelines/image.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 
 namespace cloudViewer {

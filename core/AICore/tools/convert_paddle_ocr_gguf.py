@@ -14,7 +14,9 @@ as GGUF string arrays (`ocr.dictionary`) so the CTC decoder needs no side
 files. Each run emits F32 plus optionally F16 and Q8_0 siblings; tensors
 whose last dimension is not a multiple of 32 stay F16 in the Q8_0 file (ggml
 block quantization requires that alignment) and the decision is recorded in
-the `ocr.quant.reshaped` metadata.
+the `ocr.quant.reshaped` metadata. Tensors listed in `Q8_0_KEEP_F16` for the
+source archive also stay F16 in the Q8_0 file (measured sensitivity, see
+there).
 """
 
 import argparse
@@ -47,6 +49,60 @@ def load_paddle_tensors(model_dir: Path):
     if not tensors:
         raise SystemExit(f"no tensors extracted from {model_dir}")
     return tensors, feed_names, fetch_names
+
+
+# Q8_0 candidates kept F16 per source archive. Selection rule: quantize each
+# candidate alone (all other tensors F16) and keep it F16 when that single
+# tensor moves the per-step softmax on the official rec fixture by more than
+# 10x the F16 container's own error. en_PP-OCRv4_rec_infer (F16 container
+# 5.7e-4): conv2d_139/141/143 (the backbone's first three aligned 1x1
+# convs) move it by 0.32/0.016/0.0079, every other candidate by <= 0.0027;
+# all 11 quantized gave 0.44 and changed 28% of ICDAR2015 word texts,
+# keeping these three gives 0.0039 for +13 KiB. A dequantized-to-F32 copy
+# reproduces the 0.44 exactly, so it is weight rounding, not a kernel.
+# ch_PP-OCRv4_rec_infer needs none (all 11 quantized: 5.3e-4).
+#
+# Composed-page sets (2026-10-14, table-page-gt composed TEDS attribution).
+# The composed chain (layout crop -> det cell boxes -> rec text -> SLANet
+# structure) is knife-edge sensitive: on 7/100 pinned pages a sub-pixel
+# layout-region delta crosses the int-truncation crop boundary and the SLANet
+# decode flips (e.g. 0.3 px -> 13x3 -> 13x4 cols, -0.22 TEDS on one page), so
+# the all-q8_0 row landed 5e-6 below the Paddle-0.005 gate while each stage
+# alone passed. Partial convergence re-rolls which gate fails (layout-f32 +
+# table/ocr q8_0 fails TEDS-S), so the fix converges every decode-visible
+# stage to its F32 container's decisions:
+# - picodet layout: the four FPN head convs produce cls/dis; keeping them F16
+#   makes region boxes track F32 (all-q8_0 composed per-page structure trees
+#   then match the F32 chain on the previously flipping pages).
+# - ch det: the DB head path (level inner convs + concat 1x1 + upsample)
+#   produces the sigmoid map; q8_0 weight rounding moves transition pixels
+#   (fixture max_diff 0.476) and shifts cell boxes -> rec text.
+# - SLANet_plus: the GRU decoder weight and its projection linears perturb
+#   both token logits and cell polygons (fixture loc max_diff 0.020 with
+#   token_match 1.0); the encoder stays quantized. All kept tensors already
+#   exist as F16 in the proven F16 containers of the same models.
+Q8_0_KEEP_F16 = {
+    "en_PP-OCRv4_rec_infer": {"conv2d_139.w_0", "conv2d_141.w_0",
+                              "conv2d_143.w_0"},
+    # ch rec: the same three early backbone 1x1 convs as en (same SVTR-mobile
+    # architecture, shapes (32,64)/(64,64)/(64,128)). Their q8_0 rounding is
+    # invisible on the rec fixture (all 11 quantized: 5.3e-4) but flips greedy
+    # CTC text on knife-edge composed-page crops (5/100 pages, 0.0025 TEDS).
+    "ch_PP-OCRv4_rec_infer": {"conv2d_160.w_0", "conv2d_162.w_0",
+                              "conv2d_164.w_0"},
+    "picodet_lcnet_x1_0_fgd_layout_cdla_infer": {
+        "conv2d_100.w_0", "conv2d_101.w_0",
+        "conv2d_102.w_0", "conv2d_103.w_0"},
+    "ch_PP-OCRv4_det_infer": {
+        "conv2d_132.w_0", "conv2d_133.w_0", "conv2d_134.w_0",
+        "conv2d_136.w_0", "conv2d_138.w_0", "conv2d_142.w_0",
+        "conv2d_144.w_0", "conv2d_148.w_0", "conv2d_150.w_0",
+        "conv2d_154.w_0", "conv2d_156.w_0", "conv2d_159.w_0",
+        "conv2d_transpose_0.w_0"},
+    "SLANet_plus_infer.tar": {
+        "gru_cell_0.w_1", "linear_0.w_0", "linear_1.w_0",
+        "linear_3.w_0", "linear_5.w_0"},
+}
 
 
 def gguf_tensor_name(name: str) -> str:
@@ -87,7 +143,7 @@ def table_metadata(model_dir: Path):
 
 
 def quantized(name: str, tensor: np.ndarray, kind: str,
-              reshaped, keep_f32=()):
+              reshaped, keep_f32=(), keep_f16=False):
     """Return (array, ggml_type) for the requested container quant."""
     import gguf
     # Matmul weights sit on the B side of ggml_mul_mat; the CPU kernel only
@@ -105,7 +161,7 @@ def quantized(name: str, tensor: np.ndarray, kind: str,
                  if tensor.size else 0.0)
     if magnitude > 60000.0 or not np.isfinite(tensor).all():
         return tensor, gguf.GGMLQuantizationType.F32
-    if kind == "f16":
+    if kind == "f16" or (kind == "q8_0" and keep_f16):
         return tensor.astype(np.float16), gguf.GGMLQuantizationType.F16
     if kind == "q8_0":
         if tensor.ndim >= 2 and tensor.size:
@@ -124,7 +180,7 @@ def quantized(name: str, tensor: np.ndarray, kind: str,
 
 
 def write_gguf(tensors, metadata, output: Path, kind: str,
-               reshaped, keep_f32=()):
+               reshaped, keep_f32=(), keep_f16=()):
     import gguf
     writer = gguf.GGUFWriter(str(output), "ocr")
     for key, value in metadata.items():
@@ -151,7 +207,8 @@ def write_gguf(tensors, metadata, output: Path, kind: str,
                             ",".join(str(d) for d in tensor.shape))
     quantized_tensors = {
         name: quantized(name, tensor, kind, reshaped,
-                        keep_f32=name in keep_f32)
+                        keep_f32=name in keep_f32,
+                        keep_f16=name in keep_f16)
         for name, tensor in tensors.items()
     }
     if reshaped:
@@ -267,7 +324,9 @@ def main() -> None:
         targets = [(Path(f"{stem}-{k}.gguf"), k) for k in kinds]
     reshaped = []
     for path, kind in targets:
-        write_gguf(tensors, metadata, path, kind, reshaped, keep_f32=matmul_y_weights)
+        write_gguf(tensors, metadata, path, kind, reshaped,
+                   keep_f32=matmul_y_weights,
+                   keep_f16=Q8_0_KEEP_F16.get(args.source_name, ()))
         outputs.append(path)
         print(f"wrote {path} ({kind}, {len(tensors)} tensors)")
 

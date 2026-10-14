@@ -52,10 +52,11 @@ shared AICore plugin shape, same split as qRMBG):
   pinned SHA-256 verification and the shared progress bar.
 - **Run OCR / Cancel** — the run executes on an `OCRWorker` thread: the
   device task queue is acquired first (serialized against every other AICore
-  task), the context is created on the worker thread and released on the main
-  thread, and cooperative cancellation is bound for the run. Progress is
-  stage-based with the busy (indeterminate) bar — the aligned fallback for
-  backends without per-node progress — plus a 10 s heartbeat in the console.
+  task), the contexts are created and destroyed on the worker thread while the
+  device lock is held, and cooperative cancellation is bound for the run.
+  Progress is stage-based with the busy (indeterminate) bar — the aligned
+  fallback for backends without per-node progress — plus a 10 s heartbeat in
+  the console.
 - **Add result to DB** — the single materialization choice. It adds a
   source-size numbered overlay to the DB tree and attaches it to the active
   render view when one exists; when unchecked, results remain only in the
@@ -103,7 +104,9 @@ README: [`core/AICore/src/tasks/table/README.md`](../../../../core/AICore/src/ta
 
 Cache paths: models in `~/cloudViewer_data/extract/ocr_models/`
 (`ppocr-*`, `pplcnet-layout-*`, `slanet-plus-table-*`), probe fixtures in
-`~/cloudViewer_data/extract/ocr_fixtures/`, test data in
+`~/cloudViewer_data/extract/ocr_fixtures/` (the official Paddle layout assets
+are published in the `ocr-fixtures` release and verified by an empty-cache
+validation run), test data in
 `~/cloudViewer_data/extract/ppocr_testdata/` (archive:
 `~/cloudViewer_data/download/ppocr_testdata.zip`, SHA-256
 `9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484`; adds
@@ -126,14 +129,15 @@ come from the AICore `table` catalog and share the `ocr_models` cache. Recogniti
 [`core/AICore/src/tasks/ocr/README.md`](../../../../core/AICore/src/tasks/ocr/README.md)。下面的历史性能叙述仅保留排障背景；若与本节冲突，以本节和任务 README 为准。
 
 同一 RTX 4090、同一 PNG、PaddleOCR 3.0.1 / paddlepaddle-gpu 3.0.0、3 warmups +
-10 timed runs；范围覆盖 det `{f32,f16,q8_0}` × rec `{f32,f16,q8_0}` 的九种组合，CUDA 与
-Vulkan 共 54 个端到端结果，全部低于 Paddle GPU p50：
+10 timed runs；范围覆盖 det `{f32,f16,q8_0}` × rec `{f32,f16,q8_0}` 的九种组合。当前同机 developer 矩阵为：
 
-| 图像 | Paddle GPU p50 | CUDA p50 | Vulkan p50 |
+| 图像 | Paddle GPU p50 / p95 | CUDA p50（p95 范围） | Vulkan p50（p95 范围） |
 |---|---:|---:|---:|
-| ppocrv4，2566×1312 | 175.40 ms | 62.43–65.35 ms | 71.83–75.77 ms |
-| medal_table | 99.87 ms | 34.19–35.07 ms | 43.59–45.47 ms |
-| layout_doc_test | 125.96 ms | 53.44–55.02 ms | 68.28–92.35 ms |
+| ppocrv4，2566×1312 | 164.96 / 165.82 ms | 64.42–66.51（64.85–71.96）ms | 79.05–83.31（81.60–88.40）ms |
+| medal_table | 66.71 / 67.88 ms | 26.78–27.15（26.99–27.54）ms | 43.93–46.73（46.63–49.75）ms |
+| layout_doc_test | 103.64 / 107.86 ms | 66.80–67.60（67.40–68.53）ms | 107.15–115.64（113.52–123.84）ms |
+
+因此旧的“54/54 全部快于 Paddle”宣称无效：Vulkan 在 `layout_doc_test` 的 9 个组合均慢于 Paddle（中位 speedup `0.952×`）。这些数据未满足 release-profile 与受控 governor 条件，只用于当前实现验真；不得作为发布速度声明。
 
 Paddle 字符串逐字相同率不是无标签图像的准确率：F32 图级数值/argmax 门验证的是
 转换和执行，而端到端差异还包括 box、crop 和两个 OCR pipeline 的 CTC 决策；layout
@@ -149,6 +153,9 @@ ICDAR2015 的官方下载需要注册；在已许可的 GT 包落入测试资产
 插件修改系统功耗策略。
 
 ## Runtime notes
+
+以下条目是按时间累积的诊断记录，可能描述已撤销候选或已被上方“当前权威记录”取代的中间状态；当前精度、速度和后端结论只以上方链接的任务 README、validation manifest 与最新全量报告为准。
+
 - **CUDA conv-kernel study (CORRECTED adjudication, <100 ms reached)** —
   the previous session's "direct conv breaks transcription parity" verdict
   was an artifact: every 67-88/98 measurement was taken while the
@@ -311,14 +318,13 @@ ICDAR2015 的官方下载需要注册；在已许可的 GT 包落入测试资产
   class appended at export) and vocab = dict+1 (the table already carries its
   own trailing space entry). The trailing space class is real recognized
   text and is decoded, not skipped.
-- **Accuracy fixtures** — the probe fixtures (`ocr_fixtures/*.npy`, rec ch
-  + en / det / layout) are regenerated deterministically by
-  `core/AICore/scripts/gen_ocr_fixtures.py`, a numpy replay of the audited
-  Paddle graph read straight from the F32 GGUF; the historical release .npy
-  assets are gone. Measured stock-CPU parity: rec-ch max|diff| 6.5e-3
-  (isolated post-softmax near-ties, argmax sequence exact), rec-en 7.8e-4,
-  det 3.6e-3, layout 1.2e-2 (raw GFL logits); Vulkan parity is bit-identical
-  to CPU stock on all three graphs.
+- **Accuracy fixtures (corrected)** — det/rec/layout release gates come from
+  an independent upstream Paddle predictor, never from a numpy replay of the
+  same GGUF. `gen_ocr_fixtures.py` now keeps only `--fetch-at` diagnostics;
+  `export_ocr_fixture.py` owns predictor export. The official layout assets
+  are published in `ocr-fixtures`; an isolated empty-cache run downloaded all
+  nine arrays, verified their pinned SHA-256 values, and passed the CPU graph
+  and decoded-region gates twice per scenario.
 - **Export visualization** — the annotated image follows the official
   PaddleOCR `draw_ocr` style: red 2-px closed polygon outlines (boxes below
   `drop_score` 0.5 are skipped), the image resized to a 600-px long side,

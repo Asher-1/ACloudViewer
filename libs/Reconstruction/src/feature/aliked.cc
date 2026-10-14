@@ -54,8 +54,12 @@ void ConvertFeatures(const aicore_lightglue_features& features,
     keypoints->resize(static_cast<size_t>(count));
     for (int i = 0; i < count; ++i) {
         // ALIKED keypoints are pixel coordinates without scale/orientation.
-        (*keypoints)[static_cast<size_t>(i)] = FeatureKeypoint(
-                features.keypoints[i].x, features.keypoints[i].y);
+        // Upstream parity (a2bd15c2 feature/aliked.cc): the AICore ABI puts
+        // the top-left pixel center at (0, 0); COLMAP keypoints use (0.5,
+        // 0.5).
+        (*keypoints)[static_cast<size_t>(i)] =
+                FeatureKeypoint(features.keypoints[i].x + 0.5f,
+                                features.keypoints[i].y + 0.5f);
     }
     if (count > 0 && features.descriptors != nullptr &&
         features.descriptor_dim > 0) {
@@ -82,6 +86,9 @@ class AlikedFeatureExtractor : public FeatureExtractor {
     THROW_CHECK(options_.Check());
     THROW_CHECK_NOTNULL(options_.aliked);
     AlikedExtractionOptions resolved = *options_.aliked;
+    // use_gpu is the upstream-facing placement switch; the fork's device
+    // string only takes effect when the caller allows GPU placement.
+    if (!options_.use_gpu) resolved.device = "cpu";
     if (!ProvisionDefaultAlikedModels(&resolved)) {
       throw std::runtime_error("ALIKED extractor model provisioning failed");
     }

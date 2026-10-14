@@ -1004,18 +1004,78 @@ void UndistortImage(const UndistortCameraOptions& options,
                           distorted_bitmap, undistorted_bitmap);
 }
 
+void RescaleToMaxImageSize(const UndistortCameraOptions& options,
+                           Camera* camera) {
+  if (options.max_image_size < 0) {
+    return;
+  }
+  const double max_image_scale =
+      std::min(options.max_image_size / static_cast<double>(camera->Width()),
+               options.max_image_size / static_cast<double>(camera->Height()));
+  if (max_image_scale < 1.0) {
+    camera->Rescale(max_image_scale);
+  }
+}
+
 void UndistortReconstruction(const UndistortCameraOptions& options,
                              Reconstruction* reconstruction) {
   const auto distorted_cameras = reconstruction->Cameras();
-  for (auto& camera : distorted_cameras) {
-    reconstruction->Camera(camera.first) =
-        UndistortCamera(options, camera.second);
+  // Leave a camera unchanged exactly when the image undistortion also copies
+  // its images through unchanged, so that the reconstruction stays consistent
+  // with the output images (see COLMAPUndistorterImpl::Undistort). Both
+  // spherical cameras (e.g. EQUIRECTANGULAR, which have no pinhole image
+  // plane to undistort to) and already-undistorted perspective cameras are
+  // otherwise copied through as-is. When a max_image_size is requested, they
+  // are still resized to match the rescaled output images: perspective
+  // cameras through undistortion, spherical cameras by resizing to a smaller
+  // image of the same model.
+  const auto keep_unchanged = [&options](const Camera& camera) {
+    return camera.IsUndistorted() && options.max_image_size < 0;
+  };
+  for (const auto& camera_entry : distorted_cameras) {
+    if (keep_unchanged(camera_entry.second)) {
+      continue;
+    }
+    Camera& undistorted_camera = reconstruction->Camera(camera_entry.first);
+    if (camera_entry.second.IsSpherical()) {
+      // Only reached with a max_image_size: resize the spherical camera in
+      // place, keeping its model.
+      undistorted_camera = camera_entry.second;
+      RescaleToMaxImageSize(options, &undistorted_camera);
+    } else {
+      undistorted_camera = UndistortCamera(options, camera_entry.second);
+    }
   }
 
   for (const auto& distorted_image : reconstruction->Images()) {
-    auto& image = reconstruction->Image(distorted_image.first);
-    const auto& distorted_camera = distorted_cameras.at(image.CameraId());
-    const auto& undistorted_camera = reconstruction->Camera(image.CameraId());
+    Image& image = reconstruction->Image(distorted_image.first);
+    const Camera& distorted_camera = distorted_cameras.at(image.CameraId());
+    // Cameras left unchanged above need no observation rewrite.
+    if (keep_unchanged(distorted_camera)) {
+      continue;
+    }
+    const Camera& undistorted_camera =
+        reconstruction->Camera(image.CameraId());
+
+    if (distorted_camera.IsSpherical()) {
+      // Spherical models are only resized (see above). The equirectangular
+      // pixel<->angle map is linear in the image dimensions, so observations
+      // scale linearly. Unlike the perspective round-trip below, this stays
+      // valid for back-hemisphere observations, whose bearing has no forward
+      // normalized (CamFromImg) representation.
+      const double scale_x = static_cast<double>(undistorted_camera.Width()) /
+                             static_cast<double>(distorted_camera.Width());
+      const double scale_y = static_cast<double>(undistorted_camera.Height()) /
+                             static_cast<double>(distorted_camera.Height());
+      for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+           ++point2D_idx) {
+        Eigen::Vector2d& xy = image.Point2D(point2D_idx).XY();
+        xy.x() *= scale_x;
+        xy.y() *= scale_y;
+      }
+      continue;
+    }
+
     for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
          ++point2D_idx) {
       auto& point2D = image.Point2D(point2D_idx);

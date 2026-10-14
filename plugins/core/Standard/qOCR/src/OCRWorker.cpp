@@ -13,9 +13,11 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFont>
+#include <QImageReader>
 #include <QPainter>
 #include <QPolygonF>
 #include <cstring>
+#include <memory>
 
 #include "aicore/ocr_capi.h"
 #include "aicore/table_capi.h"
@@ -27,19 +29,14 @@ OCRWorker::OCRWorker(const Settings& settings, QObject* parent)
 }
 
 OCRWorker::~OCRWorker() {
-    releaseContextOnMainThread();
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
     if (m_cancelToken) {
         aicore_cancel_token_free(m_cancelToken);
         m_cancelToken = nullptr;
     }
-}
-
-void OCRWorker::releaseContextOnMainThread() {
-    // The context is created on the worker thread; destroy it here (main
-    // thread) so GPU teardown never races the render thread.
-    ecvAICoreRuntime::releasePending(m_pendingTableCtx,
-                                     &aicore_table_context_destroy);
-    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_ocr_context_destroy);
 }
 
 void OCRWorker::requestTaskCancel() {
@@ -59,6 +56,21 @@ void OCRWorker::run() {
         emit taskFinished(false);
         return;
     }
+
+    using OcrContext = std::unique_ptr<aicore_ocr_ctx,
+                                       decltype(&aicore_ocr_context_destroy)>;
+    using TableContext =
+            std::unique_ptr<aicore_table_ctx,
+                            decltype(&aicore_table_context_destroy)>;
+    OcrContext ocrCtx(nullptr, &aicore_ocr_context_destroy);
+    TableContext tableCtx(nullptr, &aicore_table_context_destroy);
+    auto finish = [&](bool success) {
+        // Backend buffers and leases are released on their owning worker
+        // thread before the device task lock and thread itself are released.
+        tableCtx.reset();
+        ocrCtx.reset();
+        emit taskFinished(success);
+    };
 
     emit taskStage(tr("Loading models…"), -1);
     emit logMessage(
@@ -90,21 +102,21 @@ void OCRWorker::run() {
         options.det_limit_type = 1;
         options.det_max_side = 960;
     }
-    m_pendingCtx = aicore_ocr_context_create(&options);
-    if (!m_pendingCtx) {
+    ocrCtx.reset(aicore_ocr_context_create(&options));
+    if (!ocrCtx) {
         emit logMessage(
                 tr("[qOCR] Model load failed: %1")
                         .arg(QString::fromUtf8(aicore_ocr_last_error())));
-        emit taskFinished(false);
+        finish(false);
         return;
     }
-    if (!aicore_ocr_context_ready(m_pendingCtx)) {
+    if (!aicore_ocr_context_ready(ocrCtx.get())) {
         emit logMessage(tr("[qOCR] Model context is not ready."));
-        emit taskFinished(false);
+        finish(false);
         return;
     }
     const QString resolvedDevice =
-            QString::fromUtf8(aicore_ocr_context_device(m_pendingCtx));
+            QString::fromUtf8(aicore_ocr_context_device(ocrCtx.get()));
     emit logMessage(tr("[qOCR] Models loaded on device: %1")
                             .arg(resolvedDevice.isEmpty() ? m_settings.device
                                                           : resolvedDevice));
@@ -118,20 +130,19 @@ void OCRWorker::run() {
         tableOptions.model_path = tableBytes.constData();
         tableOptions.device = deviceBytes.constData();
         tableOptions.n_threads = m_settings.threads;
-        m_pendingTableCtx = aicore_table_context_create(&tableOptions);
-        if (!m_pendingTableCtx ||
-            !aicore_table_context_ready(m_pendingTableCtx)) {
+        tableCtx.reset(aicore_table_context_create(&tableOptions));
+        if (!tableCtx || !aicore_table_context_ready(tableCtx.get())) {
             emit logMessage(
                     tr("[qOCR] Table model load failed: %1")
                             .arg(QString::fromUtf8(aicore_table_last_error())));
-            emit taskFinished(false);
+            finish(false);
             return;
         }
     }
 
     if (aicore_cancel_token_requested(m_cancelToken)) {
         emit logMessage(tr("[qOCR] Cancelled before inference."));
-        emit taskFinished(false);
+        finish(false);
         return;
     }
 
@@ -147,8 +158,8 @@ void OCRWorker::run() {
             break;
         }
         const QString name = QFileInfo(images[i]).fileName();
-        emit taskStage((m_pendingTableCtx ? tr("Text + tables %1/%2: %3")
-                                          : tr("Text %1/%2: %3"))
+        emit taskStage((tableCtx ? tr("Text + tables %1/%2: %3")
+                                 : tr("Text %1/%2: %3"))
                                .arg(i + 1)
                                .arg(total)
                                .arg(name),
@@ -157,7 +168,7 @@ void OCRWorker::run() {
         one.imagePath = images[i];
         OCRRunResult runResult;
         QString error;
-        if (!recognizeImage(m_pendingCtx, m_pendingTableCtx, one, m_cancelToken,
+        if (!recognizeImage(ocrCtx.get(), tableCtx.get(), one, m_cancelToken,
                             &runResult, &error)) {
             if (aicore_cancel_token_requested(m_cancelToken)) {
                 cancelled = true;
@@ -167,6 +178,12 @@ void OCRWorker::run() {
             emit logMessage(tr("[qOCR] %1: %2").arg(name, error));
             continue;
         }
+        // A cancel that lands after the last cancellation point still lets
+        // the frame finish; it must not reach the DB after the user stopped.
+        if (aicore_cancel_token_requested(m_cancelToken)) {
+            cancelled = true;
+            break;
+        }
         ++done;
         QString line = tr("[qOCR] %1/%2 %3: %4 region(s) in %5 ms [%6]")
                                .arg(i + 1)
@@ -175,7 +192,7 @@ void OCRWorker::run() {
                                .arg(runResult.boxes.size())
                                .arg(runResult.e2eMs, 0, 'f', 0)
                                .arg(runResult.resolvedDevice);
-        if (m_pendingTableCtx) {
+        if (tableCtx) {
             line += tr(", %1 table(s) in %2 ms")
                             .arg(runResult.tables.size())
                             .arg(runResult.tableMs, 0, 'f', 0);
@@ -193,7 +210,7 @@ void OCRWorker::run() {
                         .arg(failed)
                         .arg(cancelled ? tr(", cancelled") : QString()));
     }
-    emit taskFinished(done > 0 && failed == 0 && !cancelled);
+    finish(done > 0 && failed == 0 && !cancelled);
 }
 
 bool OCRWorker::recognizeImage(aicore_ocr_ctx* ctx,
@@ -203,8 +220,12 @@ bool OCRWorker::recognizeImage(aicore_ocr_ctx* ctx,
                                OCRRunResult* out,
                                QString* error) {
     // Borrowed, stride-aware image view (ecvAICoreRuntimeHelpers). The
-    // converted QImage must outlive the aicore_ocr_run call below.
-    QImage source(settings.imagePath);
+    // converted QImage must outlive the aicore_ocr_run call below. EXIF
+    // orientation is applied like ecvImage and cv2.imread, so boxes match
+    // the upright image the DB shows.
+    QImageReader reader(settings.imagePath);
+    reader.setAutoTransform(true);
+    QImage source = reader.read();
     if (source.isNull()) {
         *error = tr("Failed to load image: %1").arg(settings.imagePath);
         return false;
@@ -352,13 +373,6 @@ constexpr int kOfficialLineGap = 25;
 constexpr int kOfficialLongSide = 600;
 constexpr int kOfficialWrapUnits = kOfficialPanelWidth / kOfficialFontPx - 4;
 
-// str_count: CJK/fullwidth characters count 1, ASCII 0.5 (visual width).
-double officialVisualWidth(const QString& text) {
-    double w = 0.0;
-    for (const QChar c : text) w += (c.unicode() > 127) ? 1.0 : 0.5;
-    return w;
-}
-
 // The longest prefix whose visual width stays within `units` (the official
 // wrap slices by str_count units, not by character count).
 QString officialLeftByUnits(const QString& text, int units) {
@@ -382,12 +396,11 @@ QStringList officialFontFamilies() {
 }
 }  // namespace
 
-QImage OCRRender::officialVisualization(const OCRRunResult& result) {
+QImage OCRRender::overlayVisualization(const OCRRunResult& result) {
     if (result.sourceImage.isNull()) return QImage();
 
-    // Keep the source geometry intact. A stable index beside each quad joins
-    // this compact overlay to the scrollable result table without growing the
-    // image for every recognized line.
+    // The in-app/DB overlay preserves source geometry. Stable indices join
+    // quads to the scrollable result table without an unbounded text panel.
     QImage annotated = result.sourceImage.convertToFormat(QImage::Format_RGB32);
     QPainter painter(&annotated);
     QPen boxPen(QColor(220, 38, 38),
@@ -422,8 +435,6 @@ QImage OCRRender::officialVisualization(const OCRRunResult& result) {
         painter.setPen(boxPen);
     }
 
-    // Table cells: thin blue polygons (the PaddleX table_recognition cell
-    // visualization), drawn after the text so the indices stay readable.
     QPen cellPen(QColor(37, 99, 235), qMax(1, boxPen.width() / 2));
     painter.setPen(cellPen);
     for (const OCRTableResult& table : result.tables) {
@@ -436,4 +447,65 @@ QImage OCRRender::officialVisualization(const OCRRunResult& result) {
     }
     painter.end();
     return annotated;
+}
+
+QImage OCRRender::officialVisualization(const OCRRunResult& result) {
+    if (result.sourceImage.isNull()) return QImage();
+
+    QImage boxed = result.sourceImage.convertToFormat(QImage::Format_RGB32);
+    QPainter boxPainter(&boxed);
+    QPen officialPen(QColor(255, 0, 0), 2);
+    officialPen.setJoinStyle(Qt::RoundJoin);
+    boxPainter.setPen(officialPen);
+    boxPainter.setBrush(Qt::NoBrush);
+    QStringList lines;
+    int index = 0;
+    for (const OCRBoxResult& box : result.boxes) {
+        if (box.score < kOfficialDropScore) continue;
+        ++index;
+        QPolygonF polygon;
+        for (int c = 0; c < 4; ++c)
+            polygon << QPointF(box.quad[c][0], box.quad[c][1]);
+        boxPainter.drawPolygon(polygon);
+
+        QString remaining = QStringLiteral("%1: %2 %3")
+                                    .arg(index)
+                                    .arg(box.text)
+                                    .arg(box.score, 0, 'f', 3);
+        while (!remaining.isEmpty()) {
+            QString part = officialLeftByUnits(remaining, kOfficialWrapUnits);
+            if (part.isEmpty()) part = remaining.left(1);
+            lines.push_back(part);
+            remaining.remove(0, part.size());
+        }
+    }
+    boxPainter.end();
+
+    const QImage resized =
+            boxed.scaled(kOfficialLongSide, kOfficialLongSide,
+                         Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    const int linesPerPanel =
+            qMax(1, (resized.height() - 10) / kOfficialLineGap);
+    const int panelCount =
+            qMax(1, (lines.size() + linesPerPanel - 1) / linesPerPanel);
+    QImage output(resized.width() + panelCount * kOfficialPanelWidth,
+                  resized.height(), QImage::Format_RGB32);
+    output.fill(Qt::white);
+    QPainter painter(&output);
+    painter.drawImage(0, 0, resized);
+    QFont font;
+    font.setPixelSize(kOfficialFontPx);
+    qtCompatSetFontFamilies(font, officialFontFamilies());
+    painter.setFont(font);
+    painter.setPen(Qt::black);
+    for (int i = 0; i < lines.size(); ++i) {
+        const int panel = i / linesPerPanel;
+        const int row = i % linesPerPanel;
+        const int x =
+                resized.width() + panel * kOfficialPanelWidth + kOfficialFontPx;
+        const int y = 5 + kOfficialFontPx + row * kOfficialLineGap;
+        painter.drawText(x, y, lines.at(i));
+    }
+    painter.end();
+    return output;
 }

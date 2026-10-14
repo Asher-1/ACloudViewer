@@ -256,7 +256,7 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 RUN if [ "${PREBUILD_DEPS_ONLY}" = "OFF" ]; then \
         echo "Start Build ACloudViewer apps installer..." \
         && rm -rf ${ACloudViewer_BUILD}/* \
-        && WITH_RDB=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}; \
+        && WITH_RDB=ON NINJA_GRAPH_CHECK=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}; \
     fi
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
