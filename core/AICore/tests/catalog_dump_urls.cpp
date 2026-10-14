@@ -13,6 +13,7 @@
 #include <cstring>
 #include <string>
 
+#include "aicore/anycalib_capi.h"
 #include "aicore/asset_digests.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/gkd_capi.h"
@@ -130,6 +131,12 @@ void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_ocr_model_count(); ++i) {
         const aicore_ocr_model_entry* e = aicore_ocr_model_at(i);
         if (e) emitAsset("ocr", "ocr_models", e->filename, e->download_url);
+    }
+    for (int i = 0; i < aicore_anycalib_model_count(); ++i) {
+        const aicore_anycalib_model_entry* e = aicore_anycalib_model_at(i);
+        if (e)
+            emitAsset("anycalib", "anycalib_models", e->filename,
+                      e->download_url);
     }
     for (int i = 0; i < aicore_table_model_count(); ++i) {
         const aicore_table_model_entry* e = aicore_table_model_at(i);

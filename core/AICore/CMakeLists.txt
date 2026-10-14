@@ -21,6 +21,7 @@
 #   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
 #   src/tasks/loma/       — LoMa feature extraction and matching
 #   src/tasks/reid/       — appearance embeddings for multi-object tracking
+#   src/tasks/anycalib/   — AnyCalib single-image intrinsics (catalog; runtime gates pending)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -102,6 +103,8 @@ file(GLOB AICORE_TABLE_SOURCES CONFIGURE_DEPENDS ${AICORE_TABLE_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
+set(AICORE_ANYCALIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/anycalib)
+file(GLOB AICORE_ANYCALIB_SOURCES CONFIGURE_DEPENDS ${AICORE_ANYCALIB_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
@@ -175,6 +178,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_TABLE_SOURCES}
     ${AICORE_YOLO_SOURCES}
     ${AICORE_REID_SOURCES}
+    ${AICORE_ANYCALIB_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_GKD_SOURCES}

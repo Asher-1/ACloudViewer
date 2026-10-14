@@ -63,9 +63,18 @@ def parse_args() -> argparse.Namespace:
                         help="Record L3 metrics without applying thresholds; requires --l3")
     parser.add_argument("--seed", type=int,
                         help="Fixed mapper seed; required in L3 mode")
+    parser.add_argument("--pipeline", choices=("incremental", "global"),
+                        default="incremental",
+                        help="Sparse pipeline under comparison; the feature and "
+                             "matching stages are identical for both pipelines")
     parser.add_argument("--mapper-option", action="append", default=[],
                         metavar="KEY=VALUE",
                         help="Raw mapper option forwarded unchanged to both variants")
+    parser.add_argument("--candidate-mapper-option", action="append", default=[],
+                        metavar="KEY=VALUE",
+                        help="Extra mapper option applied to the candidate only, for "
+                             "candidate-side backends the upstream CLI does not expose "
+                             "(e.g. GlobalMapper.ra_backend); recorded in the report")
     parser.add_argument("--l3-thresholds", type=Path,
                         help="Calibrated JSON thresholds; required in L3 mode")
     parser.add_argument("--loma-variant", choices=("b", "b128", "r", "l", "g"),
@@ -323,12 +332,14 @@ def l3_configuration(args: argparse.Namespace,
         json.dumps(input_manifest, sort_keys=True).encode("utf-8")).hexdigest()
     return {
         "input_manifest_sha256": manifest_digest,
+        "pipeline": args.pipeline,
         "max_features": args.max_features,
         "camera_model": args.camera_model,
         "single_camera": args.single_camera,
         "sift_gpu": args.sift_gpu,
         "seed": args.seed,
         "mapper_options": sorted(args.mapper_option),
+        "candidate_mapper_options": sorted(args.candidate_mapper_option),
     }
 
 
@@ -447,12 +458,36 @@ def run_variant(args: argparse.Namespace, name: str, feature_type: str,
     if args.seed is not None:
         match += ["--random-seed", str(args.seed)]
 
-    sparse = base + ["sparse", "--database", str(database),
-                     "--image-path", str(args.images), "--output", str(sparse_root)]
-    if args.seed is not None:
-        sparse += ["--random-seed", str(args.seed)]
-    for mapper_option in args.mapper_option:
-        sparse += ["--mapper-option", mapper_option]
+    if args.pipeline == "global":
+        # The global mapper is the stage under comparison and both COLMAP
+        # implementations expose the identical `global_mapper` CLI, so it is
+        # invoked directly instead of through the harness sparse command
+        # (which selects only incremental/hierarchical). Feature extraction
+        # and matching above stay identical to the incremental pipeline.
+        sparse = [str(colmap_binary), "global_mapper",
+                  "--database_path", str(database),
+                  "--image_path", str(args.images),
+                  "--output_path", str(sparse_root)]
+        # Both global mapper CLIs reject a missing output directory
+        # (ExistsDir check) instead of creating it like the incremental
+        # mapper does.
+        sparse_root.mkdir(parents=True, exist_ok=True)
+        if args.seed is not None:
+            sparse += ["--GlobalMapper.random_seed", str(args.seed)]
+        for mapper_option in args.mapper_option:
+            key, _, value = mapper_option.partition("=")
+            sparse += [f"--{key}", value]
+        if name == "candidate":
+            for mapper_option in args.candidate_mapper_option:
+                key, _, value = mapper_option.partition("=")
+                sparse += [f"--{key}", value]
+    else:
+        sparse = base + ["sparse", "--database", str(database),
+                         "--image-path", str(args.images), "--output", str(sparse_root)]
+        if args.seed is not None:
+            sparse += ["--random-seed", str(args.seed)]
+        for mapper_option in args.mapper_option:
+            sparse += ["--mapper-option", mapper_option]
     stages = {
         "feature_extraction_s": run_stage(
             extract, workspace / "extract.log", colmap_binary, args.runtime_library_dir),
@@ -531,6 +566,15 @@ def main() -> int:
         raise SystemExit(f"refusing to overwrite non-empty output: {args.output}")
     if args.l3_calibrate and not args.l3:
         raise SystemExit("--l3-calibrate requires --l3")
+    if args.pipeline == "global":
+        missing_binaries = [name for name, value in (
+                                ("--acv-colmap", args.acv_colmap),
+                                ("--upstream-colmap", args.upstream_colmap))
+                            if value is None]
+        if missing_binaries:
+            raise SystemExit(
+                "--pipeline global invokes each COLMAP binary directly and "
+                "requires " + ", ".join(missing_binaries))
     if args.l3:
         required = {
             "--acv-colmap": args.acv_colmap,
@@ -573,6 +617,7 @@ def main() -> int:
 
     started = time.perf_counter()
     configuration = {
+        "pipeline": args.pipeline,
         "max_features": args.max_features,
         "camera_model": args.camera_model,
         "single_camera": args.single_camera,

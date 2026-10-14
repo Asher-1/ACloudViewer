@@ -151,7 +151,7 @@ cmake --build build_app --target AICore aicore-contract-tests -j4
 
 Use only `AICore_*` public options. Internal `GGML_*` cache entries are derived
 by `cmake/AICoreOptions.cmake`; do not pass them as user configuration.
-The unified library exposes all 16 tasks. Task-specific plugin switches only
+The unified library exposes all 17 tasks. Task-specific plugin switches only
 control their Qt consumers; they do not remove task contracts from AICore.
 
 ggml is an ExternalProject. Persistent modifications are ordered unified diff

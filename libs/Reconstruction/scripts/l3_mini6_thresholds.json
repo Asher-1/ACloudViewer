@@ -9,6 +9,7 @@
   "point_nn_p95": 1e-08,
   "configuration": {
     "input_manifest_sha256": "4bcb9b883f732a50d60b9e8c52f617645fe26f2273a688f32c0e9dadd2a17f8c",
+    "pipeline": "incremental",
     "max_features": 2048,
     "camera_model": "SIMPLE_RADIAL",
     "single_camera": true,
@@ -17,7 +18,8 @@
     "mapper_options": [
       "Mapper.min_num_matches=20",
       "Mapper.num_threads=1"
-    ]
+    ],
+    "candidate_mapper_options": []
   },
   "provenance": {
     "fixture": "dataset_monstree/mini6 (configuration above, enforced by the runner). A seeded run also passes FeatureExtraction.num_threads 1 (sorted image ids) and TwoViewGeometry.random_seed.",

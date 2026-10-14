@@ -2523,11 +2523,11 @@ which write into the existing pointee. Evidence:
 
 ### Pending follow-ups from P1-ra
 
-- **L3 gate for global mapper with CERES backend**: the current L3 runner
-  only drives the incremental mapper. The global-mapper path (which is the
-  only consumer of `RotationAveragingBackend::CERES` in production) has no
-  L3 coverage yet. Need a separate runner invocation or a `--pipeline
-  global` flag on `run_loma_sfm_comparison.py`.
+- **L3 gate for global mapper with CERES backend** — **完成(2026-10-14,见下方
+  批次 AD)**:`run_loma_sfm_comparison.py` 新增 `--pipeline global`(直调两侧
+  `global_mapper` 命令)与 `--candidate-mapper-option`(fork 侧专用后端键);默认
+  后端 gate(`l3_mini6_thresholds_global.json`)与 CERES 变体 gate
+  (`l3_mini6_thresholds_global_ceres.json`)均 **PASS / violations=[]**。
 
 ## P1-db — DB schema 4030001 and migration of `f1ea91d0` (PENDING)
 
@@ -2551,7 +2551,7 @@ implementation under `src/tasks/`, monolithic CMake/test closure, catalog/
 digest, probe, manifest, ABI tests. Plugin consumer surface and validation
 matrix.
 
-## Deps — PoissonRecon / METIS upgrade justification (PENDING)
+## Deps — PoissonRecon / METIS upgrade justification(完成 2026-10-14,裁定:均不升级,见批次 AD)
 
 Provide evidence-based justification before upgrading PoissonRecon or
 migrating to METIS. No change without a named problem that the upgrade
@@ -2814,4 +2814,268 @@ vendor-move×system-container 缩小为 vendor-config×system-serialization。**
   `--upstream-revision` 仍钉 3e5c915c(5 提交中无增量管线路径改动,
   计数逐位一致佐证),升级基线 worktree 到 6db3867f 属独立小批。
 
+## 批次 AD:L3 global-mapper 运行器 + METIS/PoissonRecon 论证收口(2026-10-14)
 
+### 1. `run_loma_sfm_comparison.py` 新增 `--pipeline {incremental,global}`
+
+- 信息流不变:同一特征 DB → 两个二进制各自跑 mapper → 比较稀疏模型;
+  唯一 delta 是 mapping 阶段 argv。global 路径**直调两侧 `global_mapper`
+  命令**(fork:1029 与 upstream:393 的 CLI 逐字同构:`AddDatabaseOptions/
+  AddImageOptions/output_path/AddGlobalMapperOptions`),不经 harness
+  (`sparse --method` 仅支持 incremental/hierarchical,扩展它跨仓零 gate 收益);
+  extract/match 阶段与 incremental 完全一致(同 seed、同 SIFT argv),
+  最大化隔离 mapper 比较。
+- `--GlobalMapper.random_seed` 由 runner 从 `--seed` 注入;线程/匹配数等经
+  `--mapper-option`(KEY=VALUE → `--KEY VALUE`)透传。
+- 新增 `--candidate-mapper-option`:仅作用于候选侧,用于上游 CLI 不暴露的
+  fork 侧后端键(实测:上游 global mapper 的 rotation averaging 是
+  `RotationEstimatorOptions`,**无 backend CLI 键**;`GlobalMapper.ra_backend`
+  是 fork 侧生产键)。选项写入报告与阈值绑定配置。
+- global 路径预建 `output_path`(两侧 `ExistsDir` 检查拒绝缺失目录,而
+  incremental mapper 自建——首跑踩坑已修)。
+- 阈值绑定强化:`l3_configuration` 新增 `pipeline` 与
+  `candidate_mapper_options` 键;既有 `l3_mini6_thresholds.json` 补记
+  `pipeline: "incremental"`(保持旧 gate 可复现)。
+
+### 2. 定标与 gate 证据(mini6,seed 20261009,SIFT CPU,2048 特征,
+SIMPLE_RADIAL,GlobalMapper.num_threads=1 / min_num_matches=20)
+
+- **位稳定实证**:默认后端连跑 3 次,两侧 model_txt 哈希逐 run 不变
+  (candidate `bd86dc20ff4d9edf…`,baseline `2f9a3624c1557c3c…`)。
+- **跨二进制 delta(默认后端)**:registered 6/6、points **397/397**、
+  observations **1256/1256**、mtl 逐位相同(3.163727959697733)、rotation p95
+  **0.0**、center p95 7.17e-14、point-NN p95 8.46e-12、rms 相对差 1.01e-11
+  ——仅 final-BA 浮点残差级。
+- **阈值方法学修正**:原"中点规则"以双精度分辨率作噪声底时,阈值
+  (3e-13)会压在实测分歧(1.01e-11)之下——自相矛盾。修正:该比较的
+  有效噪声底 = 实测跨二进制分歧(位稳定可复现,非 run 噪声);上界 =
+  本 fixture 上已知最小真实算法分歧(std::unordered 时代实测,真实回归
+  预期出现在其量级)。阈值 = sqrt(下界×上界):
+  `l3_mini6_thresholds_global.json`:rms 3e-7 / center 5e-9 / rotation 1e-4 /
+  point-NN 5e-7(观测值距上界 4-7 个数量级)。
+- **正式 gate**:`build_app/Testing/l3-global-gate-final/comparison.json`
+  **PASS / violations=[]**(exit 0)。
+- **CERES 变体**(fork 生产路径覆盖):`--candidate-mapper-option
+  GlobalMapper.ra_backend=CERES`,2 次连跑位稳定;结构与上游完全一致
+  (6/397/1256/mtl 逐位同/rotation 0.0),delta = center p95 2.34e-8、
+  point-NN p95 1.33e-6、rms 相对差 9.82e-7(BA 残差级,距上界 2-4 个
+  数量级)。`l3_mini6_thresholds_global_ceres.json` 同规则定标
+  (rms 8e-5 / center 3e-6 / rotation 1e-4 / point-NN 2e-4),正式 gate
+  `build_app/Testing/l3-global-ceres-gate-final/comparison.json`
+  **PASS / violations=[]**。provenance 明示:这是 fork CERES 生产路径
+  对照上游 global pipeline 的门,不是后端 parity(上游无此键)。
+- **incremental gate 回归复验**:`build_app/Testing/l3-incremental-recheck/
+  comparison.json` **PASS / violations=[]**(runner 与旧阈值文件变更后
+  旧行为可复现)。
+
+### 3. METIS / PoissonRecon 升级论证收口(裁定:均不升级)
+
+- **METIS**:fork 用 vendored Graclus 1.2(`lib/Graclus` 含 metisLib,
+  `GraclusGraph`),upstream 用 system METIS(`metis.h`,idx_t ABI,
+  `METIS_PartGraphKway`)。迁移成本 = 引入 idx_t ABI 耦合 + 层级管线
+  分割迭代序变化(仅 hierarchical 管线可观测,mini6 不覆盖);收益 =
+  **无具名问题**——台账无任何针对 hierarchical 分割的缺陷/精度/性能
+  记录。裁定:保留 Graclus;出现具名 hierarchical 缺陷或上游 API 强制
+  依赖时再议。
+- **PoissonRecon**:fork 钉 Open3D-PoissonRecon@6ddec9a6(Asher-1 镜像 +
+  SHA256),服务 qPoissonRecon(点云→网格,CloudCompare 侧);**COLMAP
+  对齐面不消费 PoissonRecon**(upstream colmap 依赖树无此项)。台账无
+  具名缺陷。裁定:保留现钉版本;出现具名缺陷/特性需求时再议。
+- 与 Batch Z/Mapper closure 记录的"intentional Graclus/METIS dependency
+  split"一致,本节将其升级为显式决策记录。
+
+### 4. 本批改动面
+
+- `libs/Reconstruction/scripts/run_loma_sfm_comparison.py`(+51 行:
+  `--pipeline`/`--candidate-mapper-option`/global 直调路径/output_path
+  预建/配置绑定键);
+- 新增 `scripts/l3_mini6_thresholds_global.json`、
+  `scripts/l3_mini6_thresholds_global_ceres.json`;
+- `scripts/l3_mini6_thresholds.json` 补记 `pipeline`/`candidate_mapper_options`
+  绑定键(定标数据不变)。
+- 无生产 C++ 改动;无新增依赖;Ubuntu 22.04/24.04 兼容面不变
+  (Boost>=1.74 守卫已由批次 AC 固化)。
+
+
+
+## 批次 AE:AnyCalib AICore 化——第一增量(转换器与资产)(2026-10-14)
+
+### 1. 网络与合同取证(决定实现形态的实证)
+
+- 上游 `scripts/anycalib/export_onnx.py`(附带 checkout):网络 = **DINOv2
+  ViT-L/14 骨干 + 轻 DPT 解码器 + 凸切线头**;输入 `image` f32
+  [1,3,322,322] RGB∈[0,1](ImageNet 归一化在图内);输出 `rays`
+  [1,322²,3] + `tangent_coords` [1,322²,2]。
+- fork 侧 `calibration/anycalib.cc` 已完整移植**除神经前向前后的全部胶水**
+  (`PrepareAnyCalibInput` 预处理 + `FitCameraFromRays` 拟合,后者
+  ray_fitting_test 31/31)——**AICore task 的本质 = 单次前向替换 onnx 块**,
+  ABI 面极小(图进张量出)。
+- ONNX 实测(opset 18):424 初始化器 = 320.3M 参数(1221.7 MiB fp32,
+  与 release content-length 1282571813 一致);算子集 Add/MatMul/Mul/
+  Transpose/Gather/Reshape/LayerNormalization/Conv/Softmax/Erf/Relu/
+  Resize/Slice/Concat/Pad/ReduceSum/ReduceL2/Sin/Cos——全部在 ggml+
+  AICore 既有算子覆盖内(DA3 已跑 DINOv2 族)。
+- 架构参数实测:24 块、embed 1024、heads 16、mlp 4096、**无 register
+  tokens**(pos_embed 解析后 530 = 1 cls + 529 patch;canvas 1370 =
+  1 + 37²,bicubic half_pixel 降到 23×23)、layer-scale(ls1/ls2)存在、
+  QKV/Proj/FC1/FC2 为融合匿名权重(val_*,需按后继 bias 名回推归属)。
+
+### 2. 本增量交付
+
+- **转换器** `core/AICore/tools/convert_anycalib_onnx_gguf.py`(OCR 转换器
+  同型:tensor 名 verbatim 保留在 `anycalib.` 命名空间;匿名融合权重按
+  MatMul→Add(bias) 序列回推并强制全解析,否则中止;pos-embed 解析张量
+  由 ORT 跑完整图+追加 `cat_1` 额外输出取得——完整图 ORT 加载实证通过,
+  精确性由构造保证;canvas 张量保留作 provenance)。
+- **资产**(pinned catalog 布局 `~/cloudViewer_data/extract/anycalib_models/`):
+  `anycalib_gen_v1.0.0_322x322.f32.gguf`(1223.8 MiB)与
+  `.f16.gguf`(611.9 MiB),各 396 张量(24 块 × 14 + patch_embed +
+  pos_embed×2 + mean/std + decoder/head 全集);
+  源 ONNX sha256 `a3afb0d2…` 与 resources.h 钉值逐位一致。
+- **golden 参考** `anycalib_gen_v1.0.0_322x322_golden.npz`:固定种子
+  (20261014)随机图 [1,3,322,322] + ORT `rays`/`tangent_coords` 输出,
+  供后续 C++ ggml 图的 task 专属数值门。
+- GGUF 元数据:`anycalib.arch/version/source_sha256/source_opset/
+  patch_size/image_size/vit.{embed_dim,depth,num_heads,mlp_hidden,
+  num_prefix_tokens,pos_embed_canvas_rows}/img.{mean,std}/
+  head.{rays_dim,tangent_dim}`。
+
+### 3. 下一增量(独立批次,未开始)
+
+按 AICore 合同五项清单完成 task 化:
+
+1. `core/AICore/include/aicore/anycalib_capi.h`(borrowed image_view 进,
+   rays/tangent typed 结果出,共用 pipeline_timings);
+2. `core/AICore/src/tasks/anycalib/`:`model_catalog.cpp`(stable URL =
+   upstream release asset,destination `anycalib_models/`,f16/f32 档)+
+   ggml 图(patch embed→24 ViT 块[复用 depth/vit_block 形态]→DPT
+   解码器[4×reassemble+fusion,含 4 处 linear Resize 的 half_pixel 双线性
+   等价实现]→tangent 头→归一化)+ capi.cpp;
+3. `asset_digests.h` SHA-256 条目 + `test_catalog_dump_urls --json` 接入
+   自动下载校验;
+4. task 探针(对 golden npz 数值门)+ CMake target +
+   `validation_manifest.json` 行(backend/pipeline/quantization 覆盖);
+5. runner 测试 + consumer 接线:`CreateAnyCalibCalibrator` 的
+   `COLMAP_ONNX_ENABLED` throw 分支改走 AICore 路径,un-gate anycalib_test
+   的 3 个 SKIP;qAnyLabeling 类插件消费面随后评估。
+
+### 4. 本增量环境备注
+
+- pyenv 3.12 增装 `onnx 1.23.2 / onnxruntime 1.31.0 / gguf`(仅转换主机
+  需要;运行时零 ORT 依赖,与 OCR/LoMa 转换器同约定)。
+- 教训:PyTorch 追踪图的 bicubic Resize 在 ORT 的 3-D/降采样+antialias=0
+  组合不可独立执行,但完整图可通过校验——子图重建不如"全图追加输出"
+  简单且精确。
+
+## 批次 AF:AnyCalib task 化——catalog-first 落地 + 图实现规格定稿(2026-10-14)
+
+### 本批落地(OCR 首次落地同型:catalog 先行,runtime gates 待图实现)
+
+1. **公共 ABI** `core/AICore/include/aicore/anycalib_capi.h`:模型目录
+   存取(`aicore_anycalib_model_count/at/by_filename`)+ 推理契约全文
+   (run 签名/所有权/typed results/timings/shutdown)以注释定稿——
+   网络输入 = 借用只读 f32 CHW 3×322×322 RGB[0,1](与导出 ONNX "image"
+   逐字同合同;裁剪/旋转/缩放几何记账留 fork 侧 AnyCalibInput,与
+   LightGlue/LoMa 描述子输入同类 ABI 边界,非解码图像)。
+2. **目录** `src/tasks/anycalib/model_catalog.cpp`:变体
+   `anycalib_gen_v1.0.0_322x322` × {f32,f16}(Q8_0 待 manifest 量化门后
+   再加),下载基 `…/cloudViewer_downloads/releases/download/anycalib/`。
+3. **digest** `asset_digests.h` 三行(f32 `4f2ef708…`、f16 `e7391f69…`、
+   ref.npz `91e71591…`,均为本机产出实测值;资产已就位
+   `~/cloudViewer_data/extract/anycalib_models/`)。
+4. **catalog dump** `tests/catalog_dump_urls.cpp` 增加 anycalib 发射块;
+   实测 dump 输出 2 行、URL/sha 正确。
+5. **CMake** `AICORE_ANYCALIB_SRC_DIR` + GLOB + 主库源表;`AICore` 构建
+   exit 0。
+
+### 验证与边界
+
+- `check_capi_coverage.py` PASS(95% 目标);catalog/coverage ctest 全绿;
+  `test_catalog_remote_assets` 对 anycalib 两 URL 404 —— **release 发布
+  步骤待用户执行**:将 `~/cloudViewer_data/extract/anycalib_models/` 三件
+  (f32/f16/ref.npz)按文件名原样发布到 cloudViewer_downloads `anycalib`
+  tag 后该测试转绿。此为唯一未闭合项,非代码缺陷。
+
+### 图实现规格(下轮按此直写 C++,节点级证据见 .qoder/tmp dump)
+
+- 输入 mean/std 图内归一 → patch embed Conv14/14(im2col,[1024,588]×
+  [588,529])+bias → cls(pos_embed 行 0)前插 → [1024,530] + 解析后
+  pos_embed(GGUF `backbone.pos_embed` 已含)。
+- 24 块:LN(eps 1e-6)→ 融合 QKV [3072,1024]+b → 16 头 SDPA(参照
+  rfdetr/dinov2.cpp sdpa_attention 形态,行切片取 q/k/v)→ proj+b →
+  ×ls1 → 残差;LN2 → fc1+b → GELU(Erf 精确型:x/2*(1+erf(x/√2)),
+  ONNX 节点序 Div/Erf/Add/Mul/Mul)→ fc2+b → ×ls2 → 残差。
+- 抽层 = block [5,11,17,23](0 基 [4,10,16,22])mlp 残差输出,去 cls,
+  reshape [1,1024,23,23]。
+- reassemble:4× project 1×1(→128/256/512/1024)→ 4× bilinear ×2
+  (23→46,half_pixel,antialias=0)→ 4× conv3×3 pad1 →256。
+- fusion(粗→细):unit2(F0 作用于 conv2d_8)→add_49;F1:unit1(conv2d_7)
+  +add_49→add_51→unit2→add_52;F2 同型(conv2d_6)→add_55;F3(conv2d_5)
+  →add_58。res unit = conv-relu-conv-relu+skip。
+- decoder.project 3×3 pad1 256→256 + relu → relu_14。
+- 头两支:tangent_head.0 3×3 256→128+relu+tangent_head.2 1×1→2ch;
+  upsampling_weights_head.0 3×3 256→128+relu+.2 1×1→441ch →
+  reshape [1,1,9,7,7,46,46] → softmax(dim=9)。
+- 凸上采样 46→322:tangent 2ch → Pad(pads=[1,1,1,1] 于 H/W,**mode 待查**,
+  dump 节点 832)→48×48 → 9 个 3×3 邻域 view(dx,dy∈{0,1,2})→ reshape
+  [2,9,1,1,46,46] → ×softmax 权重(广播)→ 9 轴求和(permute 后
+  sum_rows)→ [1,2,7,7,46,46] → permute [0,1,4,2,5,3] → reshape
+  [1,2,322,322]。
+- 射线归一化:L2 范数(逐像素 2ch)→ Where(norm<=0,1,norm)(ggml 用
+  less+mul/add 组合)→ ray=[sin(θ)·t/‖t‖, cos(θ)],θ=‖t‖;输出
+  rays [103684,3] / tangent [103684,2]。
+- GGUF 张量名 verbatim(转换器已保证);layout 注意 gguf ne 反序
+  (numpy [530,1024] → ggml ne=[1024,530]),mul_mat 前按需 transpose。
+
+### 下一增量(图落地后的闭合项)
+
+cap session(graph.cpp/capi.cpp/loader)→ golden 数值门 probe(tests/
+anycalib/,读 ref.npz,f16/rms 阈值)→ CMake probe target +
+validation_manifest.json 行(结构化 accuracy,引用 ref.npz)→
+consumer 接线(CreateAnyCalibCalibrator onnx throw 分支改走 AICore)
+→ un-gate anycalib_test 3 SKIP → 全量 gate。
+
+## 批次 AE:vendor Boost nvp 前向声明 —— 移除 Boost>=1.74 守卫,支持面回落 1.71(2026-10-14)
+
+- **背景**:AB/AC 批次的收敛裁定(Boost < 1.74 FATAL_ERROR 守卫)导致 CI
+  cpu-focal 在 configure 阶段即死(NINJA_GRAPH_CHECK),focal 被判不支持。
+  用户裁定改为正向修复崩溃本体。
+- **根因(精确定位,非 exception specifier 宏偏斜)**:vendor
+  `boost/unordered` 1.92 的 9 处头无条件包含 vendor
+  `boost/core/serialization.hpp` → 其 `#include <boost/core/nvp.hpp>` 定义
+  `boost::serialization::nvp`(1.92 新形状,守卫 `BOOST_CORE_NVP_HPP`);
+  系统 Boost 1.71 的 `boost/serialization/nvp.hpp` 在**不同守卫**
+  (`BOOST_SERIALIZATION_NVP_HPP`)下自定义旧形状 `struct nvp` → 同一 TU
+  两次定义,redefinition 于 nvp.hpp:37/81(1.74+ 的 serialization/nvp.hpp
+  已改为包含 core/nvp.hpp,故 1.74/1.83 不炸)。探针
+  `.qoder/tmp/boost_mix_pt.cc`(graph+property_tree)即最小复现。
+- **修复(单文件)**:vendor `core/serialization.hpp` 不再 include
+  `core/nvp.hpp`,改为 `template<class T> class nvp;` 前向声明 +
+  `boost::core::make_nvp` 本地定义(构造 `serialization::nvp<T>`,仅实例化
+  于实际 serialize 路径——全仓无消费者)。nvp 定义权交还系统:1.71 由
+  serialization/nvp.hpp 定义,1.74+ 经其自带 include 落到 vendor
+  core/nvp.hpp——与既有行为一致。任何顺序、任何版本均恰好一次定义。
+- **验证**:①1.71 探针×3(pt、order2、含 CGAL 全探针)0 error;②真实
+  focal 依赖镜像 cloudviewer-deps:develop-ubuntu20.04-cuda12.6.3
+  compile+link+run PASS;③1.74 全量 make -j20 100% 0 error;④L3 固定
+  种子门禁(旧参数)verdict PASS、violations=[]。
+- **处置**:libs/Reconstruction/CMakeLists.txt 守卫删除,注释改为记录
+  修复;src/CMakeLists.txt vendor 闭包注释同步(支持面 floor 1.71)。
+  `.qoder/tmp/boost171/`(1.71 头文件)与探针保留为复验资产。
+
+### 批次 AF 补记:anycalib release 发布与全链验证(2026-10-14)
+
+- **release**:Asher-1/cloudViewer_downloads tag `anycalib`(release id
+  412539810),资产三件按名上传并经 API state=uploaded 核对:
+  f32 1283221440 B、f16 641624640 B、ref.npz 2955361 B(大文件经
+  `curl -T` 流式上传规避 --data-binary OOM);release body 记录源 ONNX
+  sha、转换器与 ref.npz 用途。
+- **验证**:`test_catalog_remote_assets` **Passed**(47.01s);
+  `check_catalog_assets.py` **522/522 catalog URLs OK**(520→522);
+  三 URL 公网 200。
+- **文档依赖更新**:core/AICore/CMakeLists.txt 任务注释表、README.md
+  "exposes all 16 tasks"→17、docs/ARCHITECTURE.md 任务层计数 16→17。
+- **q8_0 裁定(记录于目录注释)**:任务尚无 ggml 图与数值门,合同要求
+  量化档必须由 task 专属 probe 背书后方可发布;AnyCalib 为单图一次前向
+  (非逐帧),尚无显存/延迟具名诉求;f16(612 MiB)已覆盖推荐档。q8 随
+  图落地 + golden 门通过后按 LoMa/OCR 同型补发并增目录行。

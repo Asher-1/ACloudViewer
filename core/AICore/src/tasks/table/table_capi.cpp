@@ -24,6 +24,7 @@
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <deque>
 #include <new>
@@ -238,11 +239,18 @@ aicore_table_result* aicore_table_run(aicore_table_ctx* ctx,
         setLastError("table: run called with an invalid context or image");
         return nullptr;
     }
-    if (options && (options->struct_size < sizeof(aicore_table_run_options) ||
+    if (options && (options->struct_size < offsetof(aicore_table_run_options,
+                                                    fallback_region_mask) ||
                     options->abi_version != AICORE_TABLE_ABI_VERSION)) {
         setLastError("table: invalid run options (struct_size/abi_version)");
         return nullptr;
     }
+    // Callers compiled against the pre-fallback header pass the old struct
+    // size; the trailing field reads as 0 (upstream behavior).
+    const uint32_t fallbackMask =
+            options && options->struct_size >= sizeof(aicore_table_run_options)
+                    ? options->fallback_region_mask
+                    : 0u;
     aicore::img::Image src;
     if (!aicore::img::image_from_view(*image, src)) {
         setLastError("table: unsupported or empty image view");
@@ -289,6 +297,37 @@ aicore_table_result* aicore_table_run(aicore_table_ctx* ctx,
                 y1 = std::max(y1, reg->quad[k][1]);
             }
             addRegion(x0, y0, x1, y1, i);
+        }
+        if (regions.empty() && fallbackMask != 0) {
+            // Class fallback: CDLA labels some synthetic-border tables
+            // "figure"/"text"; accept the single best-scoring region whose
+            // class is in the caller's mask, only when no "table" region
+            // exists so pages with real tables keep the upstream behavior.
+            const aicore_ocr_region* best = nullptr;
+            int bestIndex = -1;
+            for (int i = 0; i < n; ++i) {
+                const aicore_ocr_region* reg =
+                        aicore_ocr_region_at(ocr_result, i);
+                if (!reg || reg->class_id > 31 ||
+                    (fallbackMask & (1u << reg->class_id)) == 0)
+                    continue;
+                if (minScore > 0.0f && reg->score < minScore) continue;
+                if (!best || reg->score > best->score) {
+                    best = reg;
+                    bestIndex = i;
+                }
+            }
+            if (best) {
+                float x0 = best->quad[0][0], y0 = best->quad[0][1];
+                float x1 = x0, y1 = y0;
+                for (int k = 1; k < 4; ++k) {
+                    x0 = std::min(x0, best->quad[k][0]);
+                    y0 = std::min(y0, best->quad[k][1]);
+                    x1 = std::max(x1, best->quad[k][0]);
+                    y1 = std::max(y1, best->quad[k][1]);
+                }
+                addRegion(x0, y0, x1, y1, bestIndex);
+            }
         }
     } else {
         // Whole-image table: the reference box is [0, 0, w - 1, h - 1] and

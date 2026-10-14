@@ -37,6 +37,20 @@ scored here (``--paddle-predictions``), or its pinned means are supplied
 One JSON summary line per row is printed (``validate_all.py`` generic
 parser); the full report with per-image scores goes to ``--output``.
 The exit code is non-zero when any row fails its gate.
+
+Composed-page rows (``--layout-quant``) score the nominal draw by default.
+``--jitter-ensemble`` instead re-runs the whole page at integer shifts
+(-1,-1), (0,0), (+1,+1) and reports per-page means (a table missed at an
+offset scores 0 there). The composed chain is knife-edge sensitive: a
+sub-pixel layout-region delta crosses the int-truncation crop boundary and
+flips the SLANet structure decode (measured: 0.3 px -> 13x3 -> 13x4 columns,
+-0.22 TEDS on one pinned page), so a single draw measures which pages happen
+to sit on a decode boundary. The ensemble measures placement robustness
+instead; measured on the pinned 100-page set it costs f32 -0.009 TEDS and
+q8_0 -0.008 (f32 0.5432 -> 0.5344, q8_0 0.5413 -> 0.5329), i.e. the gap
+between quantizations shrinks to ~0.0015 while the absolute level sits well
+below a pinned single-draw Paddle reference - compare it only against a
+Paddle baseline drawn under the same protocol.
 """
 
 from __future__ import annotations
@@ -58,6 +72,11 @@ TEDS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TEDS)
 
 QUANTS = ("f32", "f16", "q8_0")
+
+# Composed-page placement ensemble. The diagonal integer shifts land the
+# layout box on both the x and the y int-truncation boundary of the crop,
+# which is where the structure decode flips.
+JITTER_OFFSETS = ((-1, -1), (0, 0), (1, 1))
 
 
 def sha256_file(path: Path) -> str:
@@ -118,9 +137,16 @@ def score(predictions: dict[str, str], truth: dict[str, str]) -> dict:
             "per_image": per_image}
 
 
-def run_bench(args, backend: str, quant: str, truth: dict[str, str],
-              boxes: dict[str, list[float]],
-              environment: dict[str, str]) -> tuple[dict[str, str], dict]:
+def _run_bench_images(args, backend: str, quant: str, environment: dict[str, str],
+                      images: dict[str, str], boxes: dict[str, list[float]],
+                      raw_path: Path) -> tuple[dict[str, str], int, dict]:
+    """Run bench_table over an explicit {name: image_path} list.
+
+    Returns ({name: predicted html}, pages whose best region IoU >= 0.5,
+    bench summary). With `boxes`, the scored table is the predicted region
+    with the highest IoU against the (already offset) table_box; a miss
+    scores an empty prediction.
+    """
     table_model = args.models_dir / f"slanet-plus-table-{quant}.gguf"
     det_model = args.models_dir / f"ppocr-det-ch-{args.ocr_quant}.gguf"
     rec_model = args.models_dir / f"ppocr-rec-ch-{args.ocr_quant}.gguf"
@@ -130,8 +156,8 @@ def run_bench(args, backend: str, quant: str, truth: dict[str, str],
     for model in models:
         if not model.is_file():
             raise FileNotFoundError(model)
-    list_path = args.output / f"images_{backend}_{quant}.txt"
-    list_path.write_text("".join(str(args.image_root / name) + "\n" for name in truth),
+    list_path = raw_path.with_name(raw_path.stem + "_list.txt")
+    list_path.write_text("".join(path + "\n" for path in images.values()),
                          encoding="utf-8")
     command = [str(args.bench), "--table", str(table_model), "--det", str(det_model),
                "--rec", str(rec_model), "--device", backend,
@@ -141,14 +167,15 @@ def run_bench(args, backend: str, quant: str, truth: dict[str, str],
                "--list", str(list_path)]
     if args.layout_quant:
         command += ["--layout", str(models[3]), "--layout-regions"]
+    if args.bench_region_fallback_mask:
+        command += ["--region-fallback-mask", str(args.bench_region_fallback_mask)]
     completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, env=environment, check=False)
-    raw = args.output / f"aicore_{backend}_{quant}.jsonl"
-    raw.write_text(completed.stdout, encoding="utf-8")
+    raw_path.write_text(completed.stdout, encoding="utf-8")
     if completed.returncode:
         raise RuntimeError(f"bench_table failed ({completed.returncode}): "
                            f"{' '.join(command)}\n{completed.stderr[-4000:]}")
-    root = str(args.image_root) + os.sep
+    path_to_name = {path: name for name, path in images.items()}
     predictions: dict[str, str] = {}
     summary: dict = {}
     found = 0
@@ -159,8 +186,12 @@ def run_bench(args, backend: str, quant: str, truth: dict[str, str],
         if record.get("summary"):
             summary = record
             continue
-        name = record["image"][len(root):] if record["image"].startswith(root) \
-            else record["image"]
+        name = path_to_name.get(record["image"])
+        if name is None:  # bench echoes the path verbatim; tolerate a
+            name = path_to_name.get(str(Path(record["image"]).resolve()))  # normalized form
+        if name is None:
+            raise RuntimeError(f"bench_table reported unknown image "
+                               f"{record['image']!r}")
         tables = record["tables"]
         if name in boxes:
             # Composed page: the predicted table covering the pasted GT box.
@@ -171,11 +202,110 @@ def run_bench(args, backend: str, quant: str, truth: dict[str, str],
             predictions[name] = best["html"] if hit else ""
         else:
             predictions[name] = tables[0]["html"] if tables else ""
-    if len(predictions) != len(truth):
-        raise RuntimeError(f"bench_table returned {len(predictions)} of {len(truth)} images")
+    if len(predictions) != len(images):
+        raise RuntimeError(f"bench_table returned {len(predictions)} of "
+                           f"{len(images)} images")
+    return predictions, found, summary
+
+
+def run_bench(args, backend: str, quant: str, truth: dict[str, str],
+              boxes: dict[str, list[float]],
+              environment: dict[str, str]) -> tuple[dict[str, str], dict]:
+    images = {name: str(args.image_root / name) for name in truth}
+    predictions, found, summary = _run_bench_images(
+        args, backend, quant, environment, images, boxes,
+        args.output / f"aicore_{backend}_{quant}.jsonl")
     if boxes:
         summary["table_recall"] = found / len(truth)
     return predictions, summary
+
+
+def _shifted_page(src: Path, dst: Path, dy: int, dx: int) -> str:
+    """Materialize the page cropped by (dy, dx) at the top-left corner.
+
+    cv2, like the compositor, keeps the pipeline dependency-free; the 1 px
+    crop is what moves the int-truncation boundary relative to the content.
+    """
+    import cv2
+    if dst.is_file():
+        return str(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    page = cv2.imread(str(src))
+    if page is None:
+        raise RuntimeError(f"cannot read composed page {src}")
+    height, width = page.shape[:2]
+    shifted = page[max(dy, 0):height + min(dy, 0),
+                   max(dx, 0):width + min(dx, 0)]
+    if not cv2.imwrite(str(dst), shifted):
+        raise RuntimeError(f"cannot write jittered page {dst}")
+    return str(dst)
+
+
+def composed_ensemble(args, backend: str, quant: str,
+                      environment: dict[str, str], truth: dict[str, str],
+                      boxes: dict[str, list[float]],
+                      offsets=JITTER_OFFSETS) -> tuple[dict, int, dict, dict]:
+    """Run the composed chain once per integer placement offset.
+
+    Returns ({offset: {name: html}}, nominal found count, nominal summary,
+    {offset: summary}). Only the non-zero offsets need new page files; the
+    nominal draw reads the pages the compositor wrote.
+    """
+    per_offset: dict[tuple[int, int], dict[str, str]] = {}
+    summaries: dict[tuple[int, int], dict] = {}
+    nominal_found = 0
+    for offset in offsets:
+        dy, dx = offset
+        images: dict[str, str] = {}
+        offset_boxes: dict[str, list[float]] = {}
+        # shifted = page[max(dy,0):H+min(dy,0), max(dx,0):W+min(dx,0)], so
+        # original content moves by (-max(dx,0), -max(dy,0)); the (-1,-1)
+        # crop only drops the bottom/right edge and keeps coordinates.
+        shift_x, shift_y = max(dx, 0), max(dy, 0)
+        for name in truth:
+            src = args.image_root / name
+            if offset == (0, 0):
+                images[name] = str(src)
+                offset_boxes[name] = list(boxes[name])
+            else:
+                dst = args.output / "jitter" / (
+                    Path(name).stem + f"_j{dy}_{dx}" + Path(name).suffix)
+                images[name] = _shifted_page(src, dst, dy, dx)
+                # box layout is [x0, y0, x1, y1]
+                offset_boxes[name] = [boxes[name][0] - shift_x,
+                                      boxes[name][1] - shift_y,
+                                      boxes[name][2] - shift_x,
+                                      boxes[name][3] - shift_y]
+        raw = args.output / (f"aicore_{backend}_{quant}.jsonl" if offset == (0, 0)
+                             else f"aicore_{backend}_{quant}_j{dy}_{dx}.jsonl")
+        predictions, found, summary = _run_bench_images(
+            args, backend, quant, environment, images, offset_boxes, raw)
+        per_offset[offset] = predictions
+        summaries[offset] = summary
+        if offset == (0, 0):
+            nominal_found = found
+    return per_offset, nominal_found, summaries[(0, 0)], summaries
+
+
+def score_ensemble(per_offset: dict, truth: dict[str, str]) -> dict:
+    """Per-page mean TEDS over the placement offsets (miss scores 0)."""
+    offsets = sorted(per_offset)
+    per_image = {}
+    for name, gt in truth.items():
+        draws = [TEDS.teds(per_offset[o].get(name, ""), gt) for o in offsets]
+        draws_s = [TEDS.teds(per_offset[o].get(name, ""), gt,
+                             structure_only=True) for o in offsets]
+        per_image[name] = {"teds": statistics.fmean(draws),
+                           "teds_s": statistics.fmean(draws_s),
+                           "per_offset_teds": draws}
+    teds = [row["teds"] for row in per_image.values()]
+    teds_s = [row["teds_s"] for row in per_image.values()]
+    return {"images": len(per_image),
+            "teds": statistics.fmean(teds),
+            "teds_s": statistics.fmean(teds_s),
+            "structure_exact": sum(v == 1.0 for v in teds_s) / len(teds_s),
+            "jitter_offsets": [list(o) for o in offsets],
+            "per_image": per_image}
 
 
 def main() -> int:
@@ -203,6 +333,15 @@ def main() -> int:
     parser.add_argument("--layout-quant", choices=QUANTS,
                         help="composed pages: run pplcnet-layout-<quant> and "
                              "score the table found over each table_box")
+    parser.add_argument("--jitter-ensemble", action="store_true",
+                        help="composed pages: also draw the chain at (-1,-1) and "
+                             "+(+1,+1) px page shifts and report per-page means; "
+                             "compare only against an ensemble Paddle baseline")
+    parser.add_argument("--bench-region-fallback-mask", type=int, default=0,
+                        help="pass --region-fallback-mask <mask> to bench_table: "
+                             "bit i = layout class id i accepted as a table crop "
+                             "when the page has no \"table\" region (CDLA labels "
+                             "some synthetic-border tables figure; Figure bit = 4)")
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--paddle-predictions", type=Path,
@@ -288,9 +427,15 @@ def main() -> int:
     failed = False
     for backend in args.backends:
         for quant in args.quants:
-            predictions, summary = run_bench(args, backend, quant, truth, boxes,
-                                             environment)
-            row = score(predictions, truth)
+            if boxes and args.jitter_ensemble:
+                per_offset, found, summary, _ = composed_ensemble(
+                    args, backend, quant, environment, truth, boxes)
+                row = score_ensemble(per_offset, truth)
+                summary["table_recall"] = found / len(truth)
+            else:
+                predictions, summary = run_bench(args, backend, quant, truth, boxes,
+                                                 environment)
+                row = score(predictions, truth)
             row.update({"task": "table", "backend": backend, "quant": quant,
                         "device": summary.get("device", ""),
                         "table_p50_ms": summary.get("table_p50_ms", 0.0),

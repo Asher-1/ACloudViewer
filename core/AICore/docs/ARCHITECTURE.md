@@ -72,7 +72,7 @@ flowchart TB
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/<br/>(16 tasks in the unified library)"]
+        subgraph TASKS["Task layer src/tasks/[task]/<br/>(17 tasks in the unified library)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end

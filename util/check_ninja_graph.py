@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Check a freshly configured Ninja build tree for plan-time errors.
 
 Ninja validates the requested part of the graph before it runs a single

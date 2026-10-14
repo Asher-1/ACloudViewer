@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
     const char* layoutPath = nullptr;
     const char* device = "auto";
     int threads = 0, warmups = 1, detLimitType = 0, detMaxSide = 0;
+    unsigned long regionFallbackMask = 0;
     bool layoutRegions = false;
     std::vector<std::string> images;
     for (int i = 1; i < argc; ++i) {
@@ -115,6 +116,8 @@ int main(int argc, char** argv) {
             detLimitType = std::atoi(next());
         else if (a == "--det-max-side")
             detMaxSide = std::atoi(next());
+        else if (a == "--region-fallback-mask")
+            regionFallbackMask = std::strtoul(next(), nullptr, 0);
         else if (a == "--list") {
             std::ifstream list(next());
             for (std::string line; std::getline(list, line);)
@@ -173,6 +176,7 @@ int main(int argc, char** argv) {
     ropt.struct_size = sizeof(ropt);
     ropt.abi_version = AICORE_TABLE_ABI_VERSION;
     ropt.use_layout_regions = layoutRegions ? 1 : 0;
+    ropt.fallback_region_mask = static_cast<uint32_t>(regionFallbackMask);
 
     std::vector<double> tableMs, ocrMs, totalMs;
     int failures = 0;

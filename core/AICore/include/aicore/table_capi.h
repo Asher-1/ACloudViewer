@@ -83,6 +83,15 @@ typedef struct aicore_table_run_options {
      *  region the OCR layout stage returned; that stage already applies
      *  the PP-Structure layout_score_threshold 0.5). */
     float min_region_score;
+    /** Bit i = layout class id i is accepted as a table crop when the page
+     *  contains no "table"-class region. The CDLA layout model labels some
+     *  synthetic-border tables "figure" (measured: 36/100 composed pages,
+     *  region IoU 0.54-0.99, zero "table" regions); the fallback recovers
+     *  them. At most one fallback crop per page (highest region score).
+     *  0 keeps the upstream behavior ("table" class only). Callers that do
+     *  not extend their struct to this field get 0; class ids index
+     *  aicore_ocr_label_at of the OCR context's layout labels. */
+    uint32_t fallback_region_mask;
 } aicore_table_run_options;
 
 typedef struct aicore_table_cell {
