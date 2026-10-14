@@ -168,13 +168,6 @@ TEST(PrepareAnyCalibInputTest, DegenerateGravityDoesNotCrash) {
   EXPECT_EQ(PrepareAnyCalibInput(bitmap, nan_gravity).image_rot90, 0);
 }
 
-TEST(CreateAnyCalibCalibratorTest, EmptyModelPathThrows) {
-  SingleViewCalibrationOptions options;
-  options.anycalib->model_path = "";
-  // Route through the public factory, like production callers.
-  EXPECT_THROW(SingleViewCalibrator::Create(options), std::exception);
-}
-
 TEST(CreateAnyCalibCalibratorTest, NullAnyCalibOptionsThrows) {
   SingleViewCalibrationOptions options;
   options.anycalib = nullptr;
@@ -183,20 +176,34 @@ TEST(CreateAnyCalibCalibratorTest, NullAnyCalibOptionsThrows) {
 
 TEST(CreateAnyCalibCalibratorTest, MissingModelFileThrows) {
   SingleViewCalibrationOptions options;
-  options.anycalib->model_path = "/nonexistent/anycalib_gen.onnx";
+  options.anycalib->model_path = "/nonexistent/anycalib_gen.f16.gguf";
   EXPECT_THROW(CreateAnyCalibCalibrator(options), std::exception);
 }
 
-// The AnyCalib model is ~1.3GB; share one calibrator across the inference
-// tests instead of reloading it per TEST. It is destroyed in
-// TearDownTestSuite while the test run is still active, since ONNX sessions
-// must not be destroyed during static teardown at process exit.
+// The default (empty) model path resolves through the AICore anycalib task
+// catalog + shared cache; creation only throws when the model is unavailable
+// (no cache and no download transport).
+TEST(CreateAnyCalibCalibratorTest, DefaultModelPathResolvesThroughAICore) {
+  SingleViewCalibrationOptions options;
+  options.use_gpu = false;
+  std::unique_ptr<SingleViewCalibrator> calibrator;
+  try {
+    calibrator = SingleViewCalibrator::Create(options);
+  } catch (const std::exception& e) {
+    GTEST_SKIP() << "AnyCalib model unavailable: " << e.what();
+  }
+  EXPECT_NE(calibrator, nullptr);
+}
+
+// The AnyCalib model (~642MB f16) is shared across the inference tests
+// instead of reloading it per TEST. It is destroyed in TearDownTestSuite
+// while the test run is still active, since AICore contexts must not be
+// destroyed during static teardown at process exit.
 class AnyCalibCalibratorTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    // Fork adjudication: the ONNX inference backend is excluded (ggml/AICore
-    // replaces onnx), so creating the AnyCalib calibrator throws. Park the
-    // inference cases behind a skip instead of crashing the test suite.
+    // Inference runs through the AICore anycalib task (ggml graph); the
+    // default model resolves through the AICore catalog + shared cache.
     try {
       SingleViewCalibrationOptions options;
       options.use_gpu = false;
@@ -217,7 +224,7 @@ std::unique_ptr<SingleViewCalibrator> AnyCalibCalibratorTest::calibrator_;
 // downloads the default model on first run (hash-verified cache).
 TEST_F(AnyCalibCalibratorTest, SmokeTestWithModel) {
   if (!calibrator_) {
-    GTEST_SKIP() << "AnyCalib requires ONNX support (fork: ggml/AICore)";
+    GTEST_SKIP() << "AnyCalib model unavailable (AICore catalog/cache)";
   }
   Bitmap bitmap(64, 48, /*as_rgb=*/true);
   for (int r = 0; r < 48; ++r) {
@@ -253,7 +260,7 @@ TEST_F(AnyCalibCalibratorTest, SmokeTestWithModel) {
 // Calibrate without paying for model inference.
 TEST_F(AnyCalibCalibratorTest, GreyInput) {
   if (!calibrator_) {
-    GTEST_SKIP() << "AnyCalib requires ONNX support (fork: ggml/AICore)";
+    GTEST_SKIP() << "AnyCalib model unavailable (AICore catalog/cache)";
   }
   Bitmap bitmap;
   CreateSolidGreyImage(64, 48, 128, &bitmap);
@@ -269,7 +276,7 @@ TEST_F(AnyCalibCalibratorTest, GreyInput) {
 // test's calibrator.
 TEST_F(AnyCalibCalibratorTest, InvalidCameraModelReturnsFalse) {
   if (!calibrator_) {
-    GTEST_SKIP() << "AnyCalib requires ONNX support (fork: ggml/AICore)";
+    GTEST_SKIP() << "AnyCalib model unavailable (AICore catalog/cache)";
   }
   Bitmap bitmap;
   CreateSolidRgbImage(64, 48, 255, &bitmap);

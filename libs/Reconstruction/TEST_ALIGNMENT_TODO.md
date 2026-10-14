@@ -3063,6 +3063,27 @@ consumer 接线(CreateAnyCalibCalibrator onnx throw 分支改走 AICore)
   修复;src/CMakeLists.txt vendor 闭包注释同步(支持面 floor 1.71)。
   `.qoder/tmp/boost171/`(1.71 头文件)与探针保留为复验资产。
 
+### 批次 AE 更正(同日,macOS conda Boost 1.84 证伪前向声明方案)
+
+- **证伪**:前向声明方案在 macOS(conda Boost **1.84**)CI 爆炸:
+  `multi_index_container.hpp:1124 implicit instantiation of undefined
+  template 'serialization::nvp<...>'`、`1132 no member named 'make_nvp'`。
+  根因:Boost >= **1.84** 起系统 `multi_index_container.hpp`(经
+  property_tree 进入每个 ColmapLib TU)直接 include
+  `<boost/core/serialization.hpp>` 并**实例化** `serialization::nvp`
+  (完整类型)与 `serialization::make_nvp`——vendor shadow 必须提供它们,
+  前向声明恰好抽掉。"全仓无 serialize 实例化"的前提对 <1.84 成立,
+  对 >=1.84 不成立(系统头自身是消费者)。
+- **终版修复(守卫握手)**:vendor `core/serialization.hpp` 在
+  `#if !defined(BOOST_SERIALIZATION_NVP_HPP)` 下 include `core/nvp.hpp`
+  (提供完整 nvp+make_nvp)并认领 `BOOST_SERIALIZATION_NVP_HPP`(阻 1.71
+  二次定义);守卫已置(1.71 系统头先行)则不定义、别名到系统定义。
+  另:vendor `core/nvp.hpp` 的 `make_nvp` 去 `BOOST_NOEXCEPT`(1.71
+  `number_base.hpp:62` 前置声明无异常说明符,noexcept 版本与之冲突)。
+- **四象限验证**:1.71 vendor-first/pt-first(focal 镜像 compile+link+run
+  PASS)、1.74 全探针+链接运行 PASS、1.84 消费者模式仿真
+  (boost_184_sim.cc)PASS;L3 固定种子门禁复验 PASS。
+
 ### 批次 AF 补记:anycalib release 发布与全链验证(2026-10-14)
 
 - **release**:Asher-1/cloudViewer_downloads tag `anycalib`(release id
@@ -3079,3 +3100,162 @@ consumer 接线(CreateAnyCalibCalibrator onnx throw 分支改走 AICore)
   量化档必须由 task 专属 probe 背书后方可发布;AnyCalib 为单图一次前向
   (非逐帧),尚无显存/延迟具名诉求;f16(612 MiB)已覆盖推荐档。q8 随
   图落地 + golden 门通过后按 LoMa/OCR 同型补发并增目录行。
+
+## 批次 AG:AnyCalib task 化——ggml 图全链跑通,parity 门未过(2026-10-14)
+
+### 已落地
+
+- **推理 C ABI 全套实现**:`anycalib_capi.h` 推理面转正(options/load/run/
+  timings/free/shutdown,契约见头注释);`src/tasks/anycalib/capi.cpp`
+  (reid 同型 174 行);`anycalib_graph.{hpp,cpp}`(529 行:GGUF File、
+  engine_backend 会话、静态图)。
+- **图全链执行通过**:预归一 → patch embed(im2col)→ cls+pos → 24 块
+  (融合 QKV/16 头 SDPA/layer-scale/erf-GELU)→ 抽层 [4,10,16,22] →
+  4×reassemble(1×1+常数矩阵 2× bilinear+conv3×3)→ 4 级 fusion →
+  project → 双支头 → 凸组合累加 {46,46,49,2} → 宿主侧精确 f32 输出布局
+  与射线归一化。CPU 实测 wall p50 = 958ms,无断言崩溃。
+- **探针** `tests/anycalib/anycalib_parity_probe.cpp`(zip STORED + npy
+  读取,链接 libAICore,CMake 目标 anycalib_parity_probe)。
+
+### 调试过程实录(ggml 契约五连)
+
+①f16 GGUF 的 bias/mean/pos 与 f32 激活逐元素运算 → 图建期 ggml_cast 统一;
+②ONNX MatMul 权重是 [K,M](与 nn.Linear [M,K] 相反)→ 四个融合权重
+WT=cont(transpose);③此 ggml 的 mul_mat 拒绝转置 src0 → cont(ᵀ) 物化
+(每权重一次拷贝,~1% 开销,后续可上加载期转置);④reshape_4d 要求连续 →
+k/v/q 视图与 nb 偏移视图补 cont;⑤mul 广播 can_repeat 限制 → 邻居平面
+repeat 到 {46,46,49,2} 作结果承载。
+
+### 当前 parity(FAIL,未达标即不声称)
+
+- `rays_rel_rms 0.182 / tangent_rel_rms 0.9999 / max_abs ~0.23`,
+  wall p50 958ms(CPU)。tangent ≈1.0 = 空间去相关,强烈指向凸上采样
+  输出区域映射或其上游某一中间量;rays 0.18 部分相关。
+- **系统化对表方案(下轮首步)**:ORT 全图加中间输出(add_10/add_24/
+  add_36/add_48 四抽层、conv2d_5、add_58、conv2d_25/tan46、w441)与
+  ggml 侧同位张量逐级对表(转换器"全图+额外输出"同法),二分定位首个
+  分歧级;主嫌:①凸组合 H/W 交织方向(h46*7+h7 vs h7*46+h46);
+  ②R 双线性矩阵 half_pixel 边界钳制值;③ref.npz 的 rays 尾段公式
+  复核(848 节点 Where 分支)。
+- 裁定:parity 未过 → **不接 consumer、不 un-gate、不加 manifest 行、
+  不发 q8**(合同:数值门不通过即无资产主张)。本批五项清单推进至
+  图+探针,门禁联调入下批。
+
+### 复用面确认(用户要求"不重复造轮子")
+
+- 下载/缓存:目录 URL + asset_digests 走既有 `test_catalog_dump_urls`/
+  `check_catalog_assets`/`model_cache` 体系(零新接口);会话/后端复用
+  `lightglue::engine_backend`(BackendLease + galloc);探针 ctest 沿用
+  tests/CMakeLists 注册机制。
+
+## 批次 AH:parity 二分突破——骨干 24 块全对齐,decoder 布局收尾中(2026-10-14)
+
+### 方法论突破(可复用)
+
+- **galloc 缓冲复用陷阱**:ggml_gallocr 按生命周期回收中间张量缓冲,
+  compute 后读回中间量 = 读到"别人的数据"(D_input 曾读到归一化值、
+  D_sub 曾读到 softmax 权重)。三种尝试:①0 权重 sum 沉降 ✗(sum 执行
+  后即释放);②concat 链经 reshape 视图 ✗(视图不延长源生命期);
+  ③**AICALIB_DUMP_TENSOR 单输出模式 ✓**——每个待查张量单独作为图输出
+  跑一次(图输出缓冲永不复用,读回必然真实),探针循环 33 张量。
+- **诚实对表结果(f32 GGUF,单输出模式)**:L1 = 0.0 逐位、L2/L3 =
+  2.8e-7、**B0..B23 全部 4.1e-7 ~ 3.4e-6(24 个 ViT 块数值全对齐!)**、
+  L4 tap0 = 8.4e-7 ✓。
+- **抽层错位根因修复**:DPT 抽层是 ONNX 切片 add_10/24/36/48 =
+  0 基块 **{4, 11, 17, 23}**(每块 2 个 add),不是惯例的 {4,10,16,22}
+  ——修正后 B23 ✓。
+- **conv 尾段修复**:Conv3x3/Conv1x1/project 补 yolo 尾段
+  (reshape_4d → permute → cont);ggml permute 语义 = **放置**
+  (`ne[axis[i]] = old ne[i]`,ggml.c 实证)。
+- **conv1x1 修正**:HWC {W,H,C} 输入需 cont(permute(x,1,2,0,3)) 取
+  {C,P} 位置向量(mul_mat K 对齐),输出 {out,P} 经 reshape_4d+permute
+  (2,0,1,3) 回 HWC。
+
+### 当前状态(诚实)
+
+- 解码器各 dump 的 direct-CHW 解释:D_map0 8.4e-7 ✓、D_proj0 7.9e-7 ✓、
+  D_resized0 6.4e-7 ✓、L6 2.8e-7 ✓、L7 1.1e-6 ✓;**L8 tan46 1.11 / 
+  L9 w441 0.76 未过**——注意:多轮修版后部分 dump 的布局解释(两种
+  reshape 转置)与 ggml 视图 ne 的映射关系尚有混淆,残留分歧集中在
+  Conv1x1 的两次调用与凸组合;读取通路已可信(单输出模式)。
+- 下一轮:以单输出模式 dump D_tan128(relu_15 对表 1.31 → Conv3x3
+  (tangent_head.0) 或 relu14 未验)→ 逐张量对表至 L8/L9 全绿 →
+  探针 golden 门(阈值待定标)→ 移除 dump 基建 → manifest 行 →
+  consumer 接线 + un-gate → q8 → 全量 gate。
+
+## 批次 AI:parity 最后一段——L8/L9 全绿,acc 凸组合待解(2026-10-14)
+
+- 误报澄清:上轮 L8 1.22 / L9 1.38 是旧二进制读数 + rm 顺序误删 dump。
+  本轮单输出模式实测:**D_tan128 (relu_15) 4.1e-7 ✓、L8 tan46 2.6e-7 ✓、
+  L9 w441 2.6e-7 ✓(direct-CHW)**——骨干+解码器+双支头全链对齐!
+- softmax 轴修复:ggml permute 放置语义下,9 轴到 ne[0] 应为
+  `permute(w4, 1,2,3,0)`(原 3,0,1,2 把 softmax 跑在 h46 轴上)。
+- **残留唯一分歧:acc(凸组合输出 {46,46,49,2})数值错**(与 ORT sum_1
+  穷举 16 种布局映射全部 ≥1.9)。已排除:布局重排(穷举)、tap 顺序
+  (i9 = dy*3+dx ✓)、pad/Gather 语义(pads 对称 1 ✓、indices 移位窗 ✓)、
+  repeat 广播、wi 切片。下一步:①核对 ONNX ReduceSum 的 axes 常量;
+  ②dump w9/softmax_24 直接对表(布局映射已知:内存 [i9][w][h][i49],
+  i49 = i7a*7+i7b);③复核宿主重排 H = h46*7+hs(ONNX permute_30
+  [0,1,4,2,5,3] 已推得一致)。
+- parity 探针基建稳定可用:AICALIB_DUMP_TENSOR 单输出模式 + 33 张量。
+
+## 批次 AI 补充:全链仅剩 acc 一级(2026-10-14 深夜)
+
+- 单输出模式实测更新:**D_tan128 4.1e-7 ✓、L8 tan46 2.6e-7 ✓、
+  L9 w441 2.6e-7 ✓、D_w9(softmax 输出)2.1e-7 ✓**(映射已穷举实证:
+  内存 [i9][W][H][i49],i49 = hs*7+ws,i9 = dy*3+dx)。
+- **acc(凸组合 Σ w_i·nb_i)仍错**(对 ORT sum_1 穷举 16 布局全 ≥1.9,
+  数值性错误而非布局)。已实证正确:w441/tan46/w9/softmax 9 轴/pad 零帧
+  /Gather 移位窗(i9 = dy*3+dx)/repeat 语义(repeat(a=nb, b=full))/
+  wi 切片/宿主 H=h46*7+hs。
+- 下一轮首查:①nb 9 窗口视图的实际内容(把 9 个 cont(nb_i) 加入 dbg
+  单输出对表 view_32 的 9 个切片——view_3d 的 offset=(dy*48+dx) 元素
+  单位疑似应以字节计即 *sizeof(float),当前代码已乘但需对照 padded nb);
+  ②wi 切片的 nb0 步长(w9 cont 后 = 1 ✓ 已验);③repeat 的 full_shape
+  张量无数据是否影响 mul 广播路径。
+- parity 探针/单输出 dump/ORT 中间对表三件套全部就绪,剩余收敛预计
+  一个短会话。
+### 批次 AI-收口(2026-10-14):acc 分歧根因修复 + 全链 PASS + manifest 行 + consumer 接线
+
+- **根因 1(wi 切片轴错位,主因)**:w9 = softmax(permute(w4,1,2,3,0)) 的
+  ne = {k=9, W=46, H=46, i49=49}(k 在 ne[0]),而旧代码
+  `view_4d(w9,46,46,49,1, nb[1],nb[2],nb[3], i*nb[0])` 展开为
+  flat[i + n0 + 9*n1 + 414*n2] ≠ 期望 flat[i + 9*n0 + 414*n1 + 19044*n2],
+  k/W/H/i49 四轴全部错位;且 W 在 w9 的 dim1(步长 9 float)根本无法作为
+  view dim0(ggml 视图 dim0 步长恒为元素大小)。修:
+  `w9p = cont(permute(w9, 3,0,1,2))` 物化 {W,H,i49,k} 后按
+  `view_4d(w9p,46,46,49,1, nb1,nb2,nb3, i*nb3)` 切片(3.7MB 拷贝)。
+  D_w9 ✓ 与 acc ✗ 并存的原因:D_w9 验证 w9 本体,wi 是其坏视图。
+- **根因 2(宿主平面映射)**:acc ne={W,H,49,2} 的实际内存序为
+  flat = w46 + 46*h46 + 2116*i49 + 103684*c(≡ ORT sum_1 [2,7,7,46,46]
+  C-order 恒等映射),旧代码按 (h46*46+w46)*49*2 + 2*i49 + c 交错读取。
+  修:src = i49*kPlane + h46*kMap + w46,c 通道偏移 +kAccCh。
+- **零成本证伪链(全部 numpy,锚定语义)**:mask-vs-mul_72 6.5e-8、
+  acc_np-vs-sum_1 6.9e-8(softmax 轴 + pad 窗口 + 逐 tap 乘积 + ReduceSum
+  语义全对);修正宿主映射的 numpy 重排 vs ORT tangent_coords **位级 0 差**;
+  ray 公式 6.7e-9。注:/tmp/anycalib_gg 旧 dump 为修复前构建产物,不可作证据。
+- **parity 门 PASS**:#f32 rays 4.9e-8/tangent 2.4e-7/max 1.6e-7,
+  #f16 1.1e-4/6.1e-4/1.8e-4(wall p50 ≈1.0-1.4s CPU)。
+- **dump 基建移除**:dbg 列表/AICALIB_DUMP_TENSOR/AICALIB_DUMP_DIR 全部
+  删除(合同:生产代码不读私有 env),回归 PASS。
+- **manifest 行**:tasks+anycalib;anycalib-ref-golden input_assets
+  (ref.npz sha fb3d549e.../3318592B,release anycalib);anycalib-parity-f32
+  (checks 1e-6/5e-6/2e-6/2e-6, args --max-abs 2e-6 --rel-rms 5e-6)与
+  anycalib-parity-f16(2e-3/5e-3/2e-3/2e-3)两行 light:true owned_globs
+  精确文件名,structured accuracy reference=fixture。validate_all
+  --backend cpu --tasks anycalib → **verdict PASS**(catalog 2/2 + input
+  1/1 verified)。
+- **consumer 接线(un-gate 3 SKIP)**:anycalib.cc 弃 ONNX 改 AICore
+  (ResolveAnyCalibModelPath 按 DA3 模式:显式路径→catalog f16 entry URL +
+  AssetDigestForFile + aicore_anycalib_model_cache_dir + 下载/校验/缓存);
+  新 C API aicore_anycalib_model_cache_dir(model_cache.hpp 加
+  anycalib_model_cache_dir→extract_model_dir("anycalib_models"));resources.h
+  kDefaultAnyCalibGenUri 置空(空=目录推荐变体);anycalib_test 移除
+  EmptyModelPathThrows、新增 DefaultModelPathResolvesThroughAICore,
+  skip 消息改为"model unavailable"。**anycalib_test 12/12 PASS**
+  (SmokeTestWithModel 真机推理 1.0s)。check_capi_coverage 95% PASS、
+  boundary --strict PASS。
+- **遗留(下增量)**:①q8_0 转换/发布/目录行(kQuantSuffixes 加
+  "q8_0")/digest/manifest 消费行;②全量 gate(aicore-validate-all + ctest
+  -L capi + pytest agent-integration L1/L2/L5);③P1-db(4030001)。
+

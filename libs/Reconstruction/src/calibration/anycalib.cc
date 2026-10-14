@@ -3,14 +3,20 @@
 #include "calibration/anycalib.h"
 
 #include "calibration/single_view_calibrator.h"
+#include "util/download.h"
+#include "util/file.h"
 #include "util/logging.h"
-#ifdef COLMAP_ONNX_ENABLED
-#include "util/onnx.h"
+#ifdef AICore_ENABLED
+#include "aicore/anycalib_capi.h"
+#include "aicore/asset_digests.h"
 #endif
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <optional>
+#include <string_view>
 
 namespace colmap {
 namespace {
@@ -44,59 +50,126 @@ Eigen::Vector2i CenterCropOrigin(int width, int height) {
   return Eigen::Vector2i((width - side) / 2, (height - side) / 2);
 }
 
-#ifdef COLMAP_ONNX_ENABLED
+#ifdef AICore_ENABLED
 
-// Validate the AnyCalib input/output signature and return the index of the
-// `rays` output. Throws on a signature mismatch or if `rays` is missing.
-size_t CheckONNXSignatureAndGetRayIndex(const ONNXModel& model) {
-  THROW_CHECK_EQ(model.input_shapes().size(), 1);
-  THROW_CHECK_EQ(model.input_element_types().size(), 1);
-  ThrowCheckONNXNode(model.input_names()[0],
-                     "image",
-                     model.input_shapes()[0],
-                     {1, 3, kAnyCalibInputSize, kAnyCalibInputSize});
-  ThrowCheckONNXElementType(model.input_names()[0],
-                            model.input_element_types()[0],
-                            ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-  THROW_CHECK_EQ(model.output_shapes().size(), 2);
-  THROW_CHECK_EQ(model.output_element_types().size(), 2);
-  std::optional<size_t> rays_idx;
-  for (size_t i = 0; i < model.output_names().size(); ++i) {
-    const std::string_view name = model.output_names()[i];
-    const auto& shape = model.output_shapes()[i];
-    // The outputs are read as float below; validate the element type with
-    // the same rigor as the shapes rather than relying on the ORT version's
-    // `GetTensorData` checking.
-    ThrowCheckONNXElementType(name,
-                              model.output_element_types()[i],
-                              ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    if (name == "rays") {
-      ThrowCheckONNXNode(
-          name, "rays", shape, {1, kAnyCalibInputSize * kAnyCalibInputSize, 3});
-      rays_idx = i;
-    } else if (name == "tangent_coords") {
-      ThrowCheckONNXNode(name,
-                         "tangent_coords",
-                         shape,
-                         {1, kAnyCalibInputSize * kAnyCalibInputSize, 2});
-    } else {
-      LOG_FATAL_THROW(std::invalid_argument) << "Unexpected AnyCalib output: " << name;
+// Default published GGUF: the catalog's recommended half-precision variant.
+constexpr const char* kDefaultAnyCalibModelFile =
+        "anycalib_gen_v1.0.0_322x322.f16.gguf";
+
+// Resolve the anycalib GGUF path. An explicit local path wins; otherwise the
+// AICore task catalog supplies the published URL and the pinned digest from
+// aicore/asset_digests.h, and the shared download utility fills the
+// cross-platform cache directory (DA3 resolver pattern). Returns an empty
+// string on any resolution or integrity failure (the caller throws).
+std::string ResolveAnyCalibModelPath(const std::string& model_path) {
+  if (!model_path.empty()) {
+    if (ExistsFile(model_path)) {
+      return model_path;
     }
+    LOG(ERROR) << "AnyCalib: explicit model path does not exist: "
+               << model_path;
+    return "";
   }
-  THROW_CHECK(rays_idx.has_value()) << "AnyCalib outputs must contain \"rays\"";
-  return *rays_idx;
+
+  const aicore_anycalib_model_entry* entry =
+      aicore_anycalib_model_by_filename(kDefaultAnyCalibModelFile);
+  if (entry == nullptr) {
+    LOG(ERROR) << "AnyCalib: model not in the AICore catalog: "
+               << kDefaultAnyCalibModelFile;
+    return "";
+  }
+  const char* pinned_digest =
+      aicore::AssetDigestForFile(kDefaultAnyCalibModelFile);
+  if (pinned_digest == nullptr) {
+    LOG(ERROR) << "AnyCalib: no pinned digest for model asset: "
+               << kDefaultAnyCalibModelFile;
+    return "";
+  }
+
+  char* cache_dir_c = aicore_anycalib_model_cache_dir();
+  if (cache_dir_c == nullptr) {
+    LOG(ERROR) << "AnyCalib: failed to query the model cache directory";
+    return "";
+  }
+  const std::filesystem::path cache_dir(cache_dir_c);
+  aicore_anycalib_free_buffer(cache_dir_c);
+  std::error_code ec;
+  std::filesystem::create_directories(cache_dir, ec);
+
+  const auto cached_path = cache_dir / kDefaultAnyCalibModelFile;
+  if (std::filesystem::exists(cached_path)) {
+    // Verify the cached model before trusting it: a truncated or corrupted
+    // cache must never silently feed the calibration.
+    const std::string cached_digest = ComputeFileSHA256(cached_path);
+    if (cached_digest == pinned_digest) {
+      return cached_path.string();
+    }
+    LOG(WARNING) << "AnyCalib: cached model failed digest check (got "
+                 << cached_digest << ", expected " << pinned_digest
+                 << "), re-downloading: " << cached_path.string();
+    std::filesystem::remove(cached_path);
+  }
+
+  const auto blob = DownloadFile(entry->download_url);
+  if (!blob.has_value()) {
+    LOG(ERROR) << "AnyCalib: failed to download model from: "
+               << entry->download_url;
+    return "";
+  }
+  // Verify before caching: a corrupted download must never poison the cache.
+  const std::string blob_digest =
+      ComputeSHA256(std::string_view(blob->data(), blob->size()));
+  if (blob_digest != pinned_digest) {
+    LOG(ERROR) << "AnyCalib: downloaded model failed digest check (got "
+               << blob_digest << ", expected " << pinned_digest << "): "
+               << entry->download_url;
+    return "";
+  }
+  std::ofstream ofs(cached_path, std::ios::binary);
+  if (!ofs) {
+    LOG(ERROR) << "AnyCalib: failed to write cached model to: "
+               << cached_path.string();
+    return "";
+  }
+  ofs.write(blob->data(), static_cast<std::streamsize>(blob->size()));
+  ofs.close();
+  return cached_path.string();
 }
 
+// Single-view calibrator backed by the AICore anycalib task (libAICore):
+// the ggml graph returns typed per-pixel rays for the 322x322 network crop;
+// intrinsics fitting is shared with the ray-based backend interface.
 class AnyCalibCalibrator : public SingleViewCalibrator {
  public:
   explicit AnyCalibCalibrator(const SingleViewCalibrationOptions& options)
-      : options_(options),
-        model_(options.anycalib->model_path,
-               options.num_threads,
-               options.use_gpu,
-               options.gpu_index) {
+      : options_(options) {
     THROW_CHECK(options_.Check());
-    rays_idx_ = CheckONNXSignatureAndGetRayIndex(model_);
+    THROW_CHECK_NOTNULL(options_.anycalib);
+    const std::string model_path =
+        ResolveAnyCalibModelPath(options_.anycalib->model_path);
+    THROW_CHECK(!model_path.empty())
+        << "AnyCalib: failed to resolve the anycalib GGUF model";
+    aicore_anycalib_options* opts = aicore_anycalib_options_new();
+    THROW_CHECK_NOTNULL(opts);
+    // CPU routing until the task gains backend parity (the task itself
+    // rejects non-CPU devices).
+    aicore_anycalib_options_set_device(opts, "cpu");
+    aicore_anycalib_options_set_threads(
+        opts, options_.num_threads > 0 ? options_.num_threads : 0);
+    ctx_ = aicore_anycalib_load_opts(model_path.c_str(), opts);
+    aicore_anycalib_options_free(opts);
+    THROW_CHECK(ctx_ != nullptr && aicore_anycalib_is_ready(ctx_))
+        << "AnyCalib: failed to load the anycalib GGUF: "
+        << (ctx_ != nullptr && aicore_anycalib_last_error(ctx_) != nullptr
+                ? aicore_anycalib_last_error(ctx_)
+                : "unknown error");
+  }
+
+  ~AnyCalibCalibrator() override {
+    if (ctx_ != nullptr) {
+      aicore_anycalib_free(ctx_);
+      ctx_ = nullptr;
+    }
   }
 
   bool Calibrate(const Bitmap& bitmap,
@@ -126,20 +199,24 @@ class AnyCalibCalibrator : public SingleViewCalibrator {
     }
 
     AnyCalibInput input = PrepareAnyCalibInput(*input_bitmap, pose_prior);
-    const std::vector<int64_t> input_shape(
-        {1, 3, kAnyCalibInputSize, kAnyCalibInputSize});
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtDeviceAllocator,
-                                   OrtMemType::OrtMemTypeCPU),
-        input.data.data(),
-        input.data.size(),
-        input_shape.data(),
-        input_shape.size());
-    std::vector<Ort::Value> input_tensors;
-    input_tensors.push_back(std::move(input_tensor));
-    const std::vector<Ort::Value> outputs = model_.Run(input_tensors);
+    float* rays_buffer = nullptr;
+    float* tangent_buffer = nullptr;
+    int32_t count = 0;
+    const int rc = aicore_anycalib_run(ctx_,
+                                       input.data.data(),
+                                       &rays_buffer,
+                                       &tangent_buffer,
+                                       &count);
+    if (rc != 0 || rays_buffer == nullptr ||
+        count != kAnyCalibInputSize * kAnyCalibInputSize) {
+      LOG(ERROR) << "AnyCalib: inference failed (rc=" << rc
+                 << ", count=" << count << ")";
+      aicore_anycalib_free_buffer(rays_buffer);
+      aicore_anycalib_free_buffer(tangent_buffer);
+      return false;
+    }
+    const float* rays_data = rays_buffer;
 
-    const float* rays_data = outputs[rays_idx_].GetTensorData<float>();
     const int size = kAnyCalibInputSize;
     std::vector<Eigen::Vector2d> img_points;
     std::vector<Eigen::Vector3d> cam_rays;
@@ -155,6 +232,8 @@ class AnyCalibCalibrator : public SingleViewCalibrator {
             rays_data[3 * i], rays_data[3 * i + 1], rays_data[3 * i + 2])));
       }
     }
+    aicore_anycalib_free_buffer(rays_buffer);
+    aicore_anycalib_free_buffer(tangent_buffer);
 
     std::vector<double> prior_focal_lengths;
     if (options_.anycalib->fitting.prior_focal_length_weight > 0.0 &&
@@ -205,8 +284,7 @@ class AnyCalibCalibrator : public SingleViewCalibrator {
 
  private:
   SingleViewCalibrationOptions options_;
-  ONNXModel model_;
-  size_t rays_idx_ = 0;
+  aicore_anycalib_ctx* ctx_ = nullptr;
 };
 
 #endif
@@ -320,14 +398,14 @@ AnyCalibInput PrepareAnyCalibInput(const Bitmap& bitmap,
 
 std::unique_ptr<SingleViewCalibrator> CreateAnyCalibCalibrator(
     const SingleViewCalibrationOptions& options) {
-#ifdef COLMAP_ONNX_ENABLED
+#ifdef AICore_ENABLED
   // Validate before constructing: the constructor dereferences
-  // `options.anycalib` in its initializer list and loads the network model, so
-  // invalid options must be rejected before any of that happens.
+  // `options.anycalib` and resolves/loads the GGUF model, so invalid options
+  // must be rejected before any of that happens.
   THROW_CHECK(options.Check());
   return std::make_unique<AnyCalibCalibrator>(options);
 #else
-  throw std::runtime_error("AnyCalib calibration requires ONNX support.");
+  throw std::runtime_error("AnyCalib calibration requires AICore support.");
 #endif
 }
 

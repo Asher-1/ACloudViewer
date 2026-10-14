@@ -767,6 +767,16 @@ target_include_directories(test_ocr_runtime PRIVATE
 # parity ctest stays runnable while unrelated task sources (e.g. the sam3d
 # vendor migration) break the main-library closure.
 target_link_libraries(test_ocr_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+
+# AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
+# Runtime golden fixtures shipped in the anycalib release. Sources are
+# compiled into the target like the OCR probe so the parity ctest stays
+# runnable while unrelated task sources break the main-library closure.
+add_executable(anycalib_parity_probe tests/anycalib/anycalib_parity_probe.cpp)
+target_include_directories(anycalib_parity_probe PRIVATE ${AICORE_INC_DIR})
+target_link_libraries(anycalib_parity_probe PRIVATE AICore)
+set_target_properties(anycalib_parity_probe PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 set_target_properties(test_ocr_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside

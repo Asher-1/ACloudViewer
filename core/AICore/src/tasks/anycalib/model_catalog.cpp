@@ -18,6 +18,7 @@
 
 #include "aicore/anycalib_capi.h"
 #include "common/capi_utils.hpp"
+#include "common/model_cache.hpp"
 
 namespace {
 
@@ -120,4 +121,8 @@ aicore_anycalib_model_by_filename(const char* filename) {
         }
     }
     return nullptr;
+}
+
+AICORE_CAPI char* aicore_anycalib_model_cache_dir(void) {
+    return dupString(aicore::anycalib_model_cache_dir().c_str());
 }

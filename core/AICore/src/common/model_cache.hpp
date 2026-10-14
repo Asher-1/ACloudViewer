@@ -68,4 +68,8 @@ inline std::string map_anything_model_cache_dir() {
     return extract_model_dir("map_anything_models");
 }
 
+inline std::string anycalib_model_cache_dir() {
+    return extract_model_dir("anycalib_models");
+}
+
 }  // namespace aicore

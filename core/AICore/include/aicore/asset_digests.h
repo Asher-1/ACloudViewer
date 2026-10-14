@@ -79,7 +79,7 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"clip-ViT-B-32-f32.ref.npz", "40c0fa89b9e08104dfb6a6d2e753ad0d092a3af80b4c56b822ad0e4e5d43a606" },
         {"anycalib_gen_v1.0.0_322x322.f32.gguf", "4f2ef708c3eca5d85f732650540ec009a957a5e3a662b2920ac30de4f1e3770e" },
         {"anycalib_gen_v1.0.0_322x322.f16.gguf", "e7391f6918a723fa20a74def9e0cc979e09f8f4f332eab3e40135b71cbd10782" },
-        {"anycalib_gen_v1.0.0_322x322.ref.npz", "91e71591c8e906ca0c2511373ffcc780071c9edb747c0ca34dc4ce82653f898d" },
+        {"anycalib_gen_v1.0.0_322x322.ref.npz", "fb3d549e082d033936dfb35def098cbe67e2f262820f460088cdbc6c9d7bd82f" },
         {"clip-ViT-B-32-q8_0.gguf", "f8cbdb9cd7b53e1b4709f2f6ad3deb39bab9b60f42580f1be8c07ebf95ef9bee" },
         {"clip-ViT-B-32-q8_0.ref.npz", "40c0fa89b9e08104dfb6a6d2e753ad0d092a3af80b4c56b822ad0e4e5d43a606" },
         {"deeplsd_md-f16.gguf", "288902d4934fcfb425f4ed96d257dac1e62e4bb2397e5c826fc1103744387117" },
