@@ -407,7 +407,12 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
       camera.SetModelId(options.camera_model_id);
       camera.Params() = options.camera_params;
       THROW_CHECK(camera.VerifyParams());
-      camera.SetPriorFocalLength(options.camera_has_prior_focal_length);
+      // Upstream parity (f1ea91d0): explicit source mapping — the
+      // SetPriorFocalLength shim would map false to GUESS, diverging from
+      // upstream's UNKNOWN for prior-free synthetic cameras.
+      camera.SetSource(options.camera_has_prior_focal_length
+                           ? CameraSource::USER
+                           : CameraSource::UNKNOWN);
       camera.SetCameraId(
           (database == nullptr)
               ? (rig_idx * options.num_cameras_per_rig + camera_idx + 1)

@@ -597,6 +597,10 @@ void CopyCameraIntrinsics(const Camera& src, Camera& dst) {
   dst.SetModelId(src.ModelId());
   dst.SetParams(src.Params());
   dst.SetPriorFocalLength(src.HasPriorFocalLength());
+  // Upstream parity (f1ea91d0): source participates in camera equality and
+  // flows through rig application; without this the database keeps its old
+  // calibration source while the config camera carries UNKNOWN.
+  dst.SetSource(src.Source());
 }
 
 }  // namespace
