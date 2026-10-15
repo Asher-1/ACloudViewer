@@ -1,10 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// Replays a recorded detection / raw-logit scenario through the C++ port of
-// upstream's tracker and relation-belief filter and prints per-frame state in
-// the same text format as tests/compare_temporal_upstream.py, which diffs it
-// against upstream deploy/render_video.py. Qt-free.
-//
-//   test_relate_temporal_replay scenario.txt > cpp.txt
+// ----------------------------------------------------------------------------
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>

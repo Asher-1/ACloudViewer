@@ -104,6 +104,11 @@ class AccuracyTests(unittest.TestCase):
         for scenario in manifest['scenarios']:
             if scenario['task'] != 'relation':
                 continue
+            # Plugin-level rows (temporal tracker / upstream replay parity)
+            # are model-free and do not run the checkpoint accuracy probe.
+            if not any(str(a).endswith('upstream_probe.py')
+                       for a in scenario.get('args', [])):
+                continue
             with self.subTest(scenario=scenario['id']):
                 args = scenario['args']
                 self.assertEqual(args[args.index('--reference-cache')+1],

@@ -906,6 +906,8 @@ function(aicore_add_yolo_whitebox_test name)
 endfunction()
 
 aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
+aicore_add_yolo_whitebox_test(test_yolo_mask_upsample)
+aicore_add_yolo_capi_test(test_yolo_mask_upsample_capi)
 
 # Whitebox op-level bisection tool for world-family device-parity failures
 # (model/env-gated; see tests/yolo/test_yolo_world_optrace.cpp).

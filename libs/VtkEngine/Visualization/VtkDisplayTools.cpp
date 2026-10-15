@@ -574,11 +574,12 @@ void VtkDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                                           pointUniqueColor.b, viewID, viewport);
         }
 
-        vis->setPointGaussianRendering(ecvCloud->pointGaussianEnabled(),
-                                       ecvCloud->pointGaussianRadius(),
-                                       ecvCloud->pointGaussianShaderPreset(),
-                                       ecvCloud->pointGaussianEmissive(),
-                                       viewID, viewport);
+        vis->setPointGaussianRendering(
+                ecvCloud->pointGaussianEnabled(),
+                ecvCloud->pointGaussianRadius(),
+                ecvCloud->pointGaussianShaderPreset(),
+                ecvCloud->pointGaussianEmissive(),
+                ecvCloud->pointGaussianScaleArray().c_str(), viewID, viewport);
 
         vis->setPointCloudOpacity(context.opacity, viewID, viewport);
     }
@@ -760,7 +761,8 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         vis->setPointGaussianRendering(
                 mesh->pointGaussianEnabled(), mesh->pointGaussianRadius(),
                 mesh->pointGaussianShaderPreset(),
-                mesh->pointGaussianEmissive(), viewID, viewport);
+                mesh->pointGaussianEmissive(),
+                mesh->pointGaussianScaleArray().c_str(), viewID, viewport);
     }
 
     context.visFiltering = inheritedVisFiltering;

@@ -669,6 +669,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QLINGBOTMAP=ON"
                 "-DPLUGIN_STANDARD_QSAM3D=ON"
                 "-DPLUGIN_STANDARD_QANYLABELING=ON"
+                "-DBUILD_SPIRULA=ON"
+                "-DPLUGIN_STANDARD_QSPIRULA=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

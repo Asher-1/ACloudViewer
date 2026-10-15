@@ -4115,6 +4115,7 @@ void VtkVis::setPointGaussianRendering(bool enabled,
                                        double gaussianRadius,
                                        int shaderPreset,
                                        bool emissive,
+                                       const char* scaleArray,
                                        const std::string& viewID,
                                        int viewport) {
     vtkActor* actor = getActorById(viewID);
@@ -4140,6 +4141,13 @@ void VtkVis::setPointGaussianRendering(bool enabled,
             existingPG->SetScaleFactor(gaussianRadius);
             existingPG->SetSplatShaderCode(preset.shaderCode);
             existingPG->SetTriangleScale(preset.triangleScale);
+            // Per-point splat size from a point-data array (e.g. the "Scale"
+            // field of imported gaussian splats); only set when non-empty —
+            // VTK stores the name in a std::string, so nullptr is UB. When
+            // absent the mapper falls back to the uniform ScaleFactor.
+            if (scaleArray && *scaleArray) {
+                existingPG->SetScaleArray(scaleArray);
+            }
             if (emissive) {
                 existingPG->EmissiveOn();
             } else {
@@ -4160,6 +4168,9 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         pgMapper->SetScaleFactor(gaussianRadius);
         pgMapper->SetSplatShaderCode(preset.shaderCode);
         pgMapper->SetTriangleScale(preset.triangleScale);
+        if (scaleArray && *scaleArray) {
+            pgMapper->SetScaleArray(scaleArray);
+        }
         if (emissive) {
             pgMapper->EmissiveOn();
         } else {

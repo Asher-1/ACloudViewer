@@ -95,6 +95,9 @@ void ecvModelDownloader::cleanupActiveReply() {
         m_outFile = nullptr;
     }
     if (m_reply) {
+        // H2 fix: disconnect before abort() so the finished lambda doesn't run
+        // re-entrantly and start a retry after cancel() stopped the timer.
+        disconnect(m_reply, nullptr, this, nullptr);
         m_reply->abort();
         m_reply->deleteLater();
         m_reply = nullptr;
@@ -108,10 +111,15 @@ void ecvModelDownloader::cleanupActiveReply() {
 
 void ecvModelDownloader::cancel() {
     if (!m_busy) return;
+    const bool wasBusy = m_busy;
     if (m_stallTimer) m_stallTimer->stop();
     if (m_retryTimer) m_retryTimer->stop();
     cleanupActiveReply();
     emit logMessage(tr("[Download] Cancelled."));
+    // H2 fix: emit finished(false) exactly once so the caller can re-enable
+    // its controls. cleanupActiveReply() already set m_busy=false, so the
+    // handler won't call cancel() again.
+    if (wasBusy) emit finished(false, m_destPath);
 }
 
 QUrl ecvModelDownloader::hfDownloadUrl(const QString& repoId,

@@ -55,6 +55,13 @@ std::vector<Detection> postprocess(const std::vector<float>& raw, int no,
  * canvas block, so the composition collapses to a per-canvas-pixel lookup
  * (px, py) = (x * pw / cw, y * ph / ch) — no intermediate mask tensor.
  * detections must still be in canvas coordinates (call before unscale_boxes).
+ *
+ * bilinear = false keeps the nearest-block output above bit-identical.
+ * bilinear = true (Ultralytics-style smooth masks) interpolates the mixed
+ * logit map v = mc . proto bilinearly (proto cell centres at
+ * (p + 0.5) * canvas / proto canvas px, clamp-to-edge) to every canvas pixel
+ * centre inside the same box window and thresholds at v > 0. The window
+ * (x, y, w, h, bits) contract is identical; cost is O(box area).
  */
 struct SegMask {
     std::vector<uint8_t> bits;  // [w * h], 1 = inside the instance
@@ -66,7 +73,7 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
                                    const ModelMeta& meta,
                                    const std::vector<float>& proto,
                                    int proto_w, int proto_h, int canvas_w,
-                                   int canvas_h);
+                                   int canvas_h, bool bilinear = false);
 
 /* Pose: one detection plus its decoded keypoints.
  *

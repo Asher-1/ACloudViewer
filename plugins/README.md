@@ -43,6 +43,7 @@ inference tasks with one shared ggml runtime (including RelateAnything).
 | **qSAM3** | `PLUGIN_STANDARD_QSAM3` | [docs/guides/plugins/qSAM3.md](../docs/guides/plugins/qSAM3.md) | [qSAM3/README.md](core/Standard/qSAM3/README.md) |
 | **qSAM3D** | `PLUGIN_STANDARD_QSAM3D` | — | [qSAM3D/README.md](core/Standard/qSAM3D/README.md) |
 | **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
+| **qSpirula** | `PLUGIN_STANDARD_QSPIRULA` | — | [qSpirula/README.md](core/Standard/qSpirula/README.md) |
 | **qGKD** | `PLUGIN_STANDARD_QGKD` | — | [qGKD/README.md](core/Standard/qGKD/README.md) |
 | **qLingbotMap** | `PLUGIN_STANDARD_QLINGBOTMAP` | — | [qLingbotMap/README.md](core/Standard/qLingbotMap/README.md) |
 | **qRAM** | `PLUGIN_STANDARD_QRAM` | [docs/guides/plugins/qRAM.md](../docs/guides/plugins/qRAM.md) | [qRAM/README.md](core/Standard/qRAM/README.md) |

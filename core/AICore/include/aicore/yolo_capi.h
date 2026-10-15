@@ -59,6 +59,25 @@ AICORE_CAPI void aicore_yolo_options_set_iou_thres(aicore_yolo_options* opts,
 /** Caps the returned detections (0 = model default max_det). */
 AICORE_CAPI void aicore_yolo_options_set_top_k(aicore_yolo_options* opts,
                                                uint32_t top_k);
+/** Segment-mask upsampling mode (default 0). Instance masks are computed on
+ *  the low-resolution proto grid (typically H/4) and brought to the
+ *  letterbox canvas:
+ *   0 = nearest blocks: every proto cell whose logit > 0 fills its whole
+ *       canvas block (staircase edges of canvas/proto px). Unchanged legacy
+ *       output.
+ *   1 = bilinear logits (Ultralytics process_mask style): the per-instance
+ *       mixed logit map is bilinearly interpolated to canvas pixel centres
+ *       (proto cell centres at (p + 0.5) * canvas / proto, clamp-to-edge at
+ *       the grid border) inside the box window and thresholded at logit > 0
+ *       (sigmoid 0.5), giving smooth boundaries. Same window/size contract
+ *       and O(box area) cost as mode 0.
+ *  Any non-zero value selects bilinear. Takes effect at load; also readable
+ *  through aicore_yolo_options_get_mask_upsample. */
+AICORE_CAPI void aicore_yolo_options_set_mask_upsample(
+        aicore_yolo_options* opts, int bilinear);
+/** Current segment-mask upsampling mode (0 nearest, 1 bilinear; 0 for NULL). */
+AICORE_CAPI int aicore_yolo_options_get_mask_upsample(
+        const aicore_yolo_options* opts);
 /* Session-level debug/tuning knobs (default: model metadata / off). 0 clears
  * back to the default. log_level: 0=DEBUG,1=INFO,2=WARN,3=ERROR. */
 AICORE_CAPI void aicore_yolo_options_set_log_level(aicore_yolo_options* opts,

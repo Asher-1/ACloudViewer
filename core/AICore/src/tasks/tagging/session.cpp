@@ -312,14 +312,13 @@ struct Model {
             // RAM++ AUTO keeps its faster native MMQ path unless UPSTREAM
             // arithmetic is requested.
             const bool q8_weight_only =
-                    is_cuda && !caption &&
-                    ggml_is_quantized(source->type) &&
+                    is_cuda && !caption && ggml_is_quantized(source->type) &&
                     (architecture != "ram_plus" || upstream_q8_arithmetic);
             Tensor *dst =
                     q8_weight_only
                             ? ggml_new_tensor(weights, GGML_TYPE_F16,
                                               ggml_n_dims(source), source->ne)
-                            : caption_text_weight
+                    : caption_text_weight
                             ? ggml_new_tensor(weights, GGML_TYPE_F32,
                                               ggml_n_dims(source), source->ne)
                             : ggml_dup_tensor(weights, source);
@@ -449,19 +448,16 @@ struct Model {
                     require(count % QK8_0 == 0,
                             "Q8_0 weight is not block-aligned: " + name);
                     std::vector<ggml_fp16_t> converted(count);
-                    const auto *blocks = static_cast<const block_q8_0 *>(
-                            source->data);
+                    const auto *blocks =
+                            static_cast<const block_q8_0 *>(source->data);
                     for (int64_t block = 0; block < count / QK8_0; ++block) {
-                        const float scale =
-                                ggml_fp16_to_fp32(blocks[block].d);
+                        const float scale = ggml_fp16_to_fp32(blocks[block].d);
                         for (int j = 0; j < QK8_0; ++j)
-                            converted[block * QK8_0 + j] =
-                                    ggml_fp32_to_fp16(scale *
-                                                      blocks[block].qs[j]);
+                            converted[block * QK8_0 + j] = ggml_fp32_to_fp16(
+                                    scale * blocks[block].qs[j]);
                     }
-                    ggml_backend_tensor_set(
-                            dst, converted.data(), 0,
-                            count * sizeof(ggml_fp16_t));
+                    ggml_backend_tensor_set(dst, converted.data(), 0,
+                                            count * sizeof(ggml_fp16_t));
                 } else {
                     ggml_backend_tensor_set(dst, source->data, 0,
                                             ggml_nbytes(source));
@@ -518,8 +514,8 @@ struct InferenceGraph {
         // requests F32. Only RAM++ quantized weights need that stronger
         // accumulation contract; floating tagging models retain upstream F16.
         if (!model.caption &&
-            (!model.is_cuda || (model.architecture == "ram_plus" &&
-                                quantized_weight)))
+            (!model.is_cuda ||
+             (model.architecture == "ram_plus" && quantized_weight)))
             ggml_mul_mat_set_prec(product, GGML_PREC_F32);
         ggml_set_name(product,
                       model.caption ? "ram_caption_matmul" : "ram_tags_matmul");

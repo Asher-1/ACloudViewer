@@ -56,6 +56,13 @@ private:
     JsonRPCResult rpcOpen(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcExport(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcFileConvert(const QMap<QString, QVariant>& params);
+    // --- Spirula Studio (BUILD_SPIRULA; spirula_base) ---
+    JsonRPCResult rpcSpirulaVersion(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSpirulaDevices(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSpirulaLaunch(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSpirulaCli(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSpirulaImport(const QMap<QString, QVariant>& params);
+    JsonRPCResult rpcSpirulaCancel(const QMap<QString, QVariant>& params);
     // --- Scene tree ---
     JsonRPCResult rpcSceneList(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcSceneInfo(const QMap<QString, QVariant>& params);

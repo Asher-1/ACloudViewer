@@ -39,10 +39,13 @@ void qRelateAnything::onNewSelection(const ccHObject::Container& selected) {
     refreshSelection();
 }
 void qRelateAnything::refreshSelection() {
-    if (!m_dialog) return;
+    if (!m_dialog || !m_app) return;
+    // M7 fix: query current selection from app instead of using stored
+    // raw pointers, which may have become dangling if objects were deleted.
+    const ccHObject::Container& selected = m_app->getSelectedEntities();
     QList<QPair<QString, QImage>> images;
-    ccHObject::Container candidates = m_selection;
-    for (auto* obj : m_selection)
+    ccHObject::Container candidates = selected;
+    for (auto* obj : selected)
         if (obj && obj->isGroup())
             obj->filterChildren(candidates, true, CV_TYPES::IMAGE, false);
     QSet<unsigned> ids;

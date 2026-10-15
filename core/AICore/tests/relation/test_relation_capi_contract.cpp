@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <set>
+#include <string>
 
 #include "aicore/backend_capi.h"
 #include "aicore/relation_capi.h"
@@ -66,31 +68,73 @@ int main() {
             aicore_relation_last_error(nullptr));
     REQUIRE(aicore_relation_context_device(nullptr));
     float calibrationA = 7, calibrationB = 7;
-    REQUIRE(aicore_relation_calibration(nullptr, &calibrationA,
-                                        &calibrationB) < 0);
+    REQUIRE(aicore_relation_calibration(nullptr, &calibrationA, &calibrationB) <
+            0);
     REQUIRE(aicore_relation_object_vocabulary_count() == 497);
-    REQUIRE(std::strcmp(aicore_relation_object_vocabulary_at(0),
-                        "accordion") == 0 &&
-            std::strcmp(aicore_relation_object_vocabulary_at(496),
-                        "zebra") == 0 &&
+    REQUIRE(std::strcmp(aicore_relation_object_vocabulary_at(0), "accordion") ==
+                    0 &&
+            std::strcmp(aicore_relation_object_vocabulary_at(496), "zebra") ==
+                    0 &&
             !aicore_relation_object_vocabulary_at(-1) &&
             !aicore_relation_object_vocabulary_at(497));
     for (int i = 0; i < 497; ++i) {
         const char* n = aicore_relation_object_vocabulary_at(i);
         REQUIRE(n && n[0] && !std::strchr(n, ','));
     }
-    REQUIRE(aicore_relation_model_count() == 13);
-    REQUIRE(!aicore_relation_model_at(-1) && !aicore_relation_model_at(13));
-    int relations = 0, students = 0;
-    for (int i = 0; i < 13; ++i) {
+    // 9 ViT relation weights + 12 ConvNeXt relation weights, 3 text students
+    // and the CLIP tokenizer.
+    constexpr int kCatalogSize = 25;
+    REQUIRE(aicore_relation_model_count() == kCatalogSize);
+    REQUIRE(!aicore_relation_model_at(-1) &&
+            !aicore_relation_model_at(kCatalogSize));
+    int relations = 0, students = 0, tokenizers = 0, convnext = 0, vit = 0;
+    int vitFiles = 0;
+    std::set<std::string> filenames;
+    for (int i = 0; i < kCatalogSize; ++i) {
         const auto* e = aicore_relation_model_at(i);
-        REQUIRE(e && e->size_bytes > 0 && std::strlen(e->sha256) == 64);
+        REQUIRE(e && e->filename && e->download_url && e->architecture &&
+                e->sha256);
+        REQUIRE(e->size_bytes > 0 && std::strlen(e->sha256) == 64);
+        REQUIRE(filenames.insert(e->filename).second);
+        const std::string digest = e->sha256;
+        for (char c : digest)
+            REQUIRE((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
         if (e->role == AICORE_RELATION_MODEL_RELATIONS) ++relations;
         if (e->role == AICORE_RELATION_MODEL_TEXT) ++students;
+        if (e->role == AICORE_RELATION_MODEL_TOKENIZER) ++tokenizers;
+        if (e->role == AICORE_RELATION_MODEL_RELATIONS &&
+            std::strncmp(e->architecture, "convnext-", 9) == 0) {
+            ++convnext;
+            const std::string name = e->filename;
+            const std::string url = e->download_url;
+            // relsgg-convnext-{tiny,small,base,large}-{f16,f32,q8_0}.gguf
+            REQUIRE(name.rfind("relsgg-convnext-", 0) == 0);
+            REQUIRE(name.size() > 5 &&
+                    name.compare(name.size() - 5, 5, ".gguf") == 0);
+            REQUIRE(url.size() > name.size() + 1 &&
+                    url.compare(url.size() - name.size() - 1, name.size() + 1,
+                                "/" + name) == 0);
+            // The architecture names the size encoded in the filename.
+            REQUIRE(name.find(std::string(e->architecture)) !=
+                    std::string::npos);
+        } else if (e->role == AICORE_RELATION_MODEL_RELATIONS) {
+            ++vit;
+            const std::string name = e->filename;
+            if (name.rfind("relsgg-vit", 0) == 0) ++vitFiles;
+        }
     }
-    REQUIRE(relations == 9 && students == 3);
-    REQUIRE(aicore_relation_model_at(aicore_relation_model_default_index())
-                    ->role == AICORE_RELATION_MODEL_RELATIONS);
+    REQUIRE(relations == 21 && students == 3 && tokenizers == 1);
+    REQUIRE(convnext == 12 && vit == 9 && vitFiles == 9);
+    REQUIRE(relations + students + tokenizers == kCatalogSize);
+    const int defaultIndex = aicore_relation_model_default_index();
+    REQUIRE(defaultIndex >= 0 && defaultIndex < kCatalogSize);
+    const auto* defaultModel = aicore_relation_model_at(defaultIndex);
+    REQUIRE(defaultModel->role == AICORE_RELATION_MODEL_RELATIONS);
+    // The recommended default stays the ViT-S/16+ Q8_0 weight, not a
+    // ConvNeXt entry (whose graph is ported separately).
+    REQUIRE(std::strcmp(defaultModel->filename,
+                        "relsgg-vits16plus-q8_0.gguf") == 0);
+    REQUIRE(std::strncmp(defaultModel->architecture, "convnext-", 9) != 0);
     char* dir = aicore_relation_model_cache_dir();
     REQUIRE(dir && std::strstr(dir, "relation_models"));
     aicore_relation_free_buffer(dir);

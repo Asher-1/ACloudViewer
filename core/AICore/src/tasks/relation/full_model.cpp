@@ -592,6 +592,19 @@ struct FullModel::Impl : TensorLoader {
             if (ctx) ggml_free(ctx);
         }
     } cached_positions, retained_features;
+    // ConvNeXt convolution weights, dequantized once at load and stored in
+    // the packed F32 layouts ggml_im2col / ggml_conv_2d_dw_direct expect.
+    struct PackedConvs {
+        ggml_context *ctx = nullptr;
+        ggml_backend_buffer_t buffer = nullptr;
+        std::map<std::string, ggml_tensor *> kernels;
+        ~PackedConvs() {
+            if (buffer) ggml_backend_buffer_free(buffer);
+            if (ctx) ggml_free(ctx);
+        }
+    } packed_convs;
+    std::string model_family = "dinov3_vit";
+    std::vector<std::size_t> stage_channels, stage_depths;
     std::size_t c = 0, d = 0, depth = 0, heads = 0, intermediate = 0,
                 patch = 16, regs = 4, predicates = 0;
     float eps = 1e-5f;
@@ -643,10 +656,55 @@ struct FullModel::Impl : TensorLoader {
         const int64_t ffn = gguf_find_key(gguf, "ra.ffn_type");
         swiglu = ffn >= 0 &&
                  std::string(gguf_get_val_str(gguf, ffn)) == "swiglu";
-        if (!c || !d || !depth || !heads || !intermediate || !predicates)
-            throw std::runtime_error("incomplete full graph metadata");
-        if (c % heads || d % 8)
-            throw std::runtime_error("invalid full graph dimensions");
+        const int64_t family_id = gguf_find_key(gguf, "ra.model_family");
+        model_family = family_id >= 0 ? gguf_get_val_str(gguf, family_id)
+                                      : "dinov3_vit";
+        if (model_family == "dinov3_convnext") {
+            // The hierarchical tower carries per-stage widths and depths
+            // instead of the ViT scalar fields.
+            const auto hs_id = gguf_find_key(gguf, "ra.hidden_sizes");
+            const auto dp_id = gguf_find_key(gguf, "ra.depths");
+            if (hs_id < 0 || dp_id < 0 ||
+                gguf_get_arr_type(gguf, hs_id) != GGUF_TYPE_INT32 ||
+                gguf_get_arr_type(gguf, dp_id) != GGUF_TYPE_INT32)
+                throw std::runtime_error(
+                        "convnext metadata is missing hidden_sizes/depths");
+            const auto *hs = static_cast<const std::int32_t *>(
+                    gguf_get_arr_data(gguf, hs_id));
+            const auto *dp = static_cast<const std::int32_t *>(
+                    gguf_get_arr_data(gguf, dp_id));
+            for (std::size_t i = 0; i < gguf_get_arr_n(gguf, hs_id); ++i) {
+                if (hs[i] <= 0)
+                    throw std::runtime_error(
+                            "convnext hidden size must be positive");
+                stage_channels.push_back(static_cast<std::size_t>(hs[i]));
+            }
+            for (std::size_t i = 0; i < gguf_get_arr_n(gguf, dp_id); ++i) {
+                if (dp[i] <= 0)
+                    throw std::runtime_error("convnext depth must be positive");
+                stage_depths.push_back(static_cast<std::size_t>(dp[i]));
+            }
+            if (stage_channels.size() != 4 || stage_depths.size() != 4)
+                throw std::runtime_error(
+                        "convnext metadata requires exactly 4 stages");
+            if (stage_channels.back() != c)
+                throw std::runtime_error(
+                        "convnext hidden_size disagrees with the deepest "
+                        "stage");
+            depth = 0;
+            for (auto v : stage_depths) depth += v;
+            if (!c || !d || !predicates)
+                throw std::runtime_error("incomplete full graph metadata");
+            if (patch != 16)
+                throw std::runtime_error(
+                        "convnext fusion requires patch size 16");
+        } else {
+            if (!c || !d || !depth || !heads || !intermediate || !predicates)
+                throw std::runtime_error("incomplete full graph metadata");
+            if (c % heads)
+                throw std::runtime_error("invalid full graph dimensions");
+        }
+        if (d % 8) throw std::runtime_error("invalid full graph dimensions");
         tap_weights = host_f32(t("ra.backbone.layer_weights"));
         compose_gates = host_f32(t("ra.compose_gate"));
         calibration_a = meta_float("ra.calibration_a", 1.0f);
@@ -747,10 +805,10 @@ struct FullModel::Impl : TensorLoader {
                     "vocabulary exceeds the exact gather-index range");
         // Pack once at model load. Q/K/V have the same input and their output
         // rows are independent, so one matrix product preserves the graph's
-        // math while avoiding two dispatches per DINOv3 block. Strict F32 keeps
-        // the three upstream Linear calls: the packed width selects a different
-        // GEMM kernel and therefore a different K summation order.
-        if (!options.strict_f32) {
+        // math while avoiding two dispatches per DINOv3 block. Strict F32 still
+        // selects precise F32 accumulation. ConvNeXt has no attention and
+        // packs its convolution kernels instead.
+        if (model_family != "dinov3_convnext") {
             packed_qkv.ctx = ggml_init(
                     {2 * depth * ggml_tensor_overhead(), nullptr, true});
             if (!packed_qkv.ctx)
@@ -802,6 +860,8 @@ struct FullModel::Impl : TensorLoader {
                 ggml_backend_tensor_set(packed_qkv.biases[layer], bias.data(),
                                         0, bias.size() * sizeof(float));
             }
+        } else {
+            build_convnext_convs();
         }
         if (options.cache_positions) {
             const int grid = 448 / patch;
@@ -1031,11 +1091,9 @@ struct FullModel::Impl : TensorLoader {
     bool strict_cuda() const {
         return options.strict_f32 && options.backend == "cuda";
     }
-    // cuBLAS selects its kernel, and so the summation order, from the GEMM
-    // row count; strict arithmetic keeps PyTorch's padded pair count.
-    bool compact_pairs() const {
-        return options.compact_pairs && !options.strict_f32;
-    }
+    // Candidate identities are fixed before the relation head; dropping invalid
+    // rows preserves the public 128-slot wire format while reducing graph work.
+    bool compact_pairs() const { return options.compact_pairs; }
 
     // Fourier features of (x, y) points as [sin x, cos x, sin y, cos y] with
     // 16 bands each: freqs = 2**linspace(0, 7, 16), angles =
@@ -1579,6 +1637,474 @@ struct FullModel::Impl : TensorLoader {
         }
     }
 
+    float stage_ratio(std::size_t stage) const {
+        // Stage stride is 4*2^i, so the ratio to the patch grid is fixed:
+        // 4, 2, 1 and 0.5 at patch size 16.
+        return static_cast<float>(patch) /
+               (4.f * static_cast<float>(1 << stage));
+    }
+
+    // Quantized or F16 sources are cast once on the inference backend; the
+    // returned host F32 array keeps the source physical order, which already
+    // matches the packed GGML convolution layout.
+    std::vector<float> dequant_f32(ggml_tensor *source) {
+        const std::size_t n = ggml_nelements(source);
+        std::vector<float> out(n);
+        if (source->type == GGML_TYPE_F32) {
+            ggml_backend_tensor_get(source, out.data(), 0, n * sizeof(float));
+            return out;
+        }
+        auto run = make_run();
+        run.graph = ggml_new_graph_custom(run.ctx, 8, false);
+        std::vector<std::uint8_t> raw(ggml_nbytes(source));
+        ggml_backend_tensor_get(source, raw.data(), 0, raw.size());
+        auto *src = input_tensor(run, run.ctx, source->type, source->ne[0],
+                                 source->ne[1], source->ne[2], source->ne[3],
+                                 raw.data());
+        auto *cast = ggml_cast(run.ctx, src, GGML_TYPE_F32);
+        ggml_set_output(cast);
+        ggml_build_forward_expand(run.graph, cast);
+        execute(run);
+        ggml_backend_tensor_get(cast, out.data(), 0, n * sizeof(float));
+        ggml_backend_sched_reset(backend->scheduler);
+        return out;
+    }
+
+    void build_convnext_convs() {
+        // Every convolution weight is dequantized once at load into the F32
+        // layouts the graph consumes. LayerNorm affines are folded into the
+        // following linear map where the residual path allows it: a
+        // LayerNorm affine y*w+b composed with a linear map equals the same
+        // map with w folded into its input columns and W*b into its bias.
+        // Biases themselves stay explicit: the norms normalize per position
+        // over the channel axis, which only cancels scalars, not the
+        // per-channel constant a bias adds.
+        enum class Kind {
+            kDownsampleStem,
+            kDownsampleConv,
+            kDownsampleBias,
+            kDepthwise,
+            kPointwisePacked,
+            kStageProj
+        };
+        struct Spec {
+            Kind kind;
+            std::string name;
+            std::array<int64_t, 4> ne;
+            std::size_t s = 0, j = 0;
+        };
+        std::vector<Spec> specs;
+        const auto stage_prefix = [](std::size_t s) {
+            return "ra.backbone.model.model.stages." + std::to_string(s);
+        };
+        const auto ch = [&](std::size_t s) {
+            return static_cast<int64_t>(stage_channels[s]);
+        };
+        specs.push_back({Kind::kDownsampleStem,
+                         stage_prefix(0) + ".downsample_layers.0.weight",
+                         {4, 4, 3, ch(0)}});
+        for (std::size_t s = 1; s < 4; ++s) {
+            specs.push_back({Kind::kDownsampleConv,
+                             stage_prefix(s) + ".downsample_layers.1.weight",
+                             {2, 2, ch(s - 1), ch(s)},
+                             s});
+            // The stage's downsample LayerNorm affine is folded into this
+            // convolution: its scale multiplies the input channels and its
+            // shift lands in the bias through the original kernel.
+            specs.push_back(
+                    {Kind::kDownsampleBias,
+                     stage_prefix(s) + ".downsample_layers.1.bias.packed",
+                     {ch(s), 1, 1, 1},
+                     s});
+        }
+        for (std::size_t s = 0; s < 4; ++s)
+            for (std::size_t j = 0; j < stage_depths[s]; ++j)
+                specs.push_back({Kind::kDepthwise,
+                                 stage_prefix(s) + ".layers." +
+                                         std::to_string(j) +
+                                         ".depthwise_conv.weight",
+                                 {7, 7, 1, ch(s)},
+                                 s,
+                                 j});
+        for (std::size_t s = 0; s < 4; ++s)
+            for (std::size_t j = 0; j < stage_depths[s]; ++j) {
+                const auto p = stage_prefix(s) + ".layers." + std::to_string(j);
+                // The LayerScale gamma composes with the second pointwise map
+                // as a row scale, so both weights and bias are folded here.
+                specs.push_back({Kind::kPointwisePacked,
+                                 p + ".pointwise_conv1.weight.packed",
+                                 {ch(s), 4 * ch(s), 1, 1},
+                                 s,
+                                 j});
+                specs.push_back({Kind::kPointwisePacked,
+                                 p + ".pointwise_conv1.bias.packed",
+                                 {4 * ch(s), 1, 1, 1},
+                                 s,
+                                 j});
+                specs.push_back({Kind::kPointwisePacked,
+                                 p + ".pointwise_conv2.weight.packed",
+                                 {4 * ch(s), ch(s), 1, 1},
+                                 s,
+                                 j});
+                specs.push_back({Kind::kPointwisePacked,
+                                 p + ".pointwise_conv2.bias.packed",
+                                 {ch(s), 1, 1, 1},
+                                 s,
+                                 j});
+            }
+        for (std::size_t s = 0; s < 4; ++s) {
+            const float r = stage_ratio(s);
+            if (r > 1.f)
+                specs.push_back(
+                        {Kind::kStageProj,
+                         "ra.backbone.stage_proj." + std::to_string(s) +
+                                 ".weight",
+                         {static_cast<int64_t>(r), static_cast<int64_t>(r),
+                          ch(s), static_cast<int64_t>(c)}});
+        }
+        packed_convs.ctx = ggml_init(
+                {specs.size() * ggml_tensor_overhead(), nullptr, true});
+        if (!packed_convs.ctx)
+            throw std::runtime_error("cannot create packed conv kernels");
+        for (const auto &spec : specs) {
+            auto *kernel = ggml_new_tensor(packed_convs.ctx, GGML_TYPE_F32, 4,
+                                           spec.ne.data());
+            packed_convs.kernels.emplace(spec.name, kernel);
+        }
+        // Depthwise kernels switch to the channels-innermost (CWHN) memory
+        // order every backend's conv_2d_dw dispatch expects for token-major
+        // input: the logical shape stays [KW, KH, 1, C] but the strides place
+        // the channel axis innermost, so the physical order is
+        // (ky*KW + kx)*C + c.
+        for (const auto &spec : specs)
+            if (spec.kind == Kind::kDepthwise) {
+                auto *k = packed_convs.kernels.at(spec.name);
+                k->nb[0] = k->ne[3] * sizeof(float);
+                k->nb[1] = k->ne[0] * k->nb[0];
+                k->nb[2] = k->nb[0];
+                k->nb[3] = sizeof(float);
+            }
+        packed_convs.buffer = ggml_backend_alloc_ctx_tensors(
+                packed_convs.ctx, backend->accelerator);
+        if (!packed_convs.buffer)
+            throw std::runtime_error("cannot allocate packed conv kernels");
+        ggml_backend_buffer_set_usage(packed_convs.buffer,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        // Host-side normalization data consumed by the folds below: stage
+        // s>0 folds its downsample LayerNorm affine into the downsample
+        // convolution.
+        std::array<std::vector<float>, 4> stage_ln_w, stage_ln_b;
+        for (std::size_t s = 1; s < 4; ++s) {
+            stage_ln_w[s] = dequant_f32(
+                    t(stage_prefix(s) + ".downsample_layers.0.weight"));
+            stage_ln_b[s] = dequant_f32(
+                    t(stage_prefix(s) + ".downsample_layers.0.bias"));
+        }
+        for (const auto &spec : specs) {
+            auto *kernel = packed_convs.kernels.at(spec.name);
+            std::vector<float> host;
+            switch (spec.kind) {
+                case Kind::kDepthwise: {
+                    const int64_t chn = ch(spec.s);
+                    // [C,1,7,7] source: c*49 + ky*7 + kx
+                    auto src = dequant_f32(t(spec.name));
+                    host.resize(src.size());
+                    for (int64_t ci = 0; ci < chn; ++ci)
+                        for (int64_t ky = 0; ky < 7; ++ky)
+                            for (int64_t kx = 0; kx < 7; ++kx)
+                                host[(ky * 7 + kx) * chn + ci] =
+                                        src[ci * 49 + ky * 7 + kx];
+                    break;
+                }
+                case Kind::kDownsampleConv: {
+                    // [KW,KH,IC,OC] physical order
+                    host = dequant_f32(t(spec.name));
+                    const int64_t ic_n = ch(spec.s - 1);
+                    const auto &ln = stage_ln_w[spec.s];
+                    for (std::size_t i = 0; i < host.size(); ++i)
+                        host[i] *= ln[(i / 4) % ic_n];
+                    break;
+                }
+                case Kind::kDownsampleBias: {
+                    // bias' = bias + kernel_orig * ln_shift, summed over the
+                    // input channels of the [KW,KH,IC,OC] layout (KW*KH = 4).
+                    auto k = dequant_f32(t(stage_prefix(spec.s) +
+                                           ".downsample_layers.1.weight"));
+                    auto b = dequant_f32(t(stage_prefix(spec.s) +
+                                           ".downsample_layers.1.bias"));
+                    const auto &shift = stage_ln_b[spec.s];
+                    const int64_t oc_n = ch(spec.s);
+                    const int64_t ic_n = ch(spec.s - 1);
+                    host.resize(oc_n);
+                    for (int64_t oc = 0; oc < oc_n; ++oc) {
+                        const int64_t base = oc * 4 * ic_n;
+                        float acc = b[oc];
+                        for (int64_t ic = 0; ic < ic_n; ++ic)
+                            acc += shift[ic] *
+                                   (k[base + ic * 4] + k[base + ic * 4 + 1] +
+                                    k[base + ic * 4 + 2] +
+                                    k[base + ic * 4 + 3]);
+                        host[oc] = acc;
+                    }
+                    break;
+                }
+                case Kind::kPointwisePacked: {
+                    const auto p = stage_prefix(spec.s) + ".layers." +
+                                   std::to_string(spec.j);
+                    const bool pw1 = spec.name.find("pointwise_conv1") !=
+                                     std::string::npos;
+                    auto w = dequant_f32(
+                            t(p + (pw1 ? ".pointwise_conv1.weight"
+                                       : ".pointwise_conv2.weight")));
+                    auto b =
+                            dequant_f32(t(p + (pw1 ? ".pointwise_conv1.bias"
+                                                   : ".pointwise_conv2.bias")));
+                    const int64_t dd = ch(spec.s), d4 = 4 * dd;
+                    const bool is_weight =
+                            spec.name.compare(spec.name.size() - 14, 14,
+                                              ".weight.packed") == 0;
+                    if (pw1) {
+                        // Block LayerNorm affine folded into the first map.
+                        auto ln_w = dequant_f32(t(p + ".layer_norm.weight"));
+                        auto ln_b = dequant_f32(t(p + ".layer_norm.bias"));
+                        if (is_weight) {
+                            for (int64_t oc = 0; oc < d4; ++oc)
+                                for (int64_t ic = 0; ic < dd; ++ic)
+                                    w[oc * dd + ic] *= ln_w[ic];
+                            host = std::move(w);
+                        } else {
+                            host.resize(d4);
+                            for (int64_t oc = 0; oc < d4; ++oc) {
+                                float acc = b[oc];
+                                for (int64_t ic = 0; ic < dd; ++ic)
+                                    acc += w[oc * dd + ic] * ln_b[ic];
+                                host[oc] = acc;
+                            }
+                        }
+                    } else {
+                        // LayerScale gamma folded into the second map's rows.
+                        auto gamma = dequant_f32(t(p + ".gamma"));
+                        if (is_weight) {
+                            for (int64_t oc = 0; oc < dd; ++oc)
+                                for (int64_t ic = 0; ic < d4; ++ic)
+                                    w[oc * d4 + ic] *= gamma[oc];
+                            host = std::move(w);
+                        } else {
+                            for (int64_t oc = 0; oc < dd; ++oc)
+                                b[oc] *= gamma[oc];
+                            host = std::move(b);
+                        }
+                    }
+                    break;
+                }
+                default:
+                    host = dequant_f32(t(spec.name));
+                    break;
+            }
+            if (host.size() != static_cast<std::size_t>(ggml_nelements(kernel)))
+                throw std::runtime_error("conv kernel size mismatch: " +
+                                         spec.name);
+            ggml_backend_tensor_set(kernel, host.data(), 0,
+                                    host.size() * sizeof(float));
+        }
+    }
+
+    // ConvNeXt block: depthwise 7x7, channel LayerNorm, gated FFN. The block
+    // keeps the token-major [C, h*w] layout end to end: it is
+    // channels-contiguous, so every backend's depthwise dispatch takes its
+    // CWHN variant and returns token-major, and the channel LayerNorm is the
+    // bare normalize. The norm affine is folded into pointwise_conv1 at load
+    // (see build_convnext_convs); the depthwise bias stays explicit because
+    // the per-position norm only cancels scalars, not per-channel constants.
+    ggml_tensor *convnext_block(ggml_context *ctx,
+                                ggml_tensor *x,
+                                int w,
+                                int h,
+                                std::size_t stage,
+                                std::size_t j) {
+        const auto p = "ra.backbone.model.model.stages." +
+                       std::to_string(stage) + ".layers." + std::to_string(j);
+        const int64_t C = x->ne[0], hw = x->ne[1];
+        // [C, w, h] permuted to [W, H, C] semantics: a zero-copy
+        // channels-contiguous view of the token-major input.
+        auto *spatial =
+                ggml_permute(ctx, ggml_reshape_3d(ctx, x, C, w, h), 2, 0, 1, 3);
+        auto *dw = ggml_conv_2d_dw_direct(
+                ctx, packed_convs.kernels.at(p + ".depthwise_conv.weight"),
+                spatial, 1, 1, 3, 3, 1, 1);
+        auto *y = ggml_view_2d(ctx, dw, C, hw, C * sizeof(float), 0);
+        y = ggml_add(ctx, y, as_f32(ctx, t(p + ".depthwise_conv.bias")));
+        y = ggml_norm(ctx, y, eps);
+        y = linear(
+                ctx, y,
+                packed_convs.kernels.at(p + ".pointwise_conv1.weight.packed"),
+                packed_convs.kernels.at(p + ".pointwise_conv1.bias.packed"));
+        y = ggml_gelu_erf(ctx, y);
+        // pointwise_conv2 carries the folded LayerScale gamma, so the branch
+        // result feeds the residual directly.
+        y = linear(
+                ctx, y,
+                packed_convs.kernels.at(p + ".pointwise_conv2.weight.packed"),
+                packed_convs.kernels.at(p + ".pointwise_conv2.bias.packed"));
+        return ggml_add(ctx, x, y);
+    }
+
+    // token-major [C_in, h*w] -> im2col+matmul -> token-major [C_out, h'*w'].
+    // The r x r stride-r projection also realizes pixel_unshuffle: reshaping
+    // [d, C*r^2] to the [KW, KH, IC, OC] convolution layout composes the
+    // phase folding with the 1x1 projection in one product. Biases are added
+    // by the callers: each consumer applies its own (possibly folded) shift.
+    ggml_tensor *convnext_conv(ggml_context *ctx,
+                               ggml_tensor *x,
+                               int w,
+                               int h,
+                               const std::string &kernel_name,
+                               int64_t c_out,
+                               int stride,
+                               ggml_tensor *spatial_input = nullptr) {
+        auto *kernel = packed_convs.kernels.at(kernel_name);
+        const int64_t K = kernel->ne[0] * kernel->ne[1] * kernel->ne[2];
+        auto *view =
+                spatial_input
+                        ? spatial_input
+                        : ggml_cont(ctx, ggml_permute(ctx,
+                                                      ggml_reshape_3d(ctx, x,
+                                                                      x->ne[0],
+                                                                      w, h),
+                                                      2, 0, 1, 3));
+        auto *columns = ggml_im2col(ctx, kernel, view, stride, stride, 0, 0, 1,
+                                    1, true, GGML_TYPE_F32);
+        const int64_t w_out = w / stride, h_out = h / stride;
+        return matmul(ctx, ggml_reshape_2d(ctx, kernel, K, c_out),
+                      ggml_reshape_2d(ctx, columns, K, w_out * h_out));
+    }
+
+    ggml_tensor *backbone_convnext(
+            GraphRun &run,
+            ggml_context *ctx,
+            ggml_tensor *image,
+            std::vector<ggml_tensor *> &taps,
+            int height,
+            int width,
+            std::vector<std::pair<std::string, ggml_tensor *>> *trace) {
+        (void)run;
+        auto tokenize = [&](ggml_tensor *map, int64_t channels, int64_t hw) {
+            // [W, H, C] -> token-major [C, hw].
+            return ggml_reshape_2d(
+                    ctx, ggml_cont(ctx, ggml_permute(ctx, map, 1, 2, 0, 3)),
+                    channels, hw);
+        };
+        ggml_tensor *x = nullptr;
+        int w = width, h = height;
+        for (std::size_t s = 0; s < 4; ++s) {
+            const auto prefix =
+                    "ra.backbone.model.model.stages." + std::to_string(s);
+            if (s == 0) {
+                // The stem LayerNorm keeps its full affine: the residual path
+                // branches right after it, so the affine cannot move past the
+                // branch point.
+                x = convnext_conv(ctx, nullptr, w, h,
+                                  prefix + ".downsample_layers.0.weight",
+                                  stage_channels[0], 4, image);
+                x = ggml_add(
+                        ctx, x,
+                        as_f32(ctx, t(prefix + ".downsample_layers.0.bias")));
+                x = norm(ctx, x, t(prefix + ".downsample_layers.1.weight"),
+                         t(prefix + ".downsample_layers.1.bias"), eps);
+            } else {
+                // The downsample LayerNorm affine is folded into the
+                // convolution that follows (scale into the input channels,
+                // shift into its packed bias); the residual branches at that
+                // convolution's output, so the fold is exact.
+                x = ggml_norm(ctx, x, eps);
+                x = convnext_conv(ctx, x, w, h,
+                                  prefix + ".downsample_layers.1.weight",
+                                  stage_channels[s], 2);
+                x = ggml_add(
+                        ctx, x,
+                        packed_convs.kernels.at(
+                                prefix + ".downsample_layers.1.bias.packed"));
+            }
+            w /= s == 0 ? 4 : 2;
+            h /= s == 0 ? 4 : 2;
+            for (std::size_t j = 0; j < stage_depths[s]; ++j)
+                x = convnext_block(ctx, x, w, h, s, j);
+            if (trace)
+                trace->emplace_back("convnext_stage_" + std::to_string(s), x);
+            taps.push_back(x);
+        }
+        // Stage fusion: the finer stages fold r x r phases into the projection
+        // convolution, the stride-32 map is bilinearly resized, and every
+        // branch shares projection+norm and the softmax combiner.
+        const int grid = height / patch;
+        std::vector<ggml_tensor *> projected;
+        for (std::size_t s = 0; s < 4; ++s) {
+            const std::string p = "ra.backbone.stage_proj." + std::to_string(s);
+            const std::string n = "ra.backbone.stage_norm." + std::to_string(s);
+            const float r = stage_ratio(s);
+            const int64_t channels = stage_channels[s];
+            ggml_tensor *f = taps[s];
+            if (r > 1.f) {
+                const int sw = grid * static_cast<int>(r),
+                          sh = grid * static_cast<int>(r);
+                f = convnext_conv(ctx, f, sw, sh, p + ".weight", c,
+                                  static_cast<int>(r));
+                f = ggml_add(ctx, f, as_f32(ctx, t(p + ".bias")));
+            } else {
+                if (r < 1.f) {
+                    // Bilinear resize of the [W, H, C] view to the patch grid.
+                    auto *view = ggml_cont(
+                            ctx,
+                            ggml_permute(ctx,
+                                         ggml_reshape_3d(ctx, f, channels,
+                                                         grid / 2, grid / 2),
+                                         2, 0, 1, 3));
+                    auto *up = ggml_interpolate(ctx, view, grid, grid, channels,
+                                                1, GGML_SCALE_MODE_BILINEAR);
+                    f = tokenize(up, channels,
+                                 static_cast<int64_t>(grid) * grid);
+                }
+                // The 1x1 projection stores a 4D Conv2d weight [d, C, 1, 1];
+                // flatten it to [C, d].
+                f = linear(ctx, f,
+                           ggml_reshape_2d(ctx, t(p + ".weight"), channels,
+                                           static_cast<int64_t>(c)),
+                           t(p + ".bias"));
+            }
+            f = norm(ctx, f, t(n + ".weight"), t(n + ".bias"), eps);
+            projected.push_back(f);
+        }
+        if (options.strict_f32 && options.backend == "cuda") {
+            // Official F.softmax(layer_weights) runs on the device; its expf
+            // and warp-sum order differ from host std::exp by 1 ulp on some
+            // checkpoints.
+            auto *sw = ggml_soft_max(
+                    ctx, as_f32(ctx, t("ra.backbone.layer_weights")));
+            ggml_tensor *fused =
+                    ggml_mul(ctx, projected[0], ggml_view_1d(ctx, sw, 1, 0));
+            for (std::size_t i = 1; i < projected.size(); ++i)
+                fused = ggml_add(
+                        ctx, fused,
+                        ggml_mul(ctx, projected[i],
+                                 ggml_view_1d(ctx, sw, 1, i * sizeof(float))));
+            if (trace) trace->emplace_back("backbone_patch", fused);
+            return fused;
+        }
+        auto weights = tap_weights;
+        const float mx = *std::max_element(weights.begin(), weights.end());
+        float sum = 0;
+        for (auto &v : weights) {
+            v = std::exp(v - mx);
+            sum += v;
+        }
+        ggml_tensor *fused = ggml_scale(ctx, projected[0], weights[0] / sum);
+        for (std::size_t i = 1; i < projected.size(); ++i)
+            fused = ggml_add(ctx, fused,
+                             ggml_scale(ctx, projected[i], weights[i] / sum));
+        if (trace) trace->emplace_back("backbone_patch", fused);
+        return fused;
+    }
+
     ggml_tensor *backbone(GraphRun &run,
                           ggml_context *ctx,
                           ggml_tensor *image,
@@ -1587,6 +2113,9 @@ struct FullModel::Impl : TensorLoader {
                           int width,
                           std::vector<std::pair<std::string, ggml_tensor *>>
                                   *trace = nullptr) {
+        if (model_family == "dinov3_convnext")
+            return backbone_convnext(run, ctx, image, taps, height, width,
+                                     trace);
         auto *kernel =
                 t("ra.backbone.model.embeddings.patch_embeddings.weight");
         auto *columns = ggml_im2col(ctx, kernel, image, patch, patch, 0, 0, 1,
@@ -1684,31 +2213,19 @@ struct FullModel::Impl : TensorLoader {
                 if (traced) trace->emplace_back(name, value);
                 return value;
             };
-            ggml_tensor *q, *k, *v;
-            if (options.strict_f32) {
-                const auto projection = [&](const char *name, bool bias) {
-                    const std::string p = pfx + ".attention." + name;
-                    return linear(ctx, y, t(p + ".weight"),
-                                  bias ? t(p + ".bias") : nullptr);
-                };
-                q = mark("backbone_q", projection("q_proj", true));
-                k = mark("backbone_k", projection("k_proj", false));
-                v = mark("backbone_v", projection("v_proj", true));
-            } else {
-                auto *qkv = linear(ctx, y, packed_qkv.weights[layer],
-                                   packed_qkv.biases[layer]);
-                q = mark("backbone_q",
-                         ggml_cont(ctx, ggml_view_2d(ctx, qkv, c, tokens,
-                                                     qkv->nb[1], 0)));
-                k = mark("backbone_k",
-                         ggml_cont(ctx,
-                                   ggml_view_2d(ctx, qkv, c, tokens, qkv->nb[1],
+            auto *qkv = linear(ctx, y, packed_qkv.weights[layer],
+                               packed_qkv.biases[layer]);
+            auto *q = mark("backbone_q",
+                           ggml_cont(ctx, ggml_view_2d(ctx, qkv, c, tokens,
+                                                       qkv->nb[1], 0)));
+            auto *k = mark(
+                    "backbone_k",
+                    ggml_cont(ctx, ggml_view_2d(ctx, qkv, c, tokens, qkv->nb[1],
                                                 c * sizeof(float))));
-                v = mark("backbone_v",
-                         ggml_cont(ctx,
-                                   ggml_view_2d(ctx, qkv, c, tokens, qkv->nb[1],
+            auto *v = mark(
+                    "backbone_v",
+                    ggml_cont(ctx, ggml_view_2d(ctx, qkv, c, tokens, qkv->nb[1],
                                                 2 * c * sizeof(float))));
-            }
             q = ggml_permute(ctx, ggml_reshape_4d(ctx, q, dh, heads, tokens, 1),
                              0, 2, 1, 3);
             k = ggml_permute(ctx, ggml_reshape_4d(ctx, k, dh, heads, tokens, 1),

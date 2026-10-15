@@ -904,7 +904,10 @@ def release_manifest_accuracy_contract_failures(
 
 def find_binary(build: Path, name: str) -> Path:
     suffixes = (".exe", "") if os.name == "nt" else ("",)
-    for directory in (build / "bin" / "aicore_tests", build / "bin"):
+    # bin/plugin_test holds plugin-level unit tests (for example the
+    # qRelateAnything temporal tracker tests) that manifest rows may consume.
+    for directory in (build / "bin" / "aicore_tests", build / "bin",
+                      build / "bin" / "plugin_test"):
         for suffix in suffixes:
             candidate = directory / f"{name}{suffix}"
             if candidate.is_file():
@@ -1457,6 +1460,11 @@ def run_attempt(spec: RunSpec, args: argparse.Namespace) -> Attempt:
         )
         output = completed.stdout
         returncode = completed.returncode
+    except OSError as error:
+        # A missing or non-executable probe (for example a plugin test that
+        # was not built) is a row failure, not a runner crash.
+        output = f"cannot execute probe {spec.command[0]}: {error}"
+        returncode = 127
     except subprocess.TimeoutExpired as error:
         raw = error.stdout or ""
         output = raw.decode(errors="replace") if isinstance(raw, bytes) else raw

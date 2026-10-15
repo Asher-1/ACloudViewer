@@ -1,8 +1,8 @@
 {
   "repository": "https://github.com/Asher-1/RelateAnything-GGML",
-  "commit": "62f8540a2453349b371a51154ac9b5ed69404bfa",
+  "commit": "984833746e8a2aa04e7a70fc6e281dcc3bb7db54",
   "ggml_commit": "8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b",
-  "source_snapshot": "Local upstream working tree 2026-10-12: automatic CUDA F32 precision defaults, explicit precision overrides and invalid-mode validation, native-only ggml patch, and the published Q8_0 export retaining ra.vocab_head.W in F16. F16/F32 export policy metadata is corrected. The exact Hugging Face repository revision pins all published artifacts. The upstream process-global ggml-runtime-options API is mapped to task-owned relation options in AICore instead of cross-task mutable state.",
+  "source_snapshot": "Upstream commit 984833746e8a: adds the dinov3_convnext backbone family (4-stage hierarchical tower, per-stage widths/depths in GGUF metadata, patch size 16, 12 published relsgg-convnext-{tiny,small,base,large}-{f16,f32,q8_0} models), packs Q/K/V unconditionally for ViT, and no longer gates pair compaction on strict F32. The ggml patch and public C ABI are unchanged. The exact Hugging Face repository revision pins all published artifacts. The upstream process-global ggml-runtime-options API is mapped to task-owned relation options in AICore instead of cross-task mutable state.",
   "published_inventory": {
     "verified_at": "2026-10-12",
     "source_api": "https://huggingface.co/api/models/Asher-1/relateanything-ggml-full/tree/2377ca3539bf5c4f09161a886a38dd0fc7517bd0/gguf?recursive=false",
@@ -112,7 +112,7 @@
   "files": {
     "cpp_ggml/src/backend.cpp": "0c9bfc7a2c445c89394d4dc931500977c575b0ec34846afb840e91784879803a",
     "cpp_ggml/src/c_api.cpp": "d5c8fa048ba00c599e22a55c588b36e895e6824fa40775b9665ed4a87c14a362",
-    "cpp_ggml/src/full_model.cpp": "4a076c97aa52a60632da97fc217aee6014f67e9e07042554e4445f655f4841c5",
+    "cpp_ggml/src/full_model.cpp": "63d62e57bfbbcf25415735035033e00b50857e0366a6fc199fa1633dffb73192",
     "cpp_ggml/src/gguf_model.cpp": "a63b6540a7eb3298df0098d3639e9b738bbe72708a89e0e53eadc47ae78cbbc1",
     "cpp_ggml/src/image_io.cpp": "fa066a83e5fca5af9127ff90a2932042aea0ff779f86b3b2bd7ac1c8e5c5ddd7",
     "cpp_ggml/src/inference.cpp": "57e616706f38a5d3b52c3070ca3b31489efbafaea9a6a5242e8fced26877f28b",
@@ -129,10 +129,10 @@
     "cpp_ggml/third_party/clip_tokenizer.hpp": "469f57954f9bfbc5b8646b1f8deb1fea82aa1525a68ee406a99a835c35053182",
     "cpp_ggml/third_party/patches/0001-relateanything-ggml.patch": "1a856e6ed60e2a80eb3f26516cfd6d3ad237b3266a488ca683f3b6a23eb48372",
     "relsgg/corpus_type_map.json": "0e6230a1cfd747404a2b82f6d47a0111e1d45f403a48259fda257bf16750346d",
-    "cpp_ggml/scripts/export_gguf.py": "64a11a6cf4362a1d8916ffcd49cefe7d089212efcd6136ceac3074aff542a923",
+    "cpp_ggml/scripts/export_gguf.py": "0598358c03f0c805f26aa1158c90b2cfd71c0141b036cb3ddc382db74707a469",
     "cpp_ggml/scripts/export_text_student.py": "6461690a90c430c238d0af028d915667338c7139f60b61fafa411b1be4f8b83f",
-    "cpp_ggml/benchmarks/full_gguf_manifest.json": "d1b3b3c6c46c387fcc3c893f8a7c348fad844dff9029c5fd3236f977f3908d51",
-    "cpp_ggml/scripts/run_ggml.py": "67a78fb93ae2d7fcce6e627bc16044d01e43e88f9433dc567aed413d25084c10"
+    "cpp_ggml/benchmarks/full_gguf_manifest.json": "b47e8ffe3979cc8d897f86734cc5474a5233814d612fc15a797f1b94dc3f4a14",
+    "cpp_ggml/scripts/run_ggml.py": "17ac5446de4502a8e978c1968d1578eff4923debdae93273441f46e15c556822"
   },
   "plugin_ports": {
     "note": "Plugin-side ports of upstream Python deploy code (AGPL-3.0, reproduced as data/algorithms). Not part of the AICore ABI except the vocabulary.",
@@ -150,21 +150,9 @@
       "core/AICore/src/tasks/relation/object_vocabulary.cpp (497 MegaSG / RA-4M categories)"
     ]
   },
-  "pending_upstream_drift": {
-    "observed": "2026-10-13",
-    "upstream_head": "75dc55df5c782ed48a1fe74335827c6b22db9c95",
-    "summary": "The upstream working tree moved after this snapshot. The ggml patch (sha256 1a856e6e...) and the public C ABI are unchanged, but four recorded files differ and a new backbone family was added. The C++ graph in full_model.cpp has NOT been ported; the recorded file hashes above intentionally still describe the ported baseline, so upstream_probe.py will reject the current upstream tree until the port is done.",
-    "changed_files": [
-      "cpp_ggml/src/full_model.cpp",
-      "cpp_ggml/scripts/export_gguf.py",
-      "cpp_ggml/benchmarks/full_gguf_manifest.json",
-      "cpp_ggml/scripts/run_ggml.py"
-    ],
-    "new_models": "12 relsgg-convnext-{tiny,small,base,large}-{f16,f32,q8_0}.gguf (model_family dinov3_convnext: 4-stage hierarchical tower, per-stage widths/depths in GGUF metadata, patch size 16). Upstream manifest lists 21 models; this catalog has the 9 ViT ones."
-  },
   "accuracy_policy": {
     "source": "cpp_ggml/scripts/write_acceptance_status.py",
-    "sha256": "01a4213ff6b0306a250923a73a07f2b221a45963c62003842942461d607d2693",
-    "scope": "Current machine-readable upstream G1 storage-specific absolute limits; integration probes apply them to selected catalog inputs and report their different scope explicitly."
+    "sha256": "cf4a169f2a7a1ba5c934489d8e981b4e78cde876afdb29b8059eb01d4a43efed",
+    "scope": "Current machine-readable upstream G1 storage-specific absolute limits; integration probes apply them to selected catalog inputs and report their different scope explicitly. The model list now also covers the four ConvNeXt families; limits for the ViT families are unchanged."
   }
 }

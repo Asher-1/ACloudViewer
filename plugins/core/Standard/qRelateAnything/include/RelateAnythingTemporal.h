@@ -33,31 +33,31 @@ namespace RelateTemporal {
 // Every field mirrors an upstream flag or class default (names in comments).
 struct Params {
     // Tracker
-    float trackHigh = .25f;   // --track_high
-    float iouThr = .3f;       // --iou_thr
-    float lowIouThr = .5f;    // Tracker second-stage gate
-    float mergeIou = .75f;    // --merge_iou
-    int maxAge = 8;           // --max_age
-    int minHits = 2;          // --min_hits
-    float kfQ = 1.f;          // --kf_q  (box process noise)
-    float kfR = 10.f;         // --kf_r  (box measurement noise)
-    float trackFade = .18f;   // Tracker.step(fade=0.18)
+    float trackHigh = .25f;  // --track_high
+    float iouThr = .3f;      // --iou_thr
+    float lowIouThr = .5f;   // Tracker second-stage gate
+    float mergeIou = .75f;   // --merge_iou
+    int maxAge = 8;          // --max_age
+    int minHits = 2;         // --min_hits
+    float kfQ = 1.f;         // --kf_q  (box process noise)
+    float kfR = 10.f;        // --kf_r  (box measurement noise)
+    float trackFade = .18f;  // Tracker.step(fade=0.18)
     // EdgeBook
-    bool belief = true;       // not --no_belief
-    float scoreEma = .35f;    // --score_ema (only without belief)
-    float onThr = .45f;       // --on_thr
+    bool belief = true;         // not --no_belief
+    float scoreEma = .35f;      // --score_ema (only without belief)
+    float onThr = .45f;         // --on_thr
     float spatialOnThr = .42f;  // --spatial_on_thr
-    float offThr = .38f;      // --off_thr (clamped to onThr - 0.10)
-    int onFrames = 2;         // --on_frames
-    int offFrames = 6;        // --off_frames
-    float edgeFade = .12f;    // EdgeBook(fade=0.12)
-    float relQ = .05f;        // --kf_rel_q
-    float relR = 1.f;         // --kf_rel_r
-    float pMax = 8.f;         // EdgeBook(p_max=8.0)
-    int maxEdges = 8;         // --max_edges
-    int maxSpatial = 3;       // --max_spatial
-    int maxPerPair = 2;       // --max_per_pair (1 = best predicate per pair)
-    int birthTopk = 24;       // --topk (hypotheses promoted per frame)
+    float offThr = .38f;        // --off_thr (clamped to onThr - 0.10)
+    int onFrames = 2;           // --on_frames
+    int offFrames = 6;          // --off_frames
+    float edgeFade = .12f;      // EdgeBook(fade=0.12)
+    float relQ = .05f;          // --kf_rel_q
+    float relR = 1.f;           // --kf_rel_r
+    float pMax = 8.f;           // EdgeBook(p_max=8.0)
+    int maxEdges = 8;           // --max_edges
+    int maxSpatial = 3;         // --max_spatial
+    int maxPerPair = 2;         // --max_per_pair (1 = best predicate per pair)
+    int birthTopk = 24;         // --topk (hypotheses promoted per frame)
 
     float effectiveOffThr() const { return std::min(offThr, onThr - .10f); }
     bool same(const Params& o) const {
@@ -181,10 +181,11 @@ public:
         std::vector<char> ok(size_t(n), 1);
         if (frameArea > 0 && maxFrac < 1.f)
             for (int i = 0; i < n; ++i)
-                ok[size_t(i)] = (boxes[size_t(i)][2] - boxes[size_t(i)][0]) *
-                                        (boxes[size_t(i)][3] -
-                                         boxes[size_t(i)][1]) / frameArea <=
-                                maxFrac;
+                ok[size_t(i)] =
+                        (boxes[size_t(i)][2] - boxes[size_t(i)][0]) *
+                                (boxes[size_t(i)][3] - boxes[size_t(i)][1]) /
+                                frameArea <=
+                        maxFrac;
         // Cross-class duplicate suppression: "man" and "person" over the same
         // pixels survive class-aware NMS and would draw every relation twice.
         std::vector<int> order;
@@ -366,11 +367,10 @@ struct RawFrame {
 
 class EdgeBook {
 public:
-    EdgeBook(const Params& p, std::vector<std::string> predicates,
+    EdgeBook(const Params& p,
+             std::vector<std::string> predicates,
              std::vector<std::uint8_t> isSpatial)
-        : p_(p),
-          names_(std::move(predicates)),
-          spatial_(std::move(isSpatial)) {
+        : p_(p), names_(std::move(predicates)), spatial_(std::move(isSpatial)) {
         spatial_.resize(names_.size(), 0);
     }
     std::vector<Edge> edges;
@@ -393,8 +393,7 @@ public:
         for (const auto& kv : det2track) track2det[kv.second] = kv.first;
         std::map<std::pair<int, int>, std::size_t> kof;
         for (std::size_t k = 0; k < raw.K; ++k)
-            if (!raw.valid || raw.valid[k])
-                kof[{raw.sub[k], raw.obj[k]}] = k;
+            if (!raw.valid || raw.valid[k]) kof[{raw.sub[k], raw.obj[k]}] = k;
         for (const auto& b : births) {
             const auto s = det2track.find(raw.sub[b.k]);
             const auto o = det2track.find(raw.obj[b.k]);
@@ -429,7 +428,8 @@ public:
             if (!measured) e.bel.predict(p_.relQ);
             e.score = float(e.bel.prob());
             if (e.score >= offThr) e.shown = e.score;
-            if (e.bel.P <= p_.pMax) alive.push_back(e);  // else: unobserved too long
+            if (e.bel.P <= p_.pMax)
+                alive.push_back(e);  // else: unobserved too long
         }
         edges.swap(alive);
         hysteresis();
@@ -481,7 +481,8 @@ public:
         std::stable_sort(head.begin(), head.end(), byStrength);
         std::vector<Edge> inter, spat;
         for (const auto& e : head) (e.spatial ? spat : inter).push_back(e);
-        if (int(spat.size()) > p_.maxSpatial) spat.resize(size_t(p_.maxSpatial));
+        if (int(spat.size()) > p_.maxSpatial)
+            spat.resize(size_t(p_.maxSpatial));
         const int room = std::max(0, p_.maxEdges - int(spat.size()));
         if (int(inter.size()) > room) inter.resize(size_t(room));
         inter.insert(inter.end(), spat.begin(), spat.end());
@@ -538,10 +539,9 @@ private:
         }
         const std::size_t top =
                 std::min(all.size(), std::size_t(std::max(0, p_.birthTopk)));
-        std::partial_sort(all.begin(), all.begin() + std::ptrdiff_t(top),
-                          all.end(), [](const Birth& a, const Birth& b) {
-                              return a.rank > b.rank;
-                          });
+        std::partial_sort(
+                all.begin(), all.begin() + std::ptrdiff_t(top), all.end(),
+                [](const Birth& a, const Birth& b) { return a.rank > b.rank; });
         all.resize(top);
         return all;
     }
@@ -567,9 +567,9 @@ private:
                 edges.push_back({s, o, p, kv.second, spatial_[size_t(p)] != 0});
                 i = int(edges.size()) - 1;
             } else {
-                edges[size_t(i)].score = (1 - p_.scoreEma) *
-                                                 edges[size_t(i)].score +
-                                         p_.scoreEma * kv.second;
+                edges[size_t(i)].score =
+                        (1 - p_.scoreEma) * edges[size_t(i)].score +
+                        p_.scoreEma * kv.second;
             }
             Edge& e = edges[size_t(i)];
             if (e.score >= offThr) e.shown = e.score;

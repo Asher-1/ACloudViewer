@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/qSpirula/translations">
+@TRANSLATION_ENTRIES@
+    </qresource>
+</RCC>

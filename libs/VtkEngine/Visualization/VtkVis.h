@@ -808,6 +808,7 @@ public:
                                    double gaussianRadius,
                                    int shaderPreset,
                                    bool emissive,
+                                   const char* scaleArray,
                                    const std::string& viewID,
                                    int viewport = 0);
 

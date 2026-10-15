@@ -1,6 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// Unit tests for the ported upstream tracker / relation-belief / hysteresis
-// (include/RelateAnythingTemporal.h). Qt-free: no display or model needed.
+// ----------------------------------------------------------------------------
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -9,13 +13,13 @@
 
 using namespace RelateTemporal;
 
-#define REQUIRE(c)                                                       \
-    do {                                                                 \
-        if (!(c)) {                                                      \
+#define REQUIRE(c)                                                         \
+    do {                                                                   \
+        if (!(c)) {                                                        \
             std::fprintf(stderr, "FAILED %s:%d  %s\n", __FILE__, __LINE__, \
-                         #c);                                            \
-            std::exit(1);                                                \
-        }                                                                \
+                         #c);                                              \
+            std::exit(1);                                                  \
+        }                                                                  \
     } while (0)
 
 namespace {
@@ -48,8 +52,8 @@ int main() {
             Box a = kA;
             a[0] += f * 4;
             a[2] += f * 4;
-            const auto m = t.observe({a, kB}, {f == 3 ? "man" : "person", "horse"},
-                                    {.9f, .9f});
+            const auto m = t.observe(
+                    {a, kB}, {f == 3 ? "man" : "person", "horse"}, {.9f, .9f});
             REQUIRE(m.size() == 2);
             if (tid < 0) tid = m.at(0);
             REQUIRE(m.at(0) == tid);
@@ -81,7 +85,8 @@ int main() {
         Tracker u(p);
         REQUIRE(u.observe({kA}, {"x"}, {.1f}).empty());
     }
-    // Belief + hysteresis: an edge turns on after onFrames, off after offFrames.
+    // Belief + hysteresis: an edge turns on after onFrames, off after
+    // offFrames.
     {
         Tracker t(p);
         EdgeBook book(p, {"riding", "beside"}, {0, 1});

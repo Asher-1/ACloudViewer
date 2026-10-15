@@ -64,6 +64,7 @@ private:
     void resetResults();
     void recordResult(const QJsonObject& result);
     void closeEvent(QCloseEvent*) override;
+    void reject() override;  // H1 fix: make Esc call close()
     void showEvent(QShowEvent*) override;
     QComboBox *m_model = nullptr, *m_device = nullptr, *m_detector = nullptr,
               *m_objectSource = nullptr, *m_arithmetic = nullptr;

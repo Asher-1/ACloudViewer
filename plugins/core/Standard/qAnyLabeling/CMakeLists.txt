@@ -12,7 +12,6 @@ if(PLUGIN_STANDARD_QANYLABELING)
     # Source language-menu parity: .ts catalogs are compiled to .qm and
     # embedded in the plugin resources; the workspace loads the catalog
     # matching the persisted language setting at startup.
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS LinguistTools QUIET)
     set(QANYLABELING_TRANSLATIONS
         translations/qanylabeling_zh_CN.ts
         translations/qanylabeling_ja_JP.ts

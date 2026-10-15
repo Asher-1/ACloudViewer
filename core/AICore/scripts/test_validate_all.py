@@ -3,6 +3,7 @@
 import importlib.util
 import hashlib
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -1473,6 +1474,134 @@ class ValidateAllTests(unittest.TestCase):
         self.assertIn("| 18432 | 11000 |", text)
         self.assertIn("vram insufficient: demo/demo/huge.gguf", text)
         self.assertIn("█", text)  # distribution bars present
+
+
+    # ------------------------------------------------------------------
+    # relation: manifest consumers for every catalog model
+    # ------------------------------------------------------------------
+
+    REPO = MODULE_PATH.parents[3]
+
+    @classmethod
+    def relation_catalog_files(cls):
+        source = (cls.REPO / "core/AICore/src/tasks/relation/"
+                  "model_catalog.cpp").read_text(encoding="utf-8")
+        names = re.findall(r'^\s*\{"([^"]+\.(?:gguf|json))",\s*$', source,
+                           re.MULTILINE)
+        return names
+
+    @staticmethod
+    def relation_args(assets, root, full):
+        return SimpleNamespace(
+            tasks="relation", assets=assets, repo=root,
+            build=root / "build", backend="cpu", image="image",
+            image2="image2", face_image="face", sam_image="sam",
+            yolo_image="yolo", threads=1, warmup_runs=1, inference_runs=1,
+            trellis_steps=1, gpu_idle_timeout=60.0, full=full)
+
+    def expand_relation(self, full):
+        names = self.relation_catalog_files()
+        manifest = VALIDATE_ALL.load_manifest(
+            MODULE_PATH.with_name("validation_manifest.json"))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = root / "assets"
+            (assets / "relation_models").mkdir(parents=True)
+            for name in names:
+                (assets / "relation_models" / name).write_bytes(b"x")
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, self.relation_args(assets, root, full),
+                root / "reports")
+        return names, specs, diagnostics
+
+    def test_relation_catalog_has_twenty_five_published_entries(self):
+        names = self.relation_catalog_files()
+        self.assertEqual(len(names), 25)
+        self.assertEqual(
+            len([n for n in names if n.startswith("relsgg-convnext-")]), 12)
+
+    def test_relation_manifest_consumes_every_catalog_model_in_full_matrix(self):
+        names, specs, diagnostics = self.expand_relation(full=True)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        for name in names:
+            if name.endswith("-text-student-f32.gguf") or \
+                    name.endswith("tokenizer.json"):
+                continue
+            plain = {s.scenario_id for s in specs if s.model_id == name}
+            self.assertIn(
+                "relation-" + name[len("relsgg-"):-len(".gguf")], plain,
+                name)
+            self.assertIn(
+                "relation-" + name[len("relsgg-"):-len(".gguf")] + "-default",
+                plain, name)
+
+    def test_relation_convnext_rows_mirror_vit_storage_gates_and_tiering(self):
+        manifest = VALIDATE_ALL.load_manifest(
+            MODULE_PATH.with_name("validation_manifest.json"))
+        rows = {s["id"]: s for s in manifest["scenarios"]}
+        for size in ("tiny", "small", "base", "large"):
+            for quant in ("f16", "f32", "q8_0"):
+                for suffix in ("", "-default"):
+                    row = rows[f"relation-convnext-{size}-{quant}{suffix}"]
+                    ref = rows[f"relation-vitb16-{quant}{suffix}"]
+                    name = f"relation_models/relsgg-convnext-{size}-{quant}.gguf"
+                    self.assertEqual(row["owned_globs"], [name])
+                    self.assertEqual(row["model_glob"], name)
+                    self.assertTrue(row["for_each_model"])
+                    self.assertEqual(row["light"], ref["light"])
+                    self.assertEqual(row["args"], ref["args"])
+                    self.assertEqual(row["accuracy"], ref["accuracy"])
+
+    def test_relation_light_tier_runs_default_rows_for_all_twelve_convnext(self):
+        names, specs, diagnostics = self.expand_relation(full=False)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        convnext = {n for n in names if n.startswith("relsgg-convnext-")}
+        light = {s.model_id for s in specs
+                 if s.scenario_id.startswith("relation-convnext-")}
+        self.assertEqual(light, convnext)
+        self.assertTrue(all(
+            s.scenario_id.endswith("-default") for s in specs
+            if s.scenario_id.startswith("relation-convnext-")))
+        # Plugin-level temporal rows are full-matrix only.
+        self.assertFalse([s for s in specs
+                          if s.scenario_id.startswith("relation-temporal")])
+
+    def test_relation_temporal_rows_are_model_free_full_matrix_probes(self):
+        _, specs, _ = self.expand_relation(full=True)
+        by_id = {s.scenario_id: s for s in specs}
+        tracker = by_id["relation-temporal-tracker"]
+        self.assertEqual(Path(tracker.command[0]).name,
+                         "test_relate_temporal")
+        self.assertEqual(tracker.model_paths, ())
+        self.assertEqual(tracker.accuracy["reference"], "probe_invariant")
+        self.assertFalse(tracker.require_fingerprint)
+        parity = by_id["relation-temporal-upstream-parity"]
+        self.assertIn("compare_temporal_upstream.py", parity.command[1])
+        self.assertEqual(Path(parity.command[-1]).name,
+                         "test_relate_temporal_replay")
+
+    def test_find_binary_searches_plugin_test_directory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            build = Path(temp)
+            folder = build / "bin" / "plugin_test"
+            folder.mkdir(parents=True)
+            (folder / "test_relate_temporal").write_bytes(b"")
+            self.assertEqual(
+                VALIDATE_ALL.find_binary(build, "test_relate_temporal"),
+                (folder / "test_relate_temporal").resolve())
+
+    def test_missing_probe_executable_is_a_row_failure_not_a_crash(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            spec = self.make_spec(
+                temp, command=(str(root / "absent_probe"),),
+                report_path=root / "probe.json")
+            args = SimpleNamespace(repo=root, build=root, timeout=5)
+            attempt = VALIDATE_ALL.run_attempt(spec, args)
+            self.assertEqual(attempt.returncode, 127)
+            self.assertIn("cannot execute probe", attempt.output_tail)
 
 
 if __name__ == "__main__":

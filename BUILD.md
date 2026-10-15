@@ -263,6 +263,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qRAM                    | PLUGIN_STANDARD_QRAM                     | OFF           | Recognize Anything — RAM, RAM++, and Tag2Text image tagging/captions through all published F32/F16/Q8_0 GGUF models ([README](plugins/core/Standard/qRAM/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/tagging`). |
 | qRelateAnything | PLUGIN_STANDARD_QRELATEANYTHING | OFF | Scene relations for images/video, all 12 published relation/text GGUFs; public YOLO regions and shared cache ([README](plugins/core/Standard/qRelateAnything/README.md)). Requires `AICore_ENABLED=ON`. |
 | qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — **lives on the `qcalib` branch only** (one-click test data, ROS bag v2.0, BEV, LiDAR projection). Requires `BUILD_OPENCV=ON`. |
+| qSpirula                | PLUGIN_STANDARD_QSPIRULA                 | OFF           | Spirula Studio — official upstream 3DGS trainer as a standalone executable built by `-DBUILD_SPIRULA=ON` (`SPIRULA_TAG`, `SPIRULA_BACKEND=vulkan\|cuda`; process-boundary integration, launch + import, no AICore link) ([README](plugins/core/Standard/qSpirula/README.md)). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 

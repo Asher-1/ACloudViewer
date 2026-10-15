@@ -14,6 +14,12 @@ if ( PLUGIN_STANDARD_QJSONRPC )
     # Note: Network and WebSockets are already found in CMakeExternalLibs.cmake
     target_link_libraries(${PROJECT_NAME} Qt::Core Qt::Network Qt::WebSockets)
 
+    # Spirula Studio support (BUILD_SPIRULA): locator/launcher/importer shared
+    # with qSpirula via spirula_base.
+    if(TARGET spirula_base)
+        target_link_libraries(${PROJECT_NAME} spirula_base)
+    endif()
+
     add_subdirectory( include )
     add_subdirectory( src )
  

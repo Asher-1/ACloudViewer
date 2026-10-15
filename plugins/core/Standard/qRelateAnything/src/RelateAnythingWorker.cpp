@@ -13,10 +13,10 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QFont>
 #include <QFontMetrics>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygonF>
@@ -141,7 +141,8 @@ ObjectMask buildMask(const uint8_t* plane,
                      int block) {
     ObjectMask out;
     if (!plane || mw <= 0 || mh <= 0 || image.isEmpty()) return out;
-    const double sx = double(mw) / image.width(), sy = double(mh) / image.height();
+    const double sx = double(mw) / image.width(),
+                 sy = double(mh) / image.height();
     const int margin = 3 * std::max(1, block) + 2;  // covers the blur radius
     QRect box_px(QPoint(int(std::floor(box[0])) - margin,
                         int(std::floor(box[1])) - margin),
@@ -240,8 +241,8 @@ Detected detectRfdetr(aicore_rfdetr_ctx* rf,
     for (int i = 0; i < aicore_rfdetr_detection_count(rf); ++i) {
         aicore_rfdetr_detection d{};
         if (aicore_rfdetr_detection_at(rf, i, &d) != 0) continue;
-        found.push_back({{d.x1, d.y1, d.x2, d.y2}, d.score,
-                         nameOr(d.class_name), i});
+        found.push_back(
+                {{d.x1, d.y1, d.x2, d.y2}, d.score, nameOr(d.class_name), i});
     }
     found = keepBest(std::move(found), s.maxBoxes, size,
                      s.temporal ? 1.f : s.maxBoxFraction,
@@ -254,8 +255,8 @@ Detected detectRfdetr(aicore_rfdetr_ctx* rf,
         out.labels << c.name;
         ObjectMask mask;
         int32_t mw = 0, mh = 0;
-        const int len = seg ? aicore_rfdetr_detection_mask(rf, c.source, nullptr,
-                                                           0, &mw, &mh)
+        const int len = seg ? aicore_rfdetr_detection_mask(rf, c.source,
+                                                           nullptr, 0, &mw, &mh)
                             : 0;
         if (len > 0 && mw > 0 && mh > 0 && size_t(len) >= size_t(mw) * mh) {
             std::vector<unsigned char> raw;
@@ -383,16 +384,15 @@ std::vector<PickedEdge> pickEdges(const aicore_relation_result& r,
     // pair built on shaky boxes cannot crowd out a solid one. Video births use
     // --topk (24) hypotheses; the flat image demo keeps maxRelations.
     for (auto& p : all)
-        p.rank = p.edge.score * (s.boxScoreWeight
-                                         ? conf(p.edge.subject) *
-                                                   conf(p.edge.object)
-                                         : 1.f);
+        p.rank = p.edge.score *
+                 (s.boxScoreWeight ? conf(p.edge.subject) * conf(p.edge.object)
+                                   : 1.f);
     std::stable_sort(all.begin(), all.end(),
                      [](const PickedEdge& a, const PickedEdge& b) {
                          return a.rank > b.rank;
                      });
-    const size_t pool = size_t(std::max(
-            1, decomposed ? s.tracking.birthTopk : s.maxRelations));
+    const size_t pool = size_t(
+            std::max(1, decomposed ? s.tracking.birthTopk : s.maxRelations));
     if (all.size() > pool) all.resize(pool);
     // Display order (upstream EdgeBook.visible) is by raw strength.
     std::stable_sort(all.begin(), all.end(),
@@ -409,8 +409,7 @@ std::vector<PickedEdge> pickEdges(const aicore_relation_result& r,
             if (!byPair.insert({e.subject, e.object}).second) continue;
         } else {
             if (!byObject.insert({e.object, e.predicate}).second) continue;
-            if (!byHead.insert({e.subject, e.object,
-                                name.section(' ', 0, 0)})
+            if (!byHead.insert({e.subject, e.object, name.section(' ', 0, 0)})
                          .second)
                 continue;
         }
@@ -428,7 +427,7 @@ std::vector<PickedEdge> pickEdges(const aicore_relation_result& r,
     if (int(picked.size()) > s.maxRelations) picked.resize(s.maxRelations);
     return picked;
 }
-const QColor kPalette[] = {{64, 156, 255}, {255, 99, 88},  {52, 199, 123},
+const QColor kPalette[] = {{64, 156, 255}, {255, 99, 88},   {52, 199, 123},
                            {255, 184, 48}, {191, 122, 255}, {0, 199, 208},
                            {255, 133, 71}, {145, 200, 60}};
 QColor paletteColor(int index) { return kPalette[index % 8]; }
@@ -450,8 +449,8 @@ void blendMask(QImage& canvas,
             if (cx < 0 || cx >= canvas.width()) continue;
             const double cover = a[x] / 255.0;
             const double edge = 1.0 - std::abs(cover - .5) * 2.0;
-            const double w = std::min(.9, cover * .38 + edge * edge * .5) *
-                             strength;
+            const double w =
+                    std::min(.9, cover * .38 + edge * edge * .5) * strength;
             line[cx] = qRgb(int(qRed(line[cx]) * (1 - w) + c.red() * w),
                             int(qGreen(line[cx]) * (1 - w) + c.green() * w),
                             int(qBlue(line[cx]) * (1 - w) + c.blue() * w));
@@ -473,10 +472,12 @@ struct ChipLayout {
         const QSizeF size(fm.horizontalAdvance(text) + 10, fm.height() + 4);
         QRectF r(anchor, size);
         for (int tries = 0; tries < 12; ++tries) {
-            r.moveLeft(std::clamp(r.left(), 0.0,
-                                  std::max(0.0, bounds.width() - size.width())));
-            r.moveTop(std::clamp(r.top(), 0.0,
-                                 std::max(0.0, bounds.height() - size.height())));
+            r.moveLeft(
+                    std::clamp(r.left(), 0.0,
+                               std::max(0.0, bounds.width() - size.width())));
+            r.moveTop(
+                    std::clamp(r.top(), 0.0,
+                               std::max(0.0, bounds.height() - size.height())));
             bool hit = false;
             for (const auto& u : used)
                 if (u.intersects(r)) {
@@ -516,8 +517,8 @@ QImage renderScene(const QImage& image,
                                            : 1.0;
     };
     const auto objColor = [&](int i) {
-        return paletteColor(i < int(style.colorId.size()) ? style.colorId[size_t(i)]
-                                                          : i);
+        return paletteColor(
+                i < int(style.colorId.size()) ? style.colorId[size_t(i)] : i);
     };
     for (int i = 0; i < count && i < int(masks.size()); ++i)
         blendMask(out, masks[size_t(i)], objColor(i), objAlpha(i));
@@ -573,9 +574,8 @@ QImage renderScene(const QImage& image,
         };
         QPainterPath path(a);
         for (int k = 1; k <= 24; ++k) path.lineTo(at(k / 24.0));
-        const double edgeAlpha =
-                std::clamp(e.contains("alpha") ? e["alpha"].toDouble() : 1.0,
-                           0.0, 1.0);
+        const double edgeAlpha = std::clamp(
+                e.contains("alpha") ? e["alpha"].toDouble() : 1.0, 0.0, 1.0);
         QColor c = objColor(si);
         c.setAlphaF(edgeAlpha);
         painter.setBrush(Qt::NoBrush);
@@ -595,12 +595,12 @@ QImage renderScene(const QImage& image,
         const QString text = e["predicate"].toString() + "  " +
                              QString::number(e["score"].toDouble(), 'f', 2);
         const QPointF mid = at(kChipAt[i % 8]);
-        layout.chip(text,
-                    mid - QPointF(QFontMetrics(font).horizontalAdvance(text) /
-                                                  2.0 +
-                                          5,
-                                  chipHeight * .5),
-                    QColor(22, 24, 28, 225), edgeAlpha);
+        layout.chip(
+                text,
+                mid - QPointF(QFontMetrics(font).horizontalAdvance(text) / 2.0 +
+                                      5,
+                              chipHeight * .5),
+                QColor(22, 24, 28, 225), edgeAlpha);
     }
     painter.end();
     return out;
@@ -615,10 +615,11 @@ std::vector<ObjectMask> suppliedMasks(const QByteArray& planes,
     const size_t plane = size_t(size.width()) * size_t(size.height());
     if (!plane || size_t(planes.size()) != plane * size_t(count)) return out;
     for (int i = 0; i < count; ++i)
-        out[i] = buildMask(reinterpret_cast<const uint8_t*>(planes.constData()) +
-                                   size_t(i) * plane,
-                           size.width(), size.height(), size_t(size.width()),
-                           boxes.data() + i * 4, size, 1);
+        out[i] =
+                buildMask(reinterpret_cast<const uint8_t*>(planes.constData()) +
+                                  size_t(i) * plane,
+                          size.width(), size.height(), size_t(size.width()),
+                          boxes.data() + i * 4, size, 1);
     return out;
 }
 // Per-video state: persistent tracks and relation beliefs (upstream
@@ -700,9 +701,8 @@ TemporalOut temporalFrame(std::shared_ptr<void>& slot,
             std::vector<std::uint8_t> spatial;
             for (size_t i = 0; i < raw->predicate_count; ++i) {
                 names.emplace_back(raw->predicate_names[i]);
-                spatial.push_back(raw->predicate_spatial
-                                          ? raw->predicate_spatial[i]
-                                          : 0);
+                spatial.push_back(
+                        raw->predicate_spatial ? raw->predicate_spatial[i] : 0);
             }
             state->book = std::make_unique<RelateTemporal::EdgeBook>(
                     state->params, std::move(names), std::move(spatial));
@@ -714,8 +714,8 @@ TemporalOut temporalFrame(std::shared_ptr<void>& slot,
     // rejected rows stay in the relation head's input and are only skipped
     // when mapping relations onto tracks, so detection indices never shift.
     const auto det2track = state->tracker.observe(
-            boxes, labels, confs,
-            double(image.width()) * image.height(), s.maxBoxFraction);
+            boxes, labels, confs, double(image.width()) * image.height(),
+            s.maxBoxFraction);
     if (state->book) state->book->observe(det2track, confs, frame);
     std::set<int> matched;
     for (const auto& kv : det2track) {
@@ -760,12 +760,12 @@ TemporalOut temporalFrame(std::shared_ptr<void>& slot,
         style.alpha.push_back(t.alpha);
         style.colorId.push_back(t.tid);
         style.forceBox.push_back(!state->maskSeen.count(t.tid));
-        out.objects.append(QJsonObject{
-                {"index", int(dLabels.size()) - 1},
-                {"track", t.tid},
-                {"name", dLabels.back()},
-                {"score", t.conf},
-                {"box", QJsonArray{b[0], b[1], b[2], b[3]}}});
+        out.objects.append(
+                QJsonObject{{"index", int(dLabels.size()) - 1},
+                            {"track", t.tid},
+                            {"name", dLabels.back()},
+                            {"score", t.conf},
+                            {"box", QJsonArray{b[0], b[1], b[2], b[3]}}});
     }
     for (const auto& e : visible) {
         const auto si = indexOf.find(e.sub), oi = indexOf.find(e.obj);
@@ -777,10 +777,12 @@ TemporalOut temporalFrame(std::shared_ptr<void>& slot,
         edge["subject_track"] = int(e.sub);
         edge["object_track"] = int(e.obj);
         edge["predicate_index"] = int(e.pred);
-        edge["subject_name"] = QString(dLabels[si->second] + QStringLiteral(" #") +
-                                       QString::number(si->second));
-        edge["object_name"] = QString(dLabels[oi->second] + QStringLiteral(" #") +
-                                      QString::number(oi->second));
+        edge["subject_name"] =
+                QString(dLabels[si->second] + QStringLiteral(" #") +
+                        QString::number(si->second));
+        edge["object_name"] =
+                QString(dLabels[oi->second] + QStringLiteral(" #") +
+                        QString::number(oi->second));
         edge["predicate"] = pred;
         edge["type"] = QString::fromLatin1(e.spatial ? "spatial" : "semantic");
         edge["alpha"] = double(e.alpha);
@@ -805,10 +807,10 @@ bool RelateAnythingSettings::sameSession(
            detectorTextModel == s.detectorTextModel &&
            detectorIsRfdetr == s.detectorIsRfdetr && strict == s.strict &&
            (decompose || temporal) == (s.decompose || s.temporal) &&
-           predicates == s.predicates &&
-           student == s.student && tokenizer == s.tokenizer &&
-           regions == s.regions && masks == s.masks &&
-           vocabulary == s.vocabulary && vocabularyNames == s.vocabularyNames &&
+           predicates == s.predicates && student == s.student &&
+           tokenizer == s.tokenizer && regions == s.regions &&
+           masks == s.masks && vocabulary == s.vocabulary &&
+           vocabularyNames == s.vocabularyNames &&
            predicateTypes == s.predicateTypes;
 }
 RelateAnythingWorker::RelateAnythingWorker()
@@ -1033,6 +1035,8 @@ void RelateAnythingWorker::process(const RelateAnythingSettings& settings,
                 aicore_yolo_options_set_top_k(
                         detectorOpts.get(),
                         uint32_t(std::max(settings.maxBoxes * 4, 100)));
+                // Enable bilinear logit upsampling for smooth mask edges.
+                aicore_yolo_options_set_mask_upsample(detectorOpts.get(), 1);
                 // Open-vocabulary detectors (YOLO-World, YOLOE with a class
                 // list) bake the vocabulary through their text encoder.
                 QList<QByteArray> classNames;
@@ -1138,7 +1142,8 @@ void RelateAnythingWorker::process(const RelateAnythingSettings& settings,
                 supplied ? m_regionScores : detected.scores;
         const QStringList& labels = supplied ? m_regionLabels : detected.labels;
         // Video / camera frames of a detector run use the ported upstream
-        // tracker + relation-belief filter; images and batches stay independent.
+        // tracker + relation-belief filter; images and batches stay
+        // independent.
         const bool temporalMode = settings.temporal && !supplied;
         TemporalOut temporalOut;
         if (temporalMode)
@@ -1200,7 +1205,8 @@ void RelateAnythingWorker::process(const RelateAnythingSettings& settings,
             const bool decomposed =
                     raw->spatial_count > 0 || raw->semantic_count > 0;
             float calA = 1.0f, calB = 0.0f;
-            if (decomposed) aicore_relation_calibration(m_context, &calA, &calB);
+            if (decomposed)
+                aicore_relation_calibration(m_context, &calA, &calB);
             for (const auto& p :
                  pickEdges(*raw, settings, decomposed, calA, calB, scores)) {
                 const auto& e = p.edge;
@@ -1266,13 +1272,20 @@ void RelateAnythingWorker::process(const RelateAnythingSettings& settings,
                                  {"image_prepare_ms", prepareMs},
                                  {"visualization_ms", renderMs},
                                  {"worker_wall_ms", out.e2eMs}}}};
+        out.ok = true;
     } catch (const std::exception& e) {
+        out.ok = false;
         out.error = QString::fromUtf8(e.what());
-        if (!aicore_relation_ready(m_context) ||
-            (settings.regions.isEmpty() && !m_rfdetr &&
-             !aicore_yolo_is_ready(m_detector)))
-            release();
+        if (out.error.isEmpty())
+            out.error = tr("Inference failed with empty error message.");
+        const bool sessionInvalid = !aicore_relation_ready(m_context) ||
+                                    (settings.regions.isEmpty() && !m_rfdetr &&
+                                     !aicore_yolo_is_ready(m_detector));
+        out.fatal = sessionInvalid;
+        if (sessionInvalid) release();
     } catch (...) {
+        out.ok = false;
+        out.fatal = true;
         out.error = tr("Unexpected relation processing error.");
         release();
     }

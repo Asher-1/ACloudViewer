@@ -116,26 +116,38 @@ compiler settings, binaries and execution status in
   port are all detected. The 497-class vocabulary lives in the AICore relation
   task (`aicore_relation_object_vocabulary_*`).
 
+- [x] UI and robustness fixes (2026-10-15): Resolved 5 HIGH and 5 MEDIUM priority
+  issues from static code review. H2: Esc/reject() now properly calls close path.
+  H3: Empty error messages replaced with readable text; result.ok distinguishes
+  success from failure. M1: Batch processing survives non-fatal errors (missing
+  image, bad box JSON) and continues to next item. M3: Settings restore no longer
+  flips operating point to Custom. M6: Export checks saveResults() return value
+  and infers extension from file filter. M7: refreshSelection() queries live
+  selection instead of stored raw pointers. L2: Worker null guards after shutdown.
+  L9: setBusy() only updates tab state on change to avoid per-frame flicker.
+
 ## ConvNeXt integration status
 
+- [x] **Graph port complete (2026-10-15)**: ConvNeXt backbone ported from upstream
+  commit `984833746e8a` to `core/AICore/src/tasks/relation/full_model.cpp`.
+  Supports 4-stage tower with depthwise convolution, LayerScale, bilinear
+  downsampling and shared projection/norm. CPU validation shows exact native
+  parity (max_diff=0.0) on tiny-f32/q8_0, small-q8_0, base-f16, large-q8_0.
+  CUDA and Vulkan untested. `UPSTREAM.json` updated to HEAD.
 - [x] **Catalog integration complete (2026-10-14)**: All 12 ConvNeXt GGUF models
   (tiny/small/base/large × f16/f32/q8_0) are now registered in
   `model_catalog.cpp` with pinned HuggingFace URLs and SHA-256 digests from
-  upstream `full_gguf_manifest.json`. Models use the existing ViT graph
-  architecture (`relateanything_full_v1`) and share the same relation tower.
-  Digest entries added to `asset_digests.h`. Default model index unchanged (10,
-  vits16plus-q8_0). Plugin UI now exposes all 24 relation models (12 ViT + 12
-  ConvNeXt) for user selection.
-- [x] **Upstream manifest synchronized**: Local `UPSTREAM.json` records commit
-  `62f8540` (GGML support baseline) and published inventory at HF revision
-  `2377ca3539bf`. Upstream advanced to `75dc55d` (training configs, benchmarks)
-  but C ABI and ggml patch remain unchanged. ConvNeXt models confirmed present
-  in upstream `cpp_ggml/models/gguf/` and manifest.
-- [ ] **Validation matrix**: ConvNeXt models are cataloged but do not yet have
-  dedicated `validation_manifest.json` scenarios. Existing ViT validation
-  (32 rows, 3 backends) covers the shared graph and relation tower. Add
-  ConvNeXt-specific rows in a future validation-enhancement PR when expanding
-  coverage for backbone-specific accuracy/performance gates.
+  upstream `full_gguf_manifest.json`. Digest entries added to `asset_digests.h`.
+  Default model index unchanged (10, vits16plus-q8_0). Plugin UI now exposes
+  all 24 relation models (12 ViT + 12 ConvNeXt) for user selection.
+- [x] **Validation matrix**: 24 ConvNeXt scenarios (12 models × 2 tiers) added to
+  `validation_manifest.json`. Each inherits accuracy thresholds from matching ViT
+  quantization. 2 temporal scenarios (tracker unit test, upstream parity check)
+  also added. Total: 113 scenarios (was 89). ConvNeXt and temporal rows untested.
+- [x] **Mask bilinear upsampling**: Enabled via `aicore_yolo_options_set_mask_upsample(1)`
+  in RelateAnythingWorker. Bilinear logit interpolation replaces nearest-neighbor
+  proto blocks for smooth mask edges. Implementation tested in AICore with <0.5px
+  boundary error vs ground truth.
 - [ ] Video overlay quality (mask edge smoothness at AICore level), camera
   input, and per-frame end-to-end cost of stabilised video are unmeasured.
 

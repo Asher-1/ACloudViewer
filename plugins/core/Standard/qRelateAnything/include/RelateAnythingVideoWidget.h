@@ -20,6 +20,8 @@ public:
 signals:
     void frameReady(const QImage&, int);
     void invalidated();
+    // A video file reached its last frame and wrapped to the first one.
+    void looped();
 
 protected:
 #ifdef HAS_OPENCV_FACE_CAPTURE
@@ -27,6 +29,12 @@ protected:
         emit frameReady(cvMatToQImage(frame), index);
     }
 #endif
+    void onVideoLooped() override {
+        // Tracks and relation beliefs of the last frame must not carry over
+        // to the first frame of the next pass.
+        emit invalidated();
+        emit looped();
+    }
     void onStreamReset() override { emit invalidated(); }
     void onStreamStopping() override { emit invalidated(); }
     void onSourceChanged(InputSource) override { emit invalidated(); }

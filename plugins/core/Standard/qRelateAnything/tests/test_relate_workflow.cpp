@@ -91,9 +91,10 @@ int main(int argc, char** argv) {
                     optTabs->setCurrentIndex(i);
             app.processEvents();
             dialog.grab().save(parser.value("output-dir") + "/options.png");
-            if (auto* scroll = qobject_cast<QScrollArea*>(
-                        optTabs->currentWidget()))
-                std::cout << "options rows content=" << scroll->widget()->height()
+            if (auto* scroll =
+                        qobject_cast<QScrollArea*>(optTabs->currentWidget()))
+                std::cout << "options rows content="
+                          << scroll->widget()->height()
                           << "px viewport=" << scroll->viewport()->height()
                           << "px\n";
             optTabs->setCurrentIndex(0);
@@ -117,7 +118,9 @@ int main(int argc, char** argv) {
                 check(w, QString("option control ") + name);
                 return w->value();
             };
-            auto near = [](double a, double b) { return std::abs(a - b) < 1e-9; };
+            auto near = [](double a, double b) {
+                return std::abs(a - b) < 1e-9;
+            };
             check(near(dbl("relateDetectionThreshold"), .25) &&
                           near(dbl("relateDetectionIou"), .5) &&
                           near(dbl("relateMaxBoxFraction"), .85) &&
@@ -125,13 +128,13 @@ int main(int argc, char** argv) {
                           near(dbl("relateSpatialThreshold"), .42),
                   "official video-reel threshold defaults");
             check(dialog.findChild<QSpinBox*>("relateMaxRelations")->value() ==
-                          8 &&
+                                  8 &&
                           dialog.findChild<QSpinBox*>("relateMaxSpatial")
                                           ->value() == 3,
                   "official edge caps (8 total, 3 spatial)");
             check(dialog.findChild<QComboBox*>("relateProfile")
-                                  ->currentData()
-                                  .toInt() == 0 &&
+                                          ->currentData()
+                                          .toInt() == 0 &&
                           dialog.findChild<QComboBox*>("relatePredicatePreset")
                                           ->currentData()
                                           .toInt() == 0,
@@ -169,7 +172,8 @@ int main(int argc, char** argv) {
                 check(w, QString("option control ") + name);
                 return w->value();
             };
-            check(integer("relateMaxAge") == 8 && integer("relateMinHits") == 2 &&
+            check(integer("relateMaxAge") == 8 &&
+                          integer("relateMinHits") == 2 &&
                           integer("relateOnFrames") == 2 &&
                           integer("relateOffFrames") == 6 &&
                           integer("relateMaxPerPair") == 2 &&
@@ -429,8 +433,8 @@ int main(int argc, char** argv) {
             // this stage checks the decomposition, not the default floor.
             auto* relationFloor = dialog.findChild<QDoubleSpinBox*>(
                     "relateRelationThreshold");
-            auto* spatialFloor = dialog.findChild<QDoubleSpinBox*>(
-                    "relateSpatialThreshold");
+            auto* spatialFloor =
+                    dialog.findChild<QDoubleSpinBox*>("relateSpatialThreshold");
             check(relationFloor && spatialFloor &&
                           std::abs(relationFloor->value() - 0.45) < 1e-9 &&
                           std::abs(spatialFloor->value() - 0.42) < 1e-9,
@@ -544,8 +548,9 @@ int main(int argc, char** argv) {
                              });
             tabs->setCurrentIndex(tabs->indexOf(video->parentWidget()));
             run->click();
-            // Frame N+1 is only delivered after frame N's result is acknowledged,
-            // so four delivered frames means three finished results.
+            // Frame N+1 is only delivered after frame N's result is
+            // acknowledged, so four delivered frames means three finished
+            // results.
             check(wait([&] { return frames >= 4; }),
                   "consumer-driven video progresses");
             {

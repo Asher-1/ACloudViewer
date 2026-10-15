@@ -13,6 +13,7 @@
 
 // STL
 #include <algorithm>
+#include <string>
 #include <vector>
 
 // CV_CORE_LIB
@@ -256,6 +257,19 @@ public:  // Temporary color
         setRedraw(false);
     }
 
+    //! Returns the optional point-data array driving per-point splat sizes
+    //! (empty = uniform size from pointGaussianRadius only). Used e.g. by
+    //! gaussian-splat imports whose "Scale" field carries physical sizes.
+    inline const std::string& pointGaussianScaleArray() const {
+        return m_pointGaussianScaleArray;
+    }
+
+    //! Sets the point-data array name driving per-point splat sizes
+    inline void setPointGaussianScaleArray(const std::string& arrayName) {
+        m_pointGaussianScaleArray = arrayName;
+        setRedraw(false);
+    }
+
 public:  // Transformation matrix management (for display only)
     //! Associates entity with a GL transformation (rotation + translation)
     /** \warning FOR DISPLAY PURPOSE ONLY (i.e. should only be temporary)
@@ -418,6 +432,9 @@ protected:  // members
 
     //! Point Gaussian emissive mode
     bool m_pointGaussianEmissive;
+
+    //! Optional point-data array driving per-point splat sizes (empty = none)
+    std::string m_pointGaussianScaleArray;
 
     //! The stack of pushed display states
     std::vector<DisplayState::Shared> m_displayStateStack;

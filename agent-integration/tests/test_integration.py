@@ -4632,3 +4632,48 @@ class TestLevel5_PluginMCPTools:
             assert "undistort" in props
         except (ImportError, SystemExit):
             pytest.skip("MCP SDK or CLI harness not installed")
+
+
+# ---------------------------------------------------------------------------
+# Spirula Studio (BUILD_SPIRULA) — registration + RPC coverage
+# ---------------------------------------------------------------------------
+
+def test_level1_spirula_methods_registered():
+    src = _read_repo_text(
+        Path(__file__).resolve().parent.parent / "plugins" / "core"
+        / "Standard" / "qJSonRPCPlugin" / "src" / "JsonRPCPlugin.cpp")
+    for method in ["spirula.version", "spirula.devices", "spirula.launch",
+                    "spirula.cli", "spirula.import"]:
+        assert f'"{method}"' in src, \
+            f"Missing method registration for '{method}'"
+
+
+@pytest.mark.skipif(not _rpc_available(),
+                    reason="RPC GUI session not running")
+class TestSpirulaRpc:
+    """End-to-end spirula.* RPC coverage. Needs a running GUI session with the
+    qJSonRPCPlugin and BUILD_SPIRULA=ON (see docs/TESTING.md)."""
+
+    def test_spirula_version(self):
+        result = _rpc_call("spirula.version")
+        assert result["exe"]
+        assert "2026." in result["version"]
+
+    def test_spirula_devices_bounded(self):
+        # Device enumeration initializes the Vulkan runtime server-side with a
+        # 5s bound; on hosts without a usable GPU the call reports a timeout
+        # error, which is the correct behavior (never hangs the RPC thread).
+        try:
+            result = _rpc_call("spirula.devices", timeout=15)
+            assert isinstance(result["devices"], list)
+        except RuntimeError as exc:
+            assert "timed out" in str(exc), exc
+
+    def test_spirula_cli_rejects_unknown_command(self):
+        with pytest.raises(RuntimeError):
+            _rpc_call("spirula.cli", {"command": "gui"})
+
+    def test_spirula_cli_detached_returns_pid(self):
+        result = _rpc_call("spirula.cli",
+                           {"command": "train", "args": ["--help"]})
+        assert result["pid"] > 0

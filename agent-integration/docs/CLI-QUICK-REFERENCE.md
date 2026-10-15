@@ -749,6 +749,32 @@ export ACV_LOG_LEVEL=DEBUG
 
 ---
 
+## Spirula Studio (3DGS training; `BUILD_SPIRULA`)
+
+The standalone `spirula` executable ships next to ACloudViewer
+(`bin/ACloudViewer/spirula`) and is called directly — no GUI required:
+
+```bash
+# Train a 3DGS model from an image dataset (COLMAP or built-in SfM)
+spirula train ./dataset/ --output ./runs/garage
+
+# Extract a mesh from the trained model
+spirula mesh ./runs/garage --output ./mesh.ply
+
+# Pick a GPU explicitly / list devices
+spirula --device 1 train ./dataset/
+spirula --device auto --version
+
+# Every subcommand has its own help
+spirula train --help
+```
+
+In a **running GUI session**, the same operations are available over JSON-RPC
+(WebSocket 6001): `spirula.version`, `spirula.devices`, `spirula.launch`,
+`spirula.cli` (whitelisted subcommands — detached by default, synchronous with
+`timeout_ms`), and `spirula.import` (lands a trained `splat.ply` / `mesh.ply` /
+run directory into the scene tree). See [COMMAND-MAPPING.md](COMMAND-MAPPING.md).
+
 ## See Also
 
 - **Full documentation**: [agent-integration/README.md](../README.md)

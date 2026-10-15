@@ -238,6 +238,85 @@ std::vector<Detection> postprocess(const std::vector<float>& raw,
     return out;
 }
 
+namespace {
+// Bilinear mask composition for one detection (Ultralytics process_mask with
+// upsample: bilinear logits -> crop to box -> > 0). m already carries the
+// canvas window (x, y, w, h) and zeroed bits. The mixed logit
+// v = mc . proto is linear in the proto channels, so it is evaluated once on
+// the proto-grid sub-rectangle covering the window (plus the 1-cell bilinear
+// margin) and interpolated to canvas pixel centres afterwards: O(box area).
+void compose_mask_bilinear(SegMask& m,
+                           const Detection& d,
+                           const float* mc,
+                           int nm,
+                           const std::vector<float>& proto,
+                           int proto_w,
+                           int proto_h,
+                           int canvas_w,
+                           int canvas_h) {
+    // Per-axis sample table: canvas pixel centre -> two proto cells + weight.
+    struct Tap {
+        int i0, i1;
+        float f;
+    };
+    auto build = [](int start, int count, int proto_n, int canvas_n,
+                    std::vector<Tap>& taps, int& lo, int& hi) {
+        taps.resize(count);
+        lo = proto_n;
+        hi = -1;
+        const float scale = (float)proto_n / (float)canvas_n;
+        for (int i = 0; i < count; i++) {
+            const float u = ((float)(start + i) + 0.5f) * scale - 0.5f;
+            const float fl = std::floor(u);
+            Tap t;
+            t.f = u - fl;
+            t.i0 = std::clamp((int)fl, 0, proto_n - 1);
+            t.i1 = std::clamp((int)fl + 1, 0, proto_n - 1);
+            taps[i] = t;
+            lo = std::min(lo, t.i0);
+            hi = std::max(hi, t.i1);
+        }
+    };
+    std::vector<Tap> tx, ty;
+    int gx0, gx1, gy0, gy1;  // inclusive proto-grid range
+    build(m.x, m.w, proto_w, canvas_w, tx, gx0, gx1);
+    build(m.y, m.h, proto_h, canvas_h, ty, gy0, gy1);
+    const int gw = gx1 - gx0 + 1, gh = gy1 - gy0 + 1;
+
+    std::vector<float> grid((size_t)gw * gh);
+    const size_t plane = (size_t)proto_w * proto_h;
+    for (int gy = 0; gy < gh; gy++) {
+        for (int gx = 0; gx < gw; gx++) {
+            const float* pc =
+                    proto.data() + (size_t)(gy0 + gy) * proto_w + (gx0 + gx);
+            float v = 0.0f;
+            for (int c = 0; c < nm; c++) v += mc[c] * pc[(size_t)c * plane];
+            grid[(size_t)gy * gw + gx] = v;
+        }
+    }
+
+    // Box crop on canvas pixel indices (crop_mask: x1 <= x < x2).
+    for (int j = 0; j < m.h; j++) {
+        const int y = m.y + j;
+        if ((float)y < d.y1 || (float)y >= d.y2) continue;
+        const Tap& a = ty[j];
+        const float* r0 = &grid[(size_t)(a.i0 - gy0) * gw];
+        const float* r1 = &grid[(size_t)(a.i1 - gy0) * gw];
+        for (int i = 0; i < m.w; i++) {
+            const int x = m.x + i;
+            if ((float)x < d.x1 || (float)x >= d.x2) continue;
+            const Tap& b = tx[i];
+            const int c0 = b.i0 - gx0, c1 = b.i1 - gx0;
+            const float top = r0[c0] + (r0[c1] - r0[c0]) * b.f;
+            const float bot = r1[c0] + (r1[c1] - r1[c0]) * b.f;
+            const float v = top + (bot - top) * a.f;
+            if (v > 0.0f) m.bits[(size_t)j * m.w + i] = 1;
+        }
+    }
+}
+
+}  // namespace
+
 std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
                                    const std::vector<float>& raw,
                                    int na,
@@ -246,7 +325,8 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
                                    int proto_w,
                                    int proto_h,
                                    int canvas_w,
-                                   int canvas_h) {
+                                   int canvas_h,
+                                   bool bilinear) {
     std::vector<SegMask> masks(dets.size());
     const int nm = meta.nm;
     if (nm <= 0 || (int)proto.size() != nm * proto_w * proto_h ||
@@ -277,7 +357,7 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
         m.w = x2 - x1;
         m.h = y2 - y1;
         m.bits.assign((size_t)m.w * m.h, 0);
-        if (px2 <= px1 || py2 <= py1) continue;
+        if (!bilinear && (px2 <= px1 || py2 <= py1)) continue;
 
         float mc[64];
         if (nm > 64) {
@@ -286,6 +366,12 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
         }
         for (int c = 0; c < nm; c++)
             mc[c] = raw[(size_t)(mc_base + c) * na + d.anchor];
+
+        if (bilinear) {
+            compose_mask_bilinear(m, d, mc, nm, proto, proto_w, proto_h,
+                                  canvas_w, canvas_h);
+            continue;
+        }
 
         for (int py = py1; py < py2; py++) {
             const int by0 = std::max(

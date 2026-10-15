@@ -24,6 +24,7 @@
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
 #include <ecvNormalVectors.h>
+#include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
 #include <ecvRedrawScope.h>
 #include <ecvScalarField.h>
@@ -37,9 +38,19 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QRegularExpression>
 #include <QtGui>
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
+
+#include "SpirulaLauncher.h"
+#include "SpirulaLocator.h"
+#include "SplatImporter.h"
+
+#ifndef Q_OS_WIN
+#include <csignal>
+#endif
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers
@@ -479,6 +490,20 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcExport(p); });
     reg("file.convert",      "Convert file format: {input, output, ?input_filter, ?output_filter}",
         [this](auto& p){ return rpcFileConvert(p); });
+
+    // --- Spirula Studio (BUILD_SPIRULA; standalone GPLv3 executable) ---
+    reg("spirula.version", "Locate spirula executable: returns {exe, version}",
+        [this](auto& p){ return rpcSpirulaVersion(p); });
+    reg("spirula.devices", "List compute devices (Vulkan runtime; 5s timeout): {}",
+        [this](auto& p){ return rpcSpirulaDevices(p); });
+    reg("spirula.launch",  "Start the official Spirula Studio GUI (detached): {}",
+        [this](auto& p){ return rpcSpirulaLaunch(p); });
+    reg("spirula.cli",     "Run a spirula subcommand: {command: train|sfm|sam|mesh|geometry|e57|lidar|partition|encode, args:[...], ?timeout_ms} — with timeout_ms it runs synchronously and returns exit_code/stdout/stderr, otherwise detached and returns pid",
+        [this](auto& p){ return rpcSpirulaCli(p); });
+    reg("spirula.import",  "Import a training output into the scene: {path, ?mesh}",
+        [this](auto& p){ return rpcSpirulaImport(p); });
+    reg("spirula.cancel",  "Gracefully stop a detached spirula process (SIGTERM; upstream checkpoints on exit): {pid}",
+        [this](auto& p){ return rpcSpirulaCancel(p); });
 
     // --- Scene tree ---
     reg("scene.list",        "List all entities: {?recursive}",
@@ -3829,6 +3854,264 @@ JsonRPCResult JsonRPCPlugin::rpcProcessRansac(
 // ═══════════════════════════════════════════════════════════════════════════
 // Internal helper
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ═════════════════════════════════════════════════════════════════════════
+// Spirula Studio (standalone GPLv3 executable; see 3rdparty/spirula)
+// ═════════════════════════════════════════════════════════════════════════
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaVersion(
+        const QMap<QString, QVariant>& params) {
+    Q_UNUSED(params)
+    const QString exe = spirula::locateExecutable();
+    if (exe.isEmpty()) {
+        return JsonRPCResult::error(
+                1,
+                "Spirula Studio executable not found (built with "
+                "BUILD_SPIRULA=ON)");
+    }
+    QProcess proc;
+    proc.start(exe, QStringList{QStringLiteral("--version")});
+    if (!proc.waitForFinished(8000) ||
+        proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0) {
+        return JsonRPCResult::error(
+                1, "spirula --version failed",
+                D("exe", exe, "stderr",
+                  QString::fromUtf8(proc.readAllStandardError())));
+    }
+    QJsonObject result;
+    result["exe"] = exe;
+    result["version"] =
+            QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaDevices(
+        const QMap<QString, QVariant>& params) {
+    Q_UNUSED(params)
+    const QString exe = spirula::locateExecutable();
+    if (exe.isEmpty()) {
+        return JsonRPCResult::error(1, "Spirula Studio executable not found");
+    }
+    QProcess proc;
+    proc.setProgram(exe);
+    proc.setArguments(QStringList{QStringLiteral("--device"),
+                                  QStringLiteral("auto"),
+                                  QStringLiteral("--version")});
+    proc.start();
+    // Device enumeration initializes the Vulkan runtime; on hosts without a
+    // usable GPU/driver it can hang — bound it instead of trusting exit.
+    if (!proc.waitForFinished(5000)) {
+        proc.kill();
+        return JsonRPCResult::error(
+                3,
+                "spirula device enumeration timed out (a Vulkan-capable "
+                "GPU/driver is required)");
+    }
+    // Rows printed by upstream: "  * [0] NAME (type, 12345 MB)  [note]";
+    // the note is non-empty only for unusable devices.
+    static const QRegularExpression rowRe(
+            R"re(\[(-?\d+)\]\s+(\S.*?)\s+\(([^,]+),\s*(\d+)\s*MB\)(.*))re");
+    QJsonArray devices;
+    const QStringList rows =
+            QString::fromUtf8(proc.readAllStandardOutput()).split('\n');
+    for (const QString& row : rows) {
+        const auto m = rowRe.match(row);
+        if (!m.hasMatch()) {
+            continue;
+        }
+        QJsonObject device;
+        device["index"] = m.captured(1).toInt();
+        device["name"] = m.captured(2).trimmed();
+        device["type"] = m.captured(3).trimmed();
+        device["vram_mb"] = m.captured(4).toLongLong();
+        device["current"] = row.trimmed().startsWith('*');
+        device["usable"] = m.captured(5).trimmed().isEmpty();
+        devices.append(device);
+    }
+    QJsonObject result;
+    result["devices"] = devices;
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaLaunch(
+        const QMap<QString, QVariant>& params) {
+    Q_UNUSED(params)
+    const QString exe = spirula::locateExecutable();
+    QString error;
+    if (!spirula::launchGui(exe, &error)) {
+        return JsonRPCResult::error(1, error);
+    }
+    QJsonObject result;
+    result["launched"] = true;
+    result["exe"] = exe;
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaCli(
+        const QMap<QString, QVariant>& params) {
+    const QString command = params["command"].toString();
+    // Whitelist the headless subcommands; 'gui'/'sam' excluded on purpose —
+    // sam opens an interactive masking session, gui is the RPC launch path.
+    static const QSet<QString> kWhitelisted = {
+            QStringLiteral("train"),     QStringLiteral("sfm"),
+            QStringLiteral("mesh"),      QStringLiteral("geometry"),
+            QStringLiteral("e57"),       QStringLiteral("lidar"),
+            QStringLiteral("partition"), QStringLiteral("encode")};
+    if (!kWhitelisted.contains(command)) {
+        return JsonRPCResult::error(
+                -32602, "Unknown or non-whitelisted spirula command",
+                D("command", command));
+    }
+    const QString exe = spirula::locateExecutable();
+    if (exe.isEmpty()) {
+        return JsonRPCResult::error(1, "Spirula Studio executable not found");
+    }
+
+    QStringList argList{command};
+    const QVariantList rawArgs = params["args"].toList();
+    for (const QVariant& arg : rawArgs) {
+        argList << arg.toString();
+    }
+
+    QProcess process;
+    process.setProgram(exe);
+    process.setArguments(argList);
+    process.setWorkingDirectory(QFileInfo(exe).absolutePath());
+
+    // Two semantics: with timeout_ms the caller wants the synchronous result
+    // (short commands / small datasets); without it the process is detached
+    // and train/sfm run for minutes to hours — the caller then monitors the
+    // run directory (config.json + step-*.ckpt) and calls spirula.import.
+    const int timeoutMs = params.value("timeout_ms", 0).toInt();
+    QJsonObject result;
+    result["command"] = command;
+    result["args"] = QJsonArray::fromVariantList(rawArgs);
+    result["exe"] = exe;
+    if (timeoutMs > 0) {
+        process.start();
+        if (!process.waitForFinished(timeoutMs)) {
+            process.kill();
+            return JsonRPCResult::error(3, "spirula command timed out",
+                                        D("timeout_ms", timeoutMs));
+        }
+        result["exit_code"] = process.exitCode();
+        result["stdout"] = QString::fromUtf8(process.readAllStandardOutput());
+        result["stderr"] = QString::fromUtf8(process.readAllStandardError());
+    } else {
+        qint64 pid = 0;
+        if (!process.startDetached()) {
+            return JsonRPCResult::error(1,
+                                        "Failed to start spirula " + command);
+        }
+        result["pid"] = static_cast<double>(pid);
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaImport(
+        const QMap<QString, QVariant>& params) {
+    const QString path = params["path"].toString();
+    if (path.isEmpty()) {
+        return JsonRPCResult::error(-32602, "Missing 'path' parameter");
+    }
+    if (!QFileInfo::exists(path)) {
+        return JsonRPCResult::error(-32602, "File not found: " + path);
+    }
+
+    const bool asMesh =
+            params.value("mesh", false).toBool() ||
+            path.endsWith(QStringLiteral("mesh.ply"), Qt::CaseInsensitive);
+    QString error;
+    ccHObject* imported = nullptr;
+    if (asMesh) {
+        imported = spirula::loadMesh(path, &error);
+    } else {
+        const QString splatPath = spirula::resolveSplatPath(path);
+        if (splatPath.isEmpty()) {
+            return JsonRPCResult::error(
+                    1, "No splat.ply found in run directory", D("path", path));
+        }
+        imported = spirula::loadSplatPointCloud(splatPath, &error);
+    }
+    if (!imported) {
+        return JsonRPCResult::error(
+                1, error.isEmpty() ? QStringLiteral("Import failed") : error,
+                D("path", path));
+    }
+
+    const QString uniqueName = ecvPluginDbNaming::makeUnique(
+            QStringLiteral("Spirula_") + QFileInfo(path).baseName(), m_app);
+    imported->setName(uniqueName);
+    m_app->addToDB(imported, true, true, false, true);
+    m_app->setSelectedInDB(imported, true);
+    m_app->zoomOnEntities(imported);
+    m_app->refreshAll();
+
+    QJsonObject result;
+    result["entity"] = uniqueName;
+    if (imported->isA(CV_TYPES::POINT_CLOUD)) {
+        result["points"] = static_cast<qint64>(
+                static_cast<ccPointCloud*>(imported)->size());
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSpirulaCancel(
+        const QMap<QString, QVariant>& params) {
+    const qint64 pid = params["pid"].toLongLong();
+    if (pid <= 0) {
+        return JsonRPCResult::error(-32602, "Missing or invalid 'pid'");
+    }
+
+    // Identity check: only ever terminate a process whose image is the
+    // spirula executable — a stale/wrong pid must not kill something else.
+    bool isSpirula = false;
+#ifdef Q_OS_WIN
+    HANDLE handle =
+            OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
+                        FALSE, static_cast<DWORD>(pid));
+    if (!handle) {
+        return JsonRPCResult::error(1, "Process not found",
+                                    D("pid", static_cast<double>(pid)));
+    }
+    char imagePath[MAX_PATH] = {0};
+    DWORD imageSize = MAX_PATH;
+    isSpirula = QueryFullProcessImageNameA(handle, 0, imagePath, &imageSize) &&
+                QString(imagePath).contains("spirula", Qt::CaseInsensitive);
+    if (!isSpirula) {
+        CloseHandle(handle);
+        return JsonRPCResult::error(
+                1, "Refusing to cancel: pid is not a spirula process",
+                D("pid", static_cast<double>(pid)));
+    }
+    const bool terminated = TerminateProcess(handle, 1) != 0;
+    CloseHandle(handle);
+    if (!terminated) {
+        return JsonRPCResult::error(1, "TerminateProcess failed",
+                                    D("pid", static_cast<double>(pid)));
+    }
+#else
+    QFile commFile(QStringLiteral("/proc/%1/comm").arg(pid));
+    if (commFile.open(QIODevice::ReadOnly)) {
+        isSpirula = commFile.readAll().trimmed().startsWith("spirula");
+    }
+    if (!isSpirula) {
+        return JsonRPCResult::error(
+                1, "Refusing to cancel: pid is not a spirula process",
+                D("pid", static_cast<double>(pid)));
+    }
+    // SIGTERM lets the upstream trainer checkpoint before exiting.
+    if (kill(static_cast<pid_t>(pid), SIGTERM) != 0) {
+        return JsonRPCResult::error(
+                1, "kill failed",
+                D("pid", static_cast<double>(pid), "errno", errno));
+    }
+#endif
+    QJsonObject result;
+    result["cancelled"] = true;
+    result["pid"] = static_cast<double>(pid);
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
 
 void JsonRPCPlugin::redraw() {
     if (m_app->getActiveWindow()) {

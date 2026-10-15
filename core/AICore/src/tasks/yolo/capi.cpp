@@ -58,6 +58,10 @@ struct aicore_yolo_ctx {
     float conf_thres = 0.25f;
     float iou_thres = 0.7f;
     uint32_t top_k = 0;
+    // Segment-mask upsampling: false = nearest proto-cell blocks (legacy),
+    // true = bilinear interpolation of the mixed logits. Seeded from
+    // aicore_yolo_options_set_mask_upsample.
+    bool mask_bilinear = false;
 
     // Open-vocabulary state: the user class list (empty = checkpoint
     // vocabulary) that overrides the GGUF class names in every result, so
@@ -105,6 +109,7 @@ struct aicore_yolo_options {
     float conf_thres = 0.25f;
     float iou_thres = 0.7f;
     uint32_t top_k = 0;
+    bool mask_bilinear = false;  // see aicore_yolo_options_set_mask_upsample
     // Mirrors the yolo::SessionOptions debug/tuning fields (complete bridge;
     // defaults equal the SessionOptions defaults).
     int log_level = 1;  // 0=DEBUG,1=INFO,2=WARN,3=ERROR
@@ -417,6 +422,16 @@ AICORE_CAPI void aicore_yolo_options_set_top_k(aicore_yolo_options* opts,
     if (opts != nullptr) opts->top_k = top_k;
 }
 
+AICORE_CAPI void aicore_yolo_options_set_mask_upsample(
+        aicore_yolo_options* opts, int bilinear) {
+    if (opts != nullptr) opts->mask_bilinear = bilinear != 0;
+}
+
+AICORE_CAPI int aicore_yolo_options_get_mask_upsample(
+        const aicore_yolo_options* opts) {
+    return opts != nullptr && opts->mask_bilinear ? 1 : 0;
+}
+
 AICORE_CAPI void aicore_yolo_options_set_log_level(aicore_yolo_options* opts,
                                                    int log_level) {
     if (opts == nullptr) return;
@@ -547,6 +562,7 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
         ctx->conf_thres = opts->conf_thres;
         ctx->iou_thres = opts->iou_thres;
         ctx->top_k = opts->top_k;
+        ctx->mask_bilinear = opts->mask_bilinear;
     }
 
     try {
@@ -1691,7 +1707,7 @@ static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
         // Compose masks (before unscale_boxes — masks are in canvas coords)
         std::vector<yolo::SegMask> masks = yolo::compose_masks(
                 dets, raw, na, s->model.meta, proto, proto_w, proto_h,
-                info.imgsz_w, info.imgsz_h);
+                info.imgsz_w, info.imgsz_h, ctx->mask_bilinear);
 
         // Unscale boxes to original image coordinates (clipped to the
         // source image — upstream clip_boxes).

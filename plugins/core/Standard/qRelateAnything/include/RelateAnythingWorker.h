@@ -16,10 +16,10 @@
 #include <memory>
 #include <vector>
 
-#include "aicore/relation_capi.h"
-#include "aicore/runtime_capi.h"
 #include "RelateAnythingTemporal.h"
+#include "aicore/relation_capi.h"
 #include "aicore/rfdetr_capi.h"
+#include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
 struct RelateAnythingSettings {
     QString model, detector, device, student, tokenizer, predicates;
@@ -55,6 +55,13 @@ struct RelateAnythingSettings {
 };
 struct RelateAnythingResult {
     quint64 generation = 0;
+    // ok is the only success flag: a failure whose message came back empty
+    // from the C API is still a failure. `fatal` means the session itself
+    // could not be set up (model / detector load), so retrying the next image
+    // of a batch would fail the same way; per-image failures are not fatal.
+    bool ok = false, fatal = false;
+    // Non-error remark shown to the user (for example fewer than two objects).
+    QString notice;
     QString source, error, device;
     QImage image, annotated;
     QJsonObject json;
@@ -73,7 +80,8 @@ public:
                  const QString&,
                  quint64);
     void release();
-    // Forget tracks and relation beliefs (new video, seek, stop, source change).
+    // Forget tracks and relation beliefs (new video, seek, stop, source
+    // change).
     void resetTemporal();
 signals:
     void completed(const RelateAnythingResult&);

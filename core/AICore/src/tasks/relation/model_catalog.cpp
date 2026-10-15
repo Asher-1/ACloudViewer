@@ -95,84 +95,84 @@ const aicore_relation_model_entry catalog[] = {
         // ConvNeXt models (DINOv3 backbone, 4 sizes × 3 quantizations)
         {"relsgg-convnext-tiny-f16.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-tiny-f16.gguf",
          "relsgg-convnext-tiny-f16", "convnext-tiny",
          "785d3f0d324bb1412c69df1b89fe04be7cf3afe92258f1e68a78d89ce079a65f",
          137340320, 0},
         {"relsgg-convnext-tiny-f32.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-tiny-f32.gguf",
          "relsgg-convnext-tiny-f32", "convnext-tiny",
          "97fb3e7409699188926cf285d714620cc3dd0f89e13cbe2f3975ff1a78ebb272",
          274181024, 0},
         {"relsgg-convnext-tiny-q8_0.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-tiny-q8_0.gguf",
          "relsgg-convnext-tiny-q8_0", "convnext-tiny",
          "018690fdaf159a9627de71506c93ee85624a77345d1148d3b174ef43a03ec10c",
          96192288, 0},
         {"relsgg-convnext-small-f16.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-small-f16.gguf",
          "relsgg-convnext-small-f16", "convnext-small",
          "5cc130db41c1a7de0eb4da5d63539c605686eaadbcd649f92ae2e235f953edf0",
          180629120, 0},
         {"relsgg-convnext-small-f32.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-small-f32.gguf",
          "relsgg-convnext-small-f32", "convnext-small",
          "b5290933a39cff1ef97f064d6965f4d3c5260955a37dbc30728ad21f9344c606",
          360738944, 0},
         {"relsgg-convnext-small-q8_0.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-small-q8_0.gguf",
          "relsgg-convnext-small-q8_0", "convnext-small",
          "d0d0431f4e1493c58aa4d428484fbae61b6d0aeb8197879a6f7fc3db17a36e84",
          120376320, 0},
         {"relsgg-convnext-base-f16.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-base-f16.gguf",
          "relsgg-convnext-base-f16", "convnext-base",
          "b7fd03203c87b7203215b4dfe4e58a3d5881368c2015efa6eca23005544d099e",
          267090624, 0},
         {"relsgg-convnext-base-f32.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-base-f32.gguf",
          "relsgg-convnext-base-f32", "convnext-base",
          "c3ec29b957f6c04d472576dbe052e056925ee56370e852600db7d54bf331a99b",
          533661952, 0},
         {"relsgg-convnext-base-q8_0.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-base-q8_0.gguf",
          "relsgg-convnext-base-q8_0", "convnext-base",
          "549a4ab4a053d582454126d6e3f3dec70969ab1fcdfb91681cab8c01c5cb7dcc",
          176707744, 0},
         {"relsgg-convnext-large-f16.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-large-f16.gguf",
          "relsgg-convnext-large-f16", "convnext-large",
          "d0dbd9fea5fd0fe6c728dd6df55b9cb34bb7a5fb9645c5591b7767622b0f3fbc",
          511578944, 0},
         {"relsgg-convnext-large-f32.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-large-f32.gguf",
          "relsgg-convnext-large-f32", "convnext-large",
          "2fc1d48e2ea8e96ff8429a734205c5915eac73bf774efa2299227b8126d7ecc2",
          1022638592, 0},
         {"relsgg-convnext-large-q8_0.gguf",
          "https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/"
-         "2377ca3539bf5c4f09161a886a38dd0fc7517bd0/"
+         "9f17399c32cc5ee872277e5b6d70578cd2c546c6/"
          "gguf/relsgg-convnext-large-q8_0.gguf",
          "relsgg-convnext-large-q8_0", "convnext-large",
          "37a743155aab2390f5d7c8c4dd3d3c595d299870ce951db357dd1ade788ea6e2",
@@ -191,4 +191,6 @@ int aicore_relation_model_count(void) {
 const aicore_relation_model_entry *aicore_relation_model_at(int i) {
     return i >= 0 && i < aicore_relation_model_count() ? &catalog[i] : nullptr;
 }
-int aicore_relation_model_default_index(void) { return 10; }  // vits16plus-q8_0 (recommended)
+int aicore_relation_model_default_index(void) {
+    return 10;
+}  // vits16plus-q8_0 (recommended)

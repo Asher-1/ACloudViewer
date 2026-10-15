@@ -4919,6 +4919,1734 @@
    "light": false
   },
   {
+   "id": "relation-convnext-tiny-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-tiny-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-tiny-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-small-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-small-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-small-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-base-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-base-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-base-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-large-f16",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-large-f32",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-convnext-large-q8_0",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": false
+  },
+  {
    "id": "relation-text-student",
    "task": "relation",
    "owned_globs": [
@@ -5623,6 +7351,46 @@
    },
    "fingerprint_policy": "stability_only",
    "metric_parser": "relation",
+   "light": false
+  },
+  {
+   "id": "relation-temporal-tracker",
+   "task": "relation",
+   "executable": "binary:test_relate_temporal",
+   "args": [],
+   "env": {},
+   "accuracy_gate": "Ported upstream tracker, relation-belief Kalman filter and hysteresis (qRelateAnything RelateAnythingTemporal.h): identity persistence under label flips, belief smoothing and edge visibility rules. Model-free; the probe exits non-zero on any failed assertion.",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "relate-temporal-tracker-unit-invariants-v1",
+    "checks": [],
+    "require_metrics": []
+   },
+   "fingerprint_policy": "none",
+   "require_fingerprint": false,
+   "metric_parser": "generic",
+   "light": false
+  },
+  {
+   "id": "relation-temporal-upstream-parity",
+   "task": "relation",
+   "executable": "python",
+   "args": [
+    "{repo}/plugins/core/Standard/qRelateAnything/tests/compare_temporal_upstream.py",
+    "--replay",
+    "{binary:test_relate_temporal_replay}"
+   ],
+   "env": {},
+   "accuracy_gate": "The C++ tracker / belief replay matches upstream render_video.py token by token (tracks, edges, visible edges) on the scripted scenario within 0.02 absolute on printed decimals. Requires AICORE_TEST_RELATE_UPSTREAM; without it the probe exits 77 and the row is reported skipped (incomplete), never passed.",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "relate-temporal-render-video-replay-v1",
+    "checks": [],
+    "require_metrics": []
+   },
+   "fingerprint_policy": "none",
+   "require_fingerprint": false,
+   "metric_parser": "generic",
    "light": false
   },
   {
@@ -6792,6 +8560,1746 @@
     "relation_models/relsgg-vits16plus-q8_0.gguf"
    ],
    "model_glob": "relation_models/relsgg-vits16plus-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-tiny-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-tiny-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-tiny-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-tiny-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-tiny-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-small-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-small-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-small-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-small-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-small-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-base-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-base-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-base-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-base-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-base-q8_0.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-large-f16-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-f16.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-f16.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-large-f32-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-f32.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-f32.gguf",
+   "for_each_model": true,
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/tests/relation/upstream_probe.py",
+    "--probe",
+    "{binary:test_relation_probe}",
+    "--model",
+    "{model}",
+    "--backend",
+    "{backend}",
+    "--catalog",
+    "{assets}/relate_datasets/benchmark_samples/catalog.json",
+    "--output",
+    "{scenario_report}",
+    "--warmup",
+    "{warmup_runs}",
+    "--repeat",
+    "{inference_runs}",
+    "--threads",
+    "{threads}",
+    "--contracts",
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
+   ],
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
+   "accuracy": {
+    "reference": "official_pytorch_and_upstream_ggml",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
+    "checks": [
+     {
+      "metric": "native_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_pair_max_diff",
+      "op": "<=",
+      "value": 0.001
+     },
+     {
+      "metric": "native_top1_agreement",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "native_pair_set_recall",
+      "op": "==",
+      "value": 1
+     },
+     {
+      "metric": "official_mean_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_top1_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "official_pair_recall_drop",
+      "op": "<=",
+      "value": 1e-06
+     },
+     {
+      "metric": "performance_ratio",
+      "op": "<=",
+      "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "native_max_diff",
+     "native_pair_max_diff",
+     "native_top1_agreement",
+     "native_pair_set_recall",
+     "official_mean_error_excess",
+     "official_top1_drop",
+     "official_pair_recall_drop",
+     "performance_ratio",
+     "official_max_diff",
+     "official_mean_diff",
+     "official_top1_agreement",
+     "official_pair_set_recall",
+     "candidate_p50_ms",
+     "candidate_p95_ms",
+     "upstream_p50_ms",
+     "upstream_p95_ms",
+     "performance_p50_ratio",
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
+    ]
+   },
+   "fingerprint_policy": "stability_only",
+   "metric_parser": "relation",
+   "light": true
+  },
+  {
+   "id": "relation-convnext-large-q8_0-default",
+   "task": "relation",
+   "owned_globs": [
+    "relation_models/relsgg-convnext-large-q8_0.gguf"
+   ],
+   "model_glob": "relation_models/relsgg-convnext-large-q8_0.gguf",
    "for_each_model": true,
    "executable": "python",
    "args": [

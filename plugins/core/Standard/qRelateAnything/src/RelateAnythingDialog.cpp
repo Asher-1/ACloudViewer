@@ -102,9 +102,10 @@ DetectorInfo detectorInfo(const QString& filename) {
         info.dir = cacheDir(aicore_yolo_model_cache_dir(),
                             aicore_yolo_free_buffer);
         info.world = filename.contains(QStringLiteral("-world"));
-        info.vocabulary = e->text_input &&
-                          QString::fromUtf8(e->task) != QStringLiteral("text") &&
-                          !filename.contains(QStringLiteral("-pf-"));
+        info.vocabulary =
+                e->text_input &&
+                QString::fromUtf8(e->task) != QStringLiteral("text") &&
+                !filename.contains(QStringLiteral("-pf-"));
     }
     return info;
 }
@@ -125,7 +126,8 @@ void addDetectors(QComboBox* combo,
         QString name;
         if (info.rfdetr) {
             for (int i = 0; i < aicore_rfdetr_model_count(); ++i)
-                if (file == QString::fromUtf8(aicore_rfdetr_model_at(i)->filename))
+                if (file ==
+                    QString::fromUtf8(aicore_rfdetr_model_at(i)->filename))
                     name = QString::fromUtf8(
                             aicore_rfdetr_model_at(i)->display_name);
         } else {
@@ -307,12 +309,14 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
         m_queue.clear();
         if (m_batch && m_progress) m_progress->hide();
         m_batch = false;
-        m_worker->requestCancel();
+        // L2 fix: guard worker access after shutdown.
+        if (m_worker) m_worker->requestCancel();
         // New video, seek, stop or source change: forget tracks and beliefs.
         // Queued, so it runs before any frame submitted afterwards.
-        QMetaObject::invokeMethod(
-                m_worker, [w = m_worker]() { w->resetTemporal(); },
-                Qt::QueuedConnection);
+        if (m_worker)
+            QMetaObject::invokeMethod(
+                    m_worker, [w = m_worker]() { w->resetTemporal(); },
+                    Qt::QueuedConnection);
     });
     connect(m_video, &VideoPlaybackWidget::streamError, this,
             &RelateAnythingDialog::log);
@@ -428,8 +432,8 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     addDetectors(m_detector, tr("YOLO segment"), segment);
     addDetectors(m_detector, tr("RF-DETR"), rfdetr);
     addDetectors(m_detector, tr("YOLO detect (boxes)"), detect);
-    m_detector->setCurrentIndex(
-            qMax(0, m_detector->findData(QString::fromLatin1(kDefaultDetector))));
+    m_detector->setCurrentIndex(qMax(
+            0, m_detector->findData(QString::fromLatin1(kDefaultDetector))));
     m_detector->setToolTip(
             tr("Proposes the objects whose relations are predicted. "
                "Segmentation models (recommended) also give object masks, "
@@ -470,8 +474,9 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_detIou->setSingleStep(.05);
     m_detIou->setValue(.5);
     m_detIou->setObjectName("relateDetectionIou");
-    m_detIou->setToolTip(tr("NMS IoU of the YOLO detectors (upstream 0.5). "
-                            "RF-DETR is NMS-free and ignores it."));
+    m_detIou->setToolTip(
+            tr("NMS IoU of the YOLO detectors (upstream 0.5). "
+               "RF-DETR is NMS-free and ignores it."));
     m_maxBoxFraction = new QDoubleSpinBox;
     m_maxBoxFraction->setRange(.1, 1);
     m_maxBoxFraction->setSingleStep(.05);
@@ -484,9 +489,10 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_maxSpatial->setRange(0, 128);
     m_maxSpatial->setValue(3);
     m_maxSpatial->setObjectName("relateMaxSpatial");
-    m_maxSpatial->setToolTip(tr("How many of the shown relations may be "
-                                "spatial (beside, behind...). 0 = "
-                                "interactions only."));
+    m_maxSpatial->setToolTip(
+            tr("How many of the shown relations may be "
+               "spatial (beside, behind...). 0 = "
+               "interactions only."));
     m_profile = new QComboBox;
     m_profile->setObjectName("relateProfile");
     m_profile->addItem(tr("Official video reel (default)"),
@@ -510,7 +516,8 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             tr("Which relations the model may name. The official demos use "
                "curated lists; the full model vocabulary also contains "
                "unusual phrases such as \"has holding\"."));
-    m_boxScoreWeight = new QCheckBox(tr("Rank relations by detector confidence"));
+    m_boxScoreWeight =
+            new QCheckBox(tr("Rank relations by detector confidence"));
     m_boxScoreWeight->setObjectName("relateBoxScoreWeight");
     m_boxScoreWeight->setChecked(true);
     m_boxScoreWeight->setToolTip(
@@ -595,9 +602,9 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_applyingPreset = true;
     m_predicates->setText(
             RelatePresets::join(RelatePresets::videoPredicates()));
-    m_threshold->setValue(defaultConfidence(
-            m_detector->currentData().toString(),
-            int(RelatePresets::Profile::VideoReel)));
+    m_threshold->setValue(
+            defaultConfidence(m_detector->currentData().toString(),
+                              int(RelatePresets::Profile::VideoReel)));
     m_applyingPreset = false;
     // Each detector family has its own official confidence (make_reel.py
     // MODES): follow it unless the user has chosen their own values.
@@ -695,8 +702,13 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString&) {
                 m_progress->hide();
+                // H2 fix: re-enable all controls that were disabled on start,
+                // including device and detector.
                 m_download->setEnabled(true);
                 m_model->setEnabled(true);
+                m_device->setEnabled(true);
+                const bool useSupplied = m_objectSource->currentIndex() == 1;
+                m_detector->setEnabled(!useSupplied);
                 m_run->setEnabled(!m_busy);
                 bool again = m_runAfterDownload;
                 m_runAfterDownload = false;
@@ -765,7 +777,14 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             s.value("objectSource", 0).toInt() == 1 ? 1 : 0);
     const int arithmetic = s.value("arithmetic", -1).toInt();
     m_arithmetic->setCurrentIndex(qMax(0, m_arithmetic->findData(arithmetic)));
-    if (current) m_decompose->setChecked(s.value("decompose", true).toBool());
+    // M3 fix: restore decompose inside m_applyingPreset guard so it doesn't
+    // flip the profile combo to Custom when the saved value differs from
+    // the constructed default (true) while restoring a preset.
+    if (current) {
+        m_applyingPreset = true;
+        m_decompose->setChecked(s.value("decompose", true).toBool());
+        m_applyingPreset = false;
+    }
     // Schema 5 adds the video tracking controls; older files keep upstream
     // defaults (the widgets were constructed with them).
     if (s.value("schema", 1).toInt() >= 5) {
@@ -797,8 +816,9 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
 // in the widgets above, so they are not repeated here.
 void RelateAnythingDialog::buildTrackingUi(QFormLayout* form) {
     using P = RelateTemporal::Params;
-    m_stabilize = new QCheckBox(tr("Stabilise video (track objects, smooth "
-                                   "relations over time)"));
+    m_stabilize =
+            new QCheckBox(tr("Stabilise video (track objects, smooth "
+                             "relations over time)"));
     m_stabilize->setObjectName("relateStabilize");
     m_stabilize->setChecked(true);
     m_stabilize->setToolTip(
@@ -809,8 +829,9 @@ void RelateAnythingDialog::buildTrackingUi(QFormLayout* form) {
     m_belief = new QCheckBox(tr("Kalman relation belief (off = EMA)"));
     m_belief->setObjectName("relateBelief");
     m_belief->setChecked(true);
-    m_belief->setToolTip(tr("Upstream default. Off falls back to the older "
-                            "EMA + hysteresis scoring (--no_belief)."));
+    m_belief->setToolTip(
+            tr("Upstream default. Off falls back to the older "
+               "EMA + hysteresis scoring (--no_belief)."));
     form->addRow(m_belief);
     const auto dbl = [&](const QString& label, const QString& key,
                          float P::*field, double lo, double hi, double step,
@@ -836,29 +857,28 @@ void RelateAnythingDialog::buildTrackingUi(QFormLayout* form) {
         form->addRow(label, w);
         m_trackI.emplace_back(field, w);
     };
-    dbl(tr("Track confidence (--track_high)"), "relateTrackHigh",
-        &P::trackHigh, 0, 1, .05, 2,
+    dbl(tr("Track confidence (--track_high)"), "relateTrackHigh", &P::trackHigh,
+        0, 1, .05, 2,
         tr("Detections at or above this start new tracks; lower ones only "
            "extend existing tracks (ByteTrack's second stage)."));
-    dbl(tr("Track IoU gate (--iou_thr)"), "relateIouThr", &P::iouThr, 0, 1,
-        .05, 2, tr("Minimum IoU to match a confident detection to a track."));
+    dbl(tr("Track IoU gate (--iou_thr)"), "relateIouThr", &P::iouThr, 0, 1, .05,
+        2, tr("Minimum IoU to match a confident detection to a track."));
     dbl(tr("Duplicate-region IoU (--merge_iou)"), "relateMergeIou",
         &P::mergeIou, 0, 1, .05, 2,
         tr("Regions overlapping more than this are one object under two "
            "names (man / person)."));
-    integer(tr("Track max age (--max_age)"), "relateMaxAge", &P::maxAge, 0,
-            300, tr("Frames a track survives without a detection."));
+    integer(tr("Track max age (--max_age)"), "relateMaxAge", &P::maxAge, 0, 300,
+            tr("Frames a track survives without a detection."));
     integer(tr("Track min hits (--min_hits)"), "relateMinHits", &P::minHits, 1,
             30, tr("Detections needed before a track is drawn."));
     dbl(tr("Box process noise (--kf_q)"), "relateKfQ", &P::kfQ, 0, 100, .1, 2,
         tr("How fast an object really moves. Small = steadier boxes."));
-    dbl(tr("Box measurement noise (--kf_r)"), "relateKfR", &P::kfR, 0, 1000,
-        1, 1, tr("How much the detector's box wobbles. Large = smoother."));
+    dbl(tr("Box measurement noise (--kf_r)"), "relateKfR", &P::kfR, 0, 1000, 1,
+        1, tr("How much the detector's box wobbles. Large = smoother."));
     dbl(tr("Relation process noise (--kf_rel_q)"), "relateKfRelQ", &P::relQ, 0,
         10, .01, 3, tr("How fast a relation may genuinely change."));
-    dbl(tr("Relation measurement noise (--kf_rel_r)"), "relateKfRelR",
-        &P::relR, .01, 100, .1, 2,
-        tr("How much one frame's opinion is worth."));
+    dbl(tr("Relation measurement noise (--kf_rel_r)"), "relateKfRelR", &P::relR,
+        .01, 100, .1, 2, tr("How much one frame's opinion is worth."));
     dbl(tr("Relation EMA (--score_ema)"), "relateScoreEma", &P::scoreEma, 0, 1,
         .05, 2, tr("Smoothing factor when the Kalman belief is off."));
     dbl(tr("Relation off threshold (--off_thr)"), "relateOffThr", &P::offThr, 0,
@@ -919,8 +939,8 @@ void RelateAnythingDialog::applyProfile(int profile) {
     if (profile == int(RelatePresets::Profile::Custom)) return;
     const auto t = RelatePresets::thresholds(RelatePresets::Profile(profile));
     m_applyingPreset = true;
-    m_threshold->setValue(defaultConfidence(
-            m_detector->currentData().toString(), profile));
+    m_threshold->setValue(
+            defaultConfidence(m_detector->currentData().toString(), profile));
     m_detIou->setValue(t.detIou);
     m_maxBoxFraction->setValue(t.maxBoxFraction);
     m_relThreshold->setValue(t.relation);
@@ -961,6 +981,14 @@ void RelateAnythingDialog::closeEvent(QCloseEvent* event) {
                 Qt::QueuedConnection);
     event->accept();
 }
+
+void RelateAnythingDialog::reject() {
+    // H1 fix: Esc must trigger the same cleanup as the close button. Qt's
+    // default reject() only hides the dialog without calling closeEvent, so
+    // streams and downloads stay running with the window invisible.
+    close();
+}
+
 void RelateAnythingDialog::showEvent(QShowEvent* event) {
     m_closed = false;
     QDialog::showEvent(event);
@@ -1173,9 +1201,10 @@ bool RelateAnythingDialog::ensureModel(bool runAfter) {
                            ecvAssetIntegrity::PinnedDigest(info.filename)};
         required << d;
         if (!opts.detectorTextModel.isEmpty()) {
-            const QString textFile = QFileInfo(opts.detectorTextModel).fileName();
-            for (int i = 0;
-                 i < aicore_yolo_model_count(AICORE_YOLO_ROLE_TEXT); ++i) {
+            const QString textFile =
+                    QFileInfo(opts.detectorTextModel).fileName();
+            for (int i = 0; i < aicore_yolo_model_count(AICORE_YOLO_ROLE_TEXT);
+                 ++i) {
                 const auto* e = aicore_yolo_model_at(i, AICORE_YOLO_ROLE_TEXT);
                 if (textFile != QString::fromUtf8(e->filename)) continue;
                 ecvModelDownloader::Request t;
@@ -1194,8 +1223,12 @@ bool RelateAnythingDialog::ensureModel(bool runAfter) {
                     r.ingestExactSize))
             continue;
         m_runAfterDownload = runAfter;
+        // H2 fix: disable device and detector too, so changing them while
+        // downloading doesn't trigger cancel() before finished() arrives.
         m_download->setEnabled(false);
         m_model->setEnabled(false);
+        m_device->setEnabled(false);
+        m_detector->setEnabled(false);
         m_run->setEnabled(false);
         m_progress->show();
         m_downloader->download(r);
@@ -1264,6 +1297,8 @@ void RelateAnythingDialog::runNext() {
 void RelateAnythingDialog::submit(QImage image,
                                   const QString& source,
                                   bool frame) {
+    // L2 fix: guard worker access after shutdown.
+    if (!m_worker) return;
     m_framePending = frame;
     setBusy(true);
     m_worker->resetCancel();
@@ -1283,12 +1318,25 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
     m_framePending = false;
     setBusy(false);
     if (current) {
-        if (!result.error.isEmpty()) {
-            log(result.error);
-            m_queue.clear();
-            m_batch = false;
-            m_progress->hide();
-            m_video->stopStream();
+        // H3 fix: check result.ok instead of error.isEmpty(), because an empty
+        // error string from aicore_*_last_error(nullptr) is still a failure.
+        if (!result.ok) {
+            log(result.error.isEmpty() ? tr("Inference failed (no details).")
+                                       : result.error);
+            // M1 fix: for a batch, log the error but continue to the next image
+            // unless it's a fatal session error (model/detector load failure).
+            if (result.fatal) {
+                m_queue.clear();
+                m_batch = false;
+                m_progress->hide();
+                m_video->stopStream();
+            } else if (m_batch) {
+                // Non-fatal error in a batch: log and continue to next image.
+                // Don't stop the stream or clear the queue.
+            } else {
+                // Non-fatal error in single-image or video mode: stop stream.
+                m_video->stopStream();
+            }
         } else {
             m_last = result;
             recordResult(result.json);
@@ -1309,9 +1357,8 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
         if (m_batch) m_progress->setValue(++m_batchCompleted);
     }
     if (acknowledge)
-        m_video->acknowledge(current && result.error.isEmpty()
-                                     ? result.annotated
-                                     : QImage());
+        m_video->acknowledge(current && result.ok ? result.annotated
+                                                  : QImage());
     if (!m_heldFrameSource.isEmpty() && !m_closed) {
         QImage image = std::move(m_heldFrame);
         QString source = std::move(m_heldFrameSource);
@@ -1347,8 +1394,11 @@ void RelateAnythingDialog::showResult() {
                                .arg(m_last.source));
 }
 void RelateAnythingDialog::setBusy(bool busy) {
-    m_busy = busy;
-    m_tabs->setTabEnabled(2, !busy);
+    // L9 fix: only update tab state when it changes to avoid per-frame flicker.
+    if (busy != m_busy) {
+        m_busy = busy;
+        m_tabs->setTabEnabled(2, !busy);
+    }
     m_run->setEnabled(!busy && !m_downloader->isBusy());
 }
 void RelateAnythingDialog::resetResults() {
@@ -1399,11 +1449,22 @@ void RelateAnythingDialog::exportResults() {
         log(tr("Run inference before exporting."));
         return;
     }
+    QString selectedFilter;
     auto path = QFileDialog::getSaveFileName(
             this, tr("Export results"), "relate-results.json",
-            tr("JSON (*.json);;CSV (*.csv);;Text (*.txt)"));
+            tr("JSON (*.json);;CSV (*.csv);;Text (*.txt)"), &selectedFilter);
     if (path.isEmpty()) return;
-    saveResults(path);
+    // M6 fix: derive format from selected filter if extension is missing
+    if (!path.contains('.')) {
+        if (selectedFilter.contains("json", Qt::CaseInsensitive))
+            path += ".json";
+        else if (selectedFilter.contains("csv", Qt::CaseInsensitive))
+            path += ".csv";
+        else
+            path += ".txt";
+    }
+    // M6 fix: check return value and report failure
+    if (!saveResults(path)) log(tr("Failed to export results to %1").arg(path));
 }
 bool RelateAnythingDialog::saveResults(const QString& path) {
     if (path.isEmpty() || !m_resultCount || !m_resultSpool) return false;

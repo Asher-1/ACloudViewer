@@ -38,6 +38,7 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `process color-seg-scalar` | `color_seg_scalar` | — **(H)** |
 | `process g3point` | `g3point` | — **(H)** |
 | `process draco-settings` | `draco_settings` | — **(H)** |
+
 | `process e57-settings` | `e57_settings` | — **(H)** |
 | `process las-settings` | `las_settings` | — **(H)** |
 | `process csv-matrix-settings` | `csv_matrix_settings` | — **(H)** |
@@ -62,6 +63,21 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `sibr` | `sibr_*` | — **(H)** (external SIBR tools) |
 | `methods` | `list_rpc_methods` | `methods.list` **(G)** |
 | `session` | `get_session_info` (and CLI session commands) | — **(B)** |
+| — (upstream `spirula` CLI, shipped at `bin/ACloudViewer/spirula` with `BUILD_SPIRULA=ON`) | — | `spirula.version`, `spirula.devices`, `spirula.launch`, `spirula.cli`, `spirula.import` **(G)** |
+
+## Spirula Studio (3DGS training)
+
+`spirula` is the standalone GPLv3 trainer built by `BUILD_SPIRULA` (see
+`3rdparty/spirula/spirula.cmake`). It is a first-class headless CLI — call it
+directly (`spirula train <dataset>`, `spirula mesh <run>`, `spirula --device N`,
+`spirula <command> --help`) without any GUI session.
+
+Inside a **running GUI**, the `spirula.*` JSON-RPC methods wrap the same
+executable: `spirula.version` / `spirula.devices` (read-only), `spirula.launch`
+(starts the official GUI), `spirula.cli` (whitelisted subcommands — detached by
+default, synchronous with `timeout_ms`) and `spirula.import` (lands a trained
+`splat.ply` / `mesh.ply` / run directory into the scene tree). Zero patches to
+upstream: agent-side orchestration stays in the RPC/harness layer.
 
 \* The `sf` and `normals` CLI groups are **aliases** (same implementations as the matching `process …` subcommands); see [Scalar Field Commands](#scalar-field-commands) and [Normal Vector Commands](#normal-vector-commands).
 

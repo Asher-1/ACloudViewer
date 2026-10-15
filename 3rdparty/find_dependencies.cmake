@@ -2820,6 +2820,15 @@ else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 endif()
 
+# Spirula Studio (3DGS trainer): standalone *executable* component consumed
+# through a process boundary by the qSpirula plugin; linked to nothing.
+# Included only when explicitly requested (-DBUILD_SPIRULA=ON) — the
+# ExternalProject downloads ~80 MB and builds a large tree, so a plain
+# configure must stay download-free.
+if(BUILD_SPIRULA)
+    include(${CloudViewer_3RDPARTY_DIR}/spirula/spirula.cmake)
+endif()
+
 if (CLOUDVIEWER_NEED_PCL AND NOT TARGET 3rdparty_pcl)
     message(FATAL_ERROR "A plugin requiring PCL is enabled but PCL is not found. Please install PCL or disable the PCL-dependent plugins (PLUGIN_STANDARD_QPCL, PLUGIN_STANDARD_MASONRY_QAUTO_SEG, PLUGIN_STANDARD_MASONRY_QMANUAL_SEG).")
 endif()
