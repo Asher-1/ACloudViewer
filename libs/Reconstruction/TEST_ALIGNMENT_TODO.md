@@ -3336,3 +3336,94 @@ repeat 到 {46,46,49,2} 作结果承载。
   `make -j16` 重编 1148 targets **0 error/0 undefined reference**
   (ACloudViewer/pybind 至 100%)。pybind11 ODR "note" 为既有良性告警,
   与本改动无关。
+### 批次 P1-db-b(2026-10-15,进行中):schema 4030001 落地 + PyTorch 基线闭环
+
+- **PyTorch GPU 基线(闭环)**:torch 2.6.0+cu124(pyenv 3.12.12)+ 官方
+  anycalib_gen.pt(javrtg/AnyCalib release v1.0.0,1281193843B 精确匹配)
+  + 官方 repo 源码 clone。**网络坑**:pypi.nvidia.com ReadTimeout 使
+  pip 首两次静默失败,--timeout 120 --retries 8 解决;release 大文件用
+  wget -c 断点续传。基线脚本 /tmp/pt_baseline.py(backbone→decoder→head
+  三段计时,与 ggml 图同界,不含 calibrator 优化):**pt_cuda_p50 =
+  19.3 ms**;PyTorch 输出 vs ref.npz:rays 1.9e-5 / tangent 1.1e-4
+  (导出链噪声级,官方语义第二实证)。
+- **达标判定(RTX 4090,warm p50)**:精度——ggml CUDA f32 rays
+  1.7e-5 与 PyTorch 1.9e-5 同级 = **达标**;Vulkan 1.3e-4(Vulkan 后端
+  噪声底)。速度——Vulkan 17.5-19.5 ms ≈ PyTorch 19.3 = **达标**;
+  CUDA 24.8-28.9 ms 慢 1.3x = **未达标**(ggml CUDA attention/mul_mat
+  与 SDPA 差距,列优化批次)。
+- **schema 4030001 全套落地**:①COLMAP_DATABASE_SCHEMA_REVISION 0→1
+  (version.h/.in);②CreateCameraTable 复合主键(camera_id,source)+无
+  AUTOINCREMENT;③images 表移除 cameras 外键;④PostMigrateTables 新增
+  4,3,0,0 迁移分支(cameras 重命名→prior!=0→EXIF else GUESS→images
+  重建);⑤CRUD 重写(WriteCamera 禁 BEST+COALESCE(MAX)+1 显式分配/
+  UpdateCamera=INSERT OR REPLACE+UNKNOWN 解析 BEST/ReadCamera(BEST)
+  按源优先级 CASE SQL/ReadAllCameraSources×2/ExistsCameraSource/
+  DeleteCameraSource/NumCameras DISTINCT);⑥CameraToBlob/FromBlob 尾
+  随 source 字节(旧 blob 兼容);⑦database.h API + database.cc
+  ReadCameraExcludingSources/ReadAllCamerasExcludingSources/Merge
+  (merge_cameras 按源 upsert);⑧pybind:read_camera/read_all_cameras
+  增 source 默认参 + **CameraSource 枚举注册**(py::enum_ + export_values
+  + implicitly_convertible——缺它则默认参数转换段错误/类型未注册)。
+- **测试**:camera_test 增 HasPriorFocalLength/Equals-source 用例
+  (**35/35**);database_test:kUpstreamSchemaSql 升新 schema 快照 +
+  kLegacyUpstreamSchemaSql 保留迁移源 + FreshSchema 断言 revision 1 +
+  新增 TestMigrateUpstreamCamerasTable(stamp 4.3.0.0→重建→prior 映射
+  EXIF/GUESS 断言)(**30/30**)。single_view_calibrator_test 13/13。
+- **运行时遗留缺陷(本批引入,bisect 已锁定 database 层)**:
+  synthetic_test/rig_test/pairing_test(写相机路径)段错误——
+  git stash 二分证实:旧 database 层+新 camera 层 → 16/16 PASS;
+  新 database 层 → 崩。崩点栈(Release 内联失真)指向
+  ReadTwoViewGeometries(),但 WriteCamera/UpdateCamera 断点未命中,
+  疑点最窄 = WriteCamera 自动 id 分配/新 prepare 语句区/新增
+  NodeHashMap 头的混载交互。**下一会话**:函数级 bisect
+  (WriteCamera→GetImageIds→ReadAllCameras 逐个回退)+ 必要时
+  database_sqlite.cc 单文件加 -g 定位。
+- **本批 C++ gate 记录**:camera 35/35、database 30/30、
+  single_view_calibrator 13/13 PASS;rig/synthetic/pairing 段错误待修
+  (C++ gate 183/184 验收线**未达成**,不声称);pytest reconstruction
+  因 pybind CameraSource 缺注册 collection 失败→修复后待重验。
+- **台账警示**:github-actions 格式化 bot 自动提交(4068163cb0)会把我
+  的未提交改动格式化后入库——跨会话未提交工作须防 bot 抢跑;stash
+  二分时若目标文件已被 bot 提交则 stash 空跑,二分结论作废。
+### 批次 P1-db-c(2026-10-15):段错误根因修复 + anycalib flash attention 提速达标 + gate 全绿
+
+- **段错误根因(非代码缺陷,构建系统)**:pairing/synthetic/rig 三测试 SIGSEGV
+  的真凶 = **synthetic.cc.o 等消费 TU 是陈旧目标**(mtime 10-14 早于
+  database.h 修改),且其 `.o.d` 依赖文件缺失 → touch database.h 无法触发
+  重编 → 新 vtable 槽位(本批插入 ReadAllCameraSources/ExistsCameraSource
+  等虚函数)与旧 TU 的调用槽位错位 → 虚调用传参错乱(证据:Synthesize-
+  Dataset 持有堆 Database* 0x5555...810,而崩点 this=栈地址;watchpoint
+  对堆对象 vptr 零触发)。stash 二分"通过"实为三文件同步回退成一致旧布
+  局的假象。修:touch 全部 Reconstruction 源 + 全量 make 重编 → 47/47
+  PASS(pairing 16 + synthetic 19 + rig 12)。**教训:大型 ABI 变更后必须
+  强制全量重编,make 依赖残缺时 touch 单头不可信**。
+- **pybind 回退事故**:上一轮 A/B 实验 `git checkout -- database.cpp`
+  把 CameraSource 枚举注册 + source 默认参数绑定回退,全量 make 报
+  "argument annotations does not match" 暴露;已重新应用(枚举注册在
+  Database 类绑定之前 + read_camera/read_all_cameras 带 source 默认
+  BEST)。
+- **anycalib flash attention 提速(达标)**:nsys kernel 级证据 —
+  soft_max_f32 2.46ms(13.5%,25 实例×98µs 异常慢)+ cpy_scalar_transpose
+  1.87ms(10.2%)+ im2col 0.95ms。修:24 块手写 attention 链(转置拷贝
+  q/k/v + [530,530] logits + soft_max + 2×gemm + 输出侧 permute/cont)
+  换成 ggml_flash_attn_ext(fork fattn 契约:Q 必须 f32、K/V 必须 f16、
+  scale 内置参数;输出 {dk,heads,tokens} cont 后直接 reshape {dim,tokens}
+  — 不需 permute,首次实现误加 permute(0,2,1,3) 致数值错 rays 0.15)。
+  **效果(warm p50 inference)**:CUDA f32 23.2→**15.5ms**、f16 16.3、
+  q8 13.3;Vulkan f32 12.1、f16/q8 ~20;CPU 902(flash 无损)。**对比
+  PyTorch CUDA 基线 19.3ms:三量化全部超越(快 16-31%),用户达标线
+  "cuda/vulkan 速度和精度与 pytorch 一致甚至超过" 双达标**;精度 rays
+  5.4e-5(PT 1.9e-5 同级,f16 attention 噪声级)。parity 9/9 PASS +
+  validate_all 三后端 PASS;manifest f32 行 prose 已更新为 flash 语义
+  与新实测数。
+- **loma 测试回归修复**:批次 AD 的 args.pipeline 在
+  run_loma_sfm_comparison_test 的两处 Namespace 构造缺失 →
+  AttributeError;补 pipeline="incremental"/candidate_mapper_option 后
+  13/13 OK。
+- **gate 线**:ctest -R '_test$' **184/184**(此前 183/184)、pytest
+  reconstruction **404 passed 3 skipped**、全量 make 0 error、
+  validate_all cpu/cuda/vulkan anycalib 全 PASS。P1-db-b 四子任务
+  (schema/CRUD/消费点编译驱动兼容/测试移植)验收线全部达成。
+- **遗留下增量**:①消费点 43 文件的显式 source 迁移(shim 仍在,编译
+  驱动);②上游 f1ea91d0 其余文件(controller/bindings)增量对齐;
+  ③CPU 902ms 提速(用户裁定不作达标项)。

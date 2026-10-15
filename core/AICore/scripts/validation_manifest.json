@@ -3279,7 +3279,7 @@
           {
             "metric": "mean_diff",
             "op": "<",
-            "value": 0.000002
+            "value": 2e-06
           }
         ],
         "require_metrics": [
@@ -4281,7 +4281,7 @@
         "{backend}"
       ],
       "env": {},
-      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. Measured rel-RMS/max|diff| over cpu/cuda/vulkan (F32 weights on-device): rays 4.9e-8/1.7e-5/1.3e-4, tangent 2.4e-7/9.5e-5/7.2e-4; thresholds carry >=8x headroom over the worst backend.",
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. Attention runs as fused flash attention (Q f32, K/V f16), matching the PyTorch SDPA; measured rel-RMS/max|diff| over cpu/cuda/vulkan (F32 weights on-device): rays 6.3e-6/5.4e-5/1.1e-4, tangent 3.5e-5/2.9e-4/6.3e-4; thresholds carry >=8x headroom over the worst backend. CUDA inference 15.5 ms / Vulkan 12.1 ms warm p50 vs the PyTorch CUDA baseline 19.3 ms.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "anycalib-ref-golden",

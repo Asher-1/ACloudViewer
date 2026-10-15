@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <filesystem>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -21,6 +22,7 @@
 #include "scene/image.h"
 #include "scene/rig.h"
 #include "scene/two_view_geometry.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -75,6 +77,10 @@ public:
     // Check if entry already exists in database. For image pairs, the order of
     // `image_id1` and `image_id2` does not matter.
     virtual bool ExistsCamera(const camera_t camera_id) const = 0;
+    // Upstream parity (f1ea91d0): dedicated check for one calibration source
+    // (BEST is a query selector, not a source).
+    virtual bool ExistsCameraSource(const camera_t camera_id,
+                                    CameraSource source) const = 0;
     virtual bool ExistsRig(const rig_t rig_id) const = 0;
     virtual bool ExistsFrame(const frame_t frame_id) const = 0;
     virtual bool ExistsImage(const image_t image_id) const = 0;
@@ -165,8 +171,26 @@ public:
     // Read an existing entry in the database. The user is responsible for
     // making sure that the entry actually exists. For image pairs, the order
     // of `image_id1` and `image_id2` does not matter.
-    virtual Camera ReadCamera(const camera_t camera_id) const = 0;
-    virtual std::vector<Camera> ReadAllCameras() const = 0;
+    // Upstream parity (f1ea91d0): `source` defaults to BEST, which selects
+    // the highest-priority calibration for the camera via the
+    // `CameraSourcePriority` ordering.
+    virtual Camera ReadCamera(
+            const camera_t camera_id,
+            CameraSource source = CameraSource::BEST) const = 0;
+    virtual std::vector<Camera> ReadAllCameras(
+            CameraSource source = CameraSource::BEST) const = 0;
+    // Upstream parity (f1ea91d0): every persisted calibration per camera.
+    virtual std::map<CameraSource, Camera> ReadAllCameraSources(
+            const camera_t camera_id) const = 0;
+    virtual NodeHashMap<camera_t, std::map<CameraSource, Camera>>
+    ReadAllCameraSources() const = 0;
+    // Upstream-parity helpers (database.cc): read calibrations of a camera
+    // excluding the given sources, resolving one calibration per camera.
+    virtual Camera ReadCameraExcludingSources(
+            const camera_t camera_id,
+            const FlatHashSet<CameraSource>& excluded_sources) const;
+    virtual NodeHashMap<camera_t, Camera> ReadAllCamerasExcludingSources(
+            const FlatHashSet<CameraSource>& excluded_sources) const;
 
     virtual Rig ReadRig(const rig_t rig_id) const = 0;
     // Upstream parity (d3ccaf35): find the rig that has the given sensor as
@@ -219,7 +243,9 @@ public:
             const TwoViewGeometry& two_view_geometry) const = 0;
 
     // Add new camera and return its database identifier. If `use_camera_id`
-    // is false a new identifier is automatically generated.
+    // is false a new identifier is automatically generated. Upstream parity
+    // (f1ea91d0): `camera.Source()` cannot be BEST; to add or update
+    // calibrations for an existing `camera_id`, use `UpdateCamera`.
     virtual camera_t WriteCamera(const Camera& camera,
                                  const bool use_camera_id = false) const = 0;
     virtual rig_t WriteRig(const Rig& rig,
@@ -251,9 +277,16 @@ public:
     virtual pose_prior_t WritePosePrior(const PosePrior& pose_prior,
                                         bool use_pose_prior_id = false) = 0;
 
-    // Update an existing camera in the database. The user is responsible for
-    // making sure that the entry already exists.
+    // Upstream parity (f1ea91d0): insert or overwrite a calibration source
+    // for an existing camera; UNKNOWN updates the currently active (BEST)
+    // source in place; BEST is rejected.
     virtual void UpdateCamera(const Camera& camera) const = 0;
+    // Upstream parity (f1ea91d0): delete a specific calibration source (or
+    // all calibrations if BEST). The caller ensures no images still
+    // reference the camera when its last calibration is removed.
+    virtual void DeleteCameraSource(
+            const camera_t camera_id,
+            CameraSource source = CameraSource::BEST) const = 0;
     virtual void UpdateRig(const Rig& rig) const = 0;
     virtual void UpdateFrame(const Frame& frame) const = 0;
 

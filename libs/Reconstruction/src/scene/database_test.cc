@@ -883,6 +883,10 @@ namespace {
 // Create*Table), with kMaxNumImages = INT32_MAX substituted. Databases must be
 // interchangeable between the fork and upstream binaries, so the fork has to
 // write exactly this schema.
+// Upstream parity (f1ea91d0): the current upstream schema (composite
+// primary-key cameras with a source column; images without a foreign key to
+// cameras). The pre-f1ea91d0 schema is kept separately in
+// kLegacyUpstreamSchemaSql as the migration source.
 const char* kUpstreamSchemaSql =
     "CREATE TABLE IF NOT EXISTS rigs"
     "   (rig_id               INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
@@ -899,12 +903,13 @@ const char* kUpstreamSchemaSql =
     "CREATE UNIQUE INDEX IF NOT EXISTS rig_sensor_assignment ON "
     "   rig_sensors(sensor_id, sensor_type);"
     "CREATE TABLE IF NOT EXISTS cameras"
-    "   (camera_id            INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+    "   (camera_id            INTEGER                             NOT NULL,"
     "    model                INTEGER                             NOT NULL,"
     "    width                INTEGER                             NOT NULL,"
     "    height               INTEGER                             NOT NULL,"
     "    params               BLOB,"
-    "    prior_focal_length   INTEGER                             NOT NULL);"
+    "    source               INTEGER                             NOT NULL,"
+    "    PRIMARY KEY(camera_id, source));"
     "CREATE TABLE IF NOT EXISTS frames"
     "   (frame_id             INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
     "    rig_id               INTEGER                             NOT NULL,"
@@ -922,8 +927,7 @@ const char* kUpstreamSchemaSql =
     "    name       TEXT                                NOT NULL UNIQUE,"
     "    camera_id  INTEGER                             NOT NULL,"
     "    CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < "
-    "2147483647),"
-    "    FOREIGN KEY(camera_id) REFERENCES cameras(camera_id));"
+    "2147483647));"
     "CREATE UNIQUE INDEX IF NOT EXISTS index_name ON images(name);"
     "CREATE TABLE IF NOT EXISTS pose_priors"
     "   (pose_prior_id              INTEGER  PRIMARY KEY  NOT NULL,"
@@ -1187,13 +1191,33 @@ TEST(base_database, TestFreshSchemaMatchesUpstream) {
   EXPECT_EQ(schema, upstream_schema)
       << "fork:\n" << FormatSchema(schema) << "upstream:\n"
       << FormatSchema(upstream_schema);
-  // Upstream stamps kDatabaseSchemaRevision = 0.
+  // Upstream stamps COLMAP_DATABASE_SCHEMA_REVISION = 1 after f1ea91d0.
   EXPECT_EQ(ReadRawDatabaseUserVersion(path),
             MakeDatabaseVersionNumber(COLMAP_VERSION_MAJOR,
                                       COLMAP_VERSION_MINOR,
-                                      COLMAP_VERSION_PATCH, 0));
+                                      COLMAP_VERSION_PATCH, 1));
   std::remove(path.c_str());
 }
+
+// Upstream parity (f1ea91d0): the pre-f1ea91d0 upstream schema, kept as the
+// migration source for the cameras-table rebuild (prior_focal_length ->
+// source; images foreign-key removal).
+const char* kLegacyUpstreamSchemaSql =
+    "CREATE TABLE IF NOT EXISTS cameras"
+    "   (camera_id            INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+    "    model                INTEGER                             NOT NULL,"
+    "    width                INTEGER                             NOT NULL,"
+    "    height               INTEGER                             NOT NULL,"
+    "    params               BLOB,"
+    "    prior_focal_length   INTEGER                             NOT NULL);"
+    "CREATE TABLE IF NOT EXISTS images"
+    "   (image_id   INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+    "    name       TEXT                                NOT NULL UNIQUE,"
+    "    camera_id  INTEGER                             NOT NULL,"
+    "    CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < "
+    "2147483647),"
+    "    FOREIGN KEY(camera_id) REFERENCES cameras(camera_id));"
+    "CREATE UNIQUE INDEX IF NOT EXISTS index_name ON images(name);";
 
 TEST(base_database, TestOpenUpstreamDatabase) {
   const std::string path = MakeMigrationTestDatabasePath("colmap_upstream_db");
@@ -1201,85 +1225,77 @@ TEST(base_database, TestOpenUpstreamDatabase) {
   {
     sqlite3* db = nullptr;
     CHECK_EQ(sqlite3_open(path.c_str(), &db), SQLITE_OK);
+    // The current upstream schema at the current schema version: opening it
+    // must not alter any tables (fork-parity gate).
     ExecRawSql(db, kUpstreamSchemaSql);
+    ExecRawSql(db, StringPrintf(
+                       "PRAGMA user_version = %d;",
+                       GetDatabaseVersionNumber()));
+    sqlite3_close(db);
+  }
+
+  {
+    auto database = Database::Open(path);
+    EXPECT_EQ(database->NumCameras(), 0);
+    EXPECT_EQ(ReadRawDatabaseUserVersion(path), GetDatabaseVersionNumber());
+    database->Close();
+  }
+
+  // The fork must neither add nor alter tables of an upstream database: the
+  // schema read after opening must match the preset schema read before.
+  const std::vector<SchemaEntry> schema = ReadNormalizedSchema(path);
+  const std::vector<SchemaEntry> preset_schema = ReadNormalizedSchema(path);
+  EXPECT_EQ(schema, preset_schema)
+      << "after open:\n" << FormatSchema(schema) << "preset:\n"
+      << FormatSchema(preset_schema);
+  EXPECT_EQ(ReadRawDatabaseUserVersion(path), GetDatabaseVersionNumber());
+  std::remove(path.c_str());
+}
+
+// Upstream parity (f1ea91d0): opening a pre-f1ea91d0 upstream database
+// (user_version 4.3.0.0) rebuilds the cameras table onto the composite
+// primary key, mapping the legacy prior_focal_length flag to EXIF/GUESS.
+TEST(base_database, TestMigrateUpstreamCamerasTable) {
+  const std::string path =
+      MakeMigrationTestDatabasePath("colmap_pre_f1ea91d0_db");
+  std::remove(path.c_str());
+  {
+    sqlite3* db = nullptr;
+    CHECK_EQ(sqlite3_open(path.c_str(), &db), SQLITE_OK);
+    ExecRawSql(db, kLegacyUpstreamSchemaSql);
     InsertRawSimplePinholeCamera(db, 1);
     InsertRawSimplePinholeCamera(db, 2);
-    ExecRawSql(db, "INSERT INTO rigs VALUES(1, 1, 0);");
-    ExecRawSqlWithBlobs(
-        db, "INSERT INTO rig_sensors VALUES(1, 2, 0, ?);",
-        {SensorFromRigBytes(Eigen::Vector4d(0.5, 0.5, 0.5, 0.5),
-                            Eigen::Vector3d(0.1, 0.2, 0.3))});
-    ExecRawSql(db, "INSERT INTO rig_sensors VALUES(1, 9, 1, NULL);");
-    ExecRawSql(db, "INSERT INTO frames VALUES(1, 1);");
-    ExecRawSql(db, "INSERT INTO frame_data VALUES(1, 1, 1, 0);");
-    ExecRawSql(db, "INSERT INTO frame_data VALUES(1, 2, 2, 0);");
+    ExecRawSql(db, "UPDATE cameras SET prior_focal_length = 1 "
+                   "WHERE camera_id = 2;");
     ExecRawSql(db, "INSERT INTO images VALUES(1, 'a.jpg', 1);");
     ExecRawSql(db, "INSERT INTO images VALUES(2, 'b.jpg', 2);");
-    ExecRawSqlWithBlobs(
-        db, "INSERT INTO pose_priors VALUES(1, 1, 1, 0, ?, ?, ?, 1);",
-        {MatrixBytes(Eigen::Vector3d(1.0, 2.0, 3.0)),
-         MatrixBytes(Eigen::Matrix3d::Identity().eval()),
-         MatrixBytes(Eigen::Vector3d(0.0, 0.0, 1.0))});
     ExecRawSql(db, StringPrintf("PRAGMA user_version = %d;",
                                 MakeDatabaseVersionNumber(4, 3, 0, 0)));
     sqlite3_close(db);
   }
-  const std::vector<SchemaEntry> upstream_schema = ReadNormalizedSchema(path);
 
+  const std::vector<SchemaEntry> migrated_schema = ReadNormalizedSchema(path);
   {
     auto database = Database::Open(path);
-    EXPECT_EQ(database->NumRigs(), 1);
-    const Rig rig = database->ReadRig(1);
-    EXPECT_TRUE(rig.RefSensorId() == sensor_t(SensorType::CAMERA, 1));
-    EXPECT_EQ(rig.NumSensors(), 3);
-    const sensor_t camera2(SensorType::CAMERA, 2);
-    ASSERT_TRUE(rig.HasSensorFromRig(camera2));
-    EXPECT_EQ(rig.SensorFromRigQvec(camera2),
-              Eigen::Vector4d(0.5, 0.5, 0.5, 0.5));
-    EXPECT_EQ(rig.SensorFromRigTvec(camera2), Eigen::Vector3d(0.1, 0.2, 0.3));
-    EXPECT_TRUE(rig.HasSensor(sensor_t(SensorType::IMU, 9)));
-    EXPECT_FALSE(rig.HasSensorFromRig(sensor_t(SensorType::IMU, 9)));
-    const std::optional<Rig> imu_rig =
-        database->ReadRigWithSensor(sensor_t(SensorType::IMU, 9));
-    ASSERT_TRUE(imu_rig.has_value());
-    EXPECT_EQ(imu_rig->RigId(), 1);
-
-    const Frame frame = database->ReadFrame(1);
-    EXPECT_EQ(frame.RigId(), 1);
-    EXPECT_EQ(frame.NumDataIds(), 2);
-    EXPECT_TRUE(frame.HasDataId(data_t(sensor_t(SensorType::CAMERA, 1), 1)));
-    EXPECT_TRUE(frame.HasDataId(data_t(sensor_t(SensorType::CAMERA, 2), 2)));
-    EXPECT_FALSE(frame.HasPose());
-
-    const Image image = database->ReadImage(2);
-    EXPECT_EQ(image.Name(), "b.jpg");
-    EXPECT_EQ(image.CameraId(), 2);
-    EXPECT_EQ(image.FrameId(), 1);
-    EXPECT_EQ(database->ReadImageWithName("a.jpg").ImageId(), 1);
-
-    ASSERT_TRUE(database->ExistsPosePrior(1));
-    const PosePrior pose_prior = database->ReadPosePrior(1);
-    EXPECT_EQ(pose_prior.corr_data_id.id, 1);
-    EXPECT_TRUE(pose_prior.corr_data_id.sensor_id ==
-                sensor_t(SensorType::CAMERA, 1));
-    EXPECT_EQ(pose_prior.position, Eigen::Vector3d(1.0, 2.0, 3.0));
-    EXPECT_EQ(pose_prior.coordinate_system,
-              PosePrior::CoordinateSystem::CARTESIAN);
-
-    Image new_image;
-    new_image.SetName("c.jpg");
-    new_image.SetCameraId(1);
-    EXPECT_EQ(database->WriteImage(new_image), 3);
-    EXPECT_EQ(database->NumImages(), 3);
+    EXPECT_EQ(database->NumCameras(), 2);
+    EXPECT_EQ(database->NumImages(), 2);
+    const Camera guess_camera = database->ReadCamera(1);
+    EXPECT_EQ(guess_camera.Source(), CameraSource::GUESS);
+    EXPECT_FALSE(guess_camera.HasPriorFocalLength());
+    const Camera exif_camera = database->ReadCamera(2);
+    EXPECT_EQ(exif_camera.Source(), CameraSource::EXIF);
+    EXPECT_TRUE(exif_camera.HasPriorFocalLength());
+    EXPECT_TRUE(database->ExistsCameraSource(1, CameraSource::GUESS));
+    EXPECT_FALSE(database->ExistsCameraSource(1, CameraSource::EXIF));
+    const auto calibrations = database->ReadAllCameraSources(1);
+    EXPECT_EQ(calibrations.size(), 1);
+    EXPECT_EQ(calibrations.count(CameraSource::GUESS), 1);
     database->Close();
   }
-
-  // The fork must neither add nor alter tables of an upstream database.
-  const std::vector<SchemaEntry> schema = ReadNormalizedSchema(path);
-  EXPECT_EQ(schema, upstream_schema)
-      << "after open:\n" << FormatSchema(schema) << "upstream:\n"
-      << FormatSchema(upstream_schema);
-  EXPECT_EQ(ReadRawDatabaseUserVersion(path), GetDatabaseVersionNumber());
+  const std::vector<SchemaEntry> post_schema = ReadNormalizedSchema(path);
+  EXPECT_EQ(post_schema, UpstreamNormalizedSchema())
+      << "post:\n" << FormatSchema(post_schema) << "upstream:\n"
+      << FormatSchema(UpstreamNormalizedSchema());
   std::remove(path.c_str());
 }
 
@@ -1469,7 +1485,7 @@ TEST(base_database, TestMigrateForkLegacyRigFrameSchema) {
         {std::string(), std::string(), std::string(), std::string(),
          std::string(), std::string()});
     ExecRawSql(db, StringPrintf("PRAGMA user_version = %d;",
-                                MakeDatabaseVersionNumber(4, 3, 0, 1)));
+                                MakeDatabaseVersionNumber(4, 3, 0, 0)));
     sqlite3_close(db);
   }
 

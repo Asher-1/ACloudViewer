@@ -132,7 +132,10 @@ class ThresholdPolicyTest(unittest.TestCase):
             camera_model=expected["camera_model"],
             single_camera=expected["single_camera"],
             sift_gpu=expected["sift_gpu"], seed=expected["seed"],
-            mapper_option=list(reversed(expected["mapper_options"])))
+            pipeline=expected.get("pipeline", "incremental"),
+            mapper_option=list(reversed(expected["mapper_options"])),
+            candidate_mapper_option=expected.get(
+                "candidate_mapper_options", []))
         manifest = [{"path": "a.jpg", "sha256": "0" * 64}]
         actual = comparison.l3_configuration(args, manifest)
         mismatches = comparison.configuration_mismatches(expected, actual)
@@ -155,7 +158,8 @@ class DeterministicArgvTest(unittest.TestCase):
         args = comparison.argparse.Namespace(
             output=None, harness="harness", images=Path("images"),
             camera_model="SIMPLE_RADIAL", max_features=2048, single_camera=True,
-            sift_gpu=False, seed=seed, mapper_option=[], runtime_library_dir=[])
+            sift_gpu=False, seed=seed, mapper_option=[], runtime_library_dir=[],
+            pipeline="incremental", candidate_mapper_option=[])
         commands: dict[str, list[str]] = {}
 
         def record(command, log_path, colmap_binary, runtime_library_dirs):

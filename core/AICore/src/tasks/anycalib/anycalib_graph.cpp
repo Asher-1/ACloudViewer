@@ -432,35 +432,33 @@ bool Session::Run(const float* image_rgb_chw, RunResult& out) {
         ggml_tensor* qkv =
                 ggml_add(bctx, ggml_mul_mat(bctx, WT(p + "attn.qkv.weight"), h),
                          W(p + "attn.qkv.bias"));
-        ggml_tensor* q = ggml_view_2d(bctx, qkv, kDim, kTokens, qkv->nb[1], 0);
-        ggml_tensor* k_t = ggml_view_2d(bctx, qkv, kDim, kTokens, qkv->nb[1],
-                                        kDim * sizeof(float));
-        ggml_tensor* v = ggml_view_2d(bctx, qkv, kDim, kTokens, qkv->nb[1],
-                                      2 * kDim * sizeof(float));
-        q = ggml_cont(bctx, ggml_permute(bctx,
-                                         ggml_reshape_4d(
-                                                 bctx, ggml_cont(bctx, q),
-                                                 kHeadDim, kHeads, kTokens, 1),
-                                         0, 2, 1, 3));
-        k_t = ggml_cont(
-                bctx,
-                ggml_permute(bctx,
-                             ggml_reshape_4d(bctx, ggml_cont(bctx, k_t),
-                                             kHeadDim, kHeads, kTokens, 1),
-                             0, 2, 1, 3));
-        v = ggml_cont(bctx, ggml_permute(bctx,
-                                         ggml_reshape_4d(
-                                                 bctx, ggml_cont(bctx, v),
-                                                 kHeadDim, kHeads, kTokens, 1),
-                                         0, 2, 1, 3));
-        q = ggml_scale(bctx, q, 1.0f / std::sqrt(float(kHeadDim)));
-        ggml_tensor* logits = ggml_soft_max(bctx, ggml_mul_mat(bctx, k_t, q));
-        ggml_tensor* v_t = ggml_cont(bctx, ggml_permute(bctx, v, 1, 0, 2, 3));
+        // Flash attention (matches the fused SDPA of the PyTorch baseline):
+        // the traced layout {dk, tokens, heads} is exactly the flash
+        // contract. The fork fattn kernels require Q in f32 and K/V in
+        // f16; the scale moves into the op. This replaces the transposed
+        // q/k/v copies, the [tokens, tokens] logits tensor and its
+        // soft_max (the hottest non-GEMM kernel on CUDA) and the two
+        // attention GEMMs.
+        auto head_view = [&](size_t offset, ggml_type type) -> ggml_tensor* {
+            ggml_tensor* t =
+                    ggml_view_2d(bctx, qkv, kDim, kTokens, qkv->nb[1], offset);
+            t = ggml_reshape_4d(bctx, ggml_cont(bctx, t), kHeadDim, kHeads,
+                                kTokens, 1);
+            t = ggml_cont(bctx, ggml_permute(bctx, t, 0, 2, 1, 3));
+            return type == GGML_TYPE_F32 ? t : ggml_cast(bctx, t, type);
+        };
+        ggml_tensor* q_h = head_view(0, GGML_TYPE_F32);
+        ggml_tensor* k_h = head_view(kDim * sizeof(float), GGML_TYPE_F16);
+        ggml_tensor* v_h = head_view(2 * kDim * sizeof(float), GGML_TYPE_F16);
+        // flash output = {dk, heads, tokens}; folding (dk, heads) into a
+        // contiguous dim gives the [dim, tokens] token-major projection
+        // input directly.
         ggml_tensor* attn = ggml_reshape_2d(
                 bctx,
                 ggml_cont(bctx,
-                          ggml_permute(bctx, ggml_mul_mat(bctx, v_t, logits), 0,
-                                       2, 1, 3)),
+                          ggml_flash_attn_ext(bctx, q_h, k_h, v_h, nullptr,
+                                              1.0f / std::sqrt(float(kHeadDim)),
+                                              0.0f, 0.0f)),
                 kDim, kTokens);
         attn = ggml_add(bctx,
                         ggml_mul_mat(bctx, WT(p + "attn.proj.weight"), attn),

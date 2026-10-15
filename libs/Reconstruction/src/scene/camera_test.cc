@@ -438,6 +438,56 @@ TEST(Camera, Equals) {
   EXPECT_NE(camera, other);
   other.SetFocalLength(2.);
   EXPECT_EQ(camera, other);
+  // Upstream parity (f1ea91d0): the calibration source participates in
+  // equality.
+  camera.SetSource(CameraSource::USER);
+  EXPECT_NE(camera, other);
+  other.SetSource(CameraSource::USER);
+  EXPECT_EQ(camera, other);
+}
+
+// Upstream parity (f1ea91d0): the calibration source is the single source of
+// truth for the prior flag; persisted enum values are decoupled from the
+// reliability ranking via CameraSourcePriority.
+TEST(Camera, HasPriorFocalLength) {
+  EXPECT_LT(CameraSourcePriority(CameraSource::BEST),
+            CameraSourcePriority(CameraSource::UNKNOWN));
+  EXPECT_LT(CameraSourcePriority(CameraSource::UNKNOWN),
+            CameraSourcePriority(CameraSource::GUESS));
+  EXPECT_LT(CameraSourcePriority(CameraSource::GUESS),
+            CameraSourcePriority(CameraSource::EXIF));
+  EXPECT_LT(CameraSourcePriority(CameraSource::EXIF),
+            CameraSourcePriority(CameraSource::SINGLE_VIEW));
+  EXPECT_LT(CameraSourcePriority(CameraSource::SINGLE_VIEW),
+            CameraSourcePriority(CameraSource::VIEW_GRAPH));
+  EXPECT_LT(CameraSourcePriority(CameraSource::VIEW_GRAPH),
+            CameraSourcePriority(CameraSource::USER));
+
+  Camera camera;
+  camera.SetSource(CameraSource::UNKNOWN);
+  EXPECT_FALSE(camera.HasPriorFocalLength());
+  camera.SetSource(CameraSource::GUESS);
+  EXPECT_FALSE(camera.HasPriorFocalLength());
+  camera.SetSource(CameraSource::EXIF);
+  EXPECT_TRUE(camera.HasPriorFocalLength());
+  camera.SetSource(CameraSource::SINGLE_VIEW);
+  EXPECT_TRUE(camera.HasPriorFocalLength());
+  camera.SetSource(CameraSource::USER);
+  EXPECT_TRUE(camera.HasPriorFocalLength());
+  camera.SetSource(CameraSource::VIEW_GRAPH);
+  EXPECT_TRUE(camera.HasPriorFocalLength());
+
+  const Camera camera_with_source = Camera::CreateFromModelId(
+      1, SimplePinholeCameraModel::model_id, 1.0, 1, 1,
+      CameraSource::EXIF);
+  EXPECT_EQ(camera_with_source.Source(), CameraSource::EXIF);
+  EXPECT_THROW(Camera::CreateFromModelId(1,
+                                         SimplePinholeCameraModel::model_id,
+                                         1.0,
+                                         1,
+                                         1,
+                                         CameraSource::BEST),
+               std::invalid_argument);
 }
 
 TEST(Camera, Print) {

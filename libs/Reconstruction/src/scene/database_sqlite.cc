@@ -281,7 +281,15 @@ Camera ReadCameraRow(sqlite3_stmt* sql_stmt) {
   memcpy(camera.ParamsData(), sqlite3_column_blob(sql_stmt, 4),
          num_params_bytes);
 
-  camera.SetPriorFocalLength(sqlite3_column_int64(sql_stmt, 5) != 0);
+  // Upstream parity (f1ea91d0): column 5 carries the persisted
+  // CameraSource; tolerate legacy readers with fewer columns and NULLs.
+  if (sqlite3_column_count(sql_stmt) > 5 &&
+      sqlite3_column_type(sql_stmt, 5) != SQLITE_NULL) {
+    camera.SetSource(static_cast<CameraSource>(
+        sqlite3_column_int64(sql_stmt, 5)));
+  } else {
+    camera.SetSource(CameraSource::UNKNOWN);
+  }
 
   return camera;
 }
@@ -325,6 +333,8 @@ class SqliteDatabase : public Database {
   void Close() override;
 
   bool ExistsCamera(const camera_t camera_id) const override;
+  bool ExistsCameraSource(const camera_t camera_id,
+                          const CameraSource source) const override;
   bool ExistsRig(const rig_t rig_id) const override;
   bool ExistsFrame(const frame_t frame_id) const override;
   bool ExistsImage(const image_t image_id) const override;
@@ -355,8 +365,14 @@ class SqliteDatabase : public Database {
   size_t NumVerifiedImagePairs() const override;
   size_t NumPosePriors() const override;
 
-  Camera ReadCamera(const camera_t camera_id) const override;
-  std::vector<Camera> ReadAllCameras() const override;
+  Camera ReadCamera(const camera_t camera_id,
+                    const CameraSource source = CameraSource::BEST) const override;
+  std::vector<Camera> ReadAllCameras(
+      const CameraSource source = CameraSource::BEST) const override;
+  std::map<CameraSource, Camera> ReadAllCameraSources(
+      const camera_t camera_id) const override;
+  NodeHashMap<camera_t, std::map<CameraSource, Camera>>
+  ReadAllCameraSources() const override;
   Rig ReadRig(const rig_t rig_id) const override;
   std::optional<Rig> ReadRigWithSensor(sensor_t sensor_id) const override;
   std::vector<Rig> ReadAllRigs() const override;
@@ -415,6 +431,9 @@ class SqliteDatabase : public Database {
                               bool use_pose_prior_id = false) override;
 
   void UpdateCamera(const Camera& camera) const override;
+  void DeleteCameraSource(
+      const camera_t camera_id,
+      const CameraSource source = CameraSource::BEST) const override;
   void UpdateRig(const Rig& rig) const override;
   void UpdateFrame(const Frame& frame) const override;
   void UpdateImage(const Image& image) const override;
@@ -515,11 +534,13 @@ class SqliteDatabase : public Database {
   std::vector<sqlite3_stmt*> sql_stmts_;
 
   // num_*
+  sqlite3_stmt* sql_stmt_num_cameras_ = nullptr;
   sqlite3_stmt* sql_stmt_num_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_num_descriptors_ = nullptr;
 
   // exists_*
   sqlite3_stmt* sql_stmt_exists_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_exists_camera_source_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_image_id_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_image_name_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_keypoints_ = nullptr;
@@ -529,6 +550,9 @@ class SqliteDatabase : public Database {
 
   // add_*
   sqlite3_stmt* sql_stmt_add_camera_ = nullptr;
+  // Upstream parity (f1ea91d0): explicit next-id allocation for the
+  // composite-primary-key cameras table (no AUTOINCREMENT).
+  sqlite3_stmt* sql_stmt_next_camera_id_ = nullptr;
   sqlite3_stmt* sql_stmt_add_image_ = nullptr;
 
   // update_*
@@ -539,6 +563,10 @@ class SqliteDatabase : public Database {
   // read_*
   sqlite3_stmt* sql_stmt_read_camera_ = nullptr;
   sqlite3_stmt* sql_stmt_read_cameras_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_camera_source_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_cameras_for_source_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_camera_sources_for_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_all_camera_sources_ = nullptr;
   sqlite3_stmt* sql_stmt_read_image_id_ = nullptr;
   sqlite3_stmt* sql_stmt_read_image_name_ = nullptr;
   sqlite3_stmt* sql_stmt_read_images_ = nullptr;
@@ -558,6 +586,8 @@ class SqliteDatabase : public Database {
   sqlite3_stmt* sql_stmt_write_two_view_geometry_ = nullptr;
 
   // delete_*
+  sqlite3_stmt* sql_stmt_delete_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_delete_camera_source_ = nullptr;
   sqlite3_stmt* sql_stmt_delete_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_delete_two_view_geometry_ = nullptr;
 
@@ -632,6 +662,25 @@ bool SqliteDatabase::ExistsCamera(const camera_t camera_id) const {
   return ExistsRowId(sql_stmt_exists_camera_, camera_id);
 }
 
+// Upstream parity (f1ea91d0): checks whether a specific calibration source
+// exists for the camera (BEST is a query selector, not a source).
+bool SqliteDatabase::ExistsCameraSource(const camera_t camera_id,
+                                        const CameraSource source) const {
+  THROW_CHECK_NE(source, CameraSource::BEST)
+          << "Camera source cannot be BEST when checking calibration "
+             "existence.";
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_exists_camera_source_, 1, camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_exists_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  const bool exists =
+      SQLITE3_CALL(sqlite3_step(sql_stmt_exists_camera_source_)) == SQLITE_ROW;
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_exists_camera_source_));
+  return exists;
+}
+
 bool SqliteDatabase::ExistsRig(const rig_t rig_id) const {
   sqlite3_stmt* stmt = nullptr;
   SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT 1 FROM rigs WHERE rig_id=?;",
@@ -689,7 +738,15 @@ bool SqliteDatabase::ExistsTwoViewGeometry(const image_t image_id1,
                      ImagePairToPairId(image_id1, image_id2));
 }
 
-size_t SqliteDatabase::NumCameras() const { return CountRows("cameras"); }
+// Upstream parity (f1ea91d0): multiple calibrations per camera; the count
+// is the number of distinct cameras.
+size_t SqliteDatabase::NumCameras() const {
+  SQLITE3_CALL(sqlite3_step(sql_stmt_num_cameras_));
+  const size_t count = static_cast<size_t>(
+      sqlite3_column_int64(sql_stmt_num_cameras_, 0));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_num_cameras_));
+  return count;
+}
 size_t SqliteDatabase::NumRigs() const { return CountRows("rigs"); }
 size_t SqliteDatabase::NumFrames() const { return CountRows("frames"); }
 
@@ -729,31 +786,84 @@ size_t SqliteDatabase::NumVerifiedImagePairs() const {
   return CountRows("two_view_geometries");
 }
 
-Camera SqliteDatabase::ReadCamera(const camera_t camera_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_, 1, camera_id));
-
+// Upstream parity (f1ea91d0): `source` defaults to BEST, which selects the
+// highest-priority calibration for the camera via the source-priority SQL
+// ordering; an explicit source reads that exact calibration row.
+Camera SqliteDatabase::ReadCamera(
+    const camera_t camera_id, const CameraSource source) const {
   Camera camera;
-
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_));
-  if (rc == SQLITE_ROW) {
-    camera = ReadCameraRow(sql_stmt_read_camera_);
+  if (source == CameraSource::BEST) {
+    SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_, 1, camera_id));
+    if (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_)) == SQLITE_ROW) {
+      camera = ReadCameraRow(sql_stmt_read_camera_);
+    }
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_));
+    return camera;
   }
 
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_));
-
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_source_,
+                                  1,
+                                  camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_read_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  if (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_source_)) == SQLITE_ROW) {
+    camera = ReadCameraRow(sql_stmt_read_camera_source_);
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_source_));
   return camera;
 }
 
-std::vector<Camera> SqliteDatabase::ReadAllCameras() const {
+std::vector<Camera> SqliteDatabase::ReadAllCameras(
+    const CameraSource source) const {
   std::vector<Camera> cameras;
-
-  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_)) == SQLITE_ROW) {
-    cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_));
+  if (source == CameraSource::BEST) {
+    while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_)) == SQLITE_ROW) {
+      cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_));
+    }
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_));
+    return cameras;
   }
 
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_));
-
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_read_cameras_for_source_,
+                         1,
+                         static_cast<sqlite3_int64>(source)));
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_for_source_)) ==
+         SQLITE_ROW) {
+    cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_for_source_));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_for_source_));
   return cameras;
+}
+
+std::map<CameraSource, Camera> SqliteDatabase::ReadAllCameraSources(
+    const camera_t camera_id) const {
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_sources_for_camera_,
+                                  1,
+                                  camera_id));
+  std::map<CameraSource, Camera> calibrations;
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_sources_for_camera_)) ==
+         SQLITE_ROW) {
+    Camera camera = ReadCameraRow(sql_stmt_read_camera_sources_for_camera_);
+    calibrations.emplace(camera.Source(), std::move(camera));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_sources_for_camera_));
+  return calibrations;
+}
+
+NodeHashMap<camera_t, std::map<CameraSource, Camera>>
+SqliteDatabase::ReadAllCameraSources() const {
+  NodeHashMap<camera_t, std::map<CameraSource, Camera>> all_calibrations;
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_all_camera_sources_)) ==
+         SQLITE_ROW) {
+    Camera camera = ReadCameraRow(sql_stmt_read_all_camera_sources_);
+    all_calibrations[camera.CameraId()].emplace(camera.Source(),
+                                                std::move(camera));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_all_camera_sources_));
+  return all_calibrations;
 }
 
 std::optional<Rig> SqliteDatabase::ReadRigWithSensor(
@@ -1038,6 +1148,10 @@ std::string CameraToBlob(const Camera& camera) {
   for (const double param : camera.Params()) {
     WriteBinaryLittleEndian<double>(&stream, param);
   }
+  // Upstream parity (f1ea91d0): persist the calibration source after the
+  // parameters so legacy blobs (without the trailing byte) stay readable.
+  WriteBinaryLittleEndian<int8_t>(&stream,
+                                  static_cast<int8_t>(camera.Source()));
   return stream.str();
 }
 
@@ -1050,10 +1164,18 @@ Camera CameraFromBlob(const void* data, const size_t num_bytes) {
       static_cast<CameraModelId>(ReadBinaryLittleEndian<int>(&stream)));
   camera.SetWidth(ReadBinaryLittleEndian<uint64_t>(&stream));
   camera.SetHeight(ReadBinaryLittleEndian<uint64_t>(&stream));
-  camera.SetPriorFocalLength(ReadBinaryLittleEndian<uint8_t>(&stream) != 0);
+  const bool has_prior = ReadBinaryLittleEndian<uint8_t>(&stream) != 0;
   const uint64_t num_params = ReadBinaryLittleEndian<uint64_t>(&stream);
   camera.Params().resize(num_params);
   ReadBinaryLittleEndian<double>(&stream, &camera.Params());
+  // Upstream parity (f1ea91d0): legacy blobs without the trailing source
+  // byte fall back to the prior flag (EXIF/GUESS).
+  if (stream.peek() != EOF) {
+    camera.SetSource(static_cast<CameraSource>(
+        ReadBinaryLittleEndian<int8_t>(&stream)));
+  } else {
+    camera.SetSource(has_prior ? CameraSource::EXIF : CameraSource::GUESS);
+  }
   return camera;
 }
 
@@ -1264,13 +1386,23 @@ void SqliteDatabase::ReadTwoViewGeometryNumInliers(
 
 camera_t SqliteDatabase::WriteCamera(const Camera& camera,
                                const bool use_camera_id) const {
+  // Upstream parity (f1ea91d0): BEST is a query selector, not a persisted
+  // source; with auto-assignment the next id comes from the covering
+  // primary-key B-tree (composite key has no AUTOINCREMENT).
+  THROW_CHECK_NE(camera.Source(), CameraSource::BEST)
+          << "Camera source cannot be BEST when writing to database.";
+  camera_t camera_id = camera.CameraId();
   if (use_camera_id) {
-    CHECK(!ExistsCamera(camera.CameraId())) << "camera_id must be unique";
-    SQLITE3_CALL(
-        sqlite3_bind_int64(sql_stmt_add_camera_, 1, camera.CameraId()));
+    CHECK(!ExistsCamera(camera_id)) << "camera_id must be unique";
   } else {
-    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_add_camera_, 1));
+    SQLITE3_CALL(sqlite3_step(sql_stmt_next_camera_id_));
+    camera_id = static_cast<camera_t>(
+        sqlite3_column_int64(sql_stmt_next_camera_id_, 0));
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_next_camera_id_));
   }
+
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_add_camera_, 1, camera_id));
 
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_add_camera_, 2,
                                 static_cast<int>(camera.ModelId())));
@@ -1284,13 +1416,14 @@ camera_t SqliteDatabase::WriteCamera(const Camera& camera,
                                  static_cast<int>(num_params_bytes),
                                  SQLITE_STATIC));
 
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_add_camera_, 6,
-                                  camera.HasPriorFocalLength()));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_add_camera_, 6,
+                         static_cast<sqlite3_int64>(camera.Source())));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_add_camera_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_add_camera_));
 
-  return static_cast<camera_t>(sqlite3_last_insert_rowid(database_));
+  return camera_id;
 }
 
 namespace {
@@ -1518,28 +1651,67 @@ void SqliteDatabase::WriteTwoViewGeometry(
   SQLITE3_CALL(sqlite3_reset(sql_stmt_write_two_view_geometry_));
 }
 
+// Upstream parity (f1ea91d0): insert-or-overwrite a calibration source for
+// an existing camera. UNKNOWN updates the currently active (BEST) source in
+// place; BEST is rejected.
 void SqliteDatabase::UpdateCamera(const Camera& camera) const {
+  CHECK(ExistsCamera(camera.CameraId())) << "Camera does not exist";
+
+  Camera camera_to_update = camera;
+  THROW_CHECK_NE(camera_to_update.Source(), CameraSource::BEST)
+          << "Camera source cannot be BEST when updating database.";
+  if (camera_to_update.Source() == CameraSource::UNKNOWN) {
+    const Camera active_camera =
+        ReadCamera(camera.CameraId(), CameraSource::BEST);
+    camera_to_update.SetSource(active_camera.Source());
+  }
+
   SQLITE3_CALL(
       sqlite3_bind_int64(sql_stmt_update_camera_, 1,
-                       static_cast<int>(camera.ModelId())));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 2,
-                                  static_cast<sqlite3_int64>(camera.Width())));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 3,
-                                  static_cast<sqlite3_int64>(camera.Height())));
-
-  const size_t num_params_bytes = sizeof(double) * camera.NumParams();
+                       camera_to_update.CameraId()));
   SQLITE3_CALL(
-      sqlite3_bind_blob(sql_stmt_update_camera_, 4, camera.ParamsData(),
+      sqlite3_bind_int64(sql_stmt_update_camera_, 2,
+                       static_cast<int>(camera_to_update.ModelId())));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_update_camera_, 3,
+                       static_cast<sqlite3_int64>(camera_to_update.Width())));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_update_camera_, 4,
+                       static_cast<sqlite3_int64>(camera_to_update.Height())));
+
+  const size_t num_params_bytes =
+      sizeof(double) * camera_to_update.NumParams();
+  SQLITE3_CALL(
+      sqlite3_bind_blob(sql_stmt_update_camera_, 5,
+                        camera_to_update.ParamsData(),
                         static_cast<int>(num_params_bytes), SQLITE_STATIC));
 
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 5,
-                                  camera.HasPriorFocalLength()));
-
   SQLITE3_CALL(
-      sqlite3_bind_int64(sql_stmt_update_camera_, 6, camera.CameraId()));
+      sqlite3_bind_int64(sql_stmt_update_camera_, 6,
+                       static_cast<sqlite3_int64>(camera_to_update.Source())));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_update_camera_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_camera_));
+}
+
+// Upstream parity (f1ea91d0): delete a specific calibration source; BEST
+// (the default) deletes all calibrations of the camera.
+void SqliteDatabase::DeleteCameraSource(const camera_t camera_id,
+                                        const CameraSource source) const {
+  if (source == CameraSource::BEST) {
+    SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_delete_camera_, 1, camera_id));
+    SQLITE3_CALL(sqlite3_step(sql_stmt_delete_camera_));
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_camera_));
+    return;
+  }
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_delete_camera_source_, 1, camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_delete_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  SQLITE3_CALL(sqlite3_step(sql_stmt_delete_camera_source_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_camera_source_));
 }
 
 void SqliteDatabase::UpdateRig(const Rig& rig) const {
@@ -1709,6 +1881,12 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // num_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): multiple calibrations per camera.
+  sql = "SELECT COUNT(DISTINCT camera_id) FROM cameras;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_num_cameras_, 0));
+  sql_stmts_.push_back(sql_stmt_num_cameras_);
+
   sql = "SELECT rows FROM keypoints WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_num_keypoints_, 0));
@@ -1726,6 +1904,12 @@ void SqliteDatabase::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_exists_camera_, 0));
   sql_stmts_.push_back(sql_stmt_exists_camera_);
+
+  // Upstream parity (f1ea91d0).
+  sql = "SELECT 1 FROM cameras WHERE camera_id = ? AND source = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_exists_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_exists_camera_source_);
 
   sql = "SELECT 1 FROM images WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -1767,10 +1951,18 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   sql =
       "INSERT INTO cameras(camera_id, model, width, height, params, "
-      "prior_focal_length) VALUES(?, ?, ?, ?, ?, ?);";
+      "source) VALUES(?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(
       sqlite3_prepare_v2(database_, sql.c_str(), -1, &sql_stmt_add_camera_, 0));
   sql_stmts_.push_back(sql_stmt_add_camera_);
+
+  // Upstream parity (f1ea91d0): composite primary key has no AUTOINCREMENT;
+  // the next id comes from an explicit COALESCE(MAX)+1 allocation.
+  sql = "SELECT COALESCE(MAX(camera_id), 0) + 1 FROM cameras;";
+  SQLITE3_CALL(
+      sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                         &sql_stmt_next_camera_id_, 0));
+  sql_stmts_.push_back(sql_stmt_next_camera_id_);
 
   sql = "INSERT INTO images(image_id, name, camera_id) VALUES(?, ?, ?);";
   SQLITE3_CALL(
@@ -1780,9 +1972,10 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // update_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): upsert of one calibration source.
   sql =
-      "UPDATE cameras SET model=?, width=?, height=?, params=?, "
-      "prior_focal_length=? WHERE camera_id=?;";
+      "INSERT OR REPLACE INTO cameras(camera_id, model, width, height, "
+      "params, source) VALUES(?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_update_camera_, 0));
   sql_stmts_.push_back(sql_stmt_update_camera_);
@@ -1795,15 +1988,61 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // read_*
   //////////////////////////////////////////////////////////////////////////////
-  sql = "SELECT * FROM cameras WHERE camera_id = ?;";
+  // Upstream parity (f1ea91d0): source-priority ordering resolves BEST.
+  // Relies on SQLite returning bare columns from the row matching the
+  // single MAX() aggregate; do not add a second aggregate to this query.
+  std::string camera_source_priority_sql = "CASE source";
+  for (const CameraSource source :
+       {CameraSource::UNKNOWN,
+        CameraSource::USER,
+        CameraSource::GUESS,
+        CameraSource::EXIF,
+        CameraSource::SINGLE_VIEW,
+        CameraSource::VIEW_GRAPH}) {
+    camera_source_priority_sql += StringPrintf(
+        " WHEN %d THEN %d",
+        static_cast<int>(source), CameraSourcePriority(source));
+  }
+  camera_source_priority_sql += " END";
+  sql = StringPrintf(
+      "SELECT camera_id, model, width, height, params, source, MAX(%s) "
+      "FROM cameras GROUP BY camera_id ORDER BY camera_id ASC;",
+      camera_source_priority_sql.c_str());
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_cameras_, 0));
+  sql_stmts_.push_back(sql_stmt_read_cameras_);
+
+  sql = StringPrintf(
+      "SELECT camera_id, model, width, height, params, source "
+      "FROM cameras WHERE camera_id = ? ORDER BY %s DESC LIMIT 1;",
+      camera_source_priority_sql.c_str());
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_camera_, 0));
   sql_stmts_.push_back(sql_stmt_read_camera_);
 
-  sql = "SELECT * FROM cameras;";
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE camera_id = ? AND source = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_cameras_, 0));
-  sql_stmts_.push_back(sql_stmt_read_cameras_);
+                                  &sql_stmt_read_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_read_camera_source_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE source = ? ORDER BY camera_id ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_cameras_for_source_, 0));
+  sql_stmts_.push_back(sql_stmt_read_cameras_for_source_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE camera_id = ? ORDER BY source ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_camera_sources_for_camera_, 0));
+  sql_stmts_.push_back(sql_stmt_read_camera_sources_for_camera_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras ORDER BY camera_id ASC, source ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_all_camera_sources_, 0));
+  sql_stmts_.push_back(sql_stmt_read_all_camera_sources_);
 
   // Upstream parity (a2bd15c2): the image-to-frame association is resolved
   // at read time by joining frame_data on (data_id, sensor_type=CAMERA), not
@@ -1938,6 +2177,18 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // delete_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): per-camera deletion; BEST deletes all
+  // calibrations of the camera.
+  sql = "DELETE FROM cameras WHERE camera_id = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_delete_camera_, 0));
+  sql_stmts_.push_back(sql_stmt_delete_camera_);
+
+  sql = "DELETE FROM cameras WHERE camera_id = ? AND source = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_delete_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_delete_camera_source_);
+
   sql = "DELETE FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_delete_matches_, 0));
@@ -2038,14 +2289,18 @@ void SqliteDatabase::CreateRigSensorsTable() const {
 }
 
 void SqliteDatabase::CreateCameraTable() const {
+  // Upstream parity (f1ea91d0): composite primary key (camera_id, source);
+  // no AUTOINCREMENT (SQLite limitation on composite keys), no
+  // prior_focal_length column (subsumed by source).
   const std::string sql =
       "CREATE TABLE IF NOT EXISTS cameras"
-      "   (camera_id            INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+      "   (camera_id            INTEGER                             NOT NULL,"
       "    model                INTEGER                             NOT NULL,"
       "    width                INTEGER                             NOT NULL,"
       "    height               INTEGER                             NOT NULL,"
       "    params               BLOB,"
-      "    prior_focal_length   INTEGER                             NOT NULL);";
+      "    source               INTEGER                             NOT NULL,"
+      "    PRIMARY KEY(camera_id, source));";
 
   SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
@@ -2081,8 +2336,7 @@ void SqliteDatabase::CreateImageTable() const {
       "   (image_id   INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
       "    name       TEXT                                NOT NULL UNIQUE,"
       "    camera_id  INTEGER                             NOT NULL,"
-      "    CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < %d),"
-      "    FOREIGN KEY(camera_id) REFERENCES cameras(camera_id));"
+      "    CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < %d));"
       "CREATE UNIQUE INDEX IF NOT EXISTS index_name ON images(name);",
       kMaxNumImages);
 
@@ -2579,6 +2833,57 @@ void SqliteDatabase::PostMigrateTables(const bool fork_legacy_schema) const {
         SQLITE3_CALL(sqlite3_step(sql_stmt));
         SQLITE3_CALL(sqlite3_finalize(sql_stmt));
         SQLITE3_EXEC(database_, "DROP TABLE pose_priors_old;", nullptr);
+    }
+
+    // Upstream parity (f1ea91d0): migrate the cameras table to the composite
+    // primary key (camera_id, source) and recreate the images table without
+    // the foreign key to cameras.
+    if (user_version <= MakeDatabaseVersionNumber(4, 3, 0, 0)) {
+      const bool needs_camera_rename =
+          ExistsTable("cameras") && !ExistsColumn("cameras", "source");
+      if (needs_camera_rename || ExistsTable("cameras_old") ||
+          ExistsTable("images_old")) {
+        ExecOrThrow(database_, "PRAGMA foreign_keys=OFF;");
+        ExecOrThrow(database_, "PRAGMA legacy_alter_table=ON;");
+
+        if (needs_camera_rename) {
+          ExecOrThrow(database_, "ALTER TABLE cameras RENAME TO cameras_old;");
+          CreateCameraTable();
+        }
+
+        if (ExistsTable("cameras_old")) {
+          const std::string migrate_sql = StringPrintf(
+              "INSERT OR IGNORE INTO cameras "
+              "(camera_id, model, width, height, params, source) "
+              "SELECT camera_id, model, width, height, params, "
+              "CASE WHEN prior_focal_length != 0 THEN %d ELSE %d END "
+              "FROM cameras_old;",
+              static_cast<int>(CameraSource::EXIF),
+              static_cast<int>(CameraSource::GUESS));
+          ExecOrThrow(database_, migrate_sql.c_str());
+
+          if (ExistsTable("images") && !ExistsTable("images_old")) {
+            ExecOrThrow(database_, "DROP INDEX IF EXISTS index_name;");
+            ExecOrThrow(database_,
+                        "ALTER TABLE images RENAME TO images_old;");
+            CreateImageTable();
+          }
+
+          ExecOrThrow(database_, "DROP TABLE cameras_old;");
+        }
+
+        if (ExistsTable("images_old")) {
+          CreateImageTable();
+          ExecOrThrow(database_,
+                      "INSERT OR IGNORE INTO images (image_id, name, "
+                      "camera_id) SELECT image_id, name, camera_id FROM "
+                      "images_old;");
+          ExecOrThrow(database_, "DROP TABLE images_old;");
+        }
+
+        ExecOrThrow(database_, "PRAGMA legacy_alter_table=OFF;");
+        ExecOrThrow(database_, "PRAGMA foreign_keys=ON;");
+      }
     }
 
     // Stamp the schema version.
