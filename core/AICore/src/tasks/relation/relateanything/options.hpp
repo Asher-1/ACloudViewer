@@ -37,6 +37,7 @@ struct ModelOptions {
     bool retain_features = true;
     bool quant_f32_input = false;
     bool strict_f32 = false;
+    bool strict_f32_auto = true;
     bool raw_logits = false;
     bool profile = false;
 

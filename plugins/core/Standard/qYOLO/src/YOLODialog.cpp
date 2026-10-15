@@ -277,6 +277,23 @@ void YOLODialog::setupUi() {
                    "hat\") score far lower and need Confidence ~0.02 or "
                    "below."));
         classesRow->addWidget(panel.classesEdit, 1);
+        // The 497 object categories RelateAnything's official detectors are
+        // re-parameterised to (MegaSG / RA-4M); same list qRelateAnything uses.
+        // The list is read once through YOLOHelpers::ra4mVocabulary(); when the
+        // relation task is unavailable it is empty and the button is not shown.
+        const QStringList ra4m = YOLOHelpers::ra4mVocabulary();
+        if (!ra4m.isEmpty()) {
+            panel.ra4mBtn = new QPushButton(tr("RA-4M 497"), panel.textRow);
+            panel.ra4mBtn->setToolTip(
+                    tr("Fill the classes with the %1 RA-4M object categories "
+                       "used by the official RelateAnything detector.")
+                            .arg(ra4m.size()));
+            classesRow->addWidget(panel.ra4mBtn);
+            connect(panel.ra4mBtn, &QPushButton::clicked, this,
+                    [edit = panel.classesEdit, ra4m]() {
+                        edit->setText(ra4m.join(QStringLiteral(", ")));
+                    });
+        }
         textLayout->addLayout(classesRow);
         auto* textModelRow = new QHBoxLayout;
         textModelRow->setSpacing(ecvAICoreUi::hSpacing());
@@ -1168,6 +1185,7 @@ void YOLODialog::applyPanelVisibility(YOLOTaskPanel& panel) {
                 panel.task == QStringLiteral("yoloe") && !prompt_free;
         if (panel.classesEdit) {
             panel.classesEdit->setEnabled(!prompt_free);
+            if (panel.ra4mBtn) panel.ra4mBtn->setEnabled(!prompt_free);
             panel.classesEdit->setToolTip(
                     prompt_free
                             ? tr("Prompt-free checkpoints use the built-in "

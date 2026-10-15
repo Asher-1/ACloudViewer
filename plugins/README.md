@@ -26,7 +26,8 @@ When adding a new plugin, add a `README.md` in the plugin directory and register
 
 ## AI inference plugins (AICore)
 
-Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue with a single ggml copy.
+AICore-backed GUI plugins link **`libAICore.so`**, which bundles the enabled
+inference tasks with one shared ggml runtime (including RelateAnything).
 
 | Plugin | CMake option | User guide | README |
 |--------|--------------|------------|--------|

@@ -175,7 +175,8 @@ constexpr const char* kLingbotMapUniversitySkyMasksSha256 =
 // ----------------------------------------------------------------------------
 
 QString ecvTestDataRepository::dataRoot() {
-    const QString configuredRoot = qEnvironmentVariable("CLOUDVIEWER_DATA_ROOT");
+    const QString configuredRoot =
+            qEnvironmentVariable("CLOUDVIEWER_DATA_ROOT");
     if (!configuredRoot.isEmpty()) return configuredRoot;
     return QDir(QDir::homePath()).filePath(QStringLiteral("cloudViewer_data"));
 }
@@ -208,36 +209,84 @@ QString ecvTestDataRepository::findDatasetFile(Dataset kind,
     if (!QDir(root).exists()) return {};
 
     if (kind == Dataset::RelateAnything) {
-        struct Member { const char* path; const char* sha; qint64 size; };
+        struct Member {
+            const char* path;
+            const char* sha;
+            qint64 size;
+        };
         static const Member members[] = {
-            {"demo_images/bicycle.jpg", "1173a3bb48f4875064a73869bbeef7431c0c1c14a6ec751a75e8fbc7df4a8e18", 211755},
-            {"demo_images/catlaptop.jpg", "55da50d82845ad990c7a4ea377ef10bc0db0dd6076895ca14eb527775674d269", 207115},
-            {"demo_images/frisbee.jpg", "f52cbb5a26bda7c266e7e95fcda0b87f5b92f65829fd46896af2b30012c65d88", 234814},
-            {"demo_images/horse.jpg", "549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedecf29", 469827},
-            {"demo_images/skateboard.jpg", "6b5cb50eb4f13061528124f573ed9d433559f34bb8dae3e65cd970db787123e5", 233771},
-            {"demo_images/tennis.jpg", "5b5f10a29ba288bc792a676b3881e8d8f0b4e6bb3227bc6b8699cbeda66c5649", 444472},
-            {"demo_videos/r3c_adoption_54729571599.webm", "6ec4160dfb683cfb880375a118064acc3caa67707244f040f7d0316017c7c541", 32641680},
-            {"demo_videos/gof_a_gweithiwr_metrel_ray_burrell_metal_fabrica.webm", "6f17d65d2012cba1a21513a436bfeababa7c043172aa0b615f804365872a9807", 3736282},
-            {"demo_videos/technical_hardtail_riding_all_mountain_enduro.webm", "7e5f17cd3b682e6d58a9367ea6d4441ec7b642aeba9e42314ee3feae0d03afb3", 17366970},
-            {"demo_videos/jalebi_being_prepared_bangalore.webm", "cec4667f1a037558bf8b02554629f829e0350f236e63e28be1118da8aa79478c", 11665054},
-            {"demo_videos/david_farmer_guitarist_at_copped_hall_open_day_a.webm", "e1dbd6cff0c7efc1529f3171f6db33646446c87e62c44f39ee7e7f6970eef490", 37568246},
+                {"demo_images/bicycle.jpg",
+                 "1173a3bb48f4875064a73869bbeef7431c0c1c14a6ec751a75e8fbc7df4a8"
+                 "e18",
+                 211755},
+                {"demo_images/catlaptop.jpg",
+                 "55da50d82845ad990c7a4ea377ef10bc0db0dd6076895ca14eb527775674d"
+                 "269",
+                 207115},
+                {"demo_images/frisbee.jpg",
+                 "f52cbb5a26bda7c266e7e95fcda0b87f5b92f65829fd46896af2b30012c65"
+                 "d88",
+                 234814},
+                {"demo_images/horse.jpg",
+                 "549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedec"
+                 "f29",
+                 469827},
+                {"demo_images/skateboard.jpg",
+                 "6b5cb50eb4f13061528124f573ed9d433559f34bb8dae3e65cd970db78712"
+                 "3e5",
+                 233771},
+                {"demo_images/tennis.jpg",
+                 "5b5f10a29ba288bc792a676b3881e8d8f0b4e6bb3227bc6b8699cbeda66c5"
+                 "649",
+                 444472},
+                {"demo_videos/r3c_adoption_54729571599.webm",
+                 "6ec4160dfb683cfb880375a118064acc3caa67707244f040f7d0316017c7c"
+                 "541",
+                 32641680},
+                {"demo_videos/"
+                 "gof_a_gweithiwr_metrel_ray_burrell_metal_fabrica.webm",
+                 "6f17d65d2012cba1a21513a436bfeababa7c043172aa0b615f804365872a9"
+                 "807",
+                 3736282},
+                {"demo_videos/"
+                 "technical_hardtail_riding_all_mountain_enduro.webm",
+                 "7e5f17cd3b682e6d58a9367ea6d4441ec7b642aeba9e42314ee3feae0d03a"
+                 "fb3",
+                 17366970},
+                {"demo_videos/jalebi_being_prepared_bangalore.webm",
+                 "cec4667f1a037558bf8b02554629f829e0350f236e63e28be1118da8aa794"
+                 "78c",
+                 11665054},
+                {"demo_videos/"
+                 "david_farmer_guitarist_at_copped_hall_open_day_a.webm",
+                 "e1dbd6cff0c7efc1529f3171f6db33646446c87e62c44f39ee7e7f6970eef"
+                 "490",
+                 37568246},
         };
         for (const auto& member : members) {
-            if (QFileInfo(QString::fromUtf8(member.path)).fileName() != fileName) continue;
-            const QString path = QDir(root).filePath(QString::fromUtf8(member.path));
-            return ecvAssetIntegrity::isVerified(path,
-                {QCryptographicHash::Sha256, QByteArray(member.sha)}, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify, member.size)
-                    ? QFileInfo(path).absoluteFilePath() : QString();
+            if (QFileInfo(QString::fromUtf8(member.path)).fileName() !=
+                fileName)
+                continue;
+            const QString path =
+                    QDir(root).filePath(QString::fromUtf8(member.path));
+            return ecvAssetIntegrity::isVerified(
+                           path,
+                           {QCryptographicHash::Sha256, QByteArray(member.sha)},
+                           0, false, ecvAssetIntegrity::OnMiss::DeepVerify,
+                           member.size)
+                           ? QFileInfo(path).absoluteFilePath()
+                           : QString();
         }
         return {};  // Only declared demo members participate in autofill.
     }
 
     if (kind == Dataset::RAM && fileName == QStringLiteral("demo1.jpg")) {
-        const QString demo = QDir(root).filePath(QStringLiteral("demo/demo1.jpg"));
+        const QString demo =
+                QDir(root).filePath(QStringLiteral("demo/demo1.jpg"));
         const ecvAssetIntegrity::Anchor anchor{
                 QCryptographicHash::Sha256,
-                QByteArray("1b2906f4058a69936df49cb6156ec4cd117a286b420e1eb14764033bf8f3c05f")};
+                QByteArray("1b2906f4058a69936df49cb6156ec4cd117a286b420e1eb1476"
+                           "4033bf8f3c05f")};
         return ecvAssetIntegrity::isVerified(
                        demo, anchor, 0, false,
                        ecvAssetIntegrity::OnMiss::DeepVerify, 5701095)
@@ -271,15 +320,26 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
         Dataset kind) {
     switch (kind) {
         case Dataset::RelateAnything:
-            return {kind, QStringLiteral("RelateAnything"),
-                    QStringLiteral("relate_datasets.zip"), QStringLiteral("relate_datasets"),
-                    QStringLiteral("https://huggingface.co/Asher-1/relateanything-ggml-full/resolve/main/assets/relate_datasets.zip"),
-                    {QCryptographicHash::Sha256, QByteArray("e0cf31c540dfa4ac8b122e7bc73c7d3070a5d385d17a7017229344a2b7895568")}};
+            return {kind,
+                    QStringLiteral("RelateAnything"),
+                    QStringLiteral("relate_datasets.zip"),
+                    QStringLiteral("relate_datasets"),
+                    QStringLiteral("https://huggingface.co/Asher-1/"
+                                   "relateanything-ggml-full/resolve/main/"
+                                   "assets/relate_datasets.zip"),
+                    {QCryptographicHash::Sha256,
+                     QByteArray("e0cf31c540dfa4ac8b122e7bc73c7d3070a5d385d17a70"
+                                "17229344a2b7895568")}};
         case Dataset::RAM:
-            return {kind, QStringLiteral("Recognize Anything"),
-                    QStringLiteral("ram_datasets.zip"), QStringLiteral("ram_datasets"),
-                    QStringLiteral("https://huggingface.co/Asher-1/RAM_GGUF/resolve/main/ram_datasets.zip"),
-                    {QCryptographicHash::Sha256, QByteArray("ee3060f41247895a7140162f8e217a51bf2dd46df8e16679157b8086f7490177")}};
+            return {kind,
+                    QStringLiteral("Recognize Anything"),
+                    QStringLiteral("ram_datasets.zip"),
+                    QStringLiteral("ram_datasets"),
+                    QStringLiteral("https://huggingface.co/Asher-1/RAM_GGUF/"
+                                   "resolve/main/ram_datasets.zip"),
+                    {QCryptographicHash::Sha256,
+                     QByteArray("ee3060f41247895a7140162f8e217a51bf2dd46df8e166"
+                                "79157b8086f7490177")}};
         case Dataset::Monstree:
             return {kind,
                     QStringLiteral("Monstree"),
@@ -458,11 +518,18 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
     bool extractedComplete = false;
     switch (kind) {
         case Dataset::RelateAnything:
-            extractedComplete = !findDatasetFile(kind, QStringLiteral("skateboard.jpg")).isEmpty() &&
-                !findDatasetFile(kind, QStringLiteral("r3c_adoption_54729571599.webm")).isEmpty();
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("skateboard.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(
+                             kind,
+                             QStringLiteral("r3c_adoption_54729571599.webm"))
+                             .isEmpty();
             break;
         case Dataset::RAM:
-            extractedComplete = !findDatasetFile(kind, QStringLiteral("demo1.jpg")).isEmpty();
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("demo1.jpg"))
+                             .isEmpty();
             break;
         case Dataset::Monstree:
             extractedComplete = !getMonstreeImages(extract).isEmpty();

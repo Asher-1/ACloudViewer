@@ -1470,6 +1470,12 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set_tests_properties(test_relation_upstream_audit PROPERTIES
         LABELS "fast;validation")
 
+    add_test(NAME test_relation_accuracy_gate
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_accuracy.py)
+    set_tests_properties(test_relation_accuracy_gate PROPERTIES
+        LABELS "fast;validation")
+
     add_test(NAME test_relation_dependency_closure
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_dependency_closure.py

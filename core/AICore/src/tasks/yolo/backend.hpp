@@ -73,6 +73,10 @@ struct BackendCtx {
 
     /* Scheduler spanning [gpu, cpu] when gpu != nullptr. */
     ggml_backend_sched_t sched = nullptr;
+    /* Graph capacity (hash slots) the scheduler was created with. ggml
+     * asserts hash size >= nodes + leafs, so large open-vocabulary heads
+     * (hundreds of classes) need the scheduler recreated with more room. */
+    size_t sched_graph_size = 0;
 
     /* Resolved device display name (e.g. "Vulkan0 (NVIDIA GeForce ...)" or
      * "CPU"). */

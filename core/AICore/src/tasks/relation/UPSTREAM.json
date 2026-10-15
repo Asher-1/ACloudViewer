@@ -2,26 +2,169 @@
   "repository": "https://github.com/Asher-1/RelateAnything-GGML",
   "commit": "62f8540a2453349b371a51154ac9b5ed69404bfa",
   "ggml_commit": "8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b",
-  "source_snapshot": "Local upstream working tree at integration; files are pinned below, including its strict CUDA explicit-attention change.",
+  "source_snapshot": "Local upstream working tree 2026-10-12: automatic CUDA F32 precision defaults, explicit precision overrides and invalid-mode validation, native-only ggml patch, and the published Q8_0 export retaining ra.vocab_head.W in F16. F16/F32 export policy metadata is corrected. The exact Hugging Face repository revision pins all published artifacts. The upstream process-global ggml-runtime-options API is mapped to task-owned relation options in AICore instead of cross-task mutable state.",
+  "published_inventory": {
+    "verified_at": "2026-10-12",
+    "source_api": "https://huggingface.co/api/models/Asher-1/relateanything-ggml-full/tree/2377ca3539bf5c4f09161a886a38dd0fc7517bd0/gguf?recursive=false",
+    "policy": "The catalog pins the complete published Hugging Face inventory at its exact repository revision. Newly published Q8_0 weights retain ra.vocab_head.W in F16; their shared cache files are verified and repaired against the new sizes and digests.",
+    "revision": "2377ca3539bf5c4f09161a886a38dd0fc7517bd0",
+    "previous_published_q8": [
+      {
+        "file": "relsgg-vitb16-q8_0.gguf",
+        "bytes": 134249664,
+        "sha256": "61bc2a07233a1d0e189dbcab96736d38afa9f9ade8d8028b327e3aa7a12c3dd5",
+        "hf_etag": "f78fec39b14c224ae06494fdf51ab4506c12f1bbe801b5fbc5cf76b7ef15522e"
+      },
+      {
+        "file": "relsgg-vits16-q8_0.gguf",
+        "bytes": 61281184,
+        "sha256": "ee168035fa5fa2dc334e159c70ab4785e1bf9c4758427c1264b59878200fa429",
+        "hf_etag": "7849375f7a61062c2f5de16575158534609103691ab4b52393924caf7337c75f"
+      },
+      {
+        "file": "relsgg-vits16plus-q8_0.gguf",
+        "bytes": 68877280,
+        "sha256": "bb70680859abf090bb3942871a5932aa07155f6236e87c6999218ed14400c8f9",
+        "hf_etag": "7ad6047a666bfdf83a07d7144d826f37e9b6d1b059113433e1948149e2707b9c"
+      }
+    ],
+    "published_models": [
+      {
+        "filename": "relsgg-vitb16-f16.gguf",
+        "bytes": 247690848,
+        "sha256": "fbd6e868e171024182535c281b6ef142b166ea4e67060209d8cfd4b01ac5e911"
+      },
+      {
+        "filename": "relsgg-vitb16-f32.gguf",
+        "bytes": 494885344,
+        "sha256": "f7d2aa5765877e945d15fc9433c4c947a10e948091692b3f5208c71c24b8e17f"
+      },
+      {
+        "filename": "relsgg-vitb16-q8_0.gguf",
+        "bytes": 143419168,
+        "sha256": "44f40492955b493c53d796c7b4ad65d968dce301cd09567920313bf88e4c2b61"
+      },
+      {
+        "filename": "relsgg-vitb16-text-student-f32.gguf",
+        "bytes": 44946432,
+        "sha256": "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"
+      },
+      {
+        "filename": "relsgg-vits16-f16.gguf",
+        "bytes": 112374624,
+        "sha256": "bd5d0eabc41747af6d0243c755f789917c3f53864f763989bee5a4f0371767cf"
+      },
+      {
+        "filename": "relsgg-vits16-f32.gguf",
+        "bytes": 224252896,
+        "sha256": "b87e7cff5e5678e2871cbfcf2804be22e5a9b814a89be763c54c95b9c39468f4"
+      },
+      {
+        "filename": "relsgg-vits16-q8_0.gguf",
+        "bytes": 70450688,
+        "sha256": "d281ace4ad9a51edc78da26660ffd89a98d073df352de735711812b48e2dee53"
+      },
+      {
+        "filename": "relsgg-vits16-text-student-f32.gguf",
+        "bytes": 44946432,
+        "sha256": "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"
+      },
+      {
+        "filename": "relsgg-vits16plus-f16.gguf",
+        "bytes": 126569376,
+        "sha256": "36ed9f832324dff4d06edf216782eb692645f8f10c0bd7d1b4c5fa58d44d7d39"
+      },
+      {
+        "filename": "relsgg-vits16plus-f32.gguf",
+        "bytes": 252640288,
+        "sha256": "24970d851decd61bfdf4b109f5353ff81596ae8d7c9a35635f9de89d17f935e4"
+      },
+      {
+        "filename": "relsgg-vits16plus-q8_0.gguf",
+        "bytes": 78046784,
+        "sha256": "c19c25acae196e3a762fcbb4032ba450e716847bc66540988d730e4c75572177"
+      },
+      {
+        "filename": "relsgg-vits16plus-text-student-f32.gguf",
+        "bytes": 44946432,
+        "sha256": "8cd368fa8692a987a4d8739fcc642dc74fd2902d73ac5544a65f24018656475b"
+      }
+    ]
+  },
+  "adaptation": {
+    "upstream_patch_sha256": "1a856e6ed60e2a80eb3f26516cfd6d3ad237b3266a488ca683f3b6a23eb48372",
+    "acloudviewer_patch_sha256": "f7afe15a412bfc557fc186de4d34f3dddf95e6625e466fcfdebc79a9978cfc43",
+    "preserved": [
+      "RelateAnything ggml operators and backend dispatch",
+      "owner-scoped CPU dot and CUDA fast/strict arithmetic",
+      "automatic CUDA strict-F32 selection and explicit strict-F32 overrides",
+      "Q8_0 export retaining ra.vocab_head.W in F16"
+    ],
+    "context_owned_adaptations": [
+      "Qt Core Unicode tokenizer instead of a direct ICU dependency",
+      "Public text contexts retain immutable student weights and tokenizer tables; the one-shot internal encoder preserves upstream load-per-call behavior and graph arithmetic"
+    ],
+    "intentionally_not_carried": [
+      "process-global ggml-runtime-options public API and environment-variable state"
+    ],
+    "reason": "AICore task behavior is configured by owner-scoped options and public C ABI values. Carrying the upstream process-global runtime layer would introduce cross-task mutable state and a second configuration contract without changing relation graph semantics."
+  },
   "files": {
     "cpp_ggml/src/backend.cpp": "0c9bfc7a2c445c89394d4dc931500977c575b0ec34846afb840e91784879803a",
-    "cpp_ggml/src/c_api.cpp": "03e9ecc19f99b89bc788810a3bf8db7934fabe26a9afb492d7e5f09ff9ce30fb",
-    "cpp_ggml/src/full_model.cpp": "17aef4cbebaec20f16ba9508b1ab44e8bdc0bd4152982d56f9d515c6ba708913",
+    "cpp_ggml/src/c_api.cpp": "d5c8fa048ba00c599e22a55c588b36e895e6824fa40775b9665ed4a87c14a362",
+    "cpp_ggml/src/full_model.cpp": "4a076c97aa52a60632da97fc217aee6014f67e9e07042554e4445f655f4841c5",
     "cpp_ggml/src/gguf_model.cpp": "a63b6540a7eb3298df0098d3639e9b738bbe72708a89e0e53eadc47ae78cbbc1",
     "cpp_ggml/src/image_io.cpp": "fa066a83e5fca5af9127ff90a2932042aea0ff779f86b3b2bd7ac1c8e5c5ddd7",
-    "cpp_ggml/src/inference.cpp": "097af007f92905220a5aab1d974e22ffb6eda76e17694152723f7727a451c1c9",
-    "cpp_ggml/src/main.cpp": "e9cf74a2b3fcd850ed75fe64996db6092180883fe12fafa05ca51566524c2054",
+    "cpp_ggml/src/inference.cpp": "57e616706f38a5d3b52c3070ca3b31489efbafaea9a6a5242e8fced26877f28b",
+    "cpp_ggml/src/main.cpp": "06f25efcd4e06265d8b5a33d97f692a3892b2bda98a4af5efddd59b51e50668a",
     "cpp_ggml/include/relateanything/backend_binding.h": "4375d11667036882e395b9ef1e140ebc0910a2843a6b70f49fbf614642cf5442",
-    "cpp_ggml/include/relateanything/c_api.h": "1748471041bc79b9fdfa345ed7a05bb3e69f23878f0bdc0bc9e4c6baaf3ccff0",
+    "cpp_ggml/include/relateanything/c_api.h": "8452c35a3fe3dcdb12d4ca6f2a9af959ae0d040c6464656838870214c86e5e93",
     "cpp_ggml/include/relateanything/runtime_options.h": "090c419b59fcbf6f0588e88f5337ff3db15b91d75196296ccf45256147451edb",
     "cpp_ggml/include/relateanything/backend.hpp": "89923f4c9927c62eac1c80523e8d78b3e8764af2ddbbc31a5686278491ca51cc",
-    "cpp_ggml/include/relateanything/full_model.hpp": "e4d04007d62cd291721095cf16fbdcdbf0d5c2776b293aa5277c40ac29d8350b",
+    "cpp_ggml/include/relateanything/full_model.hpp": "a803170f86a65adc72de7f0b5ac697df5bd08404db559a954d9e11bb840fe5fa",
     "cpp_ggml/include/relateanything/gguf_model.hpp": "eef6abfa799616aa5d466ea2e12860c1eef11c849a53bc868819aaee279cb03c",
-    "cpp_ggml/include/relateanything/options.hpp": "5c7f5a4c7bc3d6663f8f283cd9a58de72cad391f17a5aa6dc47978c7eda50a28",
+    "cpp_ggml/include/relateanything/options.hpp": "dd7fb42d6b3c6cde6283975a1ab88e9b049ef1a956506399c976693eba6ab8c3",
     "cpp_ggml/include/relateanything/runtime_options.hpp": "2ad480f6db58e66d3f583ea28f60f1bad2a1b4541442a934c48a886045c625b8",
     "cpp_ggml/include/relateanything/types.hpp": "61daf6b8c6ca867ff28791f01e61724e4aeaeb3d00066236b188b19dda8d7dc0",
     "cpp_ggml/third_party/clip_tokenizer.hpp": "469f57954f9bfbc5b8646b1f8deb1fea82aa1525a68ee406a99a835c35053182",
     "cpp_ggml/third_party/patches/0001-relateanything-ggml.patch": "1a856e6ed60e2a80eb3f26516cfd6d3ad237b3266a488ca683f3b6a23eb48372",
-    "relsgg/corpus_type_map.json": "0e6230a1cfd747404a2b82f6d47a0111e1d45f403a48259fda257bf16750346d"
+    "relsgg/corpus_type_map.json": "0e6230a1cfd747404a2b82f6d47a0111e1d45f403a48259fda257bf16750346d",
+    "cpp_ggml/scripts/export_gguf.py": "64a11a6cf4362a1d8916ffcd49cefe7d089212efcd6136ceac3074aff542a923",
+    "cpp_ggml/scripts/export_text_student.py": "6461690a90c430c238d0af028d915667338c7139f60b61fafa411b1be4f8b83f",
+    "cpp_ggml/benchmarks/full_gguf_manifest.json": "d1b3b3c6c46c387fcc3c893f8a7c348fad844dff9029c5fd3236f977f3908d51",
+    "cpp_ggml/scripts/run_ggml.py": "67a78fb93ae2d7fcce6e627bc16044d01e43e88f9433dc567aed413d25084c10"
+  },
+  "plugin_ports": {
+    "note": "Plugin-side ports of upstream Python deploy code (AGPL-3.0, reproduced as data/algorithms). Not part of the AICore ABI except the vocabulary.",
+    "upstream_head_when_ported": "75dc55df5c782ed48a1fe74335827c6b22db9c95",
+    "files": {
+      "deploy/render_video.py": "d21600c0ea036dcb7d7b4aef18155a62c98f34cb6e8fbdf9a30943231b5dedd6",
+      "deploy/demo_webcam.py": "2e0fd7b57b8d32cc1667ed3cae59e2b620a74c782a5304245acb416417c29b96",
+      "deploy/make_reel.py": "2dedd9ebf156ffc932ac88dba21349148cced8d31179ec39ec105b38f84853e0",
+      "deploy/postprocess.py": "7261029b4537a0fbcd4a05369895023b4795187c3ed984ca881c270c4ab26953",
+      "deploy/megasg_categories.json": "de6895a9c8d84999a05031dffdaa58adb0704e6d49d8ee9b44b8178ccae19bab"
+    },
+    "ports": [
+      "plugins/core/Standard/qRelateAnything/include/RelateAnythingTemporal.h (Tracker, KalmanBox, RelationBelief, EdgeBook; numeric parity checked by tests/compare_temporal_upstream.py)",
+      "plugins/core/Standard/qRelateAnything/include/RelateAnythingPresets.h (predicate lists and operating points)",
+      "core/AICore/src/tasks/relation/object_vocabulary.cpp (497 MegaSG / RA-4M categories)"
+    ]
+  },
+  "pending_upstream_drift": {
+    "observed": "2026-10-13",
+    "upstream_head": "75dc55df5c782ed48a1fe74335827c6b22db9c95",
+    "summary": "The upstream working tree moved after this snapshot. The ggml patch (sha256 1a856e6e...) and the public C ABI are unchanged, but four recorded files differ and a new backbone family was added. The C++ graph in full_model.cpp has NOT been ported; the recorded file hashes above intentionally still describe the ported baseline, so upstream_probe.py will reject the current upstream tree until the port is done.",
+    "changed_files": [
+      "cpp_ggml/src/full_model.cpp",
+      "cpp_ggml/scripts/export_gguf.py",
+      "cpp_ggml/benchmarks/full_gguf_manifest.json",
+      "cpp_ggml/scripts/run_ggml.py"
+    ],
+    "new_models": "12 relsgg-convnext-{tiny,small,base,large}-{f16,f32,q8_0}.gguf (model_family dinov3_convnext: 4-stage hierarchical tower, per-stage widths/depths in GGUF metadata, patch size 16). Upstream manifest lists 21 models; this catalog has the 9 ViT ones."
+  },
+  "accuracy_policy": {
+    "source": "cpp_ggml/scripts/write_acceptance_status.py",
+    "sha256": "01a4213ff6b0306a250923a73a07f2b221a45963c62003842942461d607d2693",
+    "scope": "Current machine-readable upstream G1 storage-specific absolute limits; integration probes apply them to selected catalog inputs and report their different scope explicitly."
   }
 }

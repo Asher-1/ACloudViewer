@@ -34,6 +34,18 @@ annotations under `extract/relate_datasets`. Consumed member hashes are in the
 validation manifest; demo media also use the shared Qt integrity checks. The
 fixtures retain original provenance and rights information from upstream.
 
+The published Q8_0 exports now retain `ra.vocab_head.W` in F16. On 2026-10-12,
+all nine relation exports were updated in Hugging Face revision
+`2377ca3539bf5c4f09161a886a38dd0fc7517bd0`; F16/F32 files also carry corrected
+export-policy metadata. Catalog download URLs pin that revision, so a later
+upload cannot change the bytes during verification or inference. The shared
+downloader replaces outdated cache files after their size or digest fails.
+The complete inventory was verified against the
+[pinned Hugging Face tree API](https://huggingface.co/api/models/Asher-1/relateanything-ggml-full/tree/2377ca3539bf5c4f09161a886a38dd0fc7517bd0/gguf?recursive=false).
+`UPSTREAM.json` records the current inventory, previous Q8 digests and
+inference-source hashes. Reports made with the previous weights remain
+historical evidence and do not validate the updated exports.
+
 Relation predictions depend on object regions. Quantized models can change
 candidate pairs and predicate scores compared with original F32 checkpoints;
 validation requires the host to preserve the upstream framework error envelope.

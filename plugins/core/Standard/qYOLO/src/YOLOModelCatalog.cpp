@@ -24,6 +24,11 @@
 #include <vector>
 
 #include "aicore/yolo_capi.h"
+#ifdef AICore_ENABLED
+// Optional cross-task read: the RA-4M category list is owned by the AICore
+// relation task and consumed only through its public C ABI.
+#include "aicore/relation_capi.h"
+#endif
 
 namespace YOLOHelpers {
 
@@ -194,6 +199,18 @@ QString modelDisplayLabel(const YOLOModelEntry& entry) {
 
 bool filenameIsDepth(const QString& filename) {
     return filename.toLower().contains(QStringLiteral("depth"));
+}
+
+QStringList ra4mVocabulary() {
+    QStringList names;
+#ifdef AICore_ENABLED
+    const int n = aicore_relation_object_vocabulary_count();
+    names.reserve(n > 0 ? n : 0);
+    for (int i = 0; i < n; ++i)
+        if (const char* name = aicore_relation_object_vocabulary_at(i))
+            if (name[0]) names << QString::fromUtf8(name);
+#endif
+    return names;  // empty when AICore (and so the relation task) is absent
 }
 
 bool isPromptFreeFilename(const QString& filename) {

@@ -58,10 +58,10 @@ public:
          *  assets, no extraction): drive = N=1050 @ fps10 / auto kf=4,
          *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
          *  long_real campaign runs with the long-model GGUFs. */
-        LingbotMapDriveVideo,       ///< drive_frames.mp4 (long-model dataset)
-        LingbotMapLingboWorldVideo, ///< lingbo_world_frames.mp4 (long model)
-        RAM,                      ///< Official Recognize Anything demo/evaluation data
-        RelateAnything            ///< Relation image and video demonstrations
+        LingbotMapDriveVideo,        ///< drive_frames.mp4 (long-model dataset)
+        LingbotMapLingboWorldVideo,  ///< lingbo_world_frames.mp4 (long model)
+        RAM,            ///< Official Recognize Anything demo/evaluation data
+        RelateAnything  ///< Relation image and video demonstrations
     };
 
     /** Dataset metadata. */

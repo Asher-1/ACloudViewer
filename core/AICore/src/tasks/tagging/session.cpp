@@ -1,6 +1,10 @@
-// Adapted from recognize-anything-ggml cpp_ggml/src/main.cpp (Apache-2.0).
-// Numeric graph, WordPiece tokenization and beam search retain upstream
-// ordering.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "session.hpp"
 
 #include <algorithm>
@@ -37,6 +41,17 @@ using Tensor = ggml_tensor;
 void require(bool condition, const std::string &message) {
     if (!condition) throw std::runtime_error(message);
 }
+// Q8_0 block layout (binary-compatible with ggml's block_q8_0): a per-32-
+// element fp16 scale followed by 32 int8 deltas. Defined locally so the host
+// can dequantize weights at load time without pulling ggml-common.h out of
+// the ggml src tree (same pattern as yolo_graph.cpp).
+constexpr int QK8_0 = 32;
+struct block_q8_0 {
+    ggml_fp16_t d;
+    int8_t qs[QK8_0];
+};
+static_assert(sizeof(block_q8_0) == sizeof(ggml_fp16_t) + QK8_0,
+              "block_q8_0 layout mismatch");
 std::vector<std::string> lines(const std::string &path) {
     std::ifstream stream(path);
     require(stream.good(), "cannot open " + path);
@@ -50,6 +65,7 @@ struct Model {
     bool is_cpu = false;
     bool is_cuda = false;
     bool cuda_f16_compute = false;
+    bool upstream_q8_arithmetic = false;
     bool cpu_floating_qkv = false;
     bool profile = false;
     gguf_context *gguf = nullptr;
@@ -290,8 +306,20 @@ struct Model {
                     caption && source->type == GGML_TYPE_F16 &&
                     (name.rfind(architecture + ".tag_encoder.", 0) == 0 ||
                      name.rfind(architecture + ".text_decoder.", 0) == 0);
+            // CUDA MMQ quantizes activations as well as the GGUF weight.
+            // Dequantizing once at load keeps the weight-only Q8 contract
+            // without re-dequantizing every weight on each matmul call.
+            // RAM++ AUTO keeps its faster native MMQ path unless UPSTREAM
+            // arithmetic is requested.
+            const bool q8_weight_only =
+                    is_cuda && !caption &&
+                    ggml_is_quantized(source->type) &&
+                    (architecture != "ram_plus" || upstream_q8_arithmetic);
             Tensor *dst =
-                    caption_text_weight
+                    q8_weight_only
+                            ? ggml_new_tensor(weights, GGML_TYPE_F16,
+                                              ggml_n_dims(source), source->ne)
+                            : caption_text_weight
                             ? ggml_new_tensor(weights, GGML_TYPE_F32,
                                               ggml_n_dims(source), source->ne)
                             : ggml_dup_tensor(weights, source);
@@ -412,8 +440,32 @@ struct Model {
                                         index->second.size() * sizeof(int32_t));
             } else {
                 Tensor *source = ggml_get_tensor(host, name.c_str());
-                ggml_backend_tensor_set(dst, source->data, 0,
-                                        ggml_nbytes(source));
+                if (dst->type == GGML_TYPE_F16 &&
+                    source->type == GGML_TYPE_Q8_0) {
+                    // One-time host dequantization: a per-32-element fp16
+                    // scale times each int8 delta, rounded once to fp16 —
+                    // the same values the per-call CUDA dequant produced.
+                    const int64_t count = ggml_nelements(source);
+                    require(count % QK8_0 == 0,
+                            "Q8_0 weight is not block-aligned: " + name);
+                    std::vector<ggml_fp16_t> converted(count);
+                    const auto *blocks = static_cast<const block_q8_0 *>(
+                            source->data);
+                    for (int64_t block = 0; block < count / QK8_0; ++block) {
+                        const float scale =
+                                ggml_fp16_to_fp32(blocks[block].d);
+                        for (int j = 0; j < QK8_0; ++j)
+                            converted[block * QK8_0 + j] =
+                                    ggml_fp32_to_fp16(scale *
+                                                      blocks[block].qs[j]);
+                    }
+                    ggml_backend_tensor_set(
+                            dst, converted.data(), 0,
+                            count * sizeof(ggml_fp16_t));
+                } else {
+                    ggml_backend_tensor_set(dst, source->data, 0,
+                                            ggml_nbytes(source));
+                }
             }
         }
         sched = make_scheduler();
@@ -450,19 +502,25 @@ struct InferenceGraph {
         return ggml_reshape_2d(ctx, x, a, b);
     }
     Tensor *multiply(Tensor *weight, Tensor *x) {
+        // Quantized-weight classification must precede any prepared lookup:
+        // RAM++ AUTO keeps its native MMQ path and its stronger accumulation
+        // contract, while its UPSTREAM session and the other architectures
+        // receive F16 weights converted once at load time.
+        const bool quantized_weight = ggml_is_quantized(weight->type);
         const auto prepared = model.prepared_matrices.find(weight);
         if (prepared != model.prepared_matrices.end()) {
             weight = prepared->second;
             if (weight->type == GGML_TYPE_F16 && x->type == GGML_TYPE_F32)
                 x = ggml_cast(ctx, x, GGML_TYPE_F16);
         }
-        // CUDA MMQ quantizes the right-hand activation as well as the GGUF
-        // weight. A floating RHS preserves the weight-only Q8 contract.
-        if (model.is_cuda && ggml_is_quantized(weight->type) &&
-            x->type == GGML_TYPE_F32)
-            x = ggml_cast(ctx, x, GGML_TYPE_F16);
         Tensor *product = ggml_mul_mat(ctx, weight, x);
-        if (!model.caption) ggml_mul_mat_set_prec(product, GGML_PREC_F32);
+        // CUDA's owner-scoped fast path is F16 unless the graph explicitly
+        // requests F32. Only RAM++ quantized weights need that stronger
+        // accumulation contract; floating tagging models retain upstream F16.
+        if (!model.caption &&
+            (!model.is_cuda || (model.architecture == "ram_plus" &&
+                                quantized_weight)))
+            ggml_mul_mat_set_prec(product, GGML_PREC_F32);
         ggml_set_name(product,
                       model.caption ? "ram_caption_matmul" : "ram_tags_matmul");
         return product;
@@ -496,6 +554,9 @@ struct InferenceGraph {
                                  0) &&
                         entry.first.find(".attn.qkv.weight") !=
                                 std::string::npos;
+                // F32 weights also prepare once as F16; quantized weights
+                // are already converted at load time for weight-only CUDA
+                // sessions.
                 const bool cuda_matrix =
                         model.is_cuda && model.cuda_f16_compute &&
                         !model.caption && weight->type == GGML_TYPE_F32;
@@ -1465,6 +1526,11 @@ struct Session::Impl {
         require(options.model_path && *options.model_path,
                 "model path is required");
         const auto safe = [](const char *s) { return std::string(s ? s : ""); };
+        // UPSTREAM arithmetic pins the weight-only Q8 graph on CUDA too;
+        // load converts the quantized weights before upload and the demo
+        // compatibility pass measures exactly that arithmetic.
+        model.upstream_q8_arithmetic =
+                options.cpu_precision == AICORE_TAGGING_CPU_UPSTREAM;
         model.load(options.model_path, options.device ? options.device : "auto",
                    options.threads, options.generate_caption != 0,
                    safe(options.tag_list_path), safe(options.threshold_path),

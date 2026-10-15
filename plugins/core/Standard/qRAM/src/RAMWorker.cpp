@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "RAMWorker.h"
 
 #include <QCryptographicHash>
@@ -6,11 +12,45 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QPainter>
 #include <QThread>
 #include <memory>
 
 #include "ecvAICoreRuntimeHelpers.h"
 #include "ecvAssetIntegrity.h"
+
+namespace {
+// Caption (Tag2Text) and selected tags drawn on a translucent panel; shared by
+// the batch preview, the live video preview and DB publication.
+QImage annotate(const QImage& source, const QJsonObject& json) {
+    QImage image = source.convertToFormat(QImage::Format_RGB32);
+    QStringList lines;
+    const QString caption = json.value("caption").toString().trimmed();
+    if (!caption.isEmpty()) lines << caption;
+    QStringList tags;
+    for (const auto& value : json.value("selected_tags").toArray())
+        tags << value.toString();
+    if (!tags.isEmpty()) lines << tags.join(" | ");
+    if (image.isNull() || lines.isEmpty()) return image;
+
+    QPainter painter(&image);
+    QFont font = painter.font();
+    font.setBold(true);
+    font.setPointSize(qMax(10, image.height() / 38));
+    painter.setFont(font);
+    const QString text = lines.join('\n');
+    const QRect bounds =
+            painter.boundingRect(image.rect().adjusted(16, 16, -16, -16),
+                                 Qt::AlignLeft | Qt::TextWordWrap, text);
+    const QRect panel = bounds.adjusted(-10, -8, 10, 8);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(0, 0, 0, 176));
+    painter.drawRoundedRect(panel, 6, 6);
+    painter.setPen(Qt::white);
+    painter.drawText(bounds, Qt::AlignLeft | Qt::TextWordWrap, text);
+    return image;
+}
+}  // namespace
 
 bool RAMSettings::sameSession(const RAMSettings& b) const {
     return model == b.model && device == b.device && threads == b.threads &&
@@ -173,6 +213,13 @@ void RAMWorker::process(const RAMSettings& settings,
                                  {"context_init_ms", contextInitMs},
                                  {"image_prepare_ms", imagePrepareMs},
                                  {"context_reused", contextReused}}}};
+                QElapsedTimer renderTimer;
+                renderTimer.start();
+                out.annotated = annotate(image, out.json);
+                auto timings = out.json.value("timings").toObject();
+                timings.insert("visualization_ms",
+                               renderTimer.nsecsElapsed() / 1e6);
+                out.json.insert("timings", timings);
             }
         }
     }

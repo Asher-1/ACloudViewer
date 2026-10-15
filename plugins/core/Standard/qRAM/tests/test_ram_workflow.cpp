@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include <QAction>
 #include <QApplication>
 #include <QCheckBox>
@@ -35,6 +41,7 @@
 #include "RAMDialog.h"
 #include "RAMVideoWidget.h"
 #include "RAMWorker.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvTestDataRepository.h"
 
 int main(int argc, char** argv) {
@@ -133,7 +140,7 @@ int main(int argc, char** argv) {
         QFile file(path);
         if (!file.open(QIODevice::ReadOnly)) return QString();
         return QString(QCryptographicHash::hash(file.readAll(),
-                                                 QCryptographicHash::Sha256)
+                                                QCryptographicHash::Sha256)
                                .toHex());
     };
     QTemporaryDir outputs;
@@ -158,8 +165,9 @@ int main(int argc, char** argv) {
                       tabs->tabText(2) == "Options" &&
                       tabs->tabText(3) == "Video / camera",
               "workflow tabs put video after image results and options");
-        check(dialog.findChild<QPushButton*>("ramLoadSampleVideo") != nullptr,
-              "video page exposes official archive sample button");
+        check(dialog.findChild<QPushButton*>("ramLoadSampleVideo") == nullptr,
+              "video page reuses the shared sample button instead of a "
+              "duplicate");
         check(dialog.findChild<QLabel*>("ramQuickStart") != nullptr,
               "dialog exposes quick-start model guidance");
         check(device && device->count() >= 2, "device selector");
@@ -177,7 +185,8 @@ int main(int argc, char** argv) {
         check(sample && run && list && table && tabs && caption,
               "complete workflow controls");
         check(dialog.findChildren<QPlainTextEdit*>().size() == 1,
-              "dialog keeps only the result caption text pane, not a local log pane");
+              "dialog keeps only the result caption text pane, not a local log "
+              "pane");
         if (!model || !device || !sample || !run || !list || !table || !tabs ||
             !caption)
             return 1;
@@ -188,7 +197,8 @@ int main(int argc, char** argv) {
                 aicore_tagging_model_at(model->currentData().toInt());
         check(defaultModel && defaultModel->supports_caption &&
                       caption->isEnabled() && caption->isChecked(),
-              "default Tag2Text model enables caption for one-click sample use");
+              "default Tag2Text model enables caption for one-click sample "
+              "use");
         model->setCurrentIndex(6);
         check(caption->isEnabled(), "Tag2Text enables caption pipeline");
         auto* epsilon =
@@ -218,16 +228,20 @@ int main(int argc, char** argv) {
             check(list->count() == 4 && list->item(0)->text() == demo &&
                           list->currentRow() == 0,
                   "all official demo images are filled with demo1 selected");
-            auto* sampleVideo =
-                    dialog.findChild<QPushButton*>("ramLoadSampleVideo");
             auto* video = dialog.findChild<RAMVideoWidget*>();
-            if (sampleVideo && video && sampleVideo->isEnabled()) {
-                sampleVideo->click();
-                check(tabs->currentIndex() == 3 &&
+            if (video && VideoPlaybackWidget::isAvailable()) {
+                check(tabs->currentIndex() == 0 &&
                               QFileInfo(video->videoFilePath()).isFile() &&
                               sha256File(video->videoFilePath()) ==
-                                      "53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57ce944b202",
-                      "verified official archive video is selected");
+                                      "53c17ba6b53bde9b21660142a1685bfa8ce4a32d"
+                                      "6ab9c0cc08f1c57ce944b202",
+                      "one sample action also selects the verified video");
+                video->setVideoFilePath(QString());
+                tabs->setCurrentIndex(3);
+                sample->click();
+                check(tabs->currentIndex() == 3 && list->count() == 4 &&
+                              QFileInfo(video->videoFilePath()).isFile(),
+                      "sample action on the video page stays there");
                 tabs->setCurrentIndex(0);
             }
         }
@@ -332,10 +346,15 @@ int main(int argc, char** argv) {
                     &dialog, &RAMDialog::addToDbRequested, &app,
                     [&](const RAMResult& result) {
                         check(!result.image.isNull() &&
+                                      result.annotated.size() ==
+                                              result.image.size() &&
+                                      result.annotated !=
+                                              result.image.convertToFormat(
+                                                      QImage::Format_RGB32) &&
                                       result.json["tags"].toArray().size() ==
                                               classCount,
-                              "DB boundary retains typed result and decoded "
-                              "image");
+                              "DB boundary retains typed result, decoded "
+                              "image and tag overlay");
                         ++published;
                     });
             dialog.findChild<QPushButton*>("ramAddToDb")->click();
@@ -433,12 +452,36 @@ int main(int argc, char** argv) {
                                      [&](const QImage&, int) { ++frames; });
                     video->selectVideoFileSource();
                     video->setVideoFilePath(parser.value("video"));
+                    // Only the consumer acknowledgement may paint the
+                    // preview in ConsumerDriven mode.
+                    for (auto* label :
+                         video->findChildren<ecvClickableImageLabel*>())
+                        label->clear();
                     tabs->setCurrentIndex(3);
                     run->click();
                     check(waitFor([&]() {
                               return frames >= 3 && run->isEnabled();
                           }),
                           "consumer-driven video processes three frames");
+                    {
+                        auto labels =
+                                video->findChildren<ecvClickableImageLabel*>();
+                        const bool painted = std::any_of(
+                                labels.cbegin(), labels.cend(),
+                                [](const ecvClickableImageLabel* label) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                                    return !label->pixmap().isNull();
+#else
+                                    return label->pixmap() &&
+                                           !label->pixmap()->isNull();
+#endif
+                                });
+                        check(painted,
+                              "consumer-driven preview paints the annotated "
+                              "frame");
+                        dialog.grab().save(
+                                QDir(outputDir).filePath("ram-video.png"));
+                    }
                     dialog.findChild<QPushButton*>("ramCancel")->click();
                     check(waitFor([&]() { return run->isEnabled(); }),
                           "video stop releases pending inference");
@@ -550,8 +593,8 @@ int main(int argc, char** argv) {
         const bool logitParityRequired =
                 backend.compare("cpu", Qt::CaseInsensitive) == 0;
         bool toleranceValid = false;
-        const double logitTolerance =
-                parser.value("upstream-logit-tolerance").toDouble(&toleranceValid);
+        const double logitTolerance = parser.value("upstream-logit-tolerance")
+                                              .toDouble(&toleranceValid);
         check(toleranceValid && logitTolerance >= 0,
               "upstream logit tolerance is a non-negative number");
         if (!toleranceValid || logitTolerance < 0) return 1;
@@ -594,17 +637,48 @@ int main(int argc, char** argv) {
             QStringList upstream;
         };
         const std::vector<OptionCase> cases = {
-                {"custom-label-space", 2, false, true, -1, 0, 0, 30, {},
+                {"custom-label-space",
+                 2,
+                 false,
+                 true,
+                 -1,
+                 0,
+                 0,
+                 30,
+                 {},
                  {"--tag-list", space + ".tags.txt", "--thresholds",
                   space + ".thresholds.txt", "--label-embedding",
                   space + ".f32"}},
-                {"global-threshold", 2, false, false, .6, 0, 0, 30, {},
+                {"global-threshold",
+                 2,
+                 false,
+                 false,
+                 .6,
+                 0,
+                 0,
+                 30,
+                 {},
                  {"--threshold", "0.6"}},
-                {"tag2text-batch-beams", 8, true, false, -1, 0, 3, 30, {},
+                {"tag2text-batch-beams",
+                 8,
+                 true,
+                 false,
+                 -1,
+                 0,
+                 3,
+                 30,
+                 {},
                  {"--task", "caption", "--beam-batch", "3", "--max-length",
                   "30"}},
-                {"tag2text-specified-sequential", 8, true, false, -1, .05, 1,
-                 20, "dog,grass",
+                {"tag2text-specified-sequential",
+                 8,
+                 true,
+                 false,
+                 -1,
+                 .05,
+                 1,
+                 20,
+                 "dog,grass",
                  {"--task", "caption", "--beam-batch", "1", "--max-length",
                   "20", "--specified-tags", "dog,grass", "--threshold-epsilon",
                   "0.05"}},
@@ -651,9 +725,20 @@ int main(int argc, char** argv) {
                                     aicore_tagging_model_at(
                                             model->itemData(c.model).toInt())
                                             ->filename)),
-                    "--backend", backend, "--threads", "8", "--warmup", "0",
-                    "--repeat", "1", "--manifest", manifest.fileName(),
-                    "--jsonl", jsonl, "--logits-matrix", matrix};
+                    "--backend",
+                    backend,
+                    "--threads",
+                    "8",
+                    "--warmup",
+                    "0",
+                    "--repeat",
+                    "1",
+                    "--manifest",
+                    manifest.fileName(),
+                    "--jsonl",
+                    jsonl,
+                    "--logits-matrix",
+                    matrix};
             args << c.upstream;
             QProcess process;
             process.setProcessEnvironment(env);
@@ -679,9 +764,9 @@ int main(int argc, char** argv) {
             double maxError = classes == tags.size() ? 0 : INFINITY;
             for (int i = 0; i < tags.size() && classes == tags.size(); ++i) {
                 const auto tag = tags[i].toObject();
-                maxError = std::max(
-                        maxError, std::abs(tag["logit"].toDouble() -
-                                           logits[tag["index"].toInt()]));
+                maxError = std::max(maxError,
+                                    std::abs(tag["logit"].toDouble() -
+                                             logits[tag["index"].toInt()]));
             }
             QJsonArray upstreamSelected;
             for (auto value : reference["tags"].toArray())
@@ -727,8 +812,8 @@ int main(int argc, char** argv) {
         const auto names = lines(space + ".tags.txt"),
                    values = lines(space + ".thresholds.txt");
         const auto custom = exported.value("custom-label-space");
-        bool customExact = custom.size() == names.size() &&
-                           names.size() == values.size();
+        bool customExact =
+                custom.size() == names.size() && names.size() == values.size();
         for (int i = 0; customExact && i < custom.size(); ++i) {
             const auto tag = custom[i].toObject();
             customExact = tag["name"].toString() == names[i].trimmed() &&
@@ -749,9 +834,10 @@ int main(int argc, char** argv) {
         bool marginExact = !base.isEmpty() && base.size() == margin.size();
         for (int i = 0; marginExact && i < base.size(); ++i)
             marginExact =
-                    std::abs(margin[i].toObject()["threshold"].toDouble() -
-                             (float(base[i].toObject()["threshold"].toDouble()) -
-                              .05f)) <= 1e-6;
+                    std::abs(
+                            margin[i].toObject()["threshold"].toDouble() -
+                            (float(base[i].toObject()["threshold"].toDouble()) -
+                             .05f)) <= 1e-6;
         check(marginExact, "UI Tag2Text margin lowers every threshold");
         QFile report(out.filePath("ram-ui-options.json"));
         report.open(QIODevice::WriteOnly | QIODevice::Truncate);
@@ -764,11 +850,14 @@ int main(int argc, char** argv) {
                                 {"upstream_logit_tolerance", logitTolerance},
                                 {"upstream_logit_parity_required",
                                  logitParityRequired},
-                                {"upstream_binary", upstream.absoluteFilePath()},
+                                {"upstream_binary",
+                                 upstream.absoluteFilePath()},
                                 {"upstream_binary_sha256", upstreamDigest},
                                 {"candidate_aicore_sha256",
-                                 sha256File(QDir(QCoreApplication::applicationDirPath())
-                                                    .filePath("../libAICore.so"))},
+                                 sha256File(
+                                         QDir(QCoreApplication::
+                                                      applicationDirPath())
+                                                 .filePath("../libAICore.so"))},
                                 {"candidate_plugin_sha256",
                                  sha256File(parser.value("plugin-module"))},
                                 {"label_space", space},
@@ -776,7 +865,8 @@ int main(int argc, char** argv) {
                                  sha256File(space + ".tags.txt")},
                                 {"thresholds_sha256",
                                  sha256File(space + ".thresholds.txt")},
-                                {"embedding_sha256", sha256File(space + ".f32")},
+                                {"embedding_sha256",
+                                 sha256File(space + ".f32")},
                                 {"cases", evidence}})
                         .toJson());
         dialog.close();

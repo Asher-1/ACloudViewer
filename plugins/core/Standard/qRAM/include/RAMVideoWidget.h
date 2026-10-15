@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 #include "VideoPlaybackWidget.h"
 class RAMVideoWidget : public VideoPlaybackWidget {
@@ -7,7 +13,10 @@ public:
     explicit RAMVideoWidget(QWidget* p = nullptr) : VideoPlaybackWidget(p) {
         setFrameAdvanceMode(FrameAdvanceMode::ConsumerDriven);
     }
-    void acknowledge() { completeFrameProcessing(); }
+    // ConsumerDriven mode only paints the image handed back here.
+    void acknowledge(const QImage& image = QImage()) {
+        completeFrameProcessing(image);
+    }
 signals:
     void frameReady(const QImage&, int);
     void invalidated();

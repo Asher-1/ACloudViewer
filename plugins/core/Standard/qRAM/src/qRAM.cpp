@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "qRAM.h"
 
 #include <ecvImage.h>
@@ -10,39 +16,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMainWindow>
-#include <QPainter>
 #include <QSet>
 
 #include "RAMDialog.h"
-namespace {
-QImage annotatedResultImage(const RAMResult& result) {
-    QImage image = result.image.convertToFormat(QImage::Format_RGB32);
-    QString text = result.json.value("caption").toString().trimmed();
-    if (text.isEmpty()) {
-        QStringList tags;
-        for (const auto& value : result.json.value("selected_tags").toArray())
-            tags << value.toString();
-        text = tags.join(" | ");
-    }
-    if (image.isNull() || text.isEmpty()) return image;
-
-    QPainter painter(&image);
-    QFont font = painter.font();
-    font.setBold(true);
-    font.setPointSize(qMax(10, image.height() / 38));
-    painter.setFont(font);
-    const QRect bounds = painter.boundingRect(
-            image.rect().adjusted(16, 16, -16, -16),
-            Qt::AlignLeft | Qt::TextWordWrap, text);
-    const QRect panel = bounds.adjusted(-10, -8, 10, 8);
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(0, 0, 0, 176));
-    painter.drawRoundedRect(panel, 6, 6);
-    painter.setPen(Qt::white);
-    painter.drawText(bounds, Qt::AlignLeft | Qt::TextWordWrap, text);
-    return image;
-}
-}
 qRAM::qRAM(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qRAM/info.json") {
     m_action = new QAction(QIcon(":/CC/plugin/qRAM/images/qRAM.svg"),
@@ -85,36 +61,51 @@ void qRAM::showDialog() {
                 [this](const RAMResult& result) {
                     const QString name = ecvPluginDbNaming::makeUnique(
                             QStringLiteral("RAM_%1_%2_%3")
-                                    .arg(ecvPluginDbNaming::modelTagFromFilename(
-                                                 result.json["model"].toString()),
+                                    .arg(ecvPluginDbNaming::
+                                                 modelTagFromFilename(
+                                                         result.json["model"]
+                                                                 .toString()),
                                          ecvPluginDbNaming::sanitizeSegment(
-                                                 result.source.section('/', -1)),
+                                                 result.source.section('/',
+                                                                       -1)),
                                          ecvPluginDbNaming::deviceTagFromName(
                                                  result.device)),
                             m_app);
-                    auto* image = new ccImage(annotatedResultImage(result), name);
-                    const auto timings = result.json.value("timings").toObject();
+                    auto* image = new ccImage(result.annotated.isNull()
+                                                      ? result.image
+                                                      : result.annotated,
+                                              name);
+                    const auto timings =
+                            result.json.value("timings").toObject();
                     QStringList selectedTags;
                     for (const auto& value :
                          result.json.value("selected_tags").toArray())
                         selectedTags << value.toString();
                     image->setMetaData("RAM", true);
-                    image->setMetaData("Model", result.json["model"].toString());
+                    image->setMetaData("Model",
+                                       result.json["model"].toString());
                     image->setMetaData("Device", result.device);
                     image->setMetaData("Source", result.source);
                     image->setMetaData("Runtime (ms)", result.e2eMs);
-                    image->setMetaData("RAM/Selected tags", selectedTags.join('\n'));
-                    image->setMetaData("RAM/Caption", result.json.value("caption").toString());
-                    image->setMetaData("RAM/Preprocess (ms)",
-                                       timings.value("preprocess_ms").toDouble());
-                    image->setMetaData("RAM/Inference (ms)",
-                                       timings.value("inference_ms").toDouble());
-                    image->setMetaData("RAM/Postprocess (ms)",
-                                       timings.value("postprocess_ms").toDouble());
-                    image->setMetaData("RAM/Context init (ms)",
-                                       timings.value("context_init_ms").toDouble());
-                    image->setMetaData("RAM/Cold start",
-                                       !timings.value("context_reused").toBool());
+                    image->setMetaData("RAM/Selected tags",
+                                       selectedTags.join('\n'));
+                    image->setMetaData("RAM/Caption",
+                                       result.json.value("caption").toString());
+                    image->setMetaData(
+                            "RAM/Preprocess (ms)",
+                            timings.value("preprocess_ms").toDouble());
+                    image->setMetaData(
+                            "RAM/Inference (ms)",
+                            timings.value("inference_ms").toDouble());
+                    image->setMetaData(
+                            "RAM/Postprocess (ms)",
+                            timings.value("postprocess_ms").toDouble());
+                    image->setMetaData(
+                            "RAM/Context init (ms)",
+                            timings.value("context_init_ms").toDouble());
+                    image->setMetaData(
+                            "RAM/Cold start",
+                            !timings.value("context_reused").toBool());
                     image->setMetaData(
                             "RAM/Result",
                             QString::fromUtf8(

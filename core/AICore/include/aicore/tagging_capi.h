@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <stddef.h>
@@ -34,9 +41,11 @@ typedef struct aicore_tagging_options {
     const char* threshold_path;
     const char* label_embedding_path;
     int32_t cpu_precision; /**< AUTO preserves floating QKV activations in
-                            * RAM Q8's first two high-resolution stages;
+                            * RAM Q8's first two high-resolution stages and
+                            * keeps CUDA RAM++ Q8 on its faster MMQ path;
                             * UPSTREAM retains the original CPU activation
-                            * quantization. GPU and caption math are unchanged.
+                            * quantization and the weight-only CUDA Q8 graph.
+                            * Caption math is unchanged.
                             */
 } aicore_tagging_options;
 

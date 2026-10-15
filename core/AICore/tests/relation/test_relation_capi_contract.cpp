@@ -1,10 +1,16 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "aicore/relation_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/relation_capi.h"
 #define REQUIRE(x)                                                      \
     do {                                                                \
         if (!(x)) {                                                     \
@@ -17,12 +23,12 @@ int main() {
     auto r = aicore_relation_default_request();
     REQUIRE(o.struct_size == sizeof(o) && r.struct_size == sizeof(r));
     REQUIRE(o.abi_version == 1 && r.abi_version == 1);
-    REQUIRE(o.strict_f32 == 0 && o.flash_attention == 1 &&
+    REQUIRE(o.strict_f32 == -1 && o.flash_attention == 1 &&
             o.compact_pairs == 1 && o.fused_vocabulary == 1);
     aicore_model_device_info info{};
     info.struct_size = sizeof(info);
     REQUIRE(aicore_model_device_info_query(AICORE_MODEL_RELATION, "cpu",
-                                          &info) == 0);
+                                           &info) == 0);
     REQUIRE(info.capabilities & AICORE_MODEL_CAP_FULL_GRAPH);
     REQUIRE(info.capabilities & AICORE_MODEL_CAP_TASK_CANCEL);
     auto* ctx = aicore_relation_create(nullptr);
@@ -38,6 +44,15 @@ int main() {
     ctx = aicore_relation_create(&o);
     REQUIRE(!aicore_relation_ready(ctx));
     aicore_relation_free(ctx);
+    const int invalidModes[] = {-2, 2};
+    for (int invalidMode : invalidModes) {
+        o = aicore_relation_default_options();
+        o.strict_f32 = invalidMode;
+        ctx = aicore_relation_create(&o);
+        REQUIRE(ctx && !aicore_relation_ready(ctx));
+        REQUIRE(std::strstr(aicore_relation_last_error(ctx), "strict_f32"));
+        aicore_relation_free(ctx);
+    }
     aicore_relation_result* out = reinterpret_cast<aicore_relation_result*>(1);
     REQUIRE(aicore_relation_infer_image(nullptr, nullptr, &r, &out) < 0 &&
             !out);
@@ -50,6 +65,20 @@ int main() {
     REQUIRE(!aicore_relation_ready(nullptr) &&
             aicore_relation_last_error(nullptr));
     REQUIRE(aicore_relation_context_device(nullptr));
+    float calibrationA = 7, calibrationB = 7;
+    REQUIRE(aicore_relation_calibration(nullptr, &calibrationA,
+                                        &calibrationB) < 0);
+    REQUIRE(aicore_relation_object_vocabulary_count() == 497);
+    REQUIRE(std::strcmp(aicore_relation_object_vocabulary_at(0),
+                        "accordion") == 0 &&
+            std::strcmp(aicore_relation_object_vocabulary_at(496),
+                        "zebra") == 0 &&
+            !aicore_relation_object_vocabulary_at(-1) &&
+            !aicore_relation_object_vocabulary_at(497));
+    for (int i = 0; i < 497; ++i) {
+        const char* n = aicore_relation_object_vocabulary_at(i);
+        REQUIRE(n && n[0] && !std::strchr(n, ','));
+    }
     REQUIRE(aicore_relation_model_count() == 13);
     REQUIRE(!aicore_relation_model_at(-1) && !aicore_relation_model_at(13));
     int relations = 0, students = 0;

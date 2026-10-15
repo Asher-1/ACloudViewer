@@ -48,6 +48,9 @@ struct ImageOutput : PairOutput {
     std::vector<Relation> spatial_relations;
     std::vector<Relation> semantic_relations;
     bool decomposed = false;
+    // Per predicate: 1 when it belongs to the spatial stream (corpus type map,
+    // else the head's routing gate). Filled only when `decomposed`.
+    std::vector<std::uint8_t> predicate_spatial;
     // GGML-owned accelerator weight/graph buffers; excludes driver allocations.
     std::size_t backend_buffer_bytes = 0;
 };
@@ -59,7 +62,24 @@ public:
     FullModel(const FullModel &) = delete;
     FullModel & operator=(const FullModel &) = delete;
     ImageOutput infer(const ImageInput & input);
+    bool strict_f32() const;
+    // GGUF ra.calibration_a / ra.calibration_b (identity 1 / 0 if absent).
+    void calibration(float & a, float & b) const;
     const std::vector<std::string> & predicates() const;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+// A context retains the immutable student weights and CLIP vocabulary. Graphs
+// and request-specific BPE results remain scoped to each encoding call.
+class PredicateEncoder {
+public:
+    explicit PredicateEncoder(const ModelOptions & options);
+    ~PredicateEncoder();
+    PredicateEncoder(const PredicateEncoder &) = delete;
+    PredicateEncoder & operator=(const PredicateEncoder &) = delete;
+    std::vector<float> encode(const std::vector<std::string> & texts);
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

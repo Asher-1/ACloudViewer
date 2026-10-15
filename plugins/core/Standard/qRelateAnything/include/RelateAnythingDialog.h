@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 #include <QDialog>
 #include <QTemporaryFile>
@@ -7,6 +13,7 @@
 
 #include "RelateAnythingWorker.h"
 class QComboBox;
+class QFormLayout;
 class QLineEdit;
 class QCheckBox;
 class QSpinBox;
@@ -34,8 +41,10 @@ signals:
 
 private:
     void addFiles();
+    void addInput(const QString& path,
+                  const QImage& image = {},
+                  bool checked = true);
     void useTestData();
-    void loadSampleVideo();
     void run();
     void runNext();
     bool ensureModel(bool runAfter);
@@ -48,6 +57,7 @@ private:
     QString modelPath() const;
     QString relationAssetPath(int index) const;
     QString detectorPath() const;
+    QString detectorTextModelPath() const;
     void log(const QString&);
     void setBusy(bool);
     void saveSettings();
@@ -55,11 +65,34 @@ private:
     void recordResult(const QJsonObject& result);
     void closeEvent(QCloseEvent*) override;
     void showEvent(QShowEvent*) override;
-    QComboBox *m_model = nullptr, *m_device = nullptr, *m_detector = nullptr;
-    QSpinBox *m_threads = nullptr, *m_topk = nullptr, *m_maxBoxes = nullptr;
-    QDoubleSpinBox* m_threshold = nullptr;
-    QCheckBox *m_decompose = nullptr, *m_strict = nullptr;
+    QComboBox *m_model = nullptr, *m_device = nullptr, *m_detector = nullptr,
+              *m_objectSource = nullptr, *m_arithmetic = nullptr;
+    QSpinBox *m_threads = nullptr, *m_maxRelations = nullptr,
+             *m_maxBoxes = nullptr;
+    QDoubleSpinBox *m_threshold = nullptr, *m_relThreshold = nullptr,
+                   *m_spatialThreshold = nullptr, *m_detIou = nullptr,
+                   *m_maxBoxFraction = nullptr;
+    QSpinBox* m_maxSpatial = nullptr;
+    QComboBox *m_profile = nullptr, *m_predicatePreset = nullptr;
+    bool m_applyingPreset = false;
+    // Video tracking / smoothing (upstream render_video.py flags). Thresholds
+    // shared with the image path (relation floors, edge caps) reuse the
+    // widgets above; the rest live in these tables, keyed by objectName.
+    QCheckBox *m_stabilize = nullptr, *m_belief = nullptr,
+              *m_boxScoreWeight = nullptr;
+    double defaultConfidence(const QString& detector, int profile) const;
+    std::vector<std::pair<float RelateTemporal::Params::*, QDoubleSpinBox*>>
+            m_trackD;
+    std::vector<std::pair<int RelateTemporal::Params::*, QSpinBox*>> m_trackI;
+    void buildTrackingUi(QFormLayout* form);
+    RelateTemporal::Params trackingParams() const;
+    void resetTrackingDefaults();
+    void applyProfile(int profile);
+    void markCustomProfile();
+    QCheckBox* m_decompose = nullptr;
     QLineEdit *m_predicates = nullptr, *m_filter = nullptr;
+    QLineEdit *m_regions = nullptr, *m_masks = nullptr, *m_vocabulary = nullptr,
+              *m_vocabularyNames = nullptr, *m_predicateTypes = nullptr;
     QListWidget* m_inputs = nullptr;
     QTableWidget* m_table = nullptr;
     ecvClickableImageLabel* m_preview = nullptr;
@@ -68,8 +101,7 @@ private:
     QTabWidget* m_tabs = nullptr;
     QProgressBar* m_progress = nullptr;
     QPushButton *m_run = nullptr, *m_cancelButton = nullptr,
-                *m_download = nullptr, *m_sample = nullptr,
-                *m_sampleVideo = nullptr;
+                *m_download = nullptr, *m_sample = nullptr;
     RelateAnythingVideoWidget* m_video = nullptr;
     ecvModelDownloader* m_downloader = nullptr;
     QThread m_thread;

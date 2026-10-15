@@ -50,6 +50,7 @@
 #include "aicore/model_catalog_capi.h"
 #include "aicore/pipeline_timing.h"
 #include "aicore/reid_capi.h"
+#include "aicore/relation_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
@@ -59,5 +60,3 @@
 #include "aicore/tagging_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
-
-#include "aicore/relation_capi.h"

@@ -293,6 +293,12 @@ bool filenameIsDepth(const QString& filename);
  *  and rejects an explicit class list. */
 bool isPromptFreeFilename(const QString& filename);
 
+/** The 497 MegaSG / RA-4M object categories RelateAnything's official
+ *  detectors are re-parameterised to, read from the AICore relation task's
+ *  public C ABI. Empty when AICore is not built, so callers hide the
+ *  "RA-4M 497" preset instead of failing. */
+QStringList ra4mVocabulary();
+
 /** Same-scale prompt-free sibling of a non-prompt-free YOLOE GGUF filename
  *  ("yoloe-26s-seg-f16.gguf" -> "yoloe-26s-seg-pf-f16.gguf"), verified
  *  against the catalog. Empty when the input is not a non-pf YOLOE

@@ -1,5 +1,12 @@
-#include "aicore/tagging_capi.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "aicore/relation_capi.h"
+#include "aicore/tagging_capi.h"
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
@@ -111,11 +118,13 @@ void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_relation_model_count(); ++i) {
         const auto* e = aicore_relation_model_at(i);
         if (e->role != AICORE_RELATION_MODEL_TOKENIZER)
-            emitAsset("relation", "relation_models", e->filename, e->download_url, e->size_bytes);
+            emitAsset("relation", "relation_models", e->filename,
+                      e->download_url, e->size_bytes);
     }
     for (int i = 0; i < aicore_tagging_model_count(); ++i) {
         const auto* e = aicore_tagging_model_at(i);
-        emitAsset("tagging", "ram_models", e->filename, e->download_url, e->size_bytes);
+        emitAsset("tagging", "ram_models", e->filename, e->download_url,
+                  e->size_bytes);
     }
 
     for (int i = 0; i < aicore_loma_model_count(); ++i) {

@@ -1,5 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// Public C ABI probe; inputs and truth come from independent pinned assets.
+// ----------------------------------------------------------------------------
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -83,7 +88,8 @@ int main(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--contracts" || a == "--no-strict" ||
-                a == "--decompose" || a == "--decode-only")
+                a == "--auto-arithmetic" || a == "--decompose" ||
+                a == "--decode-only")
                 args[a] = "1";
             else {
                 check(i + 1 < argc, "missing option value");
@@ -115,7 +121,9 @@ int main(int argc, char** argv) {
         o.device = backend.c_str();
         o.threads = std::stoi(option("--threads", "4"));
         o.raw_logits = 1;
-        o.strict_f32 = !args.count("--no-strict");
+        o.strict_f32 = args.count("--auto-arithmetic")
+                               ? -1
+                               : !args.count("--no-strict");
         o.decompose = args.count("--decompose");
         const bool text = args.count("--texts");
         o.text_only = text;
@@ -178,6 +186,57 @@ int main(int argc, char** argv) {
                                     double(std::abs(logits[j] - r->values[j])));
                 }
                 if (i == repeat - 1) {
+                    if (args.count("--contracts")) {
+                        const char* changed[] = {"under", "Σς İ", "new"};
+                        auto encode = [&](aicore_relation_ctx* target) {
+                            aicore_relation_embeddings* raw = nullptr;
+                            check(aicore_relation_encode_text(target, changed,
+                                                              3, &raw) == 0,
+                                  aicore_relation_last_error(target));
+                            return std::unique_ptr<
+                                    aicore_relation_embeddings,
+                                    decltype(&aicore_relation_embeddings_free)>(
+                                    raw, aicore_relation_embeddings_free);
+                        };
+                        auto hot = encode(ctx.get());
+                        std::unique_ptr<aicore_relation_ctx,
+                                        decltype(&aicore_relation_free)>
+                                peer(aicore_relation_create(&o),
+                                     aicore_relation_free);
+                        check(aicore_relation_ready(peer.get()),
+                              aicore_relation_last_error(peer.get()));
+                        auto cold = encode(peer.get());
+                        peer.reset();
+                        aicore_relation_shutdown();
+                        auto again = encode(ctx.get());
+                        check(hot->count == 3 && cold->count == 3 &&
+                                      again->count == 3,
+                              "changed text request dimensions");
+                        for (size_t j = 0; j < 3 * 512; ++j) {
+                            check(std::abs(hot->values[j] - cold->values[j]) <
+                                          .0002f,
+                                  "resident text matches independent context");
+                            check(hot->values[j] == again->values[j],
+                                  "shutdown preserves resident text session");
+                        }
+                        for (size_t j = 0; j < n; ++j)
+                            check(r->values[j] == logits[j],
+                                  "later text requests preserve owned result");
+                        aicore_relation_embeddings* invalid =
+                                reinterpret_cast<aicore_relation_embeddings*>(
+                                        1);
+                        check(aicore_relation_encode_text(ctx.get(), nullptr, 1,
+                                                          &invalid) < 0 &&
+                                      !invalid,
+                              "invalid text clears output");
+                        aicore_pipeline_timings cleared{};
+                        check(aicore_relation_last_pipeline_timings(
+                                      ctx.get(), &cleared) < 0,
+                              "invalid text clears timings");
+                        auto recovered = encode(ctx.get());
+                        check(recovered->values[0] == hot->values[0],
+                              "resident text recovers after invalid request");
+                    }
                     ctx.reset();
                     check(std::isfinite(r->values[0]), "text result lifetime");
                     std::ofstream f(option("--output"), std::ios::binary);

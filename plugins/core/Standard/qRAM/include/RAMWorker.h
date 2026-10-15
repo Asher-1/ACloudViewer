@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 #include <QImage>
 #include <QJsonObject>
@@ -20,6 +26,7 @@ struct RAMResult {
     quint64 generation = 0;
     QString source, error, device;
     QImage image;
+    QImage annotated;  // image with caption / selected-tag overlay
     QJsonObject json;
     double e2eMs = 0;
 };

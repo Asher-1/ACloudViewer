@@ -20,12 +20,12 @@ The official sample archive is
 [`ram_datasets.zip`](https://huggingface.co/Asher-1/RAM_GGUF/blob/main/ram_datasets.zip),
 21,529,289 bytes, SHA-256
 `ee3060f41247895a7140162f8e217a51bf2dd46df8e16679157b8086f7490177`.
-`ecvTestDataRepository::Dataset::RAM` owns download and extraction. The **Use test
+`ecvTestDataRepository::Dataset::RAM` owns download and extraction. The **Try sample
 data** action chooses `ram_datasets/demo/demo1.jpg`; that file is 5,701,095 bytes,
 SHA-256 `1b2906f4058a69936df49cb6156ec4cd117a286b420e1eb14764033bf8f3c05f`. The
 archive also provides `demo/ram_demo1_to_4.avi`, 262,706 bytes, SHA-256
-`53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57ce944b202`, used by
-**Load sample video**.
+`53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57ce944b202`, which the
+same **Try sample data** action selects for the Video / camera tab.
 Its encoded content is PNG despite the upstream `.jpg` filename, so image I/O
 detects the content. Cached sample corruption is repaired from the verified ZIP.
 

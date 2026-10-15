@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Links only the pinned upstream static library, never AICore.
 #include <json/json.h>
 
@@ -11,16 +18,19 @@
 #include "relateanything/full_model.hpp"
 int main(int argc, char** argv) {
     try {
-        if (argc != 10)
+        if (argc != 10 && argc != 11)
             throw std::runtime_error(
                     "model tokenizer texts backend threads warmup repeats "
-                    "output strict");
+                    "output strict [token-output]");
         relateanything::ModelOptions o;
         o.text_student = argv[1];
         o.tokenizer = argv[2];
         o.backend = argv[4];
         o.threads = std::stoi(argv[5]);
-        o.strict_f32 = std::stoi(argv[9]);
+        const int arithmetic = std::stoi(argv[9]);
+        o.strict_f32 = arithmetic > 0;
+        o.strict_f32_auto = arithmetic < 0;
+        if (argc == 11) o.token_output = argv[10];
         Json::Value json;
         std::ifstream input(argv[3]);
         input >> json;

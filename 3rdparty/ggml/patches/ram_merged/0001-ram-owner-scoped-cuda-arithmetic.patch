@@ -11,18 +11,21 @@ diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
                              (cc >= GGML_CUDA_CC_AMPERE &&
                               !(dst->name && strncmp(dst->name, "sam3d_", 6) == 0)) ||
                              GGML_CUDA_CC_IS_RDNA4(cc) || GGML_CUDA_CC_IS_CDNA(cc);
-@@ -1704,6 +1705,10 @@
+@@ -1704,6 +1705,13 @@
              GGML_LOG_WARN("%s: unknown value for GGML_CUDA_CUBLAS_COMPUTE_TYPE: %s", __func__, env_cpp.c_str());
          }
      }
 +
-+    // Match the upstream arithmetic only for this graph owner.
-+    if (strncmp(dst->name, "ram_tags_", 9) == 0) compute_type = GGML_TYPE_F16;
++    // Match the upstream arithmetic only for this graph owner. Explicit
++    // graph-level F32 precision remains authoritative for sensitive nodes.
++    if (strncmp(dst->name, "ram_tags_", 9) == 0 && dst->op_params[0] != GGML_PREC_F32) {
++        compute_type = GGML_TYPE_F16;
++    }
 +    if (strncmp(dst->name, "ram_caption_", 12) == 0) compute_type = GGML_TYPE_F32;
 
      switch (compute_type) {
          case GGML_TYPE_F32:
-@@ -5395,7 +5400,8 @@
+@@ -5395,7 +5403,8 @@
                      return false; // TODO this could in principle be implemented though currently there is no use case.
                  }
                  if (b->type == GGML_TYPE_F16 && a->type != GGML_TYPE_F16) {

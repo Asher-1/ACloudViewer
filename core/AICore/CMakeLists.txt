@@ -239,13 +239,6 @@ target_include_directories(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-# RelateAnything's official CLIP tokenizer performs Unicode NFC normalization,
-# root-locale lowercasing, and Unicode regular-expression matching. Those are
-# part of the model contract, so ICU is a real runtime dependency rather than
-# an optional test convenience. FindICU's imported targets keep this portable
-# across the supported Linux, macOS, and Windows toolchains.
-find_package(ICU REQUIRED COMPONENTS uc i18n)
-target_link_libraries(${PROJECT_NAME} PRIVATE ICU::uc ICU::i18n)
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer 3rdparty_jsoncpp)
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
@@ -626,10 +619,6 @@ if(AICore_BUILD_TESTS)
         )
         add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
         target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
-        # AICore_test is a static white-box archive containing full_model.cpp;
-        # keep its direct ICU dependency explicit so every test executable gets
-        # the same tokenizer implementation as the shared AICore target.
-        target_link_libraries(AICore_test PRIVATE ICU::uc ICU::i18n)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})

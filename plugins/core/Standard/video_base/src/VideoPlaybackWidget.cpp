@@ -1510,14 +1510,10 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                 // any click is needed — a missing Enter line means events
                 // never reach the preview label at all (occlusion or
                 // filter installation), not a gesture-logic issue.
-                emit logMessage(
-                        QStringLiteral("[preview] mouse entered (events "
-                                       "reach the preview filter)"));
                 break;
             case QEvent::MouseButtonPress:
                 // Gesture-chain probe: proves the mouse event reaches the
                 // base filter and whether the subclass consumed it.
-                emit logMessage(QStringLiteral("[preview] press forwarded"));
                 if (onPreviewMousePress(static_cast<QMouseEvent*>(event))) {
                     return true;
                 }
@@ -1528,7 +1524,6 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                 }
                 break;
             case QEvent::MouseButtonRelease:
-                emit logMessage(QStringLiteral("[preview] release forwarded"));
                 if (onPreviewMouseRelease(static_cast<QMouseEvent*>(event))) {
                     return true;
                 }

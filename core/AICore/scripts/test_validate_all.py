@@ -96,6 +96,39 @@ class ValidateAllTests(unittest.TestCase):
         self.assertIn("latency_over_upstream", failures[0])
         self.assertIn("pytorch_caption_exact", failures[1])
 
+    def test_ram_new_arithmetic_contracts_are_candidate_only_after_normalization(self):
+        manifest = json.loads(
+            MODULE_PATH.with_name("validation_manifest.json").read_text())
+        expected = {
+            "ram-upstream-datasets": {
+                "json0/arithmetic_probability_max_error",
+                "json0/arithmetic_probability_mae",
+                "json0/latency_over_upstream",
+            },
+            "ram-upstream-caption": {"json0/latency_over_upstream"},
+        }
+        for scenario_id, metrics_to_check in expected.items():
+            scenario = next(row for row in manifest["scenarios"]
+                            if row["id"] == scenario_id)
+            gate = VALIDATE_ALL.normalize_accuracy_gate(scenario)
+            checks = {check["metric"]: check for check in gate["checks"]}
+            for metric in metrics_to_check:
+                check = checks[metric]
+                self.assertTrue(check.get("candidate_only"),
+                                f"{scenario_id}: {metric}")
+                isolated_gate = {"require_metrics": [metric], "checks": [check]}
+                expected_value = float(check["value"])
+                failing_value = (expected_value + 1.0 if check["op"] in ("<", "<=")
+                                 else expected_value - 1.0)
+                values = {metric: failing_value}
+                self.assertEqual(
+                    VALIDATE_ALL.evaluate_accuracy_gate(
+                        isolated_gate, values, backend="cuda", baseline=True), [])
+                failures = VALIDATE_ALL.evaluate_accuracy_gate(
+                    isolated_gate, values, backend="cuda")
+                self.assertTrue(any(metric in failure for failure in failures),
+                                f"{scenario_id}: {metric}")
+
     def test_quantization_alignment_metrics_reach_the_accuracy_gate(self):
         report = {
             "pytorch_probability_max_error": 0.06,
@@ -196,6 +229,23 @@ class ValidateAllTests(unittest.TestCase):
         failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
         self.assertEqual(len(failures), 1)
         self.assertIn("new_contract_error", failures[0])
+
+    def test_scenario_selection_narrows_without_mutating_manifest(self):
+        manifest = {
+            "tasks": {"tagging": {}},
+            "scenarios": [
+                {"id": "demo", "task": "tagging"},
+                {"id": "datasets", "task": "tagging"},
+                {"id": "caption", "task": "tagging"},
+            ],
+        }
+        narrowed = VALIDATE_ALL.select_scenarios(
+            manifest, "datasets,caption")
+        self.assertEqual([row["id"] for row in narrowed["scenarios"]],
+                         ["datasets", "caption"])
+        self.assertEqual(len(manifest["scenarios"]), 3)
+        with self.assertRaisesRegex(ValueError, "unknown scenarios: missing"):
+            VALIDATE_ALL.select_scenarios(manifest, "missing")
 
     def test_cpu_accuracy_improvement_cannot_hide_failed_upstream_compatibility(self):
         manifest = json.loads(MODULE_PATH.with_name("validation_manifest.json").read_text())
@@ -439,6 +489,38 @@ class ValidateAllTests(unittest.TestCase):
             with self.assertRaises(SystemExit) as error:
                 VALIDATE_ALL.parse_args()
         self.assertEqual(error.exception.code, 2)
+
+    def test_gpu_idle_timeout_defaults_and_positive_validation(self):
+        with mock.patch.object(sys, "argv", ["validate_all.py"]):
+            args = VALIDATE_ALL.parse_args()
+        self.assertEqual(args.gpu_idle_timeout, 60.0)
+        with mock.patch.object(sys, "argv", ["validate_all.py",
+                                             "--gpu-idle-timeout", "900"]):
+            args = VALIDATE_ALL.parse_args()
+        self.assertEqual(args.gpu_idle_timeout, 900.0)
+        with mock.patch.object(sys, "argv", ["validate_all.py",
+                                             "--gpu-idle-timeout", "0"]):
+            with self.assertRaises(SystemExit) as error:
+                VALIDATE_ALL.parse_args()
+        self.assertEqual(error.exception.code, 2)
+
+    def test_gpu_idle_timeout_reaches_dataset_and_caption_probe_args(self):
+        """The shared-host tolerance reaches only the probes that accept it:
+        the two upstream dataset/caption scenarios declare the placeholder,
+        while the demo1 wrapper forwards unknown arguments it does not
+        understand and therefore must not declare it."""
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        declared = {scenario["id"]: scenario["args"]
+                    for scenario in manifest["scenarios"]
+                    if scenario["id"].startswith("ram-upstream-")}
+        self.assertIn("--gpu-idle-timeout", declared["ram-upstream-datasets"])
+        self.assertIn("--gpu-idle-timeout", declared["ram-upstream-caption"])
+        self.assertNotIn("--gpu-idle-timeout", declared["ram-upstream-demo1"])
+        self.assertEqual(
+            VALIDATE_ALL.resolve_token("{gpu_idle_timeout}",
+                                       {"gpu_idle_timeout": "600"},
+                                       Path("/build")),
+            "600")
 
     def test_release_profile_rejects_allow_incomplete(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -701,6 +783,7 @@ class ValidateAllTests(unittest.TestCase):
                 face_image="face", sam_image="sam", yolo_image="yolo",
                 threads=1, warmup_runs=1,
                 inference_runs=1, trellis_steps=1,
+                gpu_idle_timeout=60.0,
             )
             specs, diagnostics = VALIDATE_ALL.expand_specs(
                 manifest, args, root / "reports")
@@ -723,7 +806,7 @@ class ValidateAllTests(unittest.TestCase):
                 tasks="", assets=assets, repo=root, build=root / "build",
                 backend="cpu", image="image", image2="image2", face_image="face",
                 sam_image="sam", yolo_image="yolo", threads=1, warmup_runs=1,
-                inference_runs=1, trellis_steps=1)
+                inference_runs=1, trellis_steps=1, gpu_idle_timeout=60.0)
             specs, _ = VALIDATE_ALL.expand_specs(manifest, args, root / "reports")
             self.assertEqual(len(specs), 2)
             self.assertNotEqual(specs[0].report_path, specs[1].report_path)
@@ -767,7 +850,7 @@ class ValidateAllTests(unittest.TestCase):
             backend="cpu", image="image", image2="image2",
             face_image="face", sam_image="sam", yolo_image="yolo",
             threads=1, warmup_runs=1, inference_runs=1, trellis_steps=1,
-            full=full)
+            gpu_idle_timeout=60.0, full=full)
 
     def test_light_tier_runs_only_declared_light_subset(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1121,7 +1204,8 @@ class ValidateAllTests(unittest.TestCase):
             build=MODULE_PATH.parents[3] / "build_app", backend="cuda",
             image="image", image2="image2", face_image="face",
             sam_image="sam", yolo_image="yolo", threads=1,
-            warmup_runs=1, inference_runs=1, trellis_steps=1, full=False)
+            warmup_runs=1, inference_runs=1, trellis_steps=1,
+            gpu_idle_timeout=60.0, full=False)
         specs, _ = VALIDATE_ALL.expand_specs(
             manifest, args, args.build / "Testing")
         matrix = [spec for spec in specs if spec.scenario_id == "yolo"]
@@ -1169,6 +1253,7 @@ class ValidateAllTests(unittest.TestCase):
                 face_image="face", sam_image="sam", yolo_image="yolo",
                 threads=1, warmup_runs=1,
                 inference_runs=1, trellis_steps=1,
+                gpu_idle_timeout=60.0,
             )
             specs, diagnostics = VALIDATE_ALL.expand_specs(
                 manifest, args, root / "reports")
@@ -1191,6 +1276,7 @@ class ValidateAllTests(unittest.TestCase):
             image="image", image2="image2", face_image="face",
             sam_image="sam", yolo_image="yolo", threads=1,
             warmup_runs=1, inference_runs=1, trellis_steps=1,
+            gpu_idle_timeout=60.0,
         )
         specs, diagnostics = VALIDATE_ALL.expand_specs(
             manifest, args, args.build / "Testing")

@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 #include <QDialog>
 #include <QTemporaryFile>
@@ -35,7 +41,7 @@ signals:
 private:
     void addFiles();
     void useTestData();
-    void loadSampleVideo();
+    bool loadSampleVideo();
     void run();
     void runNext();
     bool ensureModel(bool runAfter);
@@ -70,8 +76,7 @@ private:
     QTabWidget* m_tabs = nullptr;
     QProgressBar* m_progress = nullptr;
     QPushButton *m_run = nullptr, *m_cancelButton = nullptr,
-                *m_download = nullptr, *m_sample = nullptr,
-                *m_sampleVideo = nullptr;
+                *m_download = nullptr, *m_sample = nullptr;
     RAMVideoWidget* m_video = nullptr;
     ecvModelDownloader* m_downloader = nullptr;
     QThread m_thread;

@@ -1587,7 +1587,9 @@
     "--warmup",
     "{warmup_runs}",
     "--repeat",
-    "{inference_runs}"
+    "{inference_runs}",
+    "--gpu-idle-timeout",
+    "{gpu_idle_timeout}"
    ],
    "env": {},
    "accuracy_gate": "All 50 pinned frames and official label spaces: CPU explicit upstream compatibility arithmetic preserves all-class logits/probabilities and adds no per-class probability, F1 or annotation error. Every backend independently meets original-checkpoint PyTorch cross F1 >= 0.99, probability MAE <= 0.002 and mAP/CP/CR deltas <= 0.01, plus the declared full-class arithmetic reference. Complete AUTO pipeline latency stays within 5 percent of the original upstream on every dataset. GPU reports retain upstream differences as observational metrics without claiming a nonexistent compatibility mode.",
@@ -1656,12 +1658,14 @@
      {
       "metric": "json0/arithmetic_probability_max_error",
       "op": "<=",
-      "value": 0.02
+      "value": 0.02,
+      "candidate_only": true
      },
      {
       "metric": "json0/arithmetic_probability_mae",
       "op": "<=",
-      "value": 0.002
+      "value": 0.002,
+      "candidate_only": true
      },
      {
       "metric": "json0/pytorch_mAP_delta",
@@ -1681,7 +1685,8 @@
      {
       "metric": "json0/latency_over_upstream",
       "op": "<=",
-      "value": 1.05
+      "value": 1.05,
+      "candidate_only": true
      }
     ],
     "require_metrics": [
@@ -1739,7 +1744,9 @@
     "--warmup",
     "{warmup_runs}",
     "--repeat",
-    "{inference_runs}"
+    "{inference_runs}",
+    "--gpu-idle-timeout",
+    "{gpu_idle_timeout}"
    ],
    "env": {},
    "accuracy_gate": "Tag2Text captions on all 50 frames: exact and word F1 agreement against the official PyTorch decoder and the same GGUF upstream decoder; complete pipeline latency within 5 percent of upstream.",
@@ -1770,7 +1777,8 @@
      {
       "metric": "json0/latency_over_upstream",
       "op": "<=",
-      "value": 1.05
+      "value": 1.05,
+      "candidate_only": true
      }
     ],
     "require_metrics": [
@@ -3641,12 +3649,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -3687,6 +3703,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -3707,7 +3753,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -3741,12 +3793,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -3787,6 +3847,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -3807,7 +3897,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -3841,12 +3937,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -3887,6 +3991,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -3907,7 +4041,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -3941,12 +4081,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -3987,6 +4135,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4007,7 +4185,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4041,12 +4225,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4087,6 +4279,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4107,7 +4329,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4141,12 +4369,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4187,6 +4423,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4207,7 +4473,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4241,12 +4513,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4287,6 +4567,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4307,7 +4617,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4341,12 +4657,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4387,6 +4711,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4407,7 +4761,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4441,12 +4801,20 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--contracts"
+    "--contracts",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4487,6 +4855,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4507,7 +4905,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4540,6 +4944,7 @@
     "--tokenizer",
     "{assets}/relation_models/relateanything-tokenizer.json",
     "--text",
+    "--contracts",
     "--output",
     "{scenario_report}",
     "--warmup",
@@ -4547,7 +4952,9 @@
     "--repeat",
     "{inference_runs}",
     "--threads",
-    "{threads}"
+    "{threads}",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation"
    ],
    "accuracy_gate": "Every published text student encodes English, Unicode, entity, truncated and empty prompts into 512 normalized values; compare the pinned native CLIP encoder and official student checkpoint.",
    "accuracy": {
@@ -4568,6 +4975,11 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
      }
     ],
     "require_metrics": [
@@ -4580,7 +4992,8 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4618,12 +5031,20 @@
     "--student",
     "{assets}/relation_models/relsgg-vitb16-text-student-f32.gguf",
     "--tokenizer",
-    "{assets}/relation_models/relateanything-tokenizer.json"
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vitb16",
+    "reference_id": "relate-custom-predicates-vitb16-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4669,6 +5090,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4690,7 +5141,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4732,12 +5189,20 @@
     "--student",
     "{assets}/relation_models/relsgg-vits16-text-student-f32.gguf",
     "--tokenizer",
-    "{assets}/relation_models/relateanything-tokenizer.json"
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vits16",
+    "reference_id": "relate-custom-predicates-vits16-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4783,6 +5248,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4804,7 +5299,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4846,12 +5347,20 @@
     "--student",
     "{assets}/relation_models/relsgg-vits16plus-text-student-f32.gguf",
     "--tokenizer",
-    "{assets}/relation_models/relateanything-tokenizer.json"
+    "{assets}/relation_models/relateanything-tokenizer.json",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vits16plus",
+    "reference_id": "relate-custom-predicates-vits16plus-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -4897,6 +5406,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -4918,7 +5457,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -4957,12 +5502,20 @@
     "--threads",
     "{threads}",
     "--regions",
-    "--decompose"
+    "--decompose",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency.",
+   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-masks-scores-decompose",
+    "reference_id": "relate-masks-scores-decompose-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5008,6 +5561,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5029,7 +5612,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5064,12 +5653,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5110,6 +5707,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5130,7 +5757,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5165,12 +5798,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5211,6 +5852,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5231,7 +5902,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5266,12 +5943,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5312,6 +5997,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5332,7 +6047,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5367,12 +6088,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5413,6 +6142,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5433,7 +6192,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5468,12 +6233,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5514,6 +6287,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5534,7 +6337,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5569,12 +6378,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5615,6 +6432,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5635,7 +6482,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5670,12 +6523,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.01",
+    "--official-top1-limit",
+    "0.99",
+    "--official-jaccard-limit",
+    "0.99"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5716,6 +6577,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.01
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.99
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5736,7 +6627,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5771,12 +6668,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.005",
+    "--official-top1-limit",
+    "0.995",
+    "--official-jaccard-limit",
+    "0.995"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5817,6 +6722,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.005
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.995
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5837,7 +6772,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5872,12 +6813,20 @@
     "--threads",
     "{threads}",
     "--contracts",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Three independent catalog sources, raw predicate and pair logits, complete native pair set, top predicate, and original-checkpoint error envelope. The host must introduce no framework error beyond the same GGUF native upstream. Forward latency stays within 5 percent of bracketed upstream on the same host and options. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-three-source-original-checkpoint",
+    "reference_id": "relate-three-source-original-checkpoint-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -5918,6 +6867,36 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -5938,7 +6917,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -5971,6 +6956,7 @@
     "--tokenizer",
     "{assets}/relation_models/relateanything-tokenizer.json",
     "--text",
+    "--contracts",
     "--output",
     "{scenario_report}",
     "--warmup",
@@ -5979,9 +6965,11 @@
     "{inference_runs}",
     "--threads",
     "{threads}",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation"
    ],
-   "accuracy_gate": "Every published text student encodes English, Unicode, entity, truncated and empty prompts into 512 normalized values; compare the pinned native CLIP encoder and official student checkpoint. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Every published text student encodes English, Unicode, entity, truncated and empty prompts into 512 normalized values; compare the pinned native CLIP encoder and official student checkpoint. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
     "reference_id": "relate-clip-student-eight-prompts",
@@ -6000,6 +6988,11 @@
       "metric": "performance_ratio",
       "op": "<=",
       "value": 1.05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
      }
     ],
     "require_metrics": [
@@ -6012,7 +7005,8 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -6051,12 +7045,20 @@
     "{assets}/relation_models/relsgg-vitb16-text-student-f32.gguf",
     "--tokenizer",
     "{assets}/relation_models/relateanything-tokenizer.json",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vitb16",
+    "reference_id": "relate-custom-predicates-vitb16-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -6102,6 +7104,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -6123,7 +7155,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -6166,12 +7204,20 @@
     "{assets}/relation_models/relsgg-vits16-text-student-f32.gguf",
     "--tokenizer",
     "{assets}/relation_models/relateanything-tokenizer.json",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vits16",
+    "reference_id": "relate-custom-predicates-vits16-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -6217,6 +7263,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -6238,7 +7314,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -6281,12 +7363,20 @@
     "{assets}/relation_models/relsgg-vits16plus-text-student-f32.gguf",
     "--tokenizer",
     "{assets}/relation_models/relateanything-tokenizer.json",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Custom predicates from the matching native text student preserve upstream raw logits, exact typed edges and the official PyTorch error envelope; bracketed native forward latency within 5 percent. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-custom-predicates-vits16plus",
+    "reference_id": "relate-custom-predicates-vits16plus-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -6332,6 +7422,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -6353,7 +7473,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",
@@ -6393,12 +7519,20 @@
     "{threads}",
     "--regions",
     "--decompose",
-    "--no-strict"
+    "--auto-arithmetic",
+    "--reference-cache",
+    "{build}/Testing/framework-references/relation",
+    "--official-rmse-limit",
+    "0.05",
+    "--official-top1-limit",
+    "0.97",
+    "--official-jaccard-limit",
+    "0.98"
    ],
-   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency. Also verifies the upstream default (non-strict) arithmetic exposed by the plugin.",
+   "accuracy_gate": "Binary masks and detector scores with spatial/semantic decomposition preserve upstream raw tensors and exact typed stream edges, within the original-checkpoint error envelope and 5 percent forward latency. Also verifies the upstream automatic arithmetic (CUDA F32 defaults to strict) exposed by the plugin. Absolute checkpoint bounds use pooled logits/pairs for the three selected catalog inputs, with storage-specific G1 allowances and per-output added error <= 1e-5; this is not the upstream 50-image benchmark.",
    "accuracy": {
     "reference": "official_pytorch_and_upstream_ggml",
-    "reference_id": "relate-masks-scores-decompose",
+    "reference_id": "relate-masks-scores-decompose-absolute-v2",
     "checks": [
      {
       "metric": "native_max_diff",
@@ -6444,6 +7578,36 @@
       "metric": "typed_score_max_diff",
       "op": "<=",
       "value": 1e-05
+     },
+     {
+      "metric": "official_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "official_logits_rmse",
+      "op": "<=",
+      "value": 0.05
+     },
+     {
+      "metric": "official_predicate_top1_agreement",
+      "op": ">=",
+      "value": 0.97
+     },
+     {
+      "metric": "official_pairs_jaccard",
+      "op": ">=",
+      "value": 0.98
+     },
+     {
+      "metric": "official_pair_output_error_excess",
+      "op": "<=",
+      "value": 1e-05
+     },
+     {
+      "metric": "native_pair_set_jaccard",
+      "op": "==",
+      "value": 1
      }
     ],
     "require_metrics": [
@@ -6465,7 +7629,13 @@
      "upstream_p50_ms",
      "upstream_p95_ms",
      "performance_p50_ratio",
-     "performance_p95_ratio"
+     "performance_p95_ratio",
+     "official_output_error_excess",
+     "official_logits_rmse",
+     "official_predicate_top1_agreement",
+     "official_pairs_jaccard",
+     "official_pair_output_error_excess",
+     "native_pair_set_jaccard"
     ]
    },
    "fingerprint_policy": "stability_only",

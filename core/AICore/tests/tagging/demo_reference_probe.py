@@ -150,6 +150,12 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
     automatic_ram_q8 = (args.backend.lower() == "cpu" and family(model) == "ram"
                         and model.name.endswith("-q8_0.gguf")
                         and args.cpu_precision == 0)
+    # CUDA Q8 AUTO runs owner-scoped MMQ arithmetic whose raw logits deviate
+    # from the weight-only PyTorch reference. The explicit UPSTREAM pass
+    # measures the compatibility contract, mirroring the CPU RAM Q8 flow.
+    cuda_q8_compatibility = (args.backend.lower() == "cuda"
+                             and model.name.endswith("-q8_0.gguf")
+                             and args.cpu_precision == 0)
     reference_script = Path(__file__).with_name("cpu_precision_reference.py")
     arithmetic_key = sha256(reference_script)
     automatic = cache / (model.name[:-5] + ".cpu-auto-pytorch.f32")
@@ -182,7 +188,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
     command.extend(("--reference-dir", str(cache)))
     result = subprocess.run(command, text=True, capture_output=True)
     sys.stderr.write(result.stderr)
-    if result.returncode == 0 and automatic_ram_q8:
+    if result.returncode == 0 and (automatic_ram_q8 or cuda_q8_compatibility):
         report = json.loads(result.stdout.strip().splitlines()[-1])
         # Exact upstream arithmetic remains a separate, measured compatibility
         # contract. Its raw-logit bound is not transferred to AUTO arithmetic.
@@ -194,7 +200,9 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
         old = subprocess.run(compatibility, text=True, capture_output=True, check=True)
         compatibility_report = json.loads(old.stdout.strip().splitlines()[-1])
         report["compatibility_accuracy_max_diff"] = compatibility_report["accuracy_max_diff"]
-        report["compatibility_raw_logit_reference"] = "upstream_cpu_q8"
+        report["compatibility_raw_logit_reference"] = (
+            "upstream_cpu_q8" if automatic_ram_q8
+            else "upstream_weight_only_pytorch")
         sys.stdout.write(json.dumps(report) + "\n")
     elif result.returncode == 0:
         report = json.loads(result.stdout.strip().splitlines()[-1])

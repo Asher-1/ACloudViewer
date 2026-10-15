@@ -1,11 +1,16 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "relateanything/full_model.hpp"
 
 #include <json/json.h>
-#include <unicode/locid.h>
-#include <unicode/normalizer2.h>
-#include <unicode/regex.h>
-#include <unicode/unistr.h>
 
+#include <QRegularExpression>
+#include <QString>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -100,6 +105,16 @@ struct TensorLoader {
             for (int64_t i = 0; i < gguf_get_n_tensors(gguf); ++i) {
                 const char *emitted = gguf_get_tensor_name(gguf, i);
                 tensors.emplace(emitted, ggml_get_tensor(weights_ctx, emitted));
+            }
+            if (options.strict_f32_auto) {
+                // Match upstream: precise CUDA arithmetic for all-F32 matrices;
+                // F16/Q8 models retain the optimized default arithmetic.
+                bool f32_matrices = true;
+                for (const auto &[name, tensor] : tensors)
+                    if (ggml_n_dims(tensor) >= 2 &&
+                        tensor->type != GGML_TYPE_F32)
+                        f32_matrices = false;
+                options.strict_f32 = options.backend == "cuda" && f32_matrices;
             }
             weights_buffer = ggml_backend_alloc_ctx_tensors(
                     weights_ctx, backend->accelerator);
@@ -615,7 +630,7 @@ struct FullModel::Impl : TensorLoader {
                                : nullptr;
     }
 
-    explicit Impl(const ModelOptions &options) : TensorLoader(options) {
+    explicit Impl(const ModelOptions &opts) : TensorLoader(opts) {
         c = meta_u32("ra.hidden_size");
         d = meta_u32("ra.relation_dim");
         depth = meta_u32("ra.depth");
@@ -920,10 +935,10 @@ struct FullModel::Impl : TensorLoader {
     // and value-product ops. The additive mask is broadcast over queries
     // and heads; packed k/v projections remain contiguous.
     ggml_tensor *strict_cross_attention(ggml_context *ctx,
-                                      ggml_tensor *x,
-                                      ggml_tensor *memory,
-                                      const std::string &p,
-                                      ggml_tensor *mask) {
+                                        ggml_tensor *x,
+                                        ggml_tensor *memory,
+                                        const std::string &p,
+                                        ggml_tensor *mask) {
         const int64_t dim = x->ne[0], nheads = 8, dh = dim / nheads;
         auto *w = t("ra." + p + ".in_proj_weight");
         auto *b = t("ra." + p + ".in_proj_bias");
@@ -938,9 +953,11 @@ struct FullModel::Impl : TensorLoader {
         auto *v = ggml_cont(ctx, ggml_view_2d(ctx, kv, dim, memory->ne[1],
                                               kv->nb[1], dim * sizeof(float)));
         const auto heads = [&](ggml_tensor *z) {
-            return ggml_cont(ctx, ggml_permute(
-                    ctx, ggml_reshape_3d(ctx, z, dh, nheads, z->ne[1]),
-                    0, 2, 1, 3));
+            return ggml_cont(
+                    ctx,
+                    ggml_permute(ctx,
+                                 ggml_reshape_3d(ctx, z, dh, nheads, z->ne[1]),
+                                 0, 2, 1, 3));
         };
         auto *scores = ggml_scale(ctx, matmul(ctx, heads(k), heads(q)),
                                   1.0f / std::sqrt(static_cast<float>(dh)));
@@ -948,10 +965,9 @@ struct FullModel::Impl : TensorLoader {
         auto *attn = ggml_out_prod(
                 ctx, heads(v), ggml_transpose(ctx, ggml_soft_max(ctx, scores)));
         attn = ggml_reshape_2d(
-                ctx, ggml_cont(ctx, ggml_permute(ctx, attn, 0, 2, 1, 3)),
-                dim, x->ne[1]);
-        return linear(ctx, attn,
-                      t("ra." + p + ".out_proj.weight"),
+                ctx, ggml_cont(ctx, ggml_permute(ctx, attn, 0, 2, 1, 3)), dim,
+                x->ne[1]);
+        return linear(ctx, attn, t("ra." + p + ".out_proj.weight"),
                       t("ra." + p + ".out_proj.bias"));
     }
 
@@ -996,7 +1012,7 @@ struct FullModel::Impl : TensorLoader {
                     native_self_attention(ctx, y, p + ".self_attn", pair_mask));
             x = ggml_add(ctx, x,
                          strict_cross_attention(ctx, ln(ctx, x, p + ".norm2"),
-                                              memory, cross, memory_mask));
+                                                memory, cross, memory_mask));
         } else {
             x = ggml_add(ctx, x, mha(ctx, y, y, p + ".self_attn", pair_mask));
             x = ggml_add(ctx, x,
@@ -1450,7 +1466,8 @@ struct FullModel::Impl : TensorLoader {
             // Fused kernels dispatch using the final node's owner, including
             // ADD epilogues and views. Keep ownership across the whole graph.
             if (std::strncmp(node->name, "relateanything_", 15) != 0)
-                ggml_format_name(node, "relateanything_%s", ggml_op_name(node->op));
+                ggml_format_name(node, "relateanything_%s",
+                                 ggml_op_name(node->op));
         }
         if (options.quant_f32_input || options.strict_f32) {
             for (int i = 0; i < ggml_graph_n_nodes(run.graph); ++i) {
@@ -1702,7 +1719,7 @@ struct FullModel::Impl : TensorLoader {
             k = rope(ctx, k, cos, sin, dh);
             ggml_tensor *attn;
             if (options.flash_attention && !options.strict_f32 &&
-                       options.backend != "cpu") {
+                options.backend != "cpu") {
                 attn = ggml_flash_attn_ext(
                         ctx, ggml_cont(ctx, q),
                         ggml_cast(ctx, k, GGML_TYPE_F16),
@@ -2310,6 +2327,15 @@ struct FullModel::Impl : TensorLoader {
                 out.decomposed = true;
                 const auto &alpha = values[2];
                 const auto &all_logits = values[3];
+                out.predicate_spatial.assign(predicates, 0);
+                for (std::size_t j = 0; j < predicates; ++j) {
+                    const auto known = corpus_types.find(predicate_names[j]);
+                    out.predicate_spatial[j] =
+                            (known == corpus_types.end() ? alpha[j] >= .5f
+                                                         : known->second)
+                                    ? 1
+                                    : 0;
+                }
                 for (bool spatial : {true, false}) {
                     std::vector<std::pair<float, Relation>> ranked;
                     for (int i = 0; i < K; ++i)
@@ -2376,235 +2402,263 @@ struct FullModel::Impl : TensorLoader {
 FullModel::FullModel(const ModelOptions &options)
     : impl_(std::make_unique<Impl>(options)) {}
 FullModel::~FullModel() = default;
-std::vector<float> encode_predicates(const ModelOptions &options,
-                                     const std::vector<std::string> &texts) {
-    if (options.text_student.empty() || options.tokenizer.empty())
-        throw std::runtime_error(
-                "text encoding requires student and tokenizer paths");
-    ModelOptions opts = options;
-    opts.model = options.text_student;
-    TensorLoader loader(opts, "relateanything_text_student_v1");
-    const int dim = loader.meta_u32("ra.dim"),
-              length = loader.meta_u32("ra.max_len");
-    const int depth = loader.meta_u32("ra.depth"),
-              heads = loader.meta_u32("ra.heads");
-    const int output_dim = loader.meta_u32("ra.out_dim");
-    if (dim != 256 || length != 32 || depth != 6 || heads != 4 ||
-        output_dim != 512)
-        throw std::runtime_error("unsupported text student dimensions");
-    Json::Value config;
-    std::ifstream token_file(options.tokenizer);
-    if (!token_file || !(token_file >> config))
-        throw std::runtime_error("cannot read tokenizer.json");
-    const auto &normalizers = config["normalizer"]["normalizers"];
-    const auto &splitters = config["pre_tokenizer"]["pretokenizers"];
-    const std::string clip_pattern =
-            "<\\|startoftext\\|>|<\\|endoftext\\|>|'s|'t|'re|'ve|'m|'ll|'d|["
-            "\\p{L}]+|[\\p{N}]|[^\\s\\p{L}\\p{N}]+";
-    if (config["model"]["type"].asString() != "BPE" ||
-        config["model"]["end_of_word_suffix"].asString() != "</w>" ||
-        config["normalizer"]["type"].asString() != "Sequence" ||
-        normalizers.size() != 3 || normalizers[0]["type"].asString() != "NFC" ||
-        normalizers[1]["type"].asString() != "Replace" ||
-        normalizers[1]["pattern"]["Regex"].asString() != "\\s+" ||
-        normalizers[1]["content"].asString() != " " ||
-        normalizers[2]["type"].asString() != "Lowercase" ||
-        config["pre_tokenizer"]["type"].asString() != "Sequence" ||
-        splitters.size() != 2 || splitters[0]["type"].asString() != "Split" ||
-        splitters[0]["pattern"]["Regex"].asString() != clip_pattern ||
-        !splitters[0]["invert"].asBool() ||
-        splitters[1]["type"].asString() != "ByteLevel" ||
-        splitters[1]["add_prefix_space"].asBool() ||
-        config["post_processor"]["cls"][1].asInt() != 49406 ||
-        config["post_processor"]["sep"][1].asInt() != 49407)
-        throw std::runtime_error(
-                "unsupported tokenizer contract; expected official CLIP BPE "
-                "configuration");
+struct PredicateEncoder::Impl : TensorLoader {
+    const int dim, length, depth, heads, output_dim;
     clip_bpe_tokenizer tokenizer;
-    for (const auto &name : config["model"]["vocab"].getMemberNames())
-        tokenizer.encoder.emplace(name, config["model"]["vocab"][name].asInt());
-    int rank = 0;
-    for (const auto &merge : config["model"]["merges"]) {
-        std::string a, b;
-        if (merge.isArray() && merge.size() == 2) {
-            a = merge[0].asString();
-            b = merge[1].asString();
-        } else if (merge.isString()) {
-            std::istringstream row(merge.asString());
-            row >> a >> b;
-        } else
-            throw std::runtime_error("invalid tokenizer merge");
-        tokenizer.merge_ranks.emplace(clip_merge_key(a, b), rank++);
+    QRegularExpression regex;
+    std::vector<std::string> templates;
+
+    static ModelOptions student_options(const ModelOptions &options) {
+        if (options.text_student.empty() || options.tokenizer.empty())
+            throw std::runtime_error(
+                    "text encoding requires student and tokenizer paths");
+        auto opts = options;
+        opts.model = options.text_student;
+        return opts;
     }
-    if (tokenizer.encoder.size() != 49408)
-        throw std::runtime_error("invalid CLIP vocabulary");
-    clip_init_byte_encoder(tokenizer.byte_encoder);
-    UErrorCode status = U_ZERO_ERROR;
-    const auto *nfc = icu::Normalizer2::getNFCInstance(status);
-    const auto pattern = icu::UnicodeString::fromUTF8(clip_pattern);
-    std::unique_ptr<icu::RegexPattern> regex(
-            icu::RegexPattern::compile(pattern, 0, status));
-    if (U_FAILURE(status))
-        throw std::runtime_error("cannot initialize Unicode tokenizer");
-    auto templates = options.text_templates;
-    if (templates.empty())
-        templates = {"{p}", "one object is {p} another object",
-                     "a photo of something {p} something"};
-    Json::Value token_rows(Json::arrayValue);
-    std::vector<float> result(texts.size() * output_dim, 0);
-    for (std::size_t row = 0; row < texts.size(); ++row)
-        for (const auto &format : templates) {
-            std::string text = format;
-            auto slot = text.find("{p}");
-            if (slot == std::string::npos)
-                throw std::runtime_error("text template requires {p}");
-            while (slot != std::string::npos) {
-                text.replace(slot, 3, texts[row]);
-                slot = text.find("{p}", slot + texts[row].size());
-            }
-            icu::UnicodeString normalized;
-            nfc->normalize(icu::UnicodeString::fromUTF8(text), normalized,
-                           status);
-            // tokenizers Lowercase maps codepoints independently (no
-            // final-sigma rule).
-            icu::UnicodeString lowered;
-            for (int32_t i = 0; i < normalized.length();) {
-                const UChar32 cp = normalized.char32At(i);
-                icu::UnicodeString character(cp);
-                character.toLower(icu::Locale::getRoot());
-                lowered.append(character);
-                i += U16_LENGTH(cp);
-            }
-            normalized = lowered;
-            std::unique_ptr<icu::RegexMatcher> matcher(
-                    regex->matcher(normalized, status));
-            std::vector<int32_t> ids{49406};
-            while (matcher->find(status)) {
-                std::string word;
-                matcher->group(status).toUTF8String(word);
-                if (word == "<|startoftext|>" || word == "<|endoftext|>") {
-                    ids.push_back(tokenizer.encoder.at(word));
-                    continue;
+
+    explicit Impl(const ModelOptions &options)
+        : TensorLoader(student_options(options),
+                       "relateanything_text_student_v1"),
+          dim(meta_u32("ra.dim")),
+          length(meta_u32("ra.max_len")),
+          depth(meta_u32("ra.depth")),
+          heads(meta_u32("ra.heads")),
+          output_dim(meta_u32("ra.out_dim")) {
+        if (dim != 256 || length != 32 || depth != 6 || heads != 4 ||
+            output_dim != 512)
+            throw std::runtime_error("unsupported text student dimensions");
+        Json::Value config;
+        std::ifstream token_file(options.tokenizer);
+        if (!token_file || !(token_file >> config))
+            throw std::runtime_error("cannot read tokenizer.json");
+        const auto &normalizers = config["normalizer"]["normalizers"];
+        const auto &splitters = config["pre_tokenizer"]["pretokenizers"];
+        const std::string clip_pattern =
+                "<\\|startoftext\\|>|<\\|endoftext\\|>|'s|'t|'re|'ve|'m|'ll|'d|"
+                "["
+                "\\p{L}]+|[\\p{N}]|[^\\s\\p{L}\\p{N}]+";
+        if (config["model"]["type"].asString() != "BPE" ||
+            config["model"]["end_of_word_suffix"].asString() != "</w>" ||
+            config["normalizer"]["type"].asString() != "Sequence" ||
+            normalizers.size() != 3 ||
+            normalizers[0]["type"].asString() != "NFC" ||
+            normalizers[1]["type"].asString() != "Replace" ||
+            normalizers[1]["pattern"]["Regex"].asString() != "\\s+" ||
+            normalizers[1]["content"].asString() != " " ||
+            normalizers[2]["type"].asString() != "Lowercase" ||
+            config["pre_tokenizer"]["type"].asString() != "Sequence" ||
+            splitters.size() != 2 ||
+            splitters[0]["type"].asString() != "Split" ||
+            splitters[0]["pattern"]["Regex"].asString() != clip_pattern ||
+            !splitters[0]["invert"].asBool() ||
+            splitters[1]["type"].asString() != "ByteLevel" ||
+            splitters[1]["add_prefix_space"].asBool() ||
+            config["post_processor"]["cls"][1].asInt() != 49406 ||
+            config["post_processor"]["sep"][1].asInt() != 49407)
+            throw std::runtime_error(
+                    "unsupported tokenizer contract; expected official CLIP "
+                    "BPE "
+                    "configuration");
+        for (const auto &name : config["model"]["vocab"].getMemberNames())
+            tokenizer.encoder.emplace(name,
+                                      config["model"]["vocab"][name].asInt());
+        int rank = 0;
+        for (const auto &merge : config["model"]["merges"]) {
+            std::string a, b;
+            if (merge.isArray() && merge.size() == 2) {
+                a = merge[0].asString();
+                b = merge[1].asString();
+            } else if (merge.isString()) {
+                std::istringstream row(merge.asString());
+                row >> a >> b;
+            } else
+                throw std::runtime_error("invalid tokenizer merge");
+            tokenizer.merge_ranks.emplace(clip_merge_key(a, b), rank++);
+        }
+        if (tokenizer.encoder.size() != 49408)
+            throw std::runtime_error("invalid CLIP vocabulary");
+        clip_init_byte_encoder(tokenizer.byte_encoder);
+        regex = QRegularExpression(
+                QString::fromStdString(clip_pattern),
+                QRegularExpression::UseUnicodePropertiesOption);
+        if (!regex.isValid())
+            throw std::runtime_error("cannot initialize Unicode tokenizer");
+        templates = options.text_templates;
+        if (templates.empty())
+            templates = {"{p}", "one object is {p} another object",
+                         "a photo of something {p} something"};
+    }
+
+    std::vector<float> encode(const std::vector<std::string> &texts) {
+        // Keep request-dependent strings bounded by the current call, while
+        // the immutable encoder/merge tables and weights stay context-owned.
+        tokenizer.cache.clear();
+        auto &loader = *this;
+        Json::Value token_rows(Json::arrayValue);
+        std::vector<float> result(texts.size() * output_dim, 0);
+        for (std::size_t row = 0; row < texts.size(); ++row)
+            for (const auto &format : templates) {
+                std::string text = format;
+                auto slot = text.find("{p}");
+                if (slot == std::string::npos)
+                    throw std::runtime_error("text template requires {p}");
+                while (slot != std::string::npos) {
+                    text.replace(slot, 3, texts[row]);
+                    slot = text.find("{p}", slot + texts[row].size());
                 }
-                std::string encoded;
-                for (uint8_t byte : word)
-                    encoded += tokenizer.byte_encoder.at(byte);
-                std::istringstream pieces(clip_bpe_encode(tokenizer, encoded));
-                while (pieces >> word)
-                    ids.push_back(tokenizer.encoder.at(word));
-            }
-            if (U_FAILURE(status))
-                throw std::runtime_error("Unicode tokenization failed");
-            ids.push_back(49407);
-            if (ids.size() > static_cast<std::size_t>(length)) {
-                ids.resize(length);
-                ids.back() = 49407;
-            }
-            const int valid = ids.size();
-            Json::Value token_row(Json::arrayValue);
-            for (auto id : ids) token_row.append(id);
-            token_rows.append(token_row);
-            ids.resize(length, 0);
-            auto run = make_run();
-            auto *ctx = run.ctx;
-            auto t = [&](const std::string &name) {
-                return loader.tensor("ts." + name);
-            };
-            auto affine = [&](ggml_tensor *x, const std::string &p,
-                              bool bias = true) {
-                return linear(ctx, x, t(p + ".weight"),
-                              bias ? t(p + ".bias") : nullptr);
-            };
-            auto ln = [&](ggml_tensor *x, const std::string &p) {
-                return norm(ctx, x, t(p + ".weight"), t(p + ".bias"), 1e-5f);
-            };
-            auto *tokens = input_tensor(run, ctx, GGML_TYPE_I32, length, 1, 1,
-                                        1, ids.data());
-            auto *x = ggml_get_rows(ctx, t("token_embedding.weight"), tokens);
-            x = affine(x, "tok_proj", false);
-            x = ggml_add(ctx, x, t("positional"));
-            std::vector<float> padding(length * length, 0), keep(length, 0);
-            for (int k = 0; k < length; ++k) {
-                keep[k] = k < valid ? 1.0f / valid : 0;
-                if (k >= valid)
-                    for (int q = 0; q < length; ++q)
-                        padding[q * length + k] =
-                                -std::numeric_limits<float>::infinity();
-            }
-            auto *mask = input_tensor(run, ctx, GGML_TYPE_F32, length, length,
-                                      1, 1, padding.data());
-            for (int block = 0; block < depth; ++block) {
-                const auto p = "blocks." + std::to_string(block);
-                auto *y = ln(x, p + ".norm1");
-                y = packed_attention(
-                        ctx, y, y, y, t(p + ".attn.in_proj_weight"),
-                        t(p + ".attn.in_proj_bias"),
-                        t(p + ".attn.out_proj.weight"),
-                        t(p + ".attn.out_proj.bias"), dim, heads, mask, false);
-                x = ggml_add(ctx, x, y);
-                y = affine(ggml_gelu_erf(ctx, affine(ln(x, p + ".norm2"),
-                                                     p + ".ffn.0")),
-                           p + ".ffn.2");
-                x = ggml_add(ctx, x, y);
-            }
-            x = ln(x, "ln_final");
-            auto *valid_weights = input_tensor(run, ctx, GGML_TYPE_F32, length,
-                                               1, 1, 1, keep.data());
-            auto *pooled = matmul(ctx, ggml_cont(ctx, ggml_transpose(ctx, x)),
-                                  valid_weights);
-            auto *embedding =
-                    ggml_l2_norm(ctx, affine(pooled, "head", false), 1e-12f);
-            run.graph = ggml_new_graph_custom(ctx, 8192, false);
-            ggml_set_output(embedding);
-            ggml_build_forward_expand(run.graph, embedding);
-            for (int i = 0; i < ggml_graph_n_nodes(run.graph); ++i) {
-                auto *node = ggml_graph_node(run.graph, i);
-                if (std::strncmp(node->name, "relateanything_", 15) != 0)
-                    ggml_format_name(node, "relateanything_%s", ggml_op_name(node->op));
-            }
-            if (options.strict_f32)
+                // QString lowercasing, like tokenizers Lowercase, uses Unicode
+                // mappings without the locale-dependent final-sigma rule.
+                const QString normalized =
+                        QString::fromUtf8(text.data(), int(text.size()))
+                                .normalized(QString::NormalizationForm_C)
+                                .toLower();
+                auto matches = regex.globalMatch(normalized);
+                std::vector<int32_t> ids{49406};
+                while (matches.hasNext()) {
+                    std::string word =
+                            matches.next().captured().toUtf8().toStdString();
+                    if (word == "<|startoftext|>" || word == "<|endoftext|>") {
+                        ids.push_back(tokenizer.encoder.at(word));
+                        continue;
+                    }
+                    std::string encoded;
+                    for (uint8_t byte : word)
+                        encoded += tokenizer.byte_encoder.at(byte);
+                    std::istringstream pieces(
+                            clip_bpe_encode(tokenizer, encoded));
+                    while (pieces >> word)
+                        ids.push_back(tokenizer.encoder.at(word));
+                }
+                ids.push_back(49407);
+                if (ids.size() > static_cast<std::size_t>(length)) {
+                    ids.resize(length);
+                    ids.back() = 49407;
+                }
+                const int valid = ids.size();
+                Json::Value token_row(Json::arrayValue);
+                for (auto id : ids) token_row.append(id);
+                token_rows.append(token_row);
+                ids.resize(length, 0);
+                auto run = make_run();
+                auto *ctx = run.ctx;
+                auto t = [&](const std::string &name) {
+                    return loader.tensor("ts." + name);
+                };
+                auto affine = [&](ggml_tensor *x, const std::string &p,
+                                  bool bias = true) {
+                    return linear(ctx, x, t(p + ".weight"),
+                                  bias ? t(p + ".bias") : nullptr);
+                };
+                auto ln = [&](ggml_tensor *x, const std::string &p) {
+                    return norm(ctx, x, t(p + ".weight"), t(p + ".bias"),
+                                1e-5f);
+                };
+                auto *tokens = input_tensor(run, ctx, GGML_TYPE_I32, length, 1,
+                                            1, 1, ids.data());
+                auto *x =
+                        ggml_get_rows(ctx, t("token_embedding.weight"), tokens);
+                x = affine(x, "tok_proj", false);
+                x = ggml_add(ctx, x, t("positional"));
+                std::vector<float> padding(length * length, 0), keep(length, 0);
+                for (int k = 0; k < length; ++k) {
+                    keep[k] = k < valid ? 1.0f / valid : 0;
+                    if (k >= valid)
+                        for (int q = 0; q < length; ++q)
+                            padding[q * length + k] =
+                                    -std::numeric_limits<float>::infinity();
+                }
+                auto *mask = input_tensor(run, ctx, GGML_TYPE_F32, length,
+                                          length, 1, 1, padding.data());
+                for (int block = 0; block < depth; ++block) {
+                    const auto p = "blocks." + std::to_string(block);
+                    auto *y = ln(x, p + ".norm1");
+                    y = packed_attention(ctx, y, y, y,
+                                         t(p + ".attn.in_proj_weight"),
+                                         t(p + ".attn.in_proj_bias"),
+                                         t(p + ".attn.out_proj.weight"),
+                                         t(p + ".attn.out_proj.bias"), dim,
+                                         heads, mask, false);
+                    x = ggml_add(ctx, x, y);
+                    y = affine(ggml_gelu_erf(ctx, affine(ln(x, p + ".norm2"),
+                                                         p + ".ffn.0")),
+                               p + ".ffn.2");
+                    x = ggml_add(ctx, x, y);
+                }
+                x = ln(x, "ln_final");
+                auto *valid_weights = input_tensor(
+                        run, ctx, GGML_TYPE_F32, length, 1, 1, 1, keep.data());
+                auto *pooled =
+                        matmul(ctx, ggml_cont(ctx, ggml_transpose(ctx, x)),
+                               valid_weights);
+                auto *embedding = ggml_l2_norm(
+                        ctx, affine(pooled, "head", false), 1e-12f);
+                run.graph = ggml_new_graph_custom(ctx, 8192, false);
+                ggml_set_output(embedding);
+                ggml_build_forward_expand(run.graph, embedding);
                 for (int i = 0; i < ggml_graph_n_nodes(run.graph); ++i) {
                     auto *node = ggml_graph_node(run.graph, i);
-                    if (node->op == GGML_OP_SOFT_MAX)
-                        ggml_soft_max_set_hint(node, GGML_HINT_STRICT_F32);
-                    if (node->op == GGML_OP_MUL_MAT)
-                        ggml_mul_mat_set_hint(node, GGML_HINT_STRICT_F32);
+                    if (std::strncmp(node->name, "relateanything_", 15) != 0)
+                        ggml_format_name(node, "relateanything_%s",
+                                         ggml_op_name(node->op));
                 }
-            ggml_backend_sched_reset(loader.backend->scheduler);
-            for (const auto &input : run.inputs)
-                ggml_backend_sched_set_tensor_backend(
-                        loader.backend->scheduler, input.first,
-                        loader.backend->accelerator);
-            if (!ggml_backend_sched_alloc_graph(loader.backend->scheduler,
-                                                run.graph))
-                throw std::runtime_error("cannot allocate text graph");
-            for (const auto &input : run.inputs)
-                ggml_backend_tensor_set(input.first, input.second.data(), 0,
-                                        input.second.size());
-            if (ggml_backend_sched_graph_compute(loader.backend->scheduler,
-                                                 run.graph) !=
-                GGML_STATUS_SUCCESS)
-                throw std::runtime_error("text graph failed");
-            ggml_backend_sched_synchronize(loader.backend->scheduler);
-            auto values = read_f32(embedding);
+                if (loader.options.strict_f32)
+                    for (int i = 0; i < ggml_graph_n_nodes(run.graph); ++i) {
+                        auto *node = ggml_graph_node(run.graph, i);
+                        if (node->op == GGML_OP_SOFT_MAX)
+                            ggml_soft_max_set_hint(node, GGML_HINT_STRICT_F32);
+                        if (node->op == GGML_OP_MUL_MAT)
+                            ggml_mul_mat_set_hint(node, GGML_HINT_STRICT_F32);
+                    }
+                ggml_backend_sched_reset(loader.backend->scheduler);
+                for (const auto &input : run.inputs)
+                    ggml_backend_sched_set_tensor_backend(
+                            loader.backend->scheduler, input.first,
+                            loader.backend->accelerator);
+                if (!ggml_backend_sched_alloc_graph(loader.backend->scheduler,
+                                                    run.graph))
+                    throw std::runtime_error("cannot allocate text graph");
+                for (const auto &input : run.inputs)
+                    ggml_backend_tensor_set(input.first, input.second.data(), 0,
+                                            input.second.size());
+                if (ggml_backend_sched_graph_compute(loader.backend->scheduler,
+                                                     run.graph) !=
+                    GGML_STATUS_SUCCESS)
+                    throw std::runtime_error("text graph failed");
+                ggml_backend_sched_synchronize(loader.backend->scheduler);
+                auto values = read_f32(embedding);
+                for (int j = 0; j < output_dim; ++j)
+                    result[row * output_dim + j] += values[j];
+                ggml_backend_sched_reset(loader.backend->scheduler);
+            }
+        for (std::size_t row = 0; row < texts.size(); ++row) {
+            float sum = 0;
             for (int j = 0; j < output_dim; ++j)
-                result[row * output_dim + j] += values[j];
-            ggml_backend_sched_reset(loader.backend->scheduler);
+                sum += result[row * output_dim + j] *
+                       result[row * output_dim + j];
+            const float denominator = std::max(std::sqrt(sum), 1e-12f);
+            for (int j = 0; j < output_dim; ++j)
+                result[row * output_dim + j] /= denominator;
         }
-    for (std::size_t row = 0; row < texts.size(); ++row) {
-        float sum = 0;
-        for (int j = 0; j < output_dim; ++j)
-            sum += result[row * output_dim + j] * result[row * output_dim + j];
-        const float denominator = std::max(std::sqrt(sum), 1e-12f);
-        for (int j = 0; j < output_dim; ++j)
-            result[row * output_dim + j] /= denominator;
+        if (!options.token_output.empty()) {
+            std::ofstream file(options.token_output);
+            file << token_rows;
+            if (!file) throw std::runtime_error("cannot write token IDs");
+        }
+        return result;
     }
-    if (!options.token_output.empty()) {
-        std::ofstream file(options.token_output);
-        file << token_rows;
-        if (!file) throw std::runtime_error("cannot write token IDs");
-    }
-    return result;
+};
+
+PredicateEncoder::PredicateEncoder(const ModelOptions &options)
+    : impl_(std::make_unique<Impl>(options)) {}
+PredicateEncoder::~PredicateEncoder() = default;
+std::vector<float> PredicateEncoder::encode(
+        const std::vector<std::string> &texts) {
+    return impl_->encode(texts);
+}
+std::vector<float> encode_predicates(const ModelOptions &options,
+                                     const std::vector<std::string> &texts) {
+    return PredicateEncoder(options).encode(texts);
 }
 
 ImageOutput FullModel::infer(const ImageInput &input) {
@@ -2642,6 +2696,11 @@ ImageOutput FullModel::infer(const ImageInput &input) {
     gather(input.fill, selected.fill, 1);
     gather(input.box_scores, selected.box_scores, 1);
     return impl_->infer(selected);
+}
+bool FullModel::strict_f32() const { return impl_->options.strict_f32; }
+void FullModel::calibration(float &a, float &b) const {
+    a = impl_->calibration_a;
+    b = impl_->calibration_b;
 }
 const std::vector<std::string> &FullModel::predicates() const {
     return impl_->predicate_names;

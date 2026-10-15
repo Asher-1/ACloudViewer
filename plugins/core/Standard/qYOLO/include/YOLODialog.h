@@ -60,6 +60,7 @@ struct YOLOTaskPanel {
     // list + text-encoder GGUF combo (default follows the detector family).
     QWidget* textRow = nullptr;
     QLineEdit* classesEdit = nullptr;
+    QPushButton* ra4mBtn = nullptr;  // fills the RA-4M 497-class vocabulary
     QComboBox* textModelCombo = nullptr;
     // Visual-prompt row (yoloe tab only): prompt-mode selector + the box
     // drawing canvas shown while "Visual prompt" is active. Boxes live in

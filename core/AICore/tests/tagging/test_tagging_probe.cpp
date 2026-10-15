@@ -1,5 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// Public-ABI accuracy, repeatability, and timing probe for RAM-family models.
+// ----------------------------------------------------------------------------
+
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QImage>

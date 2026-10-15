@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "RAMDialog.h"
 
 #include <QAbstractItemView>
@@ -34,13 +40,13 @@
 #include <memory>
 #include <utility>
 
+#include "CVLog.h"
 #include "RAMVideoWidget.h"
 #include "aicore/backend_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
-#include "CVLog.h"
 #include "ecvPersistentSettings.h"
 #include "ecvTestDataRepository.h"
 
@@ -82,8 +88,9 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
     top->addWidget(m_sample);
     root->addLayout(top);
     auto* quickStart = new QLabel(
-            tr("<b>Quick start:</b> Click <i>Use test data</i> to load four "
-               "official RAM demos, then Run. <b>Tag2Text</b> generates a "
+            tr("<b>Quick start:</b> Click <i>Try sample data</i> to load four "
+               "official RAM demos and the sample video, then Run. "
+               "<b>Tag2Text</b> generates a "
                "sentence; <b>RAM/RAM++</b> return labels. Auto device picks "
                "CUDA, Vulkan, then CPU. Per-class thresholds use the model's "
                "defaults; caption length and beam apply only to Tag2Text."));
@@ -302,14 +309,11 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
     auto* videoLayout = new QVBoxLayout(videoPage);
     videoLayout->setContentsMargins(0, 0, 0, 0);
     auto* videoGuide = new QLabel(
-            tr("Video inference is consumer-driven. Load a video file or use "
-               "the verified official RAM archive sample."));
+            tr("Video inference is consumer-driven: each frame is shown with "
+               "its tags once inference completes. Load a video file or click "
+               "<i>Try sample data</i> for the verified official RAM sample."));
     videoGuide->setWordWrap(true);
     videoLayout->addWidget(videoGuide);
-    m_sampleVideo = new QPushButton(tr("Load sample video"));
-    m_sampleVideo->setObjectName("ramLoadSampleVideo");
-    m_sampleVideo->setEnabled(VideoPlaybackWidget::isAvailable());
-    videoLayout->addWidget(m_sampleVideo, 0, Qt::AlignLeft);
     videoLayout->addWidget(m_video, 1);
     m_tabs->addTab(videoPage, tr("Video / camera"));
     connect(m_defaults, &QCheckBox::toggled, this,
@@ -352,8 +356,6 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
     connect(m_cancelButton, &QPushButton::clicked, this, &RAMDialog::cancel);
     connect(close, &QPushButton::clicked, this, &RAMDialog::close);
     connect(m_sample, &QPushButton::clicked, this, &RAMDialog::useTestData);
-    connect(m_sampleVideo, &QPushButton::clicked, this,
-            &RAMDialog::loadSampleVideo);
     connect(m_download, &QPushButton::clicked, this,
             [this]() { ensureModel(false); });
     m_downloader = new ecvModelDownloader(this);
@@ -469,12 +471,14 @@ void RAMDialog::useTestData() {
     auto& repo = ecvTestDataRepository::instance();
     QStringList demos;
     for (int index = 1; index <= 4; ++index)
-        demos << repo.findDatasetFile(kind, QStringLiteral("demo%1.jpg").arg(index));
+        demos << repo.findDatasetFile(kind,
+                                      QStringLiteral("demo%1.jpg").arg(index));
     if (demos.front().isEmpty() && repo.isDatasetAvailable(kind)) {
         repo.extractDataset(kind);
         demos.clear();
         for (int index = 1; index <= 4; ++index)
-            demos << repo.findDatasetFile(kind, QStringLiteral("demo%1.jpg").arg(index));
+            demos << repo.findDatasetFile(
+                    kind, QStringLiteral("demo%1.jpg").arg(index));
     }
     if (demos.front().isEmpty()) {
         if (repo.isDownloadInProgress()) {
@@ -488,18 +492,26 @@ void RAMDialog::useTestData() {
     }
     if (std::any_of(demos.cbegin(), demos.cend(),
                     [](const QString& path) { return path.isEmpty(); })) {
-        log(tr("The RAM sample archive is missing one or more official demos."));
+        log(tr("The RAM sample archive is missing one or more official "
+               "demos."));
         return;
     }
+    const bool videoTab = m_tabs->currentWidget() == m_video->parentWidget();
     cancel();
     m_inputs->clear();
     m_inputs->addItems(demos);
     m_inputs->setCurrentRow(0);
     m_preview->setPreviewImage(QImage(demos.front()), QSize(480, 280));
-    m_tabs->setCurrentIndex(0);
-    log(tr("Loaded official demo1–4 images; demo1 is selected."));
+    const bool video = loadSampleVideo();
+    // One sample action fills both inputs; stay on the video page when the
+    // user asked from there so Run plays the sample immediately.
+    if (!videoTab) m_tabs->setCurrentIndex(0);
+    log(video ? tr("Loaded official demo1–4 images (demo1 selected) and the "
+                   "RAM archive sample video.")
+              : tr("Loaded official demo1–4 images; demo1 is selected."));
 }
-void RAMDialog::loadSampleVideo() {
+bool RAMDialog::loadSampleVideo() {
+    if (!VideoPlaybackWidget::isAvailable()) return false;
     auto& repo = ecvTestDataRepository::instance();
     const auto kind = ecvTestDataRepository::Dataset::RAM;
     QString videoPath = repo.findDatasetFile(kind, "ram_demo1_to_4.avi");
@@ -509,19 +521,19 @@ void RAMDialog::loadSampleVideo() {
     }
     const ecvAssetIntegrity::Anchor anchor{
             QCryptographicHash::Sha256,
-            QByteArray("53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57ce944b202")};
+            QByteArray("53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57"
+                       "ce944b202")};
     if (videoPath.isEmpty() ||
         !ecvAssetIntegrity::isVerified(videoPath, anchor, 0, false,
                                        ecvAssetIntegrity::OnMiss::DeepVerify,
                                        262706)) {
-        log(tr("The verified RAM sample video is unavailable. Use test data to "
-               "download the current official archive."));
-        return;
+        log(tr("The verified RAM sample video is unavailable in the cached "
+               "archive."));
+        return false;
     }
     m_video->selectVideoFileSource();
     m_video->setVideoFilePath(videoPath);
-    m_tabs->setCurrentIndex(m_tabs->indexOf(m_video->parentWidget()));
-    log(tr("Loaded official RAM archive sample video."));
+    return true;
 }
 QString RAMDialog::modelPath() const {
     std::unique_ptr<char, decltype(&aicore_tagging_free_buffer)> dir(
@@ -651,7 +663,7 @@ void RAMDialog::completed(const RAMResult& result) {
             m_last = result;
             recordResult(result.json);
             showResult();
-            m_preview->setPreviewImage(result.image, QSize(480, 280));
+            m_preview->setPreviewImage(result.annotated, QSize(480, 280));
             const auto timings = result.json.value("timings").toObject();
             m_timing->setText(
                     tr("%1 · %2 · worker %3 ms · inference %4 ms · %5")
@@ -662,10 +674,46 @@ void RAMDialog::completed(const RAMResult& result) {
                             .arg(timings.value("context_reused").toBool()
                                          ? tr("warm session")
                                          : tr("cold start")));
+            // Detailed timing breakdown for batch/image mode logging
+            if (!m_video->isActive()) {
+                const double contextInitMs =
+                        timings.value("context_init_ms").toDouble();
+                const double imagePrepareMs =
+                        timings.value("image_prepare_ms").toDouble();
+                const double preprocessMs =
+                        timings.value("preprocess_ms").toDouble();
+                const double inferenceMs =
+                        timings.value("inference_ms").toDouble();
+                const double postprocessMs =
+                        timings.value("postprocess_ms").toDouble();
+                const double visualizationMs =
+                        timings.value("visualization_ms").toDouble();
+                const double deviceWaitMs =
+                        timings.value("device_wait_ms").toDouble();
+                const bool contextReused =
+                        timings.value("context_reused").toBool();
+                log(tr("[Timing] %1 | device_wait=%2ms | context_init=%3ms "
+                       "%4 | image_prepare=%5ms | preprocess=%6ms | "
+                       "inference=%7ms | postprocess=%8ms | visualization=%9ms "
+                       "| e2e=%10ms")
+                            .arg(QFileInfo(result.source).fileName())
+                            .arg(deviceWaitMs, 0, 'f', 1)
+                            .arg(contextInitMs, 0, 'f', 1)
+                            .arg(contextReused ? tr("(reused)") : tr("(cold)"))
+                            .arg(imagePrepareMs, 0, 'f', 1)
+                            .arg(preprocessMs, 0, 'f', 1)
+                            .arg(inferenceMs, 0, 'f', 1)
+                            .arg(postprocessMs, 0, 'f', 1)
+                            .arg(visualizationMs, 0, 'f', 1)
+                            .arg(result.e2eMs, 0, 'f', 1));
+            }
         }
         if (m_batch) m_progress->setValue(++m_batchCompleted);
     }
-    if (acknowledge) m_video->acknowledge();
+    if (acknowledge)
+        m_video->acknowledge(current && result.error.isEmpty()
+                                     ? result.annotated
+                                     : QImage());
     if (!m_heldFrameSource.isEmpty() && !m_closed) {
         QImage image = std::move(m_heldFrame);
         QString source = std::move(m_heldFrameSource);

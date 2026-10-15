@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
@@ -19,7 +25,10 @@ typedef struct aicore_relation_options {
     const char *model_path, *device;
     int32_t threads;
     uint32_t max_boxes, topk;
-    int32_t strict_f32, quant_f32_input, raw_logits, decompose;
+    /** -1 (default): upstream automatic precision, strict for CUDA F32
+     * matrices; 0: optimized arithmetic; 1: always strict F32 arithmetic. */
+    int32_t strict_f32;
+    int32_t quant_f32_input, raw_logits, decompose;
     int32_t flash_attention, compact_pairs, fused_vocabulary, cache_positions,
             retain_features;
     const char *vocabulary_path, *vocabulary_names_path,
@@ -66,6 +75,10 @@ typedef struct aicore_relation_result {
     double forward_ms; /**< Upstream FullModel::infer duration, including graph
                           construction/ranking. */
     void *private_owner;
+    /** [predicate_count] 1 = spatial predicate (corpus type map, else the
+     * head's routing gate); NULL unless the context was created with
+     * decompose. Appended after private_owner: older readers ignore it. */
+    const uint8_t *predicate_spatial;
 } aicore_relation_result;
 /** Independently owned normalized row-major [count,512] native student output.
  */
@@ -97,6 +110,14 @@ AICORE_CAPI const char *aicore_relation_last_error(
         const aicore_relation_ctx *ctx);
 AICORE_CAPI const char *aicore_relation_context_device(
         const aicore_relation_ctx *ctx);
+/** Score calibration stored in the model (sigmoid(a * logit + b)). The
+ * decomposed spatial/semantic streams report sigmoid(logit) exactly as
+ * upstream's native path does; callers apply a/b to match the calibrated
+ * flat list and upstream's Python contract. Returns 0, or -1 when the
+ * context is not a loaded relation model. */
+AICORE_CAPI int aicore_relation_calibration(const aicore_relation_ctx *ctx,
+                                            float *a,
+                                            float *b);
 /** Borrow image/regions through return. Clear output on failure. Return 0 for
  * success, 1 for cooperative cancellation, -1 for error. Shared cancel token
  * scopes apply; cancellation is checked before and after graph execution. */
@@ -106,6 +127,11 @@ AICORE_CAPI int aicore_relation_infer_image(
         const aicore_relation_request *request,
         aicore_relation_result **output);
 AICORE_CAPI void aicore_relation_result_free(aicore_relation_result *result);
+/** Retains student weights and tokenizer in this context after first use.
+ * First-call e2e includes loading; later calls encode with the resident data.
+ * Embedding results own their values and remain valid after context teardown.
+ * Clears output/timings on error or cancellation, with the same return codes
+ * and cancel-token scopes as infer_image. */
 AICORE_CAPI int aicore_relation_encode_text(
         aicore_relation_ctx *ctx,
         const char *const *texts,
@@ -119,6 +145,12 @@ AICORE_CAPI int aicore_relation_model_count(void);
 AICORE_CAPI const aicore_relation_model_entry *aicore_relation_model_at(
         int index);
 AICORE_CAPI int aicore_relation_model_default_index(void);
+/** The 497 object categories (MegaSG / RA-4M) the official RelateAnything
+ * detectors are re-parameterised to. Feeding them to an open-vocabulary
+ * detector (YOLO-World, YOLOE) reproduces upstream's detector vocabulary.
+ * Strings are static; `at` returns NULL out of range. */
+AICORE_CAPI int aicore_relation_object_vocabulary_count(void);
+AICORE_CAPI const char *aicore_relation_object_vocabulary_at(int index);
 AICORE_CAPI char *aicore_relation_model_cache_dir(void);
 AICORE_CAPI void aicore_relation_free_buffer(void *buffer);
 AICORE_CAPI void aicore_relation_shutdown(void);

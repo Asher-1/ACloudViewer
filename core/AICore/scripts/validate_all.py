@@ -187,6 +187,21 @@ def selected_tasks(manifest: dict[str, Any], task_text: str) -> set[str]:
     return selected
 
 
+def select_scenarios(manifest: dict[str, Any], scenario_text: str) -> dict[str, Any]:
+    """Return a manifest view restricted to exact scenario ids."""
+    selected = {item.strip() for item in scenario_text.split(",") if item.strip()}
+    if not selected:
+        return manifest
+    known = {row["id"] for row in manifest["scenarios"]}
+    unknown = selected - known
+    if unknown:
+        raise ValueError("unknown scenarios: " + ", ".join(sorted(unknown)))
+    narrowed = dict(manifest)
+    narrowed["scenarios"] = [row for row in manifest["scenarios"]
+                             if row["id"] in selected]
+    return narrowed
+
+
 def manifest_model_patterns(manifest: dict[str, Any],
                             selected: set[str], *, full: bool = True,
                             tiered: set[str] | None = None) -> set[str]:
@@ -737,6 +752,13 @@ def normalize_accuracy_gate(scenario: dict[str, Any]) -> dict[str, Any]:
             normalized["value"] = float(check["value"])
         if check.get("label"):
             normalized["label"] = str(check["label"])
+        candidate_only = check.get("candidate_only", False)
+        if not isinstance(candidate_only, bool):
+            raise ValueError(
+                f"scenario {scenario.get('id', '<unknown>')} accuracy "
+                f"check {metric} candidate_only must be boolean")
+        if candidate_only:
+            normalized["candidate_only"] = True
         backends = check.get("backends")
         if backends is not None:
             if (not isinstance(backends, list) or not backends or
@@ -1079,6 +1101,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                 "threads": str(args.threads),
                 "warmup_runs": str(args.warmup_runs),
                 "inference_runs": str(args.inference_runs),
+                "gpu_idle_timeout": str(args.gpu_idle_timeout),
                 "trellis_steps": str(args.trellis_steps),
                 "scenario_model_globs": (
                     ",".join(sorted(
@@ -1886,6 +1909,9 @@ def parse_args() -> argparse.Namespace:
                              "heavy scenarios")
     parser.add_argument("--tasks", default="",
                         help="comma-separated subset; empty means every task")
+    parser.add_argument("--scenarios", default="",
+                        help="comma-separated exact scenario ids; empty means "
+                             "every scenario selected by --tasks")
     parser.add_argument("--models", default="",
                         help="comma-separated fnmatch patterns selecting "
                              "individual models: model file names (with or "
@@ -1911,6 +1937,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--threshold", type=float, default=5.0)
+    parser.add_argument("--gpu-idle-timeout", type=float, default=60.0,
+                        help="maximum seconds a probe waits for a clean GPU "
+                             "sample before failing; shared hosts with "
+                             "intermittent CUDA workloads raise it")
     parser.add_argument("--absolute-noise-floor", "--noise-floor",
                         dest="absolute_noise_floor", type=float, default=3.0,
                         help="minimum absolute increase in metric units")
@@ -2009,12 +2039,14 @@ def parse_args() -> argparse.Namespace:
             args.download_timeout < 1):
         parser.error("repeat/download values must be positive; warmup-runs "
                      "must be non-negative")
+    if args.gpu_idle_timeout <= 0:
+        parser.error("--gpu-idle-timeout must be positive")
     return args
 
 
 def main() -> int:
     args = parse_args()
-    manifest = load_manifest(args.manifest)
+    manifest = select_scenarios(load_manifest(args.manifest), args.scenarios)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     selected = selected_tasks(manifest, args.tasks)
     try:
@@ -2206,6 +2238,7 @@ def main() -> int:
         "repeats": args.repeats,
         "warmup_runs": args.warmup_runs, "inference_runs": args.inference_runs,
         "threads": args.threads, "trellis_steps": args.trellis_steps,
+        "gpu_idle_timeout": args.gpu_idle_timeout,
         "threshold_pct": args.threshold,
         "absolute_noise_floor": args.absolute_noise_floor,
         "baseline": str(args.baseline.resolve()) if args.baseline else "",

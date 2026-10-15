@@ -26,6 +26,7 @@ import tempfile
 import traceback
 from types import SimpleNamespace
 import numpy as np
+import accuracy
 SNAPSHOT = Path(__file__).resolve().parents[2] / 'src/tasks/relation/UPSTREAM.json'
 REVISION = json.loads(SNAPSHOT.read_text())['commit']
 
@@ -78,13 +79,16 @@ def parity_failures(rows, text=False, performance_limit=1.05):
     checks = [('native_max_diff', '<=', .0002 if text else .001),
               ('performance_ratio', '<=', performance_limit)]
     if text:
-        checks.append(('official_max_diff', '<=', .003))
+        checks += [('official_max_diff', '<=', .003),
+                   ('official_output_error_excess', '<=', 1e-5)]
     else:
         checks += [('native_pair_max_diff', '<=', .001),
                    ('native_top1_agreement', '>=', 1),
                    ('native_pair_set_recall', '>=', 1),
                    ('native_pair_set_jaccard', '>=', 1),
                    ('official_mean_error_excess', '<=', 1e-5),
+                   ('official_output_error_excess', '<=', 1e-5),
+                   ('official_pair_output_error_excess', '<=', 1e-5),
                    ('official_top1_drop', '<=', 1e-6),
                    ('official_pair_recall_drop', '<=', 1e-6)]
     failures = []
@@ -191,8 +195,8 @@ def edge_top1_agreement(edges, reference):
     return float(np.mean(values))
 
 
-def upstream_build_dir(upstream, backend):
-    build=upstream/f'cpp_ggml/build-{backend}'
+def upstream_build_dir(upstream, backend, selected=None):
+    build=Path(selected) if selected is not None else upstream/f'cpp_ggml/build-{backend}'
     if build.is_symlink() or not build.is_dir():
         raise RuntimeError(f'upstream {backend} build directory is missing or is a symlink: {build}')
     cache=build/'CMakeCache.txt'
@@ -208,14 +212,19 @@ def upstream_build_dir(upstream, backend):
     return build
 
 
-def verify_upstream(upstream, binary, env):
+def verify_upstream(upstream, binary, env, backend=None):
     snapshot=json.loads(SNAPSHOT.read_text())
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=snapshot['commit']:raise RuntimeError('upstream revision differs from recorded engineering baseline')
     for relative,expected in snapshot['files'].items():
         if digest(upstream/relative)!=expected:
             raise RuntimeError('upstream source differs from recorded snapshot: '+relative)
+    policy=snapshot.get('accuracy_policy')
+    if policy and digest(upstream/policy['source']) != policy['sha256']:
+        raise RuntimeError('upstream numeric policy differs from recorded snapshot')
     info=json.loads(subprocess.check_output([str(binary),'--build-info'],env=env,text=True))
+    if backend is not None and info['backend'] != backend:
+        raise RuntimeError('upstream binary was built for a different backend')
     if info['ggml_commit']!=snapshot['ggml_commit']:
         raise RuntimeError('upstream binary uses a different ggml revision')
     for source,expected in info['source']['files'].items():
@@ -260,12 +269,18 @@ def backend_modules(folder):
     return {p:digest(p) for p in sorted(paths)}
 
 
-def official_reference(upstream, family, sample, catalog, directory, text=False, texts=None, custom=False, masks=None, scores=None, image_override=None):
+def framework_device(backend, text, torch):
+    # CPU validation must not initialize or occupy a GPU used by another suite.
+    return 'cuda' if backend != 'cpu' and not text and torch.cuda.is_available() else 'cpu'
+
+
+def official_reference(upstream, family, sample, catalog, directory, text=False, texts=None, custom=False, masks=None, scores=None, image_override=None, backend='cpu', reference_cache=None):
     sys.path.insert(0,str(upstream))
     import torch
     torch.set_num_threads(4)
     torch.backends.cuda.matmul.allow_tf32=False
     torch.backends.cudnn.allow_tf32=False
+    device=framework_device(backend, text, torch)
     assets=upstream/'cpp_ggml/models/pytorch'/family
     checkpoint=assets/('text_student.pt' if text else 'model.pth')
     checkpoint_digest=digest(checkpoint)
@@ -277,9 +292,11 @@ def official_reference(upstream, family, sample, catalog, directory, text=False,
               'texts':texts,'custom':custom,
               'masks_sha256':hashlib.sha256(masks.tobytes()).hexdigest() if masks is not None else None,
               'scores':scores.tolist() if scores is not None else None,
-              'generator_sha256':digest(Path(__file__)),'cuda':torch.cuda.is_available()}
+              'generator_sha256':digest(Path(__file__)),'device':device}
     key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
-    cache=directory.parent.parent/'framework-references';cache.mkdir(exist_ok=True)
+    # One checkpoint/input identity is reusable across quantizations and modes.
+    cache=reference_cache if reference_cache is not None else directory.parent.parent/'framework-references'
+    cache.mkdir(parents=True,exist_ok=True)
     cached=cache/(key+'.npz');provenance=cache/(key+'.json')
     if cached.exists() and provenance.exists():
         saved=json.loads(provenance.read_text())
@@ -303,7 +320,7 @@ def official_reference(upstream, family, sample, catalog, directory, text=False,
         from relsgg import RelateAnything
         from PIL import Image
         checkpoint=assets/'model.pth'
-        model=RelateAnything.from_checkpoint(str(checkpoint),predicates=texts if custom else None,device='cuda' if torch.cuda.is_available() else 'cpu',full_vocabulary=not custom)
+        model=RelateAnything.from_checkpoint(str(checkpoint),predicates=texts if custom else None,device=device,full_vocabulary=not custom)
         captured={};hook=model.model.register_forward_hook(lambda m,i,o:captured.update(out=o))
         boxes=np.asarray([o['box_xyxy'] for o in sample['objects']],np.float32)
         with Image.open(image_path) as image:model.predict(image.convert('RGB'),boxes,masks=masks,box_scores=scores)
@@ -314,7 +331,7 @@ def official_reference(upstream, family, sample, catalog, directory, text=False,
     provenance.write_text(json.dumps(saved,indent=2))
     (directory/'reference-provenance.json').write_text(json.dumps(saved,indent=2))
     del model
-    if torch.cuda.is_available():torch.cuda.empty_cache()
+    if device == 'cuda':torch.cuda.empty_cache()
     return reference
 
 
@@ -351,9 +368,9 @@ def isolated_official_reference(*args, **kwargs):
             process.terminate();process.join()
 
 
-def build_native_text_probe(upstream, backend, folder, env):
+def build_native_text_probe(upstream, backend, folder, env, build=None):
     folder=folder.resolve()
-    build=upstream_build_dir(upstream,backend)
+    build=upstream_build_dir(upstream,backend) if build is None else build
     flags=(build/'CMakeFiles/relateanything-ggml.dir/flags.make').read_text()
     includes=re.search(r'^CXX_INCLUDES = (.*)$',flags,re.M).group(1)
     cflags=re.search(r'^CXX_FLAGS = (.*)$',flags,re.M).group(1)
@@ -375,25 +392,41 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--probe',type=Path,required=True);p.add_argument('--model',type=Path,required=True)
     p.add_argument('--backend',choices=('cpu','cuda','vulkan'),required=True);p.add_argument('--catalog',type=Path,required=True)
+    p.add_argument('--upstream-build',type=Path,
+                   default=os.environ.get('AICORE_TEST_RELATE_UPSTREAM_BUILD'),
+                   help='Audited upstream build configured with matching backend/compiler options')
     p.add_argument('--tokenizer',type=Path);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--reference-cache',type=Path,
+                   help='Shared, provenance-verified independent checkpoint cache')
+    p.add_argument('--official-rmse-limit',type=float)
+    p.add_argument('--official-top1-limit',type=float)
+    p.add_argument('--official-jaccard-limit',type=float)
     p.add_argument('--warmup',type=int,default=2);p.add_argument('--repeat',type=int,default=5);p.add_argument('--threads',type=int,default=8)
     p.add_argument('--samples',type=int,nargs='+',default=[0,50,60]);p.add_argument('--text',action='store_true')
     p.add_argument('--regions',action='store_true',help='Exercise binary masks and detector confidences')
     p.add_argument('--custom',action='store_true',help='Exercise the matching native predicate student in the relation graph')
     p.add_argument('--student',type=Path);p.add_argument('--decompose',action='store_true')
-    p.add_argument('--no-strict',action='store_true',help='Match the upstream CLI default arithmetic mode')
+    mode=p.add_mutually_exclusive_group()
+    mode.add_argument('--no-strict',action='store_true',help='Explicit optimized arithmetic on all models')
+    mode.add_argument('--auto-arithmetic',action='store_true',help='Match the upstream automatic CUDA F32 arithmetic policy')
     p.add_argument('--contracts',action='store_true');p.add_argument('--performance-limit',type=float,default=1.05)
     args=p.parse_args();args.threads=args.threads if args.threads>0 else min(8,os.cpu_count() or 1);upstream_text=os.environ.get('AICORE_TEST_RELATE_UPSTREAM')
     if not upstream_text: raise RuntimeError('Set AICORE_TEST_RELATE_UPSTREAM to the pinned RelateAnything-GGML checkout')
+    if not args.text and (
+            args.official_rmse_limit is None or not math.isfinite(args.official_rmse_limit) or args.official_rmse_limit <= 0 or
+            args.official_top1_limit is None or not 0 < args.official_top1_limit <= 1 or
+            args.official_jaccard_limit is None or not 0 < args.official_jaccard_limit <= 1):
+        p.error('non-text probes require explicit finite checkpoint limits from the validation manifest')
     upstream=Path(upstream_text).resolve()
-    binary=upstream_build_dir(upstream,args.backend)/'relateanything-ggml';args.output.parent.mkdir(parents=True,exist_ok=True)
+    build=upstream_build_dir(upstream,args.backend,args.upstream_build)
+    binary=build/'relateanything-ggml';args.output.parent.mkdir(parents=True,exist_ok=True)
     folder=Path(tempfile.mkdtemp(prefix=args.output.stem+'-',dir=args.output.parent))
-    env,native_env=runtime_environments(os.environ,upstream_build_dir(upstream,args.backend),args.backend)
-    revision,build_info=verify_upstream(upstream,binary,native_env)
+    env,native_env=runtime_environments(os.environ,build,args.backend)
+    revision,build_info=verify_upstream(upstream,binary,native_env,args.backend)
     auditor=timing_auditor(args.backend)
     family=args.model.name.split('-text-student')[0] if args.text else args.model.name.rsplit('-',1)[0]
     catalog=json.loads(args.catalog.read_text()); rows=[]
-    text_binary=build_native_text_probe(upstream,args.backend,folder,native_env) if args.text else None
+    text_binary=build_native_text_probe(upstream,args.backend,folder,native_env,build) if args.text else None
     for index in ([0] if args.text else args.samples):
         directory=folder/str(index);directory.mkdir();s=catalog['samples'][index]
         decoded_ppm=None
@@ -403,15 +436,18 @@ def main():
                  '--sample',index,'--pixels',decoded_ppm],directory,
                 'decode-input',env)
         common=[binary,'--backend',args.backend,'--threads',args.threads]
-        if not args.no_strict:common+=['--strict-f32']
+        if args.no_strict:common+=['--no-strict-f32']
+        elif not args.auto_arithmetic:common+=['--strict-f32']
         command=[args.probe,'--backend',args.backend,'--threads',args.threads,'--model',args.model,'--warmup',args.warmup,'--repeat',args.repeat,'--output',directory/'candidate.rafo']
         if args.no_strict:command+=['--no-strict']
+        elif args.auto_arithmetic:command+=['--auto-arithmetic']
         texts=None;masks=None;scores=None
         if args.text:
             texts=['above','holding','next to','café','上面','&amp;','a'*150,'']
             (directory/'texts.json').write_text(json.dumps(texts,ensure_ascii=False))
             command+=['--texts',directory/'texts.json','--tokenizer',args.tokenizer]
-            native=[text_binary,args.model,args.tokenizer,directory/'texts.json',args.backend,args.threads,args.warmup,args.repeat,directory/'upstream.f32',int(not args.no_strict)]
+            if args.contracts:command+=['--contracts']
+            native=[text_binary,args.model,args.tokenizer,directory/'texts.json',args.backend,args.threads,args.warmup,args.repeat,directory/'upstream.f32',(-1 if args.auto_arithmetic else int(not args.no_strict))]
         else:
             boxes=np.asarray([o['box_xyxy'] for o in s['objects']],np.float32)
             request='RAIP1\n'+json.dumps(str(decoded_ppm.resolve()))+'\n'+str(len(boxes))+'\n'+'\n'.join(' '.join(format(float(v),'.17g') for v in row) for row in boxes)+'\n'
@@ -437,13 +473,16 @@ def main():
             command+=['--catalog',args.catalog,'--sample',index]
             if args.contracts and index==args.samples[0]: command+=['--contracts']
             if args.contracts or args.decompose or args.custom or args.regions:command+=['--edges',directory/'candidate-edges.json']
-        ref=isolated_official_reference(upstream,family,s,args.catalog,directory,text=args.text,texts=texts,custom=args.custom,masks=masks,scores=scores,image_override=decoded_ppm)
+        ref=isolated_official_reference(upstream,family,s,args.catalog,directory,text=args.text,texts=texts,custom=args.custom,masks=masks,scores=scores,image_override=decoded_ppm,backend=args.backend,reference_cache=args.reference_cache or args.output.parent.parent/'framework-references')
         before=run(native,directory,'upstream-before',native_env,auditor)
         candidate=run(command,directory,'candidate',env,auditor)
         after=run(native,directory,'upstream-after',native_env,auditor)
         if args.text:
             x=np.fromfile(directory/'candidate.rafo','<f4').reshape(-1,512);y=np.fromfile(directory/'upstream.f32','<f4').reshape(-1,512)
             row={'native_max_diff':float(np.max(np.abs(x-y))),'official_max_diff':float(np.max(np.abs(x-ref['values']))),'official_mean_diff':float(np.mean(np.abs(x-ref['values']))),'latency_ms':candidate['latency_ms'],'performance_ratio':candidate['latency_ms']/statistics.mean([before['latency_ms'],after['latency_ms']]),'upstream_before_ms':before['latency_ms'],'upstream_after_ms':after['latency_ms']}
+            row['official_output_error_excess']=float(np.maximum(
+                np.abs(x.astype(np.float64)-ref['values'])-
+                np.abs(y.astype(np.float64)-ref['values']),0).max())
         else:
             actual=load_raw(directory/'candidate.rafo');baseline_raw=load_raw(directory/'upstream.rafo')
             native_values=compare(baseline_raw,actual,exact_pairs=True);truth=compare(ref,actual);upstream_truth=compare(ref,baseline_raw)
@@ -456,6 +495,7 @@ def main():
                 'official_top1_drop':max(0.0,upstream_truth['top1_agreement']-truth['top1_agreement']),
                 'official_pair_recall_drop':max(0.0,upstream_truth['pair_set_recall']-truth['pair_set_recall']),
                 'upstream_before_ms':before['latency_ms'],'upstream_after_ms':after['latency_ms'],'forward_ms':candidate['forward_mean_ms']}
+            row.update(accuracy.checkpoint_metrics(ref,baseline_raw,actual))
             if (directory/'candidate-edges.json').exists():
                 edge_command=list(native);edge_command.remove('--raw-logits')
                 edge_command[edge_command.index('--output')+1]=directory/'upstream-edges.json'
@@ -480,9 +520,22 @@ def main():
         row['sample']=index;row['candidate']=candidate;row['upstream_before']=before;row['upstream_after']=after;rows.append(row)
     summary=summarize_rows(rows)
     failures=parity_failures(rows,args.text,args.performance_limit)
-    report={'schema':1,'metrics':summary,'failures':failures,'fingerprint':str(rows[0]['candidate']['fingerprint']),
+    if not args.text:
+        summary.update(accuracy.pooled_metrics(rows))
+        failures.extend(accuracy.absolute_failures(summary,args.official_rmse_limit,
+                        args.official_top1_limit,args.official_jaccard_limit))
+    report={'schema':2,'metrics':summary,'failures':failures,'fingerprint':str(rows[0]['candidate']['fingerprint']),
             'model_sha256':digest(args.model),'backend':args.backend,'upstream_revision':revision,
+            'validation_script_sha256':digest(Path(__file__)),
+            'accuracy_helper_sha256':digest(Path(accuracy.__file__)),
+            'checkpoint_accuracy':{'scope':'pooled selected catalog inputs; not the upstream 50-image benchmark',
+                'reference_device':'cpu' if args.text or args.backend=='cpu' else 'cuda when available, otherwise cpu',
+                'rmse_limit':args.official_rmse_limit,'predicate_top1_limit':args.official_top1_limit,
+                'pair_jaccard_limit':args.official_jaccard_limit,
+                'per_output_added_error_limit':1e-5},
             'upstream_binary_sha256':digest(binary),'probe_sha256':digest(args.probe),'catalog_sha256':digest(args.catalog),
+            'upstream_build':str(build.resolve()),
+            'upstream_timed_binary_sha256':digest(text_binary if args.text else binary),
             'upstream_snapshot_sha256':digest(SNAPSHOT),'upstream_build_info':build_info,
             'candidate_libraries':loaded_libraries(args.probe,env),
             'upstream_libraries':loaded_libraries(binary,native_env),
@@ -492,7 +545,7 @@ def main():
                 'logs':str(folder)},
             'host':{'system':platform.platform(),'machine':platform.machine(),'cpu_count':os.cpu_count(),
                     'cpu_affinity':sorted(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else None},
-            'math_mode':'default' if args.no_strict else 'strict_f32','custom_predicates':args.custom,'binary_masks_and_scores':args.regions,
+            'math_mode':'automatic' if args.auto_arithmetic else ('optimized' if args.no_strict else 'strict_f32'),'custom_predicates':args.custom,'binary_masks_and_scores':args.regions,
             'decompose':args.decompose,'threads':args.threads,'warmup':args.warmup,'repeats':args.repeat,'artifacts':str(folder),'rows':rows}
     args.output.write_text(json.dumps(report,indent=2))
     print('latency_ms='+str(summary['latency_ms']))

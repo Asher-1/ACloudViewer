@@ -39,16 +39,18 @@ the RAM++ label. Open it from **Plugins → Recognize Anything (RAM++)**.
    return tags. **Download model** verifies the catalog SHA-256.
 2. Select Auto, CUDA, Vulkan, Metal, or CPU when that backend is present.
    Auto resolves in CUDA → Vulkan → CPU order.
-3. Click **Use test data** to fetch the shared upstream `ram_datasets.zip`
+3. Click **Try sample data** to fetch the shared upstream `ram_datasets.zip`
    cache. The input list is filled with official `demo/demo1.jpg` through
-   `demo/demo4.jpg`, with demo1 selected first.
+   `demo/demo4.jpg`, with demo1 selected first, and the Video / camera tab is
+   given the verified `demo/ram_demo1_to_4.avi` member.
 4. Add files, a directory, or selected database images and click **Run**.
    Batch progress, timings, searchable tag scores, and selected tags appear in
    the Results tab. Tag2Text additionally supports captions and specified
    caption tags; beam and caption-length options apply only to Tag2Text.
-5. The final Video / camera tab processes frames as the consumer advances.
-   **Load sample video** selects the verified `demo/ram_demo1_to_4.avi` member
-   from the official RAM archive. Results can be exported as JSON, CSV, or
+5. The final Video / camera tab processes frames as the consumer advances;
+   each frame is displayed with its caption and selected tags once its
+   inference completes. **Try sample data** clicked on this tab keeps it
+   active with the sample video selected. Results can be exported as JSON, CSV, or
    text, or added to the database as a labeled image.
 
 The Options tab accepts upstream-compatible custom label lists and thresholds

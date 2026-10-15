@@ -1,5 +1,10 @@
-// ACloudViewer owns physical backend handles. This upstream adapter owns only
-// the session scheduler; callers retain and lock the shared BackendLeases.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "relateanything/backend.hpp"
 
 #include <stdexcept>

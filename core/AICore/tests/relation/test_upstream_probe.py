@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reject semantic edge drift and mismatched upstream build ownership."""
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -14,6 +15,20 @@ spec.loader.exec_module(probe)
 
 
 class UpstreamProbeTests(unittest.TestCase):
+    def test_cpu_and_text_framework_truth_never_query_or_initialize_cuda(self):
+        torch=mock.Mock()
+        torch.cuda.is_available.side_effect=AssertionError('CPU truth queried CUDA')
+        self.assertEqual(probe.framework_device('cpu',False,torch),'cpu')
+        self.assertEqual(probe.framework_device('cuda',True,torch),'cpu')
+        torch.cuda.is_available.assert_not_called()
+
+    def test_gpu_framework_truth_uses_available_device_and_falls_back_to_cpu(self):
+        torch=mock.Mock()
+        torch.cuda.is_available.return_value=True
+        self.assertEqual(probe.framework_device('vulkan',False,torch),'cuda')
+        torch.cuda.is_available.return_value=False
+        self.assertEqual(probe.framework_device('cuda',False,torch),'cpu')
+
     def test_framework_reference_finishes_in_spawned_process_before_return(self):
         context=mock.Mock();receiver=mock.Mock();sender=mock.Mock();child=mock.Mock()
         context.Pipe.return_value=(receiver,sender)
@@ -75,15 +90,15 @@ class UpstreamProbeTests(unittest.TestCase):
 
     def test_failure_identifies_sample_metric_and_unchanged_limit(self):
         rows = [dict(sample=0, native_max_diff=0, official_max_diff=0,
-                     performance_ratio=1),
+                     official_output_error_excess=0, performance_ratio=1),
                 dict(sample=50, native_max_diff=0, official_max_diff=0,
-                     performance_ratio=1.06)]
+                     official_output_error_excess=0, performance_ratio=1.06)]
         self.assertEqual(probe.parity_failures(rows, text=True), [
             'sample 50: performance_ratio=1.06 requires <= 1.05'])
 
     def test_nonfinite_or_missing_metrics_cannot_pass_parity(self):
         row = dict(sample=0, native_max_diff=0, official_max_diff=0,
-                   performance_ratio=1)
+                   official_output_error_excess=0, performance_ratio=1)
         for value in (float('nan'), float('inf'), None):
             with self.subTest(value=value):
                 candidate = dict(row)
@@ -92,6 +107,29 @@ class UpstreamProbeTests(unittest.TestCase):
                 else:
                     candidate['performance_ratio'] = value
                 self.assertTrue(probe.parity_failures([candidate], text=True))
+
+    def test_text_local_error_is_rejected_despite_passing_absolute_bound(self):
+        row = dict(sample=0, native_max_diff=.00002, official_max_diff=.002,
+                   official_output_error_excess=.00002, performance_ratio=1)
+        self.assertEqual(probe.parity_failures([row], text=True), [
+            'sample 0: official_output_error_excess=2e-05 requires <= 1e-05'])
+
+    def test_numeric_policy_change_invalidates_upstream_snapshot(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            policy = root/'accuracy-policy.md'
+            policy.write_text('original numeric policy')
+            snapshot = root/'snapshot.json'
+            snapshot.write_text(json.dumps(dict(
+                commit='pinned',files={},ggml_commit='ggml-pinned',
+                accuracy_policy=dict(source=policy.name,
+                                     sha256=probe.digest(policy)))))
+            policy.write_text('changed numeric policy')
+            with mock.patch.object(probe,'SNAPSHOT',snapshot), \
+                 mock.patch.object(probe.subprocess,'check_output',
+                                   return_value='pinned\n'):
+                with self.assertRaisesRegex(RuntimeError,'numeric policy'):
+                    probe.verify_upstream(root,root/'native',{},'cpu')
 
     def test_cuda_uses_recorded_runtime_without_candidate_ggml_paths(self):
         with tempfile.TemporaryDirectory() as name:
@@ -162,6 +200,37 @@ class UpstreamProbeTests(unittest.TestCase):
                 'CMAKE_HOME_DIRECTORY:INTERNAL=/another/source\n')
             with self.assertRaisesRegex(RuntimeError, 'different source'):
                 probe.upstream_build_dir(root, 'cpu')
+
+    def test_selected_build_still_requires_pinned_source_and_real_executable(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            build = root / 'matching-flags'
+            build.mkdir()
+            (root / 'cpp_ggml').mkdir()
+            cache = build / 'CMakeCache.txt'
+            cache.write_text(f'CMAKE_HOME_DIRECTORY:INTERNAL={root}/cpp_ggml\n')
+            binary = build / 'relateanything-ggml'
+            with self.assertRaisesRegex(RuntimeError, 'executable is missing'):
+                probe.upstream_build_dir(root, 'cpu', build)
+            binary.touch()
+            self.assertEqual(probe.upstream_build_dir(root, 'cpu', build), build)
+            cache.write_text('CMAKE_HOME_DIRECTORY:INTERNAL=/another/source\n')
+            with self.assertRaisesRegex(RuntimeError, 'different source'):
+                probe.upstream_build_dir(root, 'cpu', build)
+
+    def test_selected_binary_must_match_the_requested_backend(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            snapshot = root / 'snapshot.json'
+            snapshot.write_text(json.dumps(dict(commit='pinned', files={},
+                                                ggml_commit='ggml-pinned')))
+            info = json.dumps(dict(backend='cuda', ggml_commit='ggml-pinned',
+                                   source=dict(files={})))
+            with mock.patch.object(probe, 'SNAPSHOT', snapshot), \
+                 mock.patch.object(probe.subprocess, 'check_output',
+                                   side_effect=['pinned\n', info]):
+                with self.assertRaisesRegex(RuntimeError, 'different backend'):
+                    probe.verify_upstream(root, root / 'native', {}, 'cpu')
 
 
 if __name__ == '__main__':

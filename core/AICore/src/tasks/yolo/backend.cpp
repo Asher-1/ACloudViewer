@@ -93,6 +93,7 @@ BackendCtx init_backend_ctx(int n_threads, const std::string& device_request) {
      * to CPU. */
     if (ctx.gpu) {
         ctx.sched = ggml_common::new_gpu_sched({ctx.gpu}, ctx.cpu, kGraphSize);
+        ctx.sched_graph_size = kGraphSize;
         if (!ctx.sched) {
             YOLO_LOG_WARN("%s; falling back to CPU-only",
                           ggml_common::kSchedNewFailedMsg);
@@ -160,6 +161,23 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
             ctx.gpu = nullptr;
             ctx.is_cuda = ctx.is_vulkan = false;
         } else {
+            // ggml_backend_sched_alloc_graph asserts hash size >= nodes +
+            // leafs. Open-vocabulary heads (YOLO-World / YOLOE with hundreds
+            // of classes) exceed the default capacity, so recreate the
+            // scheduler larger only when this graph needs it; graphs that fit
+            // keep the original scheduler untouched.
+            const size_t required =
+                    size_t(n_nodes) + size_t(ggml_graph_size(graph));
+            if (required > ctx.sched_graph_size) {
+                ggml_backend_sched_free(ctx.sched);
+                ctx.sched = ggml_common::new_gpu_sched({ctx.gpu}, ctx.cpu,
+                                                       required);
+                ctx.sched_graph_size = required;
+                if (!ctx.sched) {
+                    YOLO_LOG_ERROR("%s", ggml_common::kSchedNewFailedMsg);
+                    return false;
+                }
+            }
             ggml_backend_sched_reset(ctx.sched);
             // Pin the external leaves AFTER reset, before alloc_graph.
             // ggml_backend_sched_reset clears all hv_tensor_backend_ids to

@@ -7,9 +7,9 @@ and camera frames, and export complete per-class results.
 ## Start with the sample
 
 Open **Plugins → Recognize Anything (RAM++)**, select a device, then click
-**Use test data**. The button uses ACloudViewer's shared download and extraction
+**Try sample data**. The button uses ACloudViewer's shared download and extraction
 cache for the official `ram_datasets.zip` archive and fills the input list with
-`demo/demo1.jpg`. Choose a RAM-family model and click **Run**.
+`demo/demo1.jpg`, plus the Video / camera tab with `demo/ram_demo1_to_4.avi`. Choose a RAM-family model and click **Run**.
 
 The first run may download the selected GGUF model. qRAM verifies its catalog
 SHA-256 before inference. Later runs reuse the shared model cache.

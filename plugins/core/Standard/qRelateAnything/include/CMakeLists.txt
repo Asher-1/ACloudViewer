@@ -4,4 +4,6 @@ target_sources(${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingVideoWidget.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingPresets.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingTemporal.h
 )

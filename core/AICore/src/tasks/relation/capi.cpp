@@ -1,4 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -22,12 +28,14 @@ struct aicore_relation_ctx {
     aicore::runtime::BackendLease accelerator, cpu;
     ra_context *native = nullptr;
     relateanything::ModelOptions text_options;
+    std::unique_ptr<relateanything::PredicateEncoder> text_encoder;
     std::array<char, 1024> error{};
     std::string device;
     aicore_pipeline_timings timings{};
     bool text_only = false, loaded = false, has_timings = false;
     ~aicore_relation_ctx() {
         auto lock = aicore::runtime::lock_backend_leases({accelerator, cpu});
+        text_encoder.reset();
         ra_free(native);
     }
 };
@@ -77,7 +85,7 @@ aicore_relation_options aicore_relation_default_options(void) {
     o.device = "auto";
     o.max_boxes = 60;
     o.topk = 128;
-    o.strict_f32 = 0;
+    o.strict_f32 = -1;
     o.flash_attention = o.compact_pairs = o.fused_vocabulary =
             o.cache_positions = o.retain_features = 1;
     return o;
@@ -95,6 +103,8 @@ aicore_relation_ctx *aicore_relation_create(
     if (!ctx) return nullptr;
     try {
         require(valid(options), "invalid options size/version");
+        require(options->strict_f32 >= -1 && options->strict_f32 <= 1,
+                "strict_f32 must be -1 (automatic), 0 or 1");
         require(options->model_path && *options->model_path,
                 "model_path is required");
         require(options->max_boxes && options->max_boxes <= 10000 &&
@@ -143,11 +153,19 @@ aicore_relation_ctx *aicore_relation_create(
         text.backend_binding = binding;
         text.backend = backend;
         text.threads = threads;
-        text.strict_f32 = options->strict_f32 != 0;
+        text.strict_f32 = options->strict_f32 > 0;
+        text.strict_f32_auto = options->strict_f32 < 0;
         text.text_student = options->text_student_path
                                     ? options->text_student_path
                                     : options->model_path;
         if (options->tokenizer_path) text.tokenizer = options->tokenizer_path;
+        if (options->diagnostic_directory && *options->diagnostic_directory) {
+            std::filesystem::create_directories(options->diagnostic_directory);
+            text.token_output =
+                    (std::filesystem::path(options->diagnostic_directory) /
+                     "text-token-ids.json")
+                            .string();
+        }
         if (ctx->text_only) {
             gguf_init_params params{};
             params.no_alloc = true;
@@ -211,6 +229,12 @@ const char *aicore_relation_last_error(const aicore_relation_ctx *ctx) {
 }
 const char *aicore_relation_context_device(const aicore_relation_ctx *ctx) {
     return ctx ? ctx->device.c_str() : "";
+}
+int aicore_relation_calibration(const aicore_relation_ctx *ctx,
+                                float *a,
+                                float *b) {
+    if (!ctx || !ctx->loaded || ctx->text_only) return -1;
+    return ra_calibration(ctx->native, a, b);
 }
 int aicore_relation_infer_image(aicore_relation_ctx *ctx,
                                 const aicore_image_view *image,
@@ -292,6 +316,7 @@ int aicore_relation_infer_image(aicore_relation_ctx *ctx,
         out.subject_indices = raw->subject_indices;
         out.object_indices = raw->object_indices;
         out.valid_mask = raw->valid_mask;
+        out.predicate_spatial = raw->predicate_spatial;
         out.predicate_names = raw->predicate_names;
         out.backend_buffer_bytes = raw->backend_buffer_bytes;
         out.forward_ms = raw->forward_ms;
@@ -339,8 +364,11 @@ int aicore_relation_encode_text(aicore_relation_ctx *ctx,
                 {ctx->accelerator, ctx->cpu});
         auto owner = std::make_unique<Embeddings>();
         const auto start = Clock::now();
-        owner->values =
-                relateanything::encode_predicates(ctx->text_options, names);
+        if (!ctx->text_encoder)
+            ctx->text_encoder =
+                    std::make_unique<relateanything::PredicateEncoder>(
+                            ctx->text_options);
+        owner->values = ctx->text_encoder->encode(names);
         if (aicore_cancel_requested()) {
             error(ctx, "cancelled");
             return 1;

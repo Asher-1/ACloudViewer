@@ -11,7 +11,8 @@ from unittest.mock import patch
 import demo_reference_probe
 import tagging_reference
 import cpu_precision_reference
-from upstream_metrics_probe import (active_graphics_processes, execute_audited,
+from upstream_metrics_probe import (active_graphics_processes,
+                                    aicore_latency_ms, execute_audited,
                                     gpu_overlap_pids, include_graphics_audit,
                                     metrics_for_backend, probability_alignment,
                                     truth_cache, upstream_backend_env)
@@ -103,6 +104,11 @@ class IndependentAccuracyTests(unittest.TestCase):
 
 
 class TimingAuditTests(unittest.TestCase):
+    def test_aicore_latency_uses_typed_pipeline_timing_not_caller_decode_wall(self):
+        self.assertEqual(aicore_latency_ms({"latency_ms": 12.0,
+                                            "e2e_ms": 9.5}), 9.5)
+        self.assertEqual(aicore_latency_ms({"latency_ms": 12.0}), 12.0)
+
     def test_demo_wrapper_forwards_probe_inputs_and_threads(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -151,9 +157,13 @@ class TimingAuditTests(unittest.TestCase):
             self.assertEqual(default, truth_cache(*args, reference_device="cuda"))
             self.assertNotEqual(default, truth_cache(*args, reference_device="cpu"))
 
-    def test_active_graphics_cannot_be_whitelisted_as_an_idle_context(self):
+    def test_desktop_graphics_do_not_override_allowed_compute_contexts(self):
         samples = [{"pids": [17, 42, 99], "active_graphics_pids": [42, 99]}]
-        self.assertEqual(gpu_overlap_pids(samples, {17, 42}, 99), [42])
+        self.assertEqual(gpu_overlap_pids(samples, {17, 42}, 99), [])
+
+    def test_external_compute_is_rejected_while_desktop_graphics_are_observational(self):
+        samples = [{"pids": [17, 42], "active_graphics_pids": [99]}]
+        self.assertEqual(gpu_overlap_pids(samples, {17}, None), [42])
 
     def test_idle_allowed_context_and_monitored_child_are_accepted(self):
         samples = [{"pids": [17, 42, 99], "active_graphics_pids": [99]}]
@@ -177,10 +187,10 @@ class TimingAuditTests(unittest.TestCase):
         with patch("upstream_metrics_probe.subprocess.run") as run:
             run.return_value.stdout = "0 42 G 10 1 - - - - Xorg\n"
             include_graphics_audit(Evaluation)
-            self.assertEqual(Evaluation.gpu_process_ids(), {17, 42})
+            self.assertEqual(Evaluation.gpu_process_ids(), {17})
             run.assert_called_once()
 
-    def test_persistent_graphics_activity_has_a_bounded_reservation_wait(self):
+    def test_persistent_graphics_activity_is_observational(self):
         class Evaluation:
             @staticmethod
             def gpu_process_ids():
@@ -189,9 +199,8 @@ class TimingAuditTests(unittest.TestCase):
                 patch("upstream_metrics_probe.time.monotonic", side_effect=[0, 61]):
             run.return_value.stdout = "0 42 G 10 1 - - - - Xorg\n"
             include_graphics_audit(Evaluation, idle_timeout=60)
-            self.assertEqual(Evaluation.gpu_process_ids(), {42})
-            with self.assertRaisesRegex(RuntimeError, "within 60s"):
-                Evaluation.gpu_process_ids()
+            self.assertEqual(Evaluation.gpu_process_ids(), set())
+            self.assertEqual(Evaluation.gpu_process_ids(), set())
 
     def test_overlap_is_preserved_and_retried(self):
         calls = []
