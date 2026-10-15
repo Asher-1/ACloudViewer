@@ -211,7 +211,7 @@ struct Session::Impl {
     lightglue::engine_backend be;
     ggml_backend_buffer_t weights = nullptr;
     ggml_context* device_ctx = nullptr;  // non-CPU weight context
-    std::vector<float> r_host_;          // resize constant matrix upload staging
+    std::vector<float> r_host_;  // resize constant matrix upload staging
 
     void Release() {
         if (weights) {
@@ -282,14 +282,13 @@ bool Session::Load(const std::string& gguf_path,
         }
         for (int64_t i = 0; i < impl_->file.N(); ++i) {
             const ggml_tensor* src = impl_->file.Tensor(i);
-            ggml_tensor* dst = ggml_new_tensor(impl_->device_ctx,
-                                               GGML_TYPE_F32, GGML_MAX_DIMS,
-                                               src->ne);
+            ggml_tensor* dst = ggml_new_tensor(impl_->device_ctx, GGML_TYPE_F32,
+                                               GGML_MAX_DIMS, src->ne);
             ggml_set_name(dst, ggml_get_name(src));
             impl_->file.device_tensors.emplace(ggml_get_name(src), dst);
         }
-        impl_->weights = ggml_backend_alloc_ctx_tensors(impl_->device_ctx,
-                                                        impl_->be.be);
+        impl_->weights =
+                ggml_backend_alloc_ctx_tensors(impl_->device_ctx, impl_->be.be);
         if (!impl_->weights) {
             error_ = "failed to allocate anycalib device weights";
             return false;
@@ -317,8 +316,7 @@ bool Session::Load(const std::string& gguf_path,
                 const size_t block_bytes = ggml_type_size(GGML_TYPE_Q8_0);
                 const int64_t block_elems = ggml_blck_size(GGML_TYPE_Q8_0);
                 const size_t nblocks = values.size() / (size_t)block_elems;
-                const uint8_t* raw =
-                        static_cast<const uint8_t*>(src->data);
+                const uint8_t* raw = static_cast<const uint8_t*>(src->data);
                 for (size_t b = 0; b < nblocks; ++b) {
                     const uint8_t* bp = raw + b * block_bytes;
                     ggml_fp16_t d_half;

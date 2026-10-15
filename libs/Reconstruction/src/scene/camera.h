@@ -104,18 +104,20 @@ public:
     // Upstream-parity factories (COLMAP 4.x scene/camera.h): initialize
     // parameters for the given model with the principal point at the image
     // center.
-    static Camera CreateFromModelId(camera_t camera_id,
-                                    CameraModelId model_id,
-                                    double focal_length,
-                                    size_t width,
-                                    size_t height,
-                                    CameraSource source = CameraSource::UNKNOWN);
-    static Camera CreateFromModelName(camera_t camera_id,
-                                      const std::string& model_name,
-                                      double focal_length,
-                                      size_t width,
-                                      size_t height,
-                                      CameraSource source = CameraSource::UNKNOWN);
+    static Camera CreateFromModelId(
+            camera_t camera_id,
+            CameraModelId model_id,
+            double focal_length,
+            size_t width,
+            size_t height,
+            CameraSource source = CameraSource::UNKNOWN);
+    static Camera CreateFromModelName(
+            camera_t camera_id,
+            const std::string& model_name,
+            double focal_length,
+            size_t width,
+            size_t height,
+            CameraSource source = CameraSource::UNKNOWN);
 
     // Upstream-parity: the camera as a sensor in a rig.
     inline sensor_t SensorId() const {
