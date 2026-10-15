@@ -56,6 +56,10 @@ target_include_directories( map_anything_worker_parity_harness PRIVATE
 target_compile_definitions( map_anything_worker_parity_harness PRIVATE AICore_ENABLED )
 target_link_libraries( map_anything_worker_parity_harness PRIVATE
     AICore
+    # MapAnythingGeometry.cpp includes <Eigen/Dense>; on Linux the docker
+    # image resolves it from the default /usr/include/eigen3 path, but MSVC
+    # has no default Eigen location (measured: C1083 on windows-2022).
+    Eigen3::Eigen
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Concurrent
