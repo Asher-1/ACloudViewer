@@ -9,6 +9,9 @@
 // (no model load) and the catalog->variant mapping (gtest, same pattern as
 // test_qyolo_helpers).
 
+// MSVC hides M_PI behind _USE_MATH_DEFINES; the FoV test uses it.
+#define _USE_MATH_DEFINES
+
 #include <gtest/gtest.h>
 
 #include <QDir>

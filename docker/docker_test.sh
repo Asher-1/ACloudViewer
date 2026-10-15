@@ -80,10 +80,18 @@ python_unit_tests() {
         # package and wipe their build tree, so they take the first branch
         # and stay untouched.
         if ! python -c "import cloudViewer" 2>/dev/null; then
-            if [ -n "${ACloudViewer_BUILD:-}" ] && [ -d "${ACloudViewer_BUILD}/lib/python_package/cloudViewer" ]; then
+            if [ -n "${ACloudViewer_BUILD:-}" ] && [ -f "${ACloudViewer_BUILD}/CMakeCache.txt" ]; then
+                if [ ! -d "${ACloudViewer_BUILD}/lib/python_package/cloudViewer" ]; then
+                    # The GUI-app image build stops at `make install`: the
+                    # python-package assembly target (`make python-package`)
+                    # is separate and never runs there. Build it on demand so
+                    # the self-loading package exists for pytest.
+                    cmake --build "${ACloudViewer_BUILD}" --target python-package \
+                        || { echo "ERROR: python-package assembly failed in ${ACloudViewer_BUILD}" >&2; exit 1; }
+                fi
                 export PYTHONPATH="${ACloudViewer_BUILD}/lib/python_package${PYTHONPATH:+:$PYTHONPATH}"
             else
-                echo "ERROR: cloudViewer not importable and no assembled package at ${ACloudViewer_BUILD:-<unset>}/lib/python_package/cloudViewer" >&2
+                echo "ERROR: cloudViewer not importable and no build tree at ${ACloudViewer_BUILD:-<unset>} to assemble it from" >&2
                 exit 1
             fi
             # Whole-tree tests also need the runtime deps (numpy, plyfile,
