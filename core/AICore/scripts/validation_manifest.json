@@ -4274,12 +4274,14 @@
         "{model}",
         "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
         "--max-abs",
-        "2e-6",
+        "5e-3",
         "--rel-rms",
-        "5e-6"
+        "8e-3",
+        "--device",
+        "{backend}"
       ],
       "env": {},
-      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx, CPUExecutionProvider) element-wise on the pinned reference crop. Measured on cpu: rays rel-RMS 4.9e-8, tangent rel-RMS 2.4e-7, max|diff| 1.6e-7; thresholds carry >=8x headroom. CPU backend only until GPU routing lands with backend parity.",
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. Measured rel-RMS/max|diff| over cpu/cuda/vulkan (F32 weights on-device): rays 4.9e-8/1.7e-5/1.3e-4, tangent 2.4e-7/9.5e-5/7.2e-4; thresholds carry >=8x headroom over the worst backend.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "anycalib-ref-golden",
@@ -4287,22 +4289,22 @@
           {
             "metric": "rays_rel_rms",
             "op": "<",
-            "value": 1e-06
+            "value": 0.0015
           },
           {
             "metric": "tangent_rel_rms",
             "op": "<",
-            "value": 5e-06
+            "value": 0.008
           },
           {
             "metric": "rays_max_abs",
             "op": "<",
-            "value": 2e-06
+            "value": 0.005
           },
           {
             "metric": "tangent_max_abs",
             "op": "<",
-            "value": 2e-06
+            "value": 0.005
           }
         ],
         "require_metrics": [
@@ -4332,12 +4334,14 @@
         "{model}",
         "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
         "--max-abs",
-        "2e-3",
+        "5e-3",
         "--rel-rms",
-        "5e-3"
+        "8e-3",
+        "--device",
+        "{backend}"
       ],
       "env": {},
-      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx, CPUExecutionProvider) element-wise on the pinned reference crop. Measured on cpu: rays rel-RMS 1.1e-4, tangent rel-RMS 6.1e-4, max|diff| 1.8e-4 (half-precision weight storage); thresholds carry >=8x headroom. CPU backend only until GPU routing lands with backend parity.",
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. F16 storage rounding persists through the load-time F32 expansion on non-CPU backends; measured rel-RMS/max|diff| over cpu/cuda/vulkan: rays 1.1e-4/7.5e-5/1.5e-4, tangent 6.1e-4/4.1e-4/8.4e-4; thresholds carry >=8x headroom over the worst backend.",
       "accuracy": {
         "reference": "fixture",
         "reference_id": "anycalib-ref-golden",
@@ -4345,22 +4349,82 @@
           {
             "metric": "rays_rel_rms",
             "op": "<",
-            "value": 0.002
+            "value": 0.0015
           },
           {
             "metric": "tangent_rel_rms",
             "op": "<",
-            "value": 0.005
+            "value": 0.008
           },
           {
             "metric": "rays_max_abs",
             "op": "<",
-            "value": 0.002
+            "value": 0.005
           },
           {
             "metric": "tangent_max_abs",
             "op": "<",
-            "value": 0.002
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "rays_rel_rms",
+          "tangent_rel_rms",
+          "rays_max_abs",
+          "tangent_max_abs"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "anycalib-parity-q8_0",
+      "task": "anycalib",
+      "owned_globs": [
+        "anycalib_models/anycalib_gen_v1.0.0_322x322.q8_0.gguf"
+      ],
+      "model_glob": "anycalib_models/anycalib_gen_v1.0.0_322x322.q8_0.gguf",
+      "light": true,
+      "for_each_model": true,
+      "input_ids": [
+        "anycalib-ref-golden"
+      ],
+      "executable": "binary:anycalib_parity_probe",
+      "args": [
+        "{model}",
+        "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
+        "--max-abs",
+        "1e-2",
+        "--rel-rms",
+        "3e-2",
+        "--device",
+        "{backend}"
+      ],
+      "env": {},
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. The Q8_0 tier quantizes only the ViT transformer matmul weights (pre-transposed, ~99% of parameters); CPU runs quantized mul_mat natively while cuda/vulkan dequantize the weights to F32 at load. Measured rel-RMS/max|diff| over cpu/cuda/vulkan: rays 3.9e-4/4.8e-4/3.9e-4, tangent 2.1e-3/2.6e-3/2.1e-3; thresholds carry >=8x headroom over the worst backend.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "anycalib-ref-golden",
+        "checks": [
+          {
+            "metric": "rays_rel_rms",
+            "op": "<",
+            "value": 0.005
+          },
+          {
+            "metric": "tangent_rel_rms",
+            "op": "<",
+            "value": 0.03
+          },
+          {
+            "metric": "rays_max_abs",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "tangent_max_abs",
+            "op": "<",
+            "value": 0.01
           }
         ],
         "require_metrics": [

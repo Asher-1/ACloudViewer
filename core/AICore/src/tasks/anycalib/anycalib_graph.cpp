@@ -66,6 +66,12 @@ public:
             Close();
             return false;
         }
+        const int pretransposed =
+                gguf_find_key(gguf, "anycalib.quant.matmul_pretransposed");
+        pretransposed_matmul =
+                pretransposed >= 0 &&
+                gguf_get_kv_type(gguf, pretransposed) == GGUF_TYPE_UINT32 &&
+                gguf_get_val_u32(gguf, pretransposed) == 1;
         return error.empty();
     }
     void Close() {
@@ -87,6 +93,10 @@ public:
         return t;
     }
     int64_t N() const { return gguf_get_n_tensors(gguf); }
+    // Q8_0 tier: matmul weights are stored pre-transposed (ne[0] == K). The
+    // flag travels in the GGUF metadata because the dtype signal disappears
+    // when non-CPU backends expand the weights to F32 at load.
+    bool pretransposed_matmul = false;
     std::string Str(const char* key) {
         auto i = gguf_find_key(gguf, key);
         if (i < 0 || gguf_get_kv_type(gguf, i) != GGUF_TYPE_STRING) {
@@ -200,12 +210,17 @@ struct Session::Impl {
     File file;
     lightglue::engine_backend be;
     ggml_backend_buffer_t weights = nullptr;
-    std::vector<float> r_host_;  // resize constant matrix upload staging
+    ggml_context* device_ctx = nullptr;  // non-CPU weight context
+    std::vector<float> r_host_;          // resize constant matrix upload staging
 
     void Release() {
         if (weights) {
             ggml_backend_buffer_free(weights);
             weights = nullptr;
+        }
+        if (device_ctx) {
+            ggml_free(device_ctx);
+            device_ctx = nullptr;
         }
         be.release();
         file.Close();
@@ -239,8 +254,9 @@ bool Session::Load(const std::string& gguf_path,
         return false;
     }
     if (impl_->be.is_cpu()) {
-        // Bind the GGUF memory block directly: f16 weights stay f16 and are
-        // computed natively by the CPU backend.
+        // Bind the GGUF memory block directly: f16 stays f16 (elementwise
+        // operands cast at graph build) and Q8_0 matmul weights run
+        // quantized on the CPU mul_mat.
         impl_->weights = ggml_backend_cpu_buffer_from_ptr(
                 ggml_get_mem_buffer(impl_->file.ctx),
                 ggml_get_mem_size(impl_->file.ctx));
@@ -251,8 +267,77 @@ bool Session::Load(const std::string& gguf_path,
         for (int64_t i = 0; i < impl_->file.N(); ++i)
             impl_->file.Tensor(i)->buffer = impl_->weights;
     } else {
-        error_ = "anycalib: non-CPU device routing lands with backend parity";
-        return false;
+        // Non-CPU routing (lightglue policy): the Vulkan backend has no
+        // stable f16 path and quantized kernels are CPU-only, so every
+        // weight is uploaded as F32. The graph then runs the plain f32
+        // path; F16/Q8_0 storage rounding of the weights is preserved
+        // (expansion changes storage, not values).
+        ggml_init_params dp{};
+        dp.mem_size = ggml_tensor_overhead() * (impl_->file.N() + 8);
+        dp.no_alloc = true;
+        impl_->device_ctx = ggml_init(dp);
+        if (!impl_->device_ctx) {
+            error_ = "failed to create the anycalib device weight context";
+            return false;
+        }
+        for (int64_t i = 0; i < impl_->file.N(); ++i) {
+            const ggml_tensor* src = impl_->file.Tensor(i);
+            ggml_tensor* dst = ggml_new_tensor(impl_->device_ctx,
+                                               GGML_TYPE_F32, GGML_MAX_DIMS,
+                                               src->ne);
+            ggml_set_name(dst, ggml_get_name(src));
+            impl_->file.device_tensors.emplace(ggml_get_name(src), dst);
+        }
+        impl_->weights = ggml_backend_alloc_ctx_tensors(impl_->device_ctx,
+                                                        impl_->be.be);
+        if (!impl_->weights) {
+            error_ = "failed to allocate anycalib device weights";
+            return false;
+        }
+        // WEIGHTS usage tag: sched offload routing requires it, otherwise
+        // every op silently stays on the CPU secondary.
+        ggml_backend_buffer_set_usage(impl_->weights,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        for (int64_t i = 0; i < impl_->file.N(); ++i) {
+            const ggml_tensor* src = impl_->file.Tensor(i);
+            ggml_tensor* dst =
+                    impl_->file.device_tensors.at(ggml_get_name(src));
+            if (src->type == GGML_TYPE_F32) {
+                ggml_backend_tensor_set(dst, src->data, 0, ggml_nbytes(src));
+            } else if (src->type == GGML_TYPE_F16) {
+                std::vector<float> values((size_t)ggml_nelements(src));
+                ggml_fp16_to_fp32_row(
+                        static_cast<const ggml_fp16_t*>(src->data),
+                        values.data(), static_cast<int64_t>(values.size()));
+                ggml_backend_tensor_set(dst, values.data(), 0,
+                                        values.size() * sizeof(float));
+            } else if (src->type == GGML_TYPE_Q8_0) {
+                // Q8_0 block layout: { ggml_fp16_t d (scale), int8_t qs[32] }.
+                std::vector<float> values((size_t)ggml_nelements(src));
+                const size_t block_bytes = ggml_type_size(GGML_TYPE_Q8_0);
+                const int64_t block_elems = ggml_blck_size(GGML_TYPE_Q8_0);
+                const size_t nblocks = values.size() / (size_t)block_elems;
+                const uint8_t* raw =
+                        static_cast<const uint8_t*>(src->data);
+                for (size_t b = 0; b < nblocks; ++b) {
+                    const uint8_t* bp = raw + b * block_bytes;
+                    ggml_fp16_t d_half;
+                    std::memcpy(&d_half, bp, sizeof(d_half));
+                    const float scale = ggml_fp16_to_fp32(d_half);
+                    const int8_t* qs = reinterpret_cast<const int8_t*>(
+                            bp + sizeof(d_half));
+                    const size_t base = b * (size_t)block_elems;
+                    for (int64_t j = 0; j < block_elems; ++j) {
+                        values[base + (size_t)j] = scale * qs[j];
+                    }
+                }
+                ggml_backend_tensor_set(dst, values.data(), 0,
+                                        values.size() * sizeof(float));
+            } else {
+                error_ = "unsupported anycalib weight type for device upload";
+                return false;
+            }
+        }
     }
     loaded_ = true;
     return true;
@@ -282,19 +367,30 @@ bool Session::Run(const float* image_rgb_chw, RunResult& out) {
         }
     } guard{bctx};
     // The f16 GGUF stores biases/scales/pos-embed in f16 while activations
-    // are f32: cast every fetched tensor at graph build so elementwise ops
-    // see uniform f32 (mul_mat would accept f16, add/mul would not).
+    // are f32: cast those elementwise operands at graph build (mul_mat would
+    // accept f16, add/mul would not). Q8_0 matmul weights stay native so the
+    // CPU mul_mat runs quantized (q8 x f32, f32 accumulation); the Q8_0 GGUF
+    // stores only 2-D matmul weights in Q8_0 — every elementwise operand is
+    // f16/f32 by construction.
     auto W = [&](const std::string& n) -> ggml_tensor* {
         ggml_tensor* t = f.Req(n);
-        return (t != nullptr && t->type != GGML_TYPE_F32)
-                       ? ggml_cast(bctx, t, GGML_TYPE_F32)
-                       : t;
+        if (t == nullptr || t->type == GGML_TYPE_F32 ||
+            t->type == GGML_TYPE_Q8_0) {
+            return t;
+        }
+        return ggml_cast(bctx, t, GGML_TYPE_F32);
     };
     // Traced ONNX MatMul weights are [K, M] (unlike nn.Linear [M, K]); the
-    // ggml mul_mat contract needs ne[0] == K, so the four fused matmul
-    // weights transpose at graph build (free stride view).
+    // ggml mul_mat contract needs ne[0] == K, so f32/f16 fused matmul
+    // weights transpose at graph build (free stride view + cont). The Q8_0
+    // GGUF stores matmul weights pre-transposed (ne[0] == K, quantization
+    // blocks along the contraction axis), so they pass through untouched.
     auto WT = [&](const std::string& n) -> ggml_tensor* {
-        return ggml_cont(bctx, ggml_transpose(bctx, W(n)));
+        ggml_tensor* t = W(n);
+        if (t != nullptr && f.pretransposed_matmul) {
+            return t;
+        }
+        return ggml_cont(bctx, ggml_transpose(bctx, t));
     };
 
     // Constants uploaded after graph allocation (no_alloc build context).

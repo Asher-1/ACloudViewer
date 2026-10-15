@@ -27,8 +27,11 @@ precomputed here with ONNX Runtime into ``anycalib.backbone.pos_embed`` so
 the runtime graph needs no Resize/Gather/Slice ops; the canvas tensor is kept
 as ``anycalib.backbone.pos_embed_canvas`` for provenance.
 
-Each run emits an F32 and an F16 sibling. Quantized (Q8_0) tiers belong to
-the validation manifest work and are intentionally not produced here yet.
+Each run emits F32, F16 and Q8_0 siblings. The Q8_0 tier quantizes only the
+ViT transformer matmul weights (~99% of parameters), pre-transposed to
+[M, K] so the runtime mul_mat consumes them natively (blocks along the
+contraction axis); every other tensor stays F16 and non-CPU backends
+dequantize the Q8_0 weights to F32 at load (lightglue policy).
 A fixed-seed reference input plus the ONNX Runtime ``rays``/``tangent_coords``
 outputs are written next to the GGUF as ``*.ref.npz`` for the C++ parity
 gate.
@@ -248,18 +251,53 @@ def main() -> int:
     }
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    for precision, dtype in (("f32", np.float32), ("f16", np.float16)):
+
+    def q8_payload() -> dict:
+        """Q8_0 tier: pre-transposed quantized ViT matmul weights."""
+        payload = {}
+        for name, array in weights.items():
+            if (array.ndim == 2 and name.startswith("backbone.blocks.") and
+                    name.endswith((".attn.qkv.weight", ".attn.proj.weight",
+                                   ".mlp.fc1.weight", ".mlp.fc2.weight"))):
+                # GGUF stores the traced [K, M] layout; the runtime mul_mat
+                # contract wants ne[0] == K with quantization blocks along
+                # the contraction axis, so store the transpose [M, K].
+                tq = np.ascontiguousarray(array.T, dtype=np.float32)
+                if tq.shape[1] % 32 != 0:
+                    raise SystemExit(f"K axis not block-aligned: {name}")
+                payload[name] = gguf.quants.Q8_0.quantize(tq)
+            else:
+                payload[name] = array.astype(np.float16)
+        return payload
+
+    variants = {
+        "f32": {n: w.astype(np.float32) for n, w in weights.items()},
+        "f16": {n: w.astype(np.float16) for n, w in weights.items()},
+        "q8_0": q8_payload(),
+    }
+    for precision, payload in variants.items():
         path = args.output.parent / f"{args.output.name}.{precision}.gguf"
         writer = gguf.GGUFWriter(str(path), "anycalib")
-        for key, value in metadata.items():
+        kv = dict(metadata)
+        if precision == "q8_0":
+            # The Q8_0 tier stores matmul weights pre-transposed; the flag
+            # decouples that layout from the tensor dtype, which is lost
+            # when non-CPU backends expand the weights to F32 at load.
+            kv["anycalib.quant.matmul_pretransposed"] = 1
+        for key, value in kv.items():
             if isinstance(value, list):
                 writer.add_array(key, value)
             elif isinstance(value, int):
                 writer.add_uint32(key, value)
             else:
                 writer.add_string(key, value)
-        for name in sorted(weights):
-            writer.add_tensor(name, weights[name].astype(dtype))
+        for name in sorted(payload):
+            tensor = payload[name]
+            raw = (gguf.GGMLQuantizationType.Q8_0
+                   if precision == "q8_0" and name.startswith("backbone.blocks.")
+                   and tensor.dtype != np.float16 and tensor.dtype != np.float32
+                   else None)
+            writer.add_tensor(name, tensor, raw_dtype=raw)
         writer.write_header_to_file()
         writer.write_kv_data_to_file()
         writer.write_tensors_to_file()

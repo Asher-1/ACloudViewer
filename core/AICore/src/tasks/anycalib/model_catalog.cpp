@@ -42,17 +42,19 @@ static constexpr const VariantInfo kVariants[] = {
 static constexpr int kVariantCount = sizeof(kVariants) / sizeof(kVariants[0]);
 
 // Quantization suffixes — these must match the assets actually published in
-// the anycalib release (verified by test_catalog_remote_assets once the
-// release is published). The Q8_0 tier is intentionally absent until the
-// validation manifest work quantizes and gates it.
-static constexpr const char* kQuantSuffixes[] = {"f32", "f16"};
+// the anycalib release (verified by test_catalog_remote_assets). The Q8_0
+// tier quantizes only the ViT transformer matmul weights (pre-transposed,
+// flagged by anycalib.quant.matmul_pretransposed) and is gated by the
+// cross-backend parity rows in validation_manifest.json.
+static constexpr const char* kQuantSuffixes[] = {"f32", "f16", "q8_0"};
 
 static constexpr int kQuantCount =
         sizeof(kQuantSuffixes) / sizeof(kQuantSuffixes[0]);
 
 static constexpr const char* kQuantNotes[] = {
         "F32 \xe2\x80\x94 full precision reference",
-        "F16 \xe2\x80\x94 half precision (recommended)"};
+        "F16 \xe2\x80\x94 half precision (recommended)",
+        "Q8_0 \xe2\x80\x94 8-bit matmul weights (lightest)"};
 
 static char* dupString(const char* s) {
 #ifdef _MSC_VER

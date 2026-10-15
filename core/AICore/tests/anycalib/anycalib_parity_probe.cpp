@@ -101,6 +101,7 @@ bool LoadNpyFromNpz(const std::vector<uint8_t>& zip,
 int main(int argc, char** argv) {
     std::string gguf;
     std::string ref;
+    std::string device = "cpu";
     float max_abs_allowed = 0.05f;
     float rel_rms_allowed = 0.02f;
     int repeat = 1;
@@ -110,6 +111,8 @@ int main(int argc, char** argv) {
             max_abs_allowed = atof(argv[++i]);
         else if (a == "--rel-rms" && i + 1 < argc)
             rel_rms_allowed = atof(argv[++i]);
+        else if (a == "--device" && i + 1 < argc)
+            device = argv[++i];
         else if (a == "--repeat" && i + 1 < argc)
             repeat = atoi(argv[++i]);
         else if (gguf.empty())
@@ -147,7 +150,7 @@ int main(int argc, char** argv) {
     }
 
     aicore_anycalib_options* opts = aicore_anycalib_options_new();
-    aicore_anycalib_options_set_device(opts, "cpu");
+    aicore_anycalib_options_set_device(opts, device.c_str());
     aicore_anycalib_ctx* ctx = aicore_anycalib_load_opts(gguf.c_str(), opts);
     aicore_anycalib_options_free(opts);
     if (!aicore_anycalib_is_ready(ctx)) {

@@ -46,7 +46,7 @@ Camera::Camera()
       model_id_(CameraModelId::kInvalid),
       width_(0),
       height_(0),
-      prior_focal_length_(false) {}
+      source_(CameraSource::UNKNOWN) {}
 
 std::string Camera::ModelName() const { return CameraModelIdToName(model_id_); }
 
@@ -290,8 +290,11 @@ Camera Camera::CreateFromModelId(camera_t camera_id,
                                  CameraModelId model_id,
                                  double focal_length,
                                  size_t width,
-                                 size_t height) {
+                                 size_t height,
+                                 CameraSource source) {
     THROW_CHECK(ExistsCameraModelWithId(model_id));
+    THROW_CHECK_NE(source, CameraSource::BEST)
+            << "Camera source cannot be BEST.";
     Camera camera;
     camera.SetModelId(model_id);
     camera.SetCameraId(camera_id);
@@ -299,6 +302,7 @@ Camera Camera::CreateFromModelId(camera_t camera_id,
     camera.SetHeight(height);
     camera.Params() = CameraModelInitializeParams(model_id, focal_length,
                                                  width, height);
+    camera.SetSource(source);
     return camera;
 }
 
@@ -306,10 +310,14 @@ Camera Camera::CreateFromModelName(camera_t camera_id,
                                    const std::string& model_name,
                                    double focal_length,
                                    size_t width,
-                                   size_t height) {
-    return CreateFromModelId(
-            camera_id, CameraModelNameToId(model_name), focal_length, width,
-            height);
+                                   size_t height,
+                                   CameraSource source) {
+    return CreateFromModelId(camera_id,
+                             CameraModelNameToId(model_name),
+                             focal_length,
+                             width,
+                             height,
+                             source);
 }
 std::ostream& operator<<(std::ostream& stream, const Camera& camera) {
   const bool valid_model = ExistsCameraModelWithId(camera.ModelId());

@@ -3259,3 +3259,80 @@ repeat 到 {46,46,49,2} 作结果承载。
   "q8_0")/digest/manifest 消费行;②全量 gate(aicore-validate-all + ctest
   -L capi + pytest agent-integration L1/L2/L5);③P1-db(4030001)。
 
+### 批次 AI-q8(2026-10-14):Q8_0 档 + CUDA/Vulkan 后端路由 + 3x3 全矩阵 PASS
+
+- **q8_0 转换器**:convert_anycalib_onnx_gguf.py 增加 q8_0 兄弟档——仅
+  ViT transformer matmul 权重(24 块 x qkv/proj/fc1/fc2 = 96 张量,~99%
+  参数)预转置为 [M,K] 后 Q8_0 块量化(块沿收缩轴,ne[0]==K);其余张量
+  F16。GGUF 341.9 MiB(f16 612/f32 1224)。发布到既有 anycalib tag
+  (358509152B,HTTP 201,sha 3d28225a...;asset_digests 钉值一致)。
+- **布局与 dtype 解耦(根因修复)**:非 CPU 上载把 Q8_0 展开为 F32,类型
+  信号消失 → WT 若按 dtype 判预转置会在 cuda 上二次转置
+  (can_mul_mat 断言,ggml.c:3289)。修:GGUF KV
+  `anycalib.quant.matmul_pretransposed=1`(仅 q8 写)承载布局事实,
+  File::Open 读取,WT 按标志放行。
+- **CUDA/Vulkan 路由(Session::Load 非 CPU 分支,镜像 lightglue 策略)**:
+  device no_alloc ctx → 全部权重 F32 复制(f16 行展开/q8 块反量化)→
+  alloc_ctx_tensors + WEIGHTS usage tag → File::device_tensors 重定向;
+  图本体零改动(激活全 f32)。File::device_tensors 预留面首次启用。
+- **parity 矩阵 3 量化 x 3 后端 = 9/9 PASS**(ref.npz golden):
+  f32 cpu 4.9e-8/cuda 1.7e-5/vulkan 1.3e-4(rays rel-RMS);
+  f16 1.1e-4/7.5e-5/1.5e-4;q8 3.9e-4/4.8e-4/3.9e-4。
+- **速度(warm p50,repeat 3,RTX 4090)**:cpu f32/f16/q8 =
+  1004/984/1074 ms;cuda 24.8/28.9/24.8 ms;vulkan 18.7/19.5/17.5 ms。
+  **ORT CPU 官方基线 388.5 ms** → ggml CPU 慢 2.6x(缺口,f32 CPU mul_mat
+  + 图内物化拷贝,列下一优化批次);cuda/vulkan 比 ORT-CPU 基线快 ~20x,
+  官方 GPU 基线待 onnxruntime-gpu 同机补测后才能做 GPU 速度对齐主张。
+- **manifest**:三行 f32/f16/q8 阈值改跨后端实测最差值定标(>=8x 裕度),
+  args 增 --device {backend}(修正 GPU 验证静默跑 CPU 的传导缺陷),
+  prose 记录逐后端实测。validate_all anycalib **cpu/cuda/vulkan 三轮
+  全 PASS**(3 行/轮)。test_catalog_remote_assets PASSED(4 资产 URL)。
+- **合同快检**:check_capi_coverage 95% PASS、boundary --strict PASS、
+  pytest agent-integration level1/2/5 = 106 passed。
+- **遗留**:①capi 全套 ctest(后台跑,结果见 /tmp/anycalib_capi_ctest.log);
+  ②CPU 提速批次(2.6x 缺口);③官方 GPU 基线;④P1-db(4030001)。
+
+### 批次 P1-db-a(2026-10-15):f1ea91d0 脊柱第一段 — CameraSource 语义落地
+
+- **范围裁定**:f1ea91d0(#4801,43 文件 +1546/-220)在 fork 上不可干净
+  apply(scene/camera.h diff 666 行、database_sqlite.cc diff 5307 行——
+  fork 有自有改动)。采用脊柱优先 + 兼容 shim 增量移植。
+- **本段完成(camera.h/cc)**:
+  ①CameraSource 枚举(BEST=-1/UNKNOWN=0/USER=1/GUESS=2/EXIF=3/
+    SINGLE_VIEW=4/VIEW_GRAPH=5,MAKE_ENUM_CLASS_OVERLOAD_STREAM +
+    __CUDACC__ 分支,与上游逐值一致);
+  ②CameraSourcePriority(持久化枚举值与可靠性排序解耦:UNKNOWN 0 <
+    GUESS 1 < EXIF 2 < SINGLE_VIEW 3 < VIEW_GRAPH 4 < USER 5);
+  ③Camera::source_ 成员(默认 UNKNOWN)+ Source()/SetSource();
+  ④HasPriorFocalLength() 重定义 = priority(source) > priority(GUESS);
+  ⑤CreateFromModelId/Name 增 source 参数(默认 UNKNOWN,上游语义
+    THROW_CHECK_NE(source, BEST));
+  ⑥operator== 改比 source;
+  ⑦**兼容 shim**:SetPriorFocalLength 保留但重定向(prior→USER,
+    false→GUESS)——与上游 pycolmap 弃用映射一致,使 ~20 个消费文件
+    零改动编译;逐点迁移(按上游 diff:anycalib.cc→SINGLE_VIEW、
+    image_reader→EXIF 等)为后续增量,不破坏编译。
+- **验证**:ColmapLib + camera_test 编译 0 error;camera_test **34/34
+  PASS**(语义保真:prior=true ≡ USER > GUESS)。
+- **下一段(P1-db-b)**:database 层 — fork 已有 user_version 迁移框架
+  (PostMigrateTables/ReadUserVersion/MakeDatabaseVersionNumber,先前
+  批次对齐),需:①COLMAP_DATABASE_SCHEMA_REVISION bump(上游 = 4.3.0.1);
+  ②CreateCameraTable 新 schema(source 列 + PRIMARY KEY(camera_id,source)
+  + 无 AUTOINCREMENT + WriteCamera 显式 COALESCE(MAX)+1 + images 外键
+  移除 + images 表重建);③迁移分支(user_version<=4.3.0.0:cameras 重命名
+  → prior!=0→EXIF else GUESS → images 重建);④CRUD 语义(WriteCamera 禁
+  BEST/UpdateCamera 语义/ReadCamera(BEST) 按优先级/ReadAllCameraSources/
+  ExistsCameraSource/DeleteCameraSource);⑤database.h API 声明;⑥43 文件
+  消费点按上游 diff 逐点迁移(shim 允许增量);⑦camera_test/database_test
+  上游新用例移植。
+- **PyTorch GPU 基线(后台进行中)**:官方 repo = javrtg/AnyCalib
+  (release v1.0.0,anycalib_gen.pt 1281193843B);pyenv 3.12.12 装 torch
+  cu124 + checkpoint 下载后台执行(/tmp/torch_setup.log),完成后跑同机
+  同输入 warm p50 + 输出直接对表(ref.npz 黄金链之外的第二实证)。
+- **P1-db-a 后记(2026-10-15)**:签名扩展的陈旧 TU 链接错 —— 全量 make 在
+  camera.h 修改落地前编译的 image_reader.cc.o 仍引用旧 5 参
+  CreateFromModelId 符号,链接 examples/Reconstruction 失败(undefined
+  reference);touch camera.h/camera.cc + image_reader.cc 后全量
+  `make -j16` 重编 1148 targets **0 error/0 undefined reference**
+  (ACloudViewer/pybind 至 100%)。pybind11 ODR "note" 为既有良性告警,
+  与本改动无关。
