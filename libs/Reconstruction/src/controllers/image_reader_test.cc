@@ -386,6 +386,9 @@ TEST(ImageReaderTest, ManualCameraParams) {
   EXPECT_EQ(camera.Params()[2], 320.0);
   EXPECT_EQ(camera.Params()[3], 240.0);
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  // Upstream parity (f1ea91d0): camera_params in the reader options are
+  // user-specified intrinsics.
+  EXPECT_EQ(camera.Source(), CameraSource::USER);
 }
 
 TEST(ImageReaderTest, ExplicitImageNames) {

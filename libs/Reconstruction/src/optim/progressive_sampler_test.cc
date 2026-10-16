@@ -48,6 +48,10 @@ TEST(optim_progressive_sampler, TestLessSamples) {
     EXPECT_EQ(samples.size(), 2);
     EXPECT_EQ(
         std::unordered_set<size_t>(samples.begin(), samples.end()).size(), 2);
+    // Upstream parity (48af6d30 #4859): samples stay within the active prefix.
+    for (const size_t sample : samples) {
+      EXPECT_LT(sample, 5);
+    }
   }
 }
 
@@ -61,6 +65,9 @@ TEST(optim_progressive_sampler, TestEqualSamples) {
     EXPECT_EQ(samples.size(), 5);
     EXPECT_EQ(
         std::unordered_set<size_t>(samples.begin(), samples.end()).size(), 5);
+    for (const size_t sample : samples) {
+      EXPECT_LT(sample, 5);
+    }
   }
 }
 

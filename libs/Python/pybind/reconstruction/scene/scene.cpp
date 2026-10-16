@@ -94,19 +94,35 @@ void pybind_scene(py::module& m) {
     AddStringToEnumConstructor(camera_model_id);
     py::implicitly_convertible<int, colmap::CameraModelId>();
 
+    // Upstream pycolmap parity (f1ea91d0 src/pycolmap/scene/camera.cc): the
+    // calibration-source enum, constructible from its name and implicitly
+    // from the persisted integer value.
+    py::enum_<colmap::CameraSource> py_camera_source(m_scene, "CameraSource");
+    py_camera_source.value("BEST", colmap::CameraSource::BEST)
+            .value("UNKNOWN", colmap::CameraSource::UNKNOWN)
+            .value("USER", colmap::CameraSource::USER)
+            .value("GUESS", colmap::CameraSource::GUESS)
+            .value("EXIF", colmap::CameraSource::EXIF)
+            .value("SINGLE_VIEW", colmap::CameraSource::SINGLE_VIEW)
+            .value("VIEW_GRAPH", colmap::CameraSource::VIEW_GRAPH);
+    AddStringToEnumConstructor(py_camera_source);
+    py::implicitly_convertible<int, colmap::CameraSource>();
+
     py::class_<Camera> camera(m_scene, "Camera",
                               "Intrinsic camera parameters.");
     camera.def(py::init<>())
             .def_static(
                     "create_from_model_name",
                     [](camera_t camera_id, const std::string& model_name,
-                       double focal_length, size_t width, size_t height) {
+                       double focal_length, size_t width, size_t height,
+                       colmap::CameraSource source) {
                         return Camera::CreateFromModelName(
                                 camera_id, model_name, focal_length, width,
-                                height);
+                                height, source);
                     },
                     "camera_id"_a, "model_name"_a, "focal_length"_a, "width"_a,
-                    "height"_a, "Create a camera from its model name.")
+                    "height"_a, "source"_a = colmap::CameraSource::UNKNOWN,
+                    "Create a camera from its model name.")
             .def_property(
                     "camera_id",
                     [](const Camera& self) { return self.CameraId(); },
@@ -157,6 +173,36 @@ void pybind_scene(py::module& m) {
                     [](const Camera& self) { return self.FocalLengthY(); },
                     [](Camera& self, double f) { self.SetFocalLengthY(f); },
                     "Focal length along y.")
+            // Upstream pycolmap parity (f1ea91d0 src/pycolmap/scene/camera.cc):
+            // the calibration source is the single source of truth; the
+            // has_prior_focal_length setter is a deprecated compatibility
+            // shim mapping to USER/GUESS.
+            .def_property(
+                    "source", [](const Camera& self) { return self.Source(); },
+                    [](Camera& self, colmap::CameraSource source) {
+                        if (source == colmap::CameraSource::BEST) {
+                            throw py::value_error(
+                                    "Camera.source cannot be BEST. BEST is a "
+                                    "database query selector, not a valid "
+                                    "camera source.");
+                        }
+                        self.SetSource(source);
+                    },
+                    "Origin/source of the camera calibration.")
+            .def_property(
+                    "has_prior_focal_length",
+                    [](const Camera& self) {
+                        return self.HasPriorFocalLength();
+                    },
+                    [](Camera& self, bool has_prior) {
+                        PyErr_WarnEx(PyExc_DeprecationWarning,
+                                     "Camera.has_prior_focal_length setter is "
+                                     "deprecated, set Camera.source directly "
+                                     "instead.",
+                                     1);
+                        self.SetSource(has_prior ? colmap::CameraSource::USER
+                                                 : colmap::CameraSource::GUESS);
+                    })
             // Params has const/non-const overloads; bind the const getter
             // and a setter.
             .def_property(
@@ -598,7 +644,10 @@ void pybind_scene(py::module& m) {
     py::class_<Frame> frame(m_scene, "Frame",
                             "One simultaneous capture of a rig, owning an "
                             "optional rig-from-world pose.");
+    // Upstream pycolmap parity (923342c5 #4857): a Frame copy is an editable
+    // draft (the finalized flag resets in the copy constructor).
     frame.def(py::init<>())
+            .def(py::init<const Frame&>())
             .def_property(
                     "frame_id",
                     [](const Frame& self) { return self.FrameId(); },

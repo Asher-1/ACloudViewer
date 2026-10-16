@@ -76,7 +76,7 @@ TEST(CalibrateViewGraph, Nominal) {
     for (const size_t idx : camera.FocalLengthIdxs()) {
       camera.Params()[idx] += noise;
     }
-    camera.SetPriorFocalLength(false);
+    camera.SetSource(CameraSource::GUESS);
     database->UpdateCamera(camera);
   }
 

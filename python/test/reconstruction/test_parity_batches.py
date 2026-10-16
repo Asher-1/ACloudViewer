@@ -704,12 +704,18 @@ def test_bitmap_rot90_thumbnail_to_array_jpeg(tmp_path):
 # Batch 11: final engine-gap closures
 # ---------------------------------------------------------------------------
 def test_frame_finalize_data_ids():
+    # Upstream parity (923342c5 #4857): frames are finalized on insertion and
+    # by reconstruction copies; a plain Frame copy is an editable draft.
     S = _scene()
     rec = _make_trivial_reconstruction(S)
     frame = rec.frame(1)
-    assert frame.has_final_data_ids() is False
+    assert frame.has_final_data_ids() is True
     frame.finalize_data_ids()
     assert frame.has_final_data_ids() is True
+    draft = S.Frame(frame)
+    assert draft.has_final_data_ids() is False
+    draft.finalize_data_ids()
+    assert draft.has_final_data_ids() is True
 
 
 def test_camera_metadata_params_idxs_empty():

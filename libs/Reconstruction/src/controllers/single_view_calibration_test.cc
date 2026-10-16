@@ -121,7 +121,8 @@ class FakeCalibrator : public SingleViewCalibrator {
     const size_t idx =
         std::min(num_calls_++, config_.params_sequence.size() - 1);
     camera->Params() = config_.params_sequence[idx];
-    camera->SetPriorFocalLength(true);
+    // Upstream parity (f1ea91d0): the (fake) calibration output.
+    camera->SetSource(CameraSource::SINGLE_VIEW);
     return true;
   }
 
@@ -162,7 +163,8 @@ FakeCalibrationScene CreateFakeCalibrationSceneWithModel(
   camera.SetWidth(64);
   camera.SetHeight(48);
   camera.Params() = scene.initial_params;
-  camera.SetPriorFocalLength(true);
+  // Upstream parity (f1ea91d0): the scene camera's prior is an EXIF reading.
+  camera.SetSource(CameraSource::EXIF);
   const camera_t camera_id = database->WriteCamera(camera);
   for (int i = 0; i < 2; ++i) {
     const std::string name = "image" + std::to_string(i) + ".png";
@@ -218,6 +220,7 @@ TEST(SingleViewCalibrationControllerTest, FakeCalibratorUpdatesDatabase) {
   const Camera camera = ReadSingleCamera(scene.database_path);
   ExpectParamsNear(camera.Params(), {500, 32, 24, 0.10});
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(SingleViewCalibrationControllerTest,
@@ -244,6 +247,7 @@ TEST(SingleViewCalibrationControllerTest,
   EXPECT_EQ(camera.ModelId(), CameraModelId::kOpenCV);
   ExpectParamsNear(camera.Params(), {500, 500, 32, 24, 0, 0, 0, 0});
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(SingleViewCalibrationControllerTest,
@@ -268,6 +272,7 @@ TEST(SingleViewCalibrationControllerTest,
   EXPECT_EQ(camera.ModelId(), CameraModelId::kSimpleRadial);
   ExpectParamsNear(camera.Params(), {500, 32, 24, 0.10});
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(SingleViewCalibrationControllerTest, FailingCalibratorKeepsDatabase) {

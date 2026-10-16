@@ -596,10 +596,8 @@ void UpdateRigsAndFramesFromDatabase(const Database& database,
 void CopyCameraIntrinsics(const Camera& src, Camera& dst) {
   dst.SetModelId(src.ModelId());
   dst.SetParams(src.Params());
-  dst.SetPriorFocalLength(src.HasPriorFocalLength());
-  // Upstream parity (f1ea91d0): source participates in camera equality and
-  // flows through rig application; without this the database keeps its old
-  // calibration source while the config camera carries UNKNOWN.
+  // Upstream parity (f1ea91d0): the calibration source is copied verbatim;
+  // HasPriorFocalLength() is derived from it via CameraSourcePriority.
   dst.SetSource(src.Source());
 }
 
@@ -664,7 +662,9 @@ std::vector<RigConfig> ReadRigConfig(
         config_camera.camera = std::make_optional<Camera>();
         config_camera.camera->SetModelId(CameraModelNameToId(
             camera.second.get<std::string>("camera_model_name")));
-        config_camera.camera->SetPriorFocalLength(true);
+        // Upstream parity (f1ea91d0): a rig-config camera carries user-provided
+        // intrinsics.
+        config_camera.camera->SetSource(CameraSource::USER);
         // Fork adaptation: Camera::SetModelId pre-fills params with zeros
         // (upstream keeps them empty), so reset before appending.
         config_camera.camera->SetParams(std::vector<double>());

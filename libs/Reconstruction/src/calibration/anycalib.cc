@@ -259,7 +259,8 @@ class AnyCalibCalibrator : public SingleViewCalibrator {
     calibrated.SetWidth(bitmap.Width());
     calibrated.SetHeight(bitmap.Height());
     calibrated.Params() = fitted.params;
-    calibrated.SetPriorFocalLength(true);
+    // Upstream parity (f1ea91d0): single-view calibration output.
+    calibrated.SetSource(CameraSource::SINGLE_VIEW);
     if (!IsValidCalibration(calibrated)) {
       return false;
     }

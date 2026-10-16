@@ -89,6 +89,9 @@ void Reconstruction::RewireObjectPointers() {
     for (auto& [_, frame] : frames_) {
         frame.ResetRigPtr();
         frame.SetRigPtr(&Rig(frame.RigId()));
+        // Upstream parity (923342c5 #4857): the copy has raw data ids;
+        // finalize them so SetDataId/indexing keeps the invariants.
+        frame.FinalizeDataIds();
     }
     for (auto& [_, image] : images_) {
         image.ResetCameraPtr();
@@ -311,6 +314,10 @@ void Reconstruction::AddFrame(class Frame frame) {
   const frame_t frame_id = frame.FrameId();
   auto [it, inserted] = frames_.emplace(frame_id, std::move(frame));
   THROW_CHECK(inserted);
+  // Upstream parity (923342c5 #4857): the data ids are finalized on
+  // insertion, otherwise internal bookkeeping (e.g. counting reg_image_ids_)
+  // can become incorrect when frames are mutated later.
+  it->second.FinalizeDataIds();
   // Upstream parity (d3ccaf35 scene/reconstruction.cc L436): a frame that
   // carries a pose is registered on insertion. The fork's disk-read path
   // calls ResetRegistrationState() afterwards to preserve the
@@ -1033,6 +1040,8 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
             }
             new_frame.AddDataId(transcribed_id);
         }
+        // Upstream parity (923342c5 #4857): re-finalize the transcribed copy.
+        new_frame.FinalizeDataIds();
         frame = std::move(new_frame);
     }
 

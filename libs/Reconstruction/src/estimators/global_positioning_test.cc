@@ -245,7 +245,8 @@ TEST(GlobalPositioning, ObservationUncertainty) {
   dataset_options.num_points3D = 30;
   SynthesizeDataset(dataset_options, &reconstruction);
   for (const auto& [camera_id, _] : reconstruction.Cameras()) {
-    reconstruction.Camera(camera_id).SetPriorFocalLength(true);
+    // Upstream parity (f1ea91d0): prior focal length means USER here.
+    reconstruction.Camera(camera_id).SetSource(CameraSource::USER);
   }
   GlobalPositionerOptions options;
   options.use_gpu = false;
@@ -286,7 +287,8 @@ TEST(GlobalPositioning, UncalibratedObservationWeight) {
   Reconstruction reconstruction = CreateGlobalPositioningTestReconstruction();
   for (const bool calibrated : {false, true}) {
     for (const auto& [camera_id, _] : reconstruction.Cameras()) {
-      reconstruction.Camera(camera_id).SetPriorFocalLength(calibrated);
+      reconstruction.Camera(camera_id).SetSource(
+          calibrated ? CameraSource::USER : CameraSource::GUESS);
     }
     GlobalPositionerOptions options;
     options.use_gpu = false;

@@ -112,6 +112,18 @@ TEST(Reconstruction, Empty) {
   EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
+// Upstream parity (923342c5 #4857): copied frames carry finalized data ids.
+void ExpectFinalizedFrames(Reconstruction& reconstruction) {
+  for (const auto& [frame_id, _] : reconstruction.Frames()) {
+    auto& frame = reconstruction.Frame(frame_id);
+    EXPECT_TRUE(frame.HasFinalDataIds());
+    EXPECT_ANY_THROW(frame.AddDataId(*frame.DataIds().begin()));
+    EXPECT_ANY_THROW(frame.ClearDataIds());
+  }
+  EXPECT_EQ(reconstruction.NumRegImages(),
+            reconstruction.RegImageIds().size());
+}
+
 TEST(Reconstruction, ConstructCopy) {
   Reconstruction reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
@@ -121,11 +133,13 @@ TEST(Reconstruction, ConstructCopy) {
   synthetic_dataset_options.num_frames_per_rig = 8;
   synthetic_dataset_options.num_points3D = 21;
   SynthesizeDataset(synthetic_dataset_options, &reconstruction);
-  const Reconstruction reconstruction_copy(reconstruction);
+  // Non-const: ExpectFinalizedFrames probes the mutating frame API.
+  Reconstruction reconstruction_copy(reconstruction);
   EXPECT_THAT(reconstruction, ReconstructionEq(reconstruction_copy));
   ExpectEqualSerialization(reconstruction, reconstruction_copy);
   ExpectValidPtrs(reconstruction);
   ExpectValidPtrs(reconstruction_copy);
+  ExpectFinalizedFrames(reconstruction_copy);
 }
 
 TEST(Reconstruction, AssignCopy) {
@@ -143,6 +157,7 @@ TEST(Reconstruction, AssignCopy) {
   ExpectEqualSerialization(reconstruction, reconstruction_copy);
   ExpectValidPtrs(reconstruction);
   ExpectValidPtrs(reconstruction_copy);
+  ExpectFinalizedFrames(reconstruction_copy);
 }
 
 TEST(Reconstruction, Print) {

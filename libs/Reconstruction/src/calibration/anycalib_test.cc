@@ -252,6 +252,7 @@ TEST_F(AnyCalibCalibratorTest, SmokeTestWithModel) {
     EXPECT_EQ(camera.Width(), 64);
     EXPECT_EQ(camera.Height(), 48);
     EXPECT_TRUE(camera.HasPriorFocalLength());
+    EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
   }
 }
 

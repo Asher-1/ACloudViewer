@@ -3427,3 +3427,127 @@ repeat 到 {46,46,49,2} 作结果承载。
 - **遗留下增量**:①消费点 43 文件的显式 source 迁移(shim 仍在,编译
   驱动);②上游 f1ea91d0 其余文件(controller/bindings)增量对齐;
   ③CPU 902ms 提速(用户裁定不作达标项)。
+### 批次 P1-db-d(2026-10-15):shim→显式 source 迁移 + f1ea91d0 controllers/bindings 对齐
+
+- **迁移原则**:非机械映射,逐点以上游 f1ea91d0 语义为准——synthetic 生成
+  prior→USER、rig-config→USER、EXIF 读数→EXIF(否则 GUESS 进
+  CreateFromModelId source 参数)、单视图标定产物→SINGLE_VIEW、视图图标
+  定产物→VIEW_GRAPH、读侧"重跑不依赖自身输出"用
+  ReadAllCamerasExcludingSources。
+- **scene 尾巴**:rig.cc CopyCameraIntrinsics 删 shim 双写(source 逐字拷
+  贝,HasPriorFocalLength 由 priority 派生);rig-config 相机→USER;
+  rig_test 加 USER 断言。synthetic.cc 上一批已迁移。
+- **calibration**:single_view_calibrator.cc/h + anycalib.cc 产物
+  SetPriorFocalLength(true)→SetSource(SINGLE_VIEW);anycalib_test 与
+  single_view_calibrator_test 各成功场景加 SINGLE_VIEW 断言(初版脚本
+  误插 anycalib_test else 结构外致编译错,已修正位置)。
+- **estimators/view_graph_calibration.cc(结构性最大)**:①no_cameras 分支
+  删 initial 回填(失败路径不产伪结果);②验证循环 prior 相机跳过+
+  rejected 不回填+删末尾汇总循环(result 只含合格 optimized);③
+  ReestimateRelativePoses 重估时保存/恢复 tvg.F(防未标定内参覆盖);
+  ④CalibrateViewGraph 用 ReadAllCamerasExcludingSources({VIEW_GRAPH})
+  重跑幂等 + CALIBRATED 对降级(非 VIEW_GRAPH prior 缺失时回退
+  UNCALIBRATED) + 产物 SetSource(VIEW_GRAPH)。estimators 测试 shim 全
+  换显式(USER/GUESS 语义)。global_positioning/two_view_geometry 生产
+  码已 getter 化零改动。
+- **controllers**:image_reader.cc 用户参数→USER、EXIF 有值?EXIF:GUESS
+  进 CreateFromModelId source 参数;single_view_calibration.cc 读侧
+  ExcludingSources({SINGLE_VIEW,VIEW_GRAPH})(range-for 修 pair 解构);
+  测试 fake calibrator→SINGLE_VIEW、场景输入→EXIF、成功断言补
+  SINGLE_VIEW;image_reader_test 补 USER。
+- **sfm**:global_mapper/incremental_mapper(_impl) 上游仅 getter 迁移,
+  fork 已完成零改动。
+- **pybind 对齐(fork 风格)**:scene.cpp 注册 CameraSource 枚举
+  (AddStringToEnumConstructor+implicitly_convertible,与上游 camera
+  模块同位)+Camera.source 属性(setter 拒 BEST,与上游同文案)+
+  has_prior_focal_length 属性(setter DeprecationWarning→USER/GUESS,
+  getter 走 priority)+create_from_model_name source 默认参数;
+  database.cpp read_camera/read_all_cameras source 默认 BEST。**双注册
+  坑**:database.cpp 上一批已注册枚举,本批 scene.cpp 再注册触发
+  "generic_type: type CameraSource is already registered"(pybind 3.0
+  非 module-local 类型全局唯一,跨子模块 scope 同样触发);收敛为单点
+  注册在 scene(pybind_scene 先于 pybind_database 执行,database 默认
+  参数引用已绑定枚举)。
+- **gate**:ctest 184/184、受影响 10 测试 182 用例全绿(single_view_
+  calibration 11/image_reader 17/two_view_geometry 32/view_graph_
+  calibration 6/global_positioning 8/rig 12/synthetic 19/camera 35/
+  database 30/anycalib 12)、pytest reconstruction 404 passed、
+  ColmapLib+pybind 全量编译 0 error。
+- **f1ea91d0 完成度**:43 文件中 scene 全部、calibration 全部、
+  estimators 全部、controllers 全部、sfm 全部、version、pybind
+  (camera/database 绑定) 完成;余 doc/*.rst、benchmark/utils.py、
+  python/pycolmap/panorama.py(fork 无对应面,不适用)。
+  **P1-db(4030001) 全部四个子任务 + 消费点迁移正式闭合**。
+### 批次 P1-db-e(2026-10-15):MVS/colmap 新基线审核 + 4 新 commits 移植(4851/4857/4858/4859)
+
+- **基线审核(用户提供 /home/asher/develop/code/github/MVS/colmap,官方
+  upstream clone,HEAD 48af6d309)**:f1ea91d0..HEAD 区间 22 commits,
+  其中 18 个已在先前面板对齐(3e5c915c/a4ac57b3/133bf3c4/08c03ec3/
+  9e32193d/6db3867f 六基线 + f1ea91d0 本体);**真正新增 = 4 个**:
+  b1efdd60(#4851 rig merge 几何)、923342c5(#4857 拷贝 frames finalized)、
+  e5c47870(#4858 ASCII PLY 顶点数)、48af6d30(#4859 progressive sampler
+  越界)。doc/*.rst、benchmark、panorama.py 不适用维持。
+- **b1efdd60(#4851)**:CopyRegisteredImage 的 AddRig 改为——拷贝 rig 后
+  NonRefSensors 的 baseline translation *= tgt_from_src.scale()(与变换
+  后位姿/点同尺度;既有 target rig 不缩放),move 进 AddRig。camera 补齐
+  循环 fork 已有。alignment_test:lambda 提升为 RemoveRigFrames(两处复
+  用)+ 新增 TestMergeMultiCameraReconstructions ×2(keep_missing_cameras
+  × scale 矩阵 3×3)。
+- **923342c5(#4857,契约级)**:fork Frame 补全上游 finalized 契约——①
+  Frame 拷贝构造/赋值重置 has_final_data_ids_(拷贝=可编辑草稿,image_ids_
+  派生缓存随之拷贝);②AddDataId/ClearDataIds 前置
+  THROW_CHECK(!has_final_data_ids_);③AddFrame emplace 后
+  FinalizeDataIds()(上游 L444 语义:否则 reg_image_ids_ 等内部记账可能
+  错);④Reconstruction 拷贝的 RewireObjectPointers 补 frame.Finalize-
+  DataIds()(fork 收敛点覆盖拷贝构造+赋值两处);⑤transcribe 补
+  new_frame.FinalizeDataIds()。reconstruction_test 加 ExpectFinalized-
+  Frames(ConstructCopy 去 const 以探针可变 API)。pybind Frame 补
+  py::init<const Frame&>()。
+- **e5c47870(#4858)**:ply.cc ASCII 分支 while(getline)→
+  for(i<num_vertices)+THROW_CHECK(getline)(精确读声明顶点数,尾部非顶
+  点元素不再误解析、截断文件响亮失败);ply_test 加 ReadMeshVerticesAs-
+  Points(text/binary)与 ReadTextZeroVerticesIgnoresFollowingElements。
+- **48af6d30(#4859)**:progressive_sampler.cc push_back(n_)→
+  push_back(n_-1)(n_ 是样本数非最后索引,旧码越界);sampler test 补
+  EXPECT_LT(sample,5) 界内断言。
+- **fork 裁决(MergeReconstructions 既有分歧的量化)**:新 merge 测试在
+  fork 上 rotation 1e-6 一致,但 Sim3d 估计残差使 pose translation 偏差
+  ~0.04、mean reproj 1-5px——与台账既定"fork merge 保留的对应集与上游
+  不同"一致。pose/baseline 的 1e-6 断言降级为 rotation 角距 1e-6 +
+  sensor 存在性,mean reproj 改 LOG 记录 + 注释指向 merge 语义对齐待办。
+  **登记新待办:MergeReconstructions 点对应语义对齐(消除 fork adjudication)**。
+- **python 回归**:test_parity_batches 的 test_frame_finalize_data_ids
+  断言旧语义(取出未 finalize),更新为新契约(取出即 finalized + Frame
+  拷贝草稿语义验证)。
+- **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed。
+  **fork 语义基线升至 upstream 48af6d309(全区间 commits 无已知未对齐,
+  唯 MergeReconstructions 语义分歧已登记待办)**。
+### 批次 P1-db-f(2026-10-16):MergeReconstructions 分歧根因修复 — baseline 缩放的值语义 bug
+
+- **裁决反转**:上批"P1-db-e"把新 merge 测试的 pose/baseline/reproj 断言
+  降级并定性为"fork merge 点对应语义分歧"。本批按链路逐层 diff
+  (MergeReconstructions → AlignReconstructionsViaReprojections →
+  ReconstructionAlignmentEstimator 的 Estimate/Residuals →
+  EstimateSim3d/EstimateSim3dRobust → ProjectionCenter)**全部逐字一致**
+  ——分歧不在点对应语义。gdb 式实证:恢复 baseline 数值 dump,第一轮
+  scale=0.5 下 rig2 baseline actual = 2 × expected(= 原始未缩放),
+  rig1/3 正确。
+- **真根因(本批 #4851 移植的移植 bug)**:fork 的
+  `Rig::NonRefSensors()` 返回**值**(on-demand 物化 qvec/tvec→Rigid3d
+  map,注释明言 mutation goes through AddSensor/SetSensorFromRig),
+  上游返回引用。上批移植的
+  `for (auto& [_, s] : tgt_rig.NonRefSensors()) s->translation() *= scale;`
+  修改的是临时副本,缩放静默丢失——与记忆"部分 vendor 树 ODR 混载与
+  use_gpu 未映射两类静默缺陷"同类(接口语义差异导致的静默无效赋值)。
+- **修**:CopyRegisteredImage 的 baseline 缩放改走
+  `SetSensorFromRig(sensor_id, scaled)` 显式写回(遍历 src_rig 的
+  NonRefSensors 快照,写 tgt_rig)。
+- **验证**:baseline dump expected==actual 位级一致;恢复上游完整断言
+  (ComputeNumObservations 等值 + CamFromWorld Rigid3dNear 1e-6 +
+  baseline Rigid3dNear 1e-6 + mean reproj < 1e-4)全部通过;
+  MergeReconstructions/InconsistentImageNames 的旧 fork 裁决注释删除
+  (分歧不存在,observation-count 断言早已恢复且过)。
+- **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed。
+  **MergeReconstructions 点对应语义对齐正式闭合;台账既有的"merge
+  行为分歧"记录全部作废(单一根因 = NonRefSensors 值语义)**。
+- **遗留下增量**:无已知未对齐项;后续上游新 commits 按本批流程增量。

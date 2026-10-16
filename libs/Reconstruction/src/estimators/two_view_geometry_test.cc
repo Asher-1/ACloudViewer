@@ -651,7 +651,7 @@ TEST(EstimateTwoViewGeometry, PanoramicWithUndistortedFisheyeCameraIsDetected) {
       /*focal_length=*/500.0,
       /*width=*/2048,
       /*height=*/2048);
-  camera.SetPriorFocalLength(true);
+  camera.SetSource(CameraSource::USER);
   ASSERT_TRUE(camera.IsPerspectiveFisheye());
   ASSERT_TRUE(camera.IsUndistorted());
 
@@ -709,7 +709,7 @@ TEST(EstimateTwoViewGeometry, SharedFocal) {
        {SimplePinholeCameraModel::model_id, PinholeCameraModel::model_id}) {
     Camera camera = Camera::CreateFromModelId(
         /*camera_id=*/1, model_id, kFocal, /*width=*/2048, /*height=*/2048);
-    camera.SetPriorFocalLength(false);
+    camera.SetSource(CameraSource::GUESS);
     ASSERT_FALSE(camera.HasPriorFocalLength());
     ASSERT_TRUE(camera.IsPerspective());
 
@@ -810,14 +810,14 @@ TEST(EstimateTwoViewGeometry, OneSidedFocal) {
         kUncalibFocal,
         /*width=*/2048,
         /*height=*/2048);
-    uncalib_camera.SetPriorFocalLength(false);
+    uncalib_camera.SetSource(CameraSource::GUESS);
     Camera calib_camera = Camera::CreateFromModelId(
         /*camera_id=*/2,
         model_id,
         kCalibFocal,
         /*width=*/2048,
         /*height=*/2048);
-    calib_camera.SetPriorFocalLength(true);
+    calib_camera.SetSource(CameraSource::USER);
 
     // Ground-truth relative pose with a unit baseline and a bounded rotation so
     // the point cloud is visible in both views. Unlike the shared-focal case no
@@ -1040,7 +1040,7 @@ TEST(EstimateTwoViewGeometry, SphericalAndUncalibratedPerspective) {
   // camera would carry COLMAP's default guess. The recovered focal therefore
   // cannot merely echo its input.
   Camera uncalib_camera = true_camera;
-  uncalib_camera.SetPriorFocalLength(false);
+  uncalib_camera.SetSource(CameraSource::GUESS);
   uncalib_camera.SetFocalLength(0.5 * kTrueFocal);
 
   const Camera spherical_camera =
@@ -1778,7 +1778,7 @@ TEST(MaybeDecomposeRelativePoses, UsesSolverEstimatedIntrinsics) {
   Camera default_camera = true_camera;
   default_camera.SetFocalLength(
       1.2 * std::max(true_camera.Width(), true_camera.Height()));
-  default_camera.SetPriorFocalLength(false);
+  default_camera.SetSource(CameraSource::GUESS);
   ASSERT_GT(
       std::abs(default_camera.FocalLength() / true_camera.FocalLength() - 1.0),
       0.1);

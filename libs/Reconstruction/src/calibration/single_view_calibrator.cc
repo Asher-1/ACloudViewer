@@ -131,7 +131,8 @@ bool AggregateSingleViewCalibrations(
 
   camera->SetModelId(candidate.ModelId());
   camera->Params() = std::move(candidate.Params());
-  camera->SetPriorFocalLength(true);
+  // Upstream parity (f1ea91d0): single-view calibration output.
+  camera->SetSource(CameraSource::SINGLE_VIEW);
   return true;
 }
 

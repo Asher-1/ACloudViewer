@@ -301,7 +301,12 @@ std::vector<PlyPoint> ReadPly(const std::filesystem::path& path) {
       points.push_back(point);
     }
   } else {
-    while (std::getline(file, line)) {
+    // Upstream parity (e5c47870 #4858): read exactly the declared vertex
+    // count, so trailing non-vertex elements (colors, faces) are not
+    // misparsed as vertices and truncated files fail loudly.
+    for (size_t i = 0; i < num_vertices; ++i) {
+      THROW_CHECK(std::getline(file, line))
+          << "Unexpected end of PLY file at vertex " << i;
       StringTrim(&line);
       std::stringstream line_stream(line);
 

@@ -67,9 +67,14 @@ class SingleViewCalibrationController : public Thread {
       return;
     }
 
+    // Upstream parity (f1ea91d0): prefer the best calibration that is
+    // neither SINGLE_VIEW nor VIEW_GRAPH, so re-running single-view
+    // calibration does not rely on its own previous output.
     FlatHashMap<camera_t, Camera> cameras;
-    for (const Camera& camera : database_->ReadAllCameras()) {
-      cameras[camera.CameraId()] = camera;
+    for (const auto& [camera_id, camera] :
+         database_->ReadAllCamerasExcludingSources(
+             {CameraSource::SINGLE_VIEW, CameraSource::VIEW_GRAPH})) {
+      cameras[camera_id] = camera;
     }
     FlatHashMap<image_t, PosePrior> pose_priors;
     for (PosePrior& pose_prior : database_->ReadAllPosePriors()) {

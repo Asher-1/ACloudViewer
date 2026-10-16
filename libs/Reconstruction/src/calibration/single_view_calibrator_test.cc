@@ -167,6 +167,7 @@ TEST(AggregateSingleViewCalibrationsTest, OddMedian) {
       &camera));
   EXPECT_EQ(camera.Params(), std::vector<double>({500, 320, 240, 0.10}));
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(AggregateSingleViewCalibrationsTest, EvenMedian) {
@@ -181,6 +182,7 @@ TEST(AggregateSingleViewCalibrationsTest, EvenMedian) {
   EXPECT_DOUBLE_EQ(camera.Params()[2], 240);
   EXPECT_DOUBLE_EQ(camera.Params()[3], 0.10);
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(AggregateSingleViewCalibrationsTest, SetsTargetCameraModel) {
@@ -214,6 +216,7 @@ TEST(AggregateSingleViewCalibrationsTest, InvalidMedianFallsBackToClosest) {
   // tie exactly and `min_element` deterministically picks the first.
   EXPECT_EQ(camera.Params(), params1);
   EXPECT_TRUE(camera.HasPriorFocalLength());
+  EXPECT_EQ(camera.Source(), CameraSource::SINGLE_VIEW);
 }
 
 TEST(AggregateSingleViewCalibrationsTest, RejectsRaggedParams) {

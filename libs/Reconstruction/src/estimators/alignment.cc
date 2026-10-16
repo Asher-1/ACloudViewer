@@ -473,7 +473,20 @@ void CopyRegisteredImage(image_t image_id,
     }
   }
   if (!tgt_reconstruction.ExistsRig(src_frame.RigId())) {
-    tgt_reconstruction.AddRig(src_rig);
+    Rig tgt_rig = src_rig;
+    // Upstream parity (b1efdd60 #4851): rig baselines must use the same
+    // scale as the transformed camera poses and points; existing target
+    // rigs already use the target scale. The fork's NonRefSensors()
+    // materializes a value copy (mutation goes through SetSensorFromRig),
+    // so each scaled baseline is written back explicitly.
+    for (const auto& [sensor_id, sensor_from_rig] : src_rig.NonRefSensors()) {
+      if (sensor_from_rig.has_value()) {
+        Rigid3d scaled = *sensor_from_rig;
+        scaled.translation() *= tgt_from_src.scale();
+        tgt_rig.SetSensorFromRig(sensor_id, scaled);
+      }
+    }
+    tgt_reconstruction.AddRig(std::move(tgt_rig));
   }
 
   if (!tgt_reconstruction.ExistsFrame(src_frame.FrameId())) {

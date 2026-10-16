@@ -119,21 +119,9 @@ void pybind_database(py::module& m) {
                  [](PyDatabaseTransaction& self, const py::object&,
                     const py::object&, const py::object&) { self.commit(); });
 
-    // Upstream pycolmap parity (f1ea91d0 src/pycolmap/scene/camera.cc): the
-    // calibration-source enum must be registered before any method whose
-    // default argument carries a CameraSource value.
-    py::enum_<colmap::CameraSource> py_camera_source(m_submodule,
-                                                     "CameraSource");
-    py_camera_source.value("BEST", colmap::CameraSource::BEST)
-            .value("UNKNOWN", colmap::CameraSource::UNKNOWN)
-            .value("USER", colmap::CameraSource::USER)
-            .value("GUESS", colmap::CameraSource::GUESS)
-            .value("EXIF", colmap::CameraSource::EXIF)
-            .value("SINGLE_VIEW", colmap::CameraSource::SINGLE_VIEW)
-            .value("VIEW_GRAPH", colmap::CameraSource::VIEW_GRAPH)
-            .export_values();
-    py::implicitly_convertible<int, colmap::CameraSource>();
-
+    // Upstream pycolmap parity (f1ea91d0): CameraSource is registered once,
+    // in the scene submodule (pybind_scene runs before pybind_database), so
+    // the default arguments below reference an already-bound enum.
     py::class_<Database, std::shared_ptr<Database>> db(
             m_submodule, "Database",
             "The abstract COLMAP database interface (SQLite-backed). Holds "
