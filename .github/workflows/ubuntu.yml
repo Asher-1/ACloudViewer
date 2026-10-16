@@ -281,6 +281,12 @@ jobs:
       - name: Level 3 — Headless processing tests
         env:
           ACV_REQUIRE_BINARY: "1"
+          # GL-rendering plugins (qPCV) create a QOffscreenSurface under the
+          # offscreen QPA; LIBGL_ALWAYS_SOFTWARE pins that context to Mesa's
+          # software rasterizer so the test does not depend on the runner's
+          # GPU/EGL stack (measured: fresh rerun runners rotated the GL stack
+          # and PCV failed with rc=1 / "Process failed").
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
 
