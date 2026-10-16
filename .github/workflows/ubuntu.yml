@@ -281,14 +281,19 @@ jobs:
       - name: Level 3 — Headless processing tests
         env:
           ACV_REQUIRE_BINARY: "1"
-          # GL-rendering plugins (qPCV) create a QOffscreenSurface under the
-          # offscreen QPA; LIBGL_ALWAYS_SOFTWARE pins that context to Mesa's
-          # software rasterizer so the test does not depend on the runner's
-          # GPU/EGL stack (measured: fresh rerun runners rotated the GL stack
-          # and PCV failed with rc=1 / "Process failed").
+          # GL-rendering plugins (qPCV) create a QOpenGLContext +
+          # QOffscreenSurface under the offscreen QPA. EGL context creation
+          # needs a display platform: on a runner without DISPLAY the default
+          # x11 platform fails and the context is never created (measured:
+          # "Process failed" rc=1 on all three cpu runners, while the same
+          # binary passed locally once DISPLAY existed, and passed on macOS
+          # where cocoa ships its own GL). xvfb supplies that platform;
+          # LIBGL_ALWAYS_SOFTWARE keeps the context on Mesa's software
+          # rasterizer so it does not depend on the runner's GPU stack.
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
-          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          xvfb-run -a -s "-screen 0 1280x1024x24" \
+            python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
 
       # The full GUI under the offscreen QPA, as an unattended agent host runs
       # it. offscreen gets its OpenGL context through GLX, so Xvfb supplies a
