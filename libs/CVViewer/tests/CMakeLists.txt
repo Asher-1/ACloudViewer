@@ -33,14 +33,18 @@ target_include_directories(tests PRIVATE ".")
 # cloudviewer_apply_dev_runtime_bin_layout() set per-config variables
 # (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=bin/<Config>), and a per-config
 # target property initialized from those variables OVERRIDES the generic
-# RUNTIME_OUTPUT_DIRECTORY set here. Without the explicit per-config entries
-# the Windows test step cannot find tests.exe under bin/cloudviewer_test/
-# (measured on windows-2022, run 38729293986).
+# RUNTIME_OUTPUT_DIRECTORY set here. The per-config values carry a $<CONFIG>
+# generator expression because a per-config property is used verbatim — no
+# configuration subdirectory is appended (measured: with a plain value the
+# MSVC link emitted bin\cloudviewer_test\tests.exe while windows.yml locates
+# the runner at bin\cloudviewer_test\<Config>\tests.exe, run 38852073162).
+# Single-config Unix builds never see these properties, so the generic value
+# keeps them at bin/cloudviewer_test/tests.
 set_target_properties(tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/cloudviewer_test"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/cloudviewer_test"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/cloudviewer_test"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/cloudviewer_test")
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>")
 
 # Fix Qt -fPIC requirement
 cloudViewer_set_targets_independent(tests)

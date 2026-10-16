@@ -45,7 +45,11 @@ jobs:
 
   build-and-run-docker:
     name: Build and run
-    timeout-minutes: 300
+    # GitHub-hosted runners cap jobs at 360 minutes. The cuda-focal cell
+    # spent 295 min on image build + compile and was killed inside the
+    # Docker test ctest run at 300 (run 38852073276); noble/jammy finished
+    # in 188/269 min, focal is the slowest toolchain.
+    timeout-minutes: 360
     permissions:
       contents: write   # upload
       actions: write    # release
