@@ -344,7 +344,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **182 tools** (integration tests cover the full set) for AI agent use:
+The MCP server exposes **187 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|

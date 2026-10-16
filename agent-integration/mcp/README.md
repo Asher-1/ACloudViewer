@@ -56,9 +56,9 @@ claude mcp add cli-anything-acloudviewer -- cli-anything-acloudviewer-mcp
 }
 ```
 
-## Available Tools (182)
+## Available Tools (187)
 
-The MCP server registers **182 tools** covering headless CLI and GUI RPC operations. Below are the major categories — see `mcp_server.py` `list_tools()` for the full authoritative list.
+The MCP server registers **187 tools** covering headless CLI and GUI RPC operations. Below are the major categories — see `mcp_server.py` `list_tools()` for the full authoritative list.
 
 ### AICore and Generic Plugins (4)
 - **`list_ai_tasks`**, **`get_ai_schema`**, **`run_ai_batch`**, **`run_plugin_command`**
@@ -111,6 +111,9 @@ plugin argv in an isolated headless subprocess.
 
 ### SIBR Tools (12)
 - **`sibr_viewer`**, **`sibr_tool`**, **`sibr_prepare_colmap`**, **`sibr_texture_mesh`**, **`sibr_unwrap_mesh`**, **`sibr_tonemapper`**, **`sibr_align_meshes`**, **`sibr_camera_converter`**, **`sibr_nvm_to_sibr`**, **`sibr_crop_from_center`**, **`sibr_clipping_planes`**, **`sibr_distord_crop`**
+
+### Spirula 3DGS (5)
+- **`spirula_version`**, **`spirula_devices`**, **`spirula_train`**, **`spirula_run`**, **`spirula_progress`**
 
 ### Scene GUI (6)
 - **`scene_list`**, **`scene_info`**, **`scene_remove`**, **`scene_set_visible`**, **`scene_select`**, **`scene_clear`**

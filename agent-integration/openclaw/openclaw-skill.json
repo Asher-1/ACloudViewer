@@ -2,7 +2,7 @@
   "name": "acloudviewer",
   "display_name": "ACloudViewer",
   "version": "3.1.0",
-  "description": "Comprehensive 3D point cloud and mesh processing toolkit with 182 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, PCL/plugin processing, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
+  "description": "Comprehensive 3D point cloud and mesh processing toolkit with 187 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, PCL/plugin processing, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
   "author": "ACloudViewer Contributors",
   "homepage": "https://asher-1.github.io/ACloudViewer",
   "repository": "https://github.com/Asher-1/CLI-Anything",
@@ -21,7 +21,7 @@
   "requires": {
     "binary": "ACloudViewer desktop application (headless CLI or GUI mode with JSON-RPC plugin)"
   },
-  "tools_count": 182,
+  "tools_count": 187,
   "cli_anything": {
     "hub": "https://asher-1.github.io/CLI-Anything/",
     "agent_catalog": "https://asher-1.github.io/CLI-Anything/SKILL.txt",
@@ -52,6 +52,7 @@
     "transform": ["transform_apply", "transform_apply_file"],
     "utility": ["get_info", "list_rpc_methods"],
     "aicore_plugins": ["list_ai_tasks", "get_ai_schema", "run_ai_batch", "run_plugin_command"],
+    "spirula": ["spirula_version", "spirula_devices", "spirula_train", "spirula_run", "spirula_progress"],
     "io_settings": ["core_io_settings", "csv_matrix_settings", "draco_settings", "e57_settings", "fbx_settings", "las_settings", "mesh_io_settings", "photoscan_settings"]
   }
 }
