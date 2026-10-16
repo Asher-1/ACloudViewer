@@ -3551,3 +3551,25 @@ repeat 到 {46,46,49,2} 作结果承载。
   **MergeReconstructions 点对应语义对齐正式闭合;台账既有的"merge
   行为分歧"记录全部作废(单一根因 = NonRefSensors 值语义)**。
 - **遗留下增量**:无已知未对齐项;后续上游新 commits 按本批流程增量。
+### 批次 P1-db-g(2026-10-16):#4860 移植 + 不适用三文件终核 — 基线再前移至 b16ff739e
+
+- **fetch 审计**:upstream 前进 1 commit(48af6d309 → b16ff739e #4860
+  "Clear stale observations when importing PLY point clouds")。
+- **b16ff739e 移植**:①ImportPLY(path) 委托 ImportPLY(vector)(消除重复
+  路径);②核心修复——ImportPLY 的清空从 points3D_.clear() 改为
+  while(!empty) DeletePoint3D(begin()->first):clear() 只清点表,不清
+  image point2D 的 point3D_id 反向引用,残留 stale observation id;
+  DeletePoint3D 走完整清理链(含 NumObservations/track 一致性)。
+  reconstruction_test 加参数化 ReconstructionImportPLYTest(vector/
+  binary/text 三导入源 × {0,2} 点数),断言 ReplacesPoints+Clears-
+  Observations(IsValid/旧 point3D 不存在/NumPoints3D/每 image 全部
+  point2D HasPoint3D()==false/新点 xyz-color-track)。fork getter 风格
+  (XYZ()/Color()/Track()/XY())适配,54/54 全绿。
+- **不适用三文件终核**:benchmark/reconstruction/evaluation/(fork 无
+  benchmark 面)、doc/{faq,tutorial}.rst(fork docs/ 为 Sphinx 结构,非
+  上游 rst)、python/pycolmap/panorama.py(fork 无 panorama 面)——
+  维持不适用裁定;f1ea91d0 对 benchmark/utils.py 的改动实为 py 侧
+  source 一行(camera_gt.source = USER),属无对应面。
+- **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed。
+  **fork 语义基线升至 upstream b16ff739e;上游 main 全区间 commits
+  (fork 起点 → b16ff739e)无已知未对齐项**。

@@ -1274,21 +1274,18 @@ std::vector<PlyPoint> Reconstruction::ConvertToPLY() const {
 }
 
 void Reconstruction::ImportPLY(const std::filesystem::path& path) {
-    points3D_.clear();
-
-    const auto ply_points = ReadPly(path);
-
-    points3D_.reserve(ply_points.size());
-
-    for (const auto& ply_point : ply_points) {
-        AddPoint3D(Eigen::Vector3d(ply_point.x, ply_point.y, ply_point.z),
-                   Track(),
-                   Eigen::Vector3ub(ply_point.r, ply_point.g, ply_point.b));
-    }
+    // Upstream parity (b16ff739e #4860): both overloads share one path.
+    ImportPLY(ReadPly(path));
 }
 
 void Reconstruction::ImportPLY(const std::vector<PlyPoint>& ply_points) {
-    points3D_.clear();
+    // Upstream parity (b16ff739e #4860): delete point by point instead of
+    // clearing the map, so the point2D -> point3D back-references of the
+    // previous observations are cleared too (points3D_.clear() leaves stale
+    // observation ids on the images).
+    while (!points3D_.empty()) {
+        DeletePoint3D(points3D_.begin()->first);
+    }
     points3D_.reserve(ply_points.size());
     for (const auto& ply_point : ply_points) {
         AddPoint3D(Eigen::Vector3d(ply_point.x, ply_point.y, ply_point.z),
