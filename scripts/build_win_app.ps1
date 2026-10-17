@@ -170,6 +170,16 @@ if ($env:IGNORE_TEST -ne "ON") {
     }
 }
 
+# Print sccache stats while the daemon is still alive: it is spawned inside
+# this step's process tree, its stats are in-memory, and GitHub Actions
+# runners terminate that tree on step exit — the workflow-level stats step
+# and the action post-run summary therefore always report 0 requests on
+# Windows (measured: run 38918190501).
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+    Write-Host "=== sccache stats (in-step, daemon alive) ==="
+    & $env:CLOUDVIEWER_COMPILER_LAUNCHER --show-stats
+}
+
 Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "LASTEXITCODE: $LASTEXITCODE"
 # must do this at the end

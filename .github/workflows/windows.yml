@@ -342,6 +342,13 @@ jobs:
           if-no-files-found: ignore
       - name: sccache stats
         # Visibility for cache hit-rate tuning; never gates the job.
+        # NOTE: the sccache daemon lives inside the build step's process tree
+        # and its stats are in-memory. GitHub Actions runners terminate that
+        # tree when the step exits, so this post-build invocation (and the
+        # action's post-run summary) observe a freshly spawned daemon and
+        # report 0 requests on Windows — the real numbers are printed by
+        # build_win_app.ps1 / build_win_wheel.ps1 at the end of the build
+        # step, while the daemon is still alive.
         if: env.SCCACHE_GHA_ENABLED == 'true'
         continue-on-error: true
         run: |
@@ -597,6 +604,10 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # Cold-build gate, same expression as the app matrix job: releases, the
+      # weekly schedule and an explicit workflow_dispatch run WITHOUT the
+      # compile cache so the shipped artifacts stay reproducible.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -667,6 +678,25 @@ jobs:
           auto-activate-base: true
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
+      - name: Set up sccache (warm runs only)
+        # Same contract as the app matrix job above: compile cache is an
+        # optimization overlay; infra failures degrade to a vanilla build.
+        # This job is the one that hits the 6h runner limit (the CPU pass
+        # alone compiles ~3.5h of C++ without cache), so the launcher matters
+        # most here; the cache is shared with the app matrix jobs within the
+        # same run/branch.
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Enable sccache launcher
+        # util/ci_utils.ps1 Build-PipPackage forwards it as
+        # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is intentionally not enabled initially.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}
