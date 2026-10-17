@@ -112,6 +112,18 @@ pending frame. Every success, cancel, error, stale, and teardown path calls the
 shared completion hook exactly once. Heavy inference never runs on the Qt GUI
 thread.
 
+Qt5/Qt6 dual compatibility is mandatory in plugin UI code: every call to a
+version-divergent Qt API goes through `core/include/QtCompat.h` instead of
+`QT_VERSION` branches, deprecated Qt5-only methods, or plugin-local shims.
+This covers (catalog in the header comment) QRegExp/QRegularExpression,
+QStringRef/QStringView, split behavior, font metrics, text codec, endl,
+mouse/wheel/drop event positions, QMap insertMulti/unite, QVariant type
+queries, tab stops, container range constructors, atomic relaxed access,
+BGR888, font family fallback, and QDataStream versions. QtCompat.h is the
+single owner of those facts: missing wrappers are added there, never per
+plugin. This lives entirely in the Qt layer and does not relax the ABI rule
+above - nothing Qt crosses the public C ABI.
+
 Reuse `ecvAICoreRuntimeHelpers.h`, `ecvAICoreUiHelper.h`, shared video
 components, `ecvTestDataRepository`, and the existing plugin interfaces. Add
 the normal `AddPlugin` target, `info.json`, resources, README, and build/index
@@ -200,5 +212,8 @@ clock or from different model/input/quantization rows.
       ordinary plugin passthrough remains isolated in a headless child.
 - [ ] RPC handlers that spawn a child use `runChildProcess()`; none calls
       `QProcess::waitForFinished()` on the GUI thread.
+- [ ] Qt5/Qt6-divergent UI APIs go through `core/include/QtCompat.h` — no
+      `QT_VERSION` branches, Qt5-only calls, or plugin-local shims; both the
+      Qt5 (Ubuntu 22.04 CI) and Qt6 (noble) paths compile.
 - [ ] Documentation updates the owning source and links here rather than
       copying another long checklist.
