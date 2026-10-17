@@ -32,6 +32,12 @@ if(NOT MSVC)
     endif()
 else()
     target_compile_options(poisson_recon PRIVATE /bigobj)
+    # windows.h's function-style min/max macros collide with the std::min /
+    # std::max arguments inside PlyFile.inl's std::clamp calls (C4003 -> C2589
+    # -> "std::clamp: no matching overloaded function found", run
+    # 39031602497). Upstream COLMAP compiles this tree with NOMINMAX coming
+    # from its global contract, so restate it in the isolated recipe.
+    target_compile_definitions(poisson_recon PRIVATE NOMINMAX)
 endif()
 
 install(TARGETS poisson_recon ARCHIVE DESTINATION lib)
