@@ -80,11 +80,15 @@ void WriteProjectionMatrix(const std::filesystem::path& path, const Camera& came
 }
 
 void WriteCOLMAPCommands(const bool geometric,
-                         const std::string& workspace_path,
+                         const std::filesystem::path& workspace_path,
                          const std::string& workspace_format,
                          const std::string& pmvs_option_name,
                          const std::string& output_prefix,
                          const std::string& indent, std::ofstream* file) {
+  // Mirrors upstream WriteCOLMAPCommands (controllers/undistorters.cc)
+  // byte-for-byte: every line carries a trailing backslash and the paths are
+  // streamed as std::filesystem::path, whose operator<< quotes them, so the
+  // generated run-colmap-*.sh matches the upstream artifact.
   if (geometric) {
     *file << indent << "$COLMAP_EXE_PATH/colmap patch_match_stereo \\"
           << std::endl;
@@ -132,22 +136,21 @@ void WriteCOLMAPCommands(const bool geometric,
     *file << indent << "  --input_type photometric \\" << std::endl;
   }
   *file << indent << "  --output_path "
-        << JoinPaths(workspace_path, output_prefix + "fused.ply") << std::endl;
+        << workspace_path / (output_prefix + "fused.ply") << " \\" << std::endl;
 
   *file << indent << "$COLMAP_EXE_PATH/colmap poisson_mesher \\" << std::endl;
   *file << indent << "  --input_path "
-        << JoinPaths(workspace_path, output_prefix + "fused.ply") << " \\"
-        << std::endl;
+        << workspace_path / (output_prefix + "fused.ply") << " \\" << std::endl;
   *file << indent << "  --output_path "
-        << JoinPaths(workspace_path, output_prefix + "meshed-poisson.ply")
+        << workspace_path / (output_prefix + "meshed-poisson.ply") << " \\"
         << std::endl;
 
   *file << indent << "$COLMAP_EXE_PATH/colmap delaunay_mesher \\" << std::endl;
-  *file << indent << "  --input_path "
-        << JoinPaths(workspace_path, output_prefix) << " \\" << std::endl;
-  *file << indent << "  --input_type dense " << std::endl;
+  *file << indent << "  --input_path " << workspace_path / output_prefix
+        << " \\" << std::endl;
+  *file << indent << "  --input_type dense \\" << std::endl;
   *file << indent << "  --output_path "
-        << JoinPaths(workspace_path, output_prefix + "meshed-delaunay.ply")
+        << workspace_path / (output_prefix + "meshed-delaunay.ply") << " \\"
         << std::endl;
 }
 

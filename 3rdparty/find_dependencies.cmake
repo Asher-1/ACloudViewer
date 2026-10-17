@@ -1580,7 +1580,7 @@ import_3rdparty_library(3rdparty_poisson
         INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
         DEPENDS ext_poisson
         )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson poisson_recon poisson_recon_lib)
 
 # Minizip
 if(WITH_MINIZIP)

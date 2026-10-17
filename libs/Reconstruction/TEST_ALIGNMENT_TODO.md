@@ -3573,3 +3573,255 @@ repeat 到 {46,46,49,2} 作结果承载。
 - **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed。
   **fork 语义基线升至 upstream b16ff739e;上游 main 全区间 commits
   (fork 起点 → b16ff739e)无已知未对齐项**。
+### 批次 P1-db-h(2026-10-16):mini6 双管线 fork-vs-upstream 逐字节对比审计
+
+- **对比基线**:为满足"同 schema 语义"前提,把旧基线 worktree
+  (.qoder/tmp/colmap-upstream-3e5,Ninja build,原 3e5c915c)fetch 后
+  checkout 到 b16ff739e 并增量构建上游二进制(cmake --build --target
+  colmap,65 步 0 error)——旧二进制为 schema 4030000 语义,不可作字节
+  对比方。
+- **对比设计**:mini6 六图、两侧同款原生命令
+  (feature_extractor/exhaustive_matcher/mapper|global_mapper),同确定性
+  配置(single_camera、SIMPLE_RADIAL、max_num_features 2048、
+  num_threads 1、use_gpu 0、TwoViewGeometry.random_seed 20261009、
+  Mapper/GlobalMapper.random_seed 20261009、min_num_matches 20)。
+  注:上游已把提取/匹配选项命名空间迁至 FeatureExtraction/FeatureMatching
+  (fork 已同),SIFT 选项为 SiftExtraction.max_num_features。
+- **逐层证据链(文件级 sha 全 DIFF,但逐层下钻)**:
+  ①keypoints:6 图像 rows 逐一相同(3254/3069/3117/3334/3256/3297),
+    blob md5 全同;
+  ②descriptors:6 图像 blob md5 全同,**仅 image5 全幅 416768B 中
+    1 字节差 1 bit**(0x26 vs 0x27,SIFT 浮点比较边界翻转——fork 与上游
+    二进制的编译级差异,非源码语义);
+  ③matches/two_view_geometries:15/15 行,blob/config/rows 全部 md5 一致
+    (python 逐行验证 0 差异;.dump diff 的 tvg 行差异为长行分组假象);
+  ④incremental 模型:407 点、点 id 集合相同、track 407/407 逐元素一致、
+    rgb 407/407 一致,坐标差 max 6.75e-13(相对 1.7e-11,双精度末 2-3
+    ulp),reproj error 差 max 8.7e-13——1 bit 描述符差经 BA 传播的
+    收敛路径噪声底;
+  ⑤global 模型:点 id 排列结构不同(fork 与上游的哈希容器遍历序差异
+    ——NodeHashMap 1.92 vs 上游实现,global mapper 的点合并/迭代顺序
+    非位稳定面),model_comparer 最优对齐后:对齐变换≈单位阵
+    (±1e-14),rotation error max 1.95e-12 度,projection center error
+    max 1.2e-13——两模型语义等价至 1e-12 级。
+- **结论**:文件级逐字节一致**不可达且不必要**(不同编译单元的
+  1-bit SIFT 编译噪声经 BA 放大);**逻辑内容位级一致**(提取/匹配全链
+  除 1 bit 外零差异)+ **重建结果结构位级一致(incremental)/语义等价
+  至 1e-12 级(global)**。上游对齐在语义与数值层面完全闭合。
+- **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed(同批
+  先行移植 #4860 并验证)。
+### 批次 P1-db-i(2026-10-16):端到端 MVS/mesh/纹理 对比审计 — 深度语义等价 + poisson 输出面缺口
+
+- **上游二进制重建**:旧基线 build 当年配置为 CUDA_ENABLED=OFF 且
+  MVS_ENABLED=OFF(无 patch_match_stereo);重配
+  CUDA_ENABLED=ON+CMAKE_CUDA_COMPILER=/usr/local/cuda-12.4/nvcc+
+  CMAKE_CUDA_ARCHITECTURES=89+MVS_ENABLED=ON 后重建 colmap(0 error)。
+  注意上游 MVS 命令的条件宏为 COLMAP_MVS_ENABLED(由 MVS_ENABLED 选项
+  驱动),非 CUDA_ENABLED。
+- **端到端管线(mini6 incremental sparse 为起点,两侧同构)**:
+  image_undistorter → patch_match_stereo(GPU 6 分钟)→ stereo_fusion
+  (fork 392,821 融合点/up 394,426,差 0.4%)→ poisson_mesher
+  (--PoissonMeshing.num_threads 1)→ mesh_texturer。全链 rc=0,产物
+  含 fused.ply/meshed-poisson.ply/mesh.ply/texture.png 与全部
+  depth/normal maps(/tmp/mvscmp/)。
+- **深度图语义等价实证(决定性 cross 实验)**:同一 upstream undistorted
+  workspace 喂两侧 patch_match_stereo(排除 SfM ulp 传播)——深度图
+  逐字节全 DIFF,但数值层面:mean diff=1.4e-4 深度单位、std 0.049、
+  diff 与列/行/深度零相关(-0.03/0.01/-0.04,无系统性偏移,排除 K/
+  主点/布局差;fork 已含 c6ab4f897 0.5px K 修复)、|d|>0.5 仅
+  1351 像素(0.055%,深度不连续边缘的视差判断翻转)。定性 = CUDA
+  kernel 编译浮点噪声底(nvcc 89 编译),语义等价。
+- **发现的真实缺口(mesh 层)**:poisson_mesher 输出——fork 1,154,259
+  顶点/2,136,980 面/**无 value+RGB 属性**;upstream 1,287,472/2,546,818
+  且带 value+red/green/blue。顶点数差 11.5% + 属性面缺失 =
+  fork vendored 3rdparty/PoissonRecon 集成版本与上游的差异(上游默认
+  PoissonMeshing.color=16 回填颜色)。af89815ff(#4827 texture 0.5px
+  采样修复)已在 fork(texture_mapping.cc:732 注释在位)。
+- **texture.png 字节 DIFF**:继承 mesh 输入差异,采样语义已对齐。
+- **登记新待办**:①poisson_mesher 输出面对齐(PoissonRecon 版本升级
+  或颜色回填移植);②fork 特有 image_texturer 扩展面保留(上游已无
+  该命令);③texture 层待 poisson 对齐后复验。
+- **gate**:全量 make 0 error、ctest 184/184、pytest 404 passed(含
+  #4860 移植)。上游二进制侧产物与配置脚本留存 /tmp/mvscmp/、
+  /tmp/mvscmp_cross_result.txt、/tmp/bytecmp/ 供人工复核。
+### 批次 P1-db-j(2026-10-16):端到端输出面修复 — poisson 颜色回填 + textured OBJ/MTL 三件套验证
+
+- **用户质疑两点**:①meshed-poisson.ply 体积不对且无 RGB 颜色字段;②textured
+  输出无材质配置文件,纹理贴图无法加载。
+- **问题 1 三层根因(逐层实证)**:
+  ①vendored PoissonRecon = Open3D fork 6.x(3rdparty/PoissonRecon,
+  Open3D-PoissonRecon-6ddec9a),其 --color <double> 是色度权重参数,
+  **无 RGB/value 输出能力**;upstream 在 tree vendor 18.75
+  (ADAPTIVE_SOLVERS_VERSION),--colors 由 solver 解出输出顶点 RGB、
+  --density 输出 value 属性——版本鸿沟非开关问题;
+  ②本批在 PoissonMeshing 加 O(N) 均匀网格最近邻颜色回填(输入 fused.ply
+  带色 → 输出顶点取最近邻色,trim 之后执行),首次跑 no-op 的根因 =
+  exe 层 PoissonMeshing 之后默认开 MeshPostProcessing.enabled=true 的
+  PostProcessMeshFile 再写回;
+  ③PostProcessMeshFile 写回用无色 WriteBinaryPlyMesh——CompactMesh/
+  Smooth 经 PlyMeshVertex 字段其实保色,只在写盘丢弃。
+- **修复**:
+  ①util/ply.h/cc 新增 WriteBinaryPlyMeshWithColors(x/y/z float +
+  red/green/blue uchar,faces 段与既有 writer 同构);
+  ②poisson_meshing.cc 匿名 ns BackfillVertexColors:fused 色集 → 27/125
+  邻格最近邻(均格 cell=cbrt(volume/N),O(N) amortized;离群顶点 key
+  clamp 2^20 + 全扫兜底)→ tmp 原子重写;
+  ③mesh_postprocessing.cc PlyFileHasVertexColors(header property
+  r/red/diffuse_red/... 探测)→ PostProcessMeshFile 两处写回按输入带色
+  选 WithColors writer。
+- **验证(mini6 同输入)**:最终 header = x,y,z+red/green/blue、
+  顶点 1,154,259/面 2,136,980(post-process 精简后)、体积 45,094,864 =
+  41,632,027+1,154,259×3B 精确吻合;200 顶点暴力 NN 颜色位级匹配 93.5%
+  ——差异全部来自 Smooth 在回填后微移顶点(色随顶点走,位移后为次近邻,
+  视觉等效;mean NN 距离 0.031 场景单位)。poisson_meshing_test 2/2 +
+  mesh_postprocessing_test 3/3。
+- **问题 2 澄清+验证**:fork 与 upstream 的 mesh_texturer 输出契约逐字
+  一致(texture.png + mesh.ply,PlyTexturedMesh per-face UV)——**上游
+  b16ff739e 本就没有 OBJ 输出**;fork 扩展面 --export_obj(默认 false,
+  ObjFilter IO 链)上批对比脚本未开启。实跑 --export_obj 1 得完整三件
+  套:mesh.obj(v/vt/vn + mtllib mesh.mtl + usemtl material0000 +
+  f v/vt/vn)、mesh.mtl(newmtl material0000 + map_Kd mesh_map_Kd.png)、
+  mesh_map_Kd.png(12.5MB atlas)——标准 OBJ+MTL 可被任意 viewer 加载
+  纹理。
+- **value 属性缺口登记**:fork 输出仍缺上游的 value(density)属性,且
+  顶点/面数差(fork 1.15M/2.14M vs upstream 1.29M/2.55M)源于 PoissonRecon
+  6.x vs 18.75 的求解器代差——**升级 vendored PoissonRecon 到 18.75**
+  为独立批次(含 in-tree 打包/patch 重做/全部 poisson 消费者回归)。
+- **产物留存**:/tmp/mvscmp/fork/{undistorted/meshed-poisson-color.ply,
+  textured_color/(obj+mtl+atlas),textured_obj/};gate:make 0 error +
+  ctest 184/184 + pytest 404 passed。
+### 批次 P1-db-k(2026-10-16):poisson 输出面全量对齐 — value 属性透传 + 回填降级 fallback + 脚本模板逐字对齐
+
+- **用户质疑两点**:①当前仓库仍无法输出带颜色的 meshed-poisson.ply;
+  ②所有输出未全量对齐。
+- **根因修正(证伪 P1-db-j 前提)**:vendored 6.x 求解器**有** RGB/value
+  输出能力——PoissonRecon.cpp L153 `Color("color",16.f)` 默认色度权重,
+  L385-398 内部 colorData 求解,L481 GetMCIsoSurface(colorData) 写入顶点
+  色,Ply.h `PlyColorAndValueVertex::WriteProperties` =
+  x/y/z/value/red/green/blue(与上游 18.75 输出属性集一致),
+  SurfaceTrimmer.cpp L379-380 按 PlyColorAndValueVertex 保真读写。
+  真正根因 = fork 自有两道后置重写丢属性:①BackfillVertexColors 无条件
+  ReadPlyMesh→WithColors 重写(丢 value、NN 色覆盖 screened 色);
+  ②PostProcessMeshFile 经 AutoIO→ccMesh→PlyMesh 往返
+  (PlyMeshVertex 无 value 槽位)。17:00 产物无色是修复前的旧二进制。
+- **修复**:①PlyMesh 加 has_vertex_colors/has_vertex_value flag、
+  PlyMeshVertex 加 value 字段;ReadPlyMesh 解析 value(二进制/ASCII);
+  ②WriteBinaryPlyMesh/WriteTextPlyMesh 按 flag 条件输出
+  x,y,z[,value][,r,g,b](上游 PoissonRecon 属性序),删除
+  WriteBinaryPlyMeshWithColors 与 mesh_postprocessing 的
+  PlyFileHasVertexColors header 嗅探 hack;③BackfillVertexColors 降级
+  为 fallback:输出已带色即跳过(保 value+screened 色),仅无色输入
+  才 NN 回填;④PostProcessMeshFile 改用 ReadPlyMesh 自读自写
+  (AutoIO 往返移除,CompactMesh 整对象拷贝字段自然过 compaction);
+  ⑤undistortion.cc WriteCOLMAPCommands 逐字对齐上游
+  controllers/undistorters.cc(每行尾 `\` + std::filesystem::path
+  引号语义)——修掉 `--input_type dense` 后丢 `\` 的破损脚本。
+- **验证**:①重跑 poisson_mesher(mini6 fused.ply,默认参数)最终
+  header = x,y,z,value,r,g,b 与上游属性集一致,value≈10.0 与 trim
+  阈值吻合,backfill 日志确认 skip;②image_undistorter 重生成
+  run-colmap-geometric.sh / run-colmap-photometric.sh 与上游产物
+  **byte-identical**(diff 为空);③单测:poisson_meshing 2/2、ply
+  24/24、mesh_postprocessing 3/3、advancing_front 2/2、
+  mesh_simplification 13/13、undistortion 9/9(delaunay 0 用例:
+  本构建 CGAL 未启用)。
+- **裁定**:face 头 plain=vertex_index/textured=vertex_indices 即上游
+  COLMAP 自家 writer 契约(src/colmap/util/ply.cc L776/L779),上游
+  meshed-poisson.ply 的 `int int vertex_indices` 为 18.75 solver writer
+  痕迹,fork 不追;顶点/面数代差(6.x vs 18.75)维持 AD 批次裁定,
+  PoissonRecon 升级仍为独立批次。
+### 批次 P1-db-l(2026-10-17):体积差正面修复 — solver-native 输出 + JPEG 质量 + single_view_calibrator 接线
+
+- **体积差根因(字节级实证)**:up 65.21MB vs fork 49.71MB 差
+  15.50MB = 面数差 409,721×16B(6.56MB,42%,求解器代差)+ 面记录型
+  差 2,137,097×3B(6.41MB,41%,int 计数 vs uchar 计数)+ 顶点数差
+  133,155×19B(2.53MB,16%,求解器代差);颜色属性不贡献体积差。
+- **决策 1+6(solver-native 输出)**:MeshPostProcessing.enabled 默认
+  true→false(upstream parity:mesher 自身产物即最终文件,重写需
+  --MeshPostProcessing.enabled 1 显式开启)。复跑实测:post-processing
+  此前实际删除 152,659 面(6.7%,远超台账 ~2k 顶点印象;
+  meshopt_simplifyPrune prune_error=0.02 小分量剪除)+ Taubin 移动
+  顶点;评估结论:**默认不必要**(无 A/B 收益证据、扰动几何、改写
+  格式痕迹;纹理防 sliver 已由已移植 af89815ff 0.5px 采样承担)。
+  复跑后最终文件 = 6.x solver+trimmer 直写:x/y/z/value/red/green/
+  blue(属性序与 18.75 完全一致,Ply.h PlyColorAndValueVertex::
+  WriteProperties)、face `uchar int vertex_indices`(6.x 原生命名)、
+  顶点 1,156,331/面 2,289,756(未压缩)、字节核算 delta=0、backfill
+  skip 日志在位——**40% 格式差的归属从 fork writer 变为求解器痕迹**
+  (与 60% 代差同类,统一归入升级批次);fork writer 未改(守
+  COLMAP 契约,不影响 delaunay 等消费者)。
+- **决策 2+3(undistorted JPEG 质量)**:sensor/bitmap.cc Write 对
+  JPEG 未显式设置 quality(-1)时从 OIIO 默认 75 改为 **100**(上游
+  FreeImage "superb by default" 语义);复跑 image_undistorter 后
+  undistorted/*.JPG 与上游**逐字节一致**(md5 d9372a12/22a9cff32 完全
+  相同,8,501,572/7,495,271B)——A4 像素差(mean 0.65/max 8)彻底
+  关闭,证伪"重采样滤波差"假设,唯一根因就是编码质量。像素差
+  复测=0。
+- **决策 4(single_view_calibrator 接线)**:fork 的 calibration/ 栈
+  与上游文件级一致(含 anycalib/ray_fitting/resources),仅缺 exe;
+  照抄上游 exe/sfm.cc RunSingleViewCalibrator + colmap.cc 注册
+  (kSupportsGracefulShutdown)。CLI 验证:子命令在位,选项面
+  database/image/image_list/SingleViewCalibration.* 完整。
+- **决策 5(--fullDepth clamp)**:poisson_meshing.cc 照上游补
+  depth<5 时 `--fullDepth <depth>`(6.x 支持 FullDepth 参数);
+  poisson_meshing_test(depth=3)2/2 过。
+- **决策 7(PoissonRecon 升级延期)**:维持 6.x;约束登记:该 vendored
+  库同时被 qPoissonRecon(qGKD/CloudCompare 侧)与 libs/CV_db 的
+  SurfaceReconstructionPoisson.cpp 消费,升级需全面评估
+  (in-tree 打包/patch 重做/双消费者回归)后独立批次。剩余体积/数量差
+  (顶点 1.287M vs 1.156M、面 2.547M vs 2.290M、计数类型 int vs
+  uchar)全部归属求解器代差,随升级批次收敛。
+- **gate**:colmap_exe/mesh_postprocessing_test/poisson_meshing_test/
+  bitmap_test(47/47)/undistortion_test(9/9) 0 error 全绿;
+  mesh_postprocessing_test 默认值断言同步翻转(enabled=false)+
+  RemovesDegenerate 用例显式 options.enabled=true。产物留存
+  /tmp/mvscmp/fork/repro/{meshed-poisson-native.ply,repro_undist/}。
+
+### 批次 P1-db-m(2026-10-17):PoissonRecon 统一 v18.75 — 单一 ExternalProject 依赖 + 接口统一 + 逐字节对齐收口
+
+- **统一决策(用户 7 点裁定)**:①全库 poisson 统一到 v18.75,保持
+  ExternalProject_Add 集成;②三大 OS + Ubuntu focal→noble 兼容;③端到端
+  逐字节一致;④PoissonRecon 升级的 CV_db/cloudViewer 双消费者约束在此批次
+  正式解除。
+- **消费者全景(源码取证)**:三个消费者两种风格——
+  poisson_meshing.cc(CLI 入口,CV_db/src/SurfaceReconstructionPoisson.cpp
+  与 Open3D 同构的 FEMTree 直连,~900 行;qPoissonRecon/extern/Src_CC_wrap
+  PoissonReconLib.cpp,~850 行 v12 FEMTree 流水线)。三棵旧树:重建内嵌
+  v8.0(flat,MultiGridOctreeData)/ext_poisson v12.00(Src 布局)/上游
+  colmap v18.75(flat,FEMTree+Reconstructors+DataStream 重构)。
+- **v12→v18.75 漂移实证(决定弃用 v12 兼容层)**:SetTree/setDataField/
+  setMultiDepthDataField/GetMCIsoSurface/PointStreamData/
+  InputPointStreamWithData/ProcessDataWithConfidence 在 v18 全部消失,被
+  Reconstructor::Implicit 门面 + DataStream 框架取代;回植 v12 API = 版本
+  缝合,拒绝。18.75 树 99 文件中仅 PoissonRecon.cpp+SurfaceTrimmer.cpp
+  参与编译(colmap_poisson_recon 同构),其余全为头/inl。
+- **统一落点**:3rdparty/PoissonRecon/{PoissonRecon.cmake,PoissonReconLib/,
+  solver.CMakeLists.txt}。tarball=colmap@88dc0194 的
+  src/thirdparty/PoissonRecon 原树(100 项,SHA256 14b8d564...),经
+  raw.githubusercontent.com/Asher-1/cloudViewer_downloads/master/poisson/
+  分发;ExternalProject PATCH_COMMAND 注入 standalone CMakeLists 构建静态库
+  (RELEASE+funroll-loops+ffast-math+OpenMP,与 colmap_poisson_recon 逐旗
+  一致),IMPORTED 目标 poisson_recon;poisson_recon_lib=共享内存包装
+  (Reconstructor::Implicit 门面,partial-specialization 流类型,含色/
+  无色双签名),CV_db 与 qPoissonRecon 共用;退役 v8.0 内嵌树、v12
+  ext_poisson、Src_CC_wrap、macOS race patch(v18 无 THREAD_POOL,枚举
+  OPEN_MP/ASYNC/NONE,race 待 CI macOS 复验)。
+- **接口统一**:CLI 面=RunPoissonRecon/RunSurfaceTrimmer+PoissonRecon::
+  ThreadPool(poisson_meshing.cc 逐字上游移植,color 选项 bool 化对齐上游
+  结构体);内存面=PoissonReconLib::ICloud/IMesh(公共签名不变),CV_db 的
+  CreateFromPointCloudPoisson 签名/返回值/边界类型整型契约原样保留
+  (900 行收敛为 ~230 行适配层)。
+- **验证**:①poisson_mesher 端到端:fork 与上游 colmap 二进制同输入
+  (mini6 fused.ply,--PoissonMeshing.num_threads 1)输出**逐字节一致**
+  (md5 7eb9973a...,65,252,253B,1,288,819 顶点/2,547,777 面,
+  x/y/z/value/r/g/b,`int int vertex_indices` 为 solver 原生痕迹)——
+  审计 A1/A2 求解器代差缺口正式闭合,65.2MB 体积差归零;②新增
+  poisson_recon_lib_test 4/4(彩色 float/无色 float/彩色 double/浅深度
+  拒绝);③回归:poisson_meshing 2/2、mesh_postprocessing 3/3、ply 24/24、
+  undistortion 9/9;④编译门:colmap_exe/CV_DB_LIB/QPOISSON_RECON_PLUGIN
+  全绿;⑤python test_meshing 在 CI pytest 覆盖 CreateFromPointCloudPoisson。
+- **平台**:v18.75 为 C++17(focal gcc9 起可编);Linux 本机实证,
+  macOS(ASYNC 后端,race 复验)/Windows(/bigobj)由 CI 矩阵门禁;
+  focal→noble 由 CI ubuntu 矩阵门禁。
+- **遗留**:①Reconstruction 独立安装包的 poisson_recon install/export
+  规则待补(CMakeConfig.cmake.in 名单保持);②macOS race 复验结果回填;
+  ③v12→v18 网格数值差异(求解器代差)需下游纹理 A/B 记录新基线。

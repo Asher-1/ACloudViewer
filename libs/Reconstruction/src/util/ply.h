@@ -45,6 +45,9 @@ struct PlyMeshVertex {
     uint8_t r = 200;
     uint8_t g = 200;
     uint8_t b = 200;
+    // PoissonRecon sampling density of the vertex. Meaningful only when the
+    // owning PlyMesh sets has_vertex_value (the file declared the property).
+    float value = 0.0f;
 };
 
 struct PlyMeshFace {
@@ -64,6 +67,12 @@ struct PlyMeshFace {
 struct PlyMesh {
     std::vector<PlyMeshVertex> vertices;
     std::vector<PlyMeshFace> faces;
+    // Presence flags for optional vertex properties, decided by the PLY
+    // header on read and honored by the writers on write. Mirrors the
+    // upstream meshed-poisson.ply contract where the solver emits
+    // x/y/z/value/r/g/b when run with --density and color interpolation.
+    bool has_vertex_colors = false;
+    bool has_vertex_value = false;
 };
 
 struct PlyTexturedMesh {
@@ -87,13 +96,16 @@ void WriteBinaryPlyPoints(const std::filesystem::path& path,
                           const bool write_normal = true,
                           const bool write_rgb = true);
 
-// Read PLY mesh (plain or textured) from text or binary file.
+// Read PLY mesh (plain or textured) from text or binary file. The presence
+// flags of optional vertex properties (colors, value) follow the file header.
 PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path);
 
 // Returns true if the PLY file contains face elements (i.e., is a mesh).
 bool HasPlyMeshFaces(const std::filesystem::path& path);
 
-// Write PLY mesh to text or binary file.
+// Write PLY mesh to text or binary file. Optional vertex properties are
+// emitted iff the corresponding PlyMesh presence flag is set: x/y/z, then
+// value, then red/green/blue - the upstream PoissonRecon property order.
 void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);
 void WriteBinaryPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);
 void WriteTextPlyMesh(const std::filesystem::path& path,

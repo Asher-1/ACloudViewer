@@ -453,12 +453,28 @@ void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh) {
   file << "property float x" << std::endl;
   file << "property float y" << std::endl;
   file << "property float z" << std::endl;
+  if (mesh.has_vertex_value) {
+    file << "property float value" << std::endl;
+  }
+  if (mesh.has_vertex_colors) {
+    file << "property uchar red" << std::endl;
+    file << "property uchar green" << std::endl;
+    file << "property uchar blue" << std::endl;
+  }
   file << "element face " << mesh.faces.size() << std::endl;
   file << "property list uchar int vertex_index" << std::endl;
   file << "end_header" << std::endl;
 
   for (const auto& vertex : mesh.vertices) {
-    file << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+    file << vertex.x << " " << vertex.y << " " << vertex.z;
+    if (mesh.has_vertex_value) {
+      file << " " << vertex.value;
+    }
+    if (mesh.has_vertex_colors) {
+      file << " " << static_cast<int>(vertex.r) << " "
+           << static_cast<int>(vertex.g) << " " << static_cast<int>(vertex.b);
+    }
+    file << std::endl;
   }
 
   for (const auto& face : mesh.faces) {
@@ -479,6 +495,14 @@ void WriteBinaryPlyMesh(const std::filesystem::path& path,
   text_file << "property float x" << std::endl;
   text_file << "property float y" << std::endl;
   text_file << "property float z" << std::endl;
+  if (mesh.has_vertex_value) {
+    text_file << "property float value" << std::endl;
+  }
+  if (mesh.has_vertex_colors) {
+    text_file << "property uchar red" << std::endl;
+    text_file << "property uchar green" << std::endl;
+    text_file << "property uchar blue" << std::endl;
+  }
   text_file << "element face " << mesh.faces.size() << std::endl;
   text_file << "property list uchar int vertex_index" << std::endl;
   text_file << "end_header" << std::endl;
@@ -492,6 +516,14 @@ void WriteBinaryPlyMesh(const std::filesystem::path& path,
     WriteBinaryLittleEndian<float>(&binary_file, vertex.x);
     WriteBinaryLittleEndian<float>(&binary_file, vertex.y);
     WriteBinaryLittleEndian<float>(&binary_file, vertex.z);
+    if (mesh.has_vertex_value) {
+      WriteBinaryLittleEndian<float>(&binary_file, vertex.value);
+    }
+    if (mesh.has_vertex_colors) {
+      WriteBinaryLittleEndian<uint8_t>(&binary_file, vertex.r);
+      WriteBinaryLittleEndian<uint8_t>(&binary_file, vertex.g);
+      WriteBinaryLittleEndian<uint8_t>(&binary_file, vertex.b);
+    }
   }
 
   for (const auto& face : mesh.faces) {
@@ -626,6 +658,8 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
   int R_index = -1, G_index = -1, B_index = -1;
   int X_byte_pos = -1, Y_byte_pos = -1, Z_byte_pos = -1;
   int R_byte_pos = -1, G_byte_pos = -1, B_byte_pos = -1;
+  int VALUE_index = -1, VALUE_byte_pos = -1;
+  bool VALUE_double = false;
   bool X_double = false, Y_double = false, Z_double = false;
 
   while (std::getline(file, line)) {
@@ -709,6 +743,11 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
       } else if (pname == "blue" || pname == "b" || pname == "diffuse_blue") {
         B_index = num_vertex_props;
         B_byte_pos = num_bytes_per_vertex;
+      } else if (pname == "value") {
+        // PoissonRecon sampling density, emitted with --density.
+        VALUE_index = num_vertex_props;
+        VALUE_byte_pos = num_bytes_per_vertex;
+        VALUE_double = (dtype == "double" || dtype == "float64");
       }
 
       num_vertex_props += 1;
@@ -733,6 +772,9 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
       << "Invalid PLY mesh format: x, y, z properties missing";
 
   const bool has_colors = (R_index != -1) && (G_index != -1) && (B_index != -1);
+  const bool has_value = VALUE_index != -1;
+  result.mesh.has_vertex_colors = has_colors;
+  result.mesh.has_vertex_value = has_value;
 
   // Validate byte positions against buffer size for binary PLY mesh files.
   if (is_binary && num_bytes_per_vertex > 0) {
@@ -747,6 +789,10 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
     CheckBytePos(X_byte_pos, X_double ? sizeof(double) : sizeof(float), "x");
     CheckBytePos(Y_byte_pos, Y_double ? sizeof(double) : sizeof(float), "y");
     CheckBytePos(Z_byte_pos, Z_double ? sizeof(double) : sizeof(float), "z");
+    if (has_value) {
+      CheckBytePos(VALUE_byte_pos, VALUE_double ? sizeof(double) : sizeof(float),
+                   "value");
+    }
     if (has_colors) {
       CheckBytePos(R_byte_pos, sizeof(uint8_t), "r");
       CheckBytePos(G_byte_pos, sizeof(uint8_t), "g");
@@ -809,6 +855,10 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
         result.mesh.vertices.emplace_back(x, y, z, r, g, b);
       } else {
         result.mesh.vertices.emplace_back(x, y, z);
+      }
+      if (has_value) {
+        result.mesh.vertices.back().value = ReadCoord(
+            buffer.data(), VALUE_double, VALUE_byte_pos);
       }
     }
 
@@ -898,6 +948,10 @@ PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path) {
         result.mesh.vertices.emplace_back(x, y, z, r, g, b);
       } else {
         result.mesh.vertices.emplace_back(x, y, z);
+      }
+      if (has_value) {
+        result.mesh.vertices.back().value =
+            StringToDouble(items.at(VALUE_index));
       }
     }
 

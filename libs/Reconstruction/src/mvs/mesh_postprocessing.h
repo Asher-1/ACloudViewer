@@ -20,7 +20,11 @@ namespace mvs {
 // removes isolated/invalid geometry, and applies a short boundary-preserving
 // Taubin pass so texture charts are not dominated by sliver noise.
 struct MeshPostProcessingOptions {
-    bool enabled = true;
+    // Default follows the upstream contract: the mesher's own output file is
+    // final and no fork-side rewrite happens unless explicitly requested
+    // (--MeshPostProcessing.enabled 1), so the poisson/delaunay artifacts
+    // carry the solver-native vertex records and face format.
+    bool enabled = false;
     bool remove_small_components = true;
     bool remove_degenerate_faces = true;
     bool simplify = false;

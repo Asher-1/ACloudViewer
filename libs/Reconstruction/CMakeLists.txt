@@ -563,7 +563,6 @@ COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
-COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/VLFeat LIB_VLFEAT_SRCS *.h *.c *.tc)
 
@@ -593,7 +592,6 @@ if(ALL_SOURCE_TARGET)
             ${LIB_FLANN_SRCS}
             ${LIB_GRACLUS_SRCS}
             ${LIB_LSD_SRCS}
-            ${LIB_POISSON_RECON_SRCS}
             ${LIB_SIFT_GPU_SRCS}
             ${LIB_SQLITE_SRCS}
             ${LIB_VLFEAT_SRCS}

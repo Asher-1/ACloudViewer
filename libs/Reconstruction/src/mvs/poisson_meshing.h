@@ -27,11 +27,10 @@ struct PoissonMeshingOptions {
     // specified reconstruction depth is only an upper bound.
     int depth = 13;
 
-    // If specified, the reconstruction code assumes that the input is equipped
-    // with colors and will extrapolate the color values to the vertices of the
-    // reconstructed mesh. The floating point value specifies the relative
-    // importance of finer color estimates over lower ones.
-    double color = 32.0;
+    // Whether to color the vertices (upstream parity: the v18.75 solver
+    // interpolates the input sample colors onto the output vertices when
+    // --colors is passed).
+    bool color = true;
 
     // This floating point values specifies the value for mesh trimming. The
     // subset of the mesh with signal value less than the trim value is

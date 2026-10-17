@@ -9,9 +9,11 @@
 namespace colmap {
 namespace mvs {
 
-TEST(MeshPostProcessing, DefaultsEnabledAndValid) {
+TEST(MeshPostProcessing, DefaultsValid) {
     MeshPostProcessingOptions options;
-    EXPECT_TRUE(options.enabled);
+    // Upstream parity: post-processing is opt-in, the mesher's own output
+    // file is the final artifact by default.
+    EXPECT_FALSE(options.enabled);
     EXPECT_TRUE(options.Check());
 }
 
@@ -20,6 +22,9 @@ TEST(MeshPostProcessing, RemovesDegenerateAndSmoothsInterior) {
     mesh.vertices = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {0.5f, 0.5f, 0.2f}};
     mesh.faces = {{0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {3, 0, 4}, {0, 0, 1}};
     MeshPostProcessingOptions options;
+    // The default is now opt-in (upstream parity); this test exercises the
+    // enabled behavior explicitly.
+    options.enabled = true;
     options.remove_small_components = false;
     MeshPostProcessingStats stats;
     const PlyMesh out = PostProcessMesh(mesh, options, &stats);

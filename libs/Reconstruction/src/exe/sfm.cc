@@ -33,6 +33,7 @@
 
 #include "controllers/global_pipeline.h"
 #include "controllers/rotation_averaging.h"
+#include "controllers/single_view_calibration.h"
 #include "estimators/solvers/similarity_transform.h"
 #include "estimators/view_graph_calibration.h"
 
@@ -1175,6 +1176,35 @@ int RunViewGraphCalibrator(int argc, char** argv) {
   }
 
   LOG(INFO) << "View graph calibration completed successfully";
+  return EXIT_SUCCESS;
+}
+
+// Upstream parity (d3ccaf35 exe/sfm.cc RunSingleViewCalibrator): the
+// single-view calibration CLI wiring over the calibration/ stack that both
+// trees share.
+int RunSingleViewCalibrator(int argc, char** argv) {
+  std::filesystem::path image_list_path;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddImageOptions();
+  options.AddDefaultOption("image_list_path", &image_list_path);
+  options.AddSingleViewCalibrationOptions();
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
+
+  std::vector<std::string> image_names;
+  if (!image_list_path.empty()) {
+    image_names = ReadTextFileLines(image_list_path);
+  }
+
+  auto calibrator = CreateSingleViewCalibrationController(
+          *options.database_path, *options.image_path,
+          *options.single_view_calibration, image_names);
+  calibrator->Start();
+  calibrator->Wait();
+
   return EXIT_SUCCESS;
 }
 

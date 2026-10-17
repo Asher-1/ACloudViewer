@@ -175,7 +175,9 @@ public:
     const std::vector<uint8_t>& RowMajorData() const;
 
     // Upstream parity: JPEG quality for subsequent Write() calls; values
-    // in [0, 100], -1 keeps the caller-supplied flags untouched.
+    // in [0, 100], -1 keeps the caller-supplied flags untouched. An unset
+    // quality writes JPEGs at superb quality 100 (upstream's encoder
+    // default), not the OIIO default of 75.
     void SetJPEGQuality(int quality);
     int JPEGQuality() const;
 
