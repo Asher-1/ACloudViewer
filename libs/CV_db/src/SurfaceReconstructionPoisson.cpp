@@ -213,7 +213,8 @@ ccMesh::CreateFromPointCloudPoisson(const ccPointCloud& pcd,
     CloudAdapter<float> cloudAdapter(pcd);
     MeshAdapter<float> meshAdapter;
     if (!PoissonReconLib::Reconstruct(params, cloudAdapter, meshAdapter)) {
-        utility::LogError("[CreateFromPointCloudPoisson] reconstruction failed");
+        utility::LogError(
+                "[CreateFromPointCloudPoisson] reconstruction failed");
     }
 
     std::vector<double> densities;
