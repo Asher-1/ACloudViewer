@@ -9,6 +9,13 @@ project(PoissonReconSolver CXX)
 # upstream binary.
 
 add_library(poisson_recon STATIC PoissonRecon.cpp SurfaceTrimmer.cpp)
+# Windows NMC builds consume this library through an IMPORTED location whose
+# Debug name is poisson_recond.lib (3rdparty/PoissonRecon/PoissonRecon.cmake);
+# without the postfix CMake would emit a plain poisson_recon.lib for Debug and
+# the Debug lane would resolve to the Release archive (or miss it entirely).
+if(MSVC)
+    set_target_properties(poisson_recon PROPERTIES DEBUG_POSTFIX "d")
+endif()
 target_compile_definitions(poisson_recon PRIVATE RELEASE)
 target_include_directories(poisson_recon PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 if(NOT MSVC)

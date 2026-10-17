@@ -1,5 +1,17 @@
 include(ExternalProject)
 
+# Byproducts the Ninja graph can trace back to the ExternalProject's install
+# step. Declared before ExternalProject_Add so it can reference the same
+# expressions; per-config MSVC names follow the solver's DEBUG_POSTFIX "d".
+if(NOT MSVC)
+    set(POISSON_BUILD_BYPRODUCTS
+        "${CMAKE_BINARY_DIR}/poisson/install/lib/libpoisson_recon.a")
+else()
+    set(POISSON_BUILD_BYPRODUCTS
+        "${CMAKE_BINARY_DIR}/poisson/install/lib/poisson_recon.lib"
+        "${CMAKE_BINARY_DIR}/poisson/install/lib/poisson_recond.lib")
+endif()
+
 # Unified PoissonRecon dependency: Adaptive Multigrid Solvers v18.75, vendored
 # verbatim from upstream COLMAP's in-tree copy (colmap@88dc019465be,
 # src/thirdparty/PoissonRecon). One source tree serves every downstream module:
@@ -21,18 +33,29 @@ ExternalProject_Add(ext_poisson
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different
                   ${CMAKE_CURRENT_LIST_DIR}/solver.CMakeLists.txt
                   <SOURCE_DIR>/CMakeLists.txt
+    # The solver recipe is an isolated CMake instance (not a subdirectory of
+    # the main project), so the standard must be forwarded explicitly: without
+    # it AppleClang falls back to a pre-C++11 default and MyExceptions.h's
+    # `noexcept` overrides fail to compile (macOS runs 39021395360/39021395394).
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+               -DCMAKE_CXX_STANDARD=17
                -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config $<CONFIG>
     INSTALL_COMMAND ${CMAKE_COMMAND} --install . --config $<CONFIG>
+    # Ninja-family generators (the CI Ninja-Multi-Config graph check, the
+    # Windows NMC build) require every consumed file to have a producing rule;
+    # Make is lax, which is why local Unix-Makefiles trees never exposed the
+    # missing declaration (runs 39021395507/39021395388: "missing and no known
+    # rule to make it: .../poisson/install/lib/libpoisson_recon.a").
+    BUILD_BYPRODUCTS ${POISSON_BUILD_BYPRODUCTS}
 )
-
 ExternalProject_Get_Property(ext_poisson SOURCE_DIR)
 ExternalProject_Get_Property(ext_poisson INSTALL_DIR)
 set(POISSON_INCLUDE_DIRS ${SOURCE_DIR}) # Not using "/" is critical.
 
 # Solver objects (RunPoissonRecon/RunSurfaceTrimmer CLI entries). IMPORTED
 # because the sources only exist after the ExternalProject download/build.
+# The MSVC Debug name follows the solver recipe's DEBUG_POSTFIX "d".
 if(NOT MSVC)
     set(POISSON_STATIC_LIBRARY "${INSTALL_DIR}/lib/libpoisson_recon.a")
 else()
