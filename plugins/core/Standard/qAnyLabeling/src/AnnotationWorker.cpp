@@ -7,6 +7,8 @@
 
 #include "AnnotationWorker.h"
 
+#include <QtCompat.h>
+
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <algorithm>
@@ -122,7 +124,7 @@ void AnnotationWorker::infer(const QString& modelPath,
     QStringList vocabulary;
     if (world || yoloe) {
         for (const QString& name :
-             prompt.text.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+             prompt.text.split(QLatin1Char(','), QtCompat::SkipEmptyParts)) {
             const QString trimmed = name.trimmed();
             if (!trimmed.isEmpty()) vocabulary.append(trimmed);
         }
@@ -999,7 +1001,7 @@ void AnnotationWorker::infer(const QString& modelPath,
     if (kind == ModelKind::GKD) {
         auto* context = static_cast<aicore_gkd_ctx*>(m_context);
         const QStringList names =
-                prompt.text.split(QLatin1Char(','), Qt::SkipEmptyParts);
+                prompt.text.split(QLatin1Char(','), QtCompat::SkipEmptyParts);
         std::vector<QByteArray> textStorage;
         textStorage.reserve(size_t(names.size()));
         for (const QString& name : names) {

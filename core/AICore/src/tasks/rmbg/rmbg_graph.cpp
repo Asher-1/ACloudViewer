@@ -1456,6 +1456,10 @@ bool RmbgDeviceGraph::init(ggml_backend_t backend,
         err = "static backend buffer allocation failed";
         return false;
     }
+    // StaticBlob weights live here: tag WEIGHTS so the sched routes
+    // weight-consuming ops to the GPU instead of the CPU secondary.
+    ggml_backend_buffer_set_usage(impl_->static_buffer,
+                                  GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (const StaticBlob &blob : b.blobs) {
         if (blob.bytes.size() != ggml_nbytes(blob.tensor)) {
             err = std::string("static tensor byte mismatch: ") +

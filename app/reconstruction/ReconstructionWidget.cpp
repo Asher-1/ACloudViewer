@@ -548,12 +548,11 @@ void ReconstructionWidget::CreateControllers() {
         mapper_controller_->Wait();
     }
 
-    mapper_controller_.reset(new IncrementalMapperController(
+    mapper_controller_.reset(new IncrementalPipeline(
             options_.mapper.get(), *options_.image_path,
             *options_.database_path, &reconstruction_manager_));
     mapper_controller_->AddCallback(
-            IncrementalMapperController::INITIAL_IMAGE_PAIR_REG_CALLBACK,
-            [this]() {
+            IncrementalPipeline::INITIAL_IMAGE_PAIR_REG_CALLBACK, [this]() {
                 QMetaObject::invokeMethod(
                         this,
                         [this]() {
@@ -564,7 +563,7 @@ void ReconstructionWidget::CreateControllers() {
                         Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
-            IncrementalMapperController::NEXT_IMAGE_REG_CALLBACK, [this]() {
+            IncrementalPipeline::NEXT_IMAGE_REG_CALLBACK, [this]() {
                 QMetaObject::invokeMethod(
                         this,
                         [this]() {
@@ -575,7 +574,7 @@ void ReconstructionWidget::CreateControllers() {
                         Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
-            IncrementalMapperController::LAST_IMAGE_REG_CALLBACK, [this]() {
+            IncrementalPipeline::LAST_IMAGE_REG_CALLBACK, [this]() {
                 QMetaObject::invokeMethod(
                         this,
                         [this]() {
@@ -586,7 +585,7 @@ void ReconstructionWidget::CreateControllers() {
                         Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
-            IncrementalMapperController::FINISHED_CALLBACK, [this]() {
+            IncrementalPipeline::FINISHED_CALLBACK, [this]() {
                 QMetaObject::invokeMethod(
                         this,
                         [this]() {

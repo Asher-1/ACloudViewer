@@ -36,6 +36,7 @@
 #include "controllers/texturing_controller.h"
 #include "controllers/incremental_pipeline.h"
 #include "sfm/incremental_mapper.h"
+#include "sfm/observation_manager.h"
 #include "util/misc.h"
 #include "controllers/option_manager.h"
 
@@ -90,7 +91,9 @@ int RunImageDeleter(int argc, char** argv) {
   options.AddDefaultOption(
       "image_names_path", &image_names_path,
       "Path to text file containing one image name to delete per line");
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -159,7 +162,7 @@ int RunImageFilterer(int argc, char** argv) {
   double min_focal_length_ratio = 0.1;
   double max_focal_length_ratio = 10.0;
   double max_extra_param = 100.0;
-  size_t min_num_observations = 10;
+  int min_num_observations = 10;
 
   OptionManager options;
   options.AddRequiredOption("input_path", &input_path);
@@ -168,26 +171,25 @@ int RunImageFilterer(int argc, char** argv) {
   options.AddDefaultOption("max_focal_length_ratio", &max_focal_length_ratio);
   options.AddDefaultOption("max_extra_param", &max_extra_param);
   options.AddDefaultOption("min_num_observations", &min_num_observations);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
 
   const size_t num_reg_images = reconstruction.NumRegImages();
 
-  reconstruction.FilterImages(min_focal_length_ratio, max_focal_length_ratio,
-                              max_extra_param);
-
-  std::vector<image_t> filtered_image_ids;
-  for (const auto& image : reconstruction.Images()) {
-    if (image.second.IsRegistered() &&
-        image.second.NumPoints3D() < min_num_observations) {
-      filtered_image_ids.push_back(image.first);
-    }
-  }
-
-  for (const auto image_id : filtered_image_ids) {
-    reconstruction.DeRegisterImage(image_id);
+  // Registration belongs to frames. In particular, models read from disk can
+  // have valid frame poses while the fork's legacy per-image flag is false.
+  const std::vector<frame_t> filtered_frame_ids =
+      ObservationManager(reconstruction)
+          .FindFramesToFilter(min_focal_length_ratio,
+                              max_focal_length_ratio,
+                              max_extra_param,
+                              min_num_observations);
+  for (const frame_t frame_id : filtered_frame_ids) {
+    reconstruction.DeRegisterFrame(frame_id);
   }
 
   const size_t num_filtered_images =
@@ -220,7 +222,9 @@ int RunImageRectifier(int argc, char** argv) {
   options.AddDefaultOption("max_scale", &undistort_camera_options.max_scale);
   options.AddDefaultOption("max_image_size",
                            &undistort_camera_options.max_image_size);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
@@ -228,7 +232,7 @@ int RunImageRectifier(int argc, char** argv) {
   const auto stereo_pairs =
       ReadStereoImagePairs(stereo_pairs_list, reconstruction);
 
-  StereoImageRectifier rectifier(undistort_camera_options, &reconstruction,
+  StereoImageRectifierImpl rectifier(undistort_camera_options, &reconstruction,
                                   *options.image_path, output_path,
                                   stereo_pairs);
   rectifier.Start();
@@ -246,7 +250,9 @@ int RunImageRegistrator(int argc, char** argv) {
   options.AddRequiredOption("input_path", &input_path);
   options.AddRequiredOption("output_path", &output_path);
   options.AddMapperOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -257,6 +263,9 @@ int RunImageRegistrator(int argc, char** argv) {
     std::cerr << "ERROR: `output_path` is not a directory" << std::endl;
     return EXIT_FAILURE;
   }
+
+  Reconstruction reconstruction;
+  reconstruction.Read(input_path);
 
   PrintHeading1("Loading database");
 
@@ -272,6 +281,19 @@ int RunImageRegistrator(int argc, char** argv) {
     cache_options.ignore_watermarks = options.mapper->ignore_watermarks;
     cache_options.image_names = {options.mapper->image_names.begin(),
                                  options.mapper->image_names.end()};
+    // An explicit registration list selects images to add, not the complete
+    // existing model. The mapper also needs every already posed image because
+    // BeginReconstruction reloads the model against this cache.
+    if (!cache_options.image_names.empty()) {
+      for (const image_t image_id : reconstruction.RegImageIds()) {
+        cache_options.image_names.insert(
+            reconstruction.Image(image_id).Name());
+      }
+    }
+    // Registration may need an explicitly selected image with no remaining
+    // correspondence edge to an already posed image. Keep its keypoints in
+    // the cache, matching the upstream registrator's load contract.
+    cache_options.load_all_images = true;
     database_cache.Load(*database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
@@ -279,23 +301,26 @@ int RunImageRegistrator(int argc, char** argv) {
 
   std::cout << std::endl;
 
-  Reconstruction reconstruction;
-  reconstruction.Read(input_path);
-
   IncrementalMapper mapper(&database_cache);
   mapper.BeginReconstruction(&reconstruction);
 
   const auto mapper_options = options.mapper->Mapper();
 
   for (const auto& image : reconstruction.Images()) {
-    if (image.second.IsRegistered()) {
+    // Registration is a frame-pose fact. The legacy image flag can be stale
+    // after loading a fork model, so it must not schedule an already posed
+    // image for registration again.
+    if (image.second.HasPose()) {
       continue;
     }
 
     PrintHeading1("Registering image #" + std::to_string(image.first) + " (" +
                   std::to_string(reconstruction.NumRegImages() + 1) + ")");
 
-    std::cout << "  => Image sees " << image.second.NumVisiblePoints3D()
+    // Upstream parity (d3ccaf35 exe/image.cc): the visibility count lives in
+    // the mapper's observation manager, not on the image entity.
+    std::cout << "  => Image sees "
+              << mapper.ObservationManager().NumVisiblePoints3D(image.first)
               << " / " << image.second.NumObservations() << " points"
               << std::endl;
 
@@ -342,7 +367,9 @@ int RunImageUndistorter(int argc, char** argv) {
   options.AddDefaultOption("roi_min_y", &undistort_camera_options.roi_min_y);
   options.AddDefaultOption("roi_max_x", &undistort_camera_options.roi_max_x);
   options.AddDefaultOption("roi_max_y", &undistort_camera_options.roi_max_y);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   CreateDirIfNotExists(output_path);
 
@@ -383,15 +410,15 @@ int RunImageUndistorter(int argc, char** argv) {
 
   std::unique_ptr<Thread> undistorter;
   if (output_type == "COLMAP") {
-    undistorter.reset(new COLMAPUndistorter(
+    undistorter.reset(new COLMAPUndistorterImpl(
         undistort_camera_options, &reconstruction, *options.image_path,
         output_path, num_patch_match_src_images, copy_type, image_ids));
   } else if (output_type == "PMVS") {
-    undistorter.reset(new PMVSUndistorter(undistort_camera_options,
+    undistorter.reset(new PMVSUndistorterImpl(undistort_camera_options,
                                           &reconstruction, *options.image_path,
                                           output_path));
   } else if (output_type == "CMP-MVS") {
-    undistorter.reset(new CMPMVSUndistorter(undistort_camera_options,
+    undistorter.reset(new CMPMVSUndistorterImpl(undistort_camera_options,
                                             &reconstruction, *options.image_path,
                                             output_path));
   } else {
@@ -427,7 +454,9 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
   options.AddDefaultOption("roi_min_y", &undistort_camera_options.roi_min_y);
   options.AddDefaultOption("roi_max_x", &undistort_camera_options.roi_max_x);
   options.AddDefaultOption("roi_max_y", &undistort_camera_options.roi_max_y);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   CreateDirIfNotExists(output_path);
 
@@ -486,7 +515,7 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
   }
 
   std::unique_ptr<Thread> undistorter;
-  undistorter.reset(new PureImageUndistorter(undistort_camera_options,
+  undistorter.reset(new PureImageUndistorterImpl(undistort_camera_options,
                                              *options.image_path, output_path,
                                              image_names_and_cameras));
 
@@ -506,7 +535,9 @@ int RunImageTexturer(int argc, char** argv) {
   options.AddRequiredOption("output_path", &output_path);
   options.AddRequiredOption("mesh_path", &mesh_path);
   options.AddTexturingOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (!ExistsDir(input_path)) {
     std::cerr << "ERROR: `input_path` does not exist" << std::endl;

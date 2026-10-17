@@ -16,6 +16,7 @@
 
 #include "pipelines/sfm.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 #include "pybind/reconstruction/sfm/mappers.h"
 
@@ -220,7 +221,8 @@ void pybind_sfm_methods(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for the normal mapper", "database_path"_a, "image_path"_a,
           "input_path"_a, "output_path"_a, "image_list_path"_a = "",
-          "incremental_mapper_options"_a = colmap::IncrementalMapperOptions());
+          "incremental_mapper_options"_a =
+                  colmap::IncrementalPipelineOptions());
     docstring::FunctionDocInject(m, "normal_mapper",
                                  map_shared_argument_docstrings);
 
@@ -229,7 +231,8 @@ void pybind_sfm_methods(py::module& m) {
           "Function for the hierarchical mapper", "database_path"_a,
           "image_path"_a, "output_path"_a, "num_workers"_a = -1,
           "image_overlap"_a = 50, "leaf_max_num_images"_a = 500,
-          "incremental_mapper_options"_a = colmap::IncrementalMapperOptions());
+          "incremental_mapper_options"_a =
+                  colmap::IncrementalPipelineOptions());
     docstring::FunctionDocInject(m, "hierarchical_mapper",
                                  map_shared_argument_docstrings);
 
@@ -246,7 +249,8 @@ void pybind_sfm_methods(py::module& m) {
           "Function for the triangulation of points", "database_path"_a,
           "image_path"_a, "input_path"_a, "output_path"_a,
           "clear_points"_a = false,
-          "incremental_mapper_options"_a = colmap::IncrementalMapperOptions());
+          "incremental_mapper_options"_a =
+                  colmap::IncrementalPipelineOptions());
     docstring::FunctionDocInject(m, "triangulate_points",
                                  map_shared_argument_docstrings);
 }

@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <fstream>
 #include <filesystem>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -159,19 +160,49 @@ inline void set_cpu_threads(ggml_backend_t be, int n_threads) {
 #endif
 }
 
+// Device type with a per-device cache. ggml-cuda's device get_type calls
+// cudaGetDeviceProperties on EVERY query (~0.7 ms on a driver round trip);
+// the OCR rec loop alone asked it three times per chunk through
+// is_cpu_backend (2 ms of a 4.5 ms chunk). Device objects are registry-owned
+// process-lifetime singletons with an immutable type, so caching by pointer
+// is exact. The table stays tiny (one row per device).
+inline enum ggml_backend_dev_type dev_type_cached(ggml_backend_dev_t dev) {
+    struct Entry {
+        ggml_backend_dev_t dev;
+        enum ggml_backend_dev_type type;
+    };
+    static std::mutex mutex;
+    static std::vector<Entry> table;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (const Entry& e : table)
+            if (e.dev == dev) return e.type;
+    }
+    const enum ggml_backend_dev_type type = ggml_backend_dev_type(dev);
+    std::lock_guard<std::mutex> lock(mutex);
+    for (const Entry& e : table)
+        if (e.dev == dev) return e.type;
+    table.push_back({dev, type});
+    return type;
+}
+
 // Check if a backend is CPU type.
 inline bool is_cpu_backend(ggml_backend_t be) {
     if (!be) return false;
     ggml_backend_dev_t dev = ggml_backend_get_device(be);
-    return ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_CPU;
+    return dev_type_cached(dev) == GGML_BACKEND_DEVICE_TYPE_CPU;
 }
 
 // Normalize user-facing device names to ggml registry names.
 // ggml registers backends under short names (e.g. "Metal" → "MTL") that differ
 // from the human-readable names used in our UI and config strings.
+// Registry names are compared case-insensitively against the lowercased
+// ggml_backend_reg_name: a capitalized token ("Vulkan") must not silently
+// fall through to the first GPU of a different backend.
 inline std::string normalize_backend_name(const std::string& name) {
-    if (name == "metal") return "mtl";
-    return name;
+    const std::string lower = to_lower(name);
+    if (lower == "metal") return "mtl";
+    return lower;
 }
 
 // Find an accelerator backend by name and optional index. Both discrete and

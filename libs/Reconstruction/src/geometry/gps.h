@@ -34,6 +34,23 @@ public:
     // Upstream COLMAP ENU API (dbb41680). EllToXYZ/XYZToEll above are the
     // fork-legacy spellings of EllipsoidToECEF/ECEFToEllipsoid and remain the
     // single implementation source for the ECEF conversion below.
+    // Convert ellipsoidal (lat/lon/alt) to UTM coordinates.
+    // Returns a pair of the converted coordinates and the zone number.
+    // If the points span multiple zones, the zone with the most points is
+    // chosen. The conversion uses a 4th-order expansion formula. The easting
+    // offset is 500 km, and the northing offset is 10,000 km for the Southern
+    // Hemisphere. (Upstream d3ccaf35 geometry/gps.h parity.)
+    std::pair<std::vector<Eigen::Vector3d>, int> EllipsoidToUTM(
+            const std::vector<Eigen::Vector3d>& lat_lon_alt) const;
+
+    // Convert UTM to ellipsoidal (lat/lon/alt) coordinates.
+    // Requires the zone number and hemisphere (true for north, false for
+    // south).
+    std::vector<Eigen::Vector3d> UTMToEllipsoid(
+            const std::vector<Eigen::Vector3d>& xyz_in_utm,
+            int zone,
+            bool is_north) const;
+
     // Convert ellipsoidal (lat/lon/alt) to ENU coordinates.
     // The reference point (ref_lat, ref_lon, ref_alt) defines the ENU origin.
     // Upstream COLMAP ECEF API (dbb41680): delegates to the legacy

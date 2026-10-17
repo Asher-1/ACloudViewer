@@ -20,12 +20,10 @@ extern "C" {
  *
  * This header publishes the PP-OCRv4 catalog entries converted by the
  * first-party converter (core/AICore/tools/convert_paddle_ocr_gguf.py) and
- * hosted in the PP-OCR release of cloudViewer_downloads. Only the catalog
- * enumeration is public for now: the inference session/result APIs land
- * together with the `ocr` task graph implementation and its accuracy gates
- * (see qAnyLabeling/TODO.md, P1-P3). Keeping the runtime API absent until
- * the gates pass means no consumer can mistake the catalog for a working
- * inference contract.
+ * hosted in the PP-OCR release of cloudViewer_downloads. The catalog and
+ * inference session/result APIs below are the public OCR contract; graph,
+ * preprocessing, postprocessing, model state, and backend details remain
+ * task-private and are validated by the manifest-owned accuracy gates.
  */
 
 typedef struct aicore_ocr_model_entry {
@@ -35,9 +33,9 @@ typedef struct aicore_ocr_model_entry {
     const char* download_url;
     /** User-facing display name. */
     const char* display_name;
-    /** "det" or "rec". */
+    /** "det", "rec", or "layout". */
     const char* role;
-    /** "ch" or "en" (recognition script). */
+    /** "ch", "en", or "cdla". */
     const char* language;
 } aicore_ocr_model_entry;
 
@@ -76,7 +74,7 @@ AICORE_CAPI void aicore_ocr_free_buffer(char* buffer);
  * result arrays owned by the result container:
  *   - boxes:      text quadrilateral + UTF-8 transcription + score + script
  *   - regions:    layout class + reading order (when a layout model loads)
- *   - relations:  KIE index pairs + role (when a KIE model loads)
+ *   - relations:  reserved KIE index pairs; empty in ABI v1
  */
 
 typedef struct aicore_ocr_options {
@@ -85,11 +83,18 @@ typedef struct aicore_ocr_options {
     const char* det_model_path;    /**< det GGUF (required) */
     const char* rec_model_path;    /**< rec GGUF (required) */
     const char* layout_model_path; /**< layout GGUF (optional, NULL) */
-    const char* kie_model_path;    /**< KIE GGUF (optional, NULL) */
-    int32_t det_max_side;          /**< det resize limit (0 = model default) */
+    /** Reserved for a future KIE contract. Must be NULL in ABI v1; a non-empty
+     *  value is rejected instead of being silently ignored. */
+    const char* kie_model_path;
+    int32_t det_max_side;   /**< det resize limit (0 = model default) */
     float det_box_thresh;   /**< DB binarization threshold (0 = default) */
     float det_unclip_ratio; /**< polygon expansion (0 = default) */
-    int32_t rec_max_batch;  /**< crops per rec forward (0 = default 8) */
+    /** Official text_recognition_batch_size: crops are sorted by aspect
+     *  ratio and every group of this many is padded to the group's widest
+     *  crop, exactly like the PaddleOCR pipeline. The pad width changes the
+     *  recognized text, so this is a semantic option, not a speed knob; the
+     *  forward chunking is independent of it (0 = official 6). */
+    int32_t rec_max_batch;
     /** Device request: NULL or "auto" follows the platform order (CUDA ->
      *  Vulkan -> CPU on Linux/Windows, Metal -> CPU on macOS); "cpu" or an
      *  explicit backend id ("cuda", "vulkan:1", ...) selects one. Appended
@@ -98,6 +103,17 @@ typedef struct aicore_ocr_options {
     const char* device;
     /** CPU thread count for the CPU backend (<= 0 = backend default). */
     int32_t n_threads;
+    /** DB box-score filter: a candidate whose mean probability inside the
+     *  polygon falls below this is dropped (official PP-OCR det
+     *  box_thresh, default 0.6; <= 0 keeps the official default). Appended
+     *  in v1.1; callers with the older struct_size get the default. */
+    float det_box_score_thresh;
+    /** det resize mode: 0 = PaddleOCR 3.0.1 OCR default ("min": scale the
+     *  SHORT side up to det_max_side when it is below it; det_max_side is
+     *  limit_side_len and defaults to 64), 1 = "max" cap (never upscale,
+     *  long side <= det_max_side; det_max_side 960 matches the official
+     *  table_recognition pipeline). Appended in v1.1. */
+    int32_t det_limit_type;
 } aicore_ocr_options;
 
 #define AICORE_OCR_ABI_VERSION 1u
@@ -116,12 +132,48 @@ typedef struct aicore_ocr_region {
     float score;
 } aicore_ocr_region;
 
+/** Reserved KIE relation shape. ABI v1 returns zero relations because KIE
+ *  model execution is not part of the published OCR contract. */
 typedef struct aicore_ocr_relation {
     int32_t head_index; /**< box index */
     int32_t tail_index; /**< box index */
     int32_t role;       /**< KIE role class id */
     float score;
 } aicore_ocr_relation;
+
+/** Optional OCR post-process breakdown for the last result. These wall-clock
+ *  intervals include parallel worker lifetime and are diagnostic/benchmark
+ *  evidence, not a replacement for aicore_pipeline_timings. */
+#define AICORE_OCR_POST_TIMINGS_ABI_VERSION 2u
+
+enum {
+    AICORE_OCR_POST_TIMING_DB_BOXES = 1u << 0,
+    AICORE_OCR_POST_TIMING_CROP_RESIZE_PACK = 1u << 1,
+    AICORE_OCR_POST_TIMING_CTC_DECODE = 1u << 2,
+    AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY = 1u << 3,
+    AICORE_OCR_POST_TIMING_OUTPUT_READBACK = 1u << 4,
+    AICORE_OCR_POST_TIMING_INPUT_UPLOAD = 1u << 5,
+    /** 独立图计算时间；用于定位 det 与 rec 的最大执行热点。 */
+    AICORE_OCR_POST_TIMING_DET_GRAPH_COMPUTE = 1u << 6,
+    AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE = 1u << 7,
+};
+
+typedef struct aicore_ocr_post_timing_breakdown {
+    uint32_t abi_version;
+    uint32_t valid_fields;
+    double db_boxes_ms;
+    double crop_resize_pack_ms;
+    double ctc_decode_ms;
+    double result_assembly_ms;
+    /** Device-to-host output transfer; graph compute remains in inference. */
+    double output_readback_ms;
+    /** Host-to-device graph-input transfer; excludes graph compute. */
+    double input_upload_ms;
+    /** DBNet 图计算时间；不包含传输或后处理。v2 追加字段。 */
+    double det_graph_compute_ms;
+    /** 所有 SVTR rec 图计算时间；不包含传输或 CTC。v2 追加字段。 */
+    double rec_graph_compute_ms;
+} aicore_ocr_post_timing_breakdown;
 
 typedef struct aicore_ocr_result aicore_ocr_result;
 typedef struct aicore_ocr_ctx aicore_ocr_ctx;
@@ -152,8 +204,12 @@ AICORE_CAPI aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
 
 /** Recognize text inside caller-provided quads (skip-detection path).
  *  `quads` holds `count` clockwise-from-top-left corner polygons in image
- *  pixel coordinates, row-major (count * 4 * 2 floats). Returns boxes only
- *  (no det pass); same ownership rules as aicore_ocr_run(). */
+ *  pixel coordinates, row-major (count * 4 * 2 floats). Each quad is
+ *  clipped to the image and cropped exactly like a det box (minimum-area
+ *  rectangle of its integer corners), so feeding back the quads of
+ *  aicore_ocr_run() reproduces its texts. Returns exactly `count` boxes in
+ *  input order (no det pass); a degenerate or non-finite quad yields an
+ *  empty text with score 0. Same ownership rules as aicore_ocr_run(). */
 AICORE_CAPI aicore_ocr_result* aicore_ocr_recognize(
         aicore_ocr_ctx* ctx,
         const aicore_image_view* image,
@@ -183,6 +239,11 @@ AICORE_CAPI void aicore_ocr_result_release(aicore_ocr_result* result);
 /** Common stage timings of the last run (valid_fields marks truth). */
 AICORE_CAPI aicore_pipeline_timings
 aicore_ocr_timings(const aicore_ocr_result* result);
+
+/** OCR post-process substage timings of the last run (valid_fields marks
+ *  available stages; NULL returns a zero-initialized breakdown). */
+AICORE_CAPI aicore_ocr_post_timing_breakdown
+aicore_ocr_post_timings(const aicore_ocr_result* result);
 
 /** Thread-local error string of the last failing call (never NULL). */
 AICORE_CAPI const char* aicore_ocr_last_error(void);

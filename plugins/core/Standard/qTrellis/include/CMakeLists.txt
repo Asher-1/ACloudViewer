@@ -5,4 +5,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/TrellisWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/TrellisDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/TrellisMeshViewer.h
+        ${CMAKE_CURRENT_LIST_DIR}/TrellisBatchCommand.h
 )

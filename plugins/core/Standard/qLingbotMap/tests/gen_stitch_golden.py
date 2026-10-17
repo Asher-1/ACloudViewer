@@ -34,7 +34,10 @@ def make_pose_enc(rng, frames):
 
 
 def pose_enc_to_c2w(pe):
-    """Engine decode: c2w rot = R^T, c2w t = -R^T t (w2c pose_enc)."""
+    """Engine sidecar decode: c2w = [R^T | -R^T t] — the W2C twin of the
+    pose_enc decode [R|t] (which IS the camera-to-world; the sidecar
+    field is named "c2w" upstream but carries w2c). The test inverts it
+    before feeding the stitcher, mirroring the worker boundary."""
     frames = pe.shape[0]
     c2w = np.zeros((frames, 4, 4), dtype=np.float32)
     for i in range(frames):

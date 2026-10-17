@@ -31,6 +31,49 @@ PRIVATE_MODEL_OWNER = re.compile(
     re.IGNORECASE)
 
 
+QTHREAD_WORKER = re.compile(r"\bclass\s+(\w+)\s*(?:final\s*)?:\s*public\s+QThread\b")
+
+
+def destructor_body(text: str, name: str) -> str | None:
+    """Body of the first ``name::~name()`` (or in-class ``~name()``) definition."""
+    match = re.search(
+        rf"(?:\b{name}::)?~{name}\s*\(\s*\)\s*(?:noexcept\s*)?(?:override\s*)?\{{",
+        text)
+    if not match:
+        return None
+    depth, start = 1, match.end()
+    for index in range(start, len(text)):  # O(body): one brace scan
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index]
+    return None
+
+
+def unjoined_workers(text_by_file: dict[Path, str], root: Path) -> list[str]:
+    """QThread workers whose destructor does not wait() for run().
+
+    Plugins deleteLater() a worker from the queued taskFinished slot while
+    run() may still be returning; ~QThread aborts on a running thread and the
+    worker's cancel token/context would be freed under run().
+    """
+    issues = []
+    sources = "\n".join(text_by_file.values())
+    for path, text in text_by_file.items():
+        if "tests" in path.parts:
+            continue
+        for match in QTHREAD_WORKER.finditer(text):
+            body = destructor_body(sources, match.group(1))
+            if body is None or not re.search(r"\bwait\s*\(", body):
+                line_no = text.count("\n", 0, match.start()) + 1
+                issues.append(f"{path.relative_to(root)}:{line_no}: QThread "
+                              f"worker {match.group(1)} destructor does not "
+                              "wait() for run()")
+    return issues
+
+
 def source_files(directory: Path) -> list[Path]:
     return sorted(path for path in directory.rglob("*")
                   if path.is_file() and path.suffix.lower() in SOURCE_SUFFIXES)
@@ -57,8 +100,14 @@ def check_plugin_root(root: Path, plugin: str | None = None,
             }
             if not any(PUBLIC_INCLUDE.search(text) for text in text_by_file.values()):
                 continue
+            issues.extend(unjoined_workers(text_by_file, root))
             for path, text in text_by_file.items():
                 relative = path.relative_to(root)
+                # Explicit remote-inference clients may use Qt networking for
+                # request/response transport. They do not own or download
+                # local model assets; URLs/catalogs remain forbidden below.
+                remote_transport = (
+                    "aicore-boundary: remote-inference-transport" in text)
                 # Test fixtures intentionally use environment variables to
                 # select models; the production plugin sources do not get
                 # that exception.
@@ -74,8 +123,12 @@ def check_plugin_root(root: Path, plugin: str | None = None,
                     if (not is_test and not line.lstrip().startswith("//") and
                             ABSOLUTE_PATH.search(line)):
                         warnings.append(f"{relative}:{line_no}: developer absolute path")
+                    model_owner = PRIVATE_MODEL_OWNER.search(line)
+                    remote_network = remote_transport and (
+                        "QNetworkAccessManager" in line or
+                        "QNetworkReply" in line)
                     if (not is_test and not line.lstrip().startswith("//") and
-                            PRIVATE_MODEL_OWNER.search(line)):
+                            model_owner and not remote_network):
                         warnings.append(f"{relative}:{line_no}: plugin-owned model/cache/download symbol")
     if strict:
         issues.extend(warnings)

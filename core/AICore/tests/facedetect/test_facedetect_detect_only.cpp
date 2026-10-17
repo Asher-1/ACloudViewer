@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "aicore/facedetect_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -29,6 +30,22 @@ struct RunResult {
     std::vector<float> flat;  // score,x1,y1,x2,y2 + 10 landmarks per face
     bool finite = true;
 };
+
+int positiveEnvOr(const char* name, int fallback) {
+    const char* value = std::getenv(name);
+    const int parsed = value ? std::atoi(value) : 0;
+    return parsed > 0 ? parsed : fallback;
+}
+
+double maxAbsDiff(const std::vector<float>& reference,
+                  const std::vector<float>& candidate) {
+    if (reference.size() != candidate.size()) return INFINITY;
+    double maximum = 0.0;
+    for (size_t i = 0; i < reference.size(); ++i)
+        maximum = std::max(maximum, std::abs(static_cast<double>(reference[i]) -
+                                             candidate[i]));
+    return maximum;
+}
 
 RunResult detect(aicore_facedetect_ctx* ctx,
                  const char* image,
@@ -112,42 +129,65 @@ int main() {
         return 1;
     }
 
-    std::vector<double> elapsed;
-    RunResult first;
-    for (int i = 0; i < 4; ++i) {
-        double ms = 0.0;
-        RunResult run = detect(ctx, image, &ms);
-        if (i == 0) first = run;
-        elapsed.push_back(ms);
-        if (run.count != first.count || run.flat.size() != first.flat.size()) {
-            std::fprintf(stderr, "unstable face count across runs\n");
+    const int warmups = positiveEnvOr("AICORE_TEST_WARMUP_RUNS", 2);
+    const int runs = positiveEnvOr("AICORE_TEST_INFERENCE_RUNS", 7);
+    for (int i = 0; i < warmups; ++i) {
+        double ignored = 0.0;
+        RunResult warmup = detect(ctx, image, &ignored);
+        if (warmup.count < 1 || !warmup.finite) {
+            std::fprintf(stderr, "invalid warmup output\n");
             aicore_facedetect_free(ctx);
             return 1;
         }
     }
+
+    std::vector<double> elapsed;
+    elapsed.reserve(runs);
+    RunResult reference;
+    double worst = 0.0;
+    for (int i = 0; i < runs; ++i) {
+        double ms = 0.0;
+        RunResult run = detect(ctx, image, &ms);
+        if (i == 0) reference = run;
+        elapsed.push_back(ms);
+        if (run.count != reference.count || !run.finite) {
+            std::fprintf(stderr, "unstable or non-finite detection output\n");
+            aicore_facedetect_free(ctx);
+            return 1;
+        }
+        worst = std::max(worst, maxAbsDiff(reference.flat, run.flat));
+    }
     aicore_facedetect_free(ctx);
 
-    if (first.count < 1) {
+    if (reference.count < 1) {
         std::fprintf(stderr, "detector found no faces on %s\n", image);
         return 1;
     }
-    if (!first.finite) {
-        std::fprintf(stderr, "non-finite detection output\n");
+    // Same context and input must keep typed detections numerically stable.
+    if (worst > 1.0e-4) {
+        std::fprintf(stderr, "detection drift %.7f exceeds 1e-4\n", worst);
         return 1;
     }
-    // Run-to-run stability of the typed result store.
-    double worst = 0.0;
     double sum = 0.0;
-    for (float v : first.flat) sum += v;
-    (void)worst;
+    for (float v : reference.flat) sum += v;
     std::sort(elapsed.begin(), elapsed.end());
     const double p50 = elapsed[elapsed.size() / 2];
-    const double p95 = elapsed.back();
-    // Determinism: repeat the whole pipeline once more and diff against the
-    // captured first run by re-running detect (results replaced in store).
-    std::fprintf(stderr,
-                 "{\"task\":\"facedetect\",\"faces\":%d,\"sum\":%.4f,"
-                 "\"p50_ms\":%.2f,\"p95_ms\":%.2f}\n",
-                 first.count, sum, p50, p95);
+    const double p95 =
+            elapsed[static_cast<size_t>(std::ceil(
+                            0.95 * static_cast<double>(elapsed.size()))) -
+                    1];
+    const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE");
+    // output_hash: byte fingerprint of the typed detections, so the runner's
+    // exact policy also proves cross-process determinism and baseline drift.
+    const uint64_t output_hash = aicore::test::fnv1a(
+            reference.flat.data(), reference.flat.size() * sizeof(float));
+    std::printf(
+            "{\"suite\":\"aicore\",\"task\":\"facedetect\","
+            "\"device\":\"%s\",\"faces\":%d,\"sum\":%.4f,"
+            "\"p50_ms\":%.2f,\"p95_ms\":%.2f,\"warmups\":%d,"
+            "\"iterations\":%d,\"max_abs_diff\":%.7f,"
+            "\"output_hash\":\"%016llx\"}\n",
+            device ? device : "auto", reference.count, sum, p50, p95, warmups,
+            runs, worst, static_cast<unsigned long long>(output_hash));
     return 0;
 }

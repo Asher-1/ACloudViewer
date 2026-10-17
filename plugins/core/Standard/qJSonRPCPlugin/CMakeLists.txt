@@ -20,6 +20,17 @@ if ( PLUGIN_STANDARD_QJSONRPC )
         target_link_libraries(${PROJECT_NAME} spirula_base)
     endif()
 
+    # Selection-tools probes (view.selectRegion) drive cvViewSelectionManager
+    # from the VTK engine, the same link layout the main app uses.
+    if (TARGET QVTK_ENGINE_LIB)
+        target_include_directories( ${PROJECT_NAME}
+                                    PRIVATE
+                                    ${QVTK_ENGINE_LIB_SOURCE_DIR}
+                                    ${QVTK_ENGINE_LIB_SOURCE_DIR}/Tools/SelectionTools
+        )
+        target_link_libraries(${PROJECT_NAME} QVTK_ENGINE_LIB)
+    endif()
+
     add_subdirectory( include )
     add_subdirectory( src )
  

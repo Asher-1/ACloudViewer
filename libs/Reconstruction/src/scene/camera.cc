@@ -46,7 +46,7 @@ Camera::Camera()
       model_id_(CameraModelId::kInvalid),
       width_(0),
       height_(0),
-      prior_focal_length_(false) {}
+      source_(CameraSource::UNKNOWN) {}
 
 std::string Camera::ModelName() const { return CameraModelIdToName(model_id_); }
 
@@ -75,23 +75,15 @@ const std::vector<size_t>& Camera::ExtraParamsIdxs() const {
 }
 
 Eigen::Matrix3d Camera::CalibrationMatrix() const {
+  // Upstream parity (d3ccaf35): a thrown, catchable check (LOG(FATAL)
+  // aborts instead, and Spherical models must be able to probe this).
+  THROW_CHECK(IsPerspective())
+      << "CalibrationMatrix() only defined for perspective cameras.";
   Eigen::Matrix3d K = Eigen::Matrix3d::Identity();
-
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  if (idxs.size() == 1) {
-    K(0, 0) = params_[idxs[0]];
-    K(1, 1) = params_[idxs[0]];
-  } else if (idxs.size() == 2) {
-    K(0, 0) = params_[idxs[0]];
-    K(1, 1) = params_[idxs[1]];
-  } else {
-    LOG(FATAL)
-        << "Camera model must either have 1 or 2 focal length parameters.";
-  }
-
+  K(0, 0) = FocalLengthX();
+  K(1, 1) = FocalLengthY();
   K(0, 2) = PrincipalPointX();
   K(1, 2) = PrincipalPointY();
-
   return K;
 }
 
@@ -113,7 +105,7 @@ double Camera::MeanFocalLength() const {
 
 double Camera::FocalLength() const {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 1);
+  THROW_CHECK_EQ(idxs.size(), 1);
   return params_[idxs[0]];
 }
 
@@ -138,37 +130,37 @@ void Camera::SetFocalLength(const double focal_length) {
 
 void Camera::SetFocalLengthX(const double focal_length_x) {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[0]] = focal_length_x;
 }
 
 void Camera::SetFocalLengthY(const double focal_length_y) {
   const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[1]] = focal_length_y;
 }
 
 double Camera::PrincipalPointX() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   return params_[idxs[0]];
 }
 
 double Camera::PrincipalPointY() const {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   return params_[idxs[1]];
 }
 
 void Camera::SetPrincipalPointX(const double ppx) {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[0]] = ppx;
 }
 
 void Camera::SetPrincipalPointY(const double ppy) {
   const std::vector<size_t>& idxs = PrincipalPointIdxs();
-  CHECK_EQ(idxs.size(), 2);
+  THROW_CHECK_EQ(idxs.size(), 2);
   params_[idxs[1]] = ppy;
 }
 
@@ -298,8 +290,11 @@ Camera Camera::CreateFromModelId(camera_t camera_id,
                                  CameraModelId model_id,
                                  double focal_length,
                                  size_t width,
-                                 size_t height) {
+                                 size_t height,
+                                 CameraSource source) {
     THROW_CHECK(ExistsCameraModelWithId(model_id));
+    THROW_CHECK_NE(source, CameraSource::BEST)
+            << "Camera source cannot be BEST.";
     Camera camera;
     camera.SetModelId(model_id);
     camera.SetCameraId(camera_id);
@@ -307,7 +302,7 @@ Camera Camera::CreateFromModelId(camera_t camera_id,
     camera.SetHeight(height);
     camera.Params() = CameraModelInitializeParams(model_id, focal_length,
                                                  width, height);
-    camera.SetPriorFocalLength(true);
+    camera.SetSource(source);
     return camera;
 }
 
@@ -315,9 +310,27 @@ Camera Camera::CreateFromModelName(camera_t camera_id,
                                    const std::string& model_name,
                                    double focal_length,
                                    size_t width,
-                                   size_t height) {
-    return CreateFromModelId(
-            camera_id, CameraModelNameToId(model_name), focal_length, width,
-            height);
+                                   size_t height,
+                                   CameraSource source) {
+    return CreateFromModelId(camera_id,
+                             CameraModelNameToId(model_name),
+                             focal_length,
+                             width,
+                             height,
+                             source);
 }
+std::ostream& operator<<(std::ostream& stream, const Camera& camera) {
+  const bool valid_model = ExistsCameraModelWithId(camera.ModelId());
+  const std::string camera_id_str = camera.CameraId() != kInvalidCameraId
+                                        ? std::to_string(camera.CameraId())
+                                        : "Invalid";
+  const std::string params_info = valid_model ? camera.ParamsInfo() : "?";
+  const std::string model_name = valid_model ? camera.ModelName() : "Invalid";
+  stream << "Camera(camera_id=" << camera_id_str << ", model=" << model_name
+         << ", width=" << camera.Width() << ", height=" << camera.Height()
+         << ", params=[" << camera.ParamsToString() << "] (" << params_info
+         << "))";
+  return stream;
+}
+
 }  // namespace colmap

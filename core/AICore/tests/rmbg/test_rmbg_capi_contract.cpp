@@ -118,13 +118,14 @@ int main() {
                          ctx, &padded_rgb, &rgba, &rw, &rh, &rlen) == -1);
     AICORE_CHECK(rgba == nullptr && rw == 0 && rh == 0 && rlen == 0);
     aicore_rmbg_free(ctx);
+    ctx = nullptr;
     aicore_rmbg_options_free(opts);
 
     // Null guards on inference entry points.
     AICORE_CHECK(aicore_rmbg_remove_background_rgb(nullptr, kRgb, 3, 3, &png,
                                                    &png_len) == -1);
-    AICORE_CHECK(aicore_rmbg_remove_background_rgb(ctx /* null */, nullptr, 0,
-                                                   0, &png, &png_len) == -1);
+    AICORE_CHECK(aicore_rmbg_remove_background_rgb(ctx, nullptr, 0, 0, &png,
+                                                   &png_len) == -1);
     AICORE_CHECK(aicore_rmbg_alpha_mat_rgb(nullptr, kRgb, 3, 3, &alpha, &aw,
                                            &ah) == -1);
     AICORE_CHECK(aicore_rmbg_remove_background_rgba(nullptr, kRgb, 3, 3, &rgba,

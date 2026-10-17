@@ -188,6 +188,8 @@ TEST(ReadRigConfig, Nominal) {
   ASSERT_TRUE(configs[0].cameras[0].camera.has_value());
   EXPECT_EQ(configs[0].cameras[0].camera->ModelId(), OpenCVCameraModel::model_id);
   EXPECT_TRUE(configs[0].cameras[0].camera->HasPriorFocalLength());
+  // Upstream parity (f1ea91d0): rig-config cameras carry CameraSource::USER.
+  EXPECT_EQ(configs[0].cameras[0].camera->Source(), CameraSource::USER);
   EXPECT_THAT(configs[0].cameras[0].camera->Params(),
               testing::ElementsAre(640, 480, 320, 240, 0.1, 0.2, 0.3, 0.4));
 

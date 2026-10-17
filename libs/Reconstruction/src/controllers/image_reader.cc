@@ -59,7 +59,8 @@ ImageReader::ImageReader(const ImageReaderOptions& options, Database* database)
     prev_camera_.Params().resize(CameraModelNumParams(prev_camera_.ModelId()), 0.);
     if (!options_.camera_params.empty()) {
       THROW_CHECK(prev_camera_.SetParamsFromString(options_.camera_params));
-      prev_camera_.SetPriorFocalLength(true);
+      // Upstream parity (f1ea91d0): user-specified intrinsics.
+      prev_camera_.SetSource(CameraSource::USER);
     }
   }
 }
@@ -245,12 +246,16 @@ ImageReader::Status ImageReader::Next(Rig* rig,
             options_.default_focal_length_factor *
             std::max(bitmap->Width(), bitmap->Height()));
 
-        prev_camera_ = Camera::CreateFromModelId(prev_camera_.CameraId(),
-                                                 prev_camera_.ModelId(),
-                                                 focal_length,
-                                                 bitmap->Width(),
-                                                 bitmap->Height());
-        prev_camera_.SetPriorFocalLength(maybe_focal_length.has_value());
+        prev_camera_ = Camera::CreateFromModelId(
+            prev_camera_.CameraId(),
+            prev_camera_.ModelId(),
+            focal_length,
+            bitmap->Width(),
+            bitmap->Height(),
+            // Upstream parity (f1ea91d0): an EXIF reading is a real prior;
+            // the default-factor fallback is only a guess.
+            maybe_focal_length.has_value() ? CameraSource::EXIF
+                                           : CameraSource::GUESS);
       }
 
       prev_camera_.SetWidth(static_cast<size_t>(bitmap->Width()));

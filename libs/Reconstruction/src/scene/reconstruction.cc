@@ -31,6 +31,8 @@
 
 #include "scene/reconstruction.h"
 
+#include "util/hash_containers.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -49,18 +51,15 @@
 
 namespace colmap {
 
-Reconstruction::Reconstruction()
-    : correspondence_graph_(nullptr), num_added_points3D_(0) {}
+Reconstruction::Reconstruction() : num_added_points3D_(0) {}
 
 Reconstruction::Reconstruction(const Reconstruction& other)
-    : correspondence_graph_(other.GetCorrespondenceGraph()),
-      cameras_(other.Cameras()),
+    : cameras_(other.Cameras()),
       images_(other.Images()),
       rigs_(other.Rigs()),
       frames_(other.Frames()),
       points3D_(other.Points3D()),
-      image_pair_stats_(other.ImagePairs()),
-      reg_image_ids_(other.RegImageIds()),
+      num_reg_images_(other.num_reg_images_),
       reg_frame_ids_(other.reg_frame_ids_),
       num_added_points3D_(other.NumAddedPoints3D()) {
     RewireObjectPointers();
@@ -68,14 +67,12 @@ Reconstruction::Reconstruction(const Reconstruction& other)
 
 Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
     if (this != &other) {
-        correspondence_graph_ = other.GetCorrespondenceGraph();
         cameras_ = other.Cameras();
         images_ = other.Images();
         rigs_ = other.Rigs();
         frames_ = other.Frames();
         points3D_ = other.Points3D();
-        image_pair_stats_ = other.ImagePairs();
-        reg_image_ids_ = other.RegImageIds();
+        num_reg_images_ = other.num_reg_images_;
         reg_frame_ids_ = other.reg_frame_ids_;
         num_added_points3D_ = other.NumAddedPoints3D();
         RewireObjectPointers();
@@ -92,6 +89,9 @@ void Reconstruction::RewireObjectPointers() {
     for (auto& [_, frame] : frames_) {
         frame.ResetRigPtr();
         frame.SetRigPtr(&Rig(frame.RigId()));
+        // Upstream parity (923342c5 #4857): the copy has raw data ids;
+        // finalize them so SetDataId/indexing keeps the invariants.
+        frame.FinalizeDataIds();
     }
     for (auto& [_, image] : images_) {
         image.ResetCameraPtr();
@@ -101,8 +101,8 @@ void Reconstruction::RewireObjectPointers() {
     }
 }
 
-std::unordered_set<point3D_t> Reconstruction::Point3DIds() const {
-    std::unordered_set<point3D_t> point3D_ids;
+NodeHashSet<point3D_t> Reconstruction::Point3DIds() const {
+    NodeHashSet<point3D_t> point3D_ids;
     point3D_ids.reserve(points3D_.size());
 
     for (const auto& point3D : points3D_) {
@@ -113,7 +113,6 @@ std::unordered_set<point3D_t> Reconstruction::Point3DIds() const {
 }
 
 void Reconstruction::Load(const DatabaseCache& database_cache) {
-    correspondence_graph_ = nullptr;
 
     // Add cameras.
     cameras_.reserve(database_cache.NumCameras());
@@ -176,45 +175,14 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
         }
     }
 
-    // Add image pairs (fork-specific statistics kept for the legacy
-    // observation bookkeeping).
-    for (const auto& image_pair :
-         database_cache.CorrespondenceGraph()->NumMatchesBetweenAllImages()) {
-        ImagePairStat image_pair_stat;
-        image_pair_stat.num_total_corrs = image_pair.second;
-        image_pair_stats_.emplace(image_pair.first, image_pair_stat);
-    }
 }
 
-void Reconstruction::SetUp(const CorrespondenceGraph* correspondence_graph) {
-    CHECK_NOTNULL(correspondence_graph);
-    for (auto& image : images_) {
-        image.second.SetUp(Camera(image.second.CameraId()));
-    }
-    correspondence_graph_ = correspondence_graph;
-
-    // If an existing model was loaded from disk and there were already images
-    // registered previously, we need to set observations as triangulated.
-    for (const auto image_id : reg_image_ids_) {
-        const class Image& image = Image(image_id);
-        for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
-             ++point2D_idx) {
-            if (image.Point2D(point2D_idx).HasPoint3D()) {
-                const bool kIsContinuedPoint3D = false;
-                SetObservationAsTriangulated(image_id, point2D_idx,
-                                             kIsContinuedPoint3D);
-            }
-        }
-    }
-}
 
 void Reconstruction::TearDown() {
     // Upstream parity (dbb41680 scene/reconstruction.cc): frame-level
     // teardown. Frames without a pose are removed together with their
     // images; rigs without kept frames are removed together with their
     // sensors' cameras.
-    (void)correspondence_graph_;
-    image_pair_stats_.clear();
 
     // Remove all non-registered frames/images.
     FlatHashSet<rig_t> keep_rig_ids;
@@ -283,7 +251,17 @@ void Reconstruction::AddImage(class Image image) {
     image.SetFramePtr(&frame);
   }
   const image_t image_id = image.ImageId();
+  const frame_t frame_id = image.FrameId();
   THROW_CHECK(images_.emplace(image_id, std::move(image)).second);
+  // Fork: keep the legacy per-image registered flag in lockstep for images
+  // that are added after their frame was registered. The Load order adds
+  // frames before images, so RegisterFrame's flag pass saw no images and the
+  // flag would stay false forever for fully-posed loaded reconstructions
+  // (batch T: this silently emptied the retriangulation's Find() gates).
+  if (std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id) !=
+      reg_frame_ids_.end()) {
+    Image(image_id).SetRegistered(true);
+  }
 }
 
 void Reconstruction::AddRig(class Rig rig) {
@@ -336,6 +314,10 @@ void Reconstruction::AddFrame(class Frame frame) {
   const frame_t frame_id = frame.FrameId();
   auto [it, inserted] = frames_.emplace(frame_id, std::move(frame));
   THROW_CHECK(inserted);
+  // Upstream parity (923342c5 #4857): the data ids are finalized on
+  // insertion, otherwise internal bookkeeping (e.g. counting reg_image_ids_)
+  // can become incorrect when frames are mutated later.
+  it->second.FinalizeDataIds();
   // Upstream parity (d3ccaf35 scene/reconstruction.cc L436): a frame that
   // carries a pose is registered on insertion. The fork's disk-read path
   // calls ResetRegistrationState() afterwards to preserve the
@@ -369,8 +351,6 @@ point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
     const bool kIsContinuedPoint3D = false;
 
     for (const auto& track_el : track.Elements()) {
-        SetObservationAsTriangulated(track_el.image_id, track_el.point2D_idx,
-                                     kIsContinuedPoint3D);
     }
 
     return point3D_id;
@@ -408,8 +388,6 @@ void Reconstruction::AddObservation(const point3D_t point3D_id,
     point3D.Track().AddElement(track_el);
 
     const bool kIsContinuedPoint3D = true;
-    SetObservationAsTriangulated(track_el.image_id, track_el.point2D_idx,
-                                 kIsContinuedPoint3D);
 }
 
 point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
@@ -421,10 +399,22 @@ point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
             (point3D1.Track().Length() * point3D1.XYZ() +
              point3D2.Track().Length() * point3D2.XYZ()) /
             (point3D1.Track().Length() + point3D2.Track().Length());
-    const Eigen::Vector3d merged_rgb =
-            (point3D1.Track().Length() * point3D1.Color().cast<double>() +
-             point3D2.Track().Length() * point3D2.Color().cast<double>()) /
-            (point3D1.Track().Length() + point3D2.Track().Length());
+    // Upstream parity (d3ccaf35): black denotes a not-yet-extracted color,
+    // so it is excluded from averaging instead of pulling the merged color
+    // toward zero; both-black merges stay black.
+    const Eigen::Vector3ub kBlackColor = Eigen::Vector3ub::Zero();
+    Eigen::Vector3ub merged_color;
+    if (point3D1.Color() == kBlackColor) {
+        merged_color = point3D2.Color();
+    } else if (point3D2.Color() == kBlackColor) {
+        merged_color = point3D1.Color();
+    } else {
+        merged_color =
+                ((point3D1.Track().Length() * point3D1.Color().cast<double>() +
+                  point3D2.Track().Length() * point3D2.Color().cast<double>()) /
+                 (point3D1.Track().Length() + point3D2.Track().Length()))
+                    .cast<uint8_t>();
+    }
 
     Track merged_track;
     merged_track.Reserve(point3D1.Track().Length() + point3D2.Track().Length());
@@ -435,7 +425,7 @@ point3D_t Reconstruction::MergePoints3D(const point3D_t point3D_id1,
     DeletePoint3D(point3D_id2);
 
     const point3D_t merged_point3D_id =
-            AddPoint3D(merged_xyz, merged_track, merged_rgb.cast<uint8_t>());
+            AddPoint3D(merged_xyz, merged_track, merged_color);
 
     return merged_point3D_id;
 }
@@ -445,13 +435,6 @@ void Reconstruction::DeletePoint3D(const point3D_t point3D_id) {
     // to `Reconstruction::ResetTriObservations`
 
     const class Track& track = Point3D(point3D_id).Track();
-
-    const bool kIsDeletedPoint3D = true;
-
-    for (const auto& track_el : track.Elements()) {
-        ResetTriObservations(track_el.image_id, track_el.point2D_idx,
-                             kIsDeletedPoint3D);
-    }
 
     for (const auto& track_el : track.Elements()) {
         class Image& image = Image(track_el.image_id);
@@ -478,7 +461,6 @@ void Reconstruction::DeleteObservation(const image_t image_id,
     point3D.Track().DeleteElement(image_id, point2D_idx);
 
     const bool kIsDeletedPoint3D = false;
-    ResetTriObservations(image_id, point2D_idx, kIsDeletedPoint3D);
 
     image.ResetPoint3DForPoint2D(point2D_idx);
 }
@@ -495,37 +477,62 @@ void Reconstruction::DeleteAllPoints2DAndPoints3D() {
     }
 }
 
+void Reconstruction::DeleteAllPoints3D() {
+  // Fork variant (batch S): the retriangulation passes need the 2D
+  // keypoint coordinates as their input, so unlike
+  // DeleteAllPoints2DAndPoints3D only the 3D points and the 2D->3D
+  // observation links are cleared here; the coordinates stay in place.
+  // Callers must not hold an ObservationManager on this reconstruction
+  // across the call (the new manager is created afterwards and rebuilds
+  // its bookkeeping from the cleared state).
+  points3D_.clear();
+  for (auto& [_, image] : images_) {
+    for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+         ++point2D_idx) {
+      image.ResetPoint3DForPoint2D(point2D_idx);
+    }
+  }
+}
+
 void Reconstruction::RegisterFrame(const frame_t frame_id) {
   // Upstream parity (d3ccaf35 scene/reconstruction.cc L638): registration
-  // requires a pose and is idempotent. The fork keeps the image-level set in
-  // lockstep for the images that already exist (upstream counts
-  // num_reg_images_ here; the fork derives it from reg_image_ids_).
+  // requires a pose and is idempotent; the registered-image counter is
+  // advanced unconditionally by the frame's number of images, even when
+  // those images have not been added yet. The per-image registered flag is
+  // kept in lockstep for the images that already exist (fork legacy
+  // consumers read it via IsRegistered()).
   const class Frame& frame = Frame(frame_id);
   THROW_CHECK(frame.HasPose());
-  if (reg_frame_ids_.insert(frame_id).second) {
+  // Upstream parity (d3ccaf35): the registration order is preserved in the
+  // vector; idempotency is a linear find (the enumeration order of
+  // RegImageIds()/RegFrameIds() is observable behavior).
+  const bool already = std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(),
+                                 frame_id) != reg_frame_ids_.end();
+  if (!already) {
+    reg_frame_ids_.push_back(frame_id);
+    num_reg_images_ += frame.ImageIds().size();
     for (const image_t image_id : frame.ImageIds()) {
-      if (ExistsImage(image_id) && !Image(image_id).IsRegistered()) {
+      if (ExistsImage(image_id)) {
         Image(image_id).SetRegistered(true);
-        reg_image_ids_.push_back(image_id);
       }
     }
   }
 }
 
 void Reconstruction::RegisterImage(const image_t image_id) {
-    class Image& image = Image(image_id);
-    if (!image.IsRegistered()) {
-        image.SetRegistered(true);
-        reg_image_ids_.push_back(image_id);
-        // Frame-level lockstep (upstream registers at frame level only).
-        if (image.HasFrameId() && ExistsFrame(image.FrameId()) &&
-            Frame(image.FrameId()).HasPose()) {
-            reg_frame_ids_.insert(image.FrameId());
-        }
-    }
+    // Fork legacy helper: only flips the per-image registered flag, for
+    // callers that add images after their frame was already registered
+    // (model IO readers). The frame-level registration fact and the
+    // num_reg_images_ counter are owned exclusively by RegisterFrame
+    // (upstream parity).
+    Image(image_id).SetRegistered(true);
 }
 
 void Reconstruction::DeRegisterImage(const image_t image_id) {
+    // Fork legacy helper: clears the image's observations (single-ledger
+    // path) and its registered flag. The frame-level registration fact and
+    // the num_reg_images_ counter are owned exclusively by
+    // DeRegisterFrame (upstream parity).
     class Image& image = Image(image_id);
 
     for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
@@ -536,24 +543,6 @@ void Reconstruction::DeRegisterImage(const image_t image_id) {
     }
 
     image.SetRegistered(false);
-
-    reg_image_ids_.erase(
-            std::remove(reg_image_ids_.begin(), reg_image_ids_.end(), image_id),
-            reg_image_ids_.end());
-    // Frame-level lockstep: drop the frame when none of its images is
-    // registered anymore.
-    if (image.HasFrameId() && ExistsFrame(image.FrameId())) {
-        bool any_image_registered = false;
-        for (const image_t other_id : Frame(image.FrameId()).ImageIds()) {
-            if (ExistsImage(other_id) && Image(other_id).IsRegistered()) {
-                any_image_registered = true;
-                break;
-            }
-        }
-        if (!any_image_registered) {
-            reg_frame_ids_.erase(image.FrameId());
-        }
-    }
 }
 
 void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
@@ -567,10 +556,12 @@ void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
   frames_.clear();
   frames_.reserve(frames.size());
   // Reset the registration state first, then rebuild it consistently: the
-  // imported frames carry poses and are registered on insertion (upstream
-  // parity; AddFrame registers posed frames), which also re-registers their
-  // existing images in lockstep.
-  reg_image_ids_.clear();
+  // imported frames carry poses (fork database round-trip) and are
+  // registered on insertion (upstream parity; AddFrame registers posed
+  // frames), so the end state of this call is the upstream one - an
+  // unregistered model whose registration is established explicitly
+  // afterwards (the fork's fresh-load-starts-unregistered semantics).
+  num_reg_images_ = 0;
   reg_frame_ids_.clear();
   for (auto& [image_id, image] : images_) {
     image.SetRegistered(false);
@@ -588,10 +579,20 @@ void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
     image.SetFrameId(image_to_frame_ids.at(image_id));
     image.SetFramePtr(&Frame(image.FrameId()));
   }
+  // Upstream parity (d3ccaf35): no extra reset here - AddFrame registered
+  // the imported frames that carry a pose, and the caller decides what
+  // registration means next (the fork's disk-read path calls
+  // ResetRegistrationState() itself for fresh-load-starts-unregistered).
 }
 
 void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
-    if (!ExistsFrame(frame_id) || !Frame(frame_id).HasPose()) {
+    // Upstream parity (d3ccaf35): de-registration is driven by the
+    // frame-level set; unregistered frames are ignored with a warning.
+    // Every image of the frame drops its observations (single-ledger path)
+    // and the counter is decremented unconditionally, even for images that
+    // were never added (upstream counts them at registration time).
+    if (std::find(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id) ==
+        reg_frame_ids_.end()) {
         LOG(WARNING) << "Ignoring de-registration of frame " << frame_id
                      << ", which is not registered.";
         return;
@@ -599,40 +600,47 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
 
     class Frame& frame = Frame(frame_id);
     for (const image_t image_id : frame.ImageIds()) {
-        if (ExistsImage(image_id) && Image(image_id).IsRegistered()) {
+        if (ExistsImage(image_id)) {
             DeRegisterImage(image_id);
         }
+        --num_reg_images_;
     }
-    reg_frame_ids_.erase(frame_id);
+    const auto erase_begin_it =
+            std::remove(reg_frame_ids_.begin(), reg_frame_ids_.end(), frame_id);
+    reg_frame_ids_.erase(erase_begin_it, reg_frame_ids_.end());
     frame.ResetPose();
 }
 
-void Reconstruction::Normalize(const double extent,
-                               const double p0,
-                               const double p1,
-                               const bool use_images) {
-    CHECK_GT(extent, 0);
+Sim3d Reconstruction::Normalize(const bool fixed_scale,
+                                const double extent,
+                                const double min_percentile,
+                                const double max_percentile,
+                                const bool use_images) {
+    THROW_CHECK_GT(extent, 0);
 
-    if ((use_images && reg_image_ids_.size() < 2) ||
+    if ((use_images && NumRegFrames() < 2) ||
         (!use_images && points3D_.size() < 2)) {
-        return;
+        return Sim3d();
     }
 
-    auto bound = ComputeBoundsAndCentroid(p0, p1, use_images);
+    auto bound = ComputeBoundsAndCentroid(min_percentile, max_percentile,
+                                          use_images);
 
     // Calculate scale and translation, such that
     // translation is applied before scaling.
     const double old_extent = (std::get<1>(bound) - std::get<0>(bound)).norm();
-    double scale;
-    if (old_extent < std::numeric_limits<double>::epsilon()) {
-        scale = 1;
-    } else {
-        scale = extent / old_extent;
+    double scale = 1.;
+    if (!fixed_scale) {
+        if (old_extent >= std::numeric_limits<double>::epsilon()) {
+            scale = extent / old_extent;
+        }
     }
 
-    SimilarityTransform3 tform(scale, ComposeIdentityQuaternion(),
-                               -scale * std::get<2>(bound));
+    const Sim3d tform(scale, Eigen::Quaterniond::Identity(),
+                      -scale * std::get<2>(bound));
     Transform(tform);
+
+    return tform;
 }
 
 Eigen::Vector3d Reconstruction::ComputeCentroid(const double p0,
@@ -640,10 +648,16 @@ Eigen::Vector3d Reconstruction::ComputeCentroid(const double p0,
     return std::get<2>(ComputeBoundsAndCentroid(p0, p1, false));
 }
 
-std::pair<Eigen::Vector3d, Eigen::Vector3d> Reconstruction::ComputeBoundingBox(
-        const double p0, const double p1) const {
-    auto bound = ComputeBoundsAndCentroid(p0, p1, false);
-    return std::make_pair(std::get<0>(bound), std::get<1>(bound));
+Eigen::AlignedBox3d Reconstruction::ComputeBoundingBox(
+        const double min_percentile,
+        const double max_percentile,
+        const bool use_images) const {
+    auto bound = ComputeBoundsAndCentroid(min_percentile, max_percentile,
+                                          use_images);
+    Eigen::AlignedBox3d bbox;
+    bbox.extend(std::get<0>(bound));
+    bbox.extend(std::get<1>(bound));
+    return bbox;
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d>
@@ -657,7 +671,7 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
     CHECK_LE(p0, p1);
 
     const size_t num_elements =
-            use_images ? reg_image_ids_.size() : points3D_.size();
+            use_images ? NumRegImages() : points3D_.size();
     if (num_elements == 0) {
         return std::make_tuple(Eigen::Vector3d(0, 0, 0),
                                Eigen::Vector3d(0, 0, 0),
@@ -679,7 +693,8 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
     coords_y.reserve(num_elements);
     coords_z.reserve(num_elements);
     if (use_images) {
-        for (const image_t im_id : reg_image_ids_) {
+        const std::vector<image_t> reg_image_ids = RegImageIds();
+        for (const image_t im_id : reg_image_ids) {
             const Eigen::Vector3d proj_center = Image(im_id).ProjectionCenter();
             coords_x.push_back(proj_center(0));
             coords_y.push_back(proj_center(1));
@@ -780,39 +795,54 @@ void Reconstruction::Transform(const Sim3d& new_from_old_world) {
     }
 }
 
-Reconstruction Reconstruction::Crop(
-        const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const {
-    // add all cameras and images. Only the registered images will be used.
-    Reconstruction reconstruction;
-    for (const auto& camera_el : cameras_) {
-        reconstruction.AddCameraWithTrivialRig(camera_el.second);
+Reconstruction Reconstruction::Crop(const Eigen::AlignedBox3d& bbox) const {
+    // Upstream parity (d3ccaf35 scene/reconstruction.cc): copy the full
+    // structural state (cameras, rigs, frames with their poses - posed
+    // frames register on insertion), then strip observations from every
+    // copied image, keep only the points inside the box, and finally
+    // de-register every frame that has no in-box point support. Frames
+    // without in-box support lose their pose (HasPose() == false).
+    Reconstruction cropped_reconstruction;
+    for (const auto& [_, camera] : cameras_) {
+        cropped_reconstruction.AddCamera(camera);
     }
-    for (const auto& image_el : images_) {
-        // The copied image carries back pointers into *this* reconstruction;
-        // reset them so AddImage re-wires them into the cropped copy. The
-        // trivial frame is seeded from the image's legacy pose.
-        class Image image = image_el.second;
+    for (const auto& [_, rig] : rigs_) {
+        cropped_reconstruction.AddRig(rig);
+    }
+    for (auto [_, frame] : frames_) {
+        frame.ResetRigPtr();
+        cropped_reconstruction.AddFrame(std::move(frame));
+    }
+    for (auto [_, image] : images_) {
         image.ResetCameraPtr();
         image.ResetFramePtr();
-        reconstruction.AddImageWithTrivialFrame(image);
-        auto& cropped_image = reconstruction.Image(image_el.first);
-        cropped_image.SetRegistered(false);
-        for (point2D_t pid = 0; pid < cropped_image.NumPoints2D(); ++pid) {
-            cropped_image.ResetPoint3DForPoint2D(pid);
+        const auto num_points2D = image.NumPoints2D();
+        for (point2D_t point2D_idx = 0; point2D_idx < num_points2D;
+             ++point2D_idx) {
+            image.ResetPoint3DForPoint2D(point2D_idx);
         }
+        cropped_reconstruction.AddImage(std::move(image));
     }
-    for (const auto& point_el : points3D_) {
-        const auto& point = point_el.second;
-        if ((point.XYZ().array() >= bbox.first.array()).all() &&
-            (point.XYZ().array() <= bbox.second.array()).all()) {
-            for (const auto& track_el : point.Track().Elements()) {
-                reconstruction.RegisterImage(track_el.image_id);
+    NodeHashSet<frame_t> cropped_frame_ids;
+    for (const auto& [_, point3D] : points3D_) {
+        if (bbox.contains(point3D.XYZ())) {
+            for (const auto& track_el : point3D.Track().Elements()) {
+                cropped_frame_ids.insert(
+                    Image(track_el.image_id).FrameId());
             }
-            reconstruction.AddPoint3D(point.XYZ(), point.Track(),
-                                      point.Color());
+            // Upstream parity (c0a195a1 #4846): keep the reprojection error.
+            const point3D_t new_point3D_id = cropped_reconstruction.AddPoint3D(
+                point3D.XYZ(), point3D.Track(), point3D.Color());
+            cropped_reconstruction.Point3D(new_point3D_id)
+                    .SetError(point3D.Error());
         }
     }
-    return reconstruction;
+    for (const auto& [frame_id, _] : cropped_reconstruction.Frames()) {
+        if (cropped_frame_ids.count(frame_id) == 0) {
+            cropped_reconstruction.DeRegisterFrame(frame_id);
+        }
+    }
+    return cropped_reconstruction;
 }
 
 bool Reconstruction::Merge(const Reconstruction& reconstruction,
@@ -830,9 +860,9 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
 
     // Find common and missing images in the two reconstructions.
 
-    std::unordered_set<image_t> common_image_ids;
+    NodeHashSet<image_t> common_image_ids;
     common_image_ids.reserve(reconstruction.NumRegImages());
-    std::unordered_set<image_t> missing_image_ids;
+    NodeHashSet<image_t> missing_image_ids;
     missing_image_ids.reserve(reconstruction.NumRegImages());
 
     for (const auto& image_id : reconstruction.RegImageIds()) {
@@ -843,28 +873,56 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
         }
     }
 
-    // Register the missing images in this reconstruction.
-
+    // Register missing images while preserving their source frame. A frame may
+    // contain several camera data ids, so creating one trivial frame per image
+    // loses the rig topology and collides as soon as a second camera is copied.
     for (const auto image_id : missing_image_ids) {
-        auto reg_image = reconstruction.Image(image_id);
-        if (!ExistsCamera(reg_image.CameraId())) {
-            AddCameraWithTrivialRig(reconstruction.Camera(reg_image.CameraId()));
-        } else if (!ExistsRig(reg_image.CameraId())) {
-            class Rig rig;
-            rig.SetRigId(reg_image.CameraId());
-            rig.AddRefSensor(
-                sensor_t(SensorType::CAMERA, reg_image.CameraId()));
-            AddRig(std::move(rig));
+        const class Image& src_image = reconstruction.Image(image_id);
+        const class Frame& src_frame = reconstruction.Frame(src_image.FrameId());
+        const class Rig& src_rig = reconstruction.Rig(src_frame.RigId());
+
+        // AddRig validates every sensor, therefore all rig cameras must exist
+        // before copying a multi-camera rig.
+        for (const sensor_t& sensor_id : src_rig.SensorIds()) {
+            if (sensor_id.type == SensorType::CAMERA &&
+                !ExistsCamera(sensor_id.id)) {
+                AddCamera(reconstruction.Camera(sensor_id.id));
+            }
         }
-        // Reset the source reconstruction's back pointers so AddImage re-wires
-        // them here; the trivial frame is seeded from the legacy pose.
-        reg_image.ResetCameraPtr();
-        reg_image.ResetFramePtr();
-        reg_image.SetRegistered(false);
-        AddImageWithTrivialFrame(reg_image);
-        RegisterImage(image_id);
-        auto& image = Image(image_id);
-        tform.TransformPose(&image.Qvec(), &image.Tvec());
+        if (!ExistsRig(src_rig.RigId())) {
+            AddRig(src_rig);
+        }
+
+        if (!ExistsFrame(src_frame.FrameId())) {
+            // Frame pose is the registration authority. Transform it before
+            // insertion so AddFrame registers the complete frame once.
+            THROW_CHECK(src_frame.HasPose());
+            class Frame tgt_frame = src_frame;
+            tgt_frame.ResetRigPtr();
+            Eigen::Vector4d qvec = src_frame.RigFromWorldQvec();
+            Eigen::Vector3d tvec = src_frame.RigFromWorldTvec();
+            tform.TransformPose(&qvec, &tvec);
+            tgt_frame.SetRigFromWorld(qvec, tvec);
+            AddFrame(std::move(tgt_frame));
+        } else {
+            const class Frame& tgt_frame = Frame(src_frame.FrameId());
+            THROW_CHECK_EQ(tgt_frame.RigId(), src_frame.RigId());
+            THROW_CHECK(tgt_frame.DataIds() == src_frame.DataIds());
+        }
+
+        class Image tgt_image = src_image;
+        tgt_image.ResetCameraPtr();
+        tgt_image.ResetFramePtr();
+        tgt_image.SetRegistered(false);
+        AddImage(std::move(tgt_image));
+
+        // Keep the legacy image mirror in the one permitted direction:
+        // transformed frame pose -> image. Filtering still consumes qvec/tvec.
+        class Image& added_image = Image(image_id);
+        const Rigid3d cam_from_world = added_image.CamFromWorld();
+        const Eigen::Quaterniond& q = cam_from_world.rotation();
+        added_image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+        added_image.SetTvec(cam_from_world.translation());
     }
 
     // Merge the two point clouds using the following two rules:
@@ -878,7 +936,7 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
     for (const auto& point3D : reconstruction.Points3D()) {
         Track new_track;
         Track old_track;
-        std::unordered_set<point3D_t> old_point3D_ids;
+        NodeHashSet<point3D_t> old_point3D_ids;
         for (const auto& track_el : point3D.second.Track().Elements()) {
             if (common_image_ids.count(track_el.image_id) > 0) {
                 const auto& point2D =
@@ -911,8 +969,10 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
         }
     }
 
-    FilterPoints3DWithLargeReprojectionError(max_reproj_error, Point3DIds());
-
+    // Track conflicts are resolved above by construction. Filtering the merged
+    // cloud again changes the accepted merge result based on cluster-local
+    // refinement noise; upstream MergeReconstructions returns the unfiltered
+    // one-to-one track union here.
     return true;
 }
 
@@ -931,7 +991,8 @@ const class Image* Reconstruction::FindImageWithName(
 std::vector<std::pair<image_t, image_t>> Reconstruction::FindCommonRegImageIds(
         const Reconstruction& other) const {
     std::vector<std::pair<image_t, image_t>> common_reg_image_ids;
-    for (const image_t image_id : reg_image_ids_) {
+    // Upstream parity (d3ccaf35): iterate the derived registered images.
+    for (const image_t image_id : RegImageIds()) {
         const class Image& image = Image(image_id);
         const class Image* other_image = other.FindImageWithName(image.Name());
         if (other_image != nullptr && other_image->HasPose()) {
@@ -943,10 +1004,10 @@ std::vector<std::pair<image_t, image_t>> Reconstruction::FindCommonRegImageIds(
 }
 
 void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
-    std::unordered_map<image_t, image_t> old_to_new_image_ids;
+    NodeHashMap<image_t, image_t> old_to_new_image_ids;
     old_to_new_image_ids.reserve(NumImages());
 
-    std::unordered_map<image_t, class Image> new_images;
+    NodeHashMap<image_t, class Image> new_images;
     new_images.reserve(NumImages());
 
     for (auto& image : images_) {
@@ -979,6 +1040,8 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
             }
             new_frame.AddDataId(transcribed_id);
         }
+        // Upstream parity (923342c5 #4857): re-finalize the transcribed copy.
+        new_frame.FinalizeDataIds();
         frame = std::move(new_frame);
     }
 
@@ -989,10 +1052,9 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
     // dereference throws (point_triangulator --clear_points crash).
     RewireObjectPointers();
 
-    for (auto& image_id : reg_image_ids_) {
-        image_id = old_to_new_image_ids.at(image_id);
-    }
-
+    // Upstream parity: the registered-image fact is derived from the
+    // frames, whose data ids were transcribed above - no separate
+    // image-id list to remap.
     for (auto& point3D : points3D_) {
         for (auto& track_el : point3D.second.Track().Elements()) {
             track_el.image_id = old_to_new_image_ids.at(track_el.image_id);
@@ -1003,37 +1065,7 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
 size_t Reconstruction::FilterPoints3D(
         const double max_reproj_error,
         const double min_tri_angle,
-        const std::unordered_set<point3D_t>& point3D_ids) {
-    size_t num_filtered = 0;
-    num_filtered += FilterPoints3DWithLargeReprojectionError(max_reproj_error,
-                                                             point3D_ids);
-    num_filtered += FilterPoints3DWithSmallTriangulationAngle(min_tri_angle,
-                                                              point3D_ids);
-    return num_filtered;
-}
-
-size_t Reconstruction::FilterPoints3DInImages(
-        const double max_reproj_error,
-        const double min_tri_angle,
-        const std::unordered_set<image_t>& image_ids) {
-    std::unordered_set<point3D_t> point3D_ids;
-    for (const image_t image_id : image_ids) {
-        const class Image& image = Image(image_id);
-        for (const Point2D& point2D : image.Points2D()) {
-            if (point2D.HasPoint3D()) {
-                point3D_ids.insert(point2D.Point3DId());
-            }
-        }
-    }
-    return FilterPoints3D(max_reproj_error, min_tri_angle, point3D_ids);
-}
-
-size_t Reconstruction::FilterAllPoints3D(const double max_reproj_error,
-                                         const double min_tri_angle) {
-    // Important: First filter observations and points with large reprojection
-    // error, so that observations with large reprojection error do not make
-    // a point stable through a large triangulation angle.
-    const std::unordered_set<point3D_t>& point3D_ids = Point3DIds();
+        const NodeHashSet<point3D_t>& point3D_ids) {
     size_t num_filtered = 0;
     num_filtered += FilterPoints3DWithLargeReprojectionError(max_reproj_error,
                                                              point3D_ids);
@@ -1044,7 +1076,7 @@ size_t Reconstruction::FilterAllPoints3D(const double max_reproj_error,
 
 size_t Reconstruction::FilterObservationsWithNegativeDepth() {
     size_t num_filtered = 0;
-    for (const auto image_id : reg_image_ids_) {
+    for (const image_t image_id : RegImageIds()) {
         const class Image& image = Image(image_id);
         const Eigen::Matrix3x4d proj_matrix = image.ProjectionMatrix();
         for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
@@ -1079,7 +1111,7 @@ std::vector<image_t> Reconstruction::FilterImages(
         }
     }
 
-    // Only de-register after iterating over reg_image_ids_ to avoid
+    // Only de-register after iterating over RegImageIds() to avoid
     // simultaneous iteration and modification of the vector.
     for (const image_t image_id : filtered_image_ids) {
         DeRegisterImage(image_id);
@@ -1089,8 +1121,9 @@ std::vector<image_t> Reconstruction::FilterImages(
 }
 
 size_t Reconstruction::ComputeNumObservations() const {
+    // Upstream parity (d3ccaf35): iterate the derived registered images.
     size_t num_obs = 0;
-    for (const image_t image_id : reg_image_ids_) {
+    for (const image_t image_id : RegImageIds()) {
         num_obs += Image(image_id).NumPoints3D();
     }
     return num_obs;
@@ -1105,11 +1138,12 @@ double Reconstruction::ComputeMeanTrackLength() const {
 }
 
 double Reconstruction::ComputeMeanObservationsPerRegImage() const {
-    if (reg_image_ids_.empty()) {
+    // Upstream parity (d3ccaf35): divide by the frame-level counter.
+    if (NumRegImages() == 0) {
         return 0.0;
     } else {
         return ComputeNumObservations() /
-               static_cast<double>(reg_image_ids_.size());
+               static_cast<double>(NumRegImages());
     }
 }
 
@@ -1149,12 +1183,21 @@ void Reconstruction::Write(const std::filesystem::path& path) const {
     WriteBinary(path);
 }
 
-void Reconstruction::ReadText(const std::filesystem::path& path) {
+// Upstream parity (826a1e55 #4842): reading a model also resets the
+// registration and point-id bookkeeping so a reused object is consistent.
+void Reconstruction::Clear() {
     cameras_.clear();
     rigs_.clear();
     frames_.clear();
     images_.clear();
     points3D_.clear();
+    reg_frame_ids_.clear();
+    num_reg_images_ = 0;
+    num_added_points3D_ = 0;
+}
+
+void Reconstruction::ReadText(const std::filesystem::path& path) {
+    Clear();
     ReadCamerasText(*this, path / "cameras.txt");
     const auto rigs_path = path / "rigs.txt";
     if (ExistsFile(rigs_path)) {
@@ -1169,11 +1212,7 @@ void Reconstruction::ReadText(const std::filesystem::path& path) {
 }
 
 void Reconstruction::ReadBinary(const std::filesystem::path& path) {
-    cameras_.clear();
-    rigs_.clear();
-    frames_.clear();
-    images_.clear();
-    points3D_.clear();
+    Clear();
     ReadCamerasBinary(*this, path / "cameras.bin");
     const auto rigs_path = path / "rigs.bin";
     if (ExistsFile(rigs_path)) {
@@ -1235,21 +1274,18 @@ std::vector<PlyPoint> Reconstruction::ConvertToPLY() const {
 }
 
 void Reconstruction::ImportPLY(const std::filesystem::path& path) {
-    points3D_.clear();
-
-    const auto ply_points = ReadPly(path);
-
-    points3D_.reserve(ply_points.size());
-
-    for (const auto& ply_point : ply_points) {
-        AddPoint3D(Eigen::Vector3d(ply_point.x, ply_point.y, ply_point.z),
-                   Track(),
-                   Eigen::Vector3ub(ply_point.r, ply_point.g, ply_point.b));
-    }
+    // Upstream parity (b16ff739e #4860): both overloads share one path.
+    ImportPLY(ReadPly(path));
 }
 
 void Reconstruction::ImportPLY(const std::vector<PlyPoint>& ply_points) {
-    points3D_.clear();
+    // Upstream parity (b16ff739e #4860): delete point by point instead of
+    // clearing the map, so the point2D -> point3D back-references of the
+    // previous observations are cleared too (points3D_.clear() leaves stale
+    // observation ids on the images).
+    while (!points3D_.empty()) {
+        DeletePoint3D(points3D_.begin()->first);
+    }
     points3D_.reserve(ply_points.size());
     for (const auto& ply_point : ply_points) {
         AddPoint3D(Eigen::Vector3d(ply_point.x, ply_point.y, ply_point.z),
@@ -1276,6 +1312,14 @@ bool Reconstruction::ExtractColorsForImage(const image_t image_id,
     const Eigen::Vector3ub kBlackColor(0, 0, 0);
     for (const Point2D& point2D : image.Points2D()) {
         if (point2D.HasPoint3D()) {
+            // Defensive guard: a dangling point2D->point3D reference (a
+            // track element that survived a point deletion) must not
+            // throw std::out_of_range from Point3D()'s map::at here - the
+            // color extraction runs inside the live reconstruction loop
+            // (gtest_repeat surfaced this as a cross-iteration crash).
+            if (!ExistsPoint3D(point2D.Point3DId())) {
+                continue;
+            }
             class Point3D& point3D = Point3D(point2D.Point3DId());
             if (point3D.Color() == kBlackColor) {
                 BitmapColor<float> color;
@@ -1296,11 +1340,12 @@ bool Reconstruction::ExtractColorsForImage(const image_t image_id,
 
 void Reconstruction::ExtractColorsForAllImages(
         const std::filesystem::path& path) {
-    std::unordered_map<point3D_t, Eigen::Vector3d> color_sums;
-    std::unordered_map<point3D_t, size_t> color_counts;
+    NodeHashMap<point3D_t, Eigen::Vector3d> color_sums;
+    NodeHashMap<point3D_t, size_t> color_counts;
 
-    for (size_t i = 0; i < reg_image_ids_.size(); ++i) {
-        const class Image& image = Image(reg_image_ids_[i]);
+    const std::vector<image_t> reg_image_ids = RegImageIds();
+    for (const image_t reg_image_id : reg_image_ids) {
+        const class Image& image = Image(reg_image_id);
         const std::filesystem::path image_path = path / image.Name();
 
         Bitmap bitmap;
@@ -1372,7 +1417,7 @@ void Reconstruction::CreateImageDirs(const std::filesystem::path& path) const {
 
 size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
         const double min_tri_angle,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const NodeHashSet<point3D_t>& point3D_ids) {
     // Number of filtered points.
     size_t num_filtered = 0;
 
@@ -1380,7 +1425,7 @@ size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
     const double min_tri_angle_rad = DegToRad(min_tri_angle);
 
     // Cache for image projection centers.
-    std::unordered_map<image_t, Eigen::Vector3d> proj_centers;
+    NodeHashMap<image_t, Eigen::Vector3d> proj_centers;
 
     for (const auto point3D_id : point3D_ids) {
         if (!ExistsPoint3D(point3D_id)) {
@@ -1434,7 +1479,7 @@ size_t Reconstruction::FilterPoints3DWithSmallTriangulationAngle(
 
 size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
         const double max_reproj_error,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const NodeHashSet<point3D_t>& point3D_ids) {
     const double max_squared_reproj_error = max_reproj_error * max_reproj_error;
 
     // Number of filtered points.
@@ -1487,104 +1532,20 @@ size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
     return num_filtered;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-void Reconstruction::SetObservationAsTriangulated(
-        const image_t image_id,
-        const point2D_t point2D_idx,
-        const bool is_continued_point3D) {
-    if (correspondence_graph_ == nullptr) {
-        return;
-    }
-
-    const class Image& image = Image(image_id);
-    const Point2D& point2D = image.Point2D(point2D_idx);
-    const CorrespondenceGraph::CorrespondenceRange corrs =
-            correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
-
-    CHECK(image.IsRegistered());
-    CHECK(point2D.HasPoint3D());
-
-    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
-         corr < corrs.end; ++corr) {
-        class Image& corr_image = Image(corr->image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
-        corr_image.IncrementCorrespondenceHasPoint3D(corr->point2D_idx);
-        // Update number of shared 3D points between image pairs and make sure
-        // to only count the correspondences once (not twice forward and
-        // backward).
-        if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (is_continued_point3D || image_id < corr->image_id)) {
-            const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr->image_id);
-            image_pair_stats_[pair_id].num_tri_corrs += 1;
-            CHECK_LE(image_pair_stats_[pair_id].num_tri_corrs,
-                     image_pair_stats_[pair_id].num_total_corrs)
-                    << "The correspondence graph graph must not contain "
-                       "duplicate "
-                       "matches";
-        }
-    }
-}
-
-void Reconstruction::ResetTriObservations(const image_t image_id,
-                                          const point2D_t point2D_idx,
-                                          const bool is_deleted_point3D) {
-    if (correspondence_graph_ == nullptr) {
-        return;
-    }
-
-    const class Image& image = Image(image_id);
-    const Point2D& point2D = image.Point2D(point2D_idx);
-    const CorrespondenceGraph::CorrespondenceRange corrs =
-            correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
-
-    CHECK(image.IsRegistered());
-    CHECK(point2D.HasPoint3D());
-
-    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
-         corr < corrs.end; ++corr) {
-        class Image& corr_image = Image(corr->image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
-        corr_image.DecrementCorrespondenceHasPoint3D(corr->point2D_idx);
-        // Update number of shared 3D points between image pairs and make sure
-        // to only count the correspondences once (not twice forward and
-        // backward).
-        if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (!is_deleted_point3D || image_id < corr->image_id)) {
-            const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr->image_id);
-            image_pair_stats_[pair_id].num_tri_corrs -= 1;
-            CHECK_GE(image_pair_stats_[pair_id].num_tri_corrs, 0)
-                    << "The scene graph graph must not contain duplicate "
-                       "matches";
-        }
-    }
-}
-
-
-std::unordered_set<frame_t> Reconstruction::RegFrameIds() const {
+const std::vector<frame_t>& Reconstruction::RegFrameIds() const {
   // Upstream d3ccaf35 semantics: registration is an explicit state held in
-  // reg_frame_ids_; AddFrame registers frames that carry a pose, and
-  // RegisterImage keeps the legacy image-level set in lockstep. The fork
-  // database round-trip persists poses (a fork extension), so the disk-read
-  // path calls ResetRegistrationState() to start unregistered.
+  // reg_frame_ids_ (a vector in registration order, like upstream; batch T
+  // replaced the fork's hash-set whose enumeration order diverged from
+  // upstream's observable API order); AddFrame registers frames that carry
+  // a pose. The fork database round-trip persists poses (a fork extension),
+  // so the disk-read path calls ResetRegistrationState() to start
+  // unregistered.
   return reg_frame_ids_;
 }
 
 void Reconstruction::ResetRegistrationState() {
   reg_frame_ids_.clear();
-  reg_image_ids_.clear();
+  num_reg_images_ = 0;
   for (auto& [image_id, image] : images_) {
     image.SetRegistered(false);
   }
@@ -1625,9 +1586,12 @@ void Reconstruction::AddImageWithTrivialFrame(class Image image) {
   } else {
     image.SetFrameId(frame.FrameId());
   }
-  // Seed the frame pose from the image's legacy qvec/tvec pose so the
-  // trivial frame mirrors the image-level pose of the legacy model.
-  frame.SetRigFromWorld(image.Qvec(), image.Tvec());
+  // Upstream parity (d3ccaf35): the single-argument overload creates a
+  // pose-less frame - no registration. The fork's legacy model seeded the
+  // frame from the image's default (identity) qvec/tvec mirror, which
+  // fabricated a pose and spuriously registered the frame; callers that
+  // have a pose must use the two-argument overload, which registers
+  // explicitly.
   AddFrame(std::move(frame));
   AddImage(std::move(image));
 }
@@ -1637,9 +1601,10 @@ void Reconstruction::AddImageWithTrivialFrame(class Image image,
   const frame_t frame_id = image.ImageId();
   AddImageWithTrivialFrame(std::move(image));
   Frame(frame_id).SetRigFromWorld(cam_from_world);
-  // Frame-level registration lands with W3-2b; image-level
-        // registration below keeps the legacy model.
-        RegisterImage(frame_id);
+  // Upstream parity (d3ccaf35): the pose-carrying overload registers the
+  // frame explicitly (frame-level registration; the counter and the
+  // per-image flag follow from there).
+  RegisterFrame(frame_id);
 }
 
 
@@ -1660,4 +1625,189 @@ void Reconstruction::UpdatePoint3DErrors() {
     point3D.SetError(error_sum / point3D.Track().Length());
   }
 }
+
+bool Reconstruction::IsValid() const {
+  // Check object associations: rig-frame-image-camera references and
+  // pointers. Check rigs.
+  for (const auto& [rig_id, rig] : Rigs()) {
+    for (const sensor_t& sensor_id : rig.SensorIds()) {
+      switch (sensor_id.type) {
+        case SensorType::CAMERA:
+          if (!ExistsCamera(sensor_id.id)) {
+            LOG(WARNING) << "Rig " << rig_id << " has sensor (camera) "
+                         << sensor_id.id << " which does not exist";
+            return false;
+          }
+          break;
+        case SensorType::IMU:
+        case SensorType::INVALID:
+          // Only camera sensors are currently supported.
+          break;
+      }
+    }
+  }
+  // Check frames.
+  for (const auto& [frame_id, frame] : Frames()) {
+    if (!frame.HasRigId()) {
+      LOG(WARNING) << "Frame " << frame_id << " has no rig_id";
+      return false;
+    }
+    if (!ExistsRig(frame.RigId())) {
+      LOG(WARNING) << "Frame " << frame_id
+                   << " references non-existent rig " << frame.RigId();
+      return false;
+    }
+    if (!frame.HasRigPtr()) {
+      LOG(WARNING) << "Frame " << frame_id << " has no rig pointer";
+      return false;
+    }
+    if (frame.RigPtr() != &Rig(frame.RigId())) {
+      LOG(WARNING) << "Frame " << frame_id
+                   << " rig pointer does not match rig_id";
+      return false;
+    }
+    for (const auto& data_id : frame.DataIds()) {
+      if (!frame.RigPtr()->HasSensor(data_id.sensor_id)) {
+        LOG(WARNING) << "Frame " << frame_id << " has data with sensor_id "
+                     << data_id.sensor_id.id << " that does not exist in rig "
+                     << frame.RigId();
+        return false;
+      }
+      switch (data_id.sensor_id.type) {
+        case SensorType::CAMERA:
+          if (!ExistsImage(data_id.id)) {
+            LOG(WARNING) << "Frame " << frame_id << " references image "
+                         << data_id.id << " which does not exist";
+            return false;
+          }
+          break;
+        case SensorType::IMU:
+        case SensorType::INVALID:
+          // Only camera data is currently supported.
+          break;
+      }
+    }
+  }
+  // Check images.
+  for (const auto& [image_id, image] : Images()) {
+    if (!image.HasCameraId()) {
+      LOG(WARNING) << "Image " << image_id << " has no camera_id";
+      return false;
+    }
+    if (!ExistsCamera(image.CameraId())) {
+      LOG(WARNING) << "Image " << image_id
+                   << " references non-existent camera "
+                   << image.CameraId();
+      return false;
+    }
+    if (!image.HasCameraPtr()) {
+      LOG(WARNING) << "Image " << image_id << " has no camera pointer";
+      return false;
+    }
+    if (image.CameraPtr() != &Camera(image.CameraId())) {
+      LOG(WARNING) << "Image " << image_id
+                   << " camera pointer does not match camera_id";
+      return false;
+    }
+    if (!image.HasFrameId()) {
+      LOG(WARNING) << "Image " << image_id << " has no frame_id";
+      return false;
+    }
+    if (!ExistsFrame(image.FrameId())) {
+      LOG(WARNING) << "Image " << image_id
+                   << " references non-existent frame "
+                   << image.FrameId();
+      return false;
+    }
+    if (!image.HasFramePtr()) {
+      LOG(WARNING) << "Image " << image_id << " has no frame pointer";
+      return false;
+    }
+    if (image.FramePtr() != &Frame(image.FrameId())) {
+      LOG(WARNING) << "Image " << image_id
+                   << " frame pointer does not match frame_id";
+      return false;
+    }
+    if (!image.FramePtr()->HasDataId(image.DataId())) {
+      LOG(WARNING) << "Image " << image_id << " data_id not found in frame "
+                   << image.FrameId();
+      return false;
+    }
+    // Check 2D-3D associations: point2D -> point3D direction.
+    point2D_t actual_num_points3D = 0;
+    for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+         ++point2D_idx) {
+      const Point2D& point2D = image.Point2D(point2D_idx);
+      if (point2D.HasPoint3D()) {
+        ++actual_num_points3D;
+        if (!ExistsPoint3D(point2D.Point3DId())) {
+          LOG(WARNING) << "Image " << image_id << " point2D " << point2D_idx
+                       << " references non-existent point3D "
+                       << point2D.Point3DId();
+          return false;
+        }
+      }
+    }
+    if (image.NumPoints3D() != actual_num_points3D) {
+      LOG(WARNING) << "Image " << image_id
+                   << " NumPoints3D()=" << image.NumPoints3D()
+                   << " does not match actual count="
+                   << actual_num_points3D;
+      return false;
+    }
+  }
+  // Check 2D-3D associations: point3D -> point2D direction.
+  for (const auto& [point3D_id, point3D] : Points3D()) {
+    for (const auto& track_el : point3D.Track().Elements()) {
+      if (!ExistsImage(track_el.image_id)) {
+        LOG(WARNING) << "Point3D " << point3D_id
+                     << " track references image " << track_el.image_id
+                     << " which does not exist";
+        return false;
+      }
+      const colmap::Image& image = Image(track_el.image_id);
+      if (track_el.point2D_idx >= image.NumPoints2D()) {
+        LOG(WARNING) << "Point3D " << point3D_id
+                     << " track references point2D "
+                     << track_el.point2D_idx << " in image "
+                     << track_el.image_id << " which only has "
+                     << image.NumPoints2D() << " points";
+        return false;
+      }
+      const Point2D& point2D = image.Point2D(track_el.point2D_idx);
+      if (!point2D.HasPoint3D()) {
+        LOG(WARNING) << "Point3D " << point3D_id
+                     << " track references point2D "
+                     << track_el.point2D_idx << " in image "
+                     << track_el.image_id
+                     << " which has no point3D set";
+        return false;
+      }
+      if (point2D.Point3DId() != point3D_id) {
+        LOG(WARNING) << "Point3D " << point3D_id
+                     << " track references point2D "
+                     << track_el.point2D_idx << " in image "
+                     << track_el.image_id
+                     << " which points to different point3D "
+                     << point2D.Point3DId();
+        return false;
+      }
+    }
+  }
+  // Check registered frames exist and have poses.
+  for (const frame_t frame_id : RegFrameIds()) {
+    if (!ExistsFrame(frame_id)) {
+      LOG(WARNING) << "Registered frame " << frame_id
+                   << " does not exist";
+      return false;
+    }
+    if (!Frame(frame_id).HasPose()) {
+      LOG(WARNING) << "Registered frame " << frame_id
+                   << " has no pose";
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace colmap

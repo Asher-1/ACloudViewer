@@ -31,8 +31,10 @@
 
 #include "sfm/incremental_triangulator.h"
 
-#include "scene/projection.h"
 #include "estimators/triangulation.h"
+#include "scene/projection.h"
+#include "sfm/observation_manager.h"
+#include "util/hash_containers.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -45,18 +47,29 @@ bool IncrementalTriangulator::Options::Check() const {
     CHECK_OPTION_GT(complete_max_reproj_error, 0);
     CHECK_OPTION_GE(complete_max_transitivity, 0);
     CHECK_OPTION_GT(re_max_angle_error, 0);
-    CHECK_OPTION_GE(re_min_ratio, 0);
-    CHECK_OPTION_LE(re_min_ratio, 1);
+    CHECK_OPTION_IN(re_min_ratio, 0, 1);
     CHECK_OPTION_GE(re_max_trials, 0);
     CHECK_OPTION_GT(min_angle, 0);
+    CHECK_OPTION_GE(random_seed, -1);
     return true;
 }
 
 IncrementalTriangulator::IncrementalTriangulator(
         const CorrespondenceGraph* correspondence_graph,
-        Reconstruction* reconstruction)
+        Reconstruction* reconstruction,
+        std::shared_ptr<class ObservationManager> obs_manager)
     : correspondence_graph_(correspondence_graph),
-      reconstruction_(reconstruction) {}
+      reconstruction_(reconstruction),
+      obs_manager_(std::move(obs_manager)) {
+    if (!obs_manager_) {
+        // Non-owning observer handle: the correspondence graph outlives the
+        // triangulator by contract and stays owned by the DatabaseCache.
+        std::shared_ptr<const CorrespondenceGraph> graph_observer(
+                std::shared_ptr<void>(), correspondence_graph_);
+        obs_manager_ = std::make_shared<class ObservationManager>(
+                *reconstruction_, graph_observer);
+    }
+}
 
 size_t IncrementalTriangulator::TriangulateImage(const Options& options,
                                                  const image_t image_id) {
@@ -73,7 +86,12 @@ size_t IncrementalTriangulator::TriangulateImage(const Options& options,
     }
 
     const Image& image = reconstruction_->Image(image_id);
-    if (!image.IsRegistered()) {
+
+    // Upstream parity (d3ccaf35): the gate is the frame pose, not the
+    // legacy per-image registered flag - the flag's maintenance window
+    // (EndReconstruction(discard) clears it) does not track the actual
+    // pose fact that triangulation depends on.
+    if (!image.HasPose()) {
         return num_tris;
     }
 
@@ -137,7 +155,11 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
     }
 
     const Image& image = reconstruction_->Image(image_id);
-    if (!image.IsRegistered()) {
+
+    // Upstream parity (d3ccaf35): gate on the frame pose (see
+    // TriangulateImage note); the legacy registered flag clears on
+    // EndReconstruction(discard) while the pose fact remains.
+    if (!image.HasPose()) {
         return num_tris;
     }
 
@@ -155,6 +177,9 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
     tri_options.residual_type =
             TriangulationEstimator::ResidualType::REPROJECTION_ERROR;
     tri_options.ransac_options.max_error = options.complete_max_reproj_error;
+    // Upstream parity (a2bd15c2): the triangulation RANSAC is seeded from the
+    // pipeline seed, so fixed-seed runs are reproducible.
+    tri_options.ransac_options.random_seed = options.random_seed;
 
     // Correspondence data for reference observation in given image. We iterate
     // over all observations of the image and each observation once becomes
@@ -221,12 +246,8 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
         // Estimate triangulation.
         Eigen::Vector3d xyz;
         std::vector<char> inlier_mask;
-        if (!EstimateTriangulation(tri_options,
-                                   tri_points,
-                                   tri_cams_from_world,
-                                   tri_cameras,
-                                   &inlier_mask,
-                                   &xyz)) {
+        if (!EstimateTriangulation(tri_options, tri_points, tri_cams_from_world,
+                                   tri_cameras, &inlier_mask, &xyz)) {
             continue;
         }
 
@@ -241,7 +262,7 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
             }
         }
 
-        const point3D_t point3D_id = reconstruction_->AddPoint3D(xyz, track);
+        const point3D_t point3D_id = obs_manager_->AddPoint3D(xyz, track);
         modified_point3D_ids_.insert(point3D_id);
     }
 
@@ -249,8 +270,7 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
 }
 
 size_t IncrementalTriangulator::CompleteTracks(
-        const Options& options,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const Options& options, const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_completed = 0;
@@ -279,8 +299,7 @@ size_t IncrementalTriangulator::CompleteAllTracks(const Options& options) {
 }
 
 size_t IncrementalTriangulator::MergeTracks(
-        const Options& options,
-        const std::unordered_set<point3D_t>& point3D_ids) {
+        const Options& options, const FlatHashSet<point3D_t>& point3D_ids) {
     CHECK(options.Check());
 
     size_t num_merged = 0;
@@ -318,7 +337,7 @@ size_t IncrementalTriangulator::Retriangulate(const Options& options) {
     Options re_options = options;
     re_options.continue_max_angle_error = options.re_max_angle_error;
 
-    for (const auto& image_pair : reconstruction_->ImagePairs()) {
+    for (const auto& image_pair : obs_manager_->ImagePairs()) {
         // Only perform retriangulation for under-reconstructed image pairs.
         const double tri_ratio =
                 static_cast<double>(image_pair.second.num_tri_corrs) /
@@ -342,12 +361,14 @@ size_t IncrementalTriangulator::Retriangulate(const Options& options) {
         }
 
         const Image& image1 = reconstruction_->Image(image_id1);
-        if (!image1.IsRegistered()) {
+
+        // Upstream parity (d3ccaf35): gate on the frame pose.
+        if (!image1.HasPose()) {
             continue;
         }
 
         const Image& image2 = reconstruction_->Image(image_id2);
-        if (!image2.IsRegistered()) {
+        if (!image2.HasPose()) {
             continue;
         }
 
@@ -426,16 +447,17 @@ void IncrementalTriangulator::AddModifiedPoint3D(const point3D_t point3D_id) {
     modified_point3D_ids_.insert(point3D_id);
 }
 
-const std::unordered_set<point3D_t>&
-IncrementalTriangulator::GetModifiedPoints3D() {
-    // First remove any missing 3D points from the set.
-    for (auto it = modified_point3D_ids_.begin();
-         it != modified_point3D_ids_.end();) {
-        if (reconstruction_->ExistsPoint3D(*it)) {
-            ++it;
-        } else {
-            modified_point3D_ids_.erase(it++);
+const FlatHashSet<point3D_t>& IncrementalTriangulator::GetModifiedPoints3D() {
+    // First remove any missing 3D points from the set. Erase by key: an
+    // open-addressing set may invalidate iterators on erase.
+    std::vector<point3D_t> missing_point3D_ids;
+    for (const point3D_t point3D_id : modified_point3D_ids_) {
+        if (!reconstruction_->ExistsPoint3D(point3D_id)) {
+            missing_point3D_ids.push_back(point3D_id);
         }
+    }
+    for (const point3D_t point3D_id : missing_point3D_ids) {
+        modified_point3D_ids_.erase(point3D_id);
     }
     return modified_point3D_ids_;
 }
@@ -447,6 +469,7 @@ void IncrementalTriangulator::ClearModifiedPoints3D() {
 void IncrementalTriangulator::ClearCaches() {
     camera_has_bogus_params_.clear();
     merge_trials_.clear();
+    found_corrs_.clear();
 }
 
 size_t IncrementalTriangulator::Find(const Options& options,
@@ -454,16 +477,15 @@ size_t IncrementalTriangulator::Find(const Options& options,
                                      const point2D_t point2D_idx,
                                      const size_t transitivity,
                                      std::vector<CorrData>* corrs_data) {
-    std::vector<CorrespondenceGraph::Correspondence> corrs;
     correspondence_graph_->ExtractTransitiveCorrespondences(
-            image_id, point2D_idx, transitivity, &corrs);
+            image_id, point2D_idx, transitivity, &found_corrs_);
 
     corrs_data->clear();
-    corrs_data->reserve(corrs.size());
+    corrs_data->reserve(found_corrs_.size());
 
     size_t num_triangulated = 0;
 
-    for (const CorrespondenceGraph::Correspondence corr : corrs) {
+    for (const auto& corr : found_corrs_) {
         if (!reconstruction_->ExistsImage(corr.image_id)) {
             std::cout << "[IncrementalTriangulator::Find] Image "
                       << corr.image_id << " does not exist" << std::endl;
@@ -471,7 +493,11 @@ size_t IncrementalTriangulator::Find(const Options& options,
         }
 
         const Image& corr_image = reconstruction_->Image(corr.image_id);
-        if (!corr_image.IsRegistered()) {
+        // Upstream parity (d3ccaf35): the gate is the frame pose; the fork's
+        // legacy per-image registered flag is not maintained for images that
+        // were added after their frame was registered (the Load order), so
+        // it reads false for fully-posed reconstructions.
+        if (!corr_image.HasPose()) {
             continue;
         }
 
@@ -547,6 +573,7 @@ size_t IncrementalTriangulator::Create(
             TriangulationEstimator::ResidualType::ANGULAR_ERROR;
     tri_options.ransac_options.max_error =
             DegToRad(options.create_max_angle_error);
+    tri_options.ransac_options.random_seed = options.random_seed;
 
     // Enforce exhaustive sampling for small track lengths.
     const size_t kExhaustiveSamplingThreshold = 15;
@@ -558,12 +585,8 @@ size_t IncrementalTriangulator::Create(
     // Estimate triangulation.
     Eigen::Vector3d xyz;
     std::vector<char> inlier_mask;
-    if (!EstimateTriangulation(tri_options,
-                               tri_points,
-                               tri_cams_from_world,
-                               tri_cameras,
-                               &inlier_mask,
-                               &xyz)) {
+    if (!EstimateTriangulation(tri_options, tri_points, tri_cams_from_world,
+                               tri_cameras, &inlier_mask, &xyz)) {
         return 0;
     }
 
@@ -577,16 +600,18 @@ size_t IncrementalTriangulator::Create(
         }
     }
 
-    // Add estimated point to reconstruction.
-    const point3D_t point3D_id = reconstruction_->AddPoint3D(xyz, track);
+    // Add estimated point to reconstruction (through the observation
+    // manager so the visibility statistics stay in sync).
+    const size_t track_length = track.Length();
+    const point3D_t point3D_id = obs_manager_->AddPoint3D(xyz, track);
     modified_point3D_ids_.insert(point3D_id);
 
     const size_t kMinRecursiveTrackLength = 3;
-    if (create_corrs_data.size() - track.Length() >= kMinRecursiveTrackLength) {
-        return track.Length() + Create(options, create_corrs_data);
+    if (create_corrs_data.size() - track_length >= kMinRecursiveTrackLength) {
+        return track_length + Create(options, create_corrs_data);
     }
 
-    return track.Length();
+    return track_length;
 }
 
 size_t IncrementalTriangulator::Continue(
@@ -600,6 +625,8 @@ size_t IncrementalTriangulator::Continue(
 
     double best_angle_error = std::numeric_limits<double>::max();
     size_t best_idx = std::numeric_limits<size_t>::max();
+    std::optional<Rigid3d> ref_cam_from_world;
+    std::optional<Eigen::Vector3d> ref_cam_ray;
 
     for (size_t idx = 0; idx < corrs_data.size(); ++idx) {
         const CorrData& corr_data = corrs_data[idx];
@@ -610,10 +637,24 @@ size_t IncrementalTriangulator::Continue(
         const Point3D& point3D =
                 reconstruction_->Point3D(corr_data.point2D->Point3DId());
 
-        const double angle_error = CalculateAngularError(
-                ref_corr_data.point2D->XY(), point3D.XYZ(),
-                ref_corr_data.image->Qvec(), ref_corr_data.image->Tvec(),
-                *ref_corr_data.camera);
+        // Upstream parity (d3ccaf35): read the pose through the live
+        // frame-composed CamFromWorld - the legacy qvec/tvec mirrors go stale
+        // for frames outside the last BA window and would reject continues
+        // with tens of degrees of phantom angular error.
+        // Upstream parity (d358bafe): cache the reference pose and ray,
+        // shared by all candidates. Computed lazily to skip the unprojection
+        // when no candidate is triangulated.
+        if (!ref_cam_from_world) {
+            ref_cam_from_world = ref_corr_data.image->CamFromWorld();
+            ref_cam_ray = ref_corr_data.camera->CamRayFromImg(
+                    ref_corr_data.point2D->XY());
+        }
+
+        const double angle_error =
+                ref_cam_ray ? CalculateAngularReprojectionError(
+                                      *ref_cam_ray, point3D.XYZ(),
+                                      *ref_cam_from_world)
+                            : EIGEN_PI;
         if (angle_error < best_angle_error) {
             best_angle_error = angle_error;
             best_idx = idx;
@@ -626,8 +667,7 @@ size_t IncrementalTriangulator::Continue(
         const CorrData& corr_data = corrs_data[best_idx];
         const TrackElement track_el(ref_corr_data.image_id,
                                     ref_corr_data.point2D_idx);
-        reconstruction_->AddObservation(corr_data.point2D->Point3DId(),
-                                        track_el);
+        obs_manager_->AddObservation(corr_data.point2D->Point3DId(), track_el);
         modified_point3D_ids_.insert(corr_data.point2D->Point3DId());
         return 1;
     }
@@ -654,24 +694,32 @@ size_t IncrementalTriangulator::Merge(const Options& options,
         for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
              corr < corrs.end; ++corr) {
             const auto& image = reconstruction_->Image(corr->image_id);
-            if (!image.IsRegistered()) {
+            // Upstream parity (d3ccaf35): gate on the frame pose (see Find).
+            if (!image.HasPose()) {
                 continue;
             }
 
             const Point2D& corr_point2D = image.Point2D(corr->point2D_idx);
             if (!corr_point2D.HasPoint3D() ||
-                corr_point2D.Point3DId() == point3D_id ||
-                merge_trials_[point3D_id].count(corr_point2D.Point3DId()) > 0) {
+                corr_point2D.Point3DId() == point3D_id) {
+                continue;
+            }
+
+            // Canonical (min, max) pair so this merge is keyed identically
+            // regardless of which side of the pair we are visiting from.
+            const point3D_t corr_point3D_id = corr_point2D.Point3DId();
+            const std::pair<point3D_t, point3D_t> merge_trial_key =
+                    point3D_id < corr_point3D_id
+                            ? std::make_pair(point3D_id, corr_point3D_id)
+                            : std::make_pair(corr_point3D_id, point3D_id);
+            if (!merge_trials_.insert(merge_trial_key).second) {
                 continue;
             }
 
             // Try to merge the two 3D points.
 
             const Point3D& corr_point3D =
-                    reconstruction_->Point3D(corr_point2D.Point3DId());
-
-            merge_trials_[point3D_id].insert(corr_point2D.Point3DId());
-            merge_trials_[corr_point2D.Point3DId()].insert(point3D_id);
+                    reconstruction_->Point3D(corr_point3D_id);
 
             // Weighted average of point locations, depending on track length.
             const Eigen::Vector3d merged_xyz =
@@ -690,10 +738,11 @@ size_t IncrementalTriangulator::Merge(const Options& options,
                             reconstruction_->Camera(test_image.CameraId());
                     const Point2D& test_point2D =
                             test_image.Point2D(test_track_el.point2D_idx);
-                    // Upstream parity (d3ccaf35 IncrementalTriangulator::Merge):
-                    // evaluate through the rig-aware CamFromWorld() accessor, so
-                    // the check always sees the live pose after bundle adjustment
-                    // instead of the legacy shadow buffers.
+                    // Upstream parity (d3ccaf35
+                    // IncrementalTriangulator::Merge): evaluate through the
+                    // rig-aware CamFromWorld() accessor, so the check always
+                    // sees the live pose after bundle adjustment instead of the
+                    // legacy shadow buffers.
                     if (CalculateSquaredReprojectionError(
                                 test_point2D.XY(), merged_xyz,
                                 test_image.CamFromWorld(),
@@ -712,8 +761,7 @@ size_t IncrementalTriangulator::Merge(const Options& options,
                 const size_t num_merged = point3D.Track().Length() +
                                           corr_point3D.Track().Length();
 
-                const point3D_t merged_point3D_id =
-                        reconstruction_->MergePoints3D(
+                const point3D_t merged_point3D_id = obs_manager_->MergePoints3D(
                                 point3D_id, corr_point2D.Point3DId());
 
                 modified_point3D_ids_.erase(point3D_id);
@@ -749,27 +797,41 @@ size_t IncrementalTriangulator::Complete(const Options& options,
 
     const Point3D& point3D = reconstruction_->Point3D(point3D_id);
 
-    std::vector<TrackElement> queue = point3D.Track().Elements();
+    // Upstream parity (a2bd15c2): member-held BFS scratch buffers, LIFO
+    // expansion within a level, and a visited set seeded with the existing
+    // track so shared correspondences are evaluated once. The expansion
+    // order determines the order of the added track elements.
+    complete_curr_queue_ = point3D.Track().Elements();
+    complete_next_queue_.clear();
+    complete_visited_.clear();
+    for (const TrackElement& el : complete_curr_queue_) {
+        complete_visited_.insert(std::make_pair(el.image_id, el.point2D_idx));
+    }
 
     const int max_transitivity = options.complete_max_transitivity;
-    for (int transitivity = 0; transitivity < max_transitivity;
+    for (int transitivity = 1; transitivity <= max_transitivity;
          ++transitivity) {
-        if (queue.empty()) {
-            break;
-        }
+        while (!complete_curr_queue_.empty()) {
+            const TrackElement queue_elem = complete_curr_queue_.back();
+            complete_curr_queue_.pop_back();
 
-        const auto prev_queue = queue;
-        queue.clear();
-
-        for (const TrackElement queue_elem : prev_queue) {
             const CorrespondenceGraph::CorrespondenceRange corrs =
                     correspondence_graph_->FindCorrespondences(
                             queue_elem.image_id, queue_elem.point2D_idx);
 
             for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
                  corr < corrs.end; ++corr) {
+                if (!complete_visited_
+                             .insert(std::make_pair(corr->image_id,
+                                                    corr->point2D_idx))
+                             .second) {
+                    continue;
+                }
+
                 const Image& image = reconstruction_->Image(corr->image_id);
-                if (!image.IsRegistered()) {
+                // Upstream parity (d3ccaf35): gate on the frame pose (see
+                // Find).
+                if (!image.HasPose()) {
                     continue;
                 }
 
@@ -785,24 +847,31 @@ size_t IncrementalTriangulator::Complete(const Options& options,
                 }
 
                 if (CalculateSquaredReprojectionError(
-                            point2D.XY(), point3D.XYZ(), image.Qvec(),
-                            image.Tvec(), camera) > max_squared_reproj_error) {
+                            point2D.XY(), point3D.XYZ(), image.CamFromWorld(),
+                            camera) > max_squared_reproj_error) {
                     continue;
                 }
 
                 // Success, add observation to point track.
                 const TrackElement track_el(corr->image_id, corr->point2D_idx);
-                reconstruction_->AddObservation(point3D_id, track_el);
+                obs_manager_->AddObservation(point3D_id, track_el);
                 modified_point3D_ids_.insert(point3D_id);
 
                 // Recursively complete track for this new correspondence.
-                if (transitivity < max_transitivity - 1) {
-                    queue.emplace_back(corr->image_id, corr->point2D_idx);
+                if (transitivity < max_transitivity) {
+                    complete_next_queue_.emplace_back(corr->image_id,
+                                                      corr->point2D_idx);
                 }
 
                 num_completed += 1;
             }
         }
+
+        if (complete_next_queue_.empty()) {
+            break;
+        }
+
+        std::swap(complete_curr_queue_, complete_next_queue_);
     }
 
     return num_completed;

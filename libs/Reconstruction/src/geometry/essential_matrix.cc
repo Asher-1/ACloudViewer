@@ -131,8 +131,13 @@ void FindOptimalImageObservations(const Eigen::Matrix3d& E,
   const double d = sqrt(b * b - a * c);
   double lambda = c / (b + d);
 
-  n1 -= E_tilde * lambda * n1;
-  n2 -= E_tilde.transpose() * lambda * n2;
+  // Upstream parity (1d7aec0f, "Fix optimal point algorithm"): each
+  // epipolar line is corrected by the step of the other image.
+  const Eigen::Vector2d delta1 = lambda * n1;
+  const Eigen::Vector2d delta2 = lambda * n2;
+
+  n1 -= E_tilde * delta2;
+  n2 -= E_tilde.transpose() * delta1;
 
   lambda *= (2.0 * d) / (n1.squaredNorm() + n2.squaredNorm());
 
@@ -157,80 +162,34 @@ Eigen::Matrix3d InvertEssentialMatrix(const Eigen::Matrix3d& E) {
   return E.transpose();
 }
 
-bool RefineEssentialMatrix(const ceres::Solver::Options& options,
-                           const std::vector<Eigen::Vector2d>& points1,
-                           const std::vector<Eigen::Vector2d>& points2,
-                           const std::vector<char>& inlier_mask,
-                           Eigen::Matrix3d* E) {
-  CHECK_EQ(points1.size(), points2.size());
-  CHECK_EQ(points1.size(), inlier_mask.size());
-
-  // Extract inlier points for decomposing the essential matrix into
-  // rotation and translation components.
-
-  size_t num_inliers = 0;
-  for (const auto inlier : inlier_mask) {
-    if (inlier) {
-      num_inliers += 1;
-    }
+double ComputeSquaredTangentSampsonError(const Eigen::Vector3d& cam_ray1,
+                                         const Eigen::Matrix3x2d& J1,
+                                         const Eigen::Vector3d& cam_ray2,
+                                         const Eigen::Matrix3x2d& J2,
+                                         const Eigen::Matrix3d& E) {
+  // Upstream parity (a2bd15c2): explicit SquaredPixelGradientNorm contraction
+  // and an exact-zero guard, so RANSAC scores match upstream bit for bit.
+  const Eigen::Vector3d Eray1 = E * cam_ray1;
+  const Eigen::Vector3d Etray2 = E.transpose() * cam_ray2;
+  const double num = cam_ray2.dot(Eray1);
+  // Chain the constraint gradients from ray space into pixel space. The
+  // gradient w.r.t. ray1 is E^T ray2 and w.r.t. ray2 is E ray1.
+  const double denom_sq_norm = SquaredPixelGradientNorm(J1, Etray2) +
+                               SquaredPixelGradientNorm(J2, Eray1);
+  if (denom_sq_norm == 0) {
+    return std::numeric_limits<double>::max();
   }
-
-  std::vector<Eigen::Vector2d> inlier_points1(num_inliers);
-  std::vector<Eigen::Vector2d> inlier_points2(num_inliers);
-  size_t j = 0;
-  for (size_t i = 0; i < inlier_mask.size(); ++i) {
-    if (inlier_mask[i]) {
-      inlier_points1[j] = points1[i];
-      inlier_points2[j] = points2[i];
-      j += 1;
-    }
-  }
-
-  // Extract relative pose from essential matrix.
-
-  Eigen::Matrix3d R;
-  Eigen::Vector3d tvec;
-  std::vector<Eigen::Vector3d> points3D;
-  PoseFromEssentialMatrix(*E, inlier_points1, inlier_points2, &R, &tvec,
-                          &points3D);
-
-  Eigen::Vector4d qvec = RotationMatrixToQuaternion(R);
-
-  if (points3D.size() == 0) {
-    return false;
-  }
-
-  // Refine essential matrix, use all points so that refinement is able to
-  // consider points as inliers that were originally outliers.
-
-  const bool refinement_success =
-      RefineRelativePose(options, inlier_points1, inlier_points2, &qvec, &tvec);
-
-  if (!refinement_success) {
-    return false;
-  }
-
-  // Compose refined essential matrix.
-  const Eigen::Matrix3d rot_mat = QuaternionToRotationMatrix(qvec);
-  *E = EssentialMatrixFromPose(rot_mat, tvec);
-
-  return true;
+  return num * num / denom_sq_norm;
 }
 
 double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
                                          const CamRayWithJac& cam_ray2,
                                          const Eigen::Matrix3d& E) {
-  const Eigen::Vector3d e_ray1 = E * cam_ray1.ray;
-  const Eigen::Vector3d et_ray2 = E.transpose() * cam_ray2.ray;
-  const double residual = cam_ray2.ray.dot(e_ray1);
-  const Eigen::Vector2d grad1 = cam_ray1.jacobian.transpose() * et_ray2;
-  const Eigen::Vector2d grad2 = cam_ray2.jacobian.transpose() * e_ray1;
-  const double denominator = grad1.squaredNorm() + grad2.squaredNorm();
-  if (!(denominator > std::numeric_limits<double>::epsilon()) ||
-      !std::isfinite(denominator)) {
-    return std::numeric_limits<double>::max();
-  }
-  return residual * residual / denominator;
+  return ComputeSquaredTangentSampsonError(cam_ray1.ray,
+                                           cam_ray1.jacobian,
+                                           cam_ray2.ray,
+                                           cam_ray2.jacobian,
+                                           E);
 }
 
 void ComputeSquaredTangentSampsonError(
@@ -238,7 +197,7 @@ void ComputeSquaredTangentSampsonError(
         const std::vector<CamRayWithJac>& cam_rays2,
         const Eigen::Matrix3d& E,
         std::vector<double>* residuals) {
-  CHECK_EQ(cam_rays1.size(), cam_rays2.size());
+  THROW_CHECK_EQ(cam_rays1.size(), cam_rays2.size());
   residuals->resize(cam_rays1.size());
   for (size_t i = 0; i < cam_rays1.size(); ++i) {
     (*residuals)[i] =
@@ -317,6 +276,24 @@ double ComputeSquaredSampsonError(const Eigen::Vector3d& point1,
     return std::numeric_limits<double>::max();
   }
   return num * num / denom_sq_norm;
+}
+
+// Upstream parity (a2bd15c2): the 2D overload homogenizes the points and
+// reuses the single-point error, so both overloads share the operand order
+// and the zero-denominator guard. The fork previously kept a separate
+// expanded formula in estimators/utils.cc whose different summation order
+// perturbed RANSAC scores in the last bits.
+void ComputeSquaredSampsonError(const std::vector<Eigen::Vector2d>& points1,
+                                const std::vector<Eigen::Vector2d>& points2,
+                                const Eigen::Matrix3d& E,
+                                std::vector<double>* residuals) {
+  const size_t num_points1 = points1.size();
+  THROW_CHECK_EQ(num_points1, points2.size());
+  residuals->resize(num_points1);
+  for (size_t i = 0; i < num_points1; ++i) {
+    (*residuals)[i] = ComputeSquaredSampsonError(
+        points1[i].homogeneous(), points2[i].homogeneous(), E);
+  }
 }
 
 void ComputeSquaredSampsonError(const std::vector<Eigen::Vector3d>& points1,

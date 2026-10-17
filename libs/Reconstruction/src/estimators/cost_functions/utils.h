@@ -10,6 +10,9 @@
 #include <ceres/ceres.h>
 
 #include <Eigen/Core>
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include "util/logging.h"
 
@@ -90,58 +93,6 @@ template <typename... Args>
 auto LastValueParameterPack(Args&&... args) {
     return std::get<sizeof...(Args) - 1>(std::forward_as_tuple(args...));
 }
-
-// A cost function wrapper that whitens residuals with a given covariance.
-// For example, to weight the reprojection error with an image measurement
-// covariance, one can wrap it as:
-//
-//    using ReprojCostFunctor = ReprojErrorCostFunctor<PinholeCameraModel>;
-//    ceres::CostFunction* cost_function =
-//        CovarianceWeightedCostFunctor<ReprojCostFunctor>::Create(
-//            point2D_cov, point2D));
-template <class CostFunctor>
-class CovarianceWeightedCostFunctor {
-public:
-    static constexpr int kNumResiduals = CostFunctor::kNumResiduals;
-    using kParameterDims = typename CostFunctor::kParameterDims;
-
-    // Covariance or sqrt information matrix type.
-    using CovMat = Eigen::Matrix<double, kNumResiduals, kNumResiduals>;
-
-    template <typename... Args>
-    explicit CovarianceWeightedCostFunctor(const CovMat& cov, Args&&... args)
-        : left_sqrt_info_(LeftSqrtInformation(cov)),
-          cost_(std::forward<Args>(args)...) {}
-
-    template <typename... Args>
-    static ceres::CostFunction* Create(const CovMat& cov, Args&&... args) {
-        return CreateAutoDiffCostFunction(
-                new CovarianceWeightedCostFunctor<CostFunctor>(
-                        cov, std::forward<Args>(args)...));
-    }
-
-    template <typename... Args>
-    bool operator()(Args... args) const {
-        if (!cost_(args...)) {
-            return false;
-        }
-
-        auto residuals_ptr = LastValueParameterPack(args...);
-        using T =
-                typename std::remove_reference<decltype(*residuals_ptr)>::type;
-        Eigen::Map<Eigen::Matrix<T, kNumResiduals, 1>> residuals(residuals_ptr);
-        residuals.applyOnTheLeft(left_sqrt_info_.template cast<T>());
-        return true;
-    }
-
-private:
-    CovMat LeftSqrtInformation(const CovMat& cov) {
-        return cov.inverse().llt().matrixL().transpose();
-    }
-
-    const CovMat left_sqrt_info_;
-    const CostFunctor cost_;
-};
 
 // Whitens the given cost functor with per-residual standard deviations,
 // broadcasting a single one over all residuals. Whitening a diagonal through
@@ -279,6 +230,34 @@ private:
 
     const CovMat left_sqrt_info_;
     const std::unique_ptr<ceres::CostFunction> cost_;
+};
+
+// Whitens the given cost functor with a covariance. Upstream parity
+// (a2bd15c2 cost_functions/utils.h): the whitening is applied to the
+// evaluated residuals and jacobians of the plain autodiff cost function
+// rather than propagated through autodiff (equivalent, cheaper, and the
+// floating-point evaluation order upstream uses). For example, to weight the
+// reprojection error with an image measurement covariance:
+//
+//    using ReprojCostFunctor = ReprojErrorCostFunctor<PinholeCameraModel>;
+//    ceres::CostFunction* cost_function =
+//        CovarianceWeightedCostFunctor<ReprojCostFunctor>::Create(
+//            point2D_cov, point2D));
+template <class CostFunctor>
+class CovarianceWeightedCostFunctor {
+public:
+    static constexpr int kNumResiduals = CostFunctor::kNumResiduals;
+    using kParameterDims = typename CostFunctor::kParameterDims;
+
+    // Covariance or sqrt information matrix type.
+    using CovMat = Eigen::Matrix<double, kNumResiduals, kNumResiduals>;
+
+    template <typename... Args>
+    static ceres::CostFunction* Create(const CovMat& cov, Args&&... args) {
+        return new CovarianceWeightedCostFunction<CostFunctor>(
+                cov, CreateAutoDiffCostFunction(
+                             new CostFunctor(std::forward<Args>(args)...)));
+    }
 };
 
 // Whitens the residuals and jacobians of an inner cost function with

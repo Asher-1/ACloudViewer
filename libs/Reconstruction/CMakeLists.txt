@@ -7,6 +7,48 @@ endif()
 
 project(COLMAP)
 
+# Upstream parity (d3ccaf35): upstream compiles COLMAP with compiler-default
+# codegen. The fork-wide PCL-compatibility macro EIGEN_MAX_ALIGN_BYTES=0 and
+# the SIMD flags (-msse4.2 -mfpmath=sse -mno-avx512*) change Eigen's codegen
+# inside the COLMAP subtree: the shared-focal RANSAC residual evaluation
+# (RelativePoseSharedFocalEstimator::Residuals, estimators/solvers/*.cc)
+# flips best-model selection at threshold ties, which chaotically diverges
+# trial counts and two-view-geometry inlier sets (observed: TVG pair (4,5)
+# inlier sets differ by one match; SF focal 3296.79 vs 3293.38 px). Strip
+# both for this subproject so every COLMAP TU compiles like upstream. Eigen
+# objects in this subtree are function-local, so the codegen change cannot
+# leak across translation units (no ODR/layout exposure).
+get_directory_property(COLMAP_DIR_DEFS COMPILE_DEFINITIONS)
+list(REMOVE_ITEM COLMAP_DIR_DEFS "EIGEN_MAX_ALIGN_BYTES=0")
+set_property(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${COLMAP_DIR_DEFS}")
+string(REPLACE " -msse4.2" "" COLMAP_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE " -mfpmath=sse" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512f" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512cd" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vl" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bw" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512dq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512ifma" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512pf" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512er" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi2" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vnni" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bitalg" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vpopcntdq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+
+# Hash containers: the scene/SfM containers use the FlatHashMap/NodeHashMap
+# aliases from util/hash_containers.h, backed by the vendored boost::unordered
+# 1.92 headers exactly as upstream (see src/CMakeLists.txt). The earlier std
+# backend was measured against the upstream 3e5c915c executable on the L3
+# mini6 fixture: keypoints, matches, and two-view geometries were identical,
+# yet the models diverged (1241 vs 1237 track observations), and upstream
+# rebuilt with std containers reproduced the fork's model to 1e-15. The
+# iteration order of these containers is therefore observable SfM behavior,
+# not an implementation detail.
+
+
 # The COLMAP engine version this inlined fork is aligned with. It drives the
 # database schema version (see src/util/version.h) and is decoupled from the
 # CLOUDVIEWER package version on purpose.
@@ -43,6 +85,26 @@ option(RECONSTRUCTION_CASPAR_ENABLED
        "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
 option(RECONSTRUCTION_CASPAR_USE_DOUBLE
        "Use f64 generated Caspar kernels" OFF)
+option(RECONSTRUCTION_L3_GATE_ENABLED
+       "Enable the fixed-fixture candidate-versus-pinned-upstream L3 SfM gate" OFF)
+set(RECONSTRUCTION_L3_IMAGES "" CACHE PATH
+    "Fixed image fixture directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_ACV_COLMAP "" CACHE FILEPATH
+    "Candidate ACloudViewer COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_COLMAP "" CACHE FILEPATH
+    "latest pinned upstream COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_SOURCE "" CACHE PATH
+    "Source checkout at the pinned upstream revision used to build the L3 executable")
+set(RECONSTRUCTION_L3_UPSTREAM_REVISION "" CACHE STRING
+    "Immutable revision embedded in the upstream L3 executable")
+set(RECONSTRUCTION_L3_THRESHOLDS "" CACHE FILEPATH
+    "Calibrated JSON thresholds for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_OUTPUT "${CMAKE_BINARY_DIR}/Testing/reconstruction_l3" CACHE PATH
+    "Fresh output directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_SEED "20261009" CACHE STRING
+    "Fixed mapper seed for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_HARNESS "cli-anything-acloudviewer" CACHE FILEPATH
+    "CLI harness executable for reconstruction_l3_alignment_gate")
 option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for Visual Studio / XCode development)" OFF)
 option(DOWNLOAD_ENABLED "Whether to enable (automatic) download of resources (requires Curl/OpenSSL)" ON)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
@@ -91,17 +153,50 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-# Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
-if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
-    set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
-    if (TESTS_ENABLED)
-        list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
-    endif ()
-    find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
-    # find_package(Glog REQUIRED)
-    # find_package(Ceres REQUIRED)
-    # find_package(Metis REQUIRED)
+# Boost: the compiled Boost libraries (filesystem/program_options/graph/system)
+# stay on the system / ext_boost version — the Boost 1.92 library upgrade was
+# reverted because the fork's CGAL dependency requires boost/mpl/if_c.hpp and
+# the legacy boost::filesystem API, both removed in 1.92, and the compiled
+# libraries carry no numeric contract for the COLMAP subtree. Only the
+# header-only boost::unordered subset is vendored (see src/CMakeLists.txt).
+# Boost: unconditionally resolved through find_package on every platform —
+# Linux uses the distro packages (apt libboost-all-dev in CI/docker), macOS
+# and Windows use the conda boost (1.84). The former ext_boost source build
+# (1.73, AliceVision tarball) existed solely for -DGLIBCXX_USE_CXX11_ABI=OFF
+# builds, which no CI/docker/conda configuration uses (the option defaults to
+# ON); with an ABI=0 build the caller must supply a matching-ABI boost via
+# BOOST_ROOT. The compiled libraries carry no numeric contract for the
+# COLMAP subtree; the only header-only special case is the vendored
+# boost::unordered subset for patch_match.cc (see src/CMakeLists.txt).
+set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
+if (TESTS_ENABLED)
+    list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
 endif ()
+find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
+# The vendored Boost 1.92 header subset (see src/CMakeLists.txt) shadows the
+# system Boost headers for every ColmapLib C++ TU. The historical Boost >=
+# 1.74 floor came from a serialization/nvp double definition between the
+# vendor closure and system Boost < 1.74 (Ubuntu 20.04 / Boost 1.71):
+# boost/core/serialization.hpp defining boost::serialization::nvp clashed
+# with the legacy serialization/nvp.hpp pulled by boost/graph ->
+# multi_index, AND a forward-declaration broke Boost >= 1.84 whose own
+# multi_index/serialization headers instantiate serialization::nvp from
+# core/serialization.hpp (macOS conda 1.84). Fixed at the root by the
+# guard handshake in the vendor core/serialization.hpp + noexcept-less
+# core/nvp.hpp make_nvp (see the NOTE there), so every system Boost from
+# 1.71 up compiles, links and runs the mixing probe
+# (.qoder/tmp/boost_mix_probe.cc; measured PASS on 1.71, 1.74 and the
+# 1.84 consumer pattern).
+# NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
+# They keep the fork-wide from-source build shared with the rest of the
+# project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;
+# metis ships inside ext_suitesparse) and reach this subtree through the
+# imported 3rdparty_* targets of find_dependencies.cmake on all three
+# platforms. The find_package lines below are upstream COLMAP leftovers and
+# must stay commented out.
+# find_package(Glog REQUIRED)
+# find_package(Ceres REQUIRED)
+# find_package(Metis REQUIRED)
 
 if (NOT APPLE)
     if (WIN32)
@@ -113,9 +208,9 @@ if (NOT APPLE)
             add_compile_definitions(BOOST_LIBRARYDIR=${BOOST_ROOT})
         endif ()
     else ()
-        if (NOT ${GLIBCXX_USE_CXX11_ABI})
-            set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
-        endif()
+        # ABI=0 builds must point BOOST_ROOT at a matching-ABI boost install;
+        # there is no bundled source build anymore (see the find_package note
+        # above).
     endif ()
 
     message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
@@ -272,6 +367,15 @@ else ()
     message(STATUS "Disabling OpenGL support")
 endif ()
 
+# Upstream parity (cmake/FindDependencies.cmake GPU_ENABLED): SiftGPU-based
+# feature extraction/matching is available whenever OpenGL or CUDA is.
+set(GPU_ENABLED OFF)
+if (OPENGL_ENABLED OR CUDA_ENABLED)
+    add_compile_definitions(GPU_ENABLED)
+    set(GPU_ENABLED ON)
+    message(STATUS "Enabling GPU support (OpenGL: ${OPENGL_ENABLED}, CUDA: ${CUDA_ENABLED})")
+endif ()
+
 if (PROFILING_ENABLED)
     message(STATUS "Enabling profiling support")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lprofiler -ltcmalloc")
@@ -291,6 +395,55 @@ endif ()
 if (DOWNLOAD_ENABLED)
     add_compile_definitions(COLMAP_DOWNLOAD_ENABLED)
 endif ()
+
+# Export the engine feature macros that are currently active so consumers
+# outside this directory scope (the python pybind extension TUs, which
+# include the same engine headers) can mirror them and stay ABI-identical.
+# add_compile_definitions above is directory-scoped and does NOT reach
+# sibling directories.
+set(ACV_COLMAP_ENGINE_MACROS "")
+if (OPENMP_ENABLED AND OPENMP_FOUND)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENMP_ENABLED)
+endif ()
+if (CUDA_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CUDA_ENABLED)
+endif ()
+if (GPU_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS GPU_ENABLED)
+endif ()
+if (GUI_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS GUI_ENABLED)
+endif ()
+if (OPENGL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENGL_ENABLED)
+endif ()
+if (CGAL_FOUND AND CGAL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CGAL_ENABLED)
+endif ()
+if (DOWNLOAD_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_DOWNLOAD_ENABLED)
+endif ()
+list(APPEND ACV_COLMAP_ENGINE_MACROS MAX_STURM_RECURSION_DEPTH_LIMIT=300)
+list(APPEND ACV_COLMAP_ENGINE_MACROS POSELIB_DEBUG=0)
+if (RECONSTRUCTION_FETCH_POSELIB)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS RECONSTRUCTION_FETCH_POSELIB)
+endif ()
+if (HIP_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_HIP_ENABLED)
+endif ()
+# Unconditional vendored-library configuration macros that engine headers
+# propagate to their consumers; the python binding TUs must agree on these
+# too (e.g. kiss_fft_scalar changes struct layouts).
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_ALL_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_TEST_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_WRITE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYGLTF_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYOBJLOADER_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS kiss_fft_scalar=double)
+set(ACV_COLMAP_ENGINE_MACROS "${ACV_COLMAP_ENGINE_MACROS}"
+        CACHE INTERNAL "ACloudViewer COLMAP engine feature macros")
 
 # DA3 depth estimation integration (AICore from core/DA3)
 if(AICore_ENABLED AND TARGET AICore)

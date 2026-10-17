@@ -7,7 +7,9 @@
 
 #include "controllers/hierarchical_pipeline.h"
 
+#include "scene/database_cache.h"
 #include "scene/scene_clustering.h"
+#include "sfm/observation_manager.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -36,7 +38,10 @@ void MergeClusters(
     for (size_t i = 0; i < reconstructions.size(); ++i) {
       for (size_t j = 0; j < i; ++j) {
         const double kMaxReprojError = 8.0;
-        if (reconstructions[i]->Merge(*reconstructions[j], kMaxReprojError)) {
+        // Upstream parity (a2bd15c2): merge j into i, then filter the merged
+        // points by reprojection error.
+        if (MergeAndFilterReconstructions(
+                kMaxReprojError, *reconstructions[j], *reconstructions[i])) {
           reconstructions.erase(reconstructions.begin() + j);
           merge_success = true;
           break;
@@ -69,45 +74,58 @@ void MergeClusters(
 
 }  // namespace
 
-bool HierarchicalMapperController::Options::Check() const {
+bool HierarchicalPipelineOptions::Check() const {
   CHECK_OPTION_GT(init_num_trials, -1);
+  CHECK_OPTION_GE(num_threads, -1);
   CHECK_OPTION_GE(num_workers, -1);
+  CHECK_OPTION(clustering_options.Check());
+  CHECK_OPTION(incremental_options.Check());
   return true;
 }
 
-HierarchicalMapperController::HierarchicalMapperController(
-    const Options& options, const SceneClustering::Options& clustering_options,
-    const IncrementalMapperOptions& mapper_options,
+HierarchicalPipeline::HierarchicalPipeline(
+    const HierarchicalPipelineOptions& options,
+    const std::filesystem::path& database_path,
     ReconstructionManager* reconstruction_manager)
     : options_(options),
-      clustering_options_(clustering_options),
-      mapper_options_(mapper_options),
+      database_path_(database_path),
       reconstruction_manager_(reconstruction_manager) {
   CHECK(options_.Check());
-  CHECK(clustering_options_.Check());
-  CHECK(mapper_options_.Check());
-  CHECK_EQ(clustering_options_.branching, 2);
+  CHECK_EQ(options_.clustering_options.branching, 2);
 }
 
-void HierarchicalMapperController::Run() {
+void HierarchicalPipeline::Run() {
   PrintHeading1("Partitioning the scene");
 
   //////////////////////////////////////////////////////////////////////////////
   // Cluster scene
   //////////////////////////////////////////////////////////////////////////////
 
+  // Upstream parity (1882ef4b #3926): load the database once into a cache
+  // shared by the clustering and every cluster worker.
+  std::shared_ptr<const DatabaseCache> database_cache;
+  {
+    std::cout << "Loading database" << std::endl;
+    Timer timer;
+    timer.Start();
+    DatabaseCache::Options database_cache_options;
+    database_cache_options.min_num_matches =
+        static_cast<size_t>(options_.incremental_options.min_num_matches);
+    database_cache_options.ignore_watermarks =
+        options_.incremental_options.ignore_watermarks;
+    auto database = Database::Open(database_path_);
+    database_cache = DatabaseCache::Create(*database, database_cache_options);
+    timer.PrintMinutes();
+  }
+
   std::unordered_map<image_t, std::string> image_id_to_name;
-
-  auto database = Database::Open(options_.database_path);
-
-  std::cout << "Reading images..." << std::endl;
-  const auto images = database->ReadAllImages();
-  for (const auto& image : images) {
-    image_id_to_name.emplace(image.ImageId(), image.Name());
+  image_id_to_name.reserve(database_cache->NumImages());
+  for (const auto& [image_id, image] : database_cache->Images()) {
+    image_id_to_name.emplace(image_id, image.Name());
   }
 
   SceneClustering scene_clustering =
-      SceneClustering::Create(clustering_options_, *database);
+      SceneClustering::Create(options_.clustering_options, *database_cache);
 
   auto leaf_clusters = scene_clustering.GetLeafClusters();
 
@@ -128,17 +146,23 @@ void HierarchicalMapperController::Run() {
 
   PrintHeading1("Reconstructing clusters");
 
-  // Determine the number of workers and threads per worker.
-  const int kMaxNumThreads = -1;
-  const int num_eff_threads = GetEffectiveNumThreads(kMaxNumThreads);
+  // Determine the number of workers and threads per worker. The total thread
+  // budget is divided across workers to avoid oversubscription (upstream
+  // a2bd15c2 semantics: Mapper.num_threads is overridden per worker).
+  if (options_.incremental_options.num_threads > 0) {
+    LOG(WARNING)
+        << "Mapper.num_threads is ignored in hierarchical mapping. Use "
+           "num_threads to control the total thread budget instead.";
+  }
+  const int num_total_threads = GetEffectiveNumThreads(options_.num_threads);
   const int kDefaultNumWorkers = 8;
-  const int num_eff_workers =
-      options_.num_workers < 1
-          ? std::min(static_cast<int>(leaf_clusters.size()),
-                     std::min(kDefaultNumWorkers, num_eff_threads))
-          : options_.num_workers;
+  const int num_eff_workers = std::max(
+      1, std::min(static_cast<int>(leaf_clusters.size()),
+                  std::min(options_.num_workers < 1 ? kDefaultNumWorkers
+                                                    : options_.num_workers,
+                           num_total_threads)));
   const int num_threads_per_worker =
-      std::max(1, num_eff_threads / num_eff_workers);
+      std::max(1, num_total_threads / num_eff_workers);
 
   // Function to reconstruct one cluster using incremental mapping.
   auto ReconstructCluster = [&, this](
@@ -148,20 +172,24 @@ void HierarchicalMapperController::Run() {
       return;
     }
 
-    IncrementalMapperOptions custom_options = mapper_options_;
+    IncrementalPipelineOptions custom_options = options_.incremental_options;
     custom_options.max_model_overlap = 3;
     custom_options.init_num_trials = options_.init_num_trials;
-    if (custom_options.num_threads < 0) {
-      custom_options.num_threads = num_threads_per_worker;
-    }
+    custom_options.num_threads = num_threads_per_worker;
 
+    // Create a filtered database cache for this cluster.
+    DatabaseCache::Options cluster_cache_options;
+    cluster_cache_options.min_num_matches =
+        static_cast<size_t>(options_.incremental_options.min_num_matches);
     for (const auto image_id : cluster.image_ids) {
-      custom_options.image_names.insert(image_id_to_name.at(image_id));
+      cluster_cache_options.image_names.insert(image_id_to_name.at(image_id));
     }
+    std::shared_ptr<const DatabaseCache> cluster_database_cache =
+        DatabaseCache::CreateFromCache(*database_cache, cluster_cache_options);
 
-    IncrementalMapperController mapper(&custom_options, options_.image_path,
-                                       options_.database_path,
-                                       reconstruction_manager);
+    IncrementalPipeline mapper(&custom_options, options_.image_path,
+                               std::move(cluster_database_cache),
+                               reconstruction_manager);
     mapper.Start();
     mapper.Wait();
   };
@@ -190,12 +218,22 @@ void HierarchicalMapperController::Run() {
   // Merge clusters
   //////////////////////////////////////////////////////////////////////////////
 
-  PrintHeading1("Merging clusters");
+  if (leaf_clusters.size() > 1) {
+    PrintHeading1("Merging clusters");
 
-  MergeClusters(*scene_clustering.GetRootCluster(), &reconstruction_managers);
+    MergeClusters(*scene_clustering.GetRootCluster(), &reconstruction_managers);
+  }
 
   CHECK_EQ(reconstruction_managers.size(), 1);
   *reconstruction_manager_ = std::move(reconstruction_managers.begin()->second);
+
+  // Cluster filtering stores normalized/angular residuals in Point3D::Error.
+  // Publish the final model with pixel reprojection errors, matching the
+  // reconstruction contract consumed by model analysis and the upstream
+  // hierarchical pipeline.
+  for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
+    reconstruction_manager_->Get(i).UpdatePoint3DErrors();
+  }
 
   std::cout << std::endl;
   GetTimer().PrintMinutes();

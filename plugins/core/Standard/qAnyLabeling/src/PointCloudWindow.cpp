@@ -15,11 +15,14 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDockWidget>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QFutureWatcher>
 #include <QHBoxLayout>
 #include <QHash>
+#include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -51,6 +54,7 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <QtConcurrent>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -335,6 +339,12 @@ private:
                 bool accumulate = false) {
         if (!m_frame || !onSelection) return;
         const QMatrix4x4 transform = matrix();
+        // Upstream selection.py parity: every point owns a point_size²
+        // footprint on screen, and the non-through filter keeps a point iff
+        // any of its footprint pixels lists it at the exact closest depth
+        // (float equality — same expression, same value — so equal-depth
+        // ties stay selectable together).
+        const int size = std::max(1, m_pointSize);
         QVector<int> selected;
         QHash<quint64, float> closest;
         for (int visible = 0; visible < m_visibleIndices.size(); ++visible) {
@@ -348,32 +358,54 @@ private:
                                  (1 - clip.y() / clip.w()) * height() / 2);
             if (!contains(screen)) continue;
             selected.append(i);
-            const quint64 key = quint64(std::max(0, int(screen.y()))) *
-                                        quint64(std::max(1, width())) +
-                                quint64(std::max(0, int(screen.x())));
-            if (!closest.contains(key) || z < closest.value(key))
-                closest.insert(key, z);
+            const int originX = int(screen.x());
+            const int originY = int(screen.y());
+            for (int dy = 0; dy < size; ++dy) {
+                for (int dx = 0; dx < size; ++dx) {
+                    const int px = originX + dx;
+                    const int py = originY + dy;
+                    if (px < 0 || px >= width() || py < 0 || py >= height())
+                        continue;
+                    const quint64 key = quint64(py) * quint64(width()) + px;
+                    if (!closest.contains(key) || z < closest.value(key))
+                        closest.insert(key, z);
+                }
+            }
         }
         if (!m_through) {
             selected.erase(
                     std::remove_if(
                             selected.begin(), selected.end(),
-                            [this, &transform, &closest](int i) {
+                            [this, &transform, &closest, size](int i) {
                                 const QVector4D clip =
                                         transform *
                                         QVector4D(
                                                 m_frame->points[i].toVector3D(),
                                                 1);
-                                const QPointF p(
+                                if (clip.w() <= 0) return true;
+                                const QPointF screen(
                                         (clip.x() / clip.w() + 1) * width() / 2,
                                         (1 - clip.y() / clip.w()) * height() /
                                                 2);
-                                const quint64 key =
-                                        quint64(std::max(0, int(p.y()))) *
-                                                quint64(std::max(1, width())) +
-                                        quint64(std::max(0, int(p.x())));
-                                return clip.z() / clip.w() >
-                                       closest.value(key) + 0.0001f;
+                                const float z = clip.z() / clip.w();
+                                const int originX = int(screen.x());
+                                const int originY = int(screen.y());
+                                for (int dy = 0; dy < size; ++dy) {
+                                    for (int dx = 0; dx < size; ++dx) {
+                                        const int px = originX + dx;
+                                        const int py = originY + dy;
+                                        if (px < 0 || px >= width() || py < 0 ||
+                                            py >= height())
+                                            continue;
+                                        const quint64 key =
+                                                quint64(py) * quint64(width()) +
+                                                px;
+                                        if (closest.contains(key) &&
+                                            closest.value(key) == z)
+                                            return false;
+                                    }
+                                }
+                                return true;
                             }),
                     selected.end());
         }
@@ -478,6 +510,8 @@ PointCloudWindow::PointCloudWindow(QWidget* parent) : QMainWindow(parent) {
                          int(PointCloudDocument::RemoveFromInstance));
     m_operation->addItem(tr("Split instance"),
                          int(PointCloudDocument::SplitInstance));
+    m_operation->addItem(tr("Create cuboid from selection"),
+                         int(PointCloudDocument::CreateCuboid));
     rightLayout->addWidget(m_operation);
     rightLayout->addWidget(new QLabel(tr("Instance ID"), right));
     m_instance = new QSpinBox(right);
@@ -497,6 +531,32 @@ PointCloudWindow::PointCloudWindow(QWidget* parent) : QMainWindow(parent) {
     setCentralWidget(splitter);
     m_status = new QLabel(this);
     statusBar()->addWidget(m_status);
+
+    // Camera dock: calibrated image sources with the current frame's point
+    // cloud projected on top (upstream pointcloud camera sources parity).
+    auto* cameraDock = new QDockWidget(tr("Camera"), this);
+    cameraDock->setObjectName(QStringLiteral("PointCloudCameraDock"));
+    auto* cameraBody = new QWidget(cameraDock);
+    auto* cameraLayout = new QVBoxLayout(cameraBody);
+    cameraLayout->setContentsMargins(4, 4, 4, 4);
+    auto* addCameraButton = new QPushButton(tr("Add camera..."), cameraBody);
+    connect(addCameraButton, &QPushButton::clicked, this,
+            &PointCloudWindow::addCamera);
+    cameraLayout->addWidget(addCameraButton);
+    m_cameraList = new QListWidget(cameraBody);
+    m_cameraList->setObjectName(QStringLiteral("PointCloudCameras"));
+    connect(m_cameraList, &QListWidget::currentRowChanged, this,
+            &PointCloudWindow::showCamera);
+    cameraLayout->addWidget(m_cameraList, 1);
+    m_cameraImage = new QLabel(cameraBody);
+    m_cameraImage->setObjectName(QStringLiteral("PointCloudCameraImage"));
+    m_cameraImage->setAlignment(Qt::AlignCenter);
+    m_cameraImage->setMinimumSize(320, 240);
+    cameraLayout->addWidget(m_cameraImage, 3);
+    addDockWidget(Qt::RightDockWidgetArea, cameraDock);
+    cameraDock->hide();
+    toolbar->addAction(cameraDock->toggleViewAction());
+    restoreCameras();
     connect(m_fileList, &QListWidget::currentRowChanged, this,
             &PointCloudWindow::selectFrame);
     m_view->onSelection = [this](const QVector<int>& selected) {
@@ -636,13 +696,62 @@ void PointCloudWindow::selectFrame(int index) {
                               .filePath(QFileInfo(m_files[index])
                                                 .completeBaseName() +
                                         QStringLiteral(".label"));
-    if (!loadPointCloudFrame(m_files[index], &frame, &error, output)) {
+    // Streaming prefetch hit: switching to a neighboring frame skips the
+    // file decode entirely.
+    const auto cached = m_prefetch.constFind(m_files[index]);
+    if (cached != m_prefetch.constEnd()) {
+        frame = cached.value();
+        m_prefetch.erase(cached);
+        if (!output.isEmpty()) frame.labelPath = output;
+    } else if (!loadPointCloudFrame(m_files[index], &frame, &error, output)) {
         QMessageBox::warning(this, windowTitle(), error);
         return;
     }
     m_document.setFrame(std::move(frame));
     m_view->setFrame(&m_document.frame());
     refresh();
+    refreshCameras();
+    schedulePrefetch(index);
+}
+
+void PointCloudWindow::schedulePrefetch(int index) {
+    for (int offset : {-1, 1, -2, 2}) {
+        const int target = index + offset;
+        if (target < 0 || target >= m_files.size()) continue;
+        const QString path = m_files[target];
+        if (path == m_document.frame().path || m_prefetch.contains(path) ||
+            m_prefetching.contains(path))
+            continue;
+        const QString output =
+                m_outputDirectory.isEmpty()
+                        ? QString()
+                        : QDir(m_outputDirectory)
+                                  .filePath(QFileInfo(path).completeBaseName() +
+                                            QStringLiteral(".label"));
+        m_prefetching.insert(path);
+        auto* watcher =
+                new QFutureWatcher<QPair<PointCloudFrame, QString>>(this);
+        connect(watcher,
+                &QFutureWatcher<QPair<PointCloudFrame, QString>>::finished,
+                this, [this, watcher, path]() {
+                    watcher->deleteLater();
+                    m_prefetching.remove(path);
+                    // Error strings double as the failure flag; only
+                    // successfully decoded frames enter the cache.
+                    if (!watcher->result().second.isEmpty()) return;
+                    // Bounded cache: evict an arbitrary older entry past
+                    // four decoded frames (~ a few hundred MB worst case).
+                    while (m_prefetch.size() >= 4)
+                        m_prefetch.erase(m_prefetch.begin());
+                    m_prefetch.insert(path, watcher->result().first);
+                });
+        watcher->setFuture(QtConcurrent::run([path, output]() {
+            PointCloudFrame frame;
+            QString error;
+            loadPointCloudFrame(path, &frame, &error, output);
+            return qMakePair(frame, error);
+        }));
+    }
 }
 
 void PointCloudWindow::save() {
@@ -705,6 +814,53 @@ void PointCloudWindow::applySelection(const QVector<int>& indices) {
     QString error;
     const auto operation =
             PointCloudDocument::Operation(m_operation->currentData().toInt());
+    // Cuboid creation works on the raw selection bounds: an axis-aligned
+    // box around the selected points (upstream cuboid data-model parity;
+    // interactive rotation/resizing stays with the 3D viewport).
+    if (operation == PointCloudDocument::CreateCuboid) {
+        if (indices.isEmpty()) {
+            QMessageBox::warning(this, windowTitle(),
+                                 tr("Select points to create a cuboid"));
+            return;
+        }
+        if (semantic < 1) {
+            QMessageBox::warning(this, windowTitle(),
+                                 tr("Cuboids need a class ID of 1 or higher"));
+            return;
+        }
+        QVector3D low = m_document.frame().points[indices.first()].toVector3D();
+        QVector3D high = low;
+        for (int index : indices) {
+            const QVector3D point =
+                    m_document.frame().points[index].toVector3D();
+            low.setX(std::min(low.x(), point.x()));
+            low.setY(std::min(low.y(), point.y()));
+            low.setZ(std::min(low.z(), point.z()));
+            high.setX(std::max(high.x(), point.x()));
+            high.setY(std::max(high.y(), point.y()));
+            high.setZ(std::max(high.z(), point.z()));
+        }
+        PointCloudCuboid box;
+        box.id = 1;
+        for (const PointCloudCuboid& existing : m_document.frame().cuboids)
+            box.id = std::max(box.id, existing.id + 1);
+        box.classId = semantic;
+        box.center[0] = double((low.x() + high.x()) * 0.5);
+        box.center[1] = double((low.y() + high.y()) * 0.5);
+        box.center[2] = double((low.z() + high.z()) * 0.5);
+        box.size[0] = std::max(0.01, double(high.x() - low.x()));
+        box.size[1] = std::max(0.01, double(high.y() - low.y()));
+        box.size[2] = std::max(0.01, double(high.z() - low.z()));
+        auto cuboids = m_document.frame().cuboids;
+        cuboids.append(box);
+        m_document.setCuboids(cuboids);
+        refresh();
+        refreshCameras();
+        m_status->setText(tr("Cuboid %1 created from %2 points")
+                                  .arg(box.id)
+                                  .arg(indices.size()));
+        return;
+    }
     if (m_document.operate(indices, quint16(semantic),
                            quint16(m_instance->value()), operation, &error))
         refresh();
@@ -1094,4 +1250,195 @@ void PointCloudWindow::closeEvent(QCloseEvent* event) {
         event->accept();
     else
         event->ignore();
+}
+
+void PointCloudWindow::addCamera() {
+    QDialog dialog(this);
+    dialog.setObjectName(QStringLiteral("PointCloudCameraDialog"));
+    dialog.setWindowTitle(tr("Add camera"));
+    auto* form = new QFormLayout(&dialog);
+    auto* directory = new QLineEdit(&dialog);
+    auto* browseDirectory = new QPushButton(tr("Browse..."), &dialog);
+    connect(browseDirectory, &QPushButton::clicked, directory,
+            [this, directory]() {
+                const QString path = QFileDialog::getExistingDirectory(
+                        this, tr("Camera image directory"));
+                if (!path.isEmpty()) directory->setText(path);
+            });
+    auto* directoryRow = new QHBoxLayout();
+    directoryRow->addWidget(directory, 1);
+    directoryRow->addWidget(browseDirectory);
+    form->addRow(tr("Image directory"), directoryRow);
+    auto* calibrationPath = new QLineEdit(&dialog);
+    auto* browseCalibration = new QPushButton(tr("Browse..."), &dialog);
+    connect(browseCalibration, &QPushButton::clicked, calibrationPath,
+            [this, calibrationPath]() {
+                const QString path = QFileDialog::getOpenFileName(
+                        this, tr("Calibration sidecar"), QString(),
+                        tr("Calibration JSON (*.json)"));
+                if (!path.isEmpty()) calibrationPath->setText(path);
+            });
+    auto* calibrationRow = new QHBoxLayout();
+    calibrationRow->addWidget(calibrationPath, 1);
+    calibrationRow->addWidget(browseCalibration);
+    form->addRow(tr("Calibration sidecar"), calibrationRow);
+    auto* buttons = new QDialogButtonBox(
+            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    form->addRow(buttons);
+    if (dialog.exec() != QDialog::Accepted) return;
+
+    PointCloudCalibration calibration;
+    QString error;
+    if (!loadPointCloudCalibration(calibrationPath->text().trimmed(),
+                                   &calibration, &error)) {
+        QMessageBox::warning(this, windowTitle(), error);
+        return;
+    }
+    CameraSource source;
+    source.directory = QDir(directory->text().trimmed()).absolutePath();
+    source.calibrationPath = calibrationPath->text().trimmed();
+    source.calibration = calibration;
+    source.name = QFileInfo(source.calibrationPath).completeBaseName();
+    const QStringList suffixes = {"jpg", "jpeg", "png", "bmp"};
+    for (const QFileInfo& entry :
+         QDir(source.directory)
+                 .entryInfoList(suffixes, QDir::Files, QDir::Name))
+        source.images.append(entry.absoluteFilePath());
+    if (source.images.isEmpty()) {
+        QMessageBox::warning(this, windowTitle(),
+                             tr("The camera directory holds no images."));
+        return;
+    }
+    m_cameras.append(source);
+    persistCameras();
+    m_cameraList->clear();
+    for (const CameraSource& camera : m_cameras)
+        m_cameraList->addItem(camera.name);
+    m_cameraList->setCurrentRow(m_cameras.size() - 1);
+}
+
+QString PointCloudWindow::findCameraImage(const CameraSource& source,
+                                          const QString& framePath) const {
+    // Upstream camera_name parity: the camera image shares the frame's
+    // complete base name.
+    const QString stem = QFileInfo(framePath).completeBaseName();
+    for (const QString& image : source.images)
+        if (QFileInfo(image).completeBaseName() == stem) return image;
+    return QString();
+}
+
+void PointCloudWindow::showCamera(int index) {
+    if (index < 0 || index >= m_cameras.size()) {
+        m_cameraImage->clear();
+        return;
+    }
+    refreshCameras();
+}
+
+void PointCloudWindow::refreshCameras() {
+    const int row = m_cameraList ? m_cameraList->currentRow() : -1;
+    if (row < 0 || row >= m_cameras.size() ||
+        m_document.frame().path.isEmpty()) {
+        m_cameraImage->clear();
+        return;
+    }
+    const CameraSource& source = m_cameras.at(row);
+    const QString image = findCameraImage(source, m_document.frame().path);
+    if (image.isEmpty()) {
+        m_cameraImage->setText(
+                tr("No image for frame %1")
+                        .arg(QFileInfo(m_document.frame().path).fileName()));
+        return;
+    }
+    QImageReader reader(image);
+    reader.setAutoTransform(true);
+    const QImage frame = reader.read();
+    if (frame.isNull()) {
+        m_cameraImage->setText(reader.errorString());
+        return;
+    }
+    // The point colors follow the semantic class palette used by the GL
+    // view; the overlay draws far-to-near so near points win. The frame
+    // packs XYZI as QVector4D; the projection kernel takes XYZ only.
+    QVector<QVector3D> points;
+    points.reserve(m_document.frame().points.size());
+    for (const QVector4D& point : m_document.frame().points)
+        points.append(point.toVector3D());
+    QHash<quint16, QColor> colors;
+    for (auto it = m_classColors.constBegin(); it != m_classColors.constEnd();
+         ++it)
+        colors.insert(it.key(), it.value());
+    const QImage overlay =
+            renderPointCloudCameraOverlay(frame, source.calibration, points,
+                                          m_document.frame().labels, colors, 2);
+    // Cuboid wireframes project on top of the point overlay (upstream
+    // project_cuboid consumers draw them as class-colored polylines).
+    QImage composed = overlay.convertToFormat(QImage::Format_ARGB32);
+    QPainter painter(&composed);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    for (const PointCloudCuboid& box : m_document.frame().cuboids) {
+        const QColor color =
+                colors.value(quint16(box.classId), QColor(255, 200, 0));
+        QPen pen(color, 2);
+        painter.setPen(pen);
+        QVector<QPair<QVector2D, QVector2D>> segments;
+        projectPointCloudCuboid(box.corners(), source.calibration, &segments);
+        for (const auto& segment : segments) {
+            painter.drawLine(QPointF(segment.first.x(), segment.first.y()),
+                             QPointF(segment.second.x(), segment.second.y()));
+        }
+    }
+    painter.end();
+    m_cameraImage->setPixmap(QPixmap::fromImage(composed).scaled(
+            m_cameraImage->size(), Qt::KeepAspectRatio,
+            Qt::SmoothTransformation));
+}
+
+void PointCloudWindow::persistCameras() const {
+    QJsonArray entries;
+    for (const CameraSource& source : m_cameras) {
+        QJsonObject entry;
+        entry.insert(QStringLiteral("name"), source.name);
+        entry.insert(QStringLiteral("directory"), source.directory);
+        entry.insert(QStringLiteral("calibration"), source.calibrationPath);
+        entries.append(entry);
+    }
+    QSettings settings;
+    settings.setValue(QStringLiteral("qAnyLabeling/pointCloudCameras"),
+                      QString::fromUtf8(QJsonDocument(entries).toJson(
+                              QJsonDocument::Compact)));
+}
+
+void PointCloudWindow::restoreCameras() {
+    QSettings settings;
+    const QString raw =
+            settings.value(QStringLiteral("qAnyLabeling/pointCloudCameras"))
+                    .toString();
+    if (raw.isEmpty()) return;
+    const QJsonDocument document = QJsonDocument::fromJson(raw.toUtf8());
+    if (!document.isArray()) return;
+    for (const QJsonValue& value : document.array()) {
+        const QJsonObject entry = value.toObject();
+        CameraSource source;
+        source.name = entry.value(QStringLiteral("name")).toString();
+        source.directory = entry.value(QStringLiteral("directory")).toString();
+        source.calibrationPath =
+                entry.value(QStringLiteral("calibration")).toString();
+        QString error;
+        if (source.directory.isEmpty() || source.calibrationPath.isEmpty() ||
+            !loadPointCloudCalibration(source.calibrationPath,
+                                       &source.calibration, &error))
+            continue;
+        const QStringList suffixes = {"jpg", "jpeg", "png", "bmp"};
+        for (const QFileInfo& fileInfo :
+             QDir(source.directory)
+                     .entryInfoList(suffixes, QDir::Files, QDir::Name))
+            source.images.append(fileInfo.absoluteFilePath());
+        if (source.images.isEmpty()) continue;
+        m_cameras.append(source);
+        m_cameraList->addItem(source.name);
+    }
+    if (!m_cameras.isEmpty()) m_cameraList->setCurrentRow(0);
 }

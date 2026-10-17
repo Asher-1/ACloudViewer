@@ -67,6 +67,28 @@ QNetworkAccessManager manager;
         self.assertEqual(issues, [])
         self.assertEqual(warnings, [])
 
+    def test_qthread_worker_destructor_must_wait_for_run(self):
+        header = '''#include "aicore/yolo_capi.h"
+class DemoWorker : public QThread {
+    ~DemoWorker() override;
+};
+'''
+        cases = {
+            "DemoWorker::~DemoWorker() { aicore_cancel_token_free(t); }": 1,
+            "DemoWorker::~DemoWorker() {\n    if (isRunning()) { wait(); }\n}": 0,
+            "": 1,  # implicit ~QThread aborts the same way
+        }
+        for source, expected in cases.items():
+            with self.subTest(source=source), \
+                    tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.plugin_source(root, header, "include/DemoWorker.h")
+                self.plugin_source(root, source, "src/DemoWorker.cpp")
+                issues, _ = BOUNDARIES.check_plugin_root(root)
+                self.assertEqual(
+                    sum("DemoWorker destructor" in i for i in issues),
+                    expected, issues)
+
 
 if __name__ == "__main__":
     unittest.main()

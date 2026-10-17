@@ -35,7 +35,6 @@
 #include "image/line.h"
 #include "geometry/pose.h"
 #include "image/undistortion.h"
-#include "estimators/utils.h"
 #include "optim/ransac.h"
 #include "util/logging.h"
 #include "util/misc.h"

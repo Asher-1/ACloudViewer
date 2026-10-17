@@ -40,6 +40,7 @@ add_subdirectory( qRelateAnything )
 add_subdirectory( qLingbotMap )
 add_subdirectory( qAnyLabeling )
 add_subdirectory( qSpirula )
+add_subdirectory( qMapAnything )
 
 #plugins integrated as submodules
 set( submod_plugins

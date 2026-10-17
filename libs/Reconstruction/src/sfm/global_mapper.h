@@ -12,12 +12,14 @@
 #include <limits>
 
 #include "estimators/bundle_adjustment.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "estimators/global_positioning.h"
 #include "estimators/rotation_averaging.h"
 #include "scene/database_cache.h"
 #include "scene/pose_graph.h"
 #include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 
@@ -44,12 +46,15 @@ struct GlobalMapperOptions {
         // observations are filtered from the problem entirely).
         options.min_track_length = 3;
         options.print_summary = false;
-        options.loss_function_type =
-                BundleAdjustmentOptions::LossFunctionType::HUBER;
-        options.use_gpu = true;
-        options.solver_options.function_tolerance = 1e-5;
-        options.solver_options.max_num_iterations = 200;
-        options.solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+        options.ceres->loss_function_type = CeresLossFunctionType::HUBER;
+        options.ceres->use_gpu = true;
+        options.ceres->auto_select_solver_type = false;
+        options.ceres->solver_options.function_tolerance = 1e-5;
+        // Upstream parity (4db31ac2): legacy global BA tolerances.
+        options.ceres->solver_options.gradient_tolerance = 1e-10;
+        options.ceres->solver_options.parameter_tolerance = 1e-8;
+        options.ceres->solver_options.max_num_iterations = 200;
+        options.ceres->solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
         return options;
     }();
     IncrementalTriangulator::Options retriangulation = [] {
@@ -68,6 +73,8 @@ struct GlobalMapperOptions {
     int track_required_tracks_per_view = std::numeric_limits<int>::max();
     // Minimum number of views per track.
     int track_min_num_views_per_track = 3;
+    // Maximum number of views per track. Longer tracks are discarded.
+    int track_max_num_views_per_track = 100;
     // Maximum total number of tracks to establish. Tracks are selected in order
     // of decreasing length, so the longest tracks are kept. Use this to bound
     // memory usage on large datasets. By default, there is no limit.

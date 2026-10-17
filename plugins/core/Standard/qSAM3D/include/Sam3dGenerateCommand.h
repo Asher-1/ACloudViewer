@@ -35,6 +35,8 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+
+#include "ecvAICoreBatchCommand.h"
 #endif  // AICore_ENABLED
 
 // Command keyword (the -SILENT CLI token users type after the binary).
@@ -48,7 +50,36 @@ struct CommandSam3dGenerate : public ccCommandLineInterface::Command {
 
 #ifdef AICore_ENABLED
 
+    static const ecvAICoreBatch::OptionTable& options() {
+        static const ecvAICoreBatch::OptionTable table = {
+                {"IMAGE", "list", "", "Input image; repeat for batch runs"},
+                {"MASK", "list", "", "Ordered mask companion; repeatable"},
+                {"OUT_DIR", "path", "", "Output directory (required)"},
+                {"MODELS_DIR", "path", "", "Model directory; empty uses cache"},
+                {"DEVICE", "string", "auto", "auto|cpu|cuda|vulkan|metal[:N]"},
+                {"DTYPE", "choice:f16|q8_0|q4_k", "q4_k",
+                 "SAM3D model quantization"},
+                {"STEPS", "int", "25", "Sampling steps in [1,100]"},
+                {"SEED", "int", "42", "Sampling seed"},
+                {"MESH", "bool", "1", "Generate FlexiCubes mesh output"},
+                {"RMBG", "bool", "1", "Run shared RMBG preprocessing"},
+                {"MOGE_CACHE", "bool", "0", "Reuse MoGe point-map cache"},
+                {"THREADS", "int", "8", "CPU threads"},
+                {"RESULT_JSON", "path", "", "Result manifest path"},
+                {"COND_OUT", "path", "",
+                 "Optional conditioning tensor diagnostics directory"},
+        };
+        return table;
+    }
+
     bool process(ccCommandLineInterface& cmd) override {
+        using ecvAICoreBatch::SchemaHelp;
+        const SchemaHelp help = ecvAICoreBatch::handleSchemaHelp(
+                cmd, COMMAND_SAM3D_GENERATE, QStringLiteral("sam3d"),
+                QStringLiteral("SAM 3D Objects image-to-3D generation"),
+                options());
+        if (help != SchemaHelp::NotRequested) return help == SchemaHelp::Done;
+
         cmd.print("[SAM3D_GENERATE]");
 
         QStringList images;
@@ -380,7 +411,10 @@ struct CommandSam3dGenerate : public ccCommandLineInterface::Command {
         aicore_sam3d_free(ctx);
 
         QJsonObject report;
+        report["schema"] = QStringLiteral("acloudviewer.aicore.batch/1");
+        report["keyword"] = QStringLiteral(COMMAND_SAM3D_GENERATE);
         report["task"] = QStringLiteral("sam3d");
+        report["succeeded"] = okCount;
         report["backend"] = backend;
         report["dtype"] = dtype;
         report["steps"] = steps;

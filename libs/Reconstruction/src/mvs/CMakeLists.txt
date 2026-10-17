@@ -45,6 +45,7 @@ COLMAP_ADD_SOURCES(
     model.h model.cc
     normal_map.h normal_map.cc
     texture_mapping.h texture_mapping.cc
+    textured_mesh_export.h textured_mesh_export.cc
     workspace.h workspace.cc
 )
 
@@ -80,3 +81,9 @@ elseif(HIP_ENABLED)
 
     COLMAP_ADD_HIP_TEST(gpu_mat_test gpu_mat_test.cu)
 endif()
+COLMAP_ADD_TEST(delaunay_meshing_test delaunay_meshing_test.cc)
+COLMAP_ADD_TEST(fusion_test fusion_test.cc)
+COLMAP_ADD_TEST(model_test model_test.cc)
+COLMAP_ADD_TEST(mvs_image_test image_test.cc)
+COLMAP_ADD_TEST(poisson_meshing_test poisson_meshing_test.cc)
+COLMAP_ADD_TEST(workspace_test workspace_test.cc)

@@ -10,7 +10,7 @@
 #include <list>
 #include <vector>
 
-#include "scene/database.h"
+#include "scene/database_cache.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -63,7 +63,7 @@ public:
     std::vector<const Cluster*> GetLeafClusters() const;
 
     static SceneClustering Create(const Options& options,
-                                  const Database& database);
+                                  const DatabaseCache& database_cache);
 
 private:
     void PartitionHierarchicalCluster(

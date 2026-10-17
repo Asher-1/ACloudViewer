@@ -7,6 +7,8 @@
 
 #include "AnnotationImporter.h"
 
+#include <QtCompat.h>
+
 #include <QBuffer>
 #include <QFileInfo>
 #include <QImage>
@@ -152,7 +154,7 @@ YoloImport importYolo(const QByteArray& labels,
             const QString line = lines[lineIndex].trimmed();
             if (line.isEmpty()) continue;
             const QStringList fields =
-                    line.split(whitespace, Qt::SkipEmptyParts);
+                    line.split(whitespace, QtCompat::SkipEmptyParts);
             bool valid = false;
             const int classId = fields.value(0).toInt(&valid);
             if (!valid || classId < 0 ||
@@ -246,7 +248,8 @@ YoloImport importYolo(const QByteArray& labels,
     for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
         const QString line = lines[lineIndex].trimmed();
         if (line.isEmpty()) continue;
-        const QStringList fields = line.split(whitespace, Qt::SkipEmptyParts);
+        const QStringList fields =
+                line.split(whitespace, QtCompat::SkipEmptyParts);
         const int expected = format == YoloFormat::Boxes           ? 5
                              : format == YoloFormat::OrientedBoxes ? 9
                                                                    : 7;
@@ -452,8 +455,8 @@ AnnotationImport importDota(const QByteArray& text,
     const QRegularExpression whitespace(QStringLiteral("\\s+"));
     const QStringList lines = QString::fromUtf8(text).split(QLatin1Char('\n'));
     for (int line = 0; line < lines.size(); ++line) {
-        const QStringList fields =
-                lines[line].trimmed().split(whitespace, Qt::SkipEmptyParts);
+        const QStringList fields = lines[line].trimmed().split(
+                whitespace, QtCompat::SkipEmptyParts);
         if (fields.isEmpty()) continue;
         if (fields.size() != 10) {
             result.error = QStringLiteral(

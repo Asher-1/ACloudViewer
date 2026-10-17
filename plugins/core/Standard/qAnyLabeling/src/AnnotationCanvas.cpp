@@ -303,6 +303,9 @@ void AnnotationCanvas::rebuildDisplayImage() {
         return;
     }
 
+    // Format_Grayscale16 exists since Qt 5.13. On Qt 5.12 (Ubuntu focal)
+    // no image can carry that format, so the 16-bit path is dead code.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
     if (m_image.format() == QImage::Format_Grayscale16) {
         const int width = m_image.width();
         const int height = m_image.height();
@@ -330,6 +333,7 @@ void AnnotationCanvas::rebuildDisplayImage() {
         }
         return;
     }
+#endif
 
     const QImage source = m_image.convertToFormat(QImage::Format_ARGB32);
     m_displayImage = QImage(source.size(), QImage::Format_ARGB32);

@@ -19,6 +19,11 @@ std::string StringPrintf(const char* format, ...);
 
 // Locale-independent string-to-double conversion.
 // Always uses '.' as decimal separator regardless of LC_NUMERIC.
+// Upstream parity (d3ccaf35 util/string.h): set the classic locale (i.e. '.'
+// decimal separator regardless of the global locale) and enough precision to
+// round-trip doubles losslessly.
+void SetFullPrecTextStream(std::ios& stream);
+
 double StringToDouble(const std::string& str);
 
 // Replace all occurrences of `old_str` with `new_str` in the given string.

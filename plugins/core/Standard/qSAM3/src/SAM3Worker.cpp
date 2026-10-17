@@ -256,7 +256,7 @@ bool SAM3Worker::runInference() {
         return false;
     }
 
-    SAM3WorkerResult result = buildResult(segRes, rgb);
+    SAM3WorkerResult result = buildResult(m_ctx, segRes, rgb);
     if (segRes) aicore_sam3_seg_result_free(segRes);
 
     if (result.valid) {
@@ -285,44 +285,73 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
                             m_encodedWidth != rgb.width() ||
                             m_encodedHeight != rgb.height() ||
                             !m_encodedPvsOnly;
-    if (needEncode) {
-        const int ok = aicore_sam3_encode_rgb(
-                m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
-                static_cast<size_t>(rgb.bytesPerLine()), 1);
-        if (ok != 0) {
-            CVLog::Warning("[qSAM3][SAM3Worker] PVS encode failed: %s",
-                           aicore_sam3_last_error(m_ctx));
-            emit logMessage(QString("Encode failed: %1")
-                                    .arg(aicore_sam3_last_error(m_ctx)));
-            return nullptr;
-        }
+    QString error;
+    aicore_sam3_seg_result* res =
+            segment(m_ctx, rgb, m_prompt, false, needEncode, &error);
+    if (!error.isEmpty()) {
+        CVLog::Warning("[qSAM3][SAM3Worker] PVS %s",
+                       error.toUtf8().constData());
+        emit logMessage(error);
+    }
+    if (needEncode && error.isEmpty()) {  // error is set only by encode
         m_encodedImageKey = m_image.cacheKey();
         m_encodedWidth = rgb.width();
         m_encodedHeight = rgb.height();
         m_encodedPvsOnly = true;
     }
+    return res;
+}
 
-    // Build prompt
+aicore_sam3_seg_result* SAM3Worker::segment(aicore_sam3_ctx* ctx,
+                                            const QImage& rgb,
+                                            const Prompt& p,
+                                            bool pcs,
+                                            bool encode,
+                                            QString* error) {
+    const size_t stride = static_cast<size_t>(rgb.bytesPerLine());
+    if (encode) {
+        // PCS needs the detector neck (pvs_only = 0); PVS skips it.
+        if (aicore_sam3_encode_rgb(ctx, rgb.constBits(), rgb.width(),
+                                   rgb.height(), stride, pcs ? 0 : 1) != 0) {
+            *error = QString(pcs ? "Encode (full) failed: %1"
+                                 : "Encode failed: %1")
+                             .arg(QString::fromUtf8(
+                                     aicore_sam3_last_error(ctx)));
+            return nullptr;
+        }
+    }
+    if (pcs) {
+        aicore_sam3_pcs_prompt prompt{};
+        prompt.text = p.text;
+        if (!p.posExemplars.empty()) {
+            prompt.pos_exemplars = p.posExemplars.data();
+            prompt.n_pos_exemplars = static_cast<int>(p.posExemplars.size());
+        }
+        if (!p.negExemplars.empty()) {
+            prompt.neg_exemplars = p.negExemplars.data();
+            prompt.n_neg_exemplars = static_cast<int>(p.negExemplars.size());
+        }
+        prompt.score_threshold = p.scoreThreshold;
+        prompt.nms_threshold = p.nmsThreshold;
+        return aicore_sam3_segment_pcs_rgb(ctx, &prompt, rgb.constBits(),
+                                           rgb.width(), rgb.height(), stride);
+    }
     aicore_sam3_pvs_prompt prompt{};
-    if (!m_prompt.posPoints.isEmpty()) {
-        prompt.pos_points = reinterpret_cast<const aicore_sam3_point*>(
-                m_prompt.posPoints.constData());
-        prompt.n_pos_points = m_prompt.posPoints.size();
+    if (!p.posPoints.isEmpty()) {
+        prompt.pos_points = p.posPoints.constData();
+        prompt.n_pos_points = p.posPoints.size();
     }
-    if (!m_prompt.negPoints.isEmpty()) {
-        prompt.neg_points = reinterpret_cast<const aicore_sam3_point*>(
-                m_prompt.negPoints.constData());
-        prompt.n_neg_points = m_prompt.negPoints.size();
+    if (!p.negPoints.isEmpty()) {
+        prompt.neg_points = p.negPoints.constData();
+        prompt.n_neg_points = p.negPoints.size();
     }
-    if (m_prompt.usePvsBox) {
-        prompt.box = m_prompt.pvsBox;
+    if (p.usePvsBox) {
+        prompt.box = p.pvsBox;
         prompt.use_box = 1;
     }
-    prompt.multimask = m_prompt.multimask ? 1 : 0;
-
-    return aicore_sam3_segment_pvs_rgb(m_ctx, &prompt, rgb.constBits(),
-                                       rgb.width(), rgb.height(),
-                                       static_cast<size_t>(rgb.bytesPerLine()));
+    prompt.multimask = p.multimask ? 1 : 0;
+    return aicore_sam3_segment_pvs_rgb(ctx, &prompt, rgb.constBits(),
+                                       rgb.width(), rgb.height(), stride);
 }
 
 aicore_sam3_seg_result* SAM3Worker::runPCS() {
@@ -332,42 +361,25 @@ aicore_sam3_seg_result* SAM3Worker::runPCS() {
     const bool needEncode = m_encodedImageKey != m_image.cacheKey() ||
                             m_encodedWidth != rgb.width() ||
                             m_encodedHeight != rgb.height() || m_encodedPvsOnly;
-    if (needEncode) {
-        const int ok = aicore_sam3_encode_rgb(
-                m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
-                static_cast<size_t>(rgb.bytesPerLine()), 0);
-        if (ok != 0) {
-            CVLog::Warning("[qSAM3][SAM3Worker] PCS encode failed: %s",
-                           aicore_sam3_last_error(m_ctx));
-            emit logMessage(QString("Encode (full) failed: %1")
-                                    .arg(aicore_sam3_last_error(m_ctx)));
-            return nullptr;
-        }
+    QString error;
+    aicore_sam3_seg_result* res =
+            segment(m_ctx, rgb, m_prompt, true, needEncode, &error);
+    if (!error.isEmpty()) {
+        CVLog::Warning("[qSAM3][SAM3Worker] PCS %s",
+                       error.toUtf8().constData());
+        emit logMessage(error);
+    }
+    if (needEncode && error.isEmpty()) {  // error is set only by encode
         m_encodedImageKey = m_image.cacheKey();
         m_encodedWidth = rgb.width();
         m_encodedHeight = rgb.height();
         m_encodedPvsOnly = false;
     }
-
-    aicore_sam3_pcs_prompt prompt{};
-    prompt.text = m_prompt.text;
-    if (!m_prompt.posExemplars.empty()) {
-        prompt.pos_exemplars = m_prompt.posExemplars.data();
-        prompt.n_pos_exemplars = static_cast<int>(m_prompt.posExemplars.size());
-    }
-    if (!m_prompt.negExemplars.empty()) {
-        prompt.neg_exemplars = m_prompt.negExemplars.data();
-        prompt.n_neg_exemplars = static_cast<int>(m_prompt.negExemplars.size());
-    }
-    prompt.score_threshold = m_prompt.scoreThreshold;
-    prompt.nms_threshold = m_prompt.nmsThreshold;
-
-    return aicore_sam3_segment_pcs_rgb(m_ctx, &prompt, rgb.constBits(),
-                                       rgb.width(), rgb.height(),
-                                       static_cast<size_t>(rgb.bytesPerLine()));
+    return res;
 }
 
-SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes,
+SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_ctx* ctx,
+                                         aicore_sam3_seg_result* segRes,
                                          const QImage& img) {
     SAM3WorkerResult r;
     if (!segRes) return r;
@@ -397,7 +409,7 @@ SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes,
     }
 
     aicore_sam3_timings t{};
-    if (aicore_sam3_last_timings(m_ctx, &t) == 0) {
+    if (aicore_sam3_last_timings(ctx, &t) == 0) {
         r.timings = t;
     }
 

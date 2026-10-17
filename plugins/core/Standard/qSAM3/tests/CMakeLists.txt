@@ -60,4 +60,6 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_sam3_contract)
 add_test(NAME test_sam3_contract COMMAND test_sam3_contract)
+# Qt is an indirect dependency here, outside the reach of the RUNPATH.
+cloudviewer_set_plugin_test_env(test_sam3_contract)
 set_tests_properties(test_sam3_contract PROPERTIES LABELS "model;sam3")

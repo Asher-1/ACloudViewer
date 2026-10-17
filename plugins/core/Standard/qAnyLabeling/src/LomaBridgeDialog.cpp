@@ -65,6 +65,15 @@ QPixmap preview(const QImage& image) {
 class LomaThread final : public QThread {
     Q_OBJECT
 public:
+    // Joined here as well as by the dialog: a running QThread must never be
+    // destroyed, whichever owner deletes it.
+    ~LomaThread() override {
+        if (isRunning()) {
+            requestInterruption();
+            wait();
+        }
+    }
+
     QString image0;
     QString image1;
     QString detector;

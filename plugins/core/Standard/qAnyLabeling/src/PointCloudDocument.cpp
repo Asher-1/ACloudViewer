@@ -342,6 +342,27 @@ bool loadPointCloudFrame(const QString& path,
         }
         loaded.labelExists = true;
     }
+    // Cuboid sidecar: optional, best-effort (upstream parity — a missing
+    // or unparseable sidecar leaves an empty list; a hard parse error is
+    // surfaced like the label read above).
+    loaded.cuboids.clear();
+    const QString cuboidSidecar =
+            QFileInfo(loaded.labelPath)
+                    .dir()
+                    .filePath(QFileInfo(loaded.labelPath).completeBaseName() +
+                              QStringLiteral(".cuboids.json"));
+    QFile cuboidFile(cuboidSidecar);
+    if (cuboidFile.exists()) {
+        QString cuboidError;
+        QVector<PointCloudCuboid> boxes;
+        if (!loadPointCloudCuboids(cuboidSidecar,
+                                   QFileInfo(loaded.path).fileName(), &boxes,
+                                   &cuboidError)) {
+            *error = cuboidError;
+            return false;
+        }
+        loaded.cuboids = boxes;
+    }
     *frame = std::move(loaded);
     return true;
 }
@@ -376,6 +397,20 @@ bool savePointCloudLabels(const PointCloudFrame& frame,
     if (!output.commit()) {
         *error = output.errorString();
         return false;
+    }
+    // Cuboid sidecar: written alongside the labels whenever the frame
+    // carries any cuboids (upstream save_cuboids parity).
+    if (!frame.cuboids.isEmpty()) {
+        const QString cuboidSidecar = QFileInfo(path).dir().filePath(
+                QFileInfo(path).completeBaseName() +
+                QStringLiteral(".cuboids.json"));
+        QString cuboidError;
+        if (!savePointCloudCuboids(cuboidSidecar,
+                                   QFileInfo(frame.path).fileName(),
+                                   frame.cuboids, &cuboidError)) {
+            *error = cuboidError;
+            return false;
+        }
     }
     return true;
 }

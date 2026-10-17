@@ -40,6 +40,17 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QShortcut>
+
+// Qt 5.14 compatibility: the QShortcut(QKeySequence, QObject*, Functor)
+// overload only exists from Qt 5.15. Route every shortcut through this
+// helper, which connects activated() to the functor explicitly.
+static QShortcut* addShortcut(QWidget* parent,
+                              const QKeySequence& key,
+                              std::function<void()> fn) {
+    QShortcut* sc = new QShortcut(key, parent);
+    QObject::connect(sc, &QShortcut::activated, parent, std::move(fn));
+    return sc;
+}
 #include <QSpinBox>
 #include <QSplitter>
 #include <QTableWidget>
@@ -1245,52 +1256,50 @@ VideoAnnotationDialog::VideoAnnotationDialog(QWidget* parent)
         m_timelineUndoActive = false;
         refreshSegments();
     };
-    new QShortcut(QKeySequence::Save, this, [this]() { save(); });
-    new QShortcut(QKeySequence(Qt::Key_I), this,
-                  [markIn]() { markIn->click(); });
-    new QShortcut(QKeySequence(Qt::Key_O), this,
-                  [markOut]() { markOut->click(); });
-    new QShortcut(QKeySequence(Qt::Key_N), this, [add]() { add->click(); });
-    new QShortcut(QKeySequence(Qt::Key_Space), this,
-                  [playPause]() { playPause->click(); });
-    new QShortcut(QKeySequence(Qt::Key_Delete), this, [remove]() {
+    addShortcut(this, QKeySequence::Save, [this]() { save(); });
+    addShortcut(this, QKeySequence(Qt::Key_I), [markIn]() { markIn->click(); });
+    addShortcut(this, QKeySequence(Qt::Key_O),
+                [markOut]() { markOut->click(); });
+    addShortcut(this, QKeySequence(Qt::Key_N), [add]() { add->click(); });
+    addShortcut(this, QKeySequence(Qt::Key_Space),
+                [playPause]() { playPause->click(); });
+    addShortcut(this, QKeySequence(Qt::Key_Delete), [remove]() {
         if (remove->isEnabled()) remove->click();
     });
-    new QShortcut(QKeySequence(Qt::Key_Backspace), this, [remove]() {
+    addShortcut(this, QKeySequence(Qt::Key_Backspace), [remove]() {
         if (remove->isEnabled()) remove->click();
     });
-    new QShortcut(QKeySequence(Qt::Key_Return), this,
-                  [add]() { add->click(); });
-    new QShortcut(QKeySequence(Qt::Key_Enter), this, [add]() { add->click(); });
-    new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Z), this,
-                  [this]() { undoLastEdit(); });
-    new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z), this,
-                  [this]() { redoLastEdit(); });
-    new QShortcut(QKeySequence(Qt::Key_Right), this, [this]() {
+    addShortcut(this, QKeySequence(Qt::Key_Return), [add]() { add->click(); });
+    addShortcut(this, QKeySequence(Qt::Key_Enter), [add]() { add->click(); });
+    addShortcut(this, QKeySequence(Qt::CTRL | Qt::Key_Z),
+                [this]() { undoLastEdit(); });
+    addShortcut(this, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z),
+                [this]() { redoLastEdit(); });
+    addShortcut(this, QKeySequence(Qt::Key_Right), [this]() {
         if (m_player->totalVideoFrames() <= 0) return;
         m_player->seekToFrame(
                 std::min(m_player->totalVideoFrames() - 1,
                          videoFrameAt(m_currentMs, m_data.fps) + 1));
     });
-    new QShortcut(QKeySequence(Qt::Key_Left), this, [this]() {
+    addShortcut(this, QKeySequence(Qt::Key_Left), [this]() {
         if (m_player->totalVideoFrames() <= 0) return;
         m_player->seekToFrame(
                 std::max(0, videoFrameAt(m_currentMs, m_data.fps) - 1));
     });
-    new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Right), this,
-                  [this]() { seek(m_currentMs + 1000); });
-    new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Left), this,
-                  [this]() { seek(std::max<qint64>(0, m_currentMs - 1000)); });
-    new QShortcut(QKeySequence(Qt::Key_Comma), this, [this]() {
+    addShortcut(this, QKeySequence(Qt::SHIFT | Qt::Key_Right),
+                [this]() { seek(m_currentMs + 1000); });
+    addShortcut(this, QKeySequence(Qt::SHIFT | Qt::Key_Left),
+                [this]() { seek(std::max<qint64>(0, m_currentMs - 1000)); });
+    addShortcut(this, QKeySequence(Qt::Key_Comma), [this]() {
         const int row = m_segments->currentRow();
         if (row > 0) m_segments->setCurrentRow(row - 1);
     });
-    new QShortcut(QKeySequence(Qt::Key_Period), this, [this]() {
+    addShortcut(this, QKeySequence(Qt::Key_Period), [this]() {
         const int row = m_segments->currentRow();
         if (row + 1 < m_segments->count()) m_segments->setCurrentRow(row + 1);
     });
     for (int digit = 0; digit <= 9; ++digit) {
-        new QShortcut(QKeySequence(Qt::Key_0 + digit), this, [this, digit]() {
+        addShortcut(this, QKeySequence(Qt::Key_0 + digit), [this, digit]() {
             if (digit < m_labels->count()) m_labels->setCurrentRow(digit);
         });
     }

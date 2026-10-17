@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "geometry/essential_matrix.h"
+#include "util/eigen_alignment.h"
 
 namespace colmap {
 

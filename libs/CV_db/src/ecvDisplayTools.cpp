@@ -1085,6 +1085,15 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
         try {
             ccHObject::Container toProcess;
             ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
+            if (!pickView) {
+                // Driven picks (RPC/tests) have no picking-target view:
+                // fall back to the ACTIVE view's bound DB — the same source
+                // a real click uses. m_globalDBRoot is never assigned
+                // (SetSceneDB has no caller) and m_winDBRoot is an empty
+                // per-window container, so the old fallback chain scanned
+                // NOTHING and every octree point-pick silently missed.
+                pickView = ecvViewManager::instance().getActiveView();
+            }
             ccHObject* sceneDB = pickView ? pickView->getSceneDB() : nullptr;
             ccHObject* ownDB = pickView ? pickView->getOwnDB() : nullptr;
             if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
@@ -1097,7 +1106,9 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
                 ccHObject* ent = toProcess.back();
                 toProcess.pop_back();
 
-                if (!ent->isEnabled()) continue;
+                if (!ent->isEnabled()) {
+                    continue;
+                }
 
                 bool ignoreSubmeshes = false;
 
@@ -1354,6 +1365,13 @@ ccHObject* ecvDisplayTools::GetPickedEntity(const ecvViewContext& ctx,
     if (primaryDT()->m_pickingTargetView) {
         sceneDB = primaryDT()->m_pickingTargetView->getSceneDB();
         localDB = primaryDT()->m_pickingTargetView->getOwnDB();
+    } else {
+        // Driven picks (RPC/tests): resolve the ACTIVE view's bound DB —
+        // identical to what a real click uses (see the cpuPick fallback).
+        if (auto* activeView = ecvViewManager::instance().getActiveView()) {
+            sceneDB = activeView->getSceneDB();
+            localDB = activeView->getOwnDB();
+        }
     }
     if (!sceneDB) sceneDB = primaryDT()->m_globalDBRoot;
     if (!localDB) localDB = primaryDT()->m_winDBRoot;

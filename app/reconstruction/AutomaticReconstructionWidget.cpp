@@ -832,9 +832,9 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
     // This handles the case where options_.vocab_tree_path was empty before.
-    // vocab_tree_path registers through the std::filesystem::path overload,
-    // so it lives in options_fspath_ rather than options_path_.
-    for (auto& option : options_fspath_) {
+    // vocab_tree_path registers through the std::filesystem::path overload
+    // (options_path_).
+    for (auto& option : options_path_) {
         if (option.second == &options_.vocab_tree_path) {
             if (option.first->text().isEmpty() &&
                 !options_.vocab_tree_path.empty()) {

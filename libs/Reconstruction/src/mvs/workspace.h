@@ -8,6 +8,8 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
+#include <mutex>
 
 #include "mvs/consistency_graph.h"
 #include "mvs/depth_map.h"
@@ -117,6 +119,7 @@ private:
         NON_COPYABLE(CachedImage)
     };
 
+    std::mutex cache_mutex_;
     MemoryConstrainedLRUCache<int, CachedImage> cache_;
 };
 

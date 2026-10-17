@@ -12,6 +12,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <algorithm>
 #include <functional>
 
 #include "ecvModelDownloader.h"
@@ -108,23 +109,32 @@ constexpr const char* kLightGlueDownloadUrl =
         "download/LightGlue/lightglue_test_images.zip";
 constexpr const char* kLightGlueSha256 = "";
 
-// PaddleOCR official demo/test images (qOCR + qAnyLabeling). 60 images
-// straight from the PaddleOCR repo: pytest test_files, street scenes,
-// release/2.7 scene shots, and the ch/en single-word crops the official
-// recognition demos use. MANIFEST.txt inside carries per-file SHA-256.
+// PaddleOCR official demo/test images (qOCR + qAnyLabeling): pytest
+// test_files, street scenes, release/2.7 scene shots, the ch/en single-word
+// crops the official recognition demos use, the PP-Structure table pages
+// (layout/table_page_1.png, layout/table_page_layout.jpg), two real-document
+// table crops (tables/: PP-Structure docs table.jpg, PaddleX
+// table_recognition_v2.jpg), and the labelled
+// table-recognition GT (table_rec/val.txt + 100 images) behind the AICore
+// table TEDS gate. test_files/table.jpg and table_rec/ are official but
+// synthetic tables. MANIFEST.txt inside carries per-file SHA-256/source.
 constexpr const char* kPpocrZipName = "ppocr_testdata.zip";
 constexpr const char* kPpocrExtractDir = "ppocr_testdata";
 constexpr const char* kPpocrDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/"
         "download/PP-OCR/ppocr_testdata.zip";
 constexpr const char* kPpocrSha256 =
-        "ef1374e4ac9f2d99832faa96e01c8fab97d102e9ac3b0f16815f81bcc8c23356";
+        "9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484";
 
 // LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
 // demo sequences (courthouse/loop/oxford/university, pre-cropped to the
 // 518-wide processing grid) plus the cached native sky masks for the two
 // outdoor scenes that ship them. SHA-256 pins come from the
 // lingbot_map_data release (expanded_assets digest markers).
+// ALL LingBot-Map test data lands UNDER the "lingbot_map_test_data" group
+// directory instead of littering the extract root shared with the model
+// catalogs (lingbot_models, da3_models, ...).
+constexpr const char* kLingbotMapTestGroupDir = "lingbot_map_test_data";
 constexpr const char* kLingbotMapDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "lingbot_map_data/";
@@ -145,6 +155,51 @@ constexpr const char* kLingbotMapLingboWorldVideoExtractDir =
         "lingbot_map_long";
 constexpr const char* kLingbotMapLingboWorldVideoSha256 =
         "28bd8cbb7cf6b214865176c74083e89ed40adba50add05a768adae990913478e";
+
+// MapAnything / VGGT official ETH3D benchmark scenes (qMapAnything). All 13
+// scene zips come from the map_anything_vggt_test_data release; their
+// SHA-256 pins live in aicore/asset_digests.h (resolved once here through
+// ecvAssetIntegrity::PinnedDigest, the same single point the model
+// downloads use).
+// ALL MapAnything test data lands UNDER the "map_anything_test_data" group
+// directory, mirroring the LingBot-Map grouped layout.
+constexpr const char* kMapAnythingTestGroupDir = "map_anything_test_data";
+constexpr const char* kMapAnythingDownloadBase =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "map_anything_vggt_test_data/";
+struct MapAnythingScene {
+    ecvTestDataRepository::Dataset kind;
+    const char* scene;  // zip name without extension (= extract dir name)
+    const char* label;  // display name
+};
+constexpr MapAnythingScene kMapAnythingScenes[] = {
+        {ecvTestDataRepository::Dataset::MapAnythingCourtyard, "courtyard",
+         "MapAnything courtyard (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingDeliveryArea,
+         "delivery_area", "MapAnything delivery_area (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingElectro, "electro",
+         "MapAnything electro (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingFacade, "facade",
+         "MapAnything facade (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingKicker, "kicker",
+         "MapAnything kicker (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingMeadow, "meadow",
+         "MapAnything meadow (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingOffice, "office",
+         "MapAnything office (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingPipes, "pipes",
+         "MapAnything pipes (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingPlayground, "playground",
+         "MapAnything playground (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingRelief, "relief",
+         "MapAnything relief (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingRelief2, "relief_2",
+         "MapAnything relief_2 (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingTerrace, "terrace",
+         "MapAnything terrace (ETH3D)"},
+        {ecvTestDataRepository::Dataset::MapAnythingTerrains, "terrains",
+         "MapAnything terrains (ETH3D)"},
+};
 constexpr const char* kLingbotMapLoopZipName = "loop.zip";
 constexpr const char* kLingbotMapLoopExtractDir = "loop";
 constexpr const char* kLingbotMapLoopSha256 =
@@ -196,6 +251,12 @@ QString ecvTestDataRepository::zipPath(Dataset kind) {
 
 QString ecvTestDataRepository::extractPath(Dataset kind) {
     const auto info = getDatasetInfo(kind);
+    if (!info.extractGroupName.isEmpty()) {
+        // Grouped layout: extract/<group>/<extractDirName> — keeps a plugin
+        // family's test data out of the extract root shared with catalogs.
+        return QDir(QDir(extractDir()).filePath(info.extractGroupName))
+                .filePath(info.extractDirName);
+    }
     return QDir(extractDir()).filePath(info.extractDirName);
 }
 
@@ -406,7 +467,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLingbotMapDownloadBase) +
                             QString::fromLatin1(kLingbotMapCourthouseZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapCourthouseSha256)}};
+                     QByteArray(kLingbotMapCourthouseSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapLoop:
             return {kind,
                     QStringLiteral("LingBot-Map loop (indoor loop closure)"),
@@ -415,7 +477,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLingbotMapDownloadBase) +
                             QString::fromLatin1(kLingbotMapLoopZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapLoopSha256)}};
+                     QByteArray(kLingbotMapLoopSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapOxford:
             return {kind,
                     QStringLiteral("LingBot-Map Oxford Spires (outdoor)"),
@@ -424,7 +487,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLingbotMapDownloadBase) +
                             QString::fromLatin1(kLingbotMapOxfordZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapOxfordSha256)}};
+                     QByteArray(kLingbotMapOxfordSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapOxfordSkyMasks:
             return {kind,
                     QStringLiteral("LingBot-Map oxford sky masks"),
@@ -434,7 +498,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                             QString::fromLatin1(
                                     kLingbotMapOxfordSkyMasksZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapOxfordSkyMasksSha256)}};
+                     QByteArray(kLingbotMapOxfordSkyMasksSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapUniversity:
             return {kind,
                     QStringLiteral("LingBot-Map university (outdoor)"),
@@ -443,7 +508,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLingbotMapDownloadBase) +
                             QString::fromLatin1(kLingbotMapUniversityZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapUniversitySha256)}};
+                     QByteArray(kLingbotMapUniversitySha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapUniversitySkyMasks:
             return {kind,
                     QStringLiteral("LingBot-Map university sky masks"),
@@ -454,7 +520,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                             QString::fromLatin1(
                                     kLingbotMapUniversitySkyMasksZipName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapUniversitySkyMasksSha256)}};
+                     QByteArray(kLingbotMapUniversitySkyMasksSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapDriveVideo:
             // Single-file mp4 asset: zipFileName carries the download file,
             // extractDirName the directory it is materialized into.
@@ -465,7 +532,8 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kLingbotMapDownloadBase) +
                             QString::fromLatin1(kLingbotMapDriveVideoName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapDriveVideoSha256)}};
+                     QByteArray(kLingbotMapDriveVideoSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
         case Dataset::LingbotMapLingboWorldVideo:
             return {kind,
                     QStringLiteral("LingBot-Map lingbo world (long model)"),
@@ -475,7 +543,37 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                             QString::fromLatin1(
                                     kLingbotMapLingboWorldVideoName),
                     {QCryptographicHash::Sha256,
-                     QByteArray(kLingbotMapLingboWorldVideoSha256)}};
+                     QByteArray(kLingbotMapLingboWorldVideoSha256)},
+                    QString::fromLatin1(kLingbotMapTestGroupDir)};
+        case Dataset::MapAnythingCourtyard:
+        case Dataset::MapAnythingDeliveryArea:
+        case Dataset::MapAnythingElectro:
+        case Dataset::MapAnythingFacade:
+        case Dataset::MapAnythingKicker:
+        case Dataset::MapAnythingMeadow:
+        case Dataset::MapAnythingOffice:
+        case Dataset::MapAnythingPipes:
+        case Dataset::MapAnythingPlayground:
+        case Dataset::MapAnythingRelief:
+        case Dataset::MapAnythingRelief2:
+        case Dataset::MapAnythingTerrace:
+        case Dataset::MapAnythingTerrains: {
+            const auto* row = std::find_if(std::begin(kMapAnythingScenes),
+                                           std::end(kMapAnythingScenes),
+                                           [kind](const MapAnythingScene& s) {
+                                               return s.kind == kind;
+                                           });
+            if (row == std::end(kMapAnythingScenes)) Q_UNREACHABLE();
+            const QString zipName = QStringLiteral("%1.zip").arg(row->scene);
+            return {kind,
+                    QString::fromLatin1(row->label),
+                    zipName,
+                    QString::fromLatin1(row->scene),
+                    QString::fromLatin1(kMapAnythingDownloadBase) + zipName,
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(zipName)},
+                    QString::fromLatin1(kMapAnythingTestGroupDir)};
+        }
     }
     Q_UNREACHABLE();
     return {};
@@ -510,7 +608,7 @@ ecvTestDataRepository::~ecvTestDataRepository() = default;
 // Availability query
 // ----------------------------------------------------------------------------
 
-bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
+bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
     // A directory alone is not a valid cache marker: an interrupted extract
     // leaves the root behind. Validate the files that each consumer needs so
     // a partial cache can fall through to the intact zip or a fresh download.
@@ -598,8 +696,29 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
                     !findDatasetFile(kind, getDatasetInfo(kind).zipFileName)
                              .isEmpty();
             break;
+        case Dataset::MapAnythingCourtyard:
+        case Dataset::MapAnythingDeliveryArea:
+        case Dataset::MapAnythingElectro:
+        case Dataset::MapAnythingFacade:
+        case Dataset::MapAnythingKicker:
+        case Dataset::MapAnythingMeadow:
+        case Dataset::MapAnythingOffice:
+        case Dataset::MapAnythingPipes:
+        case Dataset::MapAnythingPlayground:
+        case Dataset::MapAnythingRelief:
+        case Dataset::MapAnythingRelief2:
+        case Dataset::MapAnythingTerrace:
+        case Dataset::MapAnythingTerrains:
+            // A MapAnything scene bundle is complete when its multi-view
+            // image sequence is present.
+            extractedComplete = !getMapAnythingSceneImages(extract).isEmpty();
+            break;
     }
-    if (extractedComplete) return true;
+    return extractedComplete;
+}
+
+bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
+    if (isExtractedComplete(kind)) return true;
 
     // Check if a verified zip is cached. DeepVerify self-heals archives
     // downloaded before the integrity ledger existed (one hash pass, then
@@ -608,6 +727,48 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
     const QString zip = zipPath(kind);
     return ecvAssetIntegrity::isVerified(zip, info.anchor, 0, false,
                                          ecvAssetIntegrity::OnMiss::DeepVerify);
+}
+
+void ecvTestDataRepository::finishExtraction(Dataset kind, bool success) {
+    emit extractionFinished(success, kind);
+    // ensureDatasetReady convergence: exactly one datasetReady per accepted
+    // call, from this single choke point.
+    if (m_ensurePending && kind == m_ensureKind) {
+        m_ensurePending = false;
+        emit datasetReady(success, kind);
+    }
+}
+
+void ecvTestDataRepository::ensureDatasetReady(Dataset kind) {
+    if (isExtractedComplete(kind)) {
+        emit datasetReady(true, kind);
+        return;
+    }
+    if (m_ensurePending) {
+        if (kind == m_ensureKind) return;  // already preparing exactly this
+        emit downloadLogMessage(QStringLiteral(
+                "[Warning] Another dataset preparation is in progress"));
+        emit datasetReady(false, kind);
+        return;
+    }
+    if (m_downloadInProgress) {
+        emit downloadLogMessage(QStringLiteral(
+                "[Warning] A dataset download is already in progress"));
+        emit datasetReady(false, kind);
+        return;
+    }
+    m_ensurePending = true;
+    m_ensureKind = kind;
+    const auto info = getDatasetInfo(kind);
+    if (ecvAssetIntegrity::isVerified(zipPath(kind), info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
+        // Verified zip cached: extract now (synchronous; converges through
+        // finishExtraction before this call returns).
+        extractDataset(kind);
+    } else {
+        // Downloads converge through onDownloaderFinished.
+        startDownload(kind);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -638,6 +799,11 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
                         .arg(info.displayName));
         m_downloadInProgress = false;
         emit downloadFinished(true, kind);
+        // ensureDatasetReady chain (zip got verified between our check and
+        // startDownload): converge here as well.
+        if (m_ensurePending && kind == m_ensureKind) {
+            extractDataset(kind);
+        }
         return;
     }
 
@@ -691,6 +857,10 @@ void ecvTestDataRepository::onDownloaderFinished(bool ok,
                 QStringLiteral("[Error] Failed to download %1 dataset")
                         .arg(info.displayName));
         emit downloadFinished(false, m_currentDataset);
+        if (m_ensurePending && m_currentDataset == m_ensureKind) {
+            m_ensurePending = false;
+            emit datasetReady(false, m_currentDataset);
+        }
         return;
     }
 
@@ -701,6 +871,11 @@ void ecvTestDataRepository::onDownloaderFinished(bool ok,
             QStringLiteral("[Info] Downloaded %1 dataset successfully")
                     .arg(info.displayName));
     emit downloadFinished(true, m_currentDataset);
+    // ensureDatasetReady chain: the repository owns the download->extract
+    // ordering (legacy downloadFinished consumers stay informational).
+    if (m_ensurePending && m_currentDataset == m_ensureKind) {
+        extractDataset(m_currentDataset);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -880,40 +1055,51 @@ bool ecvTestDataRepository::isSingleFileDataset(Dataset kind) {
 bool ecvTestDataRepository::extractDataset(Dataset kind) {
     const auto info = getDatasetInfo(kind);
     const QString zip = zipPath(kind);
-    const QString extract = extractDir();
+    // Grouped datasets extract UNDER their group directory so the zip's
+    // own top-level folder lands exactly at extractPath(kind)
+    // (extract/<group>/<zip-root>); ungrouped datasets use the extract
+    // root (legacy layout).
+    const QString extract =
+            info.extractGroupName.isEmpty()
+                    ? extractDir()
+                    : QDir(extractDir()).filePath(info.extractGroupName);
 
     if (!ecvAssetIntegrity::isVerified(zip, info.anchor, 0, false,
                                        ecvAssetIntegrity::OnMiss::DeepVerify)) {
         emit downloadLogMessage(
                 QStringLiteral("[Error] Zip file is missing or invalid: %1")
                         .arg(zip));
-        emit extractionFinished(false, kind);
+        finishExtraction(kind, false);
         return false;
     }
 
     // Single-file datasets (e.g. the LingBot-Map long-model mp4s): the
-    // downloaded file itself is the content. Materialize it under the
-    // extract directory and skip the zip machinery entirely.
+    // downloaded file itself is the content. Materialize it AT
+    // extractPath(kind) (group directory included) and skip the zip
+    // machinery entirely.
     if (isSingleFileDataset(kind)) {
-        if (!QDir().mkpath(extract)) {
+        const QString dest = extractPath(kind);
+        if (!QDir().mkpath(QFileInfo(dest).absolutePath())) {
             emit downloadLogMessage(
                     QStringLiteral(
                             "[Error] Cannot create extract directory: %1")
-                            .arg(extract));
-            emit extractionFinished(false, kind);
+                            .arg(QFileInfo(dest).absolutePath()));
+            finishExtraction(kind, false);
             return false;
         }
-        const QString dest = QDir(extract).filePath(info.zipFileName);
         QFile::remove(dest);
         if (!QFile::copy(zip, dest)) {
             emit downloadLogMessage(
                     QStringLiteral("[Error] Cannot materialize %1 -> %2")
                             .arg(zip, dest));
-            emit extractionFinished(false, kind);
+            finishExtraction(kind, false);
             return false;
         }
+        emit downloadLogMessage(
+                QStringLiteral("[Test data] Materialized %1 -> %2")
+                        .arg(QFileInfo(zip).fileName(), dest));
         emit extractionProgress(1, 1);
-        emit extractionFinished(true, kind);
+        finishExtraction(kind, true);
         return true;
     }
 
@@ -922,7 +1108,7 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
         emit downloadLogMessage(
                 QStringLiteral("[Error] Cannot create extract directory: %1")
                         .arg(extract));
-        emit extractionFinished(false, kind);
+        finishExtraction(kind, false);
         return false;
     }
 
@@ -936,7 +1122,7 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
     if (!ok) {
         emit downloadLogMessage(
                 QStringLiteral("[Error] Extraction failed: %1").arg(zip));
-        emit extractionFinished(false, kind);
+        finishExtraction(kind, false);
         return false;
     }
 
@@ -947,14 +1133,15 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
                 QStringLiteral("[Error] Extraction completed but expected "
                                "directory not found: %1")
                         .arg(expectedDir));
-        emit extractionFinished(false, kind);
+        finishExtraction(kind, false);
         return false;
     }
 
     emit downloadLogMessage(
-            QStringLiteral("[Info] Extracted %1 dataset successfully")
-                    .arg(info.displayName));
-    emit extractionFinished(true, kind);
+            QStringLiteral("[Info] Extracted %1 dataset successfully: %2 -> "
+                           "%3")
+                    .arg(info.displayName, zip, extract));
+    finishExtraction(kind, true);
     return true;
 }
 
@@ -1090,6 +1277,14 @@ QStringList ecvTestDataRepository::getLingbotMapImages(
     }
     images.sort(Qt::CaseInsensitive);
     return images;
+}
+
+QStringList ecvTestDataRepository::getMapAnythingSceneImages(
+        const QString& bundleRoot) {
+    // The map_anything_vggt_test_data scene zips keep a top-level scene
+    // directory (<zip stem>/<...>/frames), so the scan is recursive (same
+    // contract as getLingbotMapImages).
+    return getLingbotMapImages(bundleRoot);
 }
 
 QStringList ecvTestDataRepository::getSamImages(const QString& bundleRoot) {

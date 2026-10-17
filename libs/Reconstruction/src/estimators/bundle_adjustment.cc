@@ -31,14 +31,14 @@
 
 #include "estimators/bundle_adjustment.h"
 
+#include "estimators/bundle_adjustment_ceres.h"
+
 #include "estimators/alignment.h"
 #include "estimators/cost_functions/pose_prior.h"
 
 #include <map>
 
-#if defined(CASPAR_ENABLED)
 #include "estimators/bundle_adjustment_caspar.h"
-#endif
 
 #include <iomanip>
 
@@ -247,16 +247,16 @@ bool BundleAdjustmentConfig::HasConstantTvec(const image_t image_id) const {
     return constant_tvecs_.find(image_id) != constant_tvecs_.end();
 }
 
-const std::unordered_set<image_t>& BundleAdjustmentConfig::Images() const {
+const FlatHashSet<image_t>& BundleAdjustmentConfig::Images() const {
     return image_ids_;
 }
 
-const std::unordered_set<point3D_t>& BundleAdjustmentConfig::VariablePoints()
+const FlatHashSet<point3D_t>& BundleAdjustmentConfig::VariablePoints()
         const {
     return variable_point3D_ids_;
 }
 
-const std::unordered_set<point3D_t>& BundleAdjustmentConfig::ConstantPoints()
+const FlatHashSet<point3D_t>& BundleAdjustmentConfig::ConstantPoints()
         const {
     return constant_point3D_ids_;
 }
@@ -304,89 +304,109 @@ void BundleAdjustmentConfig::RemoveConstantPoint(const point3D_t point3D_id) {
 // BundleAdjustmentOptions
 ////////////////////////////////////////////////////////////////////////////////
 
-ceres::LossFunction* BundleAdjustmentOptions::CreateLossFunction() const {
-    ceres::LossFunction* loss_function = nullptr;
-    switch (loss_function_type) {
-        case LossFunctionType::TRIVIAL:
-            loss_function = new ceres::TrivialLoss();
-            break;
-        case LossFunctionType::SOFT_L1:
-            loss_function = new ceres::SoftLOneLoss(loss_function_scale);
-            break;
-        case LossFunctionType::CAUCHY:
-            loss_function = new ceres::CauchyLoss(loss_function_scale);
-            break;
-        case LossFunctionType::HUBER:
-            loss_function = new ceres::HuberLoss(loss_function_scale);
-            break;
+namespace {
+
+// Assigns `src` into `dst`, reusing the existing pointee when both are set so
+// that raw pointers to nested fields (option widgets bound before
+// OptionManager::ResetOptions()) stay valid. Copies never alias the source.
+template <typename T>
+void AssignDeepCopy(std::shared_ptr<T>& dst, const std::shared_ptr<T>& src) {
+    if (src && dst) {
+        *dst = *src;
+    } else {
+        dst = src ? std::make_shared<T>(*src) : nullptr;
     }
-    CHECK_NOTNULL(loss_function);
-    return loss_function;
+}
+
+template <typename T>
+void AssignDeepMove(std::shared_ptr<T>& dst, std::shared_ptr<T>&& src) {
+    if (src && dst) {
+        *dst = std::move(*src);
+    } else {
+        dst = std::move(src);
+    }
+}
+
+}  // namespace
+
+BundleAdjustmentBackendOptions::BundleAdjustmentBackendOptions()
+    : ceres(std::make_shared<CeresBundleAdjustmentOptions>()),
+      caspar(std::make_shared<CasparBundleAdjustmentOptions>()) {}
+
+BundleAdjustmentBackendOptions::BundleAdjustmentBackendOptions(
+        const BundleAdjustmentBackendOptions& other)
+    : ceres(other.ceres ? std::make_shared<CeresBundleAdjustmentOptions>(
+                                  *other.ceres)
+                        : nullptr),
+      caspar(other.caspar ? std::make_shared<CasparBundleAdjustmentOptions>(
+                                    *other.caspar)
+                          : nullptr) {}
+
+BundleAdjustmentBackendOptions& BundleAdjustmentBackendOptions::operator=(
+        const BundleAdjustmentBackendOptions& other) {
+    if (this != &other) {
+        AssignDeepCopy(ceres, other.ceres);
+        AssignDeepCopy(caspar, other.caspar);
+    }
+    return *this;
+}
+
+BundleAdjustmentBackendOptions& BundleAdjustmentBackendOptions::operator=(
+        BundleAdjustmentBackendOptions&& other) {
+    if (this != &other) {
+        AssignDeepMove(ceres, std::move(other.ceres));
+        AssignDeepMove(caspar, std::move(other.caspar));
+    }
+    return *this;
+}
+
+PosePriorBundleAdjustmentBackendOptions::PosePriorBundleAdjustmentBackendOptions()
+    : ceres(std::make_shared<CeresPosePriorBundleAdjustmentOptions>()) {}
+
+PosePriorBundleAdjustmentBackendOptions::PosePriorBundleAdjustmentBackendOptions(
+        const PosePriorBundleAdjustmentBackendOptions& other)
+    : ceres(other.ceres
+                    ? std::make_shared<CeresPosePriorBundleAdjustmentOptions>(
+                              *other.ceres)
+                    : nullptr) {}
+
+PosePriorBundleAdjustmentBackendOptions&
+PosePriorBundleAdjustmentBackendOptions::operator=(
+        const PosePriorBundleAdjustmentBackendOptions& other) {
+    if (this != &other) {
+        AssignDeepCopy(ceres, other.ceres);
+    }
+    return *this;
+}
+
+PosePriorBundleAdjustmentBackendOptions&
+PosePriorBundleAdjustmentBackendOptions::operator=(
+        PosePriorBundleAdjustmentBackendOptions&& other) {
+    if (this != &other) {
+        AssignDeepMove(ceres, std::move(other.ceres));
+    }
+    return *this;
+}
+
+bool PosePriorBundleAdjustmentOptions::Check() const {
+    CHECK_OPTION_GT(prior_position_fallback_stddev, 0);
+    CHECK_OPTION(ceres != nullptr);
+    return ceres->Check();
 }
 
 bool BundleAdjustmentOptions::Check() const {
-    CHECK_OPTION_GE(loss_function_scale, 0);
-    CHECK_OPTION_LT(max_num_images_direct_dense_cpu_solver,
-                    max_num_images_direct_sparse_cpu_solver);
-    CHECK_OPTION_LT(max_num_images_direct_dense_gpu_solver,
-                    max_num_images_direct_sparse_gpu_solver);
+    CHECK_OPTION_GE(min_track_length, 0);
+    switch (backend) {
+        case BundleAdjustmentBackend::CERES:
+            CHECK_OPTION(ceres != nullptr);
+            CHECK_OPTION(ceres->Check());
+            break;
+        case BundleAdjustmentBackend::CASPAR:
+            CHECK_OPTION(caspar != nullptr);
+            CHECK_OPTION(caspar->Check());
+            break;
+    }
     return true;
-}
-
-ceres::Solver::Options BundleAdjustmentOptions::CreateSolverOptions(
-        const BundleAdjustmentConfig& config,
-        const ceres::Problem& problem) const {
-    ceres::Solver::Options custom_solver_options = solver_options;
-    if (VLOG_IS_ON(2)) {
-        custom_solver_options.minimizer_progress_to_stdout = true;
-        custom_solver_options.logging_type =
-                ceres::LoggingType::PER_MINIMIZER_ITERATION;
-    }
-
-    const int num_images = config.NumImages();
-    const bool has_sparse =
-            custom_solver_options.sparse_linear_algebra_library_type !=
-            ceres::NO_SPARSE;
-
-    int max_num_images_direct_dense_solver =
-            max_num_images_direct_dense_cpu_solver;
-    int max_num_images_direct_sparse_solver =
-            max_num_images_direct_sparse_cpu_solver;
-
-    if (use_gpu) {
-        LOG_FIRST_N(WARNING, 1)
-                << "Ceres bundle adjustment is CPU-only in this build; "
-                   "use the independent Caspar backend for GPU BA.";
-    }
-
-    if (num_images <= max_num_images_direct_dense_solver) {
-        custom_solver_options.linear_solver_type = ceres::DENSE_SCHUR;
-    } else if (has_sparse &&
-               num_images <= max_num_images_direct_sparse_solver) {
-        custom_solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
-    } else {  // Indirect sparse (preconditioned CG) solver.
-        custom_solver_options.linear_solver_type = ceres::ITERATIVE_SCHUR;
-        custom_solver_options.preconditioner_type = ceres::SCHUR_JACOBI;
-    }
-
-    if (problem.NumResiduals() < min_num_residuals_for_cpu_multi_threading) {
-        custom_solver_options.num_threads = 1;
-#if CERES_VERSION_MAJOR < 2
-        custom_solver_options.num_linear_solver_threads = 1;
-#endif  // CERES_VERSION_MAJOR
-    } else {
-        custom_solver_options.num_threads =
-                GetEffectiveNumThreads(custom_solver_options.num_threads);
-#if CERES_VERSION_MAJOR < 2
-        custom_solver_options.num_linear_solver_threads =
-                GetEffectiveNumThreads(
-                        custom_solver_options.num_linear_solver_threads);
-#endif  // CERES_VERSION_MAJOR
-    }
-
-    std::string solver_error;
-    CHECK(custom_solver_options.IsValid(&solver_error)) << solver_error;
-    return custom_solver_options;
 }
 
 void PrintSolverSummary(const ceres::Solver::Summary& summary) {

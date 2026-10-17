@@ -34,3 +34,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qrmbg_helpers)
 add_test(NAME test_qrmbg_helpers COMMAND test_qrmbg_helpers)
+cloudviewer_set_plugin_test_env(test_qrmbg_helpers)

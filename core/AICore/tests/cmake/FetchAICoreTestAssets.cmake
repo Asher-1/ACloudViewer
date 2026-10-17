@@ -59,17 +59,67 @@ function(aicore_fetch_test_assets root)
         "${base}/PP-OCR/ppocr-rec-ch-f32.gguf" 10000000)
     _aicore_fetch_asset("${root}" "ocr_models/ppocr-det-ch-f32.gguf"
         "${base}/PP-OCR/ppocr-det-ch-f32.gguf" 4000000)
-    foreach(asset IN ITEMS rec_ch_input.npy rec_ch_reference.npy
-            det_ch_input.npy det_ch_reference.npy
-            layout_input.npy layout_head0.npy layout_head1.npy
-            layout_head2.npy layout_head3.npy layout_head4.npy
-            layout_head5.npy layout_head6.npy layout_head7.npy
-            layout_regions.json)
-        # Probe anchors live in their own release so the model releases
-        # carry GGUF weights (and the test-data zip) only.
+    _aicore_fetch_asset("${root}" "ocr_models/pplcnet-layout-f32.gguf"
+        "${base}/PP-OCR/pplcnet-layout-f32.gguf" 4000000)
+    _aicore_fetch_asset("${root}" "ocr_models/slanet-plus-table-f32.gguf"
+        "${base}/PP-OCR/slanet-plus-table-f32.gguf" 7000000)
+    # Probe anchors live in their own release so the model releases
+    # carry GGUF weights (and the test-data zip) only. The minimum size is
+    # per file class: the table decoder outputs and the JSON references are
+    # only kilobytes.
+    # The det/rec pairs are the real-image fixtures (export_ocr_fixture.py),
+    # published as <stem>_page_*.npy and stored under the probe's stable
+    # <stem>_*.npy names; their index is the sentinel that retires a cached
+    # synthetic pair of the same name.
+    if(NOT EXISTS "${root}/ocr_fixtures/ocr_page_fixtures.json")
+        foreach(stem IN ITEMS det_ch rec_ch rec_en)
+            file(REMOVE "${root}/ocr_fixtures/${stem}_input.npy"
+                        "${root}/ocr_fixtures/${stem}_reference.npy")
+        endforeach()
+    endif()
+    foreach(stem IN ITEMS det_ch rec_ch rec_en)
+        foreach(kind IN ITEMS input reference)
+            _aicore_fetch_asset("${root}" "ocr_fixtures/${stem}_${kind}.npy"
+                "${base}/ocr-fixtures/${stem}_page_${kind}.npy" 10000)
+        endforeach()
+    endforeach()
+    _aicore_fetch_asset("${root}" "ocr_fixtures/ocr_page_fixtures.json"
+        "${base}/ocr-fixtures/ocr_page_fixtures.json" 512)
+    foreach(asset IN ITEMS layout_input.npy table_0_input.npy table_1_input.npy
+            table_2_input.npy)
         _aicore_fetch_asset("${root}" "ocr_fixtures/${asset}"
             "${base}/ocr-fixtures/${asset}" 100000)
     endforeach()
+    foreach(asset IN ITEMS layout_head0.npy layout_head1.npy
+            layout_head2.npy layout_head3.npy layout_head4.npy
+            layout_head5.npy layout_head6.npy layout_head7.npy
+            table_0_probs.npy table_0_loc.npy table_1_probs.npy
+            table_1_loc.npy table_2_probs.npy table_2_loc.npy
+            table_fixtures.json layout_regions.json)
+        _aicore_fetch_asset("${root}" "ocr_fixtures/${asset}"
+            "${base}/ocr-fixtures/${asset}" 512)
+    endforeach()
+
+    # PaddleOCR test images + table GT (test_files/table.jpg, layout/ pages,
+    # tables/ real crops, table_rec/ val split) used by the table e2e test and
+    # the validation manifest; MANIFEST.txt pins every member. The sentinel is
+    # the newest member so an older extraction is refreshed.
+    set(ppocr_zip "${root}/ppocr_testdata.zip")
+    if(NOT EXISTS "${root}/ppocr_testdata/tables/table_recognition_v2.jpg")
+        file(REMOVE "${ppocr_zip}")
+        _aicore_fetch_asset("${root}" "ppocr_testdata.zip"
+            "${base}/PP-OCR/ppocr_testdata.zip" 1000000)
+        if(EXISTS "${ppocr_zip}")
+            execute_process(
+                COMMAND "${CMAKE_COMMAND}" -E tar xf "${ppocr_zip}"
+                WORKING_DIRECTORY "${root}"
+                RESULT_VARIABLE extract_result
+                ERROR_VARIABLE extract_error)
+            if(NOT extract_result EQUAL 0)
+                message(WARNING "AICore tests: could not extract ppocr_testdata.zip: ${extract_error}")
+            endif()
+        endif()
+    endif()
 
     set(lightglue_assets
         "sacre_coeur1.jpg"

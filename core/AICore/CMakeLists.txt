@@ -15,9 +15,13 @@
 #   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
 #   src/tasks/trellis/    — TRELLIS image-to-3D generation
 #   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
+#   src/tasks/map_anything/ — universal feed-forward metric 3D reconstruction
+#                           (map-anything-ggml cpp_ggml port: VGGT-Omega / VGGT /
+#                            Pi3 / Pi3X / MapAnything / DUSt3R)
 #   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
 #   src/tasks/loma/       — LoMa feature extraction and matching
 #   src/tasks/reid/       — appearance embeddings for multi-object tracking
+#   src/tasks/anycalib/   — AnyCalib single-image intrinsics (catalog; runtime gates pending)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -53,10 +57,12 @@ set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
 set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
 set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
 set(AICORE_OCR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr)
+set(AICORE_TABLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
 set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
+set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
 set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
 
@@ -93,13 +99,18 @@ file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DI
 file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_OCR_SOURCES CONFIGURE_DEPENDS ${AICORE_OCR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_TABLE_SOURCES CONFIGURE_DEPENDS ${AICORE_TABLE_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
 file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
+set(AICORE_ANYCALIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/anycalib)
+file(GLOB AICORE_ANYCALIB_SOURCES CONFIGURE_DEPENDS ${AICORE_ANYCALIB_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RELATION_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/relation/*.cpp)
 file(GLOB AICORE_TAGGING_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/tagging/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/*.cpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
@@ -131,6 +142,9 @@ endif()
 if(NOT EXISTS ${AICORE_GKD_SRC_DIR}/gkd_graph.cpp)
     message(FATAL_ERROR "AICore: missing GKD module at ${AICORE_GKD_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp)
+    message(FATAL_ERROR "AICore: missing MapAnything module at ${AICORE_MAP_ANYTHING_SRC_DIR}")
+endif()
 if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
     message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
 endif()
@@ -147,6 +161,10 @@ if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
     message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
 endif()
 
+option(MAP_ANYTHING_ENABLE_DUMP
+       "Compile qMapAnything parity stage dumps (debug-only, increases runtime I/O)"
+       OFF)
+
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
@@ -159,17 +177,73 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_RFDETR_SOURCES}
     ${AICORE_RMBG_SOURCES}
     ${AICORE_OCR_SOURCES}
+    ${AICORE_TABLE_SOURCES}
     ${AICORE_YOLO_SOURCES}
     ${AICORE_REID_SOURCES}
+    ${AICORE_ANYCALIB_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_RELATION_SOURCES}
     ${AICORE_TAGGING_SOURCES}
     ${AICORE_GKD_SOURCES}
+    ${AICORE_MAP_ANYTHING_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
     ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
     ${AICORE_API_HEADERS}
 )
+
+# LingBot host-side floating-point parity: the reference implementation
+# (upstream cpp_ggml) compiles WITHOUT -march (x86-64 baseline, no FMA),
+# while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to this tree. With
+# contraction enabled GCC fuses `a*b+c` into vfmadd inside the DINO
+# positional-table interpolation and the Pillow resample kernels, and the
+# resulting 1-ULP drift propagates through all 24 transformer blocks into
+# visibly different depth/pose output. Disabling contraction on the
+# lingbot TUs restores the reference bit-exact contract; ggml kernels are
+# unaffected (they are compiled in ext_ggml without -march).
+set_source_files_properties(
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_capi.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_skyseg.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_gguf_loader.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# MapAnything host-side floating-point parity: the reference implementation
+# (upstream map-anything-ggml cpp_ggml) compiles WITHOUT -march (x86-64
+# baseline, no FMA), while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to
+# this tree. With contraction enabled GCC fuses `a*b+c` into vfmadd inside
+# the graph-builder's host-side float math (RoPE cos/sin tables, mean/std
+# staging, DPT resample weight math), drifting 1-ULP through the 24
+# transformer blocks and visibly changing depth/pose output versus the
+# upstream parity feeds. Disabling contraction on the map_anything TUs
+# restores the reference bit-exact contract; ggml kernels are unaffected
+# (they are compiled in ext_ggml without -march).
+set_source_files_properties(
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_capi.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_gguf_loader.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_image_io.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# OCR det/rec geometry parity: ocr_rec_crop.cpp and ocr_db_postprocess.cpp
+# port cv2.minAreaRect / contourArea / arcLength / warpPerspective(
+# INTER_CUBIC) from OpenCV's x86-64 baseline build and the Clipper offset
+# pyclipper ships, neither of which fuses a*b+c. A fused rotatingCalipers /
+# perspective-matrix product moves box corners by 1 ULP (628 of the 720 rec
+# crop golden boxes with -ffp-contract=fast) and flips cubic table cells, so
+# these TUs keep separate roundings (tests/ocr/test_ocr_rec_crop and
+# test_ocr_db_postprocess compare bytes). MSVC does not contract without
+# /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_OCR_SRC_DIR}/ocr_rec_crop.cpp
+        ${AICORE_OCR_SRC_DIR}/ocr_db_postprocess.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
+if(MAP_ANYTHING_ENABLE_DUMP)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MAP_ANYTHING_ENABLE_DUMP)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     POSITION_INDEPENDENT_CODE ON
@@ -224,10 +298,12 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_RFDETR_SRC_DIR}
         ${AICORE_RMBG_SRC_DIR}
         ${AICORE_OCR_SRC_DIR}
+        ${AICORE_TABLE_SRC_DIR}
         ${AICORE_YOLO_SRC_DIR}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
         ${AICORE_GKD_SRC_DIR}
+        ${AICORE_MAP_ANYTHING_SRC_DIR}
         ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
@@ -447,7 +523,7 @@ else()
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
             set_source_files_properties(
                 ${AICORE_COMMON_SRC_DIR}/winograd.cpp
-                ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
+                ${AICORE_COMMON_SRC_DIR}/blocked_conv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
     endif()
@@ -556,8 +632,8 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
 endif()
 
 set(_aicore_enabled_task_names
-    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma reid
-    rfdetr rmbg sam3 sam3d tagging relation trellis yolo)
+    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
+    reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -671,10 +747,22 @@ message(STATUS "AICore (SHARED): tasks=${_aicore_enabled_tasks_csv}; ggml linked
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
 
+# End-to-end OCR benchmark (det+rec per image, p50/p95); the official
+# PaddleOCR counterpart lives in scripts/bench_paddle_official.py.
+add_executable(bench_ocr tools/bench_ocr.cpp)
+target_link_libraries(bench_ocr PRIVATE AICore)
+
+# Headless table reconstruction driver (OCR + table, one JSON line per
+# image); scripts/run_table_gt_matrix.py scores its HTML against GT.
+add_executable(bench_table tools/bench_table.cpp)
+target_link_libraries(bench_table PRIVATE AICore)
+
 add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
     # Winograd conv custom op (routed by the CPU-session graph build).
     src/common/winograd.cpp
+    # Blocked-layout island ops (routed by the CPU-session graph build).
+    src/common/blocked_conv.cpp
     # Backend discovery helpers referenced by the probe (dynamic-loader
     # backend registration lives in the env bridge).
     src/common/ggml_env_bridge.cpp)
@@ -687,6 +775,16 @@ target_include_directories(test_ocr_runtime PRIVATE
 # parity ctest stays runnable while unrelated task sources (e.g. the sam3d
 # vendor migration) break the main-library closure.
 target_link_libraries(test_ocr_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+
+# AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
+# Runtime golden fixtures shipped in the anycalib release. Sources are
+# compiled into the target like the OCR probe so the parity ctest stays
+# runnable while unrelated task sources break the main-library closure.
+add_executable(anycalib_parity_probe tests/anycalib/anycalib_parity_probe.cpp)
+target_include_directories(anycalib_parity_probe PRIVATE ${AICORE_INC_DIR})
+target_link_libraries(anycalib_parity_probe PRIVATE AICore)
+set_target_properties(anycalib_parity_probe PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 set_target_properties(test_ocr_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
@@ -694,6 +792,39 @@ set_target_properties(test_ocr_runtime PROPERTIES
     # every device except the caller's own registrations disappears.
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN")
+# Layout the probe under bin/aicore_tests/ together with the ggml backend
+# copies (batch C test-layout fix; the probe does not go through the
+# tests/CMakeLists.txt that already applies the layout function).
+cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
+
+# Table-structure parity probe: the SLANet encoder runs on the OCR
+# interpreter, so it compiles the same closure plus the table runtime.
+add_executable(test_table_runtime tests/test_table_runtime.cpp
+    src/tasks/table/table_runtime.cpp
+    src/tasks/ocr/ocr_runtime.cpp
+    src/common/winograd.cpp
+    src/common/blocked_conv.cpp
+    src/common/ggml_env_bridge.cpp)
+target_include_directories(test_table_runtime PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
+    ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(test_table_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+set_target_properties(test_table_runtime PROPERTIES
+    POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN")
+cloudviewer_set_aicore_test_runtime_layout(test_table_runtime)
+# The probe_ocr_* / probe_table CTests (tests/CMakeLists.txt, labels
+# capi;model) run these binaries, but tests/ is configured before they
+# exist, so the label-derived tier DEPENDS cannot see them: attach here.
+if(TARGET aicore-model-tests)
+    add_dependencies(aicore-model-tests test_ocr_runtime test_table_runtime)
+endif()
+if(TARGET aicore-contract-tests AND AICORE_TEST_ENABLE_MODEL_TESTS)
+    add_dependencies(aicore-contract-tests test_ocr_runtime test_table_runtime)
+endif()
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()

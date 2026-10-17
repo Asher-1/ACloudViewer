@@ -45,7 +45,9 @@ int RunDatabaseCleaner(int argc, char** argv) {
   OptionManager options;
   options.AddRequiredOption("type", &type, "{all, images, features, matches}");
   options.AddDatabaseOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   StringToLower(&type);
   auto database = Database::Open(*options.database_path);
@@ -83,7 +85,9 @@ int RunDatabaseCleaner(int argc, char** argv) {
 int RunDatabaseCreator(int argc, char** argv) {
   OptionManager options;
   options.AddDatabaseOptions();
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   auto database = Database::Open(*options.database_path);
 
@@ -99,7 +103,9 @@ int RunDatabaseMerger(int argc, char** argv) {
   options.AddRequiredOption("database_path1", &database_path1);
   options.AddRequiredOption("database_path2", &database_path2);
   options.AddRequiredOption("merged_database_path", &merged_database_path);
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   if (ExistsFile(merged_database_path)) {
     std::cout << "WARNING: Merged database file must not exist." << std::endl;
@@ -136,7 +142,9 @@ int RunRigConfigurator(int argc, char** argv) {
         "output_path",
         &output_path,
         "Optional output reconstruction with configured rigs/frames.");
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     std::optional<Reconstruction> reconstruction;
     if (!input_path.empty()) {

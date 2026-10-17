@@ -17,6 +17,7 @@
 #include <QMessageBox>
 #include <QUuid>
 
+#include "FaceDetectBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -46,6 +47,14 @@ qFaceDetect::qFaceDetect(QObject* parent)
 }
 
 QList<QAction*> qFaceDetect::getActions() { return {m_action}; }
+
+void qFaceDetect::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandFaceDetect));
+}
 
 void qFaceDetect::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

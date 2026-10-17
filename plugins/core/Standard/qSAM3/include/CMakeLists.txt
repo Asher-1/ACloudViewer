@@ -9,4 +9,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/VideoWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/VideoTab.h
         ${CMAKE_CURRENT_LIST_DIR}/VideoMaskArchive.h
+        ${CMAKE_CURRENT_LIST_DIR}/SAM3BatchCommand.h
 )

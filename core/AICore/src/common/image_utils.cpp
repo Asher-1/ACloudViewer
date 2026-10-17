@@ -8,10 +8,13 @@
 #include "common/image_utils.hpp"
 
 #include <QImage>
+#include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <thread>
 #include <utility>
 
 #include "common/capi_utils.hpp"
@@ -113,12 +116,19 @@ bool image_from_view(const aicore_image_view& view, Image& out) {
     return true;
 }
 
-// OpenCV cv2.resize INTER_LINEAR: the per-axis fixed-point coefficients match
-// OpenCV's 11-bit alpha/beta layout, and the vertical multiply rounds through
-// a 22-bit shift. The horizontal pass stays scalar (the SIMD path in OpenCV
-// narrows the intermediate result to int16 first, so this version differs by
-// at most 1 on a minority of pixels; parity gates feed the reference's exact
-// resized pixels where that matters).
+// OpenCV cv2.resize INTER_LINEAR on 8U, bit-exact (imgproc/src/resize.cpp):
+//  - 11-bit alpha/beta from float (1 - f, f), rounded by saturate_cast;
+//  - x: sx < 0 or sx >= w - 1 clamps the index AND zeroes fx;
+//  - y: fy is kept as computed and only the two source row indices clamp
+//    (resizeGeneric_Invoker), so the first/last upscaled rows still split
+//    the weight across two copies of the edge row;
+//  - vertical pass: the uchar VResizeLinear specialization (scalar tail and
+//    VResizeLinearVec_32s8u alike) evaluates
+//      ((b0 * (S0 >> 4)) >> 16) + ((b1 * (S1 >> 4)) >> 16) + 2) >> 2,
+//    not the generic (b0 * S0 + b1 * S1 + 2^21) >> 22 rounding.
+// The generic rounding and the clamped fy differed by 1 LSB on 3-11% of the
+// pixels of real table/OCR inputs, enough to flip a borderline SLANet token
+// (table_recognition_v2.jpg: rowspan 9 -> 4) on identical decoded pixels.
 void cv_resize_linear_u8(
         const Image& src, uint8_t* dst, int dw, int dh, int cn) {
     const int sw = src.width;
@@ -133,7 +143,9 @@ void cv_resize_linear_u8(
     std::vector<int> ialpha(dw * 2);
     std::vector<int> yofs(dh);
     std::vector<int> ibeta(dh * 2);
-    const double sxs = (double)sw / dw, sys = (double)sh / dh;
+    // scale = 1 / inv_scale with inv_scale = dsize / ssize, as OpenCV does
+    // (not ssize / dsize: the two differ in the last ulp for some sizes).
+    const double sxs = 1.0 / ((double)dw / sw), sys = 1.0 / ((double)dh / sh);
     for (int dx = 0; dx < dw; ++dx) {
         float fx = (float)((dx + 0.5) * sxs - 0.5);
         int sx = (int)std::floor(fx);
@@ -152,37 +164,68 @@ void cv_resize_linear_u8(
     }
     for (int dy = 0; dy < dh; ++dy) {
         float fy = (float)((dy + 0.5) * sys - 0.5);
-        int sy = (int)std::floor(fy);
+        const int sy = (int)std::floor(fy);
         fy -= sy;
-        if (sy < 0) {
-            sy = 0;
-            fy = 0.f;
-        }
-        if (sy >= sh - 1) {
-            sy = sh - 1;
-            fy = 0.f;
-        }
         yofs[dy] = sy;
         ibeta[dy * 2] = sat_short((1.f - fy) * SCALE);
         ibeta[dy * 2 + 1] = sat_short(fy * SCALE);
     }
-    for (int dy = 0; dy < dh; ++dy) {
-        const int sy0 = yofs[dy], sy1 = std::min(sy0 + 1, sh - 1);
+    // Per-row fill: rows are independent (each reads a fixed two-row band
+    // of the source). Large outputs (det pre-process resizes 736-row images
+    // every frame) fill in parallel; small crops (rec, 48 rows) stay
+    // serial — the per-call thread pool costs more than the fill itself.
+    // Source addressing is hoisted out of the pixel loop (see Image::row):
+    // same bytes as channel(x, y, c), without the per-sample branches.
+    const int scn = src.channels;
+    int cmap[4] = {0, 0, 0, 0};
+    for (int c = 0; c < cn && c < 4; ++c) cmap[c] = src.channel_index(c);
+    auto fillRow = [&](int dy) {
+        const int sy0 = std::clamp(yofs[dy], 0, sh - 1);
+        const int sy1 = std::clamp(yofs[dy] + 1, 0, sh - 1);
         const int b0 = ibeta[dy * 2], b1 = ibeta[dy * 2 + 1];
+        const uint8_t* srow0 = src.row(sy0);
+        const uint8_t* srow1 = src.row(sy1);
         uint8_t* drow = dst + (size_t)dy * dw * cn;
         for (int dx = 0; dx < dw; ++dx) {
             const int sx = xofs[dx], sx1 = std::min(sx + 1, sw - 1);
             const int a0 = ialpha[dx * 2], a1 = ialpha[dx * 2 + 1];
+            const uint8_t* s00 = srow0 + (size_t)sx * scn;
+            const uint8_t* s01 = srow0 + (size_t)sx1 * scn;
+            const uint8_t* s10 = srow1 + (size_t)sx * scn;
+            const uint8_t* s11 = srow1 + (size_t)sx1 * scn;
             for (int c = 0; c < cn; ++c) {
-                const int p0 = src.channel(sx, sy0, c) * a0 +
-                               src.channel(sx1, sy0, c) * a1;
-                const int p1 = src.channel(sx, sy1, c) * a0 +
-                               src.channel(sx1, sy1, c) * a1;
-                int v = ((int64_t)p0 * b0 + (int64_t)p1 * b1 + (1 << 21)) >> 22;
+                const int ci = cmap[c];
+                const int p0 = s00[ci] * a0 + s01[ci] * a1;
+                const int p1 = s10[ci] * a0 + s11[ci] * a1;
+                int v = (((b0 * (p0 >> 4)) >> 16) + ((b1 * (p1 >> 4)) >> 16) +
+                         2) >>
+                        2;
                 v = v < 0 ? 0 : (v > 255 ? 255 : v);
                 drow[dx * cn + c] = (uint8_t)v;
             }
         }
+    };
+    const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
+    if (hw > 1 && dh >= 256 && (unsigned)dh > hw) {
+        std::atomic<int> nextRow{0};
+        std::vector<std::thread> pool;
+        pool.reserve(hw - 1);
+        for (unsigned i = 1; i < hw; ++i)
+            pool.emplace_back([&] {
+                for (;;) {
+                    const int dy = nextRow.fetch_add(1);
+                    if (dy >= dh) return;
+                    fillRow(dy);
+                }
+            });
+        for (;;) {
+            const int dy = nextRow.fetch_add(1);
+            if (dy >= dh) break;
+            fillRow(dy);
+        }
+        for (auto& t : pool) t.join();
+    } else {
+        for (int dy = 0; dy < dh; ++dy) fillRow(dy);
     }
 }
 

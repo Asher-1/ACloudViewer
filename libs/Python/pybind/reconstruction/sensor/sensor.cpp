@@ -23,8 +23,6 @@ namespace sensor {
 // copies of the packed row-major pixel storage.
 using colmap::Bitmap;
 using colmap::BitmapColor;
-using colmap::BitmapFormat;
-using colmap::BitmapRescaleFilter;
 
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
@@ -37,17 +35,10 @@ static const std::unordered_map<std::string, std::string>
 void pybind_sensor(py::module& m) {
     py::module m_sensor = m.def_submodule("sensor");
 
-    py::enum_<BitmapFormat>(m_sensor, "BitmapFormat",
-                            "Image file format selectors.")
-            .value("UNKNOWN", BitmapFormat::kUnknown)
-            .value("PNG", BitmapFormat::kPng)
-            .value("JPEG", BitmapFormat::kJpeg)
-            .value("TIFF", BitmapFormat::kTiff);
-
-    py::enum_<BitmapRescaleFilter>(m_sensor, "BitmapRescaleFilter",
-                                   "Rescaling filters.")
-            .value("BILINEAR", BitmapRescaleFilter::kBilinear)
-            .value("BOX", BitmapRescaleFilter::kBox);
+    py::enum_<Bitmap::RescaleFilter>(m_sensor, "BitmapRescaleFilter",
+                                     "Rescaling filters.")
+            .value("BILINEAR", Bitmap::RescaleFilter::kBilinear)
+            .value("BOX", Bitmap::RescaleFilter::kBox);
 
     py::class_<BitmapColor<uint8_t>> bitmap_color(m_sensor, "BitmapColor",
                                                   "An 8-bit RGB pixel color.");
@@ -91,20 +82,21 @@ void pybind_sensor(py::module& m) {
             .def_property_readonly("num_bytes", &Bitmap::NumBytes)
             .def(
                     "read",
-                    [](Bitmap& self, const std::string& path, bool as_rgb) {
-                        return self.Read(path, as_rgb);
+                    [](Bitmap& self, const std::string& path, bool as_rgb,
+                       bool linearize_colorspace) {
+                        return self.Read(path, as_rgb, linearize_colorspace);
                     },
                     "path"_a, "as_rgb"_a = true,
+                    "linearize_colorspace"_a = false,
                     "Read the image from the given path.")
             .def(
                     "write",
                     [](const Bitmap& self, const std::string& path,
-                       BitmapFormat format,
-                       int flags) { return self.Write(path, format, flags); },
-                    "path"_a, "format"_a = BitmapFormat::kUnknown,
-                    "flags"_a = 0,
-                    "Write the image to the given path (flags is the JPEG "
-                    "quality [1, 100]).")
+                       bool delinearize_colorspace) {
+                        return self.Write(path, delinearize_colorspace);
+                    },
+                    "path"_a, "delinearize_colorspace"_a = true,
+                    "Write the image to the given path.")
             .def(
                     "array",
                     [](const Bitmap& self) {
@@ -194,13 +186,81 @@ void pybind_sensor(py::module& m) {
             .def("smooth", &Bitmap::Smooth, "sigma_x"_a, "sigma_y"_a,
                  "Smooth the image with a Gaussian kernel.")
             .def("rescale", &Bitmap::Rescale, "new_width"_a, "new_height"_a,
-                 "filter"_a = BitmapRescaleFilter::kBilinear,
+                 "filter"_a = Bitmap::RescaleFilter::kBilinear,
                  "Rescale the image to the new dimensions.")
             .def("clone", &Bitmap::Clone, "Return a copy of the image.")
             .def("clone_as_grey", &Bitmap::CloneAsGrey,
                  "Return a grayscale copy of the image.")
             .def("clone_as_rgb", &Bitmap::CloneAsRGB,
                  "Return an RGB copy of the image.")
+            // Upstream pycolmap parity (d3ccaf35 sensor/bitmap.cc).
+            // Rot90 is overloaded (bool counterclockwise / int quarter
+            // turns since the calibration module port) — disambiguate the
+            // bool form for this binding.
+            .def("rot90", static_cast<void (Bitmap::*)(bool)>(&Bitmap::Rot90),
+                 "counterclockwise"_a = false,
+                 "Rotate the image in place by 90 degrees.")
+            .def("rot90_quarter_turns",
+                 static_cast<void (Bitmap::*)(int)>(&Bitmap::Rot90),
+                 "num_quarter_turns"_a,
+                 "Rotate the image in place by num_quarter_turns "
+                 "counter-clockwise quarter turns (k % 4).")
+            .def("set_jpeg_quality", &Bitmap::SetJPEGQuality, "quality"_a,
+                 "Set the JPEG quality (0-100) used by subsequent writes; "
+                 "-1 keeps caller-supplied flags untouched.")
+            .def("jpeg_quality", &Bitmap::JPEGQuality,
+                 "The configured JPEG quality or -1.")
+            .def(
+                    "thumbnail",
+                    [](Bitmap& self, int max_width, int max_height) {
+                        // Upstream semantics: rescale in place so that both
+                        // dimensions stay within the given maxima while
+                        // preserving the aspect ratio.
+                        THROW_CHECK_GT(max_width, 0);
+                        THROW_CHECK_GT(max_height, 0);
+                        const int w = self.Width();
+                        const int h = self.Height();
+                        if (w <= max_width && h <= max_height) {
+                            return;
+                        }
+                        const double scale_w =
+                                static_cast<double>(max_width) / w;
+                        const double scale_h =
+                                static_cast<double>(max_height) / h;
+                        const double scale = std::min(scale_w, scale_h);
+                        self.Rescale(static_cast<int>(w * scale),
+                                     static_cast<int>(h * scale),
+                                     colmap::Bitmap::RescaleFilter::kBilinear);
+                    },
+                    "max_width"_a, "max_height"_a,
+                    "Rescale the image in place so both dimensions stay "
+                    "within the given maxima, preserving the aspect ratio.")
+            .def(
+                    "to_array",
+                    [](const Bitmap& self) -> py::object {
+                        const int w = self.Width();
+                        const int h = self.Height();
+                        py::array_t<uint8_t> out({static_cast<py::ssize_t>(h),
+                                                  static_cast<py::ssize_t>(w),
+                                                  py::ssize_t(3)});
+                        auto buf = out.mutable_unchecked<3>();
+                        for (py::ssize_t y = 0; y < buf.shape(0); ++y) {
+                            for (py::ssize_t x = 0; x < buf.shape(1); ++x) {
+                                colmap::BitmapColor<uint8_t> color;
+                                if (!self.GetPixel(static_cast<int>(x),
+                                                   static_cast<int>(y),
+                                                   &color)) {
+                                    return py::none();
+                                }
+                                buf(y, x, 0) = color.r;
+                                buf(y, x, 1) = color.g;
+                                buf(y, x, 2) = color.b;
+                            }
+                        }
+                        return out;
+                    },
+                    "uint8 array of shape (height, width, 3) or None for "
+                    "grey-scale bitmaps.")
             .def(
                     "exif_focal_length",
                     [](const Bitmap& self) -> py::object {

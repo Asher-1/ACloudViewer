@@ -183,6 +183,13 @@ QVector<YOLOModelEntry> taskModels(const QString& task);
  *  the task's role view (aicore_yolo_model_default_index); -1 when AICore
  *  is not available or the task is unknown. */
 int defaultModelIndexForTask(const QString& task);
+/** Default text-encoder GGUF filename of an open-vocabulary family
+ *  ("world" -> CLIP ViT-B/32, "yoloe" -> MobileCLIP2-B). Shared by the
+ *  dialog's text-model combo and the -YOLO_PREDICT batch command. */
+QString defaultTextModelForTask(const QString& task);
+/** Open-vocabulary family of a catalog filename: "world", "yoloe" or empty
+ *  for closed-set / unknown models. */
+QString openVocabularyFamily(const QString& filename);
 /** Lookup by GGUF filename; returns false when unknown. */
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out);
 

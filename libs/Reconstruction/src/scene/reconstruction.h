@@ -12,6 +12,7 @@
 // clang-format on
 
 #include <filesystem>
+#include <stdexcept>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -29,6 +30,8 @@
 #include "scene/point3d.h"
 #include "scene/rig.h"
 #include "scene/track.h"
+#include "util/hash_containers.h"
+#include "util/string.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -43,13 +46,6 @@ class CorrespondenceGraph;
 // written to and read from disk.
 class Reconstruction {
 public:
-    struct ImagePairStat {
-        // The number of triangulated correspondences between two images.
-        size_t num_tri_corrs = 0;
-        // The number of total correspondences/matches between two images.
-        size_t num_total_corrs = 0;
-    };
-
     Reconstruction();
 
     // Copy construct/assign. Updates camera pointers.
@@ -72,7 +68,6 @@ public:
     inline size_t NumRegFrames() const { return reg_frame_ids_.size(); }
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
-    inline size_t NumImagePairs() const;
     inline size_t NumAddedPoints3D() const;
 
     // Get const objects.
@@ -81,9 +76,6 @@ public:
     inline const class Rig& Rig(const rig_t rig_id) const;
     inline const class Frame& Frame(const frame_t frame_id) const;
     inline const class Point3D& Point3D(const point3D_t point3D_id) const;
-    inline const ImagePairStat& ImagePair(const image_pair_t pair_id) const;
-    inline ImagePairStat& ImagePair(const image_t image_id1,
-                                    const image_t image_id2);
 
     // Get mutable objects.
     inline class Camera& Camera(const camera_t camera_id);
@@ -91,18 +83,17 @@ public:
     inline class Rig& Rig(const rig_t rig_id);
     inline class Frame& Frame(const frame_t frame_id);
     inline class Point3D& Point3D(const point3D_t point3D_id);
-    inline ImagePairStat& ImagePair(const image_pair_t pair_id);
-    inline const ImagePairStat& ImagePair(const image_t image_id1,
-                                          const image_t image_id2) const;
 
     // Get reference to all objects.
-    inline const std::unordered_map<camera_t, class Camera>& Cameras() const;
-    inline const std::unordered_map<image_t, class Image>& Images() const;
-    inline const std::unordered_map<rig_t, class Rig>& Rigs() const;
-    inline const std::unordered_map<frame_t, class Frame>& Frames() const;
+    inline const NodeHashMap<camera_t, class Camera>& Cameras() const;
+    inline const NodeHashMap<image_t, class Image>& Images() const;
+    inline const NodeHashMap<rig_t, class Rig>& Rigs() const;
+    inline const NodeHashMap<frame_t, class Frame>& Frames() const;
 
-    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
-    std::unordered_set<frame_t> RegFrameIds() const;
+    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames, in
+    // registration order (upstream holds them in a std::vector; the
+    // enumeration order is part of the observable API surface).
+    const std::vector<frame_t>& RegFrameIds() const;
 
     // Fork: the database round-trip persists frame poses (a fork extension
     // absent upstream); a freshly loaded reconstruction starts unregistered.
@@ -112,13 +103,16 @@ public:
     // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
     // points after batch modifications.
     void UpdatePoint3DErrors();
-    inline const std::vector<image_t>& RegImageIds() const;
-    inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
-    inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
-            const;
+    std::vector<image_t> RegImageIds() const;
+    inline const NodeHashMap<point3D_t, class Point3D>& Points3D() const;
 
     // Identifiers of all 3D points.
-    std::unordered_set<point3D_t> Point3DIds() const;
+    NodeHashSet<point3D_t> Point3DIds() const;
+
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): check the internal
+    // consistency of rig/frame/image/camera associations, 2D-3D track
+    // references in both directions, and registered frame poses.
+    bool IsValid() const;
 
     // Check whether specific object exists.
     inline bool ExistsCamera(const camera_t camera_id) const;
@@ -126,14 +120,17 @@ public:
     inline bool ExistsRig(const rig_t rig_id) const;
     inline bool ExistsFrame(const frame_t frame_id) const;
     inline bool ExistsPoint3D(const point3D_t point3D_id) const;
-    inline bool ExistsImagePair(const image_pair_t pair_id) const;
 
     // Load data from given `DatabaseCache`.
     void Load(const DatabaseCache& database_cache);
 
     // Setup all relevant data structures before reconstruction. Note the
     // correspondence graph object must live until `TearDown` is called.
-    void SetUp(const CorrespondenceGraph* correspondence_graph);
+    // Ownership: the reconstruction keeps the graph alive. The raw
+    // back-pointer dangled once the controller's DatabaseCache died,
+    // surfacing as _Map_base::at in cross-run scenarios (batch C). Upstream
+    // has no back-pointer here; the legacy fork bookkeeping still reads
+    // the graph, so it holds a shared reference instead.
 
     // Finalize the Reconstruction after the reconstruction has finished.
     //
@@ -197,6 +194,12 @@ public:
     // Delete all 2D points of all images and all 3D points.
     void DeleteAllPoints2DAndPoints3D();
 
+    // Fork variant (batch S): clear all 3D points and their 2D->3D
+    // observation links while KEEPING the 2D keypoint coordinates - the
+    // input data a retriangulation pass needs. Unlike
+    // DeleteAllPoints2DAndPoints3D, images retain NumPoints2D() > 0.
+    void DeleteAllPoints3D();
+
     // Register an existing image.
     void RegisterImage(const image_t image_id);
 
@@ -231,18 +234,23 @@ public:
     // Scales scene such that the minimum and maximum camera centers are at the
     // given `extent`, whereas `p0` and `p1` determine the minimum and
     // maximum percentiles of the camera centers considered.
-    void Normalize(const double extent = 10.0,
-                   const double p0 = 0.1,
-                   const double p1 = 0.9,
-                   const bool use_images = true);
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): normalizes in place
+    // and returns the applied transform; `fixed_scale` keeps the current
+    // scale and only centers the scene.
+    Sim3d Normalize(bool fixed_scale = false,
+                    double extent = 10.0,
+                    double min_percentile = 0.1,
+                    double max_percentile = 0.9,
+                    bool use_images = true);
 
     // Compute the centroid of the 3D points
     Eigen::Vector3d ComputeCentroid(const double p0 = 0.1,
                                     const double p1 = 0.9) const;
 
     // Compute the bounding box corners of the 3D points
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> ComputeBoundingBox(
-            const double p0 = 0.0, const double p1 = 1.0) const;
+    Eigen::AlignedBox3d ComputeBoundingBox(double min_percentile = 0.0,
+                                           double max_percentile = 1.0,
+                                           bool use_images = false) const;
 
     // Apply the 3D similarity transformation to all images and points.
     void Transform(const SimilarityTransform3& tform);
@@ -254,8 +262,7 @@ public:
     // of the bounding box containing the included 3D points of the new
     // reconstruction. Only the cameras and images of the included points are
     // registered.
-    Reconstruction Crop(
-            const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const;
+    Reconstruction Crop(const Eigen::AlignedBox3d& bbox) const;
 
     // Merge the given reconstruction into this reconstruction by registering
     // the images registered in the given but not in this reconstruction and by
@@ -306,12 +313,7 @@ public:
     // @return                    The number of filtered observations.
     size_t FilterPoints3D(const double max_reproj_error,
                           const double min_tri_angle,
-                          const std::unordered_set<point3D_t>& point3D_ids);
-    size_t FilterPoints3DInImages(const double max_reproj_error,
-                                  const double min_tri_angle,
-                                  const std::unordered_set<image_t>& image_ids);
-    size_t FilterAllPoints3D(const double max_reproj_error,
-                             const double min_tri_angle);
+                          const NodeHashSet<point3D_t>& point3D_ids);
 
     // Filter observations that have negative depth.
     //
@@ -374,48 +376,43 @@ public:
     // Create all image sub-directories in the given path.
     void CreateImageDirs(const std::filesystem::path& path) const;
 
-    // Access the correspondence graph.
-    inline const CorrespondenceGraph* GetCorrespondenceGraph() const;
-    inline bool HasCorrespondenceGraph() const;
-
 private:
+    // Reset all reconstruction data and bookkeeping state, so that this
+    // object can be reused to load a replacement model (see ReadText and
+    // ReadBinary).
+    void Clear();
+
     size_t FilterPoints3DWithSmallTriangulationAngle(
             const double min_tri_angle,
-            const std::unordered_set<point3D_t>& point3D_ids);
+            const NodeHashSet<point3D_t>& point3D_ids);
     size_t FilterPoints3DWithLargeReprojectionError(
             const double max_reproj_error,
-            const std::unordered_set<point3D_t>& point3D_ids);
+            const NodeHashSet<point3D_t>& point3D_ids);
 
     std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d>
     ComputeBoundsAndCentroid(const double p0,
                              const double p1,
                              const bool use_images) const;
 
-    void SetObservationAsTriangulated(const image_t image_id,
-                                      const point2D_t point2D_idx,
-                                      const bool is_continued_point3D);
-    void ResetTriObservations(const image_t image_id,
-                              const point2D_t point2D_idx,
-                              const bool is_deleted_point3D);
+    NodeHashMap<camera_t, class Camera> cameras_;
+    NodeHashMap<image_t, class Image> images_;
+    NodeHashMap<rig_t, class Rig> rigs_;
+    NodeHashMap<frame_t, class Frame> frames_;
+    NodeHashMap<point3D_t, class Point3D> points3D_;
 
-    const CorrespondenceGraph* correspondence_graph_;
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): the registered-image
+    // count is a frame-level counter maintained exclusively by
+    // RegisterFrame/DeRegisterFrame (not derived from an image-level cache),
+    // so it stays correct even when the frame's images have not been added
+    // (or have been removed) yet.
+    size_t num_reg_images_ = 0;
 
-    std::unordered_map<camera_t, class Camera> cameras_;
-    std::unordered_map<image_t, class Image> images_;
-    std::unordered_map<rig_t, class Rig> rigs_;
-    std::unordered_map<frame_t, class Frame> frames_;
-    std::unordered_map<point3D_t, class Point3D> points3D_;
-
-    std::unordered_map<image_pair_t, ImagePairStat> image_pair_stats_;
-
-    // { image_id, ... } where `images_.at(image_id).registered == true`.
-    std::vector<image_t> reg_image_ids_;
-
-    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): the explicit
-    // frame-level registration fact. Maintained in lockstep with
-    // `reg_image_ids_` by RegisterFrame/RegisterImage; AddFrame registers
-    // frames that carry a pose, as upstream does.
-    std::unordered_set<frame_t> reg_frame_ids_;
+    // Upstream parity (d3ccaf35 scene/reconstruction.h): the explicit
+    // frame-level registration fact, held as a vector in registration
+    // order (batch T: the fork's earlier NodeHashSet enumerated in hash
+    // order, which diverged from upstream's observable RegImageIds()
+    // order and broke order-sensitive consumers/tests).
+    std::vector<frame_t> reg_frame_ids_;
 
     // Total number of added 3D points, used to generate unique identifiers.
     point3D_t num_added_points3D_;
@@ -433,103 +430,142 @@ size_t Reconstruction::NumRigs() const { return rigs_.size(); }
 
 size_t Reconstruction::NumFrames() const { return frames_.size(); }
 
-size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
+size_t Reconstruction::NumRegImages() const { return num_reg_images_; }
 
 size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
-
-size_t Reconstruction::NumImagePairs() const {
-    return image_pair_stats_.size();
-}
 
 size_t Reconstruction::NumAddedPoints3D() const { return num_added_points3D_; }
 
 const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
-    return cameras_.at(camera_id);
+    try {
+        return cameras_.at(camera_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Camera with ID %d does not exist", camera_id));
+    }
 }
 
 const class Image& Reconstruction::Image(const image_t image_id) const {
-    return images_.at(image_id);
+    try {
+        return images_.at(image_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
 const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
-    return rigs_.at(rig_id);
+    try {
+        return rigs_.at(rig_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Rig with ID %d does not exist", rig_id));
+    }
 }
 
 const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
-    return frames_.at(frame_id);
+    try {
+        return frames_.at(frame_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Frame with ID %d does not exist", frame_id));
+    }
 }
 
 const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
-    return points3D_.at(point3D_id);
-}
-
-const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_pair_t pair_id) const {
-    return image_pair_stats_.at(pair_id);
-}
-
-const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_t image_id1, const image_t image_id2) const {
-    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
-    return image_pair_stats_.at(pair_id);
+    try {
+        return points3D_.at(point3D_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Point3D with ID %d does not exist", point3D_id));
+    }
 }
 
 class Camera& Reconstruction::Camera(const camera_t camera_id) {
-    return cameras_.at(camera_id);
+    try {
+        return cameras_.at(camera_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Camera with ID %d does not exist", camera_id));
+    }
 }
 
 class Image& Reconstruction::Image(const image_t image_id) {
-    return images_.at(image_id);
+    try {
+        return images_.at(image_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
-class Rig& Reconstruction::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+class Rig& Reconstruction::Rig(const rig_t rig_id) {
+    try {
+        return rigs_.at(rig_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Rig with ID %d does not exist", rig_id));
+    }
+}
 
 class Frame& Reconstruction::Frame(const frame_t frame_id) {
-    return frames_.at(frame_id);
+    try {
+        return frames_.at(frame_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Frame with ID %d does not exist", frame_id));
+    }
 }
 
 class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
-    return points3D_.at(point3D_id);
+    try {
+        return points3D_.at(point3D_id);
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Point3D with ID %d does not exist", point3D_id));
+    }
 }
 
-Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_pair_t pair_id) {
-    return image_pair_stats_.at(pair_id);
-}
-
-Reconstruction::ImagePairStat& Reconstruction::ImagePair(
-        const image_t image_id1, const image_t image_id2) {
-    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
-    return image_pair_stats_.at(pair_id);
-}
-
-const std::unordered_map<camera_t, Camera>& Reconstruction::Cameras() const {
+const NodeHashMap<camera_t, Camera>& Reconstruction::Cameras() const {
     return cameras_;
 }
 
-const std::unordered_map<image_t, class Image>& Reconstruction::Images() const {
+const NodeHashMap<image_t, class Image>& Reconstruction::Images() const {
     return images_;
 }
 
-const std::unordered_map<rig_t, class Rig>& Reconstruction::Rigs() const {
+const NodeHashMap<rig_t, class Rig>& Reconstruction::Rigs() const {
     return rigs_;
 }
 
-const std::unordered_map<frame_t, class Frame>& Reconstruction::Frames() const {
+const NodeHashMap<frame_t, class Frame>& Reconstruction::Frames() const {
     return frames_;
 }
 
-const std::vector<image_t>& Reconstruction::RegImageIds() const {
-    return reg_image_ids_;
+// Upstream parity (d3ccaf35 scene/reconstruction.cc): derived from the
+// registered frames on demand, with an explicit consistency check - the
+// registered frames may reference images that have not been added yet.
+inline std::vector<image_t> Reconstruction::RegImageIds() const {
+    std::vector<image_t> reg_image_ids;
+    for (const frame_t frame_id : reg_frame_ids_) {
+        const class Frame& frame = Frame(frame_id);
+        // Fork note: the fork's Frame::ImageIds() yields plain image ids
+        // (upstream yields data_t sensor/id pairs).
+        for (const image_t image_id : frame.ImageIds()) {
+            THROW_CHECK(ExistsImage(image_id))
+                    << "The reconstruction object is broken as image "
+                    << image_id << " in frame " << frame.FrameId()
+                    << " does not exist in the reconstruction. The most likely "
+                       "cause is missing AddImage(*) calls after adding "
+                       "frames.";
+            reg_image_ids.push_back(image_id);
+        }
+    }
+    return reg_image_ids;
 }
 
-const std::unordered_map<point3D_t, Point3D>& Reconstruction::Points3D() const {
+const NodeHashMap<point3D_t, Point3D>& Reconstruction::Points3D() const {
     return points3D_;
-}
-
-const std::unordered_map<image_pair_t, Reconstruction::ImagePairStat>&
-Reconstruction::ImagePairs() const {
-    return image_pair_stats_;
 }
 
 bool Reconstruction::ExistsCamera(const camera_t camera_id) const {
@@ -552,20 +588,8 @@ bool Reconstruction::ExistsPoint3D(const point3D_t point3D_id) const {
     return points3D_.find(point3D_id) != points3D_.end();
 }
 
-bool Reconstruction::ExistsImagePair(const image_pair_t pair_id) const {
-    return image_pair_stats_.find(pair_id) != image_pair_stats_.end();
-}
-
 bool Reconstruction::IsImageRegistered(const image_t image_id) const {
     return Image(image_id).IsRegistered();
-}
-
-const CorrespondenceGraph* Reconstruction::GetCorrespondenceGraph() const {
-    return correspondence_graph_;
-}
-
-bool Reconstruction::HasCorrespondenceGraph() const {
-    return correspondence_graph_ != nullptr;
 }
 
 template <bool kEstimateScale>
@@ -578,7 +602,7 @@ bool Reconstruction::Align(const std::vector<std::string>& image_names,
 
     // Find out which images are contained in the reconstruction and get the
     // positions of their camera centers.
-    std::unordered_set<image_t> common_image_ids;
+    NodeHashSet<image_t> common_image_ids;
     std::vector<Eigen::Vector3d> src;
     std::vector<Eigen::Vector3d> dst;
     for (size_t i = 0; i < image_names.size(); ++i) {
@@ -631,7 +655,7 @@ bool Reconstruction::AlignRobust(const std::vector<std::string>& image_names,
 
     // Find out which images are contained in the reconstruction and get the
     // positions of their camera centers.
-    std::unordered_set<image_t> common_image_ids;
+    NodeHashSet<image_t> common_image_ids;
     std::vector<Eigen::Vector3d> src;
     std::vector<Eigen::Vector3d> dst;
     for (size_t i = 0; i < image_names.size(); ++i) {

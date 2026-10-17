@@ -12,6 +12,10 @@ directly:
   weight extraction is decoded: BlockDesc(idx/parent/vars), the
   map<string, VarDesc> entries, VarDesc(name/type/persistable) and the
   LOD_TENSOR VarType branch carrying dtype and dims.
+* ``inference.json`` — a Paddle 3.x PIR program (``base_code.magic ==
+  "pir"``). Persisted weights appear as ``"#":"p"`` ops whose attribute
+  list ends with the parameter name and whose output ``t_dtensor`` carries
+  the f32 element type and the shape.
 
 Parameter order in ``*.pdiparams`` matches the program's parameter order,
 so the loader zips the parsed name list with the parsed tensor stream and
@@ -19,6 +23,7 @@ verifies every shape. A shape mismatch aborts instead of guessing, keeping
 the conversion auditable against the source graph.
 """
 
+import json
 import struct
 from pathlib import Path
 
@@ -131,6 +136,37 @@ def parse_pdmodel_vars(path: Path):
     return variables
 
 
+def parse_pir_json_vars(path: Path):
+    """Return [(name, dims)] for every persisted f32 var in a PIR program.
+
+    Mirrors parse_pdmodel_vars for the JSON container PaddleX 3.x ships
+    instead of *.pdmodel. Only ``t_f32`` parameter ops are collected; the
+    loader binds them to the param stream by shape (trying insertion and
+    lexicographic order) exactly as for the protobuf path, so a wrong set
+    aborts rather than guessing.
+    """
+    root = json.loads(path.read_text(encoding="utf-8"))
+    if root.get("base_code", {}).get("magic") != "pir":
+        raise ValueError(f"{path} is not a PIR program")
+    variables = []
+    for region in root["program"]["regions"]:
+        for block in region["blocks"]:
+            for op in block["ops"]:
+                if op.get("#") != "p":
+                    continue
+                name = next((a for a in reversed(op.get("A", []))
+                             if isinstance(a, str)), None)
+                tensor = op.get("O", {}).get("TT")
+                if not name or not tensor or \
+                        tensor.get("#") != "0.t_dtensor":
+                    continue
+                desc = tensor["D"]
+                if desc[0].get("#") != "0.t_f32":
+                    continue
+                variables.append((name, tuple(int(d) for d in desc[1])))
+    return variables
+
+
 def parse_pdparams(path: Path):
     """Return [ndarray] in file order (float32, reshaped)."""
     data = path.read_bytes()
@@ -202,12 +238,23 @@ def load_ocr_tensors(model_dir: Path):
     model_dir = Path(model_dir)
     pdmodel = model_dir / "inference.pdmodel"
     pdiparams = model_dir / "inference.pdiparams"
+    pir_json = model_dir / "inference.json"
     if not pdmodel.exists():
-        pdmodel = sorted(model_dir.glob("*.pdmodel"))[0]
+        pdmodels = sorted(model_dir.glob("*.pdmodel"))
+        if pdmodels:
+            pdmodel = pdmodels[0]
+        elif pir_json.exists():
+            pdmodel = None  # PaddleX 3.x JSON program, no protobuf
+        else:
+            raise SystemExit(f"no *.pdmodel or inference.json under "
+                             f"{model_dir}")
     if not pdiparams.exists():
         pdiparams = sorted(model_dir.glob("*.pdiparams"))[0]
 
-    variables = parse_pdmodel_vars(pdmodel)
+    if pdmodel is not None:
+        variables = parse_pdmodel_vars(pdmodel)
+    else:
+        variables = parse_pir_json_vars(pir_json)
     streamed = parse_pdparams(pdiparams)
 
     # Older exports stream parameters in creation order; Paddle 3.x writes

@@ -241,6 +241,11 @@ static vtkSmartPointer<vtkPolyData> CreateCoordinateFromLineSet(
     lineR->SetPoint(0, segR.first.data());
     lineR->SetPoint(1, segR.second.data());
     vtkSmartPointer<vtkPolyData> rData = CreateLine(lineR);
+    // Point scalars (3-comp), NOT cell RGBA: the four polydatas appended
+    // by CreateCameraSensor must carry the SAME scalar layout or
+    // vtkAppendPolyData silently drops the "Colors" array entirely — the
+    // mapper then falls back to the actor's white diffuse color and every
+    // frustum renders white.
     SetPolyDataColor(rData, ecvColor::red, false);
 
     vtkSmartPointer<vtkPoints> lineUp = vtkSmartPointer<vtkPoints>::New();
@@ -412,12 +417,12 @@ vtkSmartPointer<vtkPolyData> CreateGBLSensor(const ccGBLSensor* gBLSensor) {
 vtkSmartPointer<vtkPolyData> CreateCameraSensor(
         const ccCameraSensor* cameraSensor,
         const ecvColor::Rgb& lineColor,
-        const ecvColor::Rgb& planeColor) {
+        const ecvColor::Rgb& planeColor,
+        vtkSmartPointer<vtkPolyData>* planeFaceOut /* = nullptr */) {
     assert(cameraSensor);
 
     vtkSmartPointer<vtkPolyData> nearPlaneLinesData =
             CreatePolyDataFromLineSet(cameraSensor->getNearPlane());
-    AddPolyDataCell(nearPlaneLinesData);
     SetPolyDataColor(nearPlaneLinesData, planeColor, false);
 
     vtkSmartPointer<vtkPolyData> sideLinesData =
@@ -426,7 +431,6 @@ vtkSmartPointer<vtkPolyData> CreateCameraSensor(
 
     vtkSmartPointer<vtkPolyData> arrowLinesData =
             CreatePolyDataFromLineSet(cameraSensor->getArrow());
-    AddPolyDataCell(arrowLinesData);
     SetPolyDataColor(arrowLinesData, lineColor, false);
 
     vtkSmartPointer<vtkPolyData> axisLinesData =
@@ -439,6 +443,37 @@ vtkSmartPointer<vtkPolyData> CreateCameraSensor(
     appendFilter->AddInputData(arrowLinesData);
     appendFilter->AddInputData(axisLinesData);
     appendFilter->Update();
+    if (planeFaceOut) {
+        // Near-plane FACE from the RAW 4 corner points. The line-set
+        // polydata above comes from the vtkLineSource path, whose point
+        // array duplicates BOTH endpoints of EVERY edge (2*edges = 8
+        // points, no dedup): indexing it as {0,1,2}/{0,2,3} collapses
+        // tri1 to a degenerate (P0,P1,P1) and renders only ONE half of
+        // the quad. Raw corners = the deduplicated local frame, matching
+        // the wireframe geometry (the sensor pose is applied by the render
+        // pipeline). tri1/tri2 share the P0-P2 diagonal and are both CCW.
+        const auto& nearPts = cameraSensor->getNearPlane().points_;
+        if (nearPts.size() >= 4) {
+            auto face = vtkSmartPointer<vtkPolyData>::New();
+            auto facePoints = vtkSmartPointer<vtkPoints>::New();
+            facePoints->SetNumberOfPoints(4);
+            for (int i = 0; i < 4; ++i) {
+                facePoints->SetPoint(i, nearPts[static_cast<size_t>(i)].x(),
+                                     nearPts[static_cast<size_t>(i)].y(),
+                                     nearPts[static_cast<size_t>(i)].z());
+            }
+            face->SetPoints(facePoints);
+            vtkSmartPointer<vtkCellArray> faces =
+                    vtkSmartPointer<vtkCellArray>::New();
+            const vtkIdType tri1[3] = {0, 1, 2};
+            const vtkIdType tri2[3] = {0, 2, 3};
+            faces->InsertNextCell(3, tri1);
+            faces->InsertNextCell(3, tri2);
+            face->SetPolys(faces);
+            SetPolyDataColor(face, planeColor, false);
+            *planeFaceOut = face;
+        }
+    }
     return appendFilter->GetOutput();
 }
 

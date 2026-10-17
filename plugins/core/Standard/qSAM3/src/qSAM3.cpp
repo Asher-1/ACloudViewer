@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#include "SAM3BatchCommand.h"
 #include "SAM3Dialog.h"
 
 #ifdef AICore_ENABLED
@@ -35,6 +36,14 @@ qSAM3::qSAM3(QObject* parent)
 }
 
 QList<QAction*> qSAM3::getActions() { return {m_action}; }
+
+void qSAM3::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandSam3Segment));
+}
 
 void qSAM3::onNewSelection(const ccHObject::Container& selectedEntities) {
     if (!m_dialog || !m_dialog->isVisible()) return;

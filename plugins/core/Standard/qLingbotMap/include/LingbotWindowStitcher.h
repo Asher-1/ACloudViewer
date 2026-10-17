@@ -28,9 +28,12 @@
 namespace lingbot_stitch {
 
 //! pose_enc layout: [t(0:3), quat_xyzw scalar-last(3:7), fov_y(7), fov_x(8)],
-//! w2c semantics (the decoder image of [quat_mat | pe[:3]]).
+//! c2w semantics — the official export decode: [quat_mat | pe[:3]] IS the
+//! camera-to-world (worker boundary decodePoseC2w; pinned by
+//! test_lingbot_window_stitch's expectC2wMatchesPoseEnc).
 constexpr int kPoseEncSize = 9;
-//! Row-major 4x4 camera-to-world sidecar emitted by the engine.
+//! Row-major 4x4 decoded camera-to-world (decoder image of pose_enc; the
+//! worker fills it via decodePoseC2w, not the raw engine sidecar).
 constexpr int kC2WSize = 16;
 //! [fx, fy, cx, cy] in pixels of the processed frame.
 constexpr int kIntrinsicsSize = 4;
@@ -87,9 +90,9 @@ Similarity pairwiseAlignment(const WindowData& prev,
                              int overlap);
 
 //! Apply the official similarity warp in place: pose_enc center/quat,
-//! depth *= s, and the c2w sidecar as R'_c2w = R_c2w @ R^T,
-//! t'_c2w = s * t_c2w - R_c2w @ (R^T t) so merged c2w stays the exact
-//! decoder image of merged pose_enc.
+//! depth *= s, and the decoded c2w with the SAME left-sided mapping as the
+//! pose_enc warp (R' = R_sim @ R, t' = s * R_sim @ t + t_sim) so merged c2w
+//! stays the exact decoder image of merged pose_enc.
 void warpWindow(WindowData& win, const Similarity& sim);
 
 //! Concatenate per-window predictions de-duplicating the overlaps: every

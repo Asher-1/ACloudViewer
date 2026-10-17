@@ -27,6 +27,7 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_ui_helpers)
 add_test(NAME test_cvpluginapi_ui_helpers COMMAND test_cvpluginapi_ui_helpers)
+cloudviewer_set_plugin_test_env(test_cvpluginapi_ui_helpers)
 set_tests_properties(test_cvpluginapi_ui_helpers PROPERTIES LABELS "cvpluginapi")
 
 # Focused unit tests for the shared AICore runtime helper header
@@ -54,5 +55,6 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_runtime_helpers)
 add_test(NAME test_cvpluginapi_runtime_helpers COMMAND test_cvpluginapi_runtime_helpers)
+cloudviewer_set_plugin_test_env(test_cvpluginapi_runtime_helpers)
 set_tests_properties(test_cvpluginapi_runtime_helpers PROPERTIES LABELS "cvpluginapi")
 endif()

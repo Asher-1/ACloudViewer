@@ -446,6 +446,13 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
     /* Allocate a buffer big enough for every tensor in m.meta, on the
      * supplied backend. */
     m.weights = ggml_backend_alloc_ctx_tensors(m.meta, backend);
+    // WEIGHTS usage tag: sched offload routing requires it (sam3d loader
+    // precedent); without it ops silently stay on the CPU secondary.
+    if (m.weights) {
+        ggml_backend_buffer_set_usage(m.weights,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
+
     if (!m.weights) {
         rfdetr_logf(RFDETR_LOG_ERROR,
                     "model_realize_weights: backend alloc failed");

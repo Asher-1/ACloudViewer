@@ -290,9 +290,45 @@ TEST(GPS, ENUToECEF) {
   }
 }
 
-// NOTE: The upstream EllipsoidToUTM/UTMToEllipsoid cases (dbb41680 L293-456)
-// are deferred with the UTM API itself until the pose-prior GPS work (W7)
-// requires them; this fork has not ported GPSTransform::EllipsoidToUTM yet.
+// NOTE: The remaining upstream EllipsoidToUTM/UTMToEllipsoid cases
+// (dbb41680 L293-456) are deferred with the pose-prior GPS work (W7);
+// EllipsoidToUTM itself has since been ported and is covered below.
+
+// Upstream parity (08c03ec3 geometry/gps_test.cc): the equator uses the
+// northern hemisphere offset in the forward UTM conversion, and explicit
+// southern-encoded equator coordinates remain valid inverse input.
+TEST(GPS, UTMHemisphereNorthing) {
+  for (const auto ellipsoid :
+       {GPSTransform::Ellipsoid::GRS80, GPSTransform::Ellipsoid::WGS84}) {
+    const GPSTransform gps_tform(ellipsoid);
+    for (const double latitude : {-45.0, -1e-5, -0.0, 0.0, 1e-5, 45.0}) {
+      // Central meridians and their zones.
+      for (const auto& [longitude, expected_zone] :
+           {std::pair<double, int>{-177.0, 1},
+            std::pair<double, int>{3.0, 31},
+            std::pair<double, int>{177.0, 60}}) {
+        const Eigen::Vector3d ell(latitude, longitude, 123);
+        const auto [utm, zone] = gps_tform.EllipsoidToUTM({ell, ell});
+        ASSERT_EQ(utm.size(), 2);
+        EXPECT_EQ(zone, expected_zone);
+        EXPECT_DOUBLE_EQ(utm[0](0), 500000);
+        EXPECT_THAT(utm[0], EigenMatrixNear(utm[1], 0));
+        EXPECT_THAT(gps_tform.EllipsoidToUTM({ell}).first[0],
+                    EigenMatrixNear(utm[0], 0));
+        if (latitude == 0) {
+          // The equator uses the northern hemisphere offset.
+          EXPECT_DOUBLE_EQ(utm[0](1), 0);
+        }
+        EXPECT_THAT(gps_tform.UTMToEllipsoid(utm, zone, latitude >= 0)[0],
+                    EigenMatrixNear(ell, 1e-8));
+      }
+    }
+    // Southern-encoded equator coordinates remain valid inverse input.
+    EXPECT_THAT(gps_tform.UTMToEllipsoid(
+                    {Eigen::Vector3d(500000, 10000000, 123)}, 31, false)[0],
+                EigenMatrixNear(Eigen::Vector3d(0, 3, 123), 1e-8));
+  }
+}
 
 }  // namespace
 }  // namespace colmap

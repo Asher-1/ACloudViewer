@@ -57,6 +57,33 @@ public:
     void releaseContextOnMainThread();
     void requestTaskCancel();
 
+#ifdef AICore_ENABLED
+    /** Typed output of one image: run (all non-depth tasks) or depth, plus
+     *  the human-readable summary/hint lines the dialog logs. */
+    struct ImageResult {
+        bool isDepth = false;
+        YOLORunResult run;
+        YOLODepthResult depth;
+        QString summary;
+        QString hint;
+    };
+
+    /** Build options from \p settings (thresholds, class list + text model,
+     *  visual prompts) and load the context. Returns the context even when
+     *  it is not ready (caller frees it); \p error is set on failure. */
+    static aicore_yolo_ctx* loadContext(const Settings& settings,
+                                        QString* error);
+    /** One image (settings.inputPath) through a loaded context; dispatches
+     *  on the model's task. Shared by run() and the headless -YOLO_PREDICT
+     *  batch command so both paths produce identical results. \p cancel
+     *  may be null. */
+    static bool inferImage(aicore_yolo_ctx* ctx,
+                           const Settings& settings,
+                           aicore_cancel_token* cancel,
+                           ImageResult* out,
+                           QString* error);
+#endif
+
 signals:
     void logMessage(const QString& msg);
     void progressUpdate(int current, int total);
@@ -71,17 +98,52 @@ protected:
 private:
 #ifdef AICore_ENABLED
     bool runInference();
-    bool runDetect(const QImage& rgb);
-    bool runSegment(const QImage& rgb);
-    bool runDepth(const QImage& rgb);
-    bool runPose(const QImage& rgb);
-    bool runObb(const QImage& rgb);
-    bool runSemantic(const QImage& rgb);
-    bool runClassify(const QImage& rgb);
+    static bool runDetect(aicore_yolo_ctx* ctx,
+                          const Settings& settings,
+                          aicore_cancel_token* cancel,
+                          const QImage& rgb,
+                          ImageResult* out,
+                          QString* error);
+    static bool runSegment(aicore_yolo_ctx* ctx,
+                           const Settings& settings,
+                           aicore_cancel_token* cancel,
+                           const QImage& rgb,
+                           ImageResult* out,
+                           QString* error);
+    static bool runDepth(aicore_yolo_ctx* ctx,
+                         const Settings& settings,
+                         aicore_cancel_token* cancel,
+                         const QImage& rgb,
+                         ImageResult* out,
+                         QString* error);
+    static bool runPose(aicore_yolo_ctx* ctx,
+                        const Settings& settings,
+                        aicore_cancel_token* cancel,
+                        const QImage& rgb,
+                        ImageResult* out,
+                        QString* error);
+    static bool runObb(aicore_yolo_ctx* ctx,
+                       const Settings& settings,
+                       aicore_cancel_token* cancel,
+                       const QImage& rgb,
+                       ImageResult* out,
+                       QString* error);
+    static bool runSemantic(aicore_yolo_ctx* ctx,
+                            const Settings& settings,
+                            aicore_cancel_token* cancel,
+                            const QImage& rgb,
+                            ImageResult* out,
+                            QString* error);
+    static bool runClassify(aicore_yolo_ctx* ctx,
+                            const Settings& settings,
+                            aicore_cancel_token* cancel,
+                            const QImage& rgb,
+                            ImageResult* out,
+                            QString* error);
     /** User-assigned name for prompt index \p classId (empty = keep the
      *  backend's positional objectN label); shared by the detect and
      *  segment result paths. */
-    QString visualPromptName(uint32_t classId) const;
+    static QString visualPromptName(const Settings& settings, uint32_t classId);
 #endif
 
     Settings m_settings;

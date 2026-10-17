@@ -1244,11 +1244,15 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         // Clear 3D VTK actors for any label children
                         // that would otherwise linger in the scene.
                         clearLabelsRecursive(item);
-                        // Use the same full-redraw path as the enable branch
-                        // so VTK actor visibility is re-evaluated through the
+                        // Use the same redraw path as the enable branch so
+                        // VTK actor visibility is re-evaluated through the
                         // draw pipeline (updateScene alone doesn't suffice).
+                        // NON-forced: hiding is a STATE change — the pushes
+                        // above already landed and the plain pass re-evaluates
+                        // the draw gates; a forced pass here re-converted all
+                        // 286 camera geometries (~250ms) on every uncheck.
                         {
-                            ecvRedrawScope scope(false, true);
+                            ecvRedrawScope scope(false, false);
                             scope.markDirty(item);
                         }
                     } else {
@@ -1380,12 +1384,32 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
     // Apply interaction-mode / camera adjustments before the single redraw.
     emit selectionChanged();
 
-    ecvViewManager::instance().setRedrawRecursive(false);
-    // Selection is a STATE change (L2): the selected/deselected entities'
-    // bounding-box highlights are drawn in the plain redraw pass, so no
-    // forced rebuild is needed — a forced pass re-converted all aggregated
-    // leaves on every DBTree selection (~230ms each click).
-    MainWindow::TheInstance()->refreshAll(false, false);
+    // O(changed) selection highlight: the selected entities' highlight is
+    // their tempColor BAKED into the polydata vertex colors — it needs a
+    // REBUILD of those entities (drawPointCloud/drawMesh rebuild gate is
+    // isRedraw() || firstShow). The previous full forced pass did that for
+    // every entity (~230ms per click on a 286-camera scene); the later
+    // plain non-forced pass silently killed the highlight entirely. Scope
+    // marks ONLY the selection-delta entities (folders excluded — no own
+    // geometry, recursive markDirty would relight the whole subtree) and
+    // lets the non-forced pass rebuild just them.
+    {
+        ecvRedrawScope hlScope(false, /*forceRedraw=*/false);
+        for (int i = 0; i < deselectedItems.count(); ++i) {
+            ccHObject* element = static_cast<ccHObject*>(
+                    deselectedItems.at(i).internalPointer());
+            if (element && !element->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+                hlScope.markDirty(element);
+            }
+        }
+        for (int i = 0; i < selectedItems.count(); ++i) {
+            ccHObject* element = static_cast<ccHObject*>(
+                    selectedItems.at(i).internalPointer());
+            if (element && !element->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+                hlScope.markDirty(element);
+            }
+        }
+    }
 }
 
 void ccDBRoot::unselectEntity(ccHObject* obj) {

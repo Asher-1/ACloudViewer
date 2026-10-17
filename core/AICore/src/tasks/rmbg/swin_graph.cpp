@@ -98,6 +98,10 @@ bool SwinPatchEmbedGraph::init(ggml_backend_t backend,
         err = "weight buffer alloc failed";
         return false;
     }
+    // WEIGHTS usage tag: sched offload routing requires it, otherwise the
+    // graph silently stays on the CPU secondary despite a GPU backend.
+    ggml_backend_buffer_set_usage(buf_weights_,
+                                  GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
 
     std::vector<float> gw((size_t)embed_dim_ * 3 * 4 * 4);
     for (int oc = 0; oc < embed_dim_; ++oc)

@@ -10,6 +10,7 @@
 #include "scene/projection.h"
 #include "geometry/triangulation.h"
 #include "estimators/rotation_averaging.h"
+#include "estimators/rotation_averaging_ceres.h"
 #include "math/union_find.h"
 #include "estimators/bundle_adjustment_caspar.h"
 #include "sfm/incremental_mapper.h"
@@ -64,6 +65,29 @@ bool RunBundleAdjustment(const BundleAdjustmentOptions& options,
   return ba->Solve(&reconstruction);
 }
 
+// Upstream parity (4db31ac2 + d2473746 global_mapper.cc): the L2
+// retriangulation refinement keeps poses and intrinsics fixed, excludes no
+// tracks by length, uses a trivial loss and the legacy loose tolerances.
+BundleAdjustmentOptions RefinementBundleAdjustmentOptions(
+    const BundleAdjustmentOptions& ba_options) {
+  BundleAdjustmentOptions custom_ba_options = ba_options;
+  custom_ba_options.refine_focal_length = false;
+  custom_ba_options.refine_principal_point = false;
+  custom_ba_options.refine_extra_params = false;
+  custom_ba_options.refine_sensor_from_rig = false;
+  custom_ba_options.refine_rig_from_world = false;
+  custom_ba_options.print_summary = false;
+  custom_ba_options.min_track_length = 0;
+  custom_ba_options.ceres->loss_function_type =
+      CeresLossFunctionType::TRIVIAL;
+  custom_ba_options.ceres->solver_options.function_tolerance = 0.0;
+  custom_ba_options.ceres->solver_options.gradient_tolerance = 1.0;
+  custom_ba_options.ceres->solver_options.parameter_tolerance = 0.0;
+  custom_ba_options.ceres->solver_options.max_num_iterations = 50;
+  custom_ba_options.ceres->solver_options.max_linear_solver_iterations = 100;
+  return custom_ba_options;
+}
+
 // Fork-legacy stand-in for the upstream ObservationManager filters: the
 // per-image pose is read through ProjectionMatrix(), which is frame-aware
 // (CamFromWorld when the image is wired into a reconstruction).
@@ -97,7 +121,7 @@ void DeleteObservations(Reconstruction& reconstruction,
 // would dangle it), and points that would keep fewer than 2 observations
 // are removed entirely. The remaining points carry the mean inlier error.
 size_t FilterTracksByAngularError(Reconstruction& reconstruction,
-                                  const std::unordered_set<point3D_t>& ids,
+                                  const NodeHashSet<point3D_t>& ids,
                                   double max_angular_error_rad) {
   size_t num_filtered_observations = 0;
   for (const point3D_t point3D_id : ids) {
@@ -139,7 +163,7 @@ size_t FilterTracksByAngularError(Reconstruction& reconstruction,
 }
 
 size_t FilterTracksByNormalizedError(Reconstruction& reconstruction,
-                                     const std::unordered_set<point3D_t>& ids,
+                                     const NodeHashSet<point3D_t>& ids,
                                      double max_normalized_error) {
   size_t num_filtered_observations = 0;
   for (const point3D_t point3D_id : ids) {
@@ -204,7 +228,7 @@ size_t FilterTracksByNormalizedError(Reconstruction& reconstruction,
 
 size_t FilterTracksBySmallTriangulationAngle(
     Reconstruction& reconstruction,
-    const std::unordered_set<point3D_t>& ids,
+    const NodeHashSet<point3D_t>& ids,
     double min_tri_angle_rad) {
   std::vector<point3D_t> points_to_delete;
   for (const point3D_t point3D_id : ids) {
@@ -248,6 +272,7 @@ size_t FilterTracksBySmallTriangulationAngle(
 RotationEstimatorOptions GlobalMapperOptions::RotationAveraging() const {
   RotationEstimatorOptions opts = rotation_averaging;
   opts.refine_sensor_from_rig = refine_sensor_from_rig;
+  opts.ceres->solver_options.num_threads = num_threads;
   if (random_seed >= 0) {
     opts.random_seed = random_seed;
   }
@@ -267,20 +292,22 @@ GlobalPositionerOptions GlobalMapperOptions::GlobalPositioning() const {
 
 BundleAdjustmentOptions GlobalMapperOptions::BundleAdjustment() const {
   BundleAdjustmentOptions opts = bundle_adjustment;
-  if (opts.backend == BundleAdjustmentBackend::CERES) {
-    opts.solver_options.num_threads = num_threads;
-    opts.gpu_index = ba_gpu_index;
-  } else {
-    opts.caspar_gpu_index =
-        ba_gpu_index.empty() ? -1 : std::stoi(ba_gpu_index);
+  if (opts.ceres) {
+    opts.ceres->solver_options.num_threads = num_threads;
+    opts.ceres->gpu_index = ba_gpu_index;
+  }
+  if (opts.caspar) {
+    opts.caspar->gpu_index = ba_gpu_index;
   }
   return opts;
 }
 
 IncrementalTriangulator::Options GlobalMapperOptions::Retriangulation() const {
-  // Fork note: the fork's IncrementalTriangulator::Options has no random_seed
-  // field yet; the retriangulation stage inherits the pipeline PRNG state.
-  return retriangulation;
+  IncrementalTriangulator::Options opts = retriangulation;
+  if (random_seed >= 0) {
+    opts.random_seed = random_seed;
+  }
+  return opts;
 }
 
 GlobalMapper::GlobalMapper(
@@ -427,7 +454,9 @@ void GlobalMapper::EstablishTracks(const GlobalMapperOptions& options) {
 
     const size_t num_images = image_id_set.size();
     if (num_images <
-        static_cast<size_t>(options.track_min_num_views_per_track)) {
+            static_cast<size_t>(options.track_min_num_views_per_track) ||
+        num_images >
+            static_cast<size_t>(options.track_max_num_views_per_track)) {
       continue;
     }
 
@@ -506,7 +535,7 @@ bool GlobalMapper::GlobalPositioning(
     return false;
   }
 
-  std::unordered_set<point3D_t> point3D_ids = reconstruction_->Point3DIds();
+  NodeHashSet<point3D_t> point3D_ids = reconstruction_->Point3DIds();
 
   // Filter tracks based on the estimation. The fork reads the per-image pose
   // through ProjectionMatrix() (frame-aware) and the angular error through
@@ -626,7 +655,12 @@ bool GlobalMapper::IterativeRetriangulateAndRefine(
     double max_normalized_reproj_error,
     double min_tri_angle_deg) {
   // Delete all existing 3D points and re-establish 2D-3D correspondences.
-  reconstruction_->DeleteAllPoints2DAndPoints3D();
+  // Clear the 3D points and their observation links, but keep the 2D
+  // keypoint coordinates: they are the input data TriangulateImage
+  // iterates over. The previous DeleteAllPoints2DAndPoints3D call wiped
+  // the coordinates as well, leaving the retriangulation loop with zero
+  // points2D per image and producing no points at all.
+  reconstruction_->DeleteAllPoints3D();
 
   // Initialize mapper.
   IncrementalMapper mapper(database_cache_.get());
@@ -637,32 +671,34 @@ bool GlobalMapper::IterativeRetriangulateAndRefine(
     mapper.TriangulateImage(options, image_id);
   }
 
-  // Set up bundle adjustment options for colmap's incremental mapper.
+  // Iterative global refinement.
   // Upstream parity (d3ccaf35): the refinement runs through the mapper's
   // IterativeGlobalRefinement (complete/merge/retriangulate + global BA),
   // whose MergeTracks pass is what keeps the retriangulated point set from
   // growing (the old fork filter-and-bundle loop had no merge pass and
   // inflated the final point count by ~9%).
-  BundleAdjustmentOptions custom_ba_options = ba_options;
-  custom_ba_options.print_summary = false;
-  custom_ba_options.solver_options.num_threads =
-      ba_options.solver_options.num_threads;
-  custom_ba_options.solver_options.max_num_iterations = 50;
-  custom_ba_options.solver_options.max_linear_solver_iterations = 100;
-
-  // Iterative global refinement.
   IncrementalMapper::Options mapper_options;
   mapper_options.random_seed = options.random_seed;
   mapper.IterativeGlobalRefinement(/*max_num_refinements=*/5,
                                    /*max_refinement_change=*/0.0005,
                                    mapper_options,
-                                   custom_ba_options,
+                                   RefinementBundleAdjustmentOptions(ba_options),
                                    options,
-                                   /*normalize_reconstruction=*/true);
+                                   /*normalize_reconstruction=*/false);
 
   mapper.EndReconstruction(/*discard=*/false);
 
   // Final filtering and bundle adjustment.
+  FilterTracksByNormalizedError(*reconstruction_,
+                                reconstruction_->Point3DIds(),
+                                max_normalized_reproj_error);
+
+  if (!RunBundleAdjustment(ba_options, *reconstruction_)) {
+    return false;
+  }
+
+  // Upstream parity (4db31ac2): a second filter + bundle pass before the
+  // final normalization.
   FilterTracksByNormalizedError(*reconstruction_,
                                 reconstruction_->Point3DIds(),
                                 max_normalized_reproj_error);
@@ -765,11 +801,9 @@ bool GlobalMapper::Solve(const GlobalMapperOptions& options,
     if (!frame.HasPose()) {
       continue;
     }
-    for (const image_t image_id : frame.ImageIds()) {
-      if (!reconstruction_->IsImageRegistered(image_id)) {
-        reconstruction_->RegisterImage(image_id);
-      }
-    }
+    // Upstream parity (d3ccaf35): frame-level registration is idempotent
+    // and carries both the counter and the per-image flags.
+    reconstruction_->RegisterFrame(frame_id);
   }
 
   // Bundle adjustment

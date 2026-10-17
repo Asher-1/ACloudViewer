@@ -173,6 +173,21 @@ private:
     void finishBatch(const QString& message);
     void startInference(const QString& modelPath);
     void onInference(const AnnotationInference& result);
+    void openRemoteServerSettings();
+    void startRemoteInference();
+    // Remote video-session flow (upstream batch_processing_mode == "video"):
+    // a /v1/models probe decides the mode; video models upload the file-list
+    // frames once, prompt the current frame, propagate over SSE and save
+    // per-frame shapes into each image's sidecar.
+    void onRemoteModelsFetched(const QJsonObject& data, const QString& error);
+    void runRemotePredict();
+    void startRemoteVideoFlow();
+    void connectRemoteVideoSignals();
+    void saveRemoteShapesToSidecar(const QString& imagePath,
+                                   const QVector<AnnotationShape>& shapes);
+    QVector<AnnotationShape> remoteShapes(const QJsonArray& shapes,
+                                          const QSize& imageSize) const;
+    bool validateLabel(const QString& label) const;
     void updateFlags();
     void updateTags();
     void setTagBatchMode(bool enabled);
@@ -266,6 +281,18 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     QThread* m_thread = nullptr;
     AnnotationWorker* m_worker = nullptr;
+    class RemoteServerClient* m_remoteClient = nullptr;
+    class RemoteServerDialog* m_remoteDialog = nullptr;
+    QString m_remoteModelId;
+    QString m_validateLabel;
+    QString m_loggerLevel;
+    bool m_remoteInferenceRunning = false;
+    quint64 m_remoteGeneration = 0;
+    quint64 m_remotePromptRevision = 0;
+    QString m_remoteBatchMode;
+    bool m_remoteVideoRunning = false;
+    int m_remotePromptFrame = -1;
+    QStringList m_remoteFramePaths;
     QActionGroup* m_tools = nullptr;
     QAction* m_undoAction = nullptr;
     QAction* m_undoLastPointAction = nullptr;

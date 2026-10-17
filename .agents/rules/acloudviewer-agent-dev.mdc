@@ -11,15 +11,27 @@ alwaysApply: false
 ## JSON-RPC Plugin (C++)
 
 - All new RPC methods MUST be added to:
-  1. The dispatch table in `JsonRPCPlugin::execute()` in `JsonRPCPlugin.cpp`
-  2. Method declarations in `JsonRPCPlugin.h`
-  3. The `rpcMethodsList()` introspection method
+  1. `reg("category.action", ...)` in `JsonRPCPlugin::registerMethods()`
+     (`src/JsonRPCPlugin.cpp`); `methods.list` reads that registry
+  2. The handler declaration in `include/JsonRPCPlugin.h`, under the section
+     naming its file
+  3. The handler body in that family's `src/JsonRPCMethods<Family>.cpp`; a new
+     family gets a new file listed in `src/CMakeLists.txt` (layout: plugin
+     `README.md`, "Source layout")
 - Method naming convention: `category.action` (e.g., `cloud.computeNormals`, `view.screenshot`)
 - All methods MUST return `JsonRPCResult::success(...)` or `JsonRPCResult::error(code, message)`
-- Entity lookups use `findEntityById(m_app->dbRootObject(), entityId)`
+- Entity lookups use `findEntity(id)`, `findCloud(id, err)`, `findMesh(id, err)`
+- Child processes: `new QProcess(this)` handed to `return
+  jsonrpc::runChildProcess(process, timeoutMs, finish)`, with
+  `headlessChildEnvironment()` for ACloudViewer children and `childTimeout()`
+  for `timeout_ms` (`src/JsonRPCChildProcess.h`). Handlers run on the GUI
+  thread: never `waitForFinished()` or a nested `QEventLoop` there; the reply
+  is deferred and built in `finish` once the child ends
+- The server listens on loopback only and refuses `Origin` (browser)
+  handshakes; methods are unauthenticated
 - After visual changes, always call `redraw()` to update the viewport
 - Use `ecvMainAppInterface` methods for app interaction, not direct MainWindow access
-- The WebSocket server listens on port 6001 by default
+- The WebSocket server listens on `127.0.0.1:$ACV_RPC_PORT` (default 6001)
 
 ## MCP Server (Python)
 
@@ -51,7 +63,7 @@ This repository exposes three controlled interfaces to AI/automation scripts. **
 |-----------|--------|----------|
 | CLI Harness | `cli-anything-acloudviewer` | headless processing / GUI via RPC |
 | MCP Server | `cli-anything-acloudviewer-mcp` | OpenClaw / Cursor / Claude Code |
-| JSON-RPC | WebSocket `ws://localhost:6001` | real-time GUI control (requires qJSonRPCPlugin) |
+| JSON-RPC | WebSocket `ws://127.0.0.1:6001` | real-time GUI control (requires qJSonRPCPlugin) |
 
 Quick command reference (headless, no GUI needed):
 ```bash

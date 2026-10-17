@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "YOLOPredictCommand.h"
 #include "YOLOTrackCommand.h"
 #include "ecvPersistentSettings.h"
 
@@ -73,6 +74,8 @@ void qYOLO::registerCommands(ccCommandLineInterface* cmd) {
     }
     cmd->registerCommand(
             ccCommandLineInterface::Command::Shared(new CommandYoloTrack));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandYoloPredict));
 }
 
 void qYOLO::onNewSelection(const ccHObject::Container& selectedEntities) {

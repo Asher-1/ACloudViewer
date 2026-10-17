@@ -10,6 +10,8 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "util/eigen_alignment.h"
+
 namespace colmap {
 
 // Fundamental matrix estimator from corresponding point pairs.

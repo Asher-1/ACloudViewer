@@ -1455,6 +1455,12 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     if (!s->wbuf) {
         ggml_backend_buffer_type_t buft = backend_ctx_weight_buft(s->backend);
         s->wbuf = ggml_backend_alloc_ctx_tensors_from_buft(s->wctx, buft);
+        if (s->wbuf) {
+            // WEIGHTS usage tag: the sched offloads weight-consuming ops to
+            // the GPU only when the weights buffer carries this usage.
+            ggml_backend_buffer_set_usage(s->wbuf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
         if (!s->wbuf) {
             YOLO_LOG_ERROR("weight allocation failed");
             ggml_free(gctx);

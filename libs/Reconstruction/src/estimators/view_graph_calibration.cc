@@ -192,8 +192,12 @@ void ReestimateRelativePoses(
       const std::vector<Eigen::Vector2d>& points1 = image_points.at(image_id1);
       const std::vector<Eigen::Vector2d>& points2 = image_points.at(image_id2);
 
+      // Upstream parity (f1ea91d0): the re-estimation overwrites F from the
+      // (potentially uncalibrated) intrinsics; keep the stored F.
+      std::optional<Eigen::Matrix3d> orig_F = std::move(tvg.F);
       tvg = EstimateCalibratedTwoViewGeometry(
           camera1, points1, camera2, points2, matches, two_view_options);
+      tvg.F = std::move(orig_F);
     });
   }
   thread_pool.Wait();
@@ -282,9 +286,8 @@ FocalLengthCalibResult CalibrateFocalLengths(
 
   if (num_cameras == 0) {
     LOG(INFO) << "No cameras to optimize";
-    for (const auto& [camera_id, focal] : focal_lengths) {
-      result.focal_lengths[camera_id] = focal.initial;
-    }
+    // Upstream parity (f1ea91d0): do not report the initial focal lengths as
+    // calibrated results.
     result.success = true;
     return result;
   }
@@ -314,7 +317,11 @@ FocalLengthCalibResult CalibrateFocalLengths(
   // Validate focal lengths and revert degenerate ones.
   size_t rejected_cameras = 0;
   for (const auto& [camera_id, camera] : cameras) {
-    if (!camera.IsPerspectivePinhole()) continue;
+    // Upstream parity (f1ea91d0): cameras with a prior focal length are not
+    // calibrated here, so their result is neither validated nor reported.
+    if (!camera.IsPerspectivePinhole() || camera.HasPriorFocalLength()) {
+      continue;
+    }
     auto& focal = focal_lengths[camera_id];
     if (!problem.HasParameterBlock(&focal.optimized)) continue;
 
@@ -327,14 +334,12 @@ FocalLengthCalibResult CalibrateFocalLengths(
       rejected_cameras++;
       // Reset to original focal length.
       focal.optimized = focal.initial;
+      continue;
     }
+    result.focal_lengths[camera_id] = focal.optimized;
   }
   LOG(INFO) << rejected_cameras
             << " cameras rejected in view graph calibration";
-
-  for (const auto& [camera_id, focal] : focal_lengths) {
-    result.focal_lengths[camera_id] = focal.optimized;
-  }
 
   // Evaluate calibration errors.
   ceres::Problem::EvaluateOptions eval_options;
@@ -366,11 +371,11 @@ bool CalibrateViewGraph(const ViewGraphCalibrationOptions& options,
                         Database* database) {
   THROW_CHECK_NOTNULL(database);
 
-  // Read cameras and build image_id -> camera mapping.
-  NodeHashMap<camera_t, Camera> cameras;
-  for (Camera& camera : database->ReadAllCameras()) {
-    cameras[camera.CameraId()] = std::move(camera);
-  }
+  // Upstream parity (f1ea91d0): prefer the best calibration that is NOT
+  // VIEW_GRAPH, so that re-running view graph calibration does not rely on
+  // its own previous output.
+  NodeHashMap<camera_t, Camera> cameras =
+      database->ReadAllCamerasExcludingSources({CameraSource::VIEW_GRAPH});
   NodeHashMap<image_t, const Camera*> image_id_to_camera;
   for (const Image& image : database->ReadAllImages()) {
     image_id_to_camera[image.ImageId()] = &cameras.at(image.CameraId());
@@ -384,10 +389,27 @@ bool CalibrateViewGraph(const ViewGraphCalibrationOptions& options,
   // instead of ignoring them, improves the calibration initialization.
   std::vector<std::pair<image_pair_t, TwoViewGeometry>> pairs;
   for (auto& [pair_id, tvg] : database->ReadTwoViewGeometries()) {
-    if (tvg.config == TwoViewGeometry::UNCALIBRATED ||
-        tvg.config == TwoViewGeometry::CALIBRATED) {
-      pairs.emplace_back(pair_id, std::move(tvg));
+    if (tvg.config != TwoViewGeometry::UNCALIBRATED &&
+        tvg.config != TwoViewGeometry::CALIBRATED) {
+      continue;
     }
+    // Upstream parity (f1ea91d0): a previous run of view graph calibration
+    // upgrades UNCALIBRATED pairs to CALIBRATED and re-estimates
+    // cam2_from_cam1 with the VIEW_GRAPH cameras. Since VIEW_GRAPH cameras
+    // are excluded above, downgrade any pair whose cameras do not both have
+    // a non-VIEW_GRAPH prior back to UNCALIBRATED so its pixel-space F is
+    // not overwritten using GUESS intrinsics below.
+    if (tvg.config == TwoViewGeometry::CALIBRATED) {
+      const auto [image_id1, image_id2] = PairIdToImagePair(pair_id);
+      const Camera& camera1 = *image_id_to_camera.at(image_id1);
+      const Camera& camera2 = *image_id_to_camera.at(image_id2);
+      if (!camera1.IsSpherical() && !camera2.IsSpherical() &&
+          (!camera1.HasPriorFocalLength() ||
+           !camera2.HasPriorFocalLength())) {
+        tvg.config = TwoViewGeometry::UNCALIBRATED;
+      }
+    }
+    pairs.emplace_back(pair_id, std::move(tvg));
   }
 
   if (pairs.empty()) {
@@ -448,7 +470,8 @@ bool CalibrateViewGraph(const ViewGraphCalibrationOptions& options,
   for (const auto& [camera_id, focal_length] : calib_result.focal_lengths) {
     Camera& camera = cameras.at(camera_id);
     camera.SetFocalLength(focal_length);
-    camera.SetPriorFocalLength(true);
+    // Upstream parity (f1ea91d0): the view-graph calibration output.
+    camera.SetSource(CameraSource::VIEW_GRAPH);
     database->UpdateCamera(camera);
   }
 

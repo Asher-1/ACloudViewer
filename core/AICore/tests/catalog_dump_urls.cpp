@@ -22,17 +22,20 @@
 #include <cstring>
 #include <string>
 
+#include "aicore/anycalib_capi.h"
 #include "aicore/asset_digests.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/gkd_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
+#include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/ocr_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
+#include "aicore/table_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
 
@@ -150,6 +153,16 @@ void emitRuntimeCatalogs() {
         const aicore_ocr_model_entry* e = aicore_ocr_model_at(i);
         if (e) emitAsset("ocr", "ocr_models", e->filename, e->download_url);
     }
+    for (int i = 0; i < aicore_anycalib_model_count(); ++i) {
+        const aicore_anycalib_model_entry* e = aicore_anycalib_model_at(i);
+        if (e)
+            emitAsset("anycalib", "anycalib_models", e->filename,
+                      e->download_url);
+    }
+    for (int i = 0; i < aicore_table_model_count(); ++i) {
+        const aicore_table_model_entry* e = aicore_table_model_at(i);
+        if (e) emitAsset("table", "ocr_models", e->filename, e->download_url);
+    }
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const aicore_sam3_model_entry* e = aicore_sam3_model_at(i);
         if (e)
@@ -198,6 +211,13 @@ void emitRuntimeCatalogs() {
         if (e)
             emitAsset("lingbot", "lingbot_models", e->filename, e->download_url,
                       static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_map_anything_model_count(); ++i) {
+        const aicore_map_anything_model_entry* e =
+                aicore_map_anything_model_at(i);
+        if (e)
+            emitAsset("map_anything", "map_anything_models", e->filename,
+                      e->download_url, static_cast<long long>(e->size_bytes));
     }
 }
 

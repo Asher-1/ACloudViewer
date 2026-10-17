@@ -72,7 +72,7 @@ or any MCP-compatible tool — through a unified integration layer with three in
 
 | Interface | Protocol | Typical Use |
 |-----------|----------|-------------|
-| **JSON-RPC Plugin** | WebSocket `ws://localhost:6001` | Real-time GUI control — load files, run algorithms, capture screenshots from agent code |
+| **JSON-RPC Plugin** | WebSocket `ws://127.0.0.1:6001` | Real-time GUI control — load files, run algorithms, capture screenshots from agent code |
 | **MCP Server** | Model Context Protocol (stdio) | Native integration with Cursor IDE, Claude Code, OpenClaw |
 | **CLI Harness** | Click CLI + REPL | Shell scripts, headless batch processing, CI pipelines |
 
@@ -101,8 +101,8 @@ cli-anything-acloudviewer-mcp --mode auto
 
 | Component | Scope |
 |-----------|-------|
-| **178 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, PCV, Compass, SRA, Colmap reconstruction, view control, scene management |
-| **72 JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
+| **187 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, PCV, Compass, SRA, Colmap reconstruction, view control, scene management |
+| **82 JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
 | **40+ CLI commands** | `convert`, `process` (subsample, normals, PCV, Compass export/refit/P21, SRA, density, curvature, SOR, ICP, …), `view`, `scene`, `colmap` |
 | **40+ file formats** | PLY, PCD, LAS/LAZ, E57, FBX, OBJ, STL, DRC, SBF, VTK, ASC, XYZ, CSV, PTS, … |
 
@@ -238,6 +238,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QOCR=ON \
   -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
   -DPLUGIN_STANDARD_QANYLABELING=ON \
+  -DPLUGIN_STANDARD_QMAPANYTHING=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   .

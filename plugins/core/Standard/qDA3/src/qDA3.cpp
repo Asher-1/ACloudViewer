@@ -7,6 +7,8 @@
 
 #include "qDA3.h"
 
+#include "DA3BatchCommand.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
@@ -77,6 +79,14 @@ QStringList qDA3::selectedDbImageNames() const {
 }
 
 QList<QAction*> qDA3::getActions() { return {m_action}; }
+
+void qDA3::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandDa3Depth));
+}
 
 void qDA3::refreshDbImages() {
     if (!m_app || !m_dialog) return;

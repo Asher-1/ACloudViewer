@@ -91,7 +91,7 @@ new file mode 100644
 index 0000000..62ca76e
 --- /dev/null
 +++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
-@@ -0,0 +1,754 @@
+@@ -0,0 +1,750 @@
 +// ALIKED custom Vulkan compute — included at end of ggml-vulkan.cpp for internal API access.
 +
 +#include "ggml-vulkan-aliked.h"
@@ -341,13 +341,9 @@ index 0000000..62ca76e
 +}
 +
 +static void vk_aliked_finish(ggml_backend_vk_context *ctx) {
-+    if (!ctx->compute_ctx.expired()) {
-+        vk_context subctx = ctx->compute_ctx.lock();
-+        ggml_vk_ctx_end(subctx);
-+        ggml_vk_submit(subctx, ctx->fence);
-+        ctx->submit_pending = true;
-+        ctx->compute_ctx.reset();
-+    }
++    // Upstream submit path: the batch goes out fenceless and one fence-only
++    // submit signals it. Fencing the batch here too would put ctx->fence on two
++    // pending submits (VUID-vkQueueSubmit-fence-00064) and readbacks race.
 +    ggml_vk_synchronize(ctx);
 +    ctx->descriptor_set_idx = 0;
 +}

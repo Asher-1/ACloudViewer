@@ -7,12 +7,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "aicore/depth_capi.h"
 #include "tests/common/test_macros.hpp"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -47,7 +51,13 @@ bool RunDense(aicore_depth_ctx* ctx, const char* image, DenseResult& result) {
     return true;
 }
 
-bool Compare(const std::vector<float>& reference,
+// Relative MAE per compared tensor, emitted as one JSON line so the
+// validation runner can gate the numbers structurally (validation_manifest
+// depth-backend-parity row) instead of trusting only the exit code.
+std::vector<std::pair<std::string, double>> g_metrics;
+
+bool Compare(const char* name,
+             const std::vector<float>& reference,
              const std::vector<float>& got,
              float relative_mae_limit) {
     if (reference.size() != got.size() || reference.empty()) return false;
@@ -61,9 +71,35 @@ bool Compare(const std::vector<float>& reference,
     }
     const double relative_mae =
             absolute_error / std::max(reference_magnitude, 1.0e-6);
-    std::fprintf(stderr, "relative MAE %.6f (limit %.6f)\n", relative_mae,
-                 relative_mae_limit);
+    std::fprintf(stderr, "%s relative MAE %.6f (limit %.6f)\n", name,
+                 relative_mae, relative_mae_limit);
+    g_metrics.emplace_back(std::string(name) + "_relative_mae", relative_mae);
     return relative_mae <= relative_mae_limit;
+}
+
+// Byte hash of every typed output the parity compares. The runner's exact
+// fingerprint policy requires both sides to be byte-identical across probe
+// processes (and against the baseline), on top of the MAE thresholds.
+uint64_t HashDense(const DenseResult& r) {
+    uint64_t h =
+            aicore::test::fnv1a(r.depth.data(), r.depth.size() * sizeof(float));
+    h = aicore::test::fnv1aAppend(h, r.confidence.data(),
+                                  r.confidence.size() * sizeof(float));
+    h = aicore::test::fnv1aAppend(h, r.ext, sizeof(r.ext));
+    return aicore::test::fnv1aAppend(h, r.intr, sizeof(r.intr));
+}
+
+void PrintMetricsJson(const DenseResult& reference, const DenseResult& got) {
+    std::printf(
+            "{\"cpu_output_hash\":\"%016llx\","
+            "\"device_output_hash\":\"%016llx\"",
+            static_cast<unsigned long long>(HashDense(reference)),
+            static_cast<unsigned long long>(HashDense(got)));
+    for (const auto& metric : g_metrics) {
+        std::printf(",\"%s\":%.9g", metric.first.c_str(), metric.second);
+    }
+    std::printf("}\n");
+    std::fflush(stdout);
 }
 
 aicore_depth_ctx* Load(const char* anyview_or_model,
@@ -124,17 +160,19 @@ int main() {
     AICORE_CHECK(reference.height == got.height &&
                  reference.width == got.width);
     AICORE_CHECK(reference.metric == got.metric);
-    AICORE_CHECK(Compare(reference.depth, got.depth, 0.015f));
+    AICORE_CHECK(Compare("depth", reference.depth, got.depth, 0.015f));
     if (!reference.confidence.empty() || !got.confidence.empty()) {
-        AICORE_CHECK(Compare(reference.confidence, got.confidence, 0.02f));
+        AICORE_CHECK(Compare("confidence", reference.confidence, got.confidence,
+                             0.02f));
     }
 
     std::vector<float> ref_pose(reference.ext, reference.ext + 12);
     std::vector<float> got_pose(got.ext, got.ext + 12);
     std::vector<float> ref_intr(reference.intr, reference.intr + 9);
     std::vector<float> got_intr(got.intr, got.intr + 9);
-    AICORE_CHECK(Compare(ref_pose, got_pose, 0.02f));
-    AICORE_CHECK(Compare(ref_intr, got_intr, 0.02f));
+    AICORE_CHECK(Compare("pose", ref_pose, got_pose, 0.02f));
+    AICORE_CHECK(Compare("intrinsics", ref_intr, got_intr, 0.02f));
+    PrintMetricsJson(reference, got);
 
     aicore_depth_free(cpu);
     aicore_depth_free(accelerator);

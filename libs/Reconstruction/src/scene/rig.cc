@@ -561,10 +561,16 @@ void UpdateRigsAndFramesFromDatabase(const Database& database,
     reconstruction_frame.SetRigId(database_frame.RigId());
     reconstruction_frame.AddDataId(reconstruction_image.DataId());
     if (reconstruction_image.HasPose()) {
+      // Upstream parity (f8a406c6): images grouped into one rig frame may
+      // have independently estimated, slightly inconsistent poses. The
+      // reference sensor directly defines the shared rig pose, so prefer it
+      // over poses derived from other sensors using the averaged
+      // sensor_from_rig calibration. If the reference image has no pose,
+      // keep the first available non-reference pose as a fallback.
       if (database_rig.IsRefSensor(database_sensor_id)) {
         reconstruction_frame.SetRigFromWorld(
             reconstruction_image.CamFromWorld());
-      } else {
+      } else if (!reconstruction_frame.HasPose()) {
         reconstruction_frame.SetRigFromWorld(
             Inverse(database_rig.SensorFromRig(database_sensor_id)) *
             reconstruction_image.CamFromWorld());
@@ -590,7 +596,9 @@ void UpdateRigsAndFramesFromDatabase(const Database& database,
 void CopyCameraIntrinsics(const Camera& src, Camera& dst) {
   dst.SetModelId(src.ModelId());
   dst.SetParams(src.Params());
-  dst.SetPriorFocalLength(src.HasPriorFocalLength());
+  // Upstream parity (f1ea91d0): the calibration source is copied verbatim;
+  // HasPriorFocalLength() is derived from it via CameraSourcePriority.
+  dst.SetSource(src.Source());
 }
 
 }  // namespace
@@ -654,7 +662,9 @@ std::vector<RigConfig> ReadRigConfig(
         config_camera.camera = std::make_optional<Camera>();
         config_camera.camera->SetModelId(CameraModelNameToId(
             camera.second.get<std::string>("camera_model_name")));
-        config_camera.camera->SetPriorFocalLength(true);
+        // Upstream parity (f1ea91d0): a rig-config camera carries user-provided
+        // intrinsics.
+        config_camera.camera->SetSource(CameraSource::USER);
         // Fork adaptation: Camera::SetModelId pre-fills params with zeros
         // (upstream keeps them empty), so reset before appending.
         config_camera.camera->SetParams(std::vector<double>());

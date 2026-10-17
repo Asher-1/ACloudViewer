@@ -71,8 +71,10 @@ void pybind_vocab_tree_methods(py::module& m) {
 }
 
 void pybind_vocab_tree(py::module& m) {
-    py::module m_submodule =
-            m.def_submodule("vocab_tree", "Reconstruction vocabulary tree.");
+    py::module m_submodule = m.def_submodule(
+            "retrieval",
+            "Retrieval / vocabulary-tree index (upstream pycolmap "
+            "retrieval module parity).");
     pybind_vocab_tree_methods(m_submodule);
 
     // Upstream pycolmap parity (src/pycolmap/retrieval/visual_index.cc): the

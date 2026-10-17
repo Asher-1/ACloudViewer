@@ -18,7 +18,12 @@
 AnnotationPopup::AnnotationPopup(QWidget* parent) : QWidget(parent) {
     // Match the source Popup flags: frameless, above everything, and never
     // focus-activating or input-accepting so the canvas keeps all events.
-    setWindowFlags(Qt::WindowType::FramelessWindowHint |
+    // Qt::ToolTip is the window type those hints imply: without a type bit
+    // the widget stays a plain child and showMessage()'s screen-space
+    // geometry gets reinterpreted as parent-relative, drifting the toast by
+    // exactly the host window's position.
+    setWindowFlags(Qt::WindowType::ToolTip |
+                   Qt::WindowType::FramelessWindowHint |
                    Qt::WindowType::WindowStaysOnTopHint |
                    Qt::WindowType::WindowDoesNotAcceptFocus |
                    Qt::WindowType::WindowTransparentForInput);
@@ -43,6 +48,10 @@ AnnotationPopup::AnnotationPopup(QWidget* parent) : QWidget(parent) {
     m_timer = new QTimer(this);
     m_timer->setSingleShot(true);
     connect(m_timer, &QTimer::timeout, this, &QWidget::hide);
+    // Qt children are visible-by-inheritance: without this explicit hide,
+    // the host window's show() maps this never-positioned toast at (0,0)
+    // over the menu bar. showMessage() is the only code path that shows it.
+    hide();
 }
 
 void AnnotationPopup::showMessage(const QString& text, int msec) {

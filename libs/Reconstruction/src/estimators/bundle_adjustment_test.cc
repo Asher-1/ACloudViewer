@@ -33,6 +33,8 @@
 #include "util/testing.h"
 
 #include "sensor/models.h"
+#include <memory>
+
 #include "scene/correspondence_graph.h"
 #include "scene/projection.h"
 #include "estimators/bundle_adjustment.h"
@@ -129,8 +131,14 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     image.Qvec() = ComposeIdentityQuaternion();
     image.Tvec() =
         Eigen::Vector3d(RandomReal(-1.0, 1.0), RandomReal(-1.0, 1.0), 10);
-    image.SetRegistered(true);
-    reconstruction->AddImageWithTrivialFrame(image);
+    // Upstream parity (d3ccaf35): pass the pose explicitly through the
+    // two-argument overload, which also registers the frame (the legacy
+    // seed-from-image-mirror path no longer fabricates a pose).
+    const Eigen::Quaterniond image_q(
+        image.Qvec()(0), image.Qvec()(1), image.Qvec()(2),
+        image.Qvec()(3));
+    reconstruction->AddImageWithTrivialFrame(
+        image, Rigid3d(image_q, image.Tvec()));
 
     const Eigen::Matrix3x4d proj_matrix = image.ProjectionMatrix();
 
@@ -148,8 +156,6 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     correspondence_graph->AddImage(image_id, num_points);
     reconstruction->Image(image_id).SetPoints2D(points2D);
   }
-
-  reconstruction->SetUp(correspondence_graph);
 
   for (size_t i = 0; i < num_images; ++i) {
     const image_t image_id = static_cast<image_t>(i);

@@ -40,11 +40,15 @@
 #include "image/undistortion.h"
 #include "scene/database.h"
 #include "controllers/da3_depth_controller.h"
+#include "controllers/global_pipeline.h"
+#include "controllers/hierarchical_pipeline.h"
 #include "controllers/incremental_pipeline.h"
 #include "controllers/texturing_controller.h"
+#include "estimators/view_graph_calibration.h"
 #include "controllers/feature_extraction.h"
-#include "feature/loma.h"
-#include "feature/matching.h"
+#include "controllers/feature_extraction.h"
+#include "controllers/feature_matching.h"
+#include "estimators/bundle_adjustment_ceres.h"
 #include "mvs/da3_fusion.h"
 #include "mvs/fusion.h"
 #include "mvs/advancing_front_meshing.h"
@@ -423,6 +427,24 @@ AutomaticReconstructionController::AutomaticReconstructionController(
 
   CHECK(ExistsCameraModelWithName(options_.camera_model));
 
+  // Set feature type first so quality modifiers can query EffMaxImageSize().
+  if (options_.feature == Feature::SIFT) {
+    option_manager_.feature_extraction->type = FeatureExtractorType::SIFT;
+    option_manager_.feature_matching->type =
+        FeatureMatcherType::SIFT_BRUTEFORCE;
+  } else if (options_.feature == Feature::ALIKED) {
+    option_manager_.feature_extraction->type =
+        FeatureExtractorType::ALIKED_N16ROT;
+    option_manager_.feature_matching->type =
+        FeatureMatcherType::ALIKED_BRUTEFORCE;
+  } else if (options_.feature == Feature::LOMA) {
+    option_manager_.feature_extraction->type = FeatureExtractorType::LOMA_B;
+    option_manager_.feature_matching->type = FeatureMatcherType::LOMA_B;
+  } else if (options_.feature == Feature::LOMA128) {
+    option_manager_.feature_extraction->type = FeatureExtractorType::LOMA_B128;
+    option_manager_.feature_matching->type = FeatureMatcherType::LOMA_B128;
+  }
+
   if (options_.quality == Quality::LOW) {
     option_manager_.ModifyForLowQuality();
   } else if (options_.quality == Quality::MEDIUM) {
@@ -433,10 +455,33 @@ AutomaticReconstructionController::AutomaticReconstructionController(
     option_manager_.ModifyForExtremeQuality();
   }
 
-  option_manager_.sift_extraction->num_threads = options_.num_threads;
-  option_manager_.sift_matching->num_threads = options_.num_threads;
+  // Feature-specific overrides that must come after quality.
+  if (options_.feature != Feature::SIFT) {
+    // Guided matching is not supported for ALIKED/LoMa.
+    option_manager_.feature_matching->guided_matching = false;
+  }
+  option_manager_.feature_extraction->num_threads = options_.num_threads;
+  option_manager_.feature_matching->num_threads = options_.num_threads;
+  option_manager_.sequential_pairing->num_threads = options_.num_threads;
+  option_manager_.vocab_tree_pairing->num_threads = options_.num_threads;
   option_manager_.mapper->num_threads = options_.num_threads;
+  option_manager_.patch_match_stereo->num_threads = options_.num_threads;
   option_manager_.poisson_meshing->num_threads = options_.num_threads;
+
+  // Upstream parity (a2bd15c2): one seed drives the geometric verification
+  // and mapper RANSAC stages.
+  option_manager_.two_view_geometry->ransac_options.random_seed =
+      options_.random_seed;
+  // Upstream parity (a2bd15c2): global mapping uses stricter two-view
+  // geometry thresholds and no guided matching, which currently degrades the
+  // global pipeline.
+  if (options_.mapper == Mapper::GLOBAL) {
+    option_manager_.two_view_geometry->ransac_options.max_error = 1.0;
+    option_manager_.two_view_geometry->min_num_inliers = 30;
+    option_manager_.two_view_geometry->min_inlier_ratio = 0.25;
+    option_manager_.feature_matching->guided_matching = false;
+  }
+  option_manager_.mapper->random_seed = options_.random_seed;
 
   ImageReaderOptions reader_options = *option_manager_.image_reader;
   reader_options.database_path = *option_manager_.database_path;
@@ -448,48 +493,29 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   reader_options.single_camera = options_.single_camera;
   reader_options.camera_model = options_.camera_model;
 
-  option_manager_.sift_extraction->use_gpu = options_.use_gpu;
-  option_manager_.sift_matching->use_gpu = options_.use_gpu;
+  option_manager_.feature_extraction->use_gpu = options_.use_gpu;
+  option_manager_.feature_matching->use_gpu = options_.use_gpu;
   option_manager_.mapper->ba_use_gpu = options_.use_gpu;
-  option_manager_.bundle_adjustment->use_gpu = options_.use_gpu;
-
-  option_manager_.sift_extraction->gpu_index = options_.gpu_index;
-  option_manager_.sift_matching->gpu_index = options_.gpu_index;
-  option_manager_.patch_match_stereo->gpu_index = options_.gpu_index;
-  option_manager_.mapper->ba_gpu_index = options_.gpu_index;
-  option_manager_.bundle_adjustment->gpu_index = options_.gpu_index;
-
-  const bool use_loma = option_manager_.sift_extraction->use_loma ||
-                        !option_manager_.sift_extraction->loma_detector_model_path.empty() ||
-                        !option_manager_.sift_extraction->loma_descriptor_model_path.empty();
-  if (use_loma) {
-    LomaExtractionOptions loma_options;
-    loma_options.detector_model_path =
-        option_manager_.sift_extraction->loma_detector_model_path;
-    loma_options.descriptor_model_path =
-        option_manager_.sift_extraction->loma_descriptor_model_path;
-    loma_options.device = option_manager_.sift_extraction->loma_device;
-    loma_options.max_num_features =
-        option_manager_.sift_extraction->max_num_features;
-    loma_options.descriptor_type = FeatureDescriptorType::kLomaG;
-    ResolveDefaultLomaModelPaths(&loma_options);
-    option_manager_.sift_matching->use_loma = true;
-    if (option_manager_.sift_matching->loma_matcher_model_path.empty()) {
-      LomaMatchingOptions loma_matching_options;
-      ResolveDefaultLomaModelPaths(&loma_matching_options);
-      option_manager_.sift_matching->loma_matcher_model_path =
-          loma_matching_options.matcher_model_path;
-    }
-    feature_extractor_.reset(new LomaFeatureExtractor(reader_options,
-                                                       loma_options));
-  } else {
-    feature_extractor_.reset(new SiftFeatureExtractor(
-        reader_options, *option_manager_.sift_extraction));
+  if (option_manager_.bundle_adjustment->ceres) {
+    option_manager_.bundle_adjustment->ceres->use_gpu = options_.use_gpu;
   }
 
-  exhaustive_matcher_.reset(new ExhaustiveFeatureMatcher(
-      *option_manager_.exhaustive_matching, *option_manager_.sift_matching,
-      *option_manager_.database_path));
+  option_manager_.feature_extraction->gpu_index = options_.gpu_index;
+  option_manager_.feature_matching->gpu_index = options_.gpu_index;
+  option_manager_.patch_match_stereo->gpu_index = options_.gpu_index;
+  option_manager_.mapper->ba_gpu_index = options_.gpu_index;
+  if (option_manager_.bundle_adjustment->ceres) {
+    option_manager_.bundle_adjustment->ceres->gpu_index = options_.gpu_index;
+  }
+
+  reader_options.as_rgb = option_manager_.feature_extraction->RequiresRGB();
+  feature_extractor_ = CreateFeatureExtractorController(
+      *option_manager_.database_path, reader_options,
+      *option_manager_.feature_extraction);
+
+  exhaustive_matcher_ = CreateExhaustiveFeatureMatcher(
+      *option_manager_.exhaustive_pairing, *option_manager_.feature_matching,
+      *option_manager_.two_view_geometry, *option_manager_.database_path);
 
   // Resolve vocab_tree_path: use default if empty, and download/cache if URI
   std::string resolved_vocab_tree_path = options_.vocab_tree_path.string();
@@ -498,7 +524,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
     // default tree for the feature type (SIFT for this pipeline).
     resolved_vocab_tree_path =
         GetVocabTreeUriForFeatureType(
-            FeatureExtractorType::SIFT)
+            option_manager_.feature_extraction->type)
             .string();
   }
 
@@ -507,8 +533,8 @@ AutomaticReconstructionController::AutomaticReconstructionController(
 #ifdef COLMAP_DOWNLOAD_ENABLED
     // Download and cache the file if it's a URI, otherwise use as local path
     resolved_vocab_tree_path = MaybeDownloadAndCacheFile(resolved_vocab_tree_path).string();
-    option_manager_.sequential_matching->loop_detection = true;
-    option_manager_.sequential_matching->vocab_tree_path = resolved_vocab_tree_path;
+    option_manager_.sequential_pairing->loop_detection = true;
+    option_manager_.sequential_pairing->vocab_tree_path = resolved_vocab_tree_path;
 #else
     // If download is disabled, check if it's a URI and warn, otherwise use as local path
     if (resolved_vocab_tree_path.find("http://") == 0 ||
@@ -519,21 +545,22 @@ AutomaticReconstructionController::AutomaticReconstructionController(
       resolved_vocab_tree_path = "";  // Clear to avoid using invalid URI
     } else {
       // Use as local path
-      option_manager_.sequential_matching->loop_detection = true;
-      option_manager_.sequential_matching->vocab_tree_path = resolved_vocab_tree_path;
+      option_manager_.sequential_pairing->loop_detection = true;
+      option_manager_.sequential_pairing->vocab_tree_path = resolved_vocab_tree_path;
     }
 #endif
   }
 
-  sequential_matcher_.reset(new SequentialFeatureMatcher(
-      *option_manager_.sequential_matching, *option_manager_.sift_matching,
-      *option_manager_.database_path));
+  sequential_matcher_ = CreateSequentialFeatureMatcher(
+      *option_manager_.sequential_pairing, *option_manager_.feature_matching,
+      *option_manager_.two_view_geometry, *option_manager_.database_path);
 
   if (!resolved_vocab_tree_path.empty()) {
-    option_manager_.vocab_tree_matching->vocab_tree_path = resolved_vocab_tree_path;
-    vocab_tree_matcher_.reset(new VocabTreeFeatureMatcher(
-        *option_manager_.vocab_tree_matching, *option_manager_.sift_matching,
-        *option_manager_.database_path));
+    option_manager_.vocab_tree_pairing->vocab_tree_path =
+        resolved_vocab_tree_path;
+    vocab_tree_matcher_ = CreateVocabTreeFeatureMatcher(
+        *option_manager_.vocab_tree_pairing, *option_manager_.feature_matching,
+        *option_manager_.two_view_geometry, *option_manager_.database_path);
   }
 }
 
@@ -733,13 +760,55 @@ void AutomaticReconstructionController::RunSparseMapper() {
     }
   }
 
-  IncrementalMapperController mapper(
-      option_manager_.mapper.get(), *option_manager_.image_path,
-      *option_manager_.database_path, reconstruction_manager_);
-  active_thread_ = &mapper;
-  mapper.Start();
-  mapper.Wait();
-  active_thread_ = nullptr;
+  // Upstream parity (a2bd15c2 RunSparseMapper): dispatch on the selected
+  // mapper. The pipelines borrow the caller-owned reconstruction manager and
+  // database only for the duration of this call.
+  switch (options_.mapper) {
+    case Mapper::INCREMENTAL: {
+      IncrementalPipeline mapper(
+          option_manager_.mapper.get(), *option_manager_.image_path,
+          *option_manager_.database_path, reconstruction_manager_);
+      active_thread_ = &mapper;
+      mapper.Start();
+      mapper.Wait();
+      active_thread_ = nullptr;
+      break;
+    }
+    case Mapper::HIERARCHICAL: {
+      HierarchicalPipelineOptions hierarchical_options;
+      hierarchical_options.image_path = *option_manager_.image_path;
+      hierarchical_options.incremental_options = *option_manager_.mapper;
+      HierarchicalPipeline mapper(hierarchical_options,
+                                  *option_manager_.database_path,
+                                  reconstruction_manager_);
+      active_thread_ = &mapper;
+      mapper.Start();
+      mapper.Wait();
+      active_thread_ = nullptr;
+      break;
+    }
+    case Mapper::GLOBAL: {
+      std::shared_ptr<Database> database =
+          Database::Open(*option_manager_.database_path);
+      ViewGraphCalibrationOptions vgc_options;
+      vgc_options.random_seed = options_.random_seed;
+      vgc_options.solver_options.num_threads = options_.num_threads;
+      CalibrateViewGraph(vgc_options, database.get());
+      GlobalPipelineOptions global_options = *option_manager_.global_mapper;
+      global_options.image_path = *option_manager_.image_path;
+      global_options.num_threads = options_.num_threads;
+      global_options.random_seed = options_.random_seed;
+      // The fork's GlobalPipeline takes a shared manager; the controller
+      // only borrows its manager, so the alias must not delete it.
+      GlobalPipeline mapper(
+          std::move(global_options), std::move(database),
+          std::shared_ptr<ReconstructionManager>(
+              reconstruction_manager_, [](ReconstructionManager*) {}));
+      mapper.SetCheckIfStoppedFunc([&]() { return IsStopped(); });
+      mapper.Run();
+      break;
+    }
+  }
 
   CreateDirIfNotExists(sparse_path);
   reconstruction_manager_->Write(sparse_path, &option_manager_);
@@ -929,14 +998,14 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
       UndistortCameraOptions undistortion_options;
       undistortion_options.max_image_size =
           option_manager_.patch_match_stereo->max_image_size;
-      COLMAPUndistorter undistorter(undistortion_options,
+      COLMAPUndistorterImpl undistorter(undistortion_options,
                                     &reconstruction_manager_->Get(i),
                                     *option_manager_.image_path, dense_path);
       active_thread_ = &undistorter;
       undistorter.Start();
       undistorter.Wait();
       active_thread_ = nullptr;
-      // COLMAPUndistorter writes empty stereo/ skeleton; depth must be rebuilt.
+      // COLMAPUndistorterImpl writes empty stereo/ skeleton; depth must be rebuilt.
       RemovePathIfExists(dense_path / "stereo" / "fusion.cfg");
       RemovePathIfExists(dense_path / "stereo" / "patch-match.cfg");
     }
@@ -1089,7 +1158,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       UndistortCameraOptions undistortion_options;
       undistortion_options.max_image_size =
           option_manager_.patch_match_stereo->max_image_size;
-      COLMAPUndistorter undistorter(undistortion_options,
+      COLMAPUndistorterImpl undistorter(undistortion_options,
                                     &reconstruction_manager_->Get(i),
                                     *option_manager_.image_path, dense_path);
       active_thread_ = &undistorter;

@@ -111,6 +111,25 @@ def op_sequence(pdmodel: Path):
     return ops
 
 
+def truncate_at(ops, fetch_var: str):
+    """Keep the ops up to the producer of `fetch_var` and fetch it.
+
+    SLANet exports one dense encoder followed by a `while` op whose
+    sub-block is the autoregressive structure decoder. The interpreter only
+    executes straight-line topology, so the table converter cuts the program
+    at the encoder output and the task runtime owns the decoder step.
+    """
+    for index, op in enumerate(ops):
+        if any(fetch_var in out["args"] for out in op["outputs"]):
+            kept = ops[:index + 1]
+            kept.append({"type": "fetch",
+                         "inputs": [{"param": "X", "args": [fetch_var]}],
+                         "outputs": [{"param": "Out", "args": ["fetch"]}],
+                         "attrs": [{"name": "col", "value": 0}]})
+            return kept
+    raise SystemExit(f"no op produces {fetch_var}")
+
+
 def run_reference(model_dir: Path, x: np.ndarray):
     from paddle.inference import Config, create_predictor
     config = Config(str(model_dir / "inference.pdmodel"),
@@ -141,9 +160,14 @@ def main() -> None:
                         help="write (input, output) .npz pair for parity")
     parser.add_argument("--input-shape", default="1,3,48,320")
     parser.add_argument("--seed", type=int, default=20260928)
+    parser.add_argument("--fetch-var", default=None,
+                        help="truncate the program after the producer of "
+                             "this variable and fetch it (table encoder)")
     args = parser.parse_args()
 
     ops = op_sequence(args.model_dir / "inference.pdmodel")
+    if args.fetch_var:
+        ops = truncate_at(ops, args.fetch_var)
     shapes = var_shapes(args.model_dir / "inference.pdmodel")
     ranks = {name: len(dims) for name, dims in shapes.items()}
     # Object envelope: ops plus per-tensor logical ranks and static

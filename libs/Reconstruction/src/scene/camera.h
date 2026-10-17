@@ -12,9 +12,67 @@
 
 #include "geometry/pose.h"
 #include "sensor/models.h"
+#include "util/enum_utils.h"
 #include "util/types.h"
 
 namespace colmap {
+
+// Upstream parity (d3ccaf35 scene/camera.h): shared plausibility thresholds
+// for the incremental mapper, bundle adjustment, and single-view calibration
+// options as `HasBogusParams` thresholds. Focal length ratios are relative to
+// the maximum image dimension and correspond to opening angles of ~130 and ~5
+// degrees; distortion parameters are bounded in absolute value.
+constexpr double kDefaultMinFocalLengthRatio = 0.1;
+constexpr double kDefaultMaxFocalLengthRatio = 10.0;
+constexpr double kDefaultMaxExtraParam = 1.0;
+
+// Upstream parity (f1ea91d0 scene/camera.h): camera calibration source
+// indicating the origin of the intrinsics. The persisted enum values are
+// decoupled from their reliability ranking via `CameraSourcePriority`.
+#ifdef __CUDACC__
+enum class CameraSource {
+    BEST = -1,
+    UNKNOWN = 0,
+    USER = 1,
+    GUESS = 2,
+    EXIF = 3,
+    SINGLE_VIEW = 4,
+    VIEW_GRAPH = 5,
+};
+#else
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(CameraSource,
+                                -1,
+                                BEST,
+                                UNKNOWN,
+                                USER,
+                                GUESS,
+                                EXIF,
+                                SINGLE_VIEW,
+                                VIEW_GRAPH);
+#endif
+
+// Returns the reliability priority of a camera calibration source (higher is
+// more reliable). Decouples the persisted enum integer values from their
+// priority ranking.
+constexpr int CameraSourcePriority(CameraSource source) {
+    switch (source) {
+        case CameraSource::UNKNOWN:
+            return 0;
+        case CameraSource::GUESS:
+            return 1;
+        case CameraSource::EXIF:
+            return 2;
+        case CameraSource::SINGLE_VIEW:
+            return 3;
+        case CameraSource::VIEW_GRAPH:
+            return 4;
+        case CameraSource::USER:
+            return 5;
+        case CameraSource::BEST:
+            break;
+    }
+    return -1;
+}
 
 // Camera class that holds the intrinsic parameters. Cameras may be shared
 // between multiple images, e.g., if the same "physical" camera took multiple
@@ -46,16 +104,20 @@ public:
     // Upstream-parity factories (COLMAP 4.x scene/camera.h): initialize
     // parameters for the given model with the principal point at the image
     // center.
-    static Camera CreateFromModelId(camera_t camera_id,
-                                    CameraModelId model_id,
-                                    double focal_length,
-                                    size_t width,
-                                    size_t height);
-    static Camera CreateFromModelName(camera_t camera_id,
-                                      const std::string& model_name,
-                                      double focal_length,
-                                      size_t width,
-                                      size_t height);
+    static Camera CreateFromModelId(
+            camera_t camera_id,
+            CameraModelId model_id,
+            double focal_length,
+            size_t width,
+            size_t height,
+            CameraSource source = CameraSource::UNKNOWN);
+    static Camera CreateFromModelName(
+            camera_t camera_id,
+            const std::string& model_name,
+            double focal_length,
+            size_t width,
+            size_t height,
+            CameraSource source = CameraSource::UNKNOWN);
 
     // Upstream-parity: the camera as a sensor in a rig.
     inline sensor_t SensorId() const {
@@ -91,8 +153,17 @@ public:
     void SetFocalLengthX(const double focal_length_x);
     void SetFocalLengthY(const double focal_length_y);
 
-    // Check if camera has prior focal length.
+    // Check if camera has prior focal length: upstream parity (f1ea91d0)
+    // means the calibration source outranks the fallback heuristic, i.e.
+    // `source` is EXIF, SINGLE_VIEW, USER, or VIEW_GRAPH.
     inline bool HasPriorFocalLength() const;
+    // The origin / source of the camera calibration parameters. Upstream
+    // parity (f1ea91d0): the single source of truth for the prior flag.
+    inline CameraSource Source() const;
+    inline void SetSource(const CameraSource source);
+    // Deprecated upstream-parity compatibility shim (mirrors the pycolmap
+    // deprecation mapping): True maps to CameraSource::USER, False to
+    // CameraSource::GUESS. New code sets `source` explicitly.
     inline void SetPriorFocalLength(const bool prior);
 
     // Access principal point parameters. Only works if there are two
@@ -172,6 +243,12 @@ public:
     // Project point from camera frame to image plane. Without cheirality
     // check, points behind the camera are projected as well and only points
     // on the camera plane fail.
+    // Upstream parity (d3ccaf35 scene/camera.h): indices of metadata
+    // parameters in params (empty: all fork models are perspective).
+    std::vector<size_t> MetaDataParamsIdxs() const {
+        return CameraModelMetaDataParamsIdxs(ModelId());
+    }
+
     std::optional<Eigen::Vector2d> ImgFromCam(
             const Eigen::Vector3d& camera_point,
             bool check_cheirality = true) const;
@@ -217,7 +294,7 @@ private:
 
     // Whether there is a safe prior for the focal length,
     // e.g. manually provided or extracted from EXIF
-    bool prior_focal_length_;
+    CameraSource source_ = CameraSource::UNKNOWN;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -238,10 +315,17 @@ void Camera::SetWidth(const size_t width) { width_ = width; }
 
 void Camera::SetHeight(const size_t height) { height_ = height; }
 
-bool Camera::HasPriorFocalLength() const { return prior_focal_length_; }
+bool Camera::HasPriorFocalLength() const {
+    return CameraSourcePriority(source_) >
+           CameraSourcePriority(CameraSource::GUESS);
+}
+
+CameraSource Camera::Source() const { return source_; }
+
+void Camera::SetSource(const CameraSource source) { source_ = source; }
 
 void Camera::SetPriorFocalLength(const bool prior) {
-    prior_focal_length_ = prior;
+    source_ = prior ? CameraSource::USER : CameraSource::GUESS;
 }
 
 size_t Camera::NumParams() const { return params_.size(); }
@@ -263,10 +347,13 @@ void Camera::SetParams(const std::vector<double>& params) { params_ = params; }
 bool Camera::operator==(const Camera& other) const {
     return CameraId() == other.CameraId() && ModelId() == other.ModelId() &&
            Width() == other.Width() && Height() == other.Height() &&
-           Params() == other.Params() &&
-           HasPriorFocalLength() == other.HasPriorFocalLength();
+           Params() == other.Params() && Source() == other.Source();
 }
 
 bool Camera::operator!=(const Camera& other) const { return !(*this == other); }
+
+// Upstream parity (d3ccaf35 scene/camera.cc): human-readable summary used
+// by logging and the Print test.
+std::ostream& operator<<(std::ostream& stream, const Camera& camera);
 
 }  // namespace colmap

@@ -58,6 +58,19 @@ struct Image {
         if (channels == 1) return pixel[0];
         return pixel[bgr ? 2 - c : c];
     }
+    // Hoistable pieces of channel() for hot loops: `row(y)[x * channels +
+    // channel_index(c)]` is the same byte channel(x, y, c) returns, but the
+    // data()/stride()/channels/bgr branches are evaluated once per row (or
+    // once per call) instead of per sample. Writes through a raw `uint8_t*` /
+    // `float*` destination may alias this struct, so the compiler cannot do
+    // that hoisting on its own; the resize/pack/crop kernels ran 3-5x slower
+    // than the arithmetic warranted before the callers hoisted explicitly.
+    const uint8_t* row(int y) const {
+        return data() + static_cast<size_t>(y) * stride();
+    }
+    int channel_index(int c) const {
+        return channels == 1 ? 0 : (bgr ? 2 - c : c);
+    }
     bool empty() const {
         return width <= 0 || height <= 0 || data() == nullptr;
     }
@@ -77,8 +90,8 @@ bool image_from_view(const aicore_image_view& view, Image& out);
 
 // OpenCV-aligned (cv2.resize INTER_LINEAR, 11-bit fixed point) bilinear
 // resample of a strided source view into a tightly packed `dw`x`dh`x`cn`
-// destination. Matches OpenCV to within 1 LSB on a minority of pixels; task
-// parity gates feed the reference's exact resized pixels where that matters.
+// destination. Bit-exact with the OpenCV 8U path (coefficients, border
+// handling and the uchar vertical rounding); see the .cpp for the rules.
 void cv_resize_linear_u8(
         const Image& src, uint8_t* dst, int dw, int dh, int cn);
 

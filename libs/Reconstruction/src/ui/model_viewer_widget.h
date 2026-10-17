@@ -11,6 +11,8 @@
 #include <QtCore>
 #include <QtGlobal>
 #include <QtOpenGL>
+
+#include "util/hash_containers.h"
 // QOpenGLWidget: In Qt5 it's in QtOpenGL module, in Qt6 it's in QtOpenGLWidgets
 // module Use direct include which works for both when the appropriate module is
 // linked
@@ -109,9 +111,9 @@ public:
 
     // Copy of current scene data that is displayed
     Reconstruction* reconstruction = nullptr;
-    std::unordered_map<camera_t, Camera> cameras;
-    std::unordered_map<image_t, Image> images;
-    std::unordered_map<point3D_t, Point3D> points3D;
+    NodeHashMap<camera_t, Camera> cameras;
+    NodeHashMap<image_t, Image> images;
+    NodeHashMap<point3D_t, Point3D> points3D;
     std::vector<image_t> reg_image_ids;
 
     QLabel* statusbar_status_label;

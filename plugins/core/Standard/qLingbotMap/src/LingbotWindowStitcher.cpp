@@ -214,12 +214,6 @@ Similarity pairwiseAlignment(const WindowData& prev,
 
 void warpWindow(WindowData& win, const Similarity& sim) {
     const float* R = sim.R;
-    float RT[9];
-    for (int r = 0; r < 3; ++r) {
-        for (int c = 0; c < 3; ++c) {
-            RT[r * 3 + c] = R[c * 3 + r];
-        }
-    }
     const size_t plane = static_cast<size_t>(win.width) * win.height;
     for (int f = 0; f < win.frames; ++f) {
         float* pe = win.poseEnc.data() + static_cast<size_t>(f) * kPoseEncSize;
@@ -245,29 +239,34 @@ void warpWindow(WindowData& win, const Similarity& sim) {
             d[p] *= sim.s;
         }
 
-        // c2w sidecar: R' = R_c2w @ R^T, t' = s * t_c2w - R_c2w @ (R^T t).
+        // c2w (the decoded pose_enc [R|t], camera-to-world): the window
+        // alignment maps WORLD points by the similarity (s, R, t), so the
+        // c2w warps by LEFT-multiplication —
+        //   c2w_R' = R @ c2w_R,  c2w_t' = s * R @ c2w_t + t
+        // keeping merged c2w == decode(merged pose_enc) exactly. (The
+        // official ggml_demo warps the SIDECAR — inv(decode), w2c — with
+        // the mirror-image right-multiplication formula; both are the same
+        // warp expressed in the two conventions.)
         float* c2w = win.c2w.data() + static_cast<size_t>(f) * kC2WSize;
         const float rIn[9] = {c2w[0], c2w[1], c2w[2], c2w[4], c2w[5],
                               c2w[6], c2w[8], c2w[9], c2w[10]};
         float rOut[9];
-        mat3Mul(rIn, RT, rOut);
+        mat3Mul(R, rIn, rOut);
         const float tin[3] = {c2w[3], c2w[7], c2w[11]};
-        float RtT[3];
-        mat3Vec(RT, sim.t, RtT);
-        float rotTin[3];
-        mat3Vec(rIn, RtT, rotTin);
+        float sRt[3];
+        mat3Vec(R, tin, sRt);
         c2w[0] = rOut[0];
         c2w[1] = rOut[1];
         c2w[2] = rOut[2];
-        c2w[3] = sim.s * tin[0] - rotTin[0];
+        c2w[3] = sim.s * sRt[0] + sim.t[0];
         c2w[4] = rOut[3];
         c2w[5] = rOut[4];
         c2w[6] = rOut[5];
-        c2w[7] = sim.s * tin[1] - rotTin[1];
+        c2w[7] = sim.s * sRt[1] + sim.t[1];
         c2w[8] = rOut[6];
         c2w[9] = rOut[7];
         c2w[10] = rOut[8];
-        c2w[11] = sim.s * tin[2] - rotTin[2];
+        c2w[11] = sim.s * sRt[2] + sim.t[2];
     }
 }
 

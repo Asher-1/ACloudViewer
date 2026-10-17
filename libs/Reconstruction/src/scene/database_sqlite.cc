@@ -183,17 +183,8 @@ MatrixType ReadDynamicMatrixBlob(sqlite3_stmt* sql_stmt, const int rc,
   return matrix;
 }
 
-void BindPoseBlob(sqlite3_stmt* sql_stmt,
-                 const int qvec_column,
-                 const int tvec_column,
-                 const Eigen::Vector4d& qvec,
-                 const Eigen::Vector3d& tvec) {
-  SQLITE3_CALL(sqlite3_bind_blob(sql_stmt, qvec_column, qvec.data(),
-                                 sizeof(double) * qvec.size(), SQLITE_STATIC));
-  SQLITE3_CALL(sqlite3_bind_blob(sql_stmt, tvec_column, tvec.data(),
-                                 sizeof(double) * tvec.size(), SQLITE_STATIC));
-}
-
+// Reads a fork-legacy (qvec, tvec) blob pair; only used to migrate the
+// fork-legacy rig tables to the upstream sensor_from_rig encoding.
 bool ReadPoseBlob(sqlite3_stmt* sql_stmt,
                   const int qvec_column,
                   const int tvec_column,
@@ -210,6 +201,44 @@ bool ReadPoseBlob(sqlite3_stmt* sql_stmt,
   memcpy(tvec->data(), sqlite3_column_blob(sql_stmt, tvec_column),
          sizeof(double) * tvec->size());
   return qvec->allFinite() && tvec->allFinite() && qvec->squaredNorm() > 0.0;
+}
+
+// Upstream rig_sensors.sensor_from_rig encoding (WriteRigid3dToStringStream):
+// 7 little-endian doubles [qw, qx, qy, qz, tx, ty, tz]. The fork's qvec is
+// stored as (w, x, y, z), so it maps onto the blob element by element.
+std::string SensorFromRigToBlob(const Eigen::Vector4d& qvec,
+                                const Eigen::Vector3d& tvec) {
+  std::ostringstream stream(std::ios::binary);
+  for (int i = 0; i < 4; ++i) {
+    WriteBinaryLittleEndian<double>(&stream, qvec(i));
+  }
+  for (int i = 0; i < 3; ++i) {
+    WriteBinaryLittleEndian<double>(&stream, tvec(i));
+  }
+  return stream.str();
+}
+
+// Returns false for NULL (unknown sensor_from_rig).
+bool SensorFromRigFromBlob(sqlite3_stmt* sql_stmt,
+                           const int col,
+                           Eigen::Vector4d* qvec,
+                           Eigen::Vector3d* tvec) {
+  if (sqlite3_column_type(sql_stmt, col) == SQLITE_NULL) {
+    return false;
+  }
+  const size_t num_bytes =
+      static_cast<size_t>(sqlite3_column_bytes(sql_stmt, col));
+  CHECK_EQ(num_bytes, 7 * sizeof(double));
+  const std::string bytes(
+      static_cast<const char*>(sqlite3_column_blob(sql_stmt, col)), num_bytes);
+  std::istringstream stream(bytes, std::ios::binary);
+  for (int i = 0; i < 4; ++i) {
+    (*qvec)(i) = ReadBinaryLittleEndian<double>(&stream);
+  }
+  for (int i = 0; i < 3; ++i) {
+    (*tvec)(i) = ReadBinaryLittleEndian<double>(&stream);
+  }
+  return true;
 }
 
 template <typename MatrixType>
@@ -252,7 +281,15 @@ Camera ReadCameraRow(sqlite3_stmt* sql_stmt) {
   memcpy(camera.ParamsData(), sqlite3_column_blob(sql_stmt, 4),
          num_params_bytes);
 
-  camera.SetPriorFocalLength(sqlite3_column_int64(sql_stmt, 5) != 0);
+  // Upstream parity (f1ea91d0): column 5 carries the persisted
+  // CameraSource; tolerate legacy readers with fewer columns and NULLs.
+  if (sqlite3_column_count(sql_stmt) > 5 &&
+      sqlite3_column_type(sql_stmt, 5) != SQLITE_NULL) {
+    camera.SetSource(static_cast<CameraSource>(
+        sqlite3_column_int64(sql_stmt, 5)));
+  } else {
+    camera.SetSource(CameraSource::UNKNOWN);
+  }
 
   return camera;
 }
@@ -265,28 +302,11 @@ Image ReadImageRow(sqlite3_stmt* sql_stmt) {
       reinterpret_cast<const char*>(sqlite3_column_text(sql_stmt, 1))));
   image.SetCameraId(static_cast<camera_t>(sqlite3_column_int64(sql_stmt, 2)));
 
-  // NaNs are automatically converted to NULLs in SQLite.
-  for (size_t i = 0; i < 4; ++i) {
-    if (sqlite3_column_type(sql_stmt, i + 3) != SQLITE_NULL) {
-      image.QvecPrior(i) = sqlite3_column_double(sql_stmt, i + 3);
-    }
-  }
-
-  // NaNs are automatically converted to NULLs in SQLite.
-  for (size_t i = 0; i < 3; ++i) {
-    if (sqlite3_column_type(sql_stmt, i + 7) != SQLITE_NULL) {
-      image.TvecPrior(i) = sqlite3_column_double(sql_stmt, i + 7);
-    }
-  }
-
-  // Upstream parity (dbb41680): the last column of the image read statements
-  // carries the owning frame id, resolved by joining frame_data (with the
-  // fork-legacy frame_images fallback). NULL means the image is not yet part
+  // Upstream parity (a2bd15c2): the image-to-frame association is resolved
+  // at read time by joining frame_data; NULL means the image is not yet part
   // of a frame.
-  if (sqlite3_column_count(sql_stmt) > 10 &&
-      sqlite3_column_type(sql_stmt, 10) != SQLITE_NULL) {
-    image.SetFrameId(
-        static_cast<frame_t>(sqlite3_column_int64(sql_stmt, 10)));
+  if (sqlite3_column_type(sql_stmt, 3) != SQLITE_NULL) {
+    image.SetFrameId(static_cast<frame_t>(sqlite3_column_int64(sql_stmt, 3)));
   }
 
   return image;
@@ -313,13 +333,14 @@ class SqliteDatabase : public Database {
   void Close() override;
 
   bool ExistsCamera(const camera_t camera_id) const override;
+  bool ExistsCameraSource(const camera_t camera_id,
+                          const CameraSource source) const override;
   bool ExistsRig(const rig_t rig_id) const override;
   bool ExistsFrame(const frame_t frame_id) const override;
   bool ExistsImage(const image_t image_id) const override;
   bool ExistsImageWithName(std::string name) const override;
   bool ExistsKeypoints(const image_t image_id) const override;
   bool ExistsDescriptors(const image_t image_id) const override;
-  bool ExistsFloatDescriptors(const image_t image_id) const override;
   bool ExistsMatches(const image_t image_id1,
                      const image_t image_id2) const override;
   bool ExistsInlierMatches(const image_t image_id1,
@@ -344,8 +365,14 @@ class SqliteDatabase : public Database {
   size_t NumVerifiedImagePairs() const override;
   size_t NumPosePriors() const override;
 
-  Camera ReadCamera(const camera_t camera_id) const override;
-  std::vector<Camera> ReadAllCameras() const override;
+  Camera ReadCamera(const camera_t camera_id,
+                    const CameraSource source = CameraSource::BEST) const override;
+  std::vector<Camera> ReadAllCameras(
+      const CameraSource source = CameraSource::BEST) const override;
+  std::map<CameraSource, Camera> ReadAllCameraSources(
+      const camera_t camera_id) const override;
+  NodeHashMap<camera_t, std::map<CameraSource, Camera>>
+  ReadAllCameraSources() const override;
   Rig ReadRig(const rig_t rig_id) const override;
   std::optional<Rig> ReadRigWithSensor(sensor_t sensor_id) const override;
   std::vector<Rig> ReadAllRigs() const override;
@@ -356,14 +383,11 @@ class SqliteDatabase : public Database {
   std::vector<Image> ReadAllImages() const override;
   FeatureKeypoints ReadKeypoints(const image_t image_id) const override;
   FeatureDescriptors ReadDescriptors(const image_t image_id) const override;
-  FeatureDescriptorsFloat ReadFloatDescriptors(
-          const image_t image_id) const override;
-  FeatureDescriptorType ReadDescriptorType(
-          const image_t image_id) const override;
   FeatureMatches ReadMatches(const image_t image_id1,
                              const image_t image_id2) const override;
   std::vector<std::pair<image_pair_t, FeatureMatches>> ReadAllMatches()
           const override;
+  std::vector<std::pair<image_pair_t, int>> ReadNumMatches() const override;
   TwoViewGeometry ReadTwoViewGeometry(const image_t image_id1,
                                       const image_t image_id2)
           const override;
@@ -392,9 +416,6 @@ class SqliteDatabase : public Database {
   void WriteDescriptors(const image_t image_id,
                         const FeatureDescriptors& descriptors)
           const override;
-  void WriteFloatDescriptors(const image_t image_id,
-                             const FeatureDescriptorsFloat& descriptors,
-                             FeatureDescriptorType type) const override;
   void WriteMatches(const image_t image_id1,
                     const image_t image_id2,
                     const FeatureMatches& matches) const override;
@@ -410,6 +431,9 @@ class SqliteDatabase : public Database {
                               bool use_pose_prior_id = false) override;
 
   void UpdateCamera(const Camera& camera) const override;
+  void DeleteCameraSource(
+      const camera_t camera_id,
+      const CameraSource source = CameraSource::BEST) const override;
   void UpdateRig(const Rig& rig) const override;
   void UpdateFrame(const Frame& frame) const override;
   void UpdateImage(const Image& image) const override;
@@ -433,7 +457,7 @@ class SqliteDatabase : public Database {
   void ClearKeypoints() const override;
   void ClearMatches() const override;
   void ClearTwoViewGeometries() const override;
-  void ClearPosePriors() override;
+  void ClearPosePriors() const override;
 
  protected:
   void BeginTransaction() const override;
@@ -456,28 +480,28 @@ class SqliteDatabase : public Database {
   void CreateCameraTable() const;
   void CreateRigTable() const;
   void CreateRigSensorsTable() const;
-  void CreateRigCamerasTable() const;
   void CreateFrameTable() const;
   void CreateFrameDataTable() const;
-  void CreateFrameImagesTable() const;
   void CreateImageTable() const;
   void CreateKeypointsTable() const;
   void CreateDescriptorsTable() const;
-  void CreateFloatDescriptorsTable() const;
   void CreateMatchesTable() const;
   void CreateTwoViewGeometriesTable() const;
   void CreatePosePriorsTable() const;
 
-  // Legacy-schema preparation before CreateTables() (upstream parity).
-  void PreMigrateTables() const;
+  // Legacy-schema preparation before CreateTables() (upstream parity). Returns
+  // whether the database carries the fork-legacy rig/frame/image schema,
+  // whose tables were moved aside to be migrated by PostMigrateTables().
+  bool PreMigrateTables() const;
 
   // Version-gated migrations and the user_version stamp (upstream parity).
-  void PostMigrateTables() const;
+  void PostMigrateTables(bool fork_legacy_schema) const;
+
+  // Copies the moved-aside fork-legacy tables into the upstream schema.
+  void MigrateForkLegacyTables() const;
 
   // Reads the raw PRAGMA user_version value.
   int ReadUserVersion() const;
-
-  void UpdateSchema() const;
 
   bool ExistsTable(const std::string& table_name) const;
   bool ExistsColumn(const std::string& table_name,
@@ -510,21 +534,25 @@ class SqliteDatabase : public Database {
   std::vector<sqlite3_stmt*> sql_stmts_;
 
   // num_*
+  sqlite3_stmt* sql_stmt_num_cameras_ = nullptr;
   sqlite3_stmt* sql_stmt_num_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_num_descriptors_ = nullptr;
 
   // exists_*
   sqlite3_stmt* sql_stmt_exists_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_exists_camera_source_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_image_id_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_image_name_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_exists_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_exists_two_view_geometry_ = nullptr;
 
   // add_*
   sqlite3_stmt* sql_stmt_add_camera_ = nullptr;
+  // Upstream parity (f1ea91d0): explicit next-id allocation for the
+  // composite-primary-key cameras table (no AUTOINCREMENT).
+  sqlite3_stmt* sql_stmt_next_camera_id_ = nullptr;
   sqlite3_stmt* sql_stmt_add_image_ = nullptr;
 
   // update_*
@@ -535,15 +563,18 @@ class SqliteDatabase : public Database {
   // read_*
   sqlite3_stmt* sql_stmt_read_camera_ = nullptr;
   sqlite3_stmt* sql_stmt_read_cameras_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_camera_source_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_cameras_for_source_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_camera_sources_for_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_all_camera_sources_ = nullptr;
   sqlite3_stmt* sql_stmt_read_image_id_ = nullptr;
   sqlite3_stmt* sql_stmt_read_image_name_ = nullptr;
   sqlite3_stmt* sql_stmt_read_images_ = nullptr;
   sqlite3_stmt* sql_stmt_read_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_read_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_read_float_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_read_descriptor_type_ = nullptr;
   sqlite3_stmt* sql_stmt_read_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_read_matches_all_ = nullptr;
+  sqlite3_stmt* sql_stmt_read_num_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometry_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometries_ = nullptr;
   sqlite3_stmt* sql_stmt_read_two_view_geometry_num_inliers_ = nullptr;
@@ -551,11 +582,12 @@ class SqliteDatabase : public Database {
   // write_*
   sqlite3_stmt* sql_stmt_write_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_write_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_write_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_write_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_write_two_view_geometry_ = nullptr;
 
   // delete_*
+  sqlite3_stmt* sql_stmt_delete_camera_ = nullptr;
+  sqlite3_stmt* sql_stmt_delete_camera_source_ = nullptr;
   sqlite3_stmt* sql_stmt_delete_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_delete_two_view_geometry_ = nullptr;
 
@@ -569,7 +601,6 @@ class SqliteDatabase : public Database {
   sqlite3_stmt* sql_stmt_clear_cameras_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_images_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_descriptors_ = nullptr;
-  sqlite3_stmt* sql_stmt_clear_float_descriptors_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_keypoints_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_matches_ = nullptr;
   sqlite3_stmt* sql_stmt_clear_two_view_geometries_ = nullptr;
@@ -612,9 +643,9 @@ void SqliteDatabase::OpenSqlite() {
   // Enable auto vacuum to reduce DB file size
   SQLITE3_EXEC(database_, "PRAGMA auto_vacuum=1", nullptr);
 
-  PreMigrateTables();
+  const bool fork_legacy_schema = PreMigrateTables();
   CreateTables();
-  PostMigrateTables();
+  PostMigrateTables(fork_legacy_schema);
   PrepareSQLStatements();
 }
 
@@ -629,6 +660,25 @@ void SqliteDatabase::Close() {
 
 bool SqliteDatabase::ExistsCamera(const camera_t camera_id) const {
   return ExistsRowId(sql_stmt_exists_camera_, camera_id);
+}
+
+// Upstream parity (f1ea91d0): checks whether a specific calibration source
+// exists for the camera (BEST is a query selector, not a source).
+bool SqliteDatabase::ExistsCameraSource(const camera_t camera_id,
+                                        const CameraSource source) const {
+  THROW_CHECK_NE(source, CameraSource::BEST)
+          << "Camera source cannot be BEST when checking calibration "
+             "existence.";
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_exists_camera_source_, 1, camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_exists_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  const bool exists =
+      SQLITE3_CALL(sqlite3_step(sql_stmt_exists_camera_source_)) == SQLITE_ROW;
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_exists_camera_source_));
+  return exists;
 }
 
 bool SqliteDatabase::ExistsRig(const rig_t rig_id) const {
@@ -665,10 +715,6 @@ bool SqliteDatabase::ExistsDescriptors(const image_t image_id) const {
   return ExistsRowId(sql_stmt_exists_descriptors_, image_id);
 }
 
-bool SqliteDatabase::ExistsFloatDescriptors(const image_t image_id) const {
-  return ExistsRowId(sql_stmt_exists_float_descriptors_, image_id);
-}
-
 bool SqliteDatabase::ExistsMatches(const image_t image_id1,
                              const image_t image_id2) const {
   return ExistsRowId(sql_stmt_exists_matches_,
@@ -677,8 +723,13 @@ bool SqliteDatabase::ExistsMatches(const image_t image_id1,
 
 bool SqliteDatabase::ExistsInlierMatches(const image_t image_id1,
                                    const image_t image_id2) const {
-  return ExistsRowId(sql_stmt_exists_two_view_geometry_,
-                     ImagePairToPairId(image_id1, image_id2));
+  // Upstream parity (d3ccaf35): the entry must exist AND carry a non-empty
+  // inlier array (the fork previously aliased this to row existence).
+  if (!ExistsRowId(sql_stmt_exists_two_view_geometry_,
+                   ImagePairToPairId(image_id1, image_id2))) {
+    return false;
+  }
+  return !ReadTwoViewGeometry(image_id1, image_id2).inlier_matches.empty();
 }
 
 bool SqliteDatabase::ExistsTwoViewGeometry(const image_t image_id1,
@@ -687,7 +738,15 @@ bool SqliteDatabase::ExistsTwoViewGeometry(const image_t image_id1,
                      ImagePairToPairId(image_id1, image_id2));
 }
 
-size_t SqliteDatabase::NumCameras() const { return CountRows("cameras"); }
+// Upstream parity (f1ea91d0): multiple calibrations per camera; the count
+// is the number of distinct cameras.
+size_t SqliteDatabase::NumCameras() const {
+  SQLITE3_CALL(sqlite3_step(sql_stmt_num_cameras_));
+  const size_t count = static_cast<size_t>(
+      sqlite3_column_int64(sql_stmt_num_cameras_, 0));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_num_cameras_));
+  return count;
+}
 size_t SqliteDatabase::NumRigs() const { return CountRows("rigs"); }
 size_t SqliteDatabase::NumFrames() const { return CountRows("frames"); }
 
@@ -727,31 +786,84 @@ size_t SqliteDatabase::NumVerifiedImagePairs() const {
   return CountRows("two_view_geometries");
 }
 
-Camera SqliteDatabase::ReadCamera(const camera_t camera_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_, 1, camera_id));
-
+// Upstream parity (f1ea91d0): `source` defaults to BEST, which selects the
+// highest-priority calibration for the camera via the source-priority SQL
+// ordering; an explicit source reads that exact calibration row.
+Camera SqliteDatabase::ReadCamera(
+    const camera_t camera_id, const CameraSource source) const {
   Camera camera;
-
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_));
-  if (rc == SQLITE_ROW) {
-    camera = ReadCameraRow(sql_stmt_read_camera_);
+  if (source == CameraSource::BEST) {
+    SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_, 1, camera_id));
+    if (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_)) == SQLITE_ROW) {
+      camera = ReadCameraRow(sql_stmt_read_camera_);
+    }
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_));
+    return camera;
   }
 
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_));
-
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_source_,
+                                  1,
+                                  camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_read_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  if (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_source_)) == SQLITE_ROW) {
+    camera = ReadCameraRow(sql_stmt_read_camera_source_);
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_source_));
   return camera;
 }
 
-std::vector<Camera> SqliteDatabase::ReadAllCameras() const {
+std::vector<Camera> SqliteDatabase::ReadAllCameras(
+    const CameraSource source) const {
   std::vector<Camera> cameras;
-
-  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_)) == SQLITE_ROW) {
-    cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_));
+  if (source == CameraSource::BEST) {
+    while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_)) == SQLITE_ROW) {
+      cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_));
+    }
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_));
+    return cameras;
   }
 
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_));
-
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_read_cameras_for_source_,
+                         1,
+                         static_cast<sqlite3_int64>(source)));
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_cameras_for_source_)) ==
+         SQLITE_ROW) {
+    cameras.push_back(ReadCameraRow(sql_stmt_read_cameras_for_source_));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_for_source_));
   return cameras;
+}
+
+std::map<CameraSource, Camera> SqliteDatabase::ReadAllCameraSources(
+    const camera_t camera_id) const {
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_camera_sources_for_camera_,
+                                  1,
+                                  camera_id));
+  std::map<CameraSource, Camera> calibrations;
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_camera_sources_for_camera_)) ==
+         SQLITE_ROW) {
+    Camera camera = ReadCameraRow(sql_stmt_read_camera_sources_for_camera_);
+    calibrations.emplace(camera.Source(), std::move(camera));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_camera_sources_for_camera_));
+  return calibrations;
+}
+
+NodeHashMap<camera_t, std::map<CameraSource, Camera>>
+SqliteDatabase::ReadAllCameraSources() const {
+  NodeHashMap<camera_t, std::map<CameraSource, Camera>> all_calibrations;
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_all_camera_sources_)) ==
+         SQLITE_ROW) {
+    Camera camera = ReadCameraRow(sql_stmt_read_all_camera_sources_);
+    all_calibrations[camera.CameraId()].emplace(camera.Source(),
+                                                std::move(camera));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_all_camera_sources_));
+  return all_calibrations;
 }
 
 std::optional<Rig> SqliteDatabase::ReadRigWithSensor(
@@ -802,7 +914,7 @@ std::optional<Rig> SqliteDatabase::ReadRigWithSensor(
 Rig SqliteDatabase::ReadRig(const rig_t rig_id) const {
   sqlite3_stmt* ref_stmt = nullptr;
   SQLITE3_CALL(sqlite3_prepare_v2(
-      database_, "SELECT ref_sensor_id, ref_sensor_type, ref_camera_id FROM rigs "
+      database_, "SELECT ref_sensor_id, ref_sensor_type FROM rigs "
       "WHERE rig_id=?;", -1, &ref_stmt, nullptr));
   SQLITE3_CALL(sqlite3_bind_int64(ref_stmt, 1, rig_id));
   Rig rig;
@@ -810,54 +922,31 @@ Rig SqliteDatabase::ReadRig(const rig_t rig_id) const {
     SQLITE3_CALL(sqlite3_finalize(ref_stmt));
     return rig;
   }
-  const bool has_generic_ref = sqlite3_column_type(ref_stmt, 0) != SQLITE_NULL &&
-                               sqlite3_column_type(ref_stmt, 1) != SQLITE_NULL;
   const sensor_t ref_sensor_id(
-      has_generic_ref ? static_cast<SensorType>(sqlite3_column_int(ref_stmt, 1))
-                      : SensorType::CAMERA,
-      has_generic_ref ? static_cast<uint32_t>(sqlite3_column_int64(ref_stmt, 0))
-                      : static_cast<uint32_t>(sqlite3_column_int64(ref_stmt, 2)));
+      static_cast<SensorType>(sqlite3_column_int(ref_stmt, 1)),
+      static_cast<uint32_t>(sqlite3_column_int64(ref_stmt, 0)));
   SQLITE3_CALL(sqlite3_finalize(ref_stmt));
   rig.SetRigId(rig_id);
   rig.AddRefSensor(ref_sensor_id);
-  sqlite3_stmt* stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(
-      database_, "SELECT camera_id, qvec, tvec FROM rig_cameras WHERE rig_id=? "
-      "ORDER BY camera_id;", -1, &stmt, nullptr));
-  SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, rig_id));
-  struct CameraPose { camera_t camera_id; Eigen::Vector4d qvec; Eigen::Vector3d tvec; };
-  std::vector<CameraPose> cameras;
-  while (SQLITE3_CALL(sqlite3_step(stmt)) == SQLITE_ROW) {
-    const camera_t camera_id = static_cast<camera_t>(sqlite3_column_int64(stmt, 0));
-    Eigen::Vector4d qvec;
-    Eigen::Vector3d tvec;
-    CHECK(ReadPoseBlob(stmt, 1, 2, &qvec, &tvec));
-    cameras.push_back({camera_id, qvec, tvec});
-  }
-  SQLITE3_CALL(sqlite3_finalize(stmt));
-  for (const CameraPose& camera : cameras) {
-    if (!rig.HasCamera(camera.camera_id)) {
-      rig.AddCamera(camera.camera_id, camera.qvec, camera.tvec);
-    }
-  }
+  // Upstream parity (a2bd15c2): rig_sensors only holds the non-reference
+  // sensors; a NULL sensor_from_rig is an unknown extrinsic.
   sqlite3_stmt* sensor_stmt = nullptr;
   SQLITE3_CALL(sqlite3_prepare_v2(
-      database_, "SELECT sensor_id, sensor_type, qvec, tvec FROM rig_sensors "
-      "WHERE rig_id=? ORDER BY sensor_type, sensor_id;", -1, &sensor_stmt, nullptr));
+      database_, "SELECT sensor_id, sensor_type, sensor_from_rig FROM "
+      "rig_sensors WHERE rig_id=? ORDER BY sensor_type, sensor_id;", -1,
+      &sensor_stmt, nullptr));
   SQLITE3_CALL(sqlite3_bind_int64(sensor_stmt, 1, rig_id));
   while (SQLITE3_CALL(sqlite3_step(sensor_stmt)) == SQLITE_ROW) {
     const sensor_t sensor_id(
         static_cast<SensorType>(sqlite3_column_int(sensor_stmt, 1)),
         static_cast<uint32_t>(sqlite3_column_int64(sensor_stmt, 0)));
     if (rig.HasSensor(sensor_id)) continue;
-    if (sqlite3_column_type(sensor_stmt, 2) == SQLITE_NULL ||
-        sqlite3_column_type(sensor_stmt, 3) == SQLITE_NULL) {
-      rig.AddSensor(sensor_id, std::nullopt, std::nullopt);
-    } else {
-      Eigen::Vector4d qvec;
-      Eigen::Vector3d tvec;
-      CHECK(ReadPoseBlob(sensor_stmt, 2, 3, &qvec, &tvec));
+    Eigen::Vector4d qvec;
+    Eigen::Vector3d tvec;
+    if (SensorFromRigFromBlob(sensor_stmt, 2, &qvec, &tvec)) {
       rig.AddSensor(sensor_id, qvec, tvec);
+    } else {
+      rig.AddSensor(sensor_id, std::nullopt, std::nullopt);
     }
   }
   SQLITE3_CALL(sqlite3_finalize(sensor_stmt));
@@ -877,20 +966,16 @@ std::vector<Rig> SqliteDatabase::ReadAllRigs() const {
 }
 
 Frame SqliteDatabase::ReadFrame(const frame_t frame_id) const {
+  // Upstream parity (a2bd15c2): frames persist only the rig association; the
+  // pose is a reconstruction-level estimate and never stored.
   sqlite3_stmt* frame_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT rig_id, has_pose, qvec, tvec "
-                                  "FROM frames WHERE frame_id=?;", -1, &frame_stmt, nullptr));
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT rig_id FROM frames "
+                                  "WHERE frame_id=?;", -1, &frame_stmt, nullptr));
   SQLITE3_CALL(sqlite3_bind_int64(frame_stmt, 1, frame_id));
   Frame frame;
   if (SQLITE3_CALL(sqlite3_step(frame_stmt)) == SQLITE_ROW) {
     frame.SetFrameId(frame_id);
     frame.SetRigId(static_cast<rig_t>(sqlite3_column_int64(frame_stmt, 0)));
-    if (sqlite3_column_int(frame_stmt, 1) != 0) {
-      Eigen::Vector4d qvec;
-      Eigen::Vector3d tvec;
-      CHECK(ReadPoseBlob(frame_stmt, 2, 3, &qvec, &tvec));
-      frame.SetRigFromWorld(qvec, tvec);
-    }
   }
   SQLITE3_CALL(sqlite3_finalize(frame_stmt));
   if (frame.FrameId() == kInvalidFrameId) return frame;
@@ -906,20 +991,6 @@ Frame SqliteDatabase::ReadFrame(const frame_t frame_id) const {
         static_cast<uint64_t>(sqlite3_column_int64(data_stmt, 0))));
   }
   SQLITE3_CALL(sqlite3_finalize(data_stmt));
-  if (frame.DataIds().empty()) {
-    // Fork-legacy fallback: rows written before the W3-2a dual-write have no
-    // frame_data entries, so derive them from frame_images. AddImageId's
-    // image_id == camera_id assumption would otherwise duplicate the data
-    // ids that the frame_data read above already restored.
-    sqlite3_stmt* image_stmt = nullptr;
-    SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT image_id FROM frame_images "
-                                    "WHERE frame_id=? ORDER BY image_id;", -1, &image_stmt, nullptr));
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 1, frame_id));
-    while (SQLITE3_CALL(sqlite3_step(image_stmt)) == SQLITE_ROW) {
-      frame.AddImageId(static_cast<image_t>(sqlite3_column_int64(image_stmt, 0)));
-    }
-    SQLITE3_CALL(sqlite3_finalize(image_stmt));
-  }
   return frame;
 }
 
@@ -995,37 +1066,16 @@ FeatureDescriptors SqliteDatabase::ReadDescriptors(const image_t image_id) const
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_descriptors_, 1, image_id));
 
   const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_descriptors_));
-  const FeatureDescriptors descriptors =
-      ReadDynamicMatrixBlob<FeatureDescriptors>(sql_stmt_read_descriptors_, rc,
-                                                0);
+  FeatureDescriptors descriptors;
+  descriptors.data = ReadDynamicMatrixBlob<FeatureDescriptorsData>(
+          sql_stmt_read_descriptors_, rc, 0);
+  if (rc == SQLITE_ROW) {
+    descriptors.type = static_cast<FeatureExtractorType>(
+            sqlite3_column_int(sql_stmt_read_descriptors_, 3));
+  }
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_descriptors_));
-
   return descriptors;
-}
-
-FeatureDescriptorsFloat SqliteDatabase::ReadFloatDescriptors(
-    const image_t image_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_float_descriptors_, 1,
-                                  image_id));
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_float_descriptors_));
-  const FeatureDescriptorsFloat descriptors =
-      ReadDynamicMatrixBlob<FeatureDescriptorsFloat>(
-          sql_stmt_read_float_descriptors_, rc, 0);
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_float_descriptors_));
-  return descriptors;
-}
-
-FeatureDescriptorType SqliteDatabase::ReadDescriptorType(
-    const image_t image_id) const {
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_descriptor_type_, 1,
-                                  image_id));
-  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_descriptor_type_));
-  const auto type = rc == SQLITE_ROW
-                        ? sqlite3_column_int(sql_stmt_read_descriptor_type_, 0)
-                        : static_cast<int>(FeatureDescriptorType::kSift);
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_descriptor_type_));
-  return static_cast<FeatureDescriptorType>(type);
 }
 
 FeatureMatches SqliteDatabase::ReadMatches(image_t image_id1,
@@ -1065,6 +1115,98 @@ std::vector<std::pair<image_pair_t, FeatureMatches>> SqliteDatabase::ReadAllMatc
   return all_matches;
 }
 
+std::vector<std::pair<image_pair_t, int>> SqliteDatabase::ReadNumMatches()
+    const {
+  std::vector<std::pair<image_pair_t, int>> num_matches;
+
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_num_matches_)) ==
+         SQLITE_ROW) {
+    const image_pair_t pair_id = static_cast<image_pair_t>(
+        sqlite3_column_int64(sql_stmt_read_num_matches_, 0));
+    const int rows =
+        static_cast<int>(sqlite3_column_int64(sql_stmt_read_num_matches_, 1));
+    num_matches.emplace_back(pair_id, rows);
+  }
+
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_num_matches_));
+
+  return num_matches;
+}
+
+// Serialize a camera to a little-endian binary blob for storage in a single
+// BLOB column (upstream parity d3ccaf35; adapted to the fork's getter/setter
+// Camera API).
+std::string CameraToBlob(const Camera& camera) {
+  std::ostringstream stream(std::ios::binary);
+  WriteBinaryLittleEndian<camera_t>(&stream, camera.CameraId());
+  WriteBinaryLittleEndian<int>(&stream, static_cast<int>(camera.ModelId()));
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Width());
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Height());
+  WriteBinaryLittleEndian<uint8_t>(&stream,
+                                   camera.HasPriorFocalLength() ? 1 : 0);
+  WriteBinaryLittleEndian<uint64_t>(&stream, camera.Params().size());
+  for (const double param : camera.Params()) {
+    WriteBinaryLittleEndian<double>(&stream, param);
+  }
+  // Upstream parity (f1ea91d0): persist the calibration source after the
+  // parameters so legacy blobs (without the trailing byte) stay readable.
+  WriteBinaryLittleEndian<int8_t>(&stream,
+                                  static_cast<int8_t>(camera.Source()));
+  return stream.str();
+}
+
+Camera CameraFromBlob(const void* data, const size_t num_bytes) {
+  const std::string bytes(static_cast<const char*>(data), num_bytes);
+  std::istringstream stream(bytes, std::ios::binary);
+  Camera camera;
+  camera.SetCameraId(ReadBinaryLittleEndian<camera_t>(&stream));
+  camera.SetModelId(
+      static_cast<CameraModelId>(ReadBinaryLittleEndian<int>(&stream)));
+  camera.SetWidth(ReadBinaryLittleEndian<uint64_t>(&stream));
+  camera.SetHeight(ReadBinaryLittleEndian<uint64_t>(&stream));
+  const bool has_prior = ReadBinaryLittleEndian<uint8_t>(&stream) != 0;
+  const uint64_t num_params = ReadBinaryLittleEndian<uint64_t>(&stream);
+  camera.Params().resize(num_params);
+  ReadBinaryLittleEndian<double>(&stream, &camera.Params());
+  // Upstream parity (f1ea91d0): legacy blobs without the trailing source
+  // byte fall back to the prior flag (EXIF/GUESS).
+  if (stream.peek() != EOF) {
+    camera.SetSource(static_cast<CameraSource>(
+        ReadBinaryLittleEndian<int8_t>(&stream)));
+  } else {
+    camera.SetSource(has_prior ? CameraSource::EXIF : CameraSource::GUESS);
+  }
+  return camera;
+}
+
+// Bind an optional camera to a statement column, writing NULL when unset. The
+// returned blob must outlive the sqlite3_step call (bound with SQLITE_STATIC).
+std::string WriteOptionalCamera(sqlite3_stmt* sql_stmt,
+                                const std::optional<Camera>& camera,
+                                const int col) {
+  if (!camera.has_value()) {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt, col));
+    return {};
+  }
+  std::string blob = CameraToBlob(*camera);
+  SQLITE3_CALL(sqlite3_bind_blob(sql_stmt,
+                                 col,
+                                 blob.data(),
+                                 static_cast<int>(blob.size()),
+                                 SQLITE_STATIC));
+  return blob;
+}
+
+std::optional<Camera> ReadOptionalCamera(sqlite3_stmt* sql_stmt,
+                                         const int col) {
+  if (sqlite3_column_type(sql_stmt, col) == SQLITE_NULL) {
+    return std::nullopt;
+  }
+  return CameraFromBlob(
+      sqlite3_column_blob(sql_stmt, col),
+      static_cast<size_t>(sqlite3_column_bytes(sql_stmt, col)));
+}
+
 TwoViewGeometry SqliteDatabase::ReadTwoViewGeometry(const image_t image_id1,
                                               const image_t image_id2) const {
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
@@ -1081,46 +1223,57 @@ TwoViewGeometry SqliteDatabase::ReadTwoViewGeometry(const image_t image_id1,
   two_view_geometry.config = static_cast<int>(
       sqlite3_column_int64(sql_stmt_read_two_view_geometry_, 3));
 
-  // Bridge the fork's legacy two-view blob layout (plain F/E/H + qvec/tvec)
-  // to the upstream struct with optional members.
-  const Eigen::Matrix3d F_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-      sql_stmt_read_two_view_geometry_, rc, 4);
-  const Eigen::Matrix3d E_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-      sql_stmt_read_two_view_geometry_, rc, 5);
-  const Eigen::Matrix3d H_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-      sql_stmt_read_two_view_geometry_, rc, 6);
-  const Eigen::Vector4d qvec_legacy = ReadStaticMatrixBlob<Eigen::Vector4d>(
-      sql_stmt_read_two_view_geometry_, rc, 7);
-  const Eigen::Vector3d tvec_legacy = ReadStaticMatrixBlob<Eigen::Vector3d>(
-      sql_stmt_read_two_view_geometry_, rc, 8);
-  two_view_geometry.cam2_from_cam1 =
-      Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
-                                 qvec_legacy(2), qvec_legacy(3)),
-              tvec_legacy);
+  // Upstream parity (a2bd15c2): NULL means not set.
+  if (sqlite3_column_type(sql_stmt_read_two_view_geometry_, 4) !=
+      SQLITE_NULL) {
+    two_view_geometry.F = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+        sql_stmt_read_two_view_geometry_, rc, 4);
+  }
+  if (sqlite3_column_type(sql_stmt_read_two_view_geometry_, 5) !=
+      SQLITE_NULL) {
+    two_view_geometry.E = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+        sql_stmt_read_two_view_geometry_, rc, 5);
+  }
+  if (sqlite3_column_type(sql_stmt_read_two_view_geometry_, 6) !=
+      SQLITE_NULL) {
+    two_view_geometry.H = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+        sql_stmt_read_two_view_geometry_, rc, 6);
+  }
+  const bool has_qvec =
+      sqlite3_column_type(sql_stmt_read_two_view_geometry_, 7) != SQLITE_NULL;
+  const bool has_tvec =
+      sqlite3_column_type(sql_stmt_read_two_view_geometry_, 8) != SQLITE_NULL;
+  THROW_CHECK_EQ(has_qvec, has_tvec)
+      << "qvec and tvec must both be NULL or both be non-NULL";
+  if (has_qvec) {
+    const Eigen::Vector4d quat_wxyz = ReadStaticMatrixBlob<Eigen::Vector4d>(
+        sql_stmt_read_two_view_geometry_, rc, 7);
+    two_view_geometry.cam2_from_cam1 =
+        Rigid3d(Eigen::Quaterniond(quat_wxyz(0), quat_wxyz(1), quat_wxyz(2),
+                                   quat_wxyz(3)),
+                ReadStaticMatrixBlob<Eigen::Vector3d>(
+                    sql_stmt_read_two_view_geometry_, rc, 8));
+  }
+
+  // Read the estimated cameras if present (NULL means not set).
+  two_view_geometry.camera1 =
+      ReadOptionalCamera(sql_stmt_read_two_view_geometry_, 9);
+  two_view_geometry.camera2 =
+      ReadOptionalCamera(sql_stmt_read_two_view_geometry_, 10);
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_two_view_geometry_));
 
   two_view_geometry.inlier_matches = FeatureMatchesFromBlob(blob);
   // The write path stores the transposed matrix so that its column-major
   // memory equals the row-major original; undo that transpose here.
-  // Upstream optional semantics: the fork-legacy blob layout encodes absent
-  // matrices and poses as all-zero blobs; zero is not a valid F/E/H or pose
-  // quaternion, so read them back as nullopt exactly like the upstream
-  // NULL columns.
-  if (!F_legacy.isZero(0)) {
-    two_view_geometry.F = F_legacy.transpose();
+  if (two_view_geometry.F) {
+    two_view_geometry.F->transposeInPlace();
   }
-  if (!E_legacy.isZero(0)) {
-    two_view_geometry.E = E_legacy.transpose();
+  if (two_view_geometry.E) {
+    two_view_geometry.E->transposeInPlace();
   }
-  if (!H_legacy.isZero(0)) {
-    two_view_geometry.H = H_legacy.transpose();
-  }
-  if (!qvec_legacy.isZero(0)) {
-    two_view_geometry.cam2_from_cam1 =
-        Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
-                                   qvec_legacy(2), qvec_legacy(3)),
-                tvec_legacy);
+  if (two_view_geometry.H) {
+    two_view_geometry.H->transposeInPlace();
   }
 
   if (SwapImagePair(image_id1, image_id2)) {
@@ -1149,33 +1302,46 @@ void SqliteDatabase::ReadTwoViewGeometries(
     two_view_geometry.config = static_cast<int>(
         sqlite3_column_int64(sql_stmt_read_two_view_geometries_, 4));
 
-    const Eigen::Matrix3d F_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-        sql_stmt_read_two_view_geometries_, rc, 5);
-    const Eigen::Matrix3d E_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-        sql_stmt_read_two_view_geometries_, rc, 6);
-    const Eigen::Matrix3d H_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
-        sql_stmt_read_two_view_geometries_, rc, 7);
-    const Eigen::Vector4d qvec_legacy = ReadStaticMatrixBlob<Eigen::Vector4d>(
-        sql_stmt_read_two_view_geometries_, rc, 8);
-    const Eigen::Vector3d tvec_legacy = ReadStaticMatrixBlob<Eigen::Vector3d>(
-        sql_stmt_read_two_view_geometries_, rc, 9);
-    // Upstream optional semantics (see ReadTwoViewGeometry): all-zero blobs
-    // encode absent values in the fork-legacy layout.
-    if (!F_legacy.isZero(0)) {
-      two_view_geometry.F = F_legacy.transpose();
+    // Upstream parity (a2bd15c2): NULL means not set.
+    if (sqlite3_column_type(sql_stmt_read_two_view_geometries_, 5) !=
+        SQLITE_NULL) {
+      two_view_geometry.F = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+          sql_stmt_read_two_view_geometries_, rc, 5);
+      two_view_geometry.F->transposeInPlace();
     }
-    if (!E_legacy.isZero(0)) {
-      two_view_geometry.E = E_legacy.transpose();
+    if (sqlite3_column_type(sql_stmt_read_two_view_geometries_, 6) !=
+        SQLITE_NULL) {
+      two_view_geometry.E = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+          sql_stmt_read_two_view_geometries_, rc, 6);
+      two_view_geometry.E->transposeInPlace();
     }
-    if (!H_legacy.isZero(0)) {
-      two_view_geometry.H = H_legacy.transpose();
+    if (sqlite3_column_type(sql_stmt_read_two_view_geometries_, 7) !=
+        SQLITE_NULL) {
+      two_view_geometry.H = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+          sql_stmt_read_two_view_geometries_, rc, 7);
+      two_view_geometry.H->transposeInPlace();
     }
-    if (!qvec_legacy.isZero(0)) {
+    const bool has_qvec =
+        sqlite3_column_type(sql_stmt_read_two_view_geometries_, 8) !=
+        SQLITE_NULL;
+    const bool has_tvec =
+        sqlite3_column_type(sql_stmt_read_two_view_geometries_, 9) !=
+        SQLITE_NULL;
+    THROW_CHECK_EQ(has_qvec, has_tvec)
+        << "qvec and tvec must both be NULL or both be non-NULL";
+    if (has_qvec) {
+      const Eigen::Vector4d quat_wxyz = ReadStaticMatrixBlob<Eigen::Vector4d>(
+          sql_stmt_read_two_view_geometries_, rc, 8);
       two_view_geometry.cam2_from_cam1 =
-          Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
-                                     qvec_legacy(2), qvec_legacy(3)),
-                  tvec_legacy);
+          Rigid3d(Eigen::Quaterniond(quat_wxyz(0), quat_wxyz(1), quat_wxyz(2),
+                                     quat_wxyz(3)),
+                  ReadStaticMatrixBlob<Eigen::Vector3d>(
+                      sql_stmt_read_two_view_geometries_, rc, 9));
     }
+    two_view_geometry.camera1 =
+        ReadOptionalCamera(sql_stmt_read_two_view_geometries_, 10);
+    two_view_geometry.camera2 =
+        ReadOptionalCamera(sql_stmt_read_two_view_geometries_, 11);
     two_view_geometries->push_back(two_view_geometry);
   }
 
@@ -1220,13 +1386,23 @@ void SqliteDatabase::ReadTwoViewGeometryNumInliers(
 
 camera_t SqliteDatabase::WriteCamera(const Camera& camera,
                                const bool use_camera_id) const {
+  // Upstream parity (f1ea91d0): BEST is a query selector, not a persisted
+  // source; with auto-assignment the next id comes from the covering
+  // primary-key B-tree (composite key has no AUTOINCREMENT).
+  THROW_CHECK_NE(camera.Source(), CameraSource::BEST)
+          << "Camera source cannot be BEST when writing to database.";
+  camera_t camera_id = camera.CameraId();
   if (use_camera_id) {
-    CHECK(!ExistsCamera(camera.CameraId())) << "camera_id must be unique";
-    SQLITE3_CALL(
-        sqlite3_bind_int64(sql_stmt_add_camera_, 1, camera.CameraId()));
+    CHECK(!ExistsCamera(camera_id)) << "camera_id must be unique";
   } else {
-    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_add_camera_, 1));
+    SQLITE3_CALL(sqlite3_step(sql_stmt_next_camera_id_));
+    camera_id = static_cast<camera_t>(
+        sqlite3_column_int64(sql_stmt_next_camera_id_, 0));
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_next_camera_id_));
   }
+
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_add_camera_, 1, camera_id));
 
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_add_camera_, 2,
                                 static_cast<int>(camera.ModelId())));
@@ -1240,83 +1416,92 @@ camera_t SqliteDatabase::WriteCamera(const Camera& camera,
                                  static_cast<int>(num_params_bytes),
                                  SQLITE_STATIC));
 
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_add_camera_, 6,
-                                  camera.HasPriorFocalLength()));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_add_camera_, 6,
+                         static_cast<sqlite3_int64>(camera.Source())));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_add_camera_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_add_camera_));
 
-  return static_cast<camera_t>(sqlite3_last_insert_rowid(database_));
+  return camera_id;
 }
+
+namespace {
+
+// Upstream WriteRigSensors (a2bd15c2): persists the non-reference sensors
+// only; unknown extrinsics are stored as NULL.
+void WriteRigSensors(sqlite3* database, const rig_t rig_id, const Rig& rig) {
+  sqlite3_stmt* stmt = nullptr;
+  SQLITE3_CALL(sqlite3_prepare_v2(
+      database, "INSERT INTO rig_sensors(rig_id, sensor_id, sensor_type, "
+      "sensor_from_rig) VALUES(?, ?, ?, ?);", -1, &stmt, nullptr));
+  for (const auto& [sensor_id, sensor_from_rig] : rig.NonRefSensors()) {
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, rig_id));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, sensor_id.id));
+    SQLITE3_CALL(sqlite3_bind_int(stmt, 3, static_cast<int>(sensor_id.type)));
+    // The blob must outlive sqlite3_step (bound with SQLITE_STATIC).
+    std::string blob;
+    if (rig.HasSensorFromRig(sensor_id)) {
+      blob = SensorFromRigToBlob(rig.SensorFromRigQvec(sensor_id),
+                                 rig.SensorFromRigTvec(sensor_id));
+      SQLITE3_CALL(sqlite3_bind_blob(stmt, 4, blob.data(),
+                                     static_cast<int>(blob.size()),
+                                     SQLITE_STATIC));
+    } else {
+      SQLITE3_CALL(sqlite3_bind_null(stmt, 4));
+    }
+    SQLITE3_CALL(sqlite3_step(stmt));
+    SQLITE3_CALL(sqlite3_reset(stmt));
+  }
+  SQLITE3_CALL(sqlite3_finalize(stmt));
+}
+
+// Upstream WriteFrameData (a2bd15c2).
+void WriteFrameData(sqlite3* database, const frame_t frame_id,
+                    const Frame& frame) {
+  sqlite3_stmt* stmt = nullptr;
+  SQLITE3_CALL(sqlite3_prepare_v2(
+      database, "INSERT INTO frame_data(frame_id, data_id, sensor_id, "
+      "sensor_type) VALUES(?, ?, ?, ?);", -1, &stmt, nullptr));
+  for (const data_t& data_id : frame.DataIds()) {
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, frame_id));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, data_id.id));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 3, data_id.sensor_id.id));
+    SQLITE3_CALL(sqlite3_bind_int(stmt, 4,
+                                  static_cast<int>(data_id.sensor_id.type)));
+    SQLITE3_CALL(sqlite3_step(stmt));
+    SQLITE3_CALL(sqlite3_reset(stmt));
+  }
+  SQLITE3_CALL(sqlite3_finalize(stmt));
+}
+
+}  // namespace
 
 rig_t SqliteDatabase::WriteRig(const Rig& rig, const bool use_rig_id) const {
   CHECK_GT(rig.NumSensors(), 0);
-  const std::vector<camera_t> legacy_camera_ids = rig.CameraIds();
-  const camera_t legacy_ref_camera_id =
-      rig.RefCameraId() != kInvalidCameraId
-          ? rig.RefCameraId()
-          : (legacy_camera_ids.empty() ? rig.RefSensorId().id
-                                       : legacy_camera_ids.front());
   sqlite3_stmt* rig_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rigs(rig_id, ref_camera_id, ref_sensor_id, ref_sensor_type) "
-                                  "VALUES(?, ?, ?, ?);", -1, &rig_stmt, nullptr));
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rigs(rig_id, ref_sensor_id, ref_sensor_type) "
+                                  "VALUES(?, ?, ?);", -1, &rig_stmt, nullptr));
   if (use_rig_id) {
     CHECK(!ExistsRig(rig.RigId()));
     SQLITE3_CALL(sqlite3_bind_int64(rig_stmt, 1, rig.RigId()));
   } else {
     SQLITE3_CALL(sqlite3_bind_null(rig_stmt, 1));
   }
-  SQLITE3_CALL(sqlite3_bind_int64(rig_stmt, 2, legacy_ref_camera_id));
-  SQLITE3_CALL(sqlite3_bind_int64(rig_stmt, 3, rig.RefSensorId().id));
-  SQLITE3_CALL(sqlite3_bind_int(rig_stmt, 4, static_cast<int>(rig.RefSensorId().type)));
+  SQLITE3_CALL(sqlite3_bind_int64(rig_stmt, 2, rig.RefSensorId().id));
+  SQLITE3_CALL(sqlite3_bind_int(rig_stmt, 3, static_cast<int>(rig.RefSensorId().type)));
   SQLITE3_CALL(sqlite3_step(rig_stmt));
   SQLITE3_CALL(sqlite3_finalize(rig_stmt));
   const rig_t rig_id = static_cast<rig_t>(sqlite3_last_insert_rowid(database_));
-  sqlite3_stmt* camera_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rig_cameras(rig_id, camera_id, qvec, tvec) "
-                                  "VALUES(?, ?, ?, ?);", -1, &camera_stmt, nullptr));
-  for (const camera_t camera_id : rig.CameraIds()) {
-    const sensor_t camera_sensor_id(SensorType::CAMERA, camera_id);
-    // Upstream parity: the sensor-from-rig pose is optional. Cameras without
-    // an estimated extrinsic are persisted with NULL blobs through the
-    // generic rig_sensors table below; the legacy rig_cameras protocol has
-    // no NULL representation, so they must not go through CamFromRig*
-    // (which would throw bad_optional_access).
-    if (!rig.HasSensorFromRig(camera_sensor_id)) {
-      continue;
-    }
-    SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 1, rig_id));
-    SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 2, camera_id));
-    BindPoseBlob(camera_stmt, 3, 4, rig.CamFromRigQvec(camera_id),
-                 rig.CamFromRigTvec(camera_id));
-    SQLITE3_CALL(sqlite3_step(camera_stmt));
-    SQLITE3_CALL(sqlite3_reset(camera_stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(camera_stmt));
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rig_sensors(rig_id, sensor_id, sensor_type, qvec, tvec) VALUES(?, ?, ?, ?, ?);", -1, &camera_stmt, nullptr));
-  for (const sensor_t& sensor_id : rig.SensorIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 1, rig_id));
-    SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 2, sensor_id.id));
-    SQLITE3_CALL(sqlite3_bind_int(camera_stmt, 3, static_cast<int>(sensor_id.type)));
-    if (rig.HasSensorFromRig(sensor_id)) {
-      BindPoseBlob(camera_stmt, 4, 5, rig.SensorFromRigQvec(sensor_id), rig.SensorFromRigTvec(sensor_id));
-    } else {
-      SQLITE3_CALL(sqlite3_bind_null(camera_stmt, 4));
-      SQLITE3_CALL(sqlite3_bind_null(camera_stmt, 5));
-    }
-    SQLITE3_CALL(sqlite3_step(camera_stmt));
-    SQLITE3_CALL(sqlite3_reset(camera_stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(camera_stmt));
+  WriteRigSensors(database_, rig_id, rig);
   return rig_id;
 }
 
 frame_t SqliteDatabase::WriteFrame(const Frame& frame, const bool use_frame_id) const {
-  CHECK_GT(frame.DataIds().size(), 0);
   CHECK(ExistsRig(frame.RigId()));
   sqlite3_stmt* frame_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frames(frame_id, rig_id, has_pose, qvec, tvec) "
-                                  "VALUES(?, ?, ?, ?, ?);", -1, &frame_stmt, nullptr));
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frames(frame_id, rig_id) "
+                                  "VALUES(?, ?);", -1, &frame_stmt, nullptr));
   if (use_frame_id) {
     CHECK(!ExistsFrame(frame.FrameId()));
     SQLITE3_CALL(sqlite3_bind_int64(frame_stmt, 1, frame.FrameId()));
@@ -1324,35 +1509,10 @@ frame_t SqliteDatabase::WriteFrame(const Frame& frame, const bool use_frame_id) 
     SQLITE3_CALL(sqlite3_bind_null(frame_stmt, 1));
   }
   SQLITE3_CALL(sqlite3_bind_int64(frame_stmt, 2, frame.RigId()));
-  SQLITE3_CALL(sqlite3_bind_int(frame_stmt, 3, frame.HasPose() ? 1 : 0));
-  if (frame.HasPose()) BindPoseBlob(frame_stmt, 4, 5, frame.RigFromWorldQvec(), frame.RigFromWorldTvec());
-  else {
-    SQLITE3_CALL(sqlite3_bind_null(frame_stmt, 4));
-    SQLITE3_CALL(sqlite3_bind_null(frame_stmt, 5));
-  }
   SQLITE3_CALL(sqlite3_step(frame_stmt));
   SQLITE3_CALL(sqlite3_finalize(frame_stmt));
   const frame_t frame_id = static_cast<frame_t>(sqlite3_last_insert_rowid(database_));
-  sqlite3_stmt* image_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frame_images(frame_id, image_id) VALUES(?, ?);",
-                                  -1, &image_stmt, nullptr));
-  for (const image_t image_id : frame.ImageIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 1, frame_id));
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 2, image_id));
-    SQLITE3_CALL(sqlite3_step(image_stmt));
-    SQLITE3_CALL(sqlite3_reset(image_stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(image_stmt));
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frame_data(frame_id, data_id, sensor_id, sensor_type) VALUES(?, ?, ?, ?);", -1, &image_stmt, nullptr));
-  for (const data_t& data_id : frame.DataIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 1, frame_id));
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 2, data_id.id));
-    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 3, data_id.sensor_id.id));
-    SQLITE3_CALL(sqlite3_bind_int(image_stmt, 4, static_cast<int>(data_id.sensor_id.type)));
-    SQLITE3_CALL(sqlite3_step(image_stmt));
-    SQLITE3_CALL(sqlite3_reset(image_stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(image_stmt));
+  WriteFrameData(database_, frame_id, frame);
   return frame_id;
 }
 
@@ -1369,18 +1529,6 @@ image_t SqliteDatabase::WriteImage(const Image& image,
                                  static_cast<int>(image.Name().size()),
                                  SQLITE_STATIC));
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_add_image_, 3, image.CameraId()));
-
-  // NaNs are automatically converted to NULLs in SQLite.
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 4, image.QvecPrior(0)));
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 5, image.QvecPrior(1)));
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 6, image.QvecPrior(2)));
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 7, image.QvecPrior(3)));
-
-  // NaNs are automatically converted to NULLs in SQLite.
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 8, image.TvecPrior(0)));
-  SQLITE3_CALL(sqlite3_bind_double(sql_stmt_add_image_, 9, image.TvecPrior(1)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_add_image_, 10, image.TvecPrior(2)));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_add_image_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_add_image_));
@@ -1402,30 +1550,12 @@ void SqliteDatabase::WriteKeypoints(const image_t image_id,
 void SqliteDatabase::WriteDescriptors(const image_t image_id,
                                 const FeatureDescriptors& descriptors) const {
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_descriptors_, 1, image_id));
-  WriteDynamicMatrixBlob(sql_stmt_write_descriptors_, descriptors, 2);
+  WriteDynamicMatrixBlob(sql_stmt_write_descriptors_, descriptors.data, 2);
+  SQLITE3_CALL(sqlite3_bind_int(sql_stmt_write_descriptors_, 5,
+                                static_cast<int>(descriptors.type)));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_write_descriptors_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_write_descriptors_));
-}
-
-void SqliteDatabase::WriteFloatDescriptors(const image_t image_id,
-                                     const FeatureDescriptorsFloat& descriptors,
-                                     const FeatureDescriptorType type) const {
-  CHECK(descriptors.rows() >= 0 && descriptors.cols() >= 0);
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 1,
-                                  image_id));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 2,
-                                  descriptors.rows()));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_float_descriptors_, 3,
-                                  descriptors.cols()));
-  SQLITE3_CALL(sqlite3_bind_int(sql_stmt_write_float_descriptors_, 4,
-                                static_cast<int>(type)));
-  SQLITE3_CALL(sqlite3_bind_blob(
-      sql_stmt_write_float_descriptors_, 5,
-      reinterpret_cast<const char*>(descriptors.data()),
-      static_cast<int>(descriptors.size() * sizeof(float)), SQLITE_STATIC));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_write_float_descriptors_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_write_float_descriptors_));
 }
 
 void SqliteDatabase::WriteMatches(const image_t image_id1, const image_t image_id2,
@@ -1471,159 +1601,142 @@ void SqliteDatabase::WriteTwoViewGeometry(
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_write_two_view_geometry_, 5,
                                   two_view_geometry_ptr->config));
 
-  // Transpose the matrices to obtain row-major data layout.
-  // Important: Do not move these objects inside the if-statement, because
-  // the objects must live until `sqlite3_step` is called on the statement.
-  // Bridge the upstream optional members to the fork's legacy blob layout:
-  // absent matrices serialize as empty blobs; the pose as zero qvec/tvec.
-  static const Eigen::Matrix3d kZero3d = Eigen::Matrix3d::Zero();
-  const Eigen::Matrix3d Ft = two_view_geometry_ptr->F
-                                 ? two_view_geometry_ptr->F->transpose()
-                                 : kZero3d;
-  const Eigen::Matrix3d Et = two_view_geometry_ptr->E
-                                 ? two_view_geometry_ptr->E->transpose()
-                                 : kZero3d;
-  const Eigen::Matrix3d Ht = two_view_geometry_ptr->H
-                                 ? two_view_geometry_ptr->H->transpose()
-                                 : kZero3d;
-  Eigen::Vector4d qvec = Eigen::Vector4d::Zero();
-  Eigen::Vector3d tvec = Eigen::Vector3d::Zero();
-  if (two_view_geometry_ptr->cam2_from_cam1) {
+  // Upstream parity (a2bd15c2): write NULL for F/E/H/pose if not set,
+  // otherwise transpose the matrices to obtain row-major data layout.
+  // Important: the bound objects must live until `sqlite3_step` is called.
+  Eigen::Matrix3d Ft, Et, Ht;
+  if (two_view_geometry_ptr->F.has_value()) {
+    Ft = two_view_geometry_ptr->F->transpose();
+    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Ft, 6);
+  } else {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_two_view_geometry_, 6));
+  }
+  if (two_view_geometry_ptr->E.has_value()) {
+    Et = two_view_geometry_ptr->E->transpose();
+    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Et, 7);
+  } else {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_two_view_geometry_, 7));
+  }
+  if (two_view_geometry_ptr->H.has_value()) {
+    Ht = two_view_geometry_ptr->H->transpose();
+    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Ht, 8);
+  } else {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_two_view_geometry_, 8));
+  }
+  Eigen::Vector4d qvec;
+  Eigen::Vector3d tvec;
+  if (two_view_geometry_ptr->cam2_from_cam1.has_value()) {
     const Eigen::Quaterniond& q =
         two_view_geometry_ptr->cam2_from_cam1->rotation();
     qvec << q.w(), q.x(), q.y(), q.z();
     tvec = two_view_geometry_ptr->cam2_from_cam1->translation();
-  }
-
-  if (two_view_geometry_ptr->inlier_matches.size() > 0) {
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Ft, 6);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Et, 7);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Ht, 8);
     WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, qvec, 9);
     WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, tvec, 10);
   } else {
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
-                          Eigen::MatrixXd(0, 0), 6);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
-                          Eigen::MatrixXd(0, 0), 7);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
-                          Eigen::MatrixXd(0, 0), 8);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
-                          Eigen::MatrixXd(0, 0), 9);
-    WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_,
-                          Eigen::MatrixXd(0, 0), 10);
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_two_view_geometry_, 9));
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_two_view_geometry_, 10));
   }
+
+  // Write NULL for camera1/camera2 if not set.
+  const std::string camera1_blob =
+      WriteOptionalCamera(sql_stmt_write_two_view_geometry_,
+                          two_view_geometry_ptr->camera1,
+                          11);
+  const std::string camera2_blob =
+      WriteOptionalCamera(sql_stmt_write_two_view_geometry_,
+                          two_view_geometry_ptr->camera2,
+                          12);
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_write_two_view_geometry_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_write_two_view_geometry_));
 }
 
+// Upstream parity (f1ea91d0): insert-or-overwrite a calibration source for
+// an existing camera. UNKNOWN updates the currently active (BEST) source in
+// place; BEST is rejected.
 void SqliteDatabase::UpdateCamera(const Camera& camera) const {
+  CHECK(ExistsCamera(camera.CameraId())) << "Camera does not exist";
+
+  Camera camera_to_update = camera;
+  THROW_CHECK_NE(camera_to_update.Source(), CameraSource::BEST)
+          << "Camera source cannot be BEST when updating database.";
+  if (camera_to_update.Source() == CameraSource::UNKNOWN) {
+    const Camera active_camera =
+        ReadCamera(camera.CameraId(), CameraSource::BEST);
+    camera_to_update.SetSource(active_camera.Source());
+  }
+
   SQLITE3_CALL(
       sqlite3_bind_int64(sql_stmt_update_camera_, 1,
-                       static_cast<int>(camera.ModelId())));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 2,
-                                  static_cast<sqlite3_int64>(camera.Width())));
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 3,
-                                  static_cast<sqlite3_int64>(camera.Height())));
-
-  const size_t num_params_bytes = sizeof(double) * camera.NumParams();
+                       camera_to_update.CameraId()));
   SQLITE3_CALL(
-      sqlite3_bind_blob(sql_stmt_update_camera_, 4, camera.ParamsData(),
+      sqlite3_bind_int64(sql_stmt_update_camera_, 2,
+                       static_cast<int>(camera_to_update.ModelId())));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_update_camera_, 3,
+                       static_cast<sqlite3_int64>(camera_to_update.Width())));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_update_camera_, 4,
+                       static_cast<sqlite3_int64>(camera_to_update.Height())));
+
+  const size_t num_params_bytes =
+      sizeof(double) * camera_to_update.NumParams();
+  SQLITE3_CALL(
+      sqlite3_bind_blob(sql_stmt_update_camera_, 5,
+                        camera_to_update.ParamsData(),
                         static_cast<int>(num_params_bytes), SQLITE_STATIC));
 
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_camera_, 5,
-                                  camera.HasPriorFocalLength()));
-
   SQLITE3_CALL(
-      sqlite3_bind_int64(sql_stmt_update_camera_, 6, camera.CameraId()));
+      sqlite3_bind_int64(sql_stmt_update_camera_, 6,
+                       static_cast<sqlite3_int64>(camera_to_update.Source())));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_update_camera_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_camera_));
 }
 
+// Upstream parity (f1ea91d0): delete a specific calibration source; BEST
+// (the default) deletes all calibrations of the camera.
+void SqliteDatabase::DeleteCameraSource(const camera_t camera_id,
+                                        const CameraSource source) const {
+  if (source == CameraSource::BEST) {
+    SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_delete_camera_, 1, camera_id));
+    SQLITE3_CALL(sqlite3_step(sql_stmt_delete_camera_));
+    SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_camera_));
+    return;
+  }
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_delete_camera_source_, 1, camera_id));
+  SQLITE3_CALL(
+      sqlite3_bind_int64(sql_stmt_delete_camera_source_,
+                         2,
+                         static_cast<sqlite3_int64>(source)));
+  SQLITE3_CALL(sqlite3_step(sql_stmt_delete_camera_source_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_camera_source_));
+}
+
 void SqliteDatabase::UpdateRig(const Rig& rig) const {
   CHECK(ExistsRig(rig.RigId()));
-  SQLITE3_EXEC(database_, StringPrintf("DELETE FROM rig_cameras WHERE rig_id=%u;", rig.RigId()).c_str(), nullptr);
   SQLITE3_EXEC(database_, StringPrintf("DELETE FROM rig_sensors WHERE rig_id=%u;", rig.RigId()).c_str(), nullptr);
   sqlite3_stmt* stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "UPDATE rigs SET ref_camera_id=?, ref_sensor_id=?, ref_sensor_type=? WHERE rig_id=?;", -1, &stmt, nullptr));
-  const std::vector<camera_t> legacy_camera_ids = rig.CameraIds();
-  const camera_t legacy_ref_camera_id =
-      rig.RefCameraId() != kInvalidCameraId
-          ? rig.RefCameraId()
-          : (legacy_camera_ids.empty() ? rig.RefSensorId().id
-                                       : legacy_camera_ids.front());
-  SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, legacy_ref_camera_id));
-  SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, rig.RefSensorId().id));
-  SQLITE3_CALL(sqlite3_bind_int(stmt, 3, static_cast<int>(rig.RefSensorId().type)));
-  SQLITE3_CALL(sqlite3_bind_int64(stmt, 4, rig.RigId()));
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "UPDATE rigs SET ref_sensor_id=?, ref_sensor_type=? WHERE rig_id=?;", -1, &stmt, nullptr));
+  SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, rig.RefSensorId().id));
+  SQLITE3_CALL(sqlite3_bind_int(stmt, 2, static_cast<int>(rig.RefSensorId().type)));
+  SQLITE3_CALL(sqlite3_bind_int64(stmt, 3, rig.RigId()));
   SQLITE3_CALL(sqlite3_step(stmt));
   SQLITE3_CALL(sqlite3_finalize(stmt));
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rig_cameras(rig_id, camera_id, qvec, tvec) VALUES(?, ?, ?, ?);", -1, &stmt, nullptr));
-  for (const camera_t camera_id : rig.CameraIds()) {
-    const sensor_t camera_sensor_id(SensorType::CAMERA, camera_id);
-    // Mirror the WriteRig bridge: cameras without an estimated extrinsic are
-    // persisted as NULL rows in rig_sensors only; the legacy rig_cameras
-    // protocol has no NULL representation (otherwise bad_optional_access).
-    if (!rig.HasSensorFromRig(camera_sensor_id)) {
-      continue;
-    }
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, rig.RigId()));
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, camera_id));
-    BindPoseBlob(stmt, 3, 4, rig.CamFromRigQvec(camera_id), rig.CamFromRigTvec(camera_id));
-    SQLITE3_CALL(sqlite3_step(stmt));
-    SQLITE3_CALL(sqlite3_reset(stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(stmt));
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rig_sensors(rig_id, sensor_id, sensor_type, qvec, tvec) VALUES(?, ?, ?, ?, ?);", -1, &stmt, nullptr));
-  for (const sensor_t& sensor_id : rig.SensorIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, rig.RigId()));
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, sensor_id.id));
-    SQLITE3_CALL(sqlite3_bind_int(stmt, 3, static_cast<int>(sensor_id.type)));
-    if (rig.HasSensorFromRig(sensor_id)) {
-      BindPoseBlob(stmt, 4, 5, rig.SensorFromRigQvec(sensor_id), rig.SensorFromRigTvec(sensor_id));
-    } else {
-      SQLITE3_CALL(sqlite3_bind_null(stmt, 4));
-      SQLITE3_CALL(sqlite3_bind_null(stmt, 5));
-    }
-    SQLITE3_CALL(sqlite3_step(stmt));
-    SQLITE3_CALL(sqlite3_reset(stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(stmt));
+  WriteRigSensors(database_, rig.RigId(), rig);
 }
 
 void SqliteDatabase::UpdateFrame(const Frame& frame) const {
   CHECK(ExistsFrame(frame.FrameId()));
   sqlite3_stmt* stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "UPDATE frames SET rig_id=?, has_pose=?, qvec=?, tvec=? WHERE frame_id=?;", -1, &stmt, nullptr));
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "UPDATE frames SET rig_id=? WHERE frame_id=?;", -1, &stmt, nullptr));
   SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, frame.RigId()));
-  SQLITE3_CALL(sqlite3_bind_int(stmt, 2, frame.HasPose() ? 1 : 0));
-  if (frame.HasPose()) BindPoseBlob(stmt, 3, 4, frame.RigFromWorldQvec(), frame.RigFromWorldTvec());
-  else { SQLITE3_CALL(sqlite3_bind_null(stmt, 3)); SQLITE3_CALL(sqlite3_bind_null(stmt, 4)); }
-  SQLITE3_CALL(sqlite3_bind_int64(stmt, 5, frame.FrameId()));
+  SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, frame.FrameId()));
   SQLITE3_CALL(sqlite3_step(stmt));
   SQLITE3_CALL(sqlite3_finalize(stmt));
-  SQLITE3_EXEC(database_, StringPrintf("DELETE FROM frame_images WHERE frame_id=%u;", frame.FrameId()).c_str(), nullptr);
   SQLITE3_EXEC(database_, StringPrintf("DELETE FROM frame_data WHERE frame_id=%u;", frame.FrameId()).c_str(), nullptr);
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frame_images(frame_id, image_id) VALUES(?, ?);", -1, &stmt, nullptr));
-  for (const image_t image_id : frame.ImageIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, frame.FrameId()));
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, image_id));
-    SQLITE3_CALL(sqlite3_step(stmt));
-    SQLITE3_CALL(sqlite3_reset(stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(stmt));
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO frame_data(frame_id, data_id, sensor_id, sensor_type) VALUES(?, ?, ?, ?);", -1, &stmt, nullptr));
-  for (const data_t& data_id : frame.DataIds()) {
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, frame.FrameId()));
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2, data_id.id));
-    SQLITE3_CALL(sqlite3_bind_int64(stmt, 3, data_id.sensor_id.id));
-    SQLITE3_CALL(sqlite3_bind_int(stmt, 4, static_cast<int>(data_id.sensor_id.type)));
-    SQLITE3_CALL(sqlite3_step(stmt));
-    SQLITE3_CALL(sqlite3_reset(stmt));
-  }
-  SQLITE3_CALL(sqlite3_finalize(stmt));
+  WriteFrameData(database_, frame.FrameId(), frame);
 }
 
 void SqliteDatabase::UpdateImage(const Image& image) const {
@@ -1631,22 +1744,7 @@ void SqliteDatabase::UpdateImage(const Image& image) const {
       sqlite3_bind_text(sql_stmt_update_image_, 1, image.Name().c_str(),
                         static_cast<int>(image.Name().size()), SQLITE_STATIC));
   SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_image_, 2, image.CameraId()));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 3, image.QvecPrior(0)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 4, image.QvecPrior(1)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 5, image.QvecPrior(2)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 6, image.QvecPrior(3)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 7, image.TvecPrior(0)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 8, image.TvecPrior(1)));
-  SQLITE3_CALL(
-      sqlite3_bind_double(sql_stmt_update_image_, 9, image.TvecPrior(2)));
-
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_image_, 10, image.ImageId()));
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_image_, 3, image.ImageId()));
 
   SQLITE3_CALL(sqlite3_step(sql_stmt_update_image_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_image_));
@@ -1679,7 +1777,10 @@ void SqliteDatabase::UpdateKeypoints(const image_t image_id,
 void SqliteDatabase::UpdateTwoViewGeometry(
         const image_t image_id1, const image_t image_id2,
         const TwoViewGeometry& two_view_geometry) const {
-  DeleteInlierMatches(image_id1, image_id2);
+  // Full-row replacement: deleting via DeleteInlierMatches only clears the
+  // inlier array (upstream semantics) and leaves the row in place, which
+  // would trip the pair_id uniqueness on the write below.
+  DeleteTwoViewGeometry(image_id1, image_id2);
   WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
 }
 
@@ -1703,11 +1804,17 @@ void SqliteDatabase::DeleteTwoViewGeometry(const image_t image_id1,
 
 void SqliteDatabase::DeleteInlierMatches(const image_t image_id1,
                                    const image_t image_id2) const {
+  // Upstream parity (d3ccaf35): clear the inlier array while keeping the
+  // two-view geometry entry itself. A plain UPDATE avoids the fork's
+  // delete+write UpdateTwoViewGeometry (which must not be re-entered) and
+  // is unconditional - a missing row is a no-op, matching the upstream
+  // Exists-guard semantics.
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
-  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_delete_two_view_geometry_, 1,
-                                  static_cast<sqlite3_int64>(pair_id)));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_delete_two_view_geometry_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_two_view_geometry_));
+  const std::string sql =
+          "UPDATE two_view_geometries SET rows = 0, cols = 0, data = NULL"
+          " WHERE pair_id = " +
+          std::to_string(static_cast<long long>(pair_id)) + ";";
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
 void SqliteDatabase::ClearAllTables() const {
@@ -1715,6 +1822,7 @@ void SqliteDatabase::ClearAllTables() const {
   ClearTwoViewGeometries();
   ClearDescriptors();
   ClearKeypoints();
+  ClearPosePriors();
   ClearFrames();
   ClearRigs();
   ClearImages();
@@ -1727,11 +1835,11 @@ void SqliteDatabase::ClearCameras() const {
 }
 
 void SqliteDatabase::ClearRigs() const {
-  SQLITE3_EXEC(database_, "DELETE FROM rig_sensors; DELETE FROM rig_cameras; DELETE FROM rigs;", nullptr);
+  SQLITE3_EXEC(database_, "DELETE FROM rig_sensors; DELETE FROM rigs;", nullptr);
 }
 
 void SqliteDatabase::ClearFrames() const {
-  SQLITE3_EXEC(database_, "DELETE FROM frame_data; DELETE FROM frame_images; DELETE FROM frames;", nullptr);
+  SQLITE3_EXEC(database_, "DELETE FROM frame_data; DELETE FROM frames;", nullptr);
 }
 
 void SqliteDatabase::ClearImages() const {
@@ -1742,8 +1850,6 @@ void SqliteDatabase::ClearImages() const {
 void SqliteDatabase::ClearDescriptors() const {
   SQLITE3_CALL(sqlite3_step(sql_stmt_clear_descriptors_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_descriptors_));
-  SQLITE3_CALL(sqlite3_step(sql_stmt_clear_float_descriptors_));
-  SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_float_descriptors_));
 }
 
 void SqliteDatabase::ClearKeypoints() const {
@@ -1775,6 +1881,12 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // num_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): multiple calibrations per camera.
+  sql = "SELECT COUNT(DISTINCT camera_id) FROM cameras;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_num_cameras_, 0));
+  sql_stmts_.push_back(sql_stmt_num_cameras_);
+
   sql = "SELECT rows FROM keypoints WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_num_keypoints_, 0));
@@ -1792,6 +1904,12 @@ void SqliteDatabase::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_exists_camera_, 0));
   sql_stmts_.push_back(sql_stmt_exists_camera_);
+
+  // Upstream parity (f1ea91d0).
+  sql = "SELECT 1 FROM cameras WHERE camera_id = ? AND source = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_exists_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_exists_camera_source_);
 
   sql = "SELECT 1 FROM images WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -1813,11 +1931,6 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_exists_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_exists_descriptors_);
 
-  sql = "SELECT 1 FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_exists_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_exists_float_descriptors_);
-
   sql = "SELECT 1 FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_exists_matches_, 0));
@@ -1838,15 +1951,20 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   sql =
       "INSERT INTO cameras(camera_id, model, width, height, params, "
-      "prior_focal_length) VALUES(?, ?, ?, ?, ?, ?);";
+      "source) VALUES(?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(
       sqlite3_prepare_v2(database_, sql.c_str(), -1, &sql_stmt_add_camera_, 0));
   sql_stmts_.push_back(sql_stmt_add_camera_);
 
-  sql =
-      "INSERT INTO images(image_id, name, camera_id, prior_qw, prior_qx, "
-      "prior_qy, prior_qz, prior_tx, prior_ty, prior_tz) VALUES(?, ?, ?, ?, ?, "
-      "?, ?, ?, ?, ?);";
+  // Upstream parity (f1ea91d0): composite primary key has no AUTOINCREMENT;
+  // the next id comes from an explicit COALESCE(MAX)+1 allocation.
+  sql = "SELECT COALESCE(MAX(camera_id), 0) + 1 FROM cameras;";
+  SQLITE3_CALL(
+      sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                         &sql_stmt_next_camera_id_, 0));
+  sql_stmts_.push_back(sql_stmt_next_camera_id_);
+
+  sql = "INSERT INTO images(image_id, name, camera_id) VALUES(?, ?, ?);";
   SQLITE3_CALL(
       sqlite3_prepare_v2(database_, sql.c_str(), -1, &sql_stmt_add_image_, 0));
   sql_stmts_.push_back(sql_stmt_add_image_);
@@ -1854,17 +1972,15 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // update_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): upsert of one calibration source.
   sql =
-      "UPDATE cameras SET model=?, width=?, height=?, params=?, "
-      "prior_focal_length=? WHERE camera_id=?;";
+      "INSERT OR REPLACE INTO cameras(camera_id, model, width, height, "
+      "params, source) VALUES(?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_update_camera_, 0));
   sql_stmts_.push_back(sql_stmt_update_camera_);
 
-  sql =
-      "UPDATE images SET name=?, camera_id=?, prior_qw=?, prior_qx=?, "
-      "prior_qy=?, prior_qz=?, prior_tx=?, prior_ty=?, prior_tz=? WHERE "
-      "image_id=?;";
+  sql = "UPDATE images SET name=?, camera_id=? WHERE image_id=?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_update_image_, 0));
   sql_stmts_.push_back(sql_stmt_update_image_);
@@ -1872,42 +1988,85 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // read_*
   //////////////////////////////////////////////////////////////////////////////
-  sql = "SELECT * FROM cameras WHERE camera_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_camera_, 0));
-  sql_stmts_.push_back(sql_stmt_read_camera_);
-
-  sql = "SELECT * FROM cameras;";
+  // Upstream parity (f1ea91d0): source-priority ordering resolves BEST.
+  // Relies on SQLite returning bare columns from the row matching the
+  // single MAX() aggregate; do not add a second aggregate to this query.
+  std::string camera_source_priority_sql = "CASE source";
+  for (const CameraSource source :
+       {CameraSource::UNKNOWN,
+        CameraSource::USER,
+        CameraSource::GUESS,
+        CameraSource::EXIF,
+        CameraSource::SINGLE_VIEW,
+        CameraSource::VIEW_GRAPH}) {
+    camera_source_priority_sql += StringPrintf(
+        " WHEN %d THEN %d",
+        static_cast<int>(source), CameraSourcePriority(source));
+  }
+  camera_source_priority_sql += " END";
+  sql = StringPrintf(
+      "SELECT camera_id, model, width, height, params, source, MAX(%s) "
+      "FROM cameras GROUP BY camera_id ORDER BY camera_id ASC;",
+      camera_source_priority_sql.c_str());
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_cameras_, 0));
   sql_stmts_.push_back(sql_stmt_read_cameras_);
 
-  // Upstream parity (dbb41680): the image-to-frame association is resolved
+  sql = StringPrintf(
+      "SELECT camera_id, model, width, height, params, source "
+      "FROM cameras WHERE camera_id = ? ORDER BY %s DESC LIMIT 1;",
+      camera_source_priority_sql.c_str());
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_camera_, 0));
+  sql_stmts_.push_back(sql_stmt_read_camera_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE camera_id = ? AND source = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_read_camera_source_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE source = ? ORDER BY camera_id ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_cameras_for_source_, 0));
+  sql_stmts_.push_back(sql_stmt_read_cameras_for_source_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras WHERE camera_id = ? ORDER BY source ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_camera_sources_for_camera_, 0));
+  sql_stmts_.push_back(sql_stmt_read_camera_sources_for_camera_);
+
+  sql = "SELECT camera_id, model, width, height, params, source "
+        "FROM cameras ORDER BY camera_id ASC, source ASC;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_all_camera_sources_, 0));
+  sql_stmts_.push_back(sql_stmt_read_all_camera_sources_);
+
+  // Upstream parity (a2bd15c2): the image-to-frame association is resolved
   // at read time by joining frame_data on (data_id, sensor_type=CAMERA), not
-  // stored in the images table. The fork-legacy frame_images table is kept
-  // as a fallback for databases written before the W3-2a dual-write.
-  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
-        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
-        "fd.sensor_type = 0 "
-        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id "
-        "WHERE images.image_id = ?;";
+  // stored in the images table.
+  sql = "SELECT images.image_id, images.name, images.camera_id, "
+        "frame_data.frame_id FROM images LEFT JOIN frame_data ON "
+        "images.image_id = frame_data.data_id AND "
+        "frame_data.sensor_type = 0 WHERE images.image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_image_id_, 0));
   sql_stmts_.push_back(sql_stmt_read_image_id_);
 
-  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
-        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
-        "fd.sensor_type = 0 "
-        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id "
-        "WHERE images.name = ?;";
+  sql = "SELECT images.image_id, images.name, images.camera_id, "
+        "frame_data.frame_id FROM images LEFT JOIN frame_data ON "
+        "images.image_id = frame_data.data_id AND "
+        "frame_data.sensor_type = 0 WHERE images.name = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_image_name_, 0));
   sql_stmts_.push_back(sql_stmt_read_image_name_);
 
-  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
-        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
-        "fd.sensor_type = 0 "
-        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id;";
+  sql = "SELECT images.image_id, images.name, images.camera_id, "
+        "frame_data.frame_id FROM images LEFT JOIN frame_data ON "
+        "images.image_id = frame_data.data_id AND "
+        "frame_data.sensor_type = 0;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_images_, 0));
   sql_stmts_.push_back(sql_stmt_read_images_);
@@ -1917,20 +2076,10 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_read_keypoints_, 0));
   sql_stmts_.push_back(sql_stmt_read_keypoints_);
 
-  sql = "SELECT rows, cols, data FROM descriptors WHERE image_id = ?;";
+  sql = "SELECT rows, cols, data, type FROM descriptors WHERE image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_read_descriptors_);
-
-  sql = "SELECT rows, cols, data, type FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_read_float_descriptors_);
-
-  sql = "SELECT type FROM float_descriptors WHERE image_id = ?;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_read_descriptor_type_, 0));
-  sql_stmts_.push_back(sql_stmt_read_descriptor_type_);
 
   sql = "SELECT rows, cols, data FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -1942,9 +2091,14 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_read_matches_all_, 0));
   sql_stmts_.push_back(sql_stmt_read_matches_all_);
 
+  sql = "SELECT pair_id, rows FROM matches WHERE rows > 0;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_num_matches_, 0));
+  sql_stmts_.push_back(sql_stmt_read_num_matches_);
+
   sql =
-      "SELECT rows, cols, data, config, F, E, H, qvec, tvec FROM "
-      "two_view_geometries WHERE pair_id = ?;";
+      "SELECT rows, cols, data, config, F, E, H, qvec, tvec, camera1, camera2 "
+      "FROM two_view_geometries WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_read_two_view_geometry_);
@@ -1960,17 +2114,17 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   0));
   sql_stmts_.push_back(sql_stmt_read_two_view_geometry_num_inliers_);
 
-  // Column order matches the pose_priors table definition and
-  // ReadPosePriorRow below.
-  sql = "SELECT pose_prior_id, data_id, sensor_id, sensor_type, position, "
-        "position_covariance, coordinate_system, gravity FROM pose_priors "
-        "WHERE pose_prior_id = ?;";
+  // Column order matches ReadPosePriorRow below.
+  sql = "SELECT pose_prior_id, corr_data_id, corr_sensor_id, "
+        "corr_sensor_type, position, position_covariance, coordinate_system, "
+        "gravity FROM pose_priors WHERE pose_prior_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_pose_prior_, 0));
   sql_stmts_.push_back(sql_stmt_read_pose_prior_);
 
-  sql = "SELECT pose_prior_id, data_id, sensor_id, sensor_type, position, "
-        "position_covariance, coordinate_system, gravity FROM pose_priors;";
+  sql = "SELECT pose_prior_id, corr_data_id, corr_sensor_id, "
+        "corr_sensor_type, position, position_covariance, coordinate_system, "
+        "gravity FROM pose_priors;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_pose_priors_, 0));
   sql_stmts_.push_back(sql_stmt_read_pose_priors_);
@@ -1988,23 +2142,18 @@ void SqliteDatabase::PrepareSQLStatements() {
                                   &sql_stmt_update_keypoints_, 0));
   sql_stmts_.push_back(sql_stmt_update_keypoints_);
 
-  sql = "UPDATE pose_priors SET data_id=?, sensor_id=?, sensor_type=?, "
-        "position=?, position_covariance=?, coordinate_system=?, gravity=? "
-        "WHERE pose_prior_id=?;";
+  sql = "UPDATE pose_priors SET corr_data_id=?, corr_sensor_id=?, "
+        "corr_sensor_type=?, position=?, position_covariance=?, "
+        "coordinate_system=?, gravity=? WHERE pose_prior_id=?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_update_pose_prior_, 0));
   sql_stmts_.push_back(sql_stmt_update_pose_prior_);
 
   sql =
-      "INSERT INTO descriptors(image_id, rows, cols, data) VALUES(?, ?, ?, ?);";
+      "INSERT INTO descriptors(image_id, rows, cols, data, type) VALUES(?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_write_descriptors_);
-
-  sql = "INSERT OR REPLACE INTO float_descriptors(image_id, rows, cols, type, data) VALUES(?, ?, ?, ?, ?);";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_write_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_write_float_descriptors_);
 
   sql = "INSERT INTO matches(pair_id, rows, cols, data) VALUES(?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -2012,14 +2161,15 @@ void SqliteDatabase::PrepareSQLStatements() {
   sql_stmts_.push_back(sql_stmt_write_matches_);
 
   sql = "INSERT INTO two_view_geometries(pair_id, rows, cols, data, config, F, "
-      "E, H, qvec, tvec) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "E, H, qvec, tvec, camera1, camera2) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+      "?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_write_two_view_geometry_);
 
-  sql = "INSERT INTO pose_priors(pose_prior_id, data_id, sensor_id, "
-        "sensor_type, position, position_covariance, coordinate_system, "
-        "gravity) VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+  sql = "INSERT INTO pose_priors(pose_prior_id, corr_data_id, "
+        "corr_sensor_id, corr_sensor_type, position, position_covariance, "
+        "coordinate_system, gravity) VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_pose_prior_, 0));
   sql_stmts_.push_back(sql_stmt_write_pose_prior_);
@@ -2027,6 +2177,18 @@ void SqliteDatabase::PrepareSQLStatements() {
   //////////////////////////////////////////////////////////////////////////////
   // delete_*
   //////////////////////////////////////////////////////////////////////////////
+  // Upstream parity (f1ea91d0): per-camera deletion; BEST deletes all
+  // calibrations of the camera.
+  sql = "DELETE FROM cameras WHERE camera_id = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_delete_camera_, 0));
+  sql_stmts_.push_back(sql_stmt_delete_camera_);
+
+  sql = "DELETE FROM cameras WHERE camera_id = ? AND source = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_delete_camera_source_, 0));
+  sql_stmts_.push_back(sql_stmt_delete_camera_source_);
+
   sql = "DELETE FROM matches WHERE pair_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_delete_matches_, 0));
@@ -2054,11 +2216,6 @@ void SqliteDatabase::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_clear_descriptors_, 0));
   sql_stmts_.push_back(sql_stmt_clear_descriptors_);
-
-  sql = "DELETE FROM float_descriptors;";
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
-                                  &sql_stmt_clear_float_descriptors_, 0));
-  sql_stmts_.push_back(sql_stmt_clear_float_descriptors_);
 
   sql = "DELETE FROM keypoints;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
@@ -2088,78 +2245,87 @@ void SqliteDatabase::FinalizeSQLStatements() {
 }
 
 void SqliteDatabase::CreateTables() const {
-  CreateCameraTable();
   CreateRigTable();
   CreateRigSensorsTable();
-  CreateRigCamerasTable();
+  CreateCameraTable();
   CreateFrameTable();
   CreateFrameDataTable();
-  CreateFrameImagesTable();
   CreateImageTable();
+  CreatePosePriorsTable();
   CreateKeypointsTable();
   CreateDescriptorsTable();
-  CreateFloatDescriptorsTable();
   CreateMatchesTable();
   CreateTwoViewGeometriesTable();
-  CreatePosePriorsTable();
 }
 
+// The Create*Table statements below are verbatim upstream a2bd15c2 so that
+// databases are interchangeable between the fork and upstream binaries.
+
 void SqliteDatabase::CreateRigTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS rigs"
-             " (rig_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-             "  ref_camera_id INTEGER, ref_sensor_id INTEGER NOT NULL,"
-             "  ref_sensor_type INTEGER NOT NULL);", nullptr);
+  const std::string sql =
+      "CREATE TABLE IF NOT EXISTS rigs"
+      "   (rig_id               INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+      "    ref_sensor_id        INTEGER                             NOT NULL,"
+      "    ref_sensor_type      INTEGER                             NOT "
+      "NULL);"
+      "CREATE UNIQUE INDEX IF NOT EXISTS rig_ref_sensor_assignment ON "
+      "   rigs(ref_sensor_id, ref_sensor_type);";
+
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
 void SqliteDatabase::CreateRigSensorsTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS rig_sensors"
-             " (rig_id INTEGER NOT NULL, sensor_id INTEGER NOT NULL, sensor_type INTEGER NOT NULL,"
-             "  qvec BLOB, tvec BLOB, PRIMARY KEY(rig_id, sensor_id, sensor_type),"
-             "  UNIQUE(sensor_id, sensor_type),"
-             "  FOREIGN KEY(rig_id) REFERENCES rigs(rig_id) ON DELETE CASCADE);", nullptr);
-}
+  const std::string sql =
+      "CREATE TABLE IF NOT EXISTS rig_sensors"
+      "   (rig_id               INTEGER                             NOT NULL,"
+      "    sensor_id            INTEGER                             NOT NULL,"
+      "    sensor_type          INTEGER                             NOT NULL,"
+      "    sensor_from_rig      BLOB,"
+      "FOREIGN KEY(rig_id) REFERENCES rigs(rig_id) ON DELETE CASCADE);"
+      "CREATE UNIQUE INDEX IF NOT EXISTS rig_sensor_assignment ON "
+      "   rig_sensors(sensor_id, sensor_type);";
 
-void SqliteDatabase::CreateRigCamerasTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS rig_cameras"
-             " (rig_id INTEGER NOT NULL, camera_id INTEGER NOT NULL,"
-             "  qvec BLOB NOT NULL, tvec BLOB NOT NULL,"
-             "  PRIMARY KEY(rig_id, camera_id), UNIQUE(camera_id),"
-             "  FOREIGN KEY(rig_id) REFERENCES rigs(rig_id) ON DELETE CASCADE,"
-             "  FOREIGN KEY(camera_id) REFERENCES cameras(camera_id));", nullptr);
-}
-
-void SqliteDatabase::CreateFrameTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS frames"
-             " (frame_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-             "  rig_id INTEGER NOT NULL, has_pose INTEGER NOT NULL, qvec BLOB, tvec BLOB,"
-             "  FOREIGN KEY(rig_id) REFERENCES rigs(rig_id));", nullptr);
-}
-
-void SqliteDatabase::CreateFrameDataTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS frame_data"
-             " (frame_id INTEGER NOT NULL, data_id INTEGER NOT NULL, sensor_id INTEGER NOT NULL,"
-             "  sensor_type INTEGER NOT NULL, PRIMARY KEY(frame_id, data_id, sensor_id, sensor_type),"
-             "  UNIQUE(data_id, sensor_type),"
-             "  FOREIGN KEY(frame_id) REFERENCES frames(frame_id) ON DELETE CASCADE);", nullptr);
-}
-
-void SqliteDatabase::CreateFrameImagesTable() const {
-  SQLITE3_EXEC(database_, "CREATE TABLE IF NOT EXISTS frame_images"
-             " (frame_id INTEGER NOT NULL, image_id INTEGER NOT NULL,"
-             "  PRIMARY KEY(frame_id, image_id), UNIQUE(image_id),"
-             "  FOREIGN KEY(frame_id) REFERENCES frames(frame_id) ON DELETE CASCADE,"
-             "  FOREIGN KEY(image_id) REFERENCES images(image_id));", nullptr);
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
 void SqliteDatabase::CreateCameraTable() const {
+  // Upstream parity (f1ea91d0): composite primary key (camera_id, source);
+  // no AUTOINCREMENT (SQLite limitation on composite keys), no
+  // prior_focal_length column (subsumed by source).
   const std::string sql =
       "CREATE TABLE IF NOT EXISTS cameras"
-      "   (camera_id            INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+      "   (camera_id            INTEGER                             NOT NULL,"
       "    model                INTEGER                             NOT NULL,"
       "    width                INTEGER                             NOT NULL,"
       "    height               INTEGER                             NOT NULL,"
       "    params               BLOB,"
-      "    prior_focal_length   INTEGER                             NOT NULL);";
+      "    source               INTEGER                             NOT NULL,"
+      "    PRIMARY KEY(camera_id, source));";
+
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
+}
+
+void SqliteDatabase::CreateFrameTable() const {
+  const std::string sql =
+      "CREATE TABLE IF NOT EXISTS frames"
+      "   (frame_id             INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
+      "    rig_id               INTEGER                             NOT NULL,"
+      "    FOREIGN KEY(rig_id) REFERENCES rigs(rig_id) ON DELETE CASCADE);";
+
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
+}
+
+void SqliteDatabase::CreateFrameDataTable() const {
+  const std::string sql =
+      "CREATE TABLE IF NOT EXISTS frame_data"
+      "   (frame_id             INTEGER                             NOT NULL,"
+      "    data_id              INTEGER                             NOT NULL,"
+      "    sensor_id            INTEGER                             NOT NULL,"
+      "    sensor_type          INTEGER                             NOT NULL,"
+      "    FOREIGN KEY(frame_id) REFERENCES frames(frame_id) ON DELETE "
+      "CASCADE);"
+      "CREATE UNIQUE INDEX IF NOT EXISTS frame_sensor_assignment ON "
+      "   frame_data(data_id, sensor_type);";
 
   SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
@@ -2170,15 +2336,7 @@ void SqliteDatabase::CreateImageTable() const {
       "   (image_id   INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,"
       "    name       TEXT                                NOT NULL UNIQUE,"
       "    camera_id  INTEGER                             NOT NULL,"
-      "    prior_qw   REAL,"
-      "    prior_qx   REAL,"
-      "    prior_qy   REAL,"
-      "    prior_qz   REAL,"
-      "    prior_tx   REAL,"
-      "    prior_ty   REAL,"
-      "    prior_tz   REAL,"
-      "CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < %d),"
-      "FOREIGN KEY(camera_id) REFERENCES cameras(camera_id));"
+      "    CONSTRAINT image_id_check CHECK(image_id >= 0 and image_id < %d));"
       "CREATE UNIQUE INDEX IF NOT EXISTS index_name ON images(name);",
       kMaxNumImages);
 
@@ -2192,7 +2350,8 @@ void SqliteDatabase::CreateKeypointsTable() const {
       "    rows      INTEGER               NOT NULL,"
       "    cols      INTEGER               NOT NULL,"
       "    data      BLOB,"
-      "FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE CASCADE);";
+      "    FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE "
+      "CASCADE);";
 
   SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
@@ -2200,24 +2359,14 @@ void SqliteDatabase::CreateKeypointsTable() const {
 void SqliteDatabase::CreateDescriptorsTable() const {
   const std::string sql =
       "CREATE TABLE IF NOT EXISTS descriptors"
-      "   (image_id  INTEGER  PRIMARY KEY  NOT NULL,"
-      "    rows      INTEGER               NOT NULL,"
-      "    cols      INTEGER               NOT NULL,"
-      "    data      BLOB,"
-      "FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE CASCADE);";
+      "   (image_id      INTEGER  PRIMARY KEY  NOT NULL,"
+      "    type          INTEGER               NOT NULL,"
+      "    rows          INTEGER               NOT NULL,"
+      "    cols          INTEGER               NOT NULL,"
+      "    data          BLOB,"
+      "    FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE "
+      "CASCADE);";
 
-  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
-}
-
-void SqliteDatabase::CreateFloatDescriptorsTable() const {
-  const std::string sql =
-      "CREATE TABLE IF NOT EXISTS float_descriptors"
-      "   (image_id  INTEGER  PRIMARY KEY  NOT NULL,"
-      "    rows      INTEGER               NOT NULL,"
-      "    cols      INTEGER               NOT NULL,"
-      "    type      INTEGER               NOT NULL,"
-      "    data      BLOB,"
-      "FOREIGN KEY(image_id) REFERENCES images(image_id) ON DELETE CASCADE);";
   SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
@@ -2249,26 +2398,28 @@ void SqliteDatabase::CreateTwoViewGeometriesTable() const {
         "    E        BLOB,"
         "    H        BLOB,"
         "    qvec     BLOB,"
-        "    tvec     BLOB);";
+        "    tvec     BLOB,"
+        "    camera1  BLOB,"
+        "    camera2  BLOB);";
     SQLITE3_EXEC(database_, sql.c_str(), nullptr);
   }
 }
 
 void SqliteDatabase::CreatePosePriorsTable() const {
-  // Upstream dbb41680 column order without the data-table foreign key (this
-  // fork has no unified `data` table; the fork-legacy tables carry the
-  // sensor references instead).
-  SQLITE3_EXEC(database_,
-               "CREATE TABLE IF NOT EXISTS pose_priors"
-               "   (pose_prior_id  INTEGER  PRIMARY KEY  AUTOINCREMENT,"
-               "    data_id        INTEGER               NOT NULL,"
-               "    sensor_id      INTEGER               NOT NULL,"
-               "    sensor_type    INTEGER               NOT NULL,"
-               "    position       BLOB,"
-               "    position_covariance BLOB,"
-               "    coordinate_system   INTEGER          NOT NULL,"
-               "    gravity        BLOB);",
-               nullptr);
+  const std::string sql =
+      "CREATE TABLE IF NOT EXISTS pose_priors"
+      "   (pose_prior_id              INTEGER  PRIMARY KEY  NOT NULL,"
+      "    corr_data_id               INTEGER               NOT NULL,"
+      "    corr_sensor_id             INTEGER               NOT NULL,"
+      "    corr_sensor_type           INTEGER               NOT NULL,"
+      "    position                   BLOB,"
+      "    position_covariance        BLOB,"
+      "    gravity                    BLOB,"
+      "    coordinate_system          INTEGER               NOT NULL);"
+      "CREATE UNIQUE INDEX IF NOT EXISTS pose_prior_data_assignment ON "
+      "   pose_priors(corr_data_id, corr_sensor_id, corr_sensor_type);";
+
+  SQLITE3_EXEC(database_, sql.c_str(), nullptr);
 }
 
 
@@ -2290,9 +2441,37 @@ bool ExistsColumnImpl(sqlite3* db, const std::string& table_name,
     return exists;
 }
 
+bool ExistsIndexImpl(sqlite3* db, const std::string& index_name) {
+    sqlite3_stmt* stmt;
+    SQLITE3_CALL(sqlite3_prepare_v2(
+            db, "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?;",
+            -1, &stmt, nullptr));
+    SQLITE3_CALL(
+            sqlite3_bind_text(stmt, 1, index_name.c_str(), -1, SQLITE_STATIC));
+    const bool exists = SQLITE3_CALL(sqlite3_step(stmt)) == SQLITE_ROW;
+    SQLITE3_CALL(sqlite3_finalize(stmt));
+    return exists;
+}
+
+// The schema migration must fail closed: unlike SQLITE3_EXEC, which only
+// logs, a failed statement aborts the open migration transaction.
+void ExecOrThrow(sqlite3* db, const std::string& sql) {
+    char* err_msg = nullptr;
+    const int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &err_msg);
+    if (rc != SQLITE_OK) {
+        const std::string message =
+                err_msg != nullptr ? err_msg : sqlite3_errstr(rc);
+        sqlite3_free(err_msg);
+        throw std::runtime_error("Database migration failed: " + message +
+                                 " [" + sql + "]");
+    }
+}
+
+constexpr char kForkLegacySuffix[] = "_fork_legacy";
+
 }  // namespace
 
-void SqliteDatabase::PreMigrateTables() const {
+bool SqliteDatabase::PreMigrateTables() const {
     // Legacy upstream databases keyed pose priors by image IDs; the table is
     // renamed so that CreateTables() can recreate it in the new schema.
     if (ExistsTable("pose_priors") &&
@@ -2301,6 +2480,214 @@ void SqliteDatabase::PreMigrateTables() const {
                      "ALTER TABLE pose_priors RENAME TO pose_priors_old;",
                      nullptr);
     }
+
+    // Fork-legacy schema (before the a2bd15c2 port): frame poses, image
+    // priors, rig_cameras/frame_images side tables, reference sensors in
+    // rig_sensors as qvec/tvec pairs, and data_id/sensor_* pose prior
+    // columns. Each table is detected on its own, because a database written
+    // by upstream and later opened by an older fork build only gained the
+    // empty side tables.
+    const std::vector<std::pair<std::string, bool>> tables = {
+        {"rigs", ExistsColumn("rigs", "ref_camera_id")},
+        {"rig_sensors", ExistsColumn("rig_sensors", "qvec")},
+        {"rig_cameras", ExistsTable("rig_cameras")},
+        {"frames", ExistsColumn("frames", "has_pose")},
+        {"frame_data", ExistsTable("frame_data") &&
+                           !ExistsIndexImpl(database_,
+                                            "frame_sensor_assignment")},
+        {"frame_images", ExistsTable("frame_images")},
+        {"images", ExistsColumn("images", "prior_qw")},
+        {"pose_priors", ExistsColumn("pose_priors", "data_id")},
+    };
+    bool fork_legacy_schema = false;
+    for (const auto& [table, is_fork_legacy] : tables) {
+        fork_legacy_schema |= is_fork_legacy;
+    }
+    if (!fork_legacy_schema) {
+        return false;
+    }
+
+    LOG(INFO) << "Migrating fork-legacy database schema to upstream";
+    // Move the fork-legacy tables aside; PostMigrateTables() copies them
+    // into the tables recreated by CreateTables() and drops them. Foreign
+    // keys are disabled and legacy_alter_table is enabled so that RENAME
+    // does not rewrite the REFERENCES clauses of the kept tables (e.g.
+    // keypoints -> images must keep naming the recreated images table) and
+    // DROP does not cascade. Everything runs in one transaction, so a
+    // failure leaves the database untouched.
+    ExecOrThrow(database_, "PRAGMA foreign_keys=OFF;");
+    ExecOrThrow(database_, "PRAGMA legacy_alter_table=ON;");
+    ExecOrThrow(database_, "BEGIN TRANSACTION;");
+    for (const auto& [table, is_fork_legacy] : tables) {
+        if (!is_fork_legacy) {
+            continue;
+        }
+        if (table == "images") {
+            // The index moves with the renamed table and would otherwise
+            // shadow the IF NOT EXISTS index of the recreated table.
+            ExecOrThrow(database_, "DROP INDEX IF EXISTS index_name;");
+        }
+        ExecOrThrow(database_, "ALTER TABLE " + table + " RENAME TO " +
+                                       table + kForkLegacySuffix + ";");
+    }
+    return true;
+}
+
+void SqliteDatabase::MigrateForkLegacyTables() const {
+    auto legacy_table = [](const std::string& table) {
+        return table + kForkLegacySuffix;
+    };
+
+    if (ExistsTable(legacy_table("rigs"))) {
+        const std::string ref_sensor_id =
+                ExistsColumn(legacy_table("rigs"), "ref_sensor_id")
+                        ? "COALESCE(ref_sensor_id, ref_camera_id)"
+                        : "ref_camera_id";
+        const std::string ref_sensor_type =
+                ExistsColumn(legacy_table("rigs"), "ref_sensor_type")
+                        ? "COALESCE(ref_sensor_type, 0)"
+                        : "0";
+        ExecOrThrow(database_,
+                    "INSERT INTO rigs(rig_id, ref_sensor_id, ref_sensor_type) "
+                    "SELECT rig_id, " + ref_sensor_id + ", " +
+                            ref_sensor_type + " FROM " +
+                            legacy_table("rigs") + " ORDER BY rig_id;");
+    }
+
+    // Non-reference sensors only (upstream WriteRigSensors). The qvec/tvec
+    // pair is re-encoded as the 7-double sensor_from_rig blob in C++, since
+    // SQLite's || operator converts blobs to text. Cameras present in both
+    // fork tables carry the same pose; the unique index keeps the first.
+    {
+        sqlite3_stmt* insert_stmt = nullptr;
+        SQLITE3_CALL(sqlite3_prepare_v2(
+                database_,
+                "INSERT OR IGNORE INTO rig_sensors(rig_id, sensor_id, "
+                "sensor_type, sensor_from_rig) SELECT ?1, ?2, ?3, ?4 WHERE NOT "
+                "EXISTS (SELECT 1 FROM rigs WHERE rig_id = ?1 AND "
+                "ref_sensor_id = ?2 AND ref_sensor_type = ?3);",
+                -1, &insert_stmt, nullptr));
+        auto copy_sensors = [this, insert_stmt](const std::string& sql) {
+            sqlite3_stmt* read_stmt = nullptr;
+            SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                            &read_stmt, nullptr));
+            while (SQLITE3_CALL(sqlite3_step(read_stmt)) == SQLITE_ROW) {
+                for (int col = 0; col < 3; ++col) {
+                    SQLITE3_CALL(sqlite3_bind_int64(
+                            insert_stmt, col + 1,
+                            sqlite3_column_int64(read_stmt, col)));
+                }
+                Eigen::Vector4d qvec;
+                Eigen::Vector3d tvec;
+                // Must outlive sqlite3_step (bound with SQLITE_STATIC).
+                std::string blob;
+                if (sqlite3_column_type(read_stmt, 3) != SQLITE_NULL &&
+                    sqlite3_column_type(read_stmt, 4) != SQLITE_NULL) {
+                    CHECK(ReadPoseBlob(read_stmt, 3, 4, &qvec, &tvec));
+                    blob = SensorFromRigToBlob(qvec, tvec);
+                    SQLITE3_CALL(sqlite3_bind_blob(
+                            insert_stmt, 4, blob.data(),
+                            static_cast<int>(blob.size()), SQLITE_STATIC));
+                } else {
+                    SQLITE3_CALL(sqlite3_bind_null(insert_stmt, 4));
+                }
+                SQLITE3_CALL(sqlite3_step(insert_stmt));
+                SQLITE3_CALL(sqlite3_reset(insert_stmt));
+            }
+            SQLITE3_CALL(sqlite3_finalize(read_stmt));
+        };
+        if (ExistsTable(legacy_table("rig_sensors"))) {
+            copy_sensors("SELECT rig_id, sensor_id, sensor_type, qvec, tvec "
+                         "FROM " + legacy_table("rig_sensors") +
+                         " ORDER BY rig_id, sensor_type, sensor_id;");
+        }
+        if (ExistsTable(legacy_table("rig_cameras"))) {
+            copy_sensors("SELECT rig_id, camera_id, 0, qvec, tvec FROM " +
+                         legacy_table("rig_cameras") +
+                         " ORDER BY rig_id, camera_id;");
+        }
+        SQLITE3_CALL(sqlite3_finalize(insert_stmt));
+    }
+
+    // Frame poses are reconstruction state and not part of the upstream
+    // schema; they are dropped.
+    if (ExistsTable(legacy_table("frames"))) {
+        ExecOrThrow(database_,
+                    "INSERT INTO frames(frame_id, rig_id) SELECT frame_id, "
+                    "rig_id FROM " + legacy_table("frames") +
+                            " ORDER BY frame_id;");
+    }
+
+    // Image priors had no production writer (only the database management
+    // GUI) and are not part of the upstream schema; they are dropped.
+    if (ExistsTable(legacy_table("images"))) {
+        ExecOrThrow(database_,
+                    "INSERT INTO images(image_id, name, camera_id) SELECT "
+                    "image_id, name, camera_id FROM " +
+                            legacy_table("images") + " ORDER BY image_id;");
+    }
+
+    if (ExistsTable(legacy_table("frame_data"))) {
+        ExecOrThrow(database_,
+                    "INSERT OR IGNORE INTO frame_data(frame_id, data_id, "
+                    "sensor_id, sensor_type) SELECT frame_id, data_id, "
+                    "sensor_id, sensor_type FROM " +
+                            legacy_table("frame_data") + ";");
+    }
+    // frame_images rows are camera data of the image's own camera sensor.
+    if (ExistsTable(legacy_table("frame_images"))) {
+        ExecOrThrow(database_,
+                    StringPrintf(
+                            "INSERT OR IGNORE INTO frame_data(frame_id, "
+                            "data_id, sensor_id, sensor_type) SELECT "
+                            "fi.frame_id, fi.image_id, images.camera_id, %d "
+                            "FROM %s AS fi JOIN images ON images.image_id = "
+                            "fi.image_id;",
+                            static_cast<int>(SensorType::CAMERA),
+                            legacy_table("frame_images").c_str()));
+    }
+
+    if (ExistsTable(legacy_table("pose_priors"))) {
+        ExecOrThrow(database_,
+                    "INSERT OR IGNORE INTO pose_priors(pose_prior_id, "
+                    "corr_data_id, corr_sensor_id, corr_sensor_type, "
+                    "position, position_covariance, gravity, "
+                    "coordinate_system) SELECT pose_prior_id, data_id, "
+                    "sensor_id, sensor_type, position, position_covariance, "
+                    "gravity, coordinate_system FROM " +
+                            legacy_table("pose_priors") +
+                            " ORDER BY pose_prior_id;");
+    }
+
+    for (const char* table : {"rigs", "rig_sensors", "rig_cameras", "frames",
+                              "frame_data", "frame_images", "images",
+                              "pose_priors"}) {
+        if (ExistsTable(legacy_table(table))) {
+            ExecOrThrow(database_,
+                        "DROP TABLE " + legacy_table(table) + ";");
+        }
+    }
+
+    // The fork-legacy two-view encoding wrote all-zero blobs for absent
+    // F/E/H/pose and zero-length blobs for entries without inliers; upstream
+    // only treats NULL as absent.
+    const std::string zero_matrix = "X'" + std::string(2 * 9 * 8, '0') + "'";
+    const std::string zero_qvec = "X'" + std::string(2 * 4 * 8, '0') + "'";
+    for (const char* column : {"F", "E", "H"}) {
+        ExecOrThrow(database_,
+                    StringPrintf("UPDATE two_view_geometries SET %s = NULL "
+                                 "WHERE length(%s) = 0 OR %s = %s;",
+                                 column, column, column,
+                                 zero_matrix.c_str()));
+    }
+    ExecOrThrow(database_,
+                "UPDATE two_view_geometries SET qvec = NULL, tvec = NULL "
+                "WHERE length(qvec) = 0 OR length(tvec) = 0 OR qvec = " +
+                        zero_qvec + ";");
+
+    ExecOrThrow(database_, "COMMIT;");
+    ExecOrThrow(database_, "PRAGMA legacy_alter_table=OFF;");
+    ExecOrThrow(database_, "PRAGMA foreign_keys=ON;");
 }
 
 int SqliteDatabase::ReadUserVersion() const {
@@ -2315,14 +2702,79 @@ int SqliteDatabase::ReadUserVersion() const {
     return user_version;
 }
 
-void SqliteDatabase::PostMigrateTables() const {
+void SqliteDatabase::PostMigrateTables(const bool fork_legacy_schema) const {
+    // F2: descriptors.type is the single persistent source of the extractor
+    // type. Old fork databases stored SIFT bytes in descriptors and learned
+    // float32 descriptors in a second table with a fork-private enum. Migrate
+    // once while the old table still exists, then remove the parallel source.
+    if (!ExistsColumn("descriptors", "type")) {
+        SQLITE3_EXEC(database_,
+                     "ALTER TABLE descriptors ADD COLUMN type INTEGER NOT NULL "
+                     "DEFAULT 0;",
+                     nullptr);
+    }
+    if (ExistsTable("float_descriptors")) {
+        sqlite3_stmt* invalid_type_stmt = nullptr;
+        SQLITE3_CALL(sqlite3_prepare_v2(
+                database_,
+                "SELECT COUNT(*) FROM float_descriptors "
+                "WHERE type NOT IN (0, 1, 2, 6, 7);",
+                -1, &invalid_type_stmt, nullptr));
+        const int invalid_rc = SQLITE3_CALL(sqlite3_step(invalid_type_stmt));
+        const int invalid_count =
+                invalid_rc == SQLITE_ROW
+                        ? sqlite3_column_int(invalid_type_stmt, 0)
+                        : 0;
+        SQLITE3_CALL(sqlite3_finalize(invalid_type_stmt));
+        if (invalid_count != 0) {
+            throw std::runtime_error(
+                    "Cannot migrate float_descriptors with an unsupported "
+                    "legacy descriptor type.");
+        }
+
+        // This is O(total descriptor bytes) because SQLite copies each blob;
+        // it runs once per legacy database and preserves raw float32 bytes.
+        SQLITE3_EXEC(
+                database_,
+                "INSERT OR REPLACE INTO descriptors(image_id, rows, cols, data, type) "
+                "SELECT image_id, rows, cols * 4, data, "
+                "CASE type "
+                "WHEN 0 THEN 0 "
+                "WHEN 1 THEN 3 "
+                "WHEN 2 THEN 4 "
+                "WHEN 6 THEN 1 "
+                "WHEN 7 THEN 2 END "
+                "FROM float_descriptors;",
+                nullptr);
+        SQLITE3_EXEC(database_, "DROP TABLE float_descriptors;", nullptr);
+    }
+
+    // Upstream parity (a2bd15c2): old databases lack some two-view columns.
+    for (const char* column :
+         {"F", "E", "H", "qvec", "tvec", "camera1", "camera2"}) {
+        if (!ExistsColumn("two_view_geometries", column)) {
+            SQLITE3_EXEC(database_,
+                         StringPrintf("ALTER TABLE two_view_geometries ADD "
+                                      "COLUMN %s BLOB;",
+                                      column)
+                                 .c_str(),
+                         nullptr);
+        }
+    }
+
     // Refuse databases written by a newer schema than this build supports.
+    // Fork-legacy databases were stamped with the fork-private schema
+    // revision 1 and are migrated instead.
     const int user_version = ReadUserVersion();
-    if (user_version > GetDatabaseVersionNumber()) {
+    if (!fork_legacy_schema && user_version > GetDatabaseVersionNumber()) {
         throw std::runtime_error(
                 "Database schema version " + std::to_string(user_version) +
                 " is newer than the supported version " +
                 std::to_string(GetDatabaseVersionNumber()) + ".");
+    }
+
+    if (fork_legacy_schema) {
+        MigrateForkLegacyTables();
     }
 
     // Legacy fork databases (pre user_version migration machinery, version
@@ -2360,53 +2812,85 @@ void SqliteDatabase::PostMigrateTables() const {
                      nullptr);
     }
 
-    // Stamp the schema version (moved from the legacy UpdateSchema tail).
+    // Upstream parity (a2bd15c2): migrate image-keyed pose priors.
+    if (ExistsTable("pose_priors_old")) {
+        LOG(INFO) << "Migrating pose_priors table";
+        sqlite3_stmt* sql_stmt;
+        SQLITE3_CALL(sqlite3_prepare_v2(
+                database_,
+                "INSERT INTO pose_priors (pose_prior_id, corr_data_id, "
+                "corr_sensor_id, corr_sensor_type, position, "
+                "position_covariance, coordinate_system, gravity) "
+                "SELECT pose_priors_old.image_id, pose_priors_old.image_id, "
+                "images.camera_id, ?, position, position_covariance, "
+                "coordinate_system, ? FROM pose_priors_old JOIN images ON "
+                "pose_priors_old.image_id = images.image_id;",
+                -1, &sql_stmt, nullptr));
+        SQLITE3_CALL(sqlite3_bind_int64(
+                sql_stmt, 1, static_cast<sqlite3_int64>(SensorType::CAMERA)));
+        const PosePrior pose_prior;
+        WriteStaticMatrixBlob(sql_stmt, pose_prior.gravity, 2);
+        SQLITE3_CALL(sqlite3_step(sql_stmt));
+        SQLITE3_CALL(sqlite3_finalize(sql_stmt));
+        SQLITE3_EXEC(database_, "DROP TABLE pose_priors_old;", nullptr);
+    }
+
+    // Upstream parity (f1ea91d0): migrate the cameras table to the composite
+    // primary key (camera_id, source) and recreate the images table without
+    // the foreign key to cameras.
+    if (user_version <= MakeDatabaseVersionNumber(4, 3, 0, 0)) {
+      const bool needs_camera_rename =
+          ExistsTable("cameras") && !ExistsColumn("cameras", "source");
+      if (needs_camera_rename || ExistsTable("cameras_old") ||
+          ExistsTable("images_old")) {
+        ExecOrThrow(database_, "PRAGMA foreign_keys=OFF;");
+        ExecOrThrow(database_, "PRAGMA legacy_alter_table=ON;");
+
+        if (needs_camera_rename) {
+          ExecOrThrow(database_, "ALTER TABLE cameras RENAME TO cameras_old;");
+          CreateCameraTable();
+        }
+
+        if (ExistsTable("cameras_old")) {
+          const std::string migrate_sql = StringPrintf(
+              "INSERT OR IGNORE INTO cameras "
+              "(camera_id, model, width, height, params, source) "
+              "SELECT camera_id, model, width, height, params, "
+              "CASE WHEN prior_focal_length != 0 THEN %d ELSE %d END "
+              "FROM cameras_old;",
+              static_cast<int>(CameraSource::EXIF),
+              static_cast<int>(CameraSource::GUESS));
+          ExecOrThrow(database_, migrate_sql.c_str());
+
+          if (ExistsTable("images") && !ExistsTable("images_old")) {
+            ExecOrThrow(database_, "DROP INDEX IF EXISTS index_name;");
+            ExecOrThrow(database_,
+                        "ALTER TABLE images RENAME TO images_old;");
+            CreateImageTable();
+          }
+
+          ExecOrThrow(database_, "DROP TABLE cameras_old;");
+        }
+
+        if (ExistsTable("images_old")) {
+          CreateImageTable();
+          ExecOrThrow(database_,
+                      "INSERT OR IGNORE INTO images (image_id, name, "
+                      "camera_id) SELECT image_id, name, camera_id FROM "
+                      "images_old;");
+          ExecOrThrow(database_, "DROP TABLE images_old;");
+        }
+
+        ExecOrThrow(database_, "PRAGMA legacy_alter_table=OFF;");
+        ExecOrThrow(database_, "PRAGMA foreign_keys=ON;");
+      }
+    }
+
+    // Stamp the schema version.
     std::unique_lock<std::mutex> lock(update_schema_mutex_);
     const std::string update_user_version_sql =
             StringPrintf("PRAGMA user_version = %d;", GetDatabaseVersionNumber());
     SQLITE3_EXEC(database_, update_user_version_sql.c_str(), nullptr);
-}
-void SqliteDatabase::UpdateSchema() const {
-  if (!ExistsColumn("rigs", "ref_sensor_id")) {
-    SQLITE3_EXEC(database_, "ALTER TABLE rigs ADD COLUMN ref_sensor_id INTEGER;", nullptr);
-  }
-  if (!ExistsColumn("rigs", "ref_sensor_type")) {
-    SQLITE3_EXEC(database_, "ALTER TABLE rigs ADD COLUMN ref_sensor_type INTEGER;", nullptr);
-  }
-  SQLITE3_EXEC(database_, "UPDATE rigs SET ref_sensor_id=ref_camera_id, ref_sensor_type=0 "
-               "WHERE ref_sensor_id IS NULL OR ref_sensor_type IS NULL;", nullptr);
-  if (!ExistsColumn("two_view_geometries", "F")) {
-    SQLITE3_EXEC(database_,
-                 "ALTER TABLE two_view_geometries ADD COLUMN F BLOB;", nullptr);
-  }
-
-  if (!ExistsColumn("two_view_geometries", "E")) {
-    SQLITE3_EXEC(database_,
-                 "ALTER TABLE two_view_geometries ADD COLUMN E BLOB;", nullptr);
-  }
-
-  if (!ExistsColumn("two_view_geometries", "H")) {
-    SQLITE3_EXEC(database_,
-                 "ALTER TABLE two_view_geometries ADD COLUMN H BLOB;", nullptr);
-  }
-
-  if (!ExistsColumn("two_view_geometries", "qvec")) {
-    SQLITE3_EXEC(database_,
-                 "ALTER TABLE two_view_geometries ADD COLUMN qvec BLOB;",
-                 nullptr);
-  }
-
-  if (!ExistsColumn("two_view_geometries", "tvec")) {
-    SQLITE3_EXEC(database_,
-                 "ALTER TABLE two_view_geometries ADD COLUMN tvec BLOB;",
-                 nullptr);
-  }
-
-  // Update user version number.
-  std::unique_lock<std::mutex> lock(update_schema_mutex_);
-  const std::string update_user_version_sql =
-      StringPrintf("PRAGMA user_version = %d;", COLMAP_VERSION_NUMBER);
-  SQLITE3_EXEC(database_, update_user_version_sql.c_str(), nullptr);
 }
 
 bool SqliteDatabase::ExistsTable(const std::string& table_name) const {
@@ -2668,7 +3152,7 @@ void SqliteDatabase::UpdatePosePrior(const PosePrior& pose_prior) {
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_pose_prior_));
 }
 
-void SqliteDatabase::ClearPosePriors() {
+void SqliteDatabase::ClearPosePriors() const {
   SQLITE3_CALL(sqlite3_step(sql_stmt_clear_pose_priors_));
   SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_pose_priors_));
 }

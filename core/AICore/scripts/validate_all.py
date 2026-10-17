@@ -319,6 +319,37 @@ def parse_catalog_output(output: str, selected: set[str],
     return [assets[path] for path in sorted(assets, key=str)]
 
 
+def manifest_catalog_drift(manifest: dict[str, Any], catalog_output: str,
+                           selected: set[str]) -> list[str]:
+    """Model patterns of the selected tasks that match no catalog row.
+
+    The preflight only downloads catalog rows a pattern selects, so a pattern
+    naming an unpublished file (renamed release asset, wrong quant suffix) is
+    dropped silently: it surfaces later as "missing asset", or never, when a
+    sibling glob excludes the real file and no scenario runs it. local_only
+    scenarios consume user-installed assets and are exempt.
+    """
+    paths = []
+    for line in catalog_output.splitlines():
+        if line.strip():
+            paths.append(str(json.loads(line).get("relative_path", "")))
+    drift: list[str] = []
+    # O(patterns x rows) fnmatch; both are a few hundred at most.
+    for scenario in manifest["scenarios"]:
+        if scenario["task"] not in selected or scenario.get("local_only"):
+            continue
+        for key in ("model_glob", "owned_globs", "covered_globs",
+                    "required_globs", "light_globs"):
+            values = scenario.get(key) or []
+            if isinstance(values, str):
+                values = [values]
+            drift.extend(
+                f"{scenario['id']}.{key}: {pattern}" for pattern in values
+                if pattern and not any(fnmatch.fnmatchcase(path, pattern)
+                                       for path in paths))
+    return drift
+
+
 def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
                        selected: set[str]) -> list[ModelAsset]:
     binary = (args.catalog_binary.resolve() if args.catalog_binary else
@@ -340,6 +371,10 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         detail = completed.stderr.strip() or completed.stdout.strip()
         raise RuntimeError(
             f"model catalog failed with code {completed.returncode}: {detail}")
+    drift = manifest_catalog_drift(manifest, completed.stdout, selected)
+    if drift:
+        raise ValueError("manifest model patterns match no catalog asset: " +
+                         "; ".join(drift))
     full = bool(getattr(args, "full", False))
     tiered = tiered_tasks(manifest)
     model_filter = [
@@ -372,13 +407,32 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         task_light_patterns=None if full else light_patterns)
 
 
-def parse_input_assets(manifest: dict[str, Any], selected: set[str]
+def parse_input_assets(manifest: dict[str, Any], selected: set[str],
+                       scenario_ids: set[str] | None = None
                        ) -> list[InputAsset]:
+    selected_scenarios = [
+        scenario for scenario in manifest["scenarios"]
+        if scenario["task"] in selected and
+        (scenario_ids is None or scenario["id"] in scenario_ids)]
+    scoped_input_ids: set[str] | None = None
+    if selected_scenarios and all("input_ids" in scenario
+                                  for scenario in selected_scenarios):
+        scoped_input_ids = {
+            str(asset_id) for scenario in selected_scenarios
+            for asset_id in scenario.get("input_ids", [])}
+    known_input_ids = {
+        str(raw.get("id", "")) for raw in manifest.get("input_assets", [])}
+    unknown_input_ids = (scoped_input_ids or set()) - known_input_ids
+    if unknown_input_ids:
+        raise ValueError("scenario input_ids name unknown assets: " +
+                         ", ".join(sorted(unknown_input_ids)))
+
     assets: list[InputAsset] = []
     for index, raw in enumerate(manifest.get("input_assets", []), 1):
         asset_id = str(raw.get("id", ""))
         tasks = frozenset(str(task) for task in raw.get("tasks", []))
-        if not tasks & selected:
+        if not tasks & selected or (scoped_input_ids is not None and
+                                    asset_id not in scoped_input_ids):
             continue
         relative = PurePosixPath(str(raw.get("relative_path", "")))
         url = str(raw.get("url", ""))
@@ -414,8 +468,6 @@ def parse_input_assets(manifest: dict[str, Any], selected: set[str]
     if not assets:
         input_tokens = ("{image}", "{image2}", "{face_image}", "{sam_image}",
                         "{yolo_image}")
-        selected_scenarios = [scenario for scenario in manifest["scenarios"]
-                              if scenario["task"] in selected]
         needs_input = any(
             any(token in value for token in input_tokens)
             for scenario in selected_scenarios
@@ -921,12 +973,34 @@ def model_quant(path: Path) -> str:
     return match.group(1).lower() if match else "f16"
 
 
-def resolve_token(text: str, values: dict[str, str], build: Path) -> str:
+def resolve_token(text: str, values: dict[str, str], build: Path,
+                  references: dict[str, str] | None = None) -> str:
+    """Expand ``{binary:X}``, ``{reference:NAME}`` and plain ``{key}`` tokens.
+
+    An unconfigured reference expands to the empty string; the consuming
+    probe must exit 77 on it so the row is reported as skipped (a gate
+    failure unless --allow-incomplete), never silently passed.
+    """
     def binary_replace(match: re.Match[str]) -> str:
         return str(find_binary(build, match.group(1)))
 
+    def reference_replace(match: re.Match[str]) -> str:
+        return (references or {}).get(match.group(1), "")
+
     text = re.sub(r"\{binary:([^}]+)\}", binary_replace, text)
+    text = re.sub(r"\{reference:([^}]+)\}", reference_replace, text)
     return text.format_map(values)
+
+
+def parse_references(items: list[str]) -> dict[str, str]:
+    """Parse repeated ``--reference NAME=PATH`` into an absolute-path map."""
+    references: dict[str, str] = {}
+    for item in items:
+        name, sep, path = item.partition("=")
+        if not sep or not name or not path:
+            raise ValueError(f"--reference expects NAME=PATH, got {item!r}")
+        references[name] = str(Path(path).expanduser().resolve())
+    return references
 
 
 def existing_files(assets: Path, pattern: str) -> list[Path]:
@@ -1119,15 +1193,17 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                 "scenario_report": str(scenario_report),
             }
             executable = raw["executable"]
+            references = getattr(args, "references", {})
             if executable == "python":
                 command = [sys.executable]
             elif executable.startswith("binary:"):
                 command = [str(find_binary(args.build, executable.split(":", 1)[1]))]
             else:
-                command = [resolve_token(executable, values, args.build)]
-            command.extend(resolve_token(item, values, args.build)
+                command = [resolve_token(executable, values, args.build,
+                                         references)]
+            command.extend(resolve_token(item, values, args.build, references)
                            for item in raw.get("args", []))
-            env = {key: resolve_token(value, values, args.build)
+            env = {key: resolve_token(value, values, args.build, references)
                    for key, value in raw.get("env", {}).items()}
             model_paths = tuple(sorted(({model} if model else set()) |
                                        required_models |
@@ -1168,25 +1244,31 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
     return specs, diagnostics
 
 
-def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[str, str]]:
+def flatten_json(value: Any, prefix: str = "",
+                 gate_metrics: frozenset[str] = frozenset()
+                 ) -> tuple[dict[str, float], dict[str, str]]:
+    # gate_metrics: leaf names the scenario's own structured accuracy gate
+    # reads; they are metrics by definition, whatever the whitelist below.
     metrics: dict[str, float] = {}
     fingerprints: dict[str, str] = {}
     if isinstance(value, dict):
         for key, child in value.items():
             child_prefix = f"{prefix}/{key}" if prefix else str(key)
-            child_metrics, child_fingerprints = flatten_json(child, child_prefix)
+            child_metrics, child_fingerprints = flatten_json(
+                child, child_prefix, gate_metrics)
             metrics.update(child_metrics)
             fingerprints.update(child_fingerprints)
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            child_metrics, child_fingerprints = flatten_json(child, f"{prefix}/{index}")
+            child_metrics, child_fingerprints = flatten_json(
+                child, f"{prefix}/{index}", gate_metrics)
             metrics.update(child_metrics)
             fingerprints.update(child_fingerprints)
     elif isinstance(value, (int, float)) and not isinstance(value, bool):
         leaf = prefix.rsplit("/", 1)[-1].lower()
         path_parts = (part.lower() for part in prefix.split("/"))
         is_timing = any(part.endswith(TIMING_SUFFIXES) for part in path_parts)
-        if (is_timing and float(value) > 0.0) or leaf in {
+        if (is_timing and float(value) > 0.0) or leaf in gate_metrics or leaf in {
                 "mask_iou", "box_error", "score_error", "worst_rel_mae",
                 "kpt_median_px", "descriptor_cosine_median",
                 "max_diff", "mean_diff", "accuracy_max_diff", "upstream_cpu_max_diff", "probability_max_diff",
@@ -1211,7 +1293,14 @@ def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[s
                 "upstream_map_delta", "upstream_cp_delta", "upstream_cr_delta",
                 "pytorch_map_delta", "pytorch_cp_delta", "pytorch_cr_delta",
                 "caption_exact", "caption_word_f1", "pytorch_caption_exact",
-                "pytorch_caption_word_f1"}:
+                "pytorch_caption_word_f1",
+                # lingbot upstream-parity probe (test_lingbot_stream_parity)
+                "pose_t_rmse", "pose_quat_maxdiff", "intr_maxdiff",
+                "depth_pool_rel_rmse", "conf_mean_maxdiff",
+                "max_diff", "mean_diff", "argmax_match",
+                # map_anything upstream-frames row: how many typed outputs
+                # were actually compared (a 0-file pass is not evidence)
+                "raw_files_compared"}:
             metrics[prefix] = float(value)
     elif isinstance(value, str):
         leaf = prefix.rsplit("/", 1)[-1].lower()
@@ -1220,7 +1309,17 @@ def flatten_json(value: Any, prefix: str = "") -> tuple[dict[str, float], dict[s
     return metrics, fingerprints
 
 
-def parse_output(output: str, parser: str, report_path: Path) -> tuple[dict[str, float], dict[str, str]]:
+def gate_metric_names(gate: dict[str, Any] | None) -> frozenset[str]:
+    """Lower-cased leaf names a structured accuracy gate reads."""
+    gate = gate or {}
+    names = set(gate.get("require_metrics", []))
+    names.update(check["metric"] for check in gate.get("checks", []))
+    return frozenset(name.rsplit("/", 1)[-1].lower() for name in names)
+
+
+def parse_output(output: str, parser: str, report_path: Path,
+                 gate_metrics: frozenset[str] = frozenset()
+                 ) -> tuple[dict[str, float], dict[str, str]]:
     metrics: dict[str, float] = {}
     fingerprints: dict[str, str] = {}
     json_values: list[Any] = []
@@ -1238,7 +1337,8 @@ def parse_output(output: str, parser: str, report_path: Path) -> tuple[dict[str,
         except (OSError, json.JSONDecodeError):
             pass
     for index, value in enumerate(json_values):
-        parsed_metrics, parsed_fingerprints = flatten_json(value, f"json{index}")
+        parsed_metrics, parsed_fingerprints = flatten_json(
+            value, f"json{index}", gate_metrics)
         metrics.update(parsed_metrics)
         fingerprints.update(parsed_fingerprints)
 
@@ -1308,7 +1408,9 @@ def sweep_task_probe_outputs(task: str, report_root: Path) -> int:
     probes/ and baseline-probes/ are dead weight; the glob also removes
     stale files left by earlier runs of the same task. Model caches under
     the asset root are never touched: re-downloading them costs far more
-    than the space they save.
+    than the space they save. ``{task}-*.d`` directories are probe-private
+    scratch trees named from ``{scenario_report}`` (e.g. the upstream
+    parity row's retained failure tensors).
     """
     removed = 0
     for directory in (report_root / "probes",
@@ -1329,6 +1431,10 @@ def sweep_task_probe_outputs(task: str, report_root: Path) -> int:
                 removed += 1
             except OSError:
                 pass
+        for path in directory.glob(f"{task}-*.d"):
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path, ignore_errors=True)
+                removed += 1
     return removed
 
 
@@ -1422,6 +1528,41 @@ def runtime_env(spec: RunSpec, args: argparse.Namespace) -> dict[str, str]:
     return env
 
 
+def configured_qt_library_dir(build: Path) -> Path | None:
+    """Recover the configured Qt runtime directory for direct CLI runs.
+
+    CTest injects AICORE_QT_LIBRARY_DIR, but users also invoke this script
+    directly. Reading CMakeCache keeps the spawned catalog/probe binaries on
+    the same Qt major/minor build instead of mixing the host Qt with the one
+    linked into AICore.
+    """
+    cache = build / "CMakeCache.txt"
+    try:
+        lines = cache.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    cmake_dirs: list[Path] = []
+    prefixes: list[Path] = []
+    for line in lines:
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        variable = key.split(":", 1)[0]
+        if variable in ("Qt5Core_DIR", "Qt6Core_DIR") and value:
+            cmake_dirs.append(Path(value))
+        elif variable == "CMAKE_PREFIX_PATH":
+            prefixes.extend(Path(item) for item in value.split(";") if item)
+    candidates: list[Path] = []
+    for directory in cmake_dirs:
+        if len(directory.parents) >= 2:
+            qt_lib = directory.parents[1]
+            candidates.extend(([qt_lib.parent / "bin", qt_lib]
+                               if os.name == "nt" else [qt_lib]))
+    for prefix in prefixes:
+        candidates.append(prefix / ("bin" if os.name == "nt" else "lib"))
+    return next((path.resolve() for path in candidates if path.is_dir()), None)
+
+
 def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
     if os.name == "nt":
         variable = "PATH"
@@ -1431,6 +1572,9 @@ def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
         variable = "LD_LIBRARY_PATH"
     parts = [str(build / "bin")]
     qt_library_dir = env.get("AICORE_QT_LIBRARY_DIR")
+    if not qt_library_dir:
+        configured_qt = configured_qt_library_dir(build)
+        qt_library_dir = str(configured_qt) if configured_qt else ""
     if qt_library_dir:
         parts.append(qt_library_dir)
     # Same rationale as the ctest AICORE_TEST_ENV_EXTRA plumbing: a dlopen'ed
@@ -1472,7 +1616,8 @@ def run_attempt(spec: RunSpec, args: argparse.Namespace) -> Attempt:
         returncode = 124
     duration_ms = (time.perf_counter() - started) * 1000.0
     metrics, fingerprints = parse_output(output, spec.metric_parser,
-                                         spec.report_path)
+                                         spec.report_path,
+                                         gate_metric_names(spec.accuracy))
     metrics.setdefault("process_wall_ms", duration_ms)
     return Attempt(returncode=returncode, duration_ms=duration_ms,
                    metrics=metrics, fingerprints=fingerprints,
@@ -2001,7 +2146,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--face-image", default="")
     parser.add_argument("--sam-image", default="")
     parser.add_argument("--yolo-image", default="")
+    parser.add_argument("--reference", action="append", default=[],
+                        metavar="NAME=PATH",
+                        help="external truth program root consumed by "
+                             "{reference:NAME} manifest tokens (repeatable), "
+                             "e.g. map_anything_ggml=<map-anything-ggml "
+                             "checkout>; rows whose reference is absent are "
+                             "skipped and fail the gate unless "
+                             "--allow-incomplete")
     args = parser.parse_args()
+    try:
+        args.references = parse_references(args.reference)
+    except ValueError as exc:
+        parser.error(str(exc))
     profile_defaults = {
         "developer": (2, 1, 2),
         "release": (3, 2, 10),
@@ -2071,7 +2228,9 @@ def main() -> int:
             catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
             jobs=args.download_jobs)
-        input_catalog = parse_input_assets(manifest, selected)
+        specs, diagnostics = expand_specs(manifest, args, args.output.parent)
+        input_catalog = parse_input_assets(
+            manifest, selected, {spec.scenario_id for spec in specs})
         input_summary, input_failures = ensure_input_assets(
             input_catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
@@ -2102,7 +2261,6 @@ def main() -> int:
           f"{input_summary['verified_cached']} cached, "
           f"{input_summary['downloaded']} downloaded",
           flush=True)
-    specs, diagnostics = expand_specs(manifest, args, args.output.parent)
     if args.allow_incomplete and cache_summary["unavailable"]:
         diagnostics["skipped_model_assets"].extend(
             cache_summary["unavailable"])
@@ -2254,6 +2412,7 @@ def main() -> int:
         "model_cache": cache_summary,
         "input_cache": input_summary,
         "manifest": file_identity(args.manifest),
+        "references": dict(getattr(args, "references", {})),
         "inputs": {
             name: file_identity(Path(path))
             for name, path in {

@@ -163,6 +163,23 @@ int defaultModelIndexForTask(const QString& task) {
 #endif
 }
 
+// Default text-encoder GGUF per open-vocabulary family (world detects with
+// CLIP embeddings; yoloe segments with MobileCLIP embeddings).
+QString defaultTextModelForTask(const QString& task) {
+    return task == QStringLiteral("yoloe")
+                   ? QStringLiteral("mobileclip2_b-f16.gguf")
+                   : QStringLiteral("clip-ViT-B-32-f16.gguf");
+}
+
+QString openVocabularyFamily(const QString& filename) {
+    for (const char* family : {"world", "yoloe"}) {
+        for (const YOLOModelEntry& e : taskModels(QLatin1String(family))) {
+            if (e.filename == filename) return QLatin1String(family);
+        }
+    }
+    return QString();
+}
+
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out) {
     const QVector<YOLOModelEntry> all = catalogModels();
     for (const YOLOModelEntry& e : all) {

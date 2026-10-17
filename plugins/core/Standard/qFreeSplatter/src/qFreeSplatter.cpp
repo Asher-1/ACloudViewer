@@ -18,6 +18,8 @@
 #include <ecvNormalVectors.h>
 #include <ecvPluginDbNaming.h>
 
+#include "FreeSplatterBatchCommand.h"
+
 #ifdef HAS_QSIBR
 #include <ecvPluginManager.h>
 #endif
@@ -689,6 +691,14 @@ void qFreeSplatter::onNewSelection(
 }
 
 QList<QAction*> qFreeSplatter::getActions() { return {m_action}; }
+
+void qFreeSplatter::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandFreeSplatterReconstruct));
+}
 
 void qFreeSplatter::refreshDbImages() {
     if (!m_app || !m_dialog) return;

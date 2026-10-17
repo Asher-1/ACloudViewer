@@ -38,6 +38,7 @@ void PatchMatchOptions::Print() const {
   PrintOption(filter_min_ncc);
   PrintOption(filter_min_triangulation_angle);
   PrintOption(filter_min_num_consistent);
+  PrintOption(num_threads);
   PrintOption(filter_geom_consistency_max_cost);
   PrintOption(write_consistency_graph);
   PrintOption(allow_missing_files);

@@ -19,6 +19,7 @@
 #include <QTimer>
 #include <QUuid>
 
+#include "RFDetrBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -58,6 +59,14 @@ qRFDetr::qRFDetr(QObject* parent)
 }
 
 QList<QAction*> qRFDetr::getActions() { return {m_action}; }
+
+void qRFDetr::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandRfDetrDetect));
+}
 
 void qRFDetr::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

@@ -1,0 +1,697 @@
+diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
+index 3644f68..2234dc5 100644
+--- a/src/ggml-cuda/CMakeLists.txt
++++ b/src/ggml-cuda/CMakeLists.txt
+@@ -132,11 +132,26 @@ if (CUDAToolkit_FOUND)
+             template-instances/fattn-vec-instance-bf16-bf16.cu)
+     endif()
+ 
++    if (GGML_SAM3D_OPS AND GGML_CUDA_FAST_MATH)
++        # Fast-math-free twins of the kernels the SAM 3D graphs run through
++        # (precise/sam3d-precise.cuh). They re-include the pristine sources in
++        # their own namespace and are the only sources besides sam3d-*.cu that
++        # do not receive -use_fast_math (see the per-source loop below).
++        file(GLOB GGML_SOURCES_CUDA_PRECISE CONFIGURE_DEPENDS "precise/*.cu")
++        list(APPEND GGML_SOURCES_CUDA ${GGML_SOURCES_CUDA_PRECISE})
++        file(GLOB SRCS "precise/*.cuh")
++        list(APPEND GGML_HEADERS_CUDA ${SRCS})
++    endif()
++
+     ggml_add_backend_library(ggml-cuda
+                              ${GGML_HEADERS_CUDA}
+                              ${GGML_SOURCES_CUDA}
+                             )
+ 
++    if (GGML_SAM3D_OPS AND GGML_CUDA_FAST_MATH)
++        target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_SAM3D_PRECISE_TWINS)
++    endif()
++
+ 
+     add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
+ 
+@@ -235,7 +250,14 @@ if (CUDAToolkit_FOUND)
+ 
+     set(CUDA_FLAGS -extended-lambda)
+     if (GGML_CUDA_FAST_MATH)
+-        list(PREPEND CUDA_FLAGS -use_fast_math)
++        # -use_fast_math is a per-translation-unit nvcc switch. The SAM 3D
++        # operator set (sam3d-*.cu) and the precise/ twins must match the
++        # fast-math OFF sam-3d-objects-ggml production build bit for bit, so
++        # the flag is attached per source instead of to the whole target.
++        set(GGML_SOURCES_CUDA_FAST_MATH ${GGML_SOURCES_CUDA})
++        list(FILTER GGML_SOURCES_CUDA_FAST_MATH EXCLUDE REGEX "(^|/)sam3d-[^/]*\\.cu$")
++        list(FILTER GGML_SOURCES_CUDA_FAST_MATH EXCLUDE REGEX "(^|/)precise/[^/]*\\.cu$")
++        set_source_files_properties(${GGML_SOURCES_CUDA_FAST_MATH} PROPERTIES COMPILE_OPTIONS "-use_fast_math")
+     endif()
+ 
+     if (GGML_CUDA_DEBUG)
+diff --git a/src/ggml-cuda/fattn.cu b/src/ggml-cuda/fattn.cu
+index a4149a9..b09c37c 100644
+--- a/src/ggml-cuda/fattn.cu
++++ b/src/ggml-cuda/fattn.cu
+@@ -598,3 +598,7 @@ void ggml_cuda_flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst
+ bool ggml_cuda_flash_attn_ext_supported(int device, const ggml_tensor * dst) {
+     return ggml_cuda_get_best_fattn_kernel(device, dst) != BEST_FATTN_KERNEL_NONE;
+ }
++
++bool ggml_cuda_flash_attn_ext_selects_mma_f16(int device, const ggml_tensor * dst) {
++    return ggml_cuda_get_best_fattn_kernel(device, dst) == BEST_FATTN_KERNEL_MMA_F16;
++}
+diff --git a/src/ggml-cuda/fattn.cuh b/src/ggml-cuda/fattn.cuh
+index 93736e3..1771d7b 100644
+--- a/src/ggml-cuda/fattn.cuh
++++ b/src/ggml-cuda/fattn.cuh
+@@ -4,6 +4,10 @@ void ggml_cuda_flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst
+ 
+ bool ggml_cuda_flash_attn_ext_supported(int device, const ggml_tensor * dst);
+ 
++// True when the dispatcher would run the F16 MMA kernel family for this node
++// (used by the precise sam3d twins to decide which shapes they can mirror).
++bool ggml_cuda_flash_attn_ext_selects_mma_f16(int device, const ggml_tensor * dst);
++
+ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * dst);
+ 
+ void ggml_cuda_sam3d_f16_masked_attn(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index f1a1b5b..768e1fb 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -58,6 +58,9 @@
+ #include "ggml-cuda/topk-moe.cuh"
+ #include "ggml-cuda/unary.cuh"
+ #include "ggml-cuda/upscale.cuh"
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++#include "ggml-cuda/precise/sam3d-precise.cuh"
++#endif
+ #include "ggml-cuda/wkv.cuh"
+ #include "ggml-cuda/gla.cuh"
+ #include "ggml-cuda/gated_delta_net.cuh"
+@@ -2306,6 +2309,14 @@ static void ggml_cuda_mul_mat_id(ggml_backend_cuda_context & ctx, ggml_tensor *
+ }
+ 
+ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct ggml_tensor * dst) {
++    bool handled = false;
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++    // sam3d_* nodes run the fast-math-free kernel twins for the ops whose ULP
++    // noise breaks bit-parity with the sam-3d-objects-ggml reference
++    // (precise/sam3d-precise.cuh); every other node keeps the dispatch below.
++    handled = ggml_cuda_precise::compute_forward(ctx, dst);
++#endif
++    if (!handled)
+     switch (dst->op) {
+         case GGML_OP_ARGMAX:
+             ggml_cuda_argmax(ctx, dst);
+@@ -3696,7 +3707,11 @@ static int ggml_cuda_try_fuse_norm_f32_affine_f16(ggml_backend_cuda_context & cu
+     if (!ggml_cuda_check_fusion_memory_ranges(cgraph, i, 2, output_nodes, 1)) {
+         return 0;
+     }
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++    return ggml_cuda_precise::norm_f32_affine(cuda_ctx, norm, gamma, beta, add) ? 2 : 0;
++#else
+     return ggml_cuda_op_norm_f32_affine(cuda_ctx, norm, gamma, beta, add) ? 2 : 0;
++#endif
+ }
+ #endif
+ 
+@@ -4408,11 +4423,23 @@ static int ggml_cuda_try_fuse(ggml_backend_cuda_context * cuda_ctx, ggml_cgraph
+     }
+ 
+     if (ggml_cuda_can_fuse(cgraph, i, { GGML_OP_RMS_NORM, GGML_OP_MUL, GGML_OP_ADD }, {})) {
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++        if (ggml_cuda_sam3d_precise_node(node->name)) {
++            ggml_cuda_precise::rms_norm_fused_add(*cuda_ctx, node, cgraph->nodes[i + 1], cgraph->nodes[i + 2]);
++            return 2;
++        }
++#endif
+         ggml_cuda_op_rms_norm_fused_add(*cuda_ctx, node, cgraph->nodes[i + 1], cgraph->nodes[i + 2]);
+         return 2;
+     }
+ 
+     if (ggml_cuda_can_fuse(cgraph, i, { GGML_OP_RMS_NORM, GGML_OP_MUL }, {})) {
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++        if (ggml_cuda_sam3d_precise_node(node->name)) {
++            ggml_cuda_precise::rms_norm_fused(*cuda_ctx, node, cgraph->nodes[i + 1]);
++            return 1;
++        }
++#endif
+         ggml_cuda_op_rms_norm_fused(*cuda_ctx, node, cgraph->nodes[i + 1]);
+         return 1;
+     }
+@@ -4430,11 +4457,23 @@ static int ggml_cuda_try_fuse(ggml_backend_cuda_context * cuda_ctx, ggml_cgraph
+     if (ggml_cuda_can_fuse(cgraph, i, { GGML_OP_UNARY, GGML_OP_MUL }, { GGML_UNARY_OP_SILU }) ||
+         ggml_cuda_can_fuse(cgraph, i, { GGML_OP_UNARY, GGML_OP_MUL }, { GGML_UNARY_OP_SIGMOID }) ||
+         ggml_cuda_can_fuse(cgraph, i, { GGML_OP_UNARY, GGML_OP_MUL }, { GGML_UNARY_OP_SOFTPLUS })) {
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++        if (ggml_cuda_sam3d_precise_node(node->name)) {
++            ggml_cuda_precise::unary_mul(*cuda_ctx, node, cgraph->nodes[i + 1]);
++            return 1;
++        }
++#endif
+         ggml_cuda_op_unary_mul(*cuda_ctx, node, cgraph->nodes[i + 1]);
+         return 1;
+     }
+ 
+     if (ggml_cuda_can_fuse(cgraph, i, { GGML_OP_UNARY, GGML_OP_SQR }, { GGML_UNARY_OP_RELU })) {
++#ifdef GGML_CUDA_SAM3D_PRECISE_TWINS
++        if (ggml_cuda_sam3d_precise_node(node->name)) {
++            ggml_cuda_precise::relu_sqr(*cuda_ctx, node, cgraph->nodes[i + 1]);
++            return 1;
++        }
++#endif
+         ggml_cuda_op_relu_sqr(*cuda_ctx, node, cgraph->nodes[i + 1]);
+         return 1;
+     }
+diff --git a/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_16-ncols2_1-precise.cu b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_16-ncols2_1-precise.cu
+new file mode 100644
+index 0000000..e6a66e2
+--- /dev/null
++++ b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_16-ncols2_1-precise.cu
+@@ -0,0 +1,13 @@
++// Precise twin of template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_1.cu
++// (see sam3d-precise.cuh). fattn-common.cuh / fattn-mma-f16.cuh are pulled in
++// inside the namespace so launch_fattn and the fixup/combine kernels get their
++// own symbols instead of COMDAT-merging with the fast-math instances.
++#include "../common.cuh"
++#include "../convert.cuh"
++#include "../vecdotq.cuh"
++#include "../mma.cuh"
++#include <cstdint>
++
++namespace ggml_cuda_precise {
++#include "../template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_1.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_32-ncols2_1-precise.cu b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_32-ncols2_1-precise.cu
+new file mode 100644
+index 0000000..b1c360f
+--- /dev/null
++++ b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_32-ncols2_1-precise.cu
+@@ -0,0 +1,13 @@
++// Precise twin of template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_1.cu
++// (see sam3d-precise.cuh). fattn-common.cuh / fattn-mma-f16.cuh are pulled in
++// inside the namespace so launch_fattn and the fixup/combine kernels get their
++// own symbols instead of COMDAT-merging with the fast-math instances.
++#include "../common.cuh"
++#include "../convert.cuh"
++#include "../vecdotq.cuh"
++#include "../mma.cuh"
++#include <cstdint>
++
++namespace ggml_cuda_precise {
++#include "../template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_1.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_64-ncols2_1-precise.cu b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_64-ncols2_1-precise.cu
+new file mode 100644
+index 0000000..b380b0c
+--- /dev/null
++++ b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_64-ncols2_1-precise.cu
+@@ -0,0 +1,13 @@
++// Precise twin of template-instances/fattn-mma-f16-instance-ncols1_64-ncols2_1.cu
++// (see sam3d-precise.cuh). fattn-common.cuh / fattn-mma-f16.cuh are pulled in
++// inside the namespace so launch_fattn and the fixup/combine kernels get their
++// own symbols instead of COMDAT-merging with the fast-math instances.
++#include "../common.cuh"
++#include "../convert.cuh"
++#include "../vecdotq.cuh"
++#include "../mma.cuh"
++#include <cstdint>
++
++namespace ggml_cuda_precise {
++#include "../template-instances/fattn-mma-f16-instance-ncols1_64-ncols2_1.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_8-ncols2_1-precise.cu b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_8-ncols2_1-precise.cu
+new file mode 100644
+index 0000000..44c7d32
+--- /dev/null
++++ b/src/ggml-cuda/precise/fattn-mma-f16-instance-ncols1_8-ncols2_1-precise.cu
+@@ -0,0 +1,13 @@
++// Precise twin of template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_1.cu
++// (see sam3d-precise.cuh). fattn-common.cuh / fattn-mma-f16.cuh are pulled in
++// inside the namespace so launch_fattn and the fixup/combine kernels get their
++// own symbols instead of COMDAT-merging with the fast-math instances.
++#include "../common.cuh"
++#include "../convert.cuh"
++#include "../vecdotq.cuh"
++#include "../mma.cuh"
++#include <cstdint>
++
++namespace ggml_cuda_precise {
++#include "../template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_1.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/fattn-precise.cu b/src/ggml-cuda/precise/fattn-precise.cu
+new file mode 100644
+index 0000000..13e296c
+--- /dev/null
++++ b/src/ggml-cuda/precise/fattn-precise.cu
+@@ -0,0 +1,104 @@
++// Precise twin of the generic F16 MMA flash-attention dispatch (fattn.cu, see
++// sam3d-precise.cuh). The SAM 3D graphs reach the generic kernels for the
++// attention layouts that sam3d-fattn.cu does not cover (F32 K/V, mismatched
++// token counts, ...); they never use grouped-query attention, so only the
++// ncols2 == 1 instance family is twinned (fattn-mma-f16-instance-*-precise.cu).
++// Every other shape - masks with gqa_ratio > 1, the vec/tile kernels, MLA head
++// sizes - is reported unsupported and keeps the fast dispatcher.
++#include "../common.cuh"
++#include "../convert.cuh"
++#include "../vecdotq.cuh"
++#include "../mma.cuh"
++#include "../fattn.cuh"
++#include <cstdint>
++
++#include "sam3d-precise.cuh"
++
++namespace ggml_cuda_precise {
++
++#include "../fattn-common.cuh"
++#include "../fattn-mma-f16.cuh"
++
++// Mirrors ggml_cuda_flash_attn_ext_mma_f16_switch_ncols1<DKQ, DV, 1> in fattn.cu.
++template <int DKQ, int DV>
++static void flash_attn_ext_mma_f16_ncols2_1(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const int cc = ggml_cuda_info().devices[ggml_cuda_get_device()].cc;
++    const ggml_tensor * Q = dst->src[0];
++
++    if (turing_mma_available(cc) && Q->ne[1] <= 8) {
++        ggml_cuda_flash_attn_ext_mma_f16_case<DKQ, DV, 8, 1>(ctx, dst);
++        return;
++    }
++
++    if (Q->ne[1] <= 16) {
++        ggml_cuda_flash_attn_ext_mma_f16_case<DKQ, DV, 16, 1>(ctx, dst);
++        return;
++    }
++
++    if (Q->ne[1] <= 32 || (GGML_CUDA_CC_IS_NVIDIA(cc) && ggml_cuda_highest_compiled_arch(cc) == GGML_CUDA_CC_TURING) ||
++            (GGML_CUDA_CC_IS_AMD(cc) && DKQ > 256)) {
++        ggml_cuda_flash_attn_ext_mma_f16_case<DKQ, DV, 32, 1>(ctx, dst);
++        return;
++    }
++
++    ggml_cuda_flash_attn_ext_mma_f16_case<DKQ, DV, 64, 1>(ctx, dst);
++}
++
++bool flash_attn_ext_supported(int device, const ggml_tensor * dst) {
++    const ggml_tensor * Q = dst->src[0];
++    const ggml_tensor * K = dst->src[1];
++    const ggml_tensor * V = dst->src[2];
++
++    // Already precise: routed to the vendored cutlass kernel in sam3d-fattn.cu.
++    if (ggml_cuda_sam3d_f16_dense_attn_supported(device, dst)) {
++        return false;
++    }
++    if (!ggml_cuda_flash_attn_ext_selects_mma_f16(device, dst)) {
++        return false;
++    }
++    // gqa_ratio == 1 is what makes ggml_cuda_flash_attn_ext_mma_f16_switch_ncols2
++    // end in the ncols2 == 1 instances, with or without a mask.
++    if (Q->ne[2] != K->ne[2] || Q->ne[0] != V->ne[0]) {
++        return false;
++    }
++    switch (Q->ne[0]) {
++        case 64:
++        case 80:
++        case 96:
++        case 112:
++        case 128:
++        case 256:
++            return true;
++        default:
++            return false;
++    }
++}
++
++void flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    ggml_cuda_set_device(ctx.device);
++    const ggml_tensor * Q = dst->src[0];
++    switch (Q->ne[0]) {
++        case 64:
++            flash_attn_ext_mma_f16_ncols2_1< 64,  64>(ctx, dst);
++            break;
++        case 80:
++            flash_attn_ext_mma_f16_ncols2_1< 80,  80>(ctx, dst);
++            break;
++        case 96:
++            flash_attn_ext_mma_f16_ncols2_1< 96,  96>(ctx, dst);
++            break;
++        case 112:
++            flash_attn_ext_mma_f16_ncols2_1<112, 112>(ctx, dst);
++            break;
++        case 128:
++            flash_attn_ext_mma_f16_ncols2_1<128, 128>(ctx, dst);
++            break;
++        case 256:
++            flash_attn_ext_mma_f16_ncols2_1<256, 256>(ctx, dst);
++            break;
++        default:
++            GGML_ABORT("fatal error");
++    }
++}
++
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/norm-precise.cu b/src/ggml-cuda/precise/norm-precise.cu
+new file mode 100644
+index 0000000..b3b5e67
+--- /dev/null
++++ b/src/ggml-cuda/precise/norm-precise.cu
+@@ -0,0 +1,8 @@
++// Precise twin of norm.cu (see sam3d-precise.cuh). Shared headers are included
++// at global scope first so only the kernel sources land in the namespace.
++#include "../common.cuh"
++#include <cstdint>
++
++namespace ggml_cuda_precise {
++#include "../norm.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/sam3d-precise-dispatch.cu b/src/ggml-cuda/precise/sam3d-precise-dispatch.cu
+new file mode 100644
+index 0000000..aaa6bd5
+--- /dev/null
++++ b/src/ggml-cuda/precise/sam3d-precise-dispatch.cu
+@@ -0,0 +1,208 @@
++// Node-level routing for the precise twins (see sam3d-precise.cuh). The op
++// headers are included inside the namespace so the declarations resolve to the
++// twin definitions in *-precise.cu; the switch mirrors ggml_cuda_compute_forward
++// for exactly the ops that have a twin.
++#include "../common.cuh"
++#include "../convert.cuh"
++
++#include "sam3d-precise.cuh"
++
++namespace ggml_cuda_precise {
++
++#include "../norm.cuh"
++#include "../softmax.cuh"
++#include "../unary.cuh"
++#include "../upscale.cuh"
++
++static bool compute_forward_unary(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    switch (ggml_get_unary_op(dst)) {
++        case GGML_UNARY_OP_ABS:
++            ggml_cuda_op_abs(ctx, dst);
++            break;
++        case GGML_UNARY_OP_SGN:
++            ggml_cuda_op_sgn(ctx, dst);
++            break;
++        case GGML_UNARY_OP_NEG:
++            ggml_cuda_op_neg(ctx, dst);
++            break;
++        case GGML_UNARY_OP_STEP:
++            ggml_cuda_op_step(ctx, dst);
++            break;
++        case GGML_UNARY_OP_GELU:
++            ggml_cuda_op_gelu(ctx, dst);
++            break;
++        case GGML_UNARY_OP_SILU:
++            ggml_cuda_op_silu(ctx, dst);
++            break;
++        case GGML_UNARY_OP_GELU_ERF:
++            ggml_cuda_op_gelu_erf(ctx, dst);
++            break;
++        case GGML_UNARY_OP_GELU_QUICK:
++            ggml_cuda_op_gelu_quick(ctx, dst);
++            break;
++        case GGML_UNARY_OP_TANH:
++            ggml_cuda_op_tanh(ctx, dst);
++            break;
++        case GGML_UNARY_OP_RELU:
++            ggml_cuda_op_relu(ctx, dst);
++            break;
++        case GGML_UNARY_OP_SIGMOID:
++            ggml_cuda_op_sigmoid(ctx, dst);
++            break;
++        case GGML_UNARY_OP_HARDSIGMOID:
++            ggml_cuda_op_hardsigmoid(ctx, dst);
++            break;
++        case GGML_UNARY_OP_HARDSWISH:
++            ggml_cuda_op_hardswish(ctx, dst);
++            break;
++        case GGML_UNARY_OP_EXP:
++            ggml_cuda_op_exp(ctx, dst);
++            break;
++        case GGML_UNARY_OP_ELU:
++            ggml_cuda_op_elu(ctx, dst);
++            break;
++        case GGML_UNARY_OP_XIELU:
++            ggml_cuda_op_xielu(ctx, dst);
++            break;
++        case GGML_UNARY_OP_FLOOR:
++            ggml_cuda_op_floor(ctx, dst);
++            break;
++        case GGML_UNARY_OP_CEIL:
++            ggml_cuda_op_ceil(ctx, dst);
++            break;
++        case GGML_UNARY_OP_ROUND:
++            ggml_cuda_op_round(ctx, dst);
++            break;
++        case GGML_UNARY_OP_TRUNC:
++            ggml_cuda_op_trunc(ctx, dst);
++            break;
++        case GGML_UNARY_OP_EXPM1:
++            ggml_cuda_op_expm1(ctx, dst);
++            break;
++        case GGML_UNARY_OP_SOFTPLUS:
++            ggml_cuda_op_softplus(ctx, dst);
++            break;
++        default:
++            return false;
++    }
++    return true;
++}
++
++static bool compute_forward_glu(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    switch (ggml_get_glu_op(dst)) {
++        case GGML_GLU_OP_REGLU:
++            ggml_cuda_op_reglu(ctx, dst);
++            break;
++        case GGML_GLU_OP_GEGLU:
++            ggml_cuda_op_geglu(ctx, dst);
++            break;
++        case GGML_GLU_OP_SWIGLU:
++            ggml_cuda_op_swiglu(ctx, dst);
++            break;
++        case GGML_GLU_OP_SWIGLU_OAI:
++            ggml_cuda_op_swiglu_oai(ctx, dst);
++            break;
++        case GGML_GLU_OP_GEGLU_ERF:
++            ggml_cuda_op_geglu_erf(ctx, dst);
++            break;
++        case GGML_GLU_OP_GEGLU_QUICK:
++            ggml_cuda_op_geglu_quick(ctx, dst);
++            break;
++        default:
++            return false;
++    }
++    return true;
++}
++
++bool compute_forward(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    if (!ggml_cuda_sam3d_precise_node(dst->name)) {
++        return false;
++    }
++    switch (dst->op) {
++        case GGML_OP_UNARY:
++            return compute_forward_unary(ctx, dst);
++        case GGML_OP_GLU:
++            return compute_forward_glu(ctx, dst);
++        // Top-level ops implemented in unary.cu (sin/cos feed the diffusion
++        // timestep embedding; fast-math __sinf/__cosf diverge at step 10).
++        case GGML_OP_SQR:
++            ggml_cuda_op_sqr(ctx, dst);
++            return true;
++        case GGML_OP_SQRT:
++            ggml_cuda_op_sqrt(ctx, dst);
++            return true;
++        case GGML_OP_SIN:
++            ggml_cuda_op_sin(ctx, dst);
++            return true;
++        case GGML_OP_COS:
++            ggml_cuda_op_cos(ctx, dst);
++            return true;
++        case GGML_OP_LOG:
++            ggml_cuda_op_log(ctx, dst);
++            return true;
++        case GGML_OP_LEAKY_RELU:
++            ggml_cuda_op_leaky_relu(ctx, dst);
++            return true;
++        case GGML_OP_SILU_BACK:
++            ggml_cuda_op_silu_back(ctx, dst);
++            return true;
++        case GGML_OP_NORM:
++            ggml_cuda_op_norm(ctx, dst);
++            return true;
++        case GGML_OP_GROUP_NORM:
++            ggml_cuda_op_group_norm(ctx, dst);
++            return true;
++        case GGML_OP_L2_NORM:
++            ggml_cuda_op_l2_norm(ctx, dst);
++            return true;
++        case GGML_OP_RMS_NORM:
++            ggml_cuda_op_rms_norm(ctx, dst);
++            return true;
++        case GGML_OP_RMS_NORM_BACK:
++            ggml_cuda_op_rms_norm_back(ctx, dst);
++            return true;
++        case GGML_OP_SOFT_MAX:
++            ggml_cuda_op_soft_max(ctx, dst);
++            return true;
++        case GGML_OP_SOFT_MAX_BACK:
++            ggml_cuda_op_soft_max_back(ctx, dst);
++            return true;
++        case GGML_OP_UPSCALE:
++            ggml_cuda_op_upscale(ctx, dst);
++            return true;
++        case GGML_OP_FLASH_ATTN_EXT:
++            if (!flash_attn_ext_supported(ctx.device, dst)) {
++                return false;
++            }
++            flash_attn_ext(ctx, dst);
++            return true;
++        default:
++            return false;
++    }
++}
++
++void rms_norm_fused(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor) {
++    ggml_cuda_op_rms_norm_fused(ctx, dst, mul_tensor);
++}
++
++void rms_norm_fused_add(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor, ggml_tensor * add_tensor) {
++    ggml_cuda_op_rms_norm_fused_add(ctx, dst, mul_tensor, add_tensor);
++}
++
++void unary_mul(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor) {
++    ggml_cuda_op_unary_mul(ctx, dst, mul_tensor);
++}
++
++void relu_sqr(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * sqr_tensor) {
++    ggml_cuda_op_relu_sqr(ctx, dst, sqr_tensor);
++}
++
++bool norm_f32_affine(ggml_backend_cuda_context & ctx,
++                     const ggml_tensor * norm,
++                     const ggml_tensor * gamma,
++                     const ggml_tensor * beta,
++                     ggml_tensor * dst) {
++    return ggml_cuda_op_norm_f32_affine(ctx, norm, gamma, beta, dst);
++}
++
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/sam3d-precise.cuh b/src/ggml-cuda/precise/sam3d-precise.cuh
+new file mode 100644
+index 0000000..8ad47e1
+--- /dev/null
++++ b/src/ggml-cuda/precise/sam3d-precise.cuh
+@@ -0,0 +1,61 @@
++#pragma once
++
++// Precise (no -use_fast_math) twins of the generic CUDA kernels that the SAM 3D
++// Objects graphs run through.
++//
++// nvcc's -use_fast_math is a per-translation-unit switch (--ftz=true,
++// --prec-div=false, --prec-sqrt=false and the __expf/__tanhf/__erff intrinsic
++// substitution behind __USE_FAST_MATH__). The sam-3d-objects-ggml production
++// build resolves it OFF while map-anything-ggml (pristine ggml) resolves it ON,
++// and both references are bit-parity contracts of this library. The two can
++// only coexist in one libggml-cuda.so if the kernels sam3d reaches are compiled
++// twice: the fast copies stay the default, and the files in this directory
++// re-include the pristine sources inside `namespace ggml_cuda_precise` so a
++// second, fully independent set of kernels (separate symbols, no COMDAT merge
++// of the header-only launch templates) is built without the flag. The graph
++// executor routes nodes named "sam3d_*" to the twins.
++//
++// Measured on the kidsroom f16 input (CUDA sm_89, seed 42, 25 steps): the
++// fast build produces 841760 gaussians, the fast-math OFF build 842560; with
++// {norm, unary, softmax, upscale, fattn mma, sam3d-*} compiled precise the
++// fast build reproduces all 352 deterministic stage tensors of the OFF build
++// bit-for-bit and the same 842560 count. The remaining kernel families
++// (binbcast, cpy, convert, cuBLAS/MMF GEMMs, conv2d, im2col, ...) were shown
++// not to contribute and keep the single fast copy.
++//
++// Compiled only when GGML_CUDA_SAM3D_PRECISE_TWINS is defined
++// (GGML_SAM3D_OPS=ON and GGML_CUDA_FAST_MATH=ON, see CMakeLists.txt).
++
++#include "../common.cuh"
++
++static inline bool ggml_cuda_sam3d_precise_node(const char * name) {
++    return name != nullptr && strncmp(name, "sam3d_", 6) == 0;
++}
++
++namespace ggml_cuda_precise {
++
++// Node-level entry: runs the precise twin for sam3d_* nodes whose op has one
++// (NORM, GROUP_NORM, RMS_NORM, L2_NORM, UNARY, GLU, SQR, SQRT, SIN, COS, LOG,
++// LEAKY_RELU, SOFT_MAX, UPSCALE and the generic F16 MMA flash-attention path). Returns false when the node must take
++// the regular dispatch; the caller still owns the trailing cudaGetLastError.
++bool compute_forward(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++
++// Fused entry points reached from the graph fuser. The fuser keeps its own
++// shape/ownership checks and only swaps the kernel for sam3d_* nodes.
++void rms_norm_fused(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor);
++void rms_norm_fused_add(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor, ggml_tensor * add_tensor);
++void unary_mul(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * mul_tensor);
++void relu_sqr(ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_tensor * sqr_tensor);
++bool norm_f32_affine(ggml_backend_cuda_context & ctx,
++                     const ggml_tensor * norm,
++                     const ggml_tensor * gamma,
++                     const ggml_tensor * beta,
++                     ggml_tensor * dst);
++
++// Generic F16 MMA flash attention (fattn-precise.cu). Only the gqa_ratio == 1
++// instances (ncols2 == 1) are twinned because the SAM 3D graphs never issue
++// grouped-query attention; every other shape keeps the fast dispatcher.
++bool flash_attn_ext_supported(int device, const ggml_tensor * dst);
++void flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/softmax-precise.cu b/src/ggml-cuda/precise/softmax-precise.cu
+new file mode 100644
+index 0000000..e74d65d
+--- /dev/null
++++ b/src/ggml-cuda/precise/softmax-precise.cu
+@@ -0,0 +1,19 @@
++// Precise twin of softmax.cu (see sam3d-precise.cuh). Shared headers are
++// included at global scope first so only the kernel sources land in the
++// namespace.
++#include "../common.cuh"
++#include "ggml.h"
++
++#ifdef GGML_USE_HIP
++#include <hip/hip_cooperative_groups.h>
++#else
++#include <cooperative_groups.h>
++#include <cooperative_groups/reduce.h>
++#endif // GGML_USE_HIP
++
++#include <cstdint>
++#include <utility>
++
++namespace ggml_cuda_precise {
++#include "../softmax.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/unary-precise.cu b/src/ggml-cuda/precise/unary-precise.cu
+new file mode 100644
+index 0000000..2f8c11e
+--- /dev/null
++++ b/src/ggml-cuda/precise/unary-precise.cu
+@@ -0,0 +1,8 @@
++// Precise twin of unary.cu (see sam3d-precise.cuh). Shared headers are included
++// at global scope first so only the kernel sources land in the namespace.
++#include "../common.cuh"
++#include "../convert.cuh"
++
++namespace ggml_cuda_precise {
++#include "../unary.cu"
++} // namespace ggml_cuda_precise
+diff --git a/src/ggml-cuda/precise/upscale-precise.cu b/src/ggml-cuda/precise/upscale-precise.cu
+new file mode 100644
+index 0000000..b669399
+--- /dev/null
++++ b/src/ggml-cuda/precise/upscale-precise.cu
+@@ -0,0 +1,8 @@
++// Precise twin of upscale.cu (see sam3d-precise.cuh). Shared headers are
++// included at global scope first so only the kernel sources land in the
++// namespace.
++#include "../common.cuh"
++
++namespace ggml_cuda_precise {
++#include "../upscale.cu"
++} // namespace ggml_cuda_precise

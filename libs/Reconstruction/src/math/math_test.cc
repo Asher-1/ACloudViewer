@@ -37,10 +37,9 @@
 using namespace colmap;
 
 TEST(util_math, TestSignOfNumber) {
-  EXPECT_EQ(SignOfNumber(0), 0);
+  EXPECT_EQ(SignOfNumber(0), 1);
   EXPECT_EQ(SignOfNumber(-0.1), -1);
   EXPECT_EQ(SignOfNumber(0.1), 1);
-  EXPECT_EQ(SignOfNumber(std::numeric_limits<float>::quiet_NaN()), 0);
   EXPECT_EQ(SignOfNumber(std::numeric_limits<float>::infinity()), 1);
   EXPECT_EQ(SignOfNumber(-std::numeric_limits<float>::infinity()), -1);
 }
@@ -85,30 +84,51 @@ TEST(util_math, TestRadToDeg) {
   EXPECT_LT(std::abs(RadToDeg(M_PI) - 180.0), 1e-6);
 }
 
-TEST(util_math, TestMedian) {
+// Upstream parity (a2bd15c2): interpolated, overflow-safe median.
+TEST(Median, Nominal) {
   EXPECT_EQ(Median<int>({1, 2, 3, 4}), 2.5);
+  EXPECT_EQ(Median<int>({4, 1, 3, 2}), 2.5);
   EXPECT_EQ(Median<int>({1, 2, 3, 100}), 2.5);
   EXPECT_EQ(Median<int>({1, 2, 3, 4, 100}), 3);
+  EXPECT_EQ(Median<int>({4, 100, 1, 3, 2}), 3);
   EXPECT_EQ(Median<int>({-100, 1, 2, 3, 4}), 2);
   EXPECT_EQ(Median<int>({-1, -2, -3, -4}), -2.5);
+  EXPECT_EQ(Median<int>({-3, -1, -4, -2}), -2.5);
   EXPECT_EQ(Median<int>({-1, -2, 3, 4}), 1);
+  // Test integer overflow scenario.
+  EXPECT_EQ(Median<int8_t>({100, 115, 119, 127}), 117);
 }
 
-TEST(util_math, TestPercentile) {
-  EXPECT_EQ(Percentile<int>({0}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0}, 50), 0);
-  EXPECT_EQ(Percentile<int>({0}, 100), 0);
-  EXPECT_EQ(Percentile<int>({0, 1}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1}, 100), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 2}, 100), 2);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 0), 0);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 33), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 50), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 66), 1);
-  EXPECT_EQ(Percentile<int>({0, 1, 1, 2}, 100), 2);
+// Upstream parity (a2bd15c2): linearly interpolated percentile.
+TEST(Percentile, Nominal) {
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 50)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0}, 100)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 50)), 0.5);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 50)), 0.5);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1}, 100)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 0}, 100)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 50)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 0)), 0);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100. / 3.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 50)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100 / 3. * 2.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 2, 0, 1}, 100 / 3. * 2.)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 1, 2}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{1, 2, 0, 1}, 100)), 2);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 1)), 1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 50)), 50);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 50.1)), 50.1);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 100}, 99)), 99);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 1)), 0.03);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 2)), 0.06);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 33)), 0.99);
+  EXPECT_EQ((Percentile(std::vector<int>{0, 1, 2, 3}, 34)), 1.02);
+  EXPECT_EQ((Percentile(std::vector<int>{3, 0, 1, 2}, 34)), 1.02);
 }
 
 TEST(util_math, TestMean) {
@@ -222,4 +242,64 @@ TEST(util_math, TestTruncateCast) {
   EXPECT_EQ((TruncateCast<int, uint8_t>(256)), 255);
   EXPECT_EQ((TruncateCast<int, uint16_t>(-1)), 0);
   EXPECT_EQ((TruncateCast<int, uint16_t>(65536)), 65535);
+}
+
+// Upstream parity (9e32193d math/math_test.cc): regression coverage for the
+// saturated conversion across signedness, widening, and floating types.
+TEST(TruncateCast, Signedness) {
+  EXPECT_EQ((TruncateCast<uint16_t, int16_t>(1234)), 1234);
+  EXPECT_EQ((TruncateCast<uint16_t, int16_t>(65535)), 32767);
+  EXPECT_EQ((TruncateCast<int16_t, uint16_t>(1234)), 1234);
+  EXPECT_EQ((TruncateCast<int16_t, uint16_t>(-1)), 0);
+  EXPECT_EQ((TruncateCast<int64_t, uint64_t>(42)), 42u);
+  EXPECT_EQ((TruncateCast<uint64_t, int64_t>(42)), 42);
+  EXPECT_EQ(
+      (TruncateCast<uint64_t, int64_t>(std::numeric_limits<uint64_t>::max())),
+      std::numeric_limits<int64_t>::max());
+}
+
+TEST(TruncateCast, Widening) {
+  EXPECT_EQ((TruncateCast<int8_t, int16_t>(-5)), -5);
+  EXPECT_EQ((TruncateCast<int16_t, int32_t>(-1234)), -1234);
+  EXPECT_EQ((TruncateCast<int16_t, int32_t>(1234)), 1234);
+  EXPECT_EQ((TruncateCast<uint8_t, uint16_t>(42)), 42);
+  EXPECT_EQ(
+      (TruncateCast<uint32_t, int64_t>(std::numeric_limits<uint32_t>::max())),
+      std::numeric_limits<uint32_t>::max());
+}
+
+TEST(TruncateCast, FloatingDestination) {
+  EXPECT_EQ((TruncateCast<double, float>(-1.0)), -1.0f);
+  EXPECT_EQ((TruncateCast<double, float>(0.0)), 0.0f);
+  EXPECT_EQ((TruncateCast<double, float>(-1e300)),
+            std::numeric_limits<float>::lowest());
+  EXPECT_EQ((TruncateCast<double, float>(1e300)),
+            std::numeric_limits<float>::max());
+  EXPECT_EQ((TruncateCast<float, double>(-1.0f)), -1.0);
+  EXPECT_EQ((TruncateCast<float, double>(0.0f)), 0.0);
+  EXPECT_EQ((TruncateCast<int, float>(-42)), -42.0f);
+  EXPECT_EQ((TruncateCast<int, double>(42)), 42.0);
+  const float subnormal = std::numeric_limits<float>::denorm_min();
+  EXPECT_EQ((TruncateCast<double, float>(subnormal)), subnormal);
+}
+
+TEST(TruncateCast, FloatingIntegerEndpoints) {
+  EXPECT_EQ((TruncateCast<float, int32_t>(2147483648.0f)),
+            std::numeric_limits<int32_t>::max());
+  EXPECT_EQ((TruncateCast<double, int64_t>(9223372036854775808.0)),
+            std::numeric_limits<int64_t>::max());
+  EXPECT_EQ((TruncateCast<double, uint64_t>(18446744073709551616.0)),
+            std::numeric_limits<uint64_t>::max());
+  EXPECT_EQ((TruncateCast<double, int64_t>(
+                std::nextafter(9223372036854775808.0, 0.0))),
+            9223372036854774784LL);
+}
+
+TEST(TruncateCast, PreserveIntegerPrecision) {
+  const int64_t signed_value = std::numeric_limits<int64_t>::max() - 1;
+  const uint64_t unsigned_value = std::numeric_limits<uint64_t>::max() - 1;
+  EXPECT_EQ((TruncateCast<int64_t, int64_t>(signed_value)), signed_value);
+  EXPECT_EQ((TruncateCast<int64_t, uint64_t>(signed_value)),
+            static_cast<uint64_t>(signed_value));
+  EXPECT_EQ((TruncateCast<uint64_t, uint64_t>(unsigned_value)), unsigned_value);
 }

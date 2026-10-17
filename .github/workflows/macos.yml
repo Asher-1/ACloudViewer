@@ -266,9 +266,9 @@ jobs:
             echo "$INSTALL_DIR" >> "$GITHUB_PATH"
             echo "ACV_BINARY=$INSTALL_DIR/ACloudViewer" >> "$GITHUB_ENV"
           else
-            echo "::warning::Binary not found at expected paths, listing install dir recursively"
+            echo "::error::ACloudViewer binary not found after install"
             find "$INSTALL_DIR" -name "ACloudViewer*" -type f 2>/dev/null || true
-            echo "ACV_BINARY=" >> "$GITHUB_ENV"
+            exit 1
           fi
 
       - name: Install agent harness
@@ -276,6 +276,8 @@ jobs:
           pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
       - name: Level 3 — Headless processing tests
+        env:
+          ACV_REQUIRE_BINARY: "1"
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
 

@@ -9,12 +9,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
-#include <ios>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "util/string.h"
@@ -44,8 +48,6 @@ struct BitmapColor {
 };
 
 // Cross-platform bitmap backed by OpenImageIO and tightly packed UINT8 data.
-enum class BitmapFormat { kUnknown, kPng, kJpeg, kTiff };
-enum class BitmapRescaleFilter { kBilinear, kBox };
 enum class BitmapMetadataModel { kMain, kExif, kGps };
 
 class Bitmap {
@@ -63,8 +65,11 @@ public:
     // Move assignment.
     Bitmap& operator=(Bitmap&& other) noexcept;
 
-    // Construct bitmap with given dimensions (upstream parity).
-    Bitmap(const int width, const int height, const bool as_rgb);
+    // Construct bitmap with given dimensions and explicit pixel colorspace.
+    Bitmap(const int width,
+           const int height,
+           const bool as_rgb,
+           const bool linear_colorspace = false);
 
     // Allocate bitmap by overwriting the existing data.
     bool Allocate(const int width, const int height, const bool as_rgb);
@@ -132,27 +137,79 @@ public:
     bool ExifLongitude(double* longitude) const;
     bool ExifAltitude(double* altitude) const;
 
-    // Read bitmap at given path and convert to grey- or colorscale.
-    bool Read(const std::filesystem::path& path, const bool as_rgb = true);
+    // Read bitmap at given path and convert to grey- or colorscale. The
+    // optional conversion preserves the in-memory linear-light invariant.
+    bool Read(const std::filesystem::path& path,
+              const bool as_rgb = true,
+              const bool linearize_colorspace = false);
 
-    // Write image to file. For JPEG, flags is the requested quality [1, 100].
+    // Write bitmap to file, converting linear-light pixels back to the
+    // metadata colorspace unless explicitly disabled.
     bool Write(const std::filesystem::path& path,
-               const BitmapFormat format = BitmapFormat::kUnknown,
-               const int flags = 0) const;
+               const bool delinearize_colorspace = true) const;
 
     // Smooth the image using a Gaussian kernel.
     void Smooth(const float sigma_x, const float sigma_y);
 
     // Rescale image to the new dimensions.
-    void Rescale(
-            const int new_width,
-            const int new_height,
-            const BitmapRescaleFilter filter = BitmapRescaleFilter::kBilinear);
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): in-place 90 degree
+    // rotation (counter-clockwise when counterclockwise=true).
+    void Rot90(bool counterclockwise = false);
+
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): in-place rotation by
+    // `num_quarter_turns` counter-clockwise quarter turns (k % 4). Needed by
+    // the calibration module's gravity-based uprighting.
+    void Rot90(int num_quarter_turns);
+
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): crop the image in place to
+    // the given rectangle, which must lie within the image bounds. Cropping
+    // to the full image is a no-op.
+    void Crop(int left, int top, int width, int height);
+
+    // Upstream parity (d3ccaf35 sensor/bitmap.h): bytes per image row and
+    // direct row-major pixel access (no padding; the fork's Storage keeps a
+    // contiguous row-major uint8 buffer). Needed by the calibration module's
+    // tensor packing.
+    int Pitch() const;
+    std::vector<uint8_t>& RowMajorData();
+    const std::vector<uint8_t>& RowMajorData() const;
+
+    // Upstream parity: JPEG quality for subsequent Write() calls; values
+    // in [0, 100], -1 keeps the caller-supplied flags untouched.
+    void SetJPEGQuality(int quality);
+    int JPEGQuality() const;
+
+    enum class RescaleFilter { kBilinear, kBox };
+
+    void Rescale(const int new_width,
+                 const int new_height,
+                 const RescaleFilter filter = RescaleFilter::kBilinear);
+
+    // Downscale the image in place so that neither dimension exceeds
+    // `max_image_size`, preserving the aspect ratio. Images that already fit
+    // within the bound are left unchanged. Returns the scale factor that was
+    // applied (1 if no rescaling was necessary).
+    double Thumbnail(int max_image_size,
+                     const RescaleFilter filter = RescaleFilter::kBilinear);
+
+    // Check whether the image is empty (i.e., width/height=0).
+    bool IsEmpty() const;
 
     // Clone the image to a new bitmap object.
     Bitmap Clone() const;
     Bitmap CloneAsGrey() const;
     Bitmap CloneAsRGB() const;
+
+    // Metadata uses OpenImageIO type names (for example "float", "int",
+    // and "point") and is preserved across clone, read, and write operations.
+    void SetMetaData(std::string_view name,
+                     std::string_view type,
+                     const void* value);
+    void SetMetaData(std::string_view name, std::string_view value);
+    bool GetMetaData(std::string_view name,
+                     std::string_view type,
+                     void* value) const;
+    std::optional<std::string> GetMetaData(std::string_view name) const;
 
     // Clone metadata from this bitmap object to another target bitmap object.
     void CloneMetadata(Bitmap* target) const;
@@ -164,10 +221,12 @@ public:
 
 private:
     struct Storage;
+    int jpeg_quality_ = -1;
     std::unique_ptr<Storage> data_;
     int width_;
     int height_;
     int channels_;
+    bool linear_colorspace_ = false;
 };
 
 // Jet colormap inspired by Matlab. Grayvalues are expected in the range [0, 1]
@@ -234,9 +293,14 @@ bool BitmapColor<T>::operator!=(const BitmapColor<T>& rhs) const {
 
 template <typename T>
 std::ostream& operator<<(std::ostream& output, const BitmapColor<T>& color) {
-    output << StringPrintf("RGB(%f, %f, %f)", static_cast<double>(color.r),
-                           static_cast<double>(color.g),
-                           static_cast<double>(color.b));
+    if constexpr (std::is_same_v<T, char> || std::is_same_v<T, unsigned char>) {
+        output << "RGB(" << static_cast<int>(color.r) << ", "
+               << static_cast<int>(color.g) << ", " << static_cast<int>(color.b)
+               << ")";
+    } else {
+        output << "RGB(" << color.r << ", " << color.g << ", " << color.b
+               << ")";
+    }
     return output;
 }
 

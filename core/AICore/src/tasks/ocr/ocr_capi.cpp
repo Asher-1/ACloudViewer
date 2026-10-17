@@ -14,27 +14,33 @@
 //   crop -> 48xH rec batch -> rec interpreter -> CTC greedy decode ->
 //   typed aicore_ocr_box{quad, text, score}.
 //
-// The DB post-process is hand-written (no OpenCV in the AICore tree). The
-// first release uses per-component bounding boxes with the DB offset
-// formula; polygon-accurate unclip is deferred to the det-eval round.
+// The DB post-process is hand-written (no OpenCV in the AICore tree) and
+// mirrors Paddle's integer Clipper/JT_ROUND unclip plus final pixel rounding.
 
 #include "aicore/ocr_capi.h"
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <deque>
 #include <map>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "aicore/runtime_capi.h"
+#include "common/blocked_conv.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/image_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
+#include "ocr_db_postprocess.hpp"
+#include "ocr_rec_crop.hpp"
 #include "ocr_runtime.hpp"
 
 namespace {
@@ -43,493 +49,319 @@ thread_local std::string g_lastError;
 
 void setLastError(const std::string& message) { g_lastError = message; }
 
+bool hasOptionField(const aicore_ocr_options* options,
+                    size_t offset,
+                    size_t size) {
+    return options && options->struct_size >= offset + size;
+}
+
+constexpr size_t kOcrOptionsInitialSize = offsetof(aicore_ocr_options, device);
 constexpr float kDetDefaultMaxSide = 960.0f;
+// PaddleOCR 3.0.1's public OCR pipeline resolves the PP-OCRv4 mobile det
+// parameters to limit_type="min", limit_side_len=64. The model inference.yml
+// describes engine profiles, not the pipeline's runtime default.
+constexpr float kDetOfficialLimitSide = 64.0f;
+constexpr float kDetOfficialMaxSideLimit = 4000.0f;
 constexpr float kDetDefaultBoxThresh = 0.3f;
+// Upstream box_thresh is the Python double 0.6, compared against cv2.mean's
+// double; 0.6f would move the gate to 0.60000002.
+constexpr double kDetDefaultBoxScoreThresh = 0.6;
 constexpr float kDetDefaultUnclipRatio = 1.5f;
 constexpr int kRecHeight = 48;
+// Official rec_image_shape width (3, 48, 320): the FLOOR of the per-crop
+// padded width, not a cap. paddlex resize(): max_wh_ratio = max(320/48,
+// w/h); imgW = int(48 * max_wh_ratio); resized_w = ceil(48 * w/h) clipped
+// to imgW; the crop is never compressed below its aspect ratio until the
+// 3200 px limit (max_imgW). The historical clamp(round(48*w/h), 1, 320)
+// squeezed every line longer than 6.67:1 (a 254x15 body line by 2.5x) into
+// garbage on every backend.
 constexpr int kRecMaxWidth = 320;
+constexpr int kRecLimitWidth = 3200;  // paddlex ResizeNormImg.max_imgW
+// Official text_recognition_batch_size (PaddleX OCR pipeline config). The
+// pipeline sorts a frame's crops by aspect ratio and pads every group of
+// this many consecutive crops to the group's widest padded width. The pad
+// width is observable: the SVTR self-attention mixes the pad columns into
+// every output position, so a crop recognized at another pad width can
+// decode to another text (measured on ICDAR2015: every text difference
+// against Paddle CPU on identical boxes was reproduced by Paddle itself at
+// the former 320/480/640/... bucket widths).
+constexpr int kRecPadGroupDefault = 6;
+// Distinct (width, rows) builds kept per rec session. Crops with an aspect
+// ratio up to 320/48 share the 320 build; only wider lines add builds. The
+// activation budget per build is held constant by recRowsCapForWidth so the
+// cache's device footprint is bounded by capacity x one 48-row 320-wide
+// build.
+constexpr size_t kRecGraphCacheCapacity = 6;
 constexpr int kDetAlign = 32;
 
 // PP-OCRv4 preprocessing constants (official DetPreProcess/RecPreProcess).
+// NormalizeImage applies mean[c]/std[c] to channel c of the cv2 BGR frame
+// (the ImageNet RGB-order constants on BGR planes, exactly as upstream).
 constexpr float kImageMean[3] = {0.485f, 0.456f, 0.406f};
 constexpr float kImageStd[3] = {0.229f, 0.224f, 0.225f};
 constexpr float kRecMean = 0.5f;
 constexpr float kRecStd = 0.5f;
+constexpr float kRecMean3[3] = {kRecMean, kRecMean, kRecMean};
+constexpr float kRecStd3[3] = {kRecStd, kRecStd, kRecStd};
+// Fixed rec batch chunk (run- and recognize-phase): see the run-phase note
+// for the measured scaling curve and the A/B rationale. The linear segment
+// reaches N=72 (VRAM ~3 GiB); the cliff is between 72 and 96, where the
+// depthwise im2col workspace pushes the allocator against VRAM (7.6+ GiB
+// resident, 20 GiB peak at 96) and every compute re-warms the CUDA graphs.
+constexpr int64_t kRecChunkBatch = 48;
+// Vulkan sessions run the direct-conv route (no im2col materialization), so
+// the workspace scales LINEARLY with N and there are no CUDA graphs to
+// re-warm. The per-chunk cost there is dominated by fixed per-op dispatch
+// overhead (~58.6 ms per 40-row chunk, of which only ~14 ms is kernel time),
+// so the cap is raised to cover a dense image in a single chunk: 1 compute
+// instead of 3 cuts the fixed overhead proportionally (measured this
+// session: 3x40 rows -> 176 ms rec, 1x104 rows -> 81 ms rec).
+constexpr int64_t kRecChunkBatchVulkan = 112;
+// Chunk cap per execution backend. CUDA sessions keep 48 (the im2col VRAM
+// cliff); Vulkan single-backend sessions keep 112. CPU sessions never batch
+// (the blocked island wins there), so the cap value is irrelevant.
+inline int64_t recChunkBatchCap(ggml_backend_t gpuBackend) {
+    if (gpuBackend && !ggml_common::is_cpu_backend(gpuBackend)) {
+        const char* name = ggml_backend_name(gpuBackend);
+        if (name && std::string(name).find("Vulkan") != std::string::npos)
+            return kRecChunkBatchVulkan;
+    }
+    return kRecChunkBatch;
+}
+// Row cap for a wider chunk: rows x width is held at cap x 320 so a 1280
+// wide chunk carries a quarter of the rows and the activation / im2col
+// workspace (both linear in rows x width) never exceeds the measured
+// 48x320 CUDA budget. Multiples of 4 keep the build key set small.
+inline int64_t recRowsCapForWidth(int64_t cap, int width) {
+    const int64_t rows = cap * kRecMaxWidth / width;
+    return std::max<int64_t>(4, rows / 4 * 4);
+}
+// Official rec pad (paddlex text_recognition/processors.py resize_norm_img
+// L61-62): padding_im = np.zeros((imgC, imgH, imgW)) in the NORMALIZED
+// domain, i.e. the fill is 0.0 = pixel 127.5 = (0.5 - mean) / std. A black
+// (-1) pad is out-of-distribution: the model was trained on ratio-bucketed
+// batches whose right side is exactly this gray fill, and the SVTR
+// self-attention mixes pad keys into every output position.
+constexpr float kRecPadFill = (0.5f - kRecMean) / kRecStd;
 
 struct OcrGraph {
     ggml_context* ctx = nullptr;  // graph tensors (no_alloc)
     ggml_cgraph* graph = nullptr;
     ggml_tensor* input = nullptr;
     ggml_tensor* output = nullptr;
-    ggml_gallocr_t alloc = nullptr;        // CPU gallocr fast path
-    ggml_backend_sched_t sched = nullptr;  // GPU scheduler (device-resident)
+    // Optional in-graph CTC reduction over `output` (rec graphs on GPU
+    // execution only): argmax class per (t, n) row and its probability.
+    ggml_tensor* argmaxIndex = nullptr;
+    ggml_tensor* argmaxProb = nullptr;
+    bool argmaxHead = false;
+    aicore::ocr::OcrGraphExec exec;  // gallocr (CPU / one device) or sched
+    // The folded-constant generation this build was emitted into. The
+    // build's constants (and their device mirrors) live in the pool, so the
+    // graph co-owns it: the weights move on to a fresh pool at the next
+    // build while every cached graph keeps its own generation alive.
+    std::shared_ptr<aicore::ocr::OcrFoldPool> fold;
     int64_t inputC = 0;
     int64_t inputH = 0;
     int64_t inputW = 0;
+    int64_t inputN = 0;
+    uint64_t lastUse = 0;  // LRU clock (OcrGraphCache)
 
     bool matches(int64_t c, int64_t h, int64_t w) const {
         return graph && inputC == c && inputH == h && inputW == w;
     }
 
     void clear() {
-        if (alloc) ggml_gallocr_free(alloc);
-        if (sched) ggml_backend_sched_free(sched);
+        exec.free();
+        releaseGraph();
+    }
+
+    // Drops the build but keeps `exec`: the slot's next build reuses the
+    // gallocr and its compute buffer (see aicore::ocr::OcrGraphExec).
+    void releaseGraph() {
         if (ctx) ggml_free(ctx);
+        // After the graph context; the pool frees the device mirrors when
+        // the last owner lets go.
+        fold.reset();
         ctx = nullptr;
         graph = nullptr;
         input = nullptr;
         output = nullptr;
-        alloc = nullptr;
-        sched = nullptr;
-        inputC = inputH = inputW = 0;
+        argmaxIndex = nullptr;
+        argmaxProb = nullptr;
+        argmaxHead = false;
+        inputC = inputH = inputW = inputN = 0;
+        lastUse = 0;
     }
+};
+
+// Bounded set of cached builds keyed by (C, H, W, N, argmax head). The rec
+// graph needs one build per (pad width, row count) actually used by a
+// frame — a document mixes short labels (320) with full-width body lines
+// (wider groups) — and a frame sequence revisits the same handful of keys, so a
+// small LRU replaces the historical single entry. Eviction releases the
+// graph (and its fold generation) but keeps the slot's allocator; the caller
+// rebuilds into the slot.
+struct OcrGraphCache {
+    std::vector<OcrGraph> entries;
+    size_t capacity = 1;
+    uint64_t clock = 0;
+
+    OcrGraph& acquire(
+            int64_t c, int64_t h, int64_t w, int64_t n, bool argmaxHead) {
+        ++clock;
+        for (OcrGraph& g : entries) {
+            if (g.matches(c, h, w) && g.inputN == n &&
+                g.argmaxHead == argmaxHead) {
+                g.lastUse = clock;
+                return g;
+            }
+        }
+        if (entries.size() < capacity) {
+            entries.emplace_back();
+            entries.back().lastUse = clock;
+            return entries.back();
+        }
+        OcrGraph* victim = &entries.front();
+        for (OcrGraph& g : entries)
+            if (g.lastUse < victim->lastUse) victim = &g;
+        victim->releaseGraph();
+        victim->lastUse = clock;
+        return *victim;
+    }
+
+    void clear() {
+        for (OcrGraph& g : entries) g.clear();
+        entries.clear();
+    }
+};
+
+// Reduced rec output: the two scalars per timestep the CTC decoder consumes
+// (argmax class, its probability), laid out [t + T * n]. When `active` the
+// full (V, T, N) softmax was NOT read back. The vectors are frame-scratch
+// owned by the context.
+struct RecArgmaxOut {
+    std::vector<int32_t> index;
+    std::vector<float> prob;
+    bool active = false;
 };
 
 // --- Stage helpers (all pure functions over plain buffers) -----------------
 
-// Bilinear resample of a strided source view into an RGB8 destination.
-// Shared by the det downscale and the per-box rec crop.
-// CHW f32 packing with the official PP-OCR normalization, over the shared
-// common image view (channel extraction + BGR handling included).
-void packNchwImage(const aicore::img::Image& img,
-                   float mean,
-                   float stdDev,
-                   std::vector<float>& nchw) {
+// CHW f32 packing with the official PP-OCR normalization. dstW is the
+// packed row width: the rec path passes the fixed kRecMaxWidth so every row
+// is laid out as [content | right-side pad] exactly like the official
+// resize_norm_img (padding_im[:, :, ..., w:] = 0 in normalized space). The
+// pack must emit the final stride IN one pass: appending the pad after a
+// w-wide pack would scramble channels/rows the moment dstW > w (the packed
+// (3,h,w) re-read as (3,h,dstW) interleaves planes) — the root cause of the
+// historical empty/garbled rec text on short crops. mean/stdDev are per
+// packed plane (plane c reads Image channel c, BGR when img.bgr is set).
+void packNchwImageTo(const aicore::img::Image& img,
+                     const float (&mean)[3],
+                     const float (&stdDev)[3],
+                     int dstW,
+                     float padValue,
+                     float* nchw) {
     const int w = img.width;
     const int h = img.height;
-    nchw.resize(static_cast<size_t>(3) * h * w);
     const float scale = 1.0f / 255.0f;
+    // Pre-fill the pad columns once per plane, then overwrite the content
+    // region (the pad lives at the row END: [content | pad] per row).
+    const size_t plane = static_cast<size_t>(h) * dstW;
     for (int ch = 0; ch < 3; ++ch) {
-        float* plane = nchw.data() + static_cast<size_t>(ch) * h * w;
+        float* p = nchw + static_cast<size_t>(ch) * plane;
         for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                plane[static_cast<size_t>(y) * w + x] =
-                        (img.channel(x, y, ch) * scale - mean) / stdDev;
-            }
+            float* row = p + static_cast<size_t>(y) * dstW;
+            for (int x = w; x < dstW; ++x) row[x] = padValue;
         }
     }
-}
-
-struct DetBox {
-    // Corner polygon in det-map pixel coordinates, ordered clockwise from
-    // the top-left corner (Paddle order_points_clockwise). Rotated text
-    // yields a genuinely non-axis-aligned quad.
-    float quad[4][2];
-    float score;  // component mean probability
-};
-
-// Official DB component gate (det_db_box_thresh in the upstream det
-// pipeline): components whose mean probability sits below it are dropped
-// before the unclip expands them.
-constexpr float kComponentScoreThresh = 0.6f;
-
-// Andrew monotone chain convex hull over the component boundary points.
-// O(n log n); the hull feeds the minimum-area rectangle below.
-std::vector<std::pair<float, float>> convexHull(
-        std::vector<std::pair<float, float>> pts) {
-    std::sort(pts.begin(), pts.end());
-    pts.erase(std::unique(pts.begin(), pts.end()), pts.end());
-    const int n = static_cast<int>(pts.size());
-    if (n < 3) return pts;
-    std::vector<std::pair<float, float>> h(2 * n);
-    int k = 0;
-    auto cross = [](const std::pair<float, float>& o,
-                    const std::pair<float, float>& a,
-                    const std::pair<float, float>& b) {
-        return (a.first - o.first) * (b.second - o.second) -
-               (a.second - o.second) * (b.first - o.first);
-    };
-    for (int i = 0; i < n; ++i) {
-        while (k >= 2 && cross(h[k - 2], h[k - 1], pts[i]) <= 0) --k;
-        h[k++] = pts[i];
-    }
-    for (int i = n - 2, t = k + 1; i >= 0; --i) {
-        while (k >= t && cross(h[k - 2], h[k - 1], pts[i]) <= 0) --k;
-        h[k++] = pts[i];
-    }
-    h.resize(k - 1);
-    return h;
-}
-
-// Corner-center form of the minimum-area rectangle.
-struct RotRect {
-    float cx = 0, cy = 0;  // center
-    float ux = 1, uy = 0;  // width direction (unit)
-    float vx = 0, vy = 1;  // height direction (unit)
-    float halfW = 0, halfH = 0;
-};
-
-// Minimum-area rectangle enclosing the hull. Rotating calipers: as the
-// edge advances around the convex hull, the extreme vertices for the edge
-// basis move monotonically, so maintaining four running pointers is O(h)
-// total. The historical per-edge full scan was O(h^2); a dense document at
-// det_max_side=960 yields components whose hull reaches tens of thousands
-// of points and the quadratic scan turned single-image inference into
-// minutes (the reported "Run OCR hang" at high resolutions).
-RotRect minAreaRect(const std::vector<std::pair<float, float>>& hull) {
-    RotRect best;
-    float bestArea = std::numeric_limits<float>::max();
-    const int h = static_cast<int>(hull.size());
-    if (h == 0) return best;
-    if (h < 3) {
-        float minX = hull[0].first, maxX = minX;
-        float minY = hull[0].second, maxY = minY;
-        for (const auto& p : hull) {
-            minX = std::min(minX, p.first);
-            maxX = std::max(maxX, p.first);
-            minY = std::min(minY, p.second);
-            maxY = std::max(maxY, p.second);
+    // One image row -> three plane rows. The expression is kept verbatim
+    // so the packed floats are bit-identical to the historical serial loop;
+    // only the source addressing is hoisted (Image::row / channel_index).
+    const int scn = img.channels;
+    const int cmap[3] = {img.channel_index(0), img.channel_index(1),
+                         img.channel_index(2)};
+    const auto packRow = [&](int y) {
+        const uint8_t* srow = img.row(y);
+        for (int ch = 0; ch < 3; ++ch) {
+            const uint8_t* s = srow + cmap[ch];
+            float* row = nchw + static_cast<size_t>(ch) * plane +
+                         static_cast<size_t>(y) * dstW;
+            const float m = mean[ch], sd = stdDev[ch];
+            for (int x = 0; x < w; ++x)
+                row[x] = (s[static_cast<size_t>(x) * scn] * scale - m) / sd;
         }
-        best.cx = (minX + maxX) / 2;
-        best.cy = (minY + maxY) / 2;
-        best.halfW = (maxX - minX) / 2;
-        best.halfH = (maxY - minY) / 2;
-        return best;
-    }
-    auto proj = [](const std::pair<float, float>& p, float ux, float uy) {
-        return p.first * ux + p.second * uy;
     };
-    // Running extreme indices for the u (edge) and v (normal) axes; they
-    // only advance, so the total work across all edges is O(h).
-    int iuMax = 1, iuMin = 1, ivMax = 1, ivMin = 1;
-    for (int i = 0; i < h; ++i) {
-        const auto& a = hull[i];
-        const auto& b = hull[(i + 1) % h];
-        float dx = b.first - a.first, dy = b.second - a.second;
-        const float len = std::sqrt(dx * dx + dy * dy);
-        if (len < 1e-6f) continue;
-        const float ux = dx / len, uy = dy / len;  // along the edge
-        const float vx = -uy, vy = ux;             // edge normal
-        const int inext = (i + 1) % h;
-        while (proj(hull[(iuMax + 1) % h], ux, uy) > proj(hull[iuMax], ux, uy))
-            iuMax = (iuMax + 1) % h;
-        while (proj(hull[(iuMin + 1) % h], ux, uy) < proj(hull[iuMin], ux, uy))
-            iuMin = (iuMin + 1) % h;
-        while (proj(hull[(ivMax + 1) % h], vx, vy) > proj(hull[ivMax], vx, vy))
-            ivMax = (ivMax + 1) % h;
-        while (proj(hull[(ivMin + 1) % h], vx, vy) < proj(hull[ivMin], vx, vy))
-            ivMin = (ivMin + 1) % h;
-        (void)inext;
-        const float maxU = proj(hull[iuMax], ux, uy);
-        const float minU = proj(hull[iuMin], ux, uy);
-        const float maxV = proj(hull[ivMax], vx, vy);
-        const float minV = proj(hull[ivMin], vx, vy);
-        const float area = (maxU - minU) * (maxV - minV);
-        if (area < bestArea) {
-            bestArea = area;
-            best.ux = ux;
-            best.uy = uy;
-            best.vx = vx;
-            best.vy = vy;
-            best.halfW = (maxU - minU) / 2;
-            best.halfH = (maxV - minV) / 2;
-            const float cu = (minU + maxU) / 2;
-            const float cv = (minV + maxV) / 2;
-            best.cx = cu * ux + cv * vx;  // inverse of the orthonormal basis
-            best.cy = cu * uy + cv * vy;
-        }
-    }
-    return best;
-}
-
-// Rectangle corners -> clockwise-from-top-left quad (Paddle
-// order_points_clockwise: min(x+y), max(x-y), max(x+y), min(x-y)).
-void rectToQuad(const RotRect& r, float quad[4][2]) {
-    const float corners[4][2] = {
-            {r.cx + r.halfW * r.ux + r.halfH * r.vx,
-             r.cy + r.halfW * r.uy + r.halfH * r.vy},
-            {r.cx + r.halfW * r.ux - r.halfH * r.vx,
-             r.cy + r.halfW * r.uy - r.halfH * r.vy},
-            {r.cx - r.halfW * r.ux - r.halfH * r.vx,
-             r.cy - r.halfW * r.uy - r.halfH * r.vy},
-            {r.cx - r.halfW * r.ux + r.halfH * r.vx,
-             r.cy - r.halfW * r.uy + r.halfH * r.vy},
-    };
-    int order[4] = {0, 1, 2, 3};
-    float sums[4], diffs[4];
-    for (int i = 0; i < 4; ++i) {
-        sums[i] = corners[i][0] + corners[i][1];
-        diffs[i] = corners[i][0] - corners[i][1];
-    }
-    int iMinSum = 0, iMaxDiff = 0, iMaxSum = 0, iMinDiff = 0;
-    for (int i = 1; i < 4; ++i) {
-        if (sums[i] < sums[iMinSum]) iMinSum = i;
-        if (sums[i] > sums[iMaxSum]) iMaxSum = i;
-        if (diffs[i] > diffs[iMaxDiff]) iMaxDiff = i;
-        if (diffs[i] < diffs[iMinDiff]) iMinDiff = i;
-    }
-    order[0] = iMinSum;
-    order[1] = iMaxDiff;
-    order[2] = iMaxSum;
-    order[3] = iMinDiff;
-    for (int i = 0; i < 4; ++i) {
-        quad[i][0] = corners[order[i]][0];
-        quad[i][1] = corners[order[i]][1];
-    }
-}
-
-// 4-connected BFS over the binarized map. Each component's boundary
-// pixels (at least one 4-neighbor binarized off) form the hull that the
-// DB post-process turns into a minimum-area rectangle - the same
-// geometry the official cv2.findContours + cv2.minAreaRect path emits.
-// O(pixels), single pass + frontier.
-std::vector<DetBox> connectedComponentsBoxes(const float* prob,
-                                             int w,
-                                             int h,
-                                             float thresh) {
-    std::vector<uint8_t> mask(static_cast<size_t>(w) * h, 0);
-    for (int64_t i = 0; i < static_cast<int64_t>(w) * h; ++i)
-        mask[i] = prob[i] >= thresh ? 1 : 0;
-    std::vector<int32_t> visited(static_cast<size_t>(w) * h, 0);
-    std::vector<DetBox> boxes;
-    std::vector<int32_t> stack;
-    std::vector<std::pair<float, float>> boundary;
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            const size_t idx = static_cast<size_t>(y) * w + x;
-            if (!mask[idx] || visited[idx]) continue;
-            // Flood fill this component, tracking its extent, mean score,
-            // and boundary pixels.
-            stack.clear();
-            boundary.clear();
-            stack.push_back(static_cast<int32_t>(idx));
-            visited[idx] = 1;
-            double scoreSum = 0.0;
-            int64_t count = 0;
-            int minX = x, maxX = x, minY = y, maxY = y;
-            while (!stack.empty()) {
-                const int32_t cur = stack.back();
-                stack.pop_back();
-                const int cy = cur / w;
-                const int cx = cur % w;
-                scoreSum += prob[cur];
-                ++count;
-                minX = std::min(minX, cx);
-                maxX = std::max(maxX, cx);
-                minY = std::min(minY, cy);
-                maxY = std::max(maxY, cy);
-                constexpr int kDx[4] = {1, -1, 0, 0};
-                constexpr int kDy[4] = {0, 0, 1, -1};
-                bool isBoundary = false;
-                for (int d = 0; d < 4; ++d) {
-                    const int nx = cx + kDx[d];
-                    const int ny = cy + kDy[d];
-                    if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
-                        isBoundary = true;
-                        continue;
-                    }
-                    const size_t nIdx = static_cast<size_t>(ny) * w + nx;
-                    if (!mask[nIdx]) {
-                        isBoundary = true;
-                    } else if (!visited[nIdx]) {
-                        visited[nIdx] = 1;
-                        stack.push_back(static_cast<int32_t>(nIdx));
-                    }
+    // Same gate as cv_resize_linear_u8: only the det/layout frame (h in the
+    // hundreds-to-thousands) fans out; rec crops (h = 48) stay serial because
+    // they are already packed from inside the per-box worker pool.
+    const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
+    if (hw > 1 && h >= 256 && static_cast<unsigned>(h) > hw) {
+        std::atomic<int> nextRow{0};
+        std::vector<std::thread> pool;
+        pool.reserve(hw - 1);
+        for (unsigned i = 1; i < hw; ++i)
+            pool.emplace_back([&] {
+                for (;;) {
+                    const int y = nextRow.fetch_add(1);
+                    if (y >= h) return;
+                    packRow(y);
                 }
-                if (isBoundary)
-                    boundary.emplace_back(static_cast<float>(cx),
-                                          static_cast<float>(cy));
-            }
-            if (count < 3 || maxX - minX + 1 < 2 || maxY - minY + 1 < 2)
-                continue;  // noise / single-pixel components
-            const float score = static_cast<float>(scoreSum / count);
-            // Official DB component gate (det_db_box_thresh): components
-            // whose mean probability sits below it are dropped before the
-            // unclip expands them.
-            if (score < kComponentScoreThresh) continue;
-            DetBox box;
-            box.score = score;
-            const auto hull = convexHull(std::move(boundary));
-            rectToQuad(minAreaRect(hull), box.quad);
-            boxes.push_back(std::move(box));
+            });
+        for (;;) {
+            const int y = nextRow.fetch_add(1);
+            if (y >= h) break;
+            packRow(y);
         }
-    }
-    return boxes;
-}
-
-// DB unclip on the minimum-area rectangle: the Vatti offset from the
-// paper reduces to a uniform outward expansion of area * unclip_ratio /
-// perimeter for rectangles, applied along both rect axes.
-DetBox unclipBox(const DetBox& box, float ratio) {
-    const float width = std::sqrt((box.quad[1][0] - box.quad[0][0]) *
-                                          (box.quad[1][0] - box.quad[0][0]) +
-                                  (box.quad[1][1] - box.quad[0][1]) *
-                                          (box.quad[1][1] - box.quad[0][1]));
-    const float height = std::sqrt((box.quad[3][0] - box.quad[0][0]) *
-                                           (box.quad[3][0] - box.quad[0][0]) +
-                                   (box.quad[3][1] - box.quad[0][1]) *
-                                           (box.quad[3][1] - box.quad[0][1]));
-    const float area = width * height;
-    const float perimeter = 2.0f * (width + height);
-    DetBox out = box;
-    if (perimeter <= 0) return out;
-    const float offset = area * ratio / perimeter;
-    const float cx = (box.quad[0][0] + box.quad[2][0]) / 2;
-    const float cy = (box.quad[0][1] + box.quad[2][1]) / 2;
-    // Rebuild the rect axes from the ordered corners, grow both halves by
-    // the offset, and re-emit the corner order.
-    RotRect r;
-    r.cx = cx;
-    r.cy = cy;
-    const float wux = box.quad[1][0] - box.quad[0][0];
-    const float wuy = box.quad[1][1] - box.quad[0][1];
-    const float wLen = std::sqrt(wux * wux + wuy * wuy);
-    if (wLen < 1e-6f) return out;
-    r.ux = wux / wLen;
-    r.uy = wuy / wLen;
-    r.vx = -r.uy;
-    r.vy = r.ux;
-    r.halfW = width / 2 + offset;
-    r.halfH = height / 2 + offset;
-    rectToQuad(r, out.quad);
-    return out;
-}
-
-// Perspective crop of an ordered quad out of an RGB buffer (the official
-// get_rotate_crop_image): the quad is warped onto an upright rectangle
-// whose width is the longer text edge. Bilinear sampling keeps the crop
-// dependency-free; the rec head is robust to the cubic-vs-linear
-// interpolation delta.
-void cropQuadRgb(const std::vector<uint8_t>& rgb,
-                 int imgW,
-                 int imgH,
-                 const float quad[4][2],
-                 int cropW,
-                 int cropH,
-                 std::vector<uint8_t>& dst) {
-    // Solve the 3x3 homography mapping (0,0)(w,0)(w,h)(0,h) -> quad by
-    // the standard 8-unknown linear system through adjugate inversion.
-    const float src[4][2] = {
-            {0, 0},
-            {static_cast<float>(cropW), 0},
-            {static_cast<float>(cropW), static_cast<float>(cropH)},
-            {0, static_cast<float>(cropH)}};
-    double A[8][9] = {};
-    for (int i = 0; i < 4; ++i) {
-        const double x = src[i][0], y = src[i][1];
-        const double X = quad[i][0], Y = quad[i][1];
-        double* r1 = A[i * 2];
-        double* r2 = A[i * 2 + 1];
-        r1[0] = x;
-        r1[1] = y;
-        r1[2] = 1;
-        r1[6] = -X * x;
-        r1[7] = -X * y;
-        r1[8] = X;
-        r2[3] = x;
-        r2[4] = y;
-        r2[5] = 1;
-        r2[6] = -Y * x;
-        r2[7] = -Y * y;
-        r2[8] = Y;
-    }
-    // Gauss elimination with partial pivoting.
-    // Size the destination up front: a singular quad (degenerate
-    // component) must yield a zero-filled crop, never an empty buffer that
-    // the downstream resize would dereference as null.
-    dst.assign(static_cast<size_t>(cropW) * cropH * 3, 0);
-    double hInv[9] = {};
-    for (int col = 0; col < 8; ++col) {
-        int piv = col;
-        for (int r = col + 1; r < 8; ++r)
-            if (std::abs(A[r][col]) > std::abs(A[piv][col])) piv = r;
-        if (std::abs(A[piv][col]) < 1e-12) return;
-        if (piv != col)
-            for (int c = col; c < 9; ++c) std::swap(A[col][c], A[piv][c]);
-        for (int r = 0; r < 8; ++r) {
-            if (r == col) continue;
-            const double f = A[r][col] / A[col][col];
-            for (int c = col; c < 9; ++c) A[r][c] -= f * A[col][c];
-        }
-    }
-    for (int i = 0; i < 8; ++i) hInv[i] = A[i][8] / A[i][i];
-    hInv[8] = 1.0;
-    for (int y = 0; y < cropH; ++y) {
-        for (int x = 0; x < cropW; ++x) {
-            const double denom = hInv[6] * x + hInv[7] * y + hInv[8];
-            if (std::abs(denom) < 1e-12) continue;
-            const double sx = (hInv[0] * x + hInv[1] * y + hInv[2]) / denom;
-            const double sy = (hInv[3] * x + hInv[4] * y + hInv[5]) / denom;
-            const int x0 = static_cast<int>(std::floor(sx));
-            const int y0 = static_cast<int>(std::floor(sy));
-            const int x1 = x0 + 1;
-            const int y1 = y0 + 1;
-            if (x0 < 0 || y0 < 0 || x1 >= imgW || y1 >= imgH) continue;
-            const float fx = static_cast<float>(sx - x0);
-            const float fy = static_cast<float>(sy - y0);
-            auto sample = [&](int px, int py, int ch) {
-                return static_cast<float>(
-                        rgb[(static_cast<size_t>(py) * imgW + px) * 3 + ch]);
-            };
-            auto* out = &dst[(static_cast<size_t>(y) * cropW + x) * 3];
-            for (int ch = 0; ch < 3; ++ch) {
-                const float v00 = sample(x0, y0, ch);
-                const float v10 = sample(x1, y0, ch);
-                const float v01 = sample(x0, y1, ch);
-                const float v11 = sample(x1, y1, ch);
-                out[ch] = static_cast<uint8_t>(std::clamp(
-                        v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) +
-                                v01 * (1 - fx) * fy + v11 * fx * fy,
-                        0.0f, 255.0f));
-            }
-        }
+        for (auto& t : pool) t.join();
+    } else {
+        for (int y = 0; y < h; ++y) packRow(y);
     }
 }
 
-// Crop an axis-aligned rectangle out of an RGB buffer with bilinear
-// sampling into (cropW, cropH).
-void cropResizeRgb(const std::vector<uint8_t>& rgb,
-                   int imgW,
-                   int imgH,
-                   float x0,
-                   float y0,
-                   float x1,
-                   float y1,
-                   int cropW,
-                   int cropH,
-                   std::vector<uint8_t>& dst) {
-    dst.assign(static_cast<size_t>(cropW) * cropH * 3, 0);
-    for (int y = 0; y < cropH; ++y) {
-        const float fy = y0 + (y + 0.5f) * (y1 - y0) / cropH - 0.5f;
-        const int sy0 =
-                std::clamp(static_cast<int>(std::floor(fy)), 0, imgH - 1);
-        const int sy1 = std::min(imgH - 1, sy0 + 1);
-        const float ly = std::clamp(fy - sy0, 0.0f, 1.0f);
-        for (int x = 0; x < cropW; ++x) {
-            const float fx = x0 + (x + 0.5f) * (x1 - x0) / cropW - 0.5f;
-            const int sx0 =
-                    std::clamp(static_cast<int>(std::floor(fx)), 0, imgW - 1);
-            const int sx1 = std::min(imgW - 1, sx0 + 1);
-            const float lx = std::clamp(fx - sx0, 0.0f, 1.0f);
-            for (int ch = 0; ch < 3; ++ch) {
-                const float v00 =
-                        rgb[(static_cast<size_t>(sy0) * imgW + sx0) * 3 + ch];
-                const float v01 =
-                        rgb[(static_cast<size_t>(sy0) * imgW + sx1) * 3 + ch];
-                const float v10 =
-                        rgb[(static_cast<size_t>(sy1) * imgW + sx0) * 3 + ch];
-                const float v11 =
-                        rgb[(static_cast<size_t>(sy1) * imgW + sx1) * 3 + ch];
-                const float top = v00 + (v01 - v00) * lx;
-                const float bottom = v10 + (v11 - v10) * lx;
-                dst[(static_cast<size_t>(y) * cropW + x) * 3 + ch] =
-                        static_cast<uint8_t>(std::clamp(
-                                top + (bottom - top) * ly, 0.0f, 255.0f));
-            }
-        }
-    }
+void packNchwImage(const aicore::img::Image& img,
+                   const float (&mean)[3],
+                   const float (&stdDev)[3],
+                   int dstW,
+                   float padValue,
+                   std::vector<float>& nchw) {
+    // resize, not assign: packNchwImageTo writes every element (content and
+    // pad columns), so a pre-fill is a second full pass over the buffer.
+    // When the caller hands in a reused scratch vector of the same size the
+    // resize is a no-op and no page faults are taken.
+    nchw.resize(static_cast<size_t>(3) * img.height * dstW);
+    packNchwImageTo(img, mean, stdDev, dstW, padValue, nchw.data());
+}
+
+// Batched-rec enablement: automatic per execution side. Sessions whose
+// graphs execute on a GPU run the chunked batch — CUDA (2.6x dense-image
+// e2e, fixture-exact at every measured N with per-slab bitwise
+// self-consistency) and Vulkan alike: the single-backend VK route
+// (AICORE_OCR_VK_SINGLE) executes the rec graph on the device, and the
+// per-crop fallback there is dispatch-bound (~98 x 2.2-3.9 ms of per-op
+// vkCmdSubmit overhead; the probe measured 14.1 ms for a 40-row direct-conv
+// chunk, i.e. 0.35 ms/row amortized). CPU-executing sessions keep per-crop
+// N=1 forwards (the blocked island wins there, and CPU batch measured
+// slower).
+bool ocrBatchedRecEnabled(ggml_backend_t gpuBackend, bool cpuExecution) {
+    // A session whose graphs execute on the CPU (plain CPU session, or a
+    // Vulkan session with the sched_gpu_tagging gate closed and the
+    // single-backend route off) keeps the per-crop path: the batched
+    // graph's strided mul_mat is slower on the CPU, and a gated-off VK
+    // batch would execute on the CPU secondary anyway.
+    if (cpuExecution) return false;
+    if (!gpuBackend || ggml_common::is_cpu_backend(gpuBackend)) return false;
+    return true;
 }
 
 // Execute one graph over a freshly packed input, reusing the cached build
 // for a stable input shape. The build (300+ op walk, folded constants,
 // allocation) costs far more than a steady-state compute and dominated real
 // images with dozens of rec crops, so the det graph is cached per geometry
-// and the rec graph (fixed 48x320) exactly once per context.
-//
-// Backend routing: CPU keeps the plain gallocr path (verified bit-exact);
-// GPU runs through ggml_backend_sched with the weights realized after the
-// build (the measured-parity order; see the context_create note for why the
-// realize-before-build alternative was rejected).
+// and the rec graph per (pad width, rows) in a small LRU (OcrGraphCache).
+// Backend routing (CPU gallocr / mixed sched / single device) is owned by
+// aicore::ocr::makeExecPlan + prepareGraph, shared with the fixture probe so
+// the probe measures exactly the graph that ships.
 bool runGraphCached(aicore_ocr_ctx* session,
                     aicore::ocr::OcrWeights& weights,
                     OcrGraph& cached,
@@ -538,21 +370,37 @@ bool runGraphCached(aicore_ocr_ctx* session,
                     int64_t c,
                     int64_t h,
                     int64_t w,
-                    const std::vector<float>& nchw,
+                    int64_t n,
+                    const float* nchwData,
+                    size_t nchwFloats,
                     std::vector<float>& output,
                     int64_t& outC,
                     int64_t& outH,
                     int64_t& outW,
+                    int64_t& outN,
                     double& inferenceMs,
-                    std::string& error) {
+                    double& inputUploadMs,
+                    double& outputReadbackMs,
+                    std::string& error,
+                    RecArgmaxOut* argmaxOut = nullptr) {
     ggml_backend_t backend = gpuBackend ? gpuBackend : cpuBackend;
     if (!backend) {
         error = "ocr: no ggml backend available";
         return false;
     }
-    const bool isCpu = ggml_common::is_cpu_backend(backend);
-    if (!cached.matches(c, h, w)) {
-        cached.clear();
+    const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
+            gpuBackend, cpuBackend, weights.sched_gpu_tagging);
+    const bool cpuExecution = plan.cpuExecution;
+    // In-graph CTC reduction, GPU execution only. The CTC decoder consumes
+    // two scalars per timestep (argmax class + its probability); reading the
+    // full (V, T, N) softmax back (51 MB per 100-box frame, ~10 ms D2H) to
+    // compute them on the host was the largest single post stage. ggml's
+    // CPU argmax is single-threaded (ith != 0 returns) and would regress a
+    // CPU session, which keeps the AVX2 host sweep.
+    const bool wantArgmaxHead = argmaxOut && !cpuExecution;
+    if (!cached.matches(c, h, w) || cached.inputN != n ||
+        cached.argmaxHead != wantArgmaxHead) {
+        cached.releaseGraph();
         // Fresh fold pool per build: every build emits new constants and
         // the pool would exhaust; the previous graph is discarded above.
         weights.resetFoldPool();
@@ -564,13 +412,13 @@ bool runGraphCached(aicore_ocr_ctx* session,
             return false;
         }
         cached.input =
-                ggml_new_tensor_4d(cached.ctx, GGML_TYPE_F32, w, h, c, 1);
+                ggml_new_tensor_4d(cached.ctx, GGML_TYPE_F32, w, h, c, n);
         // Marked as the user input: the scheduler assigns it to the CPU
         // side and copies it before the first split; the gallocr path
         // simply allocates it like any other leaf.
         ggml_set_input(cached.input);
-        aicore::ocr::OcrBuildOptions buildOptions;
-        buildOptions.cpu_conv = isCpu;
+        const aicore::ocr::OcrBuildOptions buildOptions =
+                aicore::ocr::execBuildOptions(plan);
         cached.output = aicore::ocr::buildGraph(cached.ctx, weights,
                                                 cached.input, &error, nullptr,
                                                 nullptr, &buildOptions);
@@ -578,64 +426,77 @@ bool runGraphCached(aicore_ocr_ctx* session,
             cached.clear();
             return false;
         }
-        if (isCpu) {
-            cached.alloc = ggml_gallocr_new(
-                    ggml_backend_get_default_buffer_type(backend));
-        } else {
-            // Realize the host pools (zero-copy views) and the device
-            // weights once per weights object, then cover the folded
-            // constants emitted by this build; the scheduler routes the
-            // small per-compute host->device copies (weights + constants).
-            if (!weights.realizeHostBuffers()) {
-                error = "ocr: host buffer realization failed";
-                cached.clear();
-                return false;
-            }
-            weights.tagHostLeafs();
-            if (!weights.realizeToDevice(gpuBackend, &error)) {
-                error = "ocr: device weight realization failed: " + error;
-                cached.clear();
-                return false;
-            }
-            cached.sched = ggml_common::new_gpu_sched({gpuBackend}, cpuBackend,
-                                                      1u << 20);
-            if (!cached.sched) {
-                error = "ocr: backend scheduler init failed";
-                cached.clear();
-                return false;
-            }
+        std::vector<ggml_tensor*> outputs{cached.output};
+        if (wantArgmaxHead) {
+            // Rows are the V-wide class vectors of every (t, n): the rec
+            // fetch is ne={V, T, 1, N}, so a contiguous 2D view is [V, T*N].
+            // argmax -> i32 [T*N]; get_rows over the [1, V, T*N] view with
+            // the [1, T*N] index gathers p[argmax] per row -> f32 [1, 1, T*N].
+            ggml_tensor* out = cached.output;
+            if (!ggml_is_contiguous(out)) out = ggml_cont(cached.ctx, out);
+            const int64_t vocab = out->ne[0];
+            const int64_t rows = ggml_nelements(out) / vocab;
+            ggml_tensor* flat = ggml_reshape_2d(cached.ctx, out, vocab, rows);
+            cached.argmaxIndex = ggml_argmax(cached.ctx, flat);
+            cached.argmaxProb = ggml_get_rows(
+                    cached.ctx,
+                    ggml_reshape_3d(cached.ctx, out, 1, vocab, rows),
+                    ggml_reshape_2d(cached.ctx, cached.argmaxIndex, 1, rows));
+            ggml_set_output(cached.argmaxIndex);
+            ggml_set_output(cached.argmaxProb);
+            outputs.push_back(cached.argmaxIndex);
+            outputs.push_back(cached.argmaxProb);
         }
-        cached.graph = ggml_new_graph_custom(cached.ctx, 1u << 20, false);
-        ggml_build_forward_expand(cached.graph, cached.output);
-        const bool allocated =
-                isCpu ? ggml_gallocr_alloc_graph(cached.alloc, cached.graph)
-                      : ggml_backend_sched_alloc_graph(cached.sched,
-                                                       cached.graph);
-        if (!allocated) {
-            error = "ocr: graph allocation failed";
+        cached.argmaxHead = wantArgmaxHead;
+        if (!aicore::ocr::prepareGraph(weights, cached.ctx, plan, outputs,
+                                       &cached.graph, cached.exec, error)) {
             cached.clear();
             return false;
         }
+        // Co-own this build's fold generation (see OcrGraph::fold).
+        cached.fold = weights.foldPool();
         cached.inputC = c;
         cached.inputH = h;
         cached.inputW = w;
+        cached.inputN = n;
     }
-    ggml_backend_tensor_set(cached.input, nchw.data(), 0,
-                            sizeof(float) * nchw.size());
+    const auto inputUploadStart = std::chrono::steady_clock::now();
+    ggml_backend_tensor_set(cached.input, nchwData, 0,
+                            sizeof(float) * nchwFloats);
+    inputUploadMs = std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() - inputUploadStart)
+                            .count();
     const auto start = std::chrono::steady_clock::now();
-    if (isCpu)
-        ggml_backend_graph_compute(backend, cached.graph);
-    else
-        ggml_backend_sched_graph_compute(cached.sched, cached.graph);
+    aicore::ocr::computeGraph(plan, cached.exec, cached.graph);
     const auto stop = std::chrono::steady_clock::now();
     inferenceMs =
             std::chrono::duration<double, std::milli>(stop - start).count();
     outC = cached.output->ne[2];
     outH = cached.output->ne[1];
     outW = cached.output->ne[0];
-    output.resize(static_cast<size_t>(ggml_nelements(cached.output)));
-    ggml_backend_tensor_get(cached.output, output.data(), 0,
-                            sizeof(float) * output.size());
+    outN = cached.output->ne[3];
+    const auto readbackStart = std::chrono::steady_clock::now();
+    if (cached.argmaxHead) {
+        // Only the reduced head crosses the bus; `output` is left untouched
+        // (its stale contents are never read when argmaxOut->active).
+        const size_t rows =
+                static_cast<size_t>(ggml_nelements(cached.argmaxIndex));
+        argmaxOut->index.resize(rows);
+        argmaxOut->prob.resize(rows);
+        ggml_backend_tensor_get(cached.argmaxIndex, argmaxOut->index.data(), 0,
+                                sizeof(int32_t) * rows);
+        ggml_backend_tensor_get(cached.argmaxProb, argmaxOut->prob.data(), 0,
+                                sizeof(float) * rows);
+        argmaxOut->active = true;
+    } else {
+        if (argmaxOut) argmaxOut->active = false;
+        output.resize(static_cast<size_t>(ggml_nelements(cached.output)));
+        ggml_backend_tensor_get(cached.output, output.data(), 0,
+                                sizeof(float) * output.size());
+    }
+    outputReadbackMs = std::chrono::duration<double, std::milli>(
+                               std::chrono::steady_clock::now() - readbackStart)
+                               .count();
     return true;
 }
 
@@ -643,6 +504,7 @@ bool runGraphCached(aicore_ocr_ctx* session,
 // (4 cls + 4 reg heads per FPN stride) is expanded into the graph and
 // read back as a flat vector.
 bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
+                    aicore::ocr::OcrGraphExec& exec,
                     ggml_backend_t gpuBackend,
                     ggml_backend_t cpuBackend,
                     int64_t c,
@@ -663,55 +525,30 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
     ggml_set_input(input);
     // Fresh fold pool per frame (see runGraph).
     weights.resetFoldPool();
+    // Same routing owner as det/rec (makeExecPlan): CUDA/Vulkan one-device,
+    // CPU gallocr, otherwise mixed sched behind the tagging gate.
+    const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
+            gpuBackend, cpuBackend, weights.sched_gpu_tagging);
+    const aicore::ocr::OcrBuildOptions buildOptions =
+            aicore::ocr::execBuildOptions(plan);
     std::vector<ggml_tensor*> fetchList;
     ggml_tensor* outputTensor = aicore::ocr::buildGraph(
-            ctx, weights, input, &error, nullptr, &fetchList);
+            ctx, weights, input, &error, nullptr, &fetchList, &buildOptions);
     if (!outputTensor || fetchList.size() != 8) {
         if (error.empty()) error = "ocr: layout graph fetch mismatch";
         ggml_free(ctx);
         return false;
     }
-    ggml_backend_t backend = gpuBackend ? gpuBackend : cpuBackend;
-    const bool isCpu = ggml_common::is_cpu_backend(backend);
-    ggml_backend_sched_t sched = nullptr;
-    ggml_gallocr_t alloc = nullptr;
+    ggml_cgraph* graph = nullptr;
     bool ok = false;
     do {
-        if (isCpu) {
-            alloc = ggml_gallocr_new(
-                    ggml_backend_get_default_buffer_type(backend));
-        } else {
-            if (!weights.realizeHostBuffers()) {
-                error = "ocr: host buffer realization failed";
-                break;
-            }
-            weights.tagHostLeafs();
-            if (!weights.realizeToDevice(backend, &error)) {
-                error = "ocr: device weight realization failed: " + error;
-                break;
-            }
-            sched = ggml_common::new_gpu_sched({backend}, cpuBackend, 1u << 20);
-            if (!sched) {
-                error = "ocr: backend scheduler init failed";
-                break;
-            }
-        }
-        ggml_cgraph* graph = ggml_new_graph_custom(ctx, 1u << 20, false);
-        for (ggml_tensor* t : fetchList) ggml_build_forward_expand(graph, t);
-        const bool allocated =
-                isCpu ? ggml_gallocr_alloc_graph(alloc, graph)
-                      : ggml_backend_sched_alloc_graph(sched, graph);
-        if (!allocated) {
-            error = "ocr: graph allocation failed";
+        if (!aicore::ocr::prepareGraph(weights, ctx, plan, fetchList, &graph,
+                                       exec, error))
             break;
-        }
         ggml_backend_tensor_set(input, nchw.data(), 0,
                                 sizeof(float) * nchw.size());
         const auto start = std::chrono::steady_clock::now();
-        if (isCpu)
-            ggml_backend_graph_compute(backend, graph);
-        else
-            ggml_backend_sched_graph_compute(sched, graph);
+        aicore::ocr::computeGraph(plan, exec, graph);
         const auto stop = std::chrono::steady_clock::now();
         inferenceMs =
                 std::chrono::duration<double, std::milli>(stop - start).count();
@@ -725,20 +562,23 @@ bool runLayoutHeads(aicore::ocr::OcrWeights& weights,
         }
         ok = true;
     } while (false);
-    if (sched) ggml_backend_sched_free(sched);
-    if (alloc) ggml_gallocr_free(alloc);
+    if (!ok) exec.free();
     ggml_free(ctx);
     return ok;
 }
 
-// ---- PicoDet GFL decode + MultiClassNMS (PaddleDetection semantics) ----
+// ---- PicoDet GFL decode + per-class hard NMS (PP-Structure
+// PicoDetPostProcess, the layout -> table/OCR consumer of this model) ----
 
 constexpr int kLayoutSizeH = 800;  // official PicoDet layout input
 constexpr int kLayoutSizeW = 608;
 constexpr int kGflRegMax = 8;
-constexpr float kLayoutScoreThresh = 0.3f;
+// PP-Structure layout_score_threshold / layout_nms_threshold defaults.
+constexpr float kLayoutScoreThresh = 0.5f;
 constexpr float kLayoutNmsThresh = 0.5f;
-constexpr int kLayoutKeepTopK = 100;
+constexpr int kLayoutNmsTopK = 1000;       // per-stride pre-NMS anchors
+constexpr int kLayoutCandidateSize = 200;  // hard_nms candidate_size
+constexpr int kLayoutKeepTopK = 100;       // per class
 constexpr int kLayoutStrides[4] = {8, 16, 32, 64};
 
 struct LayoutRegion {
@@ -747,88 +587,112 @@ struct LayoutRegion {
     float x1, y1, x2, y2;
 };
 
-// DFL integral over the (4, reg_max) logits per anchor, then the anchor
-// center decode and the final clip.
+// Anchors surviving the per-stride top-K, with every class probability.
+struct LayoutCandidates {
+    int classes = 0;
+    std::vector<std::array<float, 4>> boxes;  // layout input pixels
+    std::vector<float> scores;                // boxes.size() x classes
+};
+
+// One stride: the exported cls head is already sigmoid-activated (the
+// upstream post-process thresholds it as-is), the reg head carries the
+// (4, reg_max) DFL logits. Keeps the kLayoutNmsTopK anchors with the
+// highest max-class probability, then decodes their boxes (no clip: the
+// reference clips only after NMS). O(A log A) for the top-K sort.
 void gflDecode(const std::vector<float>& clsHead,
                const std::vector<float>& regHead,
                int stride,
-               std::vector<LayoutRegion>& out) {
+               LayoutCandidates& out) {
     const int fh = (kLayoutSizeH + stride - 1) / stride;
     const int fw = (kLayoutSizeW + stride - 1) / stride;
     const int anchors = fh * fw;
     const int classes = static_cast<int>(clsHead.size()) / anchors;
+    out.classes = classes;
+    std::vector<float> best(anchors);
+    std::vector<int> order(anchors);
     for (int a = 0; a < anchors; ++a) {
-        const float* clsRow = &clsHead[static_cast<size_t>(a) * classes];
-        // Sigmoid class scores.
-        for (int cat = 0; cat < classes; ++cat) {
-            const float score = 1.0f / (1.0f + std::exp(-clsRow[cat]));
-            if (score <= kLayoutScoreThresh) continue;
-            const float* regRow =
-                    &regHead[static_cast<size_t>(a) * (4 * kGflRegMax)];
-            float dist[4] = {0.f, 0.f, 0.f, 0.f};
-            for (int edge = 0; edge < 4; ++edge) {
-                float maxv = -3e38f, sum = 0.f;
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    maxv = std::max(maxv, regRow[edge * kGflRegMax + bin]);
-                }
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    sum += std::exp(regRow[edge * kGflRegMax + bin] - maxv);
-                }
-                for (int bin = 0; bin < kGflRegMax; ++bin) {
-                    const float p =
-                            std::exp(regRow[edge * kGflRegMax + bin] - maxv) /
-                            sum;
-                    dist[edge] += p * bin;
-                }
-                dist[edge] *= stride;
+        const float* row = &clsHead[static_cast<size_t>(a) * classes];
+        best[a] = *std::max_element(row, row + classes);
+        order[a] = a;
+    }
+    std::stable_sort(order.begin(), order.end(),
+                     [&](int l, int r) { return best[l] > best[r]; });
+    order.resize(std::min(anchors, kLayoutNmsTopK));
+    for (const int a : order) {
+        const float* regRow =
+                &regHead[static_cast<size_t>(a) * (4 * kGflRegMax)];
+        float dist[4] = {0.f, 0.f, 0.f, 0.f};
+        for (int edge = 0; edge < 4; ++edge) {
+            const float* bins = regRow + edge * kGflRegMax;
+            const float maxv = *std::max_element(bins, bins + kGflRegMax);
+            float sum = 0.f, acc = 0.f;
+            for (int bin = 0; bin < kGflRegMax; ++bin) {
+                const float e = std::exp(bins[bin] - maxv);
+                sum += e;
+                acc += e * bin;
             }
-            const int ah = a / fw, aw = a % fw;
-            const float cx = (aw + 0.5f) * stride;
-            const float cy = (ah + 0.5f) * stride;
-            LayoutRegion r;
-            r.score = score;
-            r.classId = cat;
-            r.x1 = std::clamp(cx - dist[0], 0.0f,
-                              static_cast<float>(kLayoutSizeW));
-            r.y1 = std::clamp(cy - dist[1], 0.0f,
-                              static_cast<float>(kLayoutSizeH));
-            r.x2 = std::clamp(cx + dist[2], 0.0f,
-                              static_cast<float>(kLayoutSizeW));
-            r.y2 = std::clamp(cy + dist[3], 0.0f,
-                              static_cast<float>(kLayoutSizeH));
-            out.push_back(r);
+            dist[edge] = acc / sum * stride;
         }
+        const float cx = (a % fw + 0.5f) * stride;
+        const float cy = (a / fw + 0.5f) * stride;
+        out.boxes.push_back(
+                {cx - dist[0], cy - dist[1], cx + dist[2], cy + dist[3]});
+        const float* row = &clsHead[static_cast<size_t>(a) * classes];
+        out.scores.insert(out.scores.end(), row, row + classes);
     }
 }
 
-// MultiClassNMS across all classes (one global list, per-class filtering
-// happens through the score threshold in gflDecode).
-std::vector<LayoutRegion> layoutNms(std::vector<LayoutRegion> regions) {
-    std::sort(regions.begin(), regions.end(),
-              [](const LayoutRegion& a, const LayoutRegion& b) {
-                  return a.score > b.score;
-              });
+// picodet_postprocess iou_of: clipped extents, eps 1e-5.
+float layoutIou(const std::array<float, 4>& a, const std::array<float, 4>& b) {
+    const auto area = [](float x1, float y1, float x2, float y2) {
+        return std::max(0.f, x2 - x1) * std::max(0.f, y2 - y1);
+    };
+    const float inter = area(std::max(a[0], b[0]), std::max(a[1], b[1]),
+                             std::min(a[2], b[2]), std::min(a[3], b[3]));
+    return inter / (area(a[0], a[1], a[2], a[3]) +
+                    area(b[0], b[1], b[2], b[3]) - inter + 1e-5f);
+}
+
+// Per class: probability > threshold, hard NMS over the 200 best
+// candidates, at most kLayoutKeepTopK kept. Output is class-major, each
+// class in descending score order (the reference concatenation order).
+// O(C * K^2) with K <= kLayoutCandidateSize.
+std::vector<LayoutRegion> layoutNms(const LayoutCandidates& cand) {
     std::vector<LayoutRegion> keep;
-    std::vector<bool> removed(regions.size(), false);
-    for (size_t i = 0; i < regions.size(); ++i) {
-        if (removed[i]) continue;
-        keep.push_back(regions[i]);
-        if (static_cast<int>(keep.size()) >= kLayoutKeepTopK) break;
-        for (size_t j = i + 1; j < regions.size(); ++j) {
-            if (removed[j]) continue;
-            const float ix1 = std::max(regions[i].x1, regions[j].x1);
-            const float iy1 = std::max(regions[i].y1, regions[j].y1);
-            const float ix2 = std::min(regions[i].x2, regions[j].x2);
-            const float iy2 = std::min(regions[i].y2, regions[j].y2);
-            const float inter =
-                    std::max(0.f, ix2 - ix1) * std::max(0.f, iy2 - iy1);
-            const float areaI = (regions[i].x2 - regions[i].x1) *
-                                (regions[i].y2 - regions[i].y1);
-            const float areaJ = (regions[j].x2 - regions[j].x1) *
-                                (regions[j].y2 - regions[j].y1);
-            const float iou = inter / (areaI + areaJ - inter + 1e-9f);
-            if (iou > kLayoutNmsThresh) removed[j] = true;
+    const size_t n = cand.boxes.size();
+    for (int cat = 0; cat < cand.classes; ++cat) {
+        std::vector<size_t> idx;
+        for (size_t i = 0; i < n; ++i)
+            if (cand.scores[i * cand.classes + cat] > kLayoutScoreThresh)
+                idx.push_back(i);
+        const auto score = [&](size_t i) {
+            return cand.scores[i * cand.classes + cat];
+        };
+        std::stable_sort(idx.begin(), idx.end(), [&](size_t l, size_t r) {
+            return score(l) > score(r);
+        });
+        if (idx.size() > static_cast<size_t>(kLayoutCandidateSize))
+            idx.resize(kLayoutCandidateSize);
+        std::vector<bool> removed(idx.size(), false);
+        int kept = 0;
+        for (size_t i = 0; i < idx.size() && kept < kLayoutKeepTopK; ++i) {
+            if (removed[i]) continue;
+            const auto& box = cand.boxes[idx[i]];
+            keep.push_back(
+                    {score(idx[i]), cat, box[0], box[1], box[2], box[3]});
+            ++kept;
+            for (size_t j = i + 1; j < idx.size(); ++j)
+                if (!removed[j] &&
+                    layoutIou(box, cand.boxes[idx[j]]) > kLayoutNmsThresh)
+                    removed[j] = true;
         }
+    }
+    // warp_boxes: clip to the layout input before the image mapping.
+    for (LayoutRegion& r : keep) {
+        r.x1 = std::clamp(r.x1, 0.0f, static_cast<float>(kLayoutSizeW));
+        r.x2 = std::clamp(r.x2, 0.0f, static_cast<float>(kLayoutSizeW));
+        r.y1 = std::clamp(r.y1, 0.0f, static_cast<float>(kLayoutSizeH));
+        r.y2 = std::clamp(r.y2, 0.0f, static_cast<float>(kLayoutSizeH));
     }
     return keep;
 }
@@ -843,10 +707,12 @@ struct aicore_ocr_ctx {
     aicore::ocr::OcrWeights layoutWeights;
     bool layoutLoaded = false;
     std::string language = "ch";
-    float detMaxSide = kDetDefaultMaxSide;
+    float detMaxSide = kDetOfficialLimitSide;
+    int detLimitType = 0;  // 0 = official "min" resize, 1 = legacy "max" cap
     float boxThresh = kDetDefaultBoxThresh;
+    double boxScoreThresh = kDetDefaultBoxScoreThresh;
     float unclipRatio = kDetDefaultUnclipRatio;
-    int recMaxBatch = 8;
+    int recPadGroup = kRecPadGroupDefault;
     // Session-owned physical backends, acquired once from the process-wide
     // runtime lease registry (GPU/auto primary + CPU secondary for the
     // scheduler, or a single CPU lease) and reused by every runGraph call;
@@ -862,7 +728,25 @@ struct aicore_ocr_ctx {
     int64_t detC = 0;
     int64_t detH = 0;
     int64_t detW = 0;
-    OcrGraph rec;
+    // Rec builds keyed by (pad width, rows): see OcrGraphCache.
+    OcrGraphCache recGraphs{{}, kRecGraphCacheCapacity, 0};
+    // Layout graphs are rebuilt per frame (fresh fold pool); the allocator
+    // persists so the fixed-size compute buffer is reused.
+    aicore::ocr::OcrGraphExec layoutExec;
+    // Frame scratch owned by the context (one owning thread, see the public
+    // header). The det input (10 MB u8 + 40 MB f32), det map (13 MB) and
+    // rec batch/output (19 MB / 51 MB) were fresh vectors every frame: the
+    // allocation page-faulted and the fill ran serially before any real
+    // work (measured 11.5 ms for the det NCHW alone against 2.9 ms for the
+    // resize that feeds it). Reusing the capacity makes only the first
+    // frame pay; a geometry change simply regrows the vectors.
+    std::vector<uint8_t> detRgbScratch;
+    std::vector<float> detNchwScratch;
+    std::vector<float> detOutputScratch;
+    std::vector<int8_t> detContourScratch;  // findContours bordered image
+    std::vector<float> recBatchScratch;
+    std::vector<float> recOutputScratch;
+    RecArgmaxOut recArgmaxScratch;
     bool ready = false;
 };
 
@@ -871,14 +755,369 @@ struct aicore_ocr_result {
     std::vector<aicore_ocr_region> regions;
     std::vector<aicore_ocr_relation> relations;
     aicore_pipeline_timings timings{};
-    // Text storage backing aicore_ocr_box::text pointers.
-    std::vector<std::string> textStorage;
+    aicore_ocr_post_timing_breakdown postTimings{};
+    // Text storage backing aicore_ocr_box::text pointers. MUST be a deque:
+    // the fill sites take c_str() pointers into these strings as they push,
+    // and a vector's push_back reallocation would move every SSO string
+    // body, dangling ALL previously handed-out box.text pointers. That
+    // use-after-free read stale-but-intact heap in the common case (which
+    // is why it looked benign) and flipped single-box transcriptions
+    // between empty/garbled whenever a later malloc reused the freed
+    // buffer — the root cause behind the "threaded CTC race" and the
+    // 98<->97 single-box drift. deque never invalidates element pointers
+    // on push_back.
+    std::deque<std::string> textStorage;
 };
+
+namespace {
+
+// ---- Rec crop geometry, chunk plan and batched forward (shared by the
+// det->rec frame path and the recognize-only quad path) ------------------
+
+// One rec crop under the official semantics: CropByPolys("quad")
+// get_minarea_rect_crop (minAreaRect re-fit of the int32 polygon,
+// get_rotate_crop_image at int() float32 edge norms, cubic warp, rot90 when
+// h/w >= 1.5) followed by resize_norm_img (resized_w = ceil(48 * w/h),
+// padded to the chunk width with the normalized-zero fill).
+struct RecCropGeom {
+    float quad[4][2] = {};  // reported box (det box / caller quad)
+    float box[4][2] = {};   // re-fit crop box the warp samples
+    int cropW = 0;
+    int cropH = 0;
+    bool rotate = false;
+    double ratio = 0.0;  // w / h after the rot90, the official sort key
+    int padW = 0;        // own padded width: int(48 * max(320/48, ratio))
+    int recW = 0;        // resized content width
+    int chunkW = 0;      // padded width of the crop's ratio group
+    int chunk = -1;      // slot assigned by planRecChunks
+    int row = -1;
+    float detScore = 0.f;
+    bool valid = false;
+};
+
+// `poly` is the crop source in image pixels, finite and inside the int32
+// range (both callers clamp it to the image).
+void recCropGeometry(RecCropGeom& g, const float poly[4][2]) {
+    int pts[4][2];
+    for (int i = 0; i < 4; ++i) {
+        // np.array(points).astype(np.int32): truncation toward zero.
+        pts[i][0] = static_cast<int>(poly[i][0]);
+        pts[i][1] = static_cast<int>(poly[i][1]);
+    }
+    aicore::ocr::minAreaRectBox(pts, 4, g.box);
+    aicore::ocr::rotateCropSize(g.box, &g.cropW, &g.cropH);
+    // Upstream warps any non-empty size (an empty dsize would make cv2 fall
+    // back to the source size, which no det box reaches).
+    g.valid = g.cropW >= 1 && g.cropH >= 1;
+    if (!g.valid) return;
+    g.rotate = static_cast<double>(g.cropH) / g.cropW >= 1.5;
+    const int w = g.rotate ? g.cropH : g.cropW;
+    const int h = g.rotate ? g.cropW : g.cropH;
+    const double ratio = static_cast<double>(w) / h;
+    const double maxRatio =
+            std::max(static_cast<double>(kRecMaxWidth) / kRecHeight, ratio);
+    const int imgW = static_cast<int>(kRecHeight * maxRatio);
+    int resizedW = static_cast<int>(std::ceil(kRecHeight * ratio));
+    if (imgW > kRecLimitWidth)
+        resizedW = kRecLimitWidth;
+    else if (resizedW > imgW)
+        resizedW = imgW;
+    g.ratio = ratio;
+    g.padW = std::min(imgW, kRecLimitWidth);
+    g.recW = std::max(1, resizedW);
+    g.chunkW = g.padW;
+}
+
+// The official batch pad (pipeline sorted(key=w/h), stable; ToBatch pads
+// each group of `group` consecutive crops to its widest padW). Rows are
+// independent inside a forward, so only the width has to match; crops of
+// different groups with the same width still share a chunk.
+// O(n log n) for the sort.
+void assignRecPadWidths(std::vector<RecCropGeom>& geoms, int group) {
+    std::vector<int> order;
+    order.reserve(geoms.size());
+    for (size_t i = 0; i < geoms.size(); ++i)
+        if (geoms[i].valid) order.push_back(static_cast<int>(i));
+    std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+        return geoms[a].ratio < geoms[b].ratio;
+    });
+    for (size_t at = 0; at < order.size(); at += group) {
+        const size_t end = std::min(order.size(), at + group);
+        int width = 0;
+        for (size_t k = at; k < end; ++k)
+            width = std::max(width, geoms[order[k]].padW);
+        for (size_t k = at; k < end; ++k) geoms[order[k]].chunkW = width;
+    }
+}
+
+struct RecChunk {
+    int width = 0;
+    int64_t rows = 0;   // graph N (count + pad tail)
+    int count = 0;      // real crops
+    int first = 0;      // index into RecChunkPlan::order
+    size_t offset = 0;  // float offset of row 0 in the packed buffer
+};
+
+struct RecChunkPlan {
+    std::vector<RecChunk> chunks;
+    std::vector<int> order;  // valid crop indices grouped by chunk
+    size_t totalFloats = 0;
+};
+
+// Group the valid crops by chunk width and cut each group into chunks.
+// Batched: rows x width stays within the per-backend budget
+// (recRowsCapForWidth) and the row count is quantized so a stable box
+// count keeps hitting the same cached build. Per-crop (CPU execution):
+// one single-row chunk per crop at its group width.
+RecChunkPlan planRecChunks(std::vector<RecCropGeom>& geoms,
+                           int padGroup,
+                           int64_t cap,
+                           bool batched) {
+    assignRecPadWidths(geoms, padGroup);
+    RecChunkPlan plan;
+    plan.order.reserve(geoms.size());
+    for (size_t i = 0; i < geoms.size(); ++i)
+        if (geoms[i].valid) plan.order.push_back(static_cast<int>(i));
+    std::stable_sort(plan.order.begin(), plan.order.end(), [&](int a, int b) {
+        return geoms[a].chunkW < geoms[b].chunkW;
+    });
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    size_t pos = 0;
+    while (pos < plan.order.size()) {
+        const int width = geoms[plan.order[pos]].chunkW;
+        size_t end = pos;
+        while (end < plan.order.size() &&
+               geoms[plan.order[end]].chunkW == width)
+            ++end;
+        const int64_t groupCount = static_cast<int64_t>(end - pos);
+        int64_t rowsPerChunk = 1;
+        if (batched) {
+            const int64_t capW = recRowsCapForWidth(cap, width);
+            const int64_t chunksWanted = (groupCount + capW - 1) / capW;
+            const int64_t rows = (groupCount + chunksWanted - 1) / chunksWanted;
+            const int64_t q = capW >= 8 ? 8 : 4;
+            rowsPerChunk = std::min(capW, (rows + q - 1) / q * q);
+        }
+        for (size_t at = pos; at < end;) {
+            RecChunk c;
+            c.width = width;
+            c.rows = rowsPerChunk;
+            c.count = static_cast<int>(std::min<size_t>(
+                    end - at, static_cast<size_t>(rowsPerChunk)));
+            c.first = static_cast<int>(at);
+            c.offset = plan.totalFloats;
+            for (int r = 0; r < c.count; ++r) {
+                RecCropGeom& g = geoms[plan.order[at + r]];
+                g.chunk = static_cast<int>(plan.chunks.size());
+                g.row = r;
+            }
+            plan.totalFloats += static_cast<size_t>(c.rows) * rowFloats * width;
+            plan.chunks.push_back(c);
+            at += c.count;
+        }
+        pos = end;
+    }
+    return plan;
+}
+
+// Pad-tail fill for every chunk (rows [count, rows)). Content rows are
+// written in full by packNchwImageTo (content + right pad columns), so
+// this is the only fill the buffer needs; it is tiny next to the frame.
+void fillRecPadRows(const RecChunkPlan& plan, float* batch) {
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    for (const RecChunk& c : plan.chunks) {
+        if (c.count >= c.rows) continue;
+        const size_t planeSz = rowFloats * c.width;
+        std::fill(batch + c.offset + planeSz * c.count,
+                  batch + c.offset + planeSz * c.rows, kRecPadFill);
+    }
+}
+
+// Perspective crop + (rot90) + resize + BGR + normalized pack of one crop
+// straight into its chunk slot. Pure over the borrowed view; distinct
+// slots per crop keep the parallel callers race-free.
+void cropAndPackRec(const aicore::img::Image& src,
+                    const RecCropGeom& g,
+                    const RecChunkPlan& plan,
+                    float* batch) {
+    std::vector<uint8_t> quadRgb(static_cast<size_t>(g.cropW) * g.cropH * 3);
+    aicore::ocr::warpPerspectiveCubicReplicate(src, g.box, g.cropW, g.cropH,
+                                               quadRgb.data());
+    aicore::img::Image warped;
+    warped.channels = 3;
+    if (g.rotate) {
+        // np.rot90: counter-clockwise, out(i, j) = in(j, W-1-i), shape
+        // (W, H) -> the text runs left-to-right again for the rec head.
+        const int W = g.cropW, H = g.cropH;
+        std::vector<uint8_t> rot(static_cast<size_t>(W) * H * 3);
+        for (int i = 0; i < W; ++i) {
+            uint8_t* orow = rot.data() + static_cast<size_t>(i) * H * 3;
+            for (int j = 0; j < H; ++j) {
+                const uint8_t* s =
+                        quadRgb.data() +
+                        (static_cast<size_t>(j) * W + (W - 1 - i)) * 3;
+                orow[j * 3 + 0] = s[0];
+                orow[j * 3 + 1] = s[1];
+                orow[j * 3 + 2] = s[2];
+            }
+        }
+        warped.width = H;
+        warped.height = W;
+        warped.rgb = std::move(rot);
+    } else {
+        warped.width = g.cropW;
+        warped.height = g.cropH;
+        warped.rgb = std::move(quadRgb);
+    }
+    aicore::img::Image cropImage;
+    cropImage.width = g.recW;
+    cropImage.height = kRecHeight;
+    cropImage.channels = 3;
+    cropImage.bgr = true;  // official cv2 channel order
+    cropImage.rgb.resize(static_cast<size_t>(g.recW) * kRecHeight * 3);
+    aicore::img::cv_resize_linear_u8(warped, cropImage.rgb.data(), g.recW,
+                                     kRecHeight, 3);
+    const RecChunk& c = plan.chunks[static_cast<size_t>(g.chunk)];
+    float* slot = batch + c.offset +
+                  static_cast<size_t>(g.row) * 3 * kRecHeight * c.width;
+    packNchwImageTo(cropImage, kRecMean3, kRecStd3, c.width, kRecPadFill, slot);
+}
+
+// Phase A driver: crop/pack every planned crop over a bounded pool.
+void cropAndPackAll(const aicore::img::Image& src,
+                    const std::vector<RecCropGeom>& geoms,
+                    const RecChunkPlan& plan,
+                    float* batch) {
+    const int count = static_cast<int>(plan.order.size());
+    if (count == 0) return;
+    unsigned hw = std::thread::hardware_concurrency();
+    if (hw == 0) hw = 1;
+    if (hw > static_cast<unsigned>(count)) hw = static_cast<unsigned>(count);
+    std::atomic<int> next{0};
+    auto worker = [&]() {
+        for (;;) {
+            const int k = next.fetch_add(1);
+            if (k >= count) return;
+            cropAndPackRec(src, geoms[static_cast<size_t>(plan.order[k])], plan,
+                           batch);
+        }
+    };
+    std::vector<std::thread> pool;
+    pool.reserve(hw - 1);
+    for (unsigned i = 1; i < hw; ++i) pool.emplace_back(worker);
+    worker();
+    for (auto& t : pool) t.join();
+}
+
+struct RecRunTimings {
+    double inferenceMs = 0.0;
+    double inputUploadMs = 0.0;
+    double outputReadbackMs = 0.0;
+    double ctcDecodeMs = 0.0;
+};
+
+// Phase B: one forward per chunk against the (width, rows) cached build,
+// then the per-row CTC decode in parallel. texts/scores are indexed by
+// crop (geoms index); unplanned crops are left untouched.
+bool runRecChunks(aicore_ocr_ctx* ctx,
+                  ggml_backend_t gpuBackend,
+                  ggml_backend_t cpuBackend,
+                  const std::vector<RecCropGeom>& geoms,
+                  const RecChunkPlan& plan,
+                  const float* batch,
+                  std::vector<std::string>& texts,
+                  std::vector<float>& scores,
+                  RecRunTimings& timings,
+                  std::string& error) {
+    const bool cpuExecution =
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
+    // Same gate as runGraphCached's wantArgmaxHead: the cache key must
+    // select the build that the call will produce.
+    const bool wantArgmaxHead = !cpuExecution;
+    std::vector<float> recOutput = std::move(ctx->recOutputScratch);
+    RecArgmaxOut& recArgmax = ctx->recArgmaxScratch;
+    const size_t rowFloats = static_cast<size_t>(3) * kRecHeight;
+    for (const RecChunk& c : plan.chunks) {
+        OcrGraph& cached = ctx->recGraphs.acquire(3, kRecHeight, c.width,
+                                                  c.rows, wantArgmaxHead);
+        int64_t outC = 0, outT = 0, outV = 0, outN = 0;
+        double inferenceMs = 0.0, uploadMs = 0.0, readbackMs = 0.0;
+        if (!runGraphCached(ctx, ctx->recWeights, cached, gpuBackend,
+                            cpuBackend, 3, kRecHeight, c.width, c.rows,
+                            batch + c.offset,
+                            static_cast<size_t>(c.rows) * rowFloats * c.width,
+                            recOutput, outC, outT, outV, outN, inferenceMs,
+                            uploadMs, readbackMs, error, &recArgmax)) {
+            ctx->recOutputScratch = std::move(recOutput);
+            return false;
+        }
+        timings.inferenceMs += inferenceMs;
+        timings.inputUploadMs += uploadMs;
+        timings.outputReadbackMs += readbackMs;
+        // Per-row CTC decode in parallel: rows are independent pure
+        // functions over the chunk output; each worker writes ONLY its
+        // crop's slot. Worker cap 8: spawning hardware_concurrency threads
+        // per chunk costs more in pthread_create than the extra
+        // parallelism returns at these row counts.
+        const auto ctcStart = std::chrono::steady_clock::now();
+        std::atomic<int> nextRow{0};
+        const unsigned workers = std::min<unsigned>(
+                {8u, std::max(1u, std::thread::hardware_concurrency()),
+                 static_cast<unsigned>(c.count)});
+        auto decoder = [&]() {
+            for (;;) {
+                const int r = nextRow.fetch_add(1);
+                if (r >= c.count) return;
+                const int crop = plan.order[static_cast<size_t>(c.first + r)];
+                float meanScore = 0.0f;
+                if (recArgmax.active) {
+                    // Reduced head: rows are [t + T * n].
+                    const size_t rowBase =
+                            static_cast<size_t>(r) * static_cast<size_t>(outT);
+                    texts[crop] = aicore::ocr::ctcGreedyDecodeIndexed(
+                            recArgmax.index.data() + rowBase,
+                            recArgmax.prob.data() + rowBase,
+                            static_cast<int>(outT), static_cast<int>(outV),
+                            ctx->recWeights.dictionary, &meanScore);
+                } else {
+                    const float* rowBase = recOutput.data() +
+                                           static_cast<size_t>(r) *
+                                                   static_cast<size_t>(outV) *
+                                                   static_cast<size_t>(outT);
+                    texts[crop] = aicore::ocr::ctcGreedyDecode(
+                            rowBase, static_cast<int>(outT),
+                            static_cast<int>(outV), ctx->recWeights.dictionary,
+                            &meanScore);
+                }
+                scores[crop] = meanScore;
+            }
+        };
+        if (workers > 1) {
+            std::vector<std::thread> pool;
+            pool.reserve(workers - 1);
+            for (unsigned i = 1; i < workers; ++i) pool.emplace_back(decoder);
+            decoder();
+            for (auto& t : pool) t.join();
+        } else {
+            decoder();
+        }
+        timings.ctcDecodeMs +=
+                std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() - ctcStart)
+                        .count();
+    }
+    ctx->recOutputScratch = std::move(recOutput);
+    return true;
+}
+
+}  // namespace
 
 extern "C" {
 
 aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
-    if (!options || options->struct_size < sizeof(aicore_ocr_options)) {
+    if (!options || options->struct_size < kOcrOptionsInitialSize) {
         setLastError("ocr: invalid options (struct_size)");
         return nullptr;
     }
@@ -888,6 +1127,10 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
     }
     if (!options->det_model_path || !options->rec_model_path) {
         setLastError("ocr: det/rec model paths are required");
+        return nullptr;
+    }
+    if (options->kie_model_path && options->kie_model_path[0]) {
+        setLastError("ocr: KIE models are not supported by this ABI version");
         return nullptr;
     }
     auto* ctx = new (std::nothrow) aicore_ocr_ctx();
@@ -931,14 +1174,34 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
         if (dash != std::string::npos) tail = tail.substr(0, dash);
         if (!tail.empty()) ctx->language = tail;
     }
-    ctx->detMaxSide = options->det_max_side > 0
-                              ? static_cast<float>(options->det_max_side)
-                              : kDetDefaultMaxSide;
+    // det_limit_type 0 (default) aligns with PaddleOCR 3.0.1's public OCR
+    // pipeline: "min"-type resize with limit_side_len 64. det_max_side
+    // overrides that limit; 1 selects the table pipeline's long-side cap.
+    const bool hasDetLimitType = hasOptionField(
+            options, offsetof(aicore_ocr_options, det_limit_type),
+            sizeof(options->det_limit_type));
+    const bool hasBoxScoreThreshold = hasOptionField(
+            options, offsetof(aicore_ocr_options, det_box_score_thresh),
+            sizeof(options->det_box_score_thresh));
+    ctx->detLimitType = hasDetLimitType ? options->det_limit_type : 0;
+    ctx->detMaxSide =
+            ctx->detLimitType == 0
+                    ? (options->det_max_side > 0
+                               ? static_cast<float>(options->det_max_side)
+                               : kDetOfficialLimitSide)
+                    : (options->det_max_side > 0
+                               ? static_cast<float>(options->det_max_side)
+                               : kDetDefaultMaxSide);
     ctx->boxThresh = options->det_box_thresh > 0 ? options->det_box_thresh
                                                  : kDetDefaultBoxThresh;
+    ctx->boxScoreThresh =
+            hasBoxScoreThreshold && options->det_box_score_thresh > 0
+                    ? options->det_box_score_thresh
+                    : kDetDefaultBoxScoreThresh;
     ctx->unclipRatio = options->det_unclip_ratio > 0 ? options->det_unclip_ratio
                                                      : kDetDefaultUnclipRatio;
-    ctx->recMaxBatch = options->rec_max_batch > 0 ? options->rec_max_batch : 8;
+    ctx->recPadGroup = options->rec_max_batch > 0 ? options->rec_max_batch
+                                                  : kRecPadGroupDefault;
     // One backend pair for the whole context, resolved from the caller's
     // device request. load_backends_once() is mandatory in GGML_BACKEND_DL
     // builds: without it no device is registered and every init silently
@@ -946,13 +1209,21 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
     // CPU on Linux/Windows, Metal -> CPU on macOS) and already includes the
     // CPU fallback; an explicit unavailable request is an honest failure.
     ggml_common::load_backends_once();
+    const bool hasDevice =
+            hasOptionField(options, offsetof(aicore_ocr_options, device),
+                           sizeof(options->device));
+    const bool hasThreads =
+            hasOptionField(options, offsetof(aicore_ocr_options, n_threads),
+                           sizeof(options->n_threads));
     const std::string deviceRequest =
-            (options->device && options->device[0]) ? options->device : "auto";
+            (hasDevice && options->device && options->device[0])
+                    ? options->device
+                    : "auto";
     // The OCR graphs are hundreds of small nodes; beyond a handful of CPU
     // threads the per-node pool barrier dominates (measured: rec graph
     // 94 ms at 32 threads vs 61 ms at 8). Cap the default like the
     // facedetect runtime does; an explicit options->n_threads still wins.
-    int nThreads = options->n_threads;
+    int nThreads = hasThreads ? options->n_threads : 0;
     if (nThreads <= 0) {
         unsigned hw = std::thread::hardware_concurrency();
         if (hw == 0) hw = 4;
@@ -969,6 +1240,31 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
     }
     ctx->resolvedDevice = ctx->primaryLease.device();
     if (!ctx->primaryLease.is_cpu()) {
+        // WEIGHTS tagging gate: CUDA keeps the sched GPU offload (5-8x per
+        // forward); Vulkan keeps the legacy all-CPU routing for now because
+        // offloaded det graphs trip an independent ggml-vulkan subbuffer
+        // fault on some geometries (352x544).
+        const bool isVulkan =
+                !ctx->primaryLease.is_cpu() &&
+                std::string(ggml_backend_name(ctx->primaryLease.handle()))
+                                .find("Vulkan") != std::string::npos;
+        ctx->detWeights.sched_gpu_tagging = !isVulkan;
+        // Measured reversal (this session): routing rec through the sched
+        // offload on Vulkan is SLOWER than the single-backend route
+        // (73-77 ms vs 58.6 ms per 40-row chunk). The sched shards the
+        // ~600-node rec graph into ~172 splits (small nodes below the
+        // offload threshold alternate CPU/VK) and every split pays a
+        // queue submit + weight-check + barrier; the plain gallocr pays
+        // one dispatch per op instead. The probe numbers that suggested
+        // sched was 5x faster were mislabeled: the probe's
+        // init_by_name("Vulkan") falls back to init_by_type and returns
+        // CUDA0, so "backend=Vulkan device=CUDA0" probes measured CUDA.
+        // rec keeps the gate closed like det/layout and runs through
+        // AICORE_OCR_VK_SINGLE.
+        ctx->recWeights.sched_gpu_tagging = !isVulkan;
+        if (ctx->layoutLoaded) {
+            ctx->layoutWeights.sched_gpu_tagging = !isVulkan;
+        }
         // GPU runs schedule against a CPU secondary (see runGraphCached); the
         // parallel lease keeps independent CPU graphs concurrent.
         ctx->cpuLease = aicore::runtime::acquire_parallel_backend_lease(
@@ -1001,7 +1297,8 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
 void aicore_ocr_context_destroy(aicore_ocr_ctx* ctx) {
     if (!ctx) return;
     ctx->det.clear();
-    ctx->rec.clear();
+    ctx->recGraphs.clear();
+    ctx->layoutExec.free();
     // Release the leases after the graphs; the weights' device buffer is
     // released by the OcrWeights destructor and must outlive neither.
     ctx->cpuLease.reset();
@@ -1068,28 +1365,78 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     srcImage.bgr = swapRB;  // BGR/BGRA views are channel-swapped on read
-    const float scale = std::min(
-            1.0f, ctx->detMaxSide / static_cast<float>(std::max(
-                                            image->width, image->height)));
-    int detW = static_cast<int>(std::ceil(image->width * scale / kDetAlign)) *
-               kDetAlign;
-    int detH = static_cast<int>(std::ceil(image->height * scale / kDetAlign)) *
-               kDetAlign;
-    detW = std::max(detW, kDetAlign);
-    detH = std::max(detH, kDetAlign);
+    // Upstream DetResizeForTest. det_limit_type 0 (default) replicates the
+    // PaddleOCR 3.0.1 OCR pipeline (limit_type="min", limit_side_len=64,
+    // max_side_limit=4000). det_limit_type 1 selects the table pipeline's
+    // never-upscale long-side cap. Either way each side TRUNCATES to int,
+    // then rounds to the nearest multiple of 32 with a floor at 32 (the
+    // network needs 32-stride alignment); the historical ceil() overshoot
+    // by up to 31 px skewed the det map ratio and the box mapping.
+    float scale;
+    if (ctx->detLimitType == 0) {
+        const int minSide = std::min(image->width, image->height);
+        scale = minSide < static_cast<int>(ctx->detMaxSide)
+                        ? ctx->detMaxSide / static_cast<float>(minSide)
+                        : 1.0f;
+    } else {
+        scale = std::min(
+                1.0f, ctx->detMaxSide / static_cast<float>(std::max(
+                                                image->width, image->height)));
+    }
+    const int resizedW = static_cast<int>(image->width * scale);
+    const int resizedH = static_cast<int>(image->height * scale);
+    // Python round() is round-half-to-even; replicate it so pinned inputs
+    // land on the exact upstream geometry.
+    const auto roundHalfEven = [](double v) {
+        const double f = std::floor(v);
+        const double d = v - f;
+        if (d > 0.5) return f + 1.0;
+        if (d < 0.5) return f;
+        return std::fmod(f, 2.0) != 0.0 ? f + 1.0 : f;
+    };
+    int detW = std::max(static_cast<int>(roundHalfEven(resizedW / 32.0)) * 32,
+                        kDetAlign);
+    int detH = std::max(static_cast<int>(roundHalfEven(resizedH / 32.0)) * 32,
+                        kDetAlign);
+    if (ctx->detLimitType == 0) {
+        // Official max_side_limit (4000): if either rounded side exceeds
+        // it, rescale both sides to fit before the 32 alignment stands.
+        const int longSide = std::max(detW, detH);
+        if (longSide > static_cast<int>(kDetOfficialMaxSideLimit)) {
+            const float down =
+                    kDetOfficialMaxSideLimit / static_cast<float>(longSide);
+            detW = std::max(static_cast<int>(roundHalfEven(
+                                    static_cast<double>(detW) * down / 32.0)) *
+                                    32,
+                            kDetAlign);
+            detH = std::max(static_cast<int>(roundHalfEven(
+                                    static_cast<double>(detH) * down / 32.0)) *
+                                    32,
+                            kDetAlign);
+        }
+    }
     aicore::img::Image detImage;
     detImage.width = detW;
     detImage.height = detH;
     detImage.channels = 3;
+    detImage.rgb = std::move(ctx->detRgbScratch);
     detImage.rgb.resize(static_cast<size_t>(detW) * detH * 3);
     aicore::img::cv_resize_linear_u8(srcImage, detImage.rgb.data(), detW, detH,
                                      3);
-    std::vector<float> detNchw;
-    packNchwImage(detImage, kImageMean[0], kImageStd[0], detNchw);
+    // The official pipeline feeds the networks BGR (cv2 order, never
+    // converted); align the channel order here. Color-sensitive rec
+    // features and the det map both shift without this. The flag makes
+    // Image::channel read plane 2-c, which is exactly what the historical
+    // in-place byte swap produced, minus one full pass over the frame.
+    detImage.bgr = true;
+    std::vector<float> detNchw = std::move(ctx->detNchwScratch);
+    packNchwImage(detImage, kImageMean, kImageStd, detW, 0.f, detNchw);
+    ctx->detRgbScratch = std::move(detImage.rgb);
     const auto preprocessStop = std::chrono::steady_clock::now();
 
-    // --- det inference: DB probability map (1,1,H,W).
-    const auto inferenceStart = std::chrono::steady_clock::now();
+    // --- det inference: DB probability map (1,1,H,W). The graph time is
+    // captured by runGraphCached (detInferenceMs), not a wall clock, so
+    // the inference stage can stay truthful when rec/layout also run.
     // Session backend handles: GPU primary + CPU secondary, or a single
     // CPU backend when the lease resolved to CPU.
     ggml_backend_t gpuBackend =
@@ -1098,27 +1445,44 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
                                         ? ctx->primaryLease.handle()
                                         : ctx->cpuLease.handle();
 
-    std::vector<float> detOutput;
-    int64_t detOutC = 0, detOutH = 0, detOutW = 0;
+    std::vector<float> detOutput = std::move(ctx->detOutputScratch);
+    int64_t detOutC = 0, detOutH = 0, detOutW = 0, detOutN = 0;
     double detInferenceMs = 0.0;
+    double detInputUploadMs = 0.0;
+    double detOutputReadbackMs = 0.0;
+    // rec/layout graph time is accumulated separately so the stage timing
+    // stays truthful: inference_ms = det + rec + layout graph compute,
+    // postprocess_ms excludes it.
+    double recLayoutInferenceMs = 0.0;
     std::string error;
-    if (!runGraphCached(ctx, ctx->detWeights, ctx->det, gpuBackend, cpuBackend,
-                        3, detH, detW, detNchw, detOutput, detOutC, detOutH,
-                        detOutW, detInferenceMs, error)) {
+    const bool detOk = runGraphCached(
+            ctx, ctx->detWeights, ctx->det, gpuBackend, cpuBackend, 3, detH,
+            detW, 1, detNchw.data(), static_cast<size_t>(3) * detH * detW,
+            detOutput, detOutC, detOutH, detOutW, detOutN, detInferenceMs,
+            detInputUploadMs, detOutputReadbackMs, error);
+    // The input is uploaded synchronously inside runGraphCached, so its
+    // buffer can go back to the context right here (even on failure).
+    ctx->detNchwScratch = std::move(detNchw);
+    if (!detOk) {
         setLastError(error);
         return nullptr;
     }
-    const auto inferenceStop = std::chrono::steady_clock::now();
 
-    // --- det post-process: threshold + components + unclip.
+    // --- det post-process: DBPostProcess.boxes_from_bitmap + SortQuadBoxes
+    // (exact ports, ocr_db_postprocess.cpp): integer boxes in image pixels,
+    // in the official reading order.
     const auto postStart = std::chrono::steady_clock::now();
-    const auto boxes = connectedComponentsBoxes(
+    const auto dbBoxesStart = postStart;
+    aicore::ocr::DbParams dbParams;
+    dbParams.thresh = ctx->boxThresh;
+    dbParams.boxThresh = ctx->boxScoreThresh;
+    dbParams.unclipRatio = ctx->unclipRatio;
+    auto boxes = aicore::ocr::dbBoxesFromBitmap(
             detOutput.data(), static_cast<int>(detOutW),
-            static_cast<int>(detOutH), ctx->boxThresh);
-    const float mapToImageX =
-            static_cast<float>(image->width) / static_cast<float>(detOutW);
-    const float mapToImageY =
-            static_cast<float>(image->height) / static_cast<float>(detOutH);
+            static_cast<int>(detOutH), image->width, image->height, dbParams,
+            ctx->detContourScratch);
+    aicore::ocr::sortQuadBoxes(boxes);
+    const auto dbBoxesStop = std::chrono::steady_clock::now();
 
     auto* result = new (std::nothrow) aicore_ocr_result();
     if (!result) {
@@ -1130,108 +1494,94 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     // Packed full-resolution RGB for the perspective crops (the det map
     // is a downscaled working image; the official pipeline warps from the
     // original image).
-    std::vector<uint8_t> fullRgb(static_cast<size_t>(image->width) *
-                                 image->height * 3);
-    for (int y = 0; y < image->height; ++y) {
-        for (int x = 0; x < image->width; ++x) {
-            uint8_t* dst =
-                    &fullRgb[(static_cast<size_t>(y) * image->width + x) * 3];
-            dst[0] = srcImage.channel(x, y, 0);
-            dst[1] = srcImage.channel(x, y, 1);
-            dst[2] = srcImage.channel(x, y, 2);
-        }
-    }
-    for (const DetBox& raw : boxes) {
-        DetBox region = unclipBox(raw, ctx->unclipRatio);
-        // Map det-map coordinates back to full-resolution image pixels.
-        float quad[4][2];
+    const auto cropResizePackStart = std::chrono::steady_clock::now();
+    // Two-phase batched recognition (shared with the recognize-only path):
+    //   A) per-box unclip/map + official crop geometry, chunk plan, then
+    //      parallel crop/pack straight into the planned slots;
+    //   B) one forward per (width, rows) chunk + per-row CTC decode.
+    // Batched rec: automatic per execution side (see ocrBatchedRecEnabled).
+    const bool recCpuExecution =
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
+    const bool batchedRec = ocrBatchedRecEnabled(gpuBackend, recCpuExecution);
+    // Batch chunking: measured single-forward scaling on the idle RTX 4090
+    // is linear to N=72 (10/30/84/91/100/120 ms at N=4/16/48/56/64/72,
+    // fixture-exact at every N) and collapses by N=96 (15.5 s) because the
+    // depthwise im2col workspace pushes the gallocr buffer against VRAM
+    // (20.2/24.5 GiB) and every compute re-warms the CUDA graphs. The 48
+    // row cap (at 320 wide; recRowsCapForWidth scales it down for wider
+    // chunks) stands on a same-load A/B: 48 rows at 215 ms e2e vs 64 rows
+    // at 257 ms for the 74-box bench frame. Pad rows are computed at full
+    // cost, so the row count is quantized (planRecChunks) rather than
+    // filled to the cap, and a stable box count hits the same build.
+    std::vector<RecCropGeom> geoms(boxes.size());
+    for (size_t bi = 0; bi < boxes.size(); ++bi) {
+        RecCropGeom& g = geoms[bi];
         for (int i = 0; i < 4; ++i) {
-            quad[i][0] = std::clamp(region.quad[i][0] * mapToImageX, 0.0f,
-                                    static_cast<float>(image->width));
-            quad[i][1] = std::clamp(region.quad[i][1] * mapToImageY, 0.0f,
-                                    static_cast<float>(image->height));
+            g.quad[i][0] = static_cast<float>(boxes[bi].quad[i][0]);
+            g.quad[i][1] = static_cast<float>(boxes[bi].quad[i][1]);
         }
-        // Crop geometry from the ordered quad (official
-        // get_rotate_crop_image): width = longer text edge, height = the
-        // shorter one.
-        const auto edgeLen = [](const float a[2], const float b[2]) {
-            const float dx = b[0] - a[0], dy = b[1] - a[1];
-            return std::sqrt(dx * dx + dy * dy);
-        };
-        const float cropWidth =
-                std::max(edgeLen(quad[0], quad[1]), edgeLen(quad[3], quad[2]));
-        const float cropHeight =
-                std::max(edgeLen(quad[0], quad[3]), edgeLen(quad[1], quad[2]));
-        const int cropW = std::max(1, static_cast<int>(std::lround(cropWidth)));
-        const int cropH =
-                std::max(1, static_cast<int>(std::lround(cropHeight)));
-        // Official det_db_min_size=3: PaddleOCR's DB post-process drops
-        // boxes narrower or shorter than 3 px before the rec stage (the
-        // unclip of a 1-2 px component carries no recognizable text and
-        // its quad is degenerate for the perspective warp).
-        if (cropW < 3 || cropH < 3) continue;
-
-        // --- rec preprocessing: perspective warp of the quad out of the
-        // det input, height-48 proportional resize with right padding,
-        // normalize.
-        const int recW = std::clamp(
-                static_cast<int>(
-                        std::lround(48.0f * cropW / static_cast<float>(cropH))),
-                1, kRecMaxWidth);
-        std::vector<uint8_t> quadRgb;
-        // The quads are full-image pixel coordinates: crop from a packed
-        // full-resolution RGB buffer, not the 32-aligned det thumbnail.
-        cropQuadRgb(fullRgb, image->width, image->height, region.quad, cropW,
-                    cropH, quadRgb);
-        aicore::img::Image warped;
-        warped.width = cropW;
-        warped.height = cropH;
-        warped.channels = 3;
-        warped.rgb = std::move(quadRgb);
-        std::vector<uint8_t> cropRgb(static_cast<size_t>(recW) * kRecHeight *
-                                     3);
-        aicore::img::cv_resize_linear_u8(warped, cropRgb.data(), recW,
-                                         kRecHeight, 3);
-        std::vector<float> recNchw;
-        aicore::img::Image cropImage;
-        cropImage.width = recW;
-        cropImage.height = kRecHeight;
-        cropImage.channels = 3;
-        cropImage.rgb = std::move(cropRgb);
-        packNchwImage(cropImage, kRecMean, kRecStd, recNchw);
-        recNchw.resize(static_cast<size_t>(3) * kRecHeight * kRecMaxWidth,
-                       (0.5f - kRecMean) / kRecStd);  // pad columns
-
-        // --- rec inference + CTC decode.
-        std::vector<float> recOutput;
-        int64_t recOutC = 0, recOutT = 0, recOutW2 = 0;
-        double recInferenceMs = 0.0;
-        if (!runGraphCached(ctx, ctx->recWeights, ctx->rec, gpuBackend,
-                            cpuBackend, 3, kRecHeight, kRecMaxWidth, recNchw,
-                            recOutput, recOutC, recOutT, recOutW2,
-                            recInferenceMs, error)) {
-            setLastError(error);
-            delete result;
-            return nullptr;
-        }
-        float meanScore = 0.0f;
-        const std::string text = aicore::ocr::ctcGreedyDecode(
-                recOutput.data(), static_cast<int>(recOutT),
-                static_cast<int>(recOutW2), ctx->recWeights.dictionary,
-                &meanScore);
-
+        g.detScore = static_cast<float>(boxes[bi].score);
+        recCropGeometry(g, g.quad);
+    }
+    const RecChunkPlan recPlan = planRecChunks(
+            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
+    std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
+    // resize, not assign: every content row is written in full by the pack
+    // (content + right pad columns) and the pad tails by fillRecPadRows.
+    batchNchw.resize(recPlan.totalFloats);
+    fillRecPadRows(recPlan, batchNchw.data());
+    // Sample with quads in IMAGE pixel coordinates (the unclipped region
+    // mapped out of the det map). The det-map coordinate space is 2x the
+    // image under the official "min"/736 resize; sampling the full-res
+    // image with det-map coordinates produces edge-clamped garbage.
+    cropAndPackAll(srcImage, geoms, recPlan, batchNchw.data());
+    const auto cropResizePackStop = std::chrono::steady_clock::now();
+    double inputUploadMs = detInputUploadMs;
+    double outputReadbackMs = detOutputReadbackMs;
+    std::vector<std::string> recTexts(boxes.size());
+    std::vector<float> recScores(boxes.size(), 0.0f);
+    RecRunTimings recTimings;
+    if (!runRecChunks(ctx, gpuBackend, cpuBackend, geoms, recPlan,
+                      batchNchw.data(), recTexts, recScores, recTimings,
+                      error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
+    }
+    recLayoutInferenceMs += recTimings.inferenceMs;
+    inputUploadMs += recTimings.inputUploadMs;
+    outputReadbackMs += recTimings.outputReadbackMs;
+    const double ctcDecodeMs = recTimings.ctcDecodeMs;
+    // Box fill in det order (the chunk plan reorders by width only for the
+    // forward); textStorage pushes stay ordered so the deque-backed
+    // box.text pointers never dangle.
+    const auto assemblyStart = std::chrono::steady_clock::now();
+    for (size_t bi = 0; bi < boxes.size(); ++bi) {
+        const RecCropGeom& g = geoms[bi];
+        if (!g.valid) continue;
         aicore_ocr_box box{};
-        std::memcpy(box.quad, quad, sizeof(quad));
-        result->textStorage.push_back(text);
+        std::memcpy(box.quad, g.quad, sizeof(box.quad));
+        result->textStorage.push_back(recTexts[bi]);
         box.text = result->textStorage.back().c_str();
-        box.score = meanScore > 0 ? meanScore : raw.score;
+        box.score = recScores[bi] > 0 ? recScores[bi] : g.detScore;
         std::strncpy(box.language, ctx->language.c_str(),
                      sizeof(box.language) - 1);
         result->boxes.push_back(box);
     }
+    double resultAssemblyMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - assemblyStart)
+                    .count();
+    // Hand the frame buffers back to the context for the next frame (error
+    // returns above simply drop them; the next frame reallocates).
+    ctx->detOutputScratch = std::move(detOutput);
+    ctx->recBatchScratch = std::move(batchNchw);
 
     // --- optional layout stage: PicoDet CDLA heads -> regions.
     if (ctx->layoutLoaded) {
+        const auto layoutAssemblyStart = std::chrono::steady_clock::now();
         aicore::img::Image layoutImage;
         layoutImage.width = kLayoutSizeW;
         layoutImage.height = kLayoutSizeH;
@@ -1240,13 +1590,17 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
                                kLayoutSizeH * 3);
         aicore::img::cv_resize_linear_u8(srcImage, layoutImage.rgb.data(),
                                          kLayoutSizeW, kLayoutSizeH, 3);
+        // PP-Structure LayoutPredictor: cv2 BGR frame, per-channel
+        // NormalizeImage (same planes as the det input).
+        layoutImage.bgr = true;
         std::vector<float> layoutNchw;
-        packNchwImage(layoutImage, kImageMean[0], kImageStd[0], layoutNchw);
+        packNchwImage(layoutImage, kImageMean, kImageStd, kLayoutSizeW, 0.f,
+                      layoutNchw);
         std::vector<std::vector<float>> heads;
         double layoutMs = 0.0;
         std::string layoutError;
         if (!runLayoutHeads(
-                    ctx->layoutWeights,
+                    ctx->layoutWeights, ctx->layoutExec,
                     ctx->primaryLease.is_cpu() ? nullptr
                                                : ctx->primaryLease.handle(),
                     ctx->primaryLease.is_cpu() ? ctx->primaryLease.handle()
@@ -1258,14 +1612,15 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
             // caller's log) instead of discarding the recognition pass.
             setLastError("ocr: layout stage failed: " + layoutError);
         } else {
-            std::vector<LayoutRegion> regions;
+            recLayoutInferenceMs += layoutMs;
+            LayoutCandidates candidates;
             for (int si = 0; si < 4; ++si) {
                 // Fetch order: transpose_0..7 = cls(8,16,32,64) then
                 // reg(8,16,32,64).
                 gflDecode(heads[si], heads[4 + si], kLayoutStrides[si],
-                          regions);
+                          candidates);
             }
-            for (LayoutRegion& r : layoutNms(std::move(regions))) {
+            for (const LayoutRegion& r : layoutNms(candidates)) {
                 aicore_ocr_region region{};
                 region.class_id = r.classId;
                 region.reading_order = -1;
@@ -1282,7 +1637,9 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
             }
             // Reading order: top-to-bottom band, left-to-right within a band
             // (the upstream PP-Structure sort, adequate for single-column
-            // documents and refined per-class in a later round).
+            // documents and refined per-class in a later round). The band
+            // test and the comparison run in the layout input space before
+            // the coordinate mapping below.
             std::vector<int> order(result->regions.size());
             for (int i = 0; i < static_cast<int>(order.size()); ++i)
                 order[i] = i;
@@ -1296,26 +1653,77 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
             });
             for (int rank = 0; rank < static_cast<int>(order.size()); ++rank)
                 result->regions[order[rank]].reading_order = rank;
+            // Map the region quads from the 608x800 layout input space back
+            // to source image pixels (the same ratio walk the upstream
+            // PP-Structure visualizer applies). Regions share the box
+            // contract: image pixel coordinates.
+            const float regionToImageX = static_cast<float>(image->width) /
+                                         static_cast<float>(kLayoutSizeW);
+            const float regionToImageY = static_cast<float>(image->height) /
+                                         static_cast<float>(kLayoutSizeH);
+            for (auto& region : result->regions) {
+                for (int c = 0; c < 4; ++c) {
+                    region.quad[c][0] =
+                            std::clamp(region.quad[c][0] * regionToImageX, 0.0f,
+                                       static_cast<float>(image->width));
+                    region.quad[c][1] =
+                            std::clamp(region.quad[c][1] * regionToImageY, 0.0f,
+                                       static_cast<float>(image->height));
+                }
+            }
         }
+        resultAssemblyMs +=
+                std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() - layoutAssemblyStart)
+                        .count() -
+                layoutMs;
     }
     const auto postStop = std::chrono::steady_clock::now();
     const auto e2eStop = postStop;
+    // The det graph ran inside the inference window above; the rec and
+    // layout graphs ran inside the post window, so their graph time moves
+    // from postprocess into inference and the remainder is the true
+    // post-process work (boxes, crops, decode, NMS).
+    result->timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;
+    result->timings.valid_fields =
+            AICORE_TIMING_PREPROCESS | AICORE_TIMING_INFERENCE |
+            AICORE_TIMING_POSTPROCESS | AICORE_TIMING_E2E;
     result->timings.preprocess_ms = std::chrono::duration<double, std::milli>(
                                             preprocessStop - preprocessStart)
                                             .count();
-    result->timings.inference_ms = std::chrono::duration<double, std::milli>(
-                                           inferenceStop - inferenceStart)
-                                           .count();
-    result->timings.postprocess_ms =
+    result->timings.inference_ms = detInferenceMs + recLayoutInferenceMs;
+    double postMs =
             std::chrono::duration<double, std::milli>(postStop - postStart)
-                    .count();
+                    .count() -
+            recLayoutInferenceMs;
+    result->timings.postprocess_ms = postMs > 0.0 ? postMs : 0.0;
     result->timings.e2e_ms =
             std::chrono::duration<double, std::milli>(e2eStop - e2eStart)
                     .count();
-    // det inference dominates; rec runs inside the post-process window and
-    // its per-crop time is recorded through the det+rec combined total.
-    result->timings.inference_ms += detInferenceMs * 0;  // see note below
-    (void)detInferenceMs;
+    result->postTimings.abi_version = AICORE_OCR_POST_TIMINGS_ABI_VERSION;
+    result->postTimings.valid_fields =
+            AICORE_OCR_POST_TIMING_DB_BOXES |
+            AICORE_OCR_POST_TIMING_CROP_RESIZE_PACK |
+            AICORE_OCR_POST_TIMING_CTC_DECODE |
+            AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY |
+            AICORE_OCR_POST_TIMING_OUTPUT_READBACK |
+            AICORE_OCR_POST_TIMING_INPUT_UPLOAD |
+            AICORE_OCR_POST_TIMING_DET_GRAPH_COMPUTE |
+            AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE;
+    result->postTimings.db_boxes_ms = std::chrono::duration<double, std::milli>(
+                                              dbBoxesStop - dbBoxesStart)
+                                              .count();
+    result->postTimings.crop_resize_pack_ms =
+            std::chrono::duration<double, std::milli>(cropResizePackStop -
+                                                      cropResizePackStart)
+                    .count();
+    result->postTimings.ctc_decode_ms = ctcDecodeMs;
+    result->postTimings.result_assembly_ms = std::max(0.0, resultAssemblyMs);
+    result->postTimings.output_readback_ms = outputReadbackMs;
+    result->postTimings.input_upload_ms = inputUploadMs;
+    // 将总 inference 拆回两个图，避免仅凭总数猜测应优化 det 还是 rec。
+    result->postTimings.det_graph_compute_ms = detInferenceMs;
+    result->postTimings.rec_graph_compute_ms = recTimings.inferenceMs;
     return result;
 }
 
@@ -1371,26 +1779,9 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     srcImage.bgr = swapRB;
-    // cropQuadRgb reads a packed 3-channel buffer; flatten the (possibly
-    // strided, 4- or 1-channel, BGR) view into a packed RGB copy once.
-    std::vector<uint8_t> flat(static_cast<size_t>(srcImage.width) *
-                              srcImage.height * 3);
-    for (int y = 0; y < srcImage.height; ++y) {
-        for (int x = 0; x < srcImage.width; ++x) {
-            uint8_t* dst =
-                    &flat[(static_cast<size_t>(y) * srcImage.width + x) * 3];
-            if (channels == 1) {
-                const uint8_t g = srcImage.channel(x, y, 0);
-                dst[0] = dst[1] = dst[2] = g;
-            } else {
-                dst[0] = srcImage.channel(x, y, 0);
-                dst[1] = srcImage.channel(x, y, 1);
-                dst[2] = srcImage.channel(x, y, 2);
-            }
-        }
-    }
-    const int imgW = srcImage.width;
-    const int imgH = srcImage.height;
+    // The crop samples the borrowed view in place (stride / 1-, 3- or
+    // 4-channel / BGR all resolved by Image::row + channel_index).
+    const auto cropResizePackStart = std::chrono::steady_clock::now();
     auto* result = new (std::nothrow) aicore_ocr_result();
     if (!result) {
         setLastError("ocr: result allocation failed");
@@ -1398,100 +1789,81 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     }
     result->boxes.reserve(static_cast<size_t>(count));
     const auto start = std::chrono::steady_clock::now();
-    double recInferenceMs = 0.0;
     std::string error;
+    // Same two-phase recognition as the frame path (recCropGeometry /
+    // planRecChunks / cropAndPackAll / runRecChunks): official crop
+    // geometry, official ratio-group pad widths, one forward per chunk,
+    // parallel CTC.
+    ggml_backend_t gpuBackend =
+            ctx->primaryLease.is_cpu() ? nullptr : ctx->primaryLease.handle();
+    ggml_backend_t cpuBackend = ctx->primaryLease.is_cpu()
+                                        ? ctx->primaryLease.handle()
+                                        : ctx->cpuLease.handle();
+    const bool recCpuExecution =
+            aicore::ocr::makeExecPlan(gpuBackend, cpuBackend,
+                                      ctx->recWeights.sched_gpu_tagging)
+                    .cpuExecution;
+    const bool batchedRec = ocrBatchedRecEnabled(gpuBackend, recCpuExecution);
+    std::vector<RecCropGeom> geoms(static_cast<size_t>(count));
     for (int32_t q = 0; q < count; ++q) {
-        const float* quad = quads + static_cast<size_t>(q) * 8;
-        const auto edgeLen = [](const float* a, const float* b) {
-            const float dx = b[0] - a[0], dy = b[1] - a[1];
-            return std::sqrt(dx * dx + dy * dy);
-        };
-        const float cropWidth =
-                std::max(edgeLen(quad, quad + 2), edgeLen(quad + 6, quad + 4));
-        const float cropHeight =
-                std::max(edgeLen(quad, quad + 6), edgeLen(quad + 2, quad + 4));
-        const int cropW = std::max(1, static_cast<int>(std::lround(cropWidth)));
-        const int cropH =
-                std::max(1, static_cast<int>(std::lround(cropHeight)));
-        // Official det_db_min_size=3: PaddleOCR's DB post-process drops
-        // boxes narrower or shorter than 3 px before the rec stage (the
-        // unclip of a 1-2 px component carries no recognizable text and
-        // its quad is degenerate for the perspective warp).
-        if (cropW < 3 || cropH < 3) continue;
-        const int recW = std::clamp(
-                static_cast<int>(
-                        std::lround(48.0f * cropW / static_cast<float>(cropH))),
-                1, kRecMaxWidth);
-        std::vector<uint8_t> quadRgb;
-        const float(*quadPtr)[2] = reinterpret_cast<const float(*)[2]>(quad);
-        cropQuadRgb(flat, imgW, imgH, quadPtr, cropW, cropH, quadRgb);
-        aicore::img::Image warped;
-        warped.width = cropW;
-        warped.height = cropH;
-        warped.channels = 3;
-        warped.rgb = std::move(quadRgb);
-        std::vector<uint8_t> cropRgb(static_cast<size_t>(recW) * kRecHeight *
-                                     3);
-        aicore::img::cv_resize_linear_u8(warped, cropRgb.data(), recW,
-                                         kRecHeight, 3);
-        std::vector<float> recNchw;
-        aicore::img::Image cropImage;
-        cropImage.width = recW;
-        cropImage.height = kRecHeight;
-        cropImage.channels = 3;
-        cropImage.rgb = std::move(cropRgb);
-        packNchwImage(cropImage, kRecMean, kRecStd, recNchw);
-        recNchw.resize(static_cast<size_t>(3) * kRecHeight * kRecMaxWidth,
-                       (0.5f - kRecMean) / kRecStd);
-        // Session backend handles: GPU primary + CPU secondary, or a
-        // single CPU backend when the lease resolved to CPU.
-        ggml_backend_t gpuBackend = ctx->primaryLease.is_cpu()
-                                            ? nullptr
-                                            : ctx->primaryLease.handle();
-        ggml_backend_t cpuBackend = ctx->primaryLease.is_cpu()
-                                            ? ctx->primaryLease.handle()
-                                            : ctx->cpuLease.handle();
-        std::vector<float> recOutput;
-        int64_t recOutC = 0, recOutT = 0, recOutW2 = 0;
-        double singleMs = 0.0;
-        if (!runGraphCached(ctx, ctx->recWeights, ctx->rec, gpuBackend,
-                            cpuBackend, 3, kRecHeight, kRecMaxWidth, recNchw,
-                            recOutput, recOutC, recOutT, recOutW2, singleMs,
-                            error)) {
-            setLastError(error);
-            delete result;
-            return nullptr;
+        RecCropGeom& g = geoms[static_cast<size_t>(q)];
+        std::memcpy(g.quad, quads + static_cast<size_t>(q) * 8, sizeof(g.quad));
+        // Same crop as the det path, so recognize(run(img) quads) reproduces
+        // run(img). Caller quads are clipped to the image like det boxes
+        // (bounds the crop size); a non-finite quad stays invalid.
+        float poly[4][2];
+        bool finite = true;
+        for (int i = 0; i < 4; ++i) {
+            finite = finite && std::isfinite(g.quad[i][0]) &&
+                     std::isfinite(g.quad[i][1]);
+            poly[i][0] = std::clamp(g.quad[i][0], 0.0f,
+                                    static_cast<float>(image->width));
+            poly[i][1] = std::clamp(g.quad[i][1], 0.0f,
+                                    static_cast<float>(image->height));
         }
-        recInferenceMs += singleMs;
-        {
-            float mn = 1e9f, mx = -1e9f;
-            double sm = 0.0;
-            for (float v : recOutput) {
-                mn = std::min(mn, v);
-                mx = std::max(mx, v);
-                sm += v;
-            }
-            std::fprintf(stderr,
-                         "[diag] recOut C=%d T=%d min=%.4f max=%.4f sum=%.4e "
-                         "nchw0=%.4f nchwEnd=%.4f\n",
-                         (int)recOutC, (int)recOutT, mn, mx, sm,
-                         recNchw.empty() ? 0.f : recNchw.front(),
-                         recNchw.empty() ? 0.f : recNchw.back());
-        }
-        float meanScore = 0.0f;
-        const std::string text = aicore::ocr::ctcGreedyDecode(
-                recOutput.data(), static_cast<int>(recOutT),
-                static_cast<int>(recOutW2), ctx->recWeights.dictionary,
-                &meanScore);
+        if (finite) recCropGeometry(g, poly);
+    }
+    const RecChunkPlan recPlan = planRecChunks(
+            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
+    std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
+    batchNchw.resize(recPlan.totalFloats);
+    fillRecPadRows(recPlan, batchNchw.data());
+    cropAndPackAll(srcImage, geoms, recPlan, batchNchw.data());
+    const auto cropResizePackStop = std::chrono::steady_clock::now();
+    std::vector<std::string> recTexts(static_cast<size_t>(count));
+    std::vector<float> recScores(static_cast<size_t>(count), 0.0f);
+    RecRunTimings recTimings;
+    if (!runRecChunks(ctx, gpuBackend, cpuBackend, geoms, recPlan,
+                      batchNchw.data(), recTexts, recScores, recTimings,
+                      error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
+    }
+    ctx->recBatchScratch = std::move(batchNchw);
+    const double recInferenceMs = recTimings.inferenceMs;
+    const double inputUploadMs = recTimings.inputUploadMs;
+    const double outputReadbackMs = recTimings.outputReadbackMs;
+    const double ctcDecodeMs = recTimings.ctcDecodeMs;
+    const auto assemblyStart = std::chrono::steady_clock::now();
+    for (int32_t q = 0; q < count; ++q) {
+        const RecCropGeom& g = geoms[static_cast<size_t>(q)];
+        // One box per input quad, in input order: callers map results back
+        // by index, so a degenerate quad yields an empty text, score 0.
         aicore_ocr_box box{};
-        std::memcpy(box.quad, quad, sizeof(box.quad));
-        result->textStorage.push_back(text);
+        std::memcpy(box.quad, g.quad, sizeof(box.quad));
+        result->textStorage.push_back(g.valid ? recTexts[static_cast<size_t>(q)]
+                                              : std::string());
         box.text = result->textStorage.back().c_str();
-        box.score = meanScore;
+        box.score = g.valid ? recScores[static_cast<size_t>(q)] : 0.0f;
         std::strncpy(box.language, ctx->language.c_str(),
                      sizeof(box.language) - 1);
         result->boxes.push_back(box);
     }
+    const double resultAssemblyMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - assemblyStart)
+                    .count();
 
     const auto stop = std::chrono::steady_clock::now();
     result->timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;
@@ -1499,6 +1871,22 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     result->timings.inference_ms = recInferenceMs;
     result->timings.e2e_ms =
             std::chrono::duration<double, std::milli>(stop - start).count();
+    result->postTimings.abi_version = AICORE_OCR_POST_TIMINGS_ABI_VERSION;
+    result->postTimings.valid_fields = AICORE_OCR_POST_TIMING_CROP_RESIZE_PACK |
+                                       AICORE_OCR_POST_TIMING_CTC_DECODE |
+                                       AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY |
+                                       AICORE_OCR_POST_TIMING_OUTPUT_READBACK |
+                                       AICORE_OCR_POST_TIMING_INPUT_UPLOAD |
+                                       AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE;
+    result->postTimings.crop_resize_pack_ms =
+            std::chrono::duration<double, std::milli>(cropResizePackStop -
+                                                      cropResizePackStart)
+                    .count();
+    result->postTimings.ctc_decode_ms = ctcDecodeMs;
+    result->postTimings.result_assembly_ms = resultAssemblyMs;
+    result->postTimings.output_readback_ms = outputReadbackMs;
+    result->postTimings.input_upload_ms = inputUploadMs;
+    result->postTimings.rec_graph_compute_ms = recInferenceMs;
     return result;
 }
 
@@ -1554,6 +1942,14 @@ aicore_pipeline_timings aicore_ocr_timings(const aicore_ocr_result* result) {
     aicore_pipeline_timings timings{};
     if (!result) return timings;
     timings = result->timings;
+    return timings;
+}
+
+aicore_ocr_post_timing_breakdown aicore_ocr_post_timings(
+        const aicore_ocr_result* result) {
+    aicore_ocr_post_timing_breakdown timings{};
+    if (!result) return timings;
+    timings = result->postTimings;
     return timings;
 }
 

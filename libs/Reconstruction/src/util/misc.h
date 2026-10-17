@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -26,6 +27,15 @@ namespace colmap {
 #define STRINGIFY(s) STRINGIFY_(s)
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
+
+// Upstream parity (d3ccaf35 util/misc.h): log headings for pipeline stages.
+#ifndef LOG_HEADING1
+#define LOG_HEADING1(message) LOG(INFO) << "=== " << (message) << " ===";
+#endif  // LOG_HEADING1
+
+#ifndef LOG_HEADING2
+#define LOG_HEADING2(message) LOG(INFO) << "--- " << (message) << " ---";
+#endif  // LOG_HEADING2
 
 // Join multiple paths into one path.
 // NOTE (fork): legacy string-join helper kept for the string-domain callers
@@ -84,9 +94,23 @@ void WriteBinaryBlob(const std::filesystem::path& path,
 // Remove an argument from the list of command-line arguments.
 void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);
 
+// Creates a deep copy of the managed object, or returns nullptr when the
+// input is empty (upstream parity; used by the feature option shells to
+// give the shared_ptr option groups value semantics).
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr) {
+    if (ptr) {
+        return std::make_shared<T>(*ptr);
+    }
+    return nullptr;
+}
 
 template <typename T>
 std::string JoinPathString(T const& path) {
@@ -125,11 +149,19 @@ bool VectorContainsDuplicateValues(const std::vector<T>& vector) {
 
 template <typename T>
 std::string VectorToCSV(const std::vector<T>& values) {
-    std::string string;
-    for (const T value : values) {
-        string += std::to_string(value) + ", ";
+    // Upstream parity (d3ccaf35 util/misc.h): stream formatting with full
+    // precision instead of std::to_string's fixed 6-decimal representation.
+    if (values.empty()) {
+        return "";
     }
-    return string.substr(0, string.length() - 2);
+    std::ostringstream stream;
+    SetFullPrecTextStream(stream);
+    for (const T& value : values) {
+        stream << value << ", ";
+    }
+    std::string buf = stream.str();
+    buf.resize(buf.size() - 2);
+    return buf;
 }
 
 template <typename T>

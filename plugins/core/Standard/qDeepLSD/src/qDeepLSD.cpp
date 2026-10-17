@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QUuid>
 
+#include "DeepLSDBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -67,6 +68,14 @@ qDeepLSD::qDeepLSD(QObject* parent)
 }
 
 QList<QAction*> qDeepLSD::getActions() { return {m_action}; }
+
+void qDeepLSD::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandDeepLsdLines));
+}
 
 void qDeepLSD::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

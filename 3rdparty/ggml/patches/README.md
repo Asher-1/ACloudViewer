@@ -33,6 +33,7 @@ variants — have been converted to `.patch` files.)
 | `msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch` | MSVC `__faststorefence` intrinsic compat |
 | `cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch` | Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI + apple_m4 SVE/SME behind compiler checks (inert when `GGML_CPU_ALL_VARIANTS=OFF`) |
 | `metal_merged/0001-metal-optimizations.patch` | Metal conv_transpose_2d IC-parallel tree reduction + flash-attn large-sequence support (inert when Metal OFF) |
+| `vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` | Do not treat a small (non-Resizable-BAR) DeviceLocal\|HostVisible heap as ReBAR: buffers stay device-local with staged uploads when that heap is < 1/2 of the largest VRAM heap (ReBAR/SAM and UMA unchanged; see the manifest note for the measured OCR+table upload collapse) |
 
 The CPU and Metal patches are inert on platforms where their feature is
 disabled, so the single unconditional manifest keeps the fetched tree
@@ -55,3 +56,15 @@ single patch from a dirty ggml v0.18.1 reference tree with:
 ```
 
 Enable in AICore: `AICore_USE_VULKAN=ON` → defines `AICORE_VULKAN_ALIKED` when the patch is applied.
+
+## MapAnything (AICore / qMapAnything)
+
+| Patch | Purpose |
+|-------|---------|
+| `map_anything_merged/0001-map-anything-ggml-parity.patch` | Single map-anything-ggml parity patch: (A) CUDA k==s conv_transpose_2d direct-gather fast path, (B) `mapany_*` node-name gate keeping pristine CUDA kernel selection (F16 cuBLAS output, conv_transpose 2x2 path, F32 GEMM route, SiLU), (C) v0.24.0 batched CONV_TRANSPOSE_2D backport for CPU/Metal, (D) the same gate on Vulkan (F32-K/V flash-attention path, SAM3 2x2/s2 conv_transpose fast path, F32-weight conv_transpose coopmat module) |
+
+The former three-patch chain (A-C) was folded into this file; replaying the
+manifest on the extracted v0.21.0 archive yielded a tree byte-identical to the
+old chain (`diff -r` empty) before part (D) was added. Its manifest slot (after
+`cuda_igemm_tf32` and `lingbot_merged/0001`, before `sam3d_merged/0005`) is
+fixed by hunk context.

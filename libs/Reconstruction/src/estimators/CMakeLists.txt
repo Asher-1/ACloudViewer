@@ -43,11 +43,11 @@ COLMAP_ADD_SOURCES(
     global_positioning.h global_positioning.cc
     pose.h pose.cc
     rotation_averaging.h rotation_averaging.cc
-    rotation_averaging_impl.h rotation_averaging_impl.cc
+    rotation_averaging_ceres.h rotation_averaging_ceres.cc
+    rotation_averaging_l1_irls.h rotation_averaging_l1_irls.cc
     translation_transform.h
     triangulation.h triangulation.cc
     two_view_geometry.h two_view_geometry.cc
-    utils.h utils.cc
     view_graph_calibration.h view_graph_calibration.cc
     gravity_refinement.h gravity_refinement.cc
 
@@ -68,6 +68,7 @@ COLMAP_ADD_SOURCES(
     solvers/fundamental_matrix.h solvers/fundamental_matrix.cc
     solvers/homography_matrix.h solvers/homography_matrix.cc
     solvers/poselib_utils.h solvers/poselib_utils.cc
+    solvers/utils.h solvers/utils.cc
     solvers/relpose_shared_focal.h solvers/relpose_shared_focal.cc
     solvers/translation_transform.h
 )
@@ -84,15 +85,24 @@ COLMAP_ADD_TEST(relpose_one_sided_focal_test
 COLMAP_ADD_TEST(absolute_pose_test solvers/absolute_pose_test.cc)
 COLMAP_ADD_TEST(solvers_affine_transform_test solvers/affine_transform_test.cc)
 COLMAP_ADD_TEST(coordinate_frame_test coordinate_frame_test.cc)
-COLMAP_ADD_TEST(estimators_utils_test utils_test.cc)
 COLMAP_ADD_TEST(global_positioning_test global_positioning_test.cc)
 COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc)
+COLMAP_ADD_TEST(solvers_generalized_absolute_pose_test
+                solvers/generalized_absolute_pose_test.cc)
+COLMAP_ADD_TEST(solvers_similarity_transform_test
+                solvers/similarity_transform_test.cc)
+COLMAP_ADD_TEST(solvers_utils_test solvers/utils_test.cc)
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)
+COLMAP_ADD_TEST(solvers_generalized_relative_pose_test
+                solvers/generalized_relative_pose_test.cc)
 COLMAP_ADD_TEST(rotation_averaging_test rotation_averaging_test.cc)
+COLMAP_ADD_TEST(rotation_averaging_ceres_test rotation_averaging_ceres_test.cc)
 COLMAP_ADD_TEST(translation_transform_test translation_transform_test.cc)
 COLMAP_ADD_TEST(solvers_essential_matrix_test solvers/essential_matrix_test.cc)
 COLMAP_ADD_TEST(solvers_fundamental_matrix_test solvers/fundamental_matrix_test.cc)
 COLMAP_ADD_TEST(solvers_homography_matrix_test solvers/homography_matrix_test.cc)
+COLMAP_ADD_TEST(poselib_utils_test solvers/poselib_utils_test.cc)
+COLMAP_ADD_TEST(bundle_adjustment_ceres_test bundle_adjustment_ceres_test.cc)
 COLMAP_ADD_TEST(view_graph_calibration_test view_graph_calibration_test.cc)
 # Minimal Boost.Test parity gate for the modernized two-view estimator; the
 # full upstream gtest suite follows the W9 synthetic-dataset port.
@@ -114,3 +124,18 @@ COLMAP_ADD_TEST(generalized_pose_test generalized_pose_test.cc)
 if (RECONSTRUCTION_CASPAR_ENABLED)
     COLMAP_ADD_TEST(bundle_adjustment_caspar_test bundle_adjustment_caspar_test.cc)
 endif ()
+COLMAP_ADD_TEST(alignment_test alignment_test.cc)
+COLMAP_ADD_TEST(calibration_test cost_functions/calibration_test.cc)
+COLMAP_ADD_TEST(estimators_cost_functions_alignment_test cost_functions/alignment_test.cc)
+COLMAP_ADD_TEST(motion_averaging_test cost_functions/motion_averaging_test.cc)
+COLMAP_ADD_TEST(cost_functions_pose_prior_test cost_functions/pose_prior_test.cc)
+COLMAP_ADD_TEST(quaternion_utils_test cost_functions/quaternion_utils_test.cc)
+COLMAP_ADD_TEST(reprojection_error_test cost_functions/reprojection_error_test.cc)
+COLMAP_ADD_TEST(sampson_error_test cost_functions/sampson_error_test.cc)
+COLMAP_ADD_TEST(tiny_manifold_test cost_functions/tiny_manifold_test.cc)
+COLMAP_ADD_TEST(tiny_sampson_error_test cost_functions/tiny_sampson_error_test.cc)
+COLMAP_ADD_TEST(utils_test cost_functions/utils_test.cc)
+COLMAP_ADD_TEST(fundamental_matrix_degensac_test fundamental_matrix_degensac_test.cc)
+COLMAP_ADD_TEST(gravity_refinement_test gravity_refinement_test.cc)
+COLMAP_ADD_TEST(estimators_pose_test pose_test.cc)
+COLMAP_ADD_TEST(relpose_shared_focal_test solvers/relpose_shared_focal_test.cc)

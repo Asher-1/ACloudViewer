@@ -40,6 +40,7 @@ COLMAP_ADD_SOURCES(
     sprt.h sprt.cc
     manifold.h
     support_measurement.h support_measurement.cc
+    two_group_sampler.h two_group_sampler.cc
 )
 
 
@@ -49,5 +50,9 @@ COLMAP_ADD_TEST(least_absolute_deviations_test
 COLMAP_ADD_TEST(loransac_test loransac_test.cc)
 COLMAP_ADD_TEST(progressive_sampler_test progressive_sampler_test.cc)
 COLMAP_ADD_TEST(random_sampler_test random_sampler_test.cc)
+COLMAP_ADD_TEST(two_group_sampler_test two_group_sampler_test.cc)
 COLMAP_ADD_TEST(ransac_test ransac_test.cc)
 COLMAP_ADD_TEST(support_measurement_test support_measurement_test.cc)
+COLMAP_ADD_TEST(sparse_cholesky_test sparse_cholesky_test.cc)
+COLMAP_ADD_TEST(sprt_test sprt_test.cc)
+COLMAP_ADD_TEST(tiny_solver_test tiny_solver_test.cc)

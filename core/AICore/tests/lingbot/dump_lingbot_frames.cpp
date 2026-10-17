@@ -13,6 +13,14 @@
 //
 // Usage:
 //   dump_lingbot_frames MODEL.gguf FRAMES.bin BACKEND H W OUT_DIR [N_FRAMES]
+//                        [--kv SCALE,WINDOW] [--kf INTERVAL]
+//                        [--skyseg GGUF] [--sky-mask-out DIR]
+//
+// --skyseg loads the native sky-segmentation model on the same context
+// (the engine then zeroes sky confidence during the stream, matching the
+// upstream CLI's argv[9]); --sky-mask-out additionally writes each
+// delivered frame's keep-mask (255 = keep, 0 = sky) as DIR/mask_XXXX.bin
+// so the masks can be diffed pixel-wise against the upstream cache PNGs.
 //
 // Prints a RESULT line with the pure-inference wall time (engine load
 // excluded) for the speed A/B against the upstream CLI.
@@ -21,6 +29,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -44,12 +53,28 @@ int main(int argc, char** argv) {
     int nFrames = argc > 7 && argv[7][0] != '-' ? std::atoi(argv[7]) : 0;
     const char* kvArg = nullptr;
     const char* kfArg = nullptr;
+    const char* stagesArg = nullptr;
+    const char* internalArg = nullptr;
+    const char* skysegArg = nullptr;
+    const char* skyMaskOutArg = nullptr;
     for (int i = 7; i < argc; ++i) {
         if (std::strcmp(argv[i], "--kv") == 0 && i + 1 < argc) {
             kvArg = argv[i + 1];
         }
         if (std::strcmp(argv[i], "--kf") == 0 && i + 1 < argc) {
             kfArg = argv[i + 1];
+        }
+        if (std::strcmp(argv[i], "--stages") == 0 && i + 1 < argc) {
+            stagesArg = argv[i + 1];
+        }
+        if (std::strcmp(argv[i], "--internal") == 0 && i + 1 < argc) {
+            internalArg = argv[i + 1];
+        }
+        if (std::strcmp(argv[i], "--skyseg") == 0 && i + 1 < argc) {
+            skysegArg = argv[i + 1];
+        }
+        if (std::strcmp(argv[i], "--sky-mask-out") == 0 && i + 1 < argc) {
+            skyMaskOutArg = argv[i + 1];
         }
     }
 
@@ -76,6 +101,13 @@ int main(int argc, char** argv) {
     aicore_lingbot_options_set_device(opts, backend.c_str());
     aicore_lingbot_options_set_threads(opts, 4);
     aicore_lingbot_options_set_stream_capacity(opts, nFrames);
+    if (stagesArg) {
+        std::filesystem::create_directories(stagesArg);
+        aicore_lingbot_options_set_dump_stages_dir(opts, stagesArg);
+    }
+    if (internalArg) {
+        aicore_lingbot_options_set_dump_internal(opts, 1, internalArg);
+    }
     if (kvArg) {
         int scale = 0, window = 0;
         if (std::sscanf(kvArg, "%d,%d", &scale, &window) == 2 && scale > 0 &&
@@ -94,12 +126,22 @@ int main(int argc, char** argv) {
         aicore_lingbot_free(ctx);
         return 1;
     }
+    if (skysegArg && skysegArg[0]) {
+        if (aicore_lingbot_skyseg_load(ctx, skysegArg) != 0) {
+            std::fprintf(stderr, "skyseg load failed: %s\n",
+                         aicore_lingbot_last_error(ctx));
+            aicore_lingbot_free(ctx);
+            return 1;
+        }
+    }
 
     // The lambda captures everything directly instead.
     struct DumpState {
         std::string outDir;
         int delivered = 0;
-    } dumpState{outDir, 0};
+        aicore_lingbot_ctx* ctx = nullptr;
+        std::string skyMaskOut;
+    } dumpState{outDir, 0, ctx, skyMaskOutArg ? skyMaskOutArg : ""};
 
     auto dumpCb = +[](void* user, const aicore_lingbot_result* r) -> int {
         auto* ds = static_cast<DumpState*>(user);
@@ -128,6 +170,25 @@ int main(int argc, char** argv) {
         file.write(reinterpret_cast<const char*>(r->c2w), 16 * sizeof(float));
         file.write(reinterpret_cast<const char*>(r->intrinsics),
                    4 * sizeof(float));
+        if (!ds->skyMaskOut.empty()) {
+            char maskPath[1024];
+            std::snprintf(maskPath, sizeof(maskPath), "%s/mask_%04d.bin",
+                          ds->skyMaskOut.c_str(), ds->delivered);
+            const int needed =
+                    aicore_lingbot_last_sky_mask(ds->ctx, nullptr, 0);
+            if (needed > 0) {
+                std::vector<unsigned char> mask(static_cast<size_t>(needed));
+                if (aicore_lingbot_last_sky_mask(ds->ctx, mask.data(),
+                                                 needed) == needed) {
+                    std::ofstream maskFile(maskPath, std::ios::binary);
+                    if (maskFile) {
+                        maskFile.write(
+                                reinterpret_cast<const char*>(mask.data()),
+                                static_cast<std::streamsize>(mask.size()));
+                    }
+                }
+            }
+        }
         ++ds->delivered;
         return 0;
     };

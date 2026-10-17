@@ -32,9 +32,11 @@
 #include "estimators/cost_functions/tiny_manifold.h"
 #include "estimators/cost_functions/tiny_sampson_error.h"
 #include "estimators/solvers/poselib_utils.h"
+#include "estimators/solvers/utils.h"
 #include "geometry/essential_matrix.h"
 #include "geometry/rigid3.h"
 #include "optim/tiny_solver.h"
+#include "util/eigen_alignment.h"
 #include "util/logging.h"
 
 #include <cmath>
@@ -113,19 +115,6 @@ double IsoscelesDeviation(const Rigid3d& cam2_from_cam1) {
   return std::abs(dist1 - dist2) / dist_sum;
 }
 
-// Focal-calibrated, normalized camera rays (x / f, y / f, 1) from centered
-// image points.
-std::vector<Eigen::Vector3d> CalibratedRays(
-    const std::vector<Eigen::Vector2d>& points, const double focal) {
-  const double inv_f = 1.0 / focal;
-  std::vector<Eigen::Vector3d> rays(points.size());
-  for (size_t i = 0; i < points.size(); ++i) {
-    rays[i] = Eigen::Vector3d(points[i].x() * inv_f, points[i].y() * inv_f, 1.0)
-                  .normalized();
-  }
-  return rays;
-}
-
 // Isotropic normalization scale: the mean magnitude of the centered image
 // points across both views. Returns 0 if there are no points.
 double ComputeScaleForNormalization(
@@ -197,7 +186,7 @@ bool RelativePoseSharedFocalEstimator::Refine(const std::vector<X_t>& points1,
   THROW_CHECK_GE(points1.size(), kMinNumSamples);
   THROW_CHECK_NOTNULL(model);
 
-  if (!(model->focal > 0.0)) {
+  if (model->focal <= 0.0 || !std::isfinite(model->focal)) {
     return false;
   }
 
@@ -217,7 +206,7 @@ bool RelativePoseSharedFocalEstimator::Refine(const std::vector<X_t>& points1,
   }
 
   // Nonlinear pixel-space Sampson refinement of the joint 6-DoF (5-DoF pose
-  // plus shared focal) via ceres::TinySolver (fixed-size, allocation-free,
+  // plus shared focal) via colmap::TinySolver (fixed-size, allocation-free,
   // autodiff), applying the shared-focal relative pose manifold. Plain least
   // squares: the points are assumed to be the inlier set, so robustness comes
   // from the RANSAC inlier selection.
@@ -229,21 +218,15 @@ bool RelativePoseSharedFocalEstimator::Refine(const std::vector<X_t>& points1,
   options.max_num_iterations = 25;
 
   Eigen::Matrix<double, 8, 1> x;
-  x.head<4>() = cam2_from_cam1.rotation().normalized().coeffs();
-  x.segment<3>(4) = cam2_from_cam1.translation().normalized();
+  x.head<7>() = RelPoseParamsFromRigid3d(cam2_from_cam1);
   x[7] = std::log(model->focal);
-  solver.Solve(f, &x, options);
-
-  // Keep the refined estimate only if the solve stayed finite and left a
-  // non-degenerate baseline; otherwise fall back to the decomposed pose and
-  // seed focal.
-  const Eigen::Vector3d translation = x.segment<3>(4);
-  if (x.allFinite() && translation.squaredNorm() > 0) {
-    cam2_from_cam1 =
-        Rigid3d(Eigen::Quaterniond(x.data()).normalized(), translation);
-    model->E = EssentialMatrixFromPose(cam2_from_cam1);
-    model->focal = std::exp(x[7]);
+  if (solver.Solve(f, &x, options).status == Solver::NUMERICAL_FAILURE) {
+    return false;
   }
+
+  cam2_from_cam1 = Rigid3dFromRelPoseParams(x.data());
+  model->E = EssentialMatrixFromPose(cam2_from_cam1);
+  model->focal = std::exp(x[7]);
   return true;
 }
 

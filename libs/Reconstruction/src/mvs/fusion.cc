@@ -33,6 +33,7 @@
 
 #include <algorithm>
 
+#include "util/hash_containers.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -248,6 +249,10 @@ void StereoFusion::Run() {
         K(0, 2) *= bitmap_scales_.at(image_idx).first;
         K(1, 1) *= bitmap_scales_.at(image_idx).second;
         K(1, 2) *= bitmap_scales_.at(image_idx).second;
+        // Upstream parity (c6ab4f89): COLMAP intrinsics place pixel centers
+        // at integer + 0.5, while the fusion samples at integer centers.
+        K(0, 2) -= 0.5f;
+        K(1, 2) -= 0.5f;
 
         ComposeProjectionMatrix(K.data(), image.GetR(), image.GetT(),
                                 P_.at(image_idx).data());
@@ -374,8 +379,9 @@ void StereoFusion::InitFusedPixelMask(int image_idx,
     if (!options_.mask_path.empty() && ExistsFile(mask_path) &&
         mask.Read(mask_path, false)) {
         BitmapColor<uint8_t> color;
-        mask.Rescale(static_cast<int>(width), static_cast<int>(height),
-                     BitmapRescaleFilter::kBox);
+        mask.Rescale(static_cast<int>(width),
+                     static_cast<int>(height),
+                     Bitmap::RescaleFilter::kBox);
         for (size_t row = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col) {
                 mask.GetPixel(col, row, &color);
@@ -408,7 +414,9 @@ void StereoFusion::Fuse(const int thread_id,
     std::vector<uint8_t> fused_point_r;
     std::vector<uint8_t> fused_point_g;
     std::vector<uint8_t> fused_point_b;
-    std::unordered_set<int> fused_point_visibility;
+    // Upstream parity: the set's iteration order is the written visibility
+    // order (fused.ply.vis), so it must be the upstream container.
+    FlatHashSet<int> fused_point_visibility;
 
     while (!fusion_queue.empty()) {
         const auto data = fusion_queue.back();
@@ -671,7 +679,9 @@ std::vector<std::vector<int>> ReadPointsVisibility(
     CHECK(file.is_open()) << path;
 
     const size_t file_num_points = ReadBinaryLittleEndian<uint64_t>(&file);
-    CHECK_EQ(file_num_points, num_points);
+    // Upstream parity: a size mismatch is a throw (std::invalid_argument),
+    // not a process abort, so callers/tests can handle it.
+    THROW_CHECK_EQ(file_num_points, num_points);
 
     std::vector<std::vector<int>> visibility(num_points);
     for (size_t i = 0; i < num_points; ++i) {

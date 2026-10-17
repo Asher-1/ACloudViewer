@@ -4,3 +4,5 @@ scipy==1.15.3
 tensorboard==2.19.0
 oauthlib==3.2.2
 certifi
+# python/test/reconstruction/sensor/test_bitmap.py decodes bitmaps via PIL.
+pillow

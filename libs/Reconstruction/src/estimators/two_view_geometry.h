@@ -12,14 +12,12 @@
 #include "feature/types.h"
 #include "optim/ransac.h"
 #include "scene/camera.h"
+#include "scene/database_cache.h"
 #include "scene/image.h"
 #include "scene/two_view_geometry.h"
 #include "util/hash_containers.h"
 
 namespace colmap {
-
-class DatabaseCache;
-class Rig;
 
 // Estimation options.
 struct TwoViewGeometryOptions {
@@ -145,13 +143,15 @@ TwoViewGeometry EstimateTwoViewGeometry(
 // @param options         Two-view geometry estimation options.
 //
 // @return                Two-view geometries for all matched images.
-// EstimateRigTwoViewGeometries is deferred to W3 together with
-// MaybeDecomposeRelativePoses and the generalized-pose cost machinery.
-
-// Decompose the relative poses of all two-view geometries that have a
-// calibrated prior and no decomposed pose yet (upstream parity: the global
-// pipeline calls this once after loading the database cache).
-void MaybeDecomposeRelativePoses(DatabaseCache* database_cache);
+std::vector<std::pair<std::pair<image_t, image_t>, TwoViewGeometry>>
+EstimateRigTwoViewGeometries(
+        const Rig& rig1,
+        const Rig& rig2,
+        const NodeHashMap<image_t, Image>& images,
+        const NodeHashMap<camera_t, Camera>& cameras,
+        const std::vector<std::pair<std::pair<image_t, image_t>,
+                                    FeatureMatches>>& matches,
+        const TwoViewGeometryOptions& options);
 
 // Estimate relative pose for two-view geometry.
 //
@@ -273,5 +273,6 @@ TwoViewGeometry TwoViewGeometryFromKnownRelativePose(
 // update the results in-memory. Skips pairs that already have a relative
 // pose or have invalid two-view geometries (UNDEFINED, DEGENERATE, WATERMARK,
 // MULTIPLE).
+void MaybeDecomposeRelativePoses(DatabaseCache* database_cache);
 
 }  // namespace colmap

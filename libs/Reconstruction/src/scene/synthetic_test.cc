@@ -95,17 +95,11 @@ TEST(SynthesizeDataset, Nominal) {
   for (const auto& [frame_id, frame] : reconstruction.Frames()) {
     Frame reconstruction_frame = frame;
     EXPECT_TRUE(reconstruction_frame.HasPose());
-    // Fork parity: the fork-legacy schema persists the frame pose
-    // (has_pose/qvec/tvec columns), so ReadFrame restores a posed frame;
-    // upstream compares ResetPose'd frames because its schema does not
-    // persist the pose. Compare the persisted fields directly instead.
+    reconstruction_frame.ResetPose();
     Frame database_frame = database->ReadFrame(frame_id);
     EXPECT_EQ(database_frame.DataIds(), reconstruction_frame.DataIds());
-    EXPECT_EQ(database_frame.HasPose(), reconstruction_frame.HasPose());
-    EXPECT_EQ(database_frame.RigFromWorldQvec(),
-              reconstruction_frame.RigFromWorldQvec());
-    EXPECT_EQ(database_frame.RigFromWorldTvec(),
-              reconstruction_frame.RigFromWorldTvec());
+    EXPECT_EQ(database_frame.RigId(), reconstruction_frame.RigId());
+    EXPECT_FALSE(database_frame.HasPose());
     EXPECT_EQ(reconstruction_frame.NumDataIds(),
               reconstruction_frame.RigPtr()->NumSensors());
   }
@@ -124,9 +118,11 @@ TEST(SynthesizeDataset, Nominal) {
     EXPECT_THAT(image.Name(), testing::EndsWith(options.image_extension));
     image_names.insert(image.Name());
     EXPECT_EQ(image.NumPoints2D(), database->ReadKeypoints(image_id).size());
-    EXPECT_EQ(image.NumPoints2D(),
-              database->ReadDescriptors(image_id).rows());
-    EXPECT_EQ(database->ReadDescriptors(image_id).cols(), 128);
+    const FeatureDescriptors database_descriptors =
+        database->ReadDescriptors(image_id);
+    EXPECT_EQ(database_descriptors.type, FeatureExtractorType::SIFT);
+    EXPECT_EQ(image.NumPoints2D(), database_descriptors.data.rows());
+    EXPECT_EQ(database_descriptors.data.cols(), 128);
     EXPECT_EQ(image.NumPoints2D(),
               options.num_points3D + options.num_points2D_without_point3D);
     EXPECT_EQ(image.NumPoints3D(), options.num_points3D);
@@ -160,7 +156,7 @@ TEST(SynthesizeDataset, Nominal) {
     const FeatureDescriptors desc0 =
         database->ReadDescriptors(point3D.Track().Element(0).image_id);
     const auto descriptors =
-        desc0.row(point3D.Track().Element(0).point2D_idx);
+        desc0.data.row(point3D.Track().Element(0).point2D_idx);
 
     double max_tri_angle = 0;
     for (size_t i1 = 0; i1 < point3D.Track().Length(); ++i1) {
@@ -174,8 +170,9 @@ TEST(SynthesizeDataset, Nominal) {
       EXPECT_LE(squared_reproj_error, kMaxReprojError * kMaxReprojError);
       const FeatureDescriptors desc1 =
           database->ReadDescriptors(point3D.Track().Element(i1).image_id);
+      EXPECT_EQ(desc1.type, FeatureExtractorType::SIFT);
       EXPECT_EQ(descriptors,
-                desc1.row(point3D.Track().Element(i1).point2D_idx));
+                desc1.data.row(point3D.Track().Element(i1).point2D_idx));
 
       Eigen::Vector3d proj_center1;
       if (proj_centers.count(image_id1) == 0) {
@@ -598,8 +595,13 @@ TEST(IncrementalMapperFrameWiring, SyntheticCacheIsFrameWiredAndDualPathConsiste
   Image& img = recon.Image(first_id);
   EXPECT_TRUE(img.HasFramePtr());
   EXPECT_TRUE(img.FramePtr()->HasRigPtr());
-  EXPECT_TRUE(img.FramePtr()->HasPose());
   EXPECT_TRUE(img.HasCameraPtr());
+  // Batch C fix: BeginReconstruction unregisters the cache-loaded frames
+  // (and their poses) so incremental SfM starts from zero registration with
+  // matching observation bookkeeping; the wiring assertions above are what
+  // this case guards, and the pose is re-established below through the
+  // mapper stage-1 write path.
+  EXPECT_FALSE(img.FramePtr()->HasPose());
 
   // Frame write (mapper stage-1 path) must be visible through the
   // pose-derived accessors and must keep the legacy shadow in sync.

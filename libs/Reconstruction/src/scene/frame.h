@@ -25,6 +25,15 @@ namespace colmap {
 // camera-data adapter for the legacy SfM pipeline.
 class Frame {
 public:
+    Frame() = default;
+    // Upstream parity (923342c5 #4857): copies are editable drafts — the
+    // finalized flag resets so transcribe-style code can Clear/Add data ids
+    // and must re-finalize explicitly.
+    Frame(const Frame& other);
+    Frame& operator=(const Frame& other);
+    Frame(Frame&&) = default;
+    Frame& operator=(Frame&&) = default;
+
     frame_t FrameId() const;
     void SetFrameId(frame_t frame_id);
     bool HasRigId() const { return rig_id_ != kInvalidRigId; }
@@ -36,7 +45,13 @@ public:
     const std::set<data_t>& DataIds() const;
     // Upstream-parity accessor (COLMAP 4.x scene/frame.h).
     size_t NumDataIds() const { return data_ids_.size(); }
-    void ClearDataIds() { data_ids_.clear(); }
+    void ClearDataIds();
+
+    // Upstream parity (d3ccaf35 scene/frame.h): mark the data ids as final
+    // when the frame is added to a reconstruction, to ensure consistency of
+    // cached counters.
+    void FinalizeDataIds() { has_final_data_ids_ = true; }
+    bool HasFinalDataIds() const { return has_final_data_ids_; }
 
     void AddImageId(image_t image_id);
     bool HasImageId(image_t image_id) const;
@@ -116,6 +131,7 @@ private:
     frame_t frame_id_ = kInvalidFrameId;
     rig_t rig_id_ = kInvalidRigId;
     std::set<data_t> data_ids_;
+    bool has_final_data_ids_ = false;
     std::set<image_t> image_ids_;
     class Rig* rig_ptr_ = nullptr;
     bool has_pose_ = false;

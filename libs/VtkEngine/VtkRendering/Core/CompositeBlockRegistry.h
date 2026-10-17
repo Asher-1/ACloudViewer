@@ -32,6 +32,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkType.h>
 
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -60,6 +61,20 @@ public:
     /// renderer; the registry only fills it with blocks.
     vtkActor* ensureGroup(const std::string& groupId);
     bool hasGroup(const std::string& groupId) const;
+    /// True when ANY group id starts with @a prefix. Container-scoped group
+    /// families (container viewId + "#lw<width>") are addressed by the bare
+    /// container viewId everywhere outside the registry, so folder-level
+    /// lookups/removals must go through the prefix forms.
+    bool hasCompositeGroupWithPrefix(const std::string& prefix) const;
+    /// Removes every group whose id starts with @a prefix. @returns the
+    /// number of groups removed.
+    int removeCompositeGroupsByPrefix(const std::string& prefix);
+    /// Enumerates the group ids whose key matches @a prefix — the caller
+    /// needs the IDS for a FULL teardown (group actor out of the renderer
+    /// + record destroy); a record-only delete leaves the actor rendering
+    /// as an uncontrollable ghost population.
+    std::vector<std::string> groupIdsWithPrefix(
+            const std::string& prefix) const;
     /// Drops the group and every leaf referencing it.
     void destroyGroup(const std::string& groupId);
     vtkActor* groupActor(const std::string& groupId) const;
@@ -103,7 +118,31 @@ public:
     bool bakeLeafTransform(const std::string& leafId,
                            const vtkMatrix4x4* matrix);
 
+    // ---- absolute (idempotent) world transforms ----
+    /// Snapshots the leaf's CURRENT block points as the untransformed base.
+    /// Call right after registering block geometry that is still in its local
+    /// frame; the leaf then tracks an ABSOLUTE world transform instead of
+    /// accumulating incremental bakes (a per-frame applyGLTransform of the
+    /// same matrix must not compose onto itself and fly away).
+    void anchorLeafBase(const std::string& leafId);
+    /// ABSOLUTE transform: points = base × matrix. Idempotent — re-applying
+    /// the same matrix is a no-op instead of a double bake. Requires a
+    /// previously anchored base. @returns true ONLY when points were actually
+    /// re-baked (callers use this to invalidate cached scene bounds exactly
+    /// when they change); false on no-op (same matrix), unknown leaf, or
+    /// missing base snapshot.
+    bool setLeafWorldTransform(const std::string& leafId,
+                               const vtkMatrix4x4* matrix);
+    /// True when the leaf has a base snapshot (setLeafWorldTransform usable).
+    bool hasLeafWorldAnchor(const std::string& leafId) const;
+
     // ---- per-leaf display control (no-ops for unknown leaves) ----
+    /** Change-detecting variant: returns false (and does NOT touch the
+     *  attribute map) when the leaf already carries exactly this visibility
+     *  — the steady redraw pass then stops churning the mapper/attributes
+     *  and the geometry-bounds dirty flag, which re-triggered full bound
+     *  recomputes on every pass for unchanged state. */
+    bool setLeafVisibilityIfChanged(const std::string& leafId, bool visible);
     void setLeafVisibility(const std::string& leafId, bool visible);
     void setLeafOpacity(const std::string& leafId, double opacity);
     /// Overrides the leaf color; pass @a color == nullptr to clear the
@@ -140,6 +179,11 @@ private:
     std::unordered_map<std::string, Group> m_groups;
     std::unordered_map<std::string, LeafRef> m_leafIndex;
     std::unordered_map<vtkActor*, std::string> m_actorToGroup;
+    // Absolute world-transform tracking (see anchorLeafBase). Base points are
+    // a small per-leaf copy (frustum line sets are ~30 points); matrices are
+    // the last applied world transform for idempotence.
+    std::unordered_map<std::string, std::vector<double>> m_leafBasePoints;
+    std::unordered_map<std::string, std::array<double, 16>> m_leafWorldMatrix;
 };
 
 }  // namespace VtkRendering

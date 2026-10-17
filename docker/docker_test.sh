@@ -60,6 +60,67 @@ ci_print_env() {
     echo "[ci_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-not set}"
 }
 
+# Whole-tree python unit tests, run inside the container under test. The
+# container image installs the python package (with the reconstruction
+# bindings), so pytest python/test collects the reconstruction
+# pycolmap-parity suite together with everything else - no special-casing.
+python_unit_tests() {
+    echo "======================================================================"
+    echo "Running Python Unit Tests"
+    echo "======================================================================"
+    echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c '
+        # The wheel images ship pytest; the CI images do not.
+        python -m pip install --quiet pytest >/dev/null 2>&1 || true
+        # The CI images never pip-install the cloudViewer package: the GUI-app
+        # build assembles it (pybind target) under
+        # $ACloudViewer_BUILD/lib/python_package (exact case as defined by
+        # Dockerfile.ci), which nothing puts on sys.path. Export it when the
+        # import would otherwise fail. The wheel images pip-install the
+        # package and wipe their build tree, so they take the first branch
+        # and stay untouched.
+        if ! python -c "import cloudViewer" 2>/dev/null; then
+            if [ -n "${ACloudViewer_BUILD:-}" ] && [ -f "${ACloudViewer_BUILD}/CMakeCache.txt" ]; then
+                if [ ! -d "${ACloudViewer_BUILD}/lib/python_package/cloudViewer" ]; then
+                    # The GUI-app image build stops at `make install`: the
+                    # python-package assembly target (`make python-package`)
+                    # is separate and never runs there. Build it on demand so
+                    # the self-loading package exists for pytest.
+                    if ! cmake --build "${ACloudViewer_BUILD}" --target python-package; then
+                        if [ "${BUILD_CUDA_MODULE:-OFF}" = "ON" ]; then
+                            # CUDA-only GUI builds stage a single (CUDA)
+                            # pybind variant; the cpu fallback variant that
+                            # the python-package guard requires is only
+                            # produced by the two-pass wheel build, so the
+                            # target cannot complete here. Python coverage
+                            # stays on the cpu images and the wheel path.
+                            echo "INFO: CUDA-only GUI build lacks the CPU pybind fallback; skipping python tests."
+                            exit 0
+                        fi
+                        echo "ERROR: python-package assembly failed in ${ACloudViewer_BUILD}" >&2
+                        exit 1
+                    fi
+                fi
+                export PYTHONPATH="${ACloudViewer_BUILD}/lib/python_package${PYTHONPATH:+:$PYTHONPATH}"
+            else
+                echo "ERROR: cloudViewer not importable and no build tree at ${ACloudViewer_BUILD:-<unset>} to assemble it from" >&2
+                exit 1
+            fi
+            # Whole-tree tests also need the runtime deps (numpy, plyfile,
+            # ...) and test-only deps (scipy, tensorboard, pillow, ...) that
+            # the wheel environments provide but the CI images do not.
+            python -m pip install --quiet -r python/requirements.txt \
+                -r python/requirements_test.txt || exit 1
+        fi
+        # Check if ML ops should be tested by checking build configuration.
+        pytest_args=""
+        if ! python -c "import sys, cloudViewer; sys.exit(not (cloudViewer._build_config[\"BUILD_PYTORCH_OPS\"] or cloudViewer._build_config[\"BUILD_TENSORFLOW_OPS\"]))" 2>/dev/null; then
+            pytest_args="--ignore python/test/ml_ops/"
+        fi
+        python -W default -m pytest python/test ${pytest_args} -v
+    '
+}
+
 cpp_test_only() {
     # Expects the following environment variables to be set:
     # - DOCKER_TAG
@@ -99,10 +160,17 @@ cpp_test_only() {
      && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
             cmake --build . --target reconstruction_caspar_parity_gate -j2; \
         fi \
+     && cmake --build . --target reconstruction_cpp_tests_gate -j2 \
      && if test -f bin/libAICore.so; then \
             python ../util/check_aicore_runtime.py bin/libAICore.so; \
         fi \
     "
+
+    # Python unit tests (whole python/test tree). The CI image installs the
+    # python package (build_gui_app: BUILD_PYTHON_MODULE=ON + BUILD_
+    # RECONSTRUCTION=ON + make install), so this covers the reconstruction
+    # pycolmap-parity suite as well - no separate compile anywhere.
+    python_unit_tests
 }
 
 cpp_python_command_tools_test() {
@@ -155,21 +223,9 @@ cpp_python_command_tools_test() {
         fi \
     "
 
-    # Python test
-    # Check if ML ops should be tested by checking build configuration dynamically
-    # This checks the actual installed cloudViewer package, not environment variables
-    echo "======================================================================"
-    echo "Running Python Unit Tests"
-    echo "======================================================================"
-    echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "
-        # Check if ML ops should be tested by checking build configuration
-        pytest_args=\"\"
-        if ! python -c \"import sys, cloudViewer; sys.exit(not (cloudViewer._build_config['BUILD_PYTORCH_OPS'] or cloudViewer._build_config['BUILD_TENSORFLOW_OPS']))\" 2>/dev/null; then
-            pytest_args=\"--ignore python/test/ml_ops/\"
-        fi
-        python -W default -m pytest python/test \${pytest_args} -v
-    "
+    # Python test (shared whole-tree runner; the wheel images install the
+    # python package, so this includes the reconstruction parity suite)
+    python_unit_tests
 
     # Command-line tools test
     echo "======================================================================"

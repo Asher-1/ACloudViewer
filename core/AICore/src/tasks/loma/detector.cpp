@@ -438,6 +438,11 @@ public:
         }
         device_weights =
                 ggml_backend_alloc_ctx_tensors(device_context, backend.be);
+        if (device_weights) {
+            ggml_backend_buffer_set_usage(device_weights,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+
         if (device_weights == nullptr) {
             error = "failed to allocate DaD weights on requested ggml backend";
             return false;

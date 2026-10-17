@@ -28,7 +28,36 @@ if (BUILD_RECONSTRUCTION)
     target_include_directories(pybind PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/lib)
+    if (DEFINED ACV_COLMAP_ENGINE_MACROS AND ACV_COLMAP_ENGINE_MACROS)
+        target_compile_definitions(pybind PRIVATE ${ACV_COLMAP_ENGINE_MACROS})
+    endif ()
     add_subdirectory(reconstruction)
+
+    # ABI parity has two different boundaries in this single extension:
+    # normal pybind sources exchange Eigen-bearing CloudViewer types with
+    # libraries built using the fork-wide EIGEN_MAX_ALIGN_BYTES=0 setting,
+    # while reconstruction sources exchange COLMAP types with libColmapLib,
+    # whose subtree deliberately removes that setting. Removing the macro
+    # from the whole pybind target makes e.g. io::rpc::SetMeshData interpret
+    # std::map<string, Eigen::Vector4f> with a different node layout and free
+    # an invalid pointer. Keep the CloudViewer ABI globally and undefine the
+    # macro only for reconstruction binding translation units.
+    if (MSVC)
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "/UEIGEN_MAX_ALIGN_BYTES")
+    else ()
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "-UEIGEN_MAX_ALIGN_BYTES")
+    endif ()
+    get_target_property(_ACV_PYBIND_SOURCES pybind SOURCES)
+    foreach (_ACV_PYBIND_SOURCE IN LISTS _ACV_PYBIND_SOURCES)
+        if (_ACV_PYBIND_SOURCE MATCHES "[/\\\\]reconstruction[/\\\\].*\\.cpp$")
+            set_property(SOURCE "${_ACV_PYBIND_SOURCE}" APPEND PROPERTY
+                         COMPILE_OPTIONS "${_ACV_PYBIND_EIGEN_UNDEFINE}")
+        endif ()
+    endforeach ()
+    unset(_ACV_PYBIND_EIGEN_UNDEFINE)
+    unset(_ACV_PYBIND_SOURCES)
+    unset(_ACV_PYBIND_SOURCE)
+
     # Some fixes for the Glog library.
     target_compile_definitions(pybind PRIVATE -DGLOG_NO_ABBREVIATED_SEVERITIES)
     target_compile_definitions(pybind PRIVATE -DGOOGLE_GLOG_DLL_DECL=)

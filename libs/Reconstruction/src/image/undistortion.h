@@ -40,6 +40,15 @@ struct UndistortCameraOptions {
     double roi_max_x = 1.0;
     double roi_max_y = 1.0;
 
+    // Maximum norm of the undistorted camera-space point (= tan(theta) where
+    // theta is the angle from the optical axis) used when tracing border
+    // pixels to compute the output image dimensions. For fisheye cameras with
+    // off-center principal points, border pixels outside the valid fisheye
+    // circle can have theta approaching pi/2, causing tan(theta) to diverge
+    // and producing extreme output dimensions. Points with norm exceeding this
+    // threshold are skipped. Set to -1 to disable the check (default).
+    double max_cam_point_norm = -1;
+
     // Controls direct target-resolution warping for undistortion and stereo
     // rectification. The default avoids unnecessary source-resolution passes.
     WarpImageOptions warp_options;
@@ -47,9 +56,9 @@ struct UndistortCameraOptions {
 
 // Undistort images and export undistorted cameras, as required by the
 // mvs::PatchMatchController class.
-class COLMAPUndistorter : public Thread {
+class COLMAPUndistorterImpl : public Thread {
 public:
-    COLMAPUndistorter(
+    COLMAPUndistorterImpl(
             const UndistortCameraOptions& options,
             Reconstruction* reconstruction,
             const std::filesystem::path& image_path,
@@ -57,6 +66,11 @@ public:
             const int num_related_images = 20,
             const CopyType copy_type = CopyType::COPY,
             const std::vector<image_t>& image_ids = std::vector<image_t>());
+
+    // Upstream parity (d3ccaf35): an external cancellation probe polled
+    // alongside the thread stop flag (controllers/undistorters.h forwards it).
+    void SetCheckIfStoppedFunc(std::function<bool()> func);
+    bool ShouldStop();
 
 private:
     void Run();
@@ -74,15 +88,16 @@ private:
     Reconstruction* reconstruction_;
     const std::vector<image_t> image_ids_;
     std::vector<std::string> image_names_;
+    std::function<bool()> check_if_stopped_func_;
 };
 
 // Undistort images and prepare data for CMVS/PMVS.
-class PMVSUndistorter : public Thread {
+class PMVSUndistorterImpl : public Thread {
 public:
-    PMVSUndistorter(const UndistortCameraOptions& options,
-                    Reconstruction* reconstruction,
-                    const std::filesystem::path& image_path,
-                    const std::filesystem::path& output_path);
+    PMVSUndistorterImpl(const UndistortCameraOptions& options,
+                        Reconstruction* reconstruction,
+                        const std::filesystem::path& image_path,
+                        const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -102,12 +117,12 @@ private:
 };
 
 // Undistort images and prepare data for CMP-MVS.
-class CMPMVSUndistorter : public Thread {
+class CMPMVSUndistorterImpl : public Thread {
 public:
-    CMPMVSUndistorter(const UndistortCameraOptions& options,
-                      Reconstruction* reconstruction,
-                      const std::filesystem::path& image_path,
-                      const std::filesystem::path& output_path);
+    CMPMVSUndistorterImpl(const UndistortCameraOptions& options,
+                          Reconstruction* reconstruction,
+                          const std::filesystem::path& image_path,
+                          const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -123,13 +138,13 @@ private:
 // Undistort images and export undistorted cameras without the need for a
 // reconstruction. Instead, the image names and camera model information are
 // read from a text file.
-class PureImageUndistorter : public Thread {
+class PureImageUndistorterImpl : public Thread {
 public:
-    PureImageUndistorter(const UndistortCameraOptions& options,
-                         const std::filesystem::path& image_path,
-                         const std::filesystem::path& output_path,
-                         const std::vector<std::pair<std::string, Camera>>&
-                                 image_names_and_cameras);
+    PureImageUndistorterImpl(const UndistortCameraOptions& options,
+                             const std::filesystem::path& image_path,
+                             const std::filesystem::path& output_path,
+                             const std::vector<std::pair<std::string, Camera>>&
+                                     image_names_and_cameras);
 
 private:
     void Run();
@@ -143,9 +158,9 @@ private:
 };
 
 // Rectify stereo image pairs.
-class StereoImageRectifier : public Thread {
+class StereoImageRectifierImpl : public Thread {
 public:
-    StereoImageRectifier(
+    StereoImageRectifierImpl(
             const UndistortCameraOptions& options,
             Reconstruction* reconstruction,
             const std::filesystem::path& image_path,

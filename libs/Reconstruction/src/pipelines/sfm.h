@@ -59,8 +59,8 @@ int NormalMapper(
         const std::string& input_path,
         const std::string& output_path,
         const std::string& image_list_path = "",
-        const colmap::IncrementalMapperOptions& incremental_mapper_options =
-                colmap::IncrementalMapperOptions());
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options =
+                colmap::IncrementalPipelineOptions());
 
 int HierarchicalMapper(
         const std::string& database_path,
@@ -69,8 +69,8 @@ int HierarchicalMapper(
         int num_workers = -1,
         int image_overlap = 50,
         int leaf_max_num_images = 500,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options =
-                colmap::IncrementalMapperOptions());
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options =
+                colmap::IncrementalPipelineOptions());
 
 int GlobalMapper(
         const std::string& database_path,
@@ -78,8 +78,8 @@ int GlobalMapper(
         const std::string& output_path,
         int num_workers = -1,
         int min_component_size = 2,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options =
-                colmap::IncrementalMapperOptions());
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options =
+                colmap::IncrementalPipelineOptions());
 
 int FilterPoints(const std::string& input_path,
                  const std::string& output_path,
@@ -93,7 +93,7 @@ int TriangulatePoints(
         const std::string& input_path,
         const std::string& output_path,
         bool clear_points = false,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options =
-                colmap::IncrementalMapperOptions());
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options =
+                colmap::IncrementalPipelineOptions());
 
 }  // namespace cloudViewer

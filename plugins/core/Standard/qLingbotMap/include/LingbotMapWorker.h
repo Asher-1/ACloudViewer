@@ -9,13 +9,19 @@
 
 #include <QElapsedTimer>
 #include <QImage>
+#include <QMutex>
 #include <QStringList>
 #include <QThread>
 #include <QVector>
+#include <QWaitCondition>
 #include <atomic>
 
 struct aicore_lingbot_ctx;
 struct aicore_lingbot_result;
+
+namespace lingbot_stitch {
+struct WindowData; /**< official windowed math (LingbotWindowStitcher.h) */
+}
 
 /** Per-frame streaming reconstruction result (processed-resolution layout).
  *  All buffers are frame-owned copies taken inside the engine callback. */
@@ -51,6 +57,25 @@ struct LingbotFramePreview {
     bool degenerate = false;   /**< non-finite depth/pose: frustum only */
 };
 
+/** Per-window ALIGNED live preview emitted when a window finishes: the
+ *  window's contribution frames (overlap de-duplicated) after the official
+ *  similarity warp, so every batch shares the first window's coordinate
+ *  frame. The main thread appends these into ONE persistent cloud and adds
+ *  one camera frustum per contributed frame (also aligned) — the live map
+ *  grows across window boundaries instead of being hidden when the next
+ *  window-local streaming preview would take over. */
+struct LingbotAlignedPreview {
+    int windowIndex = 0;
+    int width = 0;           /**< processed width (camera intrinsics) */
+    int height = 0;          /**< processed height */
+    QVector<float> points;   /**< [n * 3] world XYZ (aligned frame) */
+    QVector<uint8_t> colors; /**< [n * 3] RGB of kept points */
+    QVector<float> camC2w;   /**< [k * 16] aligned row-major c2w per
+                                  contributed frame */
+    QVector<float> camIntr;  /**< [k * 4] fx, fy, cx, cy per frame */
+    QVector<int> camFrames;  /**< k global frame indices */
+};
+
 /** Aggregated result handed back to the main thread. */
 struct LingbotRunResult {
     QVector<LingbotFrameResult> frames;
@@ -83,6 +108,9 @@ public:
     struct Settings {
         QString modelPath;   /**< LingBot-Map GGUF */
         QString imageFolder; /**< ordered image sequence */
+        /** Explicit ordered paths for headless callers. Non-empty replaces
+         *  imageFolder while videoPath retains upstream highest precedence. */
+        QStringList inputPaths;
         /** Upstream --video_path parity input (requires OpenCV at build
          *  time); when non-empty it replaces imageFolder, mirroring the
          *  upstream ggml_demo precedence. */
@@ -97,6 +125,16 @@ public:
         QString device = QStringLiteral("auto");
         int image_size = 518;       /**< official crop width */
         float confThreshold = 1.5f; /**< visibility confidence filter */
+        /** Official --downsample_factor (fused viewer display default 10):
+         *  per-frame clouds keep every Nth filtered point (parse_pc_data's
+         *  sequential arange stride). 1 = full density. */
+        int downsampleFactor = 10;
+        /** Live-preview camera behavior (official StreamingViewer parity):
+         *  0 = Global view (user-controlled, never touched);
+         *  1 = Fit latest frame (the official _fit_view: mean center,
+         *  fixed diagonal eye, re-fit at frames 1/10/50/120);
+         *  2 = Follow latest camera (the view rides the newest frustum). */
+        int liveViewMode = 1;
         /** Sky masking mode: none, native (skyseg GGUF), or cached PNG
          *  masks (upstream <scene>_sky_masks cache semantics; PNG value
          *  255 = keep, named after the source frame stem). */
@@ -132,7 +170,21 @@ public:
     /** Move the pending model context back to the main thread and free it.
      *  Safe to call from the main thread while the worker is idle. */
     void releaseContextOnMainThread();
-    void requestTaskCancel() { m_cancelRequested.store(true); }
+    void requestTaskCancel() {
+        m_cancelRequested.store(true);
+        // A paused stream waits on this condition; cancellation must wake
+        // it or the worker would hang inside the frame callback.
+        m_pauseCond.wakeAll();
+    }
+    /** Live control (official viewer pause semantics): the stream waits
+     *  INSIDE the frame callback, so no engine frame is consumed while
+     *  paused and the render window stops growing; resume continues the
+     *  same stream. Cancellation always breaks the wait. */
+    void requestPause() { m_pauseRequested.store(true); }
+    void requestResume() {
+        m_pauseRequested.store(false);
+        m_pauseCond.wakeAll();
+    }
 
 signals:
     void logMessage(const QString& msg);
@@ -140,6 +192,15 @@ signals:
     void framesDecoded(int count);
     /** Live per-frame preview while the engine streams (main-thread slot). */
     void framePreviewReady(const LingbotFramePreview& preview);
+    /** The processed-resolution input image of the frame just delivered
+     *  (implicit-sharing copy; lets the dialog mirror the reconstruction
+     *  progress like the official viewer's frame image panel). */
+    void previewImage(const QImage& image, int globalIndex);
+    /** Pause state transitions (emitted from the worker thread). */
+    void pauseStateChanged(bool paused);
+    /** ALIGNED per-window preview batch (main-thread slot): the persistent
+     *  cross-window map the transient per-window previews fold into. */
+    void alignedPreviewReady(const LingbotAlignedPreview& preview);
     void resultReady(const LingbotRunResult& result);
     void taskFinished(bool success);
 
@@ -148,6 +209,9 @@ protected:
 
 private:
     bool runInference(QString* error);
+    /** Blocks inside the engine's frame callback while paused; returns
+     *  when resumed or cancelled (the callback then reports cancel). */
+    void waitWhilePaused();
     /** Shared per-frame engine-callback state (streaming + windowed). */
     struct StreamState {
         LingbotMapWorker* worker;
@@ -158,6 +222,10 @@ private:
         int globalStart; /**< global index of local frame 0 */
         int windowIndex;
         int windowCount;
+        /** Windowed mode: numeric rows land directly in the stitcher's
+         *  WindowData (no intermediate O(depth-plane) copies); `frames`
+         *  then carries only the sky state + identity metadata. */
+        lingbot_stitch::WindowData* window = nullptr;
     };
     /** Shared streaming callback: result copy + live preview + progress. */
     static int streamCallbackEntry(void* user, const aicore_lingbot_result* r);
@@ -189,14 +257,33 @@ private:
 
     Settings m_settings;
     std::atomic<bool> m_cancelRequested{false};
+    /** Live pause state (see requestPause/requestResume). */
+    std::atomic<bool> m_pauseRequested{false};
+    bool m_pauseNotified =
+            false; /**< dedupes pauseStateChanged, worker thread only */
+    QMutex m_pauseMutex;
+    QWaitCondition m_pauseCond;
     void* m_pendingCtx = nullptr; /**< aicore_lingbot_ctx* (opaque) */
     // Worker-thread-only stream state (used inside the C callback).
     friend struct StreamState;
     int m_delivered = 0;
     bool m_skyReady = false;
     QElapsedTimer m_elapsed;
+    /** Running point count of the transient online preview cloud for the
+     *  current window/stream; drives the adaptive preview stride that
+     *  keeps the main thread's throttled re-conversion bounded. */
+    size_t m_previewPointTotal = 0;
+    /** Running point count of the ALIGNED cross-window preview batches;
+     *  stretches their pixel stride once the persistent map cloud passes
+     *  the same point budget as the transient preview. */
+    size_t m_alignedPointTotal = 0;
+    /** Mode actually used for the current run: Streaming upgraded to
+     *  Windowed by the official long-sequence policy. Computed in run()
+     *  where the stream bound is known, consumed by runInference(). */
+    Settings::Mode m_effectiveMode = Settings::Mode::Streaming;
 };
 
 Q_DECLARE_METATYPE(LingbotFrameResult)
 Q_DECLARE_METATYPE(LingbotFramePreview)
+Q_DECLARE_METATYPE(LingbotAlignedPreview)
 Q_DECLARE_METATYPE(LingbotRunResult)

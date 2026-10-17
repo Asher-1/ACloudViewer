@@ -14,6 +14,15 @@
 
 namespace colmap {
 
+// Upstream parity (d3ccaf35 util/file.h): throw-check that the directory
+// exists.
+#define THROW_CHECK_DIR_EXISTS(path)                               \
+    {                                                              \
+        const auto& path_val = (path);                             \
+        THROW_CHECK(colmap::ExistsDir(path_val))                   \
+                << "Directory " << path_val << " does not exist."; \
+    }
+
 enum class CopyType { COPY, HARD_LINK, SOFT_LINK };
 
 std::string EnsureTrailingSlash(const std::string& str);

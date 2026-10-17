@@ -51,7 +51,9 @@ def main():
         "rmbg": args.rmbg,
         "timeout_ms": args.timeout_ms,
     }
-    ws = create_connection(f"ws://127.0.0.1:{args.port}", timeout=args.timeout_ms / 1000)
+    # suppress_origin: the server refuses browser-style handshakes.
+    ws = create_connection(f"ws://127.0.0.1:{args.port}", timeout=args.timeout_ms / 1000,
+                           suppress_origin=True)
     ws.send(json.dumps({"jsonrpc": "2.0", "id": 1,
                         "method": "sam3d.generate", "params": params}))
     while True:

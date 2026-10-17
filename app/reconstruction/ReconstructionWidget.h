@@ -35,8 +35,8 @@ class MainWindow;
 namespace cloudViewer {
 
 // Directly use colmap's types
-using IncrementalMapperController = colmap::IncrementalMapperController;
-using IncrementalMapperOptions = colmap::IncrementalMapperOptions;
+using IncrementalPipeline = colmap::IncrementalPipeline;
+using IncrementalPipelineOptions = colmap::IncrementalPipelineOptions;
 using OptionManager = colmap::OptionManager;
 using RenderOptions = colmap::RenderOptions;
 
@@ -143,7 +143,7 @@ private:
     OptionManager options_;
 
     colmap::ReconstructionManager reconstruction_manager_;
-    std::unique_ptr<IncrementalMapperController> mapper_controller_;
+    std::unique_ptr<IncrementalPipeline> mapper_controller_;
 
     colmap::Timer timer_;
 

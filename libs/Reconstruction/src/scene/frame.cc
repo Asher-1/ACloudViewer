@@ -14,6 +14,35 @@
 
 namespace colmap {
 
+// Upstream parity (923342c5 #4857): copies are editable drafts — the
+// finalized flag resets so transcribe-style code can Clear/Add data ids and
+// must re-finalize explicitly before reinserting the frame.
+Frame::Frame(const Frame& other)
+    : frame_id_(other.frame_id_),
+      rig_id_(other.rig_id_),
+      data_ids_(other.data_ids_),
+      has_final_data_ids_(false),
+      image_ids_(other.image_ids_),
+      rig_ptr_(other.rig_ptr_),
+      has_pose_(other.has_pose_),
+      rig_from_world_qvec_(other.rig_from_world_qvec_),
+      rig_from_world_tvec_(other.rig_from_world_tvec_) {}
+
+Frame& Frame::operator=(const Frame& other) {
+    if (this != &other) {
+        frame_id_ = other.frame_id_;
+        rig_id_ = other.rig_id_;
+        data_ids_ = other.data_ids_;
+        has_final_data_ids_ = false;
+        image_ids_ = other.image_ids_;
+        rig_ptr_ = other.rig_ptr_;
+        has_pose_ = other.has_pose_;
+        rig_from_world_qvec_ = other.rig_from_world_qvec_;
+        rig_from_world_tvec_ = other.rig_from_world_tvec_;
+    }
+    return *this;
+}
+
 namespace {
 
 constexpr uint32_t kFrameBinaryMagic = 0x46525631;  // FRV1
@@ -39,7 +68,20 @@ void Frame::SetRigId(const rig_t rig_id) {
     rig_id_ = rig_id;
 }
 
+void Frame::ClearDataIds() {
+    // Upstream parity (923342c5 #4857): finalized frames are immutable.
+    THROW_CHECK(!has_final_data_ids_)
+            << "Cannot clear data ids of a finalized frame.";
+    data_ids_.clear();
+    image_ids_.clear();
+}
+
 void Frame::AddDataId(const data_t& data_id) {
+    // Upstream parity (923342c5 #4857): finalized frames are immutable; the
+    // data ids must be complete before the frame enters a reconstruction.
+    THROW_CHECK(!has_final_data_ids_)
+            << "Cannot add data id to a finalized frame. Data ids must be "
+               "added before the frame is added to a reconstruction.";
     CHECK_NE(static_cast<int>(data_id.sensor_id.type),
              static_cast<int>(SensorType::INVALID));
     CHECK_NE(data_id.id, std::numeric_limits<uint64_t>::max());

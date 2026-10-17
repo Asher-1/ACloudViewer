@@ -16,8 +16,8 @@
 #include "meshoptimizer.h"
 #include "xatlas.h"
 
-// AICore image encode goes through Qt (QImage built-in PNG codec); the
-// upstream stb_image_write dependency is not used in-tree.
+// AICore image encode goes through Qt (QImage built-in PNG codec); no
+// third-party image writer is used in-tree.
 #include <QBuffer>
 #include <QImage>
 #include <algorithm>

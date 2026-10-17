@@ -1686,6 +1686,42 @@ size_t CountLeafMeshes(ccHObject* container) {
     return count;
 }
 
+// Camera-sensor counterpart of CountLeafMeshes: counts CAMERA_SENSOR
+// descendants of a container (recursing through non-sensor children so
+// nested groups aggregate too).
+size_t CountLeafCameras(ccHObject* container) {
+    if (!container) return 0;
+    size_t count = 0;
+    for (unsigned int i = 0; i < container->getChildrenNumber(); ++i) {
+        ccHObject* child = container->getChild(i);
+        if (!child) continue;
+        if (child->isA(CV_TYPES::CAMERA_SENSOR)) {
+            ++count;
+        } else {
+            count += CountLeafCameras(child);
+        }
+    }
+    return count;
+}
+
+// Line-family counterpart of CountLeafCameras: counts POLY_LINE and
+// LINESET leaves of a container (recursing through non-line children so
+// nested groups aggregate too).
+size_t CountLeafLines(ccHObject* container) {
+    if (!container) return 0;
+    size_t count = 0;
+    for (unsigned int i = 0; i < container->getChildrenNumber(); ++i) {
+        ccHObject* child = container->getChild(i);
+        if (!child) continue;
+        if (child->isA(CV_TYPES::POLY_LINE) || child->isA(CV_TYPES::LINESET)) {
+            ++count;
+        } else {
+            count += CountLeafLines(child);
+        }
+    }
+    return count;
+}
+
 bool CompositeMeshEligible(ccGenericMesh* mesh, size_t containerLeafCount) {
     // Material/texture/scalar-coloring driven rendering has no per-block
     // equivalent in VTK composite display attributes: keep those parts on
@@ -1780,7 +1816,12 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             context.meshRenderingMode !=
                     MESH_RENDERING_MODE::ECV_SURFACE_MODE ||
             mesh->pointGaussianEnabled() || mesh->stipplingEnabled() ||
-            (mesh->hasNormals() && !normalsShownForView);
+            (mesh->hasNormals() && !normalsShownForView) ||
+            // GL-trans meshes have no per-block transform equivalent: the
+            // actor's SetUserTransform (idempotent per-leaf) is the only
+            // correct carrier — an aggregated block would need an
+            // incremental bake that composes on every pass and flies away.
+            mesh->isGLTransEnabled();
     if (compositeOK && m_compositeRegistry.containsLeaf(viewID) &&
         (needsDedicatedActor ||
          !CompositeMeshEligible(mesh, containerLeafCount))) {
@@ -1806,6 +1847,7 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         // leaves per slider tick.
         auto srcIt = m_leafGeometryKey.find(viewID);
         if (m_compositeRegistry.containsLeaf(viewID) &&
+            m_compositeRegistry.groupOfLeaf(viewID) == groupId &&
             srcIt != m_leafGeometryKey.end() && srcIt->second == key &&
             !mesh->isRedraw()) {
             return;
@@ -2000,6 +2042,16 @@ void VtkVis::drawPolyline(const CC_DRAW_CONTEXT& context,
                           bool closed) {
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
+
+    // Line-family aggregation FIRST (same contract as aggregateCamera
+    // Sensor): many-line scenes render as blocks of ONE group actor per
+    // (container, line width). Small containers, 2D-mode lines and lines
+    // with per-entity state without a per-block equivalent fall through to
+    // the dedicated-actor path below.
+    if (polyline && aggregateLineEntity(context, polyline, viewID, viewport)) {
+        return;
+    }
+
     Eigen::Vector3d polygonColor =
             ecvColor::Rgb::ToEigen(context.defaultPolylineColor);
 
@@ -2016,6 +2068,333 @@ void VtkVis::drawPolyline(const CC_DRAW_CONTEXT& context,
                 context.defaultLineWidth, viewID, viewport);
 }
 
+bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
+                                   const ccSensor* sensor,
+                                   const std::string& viewID,
+                                   int viewport) {
+    // Replay channel switch: dedicated actors only (see the setter doc —
+    // per-frame replay visibility rides the boolean actor channel that
+    // point clouds prove every tick, not per-block attributes).
+    if (m_sensorAggregationSuspended) {
+        if (CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[agg] '%s' SKIP suspended", viewID.c_str());
+        }
+        return false;
+    }
+    // Same VTK version guard as the mesh aggregation.
+    if (!compositeRenderingSupported()) return false;
+    // Per-entity light overrides have no per-block equivalent (the group
+    // carries ONE material): keep such cameras on dedicated actors.
+    if (m_objectLightIntensity.count(viewID)) {
+        if (m_compositeRegistry.containsLeaf(viewID)) {
+            removeFromComposite(viewID, viewport);
+        }
+        return false;
+    }
+    if (!sensor || !sensor->isA(CV_TYPES::CAMERA_SENSOR)) return false;
+    const auto* camera = reinterpret_cast<const ccCameraSensor*>(sensor);
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[agg] '%s' enter containsLeaf=%d geomKey=%d",
+                     viewID.c_str(),
+                     m_compositeRegistry.containsLeaf(viewID) ? 1 : 0,
+                     m_leafGeometryKey.count(viewID));
+    }
+
+    // Eligibility: the container must hold enough cameras for the
+    // aggregation bookkeeping to pay off (same threshold as meshes).
+    // Only POSITIVE counts are cached: streaming scenarios (LingbotMap adds
+    // cameras frame by frame) grow a below-threshold container past the
+    // threshold, and a cached negative count would pin it dedicated forever.
+    // Re-counting is cheap exactly while the container is small.
+    const ccHObject* container = camera->getParent();
+    if (!container) return false;
+    auto cit = m_containerSensorCountCache.find(container);
+    if (cit != m_containerSensorCountCache.end()) {
+        if (cit->second < kMinLeavesForComposite) return false;
+    } else {
+        const size_t camCount =
+                CountLeafCameras(const_cast<ccHObject*>(container));
+        if (camCount < kMinLeavesForComposite) return false;
+        m_containerSensorCountCache.emplace(container, camCount);
+    }
+
+    const float lineWidth = static_cast<float>(context.currentLineWidth);
+    const ecvColor::Rgb& frameCol = context.defaultPolylineColor;
+    const ecvColor::Rgb& planeCol = context.defaultMeshColor;
+    const unsigned framePacked = (unsigned(frameCol.r) << 16) |
+                                 (unsigned(frameCol.g) << 8) |
+                                 unsigned(frameCol.b);
+    const unsigned planePacked = (unsigned(planeCol.r) << 16) |
+                                 (unsigned(planeCol.g) << 8) |
+                                 unsigned(planeCol.b);
+
+    // Line width has no per-block equivalent in VTK composite attributes:
+    // group cameras per resolved width (1 plain / 2 with frustum lines) so
+    // the single group-actor property always matches every member block.
+    const std::string groupId = CVTools::FromQString(container->getViewId()) +
+                                "#lw" +
+                                std::to_string(static_cast<int>(lineWidth));
+
+    CompositeLeafKey key;
+    key.sensor = camera;
+    key.sensorPointCount = unsigned(camera->getNearPlane().points_.size() +
+                                    camera->getSideLines().points_.size() +
+                                    camera->getArrow().points_.size());
+    key.sensorLineWidth = lineWidth;
+    key.sensorFrameColor = framePacked;
+    key.sensorPlaneColor = planePacked;
+    key.sensorScale = static_cast<float>(camera->getGraphicScale());
+
+    // Same-source skip FIRST (mirrors drawMesh): the polydata conversion plus
+    // block replacement trigger a composite VBO rebuild, so unchanged cameras
+    // must neither convert nor re-register on any pass. Pose changes do NOT
+    // reach this branch — they flow through the idempotent absolute transform
+    // in applyGLTransform on top of the anchored local-frame base. The face
+    // actor must exist too: it lives OUTSIDE the registry (a dedicated
+    // "#plane" actor), so any removal path that dropped it (folder teardown,
+    // prefix sweeps) must fall through and rebuild BOTH parts — otherwise
+    // the camera renders as a wireframe WITHOUT its near-plane face.
+    auto srcIt = m_leafGeometryKey.find(viewID);
+    if (m_compositeRegistry.containsLeaf(viewID) &&
+        m_compositeRegistry.groupOfLeaf(viewID) == groupId &&
+        srcIt != m_leafGeometryKey.end() && srcIt->second == key &&
+        !sensor->isRedraw() && contains(viewID + "#plane")) {
+        return true;
+    }
+
+    // Re-aggregating a previously dedicated camera: drop the stale dedicated
+    // actor, otherwise it double-renders next to its block.
+    if (contains(viewID)) {
+        removeShapes(viewID, viewport);
+    }
+
+    vtkSmartPointer<vtkPolyData> planeFaceData;
+    auto linesData = VtkRendering::CreateCameraSensor(
+            camera, context.defaultPolylineColor, context.defaultMeshColor,
+            &planeFaceData);
+    if (!linesData) return false;
+
+    // The near-plane FACE stays a DEDICATED actor even while the wireframe
+    // aggregates into the group: it needs its own 50% opacity, which the
+    // per-block attributes of the group would fight with on a shared
+    // material. Small geometry, one extra draw call per camera.
+    // IDEMPOTENT REBUILD: drop any stale face actor first — a leftover
+    // from the dedicated path or an earlier line-width group would render
+    // a SECOND near-plane face next to the current one.
+    const std::string faceID = viewID + "#plane";
+    if (planeFaceData) {
+        if (contains(faceID)) {
+            removeShapes(faceID, viewport);
+        }
+        vtkSmartPointer<vtkPVLODActor> faceActor;
+        VtkRendering::CreateActorFromVTKDataSet(planeFaceData, faceActor);
+        faceActor->GetProperty()->SetRepresentationToSurface();
+        faceActor->GetProperty()->SetLighting(false);
+        faceActor->GetProperty()->SetOpacity(0.5);
+        addActorToRenderer(faceActor, viewport);
+        (*getShapeActorMap())[faceID] = faceActor;
+        applyLightPropertiesToActor(faceActor, faceID);
+    }
+
+    m_leafGeometryKey[viewID] = key;
+    // Register the source object: property lookups and the light-intensity
+    // eviction path (getSourceObject → rebuild) resolve entities through it.
+    // Without it a camera leaf evicted by a per-entity light edit could not
+    // rebuild its dedicated actor and would vanish.
+    setCurrentSourceObject(const_cast<ccSensor*>(sensor), viewID);
+    const bool groupNew = !m_compositeRegistry.hasGroup(groupId);
+    m_compositeRegistry.setLeafBlock(viewID, groupId, linesData);
+    // Entity opacity replay AFTER the block is in place: setLeafBlock may
+    // destroy the old block (cross-width group move → removeLeaf), and an
+    // opacity written before it would die with that block. Re-applying the
+    // persisted entity opacity here closes the loop for every registration
+    // path (fresh, same-group replace, cross-group move).
+    m_compositeRegistry.setLeafOpacity(
+            viewID, static_cast<double>(sensor->getOpacity()));
+    // Anchor the still-local block geometry so per-frame pose application is
+    // an absolute, idempotent bake (applyGLTransform → setLeafWorldTransform)
+    // instead of an accumulating incremental one.
+    m_compositeRegistry.anchorLeafBase(viewID);
+    if (vtkActor* groupActor = m_compositeRegistry.groupActor(groupId)) {
+        if (groupNew) {
+            addActorToRenderer(groupActor, viewport);
+        }
+        if (CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[agg] '%s' REGISTERED group='%s' groupNew=%d",
+                         viewID.c_str(), groupId.c_str(), groupNew ? 1 : 0);
+        }
+        // Group-level parity with the dedicated line actor: line width (per
+        // group, see groupId), surface representation, resolved lighting.
+        groupActor->GetProperty()->SetLineWidth(lineWidth);
+        groupActor->GetProperty()->SetRepresentationToSurface();
+        // Same lighting-off rationale as the dedicated camera actor above:
+        // RGBA scalar colors are final colors.
+        groupActor->GetProperty()->SetLighting(false);
+        applyLightPropertiesToActor(groupActor, groupId);
+    }
+    // New/replaced block geometry invalidates the cached scene bounds; the
+    // pre-render ResetCameraClippingRangeEvent observer recomputes once.
+    invalidateGeometryBounds();
+    return true;
+}
+
+bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
+                                 ccHObject* entity,
+                                 const std::string& viewID,
+                                 int viewport) {
+    // The "#plw" group family is DISJOINT from the sensor "#lw" family that
+    // setSensorAggregationSuspended evicts on replay, so static lines keep
+    // aggregating through replays untouched (Hybrid rule: the dynamic
+    // replay channel stays sensor-scoped).
+    if (!compositeRenderingSupported()) return false;
+    // Per-entity light overrides have no per-block equivalent (the group
+    // carries ONE material): keep such lines on dedicated actors.
+    if (m_objectLightIntensity.count(viewID)) {
+        if (m_compositeRegistry.containsLeaf(viewID)) {
+            removeFromComposite(viewID, viewport);
+        }
+        return false;
+    }
+    const bool isPolyline = entity->isA(CV_TYPES::POLY_LINE);
+    const bool isLineSet = entity->isA(CV_TYPES::LINESET);
+    if (!isPolyline && !isLineSet) return false;
+
+    unsigned keyCount = 0;
+    bool closed = false;
+    bool hasColors = false;
+    ecvColor::Rgb resolvedColor = context.defaultPolylineColor;
+    if (isPolyline) {
+        ccPolyline* polyline = static_cast<ccPolyline*>(entity);
+        // 2D-mode lines back-project their points through the LIVE view
+        // camera on every conversion (Cc2Vtk::PolylineToPolyData): baking
+        // them into a block would freeze camera-dependent geometry.
+        if (polyline->is2DMode()) return false;
+        if (polyline->size() < 2) return false;
+        // The draw pass resolves override/temp/own colors into the context
+        // (ccPolyline::drawMeOnly) BEFORE this runs.
+        keyCount = polyline->size();
+        closed = polyline->isClosed();
+    } else {
+        auto* lineset = static_cast<cloudViewer::geometry::LineSet*>(entity);
+        if (lineset->is2DMode()) return false;
+        keyCount = lineset->segmentCount();
+        if (lineset->isColorOverridden()) {
+            resolvedColor = lineset->getTempColor();
+        } else if (lineset->colorsShown()) {
+            resolvedColor = lineset->getColor();
+        }
+        hasColors = lineset->HasColors();
+    }
+
+    // Line width is a GROUP property (no per-block VTK equivalent): group
+    // per resolved width so the single group-actor property always matches
+    // every member block. The steady dedicated-path width is
+    // context.currentLineWidth (setLineWidth runs every pass on top of the
+    // rebuild-path default), so the group uses the same value.
+    const float lineWidth = static_cast<float>(context.currentLineWidth);
+    const unsigned packed = (unsigned(resolvedColor.r) << 16) |
+                            (unsigned(resolvedColor.g) << 8) |
+                            unsigned(resolvedColor.b);
+
+    // Eligibility: the container must hold enough line leaves for the
+    // aggregation bookkeeping to pay off (same threshold and positive-count
+    // caching rule as the sensor family — streaming containers grow past
+    // the threshold, a cached negative count would pin them dedicated).
+    const ccHObject* container = entity->getParent();
+    if (!container) return false;
+    auto cit = m_containerLineCountCache.find(container);
+    if (cit != m_containerLineCountCache.end()) {
+        if (cit->second < kMinLeavesForComposite) return false;
+    } else {
+        const size_t lineCount =
+                CountLeafLines(const_cast<ccHObject*>(container));
+        if (lineCount < kMinLeavesForComposite) return false;
+        m_containerLineCountCache.emplace(container, lineCount);
+    }
+
+    const std::string groupId = CVTools::FromQString(container->getViewId()) +
+                                "#plw" +
+                                std::to_string(static_cast<int>(lineWidth));
+
+    CompositeLeafKey key;
+    key.lineEntity = entity;
+    key.lineSegmentCount = keyCount;
+    key.lineClosed = closed;
+    key.lineLineWidth = lineWidth;
+    key.lineColor = packed;
+    key.lineHasColors = hasColors;
+
+    // Same-source skip (mirrors drawMesh / aggregateCameraSensor): the
+    // polydata conversion plus block replacement trigger a composite VBO
+    // rebuild, so unchanged lines must neither convert nor re-register on
+    // any pass. Geometry edits ride isRedraw() — same contract as meshes.
+    auto srcIt = m_leafGeometryKey.find(viewID);
+    if (m_compositeRegistry.containsLeaf(viewID) &&
+        m_compositeRegistry.groupOfLeaf(viewID) == groupId &&
+        srcIt != m_leafGeometryKey.end() && srcIt->second == key &&
+        !entity->isRedraw()) {
+        return true;
+    }
+
+    // Re-aggregating a previously dedicated line: drop the stale dedicated
+    // actor, otherwise it double-renders next to its block.
+    if (contains(viewID)) {
+        removeShapes(viewID, viewport);
+    }
+
+    vtkSmartPointer<vtkPolyData> linesData;
+    if (isPolyline) {
+        linesData = Converters::Cc2Vtk::PolylineToPolyData(
+                static_cast<ccPolyline*>(entity));
+    } else {
+        linesData = VtkRendering::CreatePolyDataFromLineSet(
+                *static_cast<cloudViewer::geometry::LineSet*>(entity), false);
+    }
+    if (!linesData) return false;
+
+    m_leafGeometryKey[viewID] = key;
+    // Register the source object: property lookups and the light-intensity
+    // eviction path (getSourceObject → rebuild) resolve entities through it.
+    setCurrentSourceObject(entity, viewID);
+    const bool groupNew = !m_compositeRegistry.hasGroup(groupId);
+    m_compositeRegistry.setLeafBlock(viewID, groupId, linesData);
+    // Entity opacity replay AFTER the block is in place (see the sensor
+    // path: setLeafBlock may destroy the old block on a cross-group move).
+    m_compositeRegistry.setLeafOpacity(
+            viewID, static_cast<double>(entity->getOpacity()));
+    // Anchor the still-local block geometry: per-frame ancestor transforms
+    // then apply as absolute, idempotent re-bakes (applyGLTransform) and
+    // clears return the leaf to its local frame (clearGLTransform).
+    m_compositeRegistry.anchorLeafBase(viewID);
+    // Scalar-colored linesets carry their own RGB scalars; scalar-less
+    // lines take the resolved color as a per-block override (the dedicated
+    // actor's SetColor has no composite equivalent).
+    if (!hasColors) {
+        const double color[3] = {resolvedColor.r / 255.0,
+                                 resolvedColor.g / 255.0,
+                                 resolvedColor.b / 255.0};
+        m_compositeRegistry.setLeafColor(viewID, color);
+    }
+    if (vtkActor* groupActor = m_compositeRegistry.groupActor(groupId)) {
+        if (groupNew) {
+            addActorToRenderer(groupActor, viewport);
+        }
+        // Group-level parity with the dedicated line actors: line width
+        // (per group, see groupId), surface representation (line cells
+        // render as lines) and lighting off — the dedicated polyline sets
+        // Ambient=1/Diffuse=0 and the lineset relies on unlit scalars, both
+        // resolve to "final colors, no shading".
+        groupActor->GetProperty()->SetLineWidth(lineWidth);
+        groupActor->GetProperty()->SetRepresentationToSurface();
+        groupActor->GetProperty()->SetLighting(false);
+        applyLightPropertiesToActor(groupActor, groupId);
+    }
+    // New/replaced block geometry invalidates the cached scene bounds; the
+    // pre-render ResetCameraClippingRangeEvent observer recomputes once.
+    invalidateGeometryBounds();
+    return true;
+}
+
 void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
                         const ccSensor* sensor) {
     if (!sensor) return;
@@ -2023,18 +2402,33 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
     float lineWidth = static_cast<float>(context.currentLineWidth);
+
+    // ParaView-style frustum aggregation FIRST: many-camera scenes render as
+    // blocks of ONE group actor per (container, line width), so the frame
+    // loop stays O(1) per group. Falls back to the dedicated-actor path below
+    // for small containers or cameras with per-entity state that has no
+    // per-block equivalent.
+    if (aggregateCameraSensor(context, sensor, viewID, viewport)) {
+        return;
+    }
+
     if (contains(viewID)) {
         removeShapes(viewID, viewport);
     }
+    if (contains(viewID + "#plane")) {
+        removeShapes(viewID + "#plane", viewport);
+    }
 
     vtkSmartPointer<vtkPolyData> linesData;
+    vtkSmartPointer<vtkPolyData> planeFaceData;
     if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
         // the sensor to draw
         const ccCameraSensor* camera =
                 reinterpret_cast<const ccCameraSensor*>(sensor);
         if (!camera) return;
         linesData = VtkRendering::CreateCameraSensor(
-                camera, context.defaultPolylineColor, context.defaultMeshColor);
+                camera, context.defaultPolylineColor, context.defaultMeshColor,
+                &planeFaceData);
     } else if (sensor->isA(CV_TYPES::GBL_SENSOR)) {
         // the sensor to draw
         const ccGBLSensor* camera =
@@ -2060,6 +2454,12 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
     VtkRendering::CreateActorFromVTKDataSet(linesData, linesActor);
     linesActor->GetProperty()->SetRepresentationToSurface();
     linesActor->GetProperty()->SetLineWidth(lineWidth);
+    // Entity opacity replay: rebuilds (forced redraws) recreate the actor,
+    // so the persisted ccDrawableObject::m_opacity must be re-applied here
+    // or a user-set frustum opacity silently resets to 1. Read from the
+    // ENTITY, never from context.opacity — the camera draw context
+    // hard-codes 0.2 for the translucent frustum side planes.
+    linesActor->GetProperty()->SetOpacity(sensor->getOpacity());
     addActorToRenderer(linesActor, viewport);
 
     // Save the pointer/ID pair to the global actor map
@@ -2067,6 +2467,23 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
 
     // Apply light properties
     applyLightPropertiesToActor(linesActor, viewID);
+
+    // Near-plane FACE: DEDICATED actor at 50% plain actor opacity (scaled
+    // by the entity opacity replay above). It lives under the "#plane"-
+    // suffixed ID so every removal path can drop it alongside the
+    // wireframe actor. The face geometry comes from
+    // ccCameraSensor::updateData, so it honors the sensor pose frame.
+    if (planeFaceData) {
+        const std::string faceID = viewID + "#plane";
+        vtkSmartPointer<vtkPVLODActor> faceActor;
+        VtkRendering::CreateActorFromVTKDataSet(planeFaceData, faceActor);
+        faceActor->GetProperty()->SetRepresentationToSurface();
+        faceActor->GetProperty()->SetLighting(false);
+        faceActor->GetProperty()->SetOpacity(0.5 * sensor->getOpacity());
+        addActorToRenderer(faceActor, viewport);
+        (*getShapeActorMap())[faceID] = faceActor;
+        applyLightPropertiesToActor(faceActor, faceID);
+    }
 }
 
 void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
@@ -2075,6 +2492,15 @@ void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
 
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
+
+    // Line-family aggregation FIRST — see drawPolyline. The draw pass owns
+    // a non-const lineset, cast back for the eligibility checks.
+    if (aggregateLineEntity(
+                context, const_cast<cloudViewer::geometry::LineSet*>(lineset),
+                viewID, viewport)) {
+        return;
+    }
+
     float lineWidth = static_cast<float>(context.currentLineWidth);
     if (contains(viewID)) {
         removeShapes(viewID, viewport);
@@ -2097,28 +2523,78 @@ void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
     applyLightPropertiesToActor(linesActor, viewID);
 }
 
+namespace {
+
+// Absolute UserTransform with a bitwise-same skip (exact comparison is
+// deliberate: a false "different" re-applies an identical state harmlessly,
+// while an epsilon could swallow a real but tiny pose increment and freeze
+// the entity). @returns true ONLY when the transform actually changed.
+bool setActorUserTransformIfChanged(vtkActor* actor, vtkMatrix4x4* mat44) {
+    if (auto* current = vtkTransform::SafeDownCast(actor->GetUserTransform())) {
+        const double* cur = current->GetMatrix()->GetData();
+        const double* next = mat44->GetData();
+        bool same = true;
+        for (int i = 0; i < 16; ++i) {
+            if (cur[i] != next[i]) {
+                same = false;
+                break;
+            }
+        }
+        if (same) return false;
+    }
+    vtkSmartPointer<vtkTransform> vtkTrans =
+            vtkSmartPointer<vtkTransform>::New();
+    vtkTrans->SetMatrix(mat44);
+    actor->SetUserTransform(vtkTrans);
+    actor->Modified();
+    return true;
+}
+
+// Clears the UserTransform with an already-identity skip (this runs on EVERY
+// pass for entities without GL-trans state; re-applying an identity would
+// Modified() the actor and invalidate cached bounds every frame).
+// @returns true ONLY when the transform was actually cleared.
+bool clearActorUserTransformIfSet(vtkActor* actor) {
+    if (!actor->GetUserTransform()) return false;
+    if (auto* current = vtkTransform::SafeDownCast(actor->GetUserTransform())) {
+        const double* m = current->GetMatrix()->GetData();
+        static constexpr double kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0,
+                                                 0, 0, 1, 0, 0, 0, 0, 1};
+        bool alreadyIdentity = true;
+        for (int i = 0; i < 16; ++i) {
+            if (m[i] != kIdentity[i]) {
+                alreadyIdentity = false;
+                break;
+            }
+        }
+        if (alreadyIdentity) return false;
+    }
+    vtkSmartPointer<vtkTransform> identity =
+            vtkSmartPointer<vtkTransform>::New();
+    identity->Identity();
+    actor->SetUserTransform(identity);
+    actor->Modified();
+    return true;
+}
+
+}  // namespace
+
 void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
                               const std::string& viewID,
                               int viewport) {
-    if (m_compositeRegistry.containsLeaf(viewID)) {
-        // No per-block transform in VTK composite mappers: bake it into the
-        // block geometry (same data object, attributes preserved).
-        vtkSmartPointer<vtkMatrix4x4> mat44 =
-                vtkSmartPointer<vtkMatrix4x4>::New();
-        const float* data = glTrans.data();
-        for (int r = 0; r < 4; ++r)
-            for (int c = 0; c < 4; ++c)
-                mat44->SetElement(r, c, static_cast<double>(data[c * 4 + r]));
-        m_compositeRegistry.bakeLeafTransform(viewID, mat44);
-        return;
-    }
-
-    vtkActor* actor = getActorById(viewID);
-    if (!actor) return;
-
-    // ccGLMatrix is column-major (OpenGL convention).
-    // vtkMatrix4x4::SetElement(row, col) is row-major internally but the
-    // setter uses (row, col) indexing, so we convert: element(r,c) =
+    // NOTE: no identity fast path here on purpose. When an ancestor's GL
+    // transform is reset (M → identity), the accumulator becomes identity
+    // while the leaf still carries the previously baked/applied state; the
+    // per-leaf matrix comparisons below are what re-homes it. An early
+    // return on identity would strand the entity at its old pose.
+    //
+    // Exact (bitwise) matrix comparison is also deliberate, not sloppiness:
+    // a false "different" merely re-applies an identical state (harmless,
+    // idempotent), while an epsilon comparison could swallow a real but
+    // tiny pose increment (continuous small-step motion) and freeze the
+    // entity. Same reasoning applies to setLeafWorldTransform.
+    //
+    // ccGLMatrix is column-major (OpenGL convention); element(r,c) =
     // data[c*4+r].
     vtkSmartPointer<vtkMatrix4x4> mat44 = vtkSmartPointer<vtkMatrix4x4>::New();
     const float* data = glTrans.data();
@@ -2126,22 +2602,95 @@ void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
         for (int c = 0; c < 4; ++c)
             mat44->SetElement(r, c, static_cast<double>(data[c * 4 + r]));
 
-    vtkSmartPointer<vtkTransform> vtkTrans =
-            vtkSmartPointer<vtkTransform>::New();
-    vtkTrans->SetMatrix(mat44);
-    actor->SetUserTransform(vtkTrans);
-    actor->Modified();
+    // The near-plane FACE actor lives under a "#plane"-suffixed id: the
+    // per-viewID handling below never reaches it, so an un-posed face
+    // renders at its LOCAL frame — every camera's face piles up at the
+    // world origin regardless of its sensor pose. Apply the SAME absolute
+    // transform with the same idempotence rule; this must run for BOTH the
+    // aggregated branch (early return below) and the dedicated branch.
+    if (auto shapeMap = getShapeActorMap()) {
+        auto faceIt = shapeMap->find(viewID + "#plane");
+        if (faceIt != shapeMap->end() && faceIt->second &&
+            setActorUserTransformIfChanged(
+                    vtkActor::SafeDownCast(faceIt->second), mat44)) {
+            invalidateGeometryBounds();
+        }
+    }
+
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        // No per-block transform in VTK composite mappers. For anchored
+        // leaves (camera frustum aggregation) the transform is ABSOLUTE and
+        // IDEMPOTENT: applyGLTransform runs on every pass with the resolved
+        // world state (sensor pose × ancestors), so re-baking the same
+        // matrix must be a no-op — an incremental bake would compose onto
+        // itself and fly the block away. Re-bakes read the anchored
+        // local-frame base, so pose changes render correctly without any
+        // geometry re-conversion.
+        if (m_compositeRegistry.hasLeafWorldAnchor(viewID)) {
+            if (m_compositeRegistry.setLeafWorldTransform(viewID, mat44)) {
+                // Points actually moved: cached scene bounds are stale.
+                invalidateGeometryBounds();
+            }
+        } else {
+            // Legacy incremental bake (mesh leaves; the transformInfo tool
+            // path in transformEntities relies on the relative semantics).
+            // The aggregation gate keeps GL-trans-enabled meshes on dedicated
+            // actors, so a non-identity accumulator should never reach an
+            // anchored-less leaf here; guard the degenerate identity case
+            // (baking identity would dirty the points → VBO re-upload every
+            // frame) without changing the relative-bake semantics.
+            const float* d = glTrans.data();
+            const bool identity =
+                    d[0] == 1.0f && d[5] == 1.0f && d[10] == 1.0f &&
+                    d[15] == 1.0f && d[1] == 0.0f && d[2] == 0.0f &&
+                    d[3] == 0.0f && d[4] == 0.0f && d[6] == 0.0f &&
+                    d[7] == 0.0f && d[8] == 0.0f && d[9] == 0.0f &&
+                    d[11] == 0.0f && d[12] == 0.0f && d[13] == 0.0f &&
+                    d[14] == 0.0f;
+            if (!identity) {
+                m_compositeRegistry.bakeLeafTransform(viewID, mat44);
+                invalidateGeometryBounds();
+            }
+        }
+        return;
+    }
+
+    vtkActor* actor = getActorById(viewID);
+    if (!actor) return;
+
+    if (setActorUserTransformIfChanged(actor, mat44)) {
+        // Actor transform changes the visible-prop bounds.
+        invalidateGeometryBounds();
+    }
 }
 
 void VtkVis::clearGLTransform(const std::string& viewID, int viewport) {
+    // Face actor: it must follow the wireframe back to the local frame too
+    // (see applyGLTransform — the per-viewID handling below never sees it).
+    if (auto shapeMap = getShapeActorMap()) {
+        auto faceIt = shapeMap->find(viewID + "#plane");
+        if (faceIt != shapeMap->end() && faceIt->second &&
+            clearActorUserTransformIfSet(
+                    vtkActor::SafeDownCast(faceIt->second))) {
+            invalidateGeometryBounds();
+        }
+    }
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        // The accumulated GL-trans state was cleared upstream: the anchored
+        // leaf must return to its LOCAL frame (absolute identity re-bake),
+        // otherwise a frustum aggregated at a world pose stays stranded
+        // there after its ancestor's transform is removed.
+        vtkSmartPointer<vtkMatrix4x4> identity =
+                vtkSmartPointer<vtkMatrix4x4>::New();
+        if (m_compositeRegistry.setLeafWorldTransform(viewID, identity)) {
+            invalidateGeometryBounds();
+        }
+        return;
+    }
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
-    if (actor->GetUserTransform()) {
-        vtkSmartPointer<vtkTransform> identity =
-                vtkSmartPointer<vtkTransform>::New();
-        identity->Identity();
-        actor->SetUserTransform(identity);
-        actor->Modified();
+    if (clearActorUserTransformIfSet(actor)) {
+        invalidateGeometryBounds();
     }
 }
 
@@ -2154,7 +2703,11 @@ void VtkVis::transformEntities(const CC_DRAW_CONTEXT& context) {
             CCVector3d zeroOrigin(0, 0, 0);
             vtkSmartPointer<vtkTransform> trans =
                     getTransformation(context, zeroOrigin);
-            m_compositeRegistry.bakeLeafTransform(viewID, trans->GetMatrix());
+            if (m_compositeRegistry.bakeLeafTransform(viewID,
+                                                      trans->GetMatrix())) {
+                // Block points moved: cached scene bounds are stale.
+                invalidateGeometryBounds();
+            }
             return;
         }
         vtkActor* actor = getActorById(viewID);
@@ -2170,6 +2723,8 @@ void VtkVis::transformEntities(const CC_DRAW_CONTEXT& context) {
                     getTransformation(context, CCVector3d::fromArray(origin));
             actor->SetUserTransform(trans);
             actor->Modified();
+            // Actor transform changes the visible-prop bounds.
+            invalidateGeometryBounds();
         }
     }
 }
@@ -3175,22 +3730,31 @@ bool VtkVis::addPointSprite(double cx,
 
 /******************************** Entities Removement
  * *********************************/
-void VtkVis::hideShowActors(bool visibility,
+bool VtkVis::hideShowActors(bool visibility,
                             const std::string& viewID,
                             int viewport) {
     int opacity = visibility ? 1 : 0;
 
     // Composite leaves: visibility is a per-block display attribute.
     if (m_compositeRegistry.containsLeaf(viewID)) {
-        m_compositeRegistry.setLeafVisibility(viewID, visibility);
-        return;
+        return m_compositeRegistry.setLeafVisibilityIfChanged(viewID,
+                                                              visibility);
     }
 
     vtkActor* actor = getActorById(viewID);
     if (actor) {
+        // Change-detecting write: an unconditional SetVisibility+Modified
+        // on EVERY entity of EVERY pass kept re-dirtying VTK (and the
+        // geometry-bounds cache) for unchanged state — the steady redraw
+        // then paid full bound recomputes for nothing.
+        if (actor->GetVisibility() == opacity) {
+            return false;
+        }
         actor->SetVisibility(opacity);
         actor->Modified();
+        return true;
     }
+    return false;
 }
 
 void VtkVis::hideShowActorsBySubstring(bool visibility,
@@ -3271,6 +3835,31 @@ void VtkVis::hideShowWidgets(bool visibility,
 bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
     std::string removeViewID = CVTools::FromQString(context.removeViewID);
 
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[remove] type=%d id='%s' composite=%d",
+                     static_cast<int>(context.removeEntityType),
+                     removeViewID.c_str(),
+                     m_compositeRegistry.containsLeaf(removeViewID) ? 1 : 0);
+    }
+
+    // Composite-group teardown is TYPE-AGNOSTIC and runs FIRST: the removed
+    // container may be a plain ccHObject (LingbotMap's result group), whose
+    // entity type maps to no switch case below — its aggregated camera
+    // groups ("viewId#lwN") then survived EVERY removal and kept rendering
+    // as an uncontrollable ghost population. hasCompositeGroupWithPrefix is
+    // an O(groups) lookup and a no-op when nothing matches.
+    if (hasCompositeGroupWithPrefix(removeViewID)) {
+        // FULL teardown per group: removeCompositeGroupEntity takes the
+        // group actor OUT of the renderer AND destroys the registry record.
+        // The registry-only prefix delete left the actor rendering as an
+        // uncontrollable ghost population (the "two camera sizes" report).
+        for (const auto& gid :
+             m_compositeRegistry.groupIdsWithPrefix(removeViewID)) {
+            removeCompositeGroupEntity(gid, context.defaultViewPort);
+        }
+        removeCameraPlaneFacesByPrefix(removeViewID, context.defaultViewPort);
+    }
+
     bool removeFlag = false;
 
     int viewport = context.defaultViewPort;
@@ -3282,13 +3871,10 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
             break;
         }
         case ENTITY_TYPE::ECV_HIERARCHY_OBJECT: {
-            // A folder owning a composite group: destroying it must take the
-            // group actor out of the renderer (its blocks go with it), or the
-            // removed import keeps rendering as ghost geometry.
-            if (hasCompositeGroup(removeViewID)) {
-                removeCompositeGroupEntity(removeViewID, viewport);
-                removeFlag = true;
-            }
+            // Composite teardown now runs type-agnostically above.
+            // A folder may own dedicated camera sensors (below aggregation
+            // threshold) whose face actors also carry the "#plane" suffix.
+            removeCameraPlaneFacesByPrefix(removeViewID, viewport);
         } break;
         case ENTITY_TYPE::ECV_MESH: {
             RemoveDataAxesGrid(removeViewID);
@@ -3304,7 +3890,20 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
         case ENTITY_TYPE::ECV_POLYLINE_2D:
         case ENTITY_TYPE::ECV_SHAPE:
         case ENTITY_TYPE::ECV_SENSOR: {
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[remove] SENSOR dedicated=%d face=%d",
+                             contains(removeViewID) ? 1 : 0,
+                             contains(removeViewID + "#plane") ? 1 : 0);
+            }
+            // Camera-frustum leaves render as composite blocks (no shape
+            // actor): without the leaf teardown a cleared sensor kept its
+            // block rendering as ghost geometry. The near-plane face is a
+            // DEDICATED actor ("#plane" suffix) — drop it with the wireframe.
+            removeCompositeLeafEntity(removeViewID, viewport);
             removeShapes(removeViewID, viewport);
+            if (contains(removeViewID + "#plane")) {
+                removeShapes(removeViewID + "#plane", viewport);
+            }
             removePointClouds(removeViewID, viewport);
             removeFlag = true;
         } break;
@@ -3334,6 +3933,14 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
         }
         default:
             break;
+    }
+
+    // The source-object registration (setCurrentSourceObject, used by mesh
+    // AND camera aggregation) must not outlive the entity: a stale entry is
+    // a dangling pointer that any later getSourceObject-based lookup (bounds,
+    // eviction) would dereference.
+    if (removeFlag) {
+        removeSourceObject(removeViewID);
     }
 
     return removeFlag;
@@ -3373,6 +3980,28 @@ void VtkVis::removePointClouds(const std::string& viewId, int viewport) {
 void VtkVis::removeShapes(const std::string& viewId, int viewport) {
     if (contains(viewId)) {
         removeShape(viewId, viewport);
+    }
+}
+
+void VtkVis::removeCameraPlaneFacesByPrefix(const std::string& prefix,
+                                            int viewport) {
+    // Collect first: removeShape mutates the map we iterate.
+    std::vector<std::string> matches;
+    for (const auto& entry : *getShapeActorMap()) {
+        const std::string& id = entry.first;
+        // viewIDs are BARE decimal strings: a bare prefix compare would let
+        // container "12" match camera "123"'s face. The prefix must be
+        // followed EXACTLY by the "#plane" separator (same anchor rule as
+        // CompositeBlockRegistry::groupKeyMatchesPrefix).
+        if (id.size() > prefix.size() + 6 &&
+            id.compare(0, prefix.size(), prefix) == 0 &&
+            id[prefix.size()] == '#' &&
+            id.compare(id.size() - 6, 6, "#plane") == 0) {
+            matches.push_back(id);
+        }
+    }
+    for (const auto& id : matches) {
+        removeShape(id, viewport);
     }
 }
 
@@ -4867,6 +5496,25 @@ std::string VtkVis::getIdByPolyData(vtkPolyData* polyData) {
     return std::string();
 }
 
+namespace {
+
+// Camera near-plane FACE actors are registered under a "#plane"-suffixed id
+// (dedicated actor split from the wireframe for its own 50% opacity). Pick
+// resolution maps props back to ENTITY ids, and Qt's toUInt() requires a
+// fully-numeric string — the raw suffix would break the DB lookup and make
+// cameras unpickable through their most visible geometry.
+std::string stripPickSuffix(std::string id) {
+    static constexpr char kSuffix[] = "#plane";
+    constexpr size_t kSuffixLen = sizeof(kSuffix) - 1;
+    if (id.size() > kSuffixLen &&
+        id.compare(id.size() - kSuffixLen, kSuffixLen, kSuffix) == 0) {
+        id.resize(id.size() - kSuffixLen);
+    }
+    return id;
+}
+
+}  // namespace
+
 std::string VtkVis::getIdByActor(vtkProp* actor) {
     if (!actor) {
         return std::string();
@@ -4877,7 +5525,7 @@ std::string VtkVis::getIdByActor(vtkProp* actor) {
         for (const auto& kv : *cloudMap) {
             vtkProp* prop = kv.second.actor;
             if (prop && prop == actor) {
-                return kv.first;
+                return stripPickSuffix(kv.first);
             }
         }
     }
@@ -4887,7 +5535,7 @@ std::string VtkVis::getIdByActor(vtkProp* actor) {
         for (const auto& kv : *shapeMap) {
             vtkProp* prop = kv.second;
             if (prop && prop == actor) {
-                return kv.first;
+                return stripPickSuffix(kv.first);
             }
         }
     }
@@ -4909,7 +5557,7 @@ std::string VtkVis::getIdByActor(vtkProp* actor) {
     }
     if (pickedPoly) {
         const std::string byPoly = getIdByPolyData(pickedPoly);
-        if (!byPoly.empty()) return byPoly;
+        if (!byPoly.empty()) return stripPickSuffix(byPoly);
     }
 
     return std::string();
@@ -5303,6 +5951,43 @@ bool VtkVis::compositeRenderingSupported() {
 #endif
 }
 
+void VtkVis::setSensorAggregationSuspended(bool suspended) {
+    if (m_sensorAggregationSuspended == suspended) return;
+    m_sensorAggregationSuspended = suspended;
+    if (!suspended) {
+        // Resuming: the next forced draw re-aggregates every visible camera
+        // (the dedicated actors are replaced by blocks; hidden-by-state
+        // cameras simply stay unregistered until they are shown).
+        if (CVLog::diagnosticsEnabled()) {
+            CVLog::Print(
+                    "[replay] aggregation RESUMED (blocks rebuild on "
+                    "next forced draw)");
+        }
+        return;
+    }
+    // Evict every camera composite leaf: the group actors would otherwise
+    // keep rendering their blocks as ghost wireframes (hidden-by-replay
+    // leaves never leave the screen, and the blocks have no face actor —
+    // the "cameras are always there / some have no face" pair). Groups die
+    // automatically with their last leaf (removeLeaf).
+    for (const std::string& groupId : m_compositeRegistry.groupIds()) {
+        // Camera-frustum groups are split per line width: "viewId#lwN".
+        if (groupId.find("#lw") == std::string::npos) continue;
+        const vtkIdType slotCount = m_compositeRegistry.leafSlotCount(groupId);
+        for (vtkIdType i = 0; i < slotCount; ++i) {
+            const std::string leafId =
+                    m_compositeRegistry.leafAtFlatIndex(groupId, i);
+            if (!leafId.empty()) {
+                removeFromComposite(leafId, 0);
+            }
+        }
+    }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[replay] camera aggregation suspended -> dedicated actors");
+    }
+}
+
 void VtkVis::removeCompositeLeafEntity(const std::string& leafId,
                                        int viewport) {
     if (!m_compositeRegistry.containsLeaf(leafId)) {
@@ -5339,6 +6024,15 @@ void VtkVis::removeFromComposite(const std::string& viewID, int viewport) {
     m_leafGeometryKey.erase(viewID);
     if (!emptiedGroup.empty() && doomedGroupActor) {
         removeActorFromRenderer(doomedGroupActor, viewport);
+        // Destroy the EMPTY group's registry record too: the group actor is
+        // now OUT of the renderer, and the rebuild path re-adds the actor
+        // only when the group is NEW (groupNew == !hasGroup). Keeping the
+        // empty record made every post-resume rebuild a silent no-op — the
+        // blocks were registered onto an actor that was never in any
+        // renderer, so the stopped-state baseline and the slider commits
+        // could not bring a single frustum back (the "cameras never come
+        // back after replay" regression).
+        m_compositeRegistry.destroyGroup(emptiedGroup);
     }
     if (CVLog::diagnosticsEnabled()) {
         CVLog::Print(
@@ -5349,6 +6043,17 @@ void VtkVis::removeFromComposite(const std::string& viewID, int viewport) {
 }
 
 vtkActor* VtkVis::evictCompositeLeaf(const std::string& viewID, int viewport) {
+    // Snapshot the group-level state the leaf was rendering with BEFORE the
+    // leaf leaves the group (the group actor dies with its last leaf).
+    float evictedLineWidth = 1.0f;
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        const std::string groupId = m_compositeRegistry.groupOfLeaf(viewID);
+        if (vtkActor* groupActor = m_compositeRegistry.groupActor(groupId)) {
+            evictedLineWidth = static_cast<float>(
+                    groupActor->GetProperty()->GetLineWidth());
+        }
+    }
+
     removeFromComposite(viewID, viewport);
 
     // Rebuild the dedicated actor synchronously: camera-only renders do not
@@ -5382,6 +6087,39 @@ vtkActor* VtkVis::evictCompositeLeaf(const std::string& viewID, int viewport) {
                         rebuilt->GetProperty()->SetColor(def.r, def.g, def.b);
                         if (vtkMapper* mapper = rebuilt->GetMapper()) {
                             mapper->ScalarVisibilityOff();
+                        }
+                    }
+                }
+            }
+        } else if (ccSensor* sensor = ccHObjectCaster::ToSensor(src)) {
+            // Camera-frustum leaves evicted by a per-entity light edit:
+            // rebuild the dedicated line actor with the same group state
+            // (line width from the group property, frame/plane colors from
+            // the sensor itself — already encoded in the point scalars) and
+            // the resolved sensor pose, so a camera-only Render right after
+            // the eviction shows the frustum at its world pose instead of
+            // the local-frame origin.
+            if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
+                const auto* camera =
+                        reinterpret_cast<const ccCameraSensor*>(sensor);
+                const ecvColor::Rgb frameCol = camera->getFrameColor();
+                const ecvColor::Rgb planeCol = camera->getPlaneColor();
+                if (auto linesData = VtkRendering::CreateCameraSensor(
+                            camera, frameCol, planeCol)) {
+                    vtkSmartPointer<vtkPVLODActor> linesActor;
+                    VtkRendering::CreateActorFromVTKDataSet(linesData,
+                                                            linesActor);
+                    if (linesActor) {
+                        linesActor->GetProperty()->SetRepresentationToSurface();
+                        linesActor->GetProperty()->SetLineWidth(
+                                evictedLineWidth);
+                        addActorToRenderer(linesActor, viewport);
+                        (*getShapeActorMap())[viewID] = linesActor;
+                        applyLightPropertiesToActor(linesActor, viewID);
+                        ccIndexedTransformation sensorPos;
+                        if (camera->getActiveAbsoluteTransformation(
+                                    sensorPos)) {
+                            applyGLTransform(sensorPos, viewID, viewport);
                         }
                     }
                 }
@@ -5447,6 +6185,50 @@ bool RayTriangle(const double o[3],
     return t > 1e-9;
 }
 
+// Closest approach between the ray o+t*d (t >= 0, d need NOT be normalized)
+// and the segment [a,b]. @param tHit receives the ray parameter at the
+// closest pair, @param dist the world-space distance between the two lines
+// at that pair (segment end-clamps applied). Returns false for a degenerate
+// segment or a closest approach behind the ray origin.
+bool RaySegment(const double o[3],
+                const double d[3],
+                const double a[3],
+                const double b[3],
+                double& tHit,
+                double& dist) {
+    const double e[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+    const double w[3] = {o[0] - a[0], o[1] - a[1], o[2] - a[2]};
+    const double dd = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+    const double ee = e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+    if (ee < 1e-18) return false;
+    const double de = d[0] * e[0] + d[1] * e[1] + d[2] * e[2];
+    const double dw = d[0] * w[0] + d[1] * w[1] + d[2] * w[2];
+    const double ew = e[0] * w[0] + e[1] * w[1] + e[2] * w[2];
+    double t = 0.0;
+    double s = 0.0;
+    const double det = dd * ee - de * de;
+    if (std::abs(det) > 1e-15) {
+        t = (de * ew - ee * dw) / det;
+        s = (dd * ew + de * dw) / det;
+    } else {
+        t = dd > 1e-18 ? dw / dd : 0.0;  // near-parallel: project on the ray
+    }
+    if (t < 0.0) t = 0.0;
+    s = std::clamp(s, 0.0, 1.0);
+    // Re-orthogonalize t against the clamped segment point (s may have been
+    // clamped to an endpoint, moving the true closest ray parameter).
+    const double q[3] = {a[0] + s * e[0] - o[0], a[1] + s * e[1] - o[1],
+                         a[2] + s * e[2] - o[2]};
+    t = dd > 1e-18 ? (q[0] * d[0] + q[1] * d[1] + q[2] * d[2]) / dd : 0.0;
+    if (t < 0.0) t = 0.0;
+    const double p[3] = {o[0] + t * d[0] - (a[0] + s * e[0]),
+                         o[1] + t * d[1] - (a[1] + s * e[1]),
+                         o[2] + t * d[2] - (a[2] + s * e[2])};
+    tHit = t;
+    dist = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+    return true;
+}
+
 }  // namespace
 
 std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
@@ -5482,6 +6264,18 @@ std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
     // Neighbor rays (+/-1.5 px) give a small pixel tolerance for thin beams.
     const double offsets[5][2] = {
             {0, 0}, {1.5, 0}, {-1.5, 0}, {0, 1.5}, {0, -1.5}};
+
+    // World width of ONE display pixel at a given camera distance (used by
+    // the line-pick tolerance below): perspective = 2*D*tan(fov/2)/winH.
+    int winH = 1;
+    if (ren->GetRenderWindow()) {
+        const int* wsz = ren->GetRenderWindow()->GetSize();
+        if (wsz && wsz[1] > 0) {
+            winH = wsz[1];
+        }
+    }
+    const double tanHalfFov = std::tan(ren->GetActiveCamera()->GetViewAngle() *
+                                       0.5 * M_PI / 180.0);
 
     std::string bestLeaf;
     double bestT = std::numeric_limits<double>::max();
@@ -5528,6 +6322,33 @@ std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
                 const vtkIdType nTris = poly->GetNumberOfCells();
                 for (vtkIdType c = 0; c < nTris; ++c) {
                     poly->GetCell(c, cell);
+                    // Camera frustum blocks are LINES (near-plane rect + side
+                    // beams + arrow + axis): a 2-point cell is ray-tested as a
+                    // SEGMENT with a pixel-scale tolerance — a pure triangle
+                    // ray-cast skips every line block and the composite hit
+                    // degrades to the group id (camera pick regression).
+                    if (cell->GetNumberOfPoints() == 2) {
+                        double a[3], b2[3];
+                        cell->GetPoints()->GetPoint(0, a);
+                        cell->GetPoints()->GetPoint(1, b2);
+                        double tHit = 0.0, dist = 0.0;
+                        if (!RaySegment(rr, rd, a, b2, tHit, dist)) continue;
+                        // Tolerance ≈3 display pixels at the hit distance.
+                        // rr/rd are in the leaf LOCAL frame but the actor
+                        // transform is rigid, so lengths are preserved: the
+                        // world distance along the ray is tHit * |rd| (rd
+                        // spans near→far over t in [0,1]).
+                        const double rayLen = std::sqrt(
+                                rd[0] * rd[0] + rd[1] * rd[1] + rd[2] * rd[2]);
+                        const double camDist = tHit * rayLen;
+                        const double tol =
+                                6.0 * camDist * tanHalfFov / winH + 1e-9;
+                        if (dist < tol && tHit < bestT) {
+                            bestT = tHit;
+                            bestLeaf = leafId;
+                        }
+                        continue;
+                    }
                     if (cell->GetNumberOfPoints() != 3) continue;
                     double a[3], b2[3], cc2[3];
                     cell->GetPoints()->GetPoint(0, a);
@@ -5545,7 +6366,85 @@ std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
     return bestLeaf;
 }
 
-std::string VtkVis::pickLeafViewId(double x, double y) {
+std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
+    auto shapeMap = getShapeActorMap();
+    auto* ren = getRendererCollection()->GetFirstRenderer();
+    if (!shapeMap || !ren || !ren->GetActiveCamera()) return std::string();
+
+    auto worldRay = [ren](double px, double py, double outO[3],
+                          double outD[3]) -> bool {
+        double a[4] = {px, py, 0.0, 1.0};
+        double b[4] = {px, py, 1.0, 1.0};
+        double w0[4], w1[4];
+        ren->SetDisplayPoint(a);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w0);
+        ren->SetDisplayPoint(b);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w1);
+        if (std::abs(w0[3]) < 1e-12 || std::abs(w1[3]) < 1e-12) return false;
+        outO[0] = w0[0] / w0[3];
+        outO[1] = w0[1] / w0[3];
+        outO[2] = w0[2] / w0[3];
+        outD[0] = w1[0] / w1[3] - outO[0];
+        outD[1] = w1[1] / w1[3] - outO[1];
+        outD[2] = w1[2] / w1[3] - outO[2];
+        return true;
+    };
+
+    // Center pixel plus a small ring so a face edge still counts.
+    const double offsets[5][2] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+    vtkNew<vtkGenericCell> cell;
+    for (const auto& kv : *shapeMap) {
+        const std::string& key = kv.first;
+        if (key.size() <= 6 || key.compare(key.size() - 6, 6, "#plane") != 0) {
+            continue;
+        }
+        auto* faceActor = vtkActor::SafeDownCast(kv.second);
+        // Hidden faces (replay-hidden camera, DB-tree toggle) are not
+        // pickable — GetVisibility reflects the reconciled actor state.
+        if (!faceActor || !faceActor->GetVisibility()) continue;
+        auto* mapper = faceActor->GetMapper();
+        auto* poly =
+                mapper ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
+                       : nullptr;
+        if (!poly) continue;
+        vtkMatrix4x4* actorMat = faceActor->GetMatrix();
+
+        for (const auto& off : offsets) {
+            double o[3], d[3];
+            if (!worldRay(x + off[0], y + off[1], o, d)) continue;
+            const vtkIdType nCells = poly->GetNumberOfCells();
+            for (vtkIdType c = 0; c < nCells; ++c) {
+                poly->GetCell(c, cell);
+                if (cell->GetNumberOfPoints() != 3) continue;
+                double tri[3][3];
+                for (int k = 0; k < 3; ++k) {
+                    double lp[3];
+                    cell->GetPoints()->GetPoint(k, lp);
+                    double h[4] = {lp[0], lp[1], lp[2], 1.0};
+                    double wOut[4];
+                    actorMat->MultiplyPoint(h, wOut);
+                    const double invW =
+                            std::abs(wOut[3]) < 1e-12 ? 1.0 : 1.0 / wOut[3];
+                    tri[k][0] = wOut[0] * invW;
+                    tri[k][1] = wOut[1] * invW;
+                    tri[k][2] = wOut[2] * invW;
+                }
+                double t = 0.0;
+                if (RayTriangle(o, d, tri[0], tri[1], tri[2], t)) {
+                    // The face actor id is "<sensorId>#plane"; the maps'
+                    // id conventions strip the suffix back to the camera.
+                    return stripPickSuffix(key);
+                }
+            }
+        }
+    }
+    return std::string();
+}
+
+std::string VtkVis::pickLeafViewId(double x, double y, vtkActor* hintActor) {
     auto* ren = getRendererCollection()->GetFirstRenderer();
     if (!ren) return std::string();
     const auto t0 = std::chrono::steady_clock::now();
@@ -5572,6 +6471,26 @@ std::string VtkVis::pickLeafViewId(double x, double y) {
     // the CPU ray-cast fallback below covers the composite-miss case without
     // touching the render pipeline during picking.
     vtkSmartPointer<vtkSelection> selection = runHwPass(x, y);
+
+    // Camera near-plane FACE probe (translucent, skipped by the hardware
+    // pass) — a FALLBACK, not a priority: opaque geometry under the cursor
+    // (point clouds, meshes) must keep winning over a translucent overlay,
+    // or every click near a frustum would hijack the pick away from the
+    // cloud behind it. The probe runs only when the hardware pass missed
+    // or returned an unresolvable group (the camera wireframe's line-only
+    // composite blocks). Point/triangle/label picking (selection tools)
+    // never enters this path, so their behavior is untouched.
+    auto probeCameraFace = [this, x, y, &t0]() -> std::string {
+        const std::string camId = nearestCameraFaceUnderPixel(x, y);
+        if (!camId.empty() && CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[pick] camera face probe -> '%s' (%.1f ms)",
+                         camId.c_str(),
+                         std::chrono::duration<double, std::milli>(
+                                 std::chrono::steady_clock::now() - t0)
+                                 .count());
+        }
+        return camId;
+    };
 
     if (selection && selection->GetNumberOfNodes() > 0) {
         vtkSelectionNode* node = selection->GetNode(0);
@@ -5644,7 +6563,37 @@ std::string VtkVis::pickLeafViewId(double x, double y) {
                     return cpuLeaf;
                 }
             }
+            // Line-only camera group: the wireframe is the camera's own
+            // geometry — resolve it through the face probe before giving up
+            // on the leaf.
+            {
+                const std::string camId = probeCameraFace();
+                if (!camId.empty()) return camId;
+            }
             return groupId;
+        }
+    }
+
+    // Hardware selection came back EMPTY. Two proven causes: translucent
+    // actors (the 50%-alpha camera near-plane faces) are skipped by the
+    // selection pass, and line-only composite blocks emit no selection
+    // fragments. Resolve the cheapest evidence first: the face probe (a
+    // per-#plane-actor ray test), then the CPU ray-cast; the software
+    // propPicker walks every prop (expensive on dense scenes) and stays
+    // the LAST resort.
+    {
+        const std::string camId = probeCameraFace();
+        if (!camId.empty()) return camId;
+
+        vtkActor* soft = hintActor;
+        if (!soft) soft = pickActor(x, y);
+        const std::string hintId = soft ? getIdByActor(soft) : std::string();
+        if (!hintId.empty()) {
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[pick] hw-empty -> software hint '%s'",
+                             hintId.c_str());
+            }
+            return hintId;
         }
     }
 
@@ -5667,6 +6616,22 @@ std::string VtkVis::pickLeafViewId(double x, double y) {
             return cpuLeaf;
         }
     }
+    // Same hw-empty case from the other exit: prefer the software-pick hint
+    // (translucent faces, line-only composite blocks) over a miss. The
+    // software pick is lazy here (only after face probe / hw / ray-cast
+    // all missed).
+    {
+        vtkActor* soft = hintActor;
+        if (!soft) soft = pickActor(x, y);
+        const std::string hintId = soft ? getIdByActor(soft) : std::string();
+        if (!hintId.empty()) {
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[pick] hw miss -> software hint '%s'",
+                             hintId.c_str());
+            }
+            return hintId;
+        }
+    }
     if (CVLog::diagnosticsEnabled()) {
         CVLog::Print("[pick] hw miss at (%.0f, %.0f) in %.1f ms", x, y,
                      std::chrono::duration<double, std::milli>(
@@ -5683,8 +6648,6 @@ std::string VtkVis::pickItem(double x0 /* = -1*/,
     // Timing probe only: the original vtkAreaPicker semantics are kept
     // verbatim because other selection tools depend on its frustum/geometry
     // behavior. Measure first, optimize only what the numbers indict.
-    QElapsedTimer pickTimer;
-    pickTimer.start();
     if (!m_area_picker) {
         m_area_picker = vtkSmartPointer<vtkAreaPicker>::New();
     }
@@ -5694,16 +6657,8 @@ std::string VtkVis::pickItem(double x0 /* = -1*/,
     if (!firstRen) return {};
     m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1, firstRen);
     vtkActor* pickedActor = m_area_picker->GetActor();
-    const qint64 pickMs = pickTimer.elapsed();
     if (pickedActor) {
-        const std::string id = getIdByActor(pickedActor);
-        CVLog::Print("[pickItem] hit '%s' in %lld ms", id.c_str(),
-                     static_cast<long long>(pickMs));
-        return id;
-    }
-    if (CVLog::diagnosticsEnabled()) {
-        CVLog::Print("[pickItem] no hit in %lld ms",
-                     static_cast<long long>(pickMs));
+        return getIdByActor(pickedActor);
     }
     return std::string("-1");
 }

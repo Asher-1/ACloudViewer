@@ -24,6 +24,7 @@ class qAnyLabeling final : public QObject, public ccStdPluginInterface {
 public:
     explicit qAnyLabeling(QObject* parent = nullptr);
     QList<QAction*> getActions() override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
     void setMainAppInterface(ecvMainAppInterface* app) override;
 
 private:

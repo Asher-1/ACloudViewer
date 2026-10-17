@@ -4,4 +4,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/GKDModelCatalog.h
         ${CMAKE_CURRENT_LIST_DIR}/GKDWorker.h
         ${CMAKE_CURRENT_LIST_DIR}/GKDDialog.h
+        ${CMAKE_CURRENT_LIST_DIR}/GKDBatchCommand.h
 )

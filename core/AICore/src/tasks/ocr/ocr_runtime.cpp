@@ -11,15 +11,107 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <set>
-#include <sstream>
 
+#if (defined(__GNUC__) || defined(__clang__)) && \
+        (defined(__x86_64__) || defined(__i386__))
+#include <immintrin.h>
+#define AICORE_OCR_HAS_AVX2_DISPATCH 1
+#else
+#define AICORE_OCR_HAS_AVX2_DISPATCH 0
+#endif
+#include <sstream>
+#include <unordered_set>
+
+#include "common/blocked_conv.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "common/winograd.hpp"
 
 namespace aicore {
 namespace ocr {
 
 namespace {
+
+// CTC argmax is O(T*V), with V=6625 for PP-OCR Chinese. Keep the decode
+// state machine scalar and only vectorize the independent max reduction.
+// The vector path has exactly the scalar `>` semantics: NaNs never replace
+// the current winner and equal values retain their earliest class index.
+inline int ctcArgmaxScalar(const float* row, int vocab, float* bestProb) {
+    int best = 0;
+    float bestValue = row[0];
+    for (int i = 1; i < vocab; ++i) {
+        if (row[i] > bestValue) {
+            bestValue = row[i];
+            best = i;
+        }
+    }
+    *bestProb = bestValue;
+    return best;
+}
+
+#if AICORE_OCR_HAS_AVX2_DISPATCH
+__attribute__((target("avx2"))) int ctcArgmaxAvx2(const float* row,
+                                                  int vocab,
+                                                  float* bestProb) {
+    // Scalar starts from row[0], therefore a leading NaN is itself the
+    // winner (all later `value > NaN` comparisons are false). Preserve that
+    // unusual but defined behavior before entering the vector path.
+    if (std::isnan(row[0])) return ctcArgmaxScalar(row, vocab, bestProb);
+
+    const __m256 negInf =
+            _mm256_set1_ps(-std::numeric_limits<float>::infinity());
+    __m256 laneMax = negInf;
+    int i = 0;
+    for (; i + 8 <= vocab; i += 8) {
+        const __m256 values = _mm256_loadu_ps(row + i);
+        // Ordered compare is false for NaNs, matching scalar `>`.
+        const __m256 replace = _mm256_cmp_ps(values, laneMax, _CMP_GT_OQ);
+        laneMax = _mm256_blendv_ps(laneMax, values, replace);
+    }
+    alignas(32) float lane[8];
+    _mm256_store_ps(lane, laneMax);
+    float bestValue = lane[0];
+    for (int laneIndex = 1; laneIndex < 8; ++laneIndex)
+        if (lane[laneIndex] > bestValue) bestValue = lane[laneIndex];
+    for (; i < vocab; ++i)
+        if (row[i] > bestValue) bestValue = row[i];
+
+    // A second vector pass finds the earliest equal class, preserving the
+    // scalar tie rule without carrying an index through the reduction.
+    const __m256 target = _mm256_set1_ps(bestValue);
+    i = 0;
+    for (; i + 8 <= vocab; i += 8) {
+        const int mask = _mm256_movemask_ps(
+                _mm256_cmp_ps(_mm256_loadu_ps(row + i), target, _CMP_EQ_OQ));
+        if (mask != 0) {
+            *bestProb = bestValue;
+            return i + __builtin_ctz(static_cast<unsigned>(mask));
+        }
+    }
+    for (; i < vocab; ++i) {
+        if (row[i] == bestValue) {
+            *bestProb = bestValue;
+            return i;
+        }
+    }
+    // Only reachable for an all-NaN row, already handled above; retain a
+    // scalar fallback rather than manufacture an index.
+    return ctcArgmaxScalar(row, vocab, bestProb);
+}
+
+bool ctcAvx2Available() {
+    static const bool available = __builtin_cpu_supports("avx2");
+    return available;
+}
+#endif
+
+inline int ctcArgmax(const float* row, int vocab, float* bestProb) {
+#if AICORE_OCR_HAS_AVX2_DISPATCH
+    if (ctcAvx2Available()) return ctcArgmaxAvx2(row, vocab, bestProb);
+#endif
+    return ctcArgmaxScalar(row, vocab, bestProb);
+}
 
 int64_t attrInt(const Json::Value& attrs,
                 const char* name,
@@ -66,6 +158,25 @@ void numpyPermToGgml(const std::vector<int64_t>& perm, int k[4]) {
     for (int g = 0; g < 4; ++g) k[g] = g;
     for (int i = 0; i < n && i < 4; ++i)
         k[n - 1 - static_cast<int>(perm[i])] = n - 1 - i;
+}
+
+// Exact F32 product for an F32 x F32 mul_mat (no-op for F16/quantized
+// operands): GGML_PREC_F32 plus the "ocr_scalar_" node-name gate that the
+// vulkan_prec_f32 patch reads. Vulkan NV_coopmat2 has no F32 shader and
+// rounds both F32 operands to F16 otherwise; on the rec graph that moved the
+// fixture logits by 4.4e-4 (CUDA 3e-6) and changed 15 of 2123 ICDAR2015
+// texts against Paddle CPU on identical boxes and pad widths. Every dense
+// rec/det/layout GEMM and the SVTR attention products go through here, so
+// the f32 models compute the same function on CPU, CUDA and Vulkan. Cost on
+// Vulkan: +17 ms on a 54-box document page (73 -> 90 ms e2e, Paddle GPU
+// 105 ms); CUDA and CPU unchanged.
+ggml_tensor* exactF32(ggml_tensor* mm) {
+    if (mm->src[0]->type == GGML_TYPE_F32 &&
+        mm->src[1]->type == GGML_TYPE_F32) {
+        ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
+        ggml_format_name(mm, "ocr_scalar_mm");
+    }
+    return mm;
 }
 
 ggml_tensor* scalarF32(ggml_context* ctx, float value) {
@@ -223,11 +334,21 @@ bool OcrProgram::parse(const std::string& json, std::string* error) {
 // ---------------------------------------------------------------------------
 // OcrWeights
 
+OcrFoldPool::~OcrFoldPool() {
+    if (viewMirrorBuf) ggml_backend_buffer_free(viewMirrorBuf);
+    if (viewMirrorCtx) ggml_free(viewMirrorCtx);
+    if (deviceBuf) ggml_backend_buffer_free(deviceBuf);
+    if (mirrorCtx) ggml_free(mirrorCtx);
+    if (hostBuf) ggml_backend_buffer_free(hostBuf);
+    if (ctx) ggml_free(ctx);
+}
+
 OcrWeights::~OcrWeights() {
+    // The fold pool may outlive this object inside a graph cache entry; the
+    // device weights below are ours alone.
+    fold.reset();
     if (deviceBuf) ggml_backend_buffer_free(deviceBuf);
     if (deviceCtx) ggml_free(deviceCtx);
-    if (foldBuf) ggml_backend_buffer_free(foldBuf);
-    if (foldCtx) ggml_free(foldCtx);
     if (hostConstBuf) ggml_backend_buffer_free(hostConstBuf);
     if (hostMetaBuf) ggml_backend_buffer_free(hostMetaBuf);
     if (constCtx) ggml_free(constCtx);
@@ -236,18 +357,231 @@ OcrWeights::~OcrWeights() {
 }
 
 void OcrWeights::resetFoldPool() {
-    // Drop the previous build's fold constants (its graph is gone by the
-    // time the next frame builds) and start a fresh pool; otherwise the
-    // load-time pool fills after a few builds and every later tensor
-    // comes back with a null data pointer.
-    if (foldBuf) {
-        ggml_backend_buffer_free(foldBuf);
-        foldBuf = nullptr;
-    }
-    if (foldCtx) ggml_free(foldCtx);
-    foldCtx = ggml_init({96 * 1024 * 1024, nullptr, /*no_alloc=*/false});
+    // A fresh pool per build: the previous one is released here unless a
+    // cached graph still holds it (multi-entry graph caches keep several
+    // builds alive, each with the constants it was built against).
+    fold = std::make_shared<OcrFoldPool>();
+    fold->ctx = ggml_init({96 * 1024 * 1024, nullptr, /*no_alloc=*/false});
 }
 
+bool OcrWeights::realizeFoldPoolToDevice(ggml_backend_t backend,
+                                         std::string* error) {
+    if (!fold || !fold->ctx || fold->deviceBuf) return true;
+    ggml_context* foldCtx = fold->ctx;
+    if (!backend) {
+        if (error) *error = "null backend";
+        return false;
+    }
+    // Per-tensor ALIGNED mirror. The first cut retargeted every fold tensor
+    // into a raw copy of the pool at its original offset, but the ggml pool
+    // only guarantees 16-byte alignment while Vulkan storage-buffer offsets
+    // must respect minStorageBufferOffsetAlignment — the misaligned weight
+    // bindings faulted the VK conv2d dispatch. Each fold tensor instead gets
+    // its own aligned slot (alloc_ctx_tensors), its bytes are uploaded
+    // individually, and the graph's fold tensors are repointed at the
+    // aligned copies. Safe because fold constants are read-only after the
+    // build and never reused across builds; reshaped views duplicate their
+    // parent bytes (both copies stay valid for read-only use).
+    std::vector<ggml_tensor*> foldTensors;
+    for (ggml_tensor* t = ggml_get_first_tensor(foldCtx); t != nullptr;
+         t = ggml_get_next_tensor(foldCtx, t)) {
+        if (!t->data) continue;
+        // Canonical strides only: a non-canonical view (permute/transpose)
+        // would not round-trip through a canonical-layout mirror.
+        for (int i = 1; i < GGML_MAX_DIMS; ++i) {
+            if (t->nb[i] != t->nb[i - 1] * t->ne[i - 1]) {
+                if (error) *error = "fold pool holds a non-canonical view";
+                return false;
+            }
+        }
+        foldTensors.push_back(t);
+    }
+    if (foldTensors.empty()) return true;
+    fold->mirrorCtx =
+            ggml_init({ggml_tensor_overhead() * (foldTensors.size() + 8),
+                       nullptr, /*no_alloc=*/true});
+    if (!fold->mirrorCtx) {
+        if (error) *error = "fold mirror ctx init failed";
+        return false;
+    }
+    std::vector<ggml_tensor*> mirrors;
+    mirrors.reserve(foldTensors.size());
+    for (ggml_tensor* t : foldTensors) {
+        ggml_tensor* m =
+                ggml_new_tensor(fold->mirrorCtx, t->type, GGML_MAX_DIMS, t->ne);
+        mirrors.push_back(m);
+    }
+    fold->deviceBuf = ggml_backend_alloc_ctx_tensors(fold->mirrorCtx, backend);
+    if (!fold->deviceBuf) {
+        if (error) *error = "fold device pool alloc failed";
+        return false;
+    }
+    if (sched_gpu_tagging) {
+        ggml_backend_buffer_set_usage(fold->deviceBuf,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
+    for (size_t i = 0; i < foldTensors.size(); ++i) {
+        ggml_backend_tensor_set(mirrors[i], foldTensors[i]->data, 0,
+                                ggml_nbytes(foldTensors[i]));
+        // A folded tensor can itself be a canonical view. Keeping its
+        // view_src would make ggml-vulkan derive the descriptor offset from
+        // the parent allocation, discarding this dedicated aligned slot.
+        // Its contiguous bytes were copied above, so detach the view and
+        // bind the tensor directly to its aligned device mirror.
+        foldTensors[i]->view_src = nullptr;
+        foldTensors[i]->view_offs = 0;
+        foldTensors[i]->data = mirrors[i]->data;
+        foldTensors[i]->buffer = fold->deviceBuf;
+    }
+    return true;
+}
+bool OcrWeights::materializeUnalignedStaticViews(struct ggml_cgraph* graph,
+                                                 ggml_backend_t backend,
+                                                 std::string* error) {
+    if (!graph || !backend || !fold || fold->viewMirrorBuf)
+        return graph && backend && fold;
+    const ggml_backend_buffer_t foldDeviceBuf = fold->deviceBuf;
+    const size_t alignment = ggml_backend_buft_get_alignment(
+            ggml_backend_get_default_buffer_type(backend));
+    if (alignment == 0 || (alignment & (alignment - 1)) != 0) return true;
+
+    struct PendingCopy {
+        ggml_tensor* source;
+        ggml_tensor* mirror;
+        std::vector<uint8_t> bytes;
+    };
+    std::vector<PendingCopy> pending;
+    std::unordered_set<ggml_tensor*> seen;
+    std::vector<ggml_tensor*> all;
+    std::vector<ggml_tensor*> stack;
+    const auto push = [&](ggml_tensor* tensor) {
+        if (tensor && seen.insert(tensor).second) stack.push_back(tensor);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!stack.empty()) {
+        ggml_tensor* tensor = stack.back();
+        stack.pop_back();
+        all.push_back(tensor);
+        push(tensor->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(tensor->src[i]);
+    }
+
+    // A view's descriptor offset is its root slot plus every view_offs in its
+    // chain. Only device-resident model/fold roots are static; gallocr-owned
+    // activation views must retain their allocator-managed storage.
+    seen.clear();
+    for (ggml_tensor* source : all) {
+        if (!source->view_src || !seen.insert(source).second) continue;
+        ggml_tensor* root = source;
+        size_t sourceOffset = 0;
+        while (root->view_src) {
+            sourceOffset += root->view_offs;
+            root = root->view_src;
+        }
+        if ((root->buffer != deviceBuf && root->buffer != foldDeviceBuf) ||
+            !root->data || (sourceOffset & (alignment - 1)) == 0)
+            continue;
+        // The mirror has canonical strides. A non-contiguous view cannot be
+        // represented by that layout without changing its element mapping.
+        if (!ggml_is_contiguous(source)) {
+            if (error) *error = "ocr: unaligned non-contiguous static view";
+            return false;
+        }
+        const size_t byteCount = ggml_nbytes(source);
+        if (sourceOffset > ggml_nbytes(root) ||
+            byteCount > ggml_nbytes(root) - sourceOffset) {
+            if (error) *error = "ocr: static view exceeds its root tensor";
+            return false;
+        }
+        PendingCopy copy{source, nullptr, std::vector<uint8_t>(byteCount)};
+        ggml_backend_tensor_get(root, copy.bytes.data(), sourceOffset,
+                                copy.bytes.size());
+        pending.push_back(std::move(copy));
+    }
+    if (pending.empty()) return true;
+
+    fold->viewMirrorCtx =
+            ggml_init({ggml_tensor_overhead() * (pending.size() + 8), nullptr,
+                       /*no_alloc=*/true});
+    if (!fold->viewMirrorCtx) {
+        if (error) *error = "view mirror ctx init failed";
+        return false;
+    }
+    for (PendingCopy& copy : pending)
+        copy.mirror = ggml_new_tensor(fold->viewMirrorCtx, copy.source->type,
+                                      GGML_MAX_DIMS, copy.source->ne);
+    fold->viewMirrorBuf =
+            ggml_backend_alloc_ctx_tensors(fold->viewMirrorCtx, backend);
+    if (!fold->viewMirrorBuf) {
+        if (error) *error = "view mirror alloc failed";
+        return false;
+    }
+    for (PendingCopy& copy : pending) {
+        ggml_backend_tensor_set(copy.mirror, copy.bytes.data(), 0,
+                                copy.bytes.size());
+        copy.source->view_src = nullptr;
+        copy.source->view_offs = 0;
+        copy.source->data = copy.mirror->data;
+        copy.source->buffer = fold->viewMirrorBuf;
+    }
+    return true;
+}
+
+void OcrWeights::retargetGraphToDevice(struct ggml_cgraph* graph) {
+    if (!graph) return;
+    // Collect every tensor reachable from the graph: the computed nodes,
+    // their src chains (the weight leafs live in the meta/const pools, NOT
+    // in the graph context, so a ctx walk never sees them), and the view
+    // bases. Then retarget in two phases: named host-resident weights to
+    // their device copies, and every view re-derived from its base.
+    std::vector<ggml_tensor*> all;
+    std::unordered_set<ggml_tensor*> seen;
+    std::vector<ggml_tensor*> stack;
+    auto push = [&](ggml_tensor* t) {
+        if (t && seen.insert(t).second) stack.push_back(t);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!stack.empty()) {
+        ggml_tensor* t = stack.back();
+        stack.pop_back();
+        all.push_back(t);
+        if (t->view_src) push(t->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(t->src[i]);
+    }
+    // Phase 1: named weight leafs still bound to the host pools (the graph
+    // was built against the host originals) move to their device copies.
+    for (ggml_tensor* t : all) {
+        if (t->view_src) continue;
+        if (t->buffer == hostMetaBuf || t->buffer == hostConstBuf ||
+            t->buffer == nullptr) {
+            auto it = tensors.find(t->name ? t->name : "");
+            if (it != tensors.end() && it->second && it->second->data) {
+                // The device mirror owns its tensor slot, so the host-pool
+                // byte offset must not be added a second time.
+                t->data = it->second->data;
+                t->buffer = it->second->buffer;
+                t->view_offs = 0;
+            }
+        }
+    }
+    // Phase 2 (x2 for chained views): re-derive every view's data pointer
+    // from its (possibly just-retargeted) base. A graph may have been built
+    // while that base belonged to a host pool, so its view can still carry a
+    // valid-looking host buffer. Clear every view binding here: gallocr sees
+    // the null buffer and recreates the view from the retargeted device base
+    // during allocation. Leaving the stale binding intact makes Vulkan bind a
+    // host-pool subrange in mul_mat, whose offset need not satisfy
+    // minStorageBufferOffsetAlignment.
+    for (int pass = 0; pass < 2; ++pass) {
+        for (ggml_tensor* t : all) {
+            if (!t->view_src) continue;
+            t->buffer = nullptr;
+            t->data = (char*)t->view_src->data + t->view_offs;
+        }
+    }
+}
 bool OcrWeights::realizeHostBuffers() {
     if (hostMetaBuf) return true;
     // Zero-copy CPU buffer views over the two host pools: the GGUF weights
@@ -258,10 +592,20 @@ bool OcrWeights::realizeHostBuffers() {
     hostMetaBuf = ggml_backend_cpu_buffer_from_ptr(ggml_get_mem_buffer(meta),
                                                    ggml_get_mem_size(meta));
     if (!hostMetaBuf) return false;
+    // WEIGHTS usage: the sched offloads weight-consuming ops to the GPU
+    // only when the (possibly host-resident) buffer carries this tag.
+    if (sched_gpu_tagging) {
+        ggml_backend_buffer_set_usage(hostMetaBuf,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
     if (constCtx) {
         hostConstBuf = ggml_backend_cpu_buffer_from_ptr(
                 ggml_get_mem_buffer(constCtx), ggml_get_mem_size(constCtx));
         if (!hostConstBuf) return false;
+        if (sched_gpu_tagging) {
+            ggml_backend_buffer_set_usage(hostConstBuf,
+                                          GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
     }
     return true;
 }
@@ -278,6 +622,21 @@ void OcrWeights::tagHostLeafs() {
         return p >= base &&
                p < base + static_cast<ptrdiff_t>(ggml_get_mem_size(pool));
     };
+    ggml_context* foldCtx = fold ? fold->ctx : nullptr;
+    // Lazily wrap the fold pool as a zero-copy CPU buffer. Fold constants
+    // (BN-fused conv weights) are what the graph consumes: tag the view
+    // WEIGHTS so the sched offloads conv/matmul ops to the GPU.
+    const auto foldHostBuf = [&]() -> ggml_backend_buffer_t {
+        if (!fold->hostBuf) {
+            fold->hostBuf = ggml_backend_cpu_buffer_from_ptr(
+                    ggml_get_mem_buffer(foldCtx), ggml_get_mem_size(foldCtx));
+            if (sched_gpu_tagging) {
+                ggml_backend_buffer_set_usage(
+                        fold->hostBuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+            }
+        }
+        return fold->hostBuf;
+    };
     for (auto& kv : tensors) {
         ggml_tensor* t = const_cast<ggml_tensor*>(kv.second);
         if (t->buffer) continue;
@@ -285,14 +644,8 @@ void OcrWeights::tagHostLeafs() {
             t->buffer = hostMetaBuf;
         else if (inPool(constCtx, t->data))
             t->buffer = hostConstBuf;
-        else if (inPool(foldCtx, t->data)) {
-            if (!foldBuf) {
-                foldBuf = ggml_backend_cpu_buffer_from_ptr(
-                        ggml_get_mem_buffer(foldCtx),
-                        ggml_get_mem_size(foldCtx));
-            }
-            t->buffer = foldBuf;
-        }
+        else if (inPool(foldCtx, t->data))
+            t->buffer = foldHostBuf();
     }
     if (hostConstBuf) {
         for (ggml_tensor* t = ggml_get_first_tensor(constCtx); t != nullptr;
@@ -304,13 +657,10 @@ void OcrWeights::tagHostLeafs() {
     // every one of them with the pool view (the tensors map only sees
     // the weight leaves).
     if (foldCtx) {
-        if (!foldBuf) {
-            foldBuf = ggml_backend_cpu_buffer_from_ptr(
-                    ggml_get_mem_buffer(foldCtx), ggml_get_mem_size(foldCtx));
-        }
+        ggml_backend_buffer_t buf = foldHostBuf();
         for (ggml_tensor* t = ggml_get_first_tensor(foldCtx); t != nullptr;
              t = ggml_get_next_tensor(foldCtx, t)) {
-            if (!t->buffer) t->buffer = foldBuf;
+            if (!t->buffer) t->buffer = buf;
         }
     }
 }
@@ -345,6 +695,14 @@ bool OcrWeights::realizeToDevice(ggml_backend_t backend, std::string* error) {
     }
     deviceBuf = ggml_backend_alloc_ctx_tensors(deviceCtx, backend);
     if (!deviceBuf) return fail("device weights alloc failed");
+    // Without the WEIGHTS usage tag the backend sched treats these as
+    // ordinary host buffers: pass-1 never routes weight-consuming ops to
+    // the GPU (offload branch requires usage == WEIGHTS) and the whole
+    // graph silently runs on the CPU secondary (zero CUDA kernels).
+    if (sched_gpu_tagging) {
+        ggml_backend_buffer_set_usage(deviceBuf,
+                                      GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
     for (const auto& up : uploads)
         ggml_backend_tensor_set(up.first, up.second, 0, ggml_nbytes(up.first));
     // Keep the host view alive: every later buildGraph must fold the
@@ -367,7 +725,9 @@ const ggml_tensor* OcrWeights::hostWeight(const std::string& name) const {
     return weight(name);
 }
 
-bool OcrWeights::load(const std::string& path, std::string* error) {
+bool OcrWeights::load(const std::string& path,
+                      std::string* error,
+                      bool foldAffine) {
     ggml_context* metaCtx = nullptr;
     struct gguf_init_params params = {
             /*.no_alloc =*/false,  // small models: keep weights host-readable
@@ -458,9 +818,16 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
         // operands for binary ops, im2col and mul_mat's src1, so every
         // F16 and Q8_0 parameter is materialized as f32 at load time.
         // (Q8_0 block layout: one f16 scale per 32 int8 values.)
+        // The materialized tensor must carry the GGUF name: a graph built
+        // against the host pools is retargeted to the device mirrors by
+        // name (retargetGraphToDevice), and an unnamed leaf stays bound to
+        // host memory — Vulkan faults in the driver, CUDA silently reads it
+        // over PCIe on HMM hosts (the f16/q8_0 graphs measured 2.5-5x
+        // slower than f32 for that reason alone).
         if (t->type == GGML_TYPE_F16) {
             ggml_tensor* f32 =
                     ggml_new_tensor(constCtx, GGML_TYPE_F32, 4, t->ne);
+            ggml_set_name(f32, name);
             const auto* src = static_cast<const ggml_fp16_t*>(t->data);
             auto* dst = static_cast<float*>(f32->data);
             const int64_t n = ggml_nelements(t);
@@ -483,6 +850,7 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
             const int64_t n = ggml_nelements(t);
             const int64_t blocks = n / kBlock;
             ggml_tensor* f32 = ggml_new_tensor_1d(constCtx, GGML_TYPE_F32, n);
+            ggml_set_name(f32, name);
             const uint8_t* src = static_cast<const uint8_t*>(t->data);
             auto* dst = static_cast<float*>(f32->data);
             for (int64_t b = 0; b < blocks; ++b) {
@@ -503,7 +871,326 @@ bool OcrWeights::load(const std::string& path, std::string* error) {
         }
         tensors[name] = t;
     }
+    if (foldAffine) foldAffineChains();
     return true;
+}
+
+// Load-time IR rewrite: absorb every affine op adjacent to a conv into the
+// conv's Filter/Bias, the way Paddle Inference's conv_bn/conv_affine fuse
+// passes rewrite the graph before it runs. The exported PPLCNetV3 graphs do
+// not carry batch_norm ops around the body convs; they carry the
+// LearnableAffineBlock chain already expanded into per-element passes
+//   conv -> add(b[C]) -> mul(s1) -> add(b1) -> hard_swish -> mul(s2)
+//        -> add(b2) -> next conv
+// i.e. five full-activation read/write passes per conv, none of which any
+// ggml backend can fuse into the conv GEMM (Vulkan's MUL_MAT+ADD fusion is
+// mat-vec only). On the Vulkan rec graph these passes were ~49% of kernel
+// time. Two rules run to a fixpoint on program.ops:
+//   OUT  conv(W)+Bias followed by a single-consumer add(k)/mul(k)/batch_norm
+//        on its output:  (conv(W)+b)*k = conv(kW)+kb,  conv(W)+b+k =
+//        conv(W)+(b+k) and batch_norm = mul(scale/sqrt(var+eps)) then
+//        add(beta-mean*m).
+//   IN   conv fed by a single-consumer scalar mul(k):  conv(W, k*h) = conv(kW,
+//   h);
+//        by a scalar add(k) on an UNPADDED conv:  conv(W, h+k) = conv(W, h) +
+//        k*sum(W[co,:]);  by add(ka) after mul(kq) on a padded conv: rewrite
+//        to add(ka/kq) then mul(kq) so the mul becomes adjacent and folds.
+//        That rewrite is numerically equivalent to Paddle's order: the f32
+//        rounding of (h + ka/kq) scaled by kq is eps*|kq*h + ka|, the same
+//        bound Paddle's (kq*h + ka) carries; only ka/kq adds one ulp.
+// Gates are structural: the conv output / affine input var has exactly one
+// consumer, the mutated Filter/Bias/constant weights have exactly one
+// consumer, k is a scalar or a [OC] channel vector with Paddle axis=1, and OC
+// is the slowest filter axis (conv2d [OC,IC,KH,KW], depthwise [C,1,KH,KW];
+// conv2d_transpose keeps OC second and is left alone). The folded program is
+// what the builder sees, so the removed ops no longer count toward the
+// probe fetchAt index (load with foldAffine=false to bisect the source
+// program). Complexity O(rewrites * ops) ~ 200 * 300: the index is rebuilt
+// after each rewrite because the simplest correct invariant is "fresh
+// use/producer maps", and this runs once per model load.
+void OcrWeights::foldAffineChains() {
+    std::vector<GraphOp>& ops = program.ops;
+    struct Index {
+        std::map<std::string, int> uses;
+        std::map<std::string, size_t> producer;  // var -> op index
+        std::map<std::string, size_t> consumer;  // var -> its only consumer
+    };
+    const auto buildIndex = [&]() {
+        Index ix;
+        for (size_t i = 0; i < ops.size(); ++i) {
+            for (const auto& io : ops[i].inputs)
+                for (const auto& arg : io.args) {
+                    ++ix.uses[arg];
+                    ix.consumer[arg] = i;
+                }
+            for (const auto& out : ops[i].outputs) ix.producer[out] = i;
+        }
+        return ix;
+    };
+    const auto isWeight = [&](const std::string& var) {
+        return tensors.count("ocr." + var) != 0;
+    };
+    const auto hostF32 = [&](const std::string& var) -> ggml_tensor* {
+        auto it = tensors.find("ocr." + var);
+        if (it == tensors.end() || it->second->type != GGML_TYPE_F32)
+            return nullptr;
+        return const_cast<ggml_tensor*>(it->second);
+    };
+    const auto argSlot = [](GraphOp& op, const char* param) -> std::string* {
+        for (auto& io : op.inputs)
+            if (io.param == param && !io.args.empty()) return &io.args[0];
+        return nullptr;
+    };
+    // Y of a batch_norm is its only non-weight output that is consumed
+    // (MeanOut/VarianceOut alias the statistics; Saved* are dead).
+    const auto bnOutput = [&](const GraphOp& bn, const Index& ix) {
+        std::string y;
+        for (const auto& out : bn.outputs)
+            if (!isWeight(out) && ix.uses.count(out)) y = out;
+        return y;
+    };
+
+    // Conv geometry from the filter (4-D after an f32/f16 load, 1-D for a
+    // q8_0 container whose numpy dims come from the pinned registry).
+    const std::map<std::string, int> usedBefore = buildIndex().uses;
+    struct Conv {
+        ggml_tensor* w = nullptr;
+        float* wd = nullptr;
+        int64_t oc = 0, perOc = 0;
+        bool unpadded = false;
+    };
+    const auto convOf = [&](GraphOp& op, const Index& ix) -> Conv {
+        Conv c;
+        if (op.type != "conv2d" && op.type != "depthwise_conv2d") return c;
+        if (op.outputs.size() != 1) return c;
+        std::string* f = argSlot(op, "Filter");
+        if (!f || ix.uses.at(*f) != 1) return c;
+        ggml_tensor* w = hostF32(*f);
+        if (!w) return c;
+        const int64_t n = ggml_nelements(w);
+        int64_t oc = 0;
+        if (ggml_n_dims(w) == 4) {
+            oc = w->ne[3];
+        } else {
+            auto rit = reshapedDims.find("ocr." + *f);
+            if (rit == reshapedDims.end()) rit = reshapedDims.find(*f);
+            if (rit == reshapedDims.end() || rit->second.size() != 4) return c;
+            oc = rit->second[0];
+        }
+        if (oc <= 0 || n % oc != 0) return c;
+        if (std::string* b = argSlot(op, "Bias")) {
+            ggml_tensor* bt = hostF32(*b);
+            if (!bt || ix.uses.at(*b) != 1 || ggml_nelements(bt) != oc)
+                return c;
+        }
+        c.w = w;
+        c.wd = static_cast<float*>(w->data);
+        c.oc = oc;
+        c.perOc = n / oc;
+        const auto pads = attrInts(op.attrs, "paddings");
+        const std::string algo = attrString(op.attrs, "padding_algorithm");
+        c.unpadded = (algo.empty() || algo == "EXPLICIT") &&
+                     std::all_of(pads.begin(), pads.end(),
+                                 [](int64_t p) { return p == 0; });
+        return c;
+    };
+    // The conv's Bias data, created as a zero [OC] constant on first use.
+    const auto biasOf = [&](GraphOp& op, const Conv& c) -> float* {
+        if (std::string* b = argSlot(op, "Bias"))
+            return static_cast<float*>(hostF32(*b)->data);
+        const std::string var = *argSlot(op, "Filter") + ".fold_b";
+        ggml_tensor* t = ggml_new_tensor_1d(constCtx, GGML_TYPE_F32, c.oc);
+        ggml_set_name(t, ("ocr." + var).c_str());
+        std::memset(t->data, 0, ggml_nbytes(t));
+        tensors["ocr." + var] = t;
+        program.varRanks[var] = 1;
+        for (auto& io : op.inputs)
+            if (io.param == "Bias") {
+                io.args.assign(1, var);
+                return static_cast<float*>(t->data);
+            }
+        op.inputs.push_back({"Bias", {var}});
+        return static_cast<float*>(t->data);
+    };
+
+    // An elementwise add/mul with exactly one constant operand: a scalar
+    // (any axis) or, when `channels` > 0, a [channels] vector on Paddle
+    // axis 1 (the channel axis). `var` is the activation operand's slot.
+    struct Affine {
+        std::string* var = nullptr;
+        std::string constVar;
+        const float* k = nullptr;
+        bool scalar = false;
+    };
+    const auto affineOf = [&](GraphOp& op, int64_t channels) -> Affine {
+        Affine a;
+        if (op.type != "elementwise_add" && op.type != "elementwise_mul")
+            return a;
+        if (op.outputs.size() != 1) return a;
+        std::string* x = argSlot(op, "X");
+        std::string* y = argSlot(op, "Y");
+        if (!x || !y) return a;
+        std::string* c = isWeight(*x) ? x : (isWeight(*y) ? y : nullptr);
+        if (!c || isWeight(*x) == isWeight(*y)) return a;
+        ggml_tensor* k = hostF32(*c);
+        if (!k) return a;
+        const int64_t n = ggml_nelements(k);
+        if (n == 1) {
+            a.scalar = true;
+        } else if (channels > 0 && n == channels && ggml_n_dims(k) == 1 &&
+                   attrInt(op.attrs, "axis", -1) == 1) {
+            a.scalar = false;
+        } else {
+            return a;
+        }
+        a.var = (c == x) ? y : x;
+        a.constVar = *c;
+        a.k = static_cast<const float*>(k->data);
+        return a;
+    };
+
+    // OUT rule, to a fixpoint.
+    for (bool changed = true; changed;) {
+        changed = false;
+        const Index ix = buildIndex();
+        for (size_t ci = 0; ci < ops.size() && !changed; ++ci) {
+            const Conv c = convOf(ops[ci], ix);
+            if (!c.w) continue;
+            const std::string y = ops[ci].outputs[0];
+            auto uit = ix.uses.find(y);
+            if (uit == ix.uses.end() || uit->second != 1) continue;
+            const size_t ei = ix.consumer.at(y);
+            GraphOp& e = ops[ei];
+            if (e.type == "batch_norm") {
+                const std::string* xs = argSlot(e, "X");
+                const std::string out = bnOutput(e, ix);
+                if (!xs || *xs != y || out.empty()) continue;
+                const auto stat = [&](const char* param) -> ggml_tensor* {
+                    std::string* v = argSlot(e, param);
+                    return v ? hostF32(*v) : nullptr;
+                };
+                ggml_tensor* beta = stat("Bias");
+                ggml_tensor* scale = stat("Scale");
+                ggml_tensor* mean = stat("Mean");
+                ggml_tensor* var = stat("Variance");
+                if (!beta || !scale || !mean || !var ||
+                    ggml_nelements(scale) != c.oc)
+                    continue;
+                const double eps = attrFloat(e.attrs, "epsilon", 1e-5);
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    // Same scalar formula as the unfolded batch_norm branch
+                    // (double stdv, f32 m) so both agree to the last bit.
+                    const double stdv = std::sqrt(
+                            static_cast<const float*>(var->data)[co] + eps);
+                    const float m = static_cast<float>(
+                            static_cast<const float*>(scale->data)[co] / stdv);
+                    float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) row[j] *= m;
+                    b[co] = b[co] * m +
+                            (static_cast<const float*>(beta->data)[co] -
+                             static_cast<const float*>(mean->data)[co] * m);
+                }
+                ops[ci].outputs[0] = out;
+                ops.erase(ops.begin() + static_cast<ptrdiff_t>(ei));
+                changed = true;
+                continue;
+            }
+            const Affine a = affineOf(e, c.oc);
+            if (!a.var || *a.var != y) continue;
+            if (e.type == "elementwise_mul") {
+                float* b =
+                        argSlot(ops[ci], "Bias") ? biasOf(ops[ci], c) : nullptr;
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    const float m = a.scalar ? a.k[0] : a.k[co];
+                    float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) row[j] *= m;
+                    if (b) b[co] *= m;
+                }
+            } else {
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co)
+                    b[co] += a.scalar ? a.k[0] : a.k[co];
+            }
+            ops[ci].outputs[0] = e.outputs[0];
+            ops.erase(ops.begin() + static_cast<ptrdiff_t>(ei));
+            changed = true;
+        }
+    }
+
+    // IN rule, to a fixpoint (scalar constants only: the LAB chain feeds
+    // every body conv with scalar s2/b2).
+    for (bool changed = true; changed;) {
+        changed = false;
+        const Index ix = buildIndex();
+        for (size_t ci = 0; ci < ops.size() && !changed; ++ci) {
+            const Conv c = convOf(ops[ci], ix);
+            if (!c.w) continue;
+            std::string* in = argSlot(ops[ci], "Input");
+            if (!in) continue;
+            auto uit = ix.uses.find(*in);
+            auto pit = ix.producer.find(*in);
+            if (uit == ix.uses.end() || uit->second != 1 ||
+                pit == ix.producer.end())
+                continue;
+            const size_t pi = pit->second;
+            const Affine p = affineOf(ops[pi], 0);
+            if (!p.var || !p.scalar) continue;
+            const float k = p.k[0];
+            if (ops[pi].type == "elementwise_mul") {
+                const int64_t n = c.oc * c.perOc;
+                for (int64_t j = 0; j < n; ++j) c.wd[j] *= k;
+            } else if (c.unpadded) {
+                float* b = biasOf(ops[ci], c);
+                for (int64_t co = 0; co < c.oc; ++co) {
+                    double sum = 0.0;
+                    const float* row = c.wd + co * c.perOc;
+                    for (int64_t j = 0; j < c.perOc; ++j) sum += row[j];
+                    b[co] += static_cast<float>(k * sum);
+                }
+            } else {
+                // add(ka) after mul(kq) in front of a padded conv: commute
+                // to add(ka/kq) -> mul(kq) so the next pass folds the mul.
+                const std::string h = *p.var;
+                auto hu = ix.uses.find(h);
+                auto hp = ix.producer.find(h);
+                if (hu == ix.uses.end() || hu->second != 1 ||
+                    hp == ix.producer.end() || ix.uses.at(p.constVar) != 1)
+                    continue;
+                const size_t qi = hp->second;
+                if (ops[qi].type != "elementwise_mul") continue;
+                const Affine q = affineOf(ops[qi], 0);
+                if (!q.var || !q.scalar || q.k[0] == 0.f) continue;
+                ggml_tensor* ka = hostF32(p.constVar);
+                static_cast<float*>(ka->data)[0] = k / q.k[0];
+                // Rewire g -> add -> h -> mul -> x and keep program order.
+                const std::string g = *q.var;
+                *p.var = g;
+                ops[pi].outputs[0] = h;
+                *q.var = h;
+                ops[qi].outputs[0] = *in;
+                std::swap(ops[pi], ops[qi]);
+                changed = true;
+                continue;
+            }
+            *in = *p.var;
+            ops.erase(ops.begin() + static_cast<ptrdiff_t>(pi));
+            changed = true;
+        }
+    }
+
+    // Constants the removed ops consumed are dead: drop them from the
+    // name map so realizeToDevice does not mirror them. Only constants the
+    // fold orphaned are dropped; a container may carry parameters no
+    // program op reads (the table task's hand-written decoder weights).
+    const Index ix = buildIndex();
+    for (auto it = tensors.begin(); it != tensors.end();) {
+        const std::string var = it->first.substr(4);  // strip "ocr."
+        if (usedBefore.count(var) != 0 && ix.uses.count(var) == 0)
+            it = tensors.erase(it);
+        else
+            ++it;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -525,6 +1212,16 @@ ggml_tensor* buildGraph(ggml_context* ctx,
     // on a GPU session it would force a host<->device round trip per conv).
     const bool cpuConv = options ? options->cpu_conv : false;
     int probeIndex = 0;
+    // Blocked-island routing. Availability (AVX-512 CPUID) is the CALLER's
+    // responsibility — production sets blocked_island only when
+    // aicore::blk::blocked_available(); the probe may force it on to keep
+    // the scalar island kernels parity-covered on AVX2-only hosts.
+    const bool islandOn = options && options->blocked_island;
+    // Vars whose values currently live in a blocked buffer, mapped to their
+    // own blocked tensor + true channel count. Island ops resolve their
+    // inputs through this map by var name, so arbitrary branch topologies
+    // (the det FPN consumes vars across segments) stay correct.
+    std::map<std::string, std::pair<ggml_tensor*, int>> blockedVars;
     struct BuildState {
         ggml_context* ctx;
         const OcrWeights& weights;
@@ -562,6 +1259,127 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             return t;
         }
     } state{ctx, weights, {}, {}};
+    // Blocked-island dataflow model: the det FPN branches interleave, so an
+    // op's input is NOT necessarily the previous op's output. Every island
+    // op resolves its own Input var: if the var is tracked in blockedVars
+    // the blocked tensor is consumed directly; otherwise the NCHW tensor is
+    // reordered in. `islandRebindOne` converts a single var back to NCHW
+    // (used when a stock op consumes it); `islandRebindAll` converts every
+    // tracked var (used when the program truncates).
+    struct IslandBase {
+        ggml_tensor* t = nullptr;
+        int c = 0;
+        bool blocked = false;
+        std::string name;
+    };
+    auto islandInput = [&](const GraphOp& op, const char* param) -> IslandBase {
+        for (const auto& io : op.inputs) {
+            if (io.param != param || io.args.empty()) continue;
+            const std::string& n = io.args[0];
+            ggml_tensor* t = state.resolve(n);
+            auto it = blockedVars.find(n);
+            if (it != blockedVars.end())
+                return {it->second.first, it->second.second, true, n};
+            return {t, t ? static_cast<int>(t->ne[2]) : 0, false, n};
+        }
+        return {};
+    };
+    auto islandRebindOne = [&](const std::string& name) {
+        auto it = blockedVars.find(name);
+        if (it == blockedVars.end()) return;
+        state.values[name] = aicore::blk::blocked_reorder_out(
+                ctx, it->second.first, it->second.second);
+        blockedVars.erase(it);
+    };
+    auto islandRebindAll = [&]() {
+        for (auto& kv : blockedVars)
+            state.values[kv.first] = aicore::blk::blocked_reorder_out(
+                    ctx, kv.second.first, kv.second.second);
+        blockedVars.clear();
+    };
+    // Island eligibility for a conv. The spatial cap gates ENTRY only (a
+    // conv consuming an already-blocked deep map stays in the island).
+    auto islandConvEligible = [&](const IslandBase& in, ggml_tensor* w, bool dw,
+                                  int64_t groups, int s0, int s1, int p0,
+                                  int p1) {
+        if (!islandOn) return false;
+        if (!in.blocked) {
+            // entering the island requires a clean single-image NCHW input
+            if (!in.t || in.t->type != GGML_TYPE_F32 || in.t->ne[3] != 1 ||
+                !ggml_is_contiguous(in.t))
+                return false;
+            // deep/small-spatial regime: the blocked direct kernel wins on
+            // the LCNet/MobileNet bodies, not on the wide early maps
+            constexpr int64_t kIslandMaxSpatial = 64;
+            if (std::min(in.t->ne[0], in.t->ne[1]) > kIslandMaxSpatial)
+                return false;
+        }
+        if (w->type != GGML_TYPE_F32) return false;
+        if (dw)
+            return w->ne[0] == 3 && w->ne[1] == 3 && p0 == p1 && p0 <= 2 &&
+                   s0 >= 1 && s0 <= 2 && s1 >= 1 && s1 <= 2;
+        if (groups != 1) return false;
+        if (w->ne[0] == 1 && w->ne[1] == 1) return s0 == 1 && s1 == 1;
+        return w->ne[0] == 3 && w->ne[1] == 3 && p0 == p1 && p0 <= 2 &&
+               s0 == s1 && (s0 == 1 || s0 == 2);
+    };
+    // Blocked-island conv routing. Returns false (after rebinding the
+    // op's own blocked inputs) when the conv must run on the stock path.
+    auto islandConvRoute = [&](ggml_tensor* w, ggml_tensor** x,
+                               const GraphOp& op, ggml_tensor* bias,
+                               int64_t groups, int s0, int s1, int p0, int p1,
+                               ggml_tensor** out) -> bool {
+        IslandBase in = islandInput(op, "Input");
+        if (!islandConvEligible(in, w, op.type == "depthwise_conv2d", groups,
+                                s0, s1, p0, p1)) {
+            islandRebindOne(in.name);
+            return false;
+        }
+        ggml_tensor* base =
+                in.blocked ? in.t : aicore::blk::blocked_reorder_in(ctx, in.t);
+        if (op.type == "depthwise_conv2d") {
+            *out = aicore::blk::blocked_conv3x3_dw(ctx, w, base, p0, s0, s1,
+                                                   bias);
+        } else if (w->ne[0] == 1) {
+            *out = aicore::blk::blocked_conv1x1(ctx, w, base, s0, bias);
+        } else {
+            *out = aicore::blk::blocked_conv3x3(ctx, w, base, p0, s0, bias);
+        }
+        *x = in.t;  // the stock path re-resolves after a route failure
+        return true;
+    };
+    // The island kernels assume dilation 1; a dilated conv (mid-chain)
+    // exits the island instead, and a dilated conv never enters one.
+    auto islandDilationOk = [&](int d0, int d1) { return d0 == 1 && d1 == 1; };
+    // Bind a blocked result to the op outputs. Returns true when the caller
+    // must break out of the op loop (probe truncation rebinds everything so
+    // the fetch stays comparable with the numpy reference).
+    auto islandBind = [&](const GraphOp& op, ggml_tensor* xb, int xbC) -> bool {
+        for (const auto& name : op.outputs) {
+            state.values[name] = xb;
+            blockedVars[name] = {xb, xbC};
+        }
+        if (dumpShapes && !op.outputs.empty()) {
+            std::fprintf(stderr,
+                         "[shape] [%s] %s ne=%lld,%lld,%lld,%lld (blocked)\n",
+                         op.type.c_str(), op.outputs[0].c_str(),
+                         (long long)xb->ne[0], (long long)xb->ne[1],
+                         (long long)xb->ne[2], (long long)xb->ne[3]);
+            std::fflush(stderr);
+        }
+        if (probeIndex == fetchAt) {
+            islandRebindAll();
+            state.values["__fetch__"] =
+                    op.outputs.empty() ? nullptr : state.values[op.outputs[0]];
+            ++probeIndex;
+            return true;
+        }
+        ++probeIndex;
+        for (const auto& name : op.outputs)
+            if (name.find("scale_0.tmp_0") != std::string::npos)
+                state.values["__fetch__"] = xb;  // blocked; the fetch op's
+        return false;                            // rebind converts to NCHW
+    };
     ggml_context* cctx =
             weights.foldContext() ? weights.foldContext() : weights.constCtx;
 
@@ -597,11 +1415,153 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (o.type == "concat") alignAgainst(o);
     }
 
+    // Batched-attention support (rec, N>1): the audited SVTR head has TWO
+    // serial attention blocks; each packs Q/K/V through a rank-5 reshape
+    // (N,T,3,heads,dim) that ggml's 4-D tensors cannot represent, which is
+    // what pins the rec phase to per-crop N=1 forwards. For N>1 replace
+    // each chain with strided 4-D views of the qkv projection plus
+    // batched mul_mat (the llama.cpp attention layout), so ONE forward
+    // covers all crops:
+    //   Q/K/V views : (d,t,h,n) strided views of qkv (360,T,N)
+    //   scores      = K_view x scale(Q_view)             -> (s,t,h,n)
+    //   ctx         = cont(transpose(V_view)) x scores   -> (t,d,h,n)
+    //   merged      = cont(permute(ctx)) reshaped to     -> (120,T,1,N)
+    // Pattern-driven: a rank-5 reshape [0,-1,3,8,15] triggers the bypass;
+    // everything until the block-tail reshape [0,-1,120] is skipped and
+    // its output replaced by the merged tensor. The qkv projection is
+    // located by its 360-wide first axis and validated (contiguous,
+    // (360,T,N)); any mismatch is a hard error, never a silent wrong
+    // graph. The FFN block between the two attentions is batch-safe and
+    // runs normally.
+    float attnScale = 0.f;
+    for (const auto& o : weights.program.ops) {
+        if (o.type == "scale") {
+            const double v = attrFloat(o.attrs, "scale", 0.0);
+            if (v > 0.0) {
+                attnScale = static_cast<float>(v);
+                break;
+            }
+        }
+    }
+    bool batchAttnSkip = false;
+    ggml_tensor* batchAttnMerged = nullptr;
+
     for (const GraphOp& op : weights.program.ops) {
         const std::string outName =
                 op.outputs.empty() ? std::string() : op.outputs.front();
+
+        if (op.type == "reshape2" && !op.outputs.empty()) {
+            const auto shape = attrInts(op.attrs, "shape");
+            if (shape.size() == 5 && shape[0] == 0 && shape[1] == -1 &&
+                shape[2] == 3 && input->ne[3] > 1) {
+                // Attention-block head: bypass the whole rank-5 chain.
+                ggml_tensor* qkv = nullptr;
+                for (const auto& io : op.inputs)
+                    for (const auto& arg : io.args) {
+                        auto it = state.values.find(arg);
+                        if (it != state.values.end() && it->second &&
+                            it->second->ne[0] == 360)
+                            qkv = it->second;
+                    }
+                // T is the attention time axis of the qkv projection
+                // (qkv (360,T,N)); the rec input's ne[1] is the 48-px
+                // image height, not T.
+                const int64_t T = qkv->ne[1];
+                const int64_t N = input->ne[3];
+                if (attnScale <= 0.f) {
+                    if (error) *error = "batched attention: scale attr missing";
+                    return nullptr;
+                }
+                if (!qkv || qkv->ne[0] != 360 || qkv->ne[1] != T ||
+                    qkv->ne[2] != N || qkv->ne[3] != 1 ||
+                    !ggml_is_contiguous(qkv)) {
+                    if (error) *error = "batched attention: qkv shape drift";
+                    return nullptr;
+                }
+                const size_t rowBytes = 360 * sizeof(float);
+                const size_t nStride = qkv->nb[2];
+                // (d,t,h,n) strided views over the packed [q|k|v] rows.
+                // Paddle packs e = c*120 + h*15 + d (reshape (N,T,3,8,15)),
+                // so the head stride is 15 elements = 60 BYTES and the
+                // q/k/v section offsets are 120/240 elements = 480/960
+                // bytes. The section offsets and the head stride must be
+                // kept distinct: both are numeric 60/240 pairs that swap
+                // easily and every past mix-up here scrambled the text.
+                ggml_tensor* Qdt = ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
+                                                15 * sizeof(float), nStride, 0);
+                ggml_tensor* Kdt =
+                        ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
+                                     15 * sizeof(float), nStride, 480);
+                // scores(s,t,h,n) = sum_d Q(d,t)K(d,s), batched over (h,n).
+                // The 1/sqrt(d) Q scale is linear, so applying it to the
+                // product keeps the math identical while letting ggml_scale
+                // see the contiguous mul_mat output (a strided view would
+                // trip its padded_1d assert).
+                // ggml_mul_mat's CUDA kernel does not preserve the
+                // element order of strided src0/src1 the way the CPU kernel
+                // does (CPU: bitwise-exact vs the N=1 chain; CUDA: garbage),
+                // so both attention operands are materialized contiguous
+                // first — three (15,T,8,N) copies per block, trivial next to
+                // the batched GEMMs they enable.
+                ggml_tensor* Kc = ggml_cont(ctx, Kdt);
+                ggml_tensor* Qc = ggml_cont(ctx, Qdt);
+                ggml_tensor* scores = ggml_scale(
+                        ctx, exactF32(ggml_mul_mat(ctx, Kc, Qc)), attnScale);
+                ggml_tensor* probs = ggml_soft_max(ctx, scores);
+                // ctx(d,t,h,n) = sum_s probs(s,t) V(d,s): V must enter
+                // with a contiguous s axis, so materialize (s,d) once.
+                ggml_tensor* Vdt =
+                        ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
+                                     15 * sizeof(float), nStride, 960);
+                ggml_tensor* Vsd = ggml_cont(ctx, ggml_transpose(ctx, Vdt));
+                ggml_tensor* attnCtx = exactF32(ggml_mul_mat(ctx, Vsd, probs));
+                // Reorder (d,t,h,n) -> (d,h,t,n): after cont, the (h,d)
+                // composite h*15+d becomes the fastest axis with stride 1,
+                // which is exactly the block-tail contract out[n,t,h*15+d]
+                // = attnCtx[n,h,t,d] once reshaped to (120,T,1,N). The
+                // permute index order is easy to get backwards: axes move
+                // TO the front, so (0,2,1,3) keeps d first and swaps t/h.
+                ggml_tensor* dhtn = ggml_permute(ctx, attnCtx, 0, 2, 1, 3);
+                // The audited chain carries a 4-D (N,1,T,120) footprint
+                // into the following transpose's rank-4 perm — keep it.
+                batchAttnMerged = ggml_reshape_4d(ctx, ggml_cont(ctx, dhtn),
+                                                  120, T, 1, N);
+                batchAttnSkip = true;
+                continue;
+            }
+            if (batchAttnSkip && shape.size() == 3 && shape[0] == 0 &&
+                shape[2] == 120) {
+                // Block tail: its output is the merged tensor.
+                if (!op.outputs.empty())
+                    state.values[op.outputs[0]] = batchAttnMerged;
+                batchAttnSkip = false;
+                batchAttnMerged = nullptr;
+                continue;
+            }
+        }
+        if (batchAttnSkip) continue;
+
         ggml_tensor* result = nullptr;
         bool isConstant = false;
+        // Ops outside the island's op set run stock: rebind their blocked
+        // INPUT vars to NCHW (other tracked vars stay blocked for later
+        // island consumers — the det FPN consumes vars across segments).
+        if (islandOn && !blockedVars.empty()) {
+            static const std::set<std::string> kIslandOps = {"conv2d",
+                                                             "depthwise_conv2d",
+                                                             "elementwise_add",
+                                                             "elementwise_mul",
+                                                             "relu",
+                                                             "hard_swish",
+                                                             "hard_sigmoid",
+                                                             "swish",
+                                                             "pool2d"};
+            if (!kIslandOps.count(op.type)) {
+                for (const auto& io : op.inputs)
+                    for (const auto& arg : io.args)
+                        if (!arg.empty()) islandRebindOne(arg);
+            }
+        }
 
         if (op.type == "feed") {
             result = input;
@@ -612,8 +1572,15 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (op.type == "fetch") {
                 state.values["__fetch__"] = result;
                 // Multi-output programs (PicoDet layout exposes 8 heads)
-                // collect every fetch in program order.
-                if (fetchList) fetchList->push_back(result);
+                // collect every fetch in program order. Readers copy the
+                // fetch buffer flat in numpy C order, so a fetch that is
+                // still a view (the heads end in transpose2 = permute)
+                // is materialized; a raw permuted buffer reads as the
+                // (C, N) transpose of the (N, C) head.
+                if (fetchList)
+                    fetchList->push_back(ggml_is_contiguous(result)
+                                                 ? result
+                                                 : ggml_cont(ctx, result));
             }
         } else if (op.type == "split") {
             // GFL head channel split: axis is a numpy axis over the
@@ -719,6 +1686,24 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             const int d1 =
                     static_cast<int>(dilations.empty() ? 1 : dilations[0]);
 
+            // Blocked-island conv routing (see islandConvRoute above).
+            ggml_tensor* islandOut = nullptr;
+            if (islandDilationOk(d0, d1) &&
+                islandConvRoute(w, &x, op, bias, groups, s0, s1, p0, p1,
+                                &islandOut)) {
+                if (islandBind(op, islandOut, static_cast<int>(w->ne[3])))
+                    break;
+                continue;
+            }
+            // re-resolve x after a potential island rebind (the stock path
+            // always consumes NCHW)
+            x = state.byParam(op, "Input");
+            if (!x) {
+                if (error) *error = op.type + ": missing Input";
+                return nullptr;
+            }
+            x = elemCont(ctx, x);
+
             if (op.type == "conv2d" && groups == 1) {
                 // CPU sessions route 3x3 stride-1 dilation-1 convolutions
                 // through the shared Winograd custom op (2.25x fewer
@@ -732,8 +1717,64 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     w->type == GGML_TYPE_F32 && x->type == GGML_TYPE_F32 &&
                     ggml_is_contiguous(x) && ggml_is_contiguous(w)) {
                     result = aicore::wino::winograd_conv3x3(ctx, w, x, p0);
+                } else if (options && options->gpu_rec_direct_conv) {
+                    // Direct convolution is limited to the recognizer. Its
+                    // fixed 320x48 shapes have passed decoded-text parity;
+                    // detector maps remain on im2col because small F32
+                    // accumulation changes can move DB threshold edges.
+                    result = ggml_conv_2d_direct(ctx, w, x, s0, s1, p0, p1, d0,
+                                                 d1);
+                    // The CUDA backend uses this marker to select its TF32
+                    // IGEMM path only for the parity-validated rec route.
+                    ggml_format_name(result, "ocr_rec_direct_conv");
                 } else {
-                    result = ggml_conv_2d(ctx, w, x, s0, s1, p0, p1, d0, d1);
+                    // GPU sessions route the 3x3/1x1 convs through
+                    // im2col+GEMM like the CPU stock path. Every direct
+                    // variant tried (pin-native naive, TF32 WMMA igemm, and
+                    // an F32-FMA micro-tile written for this task) is
+                    // FASTER on the det graph (14 vs 60 ms) but produces a
+                    // different F32 summation order, and the det map's
+                    // 3e-3-level deltas shift box geometry past the 0.3
+                    // threshold edge: end-to-end transcriptions regressed
+                    // 98 -> 67 valid rows even though every fixture gate
+                    // (argmax, max_diff, self) stayed green. The im2col
+                    // expansion's cuBLAS-backed GEMM order is the
+                    // transcription-parity reference, so it is the
+                    // production route until a kernel matches its numerics.
+                    // Spelled out op-for-op (ggml_conv_2d) so the GEMM node
+                    // is reachable for the precision request.
+                    // F32 weights keep F32 columns and an F32 GEMM: the
+                    // stock helper's F16 im2col rounded every f32-model
+                    // activation to 11 bits before the GEMM (first conv
+                    // already 5e-4 relative off; det map 0.025 max|diff|
+                    // vs the Paddle predictor on a real page), which the
+                    // F32 route closes to 2e-5 on CPU. On CUDA PREC_F32
+                    // also selects strict SGEMM instead of TF32 (0.0204 ->
+                    // 0.0102, same det latency on the RTX 4090, whose
+                    // GeForce TF32 rate equals its FP32 rate). F16/Q8_0
+                    // weights keep the F16 columns (no extra rounding).
+                    const bool f32Weights = w->type == GGML_TYPE_F32;
+                    ggml_tensor* cols = ggml_im2col(
+                            ctx, w, x, s0, s1, p0, p1, d0, d1, true,
+                            f32Weights ? GGML_TYPE_F32 : GGML_TYPE_F16);
+                    ggml_tensor* mm = ggml_mul_mat(
+                            ctx,
+                            ggml_reshape_2d(
+                                    ctx, cols, cols->ne[0],
+                                    cols->ne[3] * cols->ne[2] * cols->ne[1]),
+                            ggml_reshape_2d(ctx, w,
+                                            w->ne[0] * w->ne[1] * w->ne[2],
+                                            w->ne[3]));
+                    // F32 columns x F32 weights: exact F32 on every backend
+                    // (exactF32). F16/Q8_0 weights only ask for the f32
+                    // accumulator on Vulkan (conv_gemm_f32acc).
+                    exactF32(mm);
+                    if (options && options->conv_gemm_f32acc)
+                        ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
+                    result = ggml_reshape_4d(ctx, mm, cols->ne[1], cols->ne[2],
+                                             cols->ne[3], w->ne[3]);
+                    result = ggml_cont(ctx,
+                                       ggml_permute(ctx, result, 0, 1, 3, 2));
                 }
             } else if (op.type == "depthwise_conv2d") {
                 // Folded q8_0 kernels restore to {kw,kh,1,cin} from the
@@ -757,76 +1798,35 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     w = ggml_reshape_4d(ctx, w, it->second[3], it->second[2], 1,
                                         it->second[0]);
                 }
-                if (x->ne[3] == 1) {
-                    // Footprint guard: the batched GEMM materializes a
-                    // K*OW*OH*C im2col. At det resolutions (960x512) the
-                    // high-C layers reach multiple GB and starve the
-                    // allocator, so fall back to the per-channel chain
-                    // (whose per-channel im2col stays K*OW*OH) whenever
-                    // the batched buffer would exceed the cap.
-                    const auto convOut = [](int64_t in, int64_t k, int s, int p,
-                                            int d) {
-                        return (in + 2 * p - d * (k - 1) - 1) / s + 1;
-                    };
-                    const int64_t dwOW =
-                            convOut(x->ne[0], w->ne[0], s0, p0, d0);
-                    const int64_t dwOH =
-                            convOut(x->ne[1], w->ne[1], s1, p1, d1);
-                    const int64_t im2colBytes = w->ne[0] * w->ne[1] * dwOW *
-                                                dwOH * x->ne[2] * sizeof(float);
-                    constexpr int64_t kMaxIm2colBytes = 256ll << 20;
-                    if (im2colBytes > kMaxIm2colBytes) {
-                        std::vector<ggml_tensor*> parts;
-                        for (int64_t c = 0; c < x->ne[2]; ++c) {
-                            ggml_tensor* xc = ggml_view_4d(
-                                    ctx, x, x->ne[0], x->ne[1], 1, x->ne[3],
-                                    x->nb[1], x->nb[2], x->nb[3], c * x->nb[2]);
-                            ggml_tensor* wc = ggml_view_4d(
-                                    ctx, w, w->ne[0], w->ne[1], 1, 1, w->nb[1],
-                                    w->nb[2], w->nb[3], c * w->nb[3]);
-                            parts.push_back(ggml_conv_2d(ctx, wc, xc, s0, s1,
-                                                         p0, p1, d0, d1));
-                        }
-                        result = parts.front();
-                        for (size_t i = 1; i < parts.size(); ++i)
-                            result = ggml_concat(ctx, result, parts[i], 2);
-                    } else {
-                        // Depthwise as one batched GEMM (the ggml_conv_2d_dw
-                        // idiom): collapse the channel axis into the batch
-                        // axis, im2col once with a single-channel kernel
-                        // shape, and multiply by the per-channel filters as
-                        // the GEMM's batch entries. Same F32 K accumulation
-                        // as the historical per-channel conv chain, but ~6
-                        // nodes instead of ~2*C+1 — the old expansion was the
-                        // dominant node-count source (14 depthwise ops with
-                        // up to 3072 total channels produced tens of
-                        // thousands of graph nodes whose launch overhead
-                        // dwarfed the arithmetic on every backend).
-                        ggml_tensor* xc =
-                                ggml_is_contiguous(x) ? x : ggml_cont(ctx, x);
-                        ggml_tensor* xb = ggml_reshape_4d(
-                                ctx, xc, xc->ne[0], xc->ne[1], 1, xc->ne[2]);
-                        // im2col reads only the kernel geometry (KW, KH, Cin=1)
-                        // from this operand; a channel-0 view keeps the
-                        // per-channel weights intact for the GEMM below.
-                        ggml_tensor* sv =
-                                ggml_view_4d(ctx, w, w->ne[0], w->ne[1], 1, 1,
-                                             w->nb[1], w->nb[2], w->nb[3], 0);
-                        ggml_tensor* cols =
-                                ggml_im2col(ctx, sv, xb, s0, s1, p0, p1, d0, d1,
-                                            true, GGML_TYPE_F32);
-                        ggml_tensor* wr = ggml_reshape_3d(
-                                ctx, w, w->ne[0] * w->ne[1], 1, w->ne[3]);
-                        result = ggml_mul_mat(
-                                ctx, wr,
-                                ggml_reshape_3d(ctx, cols, cols->ne[0],
-                                                cols->ne[1] * cols->ne[2],
-                                                cols->ne[3]));
-                        result = ggml_reshape_4d(ctx, result, cols->ne[1],
-                                                 cols->ne[2], x->ne[2], 1);
-                    }
-                } else {
-                    // Batched input falls back to the per-channel chain.
+                // Footprint guard: the batched GEMM materializes a
+                // K*OW*OH*C*N im2col. At det resolutions (960x512) the
+                // high-C layers reach multiple GB and starve the CPU
+                // allocator, so fall back to the per-channel chain
+                // (whose per-channel im2col stays K*OW*OH) whenever
+                // the batched buffer would exceed the cap. GPU buffers
+                // live in device memory (GBs), so the same guard uses a
+                // much larger cap there.
+                const auto convOut = [](int64_t in, int64_t k, int s, int p,
+                                        int d) {
+                    return (in + 2 * p - d * (k - 1) - 1) / s + 1;
+                };
+                const int64_t dwOW = convOut(x->ne[0], w->ne[0], s0, p0, d0);
+                const int64_t dwOH = convOut(x->ne[1], w->ne[1], s1, p1, d1);
+                const int64_t im2colBytes = w->ne[0] * w->ne[1] * dwOW * dwOH *
+                                            x->ne[2] * x->ne[3] * sizeof(float);
+                constexpr int64_t kMaxIm2colBytesCpu = 256ll << 20;
+                constexpr int64_t kMaxIm2colBytesGpu = 2048ll << 20;
+                const int64_t kMaxIm2colBytes = (options && options->cpu_conv)
+                                                        ? kMaxIm2colBytesCpu
+                                                        : kMaxIm2colBytesGpu;
+                if (options && (options->gpu_rec_direct_conv ||
+                                options->gpu_dw_direct_conv)) {
+                    // The depthwise kernel has no cross-channel reduction,
+                    // so its direct 3x3 evaluation preserves the graph
+                    // result while avoiding the K^2*OH*OW*C*N im2col buffer.
+                    result = ggml_conv_2d_dw_direct(ctx, w, x, s0, s1, p0, p1,
+                                                    d0, d1);
+                } else if (im2colBytes > kMaxIm2colBytes) {
                     std::vector<ggml_tensor*> parts;
                     for (int64_t c = 0; c < x->ne[2]; ++c) {
                         ggml_tensor* xc = ggml_view_4d(
@@ -841,6 +1841,61 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     result = parts.front();
                     for (size_t i = 1; i < parts.size(); ++i)
                         result = ggml_concat(ctx, result, parts[i], 2);
+                } else {
+                    // Depthwise as one batched GEMM (the ggml_conv_2d_dw
+                    // idiom): collapse the channel axis into the batch
+                    // axis, im2col once with a single-channel kernel
+                    // shape, and multiply by the per-channel filters as
+                    // the GEMM's batch entries. Same F32 K accumulation
+                    // as the historical per-channel conv chain, but ~6
+                    // nodes instead of ~2*C+1 — the old expansion was the
+                    // dominant node-count source (14 depthwise ops with
+                    // up to 3072 total channels produced tens of
+                    // thousands of graph nodes whose launch overhead
+                    // dwarfed the arithmetic on every backend).
+                    ggml_tensor* xc =
+                            ggml_is_contiguous(x) ? x : ggml_cont(ctx, x);
+                    ggml_tensor* xb =
+                            ggml_reshape_4d(ctx, xc, xc->ne[0], xc->ne[1], 1,
+                                            xc->ne[2] * xc->ne[3]);
+                    // im2col reads only the kernel geometry (KW, KH,
+                    // Cin=1) from this operand. A channel-0 VIEW of w
+                    // would be non-contiguous for C>1 (the batch stride
+                    // keeps the channel gap), which the CUDA backend
+                    // rejects for IM2COL; cont(materialize) of the
+                    // channel-0 view is a 36-byte copy that stays
+                    // contiguous.
+                    ggml_tensor* sv = ggml_cont(
+                            ctx, ggml_view_4d(ctx, w, w->ne[0], w->ne[1], 1, 1,
+                                              w->nb[1], w->nb[2], w->nb[3], 0));
+                    ggml_tensor* cols =
+                            ggml_im2col(ctx, sv, xb, s0, s1, p0, p1, d0, d1,
+                                        true, GGML_TYPE_F32);
+                    ggml_tensor* cols3 = ggml_reshape_3d(
+                            ctx, cols, cols->ne[0], cols->ne[1] * cols->ne[2],
+                            cols->ne[3]);
+                    // Per-channel filters as the GEMM's batch entries.
+                    // The merged batch axis is i = c + n*C (c fastest,
+                    // from the reshape of the contiguous {W,H,C,N}
+                    // input), but ggml's mul_mat broadcast maps src0's
+                    // batch as i12/r2 (c SLOWEST, ggml-cpu.c), so the
+                    // slot-to-filter mapping would scramble. Instead of
+                    // relying on broadcast (or paying a full activation
+                    // permute+cont), tile the tiny filter tensor to the
+                    // full C*N batch: repeat's dst(i) = wr(i % C) is
+                    // EXACTLY our slot order, and the GEMM runs with
+                    // matching batch counts (no broadcast at all).
+                    ggml_tensor* wr = ggml_reshape_3d(
+                            ctx, w, w->ne[0] * w->ne[1], 1, w->ne[3]);
+                    ggml_tensor* wrBatchTarget = ggml_new_tensor_3d(
+                            ctx, GGML_TYPE_F32, wr->ne[0], 1, cols3->ne[2]);
+                    ggml_tensor* wrRep = ggml_repeat(ctx, wr, wrBatchTarget);
+                    result = ggml_mul_mat(ctx, wrRep, cols3);
+                    // The merged batch axis splits back order-preserving:
+                    // ne={OW,OH,C,N} enumerates c slower than n, i.e.
+                    // exactly the i = c + n*C slot order the GEMM used.
+                    result = ggml_reshape_4d(ctx, result, cols->ne[1],
+                                             cols->ne[2], x->ne[2], x->ne[3]);
                 }
             } else {
                 if (error) *error = "grouped conv2d (groups>1) unsupported";
@@ -907,6 +1962,10 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             const auto strides = attrInts(op.attrs, "strides");
             const int s0 = static_cast<int>(strides.empty() ? 1 : strides[0]);
             result = ggml_conv_transpose_2d_p0(ctx, w, x, s0);
+            // Same contract as the dense conv GEMM: F32 kernels must not
+            // take the CUDA 2x2/stride-2 cuBLAS path's default TF32 math.
+            if (w->type == GGML_TYPE_F32)
+                ggml_conv_transpose_2d_p0_set_prec(result, GGML_PREC_F32);
             if (ggml_tensor* biasT = state.byParam(op, "Bias"))
                 result = addChk(ctx, result,
                                 state.broadcastChannel(ggml_reshape_1d(
@@ -915,7 +1974,9 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             // Param names from the audited graph: Scale=w_0, Mean=w_1.
             // The four statistics are read on the CPU, so they resolve
             // through the host view (the main map may point into the
-            // device buffer after realizeToDevice).
+            // device buffer after realizeToDevice). (Only batch-norms that
+            // foldAffineChains could not rewrite into a conv bias reach
+            // this branch.)
             auto hostParam = [&](const char* param) -> const ggml_tensor* {
                 for (const auto& io : op.inputs) {
                     if (io.param == param && !io.args.empty())
@@ -980,6 +2041,121 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 return nullptr;
             }
             const int64_t axis = attrInt(op.attrs, "axis", -1);
+            bool stockFallback = false;
+            // Blocked-island elementwise routing (per-input-var resolution):
+            // 1-D [C] operands become fused bias / SE channel-scale passes;
+            // the SE excitation multiplies the body activation by the
+            // [16,1,1,CB] vector (both sides may be blocked or NCHW);
+            // residual adds run blocked when both operands are blocked or
+            // the NCHW one matches the body shape (reorder-in). Anything
+            // else rebinds this op's blocked inputs and runs stock.
+            if (islandOn) {
+                IslandBase xa = islandInput(op, "X");
+                IslandBase ya = islandInput(op, "Y");
+                if (!xa.t && a) xa = {a, a ? (int)a->ne[2] : 0, false, ""};
+                if (!ya.t && b) ya = {b, b ? (int)b->ne[2] : 0, false, ""};
+                // body = the blocked SPATIAL operand (the SE vector has
+                // 1x1 spatial; when both operands are blocked and one is
+                // 1x1, the other one is the body).
+                IslandBase* body = nullptr;
+                IslandBase* other = nullptr;
+                if (xa.blocked && ya.blocked) {
+                    const bool xaIsVec = xa.t->ne[1] == 1 && xa.t->ne[2] == 1;
+                    const bool yaIsVec = ya.t->ne[1] == 1 && ya.t->ne[2] == 1;
+                    if (xaIsVec && !yaIsVec) {
+                        body = &ya;
+                        other = &xa;
+                    } else {
+                        body = &xa;
+                        other = &ya;
+                    }
+                } else if (xa.blocked) {
+                    body = &xa;
+                    other = &ya;
+                } else if (ya.blocked) {
+                    body = &ya;
+                    other = &xa;
+                }
+                if (body && other && body->t) {
+                    ggml_tensor* o = other->t;
+                    const bool channelVec =
+                            o && ggml_n_dims(o) == 1 && o->ne[0] == body->c &&
+                            o->ne[0] > 1 &&
+                            (axis == 1 || body->c != (int)body->t->ne[1]);
+                    const bool seVecBlocked =
+                            other->blocked && ggml_n_dims(o) == 4 &&
+                            o->ne[0] == 16 && o->ne[1] == 1 && o->ne[2] == 1 &&
+                            o->ne[3] == body->t->ne[3];
+                    const bool seVecNchw =
+                            !other->blocked && o->type == GGML_TYPE_F32 &&
+                            ggml_n_dims(o) == 4 && o->ne[0] == 1 &&
+                            o->ne[1] == body->c && o->ne[2] == 1 &&
+                            o->ne[3] == 1;
+                    const bool sameShape =
+                            o && ggml_n_dims(o) == 4 && o->ne[3] == 1 &&
+                            o->ne[0] == body->t->ne[1] &&
+                            o->ne[1] == body->t->ne[2] && o->ne[2] == body->c;
+                    const bool seMul = op.type == "elementwise_mul" &&
+                                       (seVecBlocked ||
+                                        (seVecNchw && ggml_is_contiguous(o)));
+                    const bool blockedResidual = op.type == "elementwise_add" &&
+                                                 other->blocked && sameShape;
+                    const bool residual = op.type == "elementwise_add" &&
+                                          !other->blocked && sameShape &&
+                                          o->type == GGML_TYPE_F32 &&
+                                          ggml_is_contiguous(o);
+                    ggml_tensor* xb = body->t;
+                    if (channelVec) {
+                        xb = op.type == "elementwise_add"
+                                     ? aicore::blk::blocked_bias(ctx, xb, o)
+                                     : aicore::blk::blocked_mul_channel(ctx, xb,
+                                                                        o);
+                    } else if (seMul) {
+                        ggml_tensor* vec =
+                                seVecBlocked ? o
+                                             : aicore::blk::blocked_reorder_in(
+                                                       ctx, o);
+                        xb = aicore::blk::blocked_mul_channel(ctx, xb, vec);
+                    } else if (blockedResidual) {
+                        xb = aicore::blk::blocked_add(ctx, xb, o);
+                    } else if (residual) {
+                        ggml_tensor* ob =
+                                aicore::blk::blocked_reorder_in(ctx, o);
+                        xb = aicore::blk::blocked_add(ctx, xb, ob);
+                    } else {
+                        // unsupported combination: rebind this op's blocked
+                        // inputs and run the stock broadcast path
+                        islandRebindOne(xa.name);
+                        islandRebindOne(ya.name);
+                        stockFallback = true;
+                    }
+                    if (!stockFallback) {
+                        if (islandBind(op, xb, body->c)) break;
+                        continue;
+                    }
+                }
+            }
+            if (stockFallback) {
+                // The stock path needs NCHW operands; re-resolve a/b from
+                // the (possibly rebound) value map.
+                a = state.byParam(op, "X");
+                if (!a) a = state.firstInput(op);
+                b = state.byParam(op, "Y");
+                if (!b) {
+                    for (const auto& io : op.inputs) {
+                        if (io.args.empty()) continue;
+                        ggml_tensor* t = state.resolve(io.args[0]);
+                        if (t && t != a) {
+                            b = t;
+                            break;
+                        }
+                    }
+                }
+                if (!a || !b) {
+                    if (error) *error = op.type + ": missing inputs";
+                    return nullptr;
+                }
+            }
             // ggml broadcasts `b` into `a`'s shape; Paddle may place the
             // scalar/vector operand first, so normalize the order here.
             if (ggml_nelements(a) < ggml_nelements(b)) std::swap(a, b);
@@ -1007,6 +2183,16 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     b = ggml_reshape_4d(ctx, b, ne[0], ne[1], ne[2], ne[3]);
                 }
             }
+            if (!ggml_can_repeat(b, a) &&
+                ggml_nelements(a) == ggml_nelements(b)) {
+                // Same graph, same element order, two different high-dim
+                // axis assignments (batch on ne[2] on the conv-flatten
+                // branch vs ne[3] through the batched-matmul branch).
+                // Element counts match, so reshaping b onto a's footprint
+                // is order-preserving in the layout contract.
+                b = ggml_reshape_4d(ctx, b, a->ne[0], a->ne[1], a->ne[2],
+                                    a->ne[3]);
+            }
             if (!ggml_can_repeat(b, a)) {
                 std::string xName, yName;
                 for (const auto& io : op.inputs) {
@@ -1028,6 +2214,14 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                              ? addChk(ctx, a, b)
                              : mulChk(ctx, a, b, "elementwise_mul");
         } else if (op.type == "relu") {
+            if (islandOn) {
+                IslandBase in = islandInput(op, "X");
+                if (in.blocked) {
+                    ggml_tensor* xb = aicore::blk::blocked_relu(ctx, in.t);
+                    if (islandBind(op, xb, in.c)) break;
+                    continue;
+                }
+            }
             result = ggml_relu(ctx, state.need(op, "X", "relu", error));
             if (!result) return nullptr;
         } else if (op.type == "sigmoid") {
@@ -1046,6 +2240,16 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (!x) return nullptr;
             const double scale = attrFloat(op.attrs, "scale", 6.0);
             const double offset = attrFloat(op.attrs, "offset", 3.0);
+            if (islandOn) {
+                IslandBase in = islandInput(op, "X");
+                if (in.blocked && scale == 6.0 && offset == 3.0) {
+                    ggml_tensor* xb =
+                            aicore::blk::blocked_hard_swish(ctx, in.t);
+                    if (islandBind(op, xb, in.c)) break;
+                    continue;
+                }
+                if (in.blocked) islandRebindOne(in.name);  // unsupported form
+            }
             if (scale == 6.0 && offset == 3.0) {
                 // Native single-node kernel (same piecewise formula);
                 // measured BETTER high-resolution parity than the manual
@@ -1077,6 +2281,17 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (!x) return nullptr;
             const double slope = attrFloat(op.attrs, "slope", 0.2);
             const double offset = attrFloat(op.attrs, "offset", 0.5);
+            if (islandOn) {
+                IslandBase in = islandInput(op, "X");
+                if (in.blocked) {
+                    // any slope/offset: the island kernel takes them
+                    ggml_tensor* xb = aicore::blk::blocked_hard_sigmoid(
+                            ctx, in.t, static_cast<float>(slope),
+                            static_cast<float>(offset));
+                    if (islandBind(op, xb, in.c)) break;
+                    continue;
+                }
+            }
             result = ggml_clamp(
                     ctx,
                     addChk(ctx,
@@ -1089,6 +2304,15 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             ggml_tensor* x = state.need(op, "X", "swish", error);
             if (!x) return nullptr;
             const double beta = attrFloat(op.attrs, "beta", 1.0);
+            if (islandOn) {
+                IslandBase in = islandInput(op, "X");
+                if (in.blocked && beta == 1.0) {
+                    ggml_tensor* xb = aicore::blk::blocked_silu(ctx, in.t);
+                    if (islandBind(op, xb, in.c)) break;
+                    continue;
+                }
+                if (in.blocked) islandRebindOne(in.name);  // unsupported form
+            }
             if (beta == 1.0) {
                 // swish(x, 1) == silu: native single-node kernel.
                 result = ggml_silu(ctx, x);
@@ -1119,26 +2343,29 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 return nullptr;
             }
             // ggml_mul_mat(A,B) requires the shared K dimension on ne[0]
-            // of both operands and yields ne={A->ne[1], B->ne[1], ...}.
-            // Paddle stores X (M,K) - K already on ne[0] - and Y (K,N),
-            // which must be transposed to bring K onto ne[0]. The product
-            // comes out as (M,N) in ggml axes while the layout contract
-            // stores paddle (batch,M,N) as ne={N,M,batch}, so the result
-            // is transposed back onto the contract layout.
-            ggml_tensor* A = a;
-            ggml_tensor* B = b;
+            // of both operands, and its batch broadcast requires the
+            // SECOND operand to carry the batch dims (src0's high dims
+            // must divide src1's). The weight operand is therefore src0
+            // and the activation (batched) operand is src1:
+            //   Paddle X (M,K), ne={K,M,batch}; Y (K,N), ne={N,K}
+            //   Wk = trans_y ? Y : Y^T  -> (K,N) on ne[0]
+            //   out(j=m,i=n) = sum_k Wk(k,n) Ax(k,m) -> ne={M,N,batch}
+            // which transposes back onto the contract layout
+            // (batch,M,N) = ne={N,M,batch}, same as the N=1 path.
+            ggml_tensor* Ax = a;
+            ggml_tensor* Wk = b;
             if (attrBool(op.attrs, "trans_x", false))
-                A = ggml_transpose(ctx, a);
+                Ax = ggml_transpose(ctx, a);
             if (!attrBool(op.attrs, "trans_y", false))
-                B = ggml_transpose(ctx, b);
-            // ggml_mul_mat rejects transposed A operands; a permuted X
-            // (e.g. the final head transpose feeding the classifier
-            // matmul) must be materialized first. Transposed B is the
-            // supported weight path, but the CPU kernel still needs
-            // row-contiguous src1, so a permuted B is materialized too.
-            if (ggml_is_transposed(A)) A = ggml_cont(ctx, A);
-            if (!ggml_is_contiguous(B)) B = ggml_cont(ctx, B);
-            result = ggml_transpose(ctx, ggml_mul_mat(ctx, A, B));
+                Wk = ggml_transpose(ctx, b);
+            // The CPU mul_mat kernel needs row-contiguous operands.
+            if (ggml_is_transposed(Wk) || !ggml_is_contiguous(Wk))
+                Wk = ggml_cont(ctx, Wk);
+            if (!ggml_is_contiguous(Ax)) Ax = ggml_cont(ctx, Ax);
+            // ggml_mul_mat out ne = {src0.ne[1], src1.ne[1], batch...}:
+            // with the weight on src0 (ne1 = N_out) the product lands
+            // directly on the contract layout — no trailing transpose.
+            result = exactF32(ggml_mul_mat(ctx, Wk, Ax));
         } else if (op.type == "transpose2") {
             ggml_tensor* x = state.need(op, "X", "transpose2", error);
             if (!x) return nullptr;
@@ -1306,7 +2533,11 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             int64_t stated = 1;
             int inferAt = -1;
             for (int i = 0; i < numpyRank; ++i) {
-                if (shape[i] == -1)
+                // 0 is Paddle's dynamic-batch placeholder (shape_*.slice_1
+                // feeds the runtime batch): infer it from the element count
+                // exactly like -1, instead of assuming the batch lives on
+                // ggml ne[3] (the conv-flatten branch carries it on ne[2]).
+                if (shape[i] == -1 || shape[i] == 0)
                     inferAt = i;
                 else
                     stated *= numpyDims[i];
@@ -1367,27 +2598,61 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             const bool adaptive = attrBool(op.attrs, "adaptive", false);
             const bool global = attrBool(op.attrs, "global_pooling", false);
             const std::string poolType = attrString(op.attrs, "pooling_type");
-            const ggml_op_pool pool =
-                    poolType == "avg" ? GGML_OP_POOL_AVG : GGML_OP_POOL_MAX;
-            const int k0 =
-                    (global || adaptive)
-                            ? static_cast<int>(x->ne[0])
-                            : static_cast<int>(ksize.size() > 1 ? ksize[1] : 1);
-            const int k1 =
-                    (global || adaptive)
-                            ? static_cast<int>(x->ne[1])
-                            : static_cast<int>(ksize.empty() ? 1 : ksize[0]);
-            const int s0 =
-                    adaptive ? k0
-                             : static_cast<int>(strides.size() > 1 ? strides[1]
+            if (islandOn) {
+                IslandBase in = islandInput(op, "X");
+                if (in.blocked &&
+                    (global || (adaptive && ksize.size() == 2 &&
+                                ksize[0] == 1 && ksize[1] == 1)) &&
+                    poolType == "avg") {
+                    // SE squeeze: global average pool over the blocked body.
+                    ggml_tensor* xb = aicore::blk::blocked_gap(ctx, in.t);
+                    if (islandBind(op, xb, in.c)) break;
+                    continue;
+                }
+                if (in.blocked) islandRebindOne(in.name);  // non-global pool
+            }
+            const bool squeeze1x1 = global || (adaptive && ksize.size() == 2 &&
+                                               ksize[0] == 1 && ksize[1] == 1);
+            if (squeeze1x1 && poolType == "avg") {
+                // SE squeeze (global average pool to 1x1) as a row mean over
+                // the flattened H*W plane. ggml_pool_2d with k=(W,H) runs ONE
+                // thread per output element on CUDA/Vulkan, each serially
+                // sweeping the whole plane (measured ~2 ms per call, ~37 ms
+                // per det frame on CUDA — the largest single kernel cost in
+                // the det graph). ggml_mean reduces each row in parallel and
+                // is numerically the same sum/(H*W). ggml_mean needs a
+                // contiguous source (reshape asserts it too).
+                ggml_tensor* xc = ggml_is_contiguous(x) ? x : ggml_cont(ctx, x);
+                ggml_tensor* rows = ggml_reshape_3d(
+                        ctx, xc, xc->ne[0] * xc->ne[1], xc->ne[2], xc->ne[3]);
+                ggml_tensor* m = ggml_mean(ctx, rows);
+                result = ggml_reshape_4d(ctx, m, 1, 1, xc->ne[2], xc->ne[3]);
+            } else {
+                const ggml_op_pool pool =
+                        poolType == "avg" ? GGML_OP_POOL_AVG : GGML_OP_POOL_MAX;
+                const int k0 =
+                        (global || adaptive)
+                                ? static_cast<int>(x->ne[0])
+                                : static_cast<int>(ksize.size() > 1 ? ksize[1]
+                                                                    : 1);
+                const int k1 = (global || adaptive)
+                                       ? static_cast<int>(x->ne[1])
+                                       : static_cast<int>(
+                                                 ksize.empty() ? 1 : ksize[0]);
+                const int s0 = adaptive ? k0
+                                        : static_cast<int>(strides.size() > 1
+                                                                   ? strides[1]
                                                                    : 1);
-            const int s1 = adaptive ? k1
-                                    : static_cast<int>(
-                                              strides.empty() ? 1 : strides[0]);
-            const int p0 =
-                    paddings.size() > 1 ? static_cast<int>(paddings[1]) : 0;
-            const int p1 = paddings.empty() ? 0 : static_cast<int>(paddings[0]);
-            result = ggml_pool_2d(ctx, x, pool, k0, k1, s0, s1, p0, p1);
+                const int s1 =
+                        adaptive ? k1
+                                 : static_cast<int>(
+                                           strides.empty() ? 1 : strides[0]);
+                const int p0 =
+                        paddings.size() > 1 ? static_cast<int>(paddings[1]) : 0;
+                const int p1 =
+                        paddings.empty() ? 0 : static_cast<int>(paddings[0]);
+                result = ggml_pool_2d(ctx, x, pool, k0, k1, s0, s1, p0, p1);
+            }
         } else if (op.type == "scale") {
             ggml_tensor* x = state.need(op, "X", "scale", error);
             if (!x) return nullptr;
@@ -1482,33 +2747,54 @@ ggml_tensor* buildGraph(ggml_context* ctx,
     return it->second;
 }
 
-std::string ctcGreedyDecode(const float* probs,
-                            int timeSteps,
-                            int vocab,
-                            const std::vector<std::string>& dictionary,
-                            float* meanScore) {
+namespace {
+
+// CTC collapse shared by both decode entry points. `pick(t, &prob)` yields
+// the argmax class of timestep t and its probability; everything after that
+// (blank, repeat collapse, dictionary layout) is identical whether the
+// argmax was reduced on the CPU or inside the graph.
+template <typename Pick>
+std::string ctcCollapse(int timeSteps,
+                        int vocab,
+                        const std::vector<std::string>& dictionary,
+                        float* meanScore,
+                        Pick&& pick) {
     std::string text;
     double scoreSum = 0.0;
     int scoreCount = 0;
     int previous = 0;
+    // Class-index layout over the rec head (PP-OCR CTC): index 0 is the
+    // blank and the remaining classes follow one of two published
+    // container conventions:
+    //   vocab == dict.size() + 2 -> 1..N = dictionary, N+1 = " " (the raw
+    //          ppocr_keys_v1 vocabulary; use_space_char appends a trailing
+    //          space class at export time),
+    //   vocab == dict.size() + 1 -> 1..N = dictionary (the stored table
+    //          already carries its own trailing " " entry).
+    // The trailing space class is real recognized text, not a separator:
+    // unconditionally skipping vocab-1 deleted every recognized space (and
+    // the last vocabulary character whenever the container carries no
+    // space class).
+    const int64_t dictSize = static_cast<int64_t>(dictionary.size());
+    const bool spaceTail = static_cast<int64_t>(vocab) - dictSize == 2;
     for (int t = 0; t < timeSteps; ++t) {
-        const float* row = probs + static_cast<size_t>(t) * vocab;
-        int best = 0;
-        float bestProb = row[0];
-        for (int i = 1; i < vocab; ++i) {
-            if (row[i] > bestProb) {
-                bestProb = row[i];
-                best = i;
+        float bestProb = 0.0f;
+        const int best = pick(t, &bestProb);
+        // 0 = CTC blank; collapse repeats, then map the class through the
+        // layout above.
+        if (best != 0 && best != previous) {
+            if (best == vocab - 1 && spaceTail) {
+                text += " ";
+                scoreSum += bestProb;
+                ++scoreCount;
+            } else {
+                const int dictIndex = best - 1;
+                if (dictIndex >= 0 && dictIndex < static_cast<int>(dictSize)) {
+                    text += dictionary[dictIndex];
+                    scoreSum += bestProb;
+                    ++scoreCount;
+                }
             }
-        }
-        // 0 = CTC blank; vocab-1 = the word separator.
-        if (best != 0 && best != vocab - 1 && best != previous) {
-            const int dictIndex = best - 1;
-            if (dictIndex >= 0 &&
-                dictIndex < static_cast<int>(dictionary.size()))
-                text += dictionary[dictIndex];
-            scoreSum += bestProb;
-            ++scoreCount;
         }
         previous = best;
     }
@@ -1516,6 +2802,38 @@ std::string ctcGreedyDecode(const float* probs,
         *meanScore =
                 scoreCount ? static_cast<float>(scoreSum / scoreCount) : 0.0f;
     return text;
+}
+
+}  // namespace
+
+std::string ctcGreedyDecode(const float* probs,
+                            int timeSteps,
+                            int vocab,
+                            const std::vector<std::string>& dictionary,
+                            float* meanScore) {
+    return ctcCollapse(timeSteps, vocab, dictionary, meanScore,
+                       [&](int t, float* bestProb) {
+                           return ctcArgmax(
+                                   probs + static_cast<size_t>(t) * vocab,
+                                   vocab, bestProb);
+                       });
+}
+
+std::string ctcGreedyDecodeIndexed(const int32_t* bestIndex,
+                                   const float* bestProb,
+                                   int timeSteps,
+                                   int vocab,
+                                   const std::vector<std::string>& dictionary,
+                                   float* meanScore) {
+    return ctcCollapse(timeSteps, vocab, dictionary, meanScore,
+                       [&](int t, float* prob) {
+                           *prob = bestProb[t];
+                           // Clamp defensively: a backend bug can only
+                           // degrade to "unknown class", never index out
+                           // of the dictionary.
+                           const int32_t idx = bestIndex[t];
+                           return (idx < 0 || idx >= vocab) ? 0 : idx;
+                       });
 }
 
 std::vector<float> preprocessRec(const unsigned char* rgb,
@@ -1545,6 +2863,249 @@ std::vector<float> preprocessRec(const unsigned char* rgb,
         }
     }
     return out;
+}
+
+// --- Execution plan ---------------------------------------------------------
+
+namespace {
+
+bool backendNameHas(ggml_backend_t backend, const char* needle) {
+    if (!backend || ggml_common::is_cpu_backend(backend)) return false;
+    const char* name = ggml_backend_name(backend);
+    return name && std::string(name).find(needle) != std::string::npos;
+}
+
+// gallocr allocates regular graph tensors but can encounter chained views
+// before their base view has been initialized. Rebind after allocation in
+// dependency order so every device descriptor derives from device storage.
+bool initializeSingleBackendViews(ggml_cgraph* graph, std::string& error) {
+    std::vector<ggml_tensor*> tensors;
+    std::unordered_set<ggml_tensor*> seen;
+    std::vector<ggml_tensor*> pending;
+    const auto push = [&](ggml_tensor* tensor) {
+        if (tensor && seen.insert(tensor).second) pending.push_back(tensor);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!pending.empty()) {
+        ggml_tensor* tensor = pending.back();
+        pending.pop_back();
+        tensors.push_back(tensor);
+        push(tensor->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(tensor->src[i]);
+    }
+    for (size_t pass = 0; pass < tensors.size(); ++pass) {
+        bool advanced = false;
+        for (ggml_tensor* tensor : tensors) {
+            if (!tensor->view_src || tensor->buffer ||
+                !tensor->view_src->buffer)
+                continue;
+            if (ggml_backend_view_init(tensor) != GGML_STATUS_SUCCESS) {
+                error = "ocr: backend view initialization failed";
+                return false;
+            }
+            advanced = true;
+        }
+        if (!advanced) break;
+    }
+    for (ggml_tensor* tensor : tensors) {
+        if (tensor->view_src && !tensor->buffer) {
+            error = "ocr: graph contains an unbound device view";
+            return false;
+        }
+    }
+    return true;
+}
+
+// One-device dispatch invariant: after retargeting, allocation and the view
+// mirrors, every tensor the graph touches must live in a device buffer. A
+// leaf that slipped through (unnamed weight, fold constant outside the per
+// build pool, stale view binding) is otherwise only discovered as a driver
+// segfault (Vulkan) or a silent PCIe-speed read (CUDA on HMM hosts).
+bool verifyDeviceResident(ggml_cgraph* graph, std::string& error) {
+    std::unordered_set<const ggml_tensor*> seen;
+    std::vector<const ggml_tensor*> stack;
+    const auto push = [&](const ggml_tensor* t) {
+        if (t && seen.insert(t).second) stack.push_back(t);
+    };
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
+        push(ggml_graph_node(graph, i));
+    while (!stack.empty()) {
+        const ggml_tensor* t = stack.back();
+        stack.pop_back();
+        push(t->view_src);
+        for (int i = 0; i < GGML_MAX_SRC; ++i) push(t->src[i]);
+        if (ggml_nbytes(t) == 0) continue;
+        if (!t->buffer || ggml_backend_buffer_is_host(t->buffer)) {
+            error = std::string("ocr: tensor '") + ggml_get_name(t) + "' (" +
+                    ggml_op_desc(t) + ") is not device-resident on a " +
+                    "one-device plan";
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+// CUDA and Vulkan OCR graphs are standard-op graphs with no CPU-only island.
+// Executing them through one device gallocr avoids scheduler split/capture
+// overhead. Vulkan additionally needs this path because a mixed CPU/Vulkan
+// graph can hand a host-buffered view to a Vulkan subbuffer. The Vulkan
+// build flag stays separate: its direct convolution route excludes the
+// detector geometry that faults in the NVIDIA Vulkan driver.
+OcrExecPlan makeExecPlan(ggml_backend_t gpu,
+                         ggml_backend_t cpu,
+                         bool schedGpuTagging) {
+    OcrExecPlan plan;
+    plan.gpu = (gpu && !ggml_common::is_cpu_backend(gpu)) ? gpu : nullptr;
+    plan.cpu = cpu;
+    plan.singleBackend = backendNameHas(plan.gpu, "CUDA") ||
+                         backendNameHas(plan.gpu, "Vulkan");
+    plan.vkSingle = backendNameHas(plan.gpu, "Vulkan");
+    // A GPU session with the tagging gate closed runs every node on the CPU
+    // secondary; judge conv routes by where the graph EXECUTES.
+    plan.cpuExecution = !plan.gpu || (!schedGpuTagging && !plan.singleBackend);
+    return plan;
+}
+
+OcrBuildOptions execBuildOptions(const OcrExecPlan& plan) {
+    OcrBuildOptions options;
+    options.cpu_conv = plan.cpuExecution;
+    // Dense convolutions stay on im2col+GEMM for every GPU role: the rec
+    // TF32 direct route measured slower on the batched rec graph (29.3 vs
+    // 25.7 ms per 100-box frame, CUDA) and 2.3x further from the fixture
+    // reference (max|diff| 0.0139 vs 0.0059, f32); it stays an A/B knob.
+    options.gpu_rec_direct_conv = false;
+    // Depthwise convolutions run direct on every GPU graph (det included):
+    // no cross-channel reduction, so the DB map stays within the im2col
+    // route's fixture bound while the det graph drops its dominant im2col
+    // traffic (44 -> 15 ms per 2560x1440 frame, CUDA).
+    options.gpu_dw_direct_conv = !plan.cpuExecution;
+    options.vk_single = plan.vkSingle;
+    // See OcrBuildOptions::conv_gemm_f32acc: the folded conv GEMMs need an
+    // f32 accumulator on Vulkan to match the CUDA/CPU numerics.
+    options.conv_gemm_f32acc = plan.vkSingle;
+    // Blocked-island routing: CPU-executing graphs only, and only when the
+    // host advertises the AVX-512 fast path (no AVX2 island kernel).
+    options.blocked_island =
+            plan.cpuExecution && aicore::blk::blocked_available();
+    return options;
+}
+
+void OcrGraphExec::free() {
+    if (alloc) ggml_gallocr_free(alloc);
+    if (sched) ggml_backend_sched_free(sched);
+    alloc = nullptr;
+    allocBuft = nullptr;
+    sched = nullptr;
+}
+
+bool prepareGraph(OcrWeights& weights,
+                  ggml_context* ctx,
+                  const OcrExecPlan& plan,
+                  const std::vector<ggml_tensor*>& outputs,
+                  ggml_cgraph** graph,
+                  OcrGraphExec& exec,
+                  std::string& error) {
+    *graph = nullptr;
+    // Plain CPU execution: host buffers only. A gated-off GPU session must
+    // NOT use the mixed sched allocation, which would leave activations in
+    // device memory the direct graph_compute cannot read.
+    ggml_backend_buffer_type_t allocBuft = nullptr;
+    if (plan.cpuExecution)
+        allocBuft = ggml_backend_get_default_buffer_type(plan.cpu);
+    else if (plan.singleBackend)
+        allocBuft = ggml_backend_get_default_buffer_type(plan.gpu);
+    // Keep the slot's gallocr (and its compute buffer) for a same-type
+    // rebuild; anything else starts from a clean exec.
+    if (!allocBuft || exec.allocBuft != allocBuft || exec.sched) exec.free();
+    if (plan.cpuExecution) {
+        if (!exec.alloc) {
+            exec.alloc = ggml_gallocr_new(allocBuft);
+            exec.allocBuft = allocBuft;
+        }
+    } else {
+        // The builder routes folded constants into the per-build fold pool
+        // only when resetFoldPool preceded buildGraph; otherwise they land
+        // in the load-time host pool, which no device mirror covers, and a
+        // one-device dispatch dereferences host memory (Vulkan: segfault
+        // inside the driver). Fail loudly instead.
+        if (!weights.foldContext()) {
+            error = "ocr: buildGraph ran without resetFoldPool; folded "
+                    "constants are host-only";
+            exec.free();
+            return false;
+        }
+        // Realize the host pools (zero-copy views) and the device weights
+        // once per weights object, then cover the folded constants emitted
+        // by this build. The fold-pool mirror must precede allocation:
+        // without it the sched re-uploads every fold constant on EVERY
+        // compute (~12 ms per rec chunk, more than all rec kernels).
+        if (!weights.realizeHostBuffers()) {
+            error = "ocr: host buffer realization failed";
+            exec.free();
+            return false;
+        }
+        weights.tagHostLeafs();
+        if (!weights.realizeToDevice(plan.gpu, &error)) {
+            error = "ocr: device weight realization failed: " + error;
+            exec.free();
+            return false;
+        }
+        if (!weights.realizeFoldPoolToDevice(plan.gpu, &error)) {
+            error = "ocr: fold pool device realization failed: " + error;
+            exec.free();
+            return false;
+        }
+        if (plan.singleBackend) {
+            if (!exec.alloc) {
+                exec.alloc = ggml_gallocr_new(allocBuft);
+                exec.allocBuft = allocBuft;
+            }
+        } else {
+            exec.sched =
+                    ggml_common::new_gpu_sched({plan.gpu}, plan.cpu, 1u << 20);
+            if (!exec.sched) {
+                error = "ocr: backend scheduler init failed";
+                return false;
+            }
+        }
+    }
+    ggml_cgraph* g = ggml_new_graph_custom(ctx, 1u << 20, false);
+    for (ggml_tensor* t : outputs) ggml_build_forward_expand(g, t);
+    if (plan.singleBackend) weights.retargetGraphToDevice(g);
+    const bool allocated =
+            exec.alloc ? ggml_gallocr_alloc_graph(exec.alloc, g)
+                       : ggml_backend_sched_alloc_graph(exec.sched, g);
+    if (!allocated) {
+        error = "ocr: graph allocation failed";
+        exec.free();
+        return false;
+    }
+    if (plan.singleBackend &&
+        (!weights.materializeUnalignedStaticViews(g, plan.gpu, &error) ||
+         !initializeSingleBackendViews(g, error) ||
+         !verifyDeviceResident(g, error))) {
+        exec.free();
+        return false;
+    }
+    *graph = g;
+    return true;
+}
+
+void computeGraph(const OcrExecPlan& plan,
+                  const OcrGraphExec& exec,
+                  ggml_cgraph* graph) {
+    // CPU and single-device graphs run the plain graph_compute: the sched
+    // would add split/copy overhead to a single-backend graph for no
+    // routing benefit.
+    if (plan.cpuExecution)
+        ggml_backend_graph_compute(plan.cpu, graph);
+    else if (plan.singleBackend)
+        ggml_backend_graph_compute(plan.gpu, graph);
+    else
+        ggml_backend_sched_graph_compute(exec.sched, graph);
 }
 
 }  // namespace ocr

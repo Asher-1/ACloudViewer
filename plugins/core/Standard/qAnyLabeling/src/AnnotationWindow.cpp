@@ -7,6 +7,9 @@
 
 #include "AnnotationWindow.h"
 
+#include <QtCompat.h>
+#include <aicore/aliked_capi.h>
+
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
 #include <QActionGroup>
@@ -81,16 +84,18 @@
 #include <limits>
 
 #include "AnnotationLabelDialog.h"
+#include "AnnotationLogging.h"
 #include "AnnotationNavigator.h"
 #include "AnnotationPopup.h"
 #include "AnnotationYaml.h"
 #include "LomaBridgeDialog.h"
 #include "PointCloudWindow.h"
+#include "RemoteServerClient.h"
+#include "RemoteServerDialog.h"
 #include "VideoAnnotationDialog.h"
 #include "VideoFrameExtraction.h"
 #include "VideoMaskImport.h"
 #include "VideoTab.h"
-#include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
@@ -106,6 +111,12 @@
 #include "ecvModelDownloader.h"
 
 namespace {
+// QSet's iterator-range constructor needs Qt 5.14; removeDuplicates() is
+// available on every supported Qt.
+bool hasDuplicateNames(QStringList names) {
+    return names.removeDuplicates() > 0;
+}
+
 const QStringList kImageFilters = {
         QStringLiteral("*.jpg"),  QStringLiteral("*.jpeg"),
         QStringLiteral("*.png"),  QStringLiteral("*.bmp"),
@@ -213,6 +224,13 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
     m_autoSwitchToEditMode =
             settings.value(QStringLiteral("autoSwitchToEditMode"), true)
                     .toBool();
+    m_validateLabel =
+            settings.value(QStringLiteral("validateLabel")).toString();
+    m_loggerLevel = settings.value(QStringLiteral("loggerLevel"),
+                                   QStringLiteral("info"))
+                            .toString();
+    m_remoteModelId =
+            settings.value(QStringLiteral("remoteServerModel")).toString();
     m_exifScanEnabled =
             settings.value(QStringLiteral("exifScanEnabled"), true).toBool();
     m_displayLabelPopup =
@@ -2254,6 +2272,23 @@ void AnnotationWindow::editLabels() {
             return false;
         }
         const QHash<QString, LabelRule> rules = collectRules();
+        // Upstream validate_label parity: under "exact" every replacement
+        // label must already exist in the unique label list, checked before
+        // any file is touched.
+        if (m_validateLabel == QStringLiteral("exact")) {
+            for (auto rule = rules.constBegin(); rule != rules.constEnd();
+                 ++rule) {
+                if (rule->replacement.isEmpty() ||
+                    validateLabel(rule->replacement))
+                    continue;
+                QMessageBox::warning(
+                        &dialog, tr("Label change manager"),
+                        tr("Label \"%1\" is not in the unique label list "
+                           "(exact validation).")
+                                .arg(rule->replacement));
+                return false;
+            }
+        }
         struct PendingWrite {
             QString path;
             QByteArray data;
@@ -2518,11 +2553,25 @@ void AnnotationWindow::openSettings() {
     generalForm->addRow(QString(), fitColumn);
     generalForm->addRow(QString(), fitRow);
     generalForm->addRow(tr("Application font"), fontCombo);
+    auto* validateLabelMode = new QComboBox(general);
+    validateLabelMode->setObjectName(
+            QStringLiteral("AnnotationSettingsValidateLabel"));
+    validateLabelMode->addItems(
+            {QStringLiteral("(none)"), QStringLiteral("exact")});
+    validateLabelMode->setCurrentText(m_validateLabel.isEmpty()
+                                              ? QStringLiteral("(none)")
+                                              : m_validateLabel);
+    auto* loggerLevel = new QComboBox(general);
+    loggerLevel->setObjectName(QStringLiteral("AnnotationSettingsLoggerLevel"));
+    loggerLevel->addItems({QStringLiteral("info"), QStringLiteral("warning"),
+                           QStringLiteral("error")});
+    loggerLevel->setCurrentText(m_loggerLevel);
+    generalForm->addRow(tr("Validate label"), validateLabelMode);
+    generalForm->addRow(tr("Logger level"), loggerLevel);
     auto* settingsTodo = new QLabel(
             tr("Unimplemented upstream fields (contract-owned): model hub is "
-               "owned by the AICore catalog, the adapter has no logging "
-               "subsystem for logger level, and the Qt image allocation limit "
-               "needs Qt 6. See qAnyLabeling/TODO.md."),
+               "owned by the AICore catalog, and the Qt image allocation "
+               "limit needs Qt 6. See qAnyLabeling/TODO.md."),
             general);
     settingsTodo->setWordWrap(true);
     settingsTodo->setStyleSheet(QStringLiteral("color: gray;"));
@@ -3041,6 +3090,17 @@ void AnnotationWindow::openSettings() {
         m_fontFamily = fontCombo->currentFont().family();
         settings.setValue(QStringLiteral("qAnyLabeling/fontFamily"),
                           m_fontFamily);
+        m_validateLabel =
+                validateLabelMode->currentText() == QStringLiteral("exact")
+                        ? QStringLiteral("exact")
+                        : QString();
+        m_loggerLevel = loggerLevel->currentText();
+        settings.setValue(QStringLiteral("qAnyLabeling/validateLabel"),
+                          m_validateLabel);
+        settings.setValue(QStringLiteral("qAnyLabeling/loggerLevel"),
+                          m_loggerLevel);
+        // Immediate effect on the level-gated plugin logger.
+        qany_log::refreshLevel();
         if (!m_fontFamily.isEmpty()) setFont(QFont(m_fontFamily));
         settings.setValue(QStringLiteral("qAnyLabeling/shapeColorStrategy"),
                           strategy->currentData().toString());
@@ -5396,6 +5456,17 @@ void AnnotationWindow::populateModels() {
         model.family = modelFamily(model.filename);
         m_textModels.append(model);
     }
+    {
+        // The remote inference service is a pseudo-entry: no local weights
+        // exist, the configured server is the inference backend (see
+        // RemoteServerClient).
+        Model model;
+        model.filename = QStringLiteral("remote-server");
+        model.task = QStringLiteral("remote-server");
+        model.family = QStringLiteral("Remote Server");
+        m_models.append(model);
+        if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
+    }
     refreshQuantizations();
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* info = aicore_device_at(i);
@@ -7341,9 +7412,7 @@ void AnnotationWindow::exportMot(bool segmentation) {
         const QString name = QString::fromUtf8(line).trimmed();
         if (!name.isEmpty()) classes.append(name);
     }
-    if (classes.isEmpty() ||
-        QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                classes.size()) {
+    if (classes.isEmpty() || hasDuplicateNames(classes)) {
         QMessageBox::warning(this, title,
                              tr("MOT classes must be nonempty and unique"));
         return;
@@ -7459,9 +7528,7 @@ void AnnotationWindow::exportOdvg() {
         const QString name = QString::fromUtf8(line).trimmed();
         if (!name.isEmpty()) classes.append(name);
     }
-    if (classes.isEmpty() ||
-        QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                classes.size()) {
+    if (classes.isEmpty() || hasDuplicateNames(classes)) {
         QMessageBox::warning(this, title,
                              tr("Classes must be nonempty and unique"));
         return;
@@ -7588,9 +7655,7 @@ void AnnotationWindow::exportVlm() {
             const QString name = QString::fromUtf8(line).trimmed();
             if (!name.isEmpty()) classes.append(name);
         }
-        if (classes.isEmpty() ||
-            QSet<QString>(classes.cbegin(), classes.cend()).size() !=
-                    classes.size()) {
+        if (classes.isEmpty() || hasDuplicateNames(classes)) {
             QMessageBox::warning(this, title,
                                  tr("Classes must be nonempty and unique"));
             return;
@@ -7932,7 +7997,9 @@ void AnnotationWindow::importImageFlags() {
     if (contents.isEmpty()) {
         m_imageFlagNames.clear();
     } else {
-        m_imageFlagNames = contents.split(QChar('\n'), Qt::KeepEmptyParts);
+        // Default split behavior keeps empty parts (Qt 5.12 has no
+        // Qt::KeepEmptyParts).
+        m_imageFlagNames = contents.split(QChar('\n'));
         if (contents.endsWith(QChar('\n'))) m_imageFlagNames.removeLast();
     }
     updateFlags();
@@ -8334,7 +8401,7 @@ void AnnotationWindow::unionSelectedShapes() {
     snapshot();
     QVector<AnnotationShape> shapes;
     shapes.reserve(source.size() - rows.size() + 1);
-    QSet<int> removed(rows.cbegin(), rows.cend());
+    const QSet<int> removed = qtCompatQSetFromVector(rows);
     for (int i = 0; i < source.size(); ++i)
         if (!removed.contains(i)) shapes.append(source[i]);
     shapes.append(merged);
@@ -8908,6 +8975,423 @@ void AnnotationWindow::editSelectedLabel() {
     setDirty(true);
 }
 
+QVector<AnnotationShape> AnnotationWindow::remoteShapes(
+        const QJsonArray& shapes, const QSize& imageSize) const {
+    Q_UNUSED(imageSize);
+    QVector<AnnotationShape> result;
+    for (const QJsonValue& value : shapes) {
+        const QJsonObject item = value.toObject();
+        AnnotationShape shape;
+        shape.label = item.value(QStringLiteral("label")).toString();
+        shape.type = item.value(QStringLiteral("shape_type")).toString();
+        if (shape.type.isEmpty()) shape.type = QStringLiteral("rectangle");
+        const QJsonArray points =
+                item.value(QStringLiteral("points")).toArray();
+        for (const QJsonValue& point : points) {
+            const QJsonArray xy = point.toArray();
+            if (xy.size() >= 2)
+                shape.points.append(
+                        QPointF(xy.at(0).toDouble(), xy.at(1).toDouble()));
+        }
+        if (shape.points.isEmpty()) continue;
+        const QJsonValue score = item.value(QStringLiteral("score"));
+        if (score.isDouble())
+            shape.extra.insert(QStringLiteral("score"), score);
+        const QJsonValue difficult = item.value(QStringLiteral("difficult"));
+        if (difficult.isBool())
+            shape.extra.insert(QStringLiteral("difficult"), difficult);
+        const QJsonValue description =
+                item.value(QStringLiteral("description"));
+        if (description.isString() && !description.toString().isEmpty())
+            shape.extra.insert(QStringLiteral("description"), description);
+        const QJsonValue groupId = item.value(QStringLiteral("group_id"));
+        if (groupId.isDouble())
+            shape.extra.insert(QStringLiteral("group_id"), groupId);
+        const QJsonValue attributes = item.value(QStringLiteral("attributes"));
+        if (attributes.isObject())
+            shape.extra.insert(QStringLiteral("attributes"), attributes);
+        result.append(shape);
+    }
+    return result;
+}
+
+void AnnotationWindow::startRemoteInference() {
+    if (m_image.isNull() || m_remoteInferenceRunning || m_remoteVideoRunning)
+        return;
+    if (!m_remoteClient) {
+        m_remoteClient = new RemoteServerClient(this);
+        connect(m_remoteClient, &RemoteServerClient::predictFinished, this,
+                [this](const QJsonArray& shapes, const QString& error) {
+                    m_remoteInferenceRunning = false;
+                    // Stale results (image or prompt changed mid-flight) are
+                    // discarded without touching the canvas.
+                    const bool stale =
+                            m_generation != m_remoteGeneration ||
+                            m_promptRevision != m_remotePromptRevision;
+                    if (!error.isEmpty()) {
+                        qany_log::log(
+                                QStringLiteral("[Error] Remote inference: %1")
+                                        .arg(error));
+                        m_status->setText(error);
+                        return;
+                    }
+                    if (stale) return;
+                    AnnotationInference result;
+                    result.generation = m_generation;
+                    result.promptRevision = m_promptRevision;
+                    result.imagePath = m_imagePath;
+                    result.modelPath = QStringLiteral("remote-server");
+                    result.task = QStringLiteral("remote-server");
+                    result.shapes = remoteShapes(shapes, m_image.size());
+                    onInference(result);
+                });
+        connectRemoteVideoSignals();
+    }
+    QSettings settings;
+    RemoteServerClient::Settings remote;
+    remote.serverUrl =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerUrl"),
+                           QStringLiteral("http://127.0.0.1:8000"))
+                    .toString();
+    remote.apiKey =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerApiKey"))
+                    .toString();
+    remote.timeoutSec =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerTimeout"),
+                           30)
+                    .toInt();
+    m_remoteClient->applySettings(remote);
+    if (remote.serverUrl.isEmpty() || m_remoteModelId.isEmpty()) {
+        openRemoteServerSettings();
+        return;
+    }
+    m_remoteInferenceRunning = true;
+    m_remoteGeneration = m_generation;
+    m_remotePromptRevision = m_promptRevision;
+    // The batch mode is a server-side contract declared in /v1/models
+    // (upstream get_batch_processing_mode parity), so every run starts with
+    // a cheap probe that routes between the plain predict and the
+    // video-session flow.
+    m_status->setText(
+            tr("Resolving remote model (%1)...").arg(m_remoteModelId));
+    m_remoteClient->fetchModels();
+}
+
+void AnnotationWindow::onRemoteModelsFetched(const QJsonObject& data,
+                                             const QString& error) {
+    m_remoteInferenceRunning = false;
+    if (!error.isEmpty()) {
+        qany_log::log(
+                QStringLiteral("[Error] Remote model list: %1").arg(error));
+        m_status->setText(error);
+        return;
+    }
+    const QJsonObject model = data.value(m_remoteModelId).toObject();
+    // Upstream falls back to the model-level batch_processing_mode; a
+    // task-level mode is adopted only when the task list is unambiguous
+    // (this plugin has no per-task selector).
+    m_remoteBatchMode = model.value(QStringLiteral("batch_processing_mode"))
+                                .toString(QStringLiteral("default"));
+    const QJsonArray tasks =
+            model.value(QStringLiteral("available_tasks")).toArray();
+    if (m_remoteBatchMode == QLatin1String("default") && tasks.size() == 1) {
+        const QJsonObject task = tasks.at(0).toObject();
+        if (task.contains(QStringLiteral("batch_processing_mode")))
+            m_remoteBatchMode =
+                    task.value(QStringLiteral("batch_processing_mode"))
+                            .toString();
+    }
+    if (m_remoteBatchMode == QLatin1String("video")) {
+        startRemoteVideoFlow();
+        return;
+    }
+    runRemotePredict();
+}
+
+void AnnotationWindow::runRemotePredict() {
+    m_remoteInferenceRunning = true;
+    m_remoteGeneration = m_generation;
+    m_remotePromptRevision = m_promptRevision;
+    QVariantMap params;
+    params.insert(QStringLiteral("conf_threshold"), m_confidence->value());
+    params.insert(QStringLiteral("epsilon_factor"), 0.001);
+    const QString textPrompt = m_samText->text().trimmed();
+    if (!textPrompt.isEmpty())
+        params.insert(QStringLiteral("text_prompt"), textPrompt);
+    m_status->setText(
+            tr("Running remote inference (%1)...").arg(m_remoteModelId));
+    m_remoteClient->predict(m_image, m_imagePath, m_remoteModelId, params);
+}
+
+void AnnotationWindow::connectRemoteVideoSignals() {
+    connect(m_remoteClient, &RemoteServerClient::modelsFetched, this,
+            &AnnotationWindow::onRemoteModelsFetched);
+
+    // Session init finished: prompt the current frame with the text box or
+    // the canvas points (converted to relative coords, upstream parity).
+    connect(m_remoteClient, &RemoteServerClient::videoInitFinished, this,
+            [this](const QString& sessionId, const QString& error) {
+                Q_UNUSED(sessionId);
+                m_remoteInferenceRunning = false;
+                if (!error.isEmpty()) {
+                    m_remoteVideoRunning = false;
+                    qany_log::log(
+                            QStringLiteral("[Error] Remote video init: %1")
+                                    .arg(error));
+                    m_status->setText(error);
+                    return;
+                }
+                m_remoteInferenceRunning = true;
+                m_remoteGeneration = m_generation;
+                m_remotePromptRevision = m_promptRevision;
+                QVariantMap params;
+                params.insert(QStringLiteral("conf_threshold"),
+                              m_confidence->value());
+                params.insert(QStringLiteral("epsilon_factor"), 0.001);
+                const QString textPrompt = m_samText->text().trimmed();
+                if (!textPrompt.isEmpty()) {
+                    m_status->setText(tr("Prompting frame %1 with text...")
+                                              .arg(m_remotePromptFrame));
+                    m_remoteClient->videoPromptText(textPrompt,
+                                                    m_remotePromptFrame,
+                                                    m_remoteModelId, params);
+                    return;
+                }
+                const AnnotationPrompt prompt = m_canvas->prompt();
+                if (!prompt.positive.isEmpty() || !prompt.negative.isEmpty()) {
+                    const QSize size = m_image.size();
+                    QVariantList points;
+                    QVariantList labels;
+                    for (const QPointF& point : prompt.positive) {
+                        points.append(QVariantList{point.x() / size.width(),
+                                                   point.y() / size.height()});
+                        labels.append(1);
+                    }
+                    for (const QPointF& point : prompt.negative) {
+                        points.append(QVariantList{point.x() / size.width(),
+                                                   point.y() / size.height()});
+                        labels.append(0);
+                    }
+                    m_status->setText(tr("Prompting frame %1 with points...")
+                                              .arg(m_remotePromptFrame));
+                    m_remoteClient->videoPromptPoints(points, labels,
+                                                      m_remotePromptFrame,
+                                                      m_remoteModelId, params);
+                    return;
+                }
+                m_remoteVideoRunning = false;
+                m_status->setText(
+                        tr("Add a text or point prompt for the remote video "
+                           "model"));
+            });
+
+    // Prompt finished: the prompt-frame shapes go through the regular
+    // inference path, then propagation fills the remaining frames.
+    connect(m_remoteClient, &RemoteServerClient::videoPromptFinished, this,
+            [this](const QJsonArray& masks, const QString& error) {
+                if (!error.isEmpty()) {
+                    m_remoteVideoRunning = false;
+                    m_remoteInferenceRunning = false;
+                    qany_log::log(
+                            QStringLiteral("[Error] Remote video prompt: %1")
+                                    .arg(error));
+                    m_status->setText(error);
+                    return;
+                }
+                if (m_generation != m_remoteGeneration ||
+                    m_promptRevision != m_remotePromptRevision) {
+                    m_remoteVideoRunning = false;
+                    m_remoteInferenceRunning = false;
+                    m_status->setText(
+                            tr("Inference inputs changed; run again"));
+                    return;
+                }
+                m_remoteInferenceRunning = false;
+                AnnotationInference result;
+                result.generation = m_generation;
+                result.promptRevision = m_promptRevision;
+                result.imagePath = m_imagePath;
+                result.modelPath = QStringLiteral("remote-server");
+                result.task = QStringLiteral("remote-server");
+                result.shapes = remoteShapes(masks, m_image.size());
+                onInference(result);
+                m_status->setText(tr("Propagating masks across frames..."));
+                m_remoteClient->videoPropagate(m_remoteModelId, 0, -1);
+            });
+
+    connect(m_remoteClient, &RemoteServerClient::videoPropagateStarted, this,
+            [this](int totalFrames, int startFrameIndex) {
+                m_status->setText(tr("Propagating %1 frames from %2...")
+                                          .arg(totalFrames)
+                                          .arg(startFrameIndex));
+            });
+    connect(m_remoteClient, &RemoteServerClient::videoPropagateProgress, this,
+            [this](int frame) {
+                m_status->setText(tr("Propagating frame %1...").arg(frame + 1));
+            });
+
+    // Propagation finished: save every frame's masks into its sidecar
+    // (upstream save_auto_labeling_result parity); the prompt frame is
+    // already on the canvas, and the session is released either way.
+    connect(m_remoteClient, &RemoteServerClient::videoPropagateFinished, this,
+            [this](const QJsonObject& results, const QString& error) {
+                m_remoteVideoRunning = false;
+                m_remoteInferenceRunning = false;
+                if (!error.isEmpty()) {
+                    qany_log::log(
+                            QStringLiteral("[Error] Remote propagation: %1")
+                                    .arg(error));
+                    m_status->setText(error);
+                    return;
+                }
+                int saved = 0;
+                for (auto it = results.constBegin(); it != results.constEnd();
+                     ++it) {
+                    bool ok = false;
+                    const int frameIndex = it.key().toInt(&ok);
+                    if (!ok || frameIndex < 0 ||
+                        frameIndex >= m_remoteFramePaths.size() ||
+                        frameIndex == m_remotePromptFrame)
+                        continue;
+                    const QJsonArray masks =
+                            it.value()
+                                    .toObject()
+                                    .value(QStringLiteral("masks"))
+                                    .toArray();
+                    if (masks.isEmpty()) continue;
+                    saveRemoteShapesToSidecar(m_remoteFramePaths.at(frameIndex),
+                                              remoteShapes(masks, QSize()));
+                    ++saved;
+                }
+                m_status->setText(
+                        tr("Remote propagation saved %1 frames").arg(saved));
+            });
+}
+
+void AnnotationWindow::startRemoteVideoFlow() {
+    if (m_remoteVideoRunning) return;
+    // Frame set: the file list mirrors the upstream image_list; a lone
+    // image degrades to a single-frame session.
+    QStringList frames;
+    if (m_files) {
+        for (int i = 0; i < m_files->count(); ++i) {
+            const QString path =
+                    m_files->item(i)->data(Qt::UserRole).toString();
+            if (!path.isEmpty()) frames.append(path);
+        }
+    }
+    if (frames.isEmpty()) frames.append(m_imagePath);
+    if (!frames.contains(m_imagePath)) frames.append(m_imagePath);
+    // Safety bound: /v1/video/init posts every frame's file bytes at once
+    // (upstream parity), so cap the request before the base64 payload can
+    // exhaust the process on very large folders.
+    if (frames.size() > 2000) {
+        m_remoteVideoRunning = false;
+        m_status->setText(tr("Remote video sessions support at most 2000 "
+                             "frames (got %1)")
+                                  .arg(frames.size()));
+        return;
+    }
+    m_remotePromptFrame = frames.indexOf(m_imagePath);
+    m_remoteFramePaths = frames;
+    m_remoteVideoRunning = true;
+    m_status->setText(tr("Uploading %1 frames to the remote session...")
+                              .arg(frames.size()));
+    const QStringList uris = m_remoteClient->frameDataUris(frames);
+    m_remoteClient->videoInit(uris, m_remoteModelId);
+}
+
+void AnnotationWindow::saveRemoteShapesToSidecar(
+        const QString& imagePath, const QVector<AnnotationShape>& shapes) {
+    const QString sidecar = sidecarPathFor(imagePath);
+    QJsonObject document;
+    QFile input(sidecar);
+    if (input.exists() && input.open(QIODevice::ReadOnly)) {
+        const QJsonDocument parsed = QJsonDocument::fromJson(input.readAll());
+        if (parsed.isObject()) document = parsed.object();
+    }
+    int imageHeight = document.value(QStringLiteral("imageHeight")).toInt();
+    int imageWidth = document.value(QStringLiteral("imageWidth")).toInt();
+    if (imageHeight <= 0 || imageWidth <= 0) {
+        // Header fields only — QImageReader avoids a full decode.
+        QImageReader reader(imagePath);
+        const QSize size = reader.size();
+        imageHeight = size.height();
+        imageWidth = size.width();
+    }
+    QJsonArray shapeArray;
+    for (const AnnotationShape& shape : shapes)
+        shapeArray.append(shape.toJson());
+    document.insert(QStringLiteral("version"), QStringLiteral("4.0.6"));
+    if (!document.contains(QStringLiteral("flags")))
+        document.insert(QStringLiteral("flags"), QJsonObject());
+    document.insert(QStringLiteral("imageData"), QJsonValue::Null);
+    document.insert(QStringLiteral("imagePath"),
+                    QFileInfo(imagePath).fileName());
+    document.insert(QStringLiteral("imageHeight"), imageHeight);
+    document.insert(QStringLiteral("imageWidth"), imageWidth);
+    document.insert(QStringLiteral("shapes"), shapeArray);
+    QSaveFile output(sidecar);
+    if (!output.open(QIODevice::WriteOnly) ||
+        output.write(QJsonDocument(document).toJson(QJsonDocument::Indented)) <
+                0 ||
+        !output.commit()) {
+        qany_log::log(
+                QStringLiteral("[Error] Unable to save remote frame %1: %2")
+                        .arg(sidecar, output.errorString()));
+    }
+}
+
+void AnnotationWindow::openRemoteServerSettings() {
+    if (!m_remoteDialog) {
+        m_remoteDialog = new RemoteServerDialog(this);
+        connect(m_remoteDialog, &QDialog::accepted, this, [this]() {
+            const RemoteServerClient::Settings remote =
+                    m_remoteDialog->settings();
+            QSettings settings;
+            settings.setValue(QStringLiteral("qAnyLabeling/remoteServerUrl"),
+                              remote.serverUrl);
+            settings.setValue(QStringLiteral("qAnyLabeling/remoteServerApiKey"),
+                              remote.apiKey);
+            settings.setValue(
+                    QStringLiteral("qAnyLabeling/remoteServerTimeout"),
+                    remote.timeoutSec);
+            m_remoteModelId = m_remoteDialog->selectedModelId();
+            settings.setValue(QStringLiteral("qAnyLabeling/remoteServerModel"),
+                              m_remoteModelId);
+        });
+    }
+    QSettings settings;
+    RemoteServerClient::Settings remote;
+    remote.serverUrl =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerUrl"),
+                           QStringLiteral("http://127.0.0.1:8000"))
+                    .toString();
+    remote.apiKey =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerApiKey"))
+                    .toString();
+    remote.timeoutSec =
+            settings.value(QStringLiteral("qAnyLabeling/remoteServerTimeout"),
+                           30)
+                    .toInt();
+    m_remoteDialog->setSettings(remote);
+    m_remoteDialog->setSelectedModelId(m_remoteModelId);
+    m_remoteDialog->exec();
+}
+
+bool AnnotationWindow::validateLabel(const QString& label) const {
+    // Upstream validate_label semantics: null (empty here) accepts every
+    // label; "exact" requires an exact match against the unique label
+    // list. Wired into the batch-edit dialog (editLabels) apply path and
+    // available to future label-entry sites.
+    if (m_validateLabel != QStringLiteral("exact")) return true;
+    if (!m_labels) return true;
+    for (int i = 0; i < m_labels->count(); ++i)
+        if (m_labels->item(i)->data(Qt::UserRole).toString() == label)
+            return true;
+    return false;
+}
+
 void AnnotationWindow::runDetection() {
     if (m_image.isNull() || m_inferenceRunning || m_downloader->isBusy())
         return;
@@ -8917,6 +9401,12 @@ void AnnotationWindow::runDetection() {
                                         return model.filename == filename;
                                     });
     if (found == m_models.cend()) return;
+    if (found->task == QStringLiteral("remote-server")) {
+        // No local weights: the configured service is the backend, so skip
+        // the catalog download path and dispatch straight to the HTTP client.
+        startInference(QStringLiteral("remote-server"));
+        return;
+    }
     const bool sam = found->task == QStringLiteral("sam3-pvs");
     const bool depthModel = found->task.startsWith(QStringLiteral("depth"));
     const bool gkd = found->task == QStringLiteral("gkd");
@@ -9165,6 +9655,10 @@ void AnnotationWindow::startInference(const QString& modelPath) {
                                         return item.filename == filename;
                                     });
     if (model == m_models.cend()) return;
+    if (model->task == QStringLiteral("remote-server")) {
+        startRemoteInference();
+        return;
+    }
     const bool textPrompt = model->task == QStringLiteral("sam3-pvs") &&
                             model->supportsText &&
                             !m_samText->text().trimmed().isEmpty();

@@ -24,6 +24,7 @@
 #include "scene/reconstruction.h"
 #include "util/alignment.h"
 #include "util/enum_utils.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -31,7 +32,7 @@ namespace colmap {
 // Keep the solver selection independent of the caller. Incremental mapping,
 // global mapping, the GUI controller, and the CLI all enter through
 // BundleAdjuster, so a backend must be selected here rather than in one caller.
-enum class BundleAdjustmentBackend { CERES, CASPAR };
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(BundleAdjustmentBackend, 0, CERES, CASPAR);
 
 // Termination type for bundle adjustment, independent of solver backend
 // (upstream parity, d3ccaf35 estimators/bundle_adjustment.h).
@@ -78,6 +79,11 @@ public:
     size_t NumImages() const;
     size_t NumPoints() const;
     size_t NumConstantCameras() const;
+
+    // Upstream parity (d3ccaf35 bundle_adjustment.h).
+    size_t NumConstantSensorFromRigPoses() const {
+        return constant_sensor_from_rig_poses_.size();
+    }
     size_t NumConstantPoses() const;
     size_t NumConstantTvecs() const;
     size_t NumVariablePoints() const;
@@ -146,33 +152,50 @@ public:
     void RemoveConstantPoint(const point3D_t point3D_id);
 
     // Access configuration data.
-    const std::unordered_set<image_t>& Images() const;
-    const std::unordered_set<point3D_t>& VariablePoints() const;
-    const std::unordered_set<point3D_t>& ConstantPoints() const;
+    const FlatHashSet<image_t>& Images() const;
+    const FlatHashSet<point3D_t>& VariablePoints() const;
+    const FlatHashSet<point3D_t>& ConstantPoints() const;
     const std::vector<int>& ConstantTvec(const image_t image_id) const;
 
 private:
-    std::unordered_set<camera_t> constant_camera_ids_;
-    std::unordered_set<image_t> image_ids_;
-    std::unordered_set<point3D_t> ignored_point3D_ids_;
-    std::unordered_set<point3D_t> variable_point3D_ids_;
-    std::unordered_set<point3D_t> constant_point3D_ids_;
-    std::unordered_set<image_t> constant_poses_;
-    std::unordered_map<image_t, std::vector<int>> constant_tvecs_;
-    std::unordered_set<frame_t> constant_rig_from_world_poses_;
-    std::unordered_set<sensor_t> constant_sensor_from_rig_poses_;
+    // Upstream parity: the BA problem adds residual blocks in the iteration
+    // order of these sets, so they must be the same container as upstream.
+    FlatHashSet<camera_t> constant_camera_ids_;
+    FlatHashSet<image_t> image_ids_;
+    FlatHashSet<point3D_t> ignored_point3D_ids_;
+    FlatHashSet<point3D_t> variable_point3D_ids_;
+    FlatHashSet<point3D_t> constant_point3D_ids_;
+    FlatHashSet<image_t> constant_poses_;
+    FlatHashMap<image_t, std::vector<int>> constant_tvecs_;
+    FlatHashSet<frame_t> constant_rig_from_world_poses_;
+    FlatHashSet<sensor_t> constant_sensor_from_rig_poses_;
     BundleAdjustmentGauge fixed_gauge_ = BundleAdjustmentGauge::UNSPECIFIED;
 };
 
-struct BundleAdjustmentOptions {
-    // Loss function types: Trivial (non-robust) and Cauchy/Huber (robust)
-    // losses. HUBER is the upstream COLMAP default for the global mapper.
-    enum class LossFunctionType { TRIVIAL, SOFT_L1, CAUCHY, HUBER };
-    LossFunctionType loss_function_type = LossFunctionType::TRIVIAL;
+// Backend-specific option groups. Upstream parity
+// (estimators/bundle_adjustment.h): the Ceres and Caspar options are owned
+// through shared pointers so the option manager can bind to them, and copies
+// of BundleAdjustmentOptions deep-copy both groups.
+struct CeresBundleAdjustmentOptions;
+struct CasparBundleAdjustmentOptions;
 
-    // Scaling factor determines residual at which robustification takes place.
-    double loss_function_scale = 1.0;
+struct BundleAdjustmentBackendOptions {
+    std::shared_ptr<CeresBundleAdjustmentOptions> ceres;
+    std::shared_ptr<CasparBundleAdjustmentOptions> caspar;
 
+    BundleAdjustmentBackendOptions();
+    BundleAdjustmentBackendOptions(const BundleAdjustmentBackendOptions& other);
+    BundleAdjustmentBackendOptions& operator=(
+            const BundleAdjustmentBackendOptions& other);
+    BundleAdjustmentBackendOptions(BundleAdjustmentBackendOptions&& other) =
+            default;
+    // Assignments copy/move into existing pointees: option widgets keep raw
+    // pointers to nested fields across OptionManager::ResetOptions().
+    BundleAdjustmentBackendOptions& operator=(
+            BundleAdjustmentBackendOptions&& other);
+};
+
+struct BundleAdjustmentOptions : public BundleAdjustmentBackendOptions {
     // Whether to refine the focal length parameter group.
     bool refine_focal_length = true;
 
@@ -182,122 +205,62 @@ struct BundleAdjustmentOptions {
     // Whether to refine the extra parameter group.
     bool refine_extra_params = true;
 
-    // Whether to refine the extrinsic parameter group.
-    bool refine_extrinsics = true;
-
-    // Whether to refine the rig-from-world poses of frames (upstream parity,
-    // dbb41680 estimators/bundle_adjustment.h). Until the frame-shared
-    // parameter blocks land, this gates the legacy per-image extrinsic
-    // blocks.
-    bool refine_rig_from_world = true;
-
-    // Minimum track length for a 3D point to be included in bundle
-    // adjustment (upstream parity, dbb41680). Zero disables the filter.
-    int min_track_length = 0;
-
-    // Whether to refine the sensor-from-rig poses of non-reference rig
-    // sensors (upstream parity, dbb41680).
+    // Whether to refine the sensor from rig poses.
     bool refine_sensor_from_rig = true;
 
-    // Whether to keep the rotation of all rig-from-world poses constant,
-    // refining positions only (upstream parity, dbb41680; the global
-    // mapper's fixed-rotation stage enables this per pass).
+    // Whether to refine the rig from world poses.
+    bool refine_rig_from_world = true;
+
+    // Whether to refine the 3D points.
+    bool refine_points3D = true;
+
+    // Minimum track length of a 3D point to be included in the problem.
+    int min_track_length = 0;
+
+    // Whether to keep the rig-from-world rotations constant (only refine the
+    // translations).
     bool constant_rig_from_world_rotation = false;
 
     // Whether to print a final summary.
     bool print_summary = true;
 
-    // Ceres remains the portable default. CASPAR is available only in CUDA
-    // builds that explicitly enable RECONSTRUCTION_CASPAR_ENABLED.
+    // Which backend solves the problem; the matching option group above
+    // configures it.
     BundleAdjustmentBackend backend = BundleAdjustmentBackend::CERES;
 
-    // CLI/UI-facing switch until the legacy option parser can expose the enum
-    // directly. It is equivalent to backend == CASPAR.
-    bool use_caspar = false;
-    int caspar_gpu_index = -1;
-    int caspar_max_num_iterations = 200;
-
-    // Optional cooperative cancellation hook, checked once per Ceres
-    // iteration. Return true to abort the solve while keeping intermediate
-    // results; used by the graceful-shutdown path.
+    // Cooperative cancellation hook, evaluated once per solver iteration.
     std::function<bool()> check_if_stopped;
-
-    // Whether to use Ceres' CUDA linear algebra library, if available.
-    bool use_gpu = false;
-    std::string gpu_index = "-1";
-
-    // Heuristic threshold to switch from CPU to GPU based solvers.
-    // Typically, the GPU is faster for large problems but the overhead of
-    // transferring memory from the CPU to the GPU leads to better CPU
-    // performance for small problems. This depends on the specific problem and
-    // hardware.
-    int min_num_images_gpu_solver = 50;
-
-    // Heuristic threshold on the minimum number of residuals to enable
-    // multi-threading. Note that single-threaded is typically better for small
-    // bundle adjustment problems due to the overhead of threading.
-    int min_num_residuals_for_cpu_multi_threading = 50000;
-
-    // Heuristic thresholds to switch between direct, sparse, and iterative
-    // solvers. These thresholds may not be optimal for all types of problems.
-    int max_num_images_direct_dense_cpu_solver = 50;
-    int max_num_images_direct_sparse_cpu_solver = 1000;
-    int max_num_images_direct_dense_gpu_solver = 200;
-    int max_num_images_direct_sparse_gpu_solver = 4000;
-
-    // Ceres-Solver options.
-    ceres::Solver::Options solver_options;
-
-    BundleAdjustmentOptions() {
-        solver_options.function_tolerance = 0.0;
-        solver_options.gradient_tolerance = 1e-4;
-        solver_options.parameter_tolerance = 0.0;
-        solver_options.logging_type = ceres::LoggingType::SILENT;
-        solver_options.minimizer_progress_to_stdout = false;
-        solver_options.max_num_iterations = 100;
-        solver_options.max_linear_solver_iterations = 200;
-        solver_options.max_num_consecutive_invalid_steps = 10;
-        solver_options.max_consecutive_nonmonotonic_steps = 10;
-        solver_options.num_threads = -1;
-#if CERES_VERSION_MAJOR < 2
-        solver_options.num_linear_solver_threads = -1;
-#endif  // CERES_VERSION_MAJOR
-    }
-
-    // Create a new loss function based on the specified options. The caller
-    // takes ownership of the loss function.
-    ceres::LossFunction* CreateLossFunction() const;
-
-    // Create options tailored for given bundle adjustment config and problem.
-    ceres::Solver::Options CreateSolverOptions(
-            const BundleAdjustmentConfig& config,
-            const ceres::Problem& problem) const;
 
     bool Check() const;
 };
 
-// Solver-agnostic pose prior bundle adjustment options (upstream parity; the
-// fork keeps a flat struct until W18.5 introduces the backend pimpl split).
-struct PosePriorBundleAdjustmentOptions {
+// Solver-agnostic pose prior bundle adjustment options; the Ceres-specific
+// loss configuration is bound as `ceres` (upstream parity).
+struct CeresPosePriorBundleAdjustmentOptions;
+
+struct PosePriorBundleAdjustmentBackendOptions {
+    std::shared_ptr<CeresPosePriorBundleAdjustmentOptions> ceres;
+
+    PosePriorBundleAdjustmentBackendOptions();
+    PosePriorBundleAdjustmentBackendOptions(
+            const PosePriorBundleAdjustmentBackendOptions& other);
+    PosePriorBundleAdjustmentBackendOptions& operator=(
+            const PosePriorBundleAdjustmentBackendOptions& other);
+    PosePriorBundleAdjustmentBackendOptions(
+            PosePriorBundleAdjustmentBackendOptions&& other) = default;
+    PosePriorBundleAdjustmentBackendOptions& operator=(
+            PosePriorBundleAdjustmentBackendOptions&& other);
+};
+
+struct PosePriorBundleAdjustmentOptions
+    : public PosePriorBundleAdjustmentBackendOptions {
     // Fallback if no prior position covariance is provided.
     double prior_position_fallback_stddev = 1.0;
 
     // Sim3 alignment options.
     RANSACOptions alignment_ransac_options;
 
-    // Loss function for the prior position residuals.
-    BundleAdjustmentOptions::LossFunctionType
-            prior_position_loss_function_type =
-                    BundleAdjustmentOptions::LossFunctionType::TRIVIAL;
-
-    // Threshold on the residual for the robust loss.
-    double prior_position_loss_scale = std::sqrt(kChiSquare95ThreeDof);
-
-    bool Check() const {
-        CHECK_OPTION_GE(prior_position_fallback_stddev, 0.0);
-        CHECK_OPTION_GE(prior_position_loss_scale, 0.0);
-        return true;
-    }
+    bool Check() const;
 };
 
 #ifdef CASPAR_ENABLED

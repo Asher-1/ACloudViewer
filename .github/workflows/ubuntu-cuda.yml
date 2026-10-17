@@ -45,7 +45,11 @@ jobs:
 
   build-and-run-docker:
     name: Build and run
-    timeout-minutes: 300
+    # GitHub-hosted runners cap jobs at 360 minutes. The cuda-focal cell
+    # spent 295 min on image build + compile and was killed inside the
+    # Docker test ctest run at 300 (run 38852073276); noble/jammy finished
+    # in 188/269 min, focal is the slowest toolchain.
+    timeout-minutes: 360
     permissions:
       contents: write   # upload
       actions: write    # release
@@ -251,7 +255,7 @@ jobs:
             libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
             libxcb-xkb1 libxcb-xinput0 \
             libxkbcommon0 libxkbcommon-x11-0 \
-            libx11-xcb1
+            libx11-xcb1 xvfb
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
@@ -302,5 +306,12 @@ jobs:
           echo "OK: $PLUGIN has no dynamic libcudart dependency"
 
       - name: Level 3 — Headless processing tests
+        env:
+          ACV_REQUIRE_BINARY: "1"
+          # See the same step in ubuntu.yml: EGL context creation under the
+          # offscreen QPA needs a display platform (xvfb) and the software
+          # rasterizer keeps it off the runner's GPU stack.
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
-          python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          xvfb-run -a -s "-screen 0 1280x1024x24" \
+            python -m pytest agent-integration/tests/test_integration.py -v -k "level3"

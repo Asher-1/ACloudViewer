@@ -153,7 +153,7 @@ void WriteCOLMAPCommands(const bool geometric,
 
 }  // namespace
 
-COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
+COLMAPUndistorterImpl::COLMAPUndistorterImpl(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
                                      const std::filesystem::path& image_path,
                                      const std::filesystem::path& output_path,
@@ -168,7 +168,7 @@ COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
       reconstruction_(CHECK_NOTNULL(reconstruction)),
       image_ids_(image_ids) {}
 
-void COLMAPUndistorter::Run() {
+void COLMAPUndistorterImpl::Run() {
   PrintHeading1("Image undistortion");
 
   CreateDirIfNotExists(output_path_ / "images");
@@ -183,18 +183,18 @@ void COLMAPUndistorter::Run() {
   reconstruction_->CreateImageDirs(output_path_ / "stereo/consistency_graphs");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   if (image_ids_.empty()) {
     for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
       const image_t image_id = reconstruction_->RegImageIds().at(i);
       futures.push_back(
-          thread_pool.AddTask(&COLMAPUndistorter::Undistort, this, image_id));
+          thread_pool.AddTask(&COLMAPUndistorterImpl::Undistort, this, image_id));
     }
   } else {
     for (const image_t image_id : image_ids_) {
       futures.push_back(
-          thread_pool.AddTask(&COLMAPUndistorter::Undistort, this, image_id));
+          thread_pool.AddTask(&COLMAPUndistorterImpl::Undistort, this, image_id));
     }
   }
 
@@ -202,7 +202,7 @@ void COLMAPUndistorter::Run() {
   // when writing the MVS config files
   image_names_.clear();
   for (size_t i = 0; i < futures.size(); ++i) {
-    if (IsStopped()) {
+    if (ShouldStop()) {
       break;
     }
 
@@ -218,6 +218,15 @@ void COLMAPUndistorter::Run() {
         image_names_.push_back(reconstruction_->Image(image_ids_[i]).Name());
       }
     }
+  }
+
+  // Upstream parity (StopsPendingWork): a cancelled undistortion waits for
+  // the in-flight tasks and returns without rewriting the reconstruction or
+  // emitting the MVS configs; continuing here would also race the in-place
+  // UndistortReconstruction against still-running per-image workers.
+  if (ShouldStop()) {
+    thread_pool.Wait();
+    return;
   }
 
   std::cout << "Writing reconstruction..." << std::endl;
@@ -238,7 +247,18 @@ void COLMAPUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool COLMAPUndistorter::Undistort(const image_t image_id) const {
+
+void COLMAPUndistorterImpl::SetCheckIfStoppedFunc(
+        std::function<bool()> func) {
+  check_if_stopped_func_ = std::move(func);
+}
+
+bool COLMAPUndistorterImpl::ShouldStop() {
+  return IsStopped() ||
+         (check_if_stopped_func_ && check_if_stopped_func_());
+}
+
+bool COLMAPUndistorterImpl::Undistort(const image_t image_id) const {
   const Image& image = reconstruction_->Image(image_id);
 
   Bitmap distorted_bitmap;
@@ -271,7 +291,7 @@ bool COLMAPUndistorter::Undistort(const image_t image_id) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-void COLMAPUndistorter::WritePatchMatchConfig() const {
+void COLMAPUndistorterImpl::WritePatchMatchConfig() const {
   const auto path = output_path_ / "stereo/patch-match.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -281,7 +301,7 @@ void COLMAPUndistorter::WritePatchMatchConfig() const {
   }
 }
 
-void COLMAPUndistorter::WriteFusionConfig() const {
+void COLMAPUndistorterImpl::WriteFusionConfig() const {
   const auto path = output_path_ / "stereo/fusion.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -290,7 +310,7 @@ void COLMAPUndistorter::WriteFusionConfig() const {
   }
 }
 
-void COLMAPUndistorter::WriteScript(const bool geometric) const {
+void COLMAPUndistorterImpl::WriteScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-colmap-geometric.sh"
                                 : "run-colmap-photometric.sh");
@@ -302,7 +322,7 @@ void COLMAPUndistorter::WriteScript(const bool geometric) const {
   WriteCOLMAPCommands(geometric, ".", "COLMAP", "option-all", "", "", &file);
 }
 
-PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
+PMVSUndistorterImpl::PMVSUndistorterImpl(const UndistortCameraOptions& options,
                                  Reconstruction* reconstruction,
                                  const std::filesystem::path& image_path,
                                  const std::filesystem::path& output_path)
@@ -311,7 +331,7 @@ PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
       output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void PMVSUndistorter::Run() {
+void PMVSUndistorterImpl::Run() {
   PrintHeading1("Image undistortion (CMVS/PMVS)");
 
   CreateDirIfNotExists(output_path_ / "pmvs");
@@ -320,11 +340,11 @@ void PMVSUndistorter::Run() {
   CreateDirIfNotExists(output_path_ / "pmvs/models");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
-        thread_pool.AddTask(&PMVSUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&PMVSUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -367,7 +387,7 @@ void PMVSUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
+bool PMVSUndistorterImpl::Undistort(const size_t reg_image_idx) const {
   const auto output_image_path =
       output_path_ / StringPrintf("pmvs/visualize/%08d.jpg", reg_image_idx);
   const auto proj_matrix_path =
@@ -395,7 +415,7 @@ bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-void PMVSUndistorter::WriteVisibilityData() const {
+void PMVSUndistorterImpl::WriteVisibilityData() const {
   const auto path = output_path_ / "pmvs/vis.dat";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -434,7 +454,7 @@ void PMVSUndistorter::WriteVisibilityData() const {
   }
 }
 
-void PMVSUndistorter::WritePMVSScript() const {
+void PMVSUndistorterImpl::WritePMVSScript() const {
   const auto path = output_path_ / "run-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -444,7 +464,7 @@ void PMVSUndistorter::WritePMVSScript() const {
   file << "$PMVS_EXE_PATH/pmvs2 pmvs/ option-all" << std::endl;
 }
 
-void PMVSUndistorter::WriteCMVSPMVSScript() const {
+void PMVSUndistorterImpl::WriteCMVSPMVSScript() const {
   const auto path = output_path_ / "run-cmvs-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -464,7 +484,7 @@ void PMVSUndistorter::WriteCMVSPMVSScript() const {
   file << "done" << std::endl;
 }
 
-void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
+void PMVSUndistorterImpl::WriteCOLMAPScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-colmap-geometric.sh"
                                 : "run-colmap-photometric.sh");
@@ -477,7 +497,7 @@ void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
                       "", &file);
 }
 
-void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
+void PMVSUndistorterImpl::WriteCMVSCOLMAPScript(const bool geometric) const {
   const std::filesystem::path path =
       output_path_ / (geometric ? "run-cmvs-colmap-geometric.sh"
                                 : "run-cmvs-colmap-photometric.sh");
@@ -504,7 +524,7 @@ void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
   file << "done" << std::endl;
 }
 
-void PMVSUndistorter::WriteOptionFile() const {
+void PMVSUndistorterImpl::WriteOptionFile() const {
   const auto path = output_path_ / "pmvs/option-all";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
@@ -533,7 +553,7 @@ void PMVSUndistorter::WriteOptionFile() const {
   file << "oimages 0" << std::endl;
 }
 
-CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
+CMPMVSUndistorterImpl::CMPMVSUndistorterImpl(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
                                      const std::filesystem::path& image_path,
                                      const std::filesystem::path& output_path)
@@ -542,15 +562,15 @@ CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
       output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void CMPMVSUndistorter::Run() {
+void CMPMVSUndistorterImpl::Run() {
   PrintHeading1("Image undistortion (CMP-MVS)");
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   futures.reserve(reconstruction_->NumRegImages());
   for (size_t i = 0; i < reconstruction_->NumRegImages(); ++i) {
     futures.push_back(
-        thread_pool.AddTask(&CMPMVSUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&CMPMVSUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -568,7 +588,7 @@ void CMPMVSUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
+bool CMPMVSUndistorterImpl::Undistort(const size_t reg_image_idx) const {
   const auto output_image_path =
       output_path_ / StringPrintf("%05d.jpg", reg_image_idx + 1);
   const auto proj_matrix_path =
@@ -595,7 +615,7 @@ bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-PureImageUndistorter::PureImageUndistorter(
+PureImageUndistorterImpl::PureImageUndistorterImpl(
     const UndistortCameraOptions& options,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
@@ -605,18 +625,18 @@ PureImageUndistorter::PureImageUndistorter(
       output_path_(output_path),
       image_names_and_cameras_(image_names_and_cameras) {}
 
-void PureImageUndistorter::Run() {
+void PureImageUndistorterImpl::Run() {
   PrintHeading1("Image undistortion");
 
   CreateDirIfNotExists(output_path_);
 
   ThreadPool thread_pool;
-  std::vector<std::future<bool>> futures;
+  std::vector<std::shared_future<bool>> futures;
   size_t num_images = image_names_and_cameras_.size();
   futures.reserve(num_images);
   for (size_t i = 0; i < num_images; ++i) {
     futures.push_back(
-        thread_pool.AddTask(&PureImageUndistorter::Undistort, this, i));
+        thread_pool.AddTask(&PureImageUndistorterImpl::Undistort, this, i));
   }
 
   for (size_t i = 0; i < futures.size(); ++i) {
@@ -634,7 +654,7 @@ void PureImageUndistorter::Run() {
   GetTimer().PrintMinutes();
 }
 
-bool PureImageUndistorter::Undistort(const size_t image_idx) const {
+bool PureImageUndistorterImpl::Undistort(const size_t image_idx) const {
   const std::string& image_name = image_names_and_cameras_[image_idx].first;
   const Camera& camera = image_names_and_cameras_[image_idx].second;
 
@@ -656,7 +676,7 @@ bool PureImageUndistorter::Undistort(const size_t image_idx) const {
   return undistorted_bitmap.Write(output_image_path);
 }
 
-StereoImageRectifier::StereoImageRectifier(
+StereoImageRectifierImpl::StereoImageRectifierImpl(
     const UndistortCameraOptions& options, Reconstruction* reconstruction,
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path,
@@ -667,14 +687,14 @@ StereoImageRectifier::StereoImageRectifier(
       stereo_pairs_(stereo_pairs),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
-void StereoImageRectifier::Run() {
+void StereoImageRectifierImpl::Run() {
   PrintHeading1("Stereo rectification");
 
   ThreadPool thread_pool;
-  std::vector<std::future<void>> futures;
+  std::vector<std::shared_future<void>> futures;
   futures.reserve(stereo_pairs_.size());
   for (const auto& stereo_pair : stereo_pairs_) {
-    futures.push_back(thread_pool.AddTask(&StereoImageRectifier::Rectify, this,
+    futures.push_back(thread_pool.AddTask(&StereoImageRectifierImpl::Rectify, this,
                                           stereo_pair.first,
                                           stereo_pair.second));
   }
@@ -694,7 +714,7 @@ void StereoImageRectifier::Run() {
   GetTimer().PrintMinutes();
 }
 
-void StereoImageRectifier::Rectify(const image_t image_id1,
+void StereoImageRectifierImpl::Rectify(const image_t image_id1,
                                    const image_t image_id2) const {
   const Image& image1 = reconstruction_->Image(image_id1);
   const Image& image2 = reconstruction_->Image(image_id2);
@@ -825,6 +845,18 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
   // Scale the image such the the boundary of the undistorted image.
   if (roi_enabled || (camera.ModelId() != SimplePinholeCameraModel::model_id &&
                       camera.ModelId() != PinholeCameraModel::model_id)) {
+    // Upstream parity (937064dd): for fisheye cameras, CamFromImg returns
+    // perspective-normalized coords where |cam_point| = tan(theta). Near
+    // theta = pi/2, tan(theta) diverges: border pixels outside the valid
+    // fisheye circle (common with off-center principal points) produce
+    // extreme coordinates that blow up the output dimensions. Skip any
+    // cam_point whose norm exceeds the threshold.
+    THROW_CHECK_NE(options.max_cam_point_norm, 0);
+    const double max_cam_point_norm_sq =
+        options.max_cam_point_norm < 0
+            ? std::numeric_limits<double>::infinity()
+            : options.max_cam_point_norm * options.max_cam_point_norm;
+
     // Determine min/max coordinates along top / bottom image border.
 
     double left_min_x = std::numeric_limits<double>::max();
@@ -836,7 +868,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Left border.
       const std::optional<Eigen::Vector2d> cam_point1 =
           camera.CamFromImg(Eigen::Vector2d(0.5, y + 0.5));
-      if (cam_point1) {
+      if (cam_point1 && cam_point1->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point1 =
             undistorted_camera.ImgFromCam(cam_point1->homogeneous());
         if (undistorted_point1) {
@@ -847,7 +879,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Right border.
       const std::optional<Eigen::Vector2d> cam_point2 = camera.CamFromImg(
           Eigen::Vector2d(camera.Width() - 0.5, y + 0.5));
-      if (cam_point2) {
+      if (cam_point2 && cam_point2->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point2 =
             undistorted_camera.ImgFromCam(cam_point2->homogeneous());
         if (undistorted_point2) {
@@ -868,7 +900,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Top border.
       const std::optional<Eigen::Vector2d> cam_point1 =
           camera.CamFromImg(Eigen::Vector2d(x + 0.5, 0.5));
-      if (cam_point1) {
+      if (cam_point1 && cam_point1->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point1 =
             undistorted_camera.ImgFromCam(cam_point1->homogeneous());
         if (undistorted_point1) {
@@ -879,7 +911,7 @@ Camera UndistortCamera(const UndistortCameraOptions& options,
       // Bottom border.
       const std::optional<Eigen::Vector2d> cam_point2 = camera.CamFromImg(
           Eigen::Vector2d(x + 0.5, camera.Height() - 0.5));
-      if (cam_point2) {
+      if (cam_point2 && cam_point2->squaredNorm() < max_cam_point_norm_sq) {
         const std::optional<Eigen::Vector2d> undistorted_point2 =
             undistorted_camera.ImgFromCam(cam_point2->homogeneous());
         if (undistorted_point2) {
@@ -972,18 +1004,78 @@ void UndistortImage(const UndistortCameraOptions& options,
                           distorted_bitmap, undistorted_bitmap);
 }
 
+void RescaleToMaxImageSize(const UndistortCameraOptions& options,
+                           Camera* camera) {
+  if (options.max_image_size < 0) {
+    return;
+  }
+  const double max_image_scale =
+      std::min(options.max_image_size / static_cast<double>(camera->Width()),
+               options.max_image_size / static_cast<double>(camera->Height()));
+  if (max_image_scale < 1.0) {
+    camera->Rescale(max_image_scale);
+  }
+}
+
 void UndistortReconstruction(const UndistortCameraOptions& options,
                              Reconstruction* reconstruction) {
   const auto distorted_cameras = reconstruction->Cameras();
-  for (auto& camera : distorted_cameras) {
-    reconstruction->Camera(camera.first) =
-        UndistortCamera(options, camera.second);
+  // Leave a camera unchanged exactly when the image undistortion also copies
+  // its images through unchanged, so that the reconstruction stays consistent
+  // with the output images (see COLMAPUndistorterImpl::Undistort). Both
+  // spherical cameras (e.g. EQUIRECTANGULAR, which have no pinhole image
+  // plane to undistort to) and already-undistorted perspective cameras are
+  // otherwise copied through as-is. When a max_image_size is requested, they
+  // are still resized to match the rescaled output images: perspective
+  // cameras through undistortion, spherical cameras by resizing to a smaller
+  // image of the same model.
+  const auto keep_unchanged = [&options](const Camera& camera) {
+    return camera.IsUndistorted() && options.max_image_size < 0;
+  };
+  for (const auto& camera_entry : distorted_cameras) {
+    if (keep_unchanged(camera_entry.second)) {
+      continue;
+    }
+    Camera& undistorted_camera = reconstruction->Camera(camera_entry.first);
+    if (camera_entry.second.IsSpherical()) {
+      // Only reached with a max_image_size: resize the spherical camera in
+      // place, keeping its model.
+      undistorted_camera = camera_entry.second;
+      RescaleToMaxImageSize(options, &undistorted_camera);
+    } else {
+      undistorted_camera = UndistortCamera(options, camera_entry.second);
+    }
   }
 
   for (const auto& distorted_image : reconstruction->Images()) {
-    auto& image = reconstruction->Image(distorted_image.first);
-    const auto& distorted_camera = distorted_cameras.at(image.CameraId());
-    const auto& undistorted_camera = reconstruction->Camera(image.CameraId());
+    Image& image = reconstruction->Image(distorted_image.first);
+    const Camera& distorted_camera = distorted_cameras.at(image.CameraId());
+    // Cameras left unchanged above need no observation rewrite.
+    if (keep_unchanged(distorted_camera)) {
+      continue;
+    }
+    const Camera& undistorted_camera =
+        reconstruction->Camera(image.CameraId());
+
+    if (distorted_camera.IsSpherical()) {
+      // Spherical models are only resized (see above). The equirectangular
+      // pixel<->angle map is linear in the image dimensions, so observations
+      // scale linearly. Unlike the perspective round-trip below, this stays
+      // valid for back-hemisphere observations, whose bearing has no forward
+      // normalized (CamFromImg) representation.
+      const double scale_x = static_cast<double>(undistorted_camera.Width()) /
+                             static_cast<double>(distorted_camera.Width());
+      const double scale_y = static_cast<double>(undistorted_camera.Height()) /
+                             static_cast<double>(distorted_camera.Height());
+      for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+           ++point2D_idx) {
+        Eigen::Vector2d& xy = image.Point2D(point2D_idx).XY();
+        xy.x() *= scale_x;
+        xy.y() *= scale_y;
+      }
+      continue;
+    }
+
     for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
          ++point2D_idx) {
       auto& point2D = image.Point2D(point2D_idx);

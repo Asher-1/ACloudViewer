@@ -175,6 +175,15 @@ void pybind_util(py::module& m) {
                  "The engine version string (COLMAP lineage).")
             .def("get_build_info", &colmap::GetBuildInfo,
                  "The engine build configuration string.");
+
+    // Upstream pycolmap parity (util/file.h CopyType exported under the
+    // upstream top-level name).
+    py::enum_<colmap::CopyType>(m_submodule, "FileCopyType",
+                                "The copy strategy for file operations.")
+            .value("COPY", colmap::CopyType::COPY)
+            .value("HARD_LINK", colmap::CopyType::HARD_LINK)
+            .value("SOFT_LINK", colmap::CopyType::SOFT_LINK)
+            .export_values();
 }
 
 }  // namespace util

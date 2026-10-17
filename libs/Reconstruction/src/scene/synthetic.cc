@@ -407,7 +407,12 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
       camera.SetModelId(options.camera_model_id);
       camera.Params() = options.camera_params;
       THROW_CHECK(camera.VerifyParams());
-      camera.SetPriorFocalLength(options.camera_has_prior_focal_length);
+      // Upstream parity (f1ea91d0): explicit source mapping — the
+      // SetPriorFocalLength shim would map false to GUESS, diverging from
+      // upstream's UNKNOWN for prior-free synthetic cameras.
+      camera.SetSource(options.camera_has_prior_focal_length
+                           ? CameraSource::USER
+                           : CameraSource::UNKNOWN);
       camera.SetCameraId(
           (database == nullptr)
               ? (rig_idx * options.num_cameras_per_rig + camera_idx + 1)
@@ -593,7 +598,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
           FeatureKeypoints keypoints;
           keypoints.reserve(points2D.size());
           FeatureDescriptors descriptors;
-          descriptors.resize(points2D.size(), desc_dim);
+          descriptors.type = FeatureExtractorType::SIFT;
+          descriptors.data.resize(points2D.size(), desc_dim);
           std::uniform_int_distribution<int> feature_distribution(0, 255);
           for (point2D_t point2D_idx = 0; point2D_idx < points2D.size();
                ++point2D_idx) {
@@ -606,8 +612,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
                                                ? point2D.Point3DId()
                                                : options.num_points3D +
                                                      (++total_num_descriptors));
-            for (int d = 0; d < descriptors.cols(); ++d) {
-              descriptors(point2D_idx, d) =
+            for (int d = 0; d < descriptors.data.cols(); ++d) {
+              descriptors.data(point2D_idx, d) =
                   feature_distribution(feature_generator);
             }
           }

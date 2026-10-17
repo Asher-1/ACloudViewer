@@ -47,21 +47,21 @@
 namespace colmap {
 namespace {
 
-std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+std::vector<Eigen::AlignedBox3d>
 ComputeEqualPartsBounds(const Reconstruction& reconstruction,
                         const Eigen::Vector3i& split) {
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> bounds;
+    std::vector<Eigen::AlignedBox3d> bounds;
     const auto bbox = reconstruction.ComputeBoundingBox();
-    const Eigen::Vector3d extent = bbox.second - bbox.first;
+    const Eigen::Vector3d extent = bbox.max() - bbox.min();
     const Eigen::Vector3d offset(extent(0) / split(0), extent(1) / split(1),
                                  extent(2) / split(2));
 
     for (int k = 0; k < split(2); ++k) {
         for (int j = 0; j < split(1); ++j) {
             for (int i = 0; i < split(0); ++i) {
-                Eigen::Vector3d min_bound(bbox.first(0) + i * offset(0),
-                                          bbox.first(1) + j * offset(1),
-                                          bbox.first(2) + k * offset(2));
+                Eigen::Vector3d min_bound(bbox.min()(0) + i * offset(0),
+                                          bbox.min()(1) + j * offset(1),
+                                          bbox.min()(2) + k * offset(2));
                 bounds.emplace_back(min_bound, min_bound + offset);
             }
         }
@@ -85,9 +85,9 @@ Eigen::Vector3d TransformLatLonAltToModelCoords(
 }
 
 void WriteBoundingBox(const std::string& reconstruction_path,
-                      const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bounds,
+                      const Eigen::AlignedBox3d& bounds,
                       const std::string& suffix = "") {
-    const Eigen::Vector3d extent = bounds.second - bounds.first;
+    const Eigen::Vector3d extent = bounds.max() - bounds.min();
     // write axis-aligned bounding box
     {
         const std::string path =
@@ -97,8 +97,8 @@ void WriteBoundingBox(const std::string& reconstruction_path,
 
         // Ensure that we don't loose any precision by storing in text.
         file.precision(17);
-        file << bounds.first.transpose() << std::endl;
-        file << bounds.second.transpose() << std::endl;
+        file << bounds.min().transpose() << std::endl;
+        file << bounds.max().transpose() << std::endl;
     }
     // write oriented bounding box
     {
@@ -109,7 +109,7 @@ void WriteBoundingBox(const std::string& reconstruction_path,
 
         // Ensure that we don't loose any precision by storing in text.
         file.precision(17);
-        const Eigen::Vector3d center = (bounds.first + bounds.second) * 0.5;
+        const Eigen::Vector3d center = bounds.center();
         file << center.transpose() << std::endl << std::endl;
         file << "1 0 0\n0 1 0\n0 0 1" << std::endl << std::endl;
         file << extent.transpose() << std::endl;
@@ -264,7 +264,9 @@ int RunModelAligner(int argc, char** argv) {
             "{plane, ecef, enu, enu-plane, enu-plane-unscaled, custom}");
     options.AddDefaultOption("min_common_images", &min_common_images);
     options.AddDefaultOption("alignment_max_error", &ransac_options.max_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&alignment_type);
     const FlatHashSet<std::string> alignment_options{
@@ -414,7 +416,9 @@ int RunModelAnalyzer(int argc, char** argv) {
 
     OptionManager options;
     options.AddRequiredOption("path", &path);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction;
     reconstruction.Read(path);
@@ -522,7 +526,9 @@ int RunModelComparer(int argc, char** argv) {
                              &min_inlier_observations);
     options.AddDefaultOption("max_reproj_error", &max_reproj_error);
     options.AddDefaultOption("max_proj_center_error", &max_proj_center_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!output_path.empty() && !ExistsDir(output_path)) {
         LOG(ERROR) << "Provided output path is not a valid directory";
@@ -565,7 +571,9 @@ int RunModelClusterer(int argc, char** argv) {
     options.AddRequiredOption("input_path", &input_path);
     options.AddRequiredOption("output_path", &output_path);
     options.AddReconstructionClustererOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         LOG(ERROR) << "`input_path` is not a directory";
@@ -607,7 +615,9 @@ int RunModelConverter(int argc, char** argv) {
     options.AddRequiredOption("output_type", &output_type,
                               "{BIN, TXT, NVM, Bundler, VRML, PLY, R3D, CAM}");
     options.AddDefaultOption("skip_distortion", &skip_distortion);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction;
     reconstruction.Read(input_path);
@@ -656,7 +666,9 @@ int RunModelCropper(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddRequiredOption("boundary", &boundary);
     options.AddDefaultOption("gps_transform_path", &gps_transform_path);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -680,7 +692,7 @@ int RunModelCropper(int argc, char** argv) {
     reconstruction.Read(input_path);
 
     PrintHeading2("Calculating boundary coordinates");
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> bounding_box;
+    Eigen::AlignedBox3d bounding_box;
     if (boundary_elements.size() == 6) {
         SimilarityTransform3 tform;
         if (!gps_transform_path.empty()) {
@@ -688,13 +700,13 @@ int RunModelCropper(int argc, char** argv) {
             is_gps = true;
             tform = SimilarityTransform3::FromFile(gps_transform_path).Inverse();
         }
-        bounding_box.first =
+        bounding_box.min() =
                 is_gps ? TransformLatLonAltToModelCoords(tform, boundary_elements[0],
                                                          boundary_elements[1],
                                                          boundary_elements[2])
                        : Eigen::Vector3d(boundary_elements[0], boundary_elements[1],
                                          boundary_elements[2]);
-        bounding_box.second =
+        bounding_box.max() =
                 is_gps ? TransformLatLonAltToModelCoords(tform, boundary_elements[3],
                                                          boundary_elements[4],
                                                          boundary_elements[5])
@@ -725,7 +737,9 @@ int RunModelMerger(int argc, char** argv) {
     options.AddRequiredOption("input_path2", &input_path2);
     options.AddRequiredOption("output_path", &output_path);
     options.AddDefaultOption("max_reproj_error", &max_reproj_error);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     Reconstruction reconstruction1;
     reconstruction1.Read(input_path1);
@@ -775,7 +789,9 @@ int RunModelOrientationAligner(int argc, char** argv) {
                              "{MANHATTAN-WORLD, IMAGE-ORIENTATION}");
     options.AddDefaultOption("max_image_size",
                              &frame_estimation_options.max_image_size);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     StringToLower(&method);
     if (method != "manhattan-world" && method != "image-orientation") {
@@ -854,7 +870,9 @@ int RunModelSplitter(int argc, char** argv) {
     options.AddDefaultOption("min_num_points", &min_num_points);
     options.AddDefaultOption("overlap_ratio", &overlap_ratio);
     options.AddDefaultOption("min_area_ratio", &min_area_ratio);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     if (!ExistsDir(input_path)) {
         std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
@@ -890,7 +908,7 @@ int RunModelSplitter(int argc, char** argv) {
     // and get the bounding boxes for each sub-reconstruction
     PrintHeading2("Computing bound_coords");
     std::vector<std::string> tile_keys;
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> exact_bounds;
+    std::vector<Eigen::AlignedBox3d> exact_bounds;
     StringToLower(&split_type);
     if (split_type == "tiles") {
         std::ifstream file(split_params);
@@ -898,7 +916,7 @@ int RunModelSplitter(int argc, char** argv) {
 
         double x1, y1, z1, x2, y2, z2;
         std::string tile_key;
-        std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> bounds;
+        std::vector<Eigen::AlignedBox3d> bounds;
         tile_keys.clear();
         file >> tile_key >> x1 >> y1 >> z1 >> x2 >> y2 >> z2;
         while (!file.fail()) {
@@ -923,7 +941,7 @@ int RunModelSplitter(int argc, char** argv) {
         }
 
         const auto bbox = reconstruction.ComputeBoundingBox();
-        const Eigen::Vector3d full_extent = bbox.second - bbox.first;
+        const Eigen::Vector3d full_extent = bbox.max() - bbox.min();
         const Eigen::Vector3i split(
                 static_cast<int>(full_extent(0) / extent(0)) + 1,
                 static_cast<int>(full_extent(1) / extent(1)) + 1,
@@ -948,11 +966,14 @@ int RunModelSplitter(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> bounds;
+    std::vector<Eigen::AlignedBox3d> bounds;
     for (const auto& bbox : exact_bounds) {
         const Eigen::Vector3d padding =
-                (overlap_ratio * (bbox.second - bbox.first));
-        bounds.emplace_back(bbox.first - padding, bbox.second + padding);
+                (overlap_ratio * (bbox.max() - bbox.min()));
+        Eigen::AlignedBox3d padded;
+        padded.extend(bbox.min() - padding);
+        padded.extend(bbox.max() + padding);
+        bounds.emplace_back(padded);
     }
 
     PrintHeading2("Applying split and writing reconstructions");
@@ -965,9 +986,9 @@ int RunModelSplitter(int argc, char** argv) {
     auto SplitReconstruction = [&](const int idx) {
         Reconstruction tile_recon = reconstruction.Crop(bounds[idx]);
         // calculate area covered by model as proportion of box area
-        auto bbox_extent = bounds[idx].second - bounds[idx].first;
+        auto bbox_extent = bounds[idx].max() - bounds[idx].min();
         auto model_bbox = tile_recon.ComputeBoundingBox();
-        auto model_extent = model_bbox.second - model_bbox.first;
+        auto model_extent = model_bbox.max() - model_bbox.min();
         double area_ratio =
                 (model_extent(0) * model_extent(1)) / (bbox_extent(0) * bbox_extent(1));
         int tile_num_points = tile_recon.NumPoints3D();
@@ -1022,7 +1043,9 @@ int RunModelTransformer(int argc, char** argv) {
     options.AddRequiredOption("output_path", &output_path);
     options.AddRequiredOption("transform_path", &transform_path);
     options.AddDefaultOption("is_inverse", &is_inverse);
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
 
     std::cout << "Reading points input: " << input_path << std::endl;
     Reconstruction recon;

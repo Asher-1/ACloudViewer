@@ -41,8 +41,6 @@ static const double kNaN = std::numeric_limits<double>::quiet_NaN();
 
 }  // namespace
 
-const int Image::kNumPoint3DVisibilityPyramidLevels = 6;
-
 Image::Image()
     : image_id_(kInvalidImageId),
       name_(""),
@@ -51,7 +49,6 @@ Image::Image()
       num_points3D_(0),
       num_observations_(0),
       num_correspondences_(0),
-      num_visible_points3D_(0),
       qvec_(1.0, 0.0, 0.0, 0.0),
       tvec_(0.0, 0.0, 0.0),
       qvec_prior_(kNaN, kNaN, kNaN, kNaN),
@@ -73,15 +70,11 @@ Image::Image(const Image& other)
       num_points3D_(other.num_points3D_),
       num_observations_(other.num_observations_),
       num_correspondences_(other.num_correspondences_),
-      num_visible_points3D_(other.num_visible_points3D_),
       qvec_(other.qvec_),
       tvec_(other.tvec_),
       qvec_prior_(other.qvec_prior_),
       tvec_prior_(other.tvec_prior_),
-      points2D_(other.points2D_),
-      num_correspondences_have_point3D_(
-          other.num_correspondences_have_point3D_),
-      point3D_visibility_pyramid_(other.point3D_visibility_pyramid_) {}
+      points2D_(other.points2D_) {}
 
 Image& Image::operator=(const Image& other) {
     if (this != &other) {
@@ -95,37 +88,25 @@ Image& Image::operator=(const Image& other) {
         num_points3D_ = other.num_points3D_;
         num_observations_ = other.num_observations_;
         num_correspondences_ = other.num_correspondences_;
-        num_visible_points3D_ = other.num_visible_points3D_;
         qvec_ = other.qvec_;
         tvec_ = other.tvec_;
         qvec_prior_ = other.qvec_prior_;
         tvec_prior_ = other.tvec_prior_;
         points2D_ = other.points2D_;
-        num_correspondences_have_point3D_ =
-            other.num_correspondences_have_point3D_;
-        point3D_visibility_pyramid_ = other.point3D_visibility_pyramid_;
     }
     return *this;
 }
 
-void Image::SetUp(const class Camera& camera) {
-    CHECK_EQ(camera_id_, camera.CameraId());
-    point3D_visibility_pyramid_ =
-            VisibilityPyramid(kNumPoint3DVisibilityPyramidLevels,
-                              camera.Width(), camera.Height());
-}
-
-void Image::TearDown() {
-    point3D_visibility_pyramid_ = VisibilityPyramid(0, 0, 0);
-}
-
 void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
-    // Upstream parity (dbb41680 scene/image.cc): bulk-setting the 2D points
-    // is allowed on both empty and populated images (it clears any previous
-    // triangulation associations by replacing the container).
+    // Upstream parity (6db3867f scene/image.cc): reset the triangulation
+    // associations beyond the new size so shrinking cannot leave stale
+    // NumPoints3D() counters; retained observations keep their
+    // associations (only their xy is overwritten).
+    for (point2D_t point2D_idx = points.size(); point2D_idx < points2D_.size();
+         ++point2D_idx) {
+        ResetPoint3DForPoint2D(point2D_idx);
+    }
     points2D_.resize(points.size());
-    num_correspondences_have_point3D_.resize(points.size(), 0);
-    num_points3D_ = 0;
     for (point2D_t point2D_idx = 0; point2D_idx < points.size();
          ++point2D_idx) {
         points2D_[point2D_idx].SetXY(points[point2D_idx]);
@@ -136,7 +117,6 @@ void Image::SetPoints2D(const std::vector<class Point2D>& points) {
     // Upstream parity: allow repopulating a populated image (see the
     // Eigen::Vector2d overload above).
     points2D_ = points;
-    num_correspondences_have_point3D_.resize(points.size(), 0);
     // Upstream parity (dbb41680 scene/image.cc): recompute the number of
     // triangulated points when bulk-setting the 2D points.
     num_points3D_ = 0;
@@ -170,32 +150,6 @@ bool Image::HasPoint3D(const point3D_t point3D_id) const {
                         [point3D_id](const class Point2D& point2D) {
                             return point2D.Point3DId() == point3D_id;
                         }) != points2D_.end();
-}
-
-void Image::IncrementCorrespondenceHasPoint3D(const point2D_t point2D_idx) {
-    const class Point2D& point2D = points2D_.at(point2D_idx);
-
-    num_correspondences_have_point3D_[point2D_idx] += 1;
-    if (num_correspondences_have_point3D_[point2D_idx] == 1) {
-        num_visible_points3D_ += 1;
-    }
-
-    point3D_visibility_pyramid_.SetPoint(point2D.X(), point2D.Y());
-
-    assert(num_visible_points3D_ <= num_observations_);
-}
-
-void Image::DecrementCorrespondenceHasPoint3D(const point2D_t point2D_idx) {
-    const class Point2D& point2D = points2D_.at(point2D_idx);
-
-    num_correspondences_have_point3D_[point2D_idx] -= 1;
-    if (num_correspondences_have_point3D_[point2D_idx] == 0) {
-        num_visible_points3D_ -= 1;
-    }
-
-    point3D_visibility_pyramid_.ResetPoint(point2D.X(), point2D.Y());
-
-    assert(num_visible_points3D_ <= num_observations_);
 }
 
 void Image::NormalizeQvec() { qvec_ = NormalizeQuaternion(qvec_); }

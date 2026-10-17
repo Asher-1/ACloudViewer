@@ -214,3 +214,10 @@ if (USE_VTK_BACKEND)
     export_VTK_dlls(${ACloudViewer_DEST_FOLDER})
 
 endif ()
+
+# Composite aggregation regression gate (pure data-structure tests; no
+# renderer/window needed). Off by default — enable with -DVTKENGINE_BUILD_TESTS=ON.
+option(VTKENGINE_BUILD_TESTS "Build VtkEngine unit tests" OFF)
+if (VTKENGINE_BUILD_TESTS)
+    add_subdirectory(tests)
+endif ()

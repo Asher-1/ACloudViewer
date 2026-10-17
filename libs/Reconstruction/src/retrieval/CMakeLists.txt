@@ -50,3 +50,5 @@ COLMAP_ADD_SOURCES(
 COLMAP_ADD_TEST(geometry_test geometry_test.cc)
 COLMAP_ADD_TEST(inverted_file_entry_test inverted_file_entry_test.cc)
 COLMAP_ADD_TEST(visual_index_test visual_index_test.cc)
+COLMAP_ADD_TEST(retrieval_utils_test utils_test.cc)
+COLMAP_ADD_TEST(vote_and_verify_test vote_and_verify_test.cc)

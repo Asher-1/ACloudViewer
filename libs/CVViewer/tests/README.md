@@ -41,11 +41,16 @@ cmake --build build -j$(nproc)
 
 ## Running Tests
 
+The `tests` binary lands in a per-config subdirectory:
+`bin/cloudviewer_test/<Config>/tests` (e.g. `Release` for the usual
+`-DCMAKE_BUILD_TYPE=Release` build; a multi-config generator appends its
+active configuration the same way).
+
 ### Run All Tests
 
 ```bash
 cd build
-./bin/cloudviewer_test/tests
+./bin/cloudviewer_test/<Config>/tests
 ```
 
 ### Run with Options

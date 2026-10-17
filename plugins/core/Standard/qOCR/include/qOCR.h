@@ -9,8 +9,8 @@
 
 // qOCR: PP-OCR text detection/recognition over the AICore `ocr` task.
 // The plugin owns the worker lifecycle (device task lock, cancel token,
-// context create on the worker thread / release on the main thread), the
-// heartbeat log, and the DB export of the annotated recognition result —
+// context create/release on the worker thread), the heartbeat log, and the
+// DB export of the annotated recognition result —
 // the dialog stays a pure view (same split as qRMBG).
 
 #include <ecvStdPluginInterface.h>
@@ -33,6 +33,8 @@ public:
     explicit qOCR(QObject* parent = nullptr);
 
     QList<QAction*> getActions() override;
+
+    void registerCommands(ccCommandLineInterface* cmd) override;
     void setMainAppInterface(ecvMainAppInterface* app) override;
 
 private slots:

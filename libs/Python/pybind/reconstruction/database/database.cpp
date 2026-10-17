@@ -119,6 +119,9 @@ void pybind_database(py::module& m) {
                  [](PyDatabaseTransaction& self, const py::object&,
                     const py::object&, const py::object&) { self.commit(); });
 
+    // Upstream pycolmap parity (f1ea91d0): CameraSource is registered once,
+    // in the scene submodule (pybind_scene runs before pybind_database), so
+    // the default arguments below reference an already-bound enum.
     py::class_<Database, std::shared_ptr<Database>> db(
             m_submodule, "Database",
             "The abstract COLMAP database interface (SQLite-backed). Holds "
@@ -153,8 +156,12 @@ void pybind_database(py::module& m) {
                  "name"_a)
             .def("exists_pose_prior", &Database::ExistsPosePrior,
                  "pose_prior_id"_a)
-            .def("read_camera", &Database::ReadCamera, "camera_id"_a)
-            .def("read_all_cameras", &Database::ReadAllCameras)
+            // Upstream parity (f1ea91d0): optional calibration source; the
+            // default resolves the highest-priority calibration.
+            .def("read_camera", &Database::ReadCamera, "camera_id"_a,
+                 "source"_a = colmap::CameraSource::BEST)
+            .def("read_all_cameras", &Database::ReadAllCameras,
+                 "source"_a = colmap::CameraSource::BEST)
             .def("read_rig", &Database::ReadRig, "rig_id"_a)
             .def("read_all_rigs", &Database::ReadAllRigs)
             .def("read_frame", &Database::ReadFrame, "frame_id"_a)
@@ -302,6 +309,134 @@ void pybind_database(py::module& m) {
                     "Begin a scoped write transaction (use as a context "
                     "manager).",
                     py::keep_alive<0, 1>());
+
+    // --- Upstream pycolmap parity (d3ccaf35 scene/database.cc): the full
+    // management surface. Member names follow the fork engine API.
+    db.def("clear_cameras", &Database::ClearCameras, "Clear cameras table.")
+            .def("clear_rigs", &Database::ClearRigs, "Clear rigs table.")
+            .def("clear_frames", &Database::ClearFrames, "Clear frames table.")
+            .def("clear_images", &Database::ClearImages, "Clear images table.")
+            .def("clear_keypoints", &Database::ClearKeypoints,
+                 "Clear keypoints table.")
+            .def("clear_descriptors", &Database::ClearDescriptors,
+                 "Clear descriptors table.")
+            .def("clear_matches", &Database::ClearMatches,
+                 "Clear matches table.")
+            .def("clear_two_view_geometries", &Database::ClearTwoViewGeometries,
+                 "Clear two-view geometries table.")
+            .def("clear_pose_priors", &Database::ClearPosePriors,
+                 "Clear pose priors table.")
+            .def("exists_descriptors", &Database::ExistsDescriptors,
+                 "image_id"_a)
+            .def("exists_keypoints", &Database::ExistsKeypoints, "image_id"_a)
+            .def("exists_matches", &Database::ExistsMatches, "image_id1"_a,
+                 "image_id2"_a)
+            .def("exists_two_view_geometry", &Database::ExistsTwoViewGeometry,
+                 "image_id1"_a, "image_id2"_a)
+            .def("num_keypoints_for_image", &Database::NumKeypointsForImage,
+                 "image_id"_a)
+            .def("num_descriptors_for_image", &Database::NumDescriptorsForImage,
+                 "image_id"_a)
+            .def(
+                    "read_all_matches",
+                    [](Database& self) { return self.ReadAllMatches(); },
+                    "All raw matches as a list of (image_pair_id, matches) "
+                    "tuples.")
+            .def(
+                    "read_num_matches",
+                    [](Database& self) {
+                        // Upstream parity: pair ids and match counts from
+                        // the raw matches table (fork surface: ReadAllMatches).
+                        const auto all = self.ReadAllMatches();
+                        std::vector<colmap::image_pair_t> pair_ids;
+                        std::vector<int> num_matches;
+                        pair_ids.reserve(all.size());
+                        num_matches.reserve(all.size());
+                        for (const auto& [pair_id, matches] : all) {
+                            pair_ids.push_back(pair_id);
+                            num_matches.push_back(
+                                    static_cast<int>(matches.size()));
+                        }
+                        py::dict out;
+                        out["pair_ids"] = pair_ids;
+                        out["num_matches"] = num_matches;
+                        return out;
+                    },
+                    "All image pairs of the matches table with their match "
+                    "counts.")
+            .def(
+                    "read_two_view_geometries",
+                    [](Database& self) { return self.ReadTwoViewGeometries(); },
+                    "All verified two-view geometries keyed by image pair "
+                    "id.")
+            .def(
+                    "read_two_view_geometry_num_inliers",
+                    [](Database& self) {
+                        std::vector<std::pair<colmap::image_t, colmap::image_t>>
+                                image_pairs;
+                        std::vector<int> num_inliers;
+                        self.ReadTwoViewGeometryNumInliers(&image_pairs,
+                                                           &num_inliers);
+                        py::list pairs;
+                        for (const auto& p : image_pairs) {
+                            pairs.append(py::make_tuple(p.first, p.second));
+                        }
+                        py::dict out;
+                        out["image_pairs"] = pairs;
+                        out["num_inliers"] = num_inliers;
+                        return out;
+                    },
+                    "All verified image pairs with at least one inlier and "
+                    "their inlier counts.")
+            .def(
+                    "read_rig_with_sensor",
+                    [](Database& self,
+                       colmap::sensor_t sensor_id) -> py::object {
+                        auto rig = self.ReadRigWithSensor(sensor_id);
+                        if (!rig.has_value()) {
+                            return py::none();
+                        }
+                        return py::cast(*rig);
+                    },
+                    "sensor_id"_a,
+                    "Read the rig that contains the given sensor; None if "
+                    "not found.")
+            .def(
+                    "update_keypoints",
+                    [](Database& self, colmap::image_t image_id,
+                       const colmap::FeatureKeypoints& keypoints) {
+                        self.UpdateKeypoints(image_id, keypoints);
+                    },
+                    "image_id"_a, "keypoints"_a,
+                    "Update the keypoints of an image.")
+            .def_static("image_pair_to_pair_id", &Database::ImagePairToPairId,
+                        "image_id1"_a, "image_id2"_a,
+                        "Deterministic 64-bit pair id from two image ids.")
+            .def_static(
+                    "pair_id_to_image_pair",
+                    [](colmap::image_pair_t pair_id) {
+                        colmap::image_t image_id1, image_id2;
+                        Database::PairIdToImagePair(pair_id, &image_id1,
+                                                    &image_id2);
+                        return py::make_tuple(image_id1, image_id2);
+                    },
+                    "pair_id"_a, "Inverse of ``image_pair_to_pair_id``.")
+            // Python's with-statement protocol: __exit__ is invoked on the
+            // object returned by __enter__, so returning the RAII
+            // transaction makes `with db:` commit on exit. The engine's
+            // Begin/EndTransaction are protected. The protocol validator
+            // still requires __exit__ to exist on the context object itself.
+            .def("__enter__",
+                 [](Database& self) { return PyDatabaseTransaction(&self); })
+            .def("__exit__",
+                 [](Database&, const py::object&, const py::object&,
+                    const py::object&) { /* commit handled by the returned
+                                            transaction's __exit__ */
+                 })
+            .def("__repr__", [](const Database& self) {
+                return "<Database num_images=" +
+                       std::to_string(self.NumImages()) + ">";
+            });
 }
 
 }  // namespace database

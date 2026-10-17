@@ -248,6 +248,12 @@ Eigen::Quaterniond AverageQuaternions(
 Rigid3d TransformCameraWorld(const Sim3d& new_from_old_world,
                              const Rigid3d& cam_from_world);
 
+// Upstream COLMAP d3ccaf35 geometry/pose.h: interpolate two camera poses
+// (slerp on the rotation, lerp on the translation).
+Rigid3d InterpolateCameraPoses(const Rigid3d& cam1_from_world,
+                               const Rigid3d& cam2_from_world,
+                               double t);
+
 // Convert rotation matrix to/from angle axis.
 Eigen::Vector3d RotationMatrixToAngleAxis(const Eigen::Matrix3d& R);
 Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w);
@@ -264,5 +270,14 @@ double YAxisAngleFromRotation(const Eigen::Matrix3d& rotation);
 // Construct gravity-aligned rotation matrix from yaw angle, i.e., a rotation
 // about the Y-axis (gravity direction).
 Eigen::Matrix3d RotationFromYAxisAngle(double angle);
+
+// Upstream parity (d3ccaf35 geometry/pose.h): quaternion from an angle-axis
+// vector, with a first-order small-angle expansion.
+Eigen::Quaterniond QuaternionFromAngleAxis(const Eigen::Vector3d& omega);
+
+// Upstream parity (d3ccaf35 geometry/pose.h): SO(3) left/right Jacobians in
+// the angle-axis parameterization.
+Eigen::Matrix3d LeftJacobianFromAngleAxis(const Eigen::Vector3d& omega);
+Eigen::Matrix3d RightJacobianFromAngleAxis(const Eigen::Vector3d& omega);
 
 }  // namespace colmap

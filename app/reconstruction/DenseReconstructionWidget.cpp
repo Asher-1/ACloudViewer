@@ -54,6 +54,8 @@ public:
         AddOptionInt(&options->patch_match_stereo->max_image_size,
                      "max_image_size", -1);
         AddOptionText(&options->patch_match_stereo->gpu_index, "gpu_index");
+        AddOptionInt(&options->patch_match_stereo->num_threads, "num_threads",
+                     -1);
         AddOptionDouble(&options->patch_match_stereo->depth_min, "depth_min",
                         -1);
         AddOptionDouble(&options->patch_match_stereo->depth_max, "depth_max",
@@ -522,9 +524,9 @@ void DenseReconstructionWidget::Undistort() {
     }
 
     // Pass reconstruction pointer for in-place undistortion
-    COLMAPUndistorter* undistorter =
-            new COLMAPUndistorter(UndistortCameraOptions(), reconstruction_,
-                                  *options_->image_path, workspace_path);
+    COLMAPUndistorterImpl* undistorter =
+            new COLMAPUndistorterImpl(UndistortCameraOptions(), reconstruction_,
+                                      *options_->image_path, workspace_path);
     undistorter->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
         QMetaObject::invokeMethod(
                 this, [this]() { refresh_workspace_action_->trigger(); },

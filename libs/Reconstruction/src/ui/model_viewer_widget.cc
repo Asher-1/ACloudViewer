@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "util/hash_containers.h"
 #include "ui/model_viewer_widget.h"
 
 #include "ui/main_window.h"
@@ -1022,7 +1023,7 @@ void ModelViewerWidget::UploadImageConnectionData() {
     const Eigen::Vector3f proj_center = image.ProjectionCenter().cast<float>();
 
     // Collect all connected images
-    std::unordered_set<image_t> conn_image_ids;
+    NodeHashSet<image_t> conn_image_ids;
 
     for (const Point2D& point2D : image.Points2D()) {
       if (point2D.HasPoint3D()) {

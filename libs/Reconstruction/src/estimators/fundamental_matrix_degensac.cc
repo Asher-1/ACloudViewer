@@ -31,7 +31,6 @@
 
 #include "estimators/solvers/fundamental_matrix.h"
 #include "estimators/solvers/homography_matrix.h"
-#include "estimators/utils.h"
 #include "geometry/essential_matrix.h"
 #include "geometry/homography_matrix.h"
 #include "geometry/rigid3.h"

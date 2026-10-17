@@ -160,6 +160,7 @@ public:
     void drawWidgets(const WIDGETS_PARAMETER& param) override;
     void removeWidgets(const WIDGETS_PARAMETER& param) override;
     bool hideShowEntities(const ccGLDrawContext& context) override;
+    void setCameraAggregationSuspended(bool suspended) override;
     void removeEntities(const ccGLDrawContext& context) override;
     void updateApplyViewportPreviewOverlay(unsigned sensorId) override;
     void removeApplyViewportPreviewOverlay(unsigned sensorId) override;

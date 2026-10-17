@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 #include "scene/reconstruction.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 
@@ -62,7 +63,7 @@ private:
     QCheckBox* smooth_cb_;
     QDoubleSpinBox* smoothness_sb_;
 
-    std::unordered_map<const QTableWidgetItem*, ViewData> view_data_;
+    NodeHashMap<const QTableWidgetItem*, ViewData> view_data_;
 };
 
 }  // namespace colmap

@@ -1625,13 +1625,14 @@ void ccHObject::resetDrawSelfProbe() {
 
 void ccHObject::logDrawSelfProbe() {
     if (g_pN == 0) return;
-    if (!CVLog::diagnosticsEnabled()) {
+    const double total = g_pPre + g_pDrawEnt + g_pHideShowBlk + g_pNameBlk +
+                         g_pChildren + g_pTail;
+    // Silent unless ACV_DIAGNOSTICS=1: rate-limited stage attribution for
+    // slow passes, kept out of normal interactive IO.
+    if (!CVLog::diagnosticsEnabled() || total < 100.0) {
         resetDrawSelfProbe();
         return;
     }
-    const double total = g_pPre + g_pDrawEnt + g_pHideShowBlk + g_pNameBlk +
-                         g_pChildren + g_pTail;
-    if (total < 100.0) return;
     CVLog::Print(
             "[selfProbe] N=%d pre=%.1f drawEnt=%.1f(dmo=%.1f) "
             "hideShowBlk=%.1f nameBlk=%.1f(walk=%.1f on=%.1f off=%.1f) "
@@ -1710,6 +1711,22 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     }
     const bool cascadeVisible = context.visible;
 
+    // The draw context is shared by the whole traversal. Per-entity state
+    // (per-view representation overrides and values written inside
+    // drawMeOnly) must not leak into entities drawn afterwards, otherwise
+    // editing e.g. cloud A's point size also resizes every sibling cloud
+    // that has no explicit size of its own. Save the fields overridden
+    // below or during drawing and restore them once this entity is done
+    // (same scoping as the glTransAccum matrix stack above).
+    const unsigned char savedDefaultPointSize = context.defaultPointSize;
+    const unsigned char savedDefaultLineWidth = context.defaultLineWidth;
+    const unsigned char savedCurrentLineWidth = context.currentLineWidth;
+    const float savedNormalScale = context.normalScale;
+    const MESH_RENDERING_MODE savedMeshRenderingMode =
+            context.meshRenderingMode;
+    const ecvColor::Rgbub savedDefaultPolylineColor =
+            context.defaultPolylineColor;
+
     context.opacity = (viewRep && viewRep->properties().opacity.has_value())
                               ? viewRep->effectiveOpacity()
                               : getOpacity();
@@ -1787,6 +1804,16 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         }
     }
 
+    // Restore the per-entity context fields saved above so siblings (and
+    // children) start from the traversal state instead of this entity's
+    // overrides (prevents point size / line width / normals scale bleed).
+    context.defaultPointSize = savedDefaultPointSize;
+    context.defaultLineWidth = savedDefaultLineWidth;
+    context.currentLineWidth = savedCurrentLineWidth;
+    context.normalScale = savedNormalScale;
+    context.meshRenderingMode = savedMeshRenderingMode;
+    context.defaultPolylineColor = savedDefaultPolylineColor;
+
     // hide or show entities
     {
         SelfProbeScope hideShowBlkProbe(g_pHideShowBlk);
@@ -1803,8 +1830,18 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         // shown in a view it is not bound to.
         const bool savedVisible = context.visible;
         if (!isHierarchy) {
-            context.visible = m_visible && (context.skipDisplayCheck ||
-                                            isDisplayedIn(context.display));
+            // Fold the ANCESTOR cascade back in: a leaf whose OWN checkbox
+            // is on but whose parent folder is hidden must push HIDDEN —
+            // dropping the cascade here kept every already-created actor of
+            // a hidden folder on screen (folder-level hiding never worked
+            // for entities rendered through this channel). m_visible stays
+            // in the product so a selected-but-hidden entity remains
+            // hidden; skipDisplayCheck bypasses isDisplayedIn() for ownDB
+            // entities in comparative views (intentionally shown in a view
+            // they are not bound to).
+            context.visible = m_visible && savedVisible &&
+                              (context.skipDisplayCheck ||
+                               isDisplayedIn(context.display));
         }
 
         bool hasExist = true;
@@ -1909,8 +1946,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     SelfProbeScope tailProbe(g_pTail);
 
     // if the entity is currently selected, we draw its bounding-box
+    // HIERARCHY_OBJECT excluded: a folder has no own geometry, and its BB
+    // is a RECURSIVE bound over the whole subtree — recomputed on every
+    // redraw pass while selected (~284ms for a 286-camera folder), which
+    // made folder selection in the DBTree visibly stutter.
     if (m_selected && draw3D && drawInThisContext &&
-        !MACRO_EntityPicking(context) && context.currentLODLevel == 0) {
+        !isA(CV_TYPES::HIERARCHY_OBJECT) && !MACRO_EntityPicking(context) &&
+        context.currentLODLevel == 0) {
         // Check if BoundingBox should be shown
         const ecvGui::ParamStruct& params = ecvGui::Parameters();
         bool shouldShowBB = params.showBBOnSelected;
@@ -2125,8 +2167,15 @@ void ccHObject::hideObject_recursive(bool recursive) {
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
             if (sensor) {
                 sensor->hideShowDrawings(context);
-                continue;
             }
+            // NO continue: fall through to the generic engine dispatch below.
+            // hideShowDrawings() only pushes to context.display, which comes
+            // from mergeDisplay(nullptr, <disabled node>) — NULL for pure
+            // container folders (they never get a display binding), so the
+            // push silently no-ops and camera frustums kept rendering after
+            // their folder was unchecked (point clouds hide, sensors don't:
+            // every other type reaches hideInAllViews' view-manager
+            // fallback). The extra dispatch is idempotent.
         } else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH) {
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim) {

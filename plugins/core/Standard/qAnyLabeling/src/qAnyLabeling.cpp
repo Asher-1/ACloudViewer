@@ -12,6 +12,7 @@
 #include <QSettings>
 
 #include "AnnotationWindow.h"
+#include "AnyLabelingBatchCommand.h"
 
 qAnyLabeling::qAnyLabeling(QObject* parent)
     : QObject(parent),
@@ -37,7 +38,13 @@ qAnyLabeling::qAnyLabeling(QObject* parent)
         if (!m_window) {
             m_window = new AnnotationWindow(m_app ? m_app->getMainWindow()
                                                   : nullptr);
+            // Source parity: the annotation workspace is a top-level OS
+            // window with its own title bar, never a child embedded inside
+            // the main-window client area.
+            m_window->setWindowFlag(Qt::Window, true);
             m_window->setAttribute(Qt::WA_DeleteOnClose);
+            connect(m_window, &QObject::destroyed, this,
+                    [this]() { m_window = nullptr; });
             m_window->setAppInterface(m_app);
         }
         m_window->show();
@@ -52,3 +59,11 @@ void qAnyLabeling::setMainAppInterface(ecvMainAppInterface* app) {
 }
 
 QList<QAction*> qAnyLabeling::getActions() { return {m_action}; }
+
+void qAnyLabeling::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandAnyLabelInfer));
+}

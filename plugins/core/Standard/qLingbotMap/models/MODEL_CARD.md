@@ -15,7 +15,7 @@
 
 | File | Size | Notes |
 |---|---|---|
-| `lingbot-map-f16.gguf` | 2.31 GiB | **recommended** (the upstream GUI default): full-alignment format — pose 1.72e-04 / depth 4.72e-04 vs the official fp32 checkpoint over the 286-frame courthouse stream, two orders of magnitude below the official bf16 deployment self-noise |
+| `lingbot-map-f16.gguf` | 2.31 GiB | **recommended accuracy**: full-alignment format — pose 1.72e-04 / depth 4.72e-04 vs the official fp32 checkpoint over the 286-frame courthouse stream, two orders of magnitude below the official bf16 deployment self-noise. Requires a ≥30-GiB card with the release profile (the upstream CLI default is q8) |
 | `lingbot-map-q8.gguf` | 1.21 GiB | memory-saving deployment: half the weight memory; carries the documented q8 quantization loss (pose 1.31e-03 / depth 3.16e-03 over 286 frames — one order of magnitude looser than f16) and is no faster per-frame |
 | `lingbot-map-f32.gguf` | 4.63 GiB | exact reference (deepest alignment, pose ~1.3e-04 / depth 1.35e-04); same per-frame speed as f16, 2× the weight memory |
 | `lingbot-map-q4.gguf` | 703 MiB | experimental (not upstream-validated — no accuracy data) |
@@ -88,6 +88,40 @@
   the q8 weight-noise band); Vulkan deltas match each engine's own
   Vulkan-vs-CPU spread (0.34–0.40 depth max, triangle closes). Streaming
   per-frame wall: CUDA 296 vs upstream 350 ms, Vulkan 315 vs 425 ms.
+- **2026-09-23 byte-parity audit (24-frame stream, q8, kv strict 8/64,
+  CPU + CUDA, stage-level LBF3 diffing)**: three engine-level divergences
+  found and fixed — (1) the lingbot_merged ggml patch had rewritten the
+  generic `ggml_conv_2d` im2col type selection upstream-wide (reverted;
+  the Vulkan SIGFPE fix itself stays in ggml-vulkan.cpp); (2) GCC FMA
+  contraction under the project-wide `-march=x86-64-v3` fused the DINO
+  positional-table interpolation and Pillow-resample arithmetic into
+  vfmadd, drifting 1 ULP before the first transformer block — the lingbot
+  TUs now compile with `-ffp-contract=off`, after which preprocessing and
+  all 24 DINO blocks are BIT-EXACT against `lingbot-map-cli` on CPU;
+  (3) `GGML_CUDA_FORCE_CUBLAS=ON` (the reference build-cuda setting) —
+  without it the hand-written CUDA GEMM diverged from cuBLAS's reduction
+  tree at the 1e-12 level inside the attention scores, which the camera
+  head's iterative AdaLN amplifies into visible depth/pose drift; after
+  the fix the CUDA LBF3 delta dropped ~16× (q8 depth mean 1.3e-03 →
+  7.9e-05 on frame 0). Remaining sub-ULP score deltas inside the global
+  attention F32 GEMM (CPU) are under audit; downstream pose agreement is
+  now ≤3e-04 (camera-center error ≈0.3 mm at the demo scene scale).
+- **2026-09-23 scope containment**: the FORCE_CUBLAS part of the audit was
+  global and therefore reverted — it would have routed every AICore task's
+  quantized matmuls off the MMQ int8 kernels. The reference cuBLAS behavior
+  is now reproduced by `lingbot_merged/0003-cuda-mmq-lingbot-route.patch`,
+  which skips the MMQ branch ONLY for nodes named `lingbot_scalar_*` (the
+  model builder names every lingbot matmul that way); F16 keeps the mmf
+  kernel, F32 with GGML_PREC_F32 already bypasses MMQ, MMVQ stays enabled,
+  and no other task's dispatch changes (same name-scoping pattern as
+  sam3d_merged/0003). The lingbot_merged/0001 im2col hunk was removed
+  (final state): the reference build compiles F32-weight convs through the
+  generic F16-im2col path, and keeping the hunk made the DPT segment (all
+  F32-weight convs) diverge at ~1e-02 — with the hunk removed, the DPT
+  reduction trees match the reference and the only remaining CPU deltas
+  are in the DPT segment's host-side arithmetic (open audit item); lingbot
+  backbone convs are F16-weight where both branches agree, so the hunk had
+  zero effect on them.
 - **Correction (2026-09-17 late, controlled re-measurement after clearing
   stale test processes)**: the previously reported "f32 Vulkan ~2.5x
   slower" was a measurement artifact with two root causes — (1) the

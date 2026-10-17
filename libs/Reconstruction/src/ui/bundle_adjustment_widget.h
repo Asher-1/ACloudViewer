@@ -23,6 +23,8 @@ class BundleAdjustmentWidget : public OptionsWidget {
 public:
     BundleAdjustmentWidget(MainWindow* main_window, OptionManager* options);
 
+    // Fork: ReconstructionManager owns reconstructions by unique_ptr; the
+    // caller guarantees the pointer outlives the dialog.
     void Show(Reconstruction* reconstruction);
 
 private:

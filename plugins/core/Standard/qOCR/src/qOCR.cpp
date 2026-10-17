@@ -14,7 +14,9 @@
 #include <QPainter>
 #include <QPolygonF>
 
+#include "OCRBatchCommand.h"
 #include "OCRWorker.h"
+#include "QtCompat.h"
 #include "ecvGenericGLDisplay.h"
 #include "ecvImage.h"
 #include "ecvMainAppInterface.h"
@@ -51,6 +53,14 @@ qOCR::qOCR(QObject* parent)
 
 QList<QAction*> qOCR::getActions() { return {m_workspaceAction}; }
 
+void qOCR::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandOcrRecognize));
+}
+
 void qOCR::setMainAppInterface(ecvMainAppInterface* app) {
     ccStdPluginInterface::setMainAppInterface(app);
 }
@@ -70,18 +80,21 @@ void qOCR::showDialog() {
 void qOCR::executeTask(const OCRRunSettings& settings) {
     if (m_worker && m_worker->isRunning()) return;
 
-    // A fresh worker per run (the shared AICore plugin lifecycle): the old
-    // worker's context is released on the main thread before replacement.
+    // A fresh worker per run. A finished worker has already released its
+    // contexts on its own inference thread.
     if (m_worker) {
         m_worker->disconnect(this);
         m_worker->disconnect(m_dialog);
-        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
 
     if (!QFileInfo::exists(settings.detPath) ||
-        !QFileInfo::exists(settings.recPath)) {
+        !QFileInfo::exists(settings.recPath) ||
+        (!settings.layoutPath.isEmpty() &&
+         !QFileInfo::exists(settings.layoutPath)) ||
+        (!settings.tablePath.isEmpty() &&
+         !QFileInfo::exists(settings.tablePath))) {
         m_dialog->appendLog(tr("[Error] OCR models missing on disk."));
         return;
     }
@@ -106,7 +119,8 @@ void qOCR::executeTask(const OCRRunSettings& settings) {
     ws.detPath = settings.detPath;
     ws.recPath = settings.recPath;
     ws.layoutPath = settings.layoutPath;
-    ws.imagePath = settings.imagePath;
+    ws.tablePath = settings.tablePath;
+    ws.imagePaths = settings.imagePaths;
     ws.device = workerDevice;
     ws.threads = settings.threads;
 
@@ -131,12 +145,12 @@ void qOCR::cancelTask() {
 
 void qOCR::onResultReady(const OCRRunResult& result) {
     m_dialog->showResult(result);
-    if (m_currentSettings.addToDb || m_currentSettings.showInWindow) {
+    if (m_currentSettings.addToDb) {
         addResultToDb(result, m_currentSettings);
     } else {
         m_dialog->appendLog(
-                tr("[qOCR] Result display only (DB export and "
-                   "render-window overlay are off)."));
+                tr("[qOCR] Result remains in the workspace table only; "
+                   "nothing was added to the DB."));
     }
 }
 
@@ -144,39 +158,7 @@ void qOCR::addResultToDb(const OCRRunResult& result,
                          const OCRRunSettings& settings) {
     if (!m_app || result.sourceImage.isNull()) return;
 
-    // Annotated visualization: boxes + transcriptions drawn over a copy of
-    // the source image (the source QImage travels with the result, so no
-    // file re-read on the GUI thread).
-    QImage annotated = result.sourceImage.convertToFormat(QImage::Format_RGB32);
-    QPainter painter(&annotated);
-    QFont font = painter.font();
-    font.setBold(true);
-    painter.setFont(font);
-    for (const OCRBoxResult& box : result.boxes) {
-        QPolygonF polygon;
-        for (int c = 0; c < 4; ++c) {
-            polygon << QPointF(box.quad[c][0], box.quad[c][1]);
-        }
-        painter.setPen(QPen(QColor(0, 200, 120), 2));
-        painter.setBrush(QColor(0, 200, 120, 36));
-        painter.drawPolygon(polygon);
-        if (box.text.isEmpty()) continue;
-        const QString label = QStringLiteral("%1 (%2)").arg(box.text).arg(
-                box.score, 0, 'f', 2);
-        const QRectF bounds = polygon.boundingRect();
-        const QPointF anchor(bounds.left(), qMax(bounds.top() - 4.0, 12.0));
-        // White transcription on a dark pill keeps both text colors readable
-        // on any background.
-        const QRectF textRect = painter.boundingRect(
-                QRectF(anchor.x(), anchor.y() - 18, bounds.width(), 22),
-                Qt::AlignLeft | Qt::AlignVCenter, label);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(0, 0, 0, 160));
-        painter.drawRoundedRect(textRect.adjusted(-4, -2, 4, 2), 3, 3);
-        painter.setPen(Qt::white);
-        painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, label);
-    }
-    painter.end();
+    const QImage annotated = OCRRender::overlayVisualization(result);
 
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
@@ -197,6 +179,21 @@ void qOCR::addResultToDb(const OCRRunResult& result,
     img->setMetaData(QStringLiteral("OCR/Texts"), texts.join('\n'));
     img->setMetaData(QStringLiteral("OCR/DetModel"), result.detModel);
     img->setMetaData(QStringLiteral("OCR/RecModel"), result.recModel);
+    if (!result.tableModel.isEmpty()) {
+        // Reconstructed tables travel with the overlay: the structured HTML
+        // (cell spans) and the RFC 4180 CSV, one block per table.
+        QStringList html, csv;
+        for (const OCRTableResult& table : result.tables) {
+            html << table.html;
+            csv << QString::fromUtf8(table.csv);
+        }
+        img->setMetaData(QStringLiteral("OCR/TableModel"), result.tableModel);
+        img->setMetaData(QStringLiteral("OCR/TableCount"),
+                         result.tables.size());
+        img->setMetaData(QStringLiteral("OCR/TableHTML"), html.join('\n'));
+        img->setMetaData(QStringLiteral("OCR/TableCSV"), csv.join('\n'));
+        img->setMetaData(QStringLiteral("OCR/Table (ms)"), result.tableMs);
+    }
     img->setMetaData(QStringLiteral("Runtime (ms)"),
                      static_cast<double>(result.e2eMs));
     img->setMetaData(QStringLiteral("OCR/Preprocess (ms)"),
@@ -212,40 +209,28 @@ void qOCR::addResultToDb(const OCRRunResult& result,
     img->setMetaData(QStringLiteral("Model"),
                      QFileInfo(settings.recPath).fileName());
 
-    // Render-window overlay: a visible ccImage draws as a pixel-space
-    // foreground slice in its attached display. Attach to the currently
-    // active 3D view so the user sees the end-to-end annotated result
-    // without digging through the DB tree.
-    if (settings.showInWindow) {
-        if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
-            img->setDisplay(display);
-            img->setVisible(true);
-            img->setEnabled(true);
-        } else {
-            m_dialog->appendLog(
-                    tr("[qOCR] No active render window — the "
-                       "result stays in the DB tree only."));
-        }
+    // DB materialization always attempts to attach the visible overlay to the
+    // active render view. The single Add result to DB choice owns both actions.
+    if (ecvGenericGLDisplay* display = m_app->getActiveGLDisplay()) {
+        img->setDisplay(display);
+        img->setVisible(true);
+        img->setEnabled(true);
+    } else {
+        m_dialog->appendLog(
+                tr("[qOCR] No active render window — result added to the DB "
+                   "tree without an immediate overlay."));
     }
 
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
-    if (settings.addToDb) {
-        m_dialog->appendLog(tr("[qOCR] Added annotated result '%1' to the DB "
-                               "tree.")
-                                    .arg(name));
-    } else {
-        m_dialog->appendLog(tr("[qOCR] Annotated result '%1' kept out of the "
-                               "DB tree (overlay only).")
-                                    .arg(name));
-    }
+    m_dialog->appendLog(
+            tr("[qOCR] Added numbered result '%1' to the DB tree.").arg(name));
 }
 
 void qOCR::onTaskFinished(bool success) {
     m_inferenceHeartbeat->stop();
     m_dialog->setRunning(false);
     if (m_worker) {
-        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }

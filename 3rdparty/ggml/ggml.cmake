@@ -107,16 +107,28 @@ if(GGML_USE_CUDA)
     # DT_NEEDED for driver-only deployments). The companion patch in
     # 3rdparty/ggml/patches/cuda_mmq/ is inert when GGML_CUDA_FORCE_MMQ=OFF.
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=${GGML_CUDA_FORCE_MMQ})
+    # FAST_MATH is synced from AICore_CUDA_FAST_MATH (default ON = pristine
+    # ggml `-use_fast_math`, the numerics every external cpp_ggml reference
+    # except sam-3d-objects-ggml is built with; MapAnything CUDA bit-parity
+    # with map-anything-ggml requires it). OFF mirrors the sam3d upstream
+    # production build (see patches/sam3d_merged/0002 for the SiLU half of
+    # that contract, which stays precise regardless of this flag). In the ON
+    # build the sam3d_* nodes still get the OFF numerics through the
+    # per-TU twins of patches/sam3d_merged/0005 (GGML_SAM3D_OPS=ON only).
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FAST_MATH=${GGML_CUDA_FAST_MATH})
     # NOTE: the upstream sam-3d-objects-ggml production build replays CUDA
     # graphs (run_ggml.sh: GGML_CUDA_GRAPHS ON FORCE), but replay bypasses the
     # per-call host-side logic of our ported sam3d custom ops (spconv plan
     # selection and the masked-attention workspaces); the ss flow occupancy
     # collapses (58182 -> 4992 coords on the kidsroom fixture) because the
     # capture bakes the first call's internal scratch pointers into the
-    # replay. Keep graphs OFF until those ops route their scratch through the
-    # ggml allocator like upstream's do.
+    # replay. patches/cuda_graphs/0001 now excludes graphs containing those
+    # host-orchestrated custom ops from capture instead of disabling graphs
+    # globally, so standard-op graphs (OCR det/rec, layout, facedetect, ...)
+    # get capture/replay while sam3d keeps its per-call host logic.
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_GRAPHS=ON)
     set(_GGML_CUDA_ENABLED ON)
-    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ=${GGML_CUDA_FORCE_MMQ}, static cudart)")
+    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ=${GGML_CUDA_FORCE_MMQ}, FAST_MATH=${GGML_CUDA_FAST_MATH}, static cudart)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=OFF)
 endif()
@@ -206,13 +218,13 @@ if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
         -DGGML_SAM3D_MEMEFF_COMPAT_DIR=${CMAKE_CURRENT_LIST_DIR}/sam3d/pytorch-mem-eff-attention-compat
         -DGGML_SAM3D_CUTLASS_DIR=${_sam3d_cutlass_dir}
         -DGGML_SAM3D_SPCONV_DIR=${CMAKE_CURRENT_LIST_DIR}/sam3d/spconv)
-    # Mirror the upstream sam-3d-objects-ggml production build: its
-    # cpp_ggml/build-cuda CMakeCache resolves GGML_CUDA_FAST_MATH=OFF (the
-    # ggml default), and its unary.cuh additionally forces precise device
-    # math for SiLU (sam3d_merged/0002). Keeping fast math ON perturbs F16
-    # activation outputs by ULPs and the sam3d diffusion samplers amplify
-    # that into a real occupancy/parity gap vs the upstream reference.
-    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FAST_MATH=OFF)
+    # GGML_CUDA_FAST_MATH is no longer forced OFF here: the sam3d upstream
+    # production build resolves it OFF, but map-anything-ggml (pristine ggml)
+    # resolves it ON. -use_fast_math is a per-translation-unit nvcc switch, so
+    # patches/sam3d_merged/0005 compiles the kernels sam3d reaches a second
+    # time without it (namespace ggml_cuda_precise) and routes sam3d_* nodes
+    # there; both contracts hold in one libggml-cuda.so and sam3d bit-parity
+    # evidence is valid in the default AICore_CUDA_FAST_MATH=ON build.
     message(STATUS "ggml: SAM3D operator set enabled (mem-eff + CUTLASS + spconv)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_SAM3D_OPS=${GGML_USE_SAM3D_OPS})

@@ -333,6 +333,38 @@ EXPECT_EQ(orig.Frames(), test.Frames());
   EXPECT_EQ(orig.Points3D(), test.Points3D());
 }
 
+TEST(ReconstructionIO, SkewedPinholeCameraTextAndBinaryRoundTrip) {
+  Camera camera = Camera::CreateFromModelName(
+      42, "SKEWED_PINHOLE", 600.0, 1280, 960);
+  camera.Params()[1] = 500.0;
+  camera.Params()[4] = 50.0;
+
+  Reconstruction source;
+  source.AddCamera(camera);
+  const auto assert_round_trip = [&camera](const Reconstruction& restored) {
+    ASSERT_EQ(restored.NumCameras(), 1);
+    const Camera& result = restored.Camera(camera.CameraId());
+    EXPECT_EQ(result, camera);
+    EXPECT_EQ(result.ModelName(), "SKEWED_PINHOLE");
+    const Eigen::Vector2d image_point(1020.0, 1240.0);
+    ASSERT_TRUE(result.CamFromImg(image_point).has_value());
+    EXPECT_EQ(*result.CamFromImg(image_point),
+              *camera.CamFromImg(image_point));
+  };
+
+  std::stringstream text_stream;
+  WriteCamerasText(source, text_stream);
+  Reconstruction text_result;
+  ReadCamerasText(text_result, text_stream);
+  assert_round_trip(text_result);
+
+  std::stringstream binary_stream;
+  WriteCamerasBinary(source, binary_stream);
+  Reconstruction binary_result;
+  ReadCamerasBinary(binary_result, binary_stream);
+  assert_round_trip(binary_result);
+}
+
 TEST_P(ParameterizedReaderWriterTests, LegacyWithoutRigsAndFrames) {
   std::unique_ptr<ReaderWriter> reader_writer = GetParam()();
 
@@ -362,6 +394,40 @@ TEST_P(ParameterizedReaderWriterTests, LegacyWithoutRigsAndFrames) {
   EXPECT_EQ(orig.Images(), test.Images());
   reader_writer->ReadPoints3D(test);
   EXPECT_EQ(orig.Points3D(), test.Points3D());
+}
+
+TEST_P(ParameterizedReaderWriterTests, RoundtripImageNamesWithWhitespace) {
+  // Upstream parity (133bf3c4 scene/reconstruction_io_test.cc): the text
+  // reader takes the remainder of the line as the image name.
+  std::unique_ptr<ReaderWriter> reader_writer = GetParam()();
+
+  Reconstruction orig;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 3;
+  synthetic_dataset_options.num_points3D = 10;
+  SynthesizeDataset(synthetic_dataset_options, &orig);
+
+  const std::vector<std::string> names = {
+      "image (1).jpg", "sub dir/image  2.jpg", "image3.jpg"};
+  const std::vector<image_t> image_ids = orig.RegImageIds();
+  ASSERT_EQ(image_ids.size(), names.size());
+  for (size_t i = 0; i < names.size(); ++i) {
+    orig.Image(image_ids[i]).SetName(names[i]);
+  }
+
+  reader_writer->WriteRigs(orig);
+  reader_writer->WriteCameras(orig);
+  reader_writer->WriteFrames(orig);
+  reader_writer->WriteImages(orig);
+
+  Reconstruction test;
+  reader_writer->ReadCameras(test);
+  reader_writer->ReadRigs(test);
+  reader_writer->ReadFrames(test);
+  reader_writer->ReadImages(test);
+  EXPECT_EQ(orig.Images(), test.Images());
 }
 
 INSTANTIATE_TEST_SUITE_P(

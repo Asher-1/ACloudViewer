@@ -329,7 +329,11 @@ bool isOpacityRenderable(const ccHObject* obj) {
            (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
             obj->isKindOf(CV_TYPES::MESH) ||
             obj->isKindOf(CV_TYPES::PRIMITIVE) || isLineEntity(obj) ||
-            obj->isKindOf(CV_TYPES::FACET));
+            obj->isKindOf(CV_TYPES::FACET) ||
+            // Camera frustum lines: opacity applies to the line blocks /
+            // dedicated line actor (NOT to the 0.2-alpha frustum side
+            // planes, which keep their own fixed translucency).
+            obj->isKindOf(CV_TYPES::SENSOR));
 }
 
 ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
@@ -338,6 +342,12 @@ ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
     }
     if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
         return ENTITY_TYPE::ECV_POINT_CLOUD;
+    }
+    if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR)) {
+        // Route through setMeshOpacity: it carries the composite branch
+        // (per-BLOCK opacity for aggregated frustum leaves, no sibling
+        // pollution) and resolves the dedicated line actor otherwise.
+        return ENTITY_TYPE::ECV_MESH;
     }
     if (obj->isKindOf(CV_TYPES::MESH) || obj->isKindOf(CV_TYPES::PRIMITIVE) ||
         obj->isKindOf(CV_TYPES::FACET)) {

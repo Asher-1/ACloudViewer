@@ -13,6 +13,7 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
+#include <algorithm>
 
 #ifdef AICore_ENABLED
 #include "aicore/rfdetr_capi.h"
@@ -63,6 +64,13 @@ RFDetrWorker::RFDetrWorker(const Settings& settings, QObject* parent)
 }
 
 RFDetrWorker::~RFDetrWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
     releaseContextOnMainThread();
 #ifdef AICore_ENABLED
     if (m_cancelToken) {
@@ -158,111 +166,117 @@ bool RFDetrWorker::runInference() {
         return false;
     }
 
-    // Single-image inference.
-    {
-        const QImage input(m_settings.inputPath);
-        if (input.isNull()) {
-            emit logMessage(tr("[RF-DETR] Failed to load image: %1")
-                                    .arg(m_settings.inputPath));
-            return false;
-        }
-        const QImage rgb = inferenceImage(input);
-        emit progressUpdate(0, 1);
+    RFDetrRunResult result;
+    QString error;
+    if (!detectImage(m_pendingCtx, m_settings, m_cancelToken, &result,
+                     &error)) {
+        emit logMessage(tr("[RF-DETR] %1").arg(error));
+        return false;
+    }
+    emit logMessage(
+            tr("[RF-DETR] %1 object(s) in %2 ms (model=%3, threshold=%4)")
+                    .arg(result.detections.size())
+                    .arg(result.runtimeMs, 0, 'f', 1)
+                    .arg(result.modelVariant)
+                    .arg(m_settings.threshold, 0, 'f', 2));
+    emit progressUpdate(1, 1);
+    emit resultReady(result);
+    return true;
+}
 
-        QElapsedTimer timer;
-        timer.start();
-        const aicore_image_view image{
-                reinterpret_cast<const uint8_t*>(rgb.constBits()), rgb.width(),
-                rgb.height(), static_cast<size_t>(rgb.bytesPerLine()),
-                imageFormat(rgb)};
-        aicore_cancel_scope_begin(m_cancelToken);
-        const int detectRc = aicore_rfdetr_detect_image(
-                m_pendingCtx, &image, m_settings.threshold, m_settings.topK);
-        aicore_cancel_scope_end(m_cancelToken);
-        const double ms = static_cast<double>(timer.elapsed());
+bool RFDetrWorker::detectImage(aicore_rfdetr_ctx* ctx,
+                               const Settings& settings,
+                               aicore_cancel_token* cancel,
+                               RFDetrRunResult* resultOut,
+                               QString* error) {
+    const QImage input(settings.inputPath);
+    if (input.isNull()) {
+        *error = tr("Failed to load image: %1").arg(settings.inputPath);
+        return false;
+    }
+    const QImage rgb = inferenceImage(input);
 
-        if (detectRc != 0) {
-            const char* err = aicore_rfdetr_last_error(m_pendingCtx);
-            emit logMessage(tr("[RF-DETR] Inference failed: %1")
-                                    .arg(err ? QString::fromUtf8(err)
-                                             : tr("unknown error")));
-            return false;
-        }
+    QElapsedTimer timer;
+    timer.start();
+    const aicore_image_view image{
+            reinterpret_cast<const uint8_t*>(rgb.constBits()), rgb.width(),
+            rgb.height(), static_cast<size_t>(rgb.bytesPerLine()),
+            imageFormat(rgb)};
+    if (cancel) aicore_cancel_scope_begin(cancel);
+    const int detectRc = aicore_rfdetr_detect_image(
+            ctx, &image, settings.threshold, settings.topK);
+    if (cancel) aicore_cancel_scope_end(cancel);
+    const double ms = static_cast<double>(timer.elapsed());
 
-        RFDetrRunResult result;
-        result.imagePath = m_settings.inputPath;
-        result.imageName = QFileInfo(m_settings.inputPath).fileName();
-        result.modelPath = m_settings.modelPath;
-        result.runtimeMs = ms;
-        // Backend-resolved device (may differ from the request when the GPU
-        // lease failed and rfdetr fell back to CPU).
-        const char* resolvedDevice = aicore_rfdetr_context_device(m_pendingCtx);
-        result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
-                                        ? QString::fromUtf8(resolvedDevice)
-                                        : m_settings.device;
-        result.modelVariant =
-                QString::fromUtf8(aicore_rfdetr_context_variant(m_pendingCtx));
-        result.segmentation =
-                aicore_rfdetr_context_has_segmentation(m_pendingCtx) != 0;
-        result.imageSize = static_cast<int>(
-                aicore_rfdetr_context_image_size(m_pendingCtx));
-        result.numClasses = static_cast<int>(
-                aicore_rfdetr_context_num_classes(m_pendingCtx));
-        const int detectionCount = aicore_rfdetr_detection_count(m_pendingCtx);
-        result.detections.reserve(detectionCount);
-        for (int i = 0; i < detectionCount; ++i) {
-            aicore_rfdetr_detection d{};
-            if (aicore_rfdetr_detection_at(m_pendingCtx, i, &d) != 0) continue;
-            RFDetrDetection out;
-            out.classId = d.class_id;
-            out.className =
-                    d.class_name ? QString::fromUtf8(d.class_name) : QString();
-            out.score = d.score;
-            out.x1 = d.x1;
-            out.y1 = d.y1;
-            out.x2 = d.x2;
-            out.y2 = d.y2;
-            result.detections.append(out);
-        }
-        result.totalDetected = result.detections.size();
-        result.resultJson.clear();
+    if (detectRc != 0) {
+        const char* err = aicore_rfdetr_last_error(ctx);
+        *error = tr("Inference failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : tr("unknown error"));
+        return false;
+    }
 
-        // Fetch per-detection masks for segmentation models (raw bytes — no
-        // PNG encode/decode round-trip; sizing also returns the dimensions).
-        if (aicore_rfdetr_context_has_segmentation(m_pendingCtx)) {
-            const int n = aicore_rfdetr_detection_count(m_pendingCtx);
-            for (int i = 0; i < n; ++i) {
-                int32_t mw = 0, mh = 0;
-                const int len = aicore_rfdetr_detection_mask(
-                        m_pendingCtx, i, nullptr, 0, &mw, &mh);
-                if (len <= 0) continue;
-                QByteArray raw;
-                raw.resize(len);
-                if (aicore_rfdetr_detection_mask(
-                            m_pendingCtx, i,
-                            reinterpret_cast<unsigned char*>(raw.data()), len,
-                            &mw, &mh) == len) {
-                    result.detections[i].maskRaw = raw;
-                    result.detections[i].maskWidth = mw;
-                    result.detections[i].maskHeight = mh;
-                }
+    RFDetrRunResult& result = *resultOut;
+    result.imagePath = settings.inputPath;
+    result.imageName = QFileInfo(settings.inputPath).fileName();
+    result.modelPath = settings.modelPath;
+    result.runtimeMs = ms;
+    // Backend-resolved device (may differ from the request when the GPU
+    // lease failed and rfdetr fell back to CPU).
+    const char* resolvedDevice = aicore_rfdetr_context_device(ctx);
+    result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
+                                    ? QString::fromUtf8(resolvedDevice)
+                                    : settings.device;
+    result.modelVariant = QString::fromUtf8(aicore_rfdetr_context_variant(ctx));
+    result.segmentation = aicore_rfdetr_context_has_segmentation(ctx) != 0;
+    result.imageSize = static_cast<int>(aicore_rfdetr_context_image_size(ctx));
+    result.numClasses =
+            static_cast<int>(aicore_rfdetr_context_num_classes(ctx));
+    const int detectionCount = aicore_rfdetr_detection_count(ctx);
+    result.detections.reserve(detectionCount);
+    for (int i = 0; i < detectionCount; ++i) {
+        aicore_rfdetr_detection d{};
+        if (aicore_rfdetr_detection_at(ctx, i, &d) != 0) continue;
+        RFDetrDetection out;
+        out.classId = d.class_id;
+        out.className =
+                d.class_name ? QString::fromUtf8(d.class_name) : QString();
+        out.score = d.score;
+        out.x1 = d.x1;
+        out.y1 = d.y1;
+        out.x2 = d.x2;
+        out.y2 = d.y2;
+        result.detections.append(out);
+    }
+    result.totalDetected = result.detections.size();
+    result.resultJson.clear();
+
+    // Fetch per-detection masks for segmentation models (raw bytes — no
+    // PNG encode/decode round-trip; sizing also returns the dimensions).
+    if (result.segmentation) {
+        const int n = std::min(aicore_rfdetr_detection_count(ctx),
+                               static_cast<int>(result.detections.size()));
+        for (int i = 0; i < n; ++i) {
+            int32_t mw = 0, mh = 0;
+            const int len =
+                    aicore_rfdetr_detection_mask(ctx, i, nullptr, 0, &mw, &mh);
+            if (len <= 0) continue;
+            QByteArray raw;
+            raw.resize(len);
+            if (aicore_rfdetr_detection_mask(
+                        ctx, i, reinterpret_cast<unsigned char*>(raw.data()),
+                        len, &mw, &mh) == len) {
+                result.detections[i].maskRaw = raw;
+                result.detections[i].maskWidth = mw;
+                result.detections[i].maskHeight = mh;
             }
         }
-
-        // Annotated image (boxes + optional mask tint) for DB export.
-        QImage annotated = rgb;
-        RFDetrHelpers::drawDetections(&annotated, result.detections);
-        result.annotatedImage = annotated;
-
-        emit logMessage(
-                tr("[RF-DETR] %1 object(s) in %2 ms (model=%3, threshold=%4)")
-                        .arg(result.detections.size())
-                        .arg(ms, 0, 'f', 1)
-                        .arg(result.modelVariant)
-                        .arg(m_settings.threshold, 0, 'f', 2));
-        emit progressUpdate(1, 1);
-        emit resultReady(result);
     }
+
+    // Annotated image (boxes + optional mask tint) for DB export.
+    QImage annotated = rgb;
+    RFDetrHelpers::drawDetections(&annotated, result.detections);
+    result.annotatedImage = annotated;
     return true;
 }
 #endif

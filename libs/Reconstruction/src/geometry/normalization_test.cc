@@ -107,5 +107,37 @@ TEST(CenterAndNormalizeImagePoints, Nominal) {
   EXPECT_LT(std::abs(mean_point[1]), 1e-6);
 }
 
+
+// Upstream parity (9b8efa9a #4841).
+TEST(ComputeBoundingBoxAndCentroid, EqualPercentiles) {
+  for (const double percentile : {0.0, 0.5, 1.0}) {
+    const auto [bbox, centroid] = ComputeBoundingBoxAndCentroid(
+        percentile, percentile, {5, 1, 3}, {2, 6, 4}, {7, 9, 5});
+    const Eigen::Vector3d expected(
+        1 + 4 * percentile, 2 + 4 * percentile, 5 + 4 * percentile);
+    EXPECT_EQ(bbox.min(), expected);
+    EXPECT_EQ(bbox.max(), expected);
+    EXPECT_EQ(centroid, expected);
+  }
+}
+
+TEST(ComputeBoundingBoxAndCentroid, EqualPercentilesBetweenRanks) {
+  const auto [bbox, centroid] = ComputeBoundingBoxAndCentroid(
+      0.25, 0.25, {5, 1, 3}, {2, 6, 4}, {7, 9, 5});
+  EXPECT_EQ(bbox.min(), Eigen::Vector3d(1, 2, 5));
+  EXPECT_EQ(bbox.max(), Eigen::Vector3d(3, 4, 7));
+  EXPECT_EQ(centroid, Eigen::Vector3d(2, 3, 6));
+}
+
+TEST(ComputeBoundingBoxAndCentroid, RepeatedCoords) {
+  for (const double percentile : {0.0, 0.5, 1.0}) {
+    const auto [bbox, centroid] = ComputeBoundingBoxAndCentroid(
+        percentile, percentile, {1, 1, 1}, {2, 2, 2}, {3, 3, 3});
+    EXPECT_EQ(bbox.min(), Eigen::Vector3d(1, 2, 3));
+    EXPECT_EQ(bbox.max(), Eigen::Vector3d(1, 2, 3));
+    EXPECT_EQ(centroid, Eigen::Vector3d(1, 2, 3));
+  }
+}
+
 }  // namespace
 }  // namespace colmap

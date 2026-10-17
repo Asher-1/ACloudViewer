@@ -40,6 +40,9 @@ struct Options {
     int kv_window = 64;
     int stream_capacity = 0;
     int keyframe_interval = 1;
+    std::string dump_stages_dir;
+    bool dump_internal = false;
+    std::string dump_block;
 };
 
 struct Ctx {
@@ -128,6 +131,19 @@ AICORE_CAPI void aicore_lingbot_options_set_stream_capacity(
     if (Options* o = as_opts(opts)) o->stream_capacity = total_frames;
 }
 
+AICORE_CAPI void aicore_lingbot_options_set_dump_stages_dir(
+        aicore_lingbot_options* opts, const char* dir) {
+    if (Options* o = as_opts(opts)) o->dump_stages_dir = dir ? dir : "";
+}
+
+AICORE_CAPI void aicore_lingbot_options_set_dump_internal(
+        aicore_lingbot_options* opts, int enable, const char* block) {
+    if (Options* o = as_opts(opts)) {
+        o->dump_internal = enable != 0;
+        o->dump_block = block ? block : "";
+    }
+}
+
 AICORE_CAPI void aicore_lingbot_options_set_keyframe_interval(
         aicore_lingbot_options* opts, int interval) {
     if (Options* o = as_opts(opts)) o->keyframe_interval = interval;
@@ -153,6 +169,21 @@ AICORE_CAPI aicore_lingbot_ctx* aicore_lingbot_load_opts(
     mo.keyframe_interval = std::max(1, ctx->opt.keyframe_interval);
     if (ctx->opt.stream_capacity > 0)
         mo.kv_total_frames = ctx->opt.stream_capacity;
+    // Stage-dump channel (parity tooling): mirrors the upstream CLI
+    // --dump-stages so test probes can diff per-stage tensors against the
+    // reference implementation.
+    if (ctx->opt.dump_internal) {
+        // Internal dump implies the stage-dump sink (the tool passes the
+        // same prefix); dump_block restricts the tensor set like the
+        // upstream --dump-block.
+        mo.dump_internal = true;
+        mo.dump_block = ctx->opt.dump_block;
+        mo.dump_stages = true;
+        mo.dump_stages_dir = ctx->opt.dump_stages_dir;
+    } else if (!ctx->opt.dump_stages_dir.empty()) {
+        mo.dump_stages = true;
+        mo.dump_stages_dir = ctx->opt.dump_stages_dir;
+    }
 
     if (!ctx->model.load(gguf_path,
                          ctx->opt.device.empty() ? "auto" : ctx->opt.device,
@@ -214,6 +245,11 @@ AICORE_CAPI int aicore_lingbot_preprocess_image(const aicore_image_view* image,
     // data call must agree on the same NCHW element count.
     const int out_h_final = snapped_h > image_size ? image_size : snapped_h;
     const size_t needed = static_cast<size_t>(new_w) * out_h_final * 3;
+    // The sizing call reports the SAME processed dimensions as the data
+    // call (same expressions as the tail below): callers resolve the
+    // stream geometry from it before any float buffer exists.
+    if (out_width) *out_width = new_w;
+    if (out_height) *out_height = out_h_final;
     if (!out_nchw) return static_cast<int>(needed);
     if (out_size < static_cast<int>(needed)) return -1;
 

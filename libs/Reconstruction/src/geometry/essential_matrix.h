@@ -117,29 +117,20 @@ Eigen::Vector3d EpipoleFromEssentialMatrix(const Eigen::Matrix3d& E,
 // @return       Inverted essential matrix.
 Eigen::Matrix3d InvertEssentialMatrix(const Eigen::Matrix3d& matrix);
 
-// Refine essential matrix.
-//
-// Decomposes the essential matrix into rotation and translation components
-// and refines the relative pose using the function `RefineRelativePose`.
-//
-// @param E                3x3 essential matrix.
-// @param points1          First set of corresponding points.
-// @param points2          Second set of corresponding points.
-// @param inlier_mask      Inlier mask for corresponding points.
-// @param options          Solver options.
-//
-// @return                 Flag indicating if solution is usable.
-bool RefineEssentialMatrix(const ceres::Solver::Options& options,
-                           const std::vector<Eigen::Vector2d>& points1,
-                           const std::vector<Eigen::Vector2d>& points2,
-                           const std::vector<char>& inlier_mask,
-                           Eigen::Matrix3d* E);
-
 // Squared Sampson error in pixel coordinates for arbitrary central cameras.
 // The input rays carry d(ray)/d(pixel), so the denominator is the tangent
 // gradient pulled back into the image plane rather than a focal-length proxy.
 double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
                                          const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E);
+
+// Overload reading the ray and Jacobian in place, so hot loops (e.g. the CPU
+// guided-matching filter, called O(N1*N2) times) avoid materializing a
+// CamRayWithJac per correspondence.
+double ComputeSquaredTangentSampsonError(const Eigen::Vector3d& cam_ray1,
+                                         const Eigen::Matrix3x2d& J1,
+                                         const Eigen::Vector3d& cam_ray2,
+                                         const Eigen::Matrix3x2d& J2,
                                          const Eigen::Matrix3d& E);
 
 void ComputeSquaredTangentSampsonError(

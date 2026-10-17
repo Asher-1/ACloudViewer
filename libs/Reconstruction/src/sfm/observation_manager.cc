@@ -14,6 +14,7 @@
 // std::unordered_set, and frame registration going through the fork's
 // image-level RegisterImage.
 
+#include "util/hash_containers.h"
 #include "sfm/observation_manager.h"
 
 #include "scene/camera.h"
@@ -373,7 +374,7 @@ size_t ObservationManager::FilterAllPoints3D(const double max_reproj_error,
   // Important: First filter observations and points with large reprojection
   // error, so that observations with large reprojection error do not make
   // a point stable through a large triangulation angle.
-  const std::unordered_set<point3D_t> all_point3D_ids =
+  const NodeHashSet<point3D_t> all_point3D_ids =
       reconstruction_.Point3DIds();
   const FlatHashSet<point3D_t> point3D_ids(all_point3D_ids.begin(),
                                            all_point3D_ids.end());
@@ -388,7 +389,7 @@ size_t ObservationManager::FilterAllPoints3D(const double max_reproj_error,
 size_t ObservationManager::FilterPoints3DWithShortTracks(
     const size_t min_track_length) {
   size_t num_filtered_observations = 0;
-  const std::unordered_set<point3D_t> all_point3D_ids =
+  const NodeHashSet<point3D_t> all_point3D_ids =
       reconstruction_.Point3DIds();
   for (const point3D_t point3D_id : all_point3D_ids) {
     const class Point3D& point3D = reconstruction_.Point3D(point3D_id);
@@ -603,11 +604,10 @@ void ObservationManager::RegisterFrame(const frame_t frame_id) {
       }
     }
   }
-  // Fork note: the fork registers images (legacy model); register every
-  // image of the frame.
-  for (const image_t image_id : frame.ImageIds()) {
-    reconstruction_.RegisterImage(image_id);
-  }
+  // Upstream parity (d3ccaf35 sfm/observation_manager.cc): the frame-level
+  // registration fact (and the registered-image counter) is forwarded to
+  // the reconstruction once, for the whole frame.
+  reconstruction_.RegisterFrame(frame_id);
 }
 
 void ObservationManager::DeRegisterFrame(const frame_t frame_id) {
