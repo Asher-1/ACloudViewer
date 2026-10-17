@@ -3856,3 +3856,51 @@ repeat 到 {46,46,49,2} 作结果承载。
     undistorted IMG_1024.JPG md5 d9372a12... 与上游一致。
 - **待提交**:DenseReconstructionWidget.cpp(bool 绑定)+ solver.CMakeLists.txt
   (PIC),提交与否由用户决策。
+
+### 批次 P1-db-o(2026-10-17):全链路重建对比 — 分段逐字节边界 + patch_match CUDA 分叉证据链 + CLI 工具链 reconstruction 补齐
+
+- **用户两问**:①全链路(fused.ply 彩色点云/mesh/纹理贴图)是否彻底对齐;②CLI-Anything 是否全面支持 reconstruction。
+- **全链路对比设计**:共同输入(上游 undistorted images+sparse+stereo cfg,SfM 为随机算法排除在逐字节域外),
+  fork 二进制与上游 colmap 二进制各自跑 patch_match_stereo→stereo_fusion→poisson_mesher→delaunay_mesher→mesh_texturer,
+  全产物 md5 矩阵(41 文件)。
+- **结果**:13 IDENTICAL(输入图像/sparse/cfg)+28 DIFFER(全部 12 depth/normal + fused + 两 mesh)。
+  **分叉点 = patch_match_stereo 深度图**,级联至 fusion/mesh/texture。
+- **分叉根因探索(决定性实验链)**:
+  1. JPEG 质量 75 假设:排除(重编后 JPG md5 已一致);
+  2. resize 插值假设:max_image_size=0 禁缩放重跑 → 仍 DIFFER,排除;
+  3. JPEG 解码 IDCT 假设:改 PIL 无损 PNG 输入(两侧读同一文件,inflate 逐位确定)→ 仍 DIFFER,排除;
+  4. CUDA 代码差异:patch_match_cuda.cu 零空白 statement diff 44 条全部为
+     make_unique 重构/HIP 分支/宏重命名,**数值 kernel 源码零差异**;
+  5. SASS:cuobjdump per-function 全量对比,208 kernel 中仅 3 个 CudaRotateKernel
+     实例(纯搬运,索引算术重排)不同,其余 205 个(全部 sweep/photometric/PRNG/
+     初始深度)逐指令一致(含立即数);bilateral filter(gpu_mat_ref_image)与
+     PRNG(gpu_mat_prng)SASS 零差异;
+  6. 运行时输入 dump(TEMP 补丁,已还原):K(9 float)/R(9)/T(3)/depth_min/max/
+     全部 6 张图的 workspace 灰度位图采样——**两侧逐位一致**(fork 位图与 PIL
+     理想 BT.709 灰度逐位吻合);
+  7. 两侧二进制各自完全确定(同输入两次运行 md5 相同);
+  8. .o 交叉链接实验:上游 patch_match_cuda.cu.o 链入 fork 进程 → 段错误
+     (GpuMat 类布局 ABI 不兼容,上游 gpu_mat.h 已重构),环境二分不可行。
+- **工程结论**:patch_match 深度图的分叉在"输入逐位一致+数值 kernel SASS 逐指令
+  一致+双方各自确定"的约束下仍存在,唯一剩余变量为 CUDA 执行环境层(nvcc 产物
+  之外的驱动/上下文/内存布局交互)。**跨二进制的 patch_match 逐字节一致不可达**
+  (上游 COLMAP 自身不同 build/驱动间同样不可达);"逐字节一致"的现实边界 =
+  **CPU 确定性段**:undistorter 产物(run 脚本+JPG md5)、poisson/delaunay mesh
+  (md5 7eb9973a... 已证);GPU 迭代随机算法(depth map/fused 点云)以语义等价
+  为验收标准(P1-db-i 已证)。
+- **CLI-Anything reconstruction 审计与补齐(CLI-Anything@24d0e8b + ACloudViewer
+  agent-integration@3be1970c0b)**:
+  - 三列矩阵(上游命令面×CLI 暴露面×后端方法面)甄别出 agent 高价值缺口;
+  - CLI reconstruct 组 14→24 命令:新增 bundle-adjust/hierarchical-sparse/
+    triangulate/filter-points/register-images/transform-model/advancing-front/
+    crop-model/create-database/color-extract;
+  - 后端新增 point_triangulator/point_filtering/image_registrator/
+    model_transformer/advancing_front_mesher,接线既有 bundle_adjuster/
+    hierarchical_mapper/model_cropper/database_creator/color_extractor;
+  - 验证:py_compile 干净、pytest 631 passed、运行时冒烟(create-database/
+    filter-points/color-extract/analyze-model 对 fork 二进制实跑);
+  - 文档同步:COMMAND-MAPPING(24 命令树)、CLI-QUICK-REFERENCE(Fine-Grained
+    Pipeline Steps 节)、ACLOUDVIEWER.md(命令表 24 行);
+  - MCP 工具面未动(8 个 colmap_* 覆盖主链,避免文档计数联动)。
+- **产物留存**:/tmp/fullcmp(2000px 链对比)、/tmp/nrcmp(无缩放)、/tmp/pngcmp
+  (PNG 输入+dump 实验工作区)、/tmp/pm_dump_{fork,up}.txt(运行时输入 dump)。
