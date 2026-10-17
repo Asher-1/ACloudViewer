@@ -11,6 +11,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | General plugin structure and UI | `.agents/rules/acloudviewer-plugin-dev.mdc` |
 | ggml ExternalProject details | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
 | Agent/RPC/CLI integration | `.agents/rules/acloudviewer-agent-dev.mdc`, `agent-integration/README.md` |
+| GitHub Actions runner failures | `.agents/skills/github-ci-runner-debugging/SKILL.md`, `.agents/rules/acloudviewer-ci-debugging.mdc` |
 
 For AICore work, the skill is the engineering contract. Current public headers,
 CMake, `3rdparty/ggml/patches/manifest.yaml`, and current test output override
