@@ -1,31 +1,32 @@
 diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index f1a1b5b..8cf7283 100644
 --- a/src/ggml-cuda/ggml-cuda.cu
 +++ b/src/ggml-cuda/ggml-cuda.cu
-@@ -1550,7 +1550,8 @@
-         // F16-output path on Ampere, and its SS occupancy decoder flips 2 voxels
-         // on the F32-direct output (+32 gaussians). Nodes named sam3d_* keep
+@@ -1567,7 +1567,8 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
          // the upstream numerics; every other task keeps the RMBG optimization.
+         // mapany_* nodes likewise keep the pristine F16-output path (see
+         // ggml_cuda_mapany_pristine_node in common.cuh).
 -        prefer_f32_output = cc == GGML_CUDA_CC_VOLTA ||
 +        prefer_f32_output = (strncmp(dst->name, "ram_tags_", 9) == 0 && dst->op_params[0] == GGML_PREC_F32) ||
 +                            cc == GGML_CUDA_CC_VOLTA ||
                              (cc >= GGML_CUDA_CC_AMPERE &&
-                              !(dst->name && strncmp(dst->name, "sam3d_", 6) == 0)) ||
-                             GGML_CUDA_CC_IS_RDNA4(cc) || GGML_CUDA_CC_IS_CDNA(cc);
-@@ -1704,6 +1705,13 @@
-             GGML_LOG_WARN("%s: unknown value for GGML_CUDA_CUBLAS_COMPUTE_TYPE: %s", __func__, env_cpp.c_str());
+                              !(dst->name && strncmp(dst->name, "sam3d_", 6) == 0) &&
+                              !ggml_cuda_mapany_pristine_node(dst->name)) ||
+@@ -1723,6 +1724,13 @@ static void ggml_cuda_mul_mat_cublas(ggml_backend_cuda_context & ctx, const ggml
          }
      }
-+
+ 
 +    // Match the upstream arithmetic only for this graph owner. Explicit
 +    // graph-level F32 precision remains authoritative for sensitive nodes.
 +    if (strncmp(dst->name, "ram_tags_", 9) == 0 && dst->op_params[0] != GGML_PREC_F32) {
 +        compute_type = GGML_TYPE_F16;
 +    }
 +    if (strncmp(dst->name, "ram_caption_", 12) == 0) compute_type = GGML_TYPE_F32;
-
++
      switch (compute_type) {
          case GGML_TYPE_F32:
-@@ -5395,7 +5403,8 @@
+             ggml_cuda_mul_mat_cublas_impl<GGML_TYPE_F32>(ctx, src0, src1, dst);
+@@ -5447,7 +5455,8 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
                      return false; // TODO this could in principle be implemented though currently there is no use case.
                  }
                  if (b->type == GGML_TYPE_F16 && a->type != GGML_TYPE_F16) {

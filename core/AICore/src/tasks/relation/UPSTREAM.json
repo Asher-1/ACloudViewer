@@ -93,7 +93,7 @@
   },
   "adaptation": {
     "upstream_patch_sha256": "1a856e6ed60e2a80eb3f26516cfd6d3ad237b3266a488ca683f3b6a23eb48372",
-    "acloudviewer_patch_sha256": "f7afe15a412bfc557fc186de4d34f3dddf95e6625e466fcfdebc79a9978cfc43",
+    "acloudviewer_patch_sha256": "1741aa4cbc019a524664e492ef56d80d87b6cf247af8ac84fe7ffb69fa4a65d1",
     "preserved": [
       "RelateAnything ggml operators and backend dispatch",
       "owner-scoped CPU dot and CUDA fast/strict arithmetic",

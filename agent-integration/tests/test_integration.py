@@ -5068,7 +5068,7 @@ class TestLevel5_PluginMCPTools:
 
 def test_level1_spirula_methods_registered():
     src = _read_repo_text(
-        Path(__file__).resolve().parent.parent / "plugins" / "core"
+        REPO_ROOT / "plugins" / "core"
         / "Standard" / "qJSonRPCPlugin" / "src" / "JsonRPCPlugin.cpp")
     for method in ["spirula.version", "spirula.devices", "spirula.launch",
                     "spirula.cli", "spirula.import"]:

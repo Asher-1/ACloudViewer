@@ -1,13 +1,8 @@
 // Spirula Studio handlers, retained across the upstream RPC family split.
-#include "JsonRPCPlugin.h"
-#include "JsonRPCCommon.h"
-#include "JsonRPCChildProcess.h"
-#include "SpirulaLauncher.h"
-#include "SpirulaLocator.h"
-#include "SplatImporter.h"
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
+
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -17,12 +12,20 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <cerrno>
+
+#include "JsonRPCChildProcess.h"
+#include "JsonRPCCommon.h"
+#include "JsonRPCPlugin.h"
+#include "SpirulaLauncher.h"
+#include "SpirulaLocator.h"
+#include "SplatImporter.h"
 #ifndef Q_OS_WIN
 #include <csignal>
 #else
 #include <windows.h>
 #endif
 using jsonrpc::D;
+using jsonrpc::runChildProcess;
 
 JsonRPCResult JsonRPCPlugin::rpcSpirulaVersion(
         const QMap<QString, QVariant>& params) {
@@ -37,8 +40,9 @@ JsonRPCResult JsonRPCPlugin::rpcSpirulaVersion(
     auto* process = new QProcess(this);
     process->setProgram(exe);
     process->setArguments({QStringLiteral("--version")});
-    return jsonrpc::runChildProcess(
-            process, 8000, [exe](jsonrpc::ChildOutcome outcome, QProcess& child) {
+    return runChildProcess(
+            process, 8000,
+            [exe](jsonrpc::ChildOutcome outcome, QProcess& child) {
                 if (outcome != jsonrpc::ChildOutcome::Succeeded) {
                     return JsonRPCResult::error(
                             1, "spirula --version failed",
@@ -48,8 +52,10 @@ JsonRPCResult JsonRPCPlugin::rpcSpirulaVersion(
                 QJsonObject result;
                 result["exe"] = exe;
                 result["version"] =
-                        QString::fromUtf8(child.readAllStandardOutput()).trimmed();
-                return JsonRPCResult::success(QJsonDocument(result).toVariant());
+                        QString::fromUtf8(child.readAllStandardOutput())
+                                .trimmed();
+                return JsonRPCResult::success(
+                        QJsonDocument(result).toVariant());
             });
 }
 
@@ -64,39 +70,44 @@ JsonRPCResult JsonRPCPlugin::rpcSpirulaDevices(
     process->setProgram(exe);
     process->setArguments({QStringLiteral("--device"), QStringLiteral("auto"),
                            QStringLiteral("--version")});
-    return jsonrpc::runChildProcess(
+    return runChildProcess(
             process, 5000, [](jsonrpc::ChildOutcome outcome, QProcess& child) {
                 if (outcome == jsonrpc::ChildOutcome::TimedOut) {
                     return JsonRPCResult::error(
-                            3, "spirula device enumeration timed out (a Vulkan-capable GPU/driver is required)");
+                            3,
+                            "spirula device enumeration timed out (a "
+                            "Vulkan-capable GPU/driver is required)");
                 }
                 if (outcome != jsonrpc::ChildOutcome::Succeeded) {
-                    return JsonRPCResult::error(1, "spirula device enumeration failed");
+                    return JsonRPCResult::error(
+                            1, "spirula device enumeration failed");
                 }
-    // Rows printed by upstream: "  * [0] NAME (type, 12345 MB)  [note]";
-    // the note is non-empty only for unusable devices.
-    static const QRegularExpression rowRe(
-            R"re(\[(-?\d+)\]\s+(\S.*?)\s+\(([^,]+),\s*(\d+)\s*MB\)(.*))re");
-    QJsonArray devices;
-    const QStringList rows =
-            QString::fromUtf8(child.readAllStandardOutput()).split('\n');
-    for (const QString& row : rows) {
-        const auto m = rowRe.match(row);
-        if (!m.hasMatch()) {
-            continue;
-        }
-        QJsonObject device;
-        device["index"] = m.captured(1).toInt();
-        device["name"] = m.captured(2).trimmed();
-        device["type"] = m.captured(3).trimmed();
-        device["vram_mb"] = m.captured(4).toLongLong();
-        device["current"] = row.trimmed().startsWith('*');
-        device["usable"] = m.captured(5).trimmed().isEmpty();
-        devices.append(device);
-    }
-    QJsonObject result;
-    result["devices"] = devices;
-    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+                // Rows printed by upstream: "  * [0] NAME (type, 12345 MB)
+                // [note]"; the note is non-empty only for unusable devices.
+                static const QRegularExpression rowRe(
+                        R"re(\[(-?\d+)\]\s+(\S.*?)\s+\(([^,]+),\s*(\d+)\s*MB\)(.*))re");
+                QJsonArray devices;
+                const QStringList rows =
+                        QString::fromUtf8(child.readAllStandardOutput())
+                                .split('\n');
+                for (const QString& row : rows) {
+                    const auto m = rowRe.match(row);
+                    if (!m.hasMatch()) {
+                        continue;
+                    }
+                    QJsonObject device;
+                    device["index"] = m.captured(1).toInt();
+                    device["name"] = m.captured(2).trimmed();
+                    device["type"] = m.captured(3).trimmed();
+                    device["vram_mb"] = m.captured(4).toLongLong();
+                    device["current"] = row.trimmed().startsWith('*');
+                    device["usable"] = m.captured(5).trimmed().isEmpty();
+                    devices.append(device);
+                }
+                QJsonObject result;
+                result["devices"] = devices;
+                return JsonRPCResult::success(
+                        QJsonDocument(result).toVariant());
             });
 }
 
@@ -147,29 +158,37 @@ JsonRPCResult JsonRPCPlugin::rpcSpirulaCli(
     if (params.contains("timeout_ms")) {
         int timeoutMs = 0;
         JsonRPCResult invalid;
-        if (!jsonrpc::childTimeout(params, 60000, &timeoutMs, &invalid)) return invalid;
+        if (!jsonrpc::childTimeout(params, 60000, &timeoutMs, &invalid))
+            return invalid;
         auto* process = new QProcess(this);
         process->setProgram(exe);
         process->setArguments(argList);
         process->setWorkingDirectory(QFileInfo(exe).absolutePath());
-        return jsonrpc::runChildProcess(
+        return runChildProcess(
                 process, timeoutMs,
-                [result, timeoutMs](jsonrpc::ChildOutcome outcome, QProcess& child) mutable {
+                [result, timeoutMs](jsonrpc::ChildOutcome outcome,
+                                    QProcess& child) mutable {
                     if (outcome == jsonrpc::ChildOutcome::TimedOut) {
-                        return JsonRPCResult::error(3, "spirula command timed out",
+                        return JsonRPCResult::error(3,
+                                                    "spirula command timed out",
                                                     D("timeout_ms", timeoutMs));
                     }
                     if (outcome == jsonrpc::ChildOutcome::StartFailed) {
-                        return JsonRPCResult::error(1, "Failed to start spirula command");
+                        return JsonRPCResult::error(
+                                1, "Failed to start spirula command");
                     }
                     result["exit_code"] = child.exitCode();
-                    result["stdout"] = QString::fromUtf8(child.readAllStandardOutput());
-                    result["stderr"] = QString::fromUtf8(child.readAllStandardError());
-                    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+                    result["stdout"] =
+                            QString::fromUtf8(child.readAllStandardOutput());
+                    result["stderr"] =
+                            QString::fromUtf8(child.readAllStandardError());
+                    return JsonRPCResult::success(
+                            QJsonDocument(result).toVariant());
                 });
     }
     qint64 pid = 0;
-    if (!QProcess::startDetached(exe, argList, QFileInfo(exe).absolutePath(), &pid)) {
+    if (!QProcess::startDetached(exe, argList, QFileInfo(exe).absolutePath(),
+                                 &pid)) {
         return JsonRPCResult::error(1, "Failed to start spirula " + command);
     }
     result["pid"] = static_cast<double>(pid);
@@ -280,4 +299,3 @@ JsonRPCResult JsonRPCPlugin::rpcSpirulaCancel(
     result["pid"] = static_cast<double>(pid);
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }
-
