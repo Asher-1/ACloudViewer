@@ -30,10 +30,6 @@ set(PCL_LIBRARIES   pcl_io${PCL_LIB_SUFFIX}
                     pcl_visualization${PCL_LIB_SUFFIX}
                     pcl_sample_consensus${PCL_LIB_SUFFIX})
 
-foreach(item IN LISTS PCL_LIBRARIES)
-    list(APPEND PCL_BUILD_BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX}.${PCL_MAJOR_VERSION})
-endforeach()
-
 if (BUILD_WITH_CONDA)
     if (WIN32)
         SET(CONDA_LIB_DIR ${CONDA_PREFIX}/Library)
@@ -83,9 +79,7 @@ ExternalProject_Add(ext_pcl
             -DBUILD_surface_on_nurbs=ON
             -DCMAKE_PREFIX_PATH=${CONDA_LIB_DIR}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        DEPENDS 3rdparty_eigen3 3rdparty_vtk
-        BUILD_BYPRODUCTS
-            ${PCL_BUILD_BYPRODUCTS})
+        DEPENDS 3rdparty_eigen3 3rdparty_vtk)
 
 ExternalProject_Get_Property(ext_pcl INSTALL_DIR)
 set(PCL_INCLUDE_DIRS "${INSTALL_DIR}/include/pcl-${PCL_MAJOR_VERSION}/")

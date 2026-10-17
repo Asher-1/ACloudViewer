@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qMapAnything">
+        <file>info.json</file>
+        <file>images/qMapAnything.svg</file>
+    </qresource>
+</RCC>

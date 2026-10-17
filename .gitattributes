@@ -1,6 +1,11 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# git apply requires LF-only patch files. Windows checkouts would otherwise
+# convert *.patch to CRLF (text=auto) and every ggml manifest patch would fail
+# with "patch does not apply" (see 3rdparty/ggml/patches/apply_ggml_patches.py).
+*.patch     text eol=lf
+
 *.ipynb     filter=jupyter_clear_output
 
 # Custom for Visual Studio

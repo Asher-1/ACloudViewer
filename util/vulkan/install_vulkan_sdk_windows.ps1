@@ -74,9 +74,33 @@ $installer = Join-Path $workDir "vulkan_sdk.exe"
 Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $workDir | Out-Null
 
+# The LunarG CDN intermittently resets large-file transfers (seen in CI as
+# "An existing connection was forcibly closed by the remote host"). A single
+# Invoke-WebRequest has no resilience to that transient I/O fault, so retry
+# with backoff. The SHA256 gate below makes partial/aborted retries safe: any
+# corrupt re-fetch fails the hash check and never reaches the installer.
+# On Windows PowerShell 5.1 progress rendering and response buffering stall
+# large downloads, so silence progress and use basic parsing.
+$ProgressPreference = 'SilentlyContinue'
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
 $uri = "https://sdk.lunarg.com/sdk/download/$Version/windows/vulkan_sdk.exe"
 Write-Host "Downloading Vulkan SDK $Version from $uri"
-Invoke-WebRequest -Uri $uri -OutFile $installer
+$maxAttempts = 5
+for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+        Remove-Item $installer -Force -ErrorAction SilentlyContinue
+        Invoke-WebRequest -Uri $uri -OutFile $installer -UseBasicParsing -TimeoutSec 300
+        break
+    } catch {
+        if ($attempt -eq $maxAttempts) {
+            throw "Failed to download Vulkan SDK after $maxAttempts attempts: $($_.Exception.Message)"
+        }
+        $backoff = $attempt * 10
+        Write-Host "Download attempt $attempt failed ($($_.Exception.Message)); retrying in ${backoff}s."
+        Start-Sleep -Seconds $backoff
+    }
+}
 $actualSha256 = (Get-FileHash -Algorithm SHA256 $installer).Hash.ToLowerInvariant()
 if ($actualSha256 -ne $sha256.ToLowerInvariant()) {
     throw "Vulkan SDK SHA256 mismatch: got $actualSha256, expected $sha256"

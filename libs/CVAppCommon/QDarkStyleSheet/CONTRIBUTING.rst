@@ -72,7 +72,7 @@ These are the basic steps needed to start developing on QDarkStyle.
 
      .. code:: bash
 
-        conda create -n my-dev-env -c conda-forge python=3.8
+        conda create -n my-dev-env -c conda-forge python=3.10
         conda activate my-dev-env
         conda remove --force qdarkstyle # In case you have qdarkstyle installed
         conda install -c conda-forge watchdog qtsass

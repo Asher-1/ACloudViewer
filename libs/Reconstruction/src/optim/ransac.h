@@ -7,15 +7,24 @@
 
 #pragma once
 
+#include <atomic>
 #include <cfloat>
+#include <mutex>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#include "math/random.h"
 #include "optim/random_sampler.h"
 #include "optim/support_measurement.h"
 #include "util/alignment.h"
 #include "util/logging.h"
+#include "util/threading.h"
 
 namespace colmap {
 
@@ -37,8 +46,16 @@ struct RANSACOptions {
     double dyn_num_trials_multiplier = 3.0;
 
     // Number of random trials to estimate model from random subset.
-    size_t min_num_trials = 0;
-    size_t max_num_trials = std::numeric_limits<size_t>::max();
+    int min_num_trials = 0;
+    int max_num_trials = std::numeric_limits<int>::max();
+
+    // PRNG seed for randomized samplers. Set to -1 for nondeterministic
+    // behavior, or a fixed value to make results reproducible.
+    int random_seed = -1;
+
+    // Number of threads for parallel RANSAC. One preserves serial behavior;
+    // -1 resolves to the available hardware concurrency.
+    int num_threads = 1;
 
     void Check() const {
         CHECK_GT(max_error, 0);
@@ -47,6 +64,9 @@ struct RANSACOptions {
         CHECK_GE(confidence, 0);
         CHECK_LE(confidence, 1);
         CHECK_LE(min_num_trials, max_num_trials);
+        CHECK_GE(random_seed, -1);
+        CHECK_GE(num_threads, -1);
+        CHECK_NE(num_threads, 0);
     }
 };
 
@@ -72,7 +92,10 @@ public:
         typename Estimator::M_t model;
     };
 
-    explicit RANSAC(const RANSACOptions& options);
+    explicit RANSAC(const RANSACOptions& options,
+                    Estimator estimator = Estimator(),
+                    SupportMeasurer support_measurer = SupportMeasurer(),
+                    Sampler sampler = Sampler(Estimator::kMinNumSamples));
 
     // Determine the maximum number of trials required to sample at least one
     // outlier-free random set of samples with the specified confidence,
@@ -112,14 +135,54 @@ protected:
     RANSACOptions options_;
 };
 
+// Detection trait: legacy estimators return the models by value from a
+// two-argument Estimate; upstream 4.x estimators write through the models
+// output parameter. Both forms are supported transparently at the call
+// sites below, so ported upstream estimators and the fork's own estimators
+// can coexist inside the same RANSAC/LORANSAC machinery.
+template <typename Estimator, typename X_t, typename Y_t, typename = void>
+struct HasReturnValueEstimate : std::false_type {};
+
+template <typename Estimator, typename X_t, typename Y_t>
+struct HasReturnValueEstimate<
+        Estimator,
+        X_t,
+        Y_t,
+        std::void_t<decltype(std::declval<const Estimator&>().Estimate(
+                std::declval<const std::vector<X_t>&>(),
+                std::declval<const std::vector<Y_t>&>()))>> : std::true_type {};
+
+// Detection trait: upstream residual-only local estimators (e.g. the
+// Sampson fundamental-matrix estimator) expose a static
+// Refine(points1, points2, M_t*) instead of Estimate.
+template <typename Estimator, typename X_t, typename Y_t, typename = void>
+struct HasRefineMember : std::false_type {};
+
+template <typename Estimator, typename X_t, typename Y_t>
+struct HasRefineMember<
+        Estimator,
+        X_t,
+        Y_t,
+        std::void_t<decltype(std::declval<const Estimator&>().Refine(
+                std::declval<const std::vector<X_t>&>(),
+                std::declval<const std::vector<Y_t>&>(),
+                std::declval<typename Estimator::M_t*>()))>> : std::true_type {
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename Estimator, typename SupportMeasurer, typename Sampler>
 RANSAC<Estimator, SupportMeasurer, Sampler>::RANSAC(
-        const RANSACOptions& options)
-    : sampler(Sampler(Estimator::kMinNumSamples)), options_(options) {
+        const RANSACOptions& options,
+        Estimator estimator,
+        SupportMeasurer support_measurer,
+        Sampler sampler)
+    : estimator(std::move(estimator)),
+      sampler(std::move(sampler)),
+      support_measurer(std::move(support_measurer)),
+      options_(options) {
     options.Check();
 
     // Determine max_num_trials based on assumed `min_inlier_ratio`.
@@ -138,20 +201,36 @@ size_t RANSAC<Estimator, SupportMeasurer, Sampler>::ComputeNumTrials(
         const size_t num_samples,
         const double confidence,
         const double num_trials_multiplier) {
-    const double inlier_ratio = num_inliers / static_cast<double>(num_samples);
-
-    const double nom = 1 - confidence;
-    if (nom <= 0) {
+    // Upstream parity (d3ccaf35): unbiased stopping criterion from
+    // "Fixing the RANSAC stopping criterion" (Schönberger, Larsson,
+    // Pollefeys, 2025) — the without-replacement probability replaces the
+    // biased pow(inlier_ratio, kMinNumSamples) approximation. The old
+    // formula returns a different trial count, which changes which RANSAC
+    // trial wins as best model and therefore the entire downstream chain.
+    const double prob_failure = 1 - confidence;
+    if (prob_failure <= 0) {
         return std::numeric_limits<size_t>::max();
     }
 
-    const double denom = 1 - std::pow(inlier_ratio, Estimator::kMinNumSamples);
-    if (denom <= 0) {
+    double prob_inlier = 1.0;
+    for (int i = 0; i < Estimator::kMinNumSamples; ++i) {
+        prob_inlier *= static_cast<double>(num_inliers - i) /
+                       static_cast<double>(num_samples - i);
+    }
+
+    const double prob_outlier = 1 - prob_inlier;
+    if (prob_outlier <= 0) {
         return 1;
     }
 
+    // Prevent division by zero below.
+    if (prob_outlier == 1.0) {
+        return std::numeric_limits<size_t>::max();
+    }
+
     return static_cast<size_t>(
-            std::ceil(std::log(nom) / std::log(denom) * num_trials_multiplier));
+            std::ceil(std::log(prob_failure) / std::log(prob_outlier) *
+                      num_trials_multiplier));
 }
 
 template <typename Estimator, typename SupportMeasurer, typename Sampler>
@@ -162,90 +241,129 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
     CHECK_EQ(X.size(), Y.size());
 
     const size_t num_samples = X.size();
-
     Report report;
-    report.success = false;
-    report.num_trials = 0;
-
     if (num_samples < Estimator::kMinNumSamples) {
         return report;
     }
 
     typename SupportMeasurer::Support best_support;
-    typename Estimator::M_t best_model;
-
-    bool abort = false;
-
+    std::optional<typename Estimator::M_t> best_model;
     const double max_residual = options_.max_error * options_.max_error;
-
-    std::vector<double> residuals(num_samples);
-
-    std::vector<typename Estimator::X_t> X_rand(Estimator::kMinNumSamples);
-    std::vector<typename Estimator::Y_t> Y_rand(Estimator::kMinNumSamples);
+    const size_t min_num_trials = options_.min_num_trials;
 
     sampler.Initialize(num_samples);
+    const size_t max_num_trials =
+            std::min<size_t>(options_.max_num_trials, sampler.MaxNumSamples());
+    [[maybe_unused]] const int num_threads =
+            GetEffectiveNumThreads(options_.num_threads);
+    if constexpr (!is_parallel_safe_sampler<Sampler>::value) {
+        CHECK_EQ(num_threads, 1)
+                << "Parallel RANSAC only supports parallel-safe samplers";
+    }
 
-    size_t max_num_trials = options_.max_num_trials;
-    max_num_trials = std::min<size_t>(max_num_trials, sampler.MaxNumSamples());
-    size_t dyn_max_num_trials = max_num_trials;
+    std::atomic<size_t> trial_counter(0);
+    std::atomic<size_t> dyn_max_num_trials(max_num_trials);
+    std::atomic<bool> abort_flag(false);
+    std::mutex best_mutex;
 
-    for (report.num_trials = 0; report.num_trials < max_num_trials;
-         ++report.num_trials) {
-        if (abort) {
-            report.num_trials += 1;
-            break;
+#ifdef _OPENMP
+#pragma omp parallel num_threads(num_threads) if (num_threads > 1)
+#endif
+    {
+        // Mutable estimation state is local to a worker. This makes sampling,
+        // residual evaluation, and candidate generation independent.
+        Sampler thread_sampler = sampler;
+        thread_sampler.Initialize(num_samples);
+        Estimator thread_estimator = estimator;
+        SupportMeasurer thread_support_measurer = support_measurer;
+
+        if constexpr (is_randomized_sampler<Sampler>::value) {
+            if (options_.random_seed != -1) {
+#ifdef _OPENMP
+                SetPRNGSeed(options_.random_seed + omp_get_thread_num());
+#else
+                SetPRNGSeed(options_.random_seed);
+#endif
+            }
         }
 
-        sampler.SampleXY(X, Y, &X_rand, &Y_rand);
+        std::vector<double> residuals;
+        std::vector<typename Estimator::X_t> X_rand(Estimator::kMinNumSamples);
+        std::vector<typename Estimator::Y_t> Y_rand(Estimator::kMinNumSamples);
+        std::vector<typename Estimator::M_t> sample_models;
 
-        // Estimate model for current subset.
-        const std::vector<typename Estimator::M_t> sample_models =
-                estimator.Estimate(X_rand, Y_rand);
-
-        // Iterate through all estimated models.
-        for (const auto& sample_model : sample_models) {
-            estimator.Residuals(X, Y, sample_model, &residuals);
-            CHECK_EQ(residuals.size(), num_samples);
-
-            const auto support =
-                    support_measurer.Evaluate(residuals, max_residual);
-
-            // Save as best subset if better than all previous subsets.
-            if (support_measurer.Compare(support, best_support)) {
-                best_support = support;
-                best_model = sample_model;
-
-                dyn_max_num_trials =
-                        ComputeNumTrials(best_support.num_inliers, num_samples,
-                                         options_.confidence,
-                                         options_.dyn_num_trials_multiplier);
+        while (true) {
+            const size_t curr_thread_trial =
+                    trial_counter.fetch_add(1, std::memory_order_relaxed);
+            if (curr_thread_trial >= max_num_trials ||
+                abort_flag.load(std::memory_order_relaxed)) {
+                break;
             }
 
-            if (report.num_trials >= dyn_max_num_trials &&
-                report.num_trials >= options_.min_num_trials) {
-                abort = true;
+            thread_sampler.SampleXY(X, Y, &X_rand, &Y_rand);
+            sample_models.clear();
+            if constexpr (HasReturnValueEstimate<
+                                  Estimator, typename Estimator::X_t,
+                                  typename Estimator::Y_t>::value) {
+                sample_models = thread_estimator.Estimate(X_rand, Y_rand);
+            } else {
+                thread_estimator.Estimate(X_rand, Y_rand, &sample_models);
+            }
+
+            for (const auto& sample_model : sample_models) {
+                thread_estimator.Residuals(X, Y, sample_model, &residuals);
+                CHECK_EQ(residuals.size(), num_samples);
+                const auto support = thread_support_measurer.Evaluate(
+                        residuals, max_residual);
+
+                {
+                    std::unique_lock<std::mutex> lock(best_mutex,
+                                                      std::defer_lock);
+                    if (num_threads > 1) {
+                        lock.lock();
+                    }
+                    if (thread_support_measurer.Compare(support,
+                                                        best_support)) {
+                        best_support = support;
+                        best_model = sample_model;
+                        dyn_max_num_trials.store(
+                                ComputeNumTrials(
+                                        best_support.num_inliers, num_samples,
+                                        options_.confidence,
+                                        options_.dyn_num_trials_multiplier),
+                                std::memory_order_relaxed);
+                    }
+                }
+
+                if (curr_thread_trial >= dyn_max_num_trials.load(
+                                                 std::memory_order_relaxed) &&
+                    curr_thread_trial >= min_num_trials) {
+                    abort_flag.store(true, std::memory_order_relaxed);
+                    break;
+                }
+            }
+
+            if (abort_flag.load(std::memory_order_relaxed)) {
                 break;
             }
         }
     }
 
-    report.support = best_support;
-    report.model = best_model;
-
-    // No valid model was found.
-    if (report.support.num_inliers < estimator.kMinNumSamples) {
+    report.num_trials = trial_counter.load();
+    if (!best_model.has_value()) {
         return report;
     }
 
+    report.support = best_support;
+    report.model = best_model.value();
+    if (report.support.num_inliers < estimator.kMinNumSamples) {
+        return report;
+    }
     report.success = true;
 
-    // Determine inlier mask. Note that this calculates the residuals for the
-    // best model twice, but saves to copy and fill the inlier mask for each
-    // evaluated model. Some benchmarking revealed that this approach is faster.
-
+    std::vector<double> residuals(num_samples);
     estimator.Residuals(X, Y, report.model, &residuals);
     CHECK_EQ(residuals.size(), num_samples);
-
     report.inlier_mask.resize(num_samples);
     for (size_t i = 0; i < residuals.size(); ++i) {
         report.inlier_mask[i] = residuals[i] <= max_residual;

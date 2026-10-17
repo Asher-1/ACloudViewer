@@ -94,7 +94,7 @@ MIN_DOC_VERSION = (3, 9, 4)  # Documentation versioning started from v3.9.4
 
 ```bash
 # Basic usage
-cd /Users/asher/develop/code/github/ACloudViewer
+cd /path/to/ACloudViewer  # adjust to your checkout location
 python3 docs/automation/scripts/scan_releases.py
 
 # With GitHub token (to avoid rate limits)

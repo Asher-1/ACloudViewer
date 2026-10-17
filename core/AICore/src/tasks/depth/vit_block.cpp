@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vit_block.hpp"
+#include "tasks/depth/vit_block.hpp"
 
-#include "ggml_extend.hpp"
+#include "common/ggml_extend.hpp"
+
 namespace aicore {
 namespace depth {
 

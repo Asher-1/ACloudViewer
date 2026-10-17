@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "depth_export.hpp"
+#include "tasks/depth/depth_export.hpp"
 
 #include <QImage>
 #include <algorithm>

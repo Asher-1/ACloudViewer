@@ -7,8 +7,55 @@ endif()
 
 project(COLMAP)
 
-set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
-set(COLMAP_VERSION_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}${CLOUDVIEWER_VERSION_MINOR}${CLOUDVIEWER_VERSION_PATCH}")
+# Upstream parity (d3ccaf35): upstream compiles COLMAP with compiler-default
+# codegen. The fork-wide PCL-compatibility macro EIGEN_MAX_ALIGN_BYTES=0 and
+# the SIMD flags (-msse4.2 -mfpmath=sse -mno-avx512*) change Eigen's codegen
+# inside the COLMAP subtree: the shared-focal RANSAC residual evaluation
+# (RelativePoseSharedFocalEstimator::Residuals, estimators/solvers/*.cc)
+# flips best-model selection at threshold ties, which chaotically diverges
+# trial counts and two-view-geometry inlier sets (observed: TVG pair (4,5)
+# inlier sets differ by one match; SF focal 3296.79 vs 3293.38 px). Strip
+# both for this subproject so every COLMAP TU compiles like upstream. Eigen
+# objects in this subtree are function-local, so the codegen change cannot
+# leak across translation units (no ODR/layout exposure).
+get_directory_property(COLMAP_DIR_DEFS COMPILE_DEFINITIONS)
+list(REMOVE_ITEM COLMAP_DIR_DEFS "EIGEN_MAX_ALIGN_BYTES=0")
+set_property(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${COLMAP_DIR_DEFS}")
+string(REPLACE " -msse4.2" "" COLMAP_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE " -mfpmath=sse" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512f" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512cd" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vl" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bw" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512dq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512ifma" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512pf" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512er" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi2" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vbmi" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vnni" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512bitalg" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+string(REPLACE " -mno-avx512vpopcntdq" "" COLMAP_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${COLMAP_CXX_FLAGS}")
+
+# Hash containers: the scene/SfM containers use the FlatHashMap/NodeHashMap
+# aliases from util/hash_containers.h, backed by the vendored boost::unordered
+# 1.92 headers exactly as upstream (see src/CMakeLists.txt). The earlier std
+# backend was measured against the upstream 3e5c915c executable on the L3
+# mini6 fixture: keypoints, matches, and two-view geometries were identical,
+# yet the models diverged (1241 vs 1237 track observations), and upstream
+# rebuilt with std containers reproduced the fork's model to 1e-15. The
+# iteration order of these containers is therefore observable SfM behavior,
+# not an implementation detail.
+
+
+# The COLMAP engine version this inlined fork is aligned with. It drives the
+# database schema version (see src/util/version.h) and is decoupled from the
+# CLOUDVIEWER package version on purpose.
+set(COLMAP_VERSION "4.3.0.dev0")
+set(COLMAP_VERSION_MAJOR "4")
+set(COLMAP_VERSION_MINOR "3")
+set(COLMAP_VERSION_PATCH "0")
 
 ################################################################################
 # Include CMake dependencies
@@ -29,12 +76,40 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
 option(BOOST_STATIC "With boost static library" OFF)
 option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
-option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" ON)
+option(RECONSTRUCTION_HIP_ENABLED
+       "Build COLMAP PatchMatch with the ROCm HIP toolchain" OFF)
+option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" OFF) # deprecated: PBA backend retired with the COLMAP alignment (c9729fa0)
+option(RECONSTRUCTION_FETCH_POSELIB
+       "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
+option(RECONSTRUCTION_CASPAR_ENABLED
+       "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
+option(RECONSTRUCTION_CASPAR_USE_DOUBLE
+       "Use f64 generated Caspar kernels" OFF)
+option(RECONSTRUCTION_L3_GATE_ENABLED
+       "Enable the fixed-fixture candidate-versus-pinned-upstream L3 SfM gate" OFF)
+set(RECONSTRUCTION_L3_IMAGES "" CACHE PATH
+    "Fixed image fixture directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_ACV_COLMAP "" CACHE FILEPATH
+    "Candidate ACloudViewer COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_COLMAP "" CACHE FILEPATH
+    "latest pinned upstream COLMAP executable for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_UPSTREAM_SOURCE "" CACHE PATH
+    "Source checkout at the pinned upstream revision used to build the L3 executable")
+set(RECONSTRUCTION_L3_UPSTREAM_REVISION "" CACHE STRING
+    "Immutable revision embedded in the upstream L3 executable")
+set(RECONSTRUCTION_L3_THRESHOLDS "" CACHE FILEPATH
+    "Calibrated JSON thresholds for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_OUTPUT "${CMAKE_BINARY_DIR}/Testing/reconstruction_l3" CACHE PATH
+    "Fresh output directory for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_SEED "20261009" CACHE STRING
+    "Fixed mapper seed for reconstruction_l3_alignment_gate")
+set(RECONSTRUCTION_L3_HARNESS "cli-anything-acloudviewer" CACHE FILEPATH
+    "CLI harness executable for reconstruction_l3_alignment_gate")
 option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for Visual Studio / XCode development)" OFF)
 option(DOWNLOAD_ENABLED "Whether to enable (automatic) download of resources (requires Curl/OpenSSL)" ON)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
 set(OPENMP_ENABLED ${WITH_OPENMP})
-set(TESTS_ENABLED OFF)
+set(TESTS_ENABLED ${BUILD_UNIT_TESTS})
 set(CGAL_ENABLED ${CVCORELIB_USE_CGAL})
 set(SIMD_ENABLED ${USE_SIMD})
 set(OPENGL_ENABLED ON)
@@ -48,6 +123,9 @@ endif ()
 
 if (TESTS_ENABLED)
     enable_testing()
+    if (NOT TARGET gtest_main)
+        include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
+    endif ()
 endif ()
 
 if (BOOST_STATIC)
@@ -75,18 +153,50 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-# Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
-if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
-    find_package(Boost REQUIRED COMPONENTS
-                graph
-                filesystem
-                program_options
-                system)
-    # find_package(FreeImage REQUIRED)
-    # find_package(Glog REQUIRED)
-    # find_package(Ceres REQUIRED)
-    # find_package(Metis REQUIRED)
+# Boost: the compiled Boost libraries (filesystem/program_options/graph/system)
+# stay on the system / ext_boost version — the Boost 1.92 library upgrade was
+# reverted because the fork's CGAL dependency requires boost/mpl/if_c.hpp and
+# the legacy boost::filesystem API, both removed in 1.92, and the compiled
+# libraries carry no numeric contract for the COLMAP subtree. Only the
+# header-only boost::unordered subset is vendored (see src/CMakeLists.txt).
+# Boost: unconditionally resolved through find_package on every platform —
+# Linux uses the distro packages (apt libboost-all-dev in CI/docker), macOS
+# and Windows use the conda boost (1.84). The former ext_boost source build
+# (1.73, AliceVision tarball) existed solely for -DGLIBCXX_USE_CXX11_ABI=OFF
+# builds, which no CI/docker/conda configuration uses (the option defaults to
+# ON); with an ABI=0 build the caller must supply a matching-ABI boost via
+# BOOST_ROOT. The compiled libraries carry no numeric contract for the
+# COLMAP subtree; the only header-only special case is the vendored
+# boost::unordered subset for patch_match.cc (see src/CMakeLists.txt).
+set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
+if (TESTS_ENABLED)
+    list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
 endif ()
+find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
+# The vendored Boost 1.92 header subset (see src/CMakeLists.txt) shadows the
+# system Boost headers for every ColmapLib C++ TU. The historical Boost >=
+# 1.74 floor came from a serialization/nvp double definition between the
+# vendor closure and system Boost < 1.74 (Ubuntu 20.04 / Boost 1.71):
+# boost/core/serialization.hpp defining boost::serialization::nvp clashed
+# with the legacy serialization/nvp.hpp pulled by boost/graph ->
+# multi_index, AND a forward-declaration broke Boost >= 1.84 whose own
+# multi_index/serialization headers instantiate serialization::nvp from
+# core/serialization.hpp (macOS conda 1.84). Fixed at the root by the
+# guard handshake in the vendor core/serialization.hpp + noexcept-less
+# core/nvp.hpp make_nvp (see the NOTE there), so every system Boost from
+# 1.71 up compiles, links and runs the mixing probe
+# (.qoder/tmp/boost_mix_probe.cc; measured PASS on 1.71, 1.74 and the
+# 1.84 consumer pattern).
+# NOTE: Ceres / Glog / Gflags / Metis are NOT resolved through find_package.
+# They keep the fork-wide from-source build shared with the rest of the
+# project (3rdparty_ceres with ext_lapack/suitesparse, ext_glog, ext_gflags;
+# metis ships inside ext_suitesparse) and reach this subtree through the
+# imported 3rdparty_* targets of find_dependencies.cmake on all three
+# platforms. The find_package lines below are upstream COLMAP leftovers and
+# must stay commented out.
+# find_package(Glog REQUIRED)
+# find_package(Ceres REQUIRED)
+# find_package(Metis REQUIRED)
 
 if (NOT APPLE)
     if (WIN32)
@@ -98,9 +208,9 @@ if (NOT APPLE)
             add_compile_definitions(BOOST_LIBRARYDIR=${BOOST_ROOT})
         endif ()
     else ()
-        if (NOT ${GLIBCXX_USE_CXX11_ABI})
-            set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
-        endif()
+        # ABI=0 builds must point BOOST_ROOT at a matching-ABI boost install;
+        # there is no bundled source build anymore (see the find_package note
+        # above).
     endif ()
 
     message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
@@ -138,6 +248,13 @@ if (CGAL_FOUND)
     message(STATUS "Found CGAL")
     message(STATUS "  Includes : ${CGAL_INCLUDE_DIRS}")
     message(STATUS "  Libraries : ${CGAL_LIBRARY}")
+
+    # AppleClang 21 rejects the broken `operator bool()` bodies shipped in
+    # CGAL <= 5.6.1's BGL iterator.h at template-definition time; shadow the
+    # header with a patched copy (no-op on fixed CGAL installs).  See
+    # cmake/CGALBglIteratorPatch.cmake.
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/CGALBglIteratorPatch.cmake)
+    acv_enable_cgal_bgl_iterator_patch()
 endif ()
 
 ################################################################################
@@ -195,7 +312,22 @@ else ()
     message(STATUS "Disabling interprocedural optimization")
 endif ()
 
-if (BUILD_CUDA_MODULE)
+if (RECONSTRUCTION_HIP_ENABLED AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR
+        "RECONSTRUCTION_HIP_ENABLED and BUILD_CUDA_MODULE are mutually exclusive. "
+        "Configure the HIP PatchMatch runner with BUILD_CUDA_MODULE=OFF.")
+endif ()
+
+set(HIP_ENABLED OFF)
+if (RECONSTRUCTION_HIP_ENABLED)
+    # HIP is a toolchain dependency, but its imported targets are normalized
+    # through 3rdparty just like the other reconstruction dependencies.
+    include(${CloudViewer_3RDPARTY_DIR}/rocm/rocm.cmake)
+    enable_language(HIP)
+    set(HIP_ENABLED ON)
+    add_compile_definitions(COLMAP_HIP_ENABLED)
+    message(STATUS "Enabling HIP PatchMatch support (archs: ${CMAKE_HIP_ARCHITECTURES})")
+elseif (BUILD_CUDA_MODULE)
     # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
         message(
@@ -212,16 +344,6 @@ if (BUILD_CUDA_MODULE)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
-    message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
-    # Check CUDA version for PBA compatibility
-    # if(CUDAToolkit_VERSION VERSION_LESS "12.0")
-    #     set(PBA_ENABLED ON)
-    #     message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
-    # else()
-    #     set(PBA_ENABLED OFF)
-    #     message(STATUS "PBA disabled - requires CUDA 11.x or below (but found CUDA ${CUDAToolkit_VERSION})")
-    # endif()
-
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else()
@@ -229,6 +351,7 @@ else()
     message(STATUS "Disabling CUDA support")
 endif ()
 message(STATUS "Colmap CUDA enabled: ${CUDA_ENABLED}")
+message(STATUS "Colmap HIP enabled: ${HIP_ENABLED}")
 
 if (GUI_ENABLED)
     add_compile_definitions(GUI_ENABLED)
@@ -242,6 +365,15 @@ if (OPENGL_ENABLED)
     message(STATUS "Enabling OpenGL support")
 else ()
     message(STATUS "Disabling OpenGL support")
+endif ()
+
+# Upstream parity (cmake/FindDependencies.cmake GPU_ENABLED): SiftGPU-based
+# feature extraction/matching is available whenever OpenGL or CUDA is.
+set(GPU_ENABLED OFF)
+if (OPENGL_ENABLED OR CUDA_ENABLED)
+    add_compile_definitions(GPU_ENABLED)
+    set(GPU_ENABLED ON)
+    message(STATUS "Enabling GPU support (OpenGL: ${OPENGL_ENABLED}, CUDA: ${CUDA_ENABLED})")
 endif ()
 
 if (PROFILING_ENABLED)
@@ -263,6 +395,55 @@ endif ()
 if (DOWNLOAD_ENABLED)
     add_compile_definitions(COLMAP_DOWNLOAD_ENABLED)
 endif ()
+
+# Export the engine feature macros that are currently active so consumers
+# outside this directory scope (the python pybind extension TUs, which
+# include the same engine headers) can mirror them and stay ABI-identical.
+# add_compile_definitions above is directory-scoped and does NOT reach
+# sibling directories.
+set(ACV_COLMAP_ENGINE_MACROS "")
+if (OPENMP_ENABLED AND OPENMP_FOUND)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENMP_ENABLED)
+endif ()
+if (CUDA_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CUDA_ENABLED)
+endif ()
+if (GPU_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS GPU_ENABLED)
+endif ()
+if (GUI_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS GUI_ENABLED)
+endif ()
+if (OPENGL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS OPENGL_ENABLED)
+endif ()
+if (CGAL_FOUND AND CGAL_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS CGAL_ENABLED)
+endif ()
+if (DOWNLOAD_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_DOWNLOAD_ENABLED)
+endif ()
+list(APPEND ACV_COLMAP_ENGINE_MACROS MAX_STURM_RECURSION_DEPTH_LIMIT=300)
+list(APPEND ACV_COLMAP_ENGINE_MACROS POSELIB_DEBUG=0)
+if (RECONSTRUCTION_FETCH_POSELIB)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS RECONSTRUCTION_FETCH_POSELIB)
+endif ()
+if (HIP_ENABLED)
+    list(APPEND ACV_COLMAP_ENGINE_MACROS COLMAP_HIP_ENABLED)
+endif ()
+# Unconditional vendored-library configuration macros that engine headers
+# propagate to their consumers; the python binding TUs must agree on these
+# too (e.g. kiss_fft_scalar changes struct layouts).
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_ALL_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS BOOST_TEST_DYN_LINK)
+list(APPEND ACV_COLMAP_ENGINE_MACROS CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS STB_IMAGE_WRITE_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYGLTF_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS TINYOBJLOADER_IMPLEMENTATION)
+list(APPEND ACV_COLMAP_ENGINE_MACROS kiss_fft_scalar=double)
+set(ACV_COLMAP_ENGINE_MACROS "${ACV_COLMAP_ENGINE_MACROS}"
+        CACHE INTERNAL "ACloudViewer COLMAP engine feature macros")
 
 # DA3 depth estimation integration (AICore from core/DA3)
 if(AICore_ENABLED AND TARGET AICore)
@@ -292,7 +473,6 @@ set(COLMAP_INCLUDE_DIRS
         ${Boost_INCLUDE_DIR}
         ${EIGEN_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIRS}
-        ${FREEIMAGE_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
         ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
         )
@@ -309,6 +489,7 @@ if (WIN32)
         Boost::system
         Boost::filesystem
         Boost::program_options
+        3rdparty_openimageio
         )
 else()
     set(COLMAP_EXTERNAL_LIBRARIES
@@ -316,9 +497,9 @@ else()
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
+        3rdparty_openimageio
         # ${GLOG_LIBRARIES}
         # ${CERES_LIBRARIES}
-        # ${FREEIMAGE_LIBRARIES}
         )
 endif()
         
@@ -351,13 +532,9 @@ set(COLMAP_INTERNAL_LIBRARIES
         lsd
         )
 
-# Add PBA conditionally based on CUDA version
-if(PBA_ENABLED)
-    list(APPEND COLMAP_INTERNAL_LIBRARIES pba)
-    add_compile_definitions(PBA_ENABLED)
-else()
-    message(STATUS "PBA library excluded from build")
-endif()
+# PBA has been removed from the build: upstream COLMAP dropped the PBA
+# bundle-adjustment backend (c9729fa0) for CUDA 12+ compatibility, and the
+# aligned backend surface is Ceres + Caspar (see optim/bundle_adjustment.h).
 
 list(APPEND COLMAP_INTERNAL_LIBRARIES
         poisson_recon
@@ -385,21 +562,23 @@ COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 
-COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
-COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/VLFeat LIB_VLFEAT_SRCS *.h *.c *.tc)
 
-COLMAP_ADD_SOURCE_DIR(src/base BASE_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/image IMAGE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/controllers CONTROLLERS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/estimators ESTIMATORS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/exe EXE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/feature FEATURE_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/geometry GEOMETRY_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/mvs MVS_SRCS *.h *.cc *.cu)
 COLMAP_ADD_SOURCE_DIR(src/optim OPTIM_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/math MATH_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/retrieval RETRIEVAL_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/scene SCENE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/sfm SFM_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/sensor SENSOR_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/tools TOOLS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/ui UI_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/util UTIL_SRCS *.h *.cc)
@@ -413,19 +592,20 @@ if(ALL_SOURCE_TARGET)
             ${LIB_FLANN_SRCS}
             ${LIB_GRACLUS_SRCS}
             ${LIB_LSD_SRCS}
-            ${LIB_PBA_SRCS}
-            ${LIB_POISSON_RECON_SRCS}
             ${LIB_SIFT_GPU_SRCS}
             ${LIB_SQLITE_SRCS}
             ${LIB_VLFEAT_SRCS}
-            ${BASE_SRCS}
+            ${IMAGE_SRCS}
             ${CONTROLLERS_SRCS}
             ${ESTIMATORS_SRCS}
             ${EXE_SRCS}
             ${FEATURE_SRCS}
+            ${GEOMETRY_SRCS}
+            ${MATH_SRCS}
             ${MVS_SRCS}
             ${OPTIM_SRCS}
             ${RETRIEVAL_SRCS}
+            ${SCENE_SRCS}
             ${SFM_SRCS}
             ${TOOLS_SRCS}
             ${UI_SRCS}

@@ -28,11 +28,11 @@ bool embed(aicore_facedetect_ctx* ctx,
     const int rc =
             aicore_facedetect_embed_path(ctx, image, 0.0f, &values, &dim);
     if (rc != 0 || values == nullptr || dim <= 0) {
-        aicore_facedetect_free_vec(values);
+        aicore_facedetect_free_buffer(values);
         return false;
     }
     output->assign(values, values + dim);
-    aicore_facedetect_free_vec(values);
+    aicore_facedetect_free_buffer(values);
     return true;
 }
 

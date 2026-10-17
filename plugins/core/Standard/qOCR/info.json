@@ -1,0 +1,13 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "OCR Text Recognition",
+  "icon": ":/CC/plugin/qOCR/images/qOCR.svg",
+  "description": "PP-OCRv4 text detection and recognition via the AICore ocr task (first-party Paddle -> GGUF conversion), optional PP-Structure layout regions, and SLANet_plus table reconstruction (rowspan/colspan grid, HTML/CSV export) via the AICore table task.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "PP-OCR models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/PP-OCR" },
+    { "text": "PaddleOCR: https://github.com/PaddlePaddle/PaddleOCR" }
+  ]
+}

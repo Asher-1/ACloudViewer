@@ -1,0 +1,49 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -6532,6 +6532,11 @@
+         bool pipeline_robustness = false;
+         bool coopmat2_support = false;
+         bool coopmat2_decode_vector_support = false;
++        // VK_NV_cooperative_matrix2 requires VK_KHR_cooperative_matrix to be
++        // enabled with it (VUID-vkCreateDevice-ppEnabledExtensionNames-01387).
++        // Track the advertised extension separately from coopmat_support,
++        // which only says whether the KHR (coopmat1) shader paths are used.
++        bool khr_coopmat_extension = false;
+         bool pipeline_executable_properties_support = false;
+         bool internally_sync_support = false;
+         device->coopmat_support = false;
+@@ -6543,6 +6548,9 @@
+         bool shader_float8_extension = false;
+ 
+         for (const auto& properties : ext_props) {
++            if (strcmp("VK_KHR_cooperative_matrix", properties.extensionName) == 0) {
++                khr_coopmat_extension = true;
++            }
+             if (strcmp("VK_KHR_maintenance4", properties.extensionName) == 0) {
+                 maintenance4_support = true;
+             } else if (strcmp("VK_KHR_16bit_storage", properties.extensionName) == 0) {
+@@ -6902,7 +6910,11 @@
+         coopmat_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR;
+         coopmat_features.cooperativeMatrix = VK_FALSE;
+ 
+-        if (device->coopmat_support) {
++        // coopmat2 shaders also declare the KHR CooperativeMatrixKHR
++        // capability, so its feature must be enabled whenever coopmat2 is,
++        // even when GGML_VK_DISABLE_COOPMAT turned the coopmat1 paths off.
++        const bool khr_coopmat_required = coopmat2_support && khr_coopmat_extension;
++        if (device->coopmat_support || khr_coopmat_required) {
+             last_struct->pNext = (VkBaseOutStructure *)&coopmat_features;
+             last_struct = (VkBaseOutStructure *)&coopmat_features;
+         }
+@@ -7292,7 +7304,9 @@
+             }
+         }
+ 
+-        if (device->coopmat_support) {
++        // coopmat_support may have been cleared above (no suitable coopmat1
++        // shape) after VK_NV_cooperative_matrix2 was already requested.
++        if (device->coopmat_support || khr_coopmat_required) {
+             device_extensions.push_back("VK_KHR_cooperative_matrix");
+         }
+ #if defined(VK_KHR_shader_bfloat16)

@@ -61,10 +61,18 @@ else()
 endif()
 set(BORINGSSL_INCLUDE_DIRS ${BORINGSSL_ROOT_DIR}/include/) # "/" is critical.
 
-if(BUILD_WEBRTC)
-    set(BORINGSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
-    set(BORINGSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
+if(BUILD_WEBRTC AND NOT WIN32)
+    # On UNIX the WebRTC archives carry their own boringssl, so the symbols
+    # are resolved through WebRTC.
+    set(BORINGSSL_LIB_DIR)   # Empty, as we use the symbols from WebRTC.
+    set(BORINGSSL_LIBRARIES) # Empty, as we use the symbols from WebRTC.
 else()
+    # The Windows WebRTC prebuilt (webrtc_1.2.0_win.zip) does not contain
+    # boringssl symbols, so every consumer of 3rdparty_curl (e.g. the pybind
+    # wheel, where BUILD_WEBRTC=ON is forced by BUILD_JUPYTER_EXTENSION) fails
+    # with LNK2001 on OPENSSL_*/OCSP_*/SSL_* unless the standalone prebuilt
+    # boringssl - pinned to the exact commit WebRTC uses, see
+    # build_boringssl.ps1 - is linked explicitly.
     set(BORINGSSL_LIB_DIR ${BORINGSSL_ROOT_DIR}/lib)
     set(BORINGSSL_LIBRARIES ssl crypto)
 endif()

@@ -15,6 +15,16 @@ on:
         description: "Set to OFF for Release wheels"
         required: false
         default: "ON"
+      cold_build:
+        description: "Disable compile cache for end-to-end cold-build verification"
+        required: false
+        default: "false"
+
+  # Weekly cold-build gate: the full workflow runs with the compile cache
+  # disabled (COLD_BUILD=true), keeping the from-scratch end-to-end path
+  # exercised so cache hits can never rot the no-cache build.
+  schedule:
+    - cron: '0 3 * * 1'
 
   push:
     branches:
@@ -54,6 +64,10 @@ jobs:
       fail-fast: true
       matrix:
         python_version: ['3.12']
+        # Debug matrix entries are kept intentionally (devel-release smoke +
+        # future Debug-config testing); they run the env-setup steps only —
+        # the build steps are conditioned on Release (build_win_app.ps1 is
+        # Release-only) and do not affect any job's 6h wall time.
         BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
         BUILD_CUDA_MODULE: [ON, OFF]
@@ -66,6 +80,16 @@ jobs:
           - STATIC_RUNTIME: OFF
     env:
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
+      # Ninja Multi-Config drives cl.exe directly (no MSBuild vcxproj
+      # overhead) while keeping the VS-style bin/<Config>/ layout, the
+      # per-config output-dir properties and the --config Release build
+      # commands used by the scripts and the workflow test step. Requires the
+      # MSVC environment from the msvc-dev-cmd step below.
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
+      # Cold-build gate: releases, the weekly schedule and an explicit
+      # workflow_dispatch run WITHOUT the compile cache so the shipped
+      # artifacts stay reproducible from clean sources.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -108,6 +132,13 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # NOTE: do not trim CMAKE_CUDA_ARCHITECTURES here for CI speed. The CUDA
+      # installer is a distribution artifact (main-devel / release): dropping
+      # any -real arch breaks that GPU class outright (e.g. no sm_80 SASS and
+      # compute_86 PTX cannot JIT backwards onto A100), and relying on PTX JIT
+      # for newer GPUs changes first-run behavior. Compatibility of shipped
+      # artifacts is non-negotiable; build time is addressed elsewhere.
+
       - name: Install Vulkan SDK
         shell: powershell
         run: |
@@ -123,7 +154,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
@@ -133,6 +164,33 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      - name: Set up MSVC environment
+        # Ninja generators need cl.exe / INCLUDE / LIB from vcvarsall; this
+        # exports them through GITHUB_ENV so the build step inherits them.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Set up sccache (warm runs only)
+        # Compile cache is an optimization overlay: cache keys are content-
+        # addressed (compiler hash + full command line + preprocessed input),
+        # so any source/header/flag/third-party-version change misses and
+        # recompiles for real. Infra failures degrade to a vanilla build via
+        # continue-on-error + the outcome check below (cache never gates CI).
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Enable sccache launcher
+        # Only wire the launcher when the cache backend actually came up;
+        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX_COMPILER_LAUNCHER
+        # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
+        # CUDA (nvcc) caching is intentionally not enabled initially.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install dependencies
         # deploy QtIFW for installer and deploy 3rdparty_downloads.zip for fast building on windows
@@ -239,7 +297,7 @@ jobs:
           }
           
           # Check if test executable exists
-          $testExe = Join-Path $buildDir "bin\${{ matrix.CONFIG }}\tests.exe"
+          $testExe = Join-Path $buildDir "bin\cloudviewer_test\${{ matrix.CONFIG }}\tests.exe"
           if (-not (Test-Path $testExe)) {
             Write-Error "Test executable not found: $testExe"
             Write-Host "Current directory: $(Get-Location)"
@@ -254,6 +312,12 @@ jobs:
           Write-Host "Test executable: $testExe"
           Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
           Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          
+          # tests.exe lives under bin\cloudviewer_test\ but the shared DLLs are
+          # centralized in bin\<CONFIG>\; Windows has no RPATH, so prepend the
+          # DLL directory before launching.
+          $dllDir = Join-Path $buildDir "bin\${{ matrix.CONFIG }}"
+          $env:PATH = "$dllDir;$env:PATH"
           
           # Run the tests
           & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
@@ -276,6 +340,19 @@ jobs:
           name: windows-build-log-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
           path: ${{ runner.temp }}\windows-build.log
           if-no-files-found: ignore
+      - name: sccache stats
+        # Visibility for cache hit-rate tuning; never gates the job.
+        # NOTE: the sccache daemon lives inside the build step's process tree
+        # and its stats are in-memory. GitHub Actions runners terminate that
+        # tree when the step exits, so this post-build invocation (and the
+        # action's post-run summary) observe a freshly spawned daemon and
+        # report 0 requests on Windows — the real numbers are printed by
+        # build_win_app.ps1 / build_win_wheel.ps1 at the end of the build
+        # step, while the daemon is still alive.
+        if: env.SCCACHE_GHA_ENABLED == 'true'
+        continue-on-error: true
+        run: |
+          & $env:SCCACHE_PATH --show-stats
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -284,7 +361,10 @@ jobs:
           path: ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }}
           if-no-files-found: error
       - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
+        # PACKAGE_INSTALLER_NAME is only produced by the Release build step;
+        # Debug matrix jobs must skip this or the gh upload runs with an empty
+        # path (and fails the job, cascading via fail-fast).
+        if: ${{ github.ref == 'refs/heads/main' && matrix.CONFIG == 'Release' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -292,7 +372,7 @@ jobs:
           gh release view main-devel
       - name: Public App Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && matrix.CONFIG == 'Release'
         with:
           fail_on_unmatched_files: false
           generate_release_notes: false
@@ -351,7 +431,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Set up Python environment (conda, same as build)
         uses: conda-incubator/setup-miniconda@v3
@@ -482,7 +562,8 @@ jobs:
             exit 1
           }
 
-          # Run integration tests
+          # Run integration tests; a missing binary must fail, not skip
+          $env:ACV_REQUIRE_BINARY = "1"
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
@@ -523,6 +604,10 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # Cold-build gate, same expression as the app matrix job: releases, the
+      # weekly schedule and an explicit workflow_dispatch run WITHOUT the
+      # compile cache so the shipped artifacts stay reproducible.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -591,6 +676,27 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
           auto-activate-base: true
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      - name: Set up sccache (warm runs only)
+        # Same contract as the app matrix job above: compile cache is an
+        # optimization overlay; infra failures degrade to a vanilla build.
+        # This job is the one that hits the 6h runner limit (the CPU pass
+        # alone compiles ~3.5h of C++ without cache), so the launcher matters
+        # most here; the cache is shared with the app matrix jobs within the
+        # same run/branch.
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Enable sccache launcher
+        # util/ci_utils.ps1 Build-PipPackage forwards it as
+        # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is intentionally not enabled initially.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}

@@ -57,6 +57,38 @@ Getting Started
    with a single click or command.
 
 
+ACloudViewer Mesh and Texture Outputs
+-------------------------------------
+
+The dense reconstruction workflow can generate Poisson, Delaunay, and
+advancing-front meshes. Automatic reconstruction selects the requested mesher
+and passes its PLY output directly to COLMAP mesh texture mapping. The texture
+mapper uses the undistorted dense-workspace images and sparse cameras to select
+views, smooth face assignments, correct colors, pack an atlas, and inpaint
+unobserved texels.
+
+Texturing writes a standards-compatible OBJ/MTL pair, a diffuse PNG atlas, and
+a binary textured PLY containing per-face UV coordinates and a ``TextureFile``
+comment. The ``image_texturer`` command accepts either an OBJ output filename
+or a legacy output directory; when given a filename, all companion files use
+the same filename prefix in its parent directory.
+
+COLMAP's explicit QEM post-processing is also available as ``mesh_simplifier``
+with the same ``MeshSimplification.*`` options. It is intentionally not part
+of the default automatic reconstruction chain, so the selected Poisson,
+Delaunay, or advancing-front mesh remains the reference output. To reduce
+triangle count while preserving geometric boundaries, run for example::
+
+    Colmap mesh_simplifier \
+        --input_path meshed-delaunay.ply \
+        --output_path meshed-delaunay-simplified.ply \
+        --MeshSimplification.target_face_ratio 0.1
+
+The advancing-front implementation requires CGAL. It uses the current COLMAP
+float kernel with CGAL 6 or a double-precision compatibility kernel with older
+CGAL versions supported by this repository.
+
+
 Documentation
 -------------
 

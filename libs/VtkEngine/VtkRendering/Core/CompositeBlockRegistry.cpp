@@ -1,0 +1,573 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "CompositeBlockRegistry.h"
+
+// VTK
+#include <vtkActor.h>
+#include <vtkCompositeDataDisplayAttributes.h>
+#include <vtkDataObject.h>
+#include <vtkMatrix4x4.h>
+#include <vtkMultiBlockDataSet.h>
+#include <vtkNew.h>
+#include <vtkPolyData.h>
+#include <vtkProperty.h>
+#include <vtkSmartPointer.h>
+#include <vtkVersion.h>
+
+// Mapper selection: vtkCompositePolyDataMapper2 is ParaView's production
+// composite mapper and renders into vtkHardwareSelector's attribute passes,
+// so block picking (COMPOSITE_INDEX) works. The newer batched delegator
+// mapper (VTK >= 9.2) does not implement the selection passes: the group
+// actor produced no fragments during hardware picks, so every mesh click
+// fell through to the surrounding point cloud. Selection correctness beats
+// the unproven batching gain; revisit only with a controlled A/B that also
+// proves pick parity.
+#include <vtkCompositePolyDataMapper2.h>
+
+namespace VtkRendering {
+
+CompositeBlockRegistry::CompositeBlockRegistry() = default;
+
+CompositeBlockRegistry::~CompositeBlockRegistry() = default;
+
+CompositeBlockRegistry::Group* CompositeBlockRegistry::groupOf(
+        const std::string& groupId) {
+    auto it = m_groups.find(groupId);
+    return it != m_groups.end() ? &it->second : nullptr;
+}
+
+const CompositeBlockRegistry::Group* CompositeBlockRegistry::groupOf(
+        const std::string& groupId) const {
+    auto it = m_groups.find(groupId);
+    return it != m_groups.end() ? &it->second : nullptr;
+}
+
+vtkDataObject* CompositeBlockRegistry::blockObject(const Group& group,
+                                                   vtkIdType flatIndex) const {
+    if (flatIndex < 0 ||
+        flatIndex >= static_cast<vtkIdType>(group.leafOrder.size()) ||
+        group.leafOrder[flatIndex].empty()) {
+        return nullptr;
+    }
+    return group.blocks->GetBlock(flatIndex);
+}
+
+vtkActor* CompositeBlockRegistry::ensureGroup(const std::string& groupId) {
+    if (auto* existing = groupOf(groupId)) {
+        return existing->actor;
+    }
+
+    Group& group = m_groups[groupId];
+    group.blocks = vtkSmartPointer<vtkMultiBlockDataSet>::New();
+    group.attributes =
+            vtkSmartPointer<vtkCompositeDataDisplayAttributes>::New();
+
+    // vtkNew keeps sole ownership until SetMapper registers it on the actor;
+    // an early UnRegister here would destroy the mapper before SetMapper and
+    // crash inside vtkActor::SetMapper on a dangling pointer.
+    vtkNew<vtkCompositePolyDataMapper2> mapper;
+    mapper->SetInputDataObject(group.blocks);
+    mapper->SetCompositeDataDisplayAttributes(group.attributes);
+
+    group.actor = vtkSmartPointer<vtkActor>::New();
+    group.actor->GetProperty()->SetInterpolationToFlat();
+    group.actor->GetProperty()->SetBackfaceCulling(false);
+    group.actor->GetProperty()->SetFrontfaceCulling(false);
+    group.actor->SetMapper(mapper);
+    m_actorToGroup[group.actor] = groupId;
+
+    return group.actor;
+}
+
+bool CompositeBlockRegistry::hasGroup(const std::string& groupId) const {
+    return m_groups.count(groupId) != 0;
+}
+
+namespace {
+
+// Group-family matching: mesh groups use the bare container viewId as the
+// group id, camera frustum families append "#lw<width>". A container viewId
+// is a DIGIT string, so a raw prefix test would let container "12" match
+// container "123#lw1" — the match must be exact OR split exactly at the
+// '#' separator.
+inline bool groupKeyMatchesPrefix(const std::string& key,
+                                  const std::string& prefix) {
+    if (key == prefix) return true;
+    return key.size() > prefix.size() &&
+           key.compare(0, prefix.size(), prefix) == 0 &&
+           key[prefix.size()] == '#';
+}
+
+}  // namespace
+
+bool CompositeBlockRegistry::hasCompositeGroupWithPrefix(
+        const std::string& prefix) const {
+    for (const auto& kv : m_groups) {
+        if (groupKeyMatchesPrefix(kv.first, prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<std::string> CompositeBlockRegistry::groupIdsWithPrefix(
+        const std::string& prefix) const {
+    std::vector<std::string> ids;
+    for (const auto& kv : m_groups) {
+        if (groupKeyMatchesPrefix(kv.first, prefix)) {
+            ids.push_back(kv.first);
+        }
+    }
+    return ids;
+}
+
+int CompositeBlockRegistry::removeCompositeGroupsByPrefix(
+        const std::string& prefix) {
+    // Collect first, destroy second: destroying invalidates iterators.
+    std::vector<std::string> doomed;
+    for (const auto& kv : m_groups) {
+        if (groupKeyMatchesPrefix(kv.first, prefix)) {
+            doomed.push_back(kv.first);
+        }
+    }
+    for (const std::string& groupId : doomed) {
+        destroyGroup(groupId);
+    }
+    return static_cast<int>(doomed.size());
+}
+
+void CompositeBlockRegistry::destroyGroup(const std::string& groupId) {
+    auto it = m_groups.find(groupId);
+    if (it == m_groups.end()) {
+        return;
+    }
+
+    for (const auto& leafId : it->second.leafOrder) {
+        if (!leafId.empty()) {
+            m_leafIndex.erase(leafId);
+            // destroyGroup bypasses removeLeaf: drop the per-leaf anchor
+            // state here too, or the base snapshots / world matrices leak.
+            m_leafBasePoints.erase(leafId);
+            m_leafWorldMatrix.erase(leafId);
+        }
+    }
+    m_actorToGroup.erase(it->second.actor);
+    m_groups.erase(it);
+}
+
+vtkActor* CompositeBlockRegistry::groupActor(const std::string& groupId) const {
+    const Group* group = groupOf(groupId);
+    return group ? group->actor : nullptr;
+}
+
+std::vector<std::string> CompositeBlockRegistry::groupIds() const {
+    std::vector<std::string> ids;
+    ids.reserve(m_groups.size());
+    for (const auto& kv : m_groups) {
+        ids.push_back(kv.first);
+    }
+    return ids;
+}
+
+vtkIdType CompositeBlockRegistry::setLeafBlock(const std::string& leafId,
+                                               const std::string& groupId,
+                                               vtkPolyData* data) {
+    if (!data) {
+        std::string emptied;
+        removeLeaf(leafId, &emptied);
+        return -1;
+    }
+
+    // A leaf belongs to exactly one group; move it if re-parented.
+    if (const auto* previous = [&] {
+            auto it = m_leafIndex.find(leafId);
+            return it != m_leafIndex.end() ? &it->second : nullptr;
+        }()) {
+        Group* group = groupOf(groupId);
+        if (previous->groupId == groupId && group && group->blocks) {
+            // Redraws replace the block data object; migrate the per-leaf
+            // display attributes so opacity/visibility/color survive.
+            if (vtkDataObject* oldBlock =
+                        blockObject(*group, previous->flatIndex)) {
+                if (group->attributes->HasBlockVisibility(oldBlock)) {
+                    group->attributes->SetBlockVisibility(
+                            data,
+                            group->attributes->GetBlockVisibility(oldBlock));
+                }
+                if (group->attributes->HasBlockOpacity(oldBlock)) {
+                    group->attributes->SetBlockOpacity(
+                            data, group->attributes->GetBlockOpacity(oldBlock));
+                }
+                if (group->attributes->HasBlockColor(oldBlock)) {
+                    double color[3];
+                    group->attributes->GetBlockColor(oldBlock, color);
+                    group->attributes->SetBlockColor(data, color);
+                }
+                if (group->attributes->HasBlockPickability(oldBlock)) {
+                    group->attributes->SetBlockPickability(
+                            data,
+                            group->attributes->GetBlockPickability(oldBlock));
+                }
+            }
+            group->blocks->SetBlock(previous->flatIndex, data);
+            // Block geometry replaced: drop stale anchor state (same rule as
+            // the fresh-registration path below).
+            m_leafBasePoints.erase(leafId);
+            m_leafWorldMatrix.erase(leafId);
+            return previous->flatIndex;
+        }
+        removeLeaf(leafId);
+    }
+
+    // Full initialization must happen BEFORE taking the Group reference:
+    // m_groups[groupId] alone would create an empty entry whose blocks are
+    // null, and ensureGroup's early-return would then skip initialization —
+    // the null->SetBlock crash seen in the field.
+    ensureGroup(groupId);
+    Group& group = *groupOf(groupId);
+
+    vtkIdType slot;
+    if (!group.freeSlots.empty()) {
+        slot = group.freeSlots.back();
+        group.freeSlots.pop_back();
+        group.leafOrder[slot] = leafId;
+        group.blocks->SetBlock(slot, data);
+    } else {
+        slot = static_cast<vtkIdType>(group.leafOrder.size());
+        group.leafOrder.push_back(leafId);
+        group.blocks->SetBlock(slot, data);
+    }
+
+    m_leafIndex[leafId] = LeafRef{groupId, slot};
+    // A newly registered block replaces any previous geometry: a stale base
+    // snapshot or world matrix would mis-bake the next absolute transform.
+    m_leafBasePoints.erase(leafId);
+    m_leafWorldMatrix.erase(leafId);
+    return slot;
+}
+
+bool CompositeBlockRegistry::removeLeaf(const std::string& leafId,
+                                        std::string* emptiedGroup) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return false;
+    }
+
+    const LeafRef ref = it->second;
+    m_leafIndex.erase(it);
+    m_leafBasePoints.erase(leafId);
+    m_leafWorldMatrix.erase(leafId);
+
+    auto git = m_groups.find(ref.groupId);
+    if (git == m_groups.end()) {
+        return true;
+    }
+
+    Group& group = git->second;
+    group.blocks->SetBlock(ref.flatIndex, nullptr);
+    group.leafOrder[ref.flatIndex].clear();
+    group.freeSlots.push_back(ref.flatIndex);
+
+    // Destroy empty groups eagerly: the actor must leave the renderer as the
+    // last leaf disappears (the caller observes this through emptiedGroup).
+    const bool empty = group.freeSlots.size() == group.leafOrder.size();
+    if (empty) {
+        if (emptiedGroup) {
+            *emptiedGroup = ref.groupId;
+        }
+        m_groups.erase(git);
+    }
+    return true;
+}
+
+bool CompositeBlockRegistry::containsLeaf(const std::string& leafId) const {
+    return m_leafIndex.count(leafId) != 0;
+}
+
+std::string CompositeBlockRegistry::groupOfLeaf(
+        const std::string& leafId) const {
+    auto it = m_leafIndex.find(leafId);
+    return it != m_leafIndex.end() ? it->second.groupId : std::string();
+}
+
+std::string CompositeBlockRegistry::leafAtFlatIndex(const std::string& groupId,
+                                                    vtkIdType flatIndex) const {
+    const Group* group = groupOf(groupId);
+    if (!group || flatIndex < 0 ||
+        flatIndex >= static_cast<vtkIdType>(group->leafOrder.size())) {
+        return std::string();
+    }
+    return group->leafOrder[flatIndex];
+}
+
+std::string CompositeBlockRegistry::groupIdOfActor(vtkActor* actor) const {
+    if (!actor) {
+        return std::string();
+    }
+    auto it = m_actorToGroup.find(actor);
+    return it != m_actorToGroup.end() ? it->second : std::string();
+}
+
+vtkIdType CompositeBlockRegistry::leafSlotCount(
+        const std::string& groupId) const {
+    const Group* group = groupOf(groupId);
+    return group ? static_cast<vtkIdType>(group->leafOrder.size()) : 0;
+}
+
+vtkDataObject* CompositeBlockRegistry::blockAtFlatIndex(
+        const std::string& groupId, vtkIdType flatIndex) const {
+    const Group* group = groupOf(groupId);
+    return group ? blockObject(*group, flatIndex) : nullptr;
+}
+
+bool CompositeBlockRegistry::blockVisible(const std::string& groupId,
+                                          vtkIdType flatIndex) const {
+    const Group* group = groupOf(groupId);
+    if (!group) {
+        return false;
+    }
+    vtkDataObject* block = blockObject(*group, flatIndex);
+    if (!block) {
+        return false;
+    }
+    // Invisible leaves render nothing, so a CPU pick ray must skip them too.
+    if (group->attributes->HasBlockVisibility(block)) {
+        return group->attributes->GetBlockVisibility(block);
+    }
+    return true;
+}
+
+bool CompositeBlockRegistry::bakeLeafTransform(const std::string& leafId,
+                                               const vtkMatrix4x4* matrix) {
+    if (!matrix) {
+        return false;
+    }
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return false;
+    }
+    Group& group = m_groups[it->second.groupId];
+    auto* block =
+            vtkPolyData::SafeDownCast(blockObject(group, it->second.flatIndex));
+    if (!block) {
+        return false;
+    }
+
+    vtkPoints* points = block->GetPoints();
+    if (!points) {
+        return false;
+    }
+
+    // In-place bake: same data object keeps per-leaf display attributes and
+    // avoids a full block re-registration. O(points) per transformed leaf,
+    // cheap for the small parts that aggregate into composite groups.
+    const double* m = matrix->GetData();  // row-major 4x4
+    for (vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i) {
+        const double* p = points->GetPoint(i);
+        double out[3];
+        for (int r = 0; r < 3; ++r) {
+            out[r] = m[r * 4 + 0] * p[0] + m[r * 4 + 1] * p[1] +
+                     m[r * 4 + 2] * p[2] + m[r * 4 + 3];
+        }
+        points->SetPoint(i, out);
+    }
+    points->Modified();
+    block->Modified();
+    return true;
+}
+
+void CompositeBlockRegistry::anchorLeafBase(const std::string& leafId) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return;
+    }
+    Group& group = m_groups[it->second.groupId];
+    auto* block =
+            vtkPolyData::SafeDownCast(blockObject(group, it->second.flatIndex));
+    vtkPoints* points = block ? block->GetPoints() : nullptr;
+    if (!points) {
+        m_leafBasePoints.erase(leafId);
+        m_leafWorldMatrix.erase(leafId);
+        return;
+    }
+
+    const vtkIdType n = points->GetNumberOfPoints();
+    std::vector<double>& base = m_leafBasePoints[leafId];
+    base.resize(static_cast<size_t>(n) * 3);
+    for (vtkIdType i = 0; i < n; ++i) {
+        const double* p = points->GetPoint(i);
+        base[static_cast<size_t>(i) * 3 + 0] = p[0];
+        base[static_cast<size_t>(i) * 3 + 1] = p[1];
+        base[static_cast<size_t>(i) * 3 + 2] = p[2];
+    }
+    // The base is the still-untransformed local geometry; no world matrix
+    // has been applied to it yet.
+    m_leafWorldMatrix.erase(leafId);
+}
+
+bool CompositeBlockRegistry::setLeafWorldTransform(const std::string& leafId,
+                                                   const vtkMatrix4x4* matrix) {
+    if (!matrix) {
+        return false;
+    }
+    auto wmIt = m_leafWorldMatrix.find(leafId);
+    if (wmIt != m_leafWorldMatrix.end()) {
+        const std::array<double, 16>& last = wmIt->second;
+        const double* m = matrix->GetData();  // row-major 4x4
+        bool same = true;
+        for (int i = 0; i < 16; ++i) {
+            if (last[i] != m[i]) {
+                same = false;
+                break;
+            }
+        }
+        // Idempotence: the same world matrix is already baked in. Re-baking
+        // it would compose onto itself and fly the block away — and would
+        // also dirty the points (VBO re-upload + stale bounds) every frame.
+        // Report "no change" so callers skip bounds invalidation too.
+        //
+        // Exact (bitwise) comparison is deliberate: a false "different"
+        // merely re-bakes an identical state from the anchored base
+        // (harmless, idempotent); an epsilon comparison could swallow a real
+        // but tiny pose increment (continuous small-step motion) and freeze
+        // the leaf at a stale pose.
+        if (same) {
+            return false;
+        }
+    }
+
+    auto baseIt = m_leafBasePoints.find(leafId);
+    if (baseIt == m_leafBasePoints.end()) {
+        return false;
+    }
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return false;
+    }
+    Group& group = m_groups[it->second.groupId];
+    auto* block =
+            vtkPolyData::SafeDownCast(blockObject(group, it->second.flatIndex));
+    vtkPoints* points = block ? block->GetPoints() : nullptr;
+    if (!points || points->GetNumberOfPoints() * 3 !=
+                           static_cast<vtkIdType>(baseIt->second.size())) {
+        return false;
+    }
+
+    const double* m = matrix->GetData();  // row-major 4x4
+    const std::vector<double>& base = baseIt->second;
+    const vtkIdType n = points->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < n; ++i) {
+        const double* p = &base[static_cast<size_t>(i) * 3];
+        double out[3];
+        for (int r = 0; r < 3; ++r) {
+            out[r] = m[r * 4 + 0] * p[0] + m[r * 4 + 1] * p[1] +
+                     m[r * 4 + 2] * p[2] + m[r * 4 + 3];
+        }
+        points->SetPoint(i, out);
+    }
+    points->Modified();
+    block->Modified();
+
+    std::array<double, 16>& last = m_leafWorldMatrix[leafId];
+    for (int i = 0; i < 16; ++i) {
+        last[i] = m[i];
+    }
+    return true;
+}
+
+bool CompositeBlockRegistry::hasLeafWorldAnchor(
+        const std::string& leafId) const {
+    return m_leafBasePoints.count(leafId) != 0;
+}
+
+void CompositeBlockRegistry::setLeafVisibility(const std::string& leafId,
+                                               bool visible) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        group.attributes->SetBlockVisibility(block, visible);
+    }
+}
+
+bool CompositeBlockRegistry::setLeafVisibilityIfChanged(
+        const std::string& leafId, bool visible) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return false;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        // Unset blocks read back as visible (the attribute-map default), so a
+        // show push on a fresh leaf is correctly a no-op while a hide push
+        // always lands.
+        if (group.attributes->GetBlockVisibility(block) == visible) {
+            return false;
+        }
+        group.attributes->SetBlockVisibility(block, visible);
+        return true;
+    }
+    return false;
+}
+
+void CompositeBlockRegistry::setLeafOpacity(const std::string& leafId,
+                                            double opacity) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        group.attributes->SetBlockOpacity(block, opacity);
+    }
+}
+
+void CompositeBlockRegistry::setLeafColor(const std::string& leafId,
+                                          const double color[3]) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        if (color) {
+            group.attributes->SetBlockColor(block, color);
+        } else {
+            group.attributes->RemoveBlockColor(block);
+        }
+    }
+}
+
+void CompositeBlockRegistry::setLeafPickability(const std::string& leafId,
+                                                bool pickable) {
+    auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) {
+        return;
+    }
+    Group& group = m_groups[it->second.groupId];
+    if (vtkDataObject* block = blockObject(group, it->second.flatIndex)) {
+        group.attributes->SetBlockPickability(block, pickable);
+    }
+}
+
+void CompositeBlockRegistry::setGroupTransform(const std::string& groupId,
+                                               const vtkMatrix4x4* matrix) {
+    Group* group = groupOf(groupId);
+    if (!group) {
+        return;
+    }
+    if (matrix) {
+        group->actor->SetUserMatrix(const_cast<vtkMatrix4x4*>(matrix));
+    } else {
+        group->actor->SetUserMatrix(nullptr);
+    }
+}
+
+}  // namespace VtkRendering

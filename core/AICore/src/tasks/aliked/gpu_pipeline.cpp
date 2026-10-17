@@ -5,30 +5,33 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gpu_pipeline.hpp"
+#include "tasks/aliked/gpu_pipeline.hpp"
 
 #include <ggml-backend.h>
 
-#include "aliked_gpu_ops.hpp"
-#include "aliked_stage_bench.hpp"
-#include "deform_conv.hpp"
-#include "ggml_cnn.hpp"
-#include "ggml_gpu_ops.hpp"
-#include "ggml_gpu_session.hpp"
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_postprocess.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
-#include "model_weights.hpp"
-#include "score_debug.hpp"
-#include "tensor_ops.hpp"
+#include "tasks/aliked/aliked_gpu_ops.hpp"
+#include "tasks/aliked/aliked_stage_bench.hpp"
+#include "tasks/aliked/deform_conv.hpp"
+#include "tasks/aliked/ggml_cnn.hpp"
+#include "tasks/aliked/ggml_gpu_ops.hpp"
+#include "tasks/aliked/ggml_gpu_session.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_postprocess.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+#include "tasks/aliked/model_weights.hpp"
+#include "tasks/aliked/score_debug.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
+
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 #if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 
-#include "cuda/aliked_cuda.hpp"
+#include "tasks/aliked/cuda/aliked_cuda.hpp"
+
 #endif
 
 #include <algorithm>

@@ -1,5 +1,14 @@
 include(ExternalProject)
 
+# The version and configuration MUST match the copy OpenImageIO builds
+# internally (its build_libjpeg-turbo.cmake: 3.1.2, WITH_JPEG8=1, static).
+# azure_kinect's TurboJPEG archive and OIIO's libjpeg.a land in the same
+# static link (pybind module, app); two different libjpeg-turbo versions
+# export overlapping jpeg_* symbols with gaps, which pulls BOTH
+# implementations into the link - multiple definition (ubuntu-jammy CI).
+# With identical symbol sets, whichever archive the linker scans first
+# satisfies every jpeg_* reference and the second pulls no members.
+
 # Set compiler flags
 if (MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
@@ -51,9 +60,10 @@ endif()
 
 ExternalProject_Add(ext_turbojpeg
     PREFIX turbojpeg
-    URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.1.5.1.tar.gz
-    URL_HASH SHA256=61846251941e5791005fb7face196eec24541fce04f12570c308557529e92c75
-    DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/libjpeg-turbo"
+    GIT_REPOSITORY https://github.com/libjpeg-turbo/libjpeg-turbo
+    # 3.1.2 = the exact commit OpenImageIO's internal build pins
+    # (build_libjpeg-turbo.cmake); pin the commit, not the mutable tag.
+    GIT_TAG 4e151a4ad91001b3aa8c2ece2205c15f487ce320
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -62,6 +72,11 @@ ExternalProject_Add(ext_turbojpeg
         -DENABLE_STATIC=ON
         -DENABLE_SHARED=OFF
         -DWITH_SIMD=${WITH_SIMD}
+        # Match OIIO's internal configuration: without WITH_JPEG8 the
+        # jpeg_mem_* API is absent and the gap pulls OIIO's libjpeg.a into
+        # links that already carry this archive (see header comment).
+        -DWITH_JPEG8=1
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         ${ExternalProject_CMAKE_ARGS_hidden}
         # WARNING: libjpeg-turbo uses its own old version of
         # GNUInstallDirs.cmake and leads to invalid installs with

@@ -40,6 +40,35 @@ cli-anything-acloudviewer batch-convert ./scans/ ./out/ --format .ply
 cli-anything-acloudviewer batch-convert ./scans/ ./out/ -f .ply --filter-ext .las .laz
 ```
 
+### AICore Batch Inference
+
+```bash
+# Stable task registry; no model is loaded
+cli-anything-acloudviewer --json ai list
+
+# Query options from the installed plugin (the binary is the source of truth)
+cli-anything-acloudviewer --json --mode headless ai schema sam3
+
+# Repeat --image and --option for batch inputs and list-valued options
+cli-anything-acloudviewer --json --mode headless ai run sam3 \
+  --image frame-1.jpg --image frame-2.jpg --out-dir ./sam3-out \
+  --option MODE=pcs --option TEXT=person --option DEVICE=cpu
+
+# Ordinary/third-party plugin passthrough; --arg preserves legacy argv order
+cli-anything-acloudviewer --mode headless plugin run ANIMATION \
+  --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
+```
+
+`ai run` accepts common shortcuts (`--image`, `--input-dir`, `--input-list`,
+`--out-dir`, `--model`, `--device`, `--threads`, `--download`) and arbitrary
+typed `KEY=VALUE` pairs through repeated `--option`. A shortcut is valid only
+when `ai schema TASK` lists the same uppercase key (for example `yolo-track`
+takes `--option VIDEO=...`, not `--image`); native parsers reject unknown
+keys. JSON literals preserve booleans, numbers, and arrays. The 17
+registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
+FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
+AnyLabeling, MapAnything, and SAM3D.
+
 ---
 
 ## Processing Commands
@@ -335,6 +364,75 @@ Options:
   --use-gpu                     # Enable GPU acceleration
 ```
 
+### Fine-Grained Pipeline Steps
+
+```bash
+cli-anything-acloudviewer reconstruct extract-features images/ --database db.db
+cli-anything-acloudviewer reconstruct match db.db --method sequential
+cli-anything-acloudviewer reconstruct sparse db.db images/ -o sparse/
+cli-anything-acloudviewer reconstruct bundle-adjust sparse/ -o sparse_ba/
+cli-anything-acloudviewer reconstruct undistort images/ --input-path sparse/ -o undistorted/
+cli-anything-acloudviewer reconstruct dense-stereo undistorted/
+cli-anything-acloudviewer reconstruct fuse undistorted/ -o fused.ply      # colored dense cloud
+cli-anything-acloudviewer reconstruct poisson fused.ply -o meshed-poisson.ply
+cli-anything-acloudviewer reconstruct delaunay-mesh undistorted/ -o meshed-delaunay.ply
+cli-anything-acloudviewer reconstruct texture-mesh undistorted/ -o textured/ [--mesh-path mesh.ply]
+cli-anything-acloudviewer reconstruct triangulate sparse/ -o sparse_tri/   # known poses -> points
+cli-anything-acloudviewer reconstruct filter-points sparse/ -o sparse_filtered/
+cli-anything-acloudviewer reconstruct register-images --database db.db sparse/ -o sparse_reg/
+cli-anything-acloudviewer reconstruct advancing-front undistorted/ -o meshed-af.ply
+cli-anything-acloudviewer reconstruct convert-model sparse/ -o model.ply --output-type PLY
+cli-anything-acloudviewer reconstruct analyze-model sparse/
+cli-anything-acloudviewer reconstruct crop-model sparse/ -o cropped/ --boundary "min-x,y,z max-x,y,z"
+cli-anything-acloudviewer reconstruct transform-model sparse/ -o transformed/ --transform t.txt
+cli-anything-acloudviewer reconstruct color-extract --image-path images/ sparse/ -o sparse_colored/
+cli-anything-acloudviewer reconstruct create-database new.db
+cli-anything-acloudviewer reconstruct hierarchical-sparse --database db.db --image-path images/ -o sparse/
+```
+
+### Feed-Forward Multi-View Reconstruction (qMapAnything, no GUI)
+
+Headless MapAnything-family reconstruction (VGGT-Omega / VGGT / Pi3 / Pi3X /
+MapAnything / DUSt3R) — one child process, one model load, >= 2 views
+(single forward up to `MAX_FRAMES_PER_PASS`, default 64; larger sets stream
+Sim3-aligned overlap-2 chunks through the same driver as the GUI, and a pass
+the device cannot hold is halved automatically — `frames_per_pass` in the
+RESULT_JSON records what ran), merged world-frame colored PLY + RESULT_JSON. `RAW_OUTPUT_DIR` exports the
+unfiltered inference tensors and camera-to-world matrices for upstream parity;
+`GT_META` supplies benchmark camera centers so metric-frame alignment and the
+2 cm voxel stage use valid units (the frame of the upstream map-anything-ggml
+e2e PLYs; the GUI applies it automatically for `<scene>/images` inputs next
+to `<scene>/scene_meta.json`, headless only when `GT_META` is given).
+`REF_IMAGES_PATH` + `REF_IS_GPS` place your own images in a real-world frame
+from known camera positions, in the COLMAP `model_aligner --ref_images_path`
+text format (`<image_name> X Y Z` per line, >= 3 images not on one line;
+`REF_IS_GPS 1` reads WGS84 lat/lon/alt into local ENU metres about the first
+line, `0` keeps cartesian X Y Z; large coordinates make the PLY xyz double). Batch-friendly on GPU-less machines via
+`DEVICE CPU`. Other AI plugin commands are indexed in
+[COMMAND-MAPPING.md](COMMAND-MAPPING.md).
+
+```bash
+ACloudViewer -SILENT -NO_TIMESTAMP -MAP_ANYTHING_RECONSTRUCT \
+    IMAGE img1.jpg IMAGE img2.jpg \          # repeat IMAGE (>= 2)
+    OUT_DIR /tmp/map_out \                   # output directory
+    MODEL vggt-omega-1b-512-q8_0.gguf \      # path OR published catalog name
+    DEVICE cuda \                            # auto|cpu|cuda|vulkan
+    IMAGE_SIZE 512 RESIZE_MODE balanced \    # balanced|max_size|square (default: catalog)
+    MAX_FRAMES_PER_PASS 64 \                 # views per forward (>= 2)
+    MIN_CONF 0.5 \                           # default: catalog entry
+    RAW_OUTPUT_DIR raw \                     # pose/depth/conf/c2w parity data
+    STAGE_DUMP_DIR stages \                  # debug build: intermediate tensors
+    GT_META /data/courtyard/scene_meta.json \ # optional metric benchmark anchor
+    CLOUD_PLY cloud.ply RESULT_JSON result.json
+```
+
+For your own images replace `GT_META` with, e.g.,
+`REF_IMAGES_PATH /data/site/cameras.txt REF_IS_GPS 1` (the two options are
+exclusive).
+
+Headless runs do NOT trigger model downloads — pre-fetch through the GUI or
+place the GGUF in `~/cloudViewer_data/extract/map_anything_models/`.
+
 ### Step-by-Step (Advanced)
 
 | Command | Description | Key Options |
@@ -536,6 +634,15 @@ cli-anything-acloudviewer reconstruct match db.db --method exhaustive
 # 3. Sparse reconstruction
 cli-anything-acloudviewer reconstruct sparse -d db.db --image-path ./images/ -o ./sparse/
 
+# 3b. Reproducible sparse reconstruction (incremental or --method hierarchical).
+#     --mapper-option KEY=VALUE is repeatable and forwarded verbatim as --KEY VALUE;
+#     duplicate keys, malformed pairs, or --random-seed together with
+#     Mapper.random_seed are rejected before COLMAP runs, and COLMAP itself
+#     rejects unknown option names (non-zero exit).
+cli-anything-acloudviewer reconstruct sparse -d db.db --image-path ./images/ -o ./sparse/ \
+  --random-seed 17 --mapper-option Mapper.min_num_matches=32 \
+  --mapper-option Mapper.num_threads=1
+
 # 4. Undistort images
 cli-anything-acloudviewer reconstruct undistort --image-path ./images/ -i ./sparse/0 -o ./dense/
 
@@ -677,7 +784,7 @@ export ACV_BINARY=/path/to/ACloudViewer
 export ACV_CLI_MODE=headless
 
 # WebSocket URL (GUI mode)
-export ACV_RPC_URL=ws://localhost:6001
+export ACV_RPC_URL=ws://127.0.0.1:6001
 
 # Log level
 export ACV_LOG_LEVEL=DEBUG

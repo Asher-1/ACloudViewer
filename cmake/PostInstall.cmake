@@ -23,6 +23,10 @@ set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
 
+# OIIO is delivered statically on every platform (see 3rdparty/openimageio):
+# the archives embed into the consuming binaries, so there is no OIIO runtime
+# deployment or payload verification in any installable component.
+
 function(replace_version_in_file file_path)
     # read contents
     file(READ "${file_path}" FILE_CONTENT)

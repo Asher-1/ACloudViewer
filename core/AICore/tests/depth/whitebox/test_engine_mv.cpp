@@ -11,9 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "engine.hpp"
-#include "image_io.hpp"
-#include "parity.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 // e2e multi-view gate: build 2 Images from the MV baseline raw views, run the
 // full multi-view pipeline (one backbone_mv pass -> per-view depth + pose), and
 // compare each view's depth/extrinsics/intrinsics against the original PyTorch
@@ -43,7 +44,7 @@ int main() {
         for (size_t i = 0; i < imgs[v].rgb.size(); ++i)
             imgs[v].rgb[i] = (unsigned char)(raw[i] + 0.5f);
     }
-    auto eng = aicore::depth::Engine::load(gguf, 0);
+    auto eng = aicore::depth::Engine::load(gguf, {});
     if (!eng) return 1;
     std::vector<aicore::depth::ViewResult> views;
     int oH = 0, oW = 0;

@@ -46,39 +46,37 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
 
     set(_versioned_files "")
     foreach(_base IN ITEMS ggml ggml-base)
-        file(GLOB _matches
-            "${src_dir}/${lib_prefix}${_base}${lib_suffix}*"
-            "${src_dir}/${lib_prefix}${_base}.*${lib_suffix}")
-        foreach(_path IN LISTS _matches)
-            if(NOT EXISTS "${_path}")
-                continue()
-            endif()
-            get_filename_component(_name "${_path}" NAME)
-            # Match both Linux (libggml.so.0.18.1) and macOS (libggml.0.18.1.dylib)
-            if(_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
-               OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
-                if(IS_SYMLINK "${_path}")
-                    get_filename_component(_path "${_path}" REALPATH)
-                    get_filename_component(_name "${_path}" NAME)
-                endif()
-                _ggml_list_contains(_versioned_files "${_path}" _already)
-                if(_already)
-                    continue()
+        # The ExternalProject install directory can retain physical libraries from
+        # older ggml versions.  The unversioned linker name is the authoritative
+        # current version; following it avoids packaging every stale glob match.
+        set(_link_path "${src_dir}/${lib_prefix}${_base}${lib_suffix}")
+        if(EXISTS "${_link_path}")
+            if(IS_SYMLINK "${_link_path}")
+                get_filename_component(_path "${_link_path}" REALPATH)
+                get_filename_component(_name "${_path}" NAME)
+                # Match both Linux (libggml.so.0.21.0) and macOS
+                # (libggml.0.21.0.dylib).
+                if(NOT (_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+                        OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$"))
+                    message(FATAL_ERROR
+                        "CopyGgmlBackends: ${_link_path} resolves to an "
+                        "unexpected filename: ${_name}")
                 endif()
                 list(APPEND _versioned_files "${_path}")
+            elseif(lib_suffix STREQUAL ".dll")
+                # Windows ggml libraries are not versioned or symlinked.
+                list(APPEND _versioned_files "${_link_path}")
+            else()
+                message(FATAL_ERROR
+                    "CopyGgmlBackends: expected ${_link_path} to be a symlink "
+                    "to the current versioned library")
             endif()
-        endforeach()
+        else()
+            message(FATAL_ERROR
+                "CopyGgmlBackends: current ggml linker name is missing: "
+                "${_link_path}")
+        endif()
     endforeach()
-
-    # Windows: ggml ships plain DLLs without version numbers.
-    if(NOT _versioned_files AND lib_suffix STREQUAL ".dll")
-        foreach(_base IN ITEMS ggml ggml-base)
-            set(_plain "${src_dir}/${lib_prefix}${_base}${lib_suffix}")
-            if(EXISTS "${_plain}" AND NOT IS_SYMLINK "${_plain}")
-                list(APPEND _versioned_files "${_plain}")
-            endif()
-        endforeach()
-    endif()
 
     if(NOT _versioned_files)
         message(FATAL_ERROR
@@ -91,13 +89,13 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
             "${_path}" "${dest_dir}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
 
-        # Linux: libggml.so.0.18.1 → soname libggml.so.0 → link libggml.so
+        # Linux: libggml.so.<full-version> → soname libggml.so.<major> → link libggml.so
         if(_name MATCHES "^${lib_prefix}(ggml-base|ggml)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}${lib_suffix}.${_soname_major}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
-        # macOS: libggml.0.18.1.dylib → soname libggml.0.dylib → link libggml.dylib
+        # macOS: libggml.<full-version>.dylib → soname libggml.<major>.dylib → link libggml.dylib
         elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")

@@ -7,8 +7,8 @@
 
 #include <cstdio>
 
-#include "common/test_macros.hpp"
-#include "model_cache.hpp"
+#include "common/model_cache.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 

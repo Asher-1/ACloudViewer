@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ray_pose.hpp"
+#include "tasks/depth/ray_pose.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <random>
 
-#include "linalg.hpp"
+#include "tasks/depth/linalg.hpp"
 
 namespace aicore {
 namespace depth {

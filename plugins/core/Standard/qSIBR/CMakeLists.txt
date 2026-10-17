@@ -42,12 +42,11 @@ if(PLUGIN_STANDARD_QSIBR)
     if(POLICY CMP0167)
         cmake_policy(SET CMP0167 OLD)
     endif()
-    if(TARGET 3rdparty_boost)
-        set(SIBR_BOOST_LIBS 3rdparty_boost)
-    else()
-        find_package(Boost REQUIRED COMPONENTS system chrono filesystem date_time)
-        set(SIBR_BOOST_LIBS ${Boost_LIBRARIES})
-    endif()
+    # Boost comes from the platform package (apt/conda) like every other
+    # consumer; the bundled 3rdparty_boost target was removed together with
+    # the ext_boost source build.
+    find_package(Boost REQUIRED COMPONENTS system chrono filesystem date_time)
+    set(SIBR_BOOST_LIBS ${Boost_LIBRARIES})
 
     # OpenCV
     if(TARGET 3rdparty_opencv)

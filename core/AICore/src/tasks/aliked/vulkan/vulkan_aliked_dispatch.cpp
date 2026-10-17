@@ -5,15 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
 
 #include <ggml-backend.h>
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <mutex>
+
+#include "tasks/aliked/aliked_common.hpp"
 
 #if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
 #include <dlfcn.h>
@@ -126,12 +127,9 @@ bool CallVulkanNoThrow(const char *operation, Call &&call) {
     try {
         return call();
     } catch (const std::exception &e) {
-        std::fprintf(stderr, "[vk-aliked] %s failed: %s\n", operation,
-                     e.what());
+        ALIKED_LOG_ERR("%s failed: %s", operation, e.what());
     } catch (...) {
-        std::fprintf(stderr,
-                     "[vk-aliked] %s failed with an unknown exception\n",
-                     operation);
+        ALIKED_LOG_ERR("%s failed with an unknown exception", operation);
     }
     return false;
 }
@@ -196,28 +194,9 @@ void EnsureResolved(ggml_backend_t backend) {
 }
 
 void LogVkAlikedProbe(ggml_backend_t backend) {
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_TRACE") == nullptr) {
-        return;
-    }
-    static bool logged = false;
-    if (logged) {
-        return;
-    }
-    logged = true;
-    EnsureResolved(backend);
-    std::fprintf(stderr,
-                 "[vk-aliked] available=%d dkd=%d sddh=%d upsample=%d "
-                 "dense_copy=%d deform=%d\n",
-                 g_api.available != nullptr, g_api.run_dkd != nullptr,
-                 g_api.run_sddh != nullptr, g_api.upsample != nullptr,
-                 g_api.dense_copy != nullptr, g_api.deform_conv != nullptr);
-    if (g_api.available != nullptr && backend != nullptr) {
-        std::fprintf(stderr, "[vk-aliked] runtime=%d\n",
-                     CallVulkanNoThrow("availability probe",
-                                       [&] { return g_api.available(backend); })
-                             ? 1
-                             : 0);
-    }
+    // The historical LIGHTGLUE_ALIKED_VULKAN_TRACE gate was development
+    // scaffolding and is removed; the probe dump is dormant.
+    (void)backend;
 }
 
 }  // namespace

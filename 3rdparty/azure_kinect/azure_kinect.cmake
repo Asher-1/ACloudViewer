@@ -22,11 +22,21 @@ set(BUILD_AZURE_KINECT_COMMENT "")
 # This works even when the user does not have k4a libraries installed
 # in `Program Files`. We only need the headers.
 if (WIN32)
+    # The download goes through download_with_retry.cmake: the host CDNs
+    # occasionally return transient errors (HTTP 504) and a custom
+    # DOWNLOAD_COMMAND must also extract the archive into SOURCE_DIR because
+    # it disables ExternalProject's automatic extraction.
     ExternalProject_Add(
         ext_k4a
         PREFIX k4a
-        URL https://www.nuget.org/api/v2/package/Microsoft.Azure.Kinect.Sensor/1.4.1
-        URL_HASH SHA256=6c512a20c4a82b80e02b0f6d4a6cda51e88d4893cd47ab85c7bca37cd364c976
+        DOWNLOAD_COMMAND
+            ${CMAKE_COMMAND}
+            -DURL=https://www.nuget.org/api/v2/package/Microsoft.Azure.Kinect.Sensor/1.4.1
+            -DFILE_PATH=<DOWNLOAD_DIR>/Microsoft.Azure.Kinect.Sensor.1.4.1.nupkg
+            -DEXPECTED_HASH=SHA256=6c512a20c4a82b80e02b0f6d4a6cda51e88d4893cd47ab85c7bca37cd364c976
+            -DSOURCE_DIR=<SOURCE_DIR>
+            -DMAX_RETRIES=5
+            -P ${CMAKE_CURRENT_LIST_DIR}/download_with_retry.cmake
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/k4a"
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -36,11 +46,18 @@ if (WIN32)
     ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
     set(K4A_INCLUDE_DIR ${SOURCE_DIR}/build/native/include/) # "/" is critical
 else()
+    # See the WIN32 branch for why the download is wrapped in a retry script.
     ExternalProject_Add(
         ext_k4a
         PREFIX k4a
-        URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
-        URL_HASH SHA256=08303094b9ad36ea74c19bc8b8950c97055e73dd2e8bd18e2af5e165a2289cd2
+        DOWNLOAD_COMMAND
+            ${CMAKE_COMMAND}
+            -DURL=https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
+            -DFILE_PATH=<DOWNLOAD_DIR>/libk4a1.4-dev_1.4.1_amd64.deb
+            -DEXPECTED_HASH=SHA256=08303094b9ad36ea74c19bc8b8950c97055e73dd2e8bd18e2af5e165a2289cd2
+            -DSOURCE_DIR=<SOURCE_DIR>
+            -DMAX_RETRIES=5
+            -P ${CMAKE_CURRENT_LIST_DIR}/download_with_retry.cmake
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/k4a"
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""

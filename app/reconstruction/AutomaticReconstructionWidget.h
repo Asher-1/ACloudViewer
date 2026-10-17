@@ -52,6 +52,7 @@ private:
     QComboBox* data_type_cb_;
     QComboBox* quality_cb_;
     QComboBox* mesher_cb_;
+    QComboBox* texturing_type_cb_;
 
     QComboBox* sparse_mode_cb_;
     QComboBox* stereo_mode_cb_;
@@ -78,8 +79,8 @@ private:
     QFutureWatcher<DownloadResult>* download_watcher_ = nullptr;
     std::shared_ptr<std::atomic_bool> download_cancelled_;
 
-    std::vector<std::string> meshing_paths_;
-    std::vector<std::string> textured_paths_;
+    std::vector<std::filesystem::path> meshing_paths_;
+    std::vector<std::filesystem::path> textured_paths_;
     std::vector<std::vector<colmap::PlyPoint>> fused_points_;
     bool texturing_success_ = false;
     colmap::DA3VramCapWarning da3_vram_warning_;

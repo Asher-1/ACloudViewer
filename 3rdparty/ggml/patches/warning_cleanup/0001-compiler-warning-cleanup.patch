@@ -1,0 +1,34 @@
+diff --git a/src/ggml-cpu/ops.cpp b/src/ggml-cpu/ops.cpp
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -5235,8 +5235,6 @@ static void ggml_compute_forward_set_rows_impl(
+     const int64_t ir0 = dr*ith;
+     const int64_t ir1 = std::min(ir0 + dr, nr);
+ 
+-    const size_t rs = ggml_row_size(src0->type, nc);
+-
+     ggml_from_float_t const from_float = ggml_get_type_traits_cpu(dst->type)->from_float;
+ 
+     for (int64_t i03 = 0; i03 < ne03; ++i03) {
+@@ -5258,6 +5256,7 @@ static void ggml_compute_forward_set_rows_impl(
+                                             ((char *)  dst->data + i1*nb1  + i02*nb2  + i03*nb3), nc);
+                 } else if constexpr (std::is_same_v<src_t, ggml_fp16_t>) {
+                     if (dst->type == GGML_TYPE_F16) {
++                        const size_t rs = ggml_row_size(src0->type, nc);
+                         memcpy(
+                                             ((char *)  dst->data + i1*nb1  + i02*nb2  + i03*nb3),
+                                             ((char *) src0->data +  i*nb01 + i02*nb02 + i03*nb03),
+diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -875,8 +875,8 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+         const int64_t wbytes_cur = kernel->ne[3] * (int64_t) kernel->ne[0] * kernel->ne[1] * kernel->ne[2] *
+                                    (kernel->type == GGML_TYPE_Q8_0 ? (int64_t) sizeof(half) : (int64_t) ggml_type_size(kernel->type));
+         if (plan && (plan->owner_id != owner_id_cur ||
+-                     plan->in_nbytes != ggml_nbytes(input) ||
+-                     plan->out_nbytes != ggml_nbytes(dst) ||
++                     plan->in_nbytes != static_cast<int64_t>(ggml_nbytes(input)) ||
++                     plan->out_nbytes != static_cast<int64_t>(ggml_nbytes(dst)) ||
+                      plan->wbytes != wbytes_cur)) {
+             // The previous session's kernels may still be queued on the stream:
+             // graph compute is asynchronous, and per-call ggml contexts can

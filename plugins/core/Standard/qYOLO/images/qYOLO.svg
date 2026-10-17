@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#0d3320"/>
+  <!-- detection box -->
+  <rect x="9" y="22" width="34" height="26" rx="2" fill="none" stroke="#ffd54f" stroke-width="3"/>
+  <!-- label tag -->
+  <rect x="7" y="10" width="34" height="11" rx="2" fill="#ffd54f"/>
+  <text x="24" y="19" font-family="sans-serif" font-size="8" font-weight="bold" fill="#0d3320" text-anchor="middle">YOLO</text>
+  <!-- depth turbo ramp: blue -> green -> yellow -> red -->
+  <defs>
+    <linearGradient id="depthRamp" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#30123b"/>
+      <stop offset="0.35" stop-color="#47a527"/>
+      <stop offset="0.65" stop-color="#fcb519"/>
+      <stop offset="1" stop-color="#7a0403"/>
+    </linearGradient>
+  </defs>
+  <rect x="50" y="12" width="9" height="40" rx="2" fill="url(#depthRamp)" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="54.5" y="10" font-family="sans-serif" font-size="6" font-weight="bold" fill="#4fc3f7" text-anchor="middle">DEP</text>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "MapAnything Multi-View Reconstruction",
+  "icon": ":/CC/plugin/qMapAnything/images/qMapAnything.svg",
+  "description": "Universal feed-forward metric 3D reconstruction from multi-view image sets (VGGT-Omega, VGGT, Pi3, Pi3X, MapAnything, DUSt3R) via native GGML inference.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "map-anything-ggml cpp_ggml: https://github.com/facebookresearch/map-anything" },
+    { "text": "MapAnything: https://map-anything.github.io" },
+    { "text": "Models: https://huggingface.co/Asher-1/map_anything_vggt" },
+    { "text": "Test data: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/map_anything_vggt_test_data" }
+  ]
+}

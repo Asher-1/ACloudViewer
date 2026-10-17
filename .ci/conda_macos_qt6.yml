@@ -2,6 +2,7 @@ name: python_qt6
 channels:
   - conda-forge
 dependencies:
+  - cmake=3.31.8
   - python=3.13
   - pip
   - ninja
@@ -10,6 +11,7 @@ dependencies:
   - libcurl=8.14.*
   - qt6-main>=6.4.* # reconstruction
   - xerces-c=3.2.* # reconstruction
+  - llvm-openmp # AppleClang does not ship OpenMP runtime; required by reconstruction/CVCoreLib
   - cgal=6.* # facets
   - ffmpeg=7.1.*
   - typing_extensions # fix pytorch import missing issues

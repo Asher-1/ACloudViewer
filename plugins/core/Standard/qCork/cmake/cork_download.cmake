@@ -22,6 +22,13 @@ if(WIN32)
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
+        # CorkSupport.cmake links these archives by absolute path; Ninja
+        # needs a rule that generates them.
+        BUILD_BYPRODUCTS
+            <SOURCE_DIR>/cork/lib/x64/Release/wincork2013.lib
+            <SOURCE_DIR>/cork/lib/x64/Debug/wincork2013.lib
+            <SOURCE_DIR>/mpir/lib/x64/Release/mpir.lib
+            <SOURCE_DIR>/mpir/lib/x64/Debug/mpir.lib
     )
     
     ExternalProject_Get_Property(ext_cork SOURCE_DIR)
@@ -182,6 +189,9 @@ echo \"Cork build completed successfully\"
         BUILD_IN_SOURCE 1
         BUILD_COMMAND bash ${CORK_BUILD_SCRIPT} <SOURCE_DIR>
         INSTALL_COMMAND ""
+        # CorkSupport.cmake links this archive by absolute path; Ninja
+        # needs a rule that generates it.
+        BUILD_BYPRODUCTS <SOURCE_DIR>/lib/libcork.a
     )
     
     ExternalProject_Get_Property(ext_cork SOURCE_DIR)

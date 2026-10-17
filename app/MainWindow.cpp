@@ -602,7 +602,7 @@ MainWindow::MainWindow()
 
 #ifdef USE_PYTHON_MODULE
 // QString applicationPath = QCoreApplication::applicationDirPath();
-// QString pyHome = applicationPath + "/python38";
+// QString pyHome = applicationPath + "/python310";
 // if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str())) {
 //     CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].")
 //                            .arg(pyHome));
@@ -637,6 +637,16 @@ MainWindow::~MainWindow() {
     vm.setShuttingDown(true);
     vm.blockSignals(true);
     disconnect(&vm, nullptr, this, nullptr);
+
+    // Drain the undo stack while the CV_db objects are still alive. Commands
+    // held by the stack can own DB entities (Remove-mode or undone-Add
+    // ecvEntityAddRemoveCommand); letting them reach static teardown deletes
+    // those entities from ~QUndoStack with all views already destroyed, and
+    // ~ccPointCloud -> notifyGeometryUpdate() then runs with dangling state.
+    // Clearing here releases them through the normal destruction path.
+    if (auto* undoMgr = vm.undoManager()) {
+        undoMgr->clear();
+    }
 
     // Clear active source FIRST to avoid dangling pointer access when
     // views are unregistered (which triggers updateActiveRepresentation).
@@ -1162,14 +1172,17 @@ void MainWindow::connectActions() {
             &MainWindow::createPointCloudFromClipboard);
     // the 'Paste from clipboard' tool depends on the clipboard state
     {
+        // mimeData() is null when the platform has no clipboard (offscreen,
+        // minimal) or it is empty; capture by value, the local dies here.
         const QClipboard* clipboard = QApplication::clipboard();
         assert(clipboard);
-        m_ui->actionPasteCloudFromClipboard->setEnabled(
-                clipboard->mimeData()->hasText());
-        connect(clipboard, &QClipboard::dataChanged, [&]() {
+        auto updatePasteAction = [this, clipboard]() {
+            const QMimeData* mimeData = clipboard->mimeData();
             m_ui->actionPasteCloudFromClipboard->setEnabled(
-                    clipboard->mimeData()->hasText());
-        });
+                    mimeData && mimeData->hasText());
+        };
+        updatePasteAction();
+        connect(clipboard, &QClipboard::dataChanged, this, updatePasteAction);
     }
 
     // "Edit > Normals" menu
@@ -2425,14 +2438,28 @@ void MainWindow::initDBRoot() {
             const auto& selected = getSelectedEntities();
             if (selected.empty()) return;
 
-            ccHObject* first = selected.front();
+            // selected.front() is traversal order, not the row the user just
+            // clicked. With a retained multi-selection it can be a cloud or
+            // folder while the current DB-tree row is a ccImage, leaving the
+            // view in 3D. The current index is the user's display target.
+            ccHObject* focus = nullptr;
+            if (m_ui->dbTreeView) {
+                const QModelIndex current = m_ui->dbTreeView->currentIndex();
+                if (current.isValid()) {
+                    focus = static_cast<ccHObject*>(current.internalPointer());
+                }
+            }
+            if (focus == nullptr || !focus->isSelected()) {
+                focus = selected.front();
+            }
+
             auto& vm = ecvViewManager::instance();
-            auto* ownerView = vm.findViewForEntity(first);
+            auto* ownerView = vm.findViewForEntity(focus);
             if (ownerView && ownerView != vm.getActiveView()) {
                 vm.setActiveView(ownerView);
             }
 
-            const bool imageSelected = shouldUse2DImageViewer(first);
+            const bool imageSelected = shouldUse2DImageViewer(focus);
             auto* glView = dynamic_cast<vtkGLView*>(vm.getActiveView());
             if (glView) {
                 bool was2D = false;
@@ -2448,9 +2475,22 @@ void MainWindow::initDBRoot() {
                 applyViewInteractionModeForEntity(glView, imageSelected);
 
                 if (imageSelected) {
-                    fitActiveViewForImageEntity(first, glView);
+                    // The selection refresh is deliberately non-forced for
+                    // large 3D scenes. A ccImage layer, however, is born in
+                    // drawImage() only during a forced pass; force this one
+                    // selected leaf before fitting or raising its layer.
+                    m_ccRoot->redrawCCObject(focus, true);
+                    fitActiveViewForImageEntity(focus, glView);
+                    if (focus->isA(CV_TYPES::IMAGE)) {
+                        if (auto imgVis = glView->getImageVis()) {
+                            const std::string layerId =
+                                    focus->getViewId().toStdString();
+                            imgVis->fitLayerToWindow(layerId);
+                            imgVis->raiseLayer(layerId);
+                        }
+                    }
                 } else if (was2D) {
-                    const ccBBox bbox = first->getDisplayBB_recursive(false);
+                    const ccBBox bbox = focus->getDisplayBB_recursive(false);
                     if (bbox.isValid()) {
                         glView->updateConstellationCenterAndZoom(&bbox);
                     }
@@ -4628,6 +4668,17 @@ void MainWindow::addToDB(ccHObject* obj,
     // Ensure the new entity and its children have redraw flags set
     // so the VTK pipeline creates actors during the draw pass.
     obj->setRedrawFlagRecursive(true);
+    // FORCE-REDRAW LATCH for the same pass: sensors (ccCameraSensor et al.)
+    // execute their drawMeOnly ONLY under a forced pass or the escape latch
+    // (ccHObject::draw: !forceRedraw && m_forceRedraw && !hasExist). The
+    // plain redraw flag above does NOT arm that latch, so a plugin that
+    // flips the entity visible AFTER addToDB (qLingbotMap materializes
+    // cameras invisible, then applyCameraDisplay shows them) never gets its
+    // first draw — the result window stayed empty until some unrelated
+    // forced refresh happened. The latch is consumed exactly once, only
+    // for entities that have no render channel yet (hasExist gate), so
+    // steady-state interaction pays nothing.
+    obj->setForceRedrawRecursive(true);
 
     // First, trigger a full draw pass to create VTK actors for the new entity.
     // This must happen BEFORE the camera reset so that resetCamera()
@@ -5755,6 +5806,8 @@ void MainWindow::disableAll() {
 }
 
 void MainWindow::updateUIWithSelection() {
+    QElapsedTimer selTimer;
+    selTimer.start();
     dbTreeSelectionInfo selInfo;
 
     m_selectedEntities.clear();
@@ -5765,6 +5818,15 @@ void MainWindow::updateUIWithSelection() {
     }
 
     enableUIItems(selInfo);
+
+    // Bottleneck probe: selection switches must stay sub-second even with
+    // thousands of entities in the DB tree.
+    const qint64 selMs = selTimer.elapsed();
+    if (selMs > 50 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[selection] updateUIWithSelection took %lld ms (%zu selected)",
+                static_cast<long long>(selMs), m_selectedEntities.size());
+    }
 }
 
 void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {

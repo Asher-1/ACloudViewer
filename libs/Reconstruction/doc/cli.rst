@@ -7,7 +7,7 @@ The command-line interface provides access to all of COLMAP's functionality for
 automated scripting. Each core functionality is implemented as a command to the
 ``colmap`` executable. Run ``colmap -h`` to list the available commands (or
 ``COLMAP.bat -h`` under Windows). Note that if you run COLMAP from the CMake
-build folder, the executable is located at ``./src/exe/colmap``. To start the
+build folder, the executable is located at ``./src/colmap/exe/colmap``. To start the
 graphical user interface, run ``colmap gui``.
 
 Example
@@ -46,14 +46,14 @@ of commands as an alternative to the automatic reconstruction command::
     $ colmap exhaustive_matcher \
        --database_path $DATASET_PATH/database.db
 
-    $ mkdir $DATASET_PATH/sparse
+    $ mkdir -p $DATASET_PATH/sparse
 
     $ colmap mapper \
         --database_path $DATASET_PATH/database.db \
         --image_path $DATASET_PATH/images \
         --output_path $DATASET_PATH/sparse
 
-    $ mkdir $DATASET_PATH/dense
+    $ mkdir -p $DATASET_PATH/dense
 
     $ colmap image_undistorter \
         --image_path $DATASET_PATH/images \
@@ -81,11 +81,112 @@ of commands as an alternative to the automatic reconstruction command::
         --input_path $DATASET_PATH/dense \
         --output_path $DATASET_PATH/dense/meshed-delaunay.ply
 
+    $ colmap advancing_front_mesher \
+        --input_path $DATASET_PATH/dense \
+        --output_path $DATASET_PATH/dense/meshed-advancing-front.ply
+
+    # Optionally simplify a dense mesh to reduce its size.
+    $ colmap mesh_simplifier \
+        --input_path $DATASET_PATH/dense/meshed-poisson.ply \
+        --output_path $DATASET_PATH/dense/meshed-poisson-simplified.ply \
+        --MeshSimplification.target_face_ratio 0.25
+
+    # Optionally texture a mesh using the undistorted images.
+    $ colmap mesh_texturer \
+        --workspace_path $DATASET_PATH/dense \
+        --input_path $DATASET_PATH/dense/meshed-poisson.ply \
+        --output_path $DATASET_PATH/dense/textured
+
+Graceful shutdown and resuming
+------------------------------
+
+The feature extraction and matching commands, ``mapper``,
+``pose_prior_mapper``, ``bundle_adjuster``, ``point_triangulator``,
+``image_registrator``, the image undistortion commands,
+``patch_match_stereo``, and ``stereo_fusion`` handle ``SIGINT`` and ``SIGTERM``
+cooperatively. ``automatic_reconstructor`` supports graceful shutdown when
+using the incremental mapper. The first signal stops work at a safe point and
+writes any usable in-progress results. The process then exits with status 130
+for ``SIGINT`` or 143 for ``SIGTERM``. A second signal terminates immediately
+and may interrupt an output write.
+
+Feature extraction and matching can be resumed by rerunning the same command
+against the same database. PatchMatch can likewise be rerun against the same
+workspace; complete depth and normal maps are skipped. An interrupted
+incremental reconstruction is written to its normal numbered model directory
+and can be continued with ``--input_path``::
+
+    $ colmap mapper \
+        --database_path $DATASET_PATH/database.db \
+        --image_path $DATASET_PATH/images \
+        --input_path $DATASET_PATH/sparse/0 \
+        --output_path $DATASET_PATH/sparse/0
+
+Point triangulation, image registration, and bundle adjustment write their
+usable partial results before exiting. Stereo fusion writes non-empty partial
+results to a sibling path containing ``.partial`` so that an existing completed
+result is not overwritten. Interrupted image undistortion can be restarted by
+rerunning the same command. Ceres optimizations stop between iterations. The
+Caspar bundle-adjustment backend can only stop after its current solver
+invocation. The global mapper does not support graceful shutdown because its
+intermediate reconstructions cannot currently be resumed.
+
+The equivalent pycolmap functions automatically handle ``SIGINT`` (Ctrl-C) by
+performing a graceful shutdown and raising ``KeyboardInterrupt``. For other
+termination events, they accept an optional ``cancellation_token``. Explicit
+cancellation finishes cleanup and then raises ``InterruptedError``. This allows
+applications to connect cloud-preemption signals (like ``SIGTERM``) to the token
+without pycolmap replacing the host application's signal handlers. Automatic
+``SIGINT`` handling requires calling the pycolmap function from Python's main
+thread; use a cancellation token when calling it from another thread::
+
+    import signal
+    import pycolmap
+
+    token = pycolmap.CancellationToken()
+    signal.signal(signal.SIGTERM, lambda *_: token.cancel())
+    pycolmap.incremental_mapping(
+        database_path,
+        image_path,
+        output_path,
+        cancellation_token=token,
+    )
+
+To use the global SfM pipeline instead of the incremental mapper, replace the
+``mapper`` step with ``global_mapper``. The global mapper depends on good focal
+length priors, so if reliable intrinsics are not available (e.g., from EXIF or
+lab calibration), you should run ``view_graph_calibrator`` first. This step is
+optional but recommended to improve the quality of global SfM, as was always
+the default in `GLOMAP <https://github.com/colmap/glomap>`_. Note that
+``view_graph_calibrator`` modifies camera intrinsics and two-view geometries
+in the database in-place, so it is recommended to work on a copy of the
+database::
+
+    $ colmap feature_extractor \
+       --database_path $DATASET_PATH/database.db \
+       --image_path $DATASET_PATH/images
+
+    $ colmap exhaustive_matcher \
+       --database_path $DATASET_PATH/database.db
+
+    # Optional but often needed: calibrate intrinsics from the view graph.
+    # This modifies the database in-place, so work on a copy.
+    $ cp $DATASET_PATH/database.db $DATASET_PATH/database_global.db
+    $ colmap view_graph_calibrator \
+        --database_path $DATASET_PATH/database_global.db
+
+    $ mkdir -p $DATASET_PATH/sparse
+
+    $ colmap global_mapper \
+        --database_path $DATASET_PATH/database_global.db \
+        --image_path $DATASET_PATH/images \
+        --output_path $DATASET_PATH/sparse
+
 If you want to run COLMAP on a computer without an attached display (e.g.,
 cluster or cloud service), COLMAP automatically switches to use CUDA if
 supported by your system. If no CUDA enabled device is available, you can
 manually select to use CPU-based feature extraction and matching by setting the
-``--SiftExtraction.use_gpu 0`` and ``--SiftMatching.use_gpu 0`` options.
+``--FeatureExtraction.use_gpu 0`` and ``--FeatureMatching.use_gpu 0`` options.
 
 Help
 ----
@@ -117,30 +218,50 @@ The available commands can be listed using the command::
           automatic_reconstructor
           bundle_adjuster
           color_extractor
+          database_cleaner
           database_creator
+          database_merger
           delaunay_mesher
           exhaustive_matcher
           feature_extractor
           feature_importer
+          geometric_verifier
+          global_mapper
+          guided_geometric_verifier
+          hierarchical_mapper
           image_deleter
+          image_filterer
           image_rectifier
           image_registrator
           image_undistorter
+          image_undistorter_standalone
           mapper
           matches_importer
+          mesh_simplifier
+          mesh_texturer
           model_aligner
           model_analyzer
+          model_clusterer
+          model_comparer
           model_converter
+          model_cropper
           model_merger
           model_orientation_aligner
+          model_splitter
+          model_transformer
           patch_match_stereo
+          point_filtering
           point_triangulator
+          pose_prior_mapper
           poisson_mesher
-          rig_bundle_adjuster
+          project_generator
+          rig_configurator
+          rotation_averager
           sequential_matcher
           spatial_matcher
           stereo_fusion
           transitive_matcher
+          view_graph_calibrator
           vocab_tree_builder
           vocab_tree_matcher
           vocab_tree_retriever
@@ -151,38 +272,57 @@ the available options, e.g.::
     $ colmap feature_extractor -h
 
         Options can either be specified via command-line or by defining
-        them in a .ini project file passed to `--project_path`.
+        them in a .ini project file passed to ``--project_path``.
 
-          -h [ --help ]
-          --project_path arg
-          --database_path arg
-          --image_path arg
-          --image_list_path arg
-          --ImageReader.camera_model arg (=SIMPLE_RADIAL)
-          --ImageReader.single_camera arg (=0)
-          --ImageReader.camera_params arg
-          --ImageReader.default_focal_length_factor arg (=1.2)
-          --SiftExtraction.num_threads arg (=-1)
-          --SiftExtraction.use_gpu arg (=1)
-          --SiftExtraction.gpu_index arg (=-1)
-          --SiftExtraction.max_image_size arg (=3200)
-          --SiftExtraction.max_num_features arg (=8192)
-          --SiftExtraction.first_octave arg (=-1)
-          --SiftExtraction.num_octaves arg (=4)
-          --SiftExtraction.octave_resolution arg (=3)
-          --SiftExtraction.peak_threshold arg (=0.0066666666666666671)
-          --SiftExtraction.edge_threshold arg (=10)
-          --SiftExtraction.estimate_affine_shape arg (=0)
-          --SiftExtraction.max_num_orientations arg (=2)
-          --SiftExtraction.upright arg (=0)
-          --SiftExtraction.domain_size_pooling arg (=0)
-          --SiftExtraction.dsp_min_scale arg (=0.16666666666666666)
-          --SiftExtraction.dsp_max_scale arg (=3)
-          --SiftExtraction.dsp_num_scales arg (=10)
+            -h [ --help ]
+            --default_random_seed arg (=0)
+            --log_target arg (=stderr_and_file)   {stderr, stdout, file, stderr_and_file}
+            --log_path arg
+            --log_level arg (=0)
+            --log_severity arg (=0)               {INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3}
+            --log_color arg (=1)
+            --project_path arg
+            --database_path arg
+            --image_path arg
+            --camera_mode arg (=-1)
+            --image_list_path arg
+            --descriptor_normalization arg (=L1_ROOT)
+                                                  {L1_ROOT, L2}
+            --ImageReader.mask_path arg
+            --ImageReader.camera_model arg (=SIMPLE_RADIAL)
+                                                  {SIMPLE_PINHOLE, PINHOLE, SIMPLE_RADIAL, RADIAL, OPENCV, OPENCV_FISHEYE,
+                                                  FULL_OPENCV, FOV, SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, THIN_PRISM_FISHEYE,
+                                                  RAD_TAN_THIN_PRISM_FISHEYE, SIMPLE_DIVISION, DIVISION, SIMPLE_FISHEYE, FISHEYE,
+                                                  EUCM, EQUIRECTANGULAR}
+            --ImageReader.single_camera arg (=0)
+            --ImageReader.single_camera_per_folder arg (=0)
+            --ImageReader.single_camera_per_image arg (=0)
+            --ImageReader.existing_camera_id arg (=-1)
+            --ImageReader.camera_params arg
+            --ImageReader.default_focal_length_factor arg (=1.2)
+            --ImageReader.camera_mask_path arg
+            --FeatureExtraction.type arg (=SIFT)  {SIFT, ALIKED_N16ROT, ALIKED_N32, LOMA_B, LOMA_B128}
+            --FeatureExtraction.max_image_size arg (=3200)
+            --FeatureExtraction.num_threads arg (=-1)
+            --FeatureExtraction.use_gpu arg (=1)
+            --FeatureExtraction.gpu_index arg (=-1)
+            --SiftExtraction.max_num_features arg (=8192)
+            --SiftExtraction.first_octave arg (=-1)
+            --SiftExtraction.num_octaves arg (=4)
+            --SiftExtraction.octave_resolution arg (=3)
+            --SiftExtraction.peak_threshold arg (=0.0066666666666666671)
+            --SiftExtraction.edge_threshold arg (=10)
+            --SiftExtraction.estimate_affine_shape arg (=0)
+            --SiftExtraction.max_num_orientations arg (=2)
+            --SiftExtraction.upright arg (=0)
+            --SiftExtraction.domain_size_pooling arg (=0)
+            --SiftExtraction.dsp_min_scale arg (=0.16666666666666666)
+            --SiftExtraction.dsp_max_scale arg (=3)
+            --SiftExtraction.dsp_num_scales arg (=10)
 
 
 The available options can either be provided directly from the command-line or
-through a `.ini` file provided to ``--project_path``.
+through a ``.ini`` file provided to ``--project_path``.
 
 
 Commands
@@ -194,8 +334,13 @@ available as ``colmap [command]``:
 - ``gui``: The graphical user interface, see
   :ref:`Graphical User Interface <gui>` for more information.
 
-- ``automatic_reconstruction``: Automatically reconstruct sparse and dense model
-  for a set of input images.
+- ``automatic_reconstructor``: Automatically reconstruct sparse and dense model
+  for a set of input images. Key options include ``--quality`` (LOW, MEDIUM,
+  HIGH, EXTREME), ``--data_type`` (INDIVIDUAL, VIDEO, INTERNET) to tune settings
+  for different capture scenarios, ``--feature`` (SIFT, ALIKED, LOMA, LOMA128)
+  to select the feature extraction algorithm, ``--mapper`` (INCREMENTAL,
+  HIERARCHICAL, GLOBAL) to choose the SfM pipeline, and ``--mesher`` (POISSON,
+  DELAUNAY, ADVANCING_FRONT) to select the surface reconstruction method.
 
 - ``project_generator``: Generate project files at different quality settings.
 
@@ -206,8 +351,27 @@ available as ``colmap [command]``:
   ``spatial_matcher``, ``transitive_matcher``, ``matches_importer``:
   Perform feature matching after performing feature extraction.
 
+- ``geometric_verifier``: Run standalone geometric verification on existing
+  feature matches in the database. This estimates two-view geometries
+  (fundamental/essential matrices, homographies) for matched image pairs.
+
+- ``guided_geometric_verifier``: Run geometric verification guided by an
+  existing sparse reconstruction. Uses the known relative camera poses to
+  improve match verification results.
+
 - ``mapper``: Sparse 3D reconstruction / mapping of the dataset using SfM after
   performing feature extraction and matching.
+
+- ``global_mapper``: Sparse 3D reconstruction using the global SfM pipeline.
+  Unlike the incremental ``mapper``, the global approach solves for all camera
+  poses simultaneously using rotation averaging and global positioning. This
+  can be faster for large datasets but may be less robust to outliers.
+  The global mapper depends on reasonably good focal length priors to perform
+  well. Run ``view_graph_calibrator`` before ``global_mapper`` to calibrate
+  camera intrinsics and estimate relative poses from the view graph, or provide
+  camera calibrations manually.
+
+- ``pose_prior_mapper``: Sparse 3D reconstruction / mapping using pose priors.
 
 - ``hierarchical_mapper``: Sparse 3D reconstruction / mapping of the dataset
   using hierarchical SfM after performing feature extraction and matching.
@@ -239,6 +403,23 @@ available as ``colmap [command]``:
 - ``delaunay_mesher``: Meshing of the reconstructed sparse or dense point cloud
   using a graph cut on the Delaunay triangulation and visibility voting.
 
+- ``advancing_front_mesher``: Meshing of the fused point cloud using advancing
+  front surface reconstruction. Supports visibility-based filtering and
+  block-wise parallel processing for large-scale scenes. Requires CGAL.
+
+- ``mesh_simplifier``: Simplify a triangle mesh (PLY format) using Quadric Error
+  Metric (QEM) decimation. This reduces the number of faces in a mesh while
+  preserving its overall shape and appearance. Key options include
+  ``--MeshSimplification.target_face_ratio`` to control the fraction of faces
+  to retain (default 0.1), ``--MeshSimplification.max_error`` to set a maximum
+  quadric error threshold (0 = disabled), and
+  ``--MeshSimplification.boundary_weight`` to control boundary edge preservation
+  (default 1000). Supports multi-threaded initialization via
+  ``--MeshSimplification.num_threads``.
+
+- ``mesh_texturer``: Produce a texture atlas and UV coordinates for a triangle
+  mesh using calibrated multi-view images.
+
 - ``image_registrator``: Register new images in the database against an existing
   model, e.g., when extracting features and matching newly added images in a
   database after running ``mapper``. Note that no bundle adjustment or
@@ -252,7 +433,12 @@ available as ``colmap [command]``:
 
 - ``bundle_adjuster``: Run global bundle adjustment on a reconstructed scene,
   e.g., when a refinement of the intrinsics is needed or
-  after running the ``image_registrator``.
+  after running the ``image_registrator``. The solver backend is selected via
+  ``--BundleAdjustment.backend`` (``CERES`` or ``CASPAR``). Caspar [caspar]_ is
+  an experimental GPU-accelerated backend; see :doc:`faq` for details and
+  limitations.
+
+- ``database_cleaner``: Clean specific or all database tables.
 
 - ``database_creator``: Create an empty COLMAP SQLite database with the
   necessary database schema information.
@@ -263,11 +449,17 @@ available as ``colmap [command]``:
 
 - ``model_analyzer``: Print statistics about reconstructions.
 
+- ``model_clusterer``: Split a reconstruction into smaller
+  sub-model clusters. Useful for managing and processing large-scale
+  reconstructions.
+
 - ``model_aligner``: Align/geo-register model to coordinate system of given
   camera centers.
 
 - ``model_orientation_aligner``: Align the coordinate axis of a model using a
   Manhattan world assumption.
+
+- ``model_comparer``: Compare statistics of two reconstructions.
 
 - ``model_converter``: Convert the COLMAP export format to another format,
   such as PLY or NVM.
@@ -275,14 +467,18 @@ available as ``colmap [command]``:
 - ``model_cropper``: Crop model to specific bounding box described in GPS or
   model coordinate system.
 
+- ``model_merger``: Attempt to merge two disconnected reconstructions,
+  if they have common registered images.
+
 - ``model_splitter``: Divide model in rectangular sub-models specified from
   file containing bounding box coordinates, or max extent of sub-model, or
   number of subdivisions in each dimension.
 
-- ``model_merger``: Attempt to merge two disconnected reconstructions,
-  if they have common registered images.
+- ``model_transformer``: Transform coordinate frame of a model.
 
 - ``color_extractor``: Extract mean colors for all 3D points of a model.
+
+- ``rig_configurator``: Configure rigs and frames after feature extraction.
 
 - ``vocab_tree_builder``: Create a vocabulary tree from a database with
   extracted images. This is an offline procedure and can be run once, while the
@@ -294,6 +490,15 @@ available as ``colmap [command]``:
 
 - ``vocab_tree_retriever``: Perform vocabulary tree based image retrieval.
 
+- ``rotation_averager``: Run standalone rotation averaging on the view graph.
+  Estimates global camera rotations from pairwise relative rotations.
+
+- ``view_graph_calibrator``: Calibrate camera intrinsics using the view graph.
+  Estimates focal lengths and other intrinsic parameters from pairwise
+  geometric relations. Should be run before ``global_mapper``, if no good
+  prior camera intrinsics are known, since the global mapper
+  depends on reasonably good focal length priors to perform well.
+
 
 Visualization
 -------------
@@ -302,9 +507,9 @@ If you want to quickly visualize the outputs of the sparse or dense
 reconstruction pipelines, COLMAP offers you the following possibilities:
 
 - The sparse point cloud obtained with the ``mapper`` can be visualized via the
-  COLMAP GUI by importing the following files: choose ``File > Import Model``
-  and select the folder where the three files, ``cameras.txt``, ``images.txt``,
-  and ``points3d.txt`` are located.
+  COLMAP GUI by importing the model files: choose ``File > Import Model``
+  and select the folder containing the sparse model files (``cameras.txt``,
+  ``images.txt``, ``points3D.txt``, etc.).
 
 - The dense point cloud obtained with the ``stereo_fusion`` can be visualized
   via the COLMAP GUI by importing ``fused.ply``: choose
@@ -312,4 +517,7 @@ reconstruction pipelines, COLMAP offers you the following possibilities:
 
 - The dense mesh model ``meshed-*.ply`` obtained with the ``poisson_mesher`` or
   the ``delaunay_mesher`` can currently not be visualized with COLMAP, instead
-  you can use an external viewer, such as Meshlab.
+  you can use an external viewer, such as Meshlab. Use the ``mesh_simplifier``
+  command to reduce the mesh size for faster visualization or downstream
+  processing. Use the ``mesh_texturer`` command to produce a textured mesh
+  with a texture atlas that can be visualized in Meshlab or other 3D viewers.

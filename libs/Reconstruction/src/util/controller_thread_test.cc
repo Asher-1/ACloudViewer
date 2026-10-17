@@ -1,0 +1,160 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Upstream port (COLMAP dbb41680 util/controller_thread_test.cc); the fork's
+// controller_thread.h and base_controller.h are API-identical.
+
+#include "util/controller_thread.h"
+
+#include <gtest/gtest.h>
+
+#include <condition_variable>
+#include <mutex>
+
+namespace colmap {
+namespace {
+
+// Custom barrier implementation for deterministic testing
+class Barrier {
+ public:
+  Barrier() : Barrier(2) {}
+
+  explicit Barrier(const size_t count)
+      : threshold_(count), count_(count), generation_(0) {}
+
+  void Wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto current_generation = generation_;
+    if (!--count_) {
+      ++generation_;
+      count_ = threshold_;
+      condition_.notify_all();
+    } else {
+      condition_.wait(lock, [this, current_generation] {
+        return current_generation != generation_;
+      });
+    }
+  }
+
+ private:
+  std::mutex mutex_;
+  std::condition_variable condition_;
+  const size_t threshold_;
+  size_t count_;
+  size_t generation_;
+};
+
+// Simple test controller for basic tests
+class SimpleController : public BaseController {
+ public:
+  enum { WORK_CALLBACK = 1 };
+
+  SimpleController() { RegisterCallback(WORK_CALLBACK); }
+
+  void Run() override {
+    run_called_ = true;
+    Callback(WORK_CALLBACK);
+  }
+
+  bool RunCalled() const { return run_called_; }
+
+ private:
+  bool run_called_ = false;
+};
+
+// Controller with barrier support for synchronization
+class BarrierController : public BaseController {
+ public:
+  Barrier start_barrier;
+  Barrier stop_barrier;
+  Barrier end_barrier;
+
+  void Run() override {
+    start_barrier.Wait();
+    stop_barrier.Wait();
+    if (!CheckIfStopped()) {
+      end_barrier.Wait();
+    }
+  }
+};
+
+TEST(ControllerThread, GetController) {
+  auto controller = std::make_shared<SimpleController>();
+  ControllerThread<SimpleController> thread(controller);
+  EXPECT_EQ(thread.GetController(), controller);
+}
+
+TEST(ControllerThread, RunExecutesControllerRun) {
+  auto controller = std::make_shared<SimpleController>();
+  ControllerThread<SimpleController> thread(controller);
+  EXPECT_FALSE(controller->RunCalled());
+  thread.Start();
+  thread.Wait();
+  EXPECT_TRUE(controller->RunCalled());
+}
+
+TEST(ControllerThread, ControllerCallbacksExecute) {
+  auto controller = std::make_shared<SimpleController>();
+  ControllerThread<SimpleController> thread(controller);
+  int callback_count = 0;
+  controller->AddCallback(SimpleController::WORK_CALLBACK,
+                          [&callback_count]() { ++callback_count; });
+  thread.Start();
+  thread.Wait();
+  EXPECT_EQ(callback_count, 1);
+}
+
+TEST(ControllerThread, StopDuringExecution) {
+  auto controller = std::make_shared<BarrierController>();
+  ControllerThread<BarrierController> thread(controller);
+
+  thread.Start();
+  controller->start_barrier.Wait();
+
+  // Thread is now running
+  EXPECT_TRUE(thread.IsRunning());
+
+  // Stop the thread
+  thread.Stop();
+  controller->stop_barrier.Wait();
+
+  thread.Wait();
+
+  // Thread should be stopped
+  EXPECT_TRUE(thread.IsStopped());
+  EXPECT_TRUE(thread.IsFinished());
+}
+
+TEST(ControllerThread, ThreadStateProgression) {
+  auto controller = std::make_shared<BarrierController>();
+  ControllerThread<BarrierController> thread(controller);
+
+  // Initial state
+  EXPECT_FALSE(thread.IsStarted());
+  EXPECT_FALSE(thread.IsRunning());
+  EXPECT_FALSE(thread.IsFinished());
+
+  thread.Start();
+  controller->start_barrier.Wait();
+
+  // After start
+  EXPECT_TRUE(thread.IsStarted());
+  EXPECT_TRUE(thread.IsRunning());
+  EXPECT_FALSE(thread.IsFinished());
+
+  controller->stop_barrier.Wait();
+  controller->end_barrier.Wait();
+  thread.Wait();
+
+  // After finish
+  EXPECT_TRUE(thread.IsStarted());
+  EXPECT_FALSE(thread.IsRunning());
+  EXPECT_TRUE(thread.IsFinished());
+}
+
+}  // namespace
+}  // namespace colmap

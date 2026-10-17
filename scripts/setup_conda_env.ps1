@@ -44,7 +44,10 @@ $env:GENERATOR = "Visual Studio 17 2022"
 $env:ARCHITECTURE = "x64"
 $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
 $env:CLOUDVIEWER_INSTALL_DIR = "C:/dev/cloudViewer_install"
-$env:CLOUDVIEWER_ML_ROOT = "C:/Users/asher/develop/code/CloudViewer/CloudViewer-ML"
+# ML repo is expected as a sibling of this repo; override by presetting the env var.
+if (-not $env:CLOUDVIEWER_ML_ROOT) {
+    $env:CLOUDVIEWER_ML_ROOT = Join-Path (Split-Path $PSScriptRoot -Parent) "CloudViewer-ML"
+}
 
 # Display results
 Write-Host "`nEnvironment variables set:" -ForegroundColor Green

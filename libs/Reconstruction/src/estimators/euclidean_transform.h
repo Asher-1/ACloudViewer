@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "base/similarity_transform.h"
+#include "geometry/similarity_transform.h"
 #include "util/alignment.h"
 
 namespace colmap {

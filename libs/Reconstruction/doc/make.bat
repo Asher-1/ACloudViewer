@@ -1,4 +1,5 @@
 @ECHO OFF
+rem SPDX-License-Identifier: BSD-3-Clause
 
 REM Command file for Sphinx documentation
 
@@ -43,6 +44,7 @@ if "%1" == "help" (
 if "%1" == "clean" (
 	for /d %%i in (%BUILDDIR%\*) do rmdir /q /s %%i
 	del /q /s %BUILDDIR%\*
+	if exist _static\viewer rmdir /q /s _static\viewer
 	goto end
 )
 
@@ -61,6 +63,8 @@ if errorlevel 9009 (
 )
 
 if "%1" == "html" (
+	call :viewer-assets
+	if errorlevel 1 exit /b 1
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.
@@ -69,6 +73,8 @@ if "%1" == "html" (
 )
 
 if "%1" == "dirhtml" (
+	call :viewer-assets
+	if errorlevel 1 exit /b 1
 	%SPHINXBUILD% -b dirhtml %ALLSPHINXOPTS% %BUILDDIR%/dirhtml
 	if errorlevel 1 exit /b 1
 	echo.
@@ -77,6 +83,8 @@ if "%1" == "dirhtml" (
 )
 
 if "%1" == "singlehtml" (
+	call :viewer-assets
+	if errorlevel 1 exit /b 1
 	%SPHINXBUILD% -b singlehtml %ALLSPHINXOPTS% %BUILDDIR%/singlehtml
 	if errorlevel 1 exit /b 1
 	echo.
@@ -240,3 +248,19 @@ if "%1" == "pseudoxml" (
 )
 
 :end
+goto :eof
+
+:viewer-assets
+where npm > nul 2> nul
+if errorlevel 1 goto viewer-assets-missing
+if not exist node_modules goto viewer-assets-missing
+npm run build
+exit /b %errorlevel%
+
+:viewer-assets-missing
+if "%STRICT_VIEWER%" == "1" (
+	echo.npm and doc\node_modules are required when STRICT_VIEWER=1
+	exit /b 1
+)
+echo.WARNING: skipping 3D viewer build ^(npm or doc\node_modules not found^)
+exit /b 0

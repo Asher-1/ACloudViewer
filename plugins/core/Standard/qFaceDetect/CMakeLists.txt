@@ -22,12 +22,17 @@ if( PLUGIN_STANDARD_QFACEDETECT )
 
     target_link_libraries(${PROJECT_NAME} AICore)
 
+    # Shared camera / video-file playback (VideoPlaybackWidget + VideoFrameReader)
+    if(TARGET video_base)
+        target_link_libraries(${PROJECT_NAME} video_base)
+    endif()
+
     # Qt::Sql is guaranteed by root find_package (CMakeExternalLibs.cmake)
     target_link_libraries(${PROJECT_NAME} Qt::Sql)
 
     if(TARGET 3rdparty_opencv)
+        # HAS_OPENCV_FACE_CAPTURE is propagated PUBLIC by video_base
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)
-        target_compile_definitions(${PROJECT_NAME} PRIVATE HAS_OPENCV_FACE_CAPTURE)
     endif()
 
     if(MSVC)
