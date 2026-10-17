@@ -9,6 +9,12 @@ project(PoissonReconSolver CXX)
 # upstream binary.
 
 add_library(poisson_recon STATIC PoissonRecon.cpp SurfaceTrimmer.cpp)
+# The main project builds everything with CMAKE_POSITION_INDEPENDENT_CODE ON
+# (root CMakeLists.txt) but this recipe is an isolated CMake instance, so the
+# setting must be forwarded explicitly: shared objects (CV_DB_LIB.so, the
+# pybind module) link this archive and non-PIC members fail with
+# "relocation R_X86_64_PC32 ... can not be used when making a shared object".
+set_target_properties(poisson_recon PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # Windows NMC builds consume this library through an IMPORTED location whose
 # Debug name is poisson_recond.lib (3rdparty/PoissonRecon/PoissonRecon.cmake);
 # without the postfix CMake would emit a plain poisson_recon.lib for Debug and

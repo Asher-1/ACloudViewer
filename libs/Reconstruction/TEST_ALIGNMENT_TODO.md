@@ -3825,3 +3825,34 @@ repeat 到 {46,46,49,2} 作结果承载。
 - **遗留**:①Reconstruction 独立安装包的 poisson_recon install/export
   规则待补(CMakeConfig.cmake.in 名单保持);②macOS race 复验结果回填;
   ③v12→v18 网格数值差异(求解器代差)需下游纹理 A/B 记录新基线。
+
+### 批次 P1-db-n(2026-10-17):全量本地验证矩阵 — 抓住两个下游缺口并修复,逐字节复验收口
+
+- **背景**:P1-db-m 推送后 CI 暴露三处失败(用户修复于 1137997687),用户裁定
+  "本地编译都没过就 push"为流程错误;本批次以全量矩阵重验,验证通过前不再推送。
+- **全量构建抓到的两个缺口(均为 P1-db-m 遗留,此前部分构建掩盖)**:
+  1. app/reconstruction/DenseReconstructionWidget.cpp:138 —— color bool 化后 GUI
+     层第二处绑定仍为 AddOptionDouble(P1-db-l 只改了 libs/Reconstruction/src/ui
+     下的同名 widget,漏掉 app 侧)→ AddOptionBool,与 patch_match_stereo.
+     geom_consistency 同模式。
+  2. 3rdparty/PoissonRecon/solver.CMakeLists.txt —— 求解器为独立 CMake 实例,
+     主工程 CMAKE_POSITION_INDEPENDENT_CODE ON 传不进去;libpoisson_recon.a 非
+     PIC,pybind 共享对象链接报 relocation R_X86_64_PC32(可执行链接 colmap_exe
+     不要求 PIC,故 colmap_exe/CV_DB_LIB 部分构建未暴露)→
+     POSITION_INDEPENDENT_CODE ON + EP stamp 重置重建。
+- **验证矩阵(全部通过)**:
+  - 全量 make -j32 BUILD_EXIT=0:ACloudViewer GUI(125MB)/Colmap(84MB)/
+    libCV_DB_LIB.so/QPOISSON_RECON_PLUGIN/187 个 colmap_test 二进制/
+    cloudviewer_test 全部产出,零编译错误。
+  - colmap_test 全套:183 PASSED;single_view_calibration_test 10 PASSED
+    (+IntegrationTestWithModel 资源门控 SKIP);aliked_test 资源门控 SKIP;
+    pipeline_rng/seed_scan_test 为 2026-10-12 陈旧长时扫描二进制(非本批次
+    重编,300s 超时截断尾行空,非失败);poisson_recon_lib_test 4/4。
+  - cloudviewer_test:98 PASSED + 1 资源门控 SKIP(RGBD NYU),0 FAILED。
+  - 产物面逐字节:poisson_mesher(fork, PIC 重编求解器)vs 上游 colmap 二进制
+    md5 7eb9973a5a2fc0da3f9f1c960fb193f9 一致(65,252,253B,num_threads=1;
+    -fPIC 仅改寻址模式不改浮点语义,md5 与 P1-db-m 时一致);
+    run-colmap-geometric/photometric.sh 与上游产物 diff 为空;
+    undistorted IMG_1024.JPG md5 d9372a12... 与上游一致。
+- **待提交**:DenseReconstructionWidget.cpp(bool 绑定)+ solver.CMakeLists.txt
+  (PIC),提交与否由用户决策。
