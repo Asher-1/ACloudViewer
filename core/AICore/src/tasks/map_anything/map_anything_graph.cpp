@@ -201,9 +201,19 @@ ggml_tensor* flash_attn(ggml_context* ctx,
     return r;
 }
 
-// Same op decomposition as ggml_conv_2d (im2col -> mul_mat -> permute); the
-// only addition is the name on the inner mul_mat, which ggml_conv_2d does not
-// expose.
+// Same op decomposition as ggml_conv_2d (im2col -> mul_mat -> permute); two
+// additions: the im2col activations stay F32 (upstream conv_2d_f32,
+// map-anything-ggml 813173d + 774f3c8 "route every conv through the
+// F32-im2col variant" — ggml_conv_2d hardwires F16 im2col unless the weight
+// is BF16, injecting f16-quantization noise into every conv output; the f16
+// patch tokens were amplified ~200x by near-cancellations in querysplat's
+// downstream layer fusion), and the name on the inner mul_mat, which
+// ggml_conv_2d does not expose — the mapany_mm prefix drives the
+// pristine-node routing of map_anything_merged/0001 parts B/D (upstream
+// needs no name because pristine ggml has no overrides). The CPU F16-weight
+// cast the upstream helper keeps is dead here by construction:
+// stage_weights() stores every F16 tensor as F32 (upstream a759947), so `a`
+// is never F16.
 ggml_tensor* mapany_conv_2d(ggml_context* ctx,
                             ggml_tensor* a,
                             ggml_tensor* b,
@@ -215,9 +225,39 @@ ggml_tensor* mapany_conv_2d(ggml_context* ctx,
                             int d1) {
     ggml_tensor* im2col =
             ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
-                        a->type == GGML_TYPE_BF16
-                                ? GGML_TYPE_F32
-                                : GGML_TYPE_F16);  // [N, OH, OW, IC*KH*KW]
+                        GGML_TYPE_F32);  // [N, OH, OW, IC*KH*KW]
+    ggml_tensor* result = ggml_mul_mat(
+            ctx,
+            ggml_reshape_2d(ctx, im2col, im2col->ne[0],
+                            im2col->ne[3] * im2col->ne[2] * im2col->ne[1]),
+            ggml_reshape_2d(ctx, a, a->ne[0] * a->ne[1] * a->ne[2], a->ne[3]));
+    ggml_set_name(result, kMatmulName);
+    result = ggml_reshape_4d(ctx, result, im2col->ne[1], im2col->ne[2],
+                             im2col->ne[3], a->ne[3]);  // [OC, N, OH, OW]
+    return ggml_cont(ctx,
+                     ggml_permute(ctx, result, 0, 1, 3, 2));  // [N, OC, OH, OW]
+}
+
+// The F16-im2col twin of mapany_conv_2d, matching ggml_conv_2d's own type
+// rule (BF16 weights get F32 im2col, everything else F16). The upstream tree
+// keeps exactly two call sites on this variant (map-anything-ggml 774f3c8
+// converted 11 sites to conv_2d_f32 but left the dust3r encoder patch_embed
+// and the pi3x output_block "0.2" 1x1 conv on ggml_conv_2d), so the frames
+// parity gate requires the same split here. Same mapany_mm naming as above
+// for the pristine-node routing.
+ggml_tensor* mapany_conv_2d_f16(ggml_context* ctx,
+                                ggml_tensor* a,
+                                ggml_tensor* b,
+                                int s0,
+                                int s1,
+                                int p0,
+                                int p1,
+                                int d0,
+                                int d1) {
+    ggml_tensor* im2col =
+            ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
+                        a->type == GGML_TYPE_BF16 ? GGML_TYPE_F32
+                                                  : GGML_TYPE_F16);
     ggml_tensor* result = ggml_mul_mat(
             ctx,
             ggml_reshape_2d(ctx, im2col, im2col->ne[0],
@@ -1113,8 +1153,18 @@ struct VGGTRuntime::Impl : IGraphBuilder {
                             true};
         wctx = ggml_init(wp);
         if (!wctx) return false;
+        // F16-stored weights are exactly representable in F32: staging them
+        // as F32 makes the f16 GGUF tier bit-identical to the f32 tier on
+        // every backend (upstream a759947 — the CUDA f16-weight GEMM kernels
+        // otherwise quantize activations internally; the CPU lin() cast per
+        // call already existed). K-quants keep their native type — the quant
+        // IS the tier.
+        auto staged_type = [](ggml_type t) {
+            return t == GGML_TYPE_F16 ? GGML_TYPE_F32 : t;
+        };
         for (const auto& [name, ht] : m->tensors) {
-            ggml_tensor* t = ggml_new_tensor(wctx, ht.type, 4, ht.ne);
+            ggml_tensor* t =
+                    ggml_new_tensor(wctx, staged_type(ht.type), 4, ht.ne);
             ggml_set_name(t, name.c_str());
             wt[name] = t;
         }
@@ -1124,8 +1174,21 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         // precedent); without it ops silently stay on the CPU secondary.
         ggml_backend_buffer_set_usage(wbuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         for (const auto& [name, ht] : m->tensors) {
-            ggml_backend_tensor_set(wt[name], ht.data.data(), 0,
-                                    nbytes_of(ht.type, ht.ne));
+            if (ht.type == GGML_TYPE_F16) {
+                const int64_t nels =
+                        ht.ne[0] * ht.ne[1] * ht.ne[2] * ht.ne[3];
+                std::vector<float> f32((size_t)nels);
+                const auto* h16 = reinterpret_cast<const ggml_fp16_t*>(
+                        ht.data.data());
+                for (int64_t i = 0; i < nels; i++) {
+                    f32[(size_t)i] = ggml_fp16_to_fp32(h16[i]);
+                }
+                ggml_backend_tensor_set(wt[name], f32.data(), 0,
+                                        nels * sizeof(float));
+            } else {
+                ggml_backend_tensor_set(wt[name], ht.data.data(), 0,
+                                        nbytes_of(ht.type, ht.ne));
+            }
         }
         log_info("weights staged: %zu tensors, buffer %.2f GB", n,
                  ggml_backend_buffer_get_size(wbuf) / 1e9);
@@ -3875,9 +3938,12 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
                 ggml_div(gctx, ggml_sub(gctx, in_images, in_mean), in_std);
 
         // ---- siamese encoder (pair batched, B = S) ----
-        ggml_tensor* x = mapany_conv_2d(gctx, w("bb_patch.proj.weight"), img,
-                                        m->meta.patch_size, m->meta.patch_size,
-                                        0, 0, 1, 1);
+        // F16-im2col site: upstream keeps ggml_conv_2d here (see
+        // mapany_conv_2d_f16).
+        ggml_tensor* x =
+                mapany_conv_2d_f16(gctx, w("bb_patch.proj.weight"), img,
+                                   m->meta.patch_size, m->meta.patch_size,
+                                   0, 0, 1, 1);
         x = ggml_add(gctx, x, bias4(gctx, w("bb_patch.proj.bias"), C));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE()) dump_node(x, "vg_d3_conv");
@@ -4297,7 +4363,9 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
             ggml_tensor* o = conv3x3_rep(
                     ctx, x, p + ".output_block." + std::to_string(j) + ".0");
             o = ggml_relu(ctx, o);
-            o = mapany_conv_2d(
+            // F16-im2col site: upstream keeps ggml_conv_2d here (see
+            // mapany_conv_2d_f16).
+            o = mapany_conv_2d_f16(
                     ctx,
                     w((p + ".output_block." + std::to_string(j) + ".2.weight")
                               .c_str()),

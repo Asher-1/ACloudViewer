@@ -338,8 +338,11 @@ elseif (BUILD_CUDA_MODULE)
     set(CUDA_ENABLED ON)
     add_compile_definitions(CUDA_ENABLED)
 
-    # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_FORCE_INLINES")
+    # Upstream parity: no -D_FORCE_INLINES. The Ubuntu-16.04-era workaround
+    # changes glibc inline expansion inside nvcc's host pass, which perturbs
+    # the optimizer's FMA/vectorization contracts in the host-side pose math
+    # (ComputeRelativePose/ComposeProjectionMatrix) by ~1 ULP and cascades
+    # into divergent depth maps versus the upstream binary.
 
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")

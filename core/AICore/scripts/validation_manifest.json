@@ -2818,11 +2818,11 @@
         "--reference",
         "{reference:map_anything_ggml}",
         "--expect-revision",
-        "d76732e6bbaba1e1f9dc85cf5db7b705d8d48dea",
+        "774f3c8d9ccd75b10705247826d2fe84cecdded6",
         "--expect-ggml-revision",
         "456172ec733a135778adcd32d00e576a58232e45",
         "--expect-ggml-diff-sha256",
-        "d2206f3d9a47f3f0708cb0862d652f3311fa3c79421f50df3caab431635adf06",
+        "8e87111a7131134c09537a2e3aae15410f46b7965f66aea0569be5d908608a66",
         "--out",
         "{scenario_report}.upstream.d"
       ],
@@ -2830,7 +2830,7 @@
       "accuracy_gate": "bit-exact upstream truth: the same f32 (S,3,H,W) tensor through aicore_map_anything_run_frames and the pinned map-anything-ggml vggt-cli --bin on the same backend kind; every common typed output (pose/depth/conf/points/local_points/mask/scale/text_embedding) max_abs == 0, no uncompared candidate output",
       "accuracy": {
         "reference": "upstream_map_anything_ggml_cli",
-        "reference_id": "map-anything-ggml@d76732e6bbaba1e1f9dc85cf5db7b705d8d48dea cpp_ggml vggt-cli --bin, ggml v0.24.0 (456172ec) + local conv2d-transpose k==s CUDA kernel (working-tree diff sha256 d2206f3d...), build-<backend>; 3 views (dust3r 2) from sacre_coeur1/2, views>=3 mirrored",
+        "reference_id": "map-anything-ggml@774f3c8d9ccd75b10705247826d2fe84cecdded6 cpp_ggml vggt-cli --bin, ggml v0.24.0 (456172ec) + local conv2d-transpose k==s CUDA kernel + cuda-tf32-disable env knob (working-tree diff sha256 8e87111a...), build-<backend>; 3 views (dust3r 2) from sacre_coeur1/2, views>=3 mirrored",
         "checks": [
           {
             "metric": "max_diff",

@@ -3904,3 +3904,36 @@ repeat 到 {46,46,49,2} 作结果承载。
   - MCP 工具面未动(8 个 colmap_* 覆盖主链,避免文档计数联动)。
 - **产物留存**:/tmp/fullcmp(2000px 链对比)、/tmp/nrcmp(无缩放)、/tmp/pngcmp
   (PNG 输入+dump 实验工作区)、/tmp/pm_dump_{fork,up}.txt(运行时输入 dump)。
+
+### 批次 P1-db-p(2026-10-17):patch_match 逐字节分叉真根因实锤 — -march=x86-64-v3 的 FMA 合约差异(推翻 P1-db-o 的"环境层不可达"结论)
+
+- **用户驳回 P1-db-o 结论**:确定性计算必同因同果,继续全模块排查。
+- **数据流二分(运行时 dump,TEMP 补丁已还原)**:
+  1. 全量位图逐位一致(CloneAsGrey→RowMajorData,12,123,315B cmp 零差,
+     修正 P1-db-o 的 3 像素采样误判);
+  2. poses_host_data(相对位姿 host 浮点数组)**DIFFER**:rel_R 差 1.5 ULP
+     (0.0384628735 vs 0.0384628698),级联 P/inv_P(90/215 floats);
+  3. sum_image(bilateral GPU 输出)与初始深度(PRNG)IDENTICAL;
+  4. rel_R 输入(K/R/T float)逐位一致(dump 17 位打印);
+  5. 排除 -D_FORCE_INLINES(移除后 poses 不变);
+  6. **真根因**:fork 的 `-march=x86-64-v3`(cmake/CMakeFindSSE.cmake 全局
+     SIMD 注入)使 g++ -O3 将 image.cc 的 3x3 矩阵乘
+     (`R2_m * R1_m.transpose()`,Eigen 3.4.0 两侧同版)合约成 vfmadd,
+     与上游 baseline(无 -march,非 FMA)产生 ~1.5 ULP 偏移。
+- **修复(libs/Reconstruction/CMakeLists.txt + libs/Reconstruction/src/CMakeLists.txt)**:
+  - 移除 Ubuntu-16.04 残留的 `-D_FORCE_INLINES` CUDA flag(上游无);
+  - `target_compile_options(ColmapLib PRIVATE "-march=x86-64")` — COLMAP 库
+    整体恢复 baseline 合约,忠实对齐上游 COLMAP 的无 -march 代码生成。
+- **验证**:
+  - 单图(num_iterations=1,PNG 输入):poses/sum/初始深度/photometric depth
+    **4/4 IDENTICAL**;
+  - 全链 6 图(2000px,geom_consistency):**24/24 depth+normal 逐字节一致**
+    (37 IDENTICAL);剩余 DIFFER 4:fused.ply/fused.ply.vis/meshed-poisson.ply/
+    meshed-delaunay.ply — **上游 stereo_fusion 自身两次运行 md5 不同
+    (9ce8cea6 vs 91b3913c,多线程工作队列非确定)**,fused 及其下游 mesh 的
+    逐字节对上游自身不成立,以"同 fused 输入 → 同 mesh(P1-db-m 已证 md5
+    7eb9973a...)"为验收;
+  - colmap_test 185 OK(2 陈旧 scan 二进制同前);CLI-Anything pytest 631 passed。
+- **教训**:"CUDA 执行环境层不可达"是在 dump 采样不足(3 像素)与浮点差异
+  归因懒惰下得出的错误裁定;逐环节 dump(位图→poses→GPU 输出)+ ULP 级数值
+  对比才能把分叉钉死在编译器合约上。

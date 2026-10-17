@@ -63,6 +63,15 @@ endif ()
 
 get_property(COLMAP_SOURCES GLOBAL PROPERTY COLMAP_SOURCES)
 COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
+
+# Upstream parity: upstream COLMAP compiles without an -march override, so
+# its host-side pose math (mvs/image.cc: ComputeRelativePose,
+# ComposeProjectionMatrix, ...) keeps the baseline non-FMA contraction. The
+# global -march=x86-64-v3 (cmake/CMakeFindSSE.cmake) enables AVX2/FMA and
+# shifts those 3x3 products by ~1 ULP, perturbing the patch_match pose
+# texture and cascading into divergent depth maps. Restore the baseline for
+# the whole COLMAP library, matching upstream codegen.
+target_compile_options(ColmapLib PRIVATE "-march=x86-64")
 target_link_libraries(${COLMAP_LIB_NAME} PUBLIC 3rdparty_meshoptimizer)
 target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 
