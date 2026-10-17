@@ -55,17 +55,27 @@ set(POISSON_INCLUDE_DIRS ${SOURCE_DIR}) # Not using "/" is critical.
 
 # Solver objects (RunPoissonRecon/RunSurfaceTrimmer CLI entries). IMPORTED
 # because the sources only exist after the ExternalProject download/build.
-# The MSVC Debug name follows the solver recipe's DEBUG_POSTFIX "d".
+# The MSVC Debug name follows the solver recipe's DEBUG_POSTFIX "d". On MSVC
+# the location is expressed through per-config IMPORTED_LOCATION_<CONFIG>
+# properties: a $<CONFIG:Debug> genex inside the generic IMPORTED_LOCATION is
+# NOT evaluated by the Ninja Multi-Config graph and leaks literally into the
+# link inputs ("missing and no known rule to make it: poisson/install/lib/
+# poisson_recon$<$<CONFIG:Debug>:d>.lib", run 39025562222).
 if(NOT MSVC)
     set(POISSON_STATIC_LIBRARY "${INSTALL_DIR}/lib/libpoisson_recon.a")
+    set(POISSON_IMPORTED_LOCATION_PROPS
+        IMPORTED_LOCATION "${POISSON_STATIC_LIBRARY}")
 else()
-    set(POISSON_STATIC_LIBRARY
-        "${INSTALL_DIR}/lib/poisson_recon$<$<CONFIG:Debug>:d>.lib")
+    set(POISSON_STATIC_LIBRARY "${INSTALL_DIR}/lib/poisson_recon.lib")
+    set(POISSON_IMPORTED_LOCATION_PROPS
+        IMPORTED_LOCATION "${POISSON_STATIC_LIBRARY}"
+        IMPORTED_LOCATION_RELEASE "${INSTALL_DIR}/lib/poisson_recon.lib"
+        IMPORTED_LOCATION_DEBUG "${INSTALL_DIR}/lib/poisson_recond.lib")
 endif()
 add_library(poisson_recon STATIC IMPORTED GLOBAL)
 add_dependencies(poisson_recon ext_poisson)
 set_target_properties(poisson_recon PROPERTIES
-    IMPORTED_LOCATION "${POISSON_STATIC_LIBRARY}"
+    ${POISSON_IMPORTED_LOCATION_PROPS}
     INTERFACE_INCLUDE_DIRECTORIES "${POISSON_INCLUDE_DIRS}"
 )
 
