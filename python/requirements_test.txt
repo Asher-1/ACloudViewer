@@ -2,7 +2,12 @@ pytest==9.0.3
 pytest-randomly==3.8.0
 scipy==1.15.3
 tensorboard==2.19.0
-oauthlib==3.2.2
+# oauthlib is not imported directly: it resolves through tensorboard's
+# google-auth-oauthlib -> requests-oauthlib chain (oauthlib>=3.0.0, no upper
+# bound). The floor clears Dependabot alerts #31/#32 (GHSA-xpv3-w29h-x7cv
+# PKCE timing attack, GHSA-hj66-6f7g-4r5v JSONP callback injection), which
+# affect every release <= 3.3.1.
+oauthlib>=4.0.0
 certifi
 # python/test/reconstruction/sensor/test_bitmap.py decodes bitmaps via PIL.
 pillow
