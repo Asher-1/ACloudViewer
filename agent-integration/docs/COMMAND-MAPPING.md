@@ -251,7 +251,11 @@ headless mode:
   ├── process (55+ commands, incl. crop, 24 plugin processors, 8 IO settings, 3 colorimetric filters, 18 PCL tools)
   ├── sf (11 commands)
   ├── normals (6 commands)
-  ├── reconstruct (12+ Colmap commands)
+  ├── reconstruct (24 Colmap commands: auto/sparse/hierarchical-sparse/match/
+│  │    extract-features/undistort/dense-stereo/fuse/poisson/delaunay-mesh/
+│  │    advancing-front/texture-mesh/triangulate/filter-points/bundle-adjust/
+│  │    register-images/transform-model/crop-model/convert-model/analyze-model/
+│  │    simplify-mesh/color-extract/create-database/mesh)
   ├── sibr (10+ commands)
   └── transform apply-file
 
