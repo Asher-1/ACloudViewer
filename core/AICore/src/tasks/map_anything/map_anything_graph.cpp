@@ -223,9 +223,8 @@ ggml_tensor* mapany_conv_2d(ggml_context* ctx,
                             int p1,
                             int d0,
                             int d1) {
-    ggml_tensor* im2col =
-            ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
-                        GGML_TYPE_F32);  // [N, OH, OW, IC*KH*KW]
+    ggml_tensor* im2col = ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
+                                      GGML_TYPE_F32);  // [N, OH, OW, IC*KH*KW]
     ggml_tensor* result = ggml_mul_mat(
             ctx,
             ggml_reshape_2d(ctx, im2col, im2col->ne[0],
@@ -254,10 +253,9 @@ ggml_tensor* mapany_conv_2d_f16(ggml_context* ctx,
                                 int p1,
                                 int d0,
                                 int d1) {
-    ggml_tensor* im2col =
-            ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true,
-                        a->type == GGML_TYPE_BF16 ? GGML_TYPE_F32
-                                                  : GGML_TYPE_F16);
+    ggml_tensor* im2col = ggml_im2col(
+            ctx, a, b, s0, s1, p0, p1, d0, d1, true,
+            a->type == GGML_TYPE_BF16 ? GGML_TYPE_F32 : GGML_TYPE_F16);
     ggml_tensor* result = ggml_mul_mat(
             ctx,
             ggml_reshape_2d(ctx, im2col, im2col->ne[0],
@@ -1175,11 +1173,10 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         ggml_backend_buffer_set_usage(wbuf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         for (const auto& [name, ht] : m->tensors) {
             if (ht.type == GGML_TYPE_F16) {
-                const int64_t nels =
-                        ht.ne[0] * ht.ne[1] * ht.ne[2] * ht.ne[3];
+                const int64_t nels = ht.ne[0] * ht.ne[1] * ht.ne[2] * ht.ne[3];
                 std::vector<float> f32((size_t)nels);
-                const auto* h16 = reinterpret_cast<const ggml_fp16_t*>(
-                        ht.data.data());
+                const auto* h16 =
+                        reinterpret_cast<const ggml_fp16_t*>(ht.data.data());
                 for (int64_t i = 0; i < nels; i++) {
                     f32[(size_t)i] = ggml_fp16_to_fp32(h16[i]);
                 }
@@ -3940,10 +3937,9 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         // ---- siamese encoder (pair batched, B = S) ----
         // F16-im2col site: upstream keeps ggml_conv_2d here (see
         // mapany_conv_2d_f16).
-        ggml_tensor* x =
-                mapany_conv_2d_f16(gctx, w("bb_patch.proj.weight"), img,
-                                   m->meta.patch_size, m->meta.patch_size,
-                                   0, 0, 1, 1);
+        ggml_tensor* x = mapany_conv_2d_f16(gctx, w("bb_patch.proj.weight"),
+                                            img, m->meta.patch_size,
+                                            m->meta.patch_size, 0, 0, 1, 1);
         x = ggml_add(gctx, x, bias4(gctx, w("bb_patch.proj.bias"), C));
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE()) dump_node(x, "vg_d3_conv");
