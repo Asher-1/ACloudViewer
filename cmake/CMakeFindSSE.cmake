@@ -8,19 +8,29 @@ macro(CLOUDVIEWER_CHECK_FOR_SSE)
         # Test GCC/G++ and CLANG
         if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
             include(CheckCXXCompilerFlag)
-            # Use -march=x86-64-v3 for better compatibility while supporting AVX2
-            # x86-64-v3: AVX, AVX2, BMI1, BMI2 (supported by most CPUs since ~2011)
+            # ISA-uniformity contract: probe with -march=x86-64-v3 (historical
+            # fork baseline) but EMIT -march=x86-64. The COLMAP subtree
+            # requires the non-FMA baseline codegen (8cfc7088d evidence chain;
+            # comment in the root USE_SIMD branch), and these flags are ALSO
+            # re-injected per-target via CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS
+            # (libs/CMakeLists.txt), which sorts AFTER the global
+            # CMAKE_CXX_FLAGS — emitting v3 here would silently win the
+            # last--march-wins race against any baseline tail. Measured: the
+            # v3 re-injection beat the root tail after the ColmapLib PUBLIC
+            # propagation was deduplicated, and the v3-vs-baseline PoseLib
+            # mix segfaulted 9 reconstruction tests (poselib::relpose_5pt
+            # partialPivLu). One ISA for every TU of every binary.
             # Avoid -march=native to prevent AVX512 instructions that may cause "Illegal instruction"
             check_cxx_compiler_flag("-march=x86-64-v3" HAVE_MARCH_V3)
             if(HAVE_MARCH_V3)
-                list(APPEND SSE_FLAGS "-march=x86-64-v3")
-                message(STATUS "Using -march=x86-64-v3 for SIMD optimization (AVX2 compatible)")
+                list(APPEND SSE_FLAGS "-march=x86-64")
+                message(STATUS "Using -march=x86-64 for SIMD optimization (COLMAP baseline contract; v3 probe passed)")
             else()
                 # Fallback to x86-64-v2 if v3 not supported
                 check_cxx_compiler_flag("-march=x86-64-v2" HAVE_MARCH_V2)
                 if(HAVE_MARCH_V2)
-                    list(APPEND SSE_FLAGS "-march=x86-64-v2")
-                    message(STATUS "Using -march=x86-64-v2 for SSE optimization (compatible mode)")
+                    list(APPEND SSE_FLAGS "-march=x86-64")
+                    message(STATUS "Using -march=x86-64 for SIMD optimization (COLMAP baseline contract; v2 probe passed)")
                 elseif(UNIX AND NOT APPLE)
                     # On Linux, avoid -march=native to prevent AVX512 instructions
                     # Use -mtune=generic with explicit AVX2 flags instead
@@ -192,7 +202,15 @@ macro(CLOUDVIEWER_CHECK_FOR_SSE)
 
     set(CMAKE_REQUIRED_FLAGS)
 
-    if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+    # The -msse* extensions below are redundant when an -march= flag was
+    # emitted above (-march=x86-64 already implies every SSE level up to the
+    # baseline) and HARMFUL for the ISA contract: appended AFTER -march they
+    # widen the TU ISA (e.g. -march=x86-64 + -msse4.2) so the re-injected
+    # per-target copies no longer match the plain-baseline TUs from
+    # ExternalProject 3rdparties (the PoseLib partialPivLu segfault family).
+    # Only the 32-bit x87-era builds need them.
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4
+            AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG))
         if(HAVE_SSE4_2_EXTENSIONS)
             list(APPEND SSE_FLAGS "-msse4.2" "-mfpmath=sse")
         elseif(HAVE_SSE4_1_EXTENSIONS)

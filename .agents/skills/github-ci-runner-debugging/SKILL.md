@@ -88,6 +88,71 @@ unless every consumer of the flat path is updated in the same change.
 
 ## Incident log (index, not narrative)
 
+- 2026-10-18 `8cfc7088d`: Windows `Build wheel (ON, 3.12, false)` cancelled at
+  6h with all-zero sccache stats — REAL zero, not a timing artifact: the
+  wheel job ran the default "Visual Studio 17 2022" generator (ci_utils.ps1
+  Get-CMakeGeneratorArgs default) and CMAKE_C/CXX_COMPILER_LAUNCHER is only
+  honored by Makefile/Ninja generators, so MSBuild compiled the whole CPU+
+  CUDA double pass without ever invoking sccache. Fix: wheel job env
+  CLOUDVIEWER_GENERATOR="Ninja Multi-Config" + ilammy/msvc-dev-cmd (same
+  wiring as the app matrix job). Follow-up gaps found in the app->wheel NMC
+  comparison (all fixed): (1) Build-PipPackage lacked the
+  -DCMAKE_CONFIGURATION_TYPES=Release pin that Build-GuiApp already carries
+  (NMC ignores CMAKE_BUILD_TYPE); (2) ExternalProject_CMAKE_ARGS did not
+  forward CMAKE_CONFIGURATION_TYPES, so the 3rdparty sub-builds would see an
+  empty config under NMC; (3) Run-CppUnitTests probed only
+  bin\<Config>\tests.exe while the NMC layout is
+  bin\cloudviewer_test\<Config>\tests.exe, AND its not-found branch used a
+  bare `return 1` which never sets $LASTEXITCODE — the caller comparing
+  $LASTEXITCODE silently swallowed the missing-test case. It now probes both
+  layouts and throws. Keep in mind the stats steps only observe a
+  live daemon when printed in-step (build_win_wheel.ps1 tail), and a
+  cancelled job prints nothing. NOTE: the OFF+Debug app-matrix entries are
+  env-setup-only (build_win_app.ps1 is Release-only); their success does NOT
+  exercise Run-CppUnitTests.
+- 2026-10-18 `8cfc7088d`: Ubuntu `Test wheel (3.13, false)` —
+  `Fatal Python error: Segmentation fault` in
+  test_synthetic.py::test_synthesize_noise. Same ISA-mixing root as the
+  undistortion abort: pybind.so archives ColmapLib SSE2 TUs together with
+  pybind/CloudViewer v3 TUs. Reproduced 8/8 core dumps locally with the
+  CI-state cuda/pybind.so; after the global baseline tail
+  (CMakeLists.txt USE_SIMD branch appends -march=x86-64 last for
+  BUILD_RECONSTRUCTION) the rebuilt pybind.so passes 10/10. NOTE: the
+  CMake INTERFACE propagation of the baseline stops at direct
+  target_link_libraries consumers ($<LINK_ONLY> carries link deps but not
+  compile options), so the global tail is the only complete fix.
+- 2026-10-18 `8cfc7088d`: Ubuntu jammy+noble `Docker test` —
+  `image/undistortion_test` abort (`free()/munmap_chunk(): invalid pointer` in
+  TestUndistortReconstruction) and macOS ColmapLib build error
+  (`unsupported argument 'x86-64' to option '-march='`), same root: the
+  ColmapLib-only `-march=x86-64` override (PRIVATE, unconditional). Fixed by
+  x86+GNU/Clang guard and PUBLIC `$<COMPILE_LANGUAGE:CXX>` propagation in
+  `libs/Reconstruction/src/CMakeLists.txt` — ISA mixing inside one binary is
+  an ODR-level heap-corruption hazard (reproduced 5/5 locally, flags-matched
+  1-TU experiment passes 6/6).
+- 2026-10-17 `b96f8a2f5`: Windows app matrix `Build ACloudViewer App` —
+  configure error at `libs/Reconstruction/src/mvs/CMakeLists.txt:89`
+  ("Cannot specify link libraries for target poisson_meshing_test which is
+  not built by this project"): 30e9fdd981 added bare target_link_libraries
+  outside the macro; the Windows app matrix passes -DBUILD_UNIT_TESTS=OFF →
+  set(TESTS_ENABLED ${BUILD_UNIT_TESTS}) → COLMAP_ADD_TEST creates no target
+  → the post-macro links reference a target that does not exist. Forward fix
+  (upstream colmap_mvs shape): the COLMAP_ADD_TEST macro gained an optional
+  trailing `LIBS <libs...>` section (upstream LINK_LIBS parity, links inside
+  the same TESTS_ENABLED block, ARGN captured via set() because macro ARGN
+  is not a real list variable); poisson_meshing_test's direct poisson_recon
+  link was deleted as redundant (ColmapLib PUBLIC ${COLMAP_INTERNAL_LIBRARIES}
+  already propagates the solver, matching upstream colmap_mvs
+  PRIVATE_LINK_LIBS colmap_poisson_recon), poisson_recon_lib_test keeps its
+  direct PoissonReconLib.h dependency via `LIBS poisson_recon_lib`. Same run, Ubuntu focal `Docker test` 173-test gate:
+  1 failure = controllers/automatic_reconstruction_test
+  GlobalMapperProducesModel — retriangulation left the BA problem with zero
+  residuals and the fork's silent `return false` surfaced as "Global mapping
+  failed" with no diagnostic; zero-residual-failure semantics are
+  upstream-consistent (default summary = FAILURE -> IsSolutionUsable()==false);
+  fixes = upstream-aligned retriangulation sequence (DeleteAllPoints2DAndPoints3D
+  + BeginReconstruction's Load() restore) and a state-logging ERROR on
+  the zero-residual path.
 - 2026-10-16 `aff48cd6`: Ubuntu/Ubuntu CUDA `Docker test` exit 127 — per-config
   output properties moved `tests` to `bin/cloudviewer_test/Release/tests`;
   fixed MSVC-only guard in `libs/CVViewer/tests/CMakeLists.txt`.

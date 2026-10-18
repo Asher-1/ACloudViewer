@@ -604,6 +604,13 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # Ninja Multi-Config, same as the app matrix job: the CMAKE_C/CXX
+      # COMPILER_LAUNCHER (sccache) is ONLY honored by Makefile/Ninja
+      # generators — a Visual Studio generator routes compiles through
+      # MSBuild, silently ignores the launcher, and the wheel job therefore
+      # compiled the whole double pass with 0 sccache requests (job summary
+      # all-zero stats in run 39088510659) and hit the 6h runner limit.
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
       # Cold-build gate, same expression as the app matrix job: releases, the
       # weekly schedule and an explicit workflow_dispatch run WITHOUT the
       # compile cache so the shipped artifacts stay reproducible.
@@ -617,6 +624,14 @@ jobs:
           } else {
             echo "DEVELOPER_BUILD=$env:DEVELOPER_BUILD" >> $env:GITHUB_ENV
           }
+
+      - name: Set up MSVC environment
+        # Ninja generators need cl.exe / INCLUDE / LIB from vcvarsall; the
+        # app matrix job wires the same step for its Ninja Multi-Config
+        # build. Without it the NMC wheel build cannot find a compiler.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Install CUDA
         uses: Jimver/cuda-toolkit@v0.2.23

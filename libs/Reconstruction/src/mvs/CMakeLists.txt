@@ -85,8 +85,15 @@ COLMAP_ADD_TEST(delaunay_meshing_test delaunay_meshing_test.cc)
 COLMAP_ADD_TEST(fusion_test fusion_test.cc)
 COLMAP_ADD_TEST(model_test model_test.cc)
 COLMAP_ADD_TEST(mvs_image_test image_test.cc)
+# No LIBS section on purpose (upstream parity: upstream poisson_meshing_test
+# links only colmap_mvs, whose PRIVATE_LINK_LIBS carries colmap_poisson_recon):
+# the PoissonRecon solver dependency belongs to ColmapLib (PUBLIC
+# ${COLMAP_INTERNAL_LIBRARIES} in ../CMakeLists.txt), so the test resolves
+# every RunPoissonRecon symbol through the main library without a direct
+# solver link.
 COLMAP_ADD_TEST(poisson_meshing_test poisson_meshing_test.cc)
-target_link_libraries(poisson_meshing_test PRIVATE poisson_recon)
-COLMAP_ADD_TEST(poisson_recon_lib_test poisson_recon_lib_test.cc)
-target_link_libraries(poisson_recon_lib_test PRIVATE poisson_recon_lib)
+# Direct dependency: this test instantiates the PoissonReconLib.h facade
+# itself, so it links the wrapper library through the macro's LIBS section
+# (created and linked inside the same TESTS_ENABLED block).
+COLMAP_ADD_TEST(poisson_recon_lib_test poisson_recon_lib_test.cc LIBS poisson_recon_lib)
 COLMAP_ADD_TEST(workspace_test workspace_test.cc)

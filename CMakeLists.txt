@@ -752,6 +752,23 @@ if (USE_SIMD)
         message(STATUS "AVX-512 enabled by user (ENABLE_AVX512=ON)")
     endif()
 
+    # ISA contract single source of truth: cmake/CMakeFindSSE.cmake emits
+    # -march=x86-64 (not v3/native) both into CMAKE_CXX_FLAGS above and into
+    # CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS, which libs/CMakeLists.txt and
+    # libs/CV_db/CMakeLists.txt re-inject as per-target PRIVATE options.
+    # Those per-target re-injections sort AFTER the global flags, so any
+    # -march carried there wins last--march-wins — emitting the baseline in
+    # BOTH places is what keeps every TU of every final binary (pybind.so,
+    # app, tests, 3rdparty consumers of hand-built archives like PoseLib)
+    # at one ISA. Do NOT re-add a competing -march tail here: a second flag
+    # source is a drift matrix (measured: deduplicating ColmapLib's PUBLIC
+    # propagation while this tail was the only other source let the v3
+    # re-injection win and 9 reconstruction tests segfaulted in
+    # poselib::relpose_5pt). Rationale for the baseline itself: upstream
+    # COLMAP and Open3D ship binaries compiled with the compiler default ISA
+    # and keep performance-critical paths in hand-written kernels, and the
+    # non-FMA codegen is required by the patch_match byte-parity evidence
+    # chain (P1-db-p). CUDA (nvcc) passes are untouched.
     message(STATUS "Enabling SIMD support")
     message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
 else ()

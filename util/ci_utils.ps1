@@ -679,6 +679,12 @@ function Build-PipPackage {
         "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DCMAKE_BUILD_TYPE=Release",
+        # Pin the config list for multi-config generators (the wheel CI uses
+        # Ninja Multi-Config so the sccache launcher is honored): without it
+        # CMAKE_BUILD_TYPE is ignored, the 3rdparty ExternalProject args see
+        # an empty config, and the default four-configuration set gets
+        # registered. Same pin as Build-GuiApp.
+        "-DCMAKE_CONFIGURATION_TYPES=Release",
         "-DUSE_SYSTEM_EIGEN3=ON", # fix gdi32 in hwloc - not found
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
@@ -990,19 +996,33 @@ function Run-CppUnitTests {
     if (-not (Test-Path $buildDir)) {
         Write-Host "Error: build directory not found at $buildDir"
         Write-Host "Please build the project first"
-        return 1
+        throw "Run-CppUnitTests: build directory not found at $buildDir"
     }
     
     Push-Location $buildDir
     
-    # Check if tests executable exists
-    $testExe = Join-Path $buildDir "bin\$Config\tests.exe"
-    if (-not (Test-Path $testExe)) {
-        Write-Host "Error: tests executable not found at $testExe"
+    # Check if tests executable exists. Two layouts exist depending on the
+    # generator: multi-config generators (Ninja Multi-Config on the CI, MSVC)
+    # honor the per-config RUNTIME_OUTPUT_DIRECTORY_<CONFIG> set by
+    # libs/CVViewer/tests/CMakeLists.txt -> bin/cloudviewer_test/<Config>/,
+    # while single-config Makefile/Ninja trees with a generic
+    # RUNTIME_OUTPUT_DIRECTORY land at bin/<Config>/. Probe both so the test
+    # step cannot go silently green just because it looked in the wrong
+    # directory (a bare `return 1` does not set $LASTEXITCODE, so callers
+    # comparing $LASTEXITCODE never saw the failure).
+    $testExe = @(
+        (Join-Path $buildDir "bin\cloudviewer_test\$Config\tests.exe"),
+        (Join-Path $buildDir "bin\$Config\tests.exe")
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $testExe) {
+        Write-Host "Error: tests executable not found (probed:"
+        Write-Host "  bin\cloudviewer_test\$Config\tests.exe"
+        Write-Host "  bin\$Config\tests.exe )"
         Write-Host "Please build with -DBUILD_UNIT_TESTS=ON"
         Pop-Location
-        return 1
+        throw "Run-CppUnitTests: tests executable not found for config '$Config'"
     }
+    Write-Host "Tests executable: $testExe"
     
     # Set test flags
     $unitTestFlags = @("--gtest_shuffle")

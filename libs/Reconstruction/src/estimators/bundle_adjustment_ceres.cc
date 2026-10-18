@@ -132,6 +132,18 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
     SetUp(reconstruction, loss_function);
 
     if (problem_->NumResiduals() == 0) {
+        // Upstream parity (bundle_adjustment_ceres.cc Solve): a zero-residual
+        // problem returns the default summary (termination FAILURE), which
+        // the global mapper's RunBundleAdjustment surfaces as a failure. The
+        // fork carries the same semantics through this bool return; log the
+        // reconstruction state first because this path is otherwise silent
+        // (GlobalMapperProducesModel CI failure: retriangulation emptied the
+        // observation structure and the pipeline failed with no diagnostic).
+        LOG(ERROR) << "Bundle adjustment problem has no residuals: "
+                   << reconstruction->NumPoints3D() << " 3D points, "
+                   << config_.NumImages() << " configured images, "
+                   << reconstruction->NumRegFrames()
+                   << " registered frames";
         restore_metric_frame();
         return false;
     }

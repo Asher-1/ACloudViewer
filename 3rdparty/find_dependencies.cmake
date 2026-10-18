@@ -224,6 +224,13 @@ set(ExternalProject_CMAKE_ARGS
         # Always build 3rd party code in Release mode. Ignored by multi-config
         # generators (XCode, MSVC). MSVC needs matching config anyway.
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        # Multi-config generators (the Windows wheel/app CI now uses Ninja
+        # Multi-Config so the sccache launcher is honored) ignore
+        # CMAKE_BUILD_TYPE: forward the pinned configuration list so the
+        # sub-build's default config is Release instead of the generator's
+        # four-configuration default (empty --config would otherwise build
+        # Debug first). Empty on single-config generators, no-op there.
+        -DCMAKE_CONFIGURATION_TYPES=${CMAKE_CONFIGURATION_TYPES}
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON

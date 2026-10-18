@@ -655,12 +655,16 @@ bool GlobalMapper::IterativeRetriangulateAndRefine(
     double max_normalized_reproj_error,
     double min_tri_angle_deg) {
   // Delete all existing 3D points and re-establish 2D-3D correspondences.
-  // Clear the 3D points and their observation links, but keep the 2D
-  // keypoint coordinates: they are the input data TriangulateImage
-  // iterates over. The previous DeleteAllPoints2DAndPoints3D call wiped
-  // the coordinates as well, leaving the retriangulation loop with zero
-  // points2D per image and producing no points at all.
-  reconstruction_->DeleteAllPoints3D();
+  // Upstream parity (dbb41680 global_mapper.cc): DeleteAllPoints2DAndPoints3D
+  // also empties the per-image points2D vectors; the 2D keypoint coordinates
+  // are restored by the Load(*database_cache_) inside
+  // IncrementalMapper::BeginReconstruction below (its
+  // "NumPoints2D() == 0 -> SetPoints2D(cache points2D)" branch), so
+  // TriangulateImage iterates over the original keypoints again. The earlier
+  // fork variant used DeleteAllPoints3D to keep the coordinates in place
+  // because it missed that restore; the two sequences produce the same
+  // triangulation input, so the fork stays on the upstream form.
+  reconstruction_->DeleteAllPoints2DAndPoints3D();
 
   // Initialize mapper.
   IncrementalMapper mapper(database_cache_.get());
