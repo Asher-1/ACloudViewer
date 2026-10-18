@@ -338,6 +338,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_refreshCostTotalMs = 0;
     m_lastFrameHasPoints = false;
     m_lastFrameRadius = 0.0;
+    m_cameraDisplaySize = 0.0;  // re-captured at the next materialization
     std::memset(m_lastFrameC2w, 0, sizeof(m_lastFrameC2w));
     m_worldUp = CCVector3d(0, 0, 0);  // re-derived from the new run's cameras
     m_frameCameras.clear();
@@ -1073,6 +1074,22 @@ void qLingbotMap::applyDisplayState() {
                              m_resultShowCameras && (ordinal % stride == 0) &&
                              frameGate(ordinal);
             cam->setVisible(vis);
+            if (vis) {
+                // The engine clears every entity's forceRedraw latch at the
+                // tail of each draw() pass (ecvHObject::draw) — including the
+                // startPlayback forced pass, which only draws the cameras the
+                // frame gate already shows. A camera that first becomes
+                // visible mid-replay then owns NO dedicated actor (the
+                // suspended aggregation evicted its composite block) and NO
+                // latch, so the escape path in ccHObject::draw can never
+                // rebuild its frustum and the incremental replay stalls after
+                // the first camera. Re-arm the latch while the formula keeps
+                // the camera shown: when the dedicated actor already exists
+                // hideShowEntities reports hasExist and the escape never
+                // fires, so this is a bare bool write with no geometry-rebuild
+                // side effect (setForceRedraw touches no dirty flags).
+                cam->setForceRedraw(true);
+            }
             if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
                 // Idempotent write: setGraphicScale marks the geometry dirty
                 // on the sensor — an unconditional write would re-dirty all
@@ -1131,6 +1148,12 @@ void qLingbotMap::applyDisplayState() {
         const bool vis = onlineFolderOpen && cam->isEnabled() &&
                          m_resultShowCameras && (ordinal % stride == 0);
         cam->setVisible(vis);
+        if (vis) {
+            // Same re-arm rule as the materialized branch above: an online
+            // camera born while gated-hidden loses its birth latch to the
+            // first draw pass and would never render once re-shown.
+            cam->setForceRedraw(true);
+        }
         if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
             // Per-sensor base captured at creation (retina-aware); a
             // missing entry means a pre-state camera — adopt its current
@@ -1193,6 +1216,12 @@ void qLingbotMap::onResultViewRequested(int which) {
     if (!display) return;
     if (which == 1) {
         // Fit all (official Overview button): refit on the result bbox.
+        // NOTE on the args: getBB_recursive(withGLFeatures,
+        // onlyEnabledChildren) — true/false here means "include frustum
+        // graphics" + "include disabled children", NOT visible-only (the old
+        // comment said so and was wrong). The box is stable across the replay
+        // for FIT ALL (all enabled clouds are always in it); only the
+        // Go-to-first button needed a stable per-camera anchor instead.
         ccHObject* root = m_app->dbRootObject();
         ccHObject* group = root && m_resultGroupId != 0
                                    ? root->find(m_resultGroupId)
@@ -1209,25 +1238,29 @@ void qLingbotMap::onResultViewRequested(int which) {
         return;
     }
     // Move to the first camera (official "First Camera" button): the
-    // Follow-camera pose of frame 0, focal distance from the result radius.
+    // Follow-camera pose of frame 0, pulled back along its own view axis by
+    // the CAMERA'S OWN frustum display size (cached at materialization).
+    // The former anchor — 0.1 x the result bbox radius — was the root cause
+    // of the "Fit all must be clicked first" order dependence: the bbox
+    // here is getBB_recursive(withGLFeatures=true, onlyEnabledChildren=false)
+    // — its comment claimed visible-only, but the real filter is ENABLED
+    // children plus frustum GRAPHICS, whose corners only exist after the
+    // sensor's first draw (m_frustumInfos.isComputed gate). The box therefore
+    // swings with the replay's draw/visibility timing and explodes with any
+    // outlier camera center (the far tiny-cluster view with the trajectory
+    // lines running off-screen), while a small box dropped the eye INSIDE
+    // camera 0's own 50%-alpha near plane (the red flood). Neither is a
+    // stable quantity for THIS button; the frustum's own scale is.
     if (m_pendingResult.frames.isEmpty()) return;
     const LingbotFrameResult& frame = m_pendingResult.frames.first();
     if (frame.c2w.size() < 16) return;
-    double radius = m_lastFrameRadius;
-    if (ccHObject* root = m_app->dbRootObject()) {
-        if (ccHObject* group = m_resultGroupId != 0
-                                       ? root->find(m_resultGroupId)
-                                       : nullptr) {
-            const ccBBox box = group->getBB_recursive(true, false);
-            if (box.isValid()) {
-                radius = box.getDiagNorm() / 2.0;
-            }
-        }
-    }
+    const double pullback = m_cameraDisplaySize > 0.0
+                                    ? 2.0 * m_cameraDisplaySize
+                                    : 2.0 * kFallbackCameraSize;
     applyLiveCameraPose(/*mode=*/2, frame.c2w.constData(),
                         CCVector3d(frame.c2w[3], frame.c2w[7], frame.c2w[11]),
-                        radius,
-                        /*pullback=*/radius * 0.1);
+                        /*radius=*/pullback,
+                        /*pullback=*/pullback);
     m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
 }
 
@@ -1558,6 +1591,10 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     const float cameraDisplaySize =
             medBaseline > 0.f ? medBaseline * kCameraBaselineFraction
                               : kFallbackCameraSize;
+    // Stable scale anchor for the "Go to first camera" pullback (see
+    // onResultViewRequested): captured ONCE here, immune to replay timing
+    // and outliers — unlike the scene bbox the old code re-read per click.
+    m_cameraDisplaySize = cameraDisplaySize;
 
     // Official fused-viewer output structure (PointCloudViewer): ONE point
     // cloud per frame — there is no merged/fused entity upstream — each

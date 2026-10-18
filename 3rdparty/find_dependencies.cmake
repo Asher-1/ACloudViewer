@@ -566,6 +566,14 @@ function(import_3rdparty_library name)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     endif ()
     add_library(${name} INTERFACE)
+    # Honor the declared dependency edge. This used to be silently dropped:
+    # Make/VS builds only worked by accidental target ordering, while the
+    # Ninja Multi-Config wheel CI links consumers before the referenced
+    # ExternalProject's download step runs ("missing and no known rule to
+    # make it", webrtc/CVCoreLib.dll, run 39130116229).
+    foreach (arg_dep IN LISTS arg_DEPENDS)
+        add_dependencies(${name} ${arg_dep})
+    endforeach ()
     if (arg_INCLUDE_DIRS)
         foreach (incl IN LISTS arg_INCLUDE_DIRS)
             if (incl MATCHES "(.*)/$")
@@ -2319,6 +2327,12 @@ if (BUILD_WEBRTC)
             LIBRARIES ${WEBRTC_LIBRARIES}
             DEPENDS ext_webrtc_all
             )
+    # import_3rdparty_library does not consume arg_DEPENDS: without this
+    # explicit edge the Ninja graph links CVCoreLib.dll BEFORE the ext_webrtc
+    # download step runs and fails with "missing and no known rule to make
+    # it: webrtc/src/ext_webrtc/Release/lib/webrtc.lib" (Windows wheel,
+    # run 39130116229). Make/VS builds only worked by accidental ordering.
+    add_dependencies(3rdparty_webrtc ext_webrtc_all)
     target_link_libraries(3rdparty_webrtc INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)

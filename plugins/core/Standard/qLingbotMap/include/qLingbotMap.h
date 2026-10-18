@@ -273,6 +273,12 @@ private:
     /** Base graphic scale captured at materialization (the camera-size
      *  slider is a percentage of it). */
     double m_cameraBaseScale = 1.0;
+    /** Camera frustum display size captured at materialization
+     *  (median baseline x 0.35, official viewer semantics). The stable
+     *  scale anchor for the "Go to first camera" pullback: unlike the
+     *  scene bbox it never swings with replay visibility, frustum-draw
+     *  timing, or outliers. */
+    double m_cameraDisplaySize = 0.0;
     /** The "LingbotMap_frames" folder of the last result (re-filtering
      *  replaces its children; pointer dies with the group — re-checked by
      *  unique id like the playback state). */

@@ -355,7 +355,8 @@ whichever files happen to be cached locally. Tasks that declare a lightweight
 subset in `validation_manifest.json` (`"light": true` / `"light_globs"` —
 currently sam3: two tiny q8_0 SAM variants; trellis: coarse q8 pipeline;
 yolo: per-task-head q8_0 subset handed to the matrix script via
-`--model-globs`) run only that subset by default because their full
+`--model-globs`; gaussian/freesplatter: the three q8_0 variants) run only
+that subset by default because their full
 families are large and slow; pass `--full` for the complete matrix — it is
 the only form that is evidence for a complete regression, release, parity,
 or speedup claim. `--models` (fnmatch patterns against model file names or

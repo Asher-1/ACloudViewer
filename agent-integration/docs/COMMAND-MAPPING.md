@@ -65,6 +65,10 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `sibr` | `sibr_*` | — **(H)** (external SIBR tools) |
 | `methods` | `list_rpc_methods` | `methods.list` **(G)** |
 | `session` | `get_session_info` (and CLI session commands) | — **(B)** |
+| `ui list-actions` / `ui trigger-action` | — | `ui.listActions`, `ui.triggerAction` **(G)** |
+| `qt invoke` | — | `qt.invokeMethod` **(G)** (Qt reflection on any Q_INVOKABLE/slot; parameterized targets must take QVariant) |
+| `view list` / `view pick-entity` / `view pick-point` / `view select-region` | — | `view.list`, `view.pickEntity`, `view.pickPoint`, `view.selectRegion` **(G)** (agent-test pick probes) |
+| `lingbotmap run-test-scene` / `lingbotmap replay` / `lingbotmap display` | — | `qt.invokeMethod` on `LingbotMapDialog` **(G)** (Q_INVOKABLE driver surface: rpcStartTestScene, rpcStartReplay/rpcPausePlayback/rpcStopReplay/rpcSeekFrame, rpcCommitResultDisplay — the same signal chains the dialog buttons emit) |
 
 \* The `sf` and `normals` CLI groups are **aliases** (same implementations as the matching `process …` subcommands); see [Scalar Field Commands](#scalar-field-commands) and [Normal Vector Commands](#normal-vector-commands).
 

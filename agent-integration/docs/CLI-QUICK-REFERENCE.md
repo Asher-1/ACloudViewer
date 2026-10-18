@@ -69,6 +69,35 @@ registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
 FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
 AnyLabeling, MapAnything, and SAM3D.
 
+### Generic UI Drivers & Plugin Replay Automation (GUI)
+
+```bash
+# Discover every triggerable QAction (plugins, menus, toolbars), then open one
+cli-anything-acloudviewer --json ui list-actions
+cli-anything-acloudviewer ui trigger-action "LingBot-Map Reconstruction"
+
+# Qt reflection on any Q_INVOKABLE/slot (parameters take JSON scalars)
+cli-anything-acloudviewer --json qt invoke --method rpcStartReplay \
+  --class-contains LingbotMapDialog
+
+# View probes (agent tests)
+cli-anything-acloudviewer --json view list
+cli-anything-acloudviewer --json view pick-entity 400 300
+cli-anything-acloudviewer --json view pick-point 400 300
+cli-anything-acloudviewer --json view select-region 100 100 500 500
+
+# qLingbotMap regression loop (dialog must be open first; every command
+# drives the SAME signal chains the dialog buttons emit)
+cli-anything-acloudviewer lingbotmap run-test-scene "Loop"   # select scene + real Run click
+cli-anything-acloudviewer lingbotmap replay start            # start / pause / stop / seek --frame N
+cli-anything-acloudviewer lingbotmap display --show-cameras --stride 3 --cam-size 260
+cli-anything-acloudviewer --json view screenshot replay.png
+```
+
+`lingbotmap display` is an ABSOLUTE five-value commit (the same values a
+manual slider release sends); pass all five for a deterministic state.
+`replay seek` is refused while playing (official viewer semantics).
+
 ---
 
 ## Processing Commands

@@ -41,6 +41,32 @@ else()  # Linux
     endif()
 endif()
 
+# Pre-declare the archive files the download produces. Ninja-family
+# generators (the Windows wheel CI uses Ninja Multi-Config so the sccache
+# launcher is honored) require every consumed file to have a producing rule
+# or an explicit byproduct: CVCoreLib.dll links these libraries, and with an
+# empty BUILD_BYPRODUCTS the graph check fires BEFORE the download step can
+# materialize them ("missing and no known rule to make it: .../Release/lib/
+# webrtc.lib", run 39130116229). Make/VS generators are lax, which is why
+# this only surfaced after the NMC switch. Layout mirrors the $<IF:$<CONFIG:
+# Debug>,Debug,Release> selection below: the archives carry Debug/ and
+# Release/ trees with webrtc.lib and webrtc_extra.lib; the Linux tarball
+# carries lib/libwebrtc*.a.
+if (WIN32)
+    set(WEBRTC_DOWNLOAD_SRC "${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc")
+    set(WEBRTC_BUILD_BYPRODUCTS
+        "${WEBRTC_DOWNLOAD_SRC}/Debug/lib/webrtc.lib"
+        "${WEBRTC_DOWNLOAD_SRC}/Debug/lib/webrtc_extra.lib"
+        "${WEBRTC_DOWNLOAD_SRC}/Release/lib/webrtc.lib"
+        "${WEBRTC_DOWNLOAD_SRC}/Release/lib/webrtc_extra.lib"
+    )
+else()
+    set(WEBRTC_BUILD_BYPRODUCTS
+        "${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc/lib/libwebrtc.a"
+        "${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc/lib/libwebrtc_extra.a"
+    )
+endif()
+
 ExternalProject_Add(ext_webrtc
     PREFIX webrtc
     URL ${WEBRTC_URL}
@@ -50,7 +76,7 @@ ExternalProject_Add(ext_webrtc
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS ""
+    BUILD_BYPRODUCTS ${WEBRTC_BUILD_BYPRODUCTS}
 )
 
 ExternalProject_Get_Property(ext_webrtc SOURCE_DIR)

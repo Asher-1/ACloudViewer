@@ -1687,7 +1687,17 @@ void LingbotMapDialog::rpcStartTestScene(const QVariant& scene) {
 
 void LingbotMapDialog::rpcStartReplay() { emit replayPlayRequested(); }
 
+void LingbotMapDialog::rpcPausePlayback() { emit replayPauseRequested(); }
+
 void LingbotMapDialog::rpcStopReplay() { emit replayStopRequested(); }
+
+void LingbotMapDialog::rpcSeekFrame(const QVariant& frame) {
+    emit replaySeekRequested(frame.toInt());
+}
+
+void LingbotMapDialog::rpcResultView(const QVariant& which) {
+    emit resultViewRequested(which.toInt());
+}
 
 void LingbotMapDialog::rpcCommitResultDisplay(const QVariant& threshold,
                                               const QVariant& pointSize,
