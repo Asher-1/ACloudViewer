@@ -88,6 +88,24 @@ unless every consumer of the flat path is updated in the same change.
 
 ## Incident log (index, not narrative)
 
+- 2026-10-19 `2eba52d3c`: Windows `Test wheel (3.12)` — the forensics
+  stack (-v + PYTHONUNBUFFERED + seed=42) named the aborting test on the
+  first retry: `test_parity_batches.py::test_database_management_surface`
+  (faulthandler dump, then the flush of its started-but-unfinished -v line;
+  the previous run's "[22%] + 35 dots" was a stdio-buffer artifact, NOT the
+  execution position — the real position was ~88%, i.e. ~758/862 tests in,
+  with torch already loaded). Static audit of its 7 C++ calls (Database
+  open/clears/reads/read_rig_with_sensor/static pair-id helpers/`with db`
+  transaction) found all upstream-consistent; no SQLite error line before
+  the dump (the `exit(EXIT_FAILURE)` path of SQLite3CallHelper was ruled
+  out). Step-level stderr markers (`[db_mgmt_surface] ...` on the same
+  unbuffered channel as the dump, incl. forced `del`+`gc.collect()`
+  destructor markers) landed in the test — the next CI run names the exact
+  C++ call. Local Linux (gcc 11 CUDA tree): 9 markers green, test PASSED,
+  61/61 file+sensor regression — Windows-only, not locally reproducible.
+  NOTE: a stray PYTHONPATH pointing at the build staging package (its
+  bundled Qt 5.15 libs) poisons local cloudViewer imports with a misleading
+  Qt private-symbol OSError; `unset PYTHONPATH` first when debugging.
 - 2026-10-18 `4fddd764b`: Windows `Test wheel (3.12)` — `Fatal Python
   error: Aborted` 4 minutes into the python suite (stderr, immediately
   visible) while the stdout progress dots stayed buffered: the run showed
