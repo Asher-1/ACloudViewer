@@ -88,6 +88,49 @@ unless every consumer of the flat path is updated in the same change.
 
 ## Incident log (index, not narrative)
 
+- 2026-10-18 `4fddd764b`: Windows `Test wheel (3.12)` — `Fatal Python
+  error: Aborted` 4 minutes into the python suite (stderr, immediately
+  visible) while the stdout progress dots stayed buffered: the run showed
+  only 22 dots in `test_parity_batches.py [ 22%]`, then nothing for ~6h
+  until the runner limit killed it (the aborted interpreter never released
+  the output pipe). Root cause of the silence, not of the abort: the
+  windows.yml pytest invocation had no `-v`, no fixed seed and no
+  `PYTHONUNBUFFERED` (ubuntu's run_python_tests passes -v; the same suite
+  passes there in ~6min). Forensics fix: `-v --randomly-seed=42` +
+  `PYTHONUNBUFFERED: '1'` on both windows wheel test steps and in
+  run_python_tests, plus `timeout-minutes: 60` on the test-wheel job.
+  Local repro matrix (CUDA tree, gcc 11): seed 42 full-tree run passes
+  404 (torch-dependent files cannot be collected locally), single-file
+  runs pass 56/56 — the abort is Windows/MSVC-specific or order+platform
+  specific; the next CI run will name the exact test.
+- 2026-10-18 `4fddd764b`: cuda-noble `Docker build` — `curl: (6) Could not
+  resolve host: pyenv.run` at Dockerfile.ci's pyenv layer (exit 127, job
+  117709564908). Transient resolver blip killed a ~2h image build because
+  the bare `curl https://pyenv.run | bash` pipe had no retry AND no
+  pipefail (bash executed an empty script; the error surfaced later as
+  "pyenv: command not found"). Fix: bash for-loop retry (5x5s) with the
+  installer landing in a file gated on `-s` non-empty; curl
+  `--retry-all-errors` was rejected because it needs curl >= 7.71 and
+  focal (7.68) is a supported base image.
+- 2026-10-18 `4fddd764b`: cuda-focal `Docker test` —
+  automatic_reconstruction_test 173-1 (GlobalMapperProducesModel) again,
+  but the zero-residual diagnostic finally fired: `41 3D points, 5
+  configured images, 5 registered frames` inside the retriangulation BA
+  (2.3 ms after "Iterative bundle adjustment done"; the retriangulation
+  heading IS present). Static audit found every link-maintenance path
+  (Load/BeginReconstruction/MergePoints3D/AddPoint3D/FilterTracks,
+  boost::unordered_node_map reference stability) upstream-consistent; an
+  ASAN build of the full test passes clean locally (CUDA tree, gcc 11).
+  Failure is environment-nondeterministic (cpu-focal failed on b96f8a2f5,
+  passes on 4fddd764b). Next-round evidence: the zero-residual path now
+  runs a two-way link audit (empty-track point count, dangling track
+  elements, per-image linked-observation counts) — read it before any
+  further code change.
+- 2026-10-18 `4fddd764b`: Windows wheel SUCCESS on the first NMC run
+  (Build wheel ON,3.12 ~5.9h vs the VS-generator double-pass 6h timeouts),
+  confirming the sccache launcher fix, the webrtc dependency edge, and
+  CLOUDVIEWER_WHEEL_SKIP_CPU_PASS being unnecessary (CPU+CUDA double pass
+  fits when sccache actually runs).
 - 2026-10-18 `8cfc7088d`: Windows `Build wheel (ON, 3.12, false)` cancelled at
   6h with all-zero sccache stats — REAL zero, not a timing artifact: the
   wheel job ran the default "Visual Studio 17 2022" generator (ci_utils.ps1

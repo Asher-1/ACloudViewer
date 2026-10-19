@@ -53,6 +53,17 @@ constexpr ecvColor::Rgb kColmapCameraFrameColor(204, 25, 0);
 constexpr float kCameraBaselineFraction = 0.35f;
 constexpr float kFallbackCameraSize = 0.05f;
 
+// A degenerate focal (tiny-but-nonzero fx/fy from a failed model frame)
+// sends the pinhole unprojection and the frustum vFOV to degenerate
+// extremes: the frame's cloud spreads orders of magnitude past the scene
+// and the frustum near plane becomes a scene-sized wall with sidelines
+// crossing the whole reconstruction. Frames outside this band are treated
+// as reconstruction failures: no cloud, no frustum (the replay slot stays
+// null and the gate skips it).
+bool saneFocal(float focal, float maxDim) {
+    return focal >= 0.2f * maxDim && focal <= 10.0f * maxDim;
+}
+
 // Live-preview DB refresh throttle (ms) — VTK redraws stay cheap while
 // frames stream in.
 constexpr qint64 kOnlineRefreshMinMs = 33;  /**< 30 fps refresh floor */
@@ -634,7 +645,8 @@ void qLingbotMap::applyLiveCameraPose(int mode,
                                       const float* c2w,
                                       const CCVector3d& center,
                                       double radius,
-                                      double pullback) {
+                                      double pullback,
+                                      double fovDeg) {
     ecvGenericGLDisplay* display =
             m_app ? m_app->getActiveGLDisplay() : nullptr;
     if (!display) return;
@@ -719,6 +731,12 @@ void qLingbotMap::applyLiveCameraPose(int mode,
     vp.setCameraCenter(eye, /*autoUpdateFocal=*/false);
     // Keep the newest frame comfortably inside the view.
     vp.setFocalDistance(std::max(2.0 * radius, 1e-3));
+    if (fovDeg > 0.0) {
+        // Deterministic projection: the view's carried fov swings between
+        // sessions (measured 15°..131°) and turns the same pose into
+        // anything from a normal lens to a fisheye far-view.
+        vp.fov_deg = static_cast<float>(fovDeg);
+    }
     display->setViewportParameters(vp);
 }
 
@@ -1227,8 +1245,8 @@ void qLingbotMap::onResultViewRequested(int which) {
                                    ? root->find(m_resultGroupId)
                                    : nullptr;
         if (!group) return;
-        ccBBox box = group->getBB_recursive(/*onlyVisibleEntities=*/true,
-                                            /*autoCompute=*/false);
+        ccBBox box = group->getBB_recursive(/*withGLFeatures=*/true,
+                                            /*onlyEnabledChildren=*/false);
         if (!box.isValid()) {
             box = group->getBB_recursive(false, true);
         }
@@ -1238,29 +1256,39 @@ void qLingbotMap::onResultViewRequested(int which) {
         return;
     }
     // Move to the first camera (official "First Camera" button): the
-    // Follow-camera pose of frame 0, pulled back along its own view axis by
-    // the CAMERA'S OWN frustum display size (cached at materialization).
-    // The former anchor — 0.1 x the result bbox radius — was the root cause
-    // of the "Fit all must be clicked first" order dependence: the bbox
-    // here is getBB_recursive(withGLFeatures=true, onlyEnabledChildren=false)
-    // — its comment claimed visible-only, but the real filter is ENABLED
-    // children plus frustum GRAPHICS, whose corners only exist after the
-    // sensor's first draw (m_frustumInfos.isComputed gate). The box therefore
-    // swings with the replay's draw/visibility timing and explodes with any
-    // outlier camera center (the far tiny-cluster view with the trajectory
-    // lines running off-screen), while a small box dropped the eye INSIDE
-    // camera 0's own 50%-alpha near plane (the red flood). Neither is a
-    // stable quantity for THIS button; the frustum's own scale is.
+    // Follow-camera pose of frame 0, pulled back along its own view axis.
+    // The anchor is the CAMERA'S OWN frustum display size (cached at
+    // materialization) and NOT the scene bbox: getBB_recursive(true, false)
+    // spans the whole camera path (the 32-unit trajectory) plus frustum
+    // graphics, so a bbox-anchored pullback swung between "inside camera
+    // 0's own near plane" (red flood) and "far away" (tiny cluster)
+    // depending on click timing — the reported Fit-all order dependence.
+    // 10x the frustum size keeps the near plane a small quad (~5°) while
+    // the first camera's viewpoint stays readable.
     if (m_pendingResult.frames.isEmpty()) return;
     const LingbotFrameResult& frame = m_pendingResult.frames.first();
     if (frame.c2w.size() < 16) return;
     const double pullback = m_cameraDisplaySize > 0.0
-                                    ? 2.0 * m_cameraDisplaySize
-                                    : 2.0 * kFallbackCameraSize;
+                                    ? 10.0 * m_cameraDisplaySize
+                                    : 10.0 * kFallbackCameraSize;
+    // Project through the FIRST CAMERA'S OWN lens: its vertical fov from
+    // the frame intrinsics. Inheriting the view's carried fov made the
+    // same pose render as anything from a normal lens to a fisheye
+    // far-view (the carried fov swings 15°..131° between sessions).
+    const float fy = frame.intrinsics.value(1, 0.f);
+    double fovDeg = 0.0;
+    if (saneFocal(fy,
+                  static_cast<float>(std::max(frame.width, frame.height)))) {
+        fovDeg = static_cast<double>(
+                         ecvCameraSensorDisplay::ComputeVerticalFovRad(
+                                 fy, frame.height)) *
+                 180.0 / 3.14159265358979323846;
+    }
     applyLiveCameraPose(/*mode=*/2, frame.c2w.constData(),
                         CCVector3d(frame.c2w[3], frame.c2w[7], frame.c2w[11]),
                         /*radius=*/pullback,
-                        /*pullback=*/pullback);
+                        /*pullback=*/pullback,
+                        /*fovDeg=*/fovDeg);
     m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
 }
 
@@ -1432,6 +1460,7 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     const float displaySize =
             med > 0.f ? med * kCameraBaselineFraction : kFallbackCameraSize;
     const float fx = intrinsics.value(0, 0.f);
+    if (!saneFocal(fx, static_cast<float>(std::max(width, height)))) return;
     ccCameraSensor* sensor =
             buildCameraSensor(c2w, fx, width, height, displaySize);
     if (!sensor) return;
@@ -1628,7 +1657,8 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         const float fy = frame.intrinsics.value(1, 0.f);
         const float cx = frame.intrinsics.value(2, 0.f);
         const float cy = frame.intrinsics.value(3, 0.f);
-        if (fx <= 0.f || fy <= 0.f) continue;
+        const float maxDim = static_cast<float>(std::max(w, h));
+        if (!saneFocal(fx, maxDim) || !saneFocal(fy, maxDim)) continue;
         if (frame.c2w.size() < 16) continue;
 
         const size_t plane = static_cast<size_t>(w) * h;
@@ -1758,7 +1788,9 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         const LingbotFrameResult& frame = result.frames[f];
         if (frame.c2w.size() < 16) continue;
         const float fx = frame.intrinsics.value(0, 0.f);
-        if (fx <= 0.f) continue;
+        const float maxDim =
+                static_cast<float>(std::max(frame.width, frame.height));
+        if (!saneFocal(fx, maxDim)) continue;
         ccCameraSensor* sensor =
                 buildCameraSensor(frame.c2w.constData(), fx, frame.width,
                                   frame.height, cameraDisplaySize);
@@ -2092,6 +2124,10 @@ void qLingbotMap::onPlaybackTick() {
     applyReplayVisibility();
     m_playbackFrame =
             (m_playbackFrame + 1) % static_cast<int>(m_frameCameras.size());
+    // Mirror the clock into the dialog (slider + "N / count" label): the
+    // preview below advances while this label would otherwise stay frozen
+    // at "1 / count" for the whole replay — the reported zombie timeline.
+    syncReplayStateToDialog();
     // Reconstruction ↔ input-stream lockstep: the dialog preview shows the
     // frame just became current (official frame-panel behavior).
     syncReplayPreviewToDialog();

@@ -137,12 +137,17 @@ private:
     /** Applies one live-camera pose to the active view (geometry only —
      *  the CALLER must trigger a Render afterwards). \p pullback moves the
      *  eye BACK along the view direction (Follow branch) so a "go to
-     *  camera" view does not sit inside the ridden frustum's near plane. */
+     *  camera" view does not sit inside the ridden frustum's near plane.
+     *  \p fovDeg > 0 overrides the view's carried fov — "Go to first
+     *  camera" passes the frame's own vertical fov so the projection is
+     *  deterministic instead of inheriting whatever zoom state the session
+     *  carries (the 131°-fov far-view bug). */
     void applyLiveCameraPose(int mode,
                              const float* c2w,
                              const CCVector3d& center,
                              double radius,
-                             double pullback = 0.0);
+                             double pullback = 0.0,
+                             double fovDeg = 0.0);
     /** Ends the Follow-mode camera ride: un-hides the ridden online sensor
      *  and clears the view's apply-viewport preview state (armed by
      *  ccCameraSensor::applyViewport, which suppresses the ridden sensor's

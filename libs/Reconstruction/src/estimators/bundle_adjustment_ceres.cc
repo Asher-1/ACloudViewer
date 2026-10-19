@@ -144,6 +144,55 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
                    << config_.NumImages() << " configured images, "
                    << reconstruction->NumRegFrames()
                    << " registered frames";
+        // Two-way link audit: points with empty tracks mean the point was
+        // created but never linked; track elements whose point2D does not
+        // point back mean a one-sided link break. Both pinpoint the stage
+        // that broke the invariant (cuda-focal GlobalMapperProducesModel:
+        // 41 points, 5 registered frames, zero residuals). The problem is
+        // built by iterating each configured image's point2D links, so the
+        // per-image linked-observation counts below show whether the gap
+        // is in the image->point direction as well.
+        size_t audit_empty_tracks = 0;
+        size_t audit_dangling_elements = 0;
+        for (const auto& [audit_point_id, audit_point] :
+                reconstruction->Points3D()) {
+            if (audit_point.Track().Length() == 0) {
+                ++audit_empty_tracks;
+                continue;
+            }
+            for (const auto& audit_el : audit_point.Track().Elements()) {
+                const Image& audit_image =
+                        reconstruction->Image(audit_el.image_id);
+                if (audit_el.point2D_idx >= audit_image.NumPoints2D() ||
+                    audit_image.Point2D(audit_el.point2D_idx)
+                                    .Point3DId() != audit_point_id) {
+                    ++audit_dangling_elements;
+                    if (audit_dangling_elements <= 3) {
+                        LOG(ERROR) << "  dangling track element: point "
+                                   << audit_point_id << " <- image "
+                                   << audit_el.image_id << " idx "
+                                   << audit_el.point2D_idx;
+                    }
+                    break;
+                }
+            }
+        }
+        LOG(ERROR) << "  link audit: points with empty tracks="
+                   << audit_empty_tracks << ", dangling track elements="
+                   << audit_dangling_elements;
+        for (const image_t audit_image_id : config_.Images()) {
+            const Image& audit_image = reconstruction->Image(audit_image_id);
+            size_t audit_linked = 0;
+            for (const Point2D& audit_point2D : audit_image.Points2D()) {
+                if (audit_point2D.HasPoint3D()) {
+                    ++audit_linked;
+                }
+            }
+            LOG(ERROR) << "  image " << audit_image_id << " ("
+                       << audit_image.Name() << "): " << audit_linked
+                       << "/" << audit_image.NumPoints2D()
+                       << " point2D linked to a 3D point";
+        }
         restore_metric_frame();
         return false;
     }
