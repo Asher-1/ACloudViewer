@@ -118,7 +118,18 @@ $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -Pa
 if ($process.ExitCode -ne 0) {
     throw "Vulkan SDK installer failed with exit code $($process.ExitCode)"
 }
-Remove-Item $workDir -Recurse -Force
+# The installer process may still hold handles on its own files (observed:
+# Temp\acloudviewer-vulkan-*\vulkan_sdk.exe) for a short while after
+# reporting success, so a cleanup Remove-Item can hit a sharing violation
+# (run 39366721072: the SDK was installed, only this cleanup failed, and
+# the job failure cancelled the other three matrix jobs). The work dir is
+# transient — the runner reclaims it — so best-effort cleanup, never a job
+# failure.
+try {
+    Remove-Item $workDir -Recurse -Force -ErrorAction Stop
+} catch {
+    Write-Host "Warning: could not remove installer work dir '$workDir': $($_.Exception.Message)"
+}
 
 $env:VULKAN_SDK = $InstallRoot
 if ($SkipProfile -or $env:GITHUB_ACTIONS) {

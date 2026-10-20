@@ -94,8 +94,18 @@ INSTANTIATE_TEST_SUITE_P(
                       AutomaticReconstructionController::Mapper::HIERARCHICAL));
 
 // Fork addition: verify the GLOBAL dispatch produces a non-empty model and
-// writes it. Upstream excludes GLOBAL from the exact scene-similarity gate
-// because this synthetic graph may legitimately filter one frame.
+// writes it. Upstream excludes GLOBAL from this test entirely - see the
+// upstream TODO above ("Currently excluded because the test produces fewer
+// observations than expected") - so upstream CI never exercises the full
+// SIFT-to-global-mapper path and its zero-residual BA exposure stays
+// untested there. The fork keeps the coverage because the automatic
+// reconstruction UI really dispatches GLOBAL, and pairs it with the
+// RunBundleAdjustment guard (global_mapper.cc): when retriangulation leaves
+// only sub-min_track_length tracks, the BA pass is skipped instead of
+// failing the whole reconstruction. The relaxed assertions (model exists,
+// frames registered, sparse/0 written) match what this surface can
+// legitimately promise; scene-similarity stays covered by
+// global_pipeline_test.cc exactly as upstream intends.
 TEST(AutomaticReconstructionController, GlobalMapperProducesModel) {
   const auto test_dir = CreateTestDir();
   const auto workspace_path = test_dir / "workspace";

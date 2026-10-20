@@ -34,6 +34,57 @@ bool RunBundleAdjustment(const BundleAdjustmentOptions& options,
     return false;
   }
 
+  // Fork note (cuda-focal GlobalMapperProducesModel): the Ceres backend
+  // admits an observation into the problem only when its track is at least
+  // options.min_track_length long. When no observation qualifies - e.g.
+  // retriangulation after a numerically marginal scene left only two-view
+  // tracks (41 points, all length 2 in the failing CI runs) - the problem
+  // is built with zero residual blocks, ceres reports termination FAILURE,
+  // and the caller discards a reconstruction that is still structurally
+  // valid (5 registered frames). An empty residual set means the current
+  // state is already the optimum of the requested optimization: skip the
+  // pass instead of failing. The backend keeps the upstream zero-residual
+  // semantics; the skip decision belongs to the layer that owns the
+  // min_track_length policy.
+  if (options.min_track_length > 0) {
+    size_t num_linked_observations = 0;
+    size_t num_eligible_observations = 0;
+    for (const auto& [image_id, image] : reconstruction.Images()) {
+      if (!image.HasPose()) {
+        continue;
+      }
+      for (const Point2D& point2D : image.Points2D()) {
+        if (!point2D.HasPoint3D()) {
+          continue;
+        }
+        ++num_linked_observations;
+        // Mirrors the Ceres SetUp admission condition exactly
+        // (bundle_adjustment_ceres.cc AddImageToProblem): same images
+        // (all posed), no ignored points in this config, same comparison.
+        if (static_cast<int>(reconstruction.Point3D(point2D.Point3DId())
+                                     .Track()
+                                     .Length()) >= options.min_track_length) {
+          ++num_eligible_observations;
+        }
+      }
+    }
+    // Skip only the consistent degenerate state: structure exists and every
+    // observation still links to it, but every track is below the quality
+    // bar (cuda-focal GlobalMapperProducesModel: 41 two-view points). If
+    // points exist yet NO observation links to them, the image <-> point3D
+    // link invariant is broken - that is a bookkeeping bug, not a vacuous
+    // optimization - so fall through and let the zero-residual BA audit
+    // report it exactly as before this guard existed.
+    if (num_eligible_observations == 0 && num_linked_observations > 0) {
+      LOG(WARNING) << "Skipping bundle adjustment: all "
+                   << num_linked_observations << " observations on "
+                   << reconstruction.NumPoints3D()
+                   << " 3D points have tracks shorter than min_track_length="
+                   << options.min_track_length << "; nothing to optimize";
+      return true;
+    }
+  }
+
   BundleAdjustmentConfig ba_config;
   for (const auto& [image_id, image] : reconstruction.Images()) {
     if (image.HasPose()) {
