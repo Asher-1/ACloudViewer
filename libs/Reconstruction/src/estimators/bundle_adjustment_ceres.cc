@@ -136,9 +136,15 @@ bool CeresBundleAdjuster::Solve(Reconstruction* reconstruction) {
         // problem returns the default summary (termination FAILURE), which
         // the global mapper's RunBundleAdjustment surfaces as a failure. The
         // fork carries the same semantics through this bool return; log the
-        // reconstruction state first because this path is otherwise silent
-        // (GlobalMapperProducesModel CI failure: retriangulation emptied the
-        // observation structure and the pipeline failed with no diagnostic).
+        // reconstruction state first because this path is otherwise silent.
+        // The global mapper now intercepts the consistent degenerate state
+        // (structure fully linked, every track below min_track_length) in
+        // its RunBundleAdjustment guard before any problem is built, so
+        // reaching this branch from that helper means the image <-> point3D
+        // link invariant is broken - the audit below names it. The audit
+        // originally fired for the GlobalMapperProducesModel cuda-focal CI
+        // failure (41 two-view points; links were consistent, which ruled
+        // out corruption and pinned the skip-on-empty guard design).
         LOG(ERROR) << "Bundle adjustment problem has no residuals: "
                    << reconstruction->NumPoints3D() << " 3D points, "
                    << config_.NumImages() << " configured images, "
