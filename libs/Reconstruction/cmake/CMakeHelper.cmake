@@ -340,16 +340,38 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
 endmacro(COLMAP_ADD_EXECUTABLE)
 
 # Wrapper for test executables.
+# Optional trailing "LIBS <libs...>" section (upstream parity with the
+# upstream COLMAP_ADD_TEST LINK_LIBS argument): test-private link libraries
+# are consumed INSIDE the TESTS_ENABLED block, so a target's link lifetime is
+# identical to its creation lifetime. The bare post-macro
+# target_link_libraries() calls added in 30e9fdd981 broke every
+# TESTS_ENABLED=OFF configure (the Windows app matrix passes
+# -DBUILD_UNIT_TESTS=OFF; set(TESTS_ENABLED ${BUILD_UNIT_TESTS}) in
+# libs/Reconstruction/CMakeLists.txt): "Cannot specify link libraries for
+# target ... which is not built by this project".
 macro(COLMAP_ADD_TEST TARGET_NAME)
+    # ARGN is only a string-substitution pseudo-variable inside a macro, so
+    # list() commands cannot operate on it by name; capture it first.
+    set(_COLMAP_TEST_ALL_ARGS ${ARGN})
+    list(FIND _COLMAP_TEST_ALL_ARGS "LIBS" _COLMAP_TEST_LIBS_IDX)
+    if(_COLMAP_TEST_LIBS_IDX EQUAL -1)
+        set(_COLMAP_TEST_SRCS ${_COLMAP_TEST_ALL_ARGS})
+        set(_COLMAP_TEST_LIBS)
+    else()
+        list(SUBLIST _COLMAP_TEST_ALL_ARGS 0 ${_COLMAP_TEST_LIBS_IDX} _COLMAP_TEST_SRCS)
+        list(SUBLIST _COLMAP_TEST_ALL_ARGS ${_COLMAP_TEST_LIBS_IDX} -1 _COLMAP_TEST_LIBS)
+        list(REMOVE_AT _COLMAP_TEST_LIBS 0)
+    endif()
     if (TESTS_ENABLED)
-        # ${ARGN} will store the list of source files passed to this function.
-        add_executable(${TARGET_NAME} ${ARGN})
+        # ${_COLMAP_TEST_SRCS} stores the list of source files passed to this
+        # function (everything before the optional LIBS keyword).
+        add_executable(${TARGET_NAME} ${_COLMAP_TEST_SRCS})
         set_target_properties(${TARGET_NAME} PROPERTIES
                 FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
                 RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         # gmock provides the matcher infrastructure used by upstream test
         # files (e.g. util/eigen_matchers.h).
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock)
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock ${_COLMAP_TEST_LIBS})
 
         # Batch C test-layout fix: resolve shared-library directories at
         # configure time (Qt, vendored opencv) into the build RPATH so the

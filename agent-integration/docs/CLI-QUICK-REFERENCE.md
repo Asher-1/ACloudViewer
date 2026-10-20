@@ -69,6 +69,35 @@ registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
 FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
 AnyLabeling, MapAnything, and SAM3D.
 
+### Generic UI Drivers & Plugin Replay Automation (GUI)
+
+```bash
+# Discover every triggerable QAction (plugins, menus, toolbars), then open one
+cli-anything-acloudviewer --json ui list-actions
+cli-anything-acloudviewer ui trigger-action "LingBot-Map Reconstruction"
+
+# Qt reflection on any Q_INVOKABLE/slot (parameters take JSON scalars)
+cli-anything-acloudviewer --json qt invoke --method rpcStartReplay \
+  --class-contains LingbotMapDialog
+
+# View probes (agent tests)
+cli-anything-acloudviewer --json view list
+cli-anything-acloudviewer --json view pick-entity 400 300
+cli-anything-acloudviewer --json view pick-point 400 300
+cli-anything-acloudviewer --json view select-region 100 100 500 500
+
+# qLingbotMap regression loop (dialog must be open first; every command
+# drives the SAME signal chains the dialog buttons emit)
+cli-anything-acloudviewer lingbotmap run-test-scene "Loop"   # select scene + real Run click
+cli-anything-acloudviewer lingbotmap replay start            # start / pause / stop / seek --frame N
+cli-anything-acloudviewer lingbotmap display --show-cameras --stride 3 --cam-size 260
+cli-anything-acloudviewer --json view screenshot replay.png
+```
+
+`lingbotmap display` is an ABSOLUTE five-value commit (the same values a
+manual slider release sends); pass all five for a deterministic state.
+`replay seek` is refused while playing (official viewer semantics).
+
 ---
 
 ## Processing Commands
@@ -362,6 +391,32 @@ Options:
   --camera-model SIMPLE_RADIAL|PINHOLE|OPENCV|OPENCV_FISHEYE|...
   --no-dense                    # Skip dense reconstruction
   --use-gpu                     # Enable GPU acceleration
+```
+
+### Fine-Grained Pipeline Steps
+
+```bash
+cli-anything-acloudviewer reconstruct extract-features images/ --database db.db
+cli-anything-acloudviewer reconstruct match db.db --method sequential
+cli-anything-acloudviewer reconstruct sparse db.db images/ -o sparse/
+cli-anything-acloudviewer reconstruct bundle-adjust sparse/ -o sparse_ba/
+cli-anything-acloudviewer reconstruct undistort images/ --input-path sparse/ -o undistorted/
+cli-anything-acloudviewer reconstruct dense-stereo undistorted/
+cli-anything-acloudviewer reconstruct fuse undistorted/ -o fused.ply      # colored dense cloud
+cli-anything-acloudviewer reconstruct poisson fused.ply -o meshed-poisson.ply
+cli-anything-acloudviewer reconstruct delaunay-mesh undistorted/ -o meshed-delaunay.ply
+cli-anything-acloudviewer reconstruct texture-mesh undistorted/ -o textured/ [--mesh-path mesh.ply]
+cli-anything-acloudviewer reconstruct triangulate sparse/ -o sparse_tri/   # known poses -> points
+cli-anything-acloudviewer reconstruct filter-points sparse/ -o sparse_filtered/
+cli-anything-acloudviewer reconstruct register-images --database db.db sparse/ -o sparse_reg/
+cli-anything-acloudviewer reconstruct advancing-front undistorted/ -o meshed-af.ply
+cli-anything-acloudviewer reconstruct convert-model sparse/ -o model.ply --output-type PLY
+cli-anything-acloudviewer reconstruct analyze-model sparse/
+cli-anything-acloudviewer reconstruct crop-model sparse/ -o cropped/ --boundary "min-x,y,z max-x,y,z"
+cli-anything-acloudviewer reconstruct transform-model sparse/ -o transformed/ --transform t.txt
+cli-anything-acloudviewer reconstruct color-extract --image-path images/ sparse/ -o sparse_colored/
+cli-anything-acloudviewer reconstruct create-database new.db
+cli-anything-acloudviewer reconstruct hierarchical-sparse --database db.db --image-path images/ -o sparse/
 ```
 
 ### Feed-Forward Multi-View Reconstruction (qMapAnything, no GUI)

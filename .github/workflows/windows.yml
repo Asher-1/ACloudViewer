@@ -342,6 +342,13 @@ jobs:
           if-no-files-found: ignore
       - name: sccache stats
         # Visibility for cache hit-rate tuning; never gates the job.
+        # NOTE: the sccache daemon lives inside the build step's process tree
+        # and its stats are in-memory. GitHub Actions runners terminate that
+        # tree when the step exits, so this post-build invocation (and the
+        # action's post-run summary) observe a freshly spawned daemon and
+        # report 0 requests on Windows — the real numbers are printed by
+        # build_win_app.ps1 / build_win_wheel.ps1 at the end of the build
+        # step, while the daemon is still alive.
         if: env.SCCACHE_GHA_ENABLED == 'true'
         continue-on-error: true
         run: |
@@ -597,6 +604,17 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # Ninja Multi-Config, same as the app matrix job: the CMAKE_C/CXX
+      # COMPILER_LAUNCHER (sccache) is ONLY honored by Makefile/Ninja
+      # generators — a Visual Studio generator routes compiles through
+      # MSBuild, silently ignores the launcher, and the wheel job therefore
+      # compiled the whole double pass with 0 sccache requests (job summary
+      # all-zero stats in run 39088510659) and hit the 6h runner limit.
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
+      # Cold-build gate, same expression as the app matrix job: releases, the
+      # weekly schedule and an explicit workflow_dispatch run WITHOUT the
+      # compile cache so the shipped artifacts stay reproducible.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -606,6 +624,14 @@ jobs:
           } else {
             echo "DEVELOPER_BUILD=$env:DEVELOPER_BUILD" >> $env:GITHUB_ENV
           }
+
+      - name: Set up MSVC environment
+        # Ninja generators need cl.exe / INCLUDE / LIB from vcvarsall; the
+        # app matrix job wires the same step for its Ninja Multi-Config
+        # build. Without it the NMC wheel build cannot find a compiler.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Install CUDA
         uses: Jimver/cuda-toolkit@v0.2.23
@@ -667,6 +693,25 @@ jobs:
           auto-activate-base: true
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
+      - name: Set up sccache (warm runs only)
+        # Same contract as the app matrix job above: compile cache is an
+        # optimization overlay; infra failures degrade to a vanilla build.
+        # This job is the one that hits the 6h runner limit (the CPU pass
+        # alone compiles ~3.5h of C++ without cache), so the launcher matters
+        # most here; the cache is shared with the app matrix jobs within the
+        # same run/branch.
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Enable sccache launcher
+        # util/ci_utils.ps1 Build-PipPackage forwards it as
+        # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is intentionally not enabled initially.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}
@@ -756,6 +801,12 @@ jobs:
     permissions:
       contents: read
     runs-on: windows-2022
+    # Hard cap well below the 6h runner limit: the 4fddd764b run wedged for
+    # ~6h after a C++-side abort in the python suite (faulthandler dumped,
+    # the pipeline never released) and burned a full runner. The suite
+    # itself completes in ~6min on Ubuntu; 60min leaves generous headroom
+    # for the slower Windows host while reclaiming the runner on a wedge.
+    timeout-minutes: 60
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -814,6 +865,14 @@ jobs:
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
       - name: Run Python unit tests (CPU)
+        env:
+          # Unbuffered stdout: the 4fddd764b Test-wheel crash (Fatal Python
+          # error: Aborted in test_parity_batches.py) printed only buffered
+          # progress dots - the verbose per-test lines that name the failing
+          # test stayed in the stdio buffer and were lost when the abort
+          # wedged the pipeline for the remaining ~6h (Ubuntu's
+          # run_python_tests passes -v and the same suite passes in ~6min).
+          PYTHONUNBUFFERED: '1'
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
@@ -821,9 +880,11 @@ jobs:
           echo "Installing test dependencies..."
           python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CPU)..."
-          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          # -v + fixed seed (parity with run_python_tests' -v): verbose lines
+          # name every test, the fixed seed makes any failure locally
+          # reproducible.
+          python -m pytest -v --randomly-seed=42 python/test/ --ignore python/test/ml_ops/
           deactivate
       - name: Test Python package (CUDA)
         env:
@@ -842,6 +903,10 @@ jobs:
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
       - name: Run Python unit tests (CUDA)
+        env:
+          # Same forensics as the CPU step above (unbuffered verbose lines
+          # name the failing test when a C++ extension aborts mid-run).
+          PYTHONUNBUFFERED: '1'
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
@@ -849,7 +914,6 @@ jobs:
           python -V
           python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CUDA)..."
-          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          python -m pytest -v --randomly-seed=42 python/test/ --ignore python/test/ml_ops/
           deactivate

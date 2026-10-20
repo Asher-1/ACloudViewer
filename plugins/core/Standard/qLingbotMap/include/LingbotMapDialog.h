@@ -99,7 +99,14 @@ public slots:
     /** RPC/test driving: replay transport (same paths as the Play/Stop
      *  buttons — emits the very signals the buttons emit). */
     Q_INVOKABLE void rpcStartReplay();
+    Q_INVOKABLE void rpcPausePlayback();
     Q_INVOKABLE void rpcStopReplay();
+    /** RPC/test driving: a timeline seek (the sliderReleased net effect).
+     *  The plugin refuses seeks while Playing (official: disabled). */
+    Q_INVOKABLE void rpcSeekFrame(const QVariant& frame);
+    /** RPC/test driving: a Result-view button click (Go to first camera = 0,
+     *  Fit all = 1) — emits the very signal the buttons emit. */
+    Q_INVOKABLE void rpcResultView(const QVariant& which);
     /** RPC/test driving: a Result-display slider COMMIT (the released()
      *  net effect) through the dialog's own signal. */
     Q_INVOKABLE void rpcCommitResultDisplay(const QVariant& threshold,

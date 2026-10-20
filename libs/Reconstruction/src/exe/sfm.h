@@ -78,4 +78,7 @@ int RunViewGraphCalibrator(int argc, char** argv);
 int RunPointFiltering(int argc, char** argv);
 int RunPointTriangulator(int argc, char** argv);
 
+// Upstream parity (d3ccaf35 exe/sfm.h): the single-view calibration command.
+int RunSingleViewCalibrator(int argc, char** argv);
+
 }  // namespace colmap

@@ -207,6 +207,16 @@ if ($env:IGNORE_TEST -ne "ON") {
     }
 }
 
+# Print sccache stats while the daemon is still alive: it is spawned inside
+# this step's process tree, its stats are in-memory, and GitHub Actions
+# runners terminate that tree on step exit — post-build stats observers
+# therefore always report 0 requests on Windows. This job is the one that
+# hits the 6h runner limit, so the hit rate is also the key tuning signal.
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+    Write-Host "=== sccache stats (in-step, daemon alive) ==="
+    & $env:CLOUDVIEWER_COMPILER_LAUNCHER --show-stats
+}
+
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
 New-Item -ItemType Directory -Force -Path "$env:CLOUDVIEWER_INSTALL_DIR"
 Move-Item -Path "build/lib/python_package/pip_package/cloudviewer*.whl" -Destination $env:CLOUDVIEWER_INSTALL_DIR -Force

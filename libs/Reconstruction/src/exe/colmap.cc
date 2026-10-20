@@ -193,6 +193,8 @@ int main(int argc, char** argv) {
                           kSupportsGracefulShutdown);
     commands.emplace_back("transitive_matcher", &RunTransitiveMatcher,
                           kSupportsGracefulShutdown);
+    commands.emplace_back("single_view_calibrator", &RunSingleViewCalibrator,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("vocab_tree_builder", &RunVocabTreeBuilder);
     commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher,
                           kSupportsGracefulShutdown);

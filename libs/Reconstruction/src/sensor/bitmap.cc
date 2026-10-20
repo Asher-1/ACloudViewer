@@ -283,9 +283,13 @@ bool Bitmap::Write(const std::filesystem::path& path,
   const std::string extension = path.extension().string();
   const bool is_jpeg = extension == ".jpg" || extension == ".jpeg" ||
                        extension == ".JPG" || extension == ".JPEG";
-  if (is_jpeg && jpeg_quality_ > 0) {
-    spec.attribute("Compression",
-                   "jpeg:" + std::to_string(std::min(100, jpeg_quality_)));
+  // Upstream parity (sensor/bitmap.cc "Save JPEG in superb quality by
+  // default"): an unset quality (-1) must not fall back to the OIIO encoder
+  // default (75) but to superb quality 100, otherwise undistorted images
+  // are written visibly smaller and noisier than upstream.
+  if (is_jpeg) {
+    const int quality = jpeg_quality_ > 0 ? std::min(100, jpeg_quality_) : 100;
+    spec.attribute("Compression", "jpeg:" + std::to_string(quality));
   }
   const uint8_t* output_data = data_->pixels.data();
   std::vector<uint8_t> converted_output;

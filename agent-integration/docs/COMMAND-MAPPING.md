@@ -67,6 +67,10 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `methods` | `list_rpc_methods` | `methods.list` **(G)** |
 | `session` | `get_session_info` (and CLI session commands) | — **(B)** |
 | — (upstream `spirula` CLI, shipped at `bin/ACloudViewer/spirula` with `BUILD_SPIRULA=ON`) | — | `spirula.version`, `spirula.devices`, `spirula.launch`, `spirula.cli`, `spirula.import` **(G)** |
+| `ui list-actions` / `ui trigger-action` | — | `ui.listActions`, `ui.triggerAction` **(G)** |
+| `qt invoke` | — | `qt.invokeMethod` **(G)** (Qt reflection on any Q_INVOKABLE/slot; parameterized targets must take QVariant) |
+| `view list` / `view pick-entity` / `view pick-point` / `view select-region` | — | `view.list`, `view.pickEntity`, `view.pickPoint`, `view.selectRegion` **(G)** (agent-test pick probes) |
+| `lingbotmap run-test-scene` / `lingbotmap replay` / `lingbotmap display` | — | `qt.invokeMethod` on `LingbotMapDialog` **(G)** (Q_INVOKABLE driver surface: rpcStartTestScene, rpcStartReplay/rpcPausePlayback/rpcStopReplay/rpcSeekFrame, rpcCommitResultDisplay — the same signal chains the dialog buttons emit) |
 
 ## Spirula Studio (3DGS training)
 
@@ -267,7 +271,11 @@ headless mode:
   ├── process (55+ commands, incl. crop, 24 plugin processors, 8 IO settings, 3 colorimetric filters, 18 PCL tools)
   ├── sf (11 commands)
   ├── normals (6 commands)
-  ├── reconstruct (12+ Colmap commands)
+  ├── reconstruct (24 Colmap commands: auto/sparse/hierarchical-sparse/match/
+│  │    extract-features/undistort/dense-stereo/fuse/poisson/delaunay-mesh/
+│  │    advancing-front/texture-mesh/triangulate/filter-points/bundle-adjust/
+│  │    register-images/transform-model/crop-model/convert-model/analyze-model/
+│  │    simplify-mesh/color-extract/create-database/mesh)
   ├── sibr (10+ commands)
   └── transform apply-file
 

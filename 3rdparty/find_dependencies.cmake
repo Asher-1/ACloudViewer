@@ -224,6 +224,13 @@ set(ExternalProject_CMAKE_ARGS
         # Always build 3rd party code in Release mode. Ignored by multi-config
         # generators (XCode, MSVC). MSVC needs matching config anyway.
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        # Multi-config generators (the Windows wheel/app CI now uses Ninja
+        # Multi-Config so the sccache launcher is honored) ignore
+        # CMAKE_BUILD_TYPE: forward the pinned configuration list so the
+        # sub-build's default config is Release instead of the generator's
+        # four-configuration default (empty --config would otherwise build
+        # Debug first). Empty on single-config generators, no-op there.
+        -DCMAKE_CONFIGURATION_TYPES=${CMAKE_CONFIGURATION_TYPES}
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -559,6 +566,14 @@ function(import_3rdparty_library name)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     endif ()
     add_library(${name} INTERFACE)
+    # Honor the declared dependency edge. This used to be silently dropped:
+    # Make/VS builds only worked by accidental target ordering, while the
+    # Ninja Multi-Config wheel CI links consumers before the referenced
+    # ExternalProject's download step runs ("missing and no known rule to
+    # make it", webrtc/CVCoreLib.dll, run 39130116229).
+    foreach (arg_dep IN LISTS arg_DEPENDS)
+        add_dependencies(${name} ${arg_dep})
+    endforeach ()
     if (arg_INCLUDE_DIRS)
         foreach (incl IN LISTS arg_INCLUDE_DIRS)
             if (incl MATCHES "(.*)/$")
@@ -1580,7 +1595,7 @@ import_3rdparty_library(3rdparty_poisson
         INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
         DEPENDS ext_poisson
         )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson poisson_recon poisson_recon_lib)
 
 # Minizip
 if(WITH_MINIZIP)
@@ -2312,6 +2327,12 @@ if (BUILD_WEBRTC)
             LIBRARIES ${WEBRTC_LIBRARIES}
             DEPENDS ext_webrtc_all
             )
+    # import_3rdparty_library does not consume arg_DEPENDS: without this
+    # explicit edge the Ninja graph links CVCoreLib.dll BEFORE the ext_webrtc
+    # download step runs and fails with "missing and no known rule to make
+    # it: webrtc/src/ext_webrtc/Release/lib/webrtc.lib" (Windows wheel,
+    # run 39130116229). Make/VS builds only worked by accidental ordering.
+    add_dependencies(3rdparty_webrtc ext_webrtc_all)
     target_link_libraries(3rdparty_webrtc INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)

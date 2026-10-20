@@ -338,8 +338,11 @@ elseif (BUILD_CUDA_MODULE)
     set(CUDA_ENABLED ON)
     add_compile_definitions(CUDA_ENABLED)
 
-    # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_FORCE_INLINES")
+    # Upstream parity: no -D_FORCE_INLINES. The Ubuntu-16.04-era workaround
+    # changes glibc inline expansion inside nvcc's host pass, which perturbs
+    # the optimizer's FMA/vectorization contracts in the host-side pose math
+    # (ComputeRelativePose/ComposeProjectionMatrix) by ~1 ULP and cascades
+    # into divergent depth maps versus the upstream binary.
 
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
@@ -563,7 +566,6 @@ COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
-COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/VLFeat LIB_VLFEAT_SRCS *.h *.c *.tc)
 
@@ -593,7 +595,6 @@ if(ALL_SOURCE_TARGET)
             ${LIB_FLANN_SRCS}
             ${LIB_GRACLUS_SRCS}
             ${LIB_LSD_SRCS}
-            ${LIB_POISSON_RECON_SRCS}
             ${LIB_SIFT_GPU_SRCS}
             ${LIB_SQLITE_SRCS}
             ${LIB_VLFEAT_SRCS}

@@ -63,6 +63,20 @@ endif ()
 
 get_property(COLMAP_SOURCES GLOBAL PROPERTY COLMAP_SOURCES)
 COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
+
+# NOTE: the COLMAP-subtree ISA contract lives in ONE place: the root
+# CMakeLists.txt USE_SIMD branch appends -march=x86-64 LAST to the global
+# CMAKE_CXX_FLAGS for every TU when BUILD_RECONSTRUCTION is on, overriding
+# the -march=x86-64-v3 probe (cmake/CMakeFindSSE.cmake) for the whole
+# binary. That global tail is the single reliable enforcement point: the
+# earlier per-target PUBLIC propagation from ColmapLib could not reach the
+# aggregated CloudViewer TUs ($<LINK_ONLY> carries link deps but not compile
+# options), which is exactly how the wheel's pybind.so heap corruption
+# (test_synthesize_noise SIGSEGV) slipped past the per-target form.
+# Do NOT re-add a per-target -march here: a second flag source turns the
+# contract into a drift matrix, and a partial propagation gives a false
+# sense of safety. See root CMakeLists.txt for the full evidence chain
+# (image/undistortion_test 5/5 aborts, wheel pybind 8/8 core dumps).
 target_link_libraries(${COLMAP_LIB_NAME} PUBLIC 3rdparty_meshoptimizer)
 target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 

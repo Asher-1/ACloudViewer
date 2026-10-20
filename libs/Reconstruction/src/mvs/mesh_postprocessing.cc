@@ -7,21 +7,19 @@
 
 #include "mvs/mesh_postprocessing.h"
 
-#include <AutoIO.h>
-#include <ecvHObjectCaster.h>
-#include <ecvMesh.h>
-#include <ecvPointCloud.h>
-
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <numeric>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "meshoptimizer.h"
 #include "util/logging.h"
+#include "util/string.h"
 #include "controllers/option_manager.h"
 
 namespace colmap {
@@ -139,41 +137,6 @@ void Smooth(PlyMesh* mesh, const MeshPostProcessingOptions& options) {
         pass(options.smoothing_lambda);
         pass(options.smoothing_mu);
     }
-}
-
-bool ReadMesh(const std::string& path, PlyMesh* result) {
-    ccMesh mesh;
-    if (!mesh.CreateInternalCloud()) return false;
-    cloudViewer::io::ReadTriangleMeshOptions read_options;
-    read_options.print_progress = false;
-    if (!cloudViewer::io::AutoReadMesh(path, mesh, read_options)) return false;
-    ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
-    if (cloud == nullptr) return false;
-    result->vertices.clear();
-    result->faces.clear();
-    result->vertices.reserve(cloud->size());
-    for (unsigned int i = 0; i < cloud->size(); ++i) {
-        const CCVector3* point = cloud->getPoint(i);
-        CCVector3d global(point->x, point->y, point->z);
-        if (cloud->isShifted()) global = cloud->toGlobal3d(*point);
-        if (cloud->hasColors()) {
-            const ecvColor::Rgb& color = cloud->getPointColor(i);
-            result->vertices.emplace_back(static_cast<float>(global.x),
-                                          static_cast<float>(global.y),
-                                          static_cast<float>(global.z), color.r,
-                                          color.g, color.b);
-        } else {
-            result->vertices.emplace_back(static_cast<float>(global.x),
-                                          static_cast<float>(global.y),
-                                          static_cast<float>(global.z));
-        }
-    }
-    result->faces.reserve(mesh.size());
-    for (unsigned int i = 0; i < mesh.size(); ++i) {
-        const cloudViewer::VerticesIndexes* triangle = mesh.getTriangleVertIndexes(i);
-        result->faces.emplace_back(triangle->i1, triangle->i2, triangle->i3);
-    }
-    return true;
 }
 
 }  // namespace
@@ -297,16 +260,31 @@ bool PostProcessMeshFile(const std::filesystem::path& input_path,
                          const std::filesystem::path& output_path,
                          const MeshPostProcessingOptions& options,
                          MeshPostProcessingStats* stats) {
+    // Read through the fork's own PLY mesh reader instead of the AutoIO
+    // round-trip: the structured PlyMesh carries the optional vertex
+    // properties (colors, Poisson density value) with presence flags, so a
+    // colored/value-carrying input (the poisson_mesher output) survives the
+    // rewrite instead of being silently stripped to bare x/y/z.
     PlyMesh input;
-    if (!ReadMesh(input_path.string(), &input)) return false;
+    try {
+        input = ReadPlyMesh(input_path).mesh;
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Failed to read mesh " << input_path << ": " << e.what();
+        return false;
+    }
     const PlyMesh output = PostProcessMesh(input, options, stats);
+    // The presence flags of `output` (copied from the input through
+    // PostProcessMesh) decide which optional properties the writer emits.
+    auto WriteMesh = [&](const std::filesystem::path& path) {
+        WriteBinaryPlyMesh(path, output);
+    };
     if (input_path == output_path) {
         const std::string temp_path = output_path.string() + ".meshopt.tmp.ply";
         const std::string backup_path =
                 output_path.string() + ".meshopt.backup.ply";
         std::error_code ec;
         std::filesystem::remove(temp_path, ec);
-        WriteBinaryPlyMesh(temp_path, output);
+        WriteMesh(temp_path);
         if (!std::filesystem::exists(temp_path, ec) || ec) {
             return false;
         }
@@ -329,7 +307,7 @@ bool PostProcessMeshFile(const std::filesystem::path& input_path,
         }
         std::filesystem::remove(backup_path, ec);
     } else {
-        WriteBinaryPlyMesh(output_path, output);
+        WriteMesh(output_path);
     }
     return true;
 }

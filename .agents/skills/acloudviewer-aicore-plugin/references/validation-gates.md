@@ -87,7 +87,15 @@ timing fields with both relative and absolute noise floors.
 uncovered models, and resource skips are reported as `INCOMPLETE`; that report
 cannot support a release, parity, accuracy, or speed claim. `--full` is needed
 for a complete matrix claim. The light tier is a declared subset, not an
-implicit local-cache discovery.
+implicit local-cache discovery. Light members are declared per task: the
+sole published quantization when only one exists, full quantization
+coverage for small models (ocr/table), and the cheapest behavior-complete
+representative (typically q8: the sensitive error amplifier that also
+exercises the quantized mul_mat paths) for large multi-quantization
+families; f16 acts as the attribution middle layer between q8 and the f32
+anchor and belongs to `--full` evidence. There is no quantization-suffix
+rule - f32 entries in the light tier are legitimate where they are the
+only published tier (loma, deeplsd, facedetect, lightglue).
 
 ## Required Evidence Ladder
 

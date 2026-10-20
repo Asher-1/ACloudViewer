@@ -1037,7 +1037,11 @@ run_python_tests() {
     echo "======================================================================"
     echo "Running Python Unit Tests"
     echo "======================================================================"
-    python -m pytest -v "${pytest_args[@]}"
+    # Fixed seed: identical order on every run, so a failing test can be
+    # reproduced locally with the same command (matches the windows.yml
+    # --randomly-seed=42). Without it a crash mid-suite leaves only the
+    # random-order progress dots in the log.
+    python -m pytest -v --randomly-seed=42 "${pytest_args[@]}"
     pytest_result=$?
     
     echo ""

@@ -53,6 +53,17 @@ constexpr ecvColor::Rgb kColmapCameraFrameColor(204, 25, 0);
 constexpr float kCameraBaselineFraction = 0.35f;
 constexpr float kFallbackCameraSize = 0.05f;
 
+// A degenerate focal (tiny-but-nonzero fx/fy from a failed model frame)
+// sends the pinhole unprojection and the frustum vFOV to degenerate
+// extremes: the frame's cloud spreads orders of magnitude past the scene
+// and the frustum near plane becomes a scene-sized wall with sidelines
+// crossing the whole reconstruction. Frames outside this band are treated
+// as reconstruction failures: no cloud, no frustum (the replay slot stays
+// null and the gate skips it).
+bool saneFocal(float focal, float maxDim) {
+    return focal >= 0.2f * maxDim && focal <= 10.0f * maxDim;
+}
+
 // Live-preview DB refresh throttle (ms) — VTK redraws stay cheap while
 // frames stream in.
 constexpr qint64 kOnlineRefreshMinMs = 33;  /**< 30 fps refresh floor */
@@ -338,6 +349,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_refreshCostTotalMs = 0;
     m_lastFrameHasPoints = false;
     m_lastFrameRadius = 0.0;
+    m_cameraDisplaySize = 0.0;  // re-captured at the next materialization
     std::memset(m_lastFrameC2w, 0, sizeof(m_lastFrameC2w));
     m_worldUp = CCVector3d(0, 0, 0);  // re-derived from the new run's cameras
     m_frameCameras.clear();
@@ -633,7 +645,8 @@ void qLingbotMap::applyLiveCameraPose(int mode,
                                       const float* c2w,
                                       const CCVector3d& center,
                                       double radius,
-                                      double pullback) {
+                                      double pullback,
+                                      double fovDeg) {
     ecvGenericGLDisplay* display =
             m_app ? m_app->getActiveGLDisplay() : nullptr;
     if (!display) return;
@@ -718,6 +731,12 @@ void qLingbotMap::applyLiveCameraPose(int mode,
     vp.setCameraCenter(eye, /*autoUpdateFocal=*/false);
     // Keep the newest frame comfortably inside the view.
     vp.setFocalDistance(std::max(2.0 * radius, 1e-3));
+    if (fovDeg > 0.0) {
+        // Deterministic projection: the view's carried fov swings between
+        // sessions (measured 15°..131°) and turns the same pose into
+        // anything from a normal lens to a fisheye far-view.
+        vp.fov_deg = static_cast<float>(fovDeg);
+    }
     display->setViewportParameters(vp);
 }
 
@@ -1073,6 +1092,22 @@ void qLingbotMap::applyDisplayState() {
                              m_resultShowCameras && (ordinal % stride == 0) &&
                              frameGate(ordinal);
             cam->setVisible(vis);
+            if (vis) {
+                // The engine clears every entity's forceRedraw latch at the
+                // tail of each draw() pass (ecvHObject::draw) — including the
+                // startPlayback forced pass, which only draws the cameras the
+                // frame gate already shows. A camera that first becomes
+                // visible mid-replay then owns NO dedicated actor (the
+                // suspended aggregation evicted its composite block) and NO
+                // latch, so the escape path in ccHObject::draw can never
+                // rebuild its frustum and the incremental replay stalls after
+                // the first camera. Re-arm the latch while the formula keeps
+                // the camera shown: when the dedicated actor already exists
+                // hideShowEntities reports hasExist and the escape never
+                // fires, so this is a bare bool write with no geometry-rebuild
+                // side effect (setForceRedraw touches no dirty flags).
+                cam->setForceRedraw(true);
+            }
             if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
                 // Idempotent write: setGraphicScale marks the geometry dirty
                 // on the sensor — an unconditional write would re-dirty all
@@ -1131,6 +1166,12 @@ void qLingbotMap::applyDisplayState() {
         const bool vis = onlineFolderOpen && cam->isEnabled() &&
                          m_resultShowCameras && (ordinal % stride == 0);
         cam->setVisible(vis);
+        if (vis) {
+            // Same re-arm rule as the materialized branch above: an online
+            // camera born while gated-hidden loses its birth latch to the
+            // first draw pass and would never render once re-shown.
+            cam->setForceRedraw(true);
+        }
         if (auto* sensor = ccHObjectCaster::ToSensor(cam)) {
             // Per-sensor base captured at creation (retina-aware); a
             // missing entry means a pre-state camera — adopt its current
@@ -1193,13 +1234,19 @@ void qLingbotMap::onResultViewRequested(int which) {
     if (!display) return;
     if (which == 1) {
         // Fit all (official Overview button): refit on the result bbox.
+        // NOTE on the args: getBB_recursive(withGLFeatures,
+        // onlyEnabledChildren) — true/false here means "include frustum
+        // graphics" + "include disabled children", NOT visible-only (the old
+        // comment said so and was wrong). The box is stable across the replay
+        // for FIT ALL (all enabled clouds are always in it); only the
+        // Go-to-first button needed a stable per-camera anchor instead.
         ccHObject* root = m_app->dbRootObject();
         ccHObject* group = root && m_resultGroupId != 0
                                    ? root->find(m_resultGroupId)
                                    : nullptr;
         if (!group) return;
-        ccBBox box = group->getBB_recursive(/*onlyVisibleEntities=*/true,
-                                            /*autoCompute=*/false);
+        ccBBox box = group->getBB_recursive(/*withGLFeatures=*/true,
+                                            /*onlyEnabledChildren=*/false);
         if (!box.isValid()) {
             box = group->getBB_recursive(false, true);
         }
@@ -1209,25 +1256,39 @@ void qLingbotMap::onResultViewRequested(int which) {
         return;
     }
     // Move to the first camera (official "First Camera" button): the
-    // Follow-camera pose of frame 0, focal distance from the result radius.
+    // Follow-camera pose of frame 0, pulled back along its own view axis.
+    // The anchor is the CAMERA'S OWN frustum display size (cached at
+    // materialization) and NOT the scene bbox: getBB_recursive(true, false)
+    // spans the whole camera path (the 32-unit trajectory) plus frustum
+    // graphics, so a bbox-anchored pullback swung between "inside camera
+    // 0's own near plane" (red flood) and "far away" (tiny cluster)
+    // depending on click timing — the reported Fit-all order dependence.
+    // 10x the frustum size keeps the near plane a small quad (~5°) while
+    // the first camera's viewpoint stays readable.
     if (m_pendingResult.frames.isEmpty()) return;
     const LingbotFrameResult& frame = m_pendingResult.frames.first();
     if (frame.c2w.size() < 16) return;
-    double radius = m_lastFrameRadius;
-    if (ccHObject* root = m_app->dbRootObject()) {
-        if (ccHObject* group = m_resultGroupId != 0
-                                       ? root->find(m_resultGroupId)
-                                       : nullptr) {
-            const ccBBox box = group->getBB_recursive(true, false);
-            if (box.isValid()) {
-                radius = box.getDiagNorm() / 2.0;
-            }
-        }
+    const double pullback = m_cameraDisplaySize > 0.0
+                                    ? 10.0 * m_cameraDisplaySize
+                                    : 10.0 * kFallbackCameraSize;
+    // Project through the FIRST CAMERA'S OWN lens: its vertical fov from
+    // the frame intrinsics. Inheriting the view's carried fov made the
+    // same pose render as anything from a normal lens to a fisheye
+    // far-view (the carried fov swings 15°..131° between sessions).
+    const float fy = frame.intrinsics.value(1, 0.f);
+    double fovDeg = 0.0;
+    if (saneFocal(fy,
+                  static_cast<float>(std::max(frame.width, frame.height)))) {
+        fovDeg = static_cast<double>(
+                         ecvCameraSensorDisplay::ComputeVerticalFovRad(
+                                 fy, frame.height)) *
+                 180.0 / 3.14159265358979323846;
     }
     applyLiveCameraPose(/*mode=*/2, frame.c2w.constData(),
                         CCVector3d(frame.c2w[3], frame.c2w[7], frame.c2w[11]),
-                        radius,
-                        /*pullback=*/radius * 0.1);
+                        /*radius=*/pullback,
+                        /*pullback=*/pullback,
+                        /*fovDeg=*/fovDeg);
     m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/true);
 }
 
@@ -1399,6 +1460,7 @@ void qLingbotMap::addOnlineCamera(const float* c2w,
     const float displaySize =
             med > 0.f ? med * kCameraBaselineFraction : kFallbackCameraSize;
     const float fx = intrinsics.value(0, 0.f);
+    if (!saneFocal(fx, static_cast<float>(std::max(width, height)))) return;
     ccCameraSensor* sensor =
             buildCameraSensor(c2w, fx, width, height, displaySize);
     if (!sensor) return;
@@ -1558,6 +1620,10 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     const float cameraDisplaySize =
             medBaseline > 0.f ? medBaseline * kCameraBaselineFraction
                               : kFallbackCameraSize;
+    // Stable scale anchor for the "Go to first camera" pullback (see
+    // onResultViewRequested): captured ONCE here, immune to replay timing
+    // and outliers — unlike the scene bbox the old code re-read per click.
+    m_cameraDisplaySize = cameraDisplaySize;
 
     // Official fused-viewer output structure (PointCloudViewer): ONE point
     // cloud per frame — there is no merged/fused entity upstream — each
@@ -1591,7 +1657,8 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         const float fy = frame.intrinsics.value(1, 0.f);
         const float cx = frame.intrinsics.value(2, 0.f);
         const float cy = frame.intrinsics.value(3, 0.f);
-        if (fx <= 0.f || fy <= 0.f) continue;
+        const float maxDim = static_cast<float>(std::max(w, h));
+        if (!saneFocal(fx, maxDim) || !saneFocal(fy, maxDim)) continue;
         if (frame.c2w.size() < 16) continue;
 
         const size_t plane = static_cast<size_t>(w) * h;
@@ -1721,7 +1788,9 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         const LingbotFrameResult& frame = result.frames[f];
         if (frame.c2w.size() < 16) continue;
         const float fx = frame.intrinsics.value(0, 0.f);
-        if (fx <= 0.f) continue;
+        const float maxDim =
+                static_cast<float>(std::max(frame.width, frame.height));
+        if (!saneFocal(fx, maxDim)) continue;
         ccCameraSensor* sensor =
                 buildCameraSensor(frame.c2w.constData(), fx, frame.width,
                                   frame.height, cameraDisplaySize);
@@ -2055,6 +2124,10 @@ void qLingbotMap::onPlaybackTick() {
     applyReplayVisibility();
     m_playbackFrame =
             (m_playbackFrame + 1) % static_cast<int>(m_frameCameras.size());
+    // Mirror the clock into the dialog (slider + "N / count" label): the
+    // preview below advances while this label would otherwise stay frozen
+    // at "1 / count" for the whole replay — the reported zombie timeline.
+    syncReplayStateToDialog();
     // Reconstruction ↔ input-stream lockstep: the dialog preview shows the
     // frame just became current (official frame-panel behavior).
     syncReplayPreviewToDialog();
