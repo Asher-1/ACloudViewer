@@ -211,9 +211,32 @@ endfunction()
 
 function(cloudviewer_set_examples_runtime_output_directory target)
     # Per-target override matches legacy EXAMPLE_BIN_DIR = bin/examples on all platforms.
-    set_target_properties(${target} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
-    )
+    # MSVC needs two extra steps to make that override actually stick and to keep
+    # the example links out of the archive directory:
+    # 1. The dev-layout macros export CMAKE_RUNTIME_OUTPUT_DIRECTORY_<CONFIG>
+    #    (e.g. bin/Release); CMake snapshots those into per-target
+    #    RUNTIME_OUTPUT_DIRECTORY_<CONFIG> properties at add_executable() time,
+    #    and a per-config property beats the generic one set here — the example
+    #    would land in bin/Release/ instead of bin/examples/. Re-derive the
+    #    override with $<CONFIG> so one property covers every configuration.
+    # 2. On MSVC an executable link also writes an import library into
+    #    ARCHIVE_OUTPUT_DIRECTORY (lib/<CONFIG> in CI), where every static
+    #    archive lives. Under Ninja Multi-Config the last wave of example
+    #    links runs concurrently and a real-time AV scan holding the freshly
+    #    written files made one link fail with LNK1114 ERROR_SHARING_VIOLATION
+    #    (Flann.exe -> lib\Release\Flann.lib, run 39273926318). Keeping the
+    #    import libs beside the example binaries isolates them from the
+    #    archive directory entirely.
+    if (MSVC)
+        set_target_properties(${target} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
+        )
+    else ()
+        set_target_properties(${target} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
+        )
+    endif ()
 endfunction()
 
 # AICore unit tests share ggml backends already copied to bin/ by the AICore target.

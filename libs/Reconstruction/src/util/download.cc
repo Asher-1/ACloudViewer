@@ -308,6 +308,18 @@ std::optional<std::string> DownloadFile(
     curl_easy_setopt(handle.ptr, CURLOPT_WRITEFUNCTION, &WriteCurlData);
     std::ostringstream data_stream;
     curl_easy_setopt(handle.ptr, CURLOPT_WRITEDATA, &data_stream);
+    // Peer-certificate verification off, matching
+    // libs/cloudViewer/utility/Download.cpp (and upstream Open3D's
+    // utility/Download.cpp): the bundled libcurl is built against
+    // BoringSSL, whose CA store is auto-detected from /etc/ssl at build
+    // time and is empty on Windows, so verification - not the transfer -
+    // fails there with CURLE_SSL_CACERT (code 60, LoMa model download,
+    // run 39273926318). Every caller of this helper pins the asset's
+    // SHA-256 and verifies the payload after the transfer, so content
+    // integrity does not depend on the peer check; the TLS channel stays
+    // encrypted.
+    curl_easy_setopt(handle.ptr, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(handle.ptr, CURLOPT_SSL_VERIFYHOST, 0L);
 
     // Connection / transfer timeouts prevent indefinite hangs.
     curl_easy_setopt(handle.ptr, CURLOPT_CONNECTTIMEOUT, 30L);
