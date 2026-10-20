@@ -32,10 +32,20 @@ macro(CLOUDVIEWER_CHECK_FOR_SSE)
                     list(APPEND SSE_FLAGS "-march=x86-64")
                     message(STATUS "Using -march=x86-64 for SIMD optimization (COLMAP baseline contract; v2 probe passed)")
                 elseif(UNIX AND NOT APPLE)
-                    # On Linux, avoid -march=native to prevent AVX512 instructions
-                    # Use -mtune=generic with explicit AVX2 flags instead
-                    list(APPEND SSE_FLAGS "-mtune=generic" "-mavx2" "-mavx")
-                    message(STATUS "Using -mtune=generic with AVX2 for optimization (Linux compatibility mode)")
+                    # Both the v3 and v2 probes above are x86-only flags: an
+                    # older x86 toolchain (pre the x86-64-v2/v3 naming) and a
+                    # non-x86 target (aarch64 Linux) both land here, but they
+                    # need different answers. Keep the original explicit-AVX2
+                    # tuning for x86; on non-x86 the x86-only flags would be a
+                    # hard compile error, so emit tuning only — no ISA added,
+                    # matching the upstream zero-injection semantics.
+                    if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)|(x86)|(i[3-6]86)")
+                        list(APPEND SSE_FLAGS "-mtune=generic" "-mavx2" "-mavx")
+                        message(STATUS "Using -mtune=generic with AVX2 for optimization (x86 legacy fallback)")
+                    else()
+                        list(APPEND SSE_FLAGS "-mtune=generic")
+                        message(STATUS "Using -mtune=generic for SSE optimization (non-x86 fallback, no ISA added)")
+                    endif()
                 else()
                     # Fallback: try native if v2/v3 not supported (non-Linux platforms)
                     check_cxx_compiler_flag("-march=native" HAVE_MARCH)

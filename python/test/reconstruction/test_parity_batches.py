@@ -28,14 +28,21 @@ import pytest
 # (src/colmap/scene/database_test.cc, incl. Transaction and
 # OpenFileWithNonASCIIPath) run green on Windows via ctest. This test is
 # the one reproducible Windows abort (Fatal Python error: Aborted inside a
-# C++ extension, runs 39139052922/39216104050, step-level stderr markers
-# landed below for the next Windows run) - skip it on Windows until the
-# aborting call is identified, matching the upstream verification boundary.
+# C++ extension, runs 39139052922/39216104050) - skip it on Windows by
+# default, matching the upstream verification boundary.
+# Forensics mode: set ACV_WINDOWS_DB_DIAG=1 to run the test on Windows
+# anyway. The step-level stderr markers below ([db_mgmt_surface] ...)
+# then name the exact aborting C++ call on the same unbuffered channel
+# as the faulthandler dump; once that call is fixed, flip this to a
+# plain skipif(sys.platform == "win32") removal and the surface joins
+# the verified set.
+_windows_db_diag = os.environ.get("ACV_WINDOWS_DB_DIAG") == "1"
 _windows_only_skip = pytest.mark.skipif(
-    sys.platform == "win32",
+    sys.platform == "win32" and not _windows_db_diag,
     reason="Database python surface aborts on Windows runners "
     "(upstream colmap also validates this surface only on Linux); "
-    "step-level stderr markers in place for the Windows diagnosis",
+    "set ACV_WINDOWS_DB_DIAG=1 to run it with step-level "
+    "stderr forensics enabled",
 )
 
 try:  # installed package (post `pip install python/`)
