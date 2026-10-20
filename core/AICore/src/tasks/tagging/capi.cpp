@@ -54,6 +54,17 @@ aicore_tagging_request aicore_tagging_default_request(void) {
     result.threshold = -1;
     return result;
 }
+aicore_tagging_request_v2 aicore_tagging_default_request_v2(void) {
+    const auto original = aicore_tagging_default_request();
+    aicore_tagging_request_v2 result{};
+    static_assert(offsetof(aicore_tagging_request_v2, resize_mode) >=
+                          sizeof(aicore_tagging_request),
+                  "request prefix layout");
+    std::memcpy(&result, &original, sizeof(original));
+    result.struct_size = sizeof(result);
+    result.resize_mode = AICORE_TAGGING_RESIZE_OFFICIAL;
+    return result;
+}
 aicore_tagging_ctx* aicore_tagging_create(
         const aicore_tagging_options* options) {
     std::unique_ptr<aicore_tagging_ctx> ctx(new (std::nothrow)
@@ -90,10 +101,11 @@ const char* aicore_tagging_last_error(const aicore_tagging_ctx* ctx) {
 const char* aicore_tagging_context_device(const aicore_tagging_ctx* ctx) {
     return aicore_tagging_ready(ctx) ? ctx->session->device().c_str() : "";
 }
-int aicore_tagging_infer_image(aicore_tagging_ctx* ctx,
-                               const aicore_image_view* image,
-                               const aicore_tagging_request* request,
-                               aicore_tagging_result** output) {
+static int infer_image(aicore_tagging_ctx* ctx,
+                       const aicore_image_view* image,
+                       const aicore_tagging_request* request,
+                       aicore_tagging_result** output,
+                       uint64_t resize_mode) {
     if (output) *output = nullptr;
     if (!ctx) return -1;
     ctx->has_timings = false;
@@ -103,6 +115,9 @@ int aicore_tagging_infer_image(aicore_tagging_ctx* ctx,
         if (!output || !image || !valid(request) || !ctx->session)
             throw std::runtime_error(
                     "invalid request, image, output or context");
+        if (resize_mode != AICORE_TAGGING_RESIZE_OFFICIAL &&
+            resize_mode != AICORE_TAGGING_RESIZE_OPENCV)
+            throw std::runtime_error("invalid tagging resize mode");
         if (!std::isfinite(request->threshold) ||
             (request->threshold != -1 &&
              (request->threshold < 0 || request->threshold > 1)))
@@ -113,7 +128,7 @@ int aicore_tagging_infer_image(aicore_tagging_ctx* ctx,
         aicore::img::Image borrowed;
         if (!aicore::img::image_from_view(*image, borrowed))
             throw std::runtime_error("invalid image view/stride/format");
-        auto native = ctx->session->infer(borrowed, *request);
+        auto native = ctx->session->infer(borrowed, *request, resize_mode);
         const auto processed = std::chrono::steady_clock::now();
         auto result = std::make_unique<OwnedResult>();
         result->names = ctx->session->names();
@@ -159,6 +174,25 @@ int aicore_tagging_infer_image(aicore_tagging_ctx* ctx,
         ctx->error = "unknown tagging inference error";
     }
     return aicore_cancel_requested() ? 1 : -1;
+}
+int aicore_tagging_infer_image(aicore_tagging_ctx* ctx,
+                               const aicore_image_view* image,
+                               const aicore_tagging_request* request,
+                               aicore_tagging_result** output) {
+    return infer_image(ctx, image, request, output,
+                       AICORE_TAGGING_RESIZE_OFFICIAL);
+}
+int aicore_tagging_infer_image_v2(aicore_tagging_ctx* ctx,
+                                  const aicore_image_view* image,
+                                  const aicore_tagging_request_v2* request,
+                                  aicore_tagging_result** output) {
+    if (!valid(request))
+        return infer_image(ctx, image, nullptr, output,
+                           AICORE_TAGGING_RESIZE_OFFICIAL);
+    aicore_tagging_request original{};
+    std::memcpy(&original, request, sizeof(original));
+    original.struct_size = sizeof(original);
+    return infer_image(ctx, image, &original, output, request->resize_mode);
 }
 void aicore_tagging_result_free(aicore_tagging_result* result) {
     if (result) delete static_cast<OwnedResult*>(result->private_owner);

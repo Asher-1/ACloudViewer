@@ -7,11 +7,15 @@
 
 #include <QCoreApplication>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTemporaryDir>
 #include <QtEndian>
 #include <cstdio>
 #include <cstring>
 
+#include "PointCloudColors.h"
 #include "PointCloudDocument.h"
 
 static void appendFloat(QByteArray* data, float value) {
@@ -29,6 +33,39 @@ static bool writeFile(const QString& path, const QByteArray& data) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--colors-probe") {
+        QFile input(QString::fromLocal8Bit(argv[2]));
+        if (!input.open(QIODevice::ReadOnly)) return 1;
+        QJsonArray results;
+        for (const auto& value :
+             QJsonDocument::fromJson(input.readAll()).array()) {
+            const auto item = value.toObject();
+            QHash<quint16, QColor> palette;
+            const auto definitions = item["palette"].toObject();
+            for (auto it = definitions.begin(); it != definitions.end(); ++it)
+                palette.insert(quint16(it.key().toInt()),
+                               QColor(it.value().toString()));
+            QColor rgb;
+            const auto channels = item["rgb"].toArray();
+            if (!channels.isEmpty())
+                rgb = QColor(channels[0].toInt(), channels[1].toInt(),
+                             channels[2].toInt());
+            const auto color = pointCloudDisplayColor(
+                    quint32(item["label"].toDouble()),
+                    float(item["intensity"].toDouble()),
+                    channels.isEmpty() ? nullptr : &rgb,
+                    PointCloudColorMode(item["mode"].toInt()), palette,
+                    item["low"].toDouble(), item["high"].toDouble(),
+                    item["selected"].toBool());
+            results.append(QJsonArray{double(color.x()), double(color.y()),
+                                      double(color.z())});
+        }
+        QFile output(QString::fromLocal8Bit(argv[3]));
+        return output.open(QIODevice::WriteOnly) &&
+                               output.write(QJsonDocument(results).toJson()) > 0
+                       ? 0
+                       : 1;
+    }
     QTemporaryDir temporary;
     if (!temporary.isValid()) return 1;
     const QString binary = temporary.path() + QStringLiteral("/00001.bin");
@@ -60,6 +97,22 @@ int main(int argc, char** argv) {
         !document.undo() || document.dirty())
         return 1;
     if (savePointCloudLabels(frame, &error, binary) || error.isEmpty())
+        return 1;
+    // A cancelled candidate must never overwrite a previously loaded frame.
+    PointCloudFrame preserved = frame;
+    if (loadPointCloudFrame(binary, &frame, &error, {}, [] { return true; }) ||
+        !error.contains("cancelled") || frame.points != preserved.points ||
+        frame.labels != preserved.labels || frame.path != preserved.path)
+        return 1;
+    const QString large = temporary.filePath("large.bin");
+    QByteArray many;
+    for (int i = 0; i < 8193; ++i) many.append(points.left(16));
+    if (!writeFile(large, many)) return 1;
+    int checks = 0;
+    if (loadPointCloudFrame(large, &frame, &error, {},
+                            [&] { return ++checks == 3; }) ||
+        checks != 3 || !error.contains("cancelled") ||
+        frame.path != preserved.path || frame.points != preserved.points)
         return 1;
 
     document.setFrame(frame);
@@ -99,6 +152,13 @@ int main(int argc, char** argv) {
                      error.toUtf8().constData());
         return 1;
     }
+    preserved = frame;
+    checks = 0;
+    if (loadPointCloudFrame(ascii, &frame, &error, {},
+                            [&] { return ++checks == 5; }) ||
+        checks != 5 || !error.contains("cancelled") ||
+        frame.points != preserved.points || frame.rgb != preserved.rgb)
+        return 1;
     if (!writeFile(temporary.path() + QStringLiteral("/frame.label"),
                    QByteArray(4, '\0')) ||
         loadPointCloudFrame(ascii, &frame, &error) || error.isEmpty())

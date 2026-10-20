@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QColor>
+#include <QHash>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -18,6 +19,9 @@
 #include <QWidget>
 #include <algorithm>
 #include <cstdint>
+
+#include "AnnotationCuboid.h"
+#include "RelateOptions.h"
 
 struct AnnotationShape {
     QString label;
@@ -40,6 +44,7 @@ struct AnnotationShape {
 };
 
 QColor annotationShapeColor(const QString& label, const QJsonObject& extra);
+QColor annotationLabelColor(int labelId);
 
 struct AnnotationPrompt {
     QVector<QPointF> positive;
@@ -49,6 +54,19 @@ struct AnnotationPrompt {
     QString label;
     QString text;
     QString textModelPath;
+    double iouThreshold = 0.7;
+    // YOLO-World -> RAM: tag each detected crop into its object description.
+    QString objectTaggingModelPath;
+    // RAM's output configuration: filtering uses English model labels before
+    // translation, matching the upstream adapter's delete/filter precedence.
+    QString ramTagMode = QStringLiteral("en");
+    QStringList ramDeleteTags;
+    QStringList ramFilterTags;
+    // Explicit optional OCR layout head. Cache contents never enable stages.
+    QString ocrLayoutModelPath;
+    QString ocrClassifierModelPath;
+    // Original selected text polygons, not their axis-aligned bounding boxes.
+    QVector<QVector<QPointF>> ocrQuads;
     // Selected box proposals for GKD or SAM3 in source-image pixels.
     QVector<QRectF> rois;
     QVector<int> roiGroupIds;
@@ -60,6 +78,17 @@ struct AnnotationPrompt {
     // for the duration of the AICore call; points use its pixel coordinates.
     QImage visualSupportImage;
     QVector<QPointF> visualSupportPoints;
+
+    // RelateAnything: thresholds, edge caps, custom predicates and the
+    // detector stage used when fewer than two rectangles are selected.
+    RelateOptions relate;
+    // Detector (YOLO / RF-DETR GGUF) for that stage; empty = none, in which
+    // case at least two rectangles must be selected.
+    QString relateDetectorPath;
+    QStringList relateDetectorClasses;  // vocabulary detectors only
+    QString relateDetectorTextModel;
+    QString relateStudentPath;
+    QString relateTokenizerPath;
 
     // SAHI-compatible tiled detection options. These stay in the plugin
     // prompt because tiling is orchestration around the existing AICore
@@ -118,14 +147,16 @@ public:
     void setShapeColorMode(ShapeColorMode mode);
     void setDefaultShapeColor(const QColor& color);
     void setShiftAutoShapeColor(int shift);
+    void setLabelOrder(const QStringList& labels);
+    QColor shapeColor(const AnnotationShape& shape) const {
+        return effectiveLineColor(shape, false);
+    }
     void setShapeStyleColors(const QColor& line,
                              const QColor& fill,
                              const QColor& vertex,
                              const QColor& selectLine,
                              const QColor& selectFill,
                              const QColor& hoverVertex);
-    /** "auto" move mode: left-dragging empty canvas space pans the view. */
-    void setMoveMode(const QString& mode);
     void setBrightness(int value);
     void setContrast(int value);
     void setBrightnessContrast(int brightness, int contrast);
@@ -133,11 +164,26 @@ public:
     int contrast() const { return m_contrast; }
     const QImage& displayImage() const { return m_displayImage; }
     void setShapes(const QVector<AnnotationShape>& shapes);
+    /** Transient RelateAnything overlay. Each entry carries subject_index /
+     *  object_index (canvas shape indices), predicate, score and type. It is
+     *  display-only and cleared whenever the shapes or image change, because
+     *  the indices would otherwise go stale. */
+    void setRelations(const QJsonArray& relations);
+    void clearRelations();
+    void setHighlightedRelation(int row);
     // Render the current source image and annotation overlays at source
     // resolution for export. Selection handles and interactive prompts are
     // intentionally excluded.
     QImage renderVisualizationImage(
             const QVector<AnnotationShape>& shapes) const;
+    struct VisualizationOptions {
+        bool showLabels, showScores, showGroups, showTexts, showMasks;
+        bool showShapes, showLinking, showDegrees, showAttributes;
+    };
+    VisualizationOptions visualizationOptions() const;
+    QImage renderVisualizationImage(const QImage& source,
+                                    const QVector<AnnotationShape>& shapes,
+                                    const VisualizationOptions& options) const;
     void setShapeDescription(int index, const QString& description);
     void setShapeRecognition(int index,
                              const QString& description,
@@ -259,7 +305,9 @@ private:
     void updateTransform();
     void finishShape();
     void cancelShape();
-    int hitShape(const QPointF& point, int* vertex) const;
+    int hitShape(const QPointF& point,
+                 int* vertex,
+                 annotationCuboid::Face* face = nullptr) const;
     int hitGroup(const QPointF& point) const;
     QPointF rotationHandle(const AnnotationShape& shape) const;
     void moveVertex(AnnotationShape& shape, int vertex, const QPointF& point);
@@ -275,11 +323,14 @@ private:
     QImage m_image;
     QImage m_compareImage;
     QVector<AnnotationShape> m_shapes;
+    QJsonArray m_relations;
+    int m_highlightedRelation = -1;
     QString m_tool = QStringLiteral("edit");
     QString m_label;
     int m_selected = -1;
     QSet<int> m_selectedIndices;
     int m_dragVertex = -1;
+    annotationCuboid::Face m_dragFace = annotationCuboid::Face::None;
     bool m_dragging = false;
     bool m_dragChanged = false;
     QVector<int> m_dragIndices;
@@ -313,6 +364,7 @@ private:
     ShapeColorMode m_shapeColorMode = ShapeColorMode::Auto;
     QColor m_defaultShapeColor = QColor(0, 255, 0);
     int m_shiftAutoShapeColor = 0;
+    QHash<QString, int> m_labelColorIds;
     QColor m_lineColor = QColor(0, 255, 0, 128);
     QColor m_fillColor = QColor(220, 220, 220, 150);
     QColor m_vertexFillColor = QColor(0, 255, 0, 255);
@@ -320,7 +372,7 @@ private:
     QColor m_selectFillColor = QColor(0, 255, 0, 155);
     QColor m_hoverVertexFillColor = QColor(255, 255, 255, 255);
     int m_hoverVertex = -1;
-    bool m_autoMoveMode = true;
+    int m_hoverShape = -1;
     double m_crosshairOpacity = 0.5;
     bool m_doubleClickClose = true;
     bool m_doubleClickEditLabel = true;

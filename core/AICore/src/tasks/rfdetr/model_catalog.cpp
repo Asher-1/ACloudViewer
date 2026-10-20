@@ -132,7 +132,8 @@ static int detIndexMap(int index) {
 
 static aicore_rfdetr_model_entry toEntry(const ModelRow& row) {
     return {row.filename,   row.download_url, row.display_name,
-            row.quant_note, row.license_note, row.segmentation_capable};
+            row.quant_note, row.license_note, row.segmentation_capable,
+            0.50f};
 }
 
 }  // namespace

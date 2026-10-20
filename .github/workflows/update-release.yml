@@ -1,10 +1,21 @@
 name: Clean release
 permissions: {}
 on:
-  workflow_run:  # Triggered when long running windows workflow ends
-    workflows: [windows]
+  # Which asset-uploading workflow finishes last drifts over time (Windows
+  # used to be the long pole; Ubuntu CUDA and MacOS now often are). Trigger on
+  # every uploader's completion: the cleanup below is idempotent, so early
+  # runs are no-ops and the last finisher always yields a final pass after all
+  # assets of the commit are uploaded.
+  workflow_run:
+    workflows: [Windows, MacOS, Ubuntu, Ubuntu CUDA, Ubuntu Wheel]
     types: [completed]
     # branches: [main]
+
+# Serialize cleanups: near-simultaneous completions would otherwise race on
+# the same release assets (double delete-asset).
+concurrency:
+  group: clean-release
+  cancel-in-progress: false
 
 jobs:
  clean-release:

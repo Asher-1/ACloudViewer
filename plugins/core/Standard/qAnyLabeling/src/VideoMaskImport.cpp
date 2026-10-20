@@ -20,11 +20,12 @@
 #include <cmath>
 #include <limits>
 
+#include "AnnotationDocument.h"
 #include "MaskPolygon.h"
 
 namespace {
 QJsonObject emptyDocument(const Sam3ArchiveImage& image) {
-    return {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    return {{QStringLiteral("version"), annotationFormatVersion()},
             {QStringLiteral("flags"), QJsonObject()},
             {QStringLiteral("shapes"), QJsonArray()},
             {QStringLiteral("imagePath"), QFileInfo(image.filePath).fileName()},

@@ -21,6 +21,7 @@
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #endif
 
@@ -118,6 +119,95 @@ bool finalizeVideo(const QString& temporaryVideo,
     return false;
 }
 }  // namespace
+
+bool exportVisualizationVideo(
+        const QString& outputPath,
+        int fps,
+        int frameCount,
+        const std::function<QImage(int, QString*)>& renderFrame,
+        const std::function<bool(int, int)>& progress,
+        QString* error) {
+    if (error) error->clear();
+    const auto fail = [error](const QString& message) {
+        if (error) *error = message;
+        return false;
+    };
+#ifndef HAS_OPENCV_FACE_CAPTURE
+    Q_UNUSED(outputPath)
+    Q_UNUSED(fps)
+    Q_UNUSED(frameCount)
+    Q_UNUSED(renderFrame)
+    Q_UNUSED(progress)
+    return fail(
+            QStringLiteral("OpenCV video export is unavailable in this build"));
+#else
+    if (QFileInfo(outputPath)
+                        .suffix()
+                        .compare(QStringLiteral("mp4"), Qt::CaseInsensitive) !=
+                0 ||
+        fps < 1 || fps > 120 || frameCount <= 0 || !renderFrame)
+        return fail(
+                QStringLiteral("Invalid MP4 destination, FPS or frame count"));
+    const auto parent = QFileInfo(outputPath).absoluteDir();
+    if (!parent.exists())
+        return fail(QStringLiteral("Output folder does not exist"));
+    QTemporaryDir temporary(
+            parent.filePath(QStringLiteral(".qany-video-XXXXXX")));
+    if (!temporary.isValid())
+        return fail(QStringLiteral("Cannot create temporary video"));
+    const QString encoded =
+            temporary.filePath(QStringLiteral("visualization.mp4"));
+    cv::VideoWriter writer;
+    QSize size;
+    try {
+        for (int index = 0; index < frameCount; ++index) {
+            if (progress && !progress(index, frameCount))
+                return fail(QStringLiteral("Export cancelled"));
+            QString renderError;
+            const QImage image =
+                    renderFrame(index, &renderError)
+                            .convertToFormat(QImage::Format_RGB888);
+            if (image.isNull())
+                return fail(
+                        renderError.isEmpty()
+                                ? QStringLiteral("Unable to render frame %1")
+                                          .arg(index + 1)
+                                : renderError);
+            if (index == 0) {
+                size = image.size();
+                // MP4 encoders truncate odd dimensions. Reject instead of
+                // silently dropping the final row or column of annotations.
+                if (size.width() % 2 || size.height() % 2)
+                    return fail(QStringLiteral(
+                            "MP4 frames require even width and height"));
+                writer.open(encoded.toStdString(),
+                            cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps,
+                            cv::Size(size.width(), size.height()));
+                if (!writer.isOpened())
+                    return fail(QStringLiteral(
+                            "Current environment cannot write MP4 files"));
+            } else if (image.size() != size) {
+                return fail(QStringLiteral(
+                        "All video frames must have the same dimensions"));
+            }
+            cv::Mat rgb(image.height(), image.width(), CV_8UC3,
+                        const_cast<uchar*>(image.constBits()),
+                        image.bytesPerLine());
+            cv::Mat bgr;
+            cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);
+            writer.write(bgr);
+        }
+        writer.release();
+        if (progress && !progress(frameCount, frameCount))
+            return fail(QStringLiteral("Export cancelled"));
+        if (QFileInfo(encoded).size() <= 0)
+            return fail(QStringLiteral("Video encoder produced no output"));
+        return finalizeVideo(encoded, outputPath, error);
+    } catch (const std::exception& exception) {
+        return fail(QString::fromLocal8Bit(exception.what()));
+    }
+#endif
+}
 
 bool exportVideoSegment(const VideoSegmentExportRequest& request,
                         const std::function<bool(int, int)>& progress,

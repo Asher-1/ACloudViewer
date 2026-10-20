@@ -66,6 +66,53 @@ int main(int argc, char** argv) {
         return 1;
     }
     QTemporaryDir ppocrDirectory;
+    // KIE source contract: integer coordinates truncate toward zero, absent
+    // IDs default to 0, explicit null IDs and directed links survive export.
+    QJsonObject question = ocrShape;
+    question["label"] = QStringLiteral("question");
+    question["description"] = QStringLiteral("姓名？");
+    question["points"] =
+            QJsonArray{QJsonArray{-1.9, 2.9}, QJsonArray{30.8, 2.9},
+                       QJsonArray{30.8, 10.2}, QJsonArray{-1.9, 10.2}};
+    QJsonObject answer = ocrShape;
+    answer["label"] = QStringLiteral("answer");
+    answer["description"] = QStringLiteral("张三");
+    answer["group_id"] = 4;
+    QJsonObject nullId = answer;
+    nullId["group_id"] = QJsonValue::Null;
+    nullId["kie_linking"] = QJsonArray();
+    QJsonObject missingId = nullId;
+    missingId.remove("group_id");
+    const auto linkedKie = convertPpocr(
+            {{QStringLiteral("文档.png"),
+              QJsonObject{{"shapes",
+                           QJsonArray{question, answer, nullId, missingId}}}}},
+            PpocrMode::Kie);
+    const auto exportedEntities =
+            QJsonDocument::fromJson(
+                    linkedKie.text.mid(linkedKie.text.indexOf('\t') + 1)
+                            .trimmed())
+                    .array();
+    const auto linkedImport = importPpocr(linkedKie.text, PpocrMode::Kie);
+    const auto reexport = convertPpocr(
+            {{QStringLiteral("文档.png"),
+              linkedImport.documents.value(QStringLiteral("文档.png"))}},
+            PpocrMode::Kie);
+    if (!linkedKie.error.isEmpty() || !linkedImport.error.isEmpty() ||
+        linkedKie.count != 4 || linkedImport.count != 4 ||
+        exportedEntities.size() != 4 ||
+        exportedEntities[0].toObject()["points"].toArray()[0].toArray() !=
+                QJsonArray{-1, 2} ||
+        exportedEntities[0].toObject()["transcription"] !=
+                QStringLiteral("姓名？") ||
+        exportedEntities[1].toObject()["linking"].toArray() !=
+                QJsonArray{QJsonArray{3, 4}} ||
+        !exportedEntities[2].toObject()["id"].isNull() ||
+        exportedEntities[3].toObject()["id"].toInt(-1) != 0 ||
+        reexport.text != linkedKie.text) {
+        std::fprintf(stderr, "PPOCR KIE linked entity roundtrip failed\n");
+        return 1;
+    }
     QImage ppocrImage(40, 20, QImage::Format_RGB32);
     ppocrImage.fill(Qt::white);
     const QString ppocrImagePath =

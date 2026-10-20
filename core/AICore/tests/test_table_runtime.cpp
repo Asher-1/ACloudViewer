@@ -15,7 +15,8 @@
 //   loc_max_diff max |cell polygon - reference| (sigmoid domain, x488 px)
 //
 // Usage: test_table_runtime <fixture-dir> <gguf> [backend] [prob_tol]
-//                           [loc_tol]
+//                           [loc_tol] [warmups] [runs] [threads]
+//                           [audit_hold_ms] [dump_prefix]
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -33,6 +34,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <thread>
+#include <utility>
 #include <vector>
 
 #include "common/ggml_backend_utils.hpp"
@@ -98,7 +101,8 @@ int main(int argc, char** argv) {
     if (argc < 3) {
         std::fprintf(stderr,
                      "usage: %s <fixture-dir> <gguf> [backend] [prob_tol] "
-                     "[loc_tol]\n",
+                     "[loc_tol] [warmups] [runs] [threads] [audit_hold_ms] "
+                     "[dump_prefix]\n",
                      argv[0]);
         return 2;
     }
@@ -107,6 +111,17 @@ int main(int argc, char** argv) {
     const std::string backendName = argc > 3 ? argv[3] : "cpu";
     const double probTol = argc > 4 ? std::atof(argv[4]) : 1e-3;
     const double locTol = argc > 5 ? std::atof(argv[5]) : 1e-3;
+    const int warmups = argc > 6 ? std::atoi(argv[6]) : 1;
+    const int runs = argc > 7 ? std::atoi(argv[7]) : 5;
+    const int threads = argc > 8 ? std::atoi(argv[8]) : 4;
+    const int auditHoldMs = argc > 9 ? std::atoi(argv[9]) : 0;
+    const std::string dumpPrefix = argc > 10 ? argv[10] : "";
+    if (warmups < 0 || runs < 1 || threads < 1 || auditHoldMs < 0 ||
+        auditHoldMs > 10000 || !std::isfinite(probTol) || probTol <= 0 ||
+        !std::isfinite(locTol) || locTol <= 0) {
+        std::fprintf(stderr, "invalid tolerances or measurement counts\n");
+        return 2;
+    }
     if (access((fixtureDir + "/table_0_input.npy").c_str(), R_OK) != 0 ||
         access(modelPath.c_str(), R_OK) != 0) {
         std::fprintf(stderr,
@@ -146,6 +161,7 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "cpu backend init failed\n");
         return 1;
     }
+    ggml_common::set_cpu_threads(cpu, threads);
 
     bool tokensOk = true;
     float maxDiff = 0.0f, locMax = 0.0f;
@@ -179,6 +195,36 @@ int main(int argc, char** argv) {
         const int vocab = static_cast<int>(pShape[1]);
         const int refSteps = static_cast<int>(pShape[0]);
         const int gotSteps = static_cast<int>(out.tokens.size());
+        if (inShape[0] != 1 || inShape[1] != 3 || refSteps < 1 ||
+            vocab != static_cast<int>(model.vocabulary().size()) ||
+            lShape[0] != refSteps || lShape[1] != model.locReg() ||
+            out.probs.size() != static_cast<size_t>(gotSteps) * vocab ||
+            out.loc.size() != static_cast<size_t>(gotSteps) * model.locReg()) {
+            std::fprintf(stderr, "fixture %d output shapes differ\n", k);
+            return 1;
+        }
+        for (const auto* values : {&refProbs, &refLoc, &out.probs, &out.loc}) {
+            if (!std::all_of(values->begin(), values->end(), [](float value) {
+                    return std::isfinite(value);
+                })) {
+                std::fprintf(stderr, "fixture %d non-finite output\n", k);
+                return 1;
+            }
+        }
+        if (!dumpPrefix.empty()) {
+            const std::string stem =
+                    dumpPrefix + ".fixture" + std::to_string(k);
+            for (const auto& part : {std::make_pair(".probs.bin", &out.probs),
+                                     std::make_pair(".loc.bin", &out.loc)}) {
+                FILE* file = std::fopen((stem + part.first).c_str(), "wb");
+                if (!file) return 1;
+                const size_t count =
+                        std::fwrite(part.second->data(), sizeof(float),
+                                    part.second->size(), file);
+                const int closed = std::fclose(file);
+                if (count != part.second->size() || closed != 0) return 1;
+            }
+        }
         int firstMismatch = -1;
         for (int s = 0; s < std::min(refSteps, gotSteps); ++s) {
             if (argmaxRow(refProbs.data() + static_cast<size_t>(s) * vocab,
@@ -226,18 +272,18 @@ int main(int argc, char** argv) {
 
     // Steady-state latency on the longest fixture (the last one).
     std::vector<double> samples;
-    for (int r = 0; r < 6; ++r) {
+    for (int r = -warmups; r < runs; ++r) {
         aicore::table::TableStructureOutput out;
         const auto t0 = std::chrono::steady_clock::now();
         if (!model.infer(gpu, cpu, lastInput.data(), out, error)) return 1;
         const double ms = std::chrono::duration<double, std::milli>(
                                   std::chrono::steady_clock::now() - t0)
                                   .count();
-        if (r > 0) samples.push_back(ms);
+        if (r >= 0) samples.push_back(ms);
     }
     std::sort(samples.begin(), samples.end());
     const double p50 = samples[samples.size() / 2];
-    const double p95 = samples.back();
+    const double p95 = samples[static_cast<size_t>(samples.size() * .95)];
     const bool ok = tokensOk && maxDiff < probTol && locMax < locTol;
     std::printf(
             "table probe: fixtures=%d token_match=%s max_diff=%.6f "
@@ -247,10 +293,12 @@ int main(int argc, char** argv) {
     std::printf(
             "{\"task\":\"table\",\"backend\":\"%s\",\"token_match\":%d,"
             "\"max_diff\":%.6f,\"mean_diff\":%.8f,\"loc_max_diff\":%.6f,"
-            "\"p50_ms\":%.2f,\"p95_ms\":%.2f}\n",
+            "\"p50_ms\":%.2f,\"p95_ms\":%.2f,"
+            "\"warmups\":%d,\"runs\":%d,\"threads\":%d}\n",
             backendName.c_str(), tokensOk ? 1 : 0, maxDiff,
             countDiff ? sumDiff / static_cast<double>(countDiff) : 0.0, locMax,
-            p50, p95);
+            p50, p95, warmups, runs, threads);
+    std::this_thread::sleep_for(std::chrono::milliseconds(auditHoldMs));
     model.release();
     if (gpu) ggml_backend_free(gpu);
     ggml_backend_free(cpu);

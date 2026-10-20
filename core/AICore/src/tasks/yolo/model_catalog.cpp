@@ -429,9 +429,31 @@ static bool roleMatches(enum aicore_yolo_model_role role, const ModelRow& row) {
 }
 
 static aicore_yolo_model_entry toEntry(const ModelRow& row) {
-    return {row.filename,      row.download_url, row.display_name,
-            row.quant_note,    row.license_note, row.task,
-            row.depth_capable, row.end2end,      row.text_input};
+    // Annotation defaults follow X-AnyLabeling's YOLO adapter/configs.
+    // NMS-free heads retain an IoU value for sliced-detection merging only.
+    const bool pose = std::strcmp(row.task, "pose") == 0;
+    const bool world = std::strstr(row.filename, "-world") != nullptr;
+    const bool yoloe = std::strncmp(row.filename, "yoloe-", 6) == 0;
+    const bool nms = std::strcmp(row.task, "detect") == 0 ||
+                     std::strcmp(row.task, "segment") == 0 || pose ||
+                     std::strcmp(row.task, "obb") == 0;
+    const float confidence = world ? 0.10f : pose ? 0.50f : 0.25f;
+    const float iou = world                               ? 0.30f
+                      : yoloe || row.end2end              ? 0.70f
+                      : pose                              ? 0.60f
+                      : std::strcmp(row.task, "obb") == 0 ? 0.70f
+                                                          : 0.45f;
+    return {row.filename,
+            row.download_url,
+            row.display_name,
+            row.quant_note,
+            row.license_note,
+            row.task,
+            row.depth_capable,
+            row.end2end,
+            row.text_input,
+            nms || std::strcmp(row.task, "classify") == 0 ? confidence : -1.0f,
+            nms ? iou : -1.0f};
 }
 
 // Static (non-thread-local) backing store: unlike the historical

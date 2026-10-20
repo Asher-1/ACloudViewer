@@ -24,6 +24,8 @@
 #include <cmath>
 #include <limits>
 
+#include "AnnotationDocument.h"
+
 namespace {
 bool point(const QJsonValue& value, double* x, double* y) {
     const QJsonArray pair = value.toArray();
@@ -287,7 +289,7 @@ PpocrImport importPpocr(const QByteArray& labels, PpocrMode mode) {
             ++result.count;
         }
         QJsonObject document{
-                {QStringLiteral("version"), QStringLiteral("4.0.6")},
+                {QStringLiteral("version"), annotationFormatVersion()},
                 {QStringLiteral("flags"), QJsonObject()},
                 {QStringLiteral("shapes"), shapes},
                 {QStringLiteral("imagePath"), name},
@@ -326,7 +328,23 @@ PpocrConversion convertPpocr(const QVector<CocoImage>& images, PpocrMode mode) {
             annotation.insert(
                     QStringLiteral("transcription"),
                     shape.value(QStringLiteral("description")).toString());
-            annotation.insert(QStringLiteral("points"), points);
+            QJsonArray integerPoints;
+            for (const auto& value : points) {
+                double x = 0, y = 0;
+                if (!point(value, &x, &y) ||
+                    x < std::numeric_limits<int>::min() ||
+                    x > std::numeric_limits<int>::max() ||
+                    y < std::numeric_limits<int>::min() ||
+                    y > std::numeric_limits<int>::max()) {
+                    result.error =
+                            QStringLiteral("Invalid PPOCR coordinate in %1")
+                                    .arg(image.fileName);
+                    return result;
+                }
+                // Source list(map(int, p)): truncation toward zero.
+                integerPoints.append(QJsonArray{int(x), int(y)});
+            }
+            annotation.insert(QStringLiteral("points"), integerPoints);
             annotation.insert(
                     QStringLiteral("difficult"),
                     shape.value(QStringLiteral("difficult")).toBool(false));
@@ -336,7 +354,7 @@ PpocrConversion convertPpocr(const QVector<CocoImage>& images, PpocrMode mode) {
                         shape.value(QStringLiteral("label")).toString());
                 annotation.insert(
                         QStringLiteral("id"),
-                        shape.value(QStringLiteral("group_id")).isDouble()
+                        shape.contains(QStringLiteral("group_id"))
                                 ? shape.value(QStringLiteral("group_id"))
                                 : QJsonValue(0));
                 annotation.insert(

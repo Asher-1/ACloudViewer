@@ -108,6 +108,11 @@
 //      unified public path that resolves on every Qt version without any
 //      hardcoded enum literal)
 //
+// 18. Markdown and Text Block Headings:
+//    - QTextDocument Markdown / QTextBlockFormat headings (Qt5.14+, Qt6)
+//    - Functions: qtCompatSetMarkdown(), qtCompatToMarkdown(),
+//                 qtCompatHeadingLevel(), qtCompatSetHeadingLevel()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -1228,4 +1233,44 @@ inline void qtCompatSetFontFamilies(QFont& font, const QStringList& families) {
 inline QDataStream::Version qtCompatDataStreamVersion() noexcept {
     // Default-constructed stream: version() == the compiled-in default.
     return static_cast<QDataStream::Version>(QDataStream().version());
+}
+
+// ----------------------------------------------------------------------------
+// QTextDocument Markdown / QTextBlockFormat Heading Compatibility
+// ----------------------------------------------------------------------------
+// QTextDocument Markdown and heading metadata were added in Qt 5.14.
+// Keep older supported Qt builds on the source editor's plain-text fallback.
+#include <QTextBlockFormat>
+#include <QTextDocument>
+
+inline void qtCompatSetMarkdown(QTextDocument& document, const QString& text) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    document.setMarkdown(text);
+#else
+    document.setPlainText(text);
+#endif
+}
+
+inline QString qtCompatToMarkdown(const QTextDocument& document) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return document.toMarkdown();
+#else
+    return document.toPlainText();
+#endif
+}
+
+inline int qtCompatHeadingLevel(const QTextBlockFormat& format) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return format.headingLevel();
+#else
+    return format.property(QTextFormat::UserProperty + 1).toInt();
+#endif
+}
+
+inline void qtCompatSetHeadingLevel(QTextBlockFormat& format, int level) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    format.setHeadingLevel(level);
+#else
+    format.setProperty(QTextFormat::UserProperty + 1, level);
+#endif
 }

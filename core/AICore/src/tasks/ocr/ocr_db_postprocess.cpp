@@ -390,6 +390,55 @@ std::vector<DbBox> dbBoxesFromBitmap(const float* pred,
     return boxes;
 }
 
+void filterSourceDetectorBoxes(std::vector<DbBox>& boxes,
+                               int width,
+                               int height) {
+    if (width <= 0 || height <= 0) {
+        boxes.clear();
+        return;
+    }
+    size_t kept = 0;
+    for (const DbBox& box : boxes) {
+        // order_points_clockwise: argmin/argmax both select the first
+        // matching index. Equal y-x values can select the same corner twice;
+        // choosing a unique point changes the upstream crop and recognition.
+        int lo = 0, hi = 0;
+        auto sum = [&](int i) {
+            return static_cast<float>(box.quad[i][0]) + box.quad[i][1];
+        };
+        for (int i = 1; i < 4; ++i) {
+            if (sum(i) < sum(lo)) lo = i;
+            if (sum(i) > sum(hi)) hi = i;
+        }
+        int minDiff = -1, maxDiff = -1;
+        auto diff = [&](int i) {
+            return static_cast<float>(box.quad[i][1]) - box.quad[i][0];
+        };
+        for (int i = 0; i < 4; ++i) {
+            if (i == lo || i == hi) continue;
+            if (minDiff < 0 || diff(i) < diff(minDiff)) minDiff = i;
+            if (maxDiff < 0 || diff(i) > diff(maxDiff)) maxDiff = i;
+        }
+        const int order[4] = {lo, minDiff, hi, maxDiff};
+        DbBox filtered = box;
+        for (int i = 0; i < 4; ++i) {
+            filtered.quad[i][0] =
+                    std::clamp(box.quad[order[i]][0], 0, width - 1);
+            filtered.quad[i][1] =
+                    std::clamp(box.quad[order[i]][1], 0, height - 1);
+        }
+        auto length = [&](int i) {
+            const float dx = static_cast<float>(filtered.quad[0][0]) -
+                             filtered.quad[i][0];
+            const float dy = static_cast<float>(filtered.quad[0][1]) -
+                             filtered.quad[i][1];
+            return static_cast<int>(std::sqrt(dx * dx + dy * dy));
+        };
+        if (length(1) > 3 && length(3) > 3) boxes[kept++] = filtered;
+    }
+    boxes.resize(kept);
+}
+
 void sortQuadBoxes(std::vector<DbBox>& boxes) {
     std::stable_sort(boxes.begin(), boxes.end(),
                      [](const DbBox& a, const DbBox& b) {

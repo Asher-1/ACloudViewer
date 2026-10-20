@@ -28,6 +28,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "common/blocked_conv.hpp"
@@ -145,7 +146,9 @@ int main(int argc, char** argv) {
     const std::string task = argc > 3 ? argv[3] : "rec";
     const bool det = task == "det";
     const bool layout = task == "layout";
-    std::string stem = layout ? "layout" : (det ? "det_ch" : "rec_ch");
+    const bool cls = task == "cls";
+    std::string stem =
+            cls ? "cls" : (layout ? "layout" : (det ? "det_ch" : "rec_ch"));
     if (!det && !layout && modelPath.find("rec-en") != std::string::npos)
         stem = "rec_en";
     const std::string backendName = argc > 4 ? argv[4] : "CPU";
@@ -243,7 +246,7 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "model load failed: %s\n", error.c_str());
         return 1;
     }
-    if (!det && !layout && weights.dictionary.empty()) {
+    if (!det && !layout && !cls && weights.dictionary.empty()) {
         std::fprintf(stderr, "model has no embedded dictionary\n");
         return 1;
     }
@@ -318,6 +321,11 @@ int main(int argc, char** argv) {
         return 1;
     }
     const bool isCpu = ggml_common::is_cpu_backend(backend);
+    const int nThreads = argc > 10 ? std::atoi(argv[10]) : 8;
+    if (nThreads < 1) {
+        std::fprintf(stderr, "invalid thread count\n");
+        return 2;
+    }
 
     // The probe executes exactly the graph that ships: routing (CPU gallocr
     // / CUDA-Vulkan one-device / mixed sched), conv routes and allocation
@@ -333,6 +341,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+    ggml_common::set_cpu_threads(cpuBackend, nThreads);
     const aicore::ocr::OcrExecPlan plan = aicore::ocr::makeExecPlan(
             isCpu ? nullptr : backend, cpuBackend, weights.sched_gpu_tagging);
     aicore::ocr::OcrBuildOptions buildOptions =
@@ -414,8 +423,12 @@ int main(int argc, char** argv) {
     // is timed over warmups + runs so the manifest can report p50/p95.
     ggml_backend_tensor_set(input, inputData.data(), 0,
                             sizeof(float) * inputData.size());
-    constexpr int kWarmups = 2;
-    constexpr int kRuns = 5;
+    const int kWarmups = argc > 8 ? std::atoi(argv[8]) : 2;
+    const int kRuns = argc > 9 ? std::atoi(argv[9]) : 5;
+    if (kWarmups < 0 || kRuns < 1) {
+        std::fprintf(stderr, "invalid warmup/run counts\n");
+        return 2;
+    }
     std::vector<double> timings;
     timings.reserve(kRuns);
     for (int run = -kWarmups; run < kRuns; ++run) {
@@ -549,30 +562,38 @@ int main(int argc, char** argv) {
     std::vector<float> got(static_cast<size_t>(ggml_nelements(output)));
     ggml_backend_tensor_get(output, got.data(), 0, sizeof(float) * got.size());
 
+    // Persist the same final output that the accuracy gate reads. This also
+    // covers complete det/cls graphs, so storage error and backend error can
+    // be compared independently without using a truncated source graph.
+    const char* dumpPath = nullptr;
+    if (probeOutput.compare(0, 5, "dump=") == 0)
+        dumpPath = probeOutput.c_str() + 5;
+    else if (probeOutput.compare(0, 10, "fold-dump=") == 0)
+        dumpPath = probeOutput.c_str() + 10;
+    if (dumpPath) {
+        FILE* dump = std::fopen(dumpPath, "wb");
+        if (!dump || std::fwrite(got.data(), sizeof(float), got.size(), dump) !=
+                             got.size()) {
+            if (dump) std::fclose(dump);
+            std::fprintf(stderr, "failed to write probe output\n");
+            return 1;
+        }
+        std::fclose(dump);
+    }
+    // Driver telemetry is sampled independently of graph timing. Keep this
+    // graph and its allocations alive long enough to observe a short model;
+    // the hold is excluded from every timed forward and defaults to zero.
+    const int auditHoldMs = argc > 11 ? std::atoi(argv[11]) : 0;
+    if (auditHoldMs < 0 || auditHoldMs > 10000) return 2;
+    if (auditHoldMs)
+        std::this_thread::sleep_for(std::chrono::milliseconds(auditHoldMs));
+
     const int64_t timeSteps = output->ne[1];
     const int64_t vocab = output->ne[0];
 
     if (probe.fetchAt >= 0) {
         // Bisection mode: print the truncated activation's shape and sum
         // for comparison against the numpy simulator log.
-        std::vector<float> got(ggml_nelements(output));
-        ggml_backend_tensor_get(output, got.data(), 0,
-                                sizeof(float) * got.size());
-        const char* dumpPath = nullptr;
-        if (probeOutput.compare(0, 5, "dump=") == 0)
-            dumpPath = probeOutput.c_str() + 5;
-        else if (probeOutput.compare(0, 10, "fold-dump=") == 0)
-            dumpPath = probeOutput.c_str() + 10;
-        if (dumpPath) {
-            FILE* dump = std::fopen(dumpPath, "wb");
-            if (!dump || std::fwrite(got.data(), sizeof(float), got.size(),
-                                     dump) != got.size()) {
-                if (dump) std::fclose(dump);
-                std::fprintf(stderr, "failed to write fetch output\n");
-                return 1;
-            }
-            std::fclose(dump);
-        }
         double sum = 0.0;
         for (float v : got) sum += v;
         std::printf("[fetch] ne=%lld,%lld,%lld,%lld sum=%.6e\n",
@@ -599,6 +620,31 @@ int main(int argc, char** argv) {
             }
         }
         return 0;
+    }
+
+    if (cls) {
+        if (output->ne[0] != 2 || refData.size() != 2 || got.size() % 2)
+            return 1;
+        float maxDiff = 0;
+        bool match = true;
+        for (size_t row = 0; row < got.size() / 2; ++row) {
+            for (size_t label = 0; label < 2; ++label) {
+                const float value = got[row * 2 + label];
+                if (!std::isfinite(value)) return 1;
+                maxDiff = std::max(maxDiff, std::fabs(value - refData[label]));
+            }
+            match = match && ((got[row * 2 + 1] > got[row * 2]) ==
+                              (refData[1] > refData[0]));
+        }
+        std::printf(
+                "{\"task\":\"cls\",\"device\":\"%s\",\"max_diff\":%.8f,"
+                "\"argmax_match\":%d,\"p50_ms\":%.2f,\"p95_ms\":%.2f}\n",
+                ggml_backend_name(backend), maxDiff, match, p50, p95);
+        exec.free();
+        ggml_free(ctx);
+        if (!isCpu) ggml_backend_free(cpuBackend);
+        ggml_backend_free(backend);
+        return match && maxDiff <= tolerance ? 0 : 1;
     }
 
     if (layout) {
@@ -649,12 +695,33 @@ int main(int argc, char** argv) {
             const int64_t C = t->ne[0], N = t->ne[1];
             for (int64_t n = 0; n < N; ++n)
                 for (int64_t c = 0; c < C; ++c) {
+                    if (!std::isfinite(got[n * C + c]) ||
+                        !std::isfinite(ref->second[n * C + c])) {
+                        std::fprintf(stderr, "non-finite layout head value\n");
+                        return 1;
+                    }
                     const float diff =
                             std::fabs(got[n * C + c] - ref->second[n * C + c]);
                     layoutMax = std::max(layoutMax, diff);
                     layoutSum += diff;
                     hsum += got[n * C + c];
                 }
+            if (dumpPath) {
+                // Persist every head using fixture order, independent of the
+                // graph fetch order. The Python probe compares these exact
+                // buffers against live source outputs and the native CPU.
+                const auto index = static_cast<size_t>(ref - heads.data());
+                const std::string path = std::string(dumpPath) + ".head" +
+                                         std::to_string(index) + ".bin";
+                FILE* dump = std::fopen(path.c_str(), "wb");
+                if (!dump || std::fwrite(got.data(), sizeof(float), got.size(),
+                                         dump) != got.size()) {
+                    if (dump) std::fclose(dump);
+                    std::fprintf(stderr, "failed to write layout head\n");
+                    return 1;
+                }
+                std::fclose(dump);
+            }
             layoutCount += got.size();
             std::printf("[head] ne=%lldx%lld sum=%.6e\n", (long long)t->ne[0],
                         (long long)t->ne[1], hsum);
@@ -675,10 +742,19 @@ int main(int argc, char** argv) {
 
     if (det) {
         // The DBNet map is a single-channel image: compare element-wise.
+        if (got.size() != refData.size()) {
+            std::fprintf(stderr, "detection map shape mismatch\n");
+            return 1;
+        }
         float detMax = 0.0f;
         double detSum = 0.0;
         const size_t detCount = got.size();
         for (size_t i = 0; i < detCount; ++i) {
+            if (!std::isfinite(got[i]) || !std::isfinite(refData[i])) {
+                std::fprintf(stderr,
+                             "non-finite detection probability at %zu\n", i);
+                return 1;
+            }
             const float diff = std::fabs(got[i] - refData[i]);
             detMax = std::max(detMax, diff);
             detSum += diff;
@@ -750,6 +826,10 @@ int main(int argc, char** argv) {
     const size_t count = slabCount;
     std::vector<float> diffs(count);
     for (size_t i = 0; i < count; ++i) {
+        if (!std::isfinite(got[i]) || !std::isfinite(refData[i])) {
+            std::fprintf(stderr, "non-finite recognition probability\n");
+            return 1;
+        }
         const float diff = std::fabs(got[i] - refData[i]);
         diffs[i] = diff;
         maxDiff = std::max(maxDiff, diff);

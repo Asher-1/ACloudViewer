@@ -19,6 +19,22 @@ from upstream_metrics_probe import (active_graphics_processes,
 
 
 class IndependentAccuracyTests(unittest.TestCase):
+    def test_annotation_mode_requires_source_and_has_a_distinct_reference_cache(self):
+        with self.assertRaisesRegex(RuntimeError, "annotation-upstream"):
+            demo_reference_probe.annotation_preprocess(Path("unused.png"), "")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model, image = root / "model.gguf", root / "image.png"
+            model.write_bytes(b"same weights")
+            image.write_bytes(b"same pixels")
+            with patch.object(demo_reference_probe.subprocess, "check_output",
+                              return_value=demo_reference_probe.REVISION + "\n"):
+                original = demo_reference_probe.cache_for(root, root, model, image)
+                annotation = demo_reference_probe.cache_for(root, root, model, image, "source-hash:opencv")
+                changed_source = demo_reference_probe.cache_for(root, root, model, image, "changed-source:opencv")
+            self.assertNotEqual(original, annotation)
+            self.assertNotEqual(annotation, changed_source)
+
     def test_cpu_q8_reference_uses_block_scaling_and_half_scale_storage(self):
         import torch
         value = torch.zeros(2, 32)
@@ -128,6 +144,8 @@ class TimingAuditTests(unittest.TestCase):
                 "reference_cache": cache,
                 "threads": 5,
                 "cpu_precision": 0,
+                "resize_mode": 0,
+                "annotation_upstream": "",
             })()
             completed = type("Result", (), {"stdout": '{"accuracy_max_diff": 0}\n',
                                              "stderr": "", "returncode": 0})()
@@ -135,13 +153,17 @@ class TimingAuditTests(unittest.TestCase):
                     patch.object(demo_reference_probe, "cache_for", return_value=cache), \
                     patch.object(demo_reference_probe.subprocess, "run", return_value=completed) as run:
                 self.assertEqual(demo_reference_probe.materialize(args, ["--repeat", "2"]), 0)
-            command = run.call_args.args[0]
+            command = run.call_args_list[0].args[0]
             self.assertEqual(command[:7], [str(args.probe.resolve()), "--model",
                                             str(model.resolve()), "--backend", "cuda",
                                             "--image", str(image.resolve())])
             self.assertIn(("--threads", "5"), tuple(zip(command, command[1:])))
             self.assertIn(("--repeat", "2"), tuple(zip(command, command[1:])))
+            self.assertIn(("--resize-mode", "0"), tuple(zip(command, command[1:])))
             self.assertEqual(command[-2:], ["--reference-dir", str(cache.resolve())])
+            compatibility = run.call_args_list[1].args[0]
+            self.assertIn(("--cpu-precision", "1"), tuple(zip(compatibility, compatibility[1:])))
+            self.assertIn(("--repeat", "1"), tuple(zip(compatibility, compatibility[1:])))
 
     def test_cpu_truth_cannot_reuse_a_cuda_reference_cache(self):
         with tempfile.TemporaryDirectory() as directory:

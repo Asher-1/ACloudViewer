@@ -11,6 +11,7 @@ to ``test_tagging_probe`` with the resulting cache as ``--reference-dir``.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -43,7 +44,8 @@ def family(model: Path) -> str:
     raise ValueError(f"model is not in the RAM catalog: {model.name}")
 
 
-def cache_for(root: Path, upstream: Path, model: Path, image: Path) -> Path:
+def cache_for(root: Path, upstream: Path, model: Path, image: Path,
+              resize_key: str = "") -> Path:
     revision = subprocess.check_output(
         ["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True
     ).strip()
@@ -54,6 +56,7 @@ def cache_for(root: Path, upstream: Path, model: Path, image: Path) -> Path:
     digest = hashlib.sha256()
     digest.update(b"ram-demo-reference-v2\0")
     digest.update(revision.encode())
+    digest.update(resize_key.encode())
     for path in (model, image):
         digest.update(path.name.encode())
         digest.update(sha256(path).encode())
@@ -68,6 +71,28 @@ def cache_for(root: Path, upstream: Path, model: Path, image: Path) -> Path:
     return destination
 
 
+def annotation_preprocess(image: Path, upstream: str) -> tuple[object, str]:
+    """Execute the pinned source method, without loading its ONNX model."""
+    if not upstream:
+        raise RuntimeError("--annotation-upstream is required for OpenCV RAM preprocessing")
+    import cv2
+    import numpy as np
+    from PIL import Image
+    root = Path(upstream).resolve()
+    revision = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+    expected = "745f6c355f94cddb06f6965b3a4118f82033e935"
+    if revision != expected:
+        raise RuntimeError(f"AnyLabeling reference requires {expected}; got {revision}")
+    source = root / "anylabeling/services/auto_labeling/__base__/ram.py"
+    tree = ast.parse(source.read_text())
+    cls = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "RecognizeAnything")
+    method = next(node for node in cls.body if isinstance(node, ast.FunctionDef) and node.name == "preprocess")
+    namespace = {"cv2": cv2, "np": np}
+    exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+    pixels = np.asarray(Image.open(image).convert("RGB"))
+    return namespace["preprocess"](None, pixels, (384, 384)), f"{revision}:{sha256(source)}:opencv"
+
+
 def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
     upstream_text = os.environ.get("AICORE_TEST_RAM_UPSTREAM")
     if not upstream_text:
@@ -79,7 +104,18 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
     image = Path(args.image).resolve()
     if not (model.is_file() and image.is_file()):
         raise RuntimeError(f"missing model or image: {model}, {image}")
-    cache = cache_for(Path(args.reference_cache).resolve(), upstream, model, image)
+    resized = None
+    resize_key = ""
+    if args.resize_mode == 1:
+        resized, resize_key = annotation_preprocess(image, args.annotation_upstream)
+    cache = cache_for(Path(args.reference_cache).resolve(), upstream, model, image, resize_key)
+    input_args = []
+    if resized is not None:
+        input_path = cache / "annotation-input.f32"
+        resized.tofile(input_path)
+        input_args = ["--input-bin", str(input_path)]
+        with (cache / "provenance.txt").open("a") as stream:
+            stream.write(f"annotation_preprocess={resize_key}\ninput_sha256={sha256(input_path)}\n")
     base = model.name[:-5] + "-demo1-pytorch-gguf-logits.f32"
     pytorch = cache / base
     if not pytorch.is_file():
@@ -95,6 +131,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
             str(image),
             "--output",
             str(output),
+            *input_args,
         ]
         subprocess.run(command, cwd=upstream, check=True)
         generated = output / "logits.bin"
@@ -142,6 +179,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
                     "1",
                     "--logits-out",
                     str(cpu),
+                    *input_args,
                 ],
                 cwd=upstream,
                 env=runtime_env,
@@ -170,6 +208,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
             "--upstream", str(upstream), "--gguf", str(model), "--demo",
             "--threads", str(args.threads if args.threads > 0 else 8),
             "--model", "ram", "--image", str(image), "--output", str(output),
+            *input_args,
         ], cwd=upstream, check=True)
         shutil.copyfile(output / "logits.bin", automatic)
         arithmetic_provenance.write_text(arithmetic_key + "\n")
@@ -183,6 +222,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
         "--image", str(image),
         "--threads", str(args.threads),
         "--cpu-precision", str(args.cpu_precision),
+        "--resize-mode", str(args.resize_mode),
         *unknown,
     ]
     command.extend(("--reference-dir", str(cache)))
@@ -196,6 +236,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
                          "--backend", args.backend, "--image", str(image),
                          "--threads", str(args.threads), "--cpu-precision", "1",
                          "--warmup", "0", "--repeat", "1",
+                         "--resize-mode", str(args.resize_mode),
                          "--reference-dir", str(cache)]
         old = subprocess.run(compatibility, text=True, capture_output=True, check=True)
         compatibility_report = json.loads(old.stdout.strip().splitlines()[-1])
@@ -223,6 +264,8 @@ def main() -> int:
         Path(tempfile.gettempdir()) / "aicore-tagging-reference-cache"))
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--cpu-precision", type=int, choices=(0, 1), default=0)
+    parser.add_argument("--resize-mode", type=int, choices=(0, 1), default=0)
+    parser.add_argument("--annotation-upstream", default="")
     args, unknown = parser.parse_known_args()
     return materialize(args, unknown)
 

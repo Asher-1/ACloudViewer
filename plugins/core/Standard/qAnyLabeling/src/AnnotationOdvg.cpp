@@ -16,6 +16,8 @@
 #include <cmath>
 #include <limits>
 
+#include "AnnotationDocument.h"
+
 OdvgImport importOdvg(const QByteArray& jsonLines) {
     OdvgImport result;
     QSet<QString> names;
@@ -102,7 +104,7 @@ OdvgImport importOdvg(const QByteArray& jsonLines) {
             ++result.count;
         }
         result.documents.insert(
-                name, {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+                name, {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("shapes"), shapes},
                        {QStringLiteral("imagePath"), name},

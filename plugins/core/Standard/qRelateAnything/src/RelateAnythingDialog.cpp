@@ -192,6 +192,7 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
         m_device->addItem(QString::fromUtf8(d->label), id);
     }
     m_download = new QPushButton(tr("Download model"));
+    m_download->setAutoDefault(false);  // L9: prevent auto-default
     m_sample = ecvAICoreUi::makeSampleDataBtn(this);
     m_sample->setObjectName("relateUseTestData");
     top->addWidget(ecvAICoreUi::makeLabel(tr("Model")));
@@ -219,6 +220,7 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     for (auto action : {tr("Add images…"), tr("Add folder…"),
                         tr("Selected DB images"), tr("Clear")}) {
         auto* b = new QPushButton(action);
+        b->setAutoDefault(false);  // L9: only Run is default
         buttons->addWidget(b);
         connect(b, &QPushButton::clicked, this, [this, action]() {
             if (action == tr("Add images…"))
@@ -226,15 +228,20 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             else if (action == tr("Add folder…")) {
                 auto dir = QFileDialog::getExistingDirectory(
                         this, tr("Image folder"));
+                // L10 fix: early exit if user cancelled (prevents listing cwd)
+                if (dir.isEmpty()) return;
                 for (const auto& f : QDir(dir).entryInfoList(
                              {"*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp"},
                              QDir::Files, QDir::Name)) {
-                    if (!dir.isEmpty()) addInput(f.absoluteFilePath());
+                    addInput(f.absoluteFilePath());
                 }
             } else if (action == tr("Clear")) {
                 cancel();
                 m_inputs->clear();
                 resetResults();
+                // L10 fix: also clear input preview when clearing the input
+                // list
+                m_preview->setPreviewImage(QImage(), QSize(480, 280));
             } else
                 for (const auto& pair : m_db) {
                     addInput("db://" + pair.first, pair.second);
@@ -320,6 +327,17 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     });
     connect(m_video, &VideoPlaybackWidget::streamError, this,
             &RelateAnythingDialog::log);
+    // M4 fix: stop or cap spool on video loop to prevent unbounded growth.
+    connect(m_video, &RelateAnythingVideoWidget::looped, this, [this]() {
+        // Option 1: stop on loop
+        m_video->stopStream();
+        setBusy(false);
+        // Option 2: cap spool at first pass only (uncomment if continuous loop
+        // wanted) if (m_resultCount > 0) {
+        //     m_batch = false;
+        //     m_framePending = false;
+        // }
+    });
     connect(m_video, &VideoPlaybackWidget::logMessage, this,
             &RelateAnythingDialog::log);
     auto* resultPage = new QWidget;
@@ -340,21 +358,28 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_table->setHorizontalHeaderLabels(
             {tr("Subject"), tr("Predicate"), tr("Object"), tr("Score")});
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_table->setSortingEnabled(true);  // L11 fix: enable user sorting by column
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_table->setMinimumHeight(220);
     rl->addWidget(m_table, 1);
     auto* exports = new QHBoxLayout;
-    auto* exportButton = new QPushButton(tr("Export JSON / CSV / text…"));
-    auto* dbButton = new QPushButton(tr("Add result image to DB"));
-    exportButton->setObjectName("relateExport");
-    dbButton->setObjectName("relateAddToDb");
-    exports->addWidget(exportButton);
-    exports->addWidget(dbButton);
+    // L11 fix: clarify that export includes all relations (ignores filter).
+    m_exportButton =
+            new QPushButton(tr("Export all results (JSON / CSV / text)…"));
+    m_addToDbButton = new QPushButton(tr("Add result image to DB"));
+    m_exportButton->setObjectName("relateExport");
+    m_addToDbButton->setObjectName("relateAddToDb");
+    m_exportButton->setAutoDefault(false);   // L9: only Run is default
+    m_addToDbButton->setAutoDefault(false);  // L9: only Run is default
+    m_exportButton->setEnabled(false);       // L1: disabled until hasResult
+    m_addToDbButton->setEnabled(false);      // L1: disabled until hasResult
+    exports->addWidget(m_exportButton);
+    exports->addWidget(m_addToDbButton);
     exports->addStretch();
     rl->addLayout(exports);
-    connect(exportButton, &QPushButton::clicked, this,
+    connect(m_exportButton, &QPushButton::clicked, this,
             &RelateAnythingDialog::exportResults);
-    connect(dbButton, &QPushButton::clicked, this, [this]() {
+    connect(m_addToDbButton, &QPushButton::clicked, this, [this]() {
         if (!m_last.image.isNull()) emit addToDbRequested(m_last);
     });
     connect(m_filter, &QLineEdit::textChanged, this,
@@ -400,6 +425,7 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
         edit->setPlaceholderText(hint);
         edit->setToolTip(hint);
         auto* browse = new QPushButton(tr("Browse…"));
+        browse->setAutoDefault(false);  // L9: only Run is default
         layout->addWidget(edit, 1);
         layout->addWidget(browse);
         connect(browse, &QPushButton::clicked, this, [this, edit, label]() {
@@ -443,9 +469,16 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_threshold->setSingleStep(.05);
     m_threshold->setValue(.20);
     m_threshold->setObjectName("relateDetectionThreshold");
+    m_threshold->setToolTip(
+            tr("Minimum detector confidence for keeping an object. "
+               "Default depends on detector: YOLOE prompt-free 0.25, "
+               "YOLO-World 0.15, others 0.20."));
     m_maxBoxes = new QSpinBox;
     m_maxBoxes->setRange(2, 60);
     m_maxBoxes->setValue(24);
+    m_maxBoxes->setToolTip(
+            tr("Maximum objects to keep after NMS. Upstream video default 24, "
+               "image demo 32. Relations require at least 2 objects."));
     m_relThreshold = new QDoubleSpinBox;
     m_relThreshold->setRange(0, 1);
     m_relThreshold->setSingleStep(.05);
@@ -469,6 +502,11 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_decompose = new QCheckBox(tr("Separate spatial and semantic relations"));
     m_decompose->setObjectName("relateDecompose");
     m_decompose->setChecked(true);
+    m_decompose->setToolTip(tr(
+            "Output spatial and semantic relations in separate arrays. "
+            "Spatial predicates (on, near, beside) describe object positions; "
+            "semantic predicates (wearing, holding, riding) describe "
+            "interactions."));
     m_detIou = new QDoubleSpinBox;
     m_detIou->setRange(.05, 1);
     m_detIou->setSingleStep(.05);
@@ -633,16 +671,34 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             tr("JSON predicate type map for spatial and semantic separation"));
     connect(m_objectSource, qOverload<int>(&QComboBox::currentIndexChanged),
             this, [this](int index) {
-                m_detector->setEnabled(index == 0);
-                m_threshold->setEnabled(index == 0);
-                m_regions->setEnabled(index == 1);
-                m_masks->setEnabled(index == 1);
+                // L6 fix: toggle all detector-related controls together
+                const bool detectMode = (index == 0);
+                m_detector->setEnabled(detectMode);
+                m_threshold->setEnabled(detectMode);
+                m_detIou->setEnabled(detectMode);
+                m_maxBoxes->setEnabled(detectMode);
+                m_maxBoxFraction->setEnabled(detectMode);
+                m_regions->setEnabled(!detectMode);
+                m_masks->setEnabled(!detectMode);
             });
     m_regions->setEnabled(false);
     m_masks->setEnabled(false);
     connect(m_vocabulary, &QLineEdit::textChanged, this, [this]() {
-        m_predicates->setEnabled(m_vocabulary->text().trimmed().isEmpty());
+        const bool vocabEmpty = m_vocabulary->text().trimmed().isEmpty();
+        m_predicates->setEnabled(vocabEmpty);
+        // M8 fix: explain why predicates field is disabled when vocabulary is
+        // set
+        if (!vocabEmpty && m_predicates->toolTip().isEmpty()) {
+            m_predicates->setToolTip(tr(
+                    "Disabled when custom vocabulary is loaded. The external "
+                    "vocabulary file defines both object classes and relation "
+                    "predicates, so the predicates field is not used."));
+        } else if (vocabEmpty) {
+            m_predicates->setToolTip(QString());
+        }
     });
+    // L7 fix: add stretch so collapsed sections don't expand unevenly
+    optionsLayout->addStretch();
     auto* optionsScroll = new QScrollArea;
     optionsScroll->setWidgetResizable(true);
     optionsScroll->setFrameShape(QFrame::NoFrame);
@@ -675,9 +731,12 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     auto* controls = new QHBoxLayout;
     m_run = new QPushButton(tr("Run"));
     m_run->setObjectName("relateRun");
+    m_run->setDefault(true);  // L9: make Run the default button for Enter key
     m_cancelButton = new QPushButton(tr("Cancel / stop"));
     auto* close = new QPushButton(tr("Close"));
     m_cancelButton->setObjectName("relateCancel");
+    m_cancelButton->setAutoDefault(false);  // L9: prevent auto-default behavior
+    close->setAutoDefault(false);           // L9: only Run should be default
     controls->addStretch();
     controls->addWidget(m_run);
     controls->addWidget(m_cancelButton);
@@ -731,12 +790,31 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             &RelateAnythingDialog::log);
     QSettings s;
     s.beginGroup("qRelateAnything");
-    m_model->setCurrentIndex(qBound(
-            0,
-            s.value("model",
-                    m_model->findData(aicore_relation_model_default_index()))
-                    .toInt(),
-            m_model->count() - 1));
+    // L4 fix: restore by filename instead of index
+    QString savedFilename = s.value("modelFilename").toString();
+    int modelIdx = -1;
+    if (!savedFilename.isEmpty()) {
+        const QByteArray fname = savedFilename.toUtf8();
+        for (int i = 0; i < aicore_relation_model_count(); ++i) {
+            if (fname == aicore_relation_model_at(i)->filename) {
+                modelIdx = i;
+                break;
+            }
+        }
+    }
+    // Fallback to old index-based restore if filename not found or not saved
+    if (modelIdx < 0) {
+        modelIdx =
+                s.value("model", aicore_relation_model_default_index()).toInt();
+    }
+    // modelIdx is a catalog index (the combo stores it as item data); the
+    // combo itself lists only the relation-weight rows, so its row number is
+    // not the catalog index. Fall back to the catalog default when the saved
+    // row is no longer a listed model.
+    int modelRow = m_model->findData(modelIdx);
+    if (modelRow < 0)
+        modelRow = m_model->findData(aicore_relation_model_default_index());
+    m_model->setCurrentIndex(qMax(0, modelRow));
     int index = m_device->findData(s.value("device", "auto"));
     if (index >= 0) m_device->setCurrentIndex(index);
     m_threads->setValue(s.value("threads", 8).toInt());
@@ -810,6 +888,21 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
             m_applyingPreset = false;
         }
     }
+    // L7 fix: restore Options section collapse states (after sections are
+    // built)
+    auto* objSect = findChild<QGroupBox*>("relateSectionObjects");
+    auto* relSect = findChild<QGroupBox*>("relateSectionRelations");
+    auto* vidSect = findChild<QGroupBox*>("relateSectionVideoTracking");
+    auto* advSect = findChild<QGroupBox*>("relateSectionAdvanced");
+    if (objSect)
+        objSect->setChecked(s.value("sectionObjectsExpanded", true).toBool());
+    if (relSect)
+        relSect->setChecked(s.value("sectionRelationsExpanded", true).toBool());
+    if (vidSect)
+        vidSect->setChecked(
+                s.value("sectionVideoTrackingExpanded", false).toBool());
+    if (advSect)
+        advSect->setChecked(s.value("sectionAdvancedExpanded", false).toBool());
 }
 // Video tracking and smoothing controls: one row per upstream render_video.py
 // flag. Relation floors and edge caps are shared with the image path and live
@@ -996,7 +1089,13 @@ void RelateAnythingDialog::showEvent(QShowEvent* event) {
 void RelateAnythingDialog::saveSettings() {
     QSettings s;
     s.beginGroup("qRelateAnything");
-    s.setValue("model", m_model->currentIndex());
+    // L4 fix: save model filename instead of index so catalog reordering
+    // doesn't silently change the user's saved model
+    const int idx = m_model->currentIndex();
+    if (idx >= 0 && idx < aicore_relation_model_count()) {
+        const char* fname = aicore_relation_model_at(idx)->filename;
+        s.setValue("modelFilename", QString::fromUtf8(fname));
+    }
     s.setValue("device", m_device->currentData());
     s.setValue("threads", m_threads->value());
     s.setValue("confidence", m_threshold->value());
@@ -1027,6 +1126,16 @@ void RelateAnythingDialog::saveSettings() {
     s.setValue("relateStabilize", m_stabilize->isChecked());
     s.setValue("boxScoreWeight", m_boxScoreWeight->isChecked());
     s.setValue("detectorModel", m_detector->currentData());
+    // L7 fix: persist Options section collapse states
+    auto* objSect = findChild<QGroupBox*>("relateSectionObjects");
+    auto* relSect = findChild<QGroupBox*>("relateSectionRelations");
+    auto* vidSect = findChild<QGroupBox*>("relateSectionVideoTracking");
+    auto* advSect = findChild<QGroupBox*>("relateSectionAdvanced");
+    if (objSect) s.setValue("sectionObjectsExpanded", objSect->isChecked());
+    if (relSect) s.setValue("sectionRelationsExpanded", relSect->isChecked());
+    if (vidSect)
+        s.setValue("sectionVideoTrackingExpanded", vidSect->isChecked());
+    if (advSect) s.setValue("sectionAdvancedExpanded", advSect->isChecked());
 }
 void RelateAnythingDialog::setDbImages(
         const QList<QPair<QString, QImage>>& images) {
@@ -1035,6 +1144,12 @@ void RelateAnythingDialog::setDbImages(
 void RelateAnythingDialog::addInput(const QString& path,
                                     const QImage& image,
                                     bool checked) {
+    // L10 fix: check for duplicates before adding
+    for (int i = 0; i < m_inputs->count(); ++i) {
+        if (m_inputs->item(i)->text() == path) {
+            return;  // already in the list
+        }
+    }
     auto* item = new QListWidgetItem(path, m_inputs);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
@@ -1321,8 +1436,20 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
         // H3 fix: check result.ok instead of error.isEmpty(), because an empty
         // error string from aicore_*_last_error(nullptr) is still a failure.
         if (!result.ok) {
-            log(result.error.isEmpty() ? tr("Inference failed (no details).")
-                                       : result.error);
+            const QString errorText =
+                    result.error.isEmpty()
+                            ? tr("Inference failed (no details).")
+                            : result.error;
+            log(errorText);
+            // M2 fix: show critical errors in message box so user can see them.
+            // Fatal errors (session failure) always show; non-fatal batch
+            // errors are logged only to avoid dialog spam during multi-image
+            // processing.
+            if (result.fatal || !m_batch) {
+                QMessageBox::warning(
+                        this, tr("Inference Error"),
+                        tr("%1\n\nSource: %2").arg(errorText, result.source));
+            }
             // M1 fix: for a batch, log the error but continue to the next image
             // unless it's a fatal session error (model/detector load failure).
             if (result.fatal) {
@@ -1339,9 +1466,19 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
             }
         } else {
             m_last = result;
+            m_hasResult = true;  // L1: enable export buttons
+            m_exportButton->setEnabled(true);
+            m_addToDbButton->setEnabled(true);
             recordResult(result.json);
-            showResult();
-            m_preview->setPreviewImage(result.annotated, QSize(480, 280));
+            // M7 fix: skip heavy GUI updates for video frames to avoid
+            // per-frame table rebuild and smooth-downscale overhead. Only
+            // update on batch images.
+            const bool isVideoFrame =
+                    acknowledge && m_tabs->currentIndex() == 3;
+            if (!isVideoFrame) {
+                showResult();
+                m_preview->setPreviewImage(result.annotated, QSize(480, 280));
+            }
             const auto timings = result.json.value("timings").toObject();
             m_timing->setText(
                     tr("%1 · %2 · worker %3 ms · inference %4 ms · %5")
@@ -1355,6 +1492,12 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
                                          : tr("cold start")));
         }
         if (m_batch) m_progress->setValue(++m_batchCompleted);
+    }
+    // L9 fix: restore focus to Run button after any completion (success or
+    // error) so keyboard users can press Enter for the next run without
+    // re-tabbing.
+    if (current && (!result.ok || !acknowledge)) {
+        m_run->setFocus();
     }
     if (acknowledge)
         m_video->acknowledge(current && result.ok ? result.annotated
@@ -1371,6 +1514,7 @@ void RelateAnythingDialog::completed(const RelateAnythingResult& result) {
 }
 void RelateAnythingDialog::showResult() {
     QList<QJsonObject> visible;
+    const int totalRelations = m_last.json.value("relations").toArray().size();
     for (const auto& v : m_last.json.value("relations").toArray()) {
         auto e = v.toObject();
         const QString text = e["subject_name"].toString() + " " +
@@ -1379,19 +1523,33 @@ void RelateAnythingDialog::showResult() {
         if (text.contains(m_filter->text(), Qt::CaseInsensitive)) visible << e;
     }
     m_table->setRowCount(visible.size());
+    // L11 fix: populate table with sorting disabled to avoid row shuffle during
+    // fill.
+    m_table->setSortingEnabled(false);
     for (int i = 0; i < visible.size(); ++i) {
         const auto e = visible[i];
         QStringList values{e["subject_name"].toString(),
                            e["predicate"].toString(),
                            e["object_name"].toString(),
                            QString::number(e["score"].toDouble(), 'f', 5)};
-        for (int j = 0; j < 4; ++j)
-            m_table->setItem(i, j, new QTableWidgetItem(values[j]));
+        for (int j = 0; j < 4; ++j) {
+            auto* item = new QTableWidgetItem(values[j]);
+            // L11 fix: store score as numeric UserRole for correct sorting.
+            if (j == 3) item->setData(Qt::UserRole, e["score"].toDouble());
+            m_table->setItem(i, j, item);
+        }
     }
-    m_summary->setText(tr("%1 objects · %2 relations · %3")
-                               .arg(m_last.json["objects"].toArray().size())
+    m_table->setSortingEnabled(true);  // re-enable sorting after populating
+    // L11 fix: show filtered/total relation count when a filter is active.
+    const bool filtered = !m_filter->text().isEmpty();
+    const QString relationsText =
+            filtered ? tr("%1 of %2 relations")
                                .arg(visible.size())
-                               .arg(m_last.source));
+                               .arg(totalRelations)
+                     : tr("%1 relations").arg(visible.size());
+    m_summary->setText(tr("%1 objects · %2 · %3")
+                               .arg(m_last.json["objects"].toArray().size())
+                               .arg(relationsText, m_last.source));
 }
 void RelateAnythingDialog::setBusy(bool busy) {
     // L9 fix: only update tab state when it changes to avoid per-frame flicker.
@@ -1400,9 +1558,14 @@ void RelateAnythingDialog::setBusy(bool busy) {
         m_tabs->setTabEnabled(2, !busy);
     }
     m_run->setEnabled(!busy && !m_downloader->isBusy());
+    // L1: Update Cancel button text to provide feedback while cancelling.
+    m_cancelButton->setText(busy ? tr("Cancel / stop") : tr("Cancel / stop"));
 }
 void RelateAnythingDialog::resetResults() {
     m_last = RelateAnythingResult{};
+    m_hasResult = false;  // L1: disable export buttons
+    m_exportButton->setEnabled(false);
+    m_addToDbButton->setEnabled(false);
     showResult();
     m_timing->clear();
     m_resultCount = 0;

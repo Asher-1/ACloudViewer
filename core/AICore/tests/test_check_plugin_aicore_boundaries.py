@@ -29,11 +29,27 @@ class PluginBoundaryTests(unittest.TestCase):
 #include "aicore/depth_capi.h"
 const char* uri = "db://models/current";
 const char* message = "missing:\n";
+const char* kitti_entry = "velodyne_points/data/%1.pcd";
+const char* archive_entry = "archive/home/example.json";
+const char* remote_entry = "https://example.org/data/model.gguf";
 auto digest = QCryptographicHash::hash(bytes, QCryptographicHash::Sha256);
 // Source: https://github.com/Asher-1/cloudViewer_downloads/releases/download/X/y
 ''')
             issues, warnings = BOUNDARIES.check_plugin_root(root)
         self.assertEqual(issues, [])
+        self.assertEqual(warnings, [])
+
+    def test_root_paths_still_fail_when_relative_archive_paths_are_allowed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.plugin_source(root, r'''
+#include "aicore/depth_capi.h"
+const char* first = "/data/models/a.gguf";
+const char* second = "/tmp/example.json";
+const char* relative = "velodyne_points/data/frame.pcd";
+''')
+            issues, warnings = BOUNDARIES.check_plugin_root(root, strict=True)
+        self.assertEqual(len(issues), 2)
         self.assertEqual(warnings, [])
 
     def test_production_model_ownership_and_absolute_paths_are_reported(self):

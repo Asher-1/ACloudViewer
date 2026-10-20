@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "AnnotationDocument.h"
+
 namespace {
 QString coordinate(double value) { return QString::number(value, 'f', 6); }
 
@@ -515,7 +517,7 @@ CocoConversion convertCoco(const QVector<CocoImage>& images,
     const QDate today = QDate::currentDate();
     QJsonObject info{
             {QStringLiteral("year"), today.year()},
-            {QStringLiteral("version"), QStringLiteral("4.0.6")},
+            {QStringLiteral("version"), annotationFormatVersion()},
             {QStringLiteral("description"),
              QStringLiteral("COCO Label Conversion")},
             {QStringLiteral("contributor"), QStringLiteral("CVHub")},

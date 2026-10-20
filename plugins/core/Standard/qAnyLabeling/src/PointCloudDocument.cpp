@@ -70,7 +70,16 @@ bool scalar(QFile& file, const QByteArray& type, bool little, double* value) {
     return true;
 }
 
-bool readPly(QFile& file, PointCloudFrame* frame, QString* error) {
+bool loadCancelled(const std::function<bool()>& cancelled, QString* error) {
+    if (!cancelled || !cancelled()) return false;
+    *error = QStringLiteral("Point-cloud loading cancelled");
+    return true;
+}
+
+bool readPly(QFile& file,
+             PointCloudFrame* frame,
+             QString* error,
+             const std::function<bool()>& cancelled) {
     if (file.readLine().trimmed() != "ply") {
         *error = QStringLiteral("Missing PLY header");
         return false;
@@ -79,6 +88,7 @@ bool readPly(QFile& file, PointCloudFrame* frame, QString* error) {
     QVector<Element> elements;
     bool ended = false;
     while (file.pos() < 1024 * 1024 && !file.atEnd()) {
+        if (loadCancelled(cancelled, error)) return false;
         const QList<QByteArray> fields =
                 file.readLine(65536).simplified().split(' ');
         if (fields.isEmpty() || fields[0] == "comment" ||
@@ -154,6 +164,8 @@ bool readPly(QFile& file, PointCloudFrame* frame, QString* error) {
                 frame->rgb.reserve(int(element.count));
         }
         for (qint64 row = 0; row < element.count; ++row) {
+            if ((row % 1024 == 0) && loadCancelled(cancelled, error))
+                return false;
             const QList<QByteArray> tokens =
                     ascii ? file.readLine().simplified().split(' ')
                           : QList<QByteArray>{};
@@ -193,6 +205,8 @@ bool readPly(QFile& file, PointCloudFrame* frame, QString* error) {
                     return false;
                 }
                 for (qint64 item = 0; item < count; ++item) {
+                    if ((item % 1024 == 0) && loadCancelled(cancelled, error))
+                        return false;
                     double value = 0;
                     if (ascii) {
                         if (cursor >= tokens.size()) {
@@ -260,9 +274,11 @@ bool readPly(QFile& file, PointCloudFrame* frame, QString* error) {
 bool loadPointCloudFrame(const QString& path,
                          PointCloudFrame* frame,
                          QString* error,
-                         const QString& labelPath) {
+                         const QString& labelPath,
+                         const std::function<bool()>& cancelled) {
     if (!frame || !error) return false;
     error->clear();
+    if (loadCancelled(cancelled, error)) return false;
     PointCloudFrame loaded;
     loaded.path = QFileInfo(path).absoluteFilePath();
     QFile file(loaded.path);
@@ -280,28 +296,34 @@ bool loadPointCloudFrame(const QString& path,
         }
         loaded.points.reserve(int(file.size() / 16));
         while (!file.atEnd()) {
-            const QByteArray row = file.read(16);
-            if (row.size() != 16) {
+            if (loadCancelled(cancelled, error)) return false;
+            // O(N), bounded 64 KiB staging instead of one allocation/read per
+            // point.
+            const QByteArray block = file.read(65536);
+            if (block.isEmpty() || block.size() % 16) {
                 *error = QStringLiteral("Truncated BIN record");
                 return false;
             }
-            float values[4];
-            for (int k = 0; k < 4; ++k) {
-                const quint32 bits = qFromLittleEndian<quint32>(
-                        reinterpret_cast<const uchar*>(row.constData() +
-                                                       k * 4));
-                std::memcpy(&values[k], &bits, 4);
+            for (int offset = 0; offset < block.size(); offset += 16) {
+                float values[4];
+                for (int k = 0; k < 4; ++k) {
+                    const quint32 bits = qFromLittleEndian<quint32>(
+                            reinterpret_cast<const uchar*>(block.constData() +
+                                                           offset + k * 4));
+                    std::memcpy(&values[k], &bits, 4);
+                }
+                if (!std::isfinite(values[0]) || !std::isfinite(values[1]) ||
+                    !std::isfinite(values[2])) {
+                    *error = QStringLiteral(
+                            "BIN has nonfinite point coordinates");
+                    return false;
+                }
+                loaded.points.append(
+                        QVector4D(values[0], values[1], values[2], values[3]));
             }
-            if (!std::isfinite(values[0]) || !std::isfinite(values[1]) ||
-                !std::isfinite(values[2])) {
-                *error = QStringLiteral("BIN has nonfinite point coordinates");
-                return false;
-            }
-            loaded.points.append(
-                    QVector4D(values[0], values[1], values[2], values[3]));
         }
     } else if (suffix == QStringLiteral("ply")) {
-        if (!readPly(file, &loaded, error)) return false;
+        if (!readPly(file, &loaded, error, cancelled)) return false;
     } else {
         *error = QStringLiteral("Expected .bin or .ply point cloud");
         return false;
@@ -332,6 +354,8 @@ bool loadPointCloudFrame(const QString& path,
             return false;
         }
         for (int i = 0; i < loaded.labels.size(); ++i) {
+            if ((i % 1024 == 0) && loadCancelled(cancelled, error))
+                return false;
             char raw[4];
             if (labels.read(raw, 4) != 4) {
                 *error = QStringLiteral("Truncated labels");
@@ -342,27 +366,22 @@ bool loadPointCloudFrame(const QString& path,
         }
         loaded.labelExists = true;
     }
-    // Cuboid sidecar: optional, best-effort (upstream parity — a missing
-    // or unparseable sidecar leaves an empty list; a hard parse error is
-    // surfaced like the label read above).
-    loaded.cuboids.clear();
-    const QString cuboidSidecar =
-            QFileInfo(loaded.labelPath)
-                    .dir()
-                    .filePath(QFileInfo(loaded.labelPath).completeBaseName() +
-                              QStringLiteral(".cuboids.json"));
-    QFile cuboidFile(cuboidSidecar);
-    if (cuboidFile.exists()) {
-        QString cuboidError;
-        QVector<PointCloudCuboid> boxes;
-        if (!loadPointCloudCuboids(cuboidSidecar,
-                                   QFileInfo(loaded.path).fileName(), &boxes,
-                                   &cuboidError)) {
-            *error = cuboidError;
+    loaded.cuboidPath = pointCloudCuboidPath(loaded.labelPath);
+    const QStringList candidates{loaded.cuboidPath,
+                                 pointCloudCuboidPath(direct),
+                                 pointCloudCuboidPath(sibling)};
+    loaded.cuboidExists = QFileInfo::exists(loaded.cuboidPath) ||
+                          QFileInfo(loaded.cuboidPath).isSymLink();
+    for (const auto& candidate : candidates) {
+        if (loadCancelled(cancelled, error)) return false;
+        if (!QFileInfo::exists(candidate) && !QFileInfo(candidate).isSymLink())
+            continue;
+        if (!loadPointCloudCuboids(candidate, loaded.path, &loaded.cuboids,
+                                   error))
             return false;
-        }
-        loaded.cuboids = boxes;
+        break;
     }
+    if (loadCancelled(cancelled, error)) return false;
     *frame = std::move(loaded);
     return true;
 }
@@ -398,26 +417,13 @@ bool savePointCloudLabels(const PointCloudFrame& frame,
         *error = output.errorString();
         return false;
     }
-    // Cuboid sidecar: written alongside the labels whenever the frame
-    // carries any cuboids (upstream save_cuboids parity).
-    if (!frame.cuboids.isEmpty()) {
-        const QString cuboidSidecar = QFileInfo(path).dir().filePath(
-                QFileInfo(path).completeBaseName() +
-                QStringLiteral(".cuboids.json"));
-        QString cuboidError;
-        if (!savePointCloudCuboids(cuboidSidecar,
-                                   QFileInfo(frame.path).fileName(),
-                                   frame.cuboids, &cuboidError)) {
-            *error = cuboidError;
-            return false;
-        }
-    }
     return true;
 }
 
 void PointCloudDocument::setFrame(PointCloudFrame frame) {
     m_frame = std::move(frame);
     m_baseline = m_frame.labels;
+    m_cuboidBaseline = m_frame.cuboids;
     m_undo.clear();
     m_redo.clear();
     m_dirty = false;
@@ -543,10 +549,95 @@ bool PointCloudDocument::operate(const QVector<int>& indices,
 }
 
 void PointCloudDocument::apply(const Edit& edit, bool forward) {
+    if (edit.cuboids) {
+        m_frame.cuboids = forward ? edit.boxesAfter : edit.boxesBefore;
+        return;
+    }
     for (int i = 0; i < edit.indices.size(); ++i)
         m_frame.labels[edit.indices[i]] =
                 forward ? edit.after[i] : edit.before[i];
     m_dirty = m_frame.labels != m_baseline;
+}
+
+int PointCloudDocument::nextCuboidId() const {
+    QSet<int> used;
+    for (const auto& box : m_frame.cuboids) used.insert(box.id);
+    for (int id = 1; id <= 65535; ++id)
+        if (!used.contains(id)) return id;
+    return 0;
+}
+
+bool PointCloudDocument::commitCuboids(const QVector<PointCloudCuboid>& boxes) {
+    if (boxes == m_frame.cuboids) return false;
+    Edit edit;
+    edit.cuboids = true;
+    edit.boxesBefore = m_frame.cuboids;
+    edit.boxesAfter = boxes;
+    apply(edit, true);
+    m_undo.append(std::move(edit));
+    if (m_undo.size() > 50) m_undo.removeFirst();
+    m_redo.clear();
+    return true;
+}
+
+bool PointCloudDocument::setCuboid(const PointCloudCuboid& box,
+                                   QString* error) {
+    if (error) error->clear();
+    if (!box.valid(error)) return false;
+    auto boxes = m_frame.cuboids;
+    for (auto& existing : boxes) {
+        if (existing.id != box.id) continue;
+        auto lockedBox = box;
+        lockedBox.locked = true;
+        if (existing.locked && lockedBox != existing) {
+            if (error)
+                *error = QStringLiteral("Unlock the cuboid before editing it.");
+            return false;
+        }
+        existing = box;
+        return commitCuboids(boxes);
+    }
+    boxes.append(box);
+    return commitCuboids(boxes);
+}
+
+bool PointCloudDocument::deleteCuboid(int id, QString* error) {
+    if (error) error->clear();
+    auto boxes = m_frame.cuboids;
+    for (int i = 0; i < boxes.size(); ++i) {
+        if (boxes[i].id != id) continue;
+        if (boxes[i].locked) {
+            if (error)
+                *error =
+                        QStringLiteral("Unlock the cuboid before deleting it.");
+            return false;
+        }
+        boxes.removeAt(i);
+        return commitCuboids(boxes);
+    }
+    return false;
+}
+
+bool PointCloudDocument::replaceCuboids(const QVector<PointCloudCuboid>& boxes,
+                                        QString* error) {
+    if (error) error->clear();
+    QSet<int> ids;
+    for (const auto& box : boxes) {
+        if (!box.valid(error)) return false;
+        if (ids.contains(box.id)) {
+            if (error) *error = QStringLiteral("Duplicate cuboid IDs.");
+            return false;
+        }
+        ids.insert(box.id);
+    }
+    if (boxes != m_frame.cuboids) commitCuboids(boxes);
+    return true;
+}
+
+void PointCloudDocument::markCuboidsSaved(const QString& path) {
+    m_frame.cuboidPath = path;
+    m_frame.cuboidExists = true;
+    m_cuboidBaseline = m_frame.cuboids;
 }
 
 bool PointCloudDocument::undo() {

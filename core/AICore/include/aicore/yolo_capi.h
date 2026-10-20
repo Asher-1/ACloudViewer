@@ -50,10 +50,10 @@ AICORE_CAPI void aicore_yolo_options_set_device(aicore_yolo_options* opts,
 /** CPU thread count; <= 0 picks the backend default. */
 AICORE_CAPI void aicore_yolo_options_set_threads(aicore_yolo_options* opts,
                                                  int n_threads);
-/** Detection confidence threshold (default 0.25). */
+/** Detection confidence threshold in [0,1] (default 0.25). */
 AICORE_CAPI void aicore_yolo_options_set_conf_thres(aicore_yolo_options* opts,
                                                     float conf_thres);
-/** NMS IoU threshold (default 0.7). */
+/** NMS IoU threshold in [0,1] (default 0.7). */
 AICORE_CAPI void aicore_yolo_options_set_iou_thres(aicore_yolo_options* opts,
                                                    float iou_thres);
 /** Caps the returned detections (0 = model default max_det). */
@@ -376,6 +376,10 @@ typedef struct aicore_yolo_model_entry {
     int depth_capable;  // 1 for the yolo26*-depth absolute-depth variants
     int end2end;        // 1 for the yolo26 family (NMS-free head)
     int text_input;     // 1 for YOLO-World / YOLOE / text encoders
+    // Read-only catalog tail; existing field offsets are unchanged.
+    // Suggested annotation thresholds. Negative means not applicable.
+    float confidence_threshold;
+    float iou_threshold;
 } aicore_yolo_model_entry;
 
 /** Catalog role filter for the unified query entry points. */

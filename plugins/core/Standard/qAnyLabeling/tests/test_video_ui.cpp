@@ -62,6 +62,68 @@ int main(int argc, char** argv) {
                               QStringLiteral("walking"), 100, 500, 1, 3,
                               QStringLiteral("person")});
     QString error;
+    const QString visualization =
+            folder.filePath(QStringLiteral("visualization.mp4"));
+    const auto renderFrame = [](int index, QString*) {
+        QImage frame(64, 64, QImage::Format_RGB888);
+        frame.fill(QColor(200, 80, index * 40));
+        return frame;
+    };
+    if (!exportVisualizationVideo(visualization, 25, 3, renderFrame, {},
+                                  &error)) {
+        std::fprintf(stderr, "visualization export failed: %s\n",
+                     qPrintable(error));
+        return 1;
+    }
+    cv::VideoCapture visualizationReader(visualization.toStdString());
+    cv::Mat visualizationFirst;
+    if (!visualizationReader.isOpened() ||
+        std::abs(visualizationReader.get(cv::CAP_PROP_FPS) - 25) > .01 ||
+        int(visualizationReader.get(cv::CAP_PROP_FRAME_COUNT)) != 3 ||
+        !visualizationReader.read(visualizationFirst) ||
+        visualizationFirst.size() != cv::Size(64, 64) ||
+        std::abs(int(visualizationFirst.at<cv::Vec3b>(32, 32)[2]) - 200) > 8 ||
+        visualizationFirst.at<cv::Vec3b>(32, 32)[0] > 8) {
+        std::fprintf(stderr,
+                     "visualization FPS/count/size/RGB order mismatch\n");
+        return 1;
+    }
+    visualizationReader.release();
+    QFile committed(visualization);
+    if (!committed.open(QIODevice::ReadOnly)) return 1;
+    const QByteArray originalVideo = committed.readAll();
+    committed.close();
+    for (int mode = 0; mode < 4; ++mode) {
+        const auto failingFrame = [&, mode](int index, QString* message) {
+            if (mode == 1 && index == 1) {
+                *message = QStringLiteral("fixture decode error");
+                return QImage();
+            }
+            if (mode == 2 && index == 1) {
+                QImage different(66, 64, QImage::Format_RGB888);
+                different.fill(Qt::red);
+                return different;
+            }
+            return renderFrame(index, message);
+        };
+        if (exportVisualizationVideo(
+                    visualization, mode == 3 ? 0 : 25, 3, failingFrame,
+                    [mode](int done, int) { return mode != 0 || done < 1; },
+                    &error) ||
+            error.isEmpty() || !committed.open(QIODevice::ReadOnly))
+            return 1;
+        if (committed.readAll() != originalVideo) {
+            std::fprintf(stderr,
+                         "failed visualization replaced committed output\n");
+            return 1;
+        }
+        committed.close();
+    }
+    if (!QDir(folder.path())
+                 .entryList({QStringLiteral(".qany-video-*")},
+                            QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot)
+                 .isEmpty())
+        return 1;
     if (!saveVideoSidecar(path, original, &error)) return 1;
 
     VideoAnnotationDialog dialog;

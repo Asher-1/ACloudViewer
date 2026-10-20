@@ -5,291 +5,321 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Math-kernel tests for the camera-calibration sidecar (upstream
-// pointcloud/camera.py parity): strict schema validation, pinhole
-// projection, opencv5 distortion, near-plane clipping and image-rect
-// segment clipping.
-
+#include <QCoreApplication>
+#include <QDir>
 #include <QFile>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 #include <QTemporaryDir>
-#include <cmath>
 #include <cstdio>
+#include <limits>
 
 #include "PointCloudCamera.h"
 #include "PointCloudCuboid.h"
+#include "PointCloudViewTransform.h"
+
+#define REQUIRE(x)                                               \
+    do {                                                         \
+        if (!(x)) {                                              \
+            std::fprintf(stderr, "line %d: %s\n", __LINE__, #x); \
+            return 1;                                            \
+        }                                                        \
+    } while (false)
 
 namespace {
-
-int failures = 0;
-
-void expect(bool ok, const char* what) {
-    if (!ok) {
-        std::fprintf(stderr, "FAILED: %s\n", what);
-        ++failures;
-    }
+QJsonArray array(std::initializer_list<double> values) {
+    QJsonArray result;
+    for (const double value : values) result.append(value);
+    return result;
 }
 
-QString writeCalibration(const QTemporaryDir& dir, const QByteArray& body) {
-    const QString path = dir.filePath(QStringLiteral("calib.json"));
+QJsonObject calibrationJson(
+        const QString& distortionModel = QStringLiteral("none")) {
+    QJsonArray distortion;
+    if (distortionModel == QStringLiteral("opencv5"))
+        distortion = array({0.04, -0.01, 0.001, -0.002, 0.0005});
+    return QJsonObject{
+            {"schema_version", 1},
+            {"image_size", QJsonArray{100, 80}},
+            {"camera_model", "pinhole"},
+            {"camera_matrix", QJsonArray{array({50, 0, 50}), array({0, 50, 40}),
+                                         array({0, 0, 1})}},
+            {"T_pointcloud_to_camera",
+             QJsonArray{array({1, 0, 0, 0}), array({0, 1, 0, 0}),
+                        array({0, 0, 1, 0}), array({0, 0, 0, 1})}},
+            {"distortion_model", distortionModel},
+            {"distortion_coefficients", distortion}};
+}
+
+bool writeJson(const QString& path, const QJsonObject& object) {
     QFile file(path);
-    file.open(QIODevice::WriteOnly);
-    file.write(body);
-    return path;
+    return file.open(QIODevice::WriteOnly) &&
+           file.write(QJsonDocument(object).toJson()) >= 0;
 }
 
-QByteArray validBody() {
-    return QStringLiteral(
-                   "{"
-                   "\"schema_version\":1,"
-                   "\"image_size\":[200,100],"
-                   "\"camera_model\":\"pinhole\","
-                   "\"camera_matrix\":[[100,0,50],[0,100,50],[0,0,1]],"
-                   "\"T_pointcloud_to_camera\":"
-                   "[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],"
-                   "\"distortion_model\":\"none\","
-                   "\"distortion_coefficients\":[]"
-                   "}")
-            .toUtf8();
-}
+QJsonArray point(const QPointF& p) { return {p.x(), p.y()}; }
 
+QJsonObject probe(const PointCloudCalibration& calibration,
+                  const QVector<PointCloudCuboid>& cuboids) {
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    const QVector<QVector4D> points{
+            {0, 0, 5, 1}, {0, 0, 10, 1},    {1, 0, 5, 1},  {-1, 0, 5, 1},
+            {0, 1, 5, 1}, {100, 100, 1, 1}, {0, 0, -1, 1}, {nan, 0, 5, 1}};
+    QVector<int> indices;
+    QVector<QPoint> pixels;
+    QString error;
+    QJsonArray pointIndices;
+    QJsonArray pointPixels;
+    QJsonArray depthColors;
+    double nearDepth = 0, farDepth = 0;
+    if (projectPointCloud(points, calibration, &indices, &pixels, &error)) {
+        for (const int index : indices) pointIndices.append(index);
+        for (const QPoint& pixel : pixels)
+            pointPixels.append(QJsonArray{pixel.x(), pixel.y()});
+        QVector<QColor> colors;
+        if (pointCloudCameraDepthColors(points, calibration, indices, &colors,
+                                        &error, &nearDepth, &farDepth))
+            for (const auto& color : colors)
+                depthColors.append(
+                        QJsonArray{color.red(), color.green(), color.blue()});
+    }
+    QJsonArray projectedCuboids;
+    for (const PointCloudCuboid& cuboid : cuboids) {
+        QVector<QLineF> segments;
+        QJsonArray lines;
+        if (projectCuboid(cuboid, calibration, &segments, &error)) {
+            for (const QLineF& line : segments)
+                lines.append(QJsonArray{point(line.p1()), point(line.p2())});
+        }
+        projectedCuboids.append(
+                QJsonObject{{"count", lines.size()}, {"segments", lines}});
+    }
+    return QJsonObject{{"indices", pointIndices},
+                       {"pixels", pointPixels},
+                       {"depth_colors", depthColors},
+                       {"depth_range", QJsonArray{nearDepth, farDepth}},
+                       {"cuboids", projectedCuboids}};
+}
 }  // namespace
 
-int main() {
-    QTemporaryDir dir;
-    if (!dir.isValid()) return 1;
-
-    // Valid calibration loads and carries the strict fields.
-    PointCloudCalibration calibration;
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
     QString error;
-    const QString path = writeCalibration(dir, validBody());
-    expect(loadPointCloudCalibration(path, &calibration, &error),
-           "valid calibration must load");
-    expect(error.isEmpty(), "valid calibration must not report an error");
-    expect(calibration.imageSize == QSize(200, 100),
-           "image size must round-trip");
-    expect(calibration.fx == 100.0 && calibration.cx == 50.0,
-           "intrinsics must round-trip");
-
-    // Schema rejections (upstream load_calibration parity).
-    {
-        QJsonObject body = QJsonDocument::fromJson(validBody()).object();
-        body.remove(QStringLiteral("distortion_model"));
-        const QString bad = writeCalibration(dir, QJsonDocument(body).toJson());
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "missing field must be rejected");
-    }
-    {
-        QJsonObject body = QJsonDocument::fromJson(validBody()).object();
-        body.insert(QStringLiteral("extra"), 1);
-        const QString bad = writeCalibration(dir, QJsonDocument(body).toJson());
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "unknown field must be rejected");
-    }
-    {
-        QJsonObject body = QJsonDocument::fromJson(validBody()).object();
-        body.insert(QStringLiteral("schema_version"), 2);
-        const QString bad = writeCalibration(dir, QJsonDocument(body).toJson());
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "schema_version != 1 must be rejected");
-    }
-    {
-        QJsonObject body = QJsonDocument::fromJson(validBody()).object();
-        body.insert(QStringLiteral("camera_model"), QStringLiteral("fisheye"));
-        const QString bad = writeCalibration(dir, QJsonDocument(body).toJson());
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "non-pinhole model must be rejected");
-    }
-    {
-        // Non-rigid transform (scaled rotation) must be rejected.
-        const QByteArray scaled =
-                QByteArray(validBody())
-                        .replace("[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]",
-                                 "[[2,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]");
-        const QString bad = writeCalibration(dir, scaled);
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "non-rigid transform must be rejected");
-    }
-    {
-        // Skewed intrinsic (non-zero off-diagonal) must be rejected.
-        const QByteArray skewed =
-                QByteArray(validBody())
-                        .replace("[[100,0,50],[0,100,50],[0,0,1]]",
-                                 "[[100,1,50],[0,100,50],[0,0,1]]");
-        const QString bad = writeCalibration(dir, skewed);
-        expect(!loadPointCloudCalibration(bad, &calibration, &error),
-               "skewed intrinsic must be rejected");
-    }
-
-    // Identity calibration: the point (0,0,2) projects to the principal
-    // point (50,50); the point behind the camera is dropped.
-    {
-        QVector<QVector3D> points{{0, 0, 2}, {0, 0, -1}};
-        QVector<int> indices;
-        QVector<QVector2D> pixels;
-        QVector<double> depths;
-        projectPointCloudPoints(points, calibration, &indices, &pixels,
-                                &depths);
-        expect(indices.size() == 1, "only the front point stays in bounds");
-        if (indices.size() == 1) {
-            expect(pixels.first() == QVector2D(50.0f, 50.0f),
-                   "the front point must hit the principal point");
-            expect(std::abs(depths.first() - 2.0) < 1e-9,
-                   "depth must equal the camera-space z");
+    if (argc == 3 &&
+        QString::fromLocal8Bit(argv[1]) == QStringLiteral("--viewport-probe")) {
+        QFile input(QString::fromLocal8Bit(argv[2]));
+        REQUIRE(input.open(QIODevice::ReadOnly));
+        const auto cases = QJsonDocument::fromJson(input.readAll()).array();
+        QJsonArray results;
+        for (const auto& entry : cases) {
+            const auto item = entry.toObject();
+            QVector<QVector4D> points;
+            for (const auto& value : item["points"].toArray()) {
+                const auto p = value.toArray();
+                points.append(QVector4D(float(p[0].toDouble()),
+                                        float(p[1].toDouble()),
+                                        float(p[2].toDouble()), 1));
+            }
+            const auto dimensions = item["size"].toArray();
+            const QSize size(dimensions[0].toInt(), dimensions[1].toInt());
+            PointCloudViewTransform state;
+            const auto limits = item["limits"].toArray();
+            if (!limits.isEmpty()) {
+                state.minimumScale = limits[0].toDouble();
+                state.maximumScale = limits[1].toDouble();
+            }
+            state.perspective = item["perspective"].toBool();
+            state.fit(points, size);
+            if (item.contains("view")) state.setView(item["view"].toInt());
+            const auto pan = item["pan"].toArray();
+            if (!pan.isEmpty())
+                state.pan(pan[0].toDouble(), pan[1].toDouble(), size.height());
+            const auto orbit = item["orbit"].toArray();
+            if (!orbit.isEmpty())
+                state.orbit(orbit[0].toDouble(), orbit[1].toDouble());
+            if (item.contains("wheel")) state.zoom(item["wheel"].toDouble());
+            for (const auto& key : item["camera_keys"].toArray())
+                if (!points.isEmpty())
+                    REQUIRE(state.moveCamera(key.toString()));
+            QVector<PointCloudCuboid> boxes;
+            for (const auto& value : item["boxes"].toArray()) {
+                PointCloudCuboid box;
+                REQUIRE(PointCloudCuboid::fromJson(value.toObject(), &box,
+                                                   &error));
+                boxes.append(box);
+            }
+            const int focused = item["focus"].toInt();
+            for (const auto& box : boxes)
+                if (box.id == focused) state.focus(box, size);
+            QJsonArray hits;
+            for (const auto& value : item["hits"].toArray()) {
+                const auto p = value.toArray();
+                hits.append(state.hit(QPointF(p[0].toDouble(), p[1].toDouble()),
+                                      size, boxes));
+            }
+            QVector<int> visible;
+            for (int i = 0; i < points.size(); ++i)
+                if (!item.contains("visible") ||
+                    item["visible"].toArray().contains(i))
+                    visible.append(i);
+            QJsonArray previews;
+            for (const auto& value : item["previews"].toArray()) {
+                const auto p = value.toArray();
+                PointCloudCuboid box;
+                if (state.creationPreview(
+                            QPointF(p[0].toDouble(), p[1].toDouble()), size,
+                            points, visible, &box))
+                    previews.append(array(
+                            {box.center[0], box.center[1], box.center[2]}));
+                else
+                    previews.append(QJsonValue::Null);
+            }
+            const auto transform = state.matrix(size);
+            QJsonArray rows;
+            for (int row = 0; row < 4; ++row)
+                rows.append(array({transform(row, 0), transform(row, 1),
+                                   transform(row, 2), transform(row, 3)}));
+            results.append(QJsonObject{
+                    {"matrix", rows},
+                    {"center", array({state.center[0], state.center[1],
+                                      state.center[2]})},
+                    {"scale", state.scale},
+                    {"extent", state.extent},
+                    {"yaw", state.yaw},
+                    {"pitch", state.pitch},
+                    {"hits", hits},
+                    {"previews", previews}});
         }
+        std::puts(QJsonDocument(results)
+                          .toJson(QJsonDocument::Compact)
+                          .constData());
+        return 0;
     }
-
-    // Sorting: far-to-near output order (upstream argsort of -z).
-    {
-        QVector<QVector3D> points{{0, 0, 1}, {0, 0, 3}, {0, 0, 2}};
-        QVector<int> indices;
-        QVector<QVector2D> pixels;
-        QVector<double> depths;
-        projectPointCloudPoints(points, calibration, &indices, &pixels,
-                                &depths);
-        expect(indices == (QVector<int>{1, 2, 0}),
-               "points must sort far-to-near");
-    }
-
-    // opencv5 distortion pushes a center point outward radially.
-    {
-        PointCloudCalibration distorted = calibration;
-        distorted.opencv5 = true;
-        distorted.distortion[0] = 0.1;  // k1
-        QVector<QVector3D> points{{0.1, 0, 1}};
-        QVector<int> indices;
-        QVector<QVector2D> pixels;
-        QVector<double> depths;
-        projectPointCloudPoints(points, distorted, &indices, &pixels, &depths);
-        expect(indices.size() == 1, "distorted point stays in bounds");
-        if (indices.size() == 1)
-            expect(pixels.first().x() > 50.0f,
-                   "positive k1 must push the point outward");
-    }
-
-    // Cuboid edges: 12 segments, near-plane and image-rect clipping.
-    {
-        QVector<QVector3D> corners;
-        for (int corner = 0; corner < 8; ++corner) {
-            const double sx = corner & 1 ? 1 : -1;
-            const double sy = corner & 2 ? 1 : -1;
-            const double sz = corner & 4 ? 1 : -1;
-            corners.append(
-                    QVector3D(float(sx), float(sy), float(sz * 0.1 + 3)));
+    // Z-up axis presets retain their exact 90-degree top direction, including
+    // the degenerate single-point fit and portrait-window scale correction.
+    PointCloudViewTransform view;
+    view.fit({QVector4D(2, 3, 4, 1)}, QSize(100, 200));
+    REQUIRE(std::abs(view.scale - 0.22) < 1e-12);
+    view.setView(0);
+    const auto top = view.matrix(QSize(100, 200));
+    REQUIRE(std::abs(top(0, 0) - 1 / 0.11) < 1e-6);
+    REQUIRE(std::abs(top(1, 1) - 1 / 0.22) < 1e-6);
+    REQUIRE(std::abs(top(1, 2)) < 1e-12);
+    const auto previous = view.scale;
+    view.zoom(120);
+    REQUIRE(view.scale < previous);
+    view.orbit(0, 1000);
+    REQUIRE(view.pitch == 90);
+    if (argc == 4 &&
+        QString::fromLocal8Bit(argv[1]) == QStringLiteral("--probe")) {
+        PointCloudCalibration calibration;
+        REQUIRE(loadPointCloudCalibration(QString::fromLocal8Bit(argv[2]),
+                                          &calibration, &error));
+        QFile sidecar(QString::fromLocal8Bit(argv[3]));
+        REQUIRE(sidecar.open(QIODevice::ReadOnly));
+        const QJsonDocument document =
+                QJsonDocument::fromJson(sidecar.readAll());
+        REQUIRE(document.isObject());
+        QVector<PointCloudCuboid> cuboids;
+        const QJsonArray entries =
+                document.object()[QStringLiteral("cuboids")].toArray();
+        for (const QJsonValue& value : entries) {
+            PointCloudCuboid cuboid;
+            REQUIRE(PointCloudCuboid::fromJson(value.toObject(), &cuboid,
+                                               &error));
+            cuboids.append(cuboid);
         }
-        expect(pointCloudCuboidEdges().size() == 12, "a cube has 12 edges");
-        QVector<QPair<QVector2D, QVector2D>> segments;
-        projectPointCloudCuboid(corners, calibration, &segments);
-        expect(!segments.isEmpty(), "front cuboid must produce segments");
-        for (const auto& segment : segments) {
-            const bool inside =
-                    segment.first.x() >= 0 && segment.first.x() <= 199 &&
-                    segment.second.x() >= 0 && segment.second.x() <= 199 &&
-                    segment.first.y() >= 0 && segment.first.y() <= 99 &&
-                    segment.second.y() >= 0 && segment.second.y() <= 99;
-            expect(inside, "segments must stay inside the image rect");
-        }
-        // A cuboid fully behind the camera produces nothing.
-        QVector<QVector3D> behind;
-        for (const QVector3D& corner : corners)
-            behind.append(QVector3D(corner.x(), corner.y(), -5));
-        projectPointCloudCuboid(behind, calibration, &segments);
-        expect(segments.isEmpty(),
-               "a cuboid behind the camera must not project");
+        std::puts(QJsonDocument(probe(calibration, cuboids))
+                          .toJson(QJsonDocument::Compact)
+                          .constData());
+        return 0;
     }
 
-    // Overlay rendering: a point at (0,0,2) paints the principal-point
-    // pixel with its semantic color (far-to-near painter order).
-    {
-        QImage base(200, 100, QImage::Format_RGB32);
-        base.fill(Qt::black);
-        QHash<quint16, QColor> colors;
-        colors.insert(7, QColor(255, 0, 0));
-        QVector<QVector3D> points{{0, 0, 2}, {0, 0, -1}};
-        QVector<quint32> labels{7u, 7u};
-        const QImage overlay = renderPointCloudCameraOverlay(
-                base, calibration, points, labels, colors, 2);
-        expect(overlay.pixelColor(50, 50) == QColor(255, 0, 0),
-               "the projected point must paint the principal point pixel");
-        expect(overlay.pixelColor(5, 5) == QColor(Qt::black),
-               "unrelated pixels must stay untouched");
-        // Occlusion: far-to-near draw order — the farther blue point is
-        // painted first, the nearer red point covers it.
-        QVector<QVector3D> occluded{{0, 0, 1}, {0, 0, 2}};
-        QHash<quint16, QColor> two;
-        two.insert(7, QColor(255, 0, 0));
-        two.insert(3, QColor(0, 0, 255));
-        QVector<quint32> mixed{7u, 3u};  // index 0 near red, index 1 far blue
-        const QImage occludedImage = renderPointCloudCameraOverlay(
-                base, calibration, occluded, mixed, two, 2);
-        expect(occludedImage.pixelColor(50, 50) == QColor(255, 0, 0),
-               "the nearer point must paint over the farther one");
+    QTemporaryDir directory;
+    REQUIRE(directory.isValid());
+    const QString calibrationPath =
+            directory.filePath(QStringLiteral("calibration.json"));
+    REQUIRE(writeJson(calibrationPath, calibrationJson()));
+    PointCloudCalibration calibration;
+    REQUIRE(loadPointCloudCalibration(calibrationPath, &calibration, &error));
+    REQUIRE(calibration.imageSize == QSize(100, 80));
+
+    QVector<QVector4D> points{{0, 0, 5, 0},  {0, 0, 10, 0}, {1, 0, 5, 0},
+                              {-1, 0, 5, 0}, {0, 1, 5, 0},  {100, 100, 1, 0},
+                              {0, 0, -1, 0}};
+    QVector<int> indices;
+    QVector<QPoint> pixels;
+    REQUIRE(projectPointCloud(points, calibration, &indices, &pixels, &error));
+    REQUIRE(indices == QVector<int>({1, 0, 2, 3, 4}));
+    REQUIRE(pixels ==
+            QVector<QPoint>({QPoint(50, 40), QPoint(50, 40), QPoint(60, 40),
+                             QPoint(40, 40), QPoint(50, 50)}));
+
+    PointCloudCuboid cuboid;
+    cuboid.center = {{0, 0, 5}};
+    cuboid.size = {{2, 2, 2}};
+    QVector<QLineF> segments;
+    REQUIRE(projectCuboid(cuboid, calibration, &segments, &error));
+    REQUIRE(segments.size() == 12);
+    for (const QLineF& line : segments) {
+        REQUIRE(line.x1() >= 0 && line.x1() <= 99 && line.y1() >= 0 &&
+                line.y1() <= 79);
+        REQUIRE(line.x2() >= 0 && line.x2() <= 99 && line.y2() >= 0 &&
+                line.y2() <= 79);
     }
 
-    // Cuboid model: axis-aligned corners, JSON round trip, validation.
-    {
-        PointCloudCuboid box;
-        box.id = 3;
-        box.classId = 5;
-        box.center[0] = 1.0;
-        box.center[1] = 2.0;
-        box.center[2] = 3.0;
-        box.size[0] = 2.0;
-        box.size[1] = 4.0;
-        box.size[2] = 6.0;
-        const auto corners = box.corners();
-        expect(corners.size() == 8, "a cuboid has 8 corners");
-        // Upstream CORNER_SIGNS[0] = (-,-,-) and [7] = (-,+,+): with size
-        // (2,4,6) around center (1,2,3) the corners span x=0..2, y=0..4,
-        // z=0..6 with corner 7 on the -x side.
-        expect(corners.at(0) == QVector3D(0.0f, 0.0f, 0.0f),
-               "corner 0 is center - size/2 at identity rotation");
-        expect(corners.at(7) == QVector3D(0.0f, 4.0f, 6.0f),
-               "corner 7 carries the -x half-extent at identity rotation");
-        expect(corners.at(6) == QVector3D(2.0f, 4.0f, 6.0f),
-               "corner 6 is center + size/2 at identity rotation");
-        // Rotation by yaw pi/2: the x/z extents swap through the matrix.
-        PointCloudCuboid rotated = box;
-        rotated.id = 4;
-        rotated.rotation[1] = 3.14159265358979 / 2.0;
-        const auto rotatedCorners = rotated.corners();
-        const double extentX =
-                rotatedCorners.at(6).x() - rotatedCorners.at(0).x();
-        const double extentZ =
-                rotatedCorners.at(6).z() - rotatedCorners.at(0).z();
-        expect(std::abs(extentX + 6.0) < 1e-6,
-               "a yaw quarter-turn maps size-z onto x (negated)");
-        expect(std::abs(extentZ - 2.0) < 1e-6,
-               "a yaw quarter-turn keeps size-x magnitude on z");
-        // JSON sidecar round trip preserves every field.
-        const QString sidecar = dir.filePath(QStringLiteral("f0.cuboids.json"));
-        expect(savePointCloudCuboids(sidecar, QStringLiteral("frame0.bin"),
-                                     {box, rotated}, &error),
-               "cuboid sidecar must save");
-        QVector<PointCloudCuboid> loaded;
-        expect(loadPointCloudCuboids(sidecar, QStringLiteral("frame0.bin"),
-                                     &loaded, &error),
-               "cuboid sidecar must load");
-        expect(loaded.size() == 2 && loaded.first() == box,
-               "cuboid fields must round-trip");
-        // Wrong point_cloud name must be rejected.
-        QVector<PointCloudCuboid> ignored;
-        expect(!loadPointCloudCuboids(sidecar, QStringLiteral("other.bin"),
-                                      &ignored, &error),
-               "a foreign point_cloud name must be rejected");
-        // Size below the upstream minimum must be rejected.
-        PointCloudCuboid tiny = box;
-        tiny.size[1] = 0.001;
-        expect(!tiny.valid(), "sub-minimum size must be rejected");
-    }
+    const QString distortedPath =
+            directory.filePath(QStringLiteral("distorted.json"));
+    REQUIRE(writeJson(distortedPath,
+                      calibrationJson(QStringLiteral("opencv5"))));
+    PointCloudCalibration distorted;
+    REQUIRE(loadPointCloudCalibration(distortedPath, &distorted, &error));
+    REQUIRE(projectCuboid(cuboid, distorted, &segments, &error));
+    REQUIRE(segments.size() == 12 * 32);
 
-    if (failures != 0) {
-        std::fprintf(stderr, "test_pointcloud_camera: %d failure(s)\n",
-                     failures);
-        return 1;
-    }
-    std::printf("test_pointcloud_camera: ok\n");
+    QJsonObject invalid = calibrationJson();
+    invalid[QStringLiteral("camera_model")] = QStringLiteral("fisheye");
+    REQUIRE(writeJson(directory.filePath(QStringLiteral("invalid.json")),
+                      invalid));
+    REQUIRE(!loadPointCloudCalibration(
+            directory.filePath(QStringLiteral("invalid.json")), &calibration,
+            &error));
+
+    const QString imageDirectory = directory.filePath(QStringLiteral("images"));
+    REQUIRE(QDir().mkpath(imageDirectory));
+    REQUIRE(QImage(100, 80, QImage::Format_RGB32)
+                    .save(QDir(imageDirectory)
+                                  .filePath(QStringLiteral("000001.png"))));
+    REQUIRE(QImage(100, 80, QImage::Format_RGB32)
+                    .save(QDir(imageDirectory)
+                                  .filePath(QStringLiteral("000002.jpg"))));
+    QHash<QString, QString> imagePaths;
+    REQUIRE(listPointCloudCameraImages(imageDirectory, &imagePaths, &error));
+    const QSet<QString> expectedStems = QSet<QString>()
+                                        << QStringLiteral("000001")
+                                        << QStringLiteral("000002");
+    REQUIRE(imagePaths.keys().toSet() == expectedStems);
+    PointCloudCameraSource source;
+    REQUIRE(loadPointCloudCameraSource(imageDirectory, calibrationPath, &source,
+                                       &error));
+    REQUIRE(source.hasCalibration && source.imagePaths == imagePaths);
+    const QString duplicateDirectory =
+            directory.filePath(QStringLiteral("duplicate-images"));
+    REQUIRE(QDir().mkpath(duplicateDirectory));
+    REQUIRE(QImage(2, 2, QImage::Format_RGB32)
+                    .save(QDir(duplicateDirectory)
+                                  .filePath(QStringLiteral("frame.png"))));
+    REQUIRE(QImage(2, 2, QImage::Format_RGB32)
+                    .save(QDir(duplicateDirectory)
+                                  .filePath(QStringLiteral("frame.jpg"))));
+    REQUIRE(!listPointCloudCameraImages(duplicateDirectory, &imagePaths,
+                                        &error));
+    REQUIRE(error.contains(QStringLiteral("same basename")));
+    std::puts(
+            "PASS point-cloud camera calibration, projection, clipping and "
+            "distortion sampling");
     return 0;
 }

@@ -65,5 +65,11 @@ std::vector<std::array<long long, 2>> clipperOffsetRound(const float box[4][2],
 // same-line bubble pass.
 void sortQuadBoxes(std::vector<DbBox>& boxes);
 
+// X-AnyLabeling TextDetector.filter_tag_det_res, after DBPostProcess and
+// before TextSystem.sorted_boxes. Preserve numpy's first-index tie rules
+// (including repeated corners), clip to width-1/height-1 and reject edges
+// whose truncated float32 length is <=3. Source ONNX recipes only.
+void filterSourceDetectorBoxes(std::vector<DbBox>& boxes, int width, int height);
+
 }  // namespace ocr
 }  // namespace aicore

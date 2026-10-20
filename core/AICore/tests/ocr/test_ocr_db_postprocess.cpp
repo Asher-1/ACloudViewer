@@ -113,6 +113,37 @@ int dumpMap(int argc, char** argv) {
 int main(int argc, char** argv) {
     if (argc > 1 && std::strcmp(argv[1], "--map") == 0)
         return dumpMap(argc, argv);
+#ifdef AICORE_OCR_SOURCE_DET_FILTER_GOLDEN
+    {
+        std::ifstream source(AICORE_OCR_SOURCE_DET_FILTER_GOLDEN);
+        AICORE_CHECK(static_cast<bool>(source));
+        std::string line;
+        int cases = 0;
+        while (std::getline(source, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            std::istringstream row(line);
+            int width = 0, height = 0, kept = 0;
+            DbBox box{}, expected{};
+            row >> width >> height;
+            for (auto& point : box.quad) row >> point[0] >> point[1];
+            row >> kept;
+            if (kept)
+                for (auto& point : expected.quad) row >> point[0] >> point[1];
+            AICORE_CHECK(!row.fail());
+            box.score = .75;
+            std::vector<DbBox> boxes{box};
+            aicore::ocr::filterSourceDetectorBoxes(boxes, width, height);
+            AICORE_CHECK(boxes.size() == static_cast<size_t>(kept));
+            if (kept && !boxes.empty()) {
+                AICORE_CHECK(std::memcmp(boxes[0].quad, expected.quad,
+                                         sizeof(expected.quad)) == 0);
+                AICORE_CHECK(boxes[0].score == .75);
+            }
+            ++cases;
+        }
+        AICORE_CHECK(cases == 13);
+    }
+#endif
 #ifdef AICORE_OCR_DB_POSTPROCESS_GOLDEN
     const char* golden = argc > 1 ? argv[1] : AICORE_OCR_DB_POSTPROCESS_GOLDEN;
 #else

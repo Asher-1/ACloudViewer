@@ -35,6 +35,7 @@ class LomaBridgeDialog final : public QDialog {
     Q_OBJECT
 public:
     explicit LomaBridgeDialog(QWidget* parent = nullptr);
+    LomaBridgeDialog(bool lightglue, QWidget* parent);
     ~LomaBridgeDialog() override;
 
     void setImage0(const QString& path);
@@ -58,6 +59,7 @@ private:
     void refreshModelLists();
     void updatePreview();
     void setBusy(bool busy);
+    void invalidateMatches();
     void downloadNextModel();
 
     QString m_image0Path;
@@ -78,4 +80,6 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     QStringList m_pendingModels;
     QVector<LomaCorrespondence> m_result;
+    quint64 m_generation = 0;
+    bool m_lightglue = false;
 };

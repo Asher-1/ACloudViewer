@@ -45,7 +45,9 @@ struct OcrProgram {
     std::vector<GraphOp> ops;
     std::map<std::string, int> varRanks;  // static logical rank per tensor
     std::map<std::string, std::vector<int64_t>> staticShapes;  // VarDesc dims
-    std::string feedInput;                                     // "x"
+    std::map<std::string, std::vector<int64_t>> constants;
+    bool onnxLowered = false;
+    std::string feedInput;    // "x"
     std::string fetchOutput;  // "save_infer_model/scale_0.tmp_0"
     bool parse(const std::string& json, std::string* error);
 };

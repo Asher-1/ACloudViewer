@@ -63,8 +63,8 @@ public:
          *  long_real campaign runs with the long-model GGUFs. */
         LingbotMapDriveVideo,        ///< drive_frames.mp4 (long-model dataset)
         LingbotMapLingboWorldVideo,  ///< lingbo_world_frames.mp4 (long model)
-        RAM,            ///< Official Recognize Anything demo/evaluation data
-        RelateAnything, ///< Relation image and video demonstrations
+        RAM,             ///< Official Recognize Anything demo/evaluation data
+        RelateAnything,  ///< Relation image and video demonstrations
         /** MapAnything / VGGT official ETH3D benchmark scenes (qMapAnything;
          *  multi-view reconstruction inputs). All 13 scene zips come from the
          *  map_anything_vggt_test_data release and land UNDER the

@@ -14,9 +14,26 @@
 
 namespace aicore {
 namespace tagging {
-std::vector<float> preprocess(const img::Image& image, int threads) {
+std::vector<float> preprocess(const img::Image& image,
+                              int threads,
+                              uint64_t resize_mode) {
     if (image.empty()) throw std::runtime_error("invalid image");
     constexpr int size = 384, precision = 22;
+    if (resize_mode == AICORE_TAGGING_RESIZE_OPENCV) {
+        std::vector<uint8_t> resized(size * size * 3);
+        img::cv_resize_linear_u8(image, resized.data(), size, size, 3);
+        std::vector<float> pixels(size * size * 3);
+        constexpr float mean[] = {.485f, .456f, .406f},
+                        stddev[] = {.229f, .224f, .225f};
+        for (int y = 0; y < size; ++y)
+            for (int x = 0; x < size; ++x)
+                for (int c = 0; c < 3; ++c)
+                    pixels[(c * size + y) * size + x] =
+                            (resized[(y * size + x) * 3 + c] / 255.f -
+                             mean[c]) /
+                            stddev[c];
+        return pixels;
+    }
     using Table = std::vector<std::vector<std::pair<int, int32_t>>>;
     const auto coefficients = [](int input_size) {
         Table table(size);

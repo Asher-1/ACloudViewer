@@ -146,7 +146,7 @@ def evaluate_commands(images: dict[str, list[GT_EVAL.Annotation]], image_root: P
         "gt_boxes": gt_boxes, "predicted_boxes": pred_boxes, "matched_boxes": matched,
         "precision": precision, "recall": recall,
         "hmean": 2 * precision * recall / (precision + recall) if precision + recall else 0.0,
-        "word_accuracy": exact / word_reference if word_reference else 0.0,
+        "word_accuracy": exact / gt_boxes if gt_boxes else 0.0,
         "cer": char_distance / char_reference if char_reference else 0.0,
         "wer": word_distance / word_reference if word_reference else 0.0,
         "e2e_p50_ms": statistics.median(row["e2e_p50_ms"] for row in timings),

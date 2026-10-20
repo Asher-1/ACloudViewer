@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 
 namespace {
 
@@ -22,6 +23,27 @@ bool errorContains(const char* needle) {
 
 int main() {
     int failures = 0;
+
+    const auto* tiny =
+            aicore_ocr_preset_by_rec_filename("ppocrv6-tiny-rec-f32.gguf");
+    const auto* small =
+            aicore_ocr_preset_by_rec_filename("ppocrv6-small-rec-f32.gguf");
+    const auto* japan =
+            aicore_ocr_preset_by_rec_filename("ppocrv3-japan-rec-f32.gguf");
+    const auto* sourceV4 =
+            aicore_ocr_preset_by_rec_filename("ppocrv4-source-rec-f32.gguf");
+    if (!japan || !sourceV4 ||
+        std::strcmp(japan->det_stem, sourceV4->det_stem) ||
+        std::strcmp(japan->display_name, "japan_PP-OCRv3") || !tiny || !small ||
+        tiny->det_thresh != .2f || tiny->det_box_thresh != .4f ||
+        small->det_box_thresh != .45f || tiny->det_max_candidates != 3000 ||
+        tiny->cls_thresh != .9f || tiny->rec_batch != 6 ||
+        aicore_ocr_preset_at(-1) ||
+        aicore_ocr_preset_at(aicore_ocr_preset_count()) ||
+        aicore_ocr_preset_by_rec_filename("unknown.gguf") ||
+        // Recipes are not fictitious published download assets.
+        aicore_ocr_model_by_filename("ppocrv6-tiny-rec-f32.gguf"))
+        ++failures;
 
     aicore_ocr_options options{};
     options.struct_size = offsetof(aicore_ocr_options, device);
@@ -37,6 +59,18 @@ int main() {
         ++failures;
     }
     aicore_ocr_context_destroy(ctx);
+
+    // Options added after det_limit_type must not be read from older callers.
+    options.struct_size = offsetof(aicore_ocr_options, cls_model_path);
+    options.cls_thresh = std::numeric_limits<float>::quiet_NaN();
+    ctx = aicore_ocr_context_create(&options);
+    if (ctx || !errorContains("det model load failed")) ++failures;
+    aicore_ocr_context_destroy(ctx);
+    options.struct_size = sizeof(options);
+    ctx = aicore_ocr_context_create(&options);
+    if (ctx || !errorContains("invalid classifier")) ++failures;
+    aicore_ocr_context_destroy(ctx);
+    options.cls_thresh = 0;
 
     options.struct_size = offsetof(aicore_ocr_options, rec_max_batch);
     ctx = aicore_ocr_context_create(&options);
@@ -65,7 +99,8 @@ int main() {
     }
     aicore_ocr_context_destroy(ctx);
 
-    if (aicore_ocr_context_ready(nullptr) != 0 ||
+    if (aicore_ocr_recognize_regions(nullptr, nullptr, nullptr, 0) != nullptr ||
+        aicore_ocr_context_ready(nullptr) != 0 ||
         std::strcmp(aicore_ocr_context_device(nullptr), "") != 0 ||
         aicore_ocr_label_count(nullptr) != 0 ||
         aicore_ocr_label_at(nullptr, 0) != nullptr ||
@@ -74,7 +109,8 @@ int main() {
         aicore_ocr_region_count(nullptr) != 0 ||
         aicore_ocr_region_at(nullptr, 0) != nullptr ||
         aicore_ocr_relation_count(nullptr) != 0 ||
-        aicore_ocr_relation_at(nullptr, 0) != nullptr) {
+        aicore_ocr_relation_at(nullptr, 0) != nullptr ||
+        aicore_ocr_orientation_at(nullptr, 0) != nullptr) {
         std::fprintf(stderr, "OCR null accessor contract failed\n");
         ++failures;
     }

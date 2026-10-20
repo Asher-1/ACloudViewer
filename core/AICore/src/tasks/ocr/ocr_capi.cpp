@@ -703,6 +703,13 @@ struct aicore_ocr_ctx {
     aicore::ocr::OcrWeights detWeights;
     aicore::ocr::OcrWeights recWeights;
     bool recLoaded = false;
+    aicore::ocr::OcrWeights clsWeights;
+    bool clsLoaded = false;
+    float clsThreshold = 0.9f;
+    int clsBatch = 6;
+    int detMaxCandidates = 1000;
+    OcrGraphCache clsGraphs{{}, 2, 0};
+    std::vector<float> clsBatchScratch, clsOutputScratch;
     // Optional PP-Structure layout head (PicoDet CDLA).
     aicore::ocr::OcrWeights layoutWeights;
     bool layoutLoaded = false;
@@ -754,6 +761,7 @@ struct aicore_ocr_result {
     std::vector<aicore_ocr_box> boxes;
     std::vector<aicore_ocr_region> regions;
     std::vector<aicore_ocr_relation> relations;
+    std::vector<aicore_ocr_orientation> orientations;
     aicore_pipeline_timings timings{};
     aicore_ocr_post_timing_breakdown postTimings{};
     // Text storage backing aicore_ocr_box::text pointers. MUST be a deque:
@@ -774,8 +782,8 @@ namespace {
 // ---- Rec crop geometry, chunk plan and batched forward (shared by the
 // det->rec frame path and the recognize-only quad path) ------------------
 
-// One rec crop under the official semantics: CropByPolys("quad")
-// get_minarea_rect_crop (minAreaRect re-fit of the int32 polygon,
+// One rec crop under its source contract: PaddleX CropByPolys re-fits the
+// integer polygon, while X-AnyLabeling warps the quad directly. Both use
 // get_rotate_crop_image at int() float32 edge norms, cubic warp, rot90 when
 // h/w >= 1.5) followed by resize_norm_img (resized_w = ceil(48 * w/h),
 // padded to the chunk width with the normalized-zero fill).
@@ -785,6 +793,8 @@ struct RecCropGeom {
     int cropW = 0;
     int cropH = 0;
     bool rotate = false;
+    bool rotate180 = false;
+    aicore_ocr_orientation orientation{};
     double ratio = 0.0;  // w / h after the rot90, the official sort key
     int padW = 0;        // own padded width: int(48 * max(320/48, ratio))
     int recW = 0;        // resized content width
@@ -796,15 +806,22 @@ struct RecCropGeom {
 };
 
 // `poly` is the crop source in image pixels, finite and inside the int32
-// range (both callers clamp it to the image).
-void recCropGeometry(RecCropGeom& g, const float poly[4][2]) {
-    int pts[4][2];
-    for (int i = 0; i < 4; ++i) {
-        // np.array(points).astype(np.int32): truncation toward zero.
-        pts[i][0] = static_cast<int>(poly[i][0]);
-        pts[i][1] = static_cast<int>(poly[i][1]);
+// range (det/legacy callers clamp it; selected regions retain border pixels).
+void recCropGeometry(RecCropGeom& g, const float poly[4][2], bool directQuad) {
+    if (directQuad) {
+        // X-AnyLabeling TextSystem's det_box_type="quad" warps the
+        // detector/caller quad directly. Re-fitting it with minAreaRect
+        // moves even almost-axis-aligned edges and changes rec pixels.
+        for (int i = 0; i < 4; ++i) std::copy(poly[i], poly[i] + 2, g.box[i]);
+    } else {
+        // PaddleX CropByPolys first re-fits its integer polygon.
+        int pts[4][2];
+        for (int i = 0; i < 4; ++i) {
+            pts[i][0] = static_cast<int>(poly[i][0]);
+            pts[i][1] = static_cast<int>(poly[i][1]);
+        }
+        aicore::ocr::minAreaRectBox(pts, 4, g.box);
     }
-    aicore::ocr::minAreaRectBox(pts, 4, g.box);
     aicore::ocr::rotateCropSize(g.box, &g.cropW, &g.cropH);
     // Upstream warps any non-empty size (an empty dsize would make cv2 fall
     // back to the source size, which no det box reaches).
@@ -833,7 +850,9 @@ void recCropGeometry(RecCropGeom& g, const float poly[4][2]) {
 // independent inside a forward, so only the width has to match; crops of
 // different groups with the same width still share a chunk.
 // O(n log n) for the sort.
-void assignRecPadWidths(std::vector<RecCropGeom>& geoms, int group) {
+void assignRecPadWidths(std::vector<RecCropGeom>& geoms,
+                        int group,
+                        bool sourceBatchResize) {
     std::vector<int> order;
     order.reserve(geoms.size());
     for (size_t i = 0; i < geoms.size(); ++i)
@@ -846,7 +865,18 @@ void assignRecPadWidths(std::vector<RecCropGeom>& geoms, int group) {
         int width = 0;
         for (size_t k = at; k < end; ++k)
             width = std::max(width, geoms[order[k]].padW);
-        for (size_t k = at; k < end; ++k) geoms[order[k]].chunkW = width;
+        for (size_t k = at; k < end; ++k) {
+            RecCropGeom& g = geoms[order[k]];
+            g.chunkW = width;
+            if (sourceBatchResize) {
+                // TextRecognizer.resize_norm_img clips ceil(48*w/h) to
+                // the batch width. Clipping to this crop's own floor width
+                // first shrinks non-maximal wide crops by one pixel.
+                g.recW = std::max(
+                        1, std::min(width, static_cast<int>(std::ceil(
+                                                   kRecHeight * g.ratio))));
+            }
+        }
     }
 }
 
@@ -872,8 +902,9 @@ struct RecChunkPlan {
 RecChunkPlan planRecChunks(std::vector<RecCropGeom>& geoms,
                            int padGroup,
                            int64_t cap,
-                           bool batched) {
-    assignRecPadWidths(geoms, padGroup);
+                           bool batched,
+                           bool sourceBatchResize) {
+    assignRecPadWidths(geoms, padGroup, sourceBatchResize);
     RecChunkPlan plan;
     plan.order.reserve(geoms.size());
     for (size_t i = 0; i < geoms.size(); ++i)
@@ -936,10 +967,8 @@ void fillRecPadRows(const RecChunkPlan& plan, float* batch) {
 // Perspective crop + (rot90) + resize + BGR + normalized pack of one crop
 // straight into its chunk slot. Pure over the borrowed view; distinct
 // slots per crop keep the parallel callers race-free.
-void cropAndPackRec(const aicore::img::Image& src,
-                    const RecCropGeom& g,
-                    const RecChunkPlan& plan,
-                    float* batch) {
+aicore::img::Image warpRecCrop(const aicore::img::Image& src,
+                               const RecCropGeom& g) {
     std::vector<uint8_t> quadRgb(static_cast<size_t>(g.cropW) * g.cropH * 3);
     aicore::ocr::warpPerspectiveCubicReplicate(src, g.box, g.cropW, g.cropH,
                                                quadRgb.data());
@@ -969,6 +998,21 @@ void cropAndPackRec(const aicore::img::Image& src,
         warped.height = g.cropH;
         warped.rgb = std::move(quadRgb);
     }
+    if (g.rotate180) {
+        const size_t pixels = static_cast<size_t>(warped.width) * warped.height;
+        for (size_t i = 0; i < pixels / 2; ++i)
+            for (size_t ch = 0; ch < 3; ++ch)
+                std::swap(warped.rgb[i * 3 + ch],
+                          warped.rgb[(pixels - 1 - i) * 3 + ch]);
+    }
+    return warped;
+}
+
+void cropAndPackRec(const aicore::img::Image& src,
+                    const RecCropGeom& g,
+                    const RecChunkPlan& plan,
+                    float* batch) {
+    const auto warped = warpRecCrop(src, g);
     aicore::img::Image cropImage;
     cropImage.width = g.recW;
     cropImage.height = kRecHeight;
@@ -1015,6 +1059,85 @@ struct RecRunTimings {
     double outputReadbackMs = 0.0;
     double ctcDecodeMs = 0.0;
 };
+
+// Upstream TextClassifier: stable aspect order, 3x48x192 BGR, normalized
+// zero padding, batches of six, and a strict >0.9 rotation gate. Keep only
+// one finite batch of crops; regenerate the warp for rec rather than retain
+// a frame-sized collection of decoded crops.
+bool classifyCrops(aicore_ocr_ctx* ctx,
+                   ggml_backend_t gpuBackend,
+                   ggml_backend_t cpuBackend,
+                   const aicore::img::Image& src,
+                   std::vector<RecCropGeom>& geoms,
+                   RecRunTimings& timings,
+                   double& packMs,
+                   std::string& error) {
+    if (!ctx->clsLoaded) return true;
+    std::vector<size_t> order;
+    for (size_t i = 0; i < geoms.size(); ++i)
+        if (geoms[i].valid) order.push_back(i);
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+        return geoms[a].ratio < geoms[b].ratio;
+    });
+    constexpr int width = 192, height = 48;
+    constexpr size_t rowFloats = 3 * height * width;
+    for (size_t at = 0; at < order.size(); at += ctx->clsBatch) {
+        const size_t rows = std::min<size_t>(ctx->clsBatch, order.size() - at);
+        const auto packStart = std::chrono::steady_clock::now();
+        ctx->clsBatchScratch.resize(rows * rowFloats);
+        for (size_t row = 0; row < rows; ++row) {
+            const auto& g = geoms[order[at + row]];
+            const auto warped = warpRecCrop(src, g);
+            const int resizedWidth = std::clamp(
+                    static_cast<int>(std::ceil(height * g.ratio)), 1, width);
+            aicore::img::Image resized;
+            resized.width = resizedWidth;
+            resized.height = height;
+            resized.channels = 3;
+            resized.bgr = true;
+            resized.rgb.resize(static_cast<size_t>(height) * resizedWidth * 3);
+            aicore::img::cv_resize_linear_u8(warped, resized.rgb.data(),
+                                             resizedWidth, height, 3);
+            packNchwImageTo(resized, kRecMean3, kRecStd3, width, kRecPadFill,
+                            ctx->clsBatchScratch.data() + row * rowFloats);
+        }
+        packMs += std::chrono::duration<double, std::milli>(
+                          std::chrono::steady_clock::now() - packStart)
+                          .count();
+        auto& cached = ctx->clsGraphs.acquire(3, height, width, rows, false);
+        int64_t c = 0, h = 0, w = 0, n = 0;
+        double compute = 0, upload = 0, readback = 0;
+        if (!runGraphCached(ctx, ctx->clsWeights, cached, gpuBackend,
+                            cpuBackend, 3, height, width, rows,
+                            ctx->clsBatchScratch.data(), rows * rowFloats,
+                            ctx->clsOutputScratch, c, h, w, n, compute, upload,
+                            readback, error))
+            return false;
+        if (w != 2 || ctx->clsOutputScratch.size() != rows * 2) {
+            error = "ocr: classifier output must have two probabilities per "
+                    "crop";
+            return false;
+        }
+        timings.inferenceMs += compute;
+        timings.inputUploadMs += upload;
+        timings.outputReadbackMs += readback;
+        for (size_t row = 0; row < rows; ++row) {
+            auto& g = geoms[order[at + row]];
+            const float p0 = ctx->clsOutputScratch[row * 2];
+            const float p180 = ctx->clsOutputScratch[row * 2 + 1];
+            if (!std::isfinite(p0) || !std::isfinite(p180)) {
+                error = "ocr: classifier produced non-finite probabilities";
+                return false;
+            }
+            g.orientation.angle = p180 > p0 ? 180 : 0;
+            g.orientation.score = std::max(p0, p180);
+            g.rotate180 = g.orientation.angle == 180 &&
+                          g.orientation.score > ctx->clsThreshold;
+            g.orientation.rotated = g.rotate180 ? 1 : 0;
+        }
+    }
+    return true;
+}
 
 // Phase B: one forward per chunk against the (width, rows) cached build,
 // then the per-row CTC decode in parallel. texts/scores are indexed by
@@ -1133,6 +1256,27 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
         setLastError("ocr: KIE models are not supported by this ABI version");
         return nullptr;
     }
+    const bool hasCls = hasOptionField(
+            options, offsetof(aicore_ocr_options, cls_model_path),
+            sizeof(options->cls_model_path));
+    const bool hasClsThreshold =
+            hasOptionField(options, offsetof(aicore_ocr_options, cls_thresh),
+                           sizeof(options->cls_thresh));
+    const bool hasClsBatch =
+            hasOptionField(options, offsetof(aicore_ocr_options, cls_max_batch),
+                           sizeof(options->cls_max_batch));
+    const bool hasMaxCandidates = hasOptionField(
+            options, offsetof(aicore_ocr_options, det_max_candidates),
+            sizeof(options->det_max_candidates));
+    if ((hasClsThreshold &&
+         (!std::isfinite(options->cls_thresh) || options->cls_thresh < 0 ||
+          options->cls_thresh > 1)) ||
+        (hasClsBatch &&
+         (options->cls_max_batch < 0 || options->cls_max_batch > 1024)) ||
+        (hasMaxCandidates && options->det_max_candidates < 0)) {
+        setLastError("ocr: invalid classifier or candidate options");
+        return nullptr;
+    }
     auto* ctx = new (std::nothrow) aicore_ocr_ctx();
     if (!ctx) {
         setLastError("ocr: context allocation failed");
@@ -1150,6 +1294,24 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
         return nullptr;
     }
     ctx->recLoaded = true;
+    if (hasCls && options->cls_model_path && options->cls_model_path[0]) {
+        const bool loaded =
+                ctx->clsWeights.load(options->cls_model_path, &error);
+        if (loaded && ctx->clsWeights.role != "cls")
+            error = "expected cls model role";
+        if (!loaded || ctx->clsWeights.role != "cls") {
+            setLastError("ocr: classifier model load failed: " + error);
+            delete ctx;
+            return nullptr;
+        }
+        ctx->clsLoaded = true;
+    }
+    if (hasClsThreshold && options->cls_thresh > 0)
+        ctx->clsThreshold = options->cls_thresh;
+    if (hasClsBatch && options->cls_max_batch > 0)
+        ctx->clsBatch = options->cls_max_batch;
+    if (hasMaxCandidates && options->det_max_candidates > 0)
+        ctx->detMaxCandidates = options->det_max_candidates;
     // Optional layout model: the PicoDet CDLA pack with the embedded
     // class table; regions stay empty when absent.
     if (options->layout_model_path) {
@@ -1262,6 +1424,7 @@ aicore_ocr_ctx* aicore_ocr_context_create(const aicore_ocr_options* options) {
         // rec keeps the gate closed like det/layout and runs through
         // AICORE_OCR_VK_SINGLE.
         ctx->recWeights.sched_gpu_tagging = !isVulkan;
+        ctx->clsWeights.sched_gpu_tagging = !isVulkan;
         if (ctx->layoutLoaded) {
             ctx->layoutWeights.sched_gpu_tagging = !isVulkan;
         }
@@ -1298,6 +1461,7 @@ void aicore_ocr_context_destroy(aicore_ocr_ctx* ctx) {
     if (!ctx) return;
     ctx->det.clear();
     ctx->recGraphs.clear();
+    ctx->clsGraphs.clear();
     ctx->layoutExec.free();
     // Release the leases after the graphs; the weights' device buffer is
     // released by the OcrWeights destructor and must outlive neither.
@@ -1477,10 +1641,14 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     dbParams.thresh = ctx->boxThresh;
     dbParams.boxThresh = ctx->boxScoreThresh;
     dbParams.unclipRatio = ctx->unclipRatio;
+    dbParams.maxCandidates = ctx->detMaxCandidates;
     auto boxes = aicore::ocr::dbBoxesFromBitmap(
             detOutput.data(), static_cast<int>(detOutW),
             static_cast<int>(detOutH), image->width, image->height, dbParams,
             ctx->detContourScratch);
+    if (ctx->detWeights.program.onnxLowered)
+        aicore::ocr::filterSourceDetectorBoxes(boxes, image->width,
+                                               image->height);
     aicore::ocr::sortQuadBoxes(boxes);
     const auto dbBoxesStop = std::chrono::steady_clock::now();
 
@@ -1523,10 +1691,24 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
             g.quad[i][1] = static_cast<float>(boxes[bi].quad[i][1]);
         }
         g.detScore = static_cast<float>(boxes[bi].score);
-        recCropGeometry(g, g.quad);
+        recCropGeometry(g, g.quad, ctx->recWeights.program.onnxLowered);
     }
-    const RecChunkPlan recPlan = planRecChunks(
-            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
+    RecRunTimings clsTimings;
+    double clsPackMs = 0.0;
+    const auto clsStart = std::chrono::steady_clock::now();
+    if (!classifyCrops(ctx, gpuBackend, cpuBackend, srcImage, geoms, clsTimings,
+                       clsPackMs, error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
+    }
+    const double clsElapsedMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - clsStart)
+                    .count();
+    const RecChunkPlan recPlan =
+            planRecChunks(geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend),
+                          batchedRec, ctx->recWeights.program.onnxLowered);
     std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
     // resize, not assign: every content row is written in full by the pack
     // (content + right pad columns) and the pad tails by fillRecPadRows.
@@ -1550,9 +1732,10 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
         delete result;
         return nullptr;
     }
-    recLayoutInferenceMs += recTimings.inferenceMs;
-    inputUploadMs += recTimings.inputUploadMs;
-    outputReadbackMs += recTimings.outputReadbackMs;
+    recLayoutInferenceMs += recTimings.inferenceMs + clsTimings.inferenceMs;
+    inputUploadMs += recTimings.inputUploadMs + clsTimings.inputUploadMs;
+    outputReadbackMs +=
+            recTimings.outputReadbackMs + clsTimings.outputReadbackMs;
     const double ctcDecodeMs = recTimings.ctcDecodeMs;
     // Box fill in det order (the chunk plan reorders by width only for the
     // forward); textStorage pushes stay ordered so the deque-backed
@@ -1565,10 +1748,14 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
         std::memcpy(box.quad, g.quad, sizeof(box.quad));
         result->textStorage.push_back(recTexts[bi]);
         box.text = result->textStorage.back().c_str();
-        box.score = recScores[bi] > 0 ? recScores[bi] : g.detScore;
+        // This is recognition confidence, including zero for an all-blank
+        // CTC decode. Substituting detector confidence lets empty text pass
+        // the caller's drop_score filter, unlike the source TextSystem.
+        box.score = recScores[bi];
         std::strncpy(box.language, ctx->language.c_str(),
                      sizeof(box.language) - 1);
         result->boxes.push_back(box);
+        if (ctx->clsLoaded) result->orientations.push_back(g.orientation);
     }
     double resultAssemblyMs =
             std::chrono::duration<double, std::milli>(
@@ -1716,7 +1903,8 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     result->postTimings.crop_resize_pack_ms =
             std::chrono::duration<double, std::milli>(cropResizePackStop -
                                                       cropResizePackStart)
-                    .count();
+                    .count() -
+            clsElapsedMs + clsPackMs;
     result->postTimings.ctc_decode_ms = ctcDecodeMs;
     result->postTimings.result_assembly_ms = std::max(0.0, resultAssemblyMs);
     result->postTimings.output_readback_ms = outputReadbackMs;
@@ -1730,10 +1918,11 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
 // Skip-detection path: recognize text inside caller-provided quads.
 // Mirrors the rec stage of run() (perspective warp -> height-48 resize ->
 // CTC) without the det pass; quads are full-image pixel coordinates.
-aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
-                                        const aicore_image_view* image,
-                                        const float* quads,
-                                        int32_t count) {
+static aicore_ocr_result* recognizeQuads(aicore_ocr_ctx* ctx,
+                                         const aicore_image_view* image,
+                                         const float* quads,
+                                         int32_t count,
+                                         bool selectedRegions) {
     if (!ctx || !image || !quads || count <= 0) {
         setLastError("ocr: recognize requires ctx, image and quads");
         return nullptr;
@@ -1816,15 +2005,37 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         for (int i = 0; i < 4; ++i) {
             finite = finite && std::isfinite(g.quad[i][0]) &&
                      std::isfinite(g.quad[i][1]);
-            poly[i][0] = std::clamp(g.quad[i][0], 0.0f,
-                                    static_cast<float>(image->width));
-            poly[i][1] = std::clamp(g.quad[i][1], 0.0f,
-                                    static_cast<float>(image->height));
+            poly[i][0] = selectedRegions
+                                 ? g.quad[i][0]
+                                 : std::clamp(g.quad[i][0], 0.0f,
+                                              static_cast<float>(image->width));
+            poly[i][1] =
+                    selectedRegions
+                            ? g.quad[i][1]
+                            : std::clamp(g.quad[i][1], 0.0f,
+                                         static_cast<float>(image->height));
         }
-        if (finite) recCropGeometry(g, poly);
+        if (finite)
+            recCropGeometry(
+                    g, poly,
+                    selectedRegions || ctx->recWeights.program.onnxLowered);
     }
-    const RecChunkPlan recPlan = planRecChunks(
-            geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend), batchedRec);
+    RecRunTimings clsTimings;
+    double clsPackMs = 0.0;
+    const auto clsStart = std::chrono::steady_clock::now();
+    if (!classifyCrops(ctx, gpuBackend, cpuBackend, srcImage, geoms, clsTimings,
+                       clsPackMs, error)) {
+        setLastError(error);
+        delete result;
+        return nullptr;
+    }
+    const double clsElapsedMs =
+            std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - clsStart)
+                    .count();
+    const RecChunkPlan recPlan =
+            planRecChunks(geoms, ctx->recPadGroup, recChunkBatchCap(gpuBackend),
+                          batchedRec, ctx->recWeights.program.onnxLowered);
     std::vector<float> batchNchw = std::move(ctx->recBatchScratch);
     batchNchw.resize(recPlan.totalFloats);
     fillRecPadRows(recPlan, batchNchw.data());
@@ -1841,9 +2052,12 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         return nullptr;
     }
     ctx->recBatchScratch = std::move(batchNchw);
-    const double recInferenceMs = recTimings.inferenceMs;
-    const double inputUploadMs = recTimings.inputUploadMs;
-    const double outputReadbackMs = recTimings.outputReadbackMs;
+    const double recInferenceMs =
+            recTimings.inferenceMs + clsTimings.inferenceMs;
+    const double inputUploadMs =
+            recTimings.inputUploadMs + clsTimings.inputUploadMs;
+    const double outputReadbackMs =
+            recTimings.outputReadbackMs + clsTimings.outputReadbackMs;
     const double ctcDecodeMs = recTimings.ctcDecodeMs;
     const auto assemblyStart = std::chrono::steady_clock::now();
     for (int32_t q = 0; q < count; ++q) {
@@ -1859,6 +2073,7 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
         std::strncpy(box.language, ctx->language.c_str(),
                      sizeof(box.language) - 1);
         result->boxes.push_back(box);
+        if (ctx->clsLoaded) result->orientations.push_back(g.orientation);
     }
     const double resultAssemblyMs =
             std::chrono::duration<double, std::milli>(
@@ -1881,13 +2096,128 @@ aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
     result->postTimings.crop_resize_pack_ms =
             std::chrono::duration<double, std::milli>(cropResizePackStop -
                                                       cropResizePackStart)
-                    .count();
+                    .count() -
+            clsElapsedMs + clsPackMs;
     result->postTimings.ctc_decode_ms = ctcDecodeMs;
     result->postTimings.result_assembly_ms = resultAssemblyMs;
     result->postTimings.output_readback_ms = outputReadbackMs;
     result->postTimings.input_upload_ms = inputUploadMs;
-    result->postTimings.rec_graph_compute_ms = recInferenceMs;
+    result->postTimings.rec_graph_compute_ms = recTimings.inferenceMs;
     return result;
+}
+
+aicore_ocr_result* aicore_ocr_recognize(aicore_ocr_ctx* ctx,
+                                        const aicore_image_view* image,
+                                        const float* quads,
+                                        int32_t count) {
+    return recognizeQuads(ctx, image, quads, count, false);
+}
+
+aicore_ocr_result* aicore_ocr_recognize_regions(
+        aicore_ocr_ctx* ctx,
+        const aicore_image_view* image,
+        const aicore_ocr_text_region* regions,
+        int32_t count) {
+    const auto start = std::chrono::steady_clock::now();
+    if (!ctx || !image || !regions || count <= 0) {
+        setLastError(
+                "ocr: selected recognition requires ctx, image and regions");
+        return nullptr;
+    }
+    std::vector<float> quads(static_cast<size_t>(count) * 8);
+    for (int32_t i = 0; i < count; ++i) {
+        const auto& region = regions[i];
+        if (!region.points_xy || region.point_count < 3) {
+            setLastError("ocr: selected region needs at least three points");
+            return nullptr;
+        }
+        std::vector<std::array<int, 2>> points(region.point_count);
+        for (int32_t j = 0; j < region.point_count; ++j) {
+            for (int k = 0; k < 2; ++k) {
+                const float value = region.points_xy[size_t(j) * 2 + k];
+                // Float(INT_MAX) rounds out of range, so compare as double.
+                if (!std::isfinite(value) || double(value) < INT32_MIN ||
+                    double(value) > INT32_MAX) {
+                    setLastError(
+                            "ocr: selected region coordinate is not a finite "
+                            "int32 pixel");
+                    return nullptr;
+                }
+                points[j][k] = static_cast<int>(value);
+            }
+        }
+        float box[4][2];
+        aicore::ocr::minAreaRectBox(
+                reinterpret_cast<const int(*)[2]>(points.data()),
+                region.point_count, box);
+        // Source normalize_custom_detection_boxes: lexsort(y,x), then
+        // top pair left-to-right and bottom pair right-to-left.
+        int order[4] = {0, 1, 2, 3};
+        std::stable_sort(order, order + 4, [&](int a, int b) {
+            return box[a][1] < box[b][1] ||
+                   (box[a][1] == box[b][1] && box[a][0] < box[b][0]);
+        });
+        if (box[order[0]][0] > box[order[1]][0]) std::swap(order[0], order[1]);
+        if (box[order[2]][0] < box[order[3]][0]) std::swap(order[2], order[3]);
+        for (int j = 0; j < 4; ++j)
+            std::copy(box[order[j]], box[order[j]] + 2,
+                      quads.data() + size_t(i) * 8 + j * 2);
+    }
+    std::vector<int32_t> order(count);
+    for (int32_t i = 0; i < count; ++i) order[i] = i;
+    std::stable_sort(order.begin(), order.end(), [&](int32_t a, int32_t b) {
+        const float* qa = quads.data() + size_t(a) * 8;
+        const float* qb = quads.data() + size_t(b) * 8;
+        return qa[1] < qb[1] || (qa[1] == qb[1] && qa[0] < qb[0]);
+    });
+    // Source sorted_boxes uses this O(count^2) worst-case adjacent correction.
+    // Preserve it: reading order determines padding batches and recognized
+    // text.
+    for (int32_t i = 0; i < count - 1; ++i)
+        for (int32_t j = i; j >= 0; --j) {
+            const float* a = quads.data() + size_t(order[j]) * 8;
+            const float* b = quads.data() + size_t(order[j + 1]) * 8;
+            if (std::fabs(b[1] - a[1]) < 10 && b[0] < a[0])
+                std::swap(order[j], order[j + 1]);
+            else
+                break;
+        }
+    std::vector<float> sorted(quads.size());
+    for (int32_t i = 0; i < count; ++i)
+        std::copy_n(quads.data() + size_t(order[i]) * 8, 8,
+                    sorted.data() + size_t(i) * 8);
+    const auto normalized = std::chrono::steady_clock::now();
+    auto* result = recognizeQuads(ctx, image, sorted.data(), count, true);
+    if (result) {
+        // Keep source reading-order batching but return original input order
+        // so the UI can update annotations without replacing their geometry.
+        const auto assembly = std::chrono::steady_clock::now();
+        const auto boxes = result->boxes;
+        const auto orientations = result->orientations;
+        for (int32_t i = 0; i < count; ++i) {
+            result->boxes[order[i]] = boxes[i];
+            if (!orientations.empty())
+                result->orientations[order[i]] = orientations[i];
+        }
+        const auto stop = std::chrono::steady_clock::now();
+        result->postTimings.crop_resize_pack_ms +=
+                std::chrono::duration<double, std::milli>(normalized - start)
+                        .count();
+        result->postTimings.result_assembly_ms +=
+                std::chrono::duration<double, std::milli>(stop - assembly)
+                        .count();
+        result->timings.e2e_ms =
+                std::chrono::duration<double, std::milli>(stop - start).count();
+    }
+    return result;
+}
+
+const aicore_ocr_orientation* aicore_ocr_orientation_at(
+        const aicore_ocr_result* result, int index) {
+    if (!result || index < 0 ||
+        index >= static_cast<int>(result->orientations.size()))
+        return nullptr;
+    return &result->orientations[index];
 }
 
 int aicore_ocr_box_count(const aicore_ocr_result* result) {

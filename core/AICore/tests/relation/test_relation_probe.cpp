@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
             std::string a = argv[i];
             if (a == "--contracts" || a == "--no-strict" ||
                 a == "--auto-arithmetic" || a == "--decompose" ||
-                a == "--decode-only")
+                a == "--decode-only" || a == "--check-calibration")
                 args[a] = "1";
             else {
                 check(i + 1 < argc, "missing option value");
@@ -131,6 +131,7 @@ int main(int argc, char** argv) {
         const auto student = option("--student");
         std::vector<QByteArray> predicateNames;
         std::vector<const char*> predicatePointers;
+        std::vector<float> vocabularyVectors;
         if (args.count("--predicate-texts")) {
             for (const auto& v :
                  json(QString::fromStdString(option("--predicate-texts")))
@@ -141,12 +142,51 @@ int main(int argc, char** argv) {
             o.predicate_texts = predicatePointers.data();
             o.predicate_text_count = predicatePointers.size();
             o.text_student_path = student.c_str();
+        } else if (args.count("--vocabulary")) {
+            // External F32 vocabulary file
+            QFile vf(QString::fromStdString(option("--vocabulary")));
+            check(vf.open(QIODevice::ReadOnly), "cannot open vocabulary file");
+            QByteArray raw = vf.readAll();
+            check(raw.size() % (sizeof(float) * 512) == 0,
+                  "vocabulary size not multiple of 512*4");
+            vocabularyVectors.resize(raw.size() / sizeof(float));
+            std::memcpy(vocabularyVectors.data(), raw.constData(), raw.size());
+            o.vocabulary_path = option("--vocabulary").c_str();
+            const auto vnames = option("--vocabulary-names");
+            if (!vnames.empty()) {
+                for (const auto& v :
+                     json(QString::fromStdString(vnames)).array())
+                    predicateNames.push_back(v.toString().toUtf8());
+                for (const auto& v : predicateNames)
+                    predicatePointers.push_back(v.constData());
+                o.vocabulary_names_path = vnames.c_str();
+                check(predicatePointers.size() * 512 ==
+                              vocabularyVectors.size(),
+                      "vocabulary names/vectors count mismatch");
+            }
         }
         if (!dump.empty()) o.diagnostic_directory = dump.c_str();
         std::unique_ptr<aicore_relation_ctx, decltype(&aicore_relation_free)>
                 ctx(aicore_relation_create(&o), aicore_relation_free);
         check(aicore_relation_ready(ctx.get()),
               aicore_relation_last_error(ctx.get()));
+
+        // Verify calibration parameters if requested
+        if (args.count("--check-calibration")) {
+            float cal_a = 0, cal_b = 0;
+            aicore_relation_calibration(ctx.get(), &cal_a, &cal_b);
+            const float expected_a = 0.5651f, expected_b = -1.9623f;
+            check(std::abs(cal_a - expected_a) < 1e-4 &&
+                          std::abs(cal_b - expected_b) < 1e-4,
+                  QString("calibration mismatch: got a=%1 b=%2, expected a=%3 "
+                          "b=%4")
+                          .arg(cal_a)
+                          .arg(cal_b)
+                          .arg(expected_a)
+                          .arg(expected_b)
+                          .toUtf8()
+                          .constData());
+        }
         std::vector<double> times, forwards;
         std::vector<float> logits;
         uint64_t hash = 1469598103934665603ull;

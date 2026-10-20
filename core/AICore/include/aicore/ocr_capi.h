@@ -60,21 +60,50 @@ AICORE_CAPI char* aicore_ocr_model_cache_dir(void);
 /** Free a buffer returned by this API (NULL is a no-op). */
 AICORE_CAPI void aicore_ocr_free_buffer(char* buffer);
 
+/** X-AnyLabeling pipeline recipes, independent of release availability.
+ * Stems become <stem>-{f32,f16,q8_0}.gguf. A recipe does not assert that its
+ * weights are published; use model_by_filename() for downloadable assets.
+ * Unpublished recipes accept reproducibly converted local GGUFs only.
+ * Strings and entries have process lifetime. */
+typedef struct aicore_ocr_preset_entry {
+    const char* id;
+    const char* display_name;
+    const char* det_stem;
+    const char* rec_stem;
+    const char* cls_stem;
+    float det_thresh;
+    float det_box_thresh;
+    float det_unclip_ratio;
+    int32_t det_max_candidates;
+    int32_t det_max_side;
+    int32_t rec_batch;
+    int32_t cls_batch;
+    float cls_thresh;
+    float drop_score;
+} aicore_ocr_preset_entry;
+
+AICORE_CAPI int aicore_ocr_preset_count(void);
+AICORE_CAPI const aicore_ocr_preset_entry* aicore_ocr_preset_at(int index);
+AICORE_CAPI const aicore_ocr_preset_entry* aicore_ocr_preset_by_rec_filename(
+        const char* filename);
+
 /** ---- Inference contract (implemented by the `ocr` task runtime) ----
  *
- * Lifecycle: create a context from resolved catalog GGUF paths, poll
- * readiness, run images, release every result, destroy the context on the
- * owning thread, and let process shutdown delegate to
+ * Lifecycle: create a context from resolved catalog or converted local GGUF
+ * paths, poll readiness, run images, release every result, destroy the context
+ * on the owning thread, and let process shutdown delegate to
  * aicore_runtime_shutdown(). All failure paths surface through
  * aicore_ocr_last_error(). Images cross as borrowed aicore_image_view
  * values with their actual stride and RGB/RGBA/GRAY/BGR/BGRA format.
  *
  * One run executes the audited det graph (DB probability map), crops text
- * regions, and executes the rec graph per crop, returning three typed
+ * regions, optionally classifies/rotates their text direction, and executes
+ * the rec graph per crop, returning typed
  * result arrays owned by the result container:
  *   - boxes:      text quadrilateral + UTF-8 transcription + score + script
  *   - regions:    layout class + reading order (when a layout model loads)
  *   - relations:  reserved KIE index pairs; empty in ABI v1
+ *   - orientations: optional text-line angle/probability/rotation per box
  */
 
 typedef struct aicore_ocr_options {
@@ -114,6 +143,17 @@ typedef struct aicore_ocr_options {
      *  long side <= det_max_side; det_max_side 960 matches the official
      *  table_recognition pipeline). Appended in v1.1. */
     int32_t det_limit_type;
+    /** Optional 0/180-degree text-line classifier GGUF. NULL preserves the
+     *  historical detection/recognition pipeline. Applied to both run() and
+     *  recognize(), after perspective crop/rot90 and before recognition. */
+    const char* cls_model_path;
+    /** Rotate only when the 180-degree probability is strictly greater than
+     *  this threshold (0 = upstream 0.9). */
+    float cls_thresh;
+    /** Aspect-sorted classifier batch size (0 = upstream 6). */
+    int32_t cls_max_batch;
+    /** DB contour candidate limit (0 = upstream v4/v5 1000; v6 uses 3000). */
+    int32_t det_max_candidates;
 } aicore_ocr_options;
 
 #define AICORE_OCR_ABI_VERSION 1u
@@ -178,6 +218,20 @@ typedef struct aicore_ocr_post_timing_breakdown {
 typedef struct aicore_ocr_result aicore_ocr_result;
 typedef struct aicore_ocr_ctx aicore_ocr_ctx;
 
+/** Classifier decision corresponding to one returned text box. angle is
+ *  the predicted label (0 or 180); rotated indicates that the strict
+ *  confidence gate actually rotated the recognition crop. */
+typedef struct aicore_ocr_orientation {
+    int32_t angle;
+    float score;
+    int32_t rotated;
+} aicore_ocr_orientation;
+
+/** NULL when no classifier was requested, index is invalid, or result is
+ *  NULL. The pointer is borrowed from result. */
+AICORE_CAPI const aicore_ocr_orientation* aicore_ocr_orientation_at(
+        const aicore_ocr_result* result, int index);
+
 /** Create a context. Returns NULL with aicore_ocr_last_error() set when a
  *  model file is missing, a digest mismatch is detected, or the embedded
  *  graph topology is unsupported. */
@@ -205,8 +259,9 @@ AICORE_CAPI aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
 /** Recognize text inside caller-provided quads (skip-detection path).
  *  `quads` holds `count` clockwise-from-top-left corner polygons in image
  *  pixel coordinates, row-major (count * 4 * 2 floats). Each quad is
- *  clipped to the image and cropped exactly like a det box (minimum-area
- *  rectangle of its integer corners), so feeding back the quads of
+ *  clipped to the image and cropped exactly like a det box (direct quad
+ *  for ONNX-lowered models, integer minimum-area rectangle for PaddleX),
+ *  so feeding back the quads of
  *  aicore_ocr_run() reproduces its texts. Returns exactly `count` boxes in
  *  input order (no det pass); a degenerate or non-finite quad yields an
  *  empty text with score 0. Same ownership rules as aicore_ocr_run(). */
@@ -214,6 +269,27 @@ AICORE_CAPI aicore_ocr_result* aicore_ocr_recognize(
         aicore_ocr_ctx* ctx,
         const aicore_image_view* image,
         const float* quads,
+        int32_t count);
+
+/** Borrowed selected annotation polygon. points_xy contains point_count
+ *  consecutive x,y pairs; storage is needed only for the synchronous call. */
+typedef struct aicore_ocr_text_region {
+    const float* points_xy;
+    int32_t point_count;
+} aicore_ocr_text_region;
+
+/** Recognize selected annotation polygons with the X-AnyLabeling contract:
+ *  truncate coordinates to integer pixels, fit a minimum-area rectangle,
+ *  order top/bottom pairs, then warp with border replication (no clipping).
+ *  Returns count boxes in input order, containing the normalized quads;
+ *  callers retain the original polygon and annotation metadata. Regions
+ *  need at least three finite points representable as int32. Malformed
+ *  inputs fail the call; a degenerate region yields empty text/score zero.
+ *  Uses the same classifier, batching, timings and ownership as recognize(). */
+AICORE_CAPI aicore_ocr_result* aicore_ocr_recognize_regions(
+        aicore_ocr_ctx* ctx,
+        const aicore_image_view* image,
+        const aicore_ocr_text_region* regions,
         int32_t count);
 
 AICORE_CAPI int aicore_ocr_box_count(const aicore_ocr_result* result);

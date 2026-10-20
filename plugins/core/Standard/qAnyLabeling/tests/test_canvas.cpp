@@ -829,5 +829,83 @@ int main(int argc, char** argv) {
                    "holes transparent"))
             return 1;
     }
+    {
+        // RelateAnything overlay: transient, index based, never part of the
+        // shapes or the sidecar, and cleared when the indices could go stale.
+        AnnotationCanvas relations;
+        relations.resize(400, 400);
+        QImage relationImage(100, 100, QImage::Format_RGB32);
+        relationImage.fill(Qt::white);
+        relations.setImage(relationImage);
+        AnnotationShape subject;
+        subject.type = QStringLiteral("rectangle");
+        subject.label = QStringLiteral("person");
+        subject.points = {QPointF(10, 10), QPointF(30, 10), QPointF(30, 40),
+                          QPointF(10, 40)};
+        AnnotationShape object = subject;
+        object.label = QStringLiteral("horse");
+        object.points = {QPointF(50, 40), QPointF(90, 40), QPointF(90, 90),
+                         QPointF(50, 90)};
+        const auto renderRelations = [&relations]() {
+            QImage frame(400, 400, QImage::Format_ARGB32);
+            frame.fill(Qt::black);
+            QPainter painter(&frame);
+            relations.render(&painter);
+            return frame;
+        };
+        relations.setShapes({subject, object});
+        const QImage bare = renderRelations();
+        const QJsonArray edges{QJsonObject{
+                {QStringLiteral("subject_index"), 0},
+                {QStringLiteral("object_index"), 1},
+                {QStringLiteral("predicate"), QStringLiteral("riding")},
+                {QStringLiteral("score"), 0.59}}};
+        relations.setRelations(edges);
+        const QImage drawn = renderRelations();
+        if (!check(drawn != bare, "Relation edges must change canvas pixels"))
+            return 1;
+        relations.setHighlightedRelation(0);
+        if (!check(renderRelations() != drawn,
+                   "A highlighted relation must render differently"))
+            return 1;
+        relations.setHighlightedRelation(-1);
+        // With shapes hidden the edges must disappear too: compare against
+        // the same hidden-shapes frame rendered without any relations.
+        relations.setShowShapes(false);
+        const QImage hiddenWithEdges = renderRelations();
+        relations.clearRelations();
+        const QImage hiddenBare = renderRelations();
+        if (!check(hiddenWithEdges == hiddenBare,
+                   "Hiding shapes must hide the relation overlay"))
+            return 1;
+        relations.setShowShapes(true);
+        relations.setRelations(edges);
+        // An edge pointing at a missing shape is skipped, not drawn or fatal.
+        relations.setRelations(QJsonArray{
+                QJsonObject{{QStringLiteral("subject_index"), 0},
+                            {QStringLiteral("object_index"), 7},
+                            {QStringLiteral("predicate"), QStringLiteral("on")},
+                            {QStringLiteral("score"), 0.9}}});
+        if (!check(renderRelations() == bare,
+                   "Edges with out-of-range shape indices must be skipped"))
+            return 1;
+        relations.setRelations(edges);
+        relations.setShapes({subject, object});
+        if (!check(renderRelations() == bare,
+                   "Replacing shapes must clear the relation overlay"))
+            return 1;
+        relations.setRelations(edges);
+        relations.setImage(relationImage);
+        relations.setShapes({subject, object});
+        relations.setRelations(edges);
+        relations.setImage(relationImage);
+        relations.setShapes({subject, object});
+        if (!check(renderRelations() == bare,
+                   "Loading an image must clear the relation overlay"))
+            return 1;
+        if (!check(relations.shapes().first().toJson() == subject.toJson(),
+                   "The relation overlay must not modify shape data"))
+            return 1;
+    }
     return 0;
 }

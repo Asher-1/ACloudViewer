@@ -58,10 +58,12 @@
 #include <QPainterPath>
 #include <QPalette>
 #include <QPlainTextEdit>
+#include <QPointer>
 #include <QPolygonF>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QScreen>
 #include <QScrollArea>
 #include <QSet>
 #include <QSettings>
@@ -83,18 +85,25 @@
 #include <functional>
 #include <limits>
 
+#include "AnnotationConfig.h"
+#include "AnnotationDocument.h"
 #include "AnnotationLabelDialog.h"
 #include "AnnotationLogging.h"
 #include "AnnotationNavigator.h"
 #include "AnnotationPopup.h"
+#include "AnnotationTagging.h"
 #include "AnnotationYaml.h"
 #include "LomaBridgeDialog.h"
 #include "PointCloudWindow.h"
+#include "PpocrDialog.h"
+#include "RelateDetectors.h"
+#include "RelateOptionsDialog.h"
 #include "RemoteServerClient.h"
 #include "RemoteServerDialog.h"
 #include "VideoAnnotationDialog.h"
 #include "VideoFrameExtraction.h"
 #include "VideoMaskImport.h"
+#include "VideoSegmentExporter.h"
 #include "VideoTab.h"
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
@@ -103,9 +112,11 @@
 #include "aicore/gkd_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/ocr_capi.h"
+#include "aicore/relation_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
+#include "aicore/tagging_capi.h"
 #include "aicore/yolo_capi.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvModelDownloader.h"
@@ -132,6 +143,9 @@ bool acceptsImageDrop(const QMimeData* mime) {
     for (const QUrl& url : mime->urls()) {
         const QFileInfo info(url.toLocalFile());
         if (info.isDir() ||
+            (info.isFile() &&
+             info.suffix().compare(QStringLiteral("json"),
+                                   Qt::CaseInsensitive) == 0) ||
             (info.isFile() && kImageFilters.contains(QStringLiteral("*.%1").arg(
                                       info.suffix().toLower()))))
             return true;
@@ -156,19 +170,21 @@ QString quantization(const QString& filename) {
     return stem.section(QLatin1Char('-'), -1);
 }
 
-// Det GGUF paired with an OCR rec entry: same quantization tier from the
-// catalog (the det graph is script-agnostic, so the ch det model serves
-// both rec languages). Empty when the catalog has no matching tier.
+// Pairing and defaults belong to the public OCR task recipe.
 QString ocrDetPartner(const QString& recFilename) {
-    const QString quant = quantization(recFilename);
-    for (int i = 0; i < aicore_ocr_model_count(); ++i) {
-        const aicore_ocr_model_entry* entry = aicore_ocr_model_at(i);
-        if (!entry || !entry->filename || !entry->role) continue;
-        if (QString::fromLatin1(entry->role) != QStringLiteral("det")) continue;
-        const QString filename = QString::fromUtf8(entry->filename);
-        if (quantization(filename) == quant) return filename;
-    }
-    return QString();
+    const auto* preset =
+            aicore_ocr_preset_by_rec_filename(recFilename.toUtf8().constData());
+    return preset ? QString::fromUtf8(preset->det_stem) + QLatin1Char('-') +
+                            quantization(recFilename) + QStringLiteral(".gguf")
+                  : QString();
+}
+
+QString ocrClassifierPartner(const QString& recFilename) {
+    const auto* preset =
+            aicore_ocr_preset_by_rec_filename(recFilename.toUtf8().constData());
+    return preset ? QString::fromUtf8(preset->cls_stem) + QLatin1Char('-') +
+                            QStringLiteral("f32.gguf")
+                  : QString();
 }
 
 QString modelFamily(const QString& filename) {
@@ -206,160 +222,276 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
     m_recentFiles =
             settings.value(QStringLiteral("recentFiles")).toStringList();
     m_directory = settings.value(QStringLiteral("lastDirectory")).toString();
-    m_autoSave = settings.value(QStringLiteral("autoSave"), true).toBool();
-    m_saveWithImageData =
-            settings.value(QStringLiteral("storeData"), false).toBool();
+    m_autoSave = settings.value(QStringLiteral("autoSave"),
+                                annotationConfig::value("auto_save"))
+                         .toBool();
+    {
+        const int saved =
+                settings.value(QStringLiteral("relateProfile"), 0).toInt();
+        const auto profile = saved == 1 ? RelateOptions::Profile::ImageDemo
+                                        : RelateOptions::Profile::VideoReel;
+        m_relateOptions = RelateOptions::forProfile(profile);
+        if (settings.contains(QStringLiteral("relateRelationThreshold"))) {
+            m_relateOptions.relationThreshold =
+                    settings.value(QStringLiteral("relateRelationThreshold"))
+                            .toFloat();
+            m_relateOptions.spatialThreshold =
+                    settings.value(QStringLiteral("relateSpatialThreshold"))
+                            .toFloat();
+            m_relateOptions.maxRelations =
+                    settings.value(QStringLiteral("relateMaxRelations"), 8)
+                            .toInt();
+            m_relateOptions.maxSpatial =
+                    settings.value(QStringLiteral("relateMaxSpatial"), 3)
+                            .toInt();
+            m_relateOptions.decompose =
+                    settings.value(QStringLiteral("relateDecompose"), true)
+                            .toBool();
+            m_relateOptions.detectConfidence =
+                    settings.value(QStringLiteral("relateDetectConfidence"), .2)
+                            .toFloat();
+            m_relateOptions.detectIou =
+                    settings.value(QStringLiteral("relateDetectIou"), .5)
+                            .toFloat();
+            m_relateOptions.maxBoxFraction =
+                    settings.value(QStringLiteral("relateMaxBoxFraction"), .85)
+                            .toFloat();
+            m_relateOptions.maxBoxes =
+                    settings.value(QStringLiteral("relateMaxBoxes"), 24)
+                            .toInt();
+        }
+        m_relateOptions.predicates =
+                settings.value(QStringLiteral("relatePredicates")).toString();
+        m_relateOptions.detector =
+                settings.value(QStringLiteral("relateDetector")).toString();
+        m_relateOptions.profile = m_relateOptions.matchedProfile();
+    }
+    m_saveWithImageData = settings.value(QStringLiteral("storeData"),
+                                         annotationConfig::value("store_data"))
+                                  .toBool();
     m_keepPreviousBrightness =
-            settings.value(QStringLiteral("keepPreviousBrightness"), false)
+            settings.value(QStringLiteral("keepPreviousBrightness"),
+                           annotationConfig::value("keep_prev_brightness"))
                     .toBool();
     m_keepPreviousContrast =
-            settings.value(QStringLiteral("keepPreviousContrast"), false)
+            settings.value(QStringLiteral("keepPreviousContrast"),
+                           annotationConfig::value("keep_prev_contrast"))
                     .toBool();
     m_keepPreviousScale =
-            settings.value(QStringLiteral("keepPreviousScale"), false).toBool();
-    m_autoUseLastLabel =
-            settings.value(QStringLiteral("autoUseLastLabel"), false).toBool();
-    m_autoHighlightShape =
-            settings.value(QStringLiteral("autoHighlightShape"), true).toBool();
-    m_autoSwitchToEditMode =
-            settings.value(QStringLiteral("autoSwitchToEditMode"), true)
+            settings.value(QStringLiteral("keepPreviousScale"),
+                           annotationConfig::value("keep_prev_scale"))
                     .toBool();
-    m_validateLabel =
-            settings.value(QStringLiteral("validateLabel")).toString();
+    m_autoUseLastLabel =
+            settings.value(QStringLiteral("autoUseLastLabel"),
+                           annotationConfig::value("auto_use_last_label"))
+                    .toBool();
+    m_autoHighlightShape =
+            settings.value(QStringLiteral("autoHighlightShape"),
+                           annotationConfig::value("auto_highlight_shape"))
+                    .toBool();
+    m_autoSwitchToEditMode =
+            settings.value(QStringLiteral("autoSwitchToEditMode"),
+                           annotationConfig::value("auto_switch_to_edit_mode"))
+                    .toBool();
+    m_validateLabel = settings.value(QStringLiteral("validateLabel"),
+                                     annotationConfig::value("validate_label"))
+                              .toString();
     m_loggerLevel = settings.value(QStringLiteral("loggerLevel"),
-                                   QStringLiteral("info"))
+                                   annotationConfig::value("logger_level"))
                             .toString();
     m_remoteModelId =
             settings.value(QStringLiteral("remoteServerModel")).toString();
     m_exifScanEnabled =
-            settings.value(QStringLiteral("exifScanEnabled"), true).toBool();
-    m_displayLabelPopup =
-            settings.value(QStringLiteral("displayLabelPopup"), true).toBool();
-    // The source defaults this to false, but the ACloudViewer checked-image
-    // workflow renders its state through the file-list checkboxes, so the
-    // adapter keeps them visible by default.
-    m_fileListCheckboxEditable =
-            settings.value(QStringLiteral("fileListCheckboxEditable"), true)
+            settings.value(QStringLiteral("exifScanEnabled"),
+                           annotationConfig::value("exif_scan_enabled"))
                     .toBool();
-    m_sortLabels = settings.value(QStringLiteral("sortLabels"), true).toBool();
+    m_displayLabelPopup =
+            settings.value(QStringLiteral("displayLabelPopup"),
+                           annotationConfig::value("display_label_popup"))
+                    .toBool();
+    m_fileListCheckboxEditable =
+            settings.value(QStringLiteral("fileListCheckboxEditable"),
+                           annotationConfig::value(
+                                   "file_list_checkbox_editable"))
+                    .toBool();
+    m_sortLabels = settings.value(QStringLiteral("sortLabels"),
+                                  annotationConfig::value("sort_labels"))
+                           .toBool();
     m_showLabelTextField =
-            settings.value(QStringLiteral("showLabelTextField"), true).toBool();
-    m_labelCompletion = settings.value(QStringLiteral("labelCompletion"),
-                                       QStringLiteral("startswith"))
-                                .toString();
-    m_fitToContentColumn =
-            settings.value(QStringLiteral("fitToContentColumn"), true).toBool();
-    m_fitToContentRow =
-            settings.value(QStringLiteral("fitToContentRow"), false).toBool();
-    m_moveMode =
-            settings.value(QStringLiteral("moveMode"), QStringLiteral("auto"))
+            settings.value(QStringLiteral("showLabelTextField"),
+                           annotationConfig::value("show_label_text_field"))
+                    .toBool();
+    m_labelCompletion =
+            settings.value(QStringLiteral("labelCompletion"),
+                           annotationConfig::value("label_completion"))
                     .toString();
-    m_fontFamily = settings.value(QStringLiteral("fontFamily")).toString();
+    m_fitToContentColumn =
+            settings.value(QStringLiteral("fitToContentColumn"),
+                           annotationConfig::value("fit_to_content/column"))
+                    .toBool();
+    m_fitToContentRow =
+            settings.value(QStringLiteral("fitToContentRow"),
+                           annotationConfig::value("fit_to_content/row"))
+                    .toBool();
+    m_moveMode = settings.value(QStringLiteral("moveMode"),
+                                annotationConfig::value("move_mode"))
+                         .toString();
+    m_fontFamily = settings.value(QStringLiteral("fontFamily"),
+                                  annotationConfig::value("font_family"))
+                           .toString();
     m_systemClipboard =
-            settings.value(QStringLiteral("systemClipboard"), false).toBool();
+            settings.value(QStringLiteral("systemClipboard"),
+                           annotationConfig::value("system_clipboard"))
+                    .toBool();
     m_switchToChecked =
-            settings.value(QStringLiteral("switchToChecked"), false).toBool();
+            settings.value(QStringLiteral("switchToChecked"),
+                           annotationConfig::value("switch_to_checked"))
+                    .toBool();
     m_defaultBrushRadius = std::clamp(
             settings.value(QStringLiteral("brushRadius"), 12).toInt(), 1, 200);
     m_defaultShapeOpacity = std::clamp(
             settings.value(QStringLiteral("shapeOpacity"), 100).toInt(), 0,
             100);
     m_defaultMaskOpacity = std::clamp(
-            settings.value(QStringLiteral("maskOpacity"), 80).toInt(), 0, 255);
+            settings.value(QStringLiteral("maskOpacity"),
+                           annotationConfig::value("canvas/mask/opacity"))
+                    .toInt(),
+            0, 255);
     m_magicDefaultThreshold = std::clamp(
-            settings.value(QStringLiteral("magicWand/defaultThreshold"), 15)
+            settings.value(QStringLiteral("magicWand/defaultThreshold"),
+                           annotationConfig::value(
+                                   "canvas/magic_wand/default_threshold"))
                     .toInt(),
             0, 255);
     m_magicDragSensitivity = std::max(
-            0.1,
-            settings.value(QStringLiteral("magicWand/dragSensitivity"), 3.0)
-                    .toDouble());
+            0.1, settings.value(QStringLiteral("magicWand/dragSensitivity"),
+                                annotationConfig::value(
+                                        "canvas/magic_wand/drag_sensitivity"))
+                         .toDouble());
     m_magicLuminanceWeight = std::clamp(
-            settings.value(QStringLiteral("magicWand/luminanceWeight"), 0.5)
+            settings.value(QStringLiteral("magicWand/luminanceWeight"),
+                           annotationConfig::value(
+                                   "canvas/magic_wand/luminance_weight"))
                     .toDouble(),
             0.0, 1.0);
     m_shapePointSize = std::clamp(
-            settings.value(QStringLiteral("shape/pointSize"), 10).toInt(), 1,
-            64);
+            settings.value(QStringLiteral("shape/pointSize"),
+                           annotationConfig::value("shape/point_size"))
+                    .toInt(),
+            1, 64);
     m_shapeLineWidth = std::clamp(
-            settings.value(QStringLiteral("shape/lineWidth"), 4.0).toDouble(),
+            settings.value(QStringLiteral("shape/lineWidth"),
+                           annotationConfig::value("shape/line_width"))
+                    .toDouble(),
             0.5, 32.0);
-    m_canvasEpsilon = std::clamp(
-            settings.value(QStringLiteral("canvas/epsilon"), 10.0).toDouble(),
-            0.5, 100.0);
+    m_canvasEpsilon =
+            std::clamp(settings.value(QStringLiteral("canvas/epsilon"),
+                                      annotationConfig::value("canvas/epsilon"))
+                               .toDouble(),
+                       0.5, 100.0);
     m_doubleClickClose =
-            settings.value(QStringLiteral("canvas/doubleClickClose"), true)
+            settings.value(QStringLiteral("canvas/doubleClickClose"),
+                           annotationConfig::value("canvas/double_click")
+                                           .toString() ==
+                                   QStringLiteral("close"))
                     .toBool();
     m_doubleClickEditLabel =
-            settings.value(QStringLiteral("canvas/doubleClickEditLabel"), true)
+            settings.value(QStringLiteral("canvas/doubleClickEditLabel"),
+                           annotationConfig::value(
+                                   "canvas/double_click_edit_label"))
                     .toBool();
     m_numBackups = std::clamp(
-            settings.value(QStringLiteral("canvas/numBackups"), 10).toInt(), 1,
-            1000);
+            settings.value(QStringLiteral("canvas/numBackups"),
+                           annotationConfig::value("canvas/num_backups"))
+                    .toInt(),
+            1, 1000);
     m_wheelRectangleEditing =
-            settings.value(QStringLiteral("canvas/wheelRectangleEditing"), true)
+            settings.value(QStringLiteral("canvas/wheelRectangleEditing"),
+                           annotationConfig::value(
+                                   "canvas/wheel_rectangle_editing/enable"))
                     .toBool();
-    m_wheelAdjustStep = std::clamp(
-            settings.value(QStringLiteral("canvas/wheelAdjustStep"), 2.0)
-                    .toDouble(),
-            0.1, 50.0);
+    m_wheelAdjustStep =
+            std::clamp(settings.value(QStringLiteral("canvas/wheelAdjustStep"),
+                                      annotationConfig::value(
+                                              "canvas/wheel_rectangle_editing/"
+                                              "adjust_step"))
+                               .toDouble(),
+                       0.1, 50.0);
     m_wheelScaleStep = std::clamp(
-            settings.value(QStringLiteral("canvas/wheelScaleStep"), 0.05)
+            settings.value(QStringLiteral("canvas/wheelScaleStep"),
+                           annotationConfig::value(
+                                   "canvas/wheel_rectangle_editing/scale_step"))
                     .toDouble(),
             0.001, 1.0);
     m_crosshairVisible =
-            settings.value(QStringLiteral("canvas/crosshair/show"), true)
+            settings.value(QStringLiteral("canvas/crosshair/show"),
+                           annotationConfig::value("canvas/crosshair/show"))
                     .toBool();
     m_crosshairWidth = std::clamp(
-            settings.value(QStringLiteral("canvas/crosshair/width"), 2.0)
+            settings.value(QStringLiteral("canvas/crosshair/width"),
+                           annotationConfig::value("canvas/crosshair/width"))
                     .toDouble(),
             0.5, 16.0);
-    m_crosshairColor =
-            QColor(settings.value(QStringLiteral("canvas/crosshair/color"),
-                                  QStringLiteral("#00FF00"))
-                           .toString());
+    m_crosshairColor = QColor(
+            settings.value(QStringLiteral("canvas/crosshair/color"),
+                           annotationConfig::value("canvas/crosshair/color"))
+                    .toString());
     if (!m_crosshairColor.isValid()) m_crosshairColor = QColor("#00FF00");
     m_crosshairOpacity = std::clamp(
-            settings.value(QStringLiteral("canvas/crosshair/opacity"), 0.5)
+            settings.value(QStringLiteral("canvas/crosshair/opacity"),
+                           annotationConfig::value("canvas/crosshair/opacity"))
                     .toDouble(),
             0.0, 1.0);
     m_rotationLargeIncrement = std::clamp(
             settings.value(QStringLiteral("canvas/rotation/largeIncrement"),
-                           1.0)
+                           annotationConfig::value(
+                                   "canvas/rotation/large_increment"))
                     .toDouble(),
             0.01, 45.0);
     m_rotationSmallIncrement = std::clamp(
             settings.value(QStringLiteral("canvas/rotation/smallIncrement"),
-                           0.1)
+                           annotationConfig::value(
+                                   "canvas/rotation/small_increment"))
                     .toDouble(),
             0.01, 10.0);
     m_brushPointDistance = std::clamp(
-            settings.value(QStringLiteral("canvas/brush/pointDistance"), 25.0)
+            settings.value(QStringLiteral("canvas/brush/pointDistance"),
+                           annotationConfig::value(
+                                   "canvas/brush/point_distance"))
                     .toDouble(),
             0.0, 500.0);
     m_brushSimplifyEpsilon = std::clamp(
-            settings.value(QStringLiteral("canvas/brush/simplifyEpsilon"), 2.0)
+            settings.value(QStringLiteral("canvas/brush/simplifyEpsilon"),
+                           annotationConfig::value(
+                                   "canvas/brush/simplify_epsilon"))
                     .toDouble(),
             0.0, 100.0);
     m_brushMaxUndoSteps = std::clamp(
-            settings.value(QStringLiteral("canvas/brush/maxUndoSteps"), 30)
+            settings.value(QStringLiteral("canvas/brush/maxUndoSteps"),
+                           annotationConfig::value(
+                                   "canvas/brush/max_undo_steps"))
                     .toInt(),
             1, 1000);
     m_brushMaxUndoMemoryMb = std::clamp(
-            settings.value(QStringLiteral("canvas/brush/maxUndoMemoryMb"), 128)
+            settings.value(QStringLiteral("canvas/brush/maxUndoMemoryMb"),
+                           annotationConfig::value(
+                                   "canvas/brush/max_undo_memory_mb"))
                     .toInt(),
             1, 4096);
     m_magicSimplifyEpsilon = std::clamp(
             settings.value(QStringLiteral("canvas/magicWand/simplifyEpsilon"),
-                           0.5)
+                           annotationConfig::value(
+                                   "canvas/magic_wand/simplify_epsilon"))
                     .toDouble(),
             0.0, 100.0);
     m_magicOpacity = std::clamp(
-            settings.value(QStringLiteral("canvas/magicWand/opacity"), 0.6)
+            settings.value(QStringLiteral("canvas/magicWand/opacity"),
+                           annotationConfig::value("canvas/magic_wand/opacity"))
                     .toDouble(),
             0.0, 1.0);
     m_cuboidMinDepth = std::clamp(
-            settings.value(QStringLiteral("canvas/cuboid/minDepth"), 5.0)
+            settings.value(QStringLiteral("canvas/cuboid/minDepth"),
+                           annotationConfig::value("canvas/cuboid/min_depth"))
                     .toDouble(),
             0.0, 10000.0);
     const QJsonDocument digitDocument = QJsonDocument::fromJson(
@@ -382,6 +514,15 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
                                         .toString()));
         }
     }
+    m_ramTagMode =
+            settings.value(QStringLiteral("ramTagMode"), QStringLiteral("en"))
+                    .toString();
+    if (m_ramTagMode != QStringLiteral("zh"))
+        m_ramTagMode = QStringLiteral("en");
+    m_ramDeleteTags =
+            settings.value(QStringLiteral("ramDeleteTags")).toStringList();
+    m_ramFilterTags =
+            settings.value(QStringLiteral("ramFilterTags")).toStringList();
     settings.endGroup();
     createUi();
     createActions();
@@ -417,14 +558,15 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
         };
         const QString strategy =
                 persist.value(QStringLiteral("qAnyLabeling/shapeColorStrategy"),
-                              QStringLiteral("auto"))
+                              annotationConfig::value("shape_color"))
                         .toString();
         m_canvas->setShapeColorMode(
                 strategy == QStringLiteral("manual")
                         ? AnnotationCanvas::ShapeColorMode::Manual
                         : AnnotationCanvas::ShapeColorMode::Auto);
-        m_canvas->setDefaultShapeColor(readColor(
-                QStringLiteral("defaultShapeColor"), QColor(0, 255, 0)));
+        m_canvas->setDefaultShapeColor(
+                readColor(QStringLiteral("defaultShapeColor"),
+                          annotationConfig::color("default_shape_color")));
         m_canvas->setShiftAutoShapeColor(
                 persist.value(QStringLiteral(
                                       "qAnyLabeling/shiftAutoShapeColor"),
@@ -432,18 +574,17 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
                         .toInt());
         m_canvas->setShapeStyleColors(
                 readColor(QStringLiteral("shapeLineColor"),
-                          QColor(0, 255, 0, 128)),
+                          annotationConfig::color("shape/line_color")),
                 readColor(QStringLiteral("shapeFillColor"),
-                          QColor(220, 220, 220, 150)),
+                          annotationConfig::color("shape/fill_color")),
                 readColor(QStringLiteral("shapeVertexFillColor"),
-                          QColor(0, 255, 0, 255)),
+                          annotationConfig::color("shape/vertex_fill_color")),
                 readColor(QStringLiteral("shapeSelectLineColor"),
-                          QColor(255, 255, 255, 255)),
+                          annotationConfig::color("shape/select_line_color")),
                 readColor(QStringLiteral("shapeSelectFillColor"),
-                          QColor(0, 255, 0, 155)),
+                          annotationConfig::color("shape/select_fill_color")),
                 readColor(QStringLiteral("shapeHoverVertexFillColor"),
-                          QColor(255, 255, 255, 255)));
-        m_canvas->setMoveMode(m_moveMode);
+                          annotationConfig::color("shape/hvertex_fill_color")));
         if (!m_fontFamily.isEmpty()) setFont(QFont(m_fontFamily));
     }
     QTimer::singleShot(0, this, [this]() {
@@ -578,6 +719,7 @@ void AnnotationWindow::createUi() {
     centralLayout->addLayout(instructionLayout);
     centralLayout->addSpacing(5);
     m_canvas = new AnnotationCanvas(central);
+    m_canvas->setObjectName(QStringLiteral("AnnotationCanvas"));
     m_canvas->setAcceptDrops(true);
     m_canvas->installEventFilter(this);
     m_canvasScrollArea = new QScrollArea(central);
@@ -683,7 +825,13 @@ void AnnotationWindow::createUi() {
                                     m_brushMaxUndoMemoryMb);
     m_canvas->setRotationIncrements(m_rotationLargeIncrement,
                                     m_rotationSmallIncrement);
-    m_canvas->setCuboidDefaults(QPointF(24.0, -24.0), m_cuboidMinDepth);
+    const QJsonArray depth =
+            annotationConfig::jsonValue(
+                    QStringLiteral("canvas/cuboid/default_depth_vector"))
+                    .toArray();
+    m_canvas->setCuboidDefaults(
+            QPointF(depth.at(0).toDouble(), depth.at(1).toDouble()),
+            m_cuboidMinDepth);
     m_adjustmentTimer = new QTimer(this);
     m_adjustmentTimer->setSingleShot(true);
     m_adjustmentTimer->setInterval(33);
@@ -780,12 +928,10 @@ void AnnotationWindow::createUi() {
 
     auto* descriptionPanel = new QWidget(this);
     auto* descriptionLayout = new QVBoxLayout(descriptionPanel);
-    descriptionLayout->setContentsMargins(4, 4, 4, 4);
+    descriptionLayout->setContentsMargins(0, 0, 0, 0);
     m_descriptionTitle = new QLabel(tr("Image Description"), descriptionPanel);
     m_description = new QPlainTextEdit(descriptionPanel);
     m_description->setObjectName(QStringLiteral("AnnotationDescription"));
-    m_description->setPlaceholderText(tr("Description"));
-    m_description->setEnabled(false);
     descriptionLayout->addWidget(m_descriptionTitle);
     descriptionLayout->addWidget(m_description);
     auto* descriptionDock = new QDockWidget(tr("Description"), this);
@@ -896,8 +1042,24 @@ void AnnotationWindow::createUi() {
     // no template is configured; there is no persistent empty "Flags" header.
     addSidebarSection(tr("Flags"), m_flagsDock, false, 0, nullptr, false);
     m_flagsDock->hide();
+    // Relation filter widget (for RelateAnything triplets)
+    m_relationFilter = new RelationFilterWidget;
+    m_relationFilterDock = new QDockWidget(tr("Relation Filter"), this);
+    m_relationFilterDock->setWidget(m_relationFilter);
+    m_relationFilterDock->setObjectName("RelationFilterDock");
+    connect(m_relationFilter, &RelationFilterWidget::relationSelected, this,
+            &AnnotationWindow::onRelationSelected);
+    connect(m_relationFilter, &RelationFilterWidget::filterChanged, this,
+            [this](const QJsonArray& visible) {
+                m_canvas->setRelations(visible);
+            });
+    addSidebarSection(tr("Relation Filter"), m_relationFilterDock, true, 0);
+    m_relationFilterDock
+            ->hide();  // Hidden until RelateAnything inference result available
+    m_relationFilterDock->parentWidget()->hide();
+
     addSidebarSection(tr("Labels"), labelsDock, true, 0);
-    addSidebarSection(tr("Objects"), objectsDock, true, 0);
+    addSidebarSection(tr("Shapes"), objectsDock, true, 0);
     // Upstream places the file search row directly after Objects without a
     // separate Files heading.
     addSidebarSection(tr("Files"), filesDock, false, 1, nullptr, false);
@@ -1130,11 +1292,19 @@ void AnnotationWindow::createUi() {
                "support example"));
     m_gkdSupportButton->setVisible(false);
     m_confidence = new QDoubleSpinBox(modelPanel);
+    m_confidence->setObjectName(QStringLiteral("AnnotationConfidence"));
+    m_iou = new QDoubleSpinBox(modelPanel);
+    m_iou->setObjectName(QStringLiteral("AnnotationIou"));
+    m_iou->setToolTip(tr("IoU threshold"));
+    m_iou->setRange(0.0, 1.0);
+    m_iou->setSingleStep(0.05);
+    m_iou->setDecimals(2);
+    m_iou->setValue(0.7);
     m_model->setToolTip(tr("Model family"));
     m_quant->setToolTip(tr("Weight quantization"));
     m_backend->setToolTip(tr("Inference backend"));
     m_confidence->setToolTip(tr("Confidence threshold"));
-    m_confidence->setRange(0.01, 1.0);
+    m_confidence->setRange(0.0, 1.0);
     m_confidence->setSingleStep(0.05);
     m_confidence->setValue(0.25);
     m_confidence->setDecimals(2);
@@ -1166,12 +1336,113 @@ void AnnotationWindow::createUi() {
     m_sliceMergeThreshold->setDecimals(2);
     m_sliceMergeThreshold->setToolTip(tr("SAHI IOS merge threshold"));
     m_sliceMergeThreshold->setVisible(false);
-    auto* runButton = new QPushButton(tr("Run model"), modelPanel);
+    auto* runButton = new QPushButton(tr("Run (i)"), modelPanel);
+    runButton->setObjectName(QStringLiteral("AnnotationRunModel"));
     runButton->setIcon(QIcon(iconPath(QStringLiteral("auto-run.png"))));
     runButton->setToolTip(
             tr("Selected boxes become SAM3 prompts when no point, box, or text "
                "prompt is set"));
-    auto* skipDetButton = new QPushButton(tr("Skip Detection"), modelPanel);
+    m_relateOptionsButton = new QPushButton(tr("Options..."), modelPanel);
+    m_relateOptionsButton->setObjectName(
+            QStringLiteral("AnnotationRelateOptions"));
+    m_relateOptionsButton->setToolTip(
+            tr("RelateAnything thresholds, edge caps and custom predicates"));
+    m_relateOptionsButton->setVisible(false);
+    m_objectTagger = new QComboBox(modelPanel);
+    m_objectTagger->setObjectName(QStringLiteral("AnnotationObjectTagger"));
+    m_objectTagger->setToolTip(tr("Describe each detected object with RAM"));
+    m_objectTagger->addItem(tr("Object descriptions: off"), QString());
+    m_objectTagger->setVisible(false);
+    connect(m_objectTagger, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this]() {
+                ++m_promptRevision;
+                ++m_generation;
+            });
+    connect(m_relateOptionsButton, &QPushButton::clicked, this,
+            &AnnotationWindow::openRelateOptions);
+    m_ramOptionsButton = new QPushButton(tr("Tag options..."), modelPanel);
+    m_ramOptionsButton->setObjectName(QStringLiteral("AnnotationRamOptions"));
+    connect(m_ramOptionsButton, &QPushButton::clicked, this, [this]() {
+        QDialog dialog(this);
+        dialog.setObjectName(QStringLiteral("AnnotationRamOptionsDialog"));
+        dialog.setWindowTitle(tr("RAM tag options"));
+        auto* form = new QFormLayout(&dialog);
+        auto* language = new QComboBox(&dialog);
+        language->setObjectName(QStringLiteral("RamTagMode"));
+        language->addItem(tr("English"), QStringLiteral("en"));
+        language->addItem(tr("Chinese"), QStringLiteral("zh"));
+        language->setCurrentIndex(language->findData(m_ramTagMode));
+        auto* deleted = new QPlainTextEdit(&dialog);
+        deleted->setObjectName(QStringLiteral("RamDeleteTags"));
+        deleted->setPlainText(m_ramDeleteTags.join(QLatin1Char('\n')));
+        auto* retained = new QPlainTextEdit(&dialog);
+        retained->setObjectName(QStringLiteral("RamFilterTags"));
+        retained->setPlainText(m_ramFilterTags.join(QLatin1Char('\n')));
+        form->addRow(tr("Tag language"), language);
+        form->addRow(tr("Delete tags (English, one per line)"), deleted);
+        form->addRow(tr("Keep only tags (English, one per line)"), retained);
+        auto* hint = new QLabel(
+                tr("Delete tags takes precedence when both lists are set."),
+                &dialog);
+        hint->setWordWrap(true);
+        form->addRow(hint);
+        auto* buttons = new QDialogButtonBox(
+                QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+        form->addRow(buttons);
+        connect(buttons, &QDialogButtonBox::rejected, &dialog,
+                &QDialog::reject);
+        connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
+            const auto lines = [](const QString& text) {
+                QStringList result;
+                for (const auto& line : text.split(QLatin1Char('\n'))) {
+                    const QString name = line.trimmed();
+                    if (!name.isEmpty() && !result.contains(name))
+                        result.append(name);
+                }
+                return result;
+            };
+            const QStringList remove = lines(deleted->toPlainText());
+            for (const auto& name : remove) {
+                if (!annotationRamTranslations().contains(name)) {
+                    QMessageBox::warning(
+                            &dialog, tr("Invalid tag"),
+                            tr("Unknown English RAM tag: %1").arg(name));
+                    return;
+                }
+            }
+            m_ramTagMode = language->currentData().toString();
+            m_ramDeleteTags = remove;
+            m_ramFilterTags = lines(retained->toPlainText());
+            QSettings settings;
+            settings.setValue(QStringLiteral("qAnyLabeling/ramTagMode"),
+                              m_ramTagMode);
+            settings.setValue(QStringLiteral("qAnyLabeling/ramDeleteTags"),
+                              m_ramDeleteTags);
+            settings.setValue(QStringLiteral("qAnyLabeling/ramFilterTags"),
+                              m_ramFilterTags);
+            ++m_promptRevision;
+            ++m_generation;
+            dialog.accept();
+        });
+        dialog.exec();
+    });
+    m_ocrLayout = new QComboBox(modelPanel);
+    m_ocrLayout->setObjectName(QStringLiteral("AnnotationOcrLayout"));
+    m_ocrLayout->addItem(tr("Layout: off"), QString());
+    m_ocrAngleClassifier = new QCheckBox(tr("Text orientation"), modelPanel);
+    m_ocrAngleClassifier->setObjectName(
+            QStringLiteral("AnnotationOcrAngleClassifier"));
+    m_ocrAngleClassifier->setChecked(true);
+    connect(m_ocrAngleClassifier, &QCheckBox::toggled, this,
+            [this] { ++m_promptRevision; });
+    connect(m_ocrLayout, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this]() {
+                ++m_promptRevision;
+                ++m_generation;
+            });
+    m_ocrSkipButton = new QPushButton(tr("Skip Detection"), modelPanel);
+    auto* skipDetButton = m_ocrSkipButton;
+    skipDetButton->setObjectName(QStringLiteral("AnnotationOcrSkipDetection"));
     skipDetButton->setToolTip(
             tr("Re-recognize the selected text regions without re-running text "
                "detection"));
@@ -1183,7 +1454,13 @@ void AnnotationWindow::createUi() {
     promptRow->addWidget(m_samText, 3);
     promptRow->addWidget(m_gkdSupportButton);
     promptRow->addWidget(m_confidence);
+    promptRow->addWidget(m_iou);
     promptRow->addWidget(m_slicedDetection);
+    promptRow->addWidget(m_relateOptionsButton);
+    promptRow->addWidget(m_objectTagger, 2);
+    promptRow->addWidget(m_ramOptionsButton);
+    promptRow->addWidget(m_ocrLayout, 2);
+    promptRow->addWidget(m_ocrAngleClassifier);
     promptRow->addWidget(runButton);
     promptRow->addWidget(skipDetButton);
     sliceRow->addWidget(m_sliceWidth);
@@ -1205,7 +1482,9 @@ void AnnotationWindow::createUi() {
     m_modelPanel->hide();
 
     m_checked = new QCheckBox(tr("Checked"), this);
+    m_checked->setObjectName(QStringLiteral("AnnotationChecked"));
     m_status = new QLabel(tr("Open an image or folder"), this);
+    m_status->setObjectName(QStringLiteral("AnnotationStatus"));
     statusBar()->addWidget(m_status, 1);
     statusBar()->addPermanentWidget(m_checked);
 
@@ -1340,6 +1619,8 @@ void AnnotationWindow::createUi() {
         m_undoAction->setEnabled(!m_undo.isEmpty());
     });
     connect(m_canvas, &AnnotationCanvas::shapesChanged, this, [this]() {
+        ++m_promptRevision;
+        clearRelationOverlay();
         if (m_ignoreNextChange) {
             m_ignoreNextChange = false;
             updateObjects();
@@ -1401,6 +1682,8 @@ void AnnotationWindow::createUi() {
         connect(selector, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, [this]() { ++m_generation; });
     }
+    connect(m_iou, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double) { ++m_generation; });
     connect(m_confidence, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, [this]() { ++m_generation; });
     connect(m_slicedDetection, &QCheckBox::toggled, this, [this](bool enabled) {
@@ -1465,6 +1748,8 @@ void AnnotationWindow::createUi() {
     connect(runButton, &QPushButton::clicked, this,
             &AnnotationWindow::runDetection);
     connect(skipDetButton, &QPushButton::clicked, this, [this]() {
+        if (m_inferenceRunning || (m_downloader && m_downloader->isBusy()))
+            return;
         m_ocrSkipRequested = true;
         runDetection();
     });
@@ -1854,6 +2139,210 @@ void AnnotationWindow::saveVisualizationImage() {
     }
     m_status->setText(tr("Saved visualization image: %1")
                               .arg(QFileInfo(output->text()).fileName()));
+}
+
+void AnnotationWindow::saveVisualizationVideo() {
+    if (m_imagePath.isEmpty() || m_inferenceRunning || m_batchRunning ||
+        !confirmSave())
+        return;
+    QStringList files;
+    for (int i = 0; i < m_files->count(); ++i)
+        files.append(m_files->item(i)->data(Qt::UserRole).toString());
+    if (files.isEmpty()) files.append(m_imagePath);
+    const QFileInfo firstFrame(files.first());
+    const QString exportBase = m_files->count()
+                                       ? firstFrame.absoluteDir().dirName()
+                                       : firstFrame.completeBaseName();
+    const QString defaultPath =
+            QDir::cleanPath(firstFrame.absoluteDir().filePath(
+                                    QStringLiteral("../visualizations/")) +
+                            exportBase + QStringLiteral("_visualization.mp4"));
+    QDialog dialog(this);
+    dialog.setObjectName(QStringLiteral("AnnotationVisualizationVideo"));
+    dialog.setWindowTitle(tr("Visualization Video Options"));
+    auto* form = new QFormLayout(&dialog);
+    auto* output = new QLineEdit(defaultPath, &dialog);
+    output->setObjectName(QStringLiteral("VisualizationVideoPath"));
+    auto* browse = new QPushButton(tr("Browse..."), &dialog);
+    auto* pathRow = new QWidget(&dialog);
+    auto* pathLayout = new QHBoxLayout(pathRow);
+    pathLayout->setContentsMargins(0, 0, 0, 0);
+    pathLayout->addWidget(output);
+    pathLayout->addWidget(browse);
+    form->addRow(tr("Save Path"), pathRow);
+    auto* fps = new QSpinBox(&dialog);
+    fps->setObjectName(QStringLiteral("VisualizationVideoFps"));
+    fps->setRange(1, 120);
+    fps->setValue(25);
+    form->addRow(tr("FPS:"), fps);
+    auto* typeWidget = new QWidget(&dialog);
+    auto* typeLayout = new QGridLayout(typeWidget);
+    typeLayout->setContentsMargins(0, 0, 0, 0);
+    QVector<QCheckBox*> types;
+    for (const QString& type :
+         {QStringLiteral("polygon"), QStringLiteral("rectangle"),
+          QStringLiteral("rotation"), QStringLiteral("quadrilateral"),
+          QStringLiteral("point"), QStringLiteral("line"),
+          QStringLiteral("circle"), QStringLiteral("linestrip"),
+          QStringLiteral("cuboid")}) {
+        auto* box = new QCheckBox(type, &dialog);
+        box->setObjectName(QStringLiteral("VisualizationType_") + type);
+        typeLayout->addWidget(box, types.size() / 3, types.size() % 3);
+        types.append(box);
+    }
+    form->addRow(tr("Shape Types"), typeWidget);
+    auto options = m_canvas->visualizationOptions();
+    const QStringList optionNames{tr("Save Labels"), tr("Save Scores"),
+                                  tr("Save Group IDs"), tr("Save Texts"),
+                                  tr("Save Semi-transparent Masks")};
+    const bool defaults[]{options.showLabels, options.showScores,
+                          options.showGroups, options.showTexts,
+                          options.showMasks};
+    QVector<QCheckBox*> toggles;
+    for (int i = 0; i < optionNames.size(); ++i) {
+        auto* box = new QCheckBox(optionNames[i], &dialog);
+        box->setChecked(defaults[i]);
+        box->setObjectName(QStringLiteral("VisualizationOption_%1").arg(i));
+        form->addRow(box);
+        toggles.append(box);
+    }
+    auto* skipEmpty = new QCheckBox(tr("Skip Empty Files"), &dialog);
+    skipEmpty->setObjectName(QStringLiteral("VisualizationSkipEmpty"));
+    form->addRow(skipEmpty);
+    auto* buttons = new QDialogButtonBox(
+            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    form->addRow(buttons);
+    connect(browse, &QPushButton::clicked, &dialog, [&]() {
+        const QString path = QFileDialog::getSaveFileName(
+                &dialog, tr("Save Visualization Video"), output->text(),
+                tr("MP4 Video (*.mp4)"));
+        if (!path.isEmpty()) output->setText(path);
+    });
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
+        if (std::none_of(types.cbegin(), types.cend(),
+                         [](QCheckBox* box) { return box->isChecked(); })) {
+            QMessageBox::warning(
+                    &dialog, tr("Shape Types Required"),
+                    tr("Select at least one shape type before exporting."));
+            return;
+        }
+        dialog.accept();
+    });
+    if (dialog.exec() != QDialog::Accepted) return;
+    // Export pumps events; keep the accepted dialog's local controls alive
+    // even if the workspace is closed by an external command during export.
+    dialog.setParent(nullptr);
+    QString path = output->text().trimmed();
+    if (path.isEmpty()) return;
+    if (!path.endsWith(QStringLiteral(".mp4"), Qt::CaseInsensitive))
+        path += QStringLiteral(".mp4");
+    if (QFileInfo::exists(path) &&
+        QMessageBox::question(this, tr("Save Visualization Video"),
+                              tr("Overwrite %1?").arg(path)) !=
+                QMessageBox::Yes)
+        return;
+    if (!QDir().mkpath(QFileInfo(path).absolutePath())) {
+        QMessageBox::warning(this, tr("Save Visualization Video"),
+                             tr("Unable to create output folder"));
+        return;
+    }
+    QSet<QString> selectedTypes;
+    for (auto* box : types)
+        if (box->isChecked()) selectedTypes.insert(box->text());
+    options.showLabels = toggles[0]->isChecked();
+    options.showScores = toggles[1]->isChecked();
+    options.showGroups = toggles[2]->isChecked();
+    options.showTexts = toggles[3]->isChecked();
+    options.showMasks = toggles[4]->isChecked();
+    // The source renders on a fresh canvas: workspace shape visibility does
+    // not hide the explicitly selected export types.
+    options.showShapes = true;
+    const QString outputDirectory = m_outputDir;
+    const bool autoTransform = m_exifScanEnabled;
+    const auto filter = [&](const QJsonObject& document) {
+        QVector<AnnotationShape> shapes;
+        for (const auto& value :
+             document.value(QStringLiteral("shapes")).toArray()) {
+            auto shape = AnnotationShape::fromJson(value.toObject());
+            if (!selectedTypes.contains(shape.type)) continue;
+            const int minimum = shape.type == QStringLiteral("polygon") ? 3
+                                : shape.type == QStringLiteral("quadrilateral")
+                                        ? 4
+                                : shape.type == QStringLiteral("point")  ? 1
+                                : shape.type == QStringLiteral("cuboid") ? 8
+                                                                         : 2;
+            if (shape.points.size() < minimum) continue;
+            shape.visible = true;
+            if (!options.showGroups)
+                shape.extra.remove(QStringLiteral("group_id"));
+            shapes.append(shape);
+        }
+        return shapes;
+    };
+    // Keep only file names between passes; decoded images and masks remain
+    // bounded by one frame. The export never switches the active document.
+    QPointer<AnnotationWindow> owner(this);
+    const quint64 generation = m_generation;
+    QProgressDialog progress(tr("Preparing..."), tr("Cancel"), 0, files.size());
+    progress.setWindowModality(Qt::ApplicationModal);
+    progress.setMinimumDuration(0);
+    const auto advance = [&](int done, int total) {
+        progress.setMaximum(total);
+        progress.setValue(done);
+        QApplication::processEvents();
+        return owner && owner->m_generation == generation &&
+               !progress.wasCanceled();
+    };
+    QString error;
+    QStringList selectedFiles;
+    QSize size;
+    for (int i = 0; i < files.size(); ++i) {
+        if (!advance(i, files.size())) return;
+        const auto document = loadAnnotationDocument(files[i], outputDirectory,
+                                                     autoTransform);
+        if (!document.error.isEmpty()) {
+            error = document.error;
+            break;
+        }
+        if (i == 0) size = document.image.size();
+        if (document.image.size() != size) {
+            error = tr("All video frames must have the same dimensions");
+            break;
+        }
+        if (!skipEmpty->isChecked() || !filter(document.json).isEmpty())
+            selectedFiles.append(files[i]);
+    }
+    if (error.isEmpty() && selectedFiles.isEmpty())
+        error = tr("No files to export.");
+    bool saved = false;
+    if (error.isEmpty()) {
+        progress.reset();
+        progress.setLabelText(tr("Exporting..."));
+        saved = exportVisualizationVideo(
+                path, fps->value(), selectedFiles.size(),
+                [&](int index, QString* renderError) {
+                    if (!owner) return QImage();
+                    const auto document = loadAnnotationDocument(
+                            selectedFiles[index], outputDirectory,
+                            autoTransform);
+                    if (!document.error.isEmpty()) {
+                        *renderError = document.error;
+                        return QImage();
+                    }
+                    return owner->m_canvas->renderVisualizationImage(
+                            document.image, filter(document.json), options);
+                },
+                advance, &error);
+    }
+    const bool cancelled = progress.wasCanceled();
+    progress.close();
+    if (!owner || owner->m_generation != generation || cancelled) return;
+    if (saved)
+        m_status->setText(tr("Saved visualization video: %1")
+                                  .arg(QFileInfo(path).fileName()));
+    else
+        QMessageBox::warning(this, tr("Save Visualization Video"), error);
 }
 
 void AnnotationWindow::openShapeConverter() {
@@ -2525,6 +3014,8 @@ void AnnotationWindow::openSettings() {
     displayLabelPopup->setChecked(m_displayLabelPopup);
     auto* fileListEditable =
             new QCheckBox(tr("File list checkbox editable"), general);
+    fileListEditable->setObjectName(
+            QStringLiteral("AnnotationSettingsFileListEditable"));
     fileListEditable->setChecked(m_fileListCheckboxEditable);
     generalForm->addRow(QString(), displayLabelPopup);
     generalForm->addRow(QString(), fileListEditable);
@@ -2538,7 +3029,7 @@ void AnnotationWindow::openSettings() {
             {QStringLiteral("startswith"), QStringLiteral("contains")});
     labelCompletion->setCurrentText(m_labelCompletion);
     auto* moveMode = new QComboBox(general);
-    moveMode->addItems({QStringLiteral("auto"), QStringLiteral("free")});
+    moveMode->addItems({QStringLiteral("auto"), QStringLiteral("center")});
     moveMode->setCurrentText(m_moveMode);
     auto* fitColumn = new QCheckBox(tr("Fit to content column"), general);
     fitColumn->setChecked(m_fitToContentColumn);
@@ -2568,14 +3059,6 @@ void AnnotationWindow::openSettings() {
     loggerLevel->setCurrentText(m_loggerLevel);
     generalForm->addRow(tr("Validate label"), validateLabelMode);
     generalForm->addRow(tr("Logger level"), loggerLevel);
-    auto* settingsTodo = new QLabel(
-            tr("Unimplemented upstream fields (contract-owned): model hub is "
-               "owned by the AICore catalog, and the Qt image allocation "
-               "limit needs Qt 6. See qAnyLabeling/TODO.md."),
-            general);
-    settingsTodo->setWordWrap(true);
-    settingsTodo->setStyleSheet(QStringLiteral("color: gray;"));
-    generalForm->addRow(QString(), settingsTodo);
     tabs->addWidget(general);
 
     auto* shape = new QWidget(tabs);
@@ -2690,7 +3173,7 @@ void AnnotationWindow::openSettings() {
     shiftColor->setValue(
             shapeStyleSettings
                     .value(QStringLiteral("qAnyLabeling/shiftAutoShapeColor"),
-                           0)
+                           annotationConfig::value("shift_auto_shape_color"))
                     .toInt());
     auto* lineColor = colorButton(
             shape,
@@ -3037,9 +3520,18 @@ void AnnotationWindow::openSettings() {
              it != shortcutEditors.constEnd(); ++it) {
             const QKeySequence sequence = it.value()->keySequence();
             QAction* action = shortcutActions.value(it.key());
-            if (action) action->setShortcut(sequence);
-            settings.setValue(it.key(),
-                              sequence.toString(QKeySequence::PortableText));
+            if (sequence == shortcutDefaults.value(it.key())) {
+                if (action)
+                    action->setShortcuts(
+                            action->property("qAnyShortcutDefaults")
+                                    .value<QList<QKeySequence>>());
+                settings.remove(it.key());
+            } else {
+                if (action) action->setShortcut(sequence);
+                settings.setValue(
+                        it.key(),
+                        sequence.toString(QKeySequence::PortableText));
+            }
         }
         settings.endGroup();
         syncHostShortcuts();
@@ -3134,7 +3626,6 @@ void AnnotationWindow::openSettings() {
                 QColor(vertexColor->text()), QColor(selectLineColor->text()),
                 QColor(selectFillColor->text()),
                 QColor(hoverVertexColor->text()));
-        m_canvas->setMoveMode(m_moveMode);
         applyFileListCheckboxPolicy();
         settings.setValue(QStringLiteral("qAnyLabeling/autoHighlightShape"),
                           m_autoHighlightShape);
@@ -3229,7 +3720,13 @@ void AnnotationWindow::openSettings() {
         m_canvas->setBrushPointDistance(m_brushPointDistance);
         m_canvas->setRotationIncrements(m_rotationLargeIncrement,
                                         m_rotationSmallIncrement);
-        m_canvas->setCuboidDefaults(QPointF(24.0, -24.0), m_cuboidMinDepth);
+        const QJsonArray depth =
+                annotationConfig::jsonValue(
+                        QStringLiteral("canvas/cuboid/default_depth_vector"))
+                        .toArray();
+        m_canvas->setCuboidDefaults(
+                QPointF(depth.at(0).toDouble(), depth.at(1).toDouble()),
+                m_cuboidMinDepth);
         m_canvas->setCrosshair(m_crosshairVisible, m_crosshairWidth,
                                m_crosshairColor, m_crosshairOpacity);
         settings.setValue(QStringLiteral("qAnyLabeling/canvas/epsilon"),
@@ -3292,30 +3789,88 @@ void AnnotationWindow::openSettings() {
 
 void AnnotationWindow::applyTheme(const QString& mode) {
     QPalette palette = QApplication::style()->standardPalette();
-    if (mode == QStringLiteral("dark")) {
-        palette.setColor(QPalette::Window, QColor(45, 45, 48));
-        palette.setColor(QPalette::Base, QColor(30, 30, 30));
-        palette.setColor(QPalette::AlternateBase, QColor(52, 52, 55));
-        palette.setColor(QPalette::Text, QColor(235, 235, 235));
-        palette.setColor(QPalette::WindowText, QColor(235, 235, 235));
-        palette.setColor(QPalette::Button, QColor(55, 55, 58));
-        palette.setColor(QPalette::ButtonText, QColor(235, 235, 235));
-        palette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        palette.setColor(QPalette::HighlightedText, Qt::white);
-    } else if (mode == QStringLiteral("light")) {
-        palette.setColor(QPalette::Window, QColor(240, 240, 240));
-        palette.setColor(QPalette::Base, Qt::white);
-        palette.setColor(QPalette::AlternateBase, QColor(248, 248, 248));
-        palette.setColor(QPalette::Text, QColor(32, 32, 32));
-        palette.setColor(QPalette::WindowText, QColor(32, 32, 32));
-        palette.setColor(QPalette::Button, QColor(240, 240, 240));
-        palette.setColor(QPalette::ButtonText, QColor(32, 32, 32));
-        palette.setColor(QPalette::Highlight, QColor(48, 140, 198));
-        palette.setColor(QPalette::HighlightedText, Qt::white);
+    const bool dark =
+            mode == QStringLiteral("dark") ||
+            (mode == QStringLiteral("auto") &&
+             QApplication::palette().color(QPalette::Window).lightness() < 128);
+    QString stylesheet;
+    if (dark) {
+        // Source utils/theme.py:get_dark_palette. Keep the palette scoped to
+        // this workspace so changing a plugin theme never changes the host.
+        for (const auto group :
+             {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+            for (const auto& entry :
+                 std::initializer_list<QPair<QPalette::ColorRole, const char*>>{
+                         {QPalette::Window, "#1c1c1e"},
+                         {QPalette::WindowText, "#f5f5f7"},
+                         {QPalette::Base, "#2c2c2e"},
+                         {QPalette::AlternateBase, "#1c1c1e"},
+                         {QPalette::Text, "#f5f5f7"},
+                         {QPalette::BrightText, "#f5f5f7"},
+                         {QPalette::Button, "#2c2c2e"},
+                         {QPalette::ButtonText, "#f5f5f7"},
+                         {QPalette::Highlight, "#0A84FF"},
+                         {QPalette::HighlightedText, "#ffffff"},
+                         {QPalette::ToolTipBase, "#2c2c2e"},
+                         {QPalette::ToolTipText, "#f5f5f7"},
+                         {QPalette::Mid, "#2c2c2e"},
+                         {QPalette::Dark, "#1c1c1e"},
+                         {QPalette::Shadow, "#1c1c1e"}})
+                palette.setColor(group, entry.first, QColor(entry.second));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+            palette.setColor(group, QPalette::PlaceholderText,
+                             QColor("#8e8e93"));
+#endif
+        }
+        for (const auto role :
+             {QPalette::WindowText, QPalette::Text, QPalette::ButtonText})
+            palette.setColor(QPalette::Disabled, role, QColor("#aeaeb2"));
+        QFile source(QStringLiteral(
+                ":/CC/plugin/qAnyLabeling/resources/theme/dark.qss"));
+        if (source.open(QIODevice::ReadOnly))
+            stylesheet = QString::fromUtf8(source.readAll());
     }
+    setStyleSheet(stylesheet);
+    // Removing QSS restores its saved palette. Apply the selected palette
+    // afterwards so switching dark -> light cannot restore stale dark colors.
     setPalette(palette);
+    if (m_canvas) {
+        auto colors = m_canvas->palette();
+        colors.setColor(QPalette::Window,
+                        dark ? QColor("#1c1c1e") : QColor(Qt::white));
+        m_canvas->setPalette(colors);
+        m_canvas->update();
+    }
+    // The source applies additional per-widget styles after its application
+    // stylesheet. Keep both light and dark forms embedded and scoped here.
+    QFile panelResource(QStringLiteral(
+            ":/CC/plugin/qAnyLabeling/resources/theme/panels.json"));
+    if (panelResource.open(QIODevice::ReadOnly)) {
+        const auto styles = QJsonDocument::fromJson(panelResource.readAll())
+                                    .object()
+                                    .value(dark ? "dark" : "light")
+                                    .toObject();
+        for (const auto& name :
+             {"Description", "Objects", "Labels", "ImageFlags", "Files"})
+            if (auto* dock = findChild<QDockWidget*>(QString::fromLatin1(name)))
+                dock->setStyleSheet(styles.value("dock").toString());
+        for (auto* panel :
+             findChildren<QFrame*>(QStringLiteral("AnnotationSidebarSection")))
+            panel->setStyleSheet(styles.value("panel").toString());
+        if (m_description)
+            m_description->setStyleSheet(
+                    styles.value("description").toString());
+        for (const auto& name :
+             {"AnnotationDescriptionVisibility", "AnnotationLabelsVisibility",
+              "AnnotationObjectsVisibility"})
+            if (auto* box = findChild<QCheckBox*>(QString::fromLatin1(name)))
+                box->setStyleSheet(styles.value("checkbox").toString());
+    }
+    for (auto* dialog : findChildren<QDialog*>()) {
+        dialog->setStyleSheet(stylesheet);
+        dialog->setPalette(palette);
+    }
     if (m_adjustmentPanel) {
-        const bool dark = mode == QStringLiteral("dark");
         m_adjustmentPanel->setStyleSheet(
                 dark ? QStringLiteral(
                                "QFrame { background: rgba(25,25,25,235); }")
@@ -3365,12 +3920,19 @@ void AnnotationWindow::createActions() {
                                          const QString& sourceKey,
                                          const QString& category) {
         if (!action || sourceKey.isEmpty()) return;
+        if (annotationConfig::defaults()
+                    .value(QStringLiteral("shortcuts"))
+                    .toObject()
+                    .contains(sourceKey))
+            action->setShortcuts(annotationConfig::shortcuts(sourceKey));
         const QKeySequence defaultSequence = action->shortcut();
         if (action->objectName().isEmpty())
             action->setObjectName(
                     QStringLiteral("qAnyShortcut_%1").arg(sourceKey));
         action->setProperty("qAnyShortcutId", sourceKey);
         action->setProperty("qAnyShortcutCategory", category);
+        action->setProperty("qAnyShortcutDefaults",
+                            QVariant::fromValue(action->shortcuts()));
         action->setProperty("qAnyShortcutDefault",
                             QVariant::fromValue(defaultSequence));
         // Every annotation command is scoped to this top-level workspace.
@@ -3396,11 +3958,12 @@ void AnnotationWindow::createActions() {
     const QString savedTheme =
             QSettings()
                     .value(QStringLiteral("qAnyLabeling/theme"),
-                           QStringLiteral("auto"))
+                           annotationConfig::value("theme"))
                     .toString();
     const auto addTheme = [this, themeMenu, themeGroup, savedTheme](
                                   const QString& id, const QString& title) {
         auto* action = themeMenu->addAction(title);
+        action->setObjectName(QStringLiteral("AnnotationTheme_") + id);
         action->setCheckable(true);
         action->setChecked(savedTheme == id);
         themeGroup->addAction(action);
@@ -3420,7 +3983,7 @@ void AnnotationWindow::createActions() {
     const QString savedLanguage =
             QSettings()
                     .value(QStringLiteral("qAnyLabeling/language"),
-                           QStringLiteral("en_US"))
+                           annotationConfig::value("language"))
                     .toString();
     const auto addLanguage = [this, languageMenu, languageGroup, savedLanguage](
                                      const QString& id, const QString& title) {
@@ -3430,9 +3993,9 @@ void AnnotationWindow::createActions() {
         languageGroup->addAction(action);
         const bool available =
                 id == QStringLiteral("en_US") ||
-                (id == QStringLiteral("zh_CN") &&
-                 QFile::exists(QStringLiteral(":/qAnyLabeling/translations/"
-                                              "qanylabeling_zh_CN.qm")));
+                QFile::exists(QStringLiteral(":/qAnyLabeling/translations/"
+                                             "qanylabeling_%1.qm")
+                                      .arg(id));
         if (!available) {
             action->setEnabled(false);
             action->setToolTip(tr("TODO: add a C++ translation catalog"));
@@ -3483,7 +4046,8 @@ void AnnotationWindow::createActions() {
             QKeySequence(Qt::CTRL + Qt::Key_I), QStringLiteral("open"),
             [this]() {
                 const QString file = QFileDialog::getOpenFileName(
-                        this, tr("Open image"), m_directory, imageFilter());
+                        this, tr("Open image or annotation"), m_directory,
+                        imageFilter() + tr(";;JSON files (*.json)"));
                 if (!file.isEmpty()) openFile(file);
             });
     QAction* openVideo = addCommand(
@@ -3670,6 +4234,8 @@ void AnnotationWindow::createActions() {
             tr("Change Output Dir"), this, &AnnotationWindow::changeOutputDir);
     changeOutputDirectory->setObjectName(
             QStringLiteral("AnnotationChangeOutputDirectory"));
+    registerShortcut(changeOutputDirectory, QStringLiteral("save_to"),
+                     tr("File"));
     changeOutputDirectory->setToolTip(
             tr("Change where annotations are loaded/saved"));
 
@@ -3814,7 +4380,8 @@ void AnnotationWindow::createActions() {
     {
         QSettings settings;
         m_showShapesAction->setChecked(
-                settings.value(QStringLiteral("qAnyLabeling/showShapes"), true)
+                settings.value(QStringLiteral("qAnyLabeling/showShapes"),
+                               annotationConfig::value("show_shapes"))
                         .toBool());
     }
     m_showShapesAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_H));
@@ -3830,7 +4397,8 @@ void AnnotationWindow::createActions() {
     {
         QSettings settings;
         m_showMasksAction->setChecked(
-                settings.value(QStringLiteral("qAnyLabeling/showMasks"), true)
+                settings.value(QStringLiteral("qAnyLabeling/showMasks"),
+                               annotationConfig::value("show_masks"))
                         .toBool());
     }
     m_showMasksAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
@@ -3846,7 +4414,8 @@ void AnnotationWindow::createActions() {
     {
         QSettings settings;
         m_showLabelsAction->setChecked(
-                settings.value(QStringLiteral("qAnyLabeling/showLabels"), true)
+                settings.value(QStringLiteral("qAnyLabeling/showLabels"),
+                               annotationConfig::value("show_labels"))
                         .toBool());
     }
     m_showLabelsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
@@ -3879,18 +4448,22 @@ void AnnotationWindow::createActions() {
             };
     m_showScoresAction =
             addDisplayAction(tr("Show Scores"), QStringLiteral("showScores"),
-                             true, &AnnotationCanvas::setShowScores);
+                             annotationConfig::value("show_scores").toBool(),
+                             &AnnotationCanvas::setShowScores);
     m_showGroupsAction =
             addDisplayAction(tr("Show Groups"), QStringLiteral("showGroups"),
-                             false, &AnnotationCanvas::setShowGroups);
+                             annotationConfig::value("show_groups").toBool(),
+                             &AnnotationCanvas::setShowGroups);
     m_showTextsAction =
             addDisplayAction(tr("Show Texts"), QStringLiteral("showTexts"),
-                             true, &AnnotationCanvas::setShowTexts);
+                             annotationConfig::value("show_texts").toBool(),
+                             &AnnotationCanvas::setShowTexts);
     m_showTextsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
     registerShortcut(m_showTextsAction, QStringLiteral("show_texts"),
                      tr("View"));
     m_showAttributesAction = addDisplayAction(
-            tr("Show Attributes"), QStringLiteral("showAttributes"), true,
+            tr("Show Attributes"), QStringLiteral("showAttributes"),
+            annotationConfig::value("show_attributes").toBool(),
             &AnnotationCanvas::setShowAttributes);
     m_showAttributesAction->setShortcut(
             QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_L));
@@ -3898,10 +4471,12 @@ void AnnotationWindow::createActions() {
                      tr("View"));
     m_showDegreesAction =
             addDisplayAction(tr("Show Degress"), QStringLiteral("showDegrees"),
-                             false, &AnnotationCanvas::setShowDegrees);
-    m_showLinkingAction = addDisplayAction(tr("Show KIE Linking"),
-                                           QStringLiteral("showLinking"), true,
-                                           &AnnotationCanvas::setShowLinking);
+                             annotationConfig::value("show_degrees").toBool(),
+                             &AnnotationCanvas::setShowDegrees);
+    m_showLinkingAction = addDisplayAction(
+            tr("Show KIE Linking"), QStringLiteral("showLinking"),
+            annotationConfig::value("show_linking").toBool(),
+            &AnnotationCanvas::setShowLinking);
     m_showLinkingAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_K));
     registerShortcut(m_showLinkingAction, QStringLiteral("show_linking"),
                      tr("View"));
@@ -4060,9 +4635,16 @@ void AnnotationWindow::createActions() {
             tr("Export the current image with annotation overlays"));
     auto* visualizationVideoAction =
             new QAction(tr("Save Visualization Video"), this);
+    visualizationVideoAction->setObjectName(
+            QStringLiteral("AnnotationVisualizationVideoAction"));
+    visualizationVideoAction->setEnabled(false);
+    connect(visualizationVideoAction, &QAction::triggered, this,
+            &AnnotationWindow::saveVisualizationVideo);
+#ifndef HAS_OPENCV_FACE_CAPTURE
     visualizationVideoAction->setEnabled(false);
     visualizationVideoAction->setToolTip(
-            tr("TODO: upstream visualization video export workflow"));
+            tr("OpenCV video export is unavailable in this build"));
+#endif
     auto* trainAction = trainMenu->addAction(tr("Ultralytics"));
     trainAction->setEnabled(false);
     trainAction->setToolTip(tr("TODO: Ultralytics training UI and contract"));
@@ -4336,9 +4918,9 @@ void AnnotationWindow::createActions() {
             });
     QAction* shapeManager = addShortcutAction(
             editMenu, tr("Shape Manager"), QStringLiteral("edit_shapes"),
-            QKeySequence(Qt::ALT + Qt::Key_S), tr("Dialog"), []() {});
+            QKeySequence(Qt::ALT + Qt::Key_S), tr("Dialog"),
+            [this]() { editShapes(); });
     shapeManager->setEnabled(false);
-    shapeManager->setToolTip(tr("TODO: upstream shape manager dialog"));
     toolMenu->addAction(overviewAction);
     toolMenu->addSeparator();
     toolMenu->addAction(cropAction);
@@ -4357,7 +4939,10 @@ void AnnotationWindow::createActions() {
     auto* pointCloudAction = toolMenu->addAction(
             QIcon(iconPath(QStringLiteral("cartesian.png"))),
             tr("Point cloud annotation"), this,
-            &AnnotationWindow::openPointCloudAnnotation);
+            &AnnotationWindow::openPointCloudAnnotation,
+            QKeySequence(Qt::CTRL + Qt::Key_6));
+    registerShortcut(pointCloudAction, QStringLiteral("open_pointcloud"),
+                     tr("Tool"));
     pointCloudAction->setToolTip(
             tr("Open the point cloud annotation workspace"));
     pointCloudAction->setProperty("qAnyToolbarId",
@@ -4498,87 +5083,99 @@ void AnnotationWindow::createActions() {
         viewMenu->addAction(action);
         return action;
     };
-    const auto addUnsupportedToolbarCommand =
-            [&addUnsupported, &toolbarActions, this](
-                    const QString& text, const QString& id, const QString& icon,
-                    const QKeySequence& key) {
-                QAction* action = addUnsupported(text, id, key);
-                action->setIcon(QIcon(iconPath(icon)));
-                action->setProperty("qAnyToolbarId", id);
-                toolbarActions.insert(id, action);
-            };
-    addUnsupportedToolbarCommand(tr("ChatBot"), QStringLiteral("open_chatbot"),
-                                 QStringLiteral("psyduck.png"),
-                                 QKeySequence(Qt::CTRL + Qt::Key_1));
-    addUnsupportedToolbarCommand(tr("VQA"), QStringLiteral("open_vqa"),
-                                 QStringLiteral("husky.png"),
-                                 QKeySequence(Qt::CTRL + Qt::Key_2));
-    addUnsupportedToolbarCommand(
-            tr("Classifier"), QStringLiteral("open_image_classifier"),
-            QStringLiteral("ragdoll.png"), QKeySequence(Qt::CTRL + Qt::Key_3));
-    // PaddleOCR runs inside this window through the AICore ocr C API: the
-    // picker entry pairs a rec GGUF with its det partner, and this action
-    // selects the PP-OCR family (if not active) and runs over the current
-    // image, creating one text annotation per recognized region.
+    for (const auto& entry :
+         {qMakePair(QStringLiteral("open_chatbot"), tr("ChatBot")),
+          qMakePair(QStringLiteral("open_vqa"), tr("VQA"))}) {
+        const bool chatbot = entry.first == QStringLiteral("open_chatbot");
+        auto* action = viewMenu->addAction(
+                QIcon(iconPath(chatbot ? QStringLiteral("psyduck.png")
+                                       : QStringLiteral("husky.png"))),
+                entry.second, this, [this, chatbot]() {
+                    if (chatbot)
+                        openChatbot();
+                    else
+                        openVqa();
+                });
+        action->setObjectName(chatbot ? QStringLiteral("AnnotationOpenChatbot")
+                                      : QStringLiteral("AnnotationOpenVQA"));
+        registerShortcut(action, entry.first, tr("Dialog"));
+        action->setProperty("qAnyToolbarId", entry.first);
+        toolbarActions.insert(entry.first, action);
+    }
+    QAction* classifier = viewMenu->addAction(
+            QIcon(iconPath(QStringLiteral("ragdoll.png"))), tr("Classifier"),
+            this, &AnnotationWindow::openImageClassifier);
+    classifier->setObjectName(
+            QStringLiteral("AnnotationImageClassifierAction"));
+    registerShortcut(classifier, QStringLiteral("open_image_classifier"),
+                     tr("Dialog"));
+    classifier->setProperty("qAnyToolbarId",
+                            QStringLiteral("open_image_classifier"));
+    toolbarActions.insert(QStringLiteral("open_image_classifier"), classifier);
+    // Upstream Ctrl+4 opens the independent document workspace. Local
+    // text-box inference remains available in the annotation model picker.
     QAction* paddleOcr = viewMenu->addAction(tr("PaddleOCR"), this, [this]() {
-        QString ocrFamily;
-        for (const Model& model : m_models) {
-            if (model.task == QStringLiteral("ocr")) {
-                ocrFamily = model.family;
-                break;
-            }
-        }
-        if (ocrFamily.isEmpty()) {
-            QMessageBox::information(this, tr("PaddleOCR"),
-                                     tr("No PP-OCR catalog entry is "
-                                        "available."));
-            return;
-        }
-        if (m_model->currentText() != ocrFamily)
-            m_model->setCurrentText(ocrFamily);
-        runDetection();
+        auto* dialog =
+                findChild<PpocrDialog*>(QStringLiteral("AnnotationPaddleOCR"));
+        if (!dialog) dialog = new PpocrDialog(this);
+        dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
     });
     paddleOcr->setObjectName(QStringLiteral("AnnotationOpenPaddleOCR"));
     paddleOcr->setIcon(QIcon(iconPath(QStringLiteral("paddlepaddle.png"))));
     paddleOcr->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_4));
-    paddleOcr->setStatusTip(
-            tr("Run PP-OCR text detection and recognition on the image"));
+    registerShortcut(paddleOcr, QStringLiteral("open_paddleocr"), tr("Dialog"));
+    paddleOcr->setStatusTip(tr("Open PaddleOCR dialog"));
     paddleOcr->setProperty("qAnyToolbarId", QStringLiteral("open_paddleocr"));
     toolbarActions.insert(QStringLiteral("open_paddleocr"), paddleOcr);
-    QAction* lomaBridge = viewMenu->addAction(tr("LoMa two-image bridge..."));
-    lomaBridge->setObjectName(QStringLiteral("AnnotationLomaBridge"));
-    connect(lomaBridge, &QAction::triggered, this, [this]() {
-        LomaBridgeDialog bridge(this);
-        if (!m_imagePath.isEmpty()) bridge.setImage0(m_imagePath);
-        if (bridge.exec() != QDialog::Accepted) return;
-        const QVector<LomaCorrespondence> matches = bridge.acceptedMatches();
-        if (matches.isEmpty()) return;
-        if (m_imagePath != bridge.image0Path()) {
-            QMessageBox::information(this, tr("LoMa bridge"),
-                                     tr("The active image must be Image A to "
-                                        "import correspondence points."));
-            return;
-        }
-        snapshot();
-        QVector<AnnotationShape> shapes = m_canvas->shapes();
-        for (const LomaCorrespondence& match : matches) {
-            AnnotationShape shape;
-            shape.type = QStringLiteral("point");
-            shape.label = tr("LoMa correspondence");
-            shape.points = {match.image0};
-            shape.extra.insert(QStringLiteral("peer_image"),
-                               bridge.image1Path());
-            shape.extra.insert(QStringLiteral("peer_x"), match.image1.x());
-            shape.extra.insert(QStringLiteral("peer_y"), match.image1.y());
-            shape.extra.insert(QStringLiteral("score"), double(match.score));
-            shapes.append(shape);
-        }
-        m_canvas->setShapes(shapes);
-        updateObjects();
-        setDirty(true);
-        m_status->setText(
-                tr("Imported %1 LoMa correspondences").arg(matches.size()));
-    });
+    for (const bool lightglue : {false, true}) {
+        QAction* lomaBridge = viewMenu->addAction(
+                lightglue ? tr("LightGlue two-image bridge...")
+                          : tr("LoMa two-image bridge..."));
+        lomaBridge->setObjectName(
+                lightglue ? QStringLiteral("AnnotationLightGlueBridge")
+                          : QStringLiteral("AnnotationLomaBridge"));
+        connect(lomaBridge, &QAction::triggered, this, [this, lightglue]() {
+            LomaBridgeDialog bridge(lightglue, this);
+            if (!m_imagePath.isEmpty()) bridge.setImage0(m_imagePath);
+            if (bridge.exec() != QDialog::Accepted) return;
+            const QVector<LomaCorrespondence> matches =
+                    bridge.acceptedMatches();
+            if (matches.isEmpty()) return;
+            if (m_imagePath != bridge.image0Path()) {
+                QMessageBox::information(
+                        this, bridge.windowTitle(),
+                        tr("The active image must be Image A to "
+                           "import correspondence points."));
+                return;
+            }
+            snapshot();
+            QVector<AnnotationShape> shapes = m_canvas->shapes();
+            for (const LomaCorrespondence& match : matches) {
+                AnnotationShape shape;
+                shape.type = QStringLiteral("point");
+                shape.label = lightglue ? tr("LightGlue correspondence")
+                                        : tr("LoMa correspondence");
+                shape.extra.insert(QStringLiteral("matcher"),
+                                   lightglue ? QStringLiteral("LightGlue")
+                                             : QStringLiteral("LoMa"));
+                shape.points = {match.image0};
+                shape.extra.insert(QStringLiteral("peer_image"),
+                                   bridge.image1Path());
+                shape.extra.insert(QStringLiteral("peer_x"), match.image1.x());
+                shape.extra.insert(QStringLiteral("peer_y"), match.image1.y());
+                shape.extra.insert(QStringLiteral("score"),
+                                   double(match.score));
+                shapes.append(shape);
+            }
+            m_canvas->setShapes(shapes);
+            updateObjects();
+            setDirty(true);
+            m_status->setText(
+                    tr("Imported %1 correspondences").arg(matches.size()));
+        });
+    }
     // Keep the same WindowShortcut scope as every other qAny action.  The
     // actions are still installed on the canvas/list widgets for context-menu
     // discoverability, but their activation is owned by this annotation
@@ -5236,7 +5833,17 @@ void AnnotationWindow::updateActionState() {
     // behavior: commands start disabled and become available once an image
     // (or the required context) exists.
     const bool imageLoaded = !m_imagePath.isEmpty();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (auto* action = findChild<QAction*>(
+                QStringLiteral("AnnotationVisualizationVideoAction")))
+        action->setEnabled(imageLoaded && !m_inferenceRunning &&
+                           !m_batchRunning);
+#endif
     const bool multipleFiles = m_files && m_files->count() > 1;
+    if (QAction* manager =
+                findChild<QAction*>(QStringLiteral("qAnyShortcut_edit_shapes")))
+        manager->setEnabled(imageLoaded && m_files->count() > 0 &&
+                            !m_inferenceRunning && !m_batchRunning);
     if (m_nextAction) m_nextAction->setEnabled(multipleFiles);
     if (m_previousAction) m_previousAction->setEnabled(multipleFiles);
     if (m_nextUncheckedAction) m_nextUncheckedAction->setEnabled(multipleFiles);
@@ -5337,6 +5944,8 @@ void AnnotationWindow::populateModels() {
         model.task = yoloe   ? QStringLiteral("yoloe")
                      : world ? QStringLiteral("world")
                              : task;
+        model.confDefault = entry->confidence_threshold;
+        model.iouDefault = entry->iou_threshold;
         model.supportsText = entry->text_input &&
                              !model.filename.contains(QStringLiteral("-pf-"));
         model.family = modelFamily(model.filename);
@@ -5351,6 +5960,7 @@ void AnnotationWindow::populateModels() {
         model.url = QString::fromUtf8(entry->download_url ? entry->download_url
                                                           : "");
         model.quant = quantization(model.filename);
+        model.confDefault = entry->confidence_threshold;
         model.task = entry->segmentation_capable
                              ? QStringLiteral("rfdetr-segment")
                              : QStringLiteral("rfdetr-detect");
@@ -5430,6 +6040,10 @@ void AnnotationWindow::populateModels() {
     for (int i = 0; i < aicore_ocr_model_count(); ++i) {
         const aicore_ocr_model_entry* entry = aicore_ocr_model_at(i);
         if (!entry || !entry->filename || !entry->role) continue;
+        if (QString::fromLatin1(entry->role) == QStringLiteral("layout")) {
+            m_ocrLayout->addItem(QString::fromUtf8(entry->display_name),
+                                 QString::fromUtf8(entry->filename));
+        }
         if (QString::fromLatin1(entry->role) != QStringLiteral("rec")) continue;
         Model model;
         model.filename = QString::fromUtf8(entry->filename);
@@ -5444,6 +6058,28 @@ void AnnotationWindow::populateModels() {
         m_models.append(model);
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
+    // Converted local recipes are useful before weights are published. They
+    // never invent a URL; runDetection names the exact missing local file.
+    for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
+        const auto* preset = aicore_ocr_preset_at(i);
+        // Half/quantized conversion candidates are withheld until their
+        // source-framework accuracy gates pass. F32 is the verified route.
+        for (const QString& quant : {QStringLiteral("f32")}) {
+            const QString filename = QString::fromUtf8(preset->rec_stem) +
+                                     QLatin1Char('-') + quant +
+                                     QStringLiteral(".gguf");
+            if (aicore_ocr_model_by_filename(filename.toUtf8().constData()))
+                continue;
+            Model model;
+            model.filename = filename;
+            model.quant = quant;
+            model.task = QStringLiteral("ocr");
+            model.family = QString::fromUtf8(preset->display_name);
+            m_models.append(model);
+            if (m_model->findText(model.family) < 0)
+                m_model->addItem(model.family);
+        }
+    }
     for (int i = 0; i < aicore_yolo_model_count(AICORE_YOLO_ROLE_TEXT); ++i) {
         const aicore_yolo_model_entry* entry =
                 aicore_yolo_model_at(i, AICORE_YOLO_ROLE_TEXT);
@@ -5455,6 +6091,40 @@ void AnnotationWindow::populateModels() {
         model.quant = quantization(model.filename);
         model.family = modelFamily(model.filename);
         m_textModels.append(model);
+    }
+    // RAM (Recognize Anything Model) - tagging task
+    for (int i = 0; i < aicore_tagging_model_count(); ++i) {
+        const aicore_tagging_model_entry* entry = aicore_tagging_model_at(i);
+        if (!entry || !entry->filename) continue;
+        Model model;
+        model.filename = QString::fromUtf8(entry->filename);
+        model.url = QString::fromUtf8(entry->download_url ? entry->download_url
+                                                          : "");
+        model.quant = quantization(model.filename);
+        model.task = entry->supports_caption ? QStringLiteral("ram-caption")
+                                             : QStringLiteral("ram");
+        if (!entry->supports_caption)
+            m_objectTagger->addItem(QString::fromUtf8(entry->display_name),
+                                    model.filename);
+        model.family = modelFamily(model.filename);
+        m_models.append(model);
+        if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
+    }
+    // RelateAnything - relation inference
+    for (int i = 0; i < aicore_relation_model_count(); ++i) {
+        const aicore_relation_model_entry* entry = aicore_relation_model_at(i);
+        if (!entry || !entry->filename ||
+            entry->role != AICORE_RELATION_MODEL_RELATIONS)
+            continue;
+        Model model;
+        model.filename = QString::fromUtf8(entry->filename);
+        model.url = QString::fromUtf8(entry->download_url ? entry->download_url
+                                                          : "");
+        model.quant = quantization(model.filename);
+        model.task = QStringLiteral("relate");
+        model.family = modelFamily(model.filename);
+        m_models.append(model);
+        if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
     {
         // The remote inference service is a pseudo-entry: no local weights
@@ -5486,15 +6156,6 @@ void AnnotationWindow::refreshQuantizations() {
     // Apply the catalog interaction default for the selected model (the
     // upstream yaml conf per detector); the user can still override it via
     // the spinbox afterwards.
-    const QString selectedFamily = m_model->currentText();
-    for (const Model& model : m_models) {
-        if (model.family == selectedFamily &&
-            model.task == QStringLiteral("facedetect") &&
-            model.confDefault > 0.0f) {
-            m_confidence->setValue(model.confDefault);
-            break;
-        }
-    }
     m_quant->clear();
     const QString family = m_model->currentText();
     const auto selected = std::find_if(
@@ -5522,10 +6183,37 @@ void AnnotationWindow::refreshQuantizations() {
                           (selected->supportsText || gkd));
     m_gkdSupportButton->setVisible(gkd);
     m_faceLandmark->setVisible(face);
-    m_confidence->setEnabled(!featureOnly);
+    m_objectTagger->setVisible(selected != m_models.cend() &&
+                               selected->task == QStringLiteral("world"));
+    const bool ocr = selected != m_models.cend() &&
+                     selected->task == QStringLiteral("ocr");
+    m_ocrLayout->setVisible(ocr);
+    m_ocrAngleClassifier->setVisible(ocr);
+    m_ocrSkipButton->setVisible(ocr);
+    m_ramOptionsButton->setVisible(
+            selected != m_models.cend() &&
+            (selected->task == QStringLiteral("ram") ||
+             selected->task == QStringLiteral("ram-caption") ||
+             selected->task == QStringLiteral("world")));
+    // RAM selects tags with each GGUF's embedded per-class thresholds (as
+    // the upstream adapter does) and RelateAnything takes its objects from
+    // the selected rectangles, so neither consumes the confidence value.
+    const bool ignoresConfidence =
+            selected != m_models.cend() &&
+            (selected->task == QStringLiteral("ram") ||
+             selected->task == QStringLiteral("ram-caption") ||
+             selected->task == QStringLiteral("ocr") ||
+             selected->task == QStringLiteral("relate"));
+    if (m_relateOptionsButton)
+        m_relateOptionsButton->setVisible(selected != m_models.cend() &&
+                                          selected->task ==
+                                                  QStringLiteral("relate"));
+    m_confidence->setEnabled(!featureOnly && !ignoresConfidence);
     m_confidence->setToolTip(
             featureOnly ? tr("ALIKED returns its strongest keypoints")
-                        : QString());
+            : ignoresConfidence
+                    ? tr("This model uses its own built-in thresholds")
+                    : QString());
     m_samText->setPlaceholderText(gkd ? tr("Keypoints, comma separated")
                                   : openVocabulary
                                           ? tr("Classes, comma separated")
@@ -5546,10 +6234,13 @@ void AnnotationWindow::refreshQuantizations() {
     m_textModel->setCurrentIndex(preferredText);
     m_textModel->setVisible(m_textModel->count() > 0);
     m_confidence->setValue(selected != m_models.cend() &&
-                                           selected->task ==
-                                                   QStringLiteral("yoloe")
-                                   ? 0.02
+                                           selected->confDefault >= 0.0f
+                                   ? selected->confDefault
                                    : 0.25);
+    m_iou->setVisible(selected != m_models.cend() &&
+                      selected->iouDefault >= 0.0f);
+    if (selected != m_models.cend() && selected->iouDefault >= 0.0f)
+        m_iou->setValue(selected->iouDefault);
     int recommended = 0;
     for (const Model& model : m_models) {
         if (model.family != family) continue;
@@ -5605,7 +6296,7 @@ void AnnotationWindow::updateRecentMenu() {
     }
     int number = 0;
     for (const QString& file : m_recentFiles) {
-        if (file == m_imagePath) continue;
+        if (file == m_imagePath || file == m_openedLabelPath) continue;
         QAction* action = m_recentMenu->addAction(
                 QIcon(iconPath(QStringLiteral("image.svg"))),
                 QStringLiteral("&%1 %2").arg(++number).arg(
@@ -5658,7 +6349,8 @@ void AnnotationWindow::dropEvent(QDropEvent* event) {
         if (!QFileInfo(path).isFile()) continue;
         const QString filter =
                 QStringLiteral("*.%1").arg(QFileInfo(path).suffix().toLower());
-        if (kImageFilters.contains(filter)) {
+        if (kImageFilters.contains(filter) ||
+            filter == QStringLiteral("*.json")) {
             openFile(path);
             event->acceptProposedAction();
             return;
@@ -5783,14 +6475,15 @@ void AnnotationWindow::openFile(const QString& file) {
         m_displayAdjustments[m_imagePath] = qMakePair(
                 m_brightnessSlider->value(), m_contrastSlider->value());
     }
-    QImageReader reader(file);
-    reader.setAutoTransform(m_exifScanEnabled);
-    const QImage image = reader.read();
-    if (image.isNull()) {
-        QMessageBox::warning(this, tr("Open image"), reader.errorString());
+    const auto loaded =
+            loadAnnotationDocument(file, m_outputDir, m_exifScanEnabled);
+    if (!loaded.error.isEmpty()) {
+        QMessageBox::warning(this, tr("Open image or annotation"),
+                             loaded.error);
         return;
     }
-    const QString dir = QFileInfo(file).absolutePath();
+    const QImage& image = loaded.image;
+    const QString dir = QFileInfo(loaded.imagePath).absolutePath();
     if (dir != m_directory) {
         m_directory = dir;
         refreshFileList();
@@ -5799,14 +6492,19 @@ void AnnotationWindow::openFile(const QString& file) {
         settings.setValue(QStringLiteral("lastDirectory"), m_directory);
         settings.endGroup();
     } else {
-        const QString absoluteFile = QFileInfo(file).absoluteFilePath();
+        const QString absoluteFile = loaded.imagePath;
         bool listed = false;
         for (int i = 0; i < m_files->count(); ++i)
             listed |= m_files->item(i)->data(Qt::UserRole).toString() ==
                       absoluteFile;
         if (!listed) refreshFileList();
     }
-    m_imagePath = QFileInfo(file).absoluteFilePath();
+    m_imagePath = loaded.imagePath;
+    m_openedLabelPath =
+            QFileInfo(file).suffix().compare(QStringLiteral("json"),
+                                             Qt::CaseInsensitive) == 0
+                    ? loaded.labelPath
+                    : QString();
     ++m_generation;
     // A new image resets the source label-review loop state.
     m_labelLoopActive = false;
@@ -5815,6 +6513,7 @@ void AnnotationWindow::openFile(const QString& file) {
     m_selectLoopCount = -1;
     m_image = image;
     m_canvas->setImage(image);
+    clearRelationOverlay();
     if (m_zoomWidget) {
         m_zoomWidget->setEnabled(true);
         const QSignalBlocker blocker(m_zoomWidget);
@@ -5850,36 +6549,13 @@ void AnnotationWindow::openFile(const QString& file) {
             10,
             std::max(0, m_canvas->height() - m_adjustmentPanel->height() - 10));
     m_adjustmentPanel->raise();
-    m_document = QJsonObject();
+    m_document = loaded.json;
     m_sidecarBlocked = false;
-    const QString sidecar = sidecarPathFor(file);
-    QFile input(sidecar);
     QVector<AnnotationShape> shapes;
-    if (input.open(QIODevice::ReadOnly)) {
-        QJsonParseError error;
-        const QJsonDocument parsed =
-                QJsonDocument::fromJson(input.readAll(), &error);
-        if (error.error == QJsonParseError::NoError && parsed.isObject() &&
-            parsed.object().value(QStringLiteral("type")).toString() !=
-                    QStringLiteral("video_classification")) {
-            m_document = parsed.object();
-            for (const QJsonValue& value :
-                 m_document.value(QStringLiteral("shapes")).toArray())
-                if (value.isObject())
-                    shapes.append(AnnotationShape::fromJson(value.toObject()));
-        } else {
-            m_sidecarBlocked = true;
-            QMessageBox::warning(this, tr("Annotation file"),
-                                 tr("Cannot use %1 as an image annotation; "
-                                    "saving is disabled until the conflicting "
-                                    "JSON is moved or repaired.")
-                                         .arg(sidecar));
-        }
-    } else if (input.exists()) {
-        m_sidecarBlocked = true;
-        QMessageBox::warning(this, tr("Annotation file"),
-                             tr("Unable to read %1").arg(sidecar));
-    }
+    for (const QJsonValue& value :
+         m_document.value(QStringLiteral("shapes")).toArray())
+        if (value.isObject())
+            shapes.append(AnnotationShape::fromJson(value.toObject()));
     m_canvas->setShapes(shapes);
     updateNavigator();
     loadCompareImage();
@@ -5906,7 +6582,9 @@ void AnnotationWindow::openFile(const QString& file) {
         if (m_files->item(i)->data(Qt::UserRole).toString() == m_imagePath)
             m_files->setCurrentRow(i);
     m_status->setText(QFileInfo(file).fileName());
-    rememberRecentFile(m_imagePath);
+    rememberRecentFile(file);
+    ++m_sourceGeneration;
+    emit annotationSourceChanged();
 }
 
 void AnnotationWindow::setDirty(bool dirty) {
@@ -5971,7 +6649,7 @@ bool AnnotationWindow::saveDocumentTo(const QString& sidecar) {
         document.insert(QStringLiteral("tags"), tags);
     }
     if (!document.contains(QStringLiteral("version")))
-        document.insert(QStringLiteral("version"), QStringLiteral("4.0.6"));
+        document.insert(QStringLiteral("version"), annotationFormatVersion());
     if (!document.contains(QStringLiteral("flags")))
         document.insert(QStringLiteral("flags"), QJsonObject());
     if (m_saveWithImageData && !m_image.isNull()) {
@@ -5987,7 +6665,8 @@ bool AnnotationWindow::saveDocumentTo(const QString& sidecar) {
     }
     document.insert(QStringLiteral("checked"), m_checked->isChecked());
     document.insert(QStringLiteral("imagePath"),
-                    QFileInfo(m_imagePath).fileName());
+                    QDir(QFileInfo(sidecar).absolutePath())
+                            .relativeFilePath(m_imagePath));
     document.insert(QStringLiteral("imageHeight"), m_image.height());
     document.insert(QStringLiteral("imageWidth"), m_image.width());
     QJsonArray shapes;
@@ -6027,6 +6706,7 @@ void AnnotationWindow::closeImage() {
     ++m_generation;
     m_image = QImage();
     m_imagePath.clear();
+    m_openedLabelPath.clear();
     m_document = QJsonObject();
     m_sidecarBlocked = false;
     m_labelLoopActive = false;
@@ -6034,6 +6714,7 @@ void AnnotationWindow::closeImage() {
     m_labelLoopTotal = 0;
     m_selectLoopCount = -1;
     m_canvas->setImage(QImage());
+    clearRelationOverlay();
     if (m_zoomWidget) m_zoomWidget->setEnabled(false);
     m_adjustmentTimer->stop();
     m_adjustmentPanel->hide();
@@ -6052,6 +6733,8 @@ void AnnotationWindow::closeImage() {
     m_redoAction->setEnabled(false);
     setDirty(false);
     m_status->setText(tr("Open an image or folder"));
+    ++m_sourceGeneration;
+    emit annotationSourceChanged();
 }
 
 void AnnotationWindow::deleteLabelFile() {
@@ -6176,6 +6859,14 @@ void AnnotationWindow::runBatch() {
     const bool gkd = found->task == QStringLiteral("gkd");
     const bool openVocabulary = found->task == QStringLiteral("world") ||
                                 found->task == QStringLiteral("yoloe");
+    if (found->task == QStringLiteral("relate")) {
+        // Edges refer to rectangles selected on one image; there is nothing
+        // to carry across a range, so refuse before showing the dialog.
+        m_status->setText(
+                tr("RelateAnything needs selected rectangles and "
+                   "is not available in Auto Run"));
+        return;
+    }
     if (sam && !found->supportsText) {
         m_status->setText(tr("Auto Run requires a text-prompt SAM model"));
         return;
@@ -6255,24 +6946,27 @@ void AnnotationWindow::runBatch() {
     m_batchProgress->setMinimumDuration(0);
     m_batchProgress->setAutoClose(false);
     m_batchProgress->setAutoReset(false);
-    connect(m_batchProgress, &QProgressDialog::canceled, this, [this] {
-        if (!m_batchRunning) return;
-        m_batchCancelRequested = true;
-        m_runAfterDownload = false;
-        if (m_downloader->isBusy()) {
-            // Downloader cancellation has no finished signal to await.
-            m_downloader->cancel();
-            finishBatch(tr("Auto Run cancelled (%1 images completed)")
-                                .arg(m_batchIndex));
-            return;
-        }
-        if (!m_inferenceRunning)
-            finishBatch(tr("Auto Run cancelled (%1 images completed)")
-                                .arg(m_batchIndex));
-    });
+    connect(m_batchProgress, &QProgressDialog::canceled, this,
+            &AnnotationWindow::cancelBatch);
     m_batchProgress->show();
     m_status->setText(tr("Auto Run 0/%1").arg(m_batchFiles.size()));
     startBatchNext();
+}
+
+void AnnotationWindow::cancelBatch() {
+    if (!m_batchRunning) return;
+    m_batchCancelRequested = true;
+    m_runAfterDownload = false;
+    if (m_downloader->isBusy()) {
+        // Downloader cancellation has no finished signal to await.
+        m_downloader->cancel();
+        finishBatch(tr("Auto Run cancelled (%1 images completed)")
+                            .arg(m_batchIndex));
+        return;
+    }
+    if (!m_inferenceRunning)
+        finishBatch(tr("Auto Run cancelled (%1 images completed)")
+                            .arg(m_batchIndex));
 }
 
 void AnnotationWindow::finishBatch(const QString& message) {
@@ -7869,6 +8563,12 @@ void AnnotationWindow::updateObjects() {
     m_objects->blockSignals(true);
     m_objects->clear();
     QStringList names;
+    for (int i = 0; i < m_labels->count(); ++i)
+        names.append(m_labels->item(i)->text());
+    for (const AnnotationShape& shape : m_canvas->shapes())
+        if (!shape.label.isEmpty() && !names.contains(shape.label))
+            names.append(shape.label);
+    m_canvas->setLabelOrder(names);
     QHash<QString, int> classIds;
     int index = 0;
     for (const AnnotationShape& shape : m_canvas->shapes()) {
@@ -7881,7 +8581,10 @@ void AnnotationWindow::updateObjects() {
                         .arg(++index)
                         .arg(shape.label, groupText, shape.type),
                 m_objects);
-        item->setForeground(annotationShapeColor(shape.label, shape.extra));
+        item->setBackground(QColor(m_canvas->shapeColor(shape).red(),
+                                   m_canvas->shapeColor(shape).green(),
+                                   m_canvas->shapeColor(shape).blue(), 128));
+        item->setForeground(Qt::black);
         if (!shape.visible)
             item->setIcon(QIcon(iconPath(QStringLiteral("eye-off.svg"))));
         else if (shape.locked)
@@ -7917,6 +8620,14 @@ void AnnotationWindow::updateObjects() {
     m_labels->blockSignals(true);
     m_labels->clear();
     m_labels->addItems(names);
+    for (int i = 0; i < names.size(); ++i) {
+        AnnotationShape shape;
+        shape.label = names[i];
+        QColor color = m_canvas->shapeColor(shape);
+        color.setAlpha(128);
+        m_labels->item(i)->setBackground(color);
+        m_labels->item(i)->setForeground(Qt::black);
+    }
     m_labels->blockSignals(false);
     if (m_brushTarget) {
         const QString previous =
@@ -8139,6 +8850,9 @@ void AnnotationWindow::syncTagsToDocument() {
 }
 
 QString AnnotationWindow::sidecarPathFor(const QString& imagePath) const {
+    if (!m_openedLabelPath.isEmpty() &&
+        QFileInfo(imagePath).absoluteFilePath() == m_imagePath)
+        return m_openedLabelPath;
     // Source contract: when an output directory is active only that
     // directory is consulted for the per-image sidecar (load, save and
     // checked-state discovery); otherwise the sidecar sits beside the
@@ -8153,7 +8867,7 @@ QString AnnotationWindow::sidecarPathFor(const QString& imagePath) const {
 
 QStringList AnnotationWindow::sidecarCandidates(
         const QString& imagePath) const {
-    QStringList candidates;
+    QStringList candidates{sidecarPathFor(imagePath)};
     const QFileInfo info(imagePath);
     if (!m_outputDir.isEmpty())
         candidates.append(QDir(m_outputDir)
@@ -8177,6 +8891,7 @@ void AnnotationWindow::changeOutputDir() {
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (dir.isEmpty()) return;
     m_outputDir = dir;
+    m_openedLabelPath.clear();
     // The source re-imports the folder without reloading and keeps the
     // current selection; the in-memory document stays as-is and the next
     // save goes to the new directory.
@@ -8580,6 +9295,22 @@ QString AnnotationWindow::openLabelDialog(const QString& initial,
                 &QListWidget::currentTextChanged, this,
                 [&syncFlags](const QString& label) { syncFlags(label); });
     }
+    dialog.adjustSize();
+    QScreen* screen = QGuiApplication::screenAt(QCursor::pos());
+    if (!screen) screen = QGuiApplication::primaryScreen();
+    if (screen) {
+        const QRect bounds = screen->geometry();
+        QRect frame = dialog.frameGeometry();
+        if (m_moveMode == QStringLiteral("center")) {
+            frame.moveCenter(bounds.center());
+        } else {
+            frame.moveTopLeft(QCursor::pos());
+            if (frame.right() > bounds.right()) frame.moveRight(bounds.right());
+            if (frame.bottom() > bounds.bottom())
+                frame.moveBottom(bounds.bottom());
+        }
+        dialog.move(frame.topLeft());
+    }
     const int code = dialog.exec();
     if (accepted) *accepted = code == QDialog::Accepted;
     if (flagsOut) *flagsOut = dialog.selectedFlags();
@@ -8791,6 +9522,7 @@ void AnnotationWindow::uploadLabelClasses() {
         return;
     m_labels->clear();
     m_labels->addItems(labels);
+    m_canvas->setLabelOrder(labels);
     m_status->setText(tr("Successfully loaded %1 labels!").arg(labels.size()));
 }
 
@@ -8872,6 +9604,104 @@ void AnnotationWindow::editShapeAttributes() {
     updateObjects();
     setDirty(true);
     m_status->setText(tr("Shape attributes updated"));
+}
+
+void AnnotationWindow::onRelationSelected(const QJsonObject& relation) {
+    const int subject =
+            relation.value(QStringLiteral("subject_index")).toInt(-1);
+    m_canvas->setHighlightedRelation(
+            relation.value(QStringLiteral("row")).toInt(-1));
+    if (subject >= 0 && subject < m_canvas->shapes().size())
+        m_canvas->selectShape(subject);
+    m_status->setText(
+            tr("%1 %2 %3")
+                    .arg(relation.value(QStringLiteral("subject")).toString(),
+                         relation.value(QStringLiteral("predicate")).toString(),
+                         relation.value(QStringLiteral("object")).toString()));
+}
+
+int AnnotationWindow::selectedRelateRectangles() const {
+    int count = 0;
+    for (int index : m_canvas->selectedIndices()) {
+        if (index < 0 || index >= m_canvas->shapes().size()) continue;
+        const AnnotationShape& shape = m_canvas->shapes().at(index);
+        if (!shape.visible || shape.points.size() < 2 ||
+            (shape.type != QStringLiteral("rectangle") &&
+             shape.type != QStringLiteral("rotation")))
+            continue;
+        const QRectF bounds = QPolygonF(shape.points).boundingRect();
+        if (bounds.width() >= 1.0 && bounds.height() >= 1.0) ++count;
+    }
+    return count;
+}
+
+QString AnnotationWindow::relateDetectorFilename() const {
+    return m_relateOptions.detector.isEmpty()
+                   ? RelateDetectors::defaultFilename()
+                   : m_relateOptions.detector;
+}
+
+QString AnnotationWindow::relateDetectorPath() const {
+    // The chosen detector (the YOLOE prompt-free segmenter of the official
+    // image demo by default). Only cached, integrity-verified files are used
+    // here; runDetection() downloads missing ones before the run starts.
+    const auto assets = RelateDetectors::assets(relateDetectorFilename());
+    if (assets.isEmpty()) return {};
+    for (const auto& asset : assets) {
+        const ecvAssetIntegrity::Anchor anchor{
+                QCryptographicHash::Sha256,
+                ecvAssetIntegrity::PinnedDigest(asset.filename)};
+        if (!ecvAssetIntegrity::isVerified(asset.path, anchor, 1024 * 1024,
+                                           true))
+            return {};
+    }
+    return assets.first().path;
+}
+
+void AnnotationWindow::openRelateOptions() {
+    RelateOptionsDialog dialog(m_relateOptions, RelateDetectors::catalog(),
+                               this);
+    if (dialog.exec() != QDialog::Accepted) return;
+    m_relateOptions = dialog.options();
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("qAnyLabeling"));
+    settings.setValue(QStringLiteral("relateProfile"),
+                      int(m_relateOptions.profile));
+    settings.setValue(QStringLiteral("relateRelationThreshold"),
+                      m_relateOptions.relationThreshold);
+    settings.setValue(QStringLiteral("relateSpatialThreshold"),
+                      m_relateOptions.spatialThreshold);
+    settings.setValue(QStringLiteral("relateMaxRelations"),
+                      m_relateOptions.maxRelations);
+    settings.setValue(QStringLiteral("relateMaxSpatial"),
+                      m_relateOptions.maxSpatial);
+    settings.setValue(QStringLiteral("relateDecompose"),
+                      m_relateOptions.decompose);
+    settings.setValue(QStringLiteral("relateDetectConfidence"),
+                      m_relateOptions.detectConfidence);
+    settings.setValue(QStringLiteral("relateDetectIou"),
+                      m_relateOptions.detectIou);
+    settings.setValue(QStringLiteral("relateMaxBoxFraction"),
+                      m_relateOptions.maxBoxFraction);
+    settings.setValue(QStringLiteral("relateMaxBoxes"),
+                      m_relateOptions.maxBoxes);
+    settings.setValue(QStringLiteral("relateDetector"),
+                      m_relateOptions.detector);
+    settings.setValue(QStringLiteral("relatePredicates"),
+                      m_relateOptions.predicates);
+    settings.endGroup();
+    // The options change what a run returns, so a result computed with the
+    // old ones must not be applied.
+    ++m_generation;
+}
+
+void AnnotationWindow::clearRelationOverlay() {
+    if (m_canvas) m_canvas->clearRelations();
+    if (m_relationFilter) m_relationFilter->clear();
+    if (m_relationFilterDock) {
+        m_relationFilterDock->hide();
+        m_relationFilterDock->parentWidget()->hide();
+    }
 }
 
 void AnnotationWindow::pasteShapes() {
@@ -9114,6 +9944,7 @@ void AnnotationWindow::runRemotePredict() {
     m_remotePromptRevision = m_promptRevision;
     QVariantMap params;
     params.insert(QStringLiteral("conf_threshold"), m_confidence->value());
+    params.insert(QStringLiteral("iou_threshold"), m_iou->value());
     params.insert(QStringLiteral("epsilon_factor"), 0.001);
     const QString textPrompt = m_samText->text().trimmed();
     if (!textPrompt.isEmpty())
@@ -9322,7 +10153,7 @@ void AnnotationWindow::saveRemoteShapesToSidecar(
     QJsonArray shapeArray;
     for (const AnnotationShape& shape : shapes)
         shapeArray.append(shape.toJson());
-    document.insert(QStringLiteral("version"), QStringLiteral("4.0.6"));
+    document.insert(QStringLiteral("version"), annotationFormatVersion());
     if (!document.contains(QStringLiteral("flags")))
         document.insert(QStringLiteral("flags"), QJsonObject());
     document.insert(QStringLiteral("imageData"), QJsonValue::Null);
@@ -9446,6 +10277,9 @@ void AnnotationWindow::runDetection() {
     const bool rfdetr = found->task.startsWith(QStringLiteral("rfdetr-"));
     const bool rmbg = found->task == QStringLiteral("rmbg");
     const bool ocr = found->task == QStringLiteral("ocr");
+    const bool tagging = found->task == QStringLiteral("ram") ||
+                         found->task == QStringLiteral("ram-caption");
+    const bool relate = found->task == QStringLiteral("relate");
     char* cache = depthModel ? aicore_depth_model_cache_dir()
                   : deeplsd  ? aicore_deeplsd_model_cache_dir()
                   : aliked   ? aicore_aliked_model_cache_dir()
@@ -9455,6 +10289,8 @@ void AnnotationWindow::runDetection() {
                   : gkd      ? aicore_gkd_model_cache_dir()
                   : face     ? aicore_facedetect_model_cache_dir()
                   : ocr      ? aicore_ocr_model_cache_dir()
+                  : tagging  ? aicore_tagging_model_cache_dir()
+                  : relate   ? aicore_relation_model_cache_dir()
                              : aicore_yolo_model_cache_dir();
     if (!cache) {
         m_status->setText(tr("Model cache is unavailable"));
@@ -9479,6 +10315,10 @@ void AnnotationWindow::runDetection() {
         aicore_facedetect_free_buffer(cache);
     else if (ocr)
         aicore_ocr_free_buffer(cache);
+    else if (tagging)
+        aicore_tagging_free_buffer(cache);
+    else if (relate)
+        aicore_relation_free_buffer(cache);
     else
         aicore_yolo_free_buffer(cache);
     if (found->task == QStringLiteral("depth-nested")) {
@@ -9556,33 +10396,42 @@ void AnnotationWindow::runDetection() {
             m_status->setText(tr("OCR det model unavailable"));
             return;
         }
-        const QString detPath =
-                QDir(QFileInfo(path).absolutePath()).filePath(detFilename);
-        const ecvAssetIntegrity::Anchor detAnchor{
-                QCryptographicHash::Sha256,
-                ecvAssetIntegrity::PinnedDigest(detFilename)};
-        if (!ecvAssetIntegrity::isVerified(detPath, detAnchor, 1024 * 1024,
-                                           true)) {
-            const aicore_ocr_model_entry* det = aicore_ocr_model_by_filename(
-                    detFilename.toUtf8().constData());
-            if (!det || !det->download_url) {
-                m_status->setText(tr("OCR det model unavailable"));
+        QStringList dependencies{detFilename};
+        if (m_ocrAngleClassifier->isChecked())
+            dependencies.append(ocrClassifierPartner(filename));
+        const QString layoutFilename = m_ocrLayout->currentData().toString();
+        if (!layoutFilename.isEmpty()) dependencies.append(layoutFilename);
+        for (const QString& dependency : dependencies) {
+            const QString detPath =
+                    QDir(QFileInfo(path).absolutePath()).filePath(dependency);
+            const ecvAssetIntegrity::Anchor detAnchor{
+                    QCryptographicHash::Sha256,
+                    ecvAssetIntegrity::PinnedDigest(dependency)};
+            if (!ecvAssetIntegrity::isVerified(detPath, detAnchor, 1024,
+                                               true)) {
+                const aicore_ocr_model_entry* det =
+                        aicore_ocr_model_by_filename(
+                                dependency.toUtf8().constData());
+                if (!det || !det->download_url) {
+                    m_status->setText(tr("Place the converted OCR model in %1")
+                                              .arg(detPath));
+                    return;
+                }
+                QDir().mkpath(QFileInfo(detPath).absolutePath());
+                ecvModelDownloader::Request request;
+                request.url = QString::fromUtf8(det->download_url);
+                request.destPath = detPath;
+                request.minBytes = 1024;
+                request.contentAnchor = detAnchor;
+                m_runAfterDownload = true;
+                m_downloadDependencyModel = true;
+                m_downloadGeneration = m_generation;
+                m_downloadImagePath = m_imagePath;
+                m_downloadFilename = filename;
+                m_status->setText(tr("Downloading %1").arg(dependency));
+                m_downloader->download(request);
                 return;
             }
-            QDir().mkpath(QFileInfo(detPath).absolutePath());
-            ecvModelDownloader::Request request;
-            request.url = QString::fromUtf8(det->download_url);
-            request.destPath = detPath;
-            request.minBytes = 1024 * 1024;
-            request.contentAnchor = detAnchor;
-            m_runAfterDownload = true;
-            m_downloadDependencyModel = true;
-            m_downloadGeneration = m_generation;
-            m_downloadImagePath = m_imagePath;
-            m_downloadFilename = filename;
-            m_status->setText(tr("Downloading %1").arg(detFilename));
-            m_downloader->download(request);
-            return;
         }
     }
     if (openVocabulary && found->supportsText && !visualPrompt) {
@@ -9622,15 +10471,86 @@ void AnnotationWindow::runDetection() {
             return;
         }
     }
+    if (found->task == QStringLiteral("world") &&
+        !m_objectTagger->currentData().toString().isEmpty()) {
+        const QString tagFile = m_objectTagger->currentData().toString();
+        const auto tag = std::find_if(
+                m_models.cbegin(), m_models.cend(), [&](const Model& item) {
+                    return item.task == QStringLiteral("ram") &&
+                           item.filename == tagFile;
+                });
+        std::unique_ptr<char, decltype(&aicore_tagging_free_buffer)> directory(
+                aicore_tagging_model_cache_dir(), aicore_tagging_free_buffer);
+        if (tag == m_models.cend() || !directory) {
+            m_status->setText(tr("Object tagging model is unavailable"));
+            return;
+        }
+        const QString tagPath =
+                QDir(QString::fromUtf8(directory.get())).filePath(tagFile);
+        const ecvAssetIntegrity::Anchor tagAnchor{
+                QCryptographicHash::Sha256,
+                ecvAssetIntegrity::PinnedDigest(tagFile)};
+        if (!ecvAssetIntegrity::isVerified(tagPath, tagAnchor, 1024 * 1024,
+                                           true)) {
+            if (tag->url.isEmpty()) {
+                m_status->setText(tr("Model download URL is unavailable"));
+                return;
+            }
+            QDir().mkpath(QFileInfo(tagPath).absolutePath());
+            ecvModelDownloader::Request request;
+            request.url = tag->url;
+            request.destPath = tagPath;
+            request.minBytes = 1024 * 1024;
+            request.contentAnchor = tagAnchor;
+            m_runAfterDownload = true;
+            m_downloadDependencyModel = true;
+            m_downloadGeneration = m_generation;
+            m_downloadImagePath = m_imagePath;
+            m_downloadFilename = filename;
+            m_status->setText(tr("Downloading %1").arg(tagFile));
+            m_downloader->download(request);
+            return;
+        }
+    }
     const ecvAssetIntegrity::Anchor anchor{
             QCryptographicHash::Sha256,
             ecvAssetIntegrity::PinnedDigest(filename)};
     if (ecvAssetIntegrity::isVerified(path, anchor, 1024 * 1024, true)) {
+        // The detector stage needs its own files when fewer than two
+        // rectangles are selected; fetch what is missing, one file per round
+        // (the finished handler re-enters runDetection()).
+        if (relate && selectedRelateRectangles() < 2) {
+            for (const auto& asset :
+                 RelateDetectors::assets(relateDetectorFilename())) {
+                const ecvAssetIntegrity::Anchor assetAnchor{
+                        QCryptographicHash::Sha256,
+                        ecvAssetIntegrity::PinnedDigest(asset.filename)};
+                if (ecvAssetIntegrity::isVerified(asset.path, assetAnchor,
+                                                  1024 * 1024, true))
+                    continue;
+                QDir().mkpath(QFileInfo(asset.path).absolutePath());
+                ecvModelDownloader::Request request;
+                request.url = asset.url;
+                request.destPath = asset.path;
+                request.minBytes = 1024 * 1024;
+                request.contentAnchor = assetAnchor;
+                m_runAfterDownload = true;
+                m_downloadDependencyModel = true;
+                m_downloadGeneration = m_generation;
+                m_downloadImagePath = m_imagePath;
+                m_downloadFilename = filename;
+                m_status->setText(tr("Downloading %1").arg(asset.filename));
+                m_downloader->download(request);
+                return;
+            }
+        }
         startInference(path);
         return;
     }
     if (found->url.isEmpty()) {
-        m_status->setText(tr("Model download URL is unavailable"));
+        m_status->setText(
+                ocr ? tr("Place the converted OCR model in %1").arg(path)
+                    : tr("Model download URL is unavailable"));
         return;
     }
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -9640,7 +10560,9 @@ void AnnotationWindow::runDetection() {
     request.minBytes = 1024 * 1024;
     request.contentAnchor = anchor;
     m_runAfterDownload = true;
-    m_downloadDependencyModel = false;
+    // RelateAnything re-enters runDetection() so its detector stage
+    // files are checked too.
+    m_downloadDependencyModel = relate;
     m_downloadGeneration = m_generation;
     m_downloadImagePath = m_imagePath;
     m_downloadFilename = filename;
@@ -9681,6 +10603,14 @@ void AnnotationWindow::startInference(const QString& modelPath) {
                    "support points"));
         return;
     }
+    if (model->task == QStringLiteral("relate") && m_batchRunning) {
+        // Edges refer to rectangles the user selected on this image, so there
+        // is nothing to carry across an Auto Run range.
+        finishBatch(
+                tr("RelateAnything needs selected rectangles and is not "
+                   "available in Auto Run"));
+        return;
+    }
     const bool openVocabulary = model->task == QStringLiteral("world") ||
                                 model->task == QStringLiteral("yoloe");
     const bool visualPrompt = !m_batchRunning &&
@@ -9693,6 +10623,9 @@ void AnnotationWindow::startInference(const QString& modelPath) {
         return;
     }
     AnnotationPrompt prompt = m_canvas->prompt();
+    prompt.ramTagMode = m_ramTagMode;
+    prompt.ramDeleteTags = m_ramDeleteTags;
+    prompt.ramFilterTags = m_ramFilterTags;
     if (m_ocrSkipRequested && model->task != QStringLiteral("ocr")) {
         m_ocrSkipRequested = false;
         m_status->setText(tr("Skip detection applies to the OCR family"));
@@ -9704,13 +10637,22 @@ void AnnotationWindow::startInference(const QString& modelPath) {
         for (int index : selected) {
             if (index < 0 || index >= m_canvas->shapes().size()) continue;
             const AnnotationShape& shape = m_canvas->shapes().at(index);
-            if (!shape.visible || shape.label != QStringLiteral("text") ||
-                shape.points.size() < 2)
+            if (!shape.visible || shape.locked ||
+                (shape.points.size() < 3 &&
+                 !(shape.type == QStringLiteral("rectangle") &&
+                   shape.points.size() == 2)))
                 continue;
             const QRectF bounds = QPolygonF(shape.points).boundingRect();
             if (bounds.width() < 1.0 || bounds.height() < 1.0) continue;
             prompt.rois.append(bounds);
             prompt.roiSourceIndices.append(index);
+            prompt.ocrQuads.append(
+                    shape.points.size() >= 3
+                            ? shape.points
+                            : QVector<QPointF>{bounds.topLeft(),
+                                               bounds.topRight(),
+                                               bounds.bottomRight(),
+                                               bounds.bottomLeft()});
         }
         if (prompt.rois.isEmpty()) {
             m_ocrSkipRequested = false;
@@ -9737,6 +10679,85 @@ void AnnotationWindow::startInference(const QString& modelPath) {
         if (prompt.rois.isEmpty()) {
             m_status->setText(tr("Select at least one visible detection box"));
             return;
+        }
+    }
+    if (model->task == QStringLiteral("relate")) {
+        QVector<int> selected = m_canvas->selectedIndices().values().toVector();
+        std::sort(selected.begin(), selected.end());
+        for (int index : selected) {
+            if (index < 0 || index >= m_canvas->shapes().size()) continue;
+            const AnnotationShape& shape = m_canvas->shapes().at(index);
+            if (!shape.visible || shape.points.size() < 2 ||
+                (shape.type != QStringLiteral("rectangle") &&
+                 shape.type != QStringLiteral("rotation")))
+                continue;
+            const QRectF bounds = QPolygonF(shape.points).boundingRect();
+            if (bounds.width() < 1.0 || bounds.height() < 1.0) continue;
+            prompt.rois.append(bounds);
+            prompt.roiSourceIndices.append(index);
+            prompt.roiLabels.append(shape.label);
+        }
+        prompt.relate = m_relateOptions;
+        // Fewer than two selected rectangles: the official detector stage
+        // proposes the objects instead (they are added as real rectangles).
+        if (prompt.rois.size() < 2) {
+            prompt.rois.clear();
+            prompt.roiSourceIndices.clear();
+            prompt.roiLabels.clear();
+            prompt.relateDetectorPath = relateDetectorPath();
+            if (prompt.relateDetectorPath.isEmpty()) {
+                m_status->setText(
+                        tr("Select at least two visible rectangles, or "
+                           "download the RelateAnything detector (%1)")
+                                .arg(relateDetectorFilename()));
+                return;
+            }
+            const auto detector =
+                    RelateDetectors::info(relateDetectorFilename());
+            if (detector.vocabulary) {
+                // YOLO-World / YOLOE with a class list: bake the official
+                // 497 RelateAnything object names through the text encoder.
+                const auto assets =
+                        RelateDetectors::assets(relateDetectorFilename());
+                prompt.relateDetectorClasses =
+                        RelateDetectors::vocabularyClasses();
+                prompt.relateDetectorTextModel =
+                        assets.size() > 1 ? assets.at(1).path : QString();
+            }
+        }
+        if (!prompt.relate.predicateList().isEmpty()) {
+            std::unique_ptr<char, decltype(&aicore_relation_free_buffer)> dir(
+                    aicore_relation_model_cache_dir(),
+                    aicore_relation_free_buffer);
+            const QString root = dir ? QString::fromUtf8(dir.get()) : QString();
+            const QByteArray architecture = [&]() {
+                for (int i = 0; i < aicore_relation_model_count(); ++i) {
+                    const auto* e = aicore_relation_model_at(i);
+                    if (e && QString::fromUtf8(e->filename) ==
+                                     QFileInfo(modelPath).fileName())
+                        return QByteArray(e->architecture);
+                }
+                return QByteArray();
+            }();
+            for (int i = 0; i < aicore_relation_model_count(); ++i) {
+                const auto* e = aicore_relation_model_at(i);
+                if (!e) continue;
+                const QString path =
+                        QDir(root).filePath(QString::fromUtf8(e->filename));
+                if (e->role == AICORE_RELATION_MODEL_TEXT &&
+                    QByteArray(e->architecture) == architecture)
+                    prompt.relateStudentPath = path;
+                if (e->role == AICORE_RELATION_MODEL_TOKENIZER)
+                    prompt.relateTokenizerPath = path;
+            }
+            if (!QFileInfo::exists(prompt.relateStudentPath) ||
+                !QFileInfo::exists(prompt.relateTokenizerPath)) {
+                m_status->setText(
+                        tr("Custom predicates need the relation text student "
+                           "and tokenizer in the model cache; clear the "
+                           "predicates or download them first"));
+                return;
+            }
         }
     }
     if (visualPrompt) {
@@ -9816,6 +10837,18 @@ void AnnotationWindow::startInference(const QString& modelPath) {
         prompt.textModelPath =
                 QDir(QFileInfo(modelPath).absolutePath()).filePath(filename);
     }
+    if (model->task == QStringLiteral("world") &&
+        !m_objectTagger->currentData().toString().isEmpty()) {
+        std::unique_ptr<char, decltype(&aicore_tagging_free_buffer)> directory(
+                aicore_tagging_model_cache_dir(), aicore_tagging_free_buffer);
+        if (!directory) {
+            m_status->setText(tr("Object tagging model is unavailable"));
+            return;
+        }
+        prompt.objectTaggingModelPath =
+                QDir(QString::fromUtf8(directory.get()))
+                        .filePath(m_objectTagger->currentData().toString());
+    }
     const QString task =
             textPrompt ? QStringLiteral("sam3-pcs")
             : model->task == QStringLiteral("facedetect") &&
@@ -9842,7 +10875,19 @@ void AnnotationWindow::startInference(const QString& modelPath) {
         }
         metricModelPath =
                 QDir(QFileInfo(modelPath).absolutePath()).filePath(detFilename);
+        if (m_ocrAngleClassifier->isChecked())
+            prompt.ocrClassifierModelPath =
+                    QDir(QFileInfo(modelPath).absolutePath())
+                            .filePath(ocrClassifierPartner(
+                                    QFileInfo(modelPath).fileName()));
+        const QString layoutFilename = m_ocrLayout->currentData().toString();
+        if (!layoutFilename.isEmpty())
+            prompt.ocrLayoutModelPath =
+                    QDir(QFileInfo(modelPath).absolutePath())
+                            .filePath(layoutFilename);
     }
+    m_ocrSkipRequested = false;
+    prompt.iouThreshold = m_iou->value();
     const QString device = m_backend->currentData().toString();
     m_inferenceRunning = true;
     m_status->setText(tr("Running %1...").arg(task));
@@ -9871,6 +10916,7 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
     if ((result.task.startsWith(QStringLiteral("sam3-")) ||
          result.task == QStringLiteral("gkd") ||
          result.task == QStringLiteral("world") ||
+         result.task == QStringLiteral("ocr") ||
          result.task == QStringLiteral("yoloe")) &&
         result.promptRevision != m_promptRevision) {
         const QString message = tr("Inference prompt changed; run again");
@@ -9918,16 +10964,31 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
     if (result.task == QStringLiteral("ocr") &&
         !result.sourceIndices.isEmpty() &&
         result.sourceIndices.size() == result.shapes.size()) {
+        QVector<AnnotationShape> shapes = m_canvas->shapes();
+        bool changed = false;
         for (int i = 0; i < result.sourceIndices.size(); ++i) {
             const int index = result.sourceIndices.at(i);
-            if (index < 0 || index >= m_canvas->shapes().size()) continue;
+            if (index < 0 || index >= shapes.size() || shapes[index].locked)
+                continue;
             const AnnotationShape& updated = result.shapes.at(i);
-            m_canvas->setShapeRecognition(
-                    index,
-                    updated.extra.value(QStringLiteral("description"))
-                            .toString(),
-                    updated.extra.value(QStringLiteral("score")).toDouble(),
-                    updated.extra.value(QStringLiteral("language")).toString());
+            const auto text =
+                    updated.extra.value(QStringLiteral("description"));
+            changed |= shapes[index].extra.value(
+                               QStringLiteral("description")) != text;
+            // Source predict_shapes(existing_shapes=...): recognition changes
+            // the description only. Keep geometry, score and all metadata.
+            shapes[index].extra.insert(QStringLiteral("description"), text);
+        }
+        if (changed) {
+            const QVector<int> selected =
+                    m_canvas->selectedIndices().values().toVector();
+            snapshot();
+            m_canvas->setShapes(shapes);
+            m_canvas->setSelectedShapes(selected);
+            const QSignalBlocker blocked(m_checked);
+            m_checked->setChecked(false);
+            updateObjects();
+            setDirty(true);
         }
         m_status->setText(result.summary);
         return;
@@ -9959,8 +11020,44 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
             return;
         }
     }
+    // Upstream new_shapes_from_auto_labeling: a result that changes the
+    // annotations, flags or tags sends the image back to "unchecked". This
+    // must precede the first setDirty(true), because auto-save writes the
+    // checkbox state at that moment.
+    {
+        bool changes = !result.hasTags && !result.hasFlags && m_batchRunning;
+        changes |= !m_batchRunning && !result.shapes.isEmpty();
+        changes |= (result.replaceShapes ||
+                    result.task == QStringLiteral("ocr")) &&
+                   !m_canvas->shapes().isEmpty();
+        if (result.hasFlags) {
+            const QJsonObject current =
+                    m_document.value(QStringLiteral("flags")).toObject();
+            for (auto it = result.flags.constBegin();
+                 it != result.flags.constEnd(); ++it)
+                changes |= current.value(it.key()) != it.value();
+        }
+        if (result.hasTags) {
+            const QJsonArray tags = annotationNormalizedImageTags(result.tags);
+            changes |= m_document.value(QStringLiteral("tags")) !=
+                       QJsonValue(tags);
+        }
+        if (result.hasDescription)
+            changes |= m_document.value(QStringLiteral("description"))
+                               .toString() != result.description;
+        if (changes && m_checked->isChecked()) {
+            const QSignalBlocker blocked(m_checked);
+            m_checked->setChecked(false);
+        }
+    }
     if (m_canvas->brushEditing()) m_canvas->setBrushEditing(false);
-    if (m_batchRunning) {
+    // Where the worker's shapes start on the canvas (the detector stage adds
+    // rectangles, and its edges count positions inside result.shapes).
+    int relateShapeOffset = m_canvas->shapes().size();
+    if (m_batchRunning && (result.hasTags || result.hasFlags)) {
+        // Image-level classification/tagging preserves object annotations.
+    } else if (m_batchRunning || result.replaceShapes ||
+               result.task == QStringLiteral("ocr")) {
         // Auto Run replaces each sidecar's generated annotations. This keeps
         // reruns deterministic and matches the source batch workflow.
         snapshot();
@@ -9970,6 +11067,7 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
     } else if (!result.shapes.isEmpty()) {
         snapshot();
         QVector<AnnotationShape> shapes = m_canvas->shapes();
+        relateShapeOffset = shapes.size();
         int nextGroup = 0;
         for (const AnnotationShape& shape : shapes) {
             const QJsonValue group =
@@ -10023,6 +11121,48 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
     }
     if (result.task == QStringLiteral("sam3-pvs") && !result.shapes.isEmpty())
         m_canvas->clearPrompt();
+
+    // RAM: image-level tags replace the sidecar "tags" array, matching
+    // upstream new_shapes_from_auto_labeling (tags are never object shapes).
+    if (result.hasTags) {
+        const QJsonArray tags = annotationNormalizedImageTags(result.tags);
+        if (m_document.value(QStringLiteral("tags")) != QJsonValue(tags)) {
+            m_document.insert(QStringLiteral("tags"), tags);
+            updateTags();
+            setDirty(true);
+        }
+    }
+    if (result.hasDescription &&
+        m_document.value(QStringLiteral("description")).toString() !=
+                result.description) {
+        m_document.insert(QStringLiteral("description"), result.description);
+        updateDescriptionEditor();
+        setDirty(true);
+    }
+
+    // RelateAnything: feed the triplet table; the edges are also on canvas.
+    if (m_relationFilter && result.task == QStringLiteral("relate")) {
+        QJsonArray relations;
+        for (const QJsonValue& value : result.relations) {
+            QJsonObject edge = value.toObject();
+            if (result.relateAddedObjects) {
+                edge.insert(
+                        QStringLiteral("subject_index"),
+                        edge.value(QStringLiteral("subject_index")).toInt() +
+                                relateShapeOffset);
+                edge.insert(QStringLiteral("object_index"),
+                            edge.value(QStringLiteral("object_index")).toInt() +
+                                    relateShapeOffset);
+            }
+            relations.append(edge);
+        }
+        m_relationFilter->loadRelations(relations);
+        m_relationFilterDock->setVisible(!relations.isEmpty());
+        m_relationFilterDock->parentWidget()->setVisible(!relations.isEmpty());
+        // setShapes above cleared the overlay; draw the table's visible rows.
+        m_canvas->setRelations(m_relationFilter->visibleRelations());
+    }
+
     m_status->setText(
             result.summary.isEmpty()
                     ? tr("%1 annotations on %2")

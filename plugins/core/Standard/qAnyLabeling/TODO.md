@@ -1,29 +1,191 @@
 # qAnyLabeling parity TODO
 
+Upstream synchronization (2026-10-17): ACloudViewer
+`origin/users/dahailu/v3.9.5` at `aff48cd6a` is merged into the current branch.
+The earlier local OCR experiments were withdrawn at synchronization. The
+subsequent user-requested direction/v5/v6 extension now builds on that merged
+OCR runtime through the public task API; qOCR has no local workflow changes.
+See the final "OCR model and point-cloud camera implementation" section for
+the current scope, evidence and unpublished-model limits. Older OCR notes
+remain historical and must be checked against the current implementation.
+
+Synchronization validation: qAnyLabeling, qOCR and JSON-RPC build successfully;
+all 28 registered AnyLabeling tests pass with no skips. The LoMa and LightGlue
+bridges also pass on Vulkan after the final rebuild. The complete 40-patch
+ggml chain replays from the pinned archive and passes the idempotence check.
+Selected OCR recognition/detection/layout and RAM scenarios pass on CPU,
+CUDA and Vulkan (four scenarios per backend), as recorded in
+`build_app/Testing/upstream-sync-final-model-gate-{cpu,cuda,vulkan}.json`.
+The 18 RelateAnything F32/Q8 public-interface and stability probes pass, but
+independent upstream accuracy/performance validation remains incomplete:
+the existing modified `RelateAnything-GGML/cpp_ggml/src/full_model.cpp` fails
+the reference snapshot guard. Those external edits are preserved. Source
+identity checks and the final 28-test run are recorded in
+`build_app/Testing/upstream-sync-source-audit.json` and
+`build_app/Testing/upstream-sync-final-qany-tests.log`.
+
+## Current upstream follow-up (2026-10-17)
+
+The local upstream is now v4.1.3, commit
+`745f6c355f94cddb06f6965b3a4118f82033e935`. The older revision below remains
+the provenance of the copied icons and visual references, not a claim that the
+latest upstream is fully covered.
+
+- [x] Image cuboid editing: front corners and four edge centers, visible rear
+  endpoints and depth center, left/right/back face drags, minimum-size
+  constraints, out-of-image control and whole-object movement, locked shapes,
+  undo/redo, and `cuboid3d` metadata. Front and back faces are drawn separately,
+  with dashed rear edges and an orientation edge in both canvas and export.
+  The focused test covers both depth directions, zoom and stale image changes;
+  the plugin test exercises real-window drag/save/undo/redo. The upstream
+  comparison script generates transient references from the actual Python
+  `Canvas`/`Shape` methods and records revision and source hashes.
+- [x] Point-cloud workspace entry now uses the upstream `Ctrl+6` shortcut.
+- [x] New upstream point-cloud **3D cuboid task mode** core: cuboid sidecars,
+  orthogonal editing viewports, detection-mode integration, semantic/instance
+  assignment, undo/redo and real-window interaction are implemented. The
+  generated probe matches the upstream geometry over 167 cases / 1,920
+  sequential edits (maximum point delta `1.78e-14`), and the offscreen window
+  test covers task switching, top/front/side views, selection and save/reload.
+  The camera source now indexes images by the upstream basename rule, loads an
+  optional `calibration.json`, matches the current point-cloud frame, and
+  displays projected points/cuboid edges in a camera dock. The calibration,
+  depth ordering, near-plane/image clipping and `none`/`opencv5` distortion
+  output match actual upstream `camera.py` methods over synthetic clipping and
+  KITTI fixtures: 1,018 cuboid segments, maximum coordinate delta `1.14e-13`,
+  and identical depth-palette RGB values. The core `PointCloudDatasetExporter` now writes the
+  upstream Datumaro, KITTI Raw and Sly Point Cloud ZIP entry contracts,
+  including PCD payloads, cuboid metadata and Sly key maps, with cancellation
+  and ZIP-integrity regression coverage. The core `PointCloudDatasetImporter`
+  now safely parses the same three archive contracts, validates
+  frame/class/cuboid records and supports cancellation. The 2026-10-17 follow-up
+  adds `preparePointCloudDatasetImport` / `applyPointCloudDatasetImport`: unique
+  frame matching, reserved class-ID/name merging, sidecar/config previews,
+  grouped detection/segmentation configuration, staged/fsynced writes and
+  rollback after cancellation or an external file change. The exporter now
+  commits through `QSaveFile`, preserving the old archive on failure/cancellation,
+  and PCD preserves both intensity and RGB in little-endian records. The live
+  window now exposes all three formats through import/export dialogs, confirms
+  the preview, applies annotations/configuration transactionally, rejects stale
+  or reentrant workspace edits, and preserves unsaved segmentation labels.
+  Detection and segmentation use separate class tables with legacy migration.
+  Camera configuration supports multiple sources, previous/next/selection,
+  point/cuboid visibility, depth/RGB color, point size and opacity. Main-view
+  Z-up basis, fit, pan/orbit/zoom, projection, cuboid focus and oriented ray-box
+  selection now follow the actual upstream numeric methods. The live upstream
+  window uses CuboidViewport (perspective, bounded scale); the plugin follows
+  that default and also offers orthographic projection. Dataset import applies
+  annotations to the open local sequence, as upstream does; decoding archived
+  PCD payloads is not part of that import contract. Full-window screenshot
+  parity remains open; the source uses whole-frame background loading, not
+  renderer-tile streaming (see the resource/service follow-up below).
+- [x] Verify the v4.1.3 label-file path resolution changes, including opening
+  annotation JSON outside the image directory, relative `imagePath`, basename
+  fallback, explicit image overrides and embedded-image precedence. JSON files
+  can be opened/dropped directly and saved to the same document; saved image
+  paths are relative to the destination JSON. Failed decoding leaves the active
+  document intact. Eight cases match the actual upstream `LabelFile` methods.
+- [x] Shape Manager: four operations, inclusive ranges, output-directory
+  routing, one-pixel identity tolerance, locked-shape removal protection,
+  bounds/deduplication, cancellation and reload. Eight filesystem-result cases
+  match the actual upstream dialog methods. A pre-existing `_delete_` collision
+  is reported and preserved instead of overwriting an earlier deleted image.
+- [x] `file_list_checkbox_editable` now defaults to false, as upstream does;
+  explicit persisted preferences still apply.
+- [x] Resolve the previously skipped LoMa test: use the shared pinned
+  Sacre-Coeur image pair by default and published F16 detector/DeDoDe-G/B
+  matcher models. Missing/corrupt inputs fail instead of silently skipping.
+  CPU/CUDA/Vulkan produce 578/581/578 reviewed matches. Replacing an image
+  clears accepted matches and invalidates an in-flight result; the CPU stale
+  result test also passes. LoMa is an AICore extension, not an upstream model
+  port or a substitute for the separate LightGlue matcher.
+- [x] Point-cloud camera configuration preview: browse first readable images,
+  switch/step through multiple camera sources, debounce directory edits and
+  bound thumbnail cache to eight images. Previewing invalid calibration does
+  not mutate the active workspace; cancellation preserves its camera sources.
+- [x] GPU surface selection now reads point ownership from an RGBA8 framebuffer
+  with a depth attachment, using the displayed pixel footprints and physical
+  viewport size. Occluded points are excluded, equal-depth coincident points
+  are retained, and Through selects hidden depth layers. Fast brush strokes
+  include the segment between events. A real OpenGL window tests these paths.
+- [x] Main-view cuboid creation: choose the nearest visible point within the
+  upstream one-metre ray cylinder, preview a one-metre cube, double-click to
+  commit and Esc to cancel all viewports. Click selection waits until release
+  so orbit/pan drags do not select objects. The upstream numeric comparison
+  now covers 94 view scenarios, 5,208 ray-box queries and 18,216 creation-ray
+  queries; maximum creation-center delta is `7.11e-15`.
+- [ ] Screenshot-level parity remains open; numeric cuboid parity does not
+  establish complete styling or full-workspace interaction parity.
+
+Validation for this follow-up: the plugin, all registered plugin test
+targets and the standalone inference runner build successfully. The current
+plugin ctest run is **27 PASS, zero failures or skips**, including the
+point-cloud camera and camera-dock UI regression, recorded in
+`build_app/Testing/qanylabeling-round28-ctest.log` (27 plugin tests).
+The real CPU RAM/RelateAnything Run-button workflow and point-cloud window
+are included. The actual upstream Python cuboid methods
+match the C++ probe over 167 scenarios and 1,920 sequential edits (maximum
+point delta `1.78e-14`). The strict repository-wide AICore boundary check
+passes. Local evidence: `build_app/Testing/qanylabeling-cuboid-upstream.json`,
+`qanylabeling-document-upstream.json`, `qanylabeling-shape-batch-upstream.json`,
+`qanylabeling-loma-real-{cpu,cuda,vulkan}.log` and
+`qanylabeling-loma-cpu-stale.log` in the same directory.
+The point-cloud camera probe is independently compared with the upstream
+synthetic clipping and KITTI calibration/cuboid fixtures in
+`build_app/Testing/qanylabeling-pointcloud-camera-upstream.json`: three cases,
+1,018 cuboid segments, maximum coordinate delta `1.14e-13`, and exact depth
+palette RGB values. `test_qanylabeling_pointcloud_dataset` additionally creates and checks
+the three upstream ZIP formats and cancellation cleanup.
+`test_qanylabeling_pointcloud_dataset_importer` round-trips those archives
+through the safe core parser and checks CRC corruption rejection, frame/class
+merging, preview immutability, reserved IDs, conflicting destinations, existing
+class reuse, external edits and cancellation rollback for both existing/new
+sidecar/config files. `compare_pointcloud_dataset_upstream.py` calls the actual
+upstream archive readers and import-plan/apply functions; five archive cases,
+two JSON changes and class/reserved-ID merging match in
+`build_app/Testing/qanylabeling-pointcloud-dataset-upstream.json`. The cases
+include per-frame Datumaro ID reassignment, numeric frame names, unsupported
+annotation rejection, KITTI optional pose fields and inherited occlusion.
+The actual-window test also exercises all three dataset dialogs, confirmation,
+cancellation/rollback, stale previews, reentrant workspace edits, separate task
+class tables, reserved IDs and preservation of segmentation/unmatched frames.
+It checks camera source switching/reordering, invalid configuration and missing
+frames, and samples overlay pixels for visibility, RGB/depth, size and opacity.
+`qanylabeling-pointcloud-view-round26-upstream.json` compares the actual viewport
+fit/basis/matrix, pan/orbit/zoom, cuboid focus and ray-box selection methods,
+including portrait windows, scale clamps, poles and large coordinates. Matrix
+comparison allows one float32 ULP; ray-box IDs must match exactly.
+The real KITTI window capture is `qanylabeling-pointcloud-kitti.png`; this
+records the current rendering and does not establish full screenshot parity.
+The controlled GL geometry gate is additionally recorded in
+`build_app/Testing/qanylabeling-pointcloud-render-upstream-round28.json`: six
+Top/Front/Side/perspective framebuffer cases have zero differing pixels.
+
 ## Open parity gaps at a glance
 
 Every remaining upstream misalignment, in one table. Status / owner notes:
 
 | # | Area | Gap | Owner / landing | Status |
 |---|------|-----|-----------------|--------|
-| 1 | OCR interaction | `skip_detection` | C API `aicore_ocr_recognize` DONE, worker rois channel DONE, `Skip Detection` button + in-place shape update DONE; remaining: test_inference selected-rects case | TODO — one test case left |
-| 2 | OCR interaction | Direction classifier `cls` (upstream `use_angle_cls`, 0/180 flip before rec) | `ch_ppocr_mobile_v2.0_cls` paddle→GGUF conversion (extractor is generic), catalog row, `aicore_ocr_options.cls_model_path`, flip branch in `ocr_capi.cpp` | TODO — conversion may reuse `convert_paddle_ocr_gguf.py` |
-| 3 | OCR geometry | Official det-eval polygon accuracy (Vatti unclip on exact contours vs boundary-pixel hull) | `ocr_capi.cpp` post-process refinement | TODO — current output verified end-to-end, sub-pixel deltas vs OpenCV |
-| 4a | OCR evidence | Same-host official A/B and backend matrix conclusions | Paddle CPU baseline (IR on, RTX-3060 host): rec p50 90 ms / det 34 ms / layout 458 ms — the det output checksum matches ours exactly (9.2490e3), so the upstream-truth anchor is cross-validated. AICore probe p50 (CPU): rec 220 / det 380-975 / layout 509-975 — accuracy is bit-level vs paddle fixtures everywhere, but CPU latency trails paddle (det depthwise-conv scalar expansion dominates); GPU-CUDA rows already recorded (rec 206 / det 359). Vulkan: layout f16/q8 verified, f32 verified (maxDiff 2e-5) — **27-cell matrix (3 graphs x 3 quantizations x CPU/CUDA/Vulkan) all PASS**. Known defect (UPDATED): the CTC decode call sites consumed runGraphCached's (outC,outH,outW) = (1,T,vocab) mapping as (T,vocab) — every transcription came back empty even though the rec graph itself is bit-exact (cross-checked: paddle on the dumped packed input also decodes empty for that dark-blue word image, and the probe stays green). The two call sites now decode with (outH,outW) = (T,vocab); the layout stage additionally degrades to boxes-only on failure instead of discarding the run. Remaining: the standalone `run` entry still reports an empty last_error on one small-image path (repro: layout pack loaded + word_1.jpg) — needs a focused error-propagation round. Fixtures moved to the dedicated `ocr-fixtures` release so PP-OCR carries models + testdata zip only | Layout/OCR evidence recorded; rec-preprocess defect TODO |
-
-| 4 | Region/KIE | KIE (ViLayoutXLM, ViT encoder + SentencePiece tokenizer + 2-D layout embeddings) weights unpublished; regions path is LIVE | Layout LANDED 2026-09-30 end to end: `picodet_lcnet_x1_0_fgd_layout_cdla` converted (three quantizations published), the single missing op `split` added to the interpreter plus a per-build fold pool and multi-fetch graphs, GFL integral + MultiClassNMS + reading order implemented in `ocr_capi.cpp` behind the existing `layout_model_path` option, `aicore_ocr_label_*` accessors, catalog/digests/manifest rows (ocr-layout-f32/f16/q8_0; CPU and CUDA verdict PASS, f32 maxDiff 2e-5), qAnyLabeling auto-discovers the layout pack next to the det model and emits layout shapes with class/reading-order extras. KIE stays TODO: the ViT encoder needs attention-class graph ops (softmax(QK)V composition exists in ggml primitives) but the XLM-Roberta SentencePiece tokenizer and 2-D position embeddings are a dedicated conversion+runtime round — the reserved `relations` contract stays unexposed until then (register-must-run rule) | Layout Closed; KIE TODO — tokenizer + attention interpreter round |
-| 6 | Visual parity | Screenshot-level layout comparison against the in-tree upstream references | Manual fixture pass per panel using `docs/images/*` baselines | TODO — references now in-tree |
-| 7 | Point cloud | Upstream-specific interaction details (GPU surface-depth picking, renderer tiles, camera calibration, streaming loader, shortcut/theme details) | PointCloudWindow already reuses the host multi-window VTK pipeline (same rendering/IO plugins as the main app); remaining work is implementing those upstream interaction details inside that window | TODO — interaction-detail round inside the existing window, not a new pipeline |
-| 9 | External services | `remote_server` / `open_vision` / multi-model source pipelines need an external-transport contract that violates the ownership map | Not portable to AICore by design | Stays disabled |
+| 1 | OCR interaction | `skip_detection` selected-shape recognition | Public `aicore_ocr_recognize_regions`; update only descriptions, preserving geometry and metadata; explicit Run-button reset, autosave, reviewed state and undo/redo | Implemented for rectangles and polygons with at least three points; source normalization and CPU/CUDA/Vulkan worker/window checks below |
+| 2 | OCR interaction | Direction classifier `cls` (`use_angle_cls`, 0/180 flip before recognition) | Public AICore optional classifier/options/typed orientations; task-owned recipes and local converted F32 weights | Implemented for run/recognize and enabled by default; publication and complete dataset/release gates remain open |
+| 3 | OCR geometry | Full source det/rec polygon and transcription equality on a shared corpus | Consume the merged upstream OCR implementation; retain source integer corners and exact rectangle classification in the annotation adapter | Six exact source page and selected-polygon comparisons supplement graph gates; corpus/dataset accuracy remains open |
+| 4a | OCR evidence | Current model/backend acceptance | Merged public OCR catalog: det-ch, rec-ch, rec-en and CDLA layout, F32/F16/Q8_0. Current common-runner results are 15/15 on each of CPU/CUDA/Vulkan, plus real-window checks on all three | Current evidence below supersedes historical local OCR experiment results; no controlled speedup claim |
+| 4 | Region/KIE | Optional layout, PP-OCR KIE annotation format and source v5/v6 recipes | Layout is off by default; preserve real classes/reading order. Entity/link format round trip is implemented; source registers no SER/RE auto model. All six active source OCR presets have local F32 recipes through public OCR | Local workflows implemented; new weights unpublished, dataset/quantization/release gates open |
+| 6 | Visual parity | Screenshot-level layout comparison against the in-tree upstream references | Manual fixture pass per panel using `docs/images/*` baselines; controlled GL geometry comparison is separate | TODO — point-cloud GL geometry had exact 6-case framebuffer parity, but full Qt window theme, typography, controls and animation still lack a screenshot gate |
+| 7 | Point cloud | Remaining camera panels, shortcut/gesture and full-window rendering details | Cuboid geometry/sidecars/orthogonal editing, task classes, dataset transactions, multi-camera configuration and preview are implemented. GPU RGBA/depth ownership picking now covers occlusion, equal-depth ties, point footprints and continuous brush strokes. Selection projection now caches 16-pixel tiles and reuses them across brush events; 18,216 creation-ray queries match | Partial — background frame loading, bounded prefetch, selection tiles and focus animation are implemented; complete camera-panel and visual/interaction parity remain |
+| 9 | External services | Remaining `open_vision` and multi-model source pipelines | Remote Server transport already exists; ChatBot/VQA now share the asynchronous service client described below. Service inference stays remote; local inference stays in AICore | Partial; ChatBot/VQA workflow details and exact remaining model pipelines are still open |
 | 10 | Config module | Upstream `configs/auto_labeling/*.yaml` carries per-model interaction defaults (display_name, conf/iou thresholds, input size) that the picker should surface per model | AICore catalog owns model facts (ownership map): extend catalog entries with the interaction-default fields, plugin reads them from the catalog — never a private yaml table in the plugin | facedetect LANDED 2026-09-30 (`aicore_facedetect_model_entry` now carries conf/iou/input_size — buffalo 0.5/0.4/640, yunet 0.6/0.3/160 — and the picker applies the catalog conf when a detector is selected); yolo/ocr entries are the same-shape follow-up |
-| 11 | Packaging | Run/.exe/.app installers must carry the plugin resources (translations qm, docs) and rely on catalog remote-download for models; default model per task must match upstream | Existing docker/build scripts + qrc resources; verify installer contents per platform (Linux/Windows/macOS) | TODO — packaging verification round |
+| 11 | Packaging | Run/.exe/.app installers must carry the plugin resources (translations qm, docs) and rely on catalog remote-download for models; default model per task must match upstream | Existing docker/build scripts + qrc resources; verify installer contents per platform (Linux/Windows/macOS) | Linux generated plugin install rules, stripping and Unicode-path relocation are verified below; complete Linux installer and native Windows/macOS package verification remain open |
 
-Everything else in this file is either done or documented as intentionally
-unsupported with its official name.
+The detailed ledger below also retains older open workflow and validation
+items. New upstream additions are tracked separately above.
 
 ---
 
 Reference: X-AnyLabeling-GGML commit `926017d09b22564a78c55eb2f368c7b20faa0466`.
+The dated research/rollout notes below preserve historical plans; the current
+public catalogs, implementation and follow-up evidence above take precedence.
 The source tree has 205 `anylabeling/configs/auto_labeling/*.yaml` model
 configurations with 92 distinct `type` values. A model is available here only when AICore publishes a matching
 task contract and a catalog GGUF. A similar output shape alone does not mean
@@ -31,19 +193,28 @@ the source model has been ported. Re-check the live AICore catalogs before
 closing a row.
 
 Catalog-backed source `type` values whose corresponding workflows are fully
-or partly wired are `rfdetr`, `rfdetr_seg`, `rmbg`, `scrfd`,
+or partly wired are `ram`, `rfdetr`, `rfdetr_seg`, `rmbg`, `scrfd`,
 `segment_anything_2`, `segment_anything_3`, `yolo26`, `yolo26_obb`,
 `yolo26_pose`, `yolo26_seg`, `yoloe`, `yolov8`, `yolov8_seg`, and `yolow`.
 This is a task-family mapping, not a claim that every source checkpoint or
-configuration is in the AICore catalog. The remaining 78 source types are
+configuration is in the AICore catalog. The remaining 77 source types are
 listed below, including composite types that can reuse existing AICore models.
 
 ## Source models with no matching AICore catalog
 
-These source model families are intentionally absent from the model picker.
-Implement the inference task, GGUF catalog and validation first; then add the
-plugin worker and matching interaction. The names below are source config
-`type` values or exact source model families.
+The source families below have missing or partially implemented model coverage.
+Existing catalog-backed subsets remain available in the model picker. For
+missing models, implement the inference task, GGUF catalog and validation first;
+then add the plugin worker and matching interaction. The names below are source
+config `type` values or exact source model families.
+
+Current OCR scope (2026-10-17): qOCR keeps its merged workflow; the public OCR
+task now also supports the optional direction classifier, all six active source
+OCR presets as local F32 recipes, and selected arbitrary polygons as described
+in the final section. PP-OCR KIE annotation format is implemented. New-model
+publication, quantization and dataset/release gates remain open. The following dated OCR
+port/accuracy narrative records historical experiments and is not current
+acceptance evidence.
 
 - [ ] OCR and document understanding: `ppocr_v4`, `ppocr_v5`, `ppocr_v6`,
   `doclayout_yolo`, PPOCR KIE. Research verdict (2026-09): upstream's
@@ -319,8 +490,8 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   vendors llama.cpp core+mtmd pinned to a release whose bundled ggml
   matches (or is patched to) our pinned ggml v0.21.0, wired through the
   task-private cmake pattern; the plugin must not call llama.cpp directly.
-  Scope note: libmtmd covers captioning, VQA and chatbot (the disabled
-  toolbar entries) but does NOT replicate Florence2's grounding head —
+  Scope note: libmtmd covers local captioning, VQA and chatbot (remote
+  toolbar workflows are implemented by the later service follow-up) but does NOT replicate Florence2's grounding head —
   phrase-to-box labeling stays on the catalog-backed YOLO-World (CLIP
   text) / YOLOE (MobileCLIP/SAVPE) paths, which are open-vocabulary
   detectors, not VLMs, and are already wired. Integrating mtmd is
@@ -335,7 +506,51 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   rationales and question metadata). Grounding resolves a phrase to a box
   or mask for referring-expression labels; it needs the text result
   contracts and a review UI rather than ordinary detector boxes.
-- [ ] Image tagging and attributes: `ram`, `pulc_attribute`,
+- [x] RAM / RAM++ / Tag2Text image tagging uses the public tagging catalog,
+  per-class thresholds, shared downloader, resident worker and typed results.
+  The RAM Options popup exposes `tag_mode`, `delete_tags` and `filter_tags`.
+  English filtering precedes translation; delete takes precedence over keep.
+  All 4585 paired source labels and 16 option combinations match actual source
+  methods. Raw Chinese whitespace is preserved in the vocabulary; saved tags
+  are trimmed and deduplicated by the source UI contract. Repeating identical
+  normalized tags preserves the reviewed flag; changed or empty results replace
+  the tag array. Object geometry remains intact in single-image and batch runs.
+- [x] RAM/RAM++ explicitly selects X-AnyLabeling's OpenCV uint8 INTER_LINEAR
+  preprocessing in AICore. The original Pillow bilinear/antialias mode remains
+  the default for qRAM and legacy callers. The original by-value request ABI is
+  frozen; `aicore_tagging_request_v2` and the two v2 entry points carry the new
+  mode without changing old callers' storage. The common validation manifest
+  has independent same-GGUF PyTorch truth with the actual pinned source input.
+- [x] Tag2Text captions reach the document description, editor and sidecar;
+  a real Q8 Run-button test verifies saving and reloading the caption. Tag2Text
+  is an additional local catalog workflow without an exact X-AnyLabeling model.
+- [ ] Exact source ONNX checkpoint equality is still unproven. Same-GGUF
+  PyTorch accuracy, backend agreement and source preprocessing do not establish
+  identical threshold decisions for independently exported source checkpoints.
+  Historical loaded-host latency numbers and earlier Pillow/OpenCV tag counts
+  are not current performance or full-precision parity evidence.
+- [ ] RelateAnything has no counterpart in X-AnyLabeling-GGML (no adapter,
+  config or widget there); its reference is the official RelateAnything-GGML
+  (`deploy/demo_webcam.py`, `deploy/render_video.py`) and the standalone
+  qRelateAnything plugin. In the workspace it supports selected rectangles or
+  the detector stage (objects added as real rectangles; detector chosen from
+  the standalone plugin's catalog: YOLOE, YOLO-World, YOLO segment, RF-DETR,
+  YOLO detect), the two official
+  operating points with every threshold and edge cap in an Options popup,
+  custom predicates through the model's text student, the shared edge
+  selection, a display-only overlay, and a filter table. Covered by
+  `test_qanylabeling_run_path` (real relsgg-vits16plus Q8_0 through the Run
+  button: detector stage adds rectangles and an edge selects one of them,
+  selected-rectangle flow, custom vocabulary restricts the edges, sidecar and
+  checked state, Auto Run refusal, overlay cleared on deletion),
+  `test_qanylabeling_relate_options` (operating points equal the
+  qRelateAnything presets; popup behaviour), `test_qanylabeling_relation_filter`
+  and `test_qanylabeling_canvas`. Real runs cover YOLOE, RF-DETR nano and
+  YOLOv8s-worldv2 as the detector. Gaps: video smoothing lives only in the
+  standalone plugin; the detector list is not filtered by what is cached;
+  Auto Run is refused because the official demos have no batch mode; and
+  there is no screenshot-level UI comparison.
+- [ ] Image tagging and attributes still open: `pulc_attribute`,
   `internimage_cls`; generic YOLO classification is not these models.
   Research verdict (2026-09): the image-level classification RESULT
   contract already exists — `aicore_yolo_classify_result` is an image-
@@ -350,7 +565,10 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   accuracy against the reference on pinned images across f32/f16/q8 and
   CUDA/Vulkan/CPU — consumed through the existing classify ABI, with the
   plugin storing tags/attributes as sidecar-level fields (never object
-  boxes) and the Classifier toolbar entry staying disabled until then.
+  boxes). The manual Classifier toolbar workflow is now implemented (2026-10-17);
+  its optional YOLO classification assistant uses trained categories and does
+  not supply the missing PULC/InternImage or local VLM graphs. The later
+  service follow-up adds arbitrary-category remote VLM classification.
   Rollout plan (2026-09): R0 converter
   `core/AICore/tools/convert_ram_gguf.py` (ViT encoder + tag decoder
   onto existing ggml ops, tag vocabulary carried as GGUF metadata) with
@@ -415,9 +633,14 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   `yolo26_obb`) are separate checkpoint families already wired in the
   plugin; exact-weight parity for the YOLOv8 heads remains a catalog
   addition gated on published GGUFs.
-- [ ] Source `yolow_ram` requires its RAM tagger, which is absent even though
-  plain `yolow` text detection has a catalog-backed YOLO-World counterpart;
-  the RAM contract gap is recorded above.
+- [ ] Source `yolow_ram` exposes one composite YOLO-World + RAM run. The
+  underlying chain is now available in the worker: YOLO-World detections can
+  be followed by per-box RAM tagging, while standalone RAM and YOLO-World
+  runs retain their source-compatible behavior. The real combined-run test
+  now covers integer crops, description persistence, undo/redo, stale-result
+  rejection and shared `tag_mode`/`delete_tags`/`filter_tags` semantics.
+  A dedicated source composite picker/configuration, its default detector/RAM
+  pair and exact source checkpoint equality remain open.
 - [x] Interactive SAM labeling is functionally covered by AICore SAM3 point,
   box, and text prompts. Exact upstream weights remain future work:
   `segment_anything` (SAM 1), `sam_hq`,
@@ -493,15 +716,17 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
 
 These are not exempted by the missing-model rule.
 
-- [x] AICore catalog rows outside the 2D image-labeling contract are not
-  silently dropped: LoMa/LightGlue now has a paired-image correspondence
+- [x] LoMa has a paired-image correspondence
   review bridge with detector/descriptor/matcher quantization and backend
   selectors, accepted-match point annotations, and a real two-image test
-  (`test_qanylabeling_loma_bridge`, 577 CPU correspondences on the pinned
-  Sacre-Coeur pair). Gaussian, LingBot, TRELLIS
+  (`test_qanylabeling_loma_bridge`, current F16 counts CPU/CUDA/Vulkan
+  578/581/578 on the pinned Sacre-Coeur pair). Gaussian, LingBot, TRELLIS
   and SAM3D remain owned by `qFreeSplatter`, `qLingbotMap`, `qTrellis` and
   `qSAM3D`; their model matrices are documented in [MODEL_MATRIX.md](MODEL_MATRIX.md)
   but do not belong in this image-labeling picker.
+- [x] The separate LightGlue matcher has a paired-image execution path in this
+  plugin. ALIKED proposals feed the public LightGlue worker, with real bridge
+  coverage and stale-input invalidation; SIFT remains intentionally unexposed.
 
 - [x] Catalog-backed YOLOv8/YOLO26 detection and instance segmentation,
   YOLO26 pose/OBB/classification, RF-DETR detection/segmentation, SAM 2.1/3
@@ -515,9 +740,9 @@ These are not exempted by the missing-model rule.
 - [x] DeepLSD wireframe/MD line proposals and ALIKED N16Rot local keypoint
   proposals use all published catalog quantizations, the shared verified
   downloader, backend selector and reusable AICore worker context. Line
-  coordinates are restored to source-image space. The LightGlue matcher is a
-  two-image feature correspondence task; a review UI for pairing images and
-  converting matches to annotations is implemented by the LoMa bridge.
+  coordinates are restored to source-image space. LightGlue is a separate
+  two-image feature correspondence worker alongside the LoMa review bridge;
+  SIFT remains intentionally outside the picker.
 - [x] YOLOE image-prompt (SAVPE) visual prompting from selected visible
   rectangles, with original-image coordinates, checkpoint capability checks,
   prompt-count graph shaping, and backend/quantization selection. AICore
@@ -734,6 +959,22 @@ These features must be implemented regardless of model coverage.
   Also fixed a stash-merge conflict remnant in plugins/core/Standard/
   CMakeLists.txt that had silently removed the qAnyLabeling
   add_subdirectory registration.
+
+- [x] Point-cloud follow-up: live Datumaro/KITTI Raw/Sly import/export dialogs,
+  transactional application with cancel/stale-state protection, separate
+  detection/segmentation classes, multi-camera configuration and switching,
+  overlay settings and point/cuboid visibility. Z-up camera transforms,
+  perspective/default limits, focus and oriented ray-box selection now use
+  the upstream numeric contracts. UI, archive and numeric probes cover these.
+- [ ] Point-cloud parity remaining: the upstream perspective camera-control
+  panels, full keyboard/gesture coverage and screenshot-level theme/details.
+  Whole-frame background loading with cancellation and bounded neighboring-frame
+  prefetch is implemented. Focus now follows the upstream 250 ms orthographic
+  easing and distance-dependent perspective decay. Chunk/tile rendering is an
+  optional optimization absent from the inspected upstream loading contract. GPU
+  surface-depth picking, renderer tile caching, camera configuration preview,
+  cuboid workflow and dataset transactions are covered by current tests.
+  These remain UI/rendering tasks independent of model support.
 - [x] Image Navigator dock with viewport thumbnails and F9 toggle, plus a
   native Compare View with recursive basename matching, same-size validation,
   shared canvas zoom/pan, split slider, close/reset, and `Ctrl+Alt+C`. The
@@ -819,8 +1060,9 @@ These features must be implemented regardless of model coverage.
   hvertex_fill_color) with nine persisted settings rows; the label dialog
   was replaced with a source-compatible AnnotationLabelDialog honoring
   sort_labels, show_label_text_field, label_completion (startswith/contains
-  filtering) and fit_to_content; move_mode=auto now pans the canvas on
-  left-drag over empty space (behind the group-selection branch);
+  filtering) and fit_to_content. Corrected 2026-10-17: move_mode controls
+  label-popup placement (auto at the cursor, center on the screen);
+  left-drag canvas panning over empty space is independent of this setting;
   font_family applies an application font to the workspace; and two
   offscreen end-to-end fixtures now drive the exec()-blocking surfaces from
   inside their nested loops: the canvas context menu (filter submenu
@@ -839,10 +1081,9 @@ These features must be implemented regardless of model coverage.
   only errors — before falling through to the repository's single-point
   aicore_inference_log [Error]/[Warning] routing; the settings dialog
   refreshes the cached level immediately on apply.
-  (c) `file_list_checkbox_editable` default stays intentionally divergent
-  (true: the checked-image workflow renders through it) and `model_hub`
-  stays contract-owned by the AICore catalog — both re-audited and
-  confirmed as conscious decisions, not work items; (d)
+  (c) `file_list_checkbox_editable` now defaults to false, matching upstream;
+  the historical true-default exception was removed. `model_hub` remains
+  owned by the AICore catalog; (d)
   `qt_image_allocation_limit` stays blocked on a Qt 6 build.
   Full-surface audit (2026-10-08): a feature-level diff of the upstream
   label_widget action inventory (312 tr entries) against the plugin
@@ -888,7 +1129,7 @@ These features must be implemented regardless of model coverage.
   logger_level, validate_label; Shape: default color, auto color shift,
   line/fill/vertex/select-line/select-fill/hover-vertex colors, point
   size, line width) or consciously owned (model_hub by the AICore
-  catalog, file_list_checkbox_editable default, qt_image_allocation_limit
+  catalog; qt_image_allocation_limit
   pending a Qt 6 build). No settings-field work remains; what is left for
   full parity is visual only — exact overlay styling and screenshot-level
   layout comparison against docs/images/ fixtures.
@@ -999,10 +1240,1084 @@ These features must be implemented regardless of model coverage.
 - [ ] Training UI, annotation quality/consistency tools, and workflows that
   depend on external services. Implement only after their data contracts and
   ownership are identified.
-- [x] Entries whose upstream features have no AICore contract keep their
-  official source names and icons but are explicitly disabled with TODO
-  tooltips instead of fake behavior: ChatBot, VQA, the standalone image
-  Classifier, PaddleOCR, Ultralytics training, Save Visualization Video,
-  Shape Manager, Change Output Dir, and the Label Flags / Attributes /
-  Label Classes template uploads. Each carries a stable
-  `AnnotationTODO*` object name for automation.
+- [x] Unimplemented training retains its official name/icon and disabled TODO
+  tooltip. ChatBot and VQA are enabled by the resource/service follow-up below.
+  Image Classifier now provides manual classification, category editing,
+  navigation, export, and an existing-model assistant. Save Visualization
+  Video is implemented in the 2026-10-17 follow-up below. PaddleOCR, Shape Manager, Change Output Dir, and the
+  Label Flags / Attributes / Label Classes uploads are implemented and must
+  not be counted as disabled placeholders.
+
+## 2026-10-17 defaults, canvas and image-classifier follow-up
+
+Reference: X-AnyLabeling-GGML `745f6c355f94cddb06f6965b3a4118f82033e935`
+(v4.1.3). This closes the following measured surfaces; the complete TODO,
+model-zoo contracts and full-window visual parity remain open.
+
+- [x] Central source-default snapshot with YAML provenance/SHA-256 and shared
+  accessors for the workspace/canvas. Cold-start comparison executes the real
+  plugin: all 80 shortcut groups, 13 checkable actions, five docks and 35 model
+  confidence/IoU defaults agree with the source. Existing saved preferences
+  still override defaults. Japanese/Korean translations are selectable.
+- [x] Fix `move_mode`: auto positions the label popup near the cursor; center
+  positions it at screen center. It does not configure canvas panning. Preserve
+  shortcut arrays and restore source defaults when an override is cleared.
+- [x] Source palette, encounter-order label colors, selected/custom colors,
+  label/group/score placement, description/attribute styling, circle
+  center/radius geometry, shape-mask visibility, vertex markers, difficult
+  dashed lines and difficult-point triangles. The real upstream rendering
+  comparison passes 36 cases and 768 palette indices. All 18 geometry-only
+  images are pixel-exact; text checks explicitly allow one-pixel Qt 5/6 font
+  differences with separate error gates. This is export/basic canvas evidence,
+  not a full-window or overlapping/selected-state screenshot claim.
+- [x] Public YOLO/RF-DETR catalog entries own annotation confidence/IoU defaults;
+  the plugin has no duplicate model-default table. The editable IoU value is
+  passed through the current worker and remote parameters. Fix the public YOLO
+  setters to accept both endpoints of [0,1], retaining the last valid value on
+  out-of-range/NaN/infinity input. The public C API contract probe passes.
+  With `yolov8n-q8_0.gguf` and the shared `bus.jpg`, two forwards on the same
+  worker/context at IoU 0 then 1 produce 3/40 boxes on CPU and 4/44 boxes on
+  CUDA/Vulkan. These are threshold-propagation checks, not framework accuracy
+  or performance evidence. CUDA requires the matching 11.8 runtime on this
+  machine; the first attempt picked system CUDA 11.1 and did not load.
+- [x] Image Classifier is enabled at Ctrl+3. Manual MultiClass/MultiLabel,
+  AND search, category add/delete/rename, statistics, navigation, numeric
+  shortcuts, flags/metadata preservation and class-directory export are
+  implemented. The real plugin regression verifies mode switching, filtering,
+  navigation, saving and export. It uses the main document/worker/batch flow;
+  there is no second downloader, model cache or inference session owner.
+- [x] Guard the classifier's busy controls/shortcuts and invalidate its own
+  in-flight result on close. Reuse main-window batch cancellation. Image-level
+  batch classification preserves existing object shapes instead of replacing
+  them with the empty classification geometry.
+- [x] Final real-model classifier/batch acceptance and full current qAnyLabeling
+  regression: **30/30 PASS, no skips**, 103.92 seconds on the current tree.
+  The YOLO26n q8 classifier probe verifies all 1000 flags, exactly one selected
+  class, two-image batch preservation of shapes/metadata and stale-result
+  rejection after close. Strict plugin/AICore ownership check also passes.
+- [ ] Still open: local VLM graphs and full ChatBot/VQA interaction
+  parity, PULC and
+  InternImage, full-window themes/layouts and all hover/selection/overlap states,
+  face-model live IoU configuration (no public setter), the remaining exact
+  model families, complete point-cloud UI/rendering parity and the earlier release gates.
+  The Local model classifier uses trained YOLO categories. The later service
+  follow-up adds the source arbitrary-category remote VLM workflow.
+
+Evidence (build-tree files): `qanylabeling-config-upstream.json`,
+`qanylabeling-render-upstream/report.json`, `qanylabeling-iou-{cpu,cuda,vulkan}.log`,
+`qanylabeling-yolo-capi-contract.log`, `qanylabeling-parity-boundaries.log`, and
+`qanylabeling-full-final.log` under `build_app/Testing`. Reproduction commands
+are in README. OCR implementation/accuracy work is excluded from this round.
+
+## 2026-10-17 RAM/OCR consumer and visualization-video follow-up
+
+Reference remains X-AnyLabeling-GGML
+`745f6c355f94cddb06f6965b3a4118f82033e935`. **The entire TODO is not complete.**
+This round changes the AnyLabeling OCR consumer and reuses the merged OCR
+runtime/qOCR unchanged; the earlier withdrawn OCR experiments stay withdrawn.
+
+- [x] RAM/RAM++ language selection, English delete/keep filters with delete
+  precedence, exact paired 4,585-label vocabulary and raw Chinese whitespace,
+  source-compatible saved-tag normalization and reviewed-state handling.
+  The real source methods match over 16 presentation/filter/normalization
+  profiles. Existing shapes survive single-image and Auto Run image tagging.
+- [x] Source OpenCV uint8 INTER_LINEAR preprocessing for RAM/RAM++ through
+  public `aicore_tagging_request_v2` and `aicore_tagging_infer_image_v2`.
+  The original request and by-value return layout remain frozen; its inference
+  path and qRAM retain official Pillow bilinear/antialias behavior. Both modes
+  pass real image stride/channel, cancellation, owner/result lifetime and
+  live-context shutdown checks. Invalid v2 headers/modes clear outputs.
+- [x] Tag2Text caption updates the image description, persists through autosave
+  and reload, and keeps tags separate from shapes. An empty caption clears
+  the old description. This is an AICore extension, not a source ONNX claim.
+- [x] YOLO-World per-box RAM descriptions reuse the same language/filter
+  options and resident catalog-backed tagging context. Source integer,
+  half-open crops, replacement on rerun, successful empty-result clearing,
+  undo/redo, reload and stale-result rejection pass in actual-window tests on
+  CPU, CUDA and Vulkan. A dedicated source composite preset and exact original
+  detector/tagger checkpoint pair are still tracked above.
+- [x] OCR uses the selected backend and source PP-OCRv4 defaults: 960-pixel
+  max side, binary threshold 0.3, box threshold 0.6, unclip 1.5, recognition
+  batch 6 and drop score 0.5. Cached layout files never enable layout; its
+  explicit picker defaults off and recreates the resident session on change.
+  Optional CDLA regions retain their real classes and reading order.
+- [x] OCR detection replaces annotations, including clearing after an empty
+  successful result. Skip Detection recognizes selected visible, unlocked
+  rectangles/four-corner regions through the public quadrilateral API and
+  changes descriptions only. Geometry, custom labels, confidence and unknown
+  metadata survive autosave/undo/redo. The one-shot mode resets before the next
+  normal Run. Each backend's real PP-OCRv4 English fixture yields 114 text
+  shapes; explicit layout yields one region. Direction classification,
+  arbitrary polygons, PP-OCRv5/v6 and KIE are still absent capabilities.
+- [x] Save Visualization Video is enabled with OpenCV video support. Defaults
+  match the source: 25 FPS (1..120), initially unchecked shape types, five
+  overlay defaults from the canvas, Skip Empty Files off and the sibling
+  visualizations-folder destination. Frame rendering uses a fresh export
+  visibility state, source drawable-shape thresholds and bounded frame memory.
+  Tests decode RGB/BGR colors, dimensions, FPS and frame count, drive the real
+  options dialog and skip-empty behavior, and verify cancellation/failure
+  preserves an existing destination and removes temporary files. Uniform,
+  even frame dimensions are required by the native MP4 workflow. The full
+  dialog theme/layout comparison remains open.
+
+Model evidence: all 12 current OCR catalog weights across 15 scenarios and all
+nine tagging catalog weights across 15 selected scenarios pass on **each** of
+CPU/CUDA/Vulkan: **90/90 PASS**. Tagging includes nine official-preprocess rows
+and six RAM/RAM++ OpenCV-preprocess rows. OpenCV truth is generated from the
+actual pinned source `RecognizeAnything.preprocess` method and matching-GGUF
+PyTorch/CPU arithmetic references. These are developer-profile accuracy and
+repeatability checks (two processes, one warmup, two forwards), not controlled
+speedup/release evidence or equality to the source ONNX checkpoints. The
+separate RAM dataset/caption scenarios and the all-task release matrix remain
+open. The tagging/validation Python suite passes 110 tests plus two subtests;
+the strict repository-wide plugin/AICore boundary and C-API coverage gates pass.
+Final current-tree qAnyLabeling regression: **32/32 PASS, zero failures or
+skips**, 120.62 seconds, including the corrected composite replacement and
+visualization-video workflow.
+
+Evidence under `build_app/Testing`: `qanylabeling-tagging-upstream.json`,
+`qanylabeling-{ocr-core,tagging}-full-{cpu,cuda,vulkan}.json`,
+`qanylabeling-tagging-contracts-{official,opencv}.log`,
+`qanylabeling-ocr-ui-{cpu,cuda,vulkan}.log`,
+`qanylabeling-tagged-ui-{cuda,vulkan}.log`,
+`qanylabeling-ram-runner-tests-final.log`,
+`qanylabeling-ram-ocr-boundaries.log` and
+`qanylabeling-render-ram-ocr-upstream/report.json`. The latter retains 36
+passing render cases, 768 palette checks and 18 pixel-exact geometry images.
+`qanylabeling-ram-ocr-acceptance.json` indexes the current evidence and explicitly
+records `complete_upstream_parity: false`. The final plugin log is
+`qanylabeling-ram-ocr-full-final.log`. Reproduction commands are in README.
+
+Still open: the exact source model families and composite presets listed
+above, OCR direction classification/PP-OCRv5/v6/KIE/multilingual checkpoints,
+local VLM graphs and remaining ChatBot/VQA interactions,
+training and quality tools, complete point-cloud camera/gesture behavior,
+full-window visual consistency
+and complete release/independent-source accuracy gates. Functional substitutes
+and partial test matrices do not close these requirements.
+
+
+## 2026-10-17 resources, remote Chat/VQA/VLM and window follow-up
+
+Reference: X-AnyLabeling-GGML
+`745f6c355f94cddb06f6965b3a4118f82033e935`. **The entire TODO remains open.**
+No OCR runtime or qOCR changes are made by this follow-up.
+
+- [x] Verify real RAM/RAM++ GGUF metadata and converter: `ram.tag_list` is
+  English; `ram.tag_thresholds` owns inference thresholds. No Chinese list
+  is embedded. Keep the paired 4,585-line resources solely for upstream
+  English-name-to-Chinese presentation, including raw source whitespace.
+  Reordered/custom/Tag2Text vocabularies use name lookup and English fallback.
+- [x] Verify resource distribution: vocabularies, light/dark theme and panel
+  styles, icons and three compiled translation catalogs live in Qt RCC,
+  inside the centrally installed plugin. The actual generated Linux install
+  block removes build RPATH and strips the plugin. Loading that installed
+  binary, copying it to a Unicode path and changing the working directory
+  preserves vocabulary hashes, translations and all live panel styles.
+  No separate external resource-copy rule or developer path is required.
+- [x] Enable real Chatbot and VQA windows with source Ctrl+1/Ctrl+2 actions,
+  provider defaults and shared asynchronous OpenAI-compatible transport.
+  Model listing, Bearer authentication, optional tokens, nonstream responses,
+  split-UTF-8 SSE, HTTP/JSON errors, timeout and cancellation are covered.
+  Settings survive provider changes and closing without a request. Local
+  inference remains owned by AICore; service model IDs are remote configuration.
+- [x] Chat image references and multi-turn streaming persist per-image
+  `chat_history` role/content/image records. History reloads after navigation;
+  base64 stays out of sidecars. Stop/import/export/clear and stale-source
+  cancellation are implemented. Other annotation fields remain intact.
+- [x] VQA implements QLineEdit, QRadioButton, QComboBox and QCheckBox schema
+  types, source string/null/list values, component editing, manual autosave,
+  text/widget/label/image references, AI preview/apply and current-image
+  JSONL export. Source identity has its own generation so a model confidence
+  change does not invalidate manual VQA edits. Navigation cancels old work.
+- [x] Image Classifier AI Assistant and AutoRun now use the same remote
+  VLM service for user-defined categories. Six MultiClass/MultiLabel prompts
+  (including Unicode/quoted and empty categories) match the actual source
+  generator exactly. Editable prompts, fenced/raw JSON boolean flags,
+  single-image and two-image batch, cancellation, source changes, progress
+  and malformed sidecar preservation pass actual-window mock-service tests.
+  Unknown model categories are ignored, missing configured flags are false,
+  and non-boolean responses fail without annotation changes. The Local model
+  menu retains the tested AICore YOLO classifier and its shared batch/cache.
+- [x] Dark window QSS and 48 palette roles match the source (with three
+  explicitly recorded Qt 5 placeholder-role differences). Eight light/dark
+  dock/panel/description/checkbox styles match actual source generators.
+  Fix the canvas hardcoded light background: pixel samples now match dark
+  `#1c1c1e` and light `#ffffff`. Remove the cold-start empty Relation Filter
+  header and use the source Shapes sidebar title. Changing plugin theme is
+  scoped to this workspace and its dialogs.
+- [x] Point-cloud loading matches the source's background whole-frame
+  contract, with bounded neighbor prefetch, cancellation and transactional
+  commit. The UI cancellation test verifies event-loop responsiveness and
+  preservation of the active frame/cuboids. Orthographic focus uses the source
+  250 ms InOutCubic curve; perspective focus uses exponential decay to its
+  tolerance and stops on camera input. Chunk/tile rendering is absent from
+  the inspected upstream loader and is an optional optimization, not an
+  unimplemented upstream streaming requirement.
+
+Final current-tree regression: **33/33 PASS, zero failures or skips**,
+150.67 seconds, including remote Chat/VQA/VLM, the real local YOLO classifier,
+RAM/OCR consumers, paired-image matching and point-cloud UI cancellation/focus.
+The strict repository plugin/AICore ownership check passes. All three language
+catalogs compile 1,086 finished translations with no unfinished entries.
+
+Current evidence under `build_app/Testing`: `qanylabeling-service-full-final.log`,
+`qanylabeling-service-theme-upstream.{json,log}`, `qanylabeling-vlm-chat.log`,
+`qanylabeling-resource-install.{json,log}` and `qanylabeling-service-boundaries.log`.
+`qanylabeling-service-acceptance.json` indexes these results and records
+`complete_upstream_parity: false`. Runtime tests use an in-process HTTP mock;
+no remote-provider accuracy, credentials or availability verdict is implied.
+The full-window snapshots are `qanylabeling-window-dark.png` and
+`qanylabeling-upstream-window-dark.png`. Their font/DPI metadata are retained
+in the probe output/log; native Qt 5 and source Qt 6 defaults differ.
+
+Remaining acceptance work:
+
+- [ ] Full window and all dialog screenshots, typography/DPI, layout,
+  hover/selection/overlap states and complete point-cloud camera panels and
+  gestures; palette/QSS/numeric fixtures alone do not close this.
+- [x] Chat message edit/save/delete/copy/regenerate/resend and provider/model
+  JSON import/export, eight provider defaults, search/favorites/selected flags.
+  Native plugin and actual upstream method comparisons pass; delayed VQA close
+  cannot overwrite newer Chat provider parameters.
+- [ ] Complete Chat Markdown/code/math rendering, exact conversation/dialog
+  layout and remaining visual states. Current
+  history export remains a JSON array; ShareGPT dataset export is separate.
+- [x] Chat directory-wide ShareGPT multimodal ZIP export. Multi-turn messages,
+  portable image paths and original image bytes match the pinned source
+  export method; invalid annotations abort without replacing an archive.
+  The current source has no registered Alpaca dataset export.
+- [x] Chat folder AutoRun with bounded concurrency and source CPU-count
+  defaults, independent requests, failed-row counts, cancellation/source
+  generation guards and sidecar field preservation. Native plugin tests cover
+  two-image completion, API failures, cancellation and navigation.
+- [x] ShareGPT multimodal dataset import with first-available-image semantics,
+  source-version annotation templates, original-image copying and message-role
+  preservation. Native output matches the actual upstream importer. Invalid
+  later records and path escapes fail before writes; disk errors trigger an
+  attempted rollback of this operation's files, not a crash-safe transaction.
+- [x] New sidecars across editor/import/export, video masks, remote results,
+  Chat and classification share the pinned source `4.1.3` default version.
+  Existing normal-editor sidecar versions remain preserved.
+- [x] VQA folder-wide selected-field/renamed-column JSONL, component JSON
+  import/export, ordering and title/option/removal migration. Actual plugin
+  modal-dialog tests cover two images, defaults, unknown fields and malformed
+  sidecars. Export and migration fixtures match execution of the pinned
+  upstream methods; this does not close the complete source workflow.
+- [x] VQA source-default prompt templates, user-template add/edit/delete and
+  automatic `xanylabeling_data/vqa/{components,prompts}.json` interoperability.
+  Native tests verify restart loading, single selection, immutable defaults,
+  malformed-file preservation and explicit component-config replacement.
+  All 11 default name/content pairs match the pinned source configuration.
+- [x] VQA ordered disk-sidecar references, Python-compatible nested scalar/
+  list/dict formatting and sequential replacement match the actual pinned
+  source method. The dedicated prompt, cancellable loading and result preview
+  dialogs are implemented; tests cover malformed sidecars, image whitespace,
+  overlapping references, cancelled requests and Escape closing.
+- [x] Share provider/model JSON configuration between Chat and VQA, including
+  source defaults, nullable parameters, unknown fields, malformed-file
+  preservation and selected/favorite flags.
+- [ ] Complete VQA window visual states and
+  native Qt6/platform verification.
+  Migration preflights parsing and saves each file atomically; a late disk
+  write failure is reported and does not provide a whole-folder transaction.
+- [ ] Remaining exact source model families/checkpoints and composites in the
+  model ledger above, including local Florence2/VLM/Grounding and
+  PULC/InternImage; remote user-category classification is not a local model
+  graph. Training/quality tools and independent source-framework accuracy
+  and complete release matrices remain open.
+- [ ] Complete Linux installer inspection and native Windows/macOS builds,
+  installs and relocations. Embedded-resource design and Linux plugin install
+  validation do not replace these platform package gates.
+
+## 2026-10-17 OCR model and point-cloud camera implementation
+
+Reference remains X-AnyLabeling-GGML
+`745f6c355f94cddb06f6965b3a4118f82033e935`. This section supersedes the earlier
+blanket direction-classifier/v5/v6/KIE pending statements only within the
+scope below. **Complete upstream parity is still open.**
+
+- [x] Add an optional text-line direction classifier inside the existing
+  monolithic AICore OCR task. Extend ABI v1 through `struct_size`, validate
+  model roles/options and expose typed angle/probability/rotation per box.
+  Both detection/recognition and selected-quad recognition classify after
+  perspective crop, with source BGR normalization, aspect-sorted batches of
+  six and strict `score > 0.9` rotation. Old callers retain their no-classifier
+  behavior and task/runtime ownership.
+- [x] Convert the exact source ONNX direction classifier, Chinese PP-OCRv4,
+  Japanese PP-OCRv3, PP-OCRv5 and PP-OCRv6 Tiny/Small/Medium det/rec graphs to
+  twelve F32 GGUFs. ONNX is an
+  offline conversion/reference dependency; production inference stays in
+  the shared GGML OCR graph interpreter. Preserve source/dictionary SHA-256,
+  logical ranks, shape constants and exact topology; unknown operators and
+  unsupported attributes fail conversion. Rec dictionaries are embedded in
+  GGUF and need no installed resource files.
+- [x] Expose the original task-owned v4 Chinese/English and six new pipeline recipes,
+  source model names and source DB thresholds/candidate counts/batches.
+  qAnyLabeling consumes the public recipes, keeps layout off, and defaults
+  Text orientation on. New recipe selectors expose F32 only. Missing local
+  unpublished weights show the shared cache path; no guessed download URL
+  or duplicate plugin catalog is introduced.
+- [x] Add independent ONNX Runtime graph checks, ten real upright/inverted
+  word crops per new recognizer (including mixed width/order, 0.9/1.0
+  thresholds, padded BGR stride, repeats and context lifecycle), and direct
+  public-C-ABI versus unmodified source TextSystem checks on a real page.
+  The page contains 74 retained texts for source v4, 77 for Japanese v3,
+  81 for v5 and 73 for each v6 model;
+  compare exact strings and quads, not just output counts. Source commits,
+  ONNX assets and consumed image archive members have pinned digests.
+  Thirty new local-GGUF scenarios live in the common validation manifest:
+  twelve raw graphs, six ten-word orientation workflows, six source pages
+  and six ten-polygon selected-region workflows.
+  Every recognizer uses its own pinned ONNX/dictionary to generate the word
+  expectations; Japanese recognition is not compared with English literals.
+- [x] Preserve the exact source direct-quad crop for ONNX detection output;
+  keep the original PaddleX integer min-area refit for published models.
+  Support the source v4 dynamic attention shapes. Retain F32 columns in the
+  ONNX CPU bounded depthwise fallback: on the real BGR page, v6 Medium's
+  maximum raw-map error falls from 0.001048 to 0.000004 without changing the
+  0.001 gate. Detection probes reject nonfinite probabilities and size mismatch.
+- [x] Add public `aicore_ocr_recognize_regions` and route selected annotation
+  recognition through it. Match source integer truncation, minimum-area
+  polygon normalization, vertex ordering, reading-order batches and unclipped
+  border-replicated crops. Preserve original result indices and UI geometry;
+  retain low-confidence/empty texts. Cover triangles, pentagons, skew,
+  fractional/negative and out-of-image points, malformed input and valid
+  degenerate polygons against the actual source workflow.
+- [x] Match PP-OCR KIE annotation import/export for entity labels and directed
+  links, integer truncation of fractional/negative points, explicit null IDs
+  and absent-ID defaults. A four-entity Unicode round trip preserves exact
+  exported bytes. The inspected source has no active SER/RE model registration;
+  its annotation workflow does not imply automatic KIE inference. AICore
+  continues to reject the reserved nonempty KIE model option.
+- [x] Move the camera image/projection into image-space QGraphicsView items.
+  Match cursor-anchored 1.2 wheel zoom, absolute 0.02..32 limits, hand drag,
+  double-click/explicit fit and manual-transform preservation on resize.
+  Status text remains a viewport overlay and does not scale with the image.
+  Add source-size hover navigation arrows, visibility for multiple cameras,
+  cyclic switching and the source camera-arrow geometry/style.
+- [x] Replace the bottom camera dock with the source's upper-right floating
+  panel, responsive minimum/clamped geometry, lower-left resize handle and
+  user-size request retained during the panel's lifetime, as upstream does.
+  Add color radio buttons, slider values,
+  independent reset buttons, frame depth legend and persisted overlay settings.
+  Closing the panel closes its settings menu. Retain four decoded images with
+  LRU eviction, and preserve manual zoom/pan when labels or cuboids change.
+  UI tests cover these transitions; the numeric source comparison also checks
+  the depth percentiles used by the legend.
+- [x] Feed semantic/intensity/RGB/instance display colors and live creation
+  previews from the main view to the camera. Keep instance zero visible when
+  hiding numbered instances, clear previews on cancel/outside movement, retain
+  shared point storage during overlay reads, and preserve zoom/pan on edits.
+  Use source FastTransformation for photographs/point splats and one painter
+  path per cuboid to avoid repeated blending at edge intersections. Fifteen
+  executed-source camera scene comparisons match every pixel across scales,
+  colors, sizes, opacity, selected/occluded boxes and the creation preview.
+  This is a scene comparison; full-window fonts/chrome remain open.
+- [x] Match orthographic edit-event boundaries in Top/Side/Front: consume the
+  final release position, retain the initiating mouse button, ignore competing
+  presses/releases, and finish at the last valid preview on Leave, outside
+  motion/release or missing-button motion. Shift rotation snaps to 15 degrees
+  with Python's ties-to-even rounding. Preserve source handle order and hit
+  priority, resize/rotation cursors and active white 4-pixel handles; empty
+  frames and locked boxes cannot begin edits. The source-executing gesture
+  comparison covers 87 cases at `1e-10` tolerance, including rotated local axes
+  and edit counts; the normal UI ctest also covers release-only movement,
+  foreign release, Leave and snapped rotation in all three views. This does
+  not establish full visual parity.
+- [x] Broadcast an orthographic edit preview to the main GL view, both other
+  side views and the camera overlay. Replace the existing box by ID instead
+  of appending a second box. Other side views follow pure translations, while
+  rotation follows the source camera-offset rule. Preview updates leave the
+  document, undo history and point arrays unchanged. Cancel restores the
+  original box, and release commits once. Real-window checks verify the shared
+  preview value, changed GL geometry and exact GL restoration after Escape;
+  four additional executed-source camera scenes cover move/resize/rotate/cancel.
+
+Current local evidence is under `build_app/Testing`:
+`qanylabeling-ocr-pointcloud-native-final.log` (33/33 tests, zero
+failures/skips, formal build, no preload),
+`ocr-formal-{cpu,cuda,vulkan}/qanylabeling-ocr-formal-{cpu,cuda,vulkan}.json`
+(45/45 PASS per backend), `ocr-formal-snapshot.json` (32 source and ten binary
+fingerprints, no preload), `qanylabeling-ocr-formal-regions-plugin.json` (18/18
+worker runs), `qanylabeling-ocr-formal-polygon-window.json` (3/3 real-window runs),
+`qanylabeling-camera-render-upstream.json` (15/15 scene comparisons),
+`qanylabeling-cuboid-gestures-upstream.json` (87/87 event/handle comparisons),
+`qanylabeling-ocr-converter-real-final.json` (all twelve source graphs accepted)
+and `qanylabeling-ocr-extension-quant2.json` (retained failed F16/Q8 candidate
+gates). The complete current-tree evidence is indexed in
+`qanylabeling-ocr-pointcloud-acceptance.json`; inspect each verdict and count.
+These are developer checks, not release performance or dataset accuracy claims.
+The earlier `ocr-regions-*` and `qanylabeling-ocr-regions-plugin.json` results
+used an isolated candidate runtime and remain historical evidence only; the
+formal reports above replace them for the current build.
+
+Remaining OCR/point-cloud acceptance:
+
+- [ ] For each F32/F16/Q8_0 file, complete original-source probability/argmax,
+  labelled-page Hmean/CER/WER, CPU/CUDA/Vulkan consistency, controlled GPU
+  throughput/memory and same-host baseline before uploading to the existing
+  `PP-OCR` release. Upload is already authorized. Then register the real
+  URL/SHA/catalog/manifest and verify cold-cache automatic download. The local
+  `ocr-extension-release-candidate/` ZIP is not a release; the public OCR catalog
+  still contains 12 entries. Existing published OCR files also need the new
+  per-file acceptance audit.
+- [ ] Resolve the failed F16/Q8 numeric gates without weakening the F32 source
+  contract; verify every claimed quantization/backend, dataset semantics and
+  controlled release-performance baseline. Passing one graph/page is narrower
+  than a complete OCR acceptance matrix.
+- [x] Add independent original-ONNX execution with exact dequantized GGUF
+  constants, so storage error and native graph error remain separate. Require
+  exact recognizer/classifier argmax, multiple real inputs, matching source
+  roles/dictionary SHA and the existing storage-specific numeric budgets.
+  Save explicit mixed-precision policies and reproduce all 24 candidate SHA
+  values (`quant-policy-replay-v7.json`). CPU/CUDA/Vulkan each pass 22/24
+  multi-input quantized graph gates and 33/36 including orientation workflows.
+  The classifier now includes five upright plus five 180-degree inputs;
+  its F16/Q8 candidates pass on all three backends. Tiny recognizer F16/Q8_0
+  remain failures, not supported releases. Mixed precision is reported by
+  actual parameter counts: the classifier Q8 candidate is only 4.8% Q8_0.
+- [x] Add SHA-pinned official 50-image scene validation and 50-page-per-language
+  XFUND recognition to the common runner. Report raw detection Hmean,
+  fixed-GT CER/WER and complete-pipeline CER/WER independently. XFUND field
+  labels support recognition only, not detector Hmean or automatic KIE.
+  F32 CUDA development matrix passes 42/42. This is not a controlled release
+  performance or all-backend/all-quantization acceptance result.
+- [x] Add 50 complete scanned receipt pages and their 2,779 original annotations
+  from a pinned SROIE contributor corpus. The common input catalog verifies
+  all 100 image/CSV SHA values and downloads them without private probe logic.
+  Register all six presets x three quantizations as 18 additional scenarios;
+  retain commas in transcriptions and bind label filenames/content into the
+  directory digest. Dataset provenance and evaluation limits are recorded in
+  `core/AICore/tests/ocr/DATA_CARD.md`; this subset is not official held-out
+  competition certification.
+- [ ] Finish all labelled-page quantization/backend runs and resolve every
+  failed metric. v7 v4 Q8 Chinese/Japanese scene Hmean, v5 F16 complete-pipeline
+  CER/WER, and Tiny F16/Q8 scene metrics fail despite several passing graph
+  gates. Historical v7 results must not be assigned to later candidate SHA.
+- [x] Independently revalidate v8 v4-det Q8 on the corrected production library:
+  source probability gates pass on CPU/CUDA/Vulkan, Chinese/Japanese scene
+  pages pass on CPU/Vulkan, and both scene and receipt combinations pass on
+  CUDA (`filter-v8-*`). Conversion replay matches the tested file SHA.
+- [x] Add the v5 real-page confidence/CTC regression crop to all three storage
+  source scenarios and require five inputs. Old Q8 fails the new crop on all
+  three backends. New v12 F16/v14 Q8 candidates pass five-input source gates
+  on CPU/CUDA/Vulkan and CUDA scene/receipt pages; conversion replay is
+  byte-identical. Record actual mixed storage: v14 is 2.10% Q8_0, 19.13% F16,
+  78.77% F32, not pure Q8. These are not release/performance passes.
+- [ ] Resolve Tiny quantization completely. The v15 recognizer F16 passes
+  four-input graph gates on all three backends and CUDA orientation/receipts,
+  but the original F16 detector changes a real scene contour: the combination
+  loses 0.005540166 Hmean and adds 0.009803922 complete-pipeline WER. A separate
+  v16 detector retaining conv2d_112 in F32 now passes all three graph backends
+  and CUDA scene/receipt gates with v15 recognizer. Replay matches both SHA;
+  other-backend pages and XFUND are still under test. Tiny Q8 source gates
+  remain unresolved.
+- [x] Correct source batch-resize rounding and preserve zero recognition
+  confidence in the production C ABI. Native affected regressions pass 35/35,
+  with zero skips. Add fast validation-runner, OCR metric/probability and GPU
+  measurement-audit CTest gates; all four registered groups pass.
+- [x] Apply source TextDetector's additional vertex ordering, width-1/height-1
+  clipping and <=3 edge rejection only to source ONNX detector recipes.
+  Preserve first-index ties even when they repeat a corner, and match OpenCV's
+  singular-warp top-left sampling. A real scene exposed the previous phantom
+  text; 13 source-generated filter fixtures and the singular-crop regression
+  pass alongside the existing 400+ DB and 720+ crop goldens. All 12 affected
+  OCR/table/plugin/validation CTests pass with zero skips.
+- [ ] Revalidate complete page cohorts after the source detector-filter fix.
+  Unfinished old CPU/receipt/v9 cohorts were stopped and recorded in
+  `interrupted-before-source-detector-filter.json`; completed old reports are
+  retained as historical evidence. The new `filter-v7-cuda` cohort records the
+  library/probe SHA and progress separately from final metric JSON. Do not
+  merge old and new production-library page rows into a release PASS.
+- [x] Add strict GPU-activity auditing, source CUDA-provider graph benchmarks,
+  explicit thread counts and allocation holds outside timed forwards. Reject
+  missing telemetry and busy GPU measurements. Report sampled process-memory
+  high-water values without claiming an exact allocator peak.
+- [x] Retain each GPU audit under its unique ID, including rejected idle waits.
+  Repeated common-runner attempts keep distinct raw records instead of
+  overwriting previous telemetry. The four fast gate groups pass (runner 96,
+  GT 7, probability 11, audit 8).
+- [x] Record validation execution identities before inference and reject changed,
+  removed or added command/runtime artifacts afterward. Reports include SHA
+  values for selected executable/Python files, build AICore/ggml libraries,
+  CMake options and the exact consumed manifest bytes. This is a bounded build
+  identity record, not a transitive dynamic-loader trace. Runner tests now
+  pass 98/98; all four fast CTest groups and an actual classifier common-runner
+  CPU scenario (`artifact-provenance-cpu`) pass with unchanged artifacts.
+- [x] Prevent reduced detector input sizes from qualifying as release speed:
+  require source-default max-side 960 in the release probe, preserve that
+  size for every additional probability input, and explicitly use 960 in all
+  15 detector graph manifest rows. Default-size guards pass; historical
+  max-side-320 graph results remain scoped to 320.
+- [ ] Complete `default-size-accuracy-*` probability/stored-weight/backend
+  gates at 960. Existing 960 page tests do not replace full probability maps;
+  previous 320 graph PASS values cannot close the new default-size gate.
+- [ ] Revalidate the new v17 Small-detector F16 SHA on every affected backend
+  and page cohort. Default-size CPU initially passes 14/15 detector files;
+  Small F16 source mean error is 0.000101013, above the unchanged 0.0001 gate.
+  Retaining only conv2d_122 in F32 reduces it to 0.000082143 on CPU, and replay
+  is byte-identical. This result must not inherit the old file's page results.
+  The new file's graph, 50 scene pages and 50 receipt pages now pass 3/3 on
+  CPU (`filter-v17-cpu`); CUDA and Vulkan scene/receipt checks also pass 2/2
+  each (`filter-v17-pages-{cuda,vulkan}`). Remaining page and performance gates stay
+  open. The default-size CPU/CUDA/Vulkan 36-row cohorts each retain the same
+  old Tiny Q8 recognizer failure (35/36), which is not assigned to v19.
+- [ ] Complete all page cohorts and release gates for the new v19 Tiny Q8 pair.
+  Default-size detector probability, four-input recognizer probability,
+  50 scene pages and 50 receipt pages pass 4/4 on each of CPU/CUDA/Vulkan
+  (`filter-v19-cpu`, `filter-v19-pages-{cuda,vulkan}`), with
+  byte-identical conversion replay. Calibration uses 256 pinned training
+  crops, separately from the regression fixtures; document selection scope
+  in DATA_CARD. Detector/recognizer contain only 0.23903%/0.57945% Q8_0
+  parameters and remain explicit mixed-precision experiments. No speedup,
+  public model registration or release qualification follows from this PASS.
+  The explicit experimental conversion policy is now pinned in
+  `ocr_quantization_policies.json` (SHA-256
+  `3f8700eb6ab5672f396ff3c93b73c649ca480de4ec59cb0d2c14b3369d22ccc4`).
+  Both Tiny files and the Small F16 file replay byte-identically; the shared
+  model cache and product defaults remain unchanged.
+- [x] Recheck the existing 12 published OCR files through an empty cache and
+  offline preflight. `public-cold-download-0zhcaspv/report.json` records all
+  pinned hashes and both preflight passes. Current graph/layout developer
+  matrices pass 15/15 on each backend (`public-current-{cpu,cuda,vulkan}`).
+  Original Paddle detector/Chinese/English recognizer parameters match their
+  GGUF source identities; fresh Paddle probability fixture replay passes 3/3.
+  These checks do not close the new real-page and controlled-performance gates.
+- [ ] Finish release-profile repeated same-host A/B on an idle GPU. The three
+  baseline and three candidate classifier attempts were all rejected for
+  external GPU activity and are retained as failures. The source CUDA
+  I/O-binding smoke check ran successfully (max CPU/CUDA error 0.000016362),
+  but shared-GPU smoke timing is not controlled performance evidence. No
+  throughput/memory release PASS or new upload is claimed.
+  A fresh cohort on the corrected library also fails: some native samples
+  pass, while source measurements detect desktop or external RelateAnything
+  activity. Its finally block resumes the paused page scheduler; the record
+  is `controlled-cls-f32-current-cuda/matrix.json`.
+- [x] Add independent original-Paddle graph consumers for all nine published
+  detector/Chinese-recognizer/English-recognizer quantizations. The original
+  program/parameters and dictionary YAML are SHA-pinned runner inputs;
+  `public-paddle-graphs-v4-{cpu,cuda,vulkan}/matrix.json` each pass 9/9,
+  including direct native GPU/CPU comparisons. Source crashes,
+  changed argmax, nonfinite output and failed GPU audits fail closed.
+- [ ] Finish the new original-Paddle public page and GPU performance gates.
+  Six hard page/crop fixtures pass; current Chinese/English F32 and F16 street
+  cohorts pass. The public Q8_0 Chinese/English combinations fail complete
+  pipeline CER deltas (0.009708738 / 0.005295675, gate <=0.005). Remaining
+  cohorts are still running. Paddle GPU 3.0.0 exit-time heap corruption was traced to
+  inherited GLOG_log_dir, and the isolated source child now removes application
+  logging configuration. Three source GPU graphs finish normally. Replacing
+  unrecognized TF32 flags with NVIDIA_TF32_OVERRIDE=0 also restores strict CPU
+  agreement (det/ch-rec/en-rec maxima 0.000017583/0.000006557/0.000000238).
+  These shared-GPU smoke results are not controlled performance evidence.
+  Layout original-source results are recorded below, including its failures.
+- [x] Add the eight-head original PicoDet graph consumer and native head
+  export/nonfinite rejection. All source/config/fixture files participate in
+  automatic download and offline verification. F32 passes CPU/CUDA/Vulkan;
+  a real native NaN fixture is rejected. Public Paddle probe tests pass 27/27.
+- [ ] Repair published layout F16/Q8_0 source argmax mismatch. In
+  `public-layout-original-zfzv7xec/{cpu,cuda,vulkan}-v2`, both quantizations
+  fail the new exact argmax gate on all backends (worst-head CPU agreement
+  0.992307692 / 0.969230769). Native backend-to-CPU agreement passes; the
+  existing probability-only budgets cannot close this source-output gap.
+- [x] Share Paddle source-process isolation and add verified page-reference
+  replay. Require successful source teardown, pinned export SHA, unchanged
+  framework library/dependencies/code/config/GT/pages and the same language,
+  evaluation mode and threads. Native inference remains per quant/backend.
+  The old v2 page cohort was stopped for CPU source exit-time corruption;
+  keep its failure record. New v3 Chinese/English street source exports each
+  finish 50 pages normally; remaining native/source page checks are pending.
+- [x] Attribute the public Q8_0 street failure one stage at a time, with the
+  unchanged complete 50-page GT. Q8 detector + F32 recognizer fails both
+  languages (e2e CER delta 0.011473963); F32 detector + Q8 recognizer passes
+  both. Evidence: `public-q8-stage-attribution-194al707/completed.json`.
+- [ ] Repair the public Q8 detector under the original full-page defaults.
+  Keep the failed published SHA as evidence; candidate files are isolated
+  experiments and must not replace public assets before all release gates.
+- [x] Fix graph-reference dependency identity: Paddle imports vendored package
+  metadata, so last-write-wins enumeration recorded typing_extensions 4.12.2
+  instead of selected 4.16.0. Record normalized selected versions and all
+  candidate versions, hash the helper, and reject changes during execution.
+  The active v3 page cohort retains its old identity implementation; it cannot
+  be claimed to have the stronger dependency identity check retroactively.
+- [ ] Retry controlled performance when the measured GPU meets the idle gate.
+  `controlled-classifiers-current-v2-cuda` fails baseline idle acquisition after
+  draining this session's work: gnome-shell remains about 27% SM. Raw rejected
+  audits and interrupted.json are retained; the cohort was interrupted and
+  its finally block restored all own page queues. No complete matrix or
+  Vulkan performance result is assigned to this attempt.
+- [x] Recheck published SLANet graph consumers on the current build:
+  `current-table-graphs-aenvh0zm/{cpu,cuda,vulkan}/matrix.json` each has three
+  PASS rows, bound to unchanged native/library artifacts. This is one-repeat
+  developer numeric evidence; table TEDS and controlled release performance
+  are separate, unfinished gates.
+- [ ] Finish the per-file release ledger for all 51 files (48 text/layout/
+  classification and three SLANet table files). The read-only evidence index
+  keeps historical matching-weight graph results separate from current
+  before/after build-identity evidence. Fresh 36-model graph rows are recorded below;
+  no absent row or missing page dataset is assigned PASS.
+- [x] Finish the fresh 36-candidate developer graph evidence: CPU has 36
+  PASS rows, CUDA's first/retry reports together contain 36 distinct PASS
+  rows, and the Vulkan retry matrix passes all 36. Preserve the first
+  INCOMPLETE reports and their VRAM skips; this is not a release matrix.
+- [x] Apply selected-version/all-candidate dependency identity to the Paddle
+  page exporter too. Reject old reference receipts and changed helper/code
+  or dependencies during export. The reference tests pass 31/31. Own v3
+  page/repaired-CPU queues were interrupted with an explicit receipt; old
+  results remain available and do not inherit this stronger identity.
+- [ ] Run the newly pinned, independent SROIE receipts 050–099 through all
+  six public Chinese/English quantization workflows. They are disjoint from
+  the policy-selection/regression receipts 000–049; 100 source files and the
+  combined label-directory SHA are mandatory common-runner inputs. Keep the
+  repaired SHA identities separate, and do not tune on this acceptance set.
+- [x] Check DFL regression argmax per independent eight-bin edge as well as
+  the existing full-channel argmax; export the corresponding softmax error.
+  A near-tie test proves that an unchanged global argmax cannot hide a changed
+  second edge. The reference probe suite is now 28/28 PASS.
+- [ ] Repair public Q8_0 against both scenes and receipts. Four of fourteen
+  detector fallbacks pass both languages on the existing scene regression;
+  two also pass Chinese SROIE. English SROIE still fails fixed-region WER
+  (delta 0.006833713) independently of the detector, so an English recognizer
+  repair is also required. Candidate files stay isolated and unpublished.
+  The converter now keeps detector `conv2d_397.w_0` and English recognizer
+  `conv2d_161.w_0` F16. The second fallback passes the 50-page English SROIE
+  CUDA and scene CPU regressions with the detector candidate. Repeated
+  conversion of both files is byte-identical; pending hashes are `cab74270…`
+  (detector) and `695bdcbb…` (English rec). Actual Q8_0 parameter proportions
+  are 66.069% / 43.398%. Current public catalog/digests stay on the published
+  files until the pending files finish every gate. A separate local-only
+  manifest runs their source graphs and complete page workflows through the
+  common runner while verifying all original published dependencies.
+- [ ] All OCR-window visuals. The six active
+  source OCR preset checkpoints are now available as local F32 recipes;
+  unpublished artifacts are not public catalog/download support.
+- [x] Match upstream orthographic point visibility and crop/expand controls:
+  share the main viewport's filtered point indices, default depth cropping on,
+  crop Side/Front only with the 0.1 m margin, skip crop in Top/create mode, and
+  hide the perspective view while expanded and restore the three-view splitter
+  sizes afterward. Side views also use
+  the active semantic/instance/RGB/intensity point colors and match upstream's
+  device-pixel point-size rule. Native raster tests cover crop boundaries,
+  per-point color/size and window state transitions.
+- [ ] Complete point-cloud handle-icon and panel/dialog visual parity,
+  remaining keyboard/gesture/overlap
+  states and full-window screenshots.
+  Current camera navigation/zoom and numeric projection checks cover only
+  their recorded paths. Chunked point-cloud streaming remains an optional
+  optimization: the inspected source loads whole frames asynchronously.
+- [ ] Native Windows/macOS builds, installation/relocation and full Linux
+  package inspection. New OCR dictionaries live inside GGUF; existing RCC
+  resources remain in the plugin. This design does not replace native package
+  verification. Chat/VQA advanced workflows, local VLM/remaining models and
+  training/quality tools stay open in the preceding ledger.
+
+
+### Dedicated PaddleOCR document workspace (partial, 2026-10-19)
+
+- [x] Open an independent workspace from the upstream `Ctrl+4` action. Keep
+  local typed AICore OCR annotation inference in the model picker.
+- [x] Add the official async-jobs transport with the upstream model/default
+  payload, streamed multipart image/PDF upload, polling, JSON/JSONL results,
+  deadlines, cancellation and request-generation isolation. No model asset
+  ownership or local inference enters the transport.
+- [x] Add upstream-compatible on-disk records, favorites/search/status,
+  document/page/block selection, zoom, duplicate block keys, corrections and
+  JSON/Markdown export. Preserve unknown fields and use atomic JSON saves.
+- [x] Export document ZIPs with upstream Markdown order/names, corrected text,
+  cropped image assets and per-page layout previews. Reuse the streaming ZIP
+  writer for OCR and video datasets; preserve atomic replacement and video ZIP
+  root-directory behavior. An independent Python decoder checks CRC, JPEG
+  dimensions and content; the two-page Markdown fixture matches upstream.
+- [x] Apply persisted API URLs, image/PDF type filters and newest/oldest sort.
+  Exercise settings through the actual modal dialog and a local Qt HTTP
+  service; changing the selected record must not redirect an in-flight result.
+- [x] Isolated Qt 5 window/service tests and the real plugin menu/window probe
+  pass. Keep their evidence separate from release OCR model qualification.
+- [x] Remote service discovery/model refresh and generation-scoped remote
+  result-image caching; test service settings and selection changes through
+  actual Qt modal dialogs.
+- [x] Specialized OCR table token/HTML/TSV editing, fonts, spans,
+  merge/split, row/column insert/delete, default 3x3 creation, clipboard,
+  and bounded undo/redo. Native document tests verify Save/Cancel, atomic
+  persistence and preservation of unknown block fields.
+- [ ] Native PDF rendering, formula/rich-text editors, complete table and
+  full-window visual/gesture states, translation coverage and clean-package
+  installation checks.
+- [ ] Advanced VQA/Chat and remaining local model catalogs are still open.
+
+
+### 2026-10-19 current worktree evidence
+
+- [x] Preserve all 38 OCR release candidates in one SHA-verified staging
+  directory; distinguish the 36 new files from the two public Q8 repairs.
+- [x] Complete current-library source graphs for the two public Q8 repairs
+  on CPU as well as CUDA/Vulkan. Their seven composed page scenarios pass
+  on all three backends; English rec is consumed by three of those scenarios.
+- [x] Compile the complete HTML5 entity mapping into the OCR table editor,
+  with a reproducible generator and no installed-resource dependency.
+  Native/source comparison passes 5,407 cases; document Save/Cancel
+  preserves unknown fields. Compare both parses for source NBSP behavior.
+- [x] Match table default creation and paste as two undo steps, extra Python
+  splitlines separators, formula-dispatch priority and context action labels.
+- [x] Match table column/row geometry, format-button selection state and
+  right-click multi-selection restoration. Six native geometry cases execute
+  the pinned source methods with the same runtime font metrics.
+- [x] Match the table icon toolbar, top Cancel/Save order, body margins and
+  light/dark QSS; explicitly inherit the workspace palette. Two theme cases
+  compare the actual source stylesheet methods. Preserve standard format,
+  save, undo and redo shortcuts without ambiguous duplicate bindings.
+- [x] Replace the modal table dialog with a block-local QFrame editor and
+  source viewport-limited height. Six height cases execute the actual source
+  methods. Save/Cancel, unknown JSON fields and a queued stale Save after
+  document selection changes pass through the real document window.
+- [x] Verify Chat/VQA shared provider persistence, deferred-window destruction,
+  Anthropic model-list headers, 45 vision capability cases and 1,060 model
+  search cases against actual source methods. Five upstream comparison
+  scripts and four actual plugin/document/video regressions pass.
+- [x] Finish the current-library 54 new-model source page scenarios on
+  CUDA/Vulkan (54/54 each) and SLANet semantic pages (12/12 GPU rows). CPU
+  pages are retained as diagnostics and no longer gate GPU release. These
+  developer results do not complete release repeat/performance qualification.
+- [ ] Finish release repeat/stability, controlled CUDA/Vulkan same-host
+  throughput/VRAM A/B, layout accuracy repair and independent GT, and
+  upload/catalog/digest/manifest/cold-download closure. No newly uploaded
+  model is qualified yet.
+- [ ] Finish remaining table/full-window visual states,
+  formula/rich-text and PDF, advanced Chat rendering/model refresh and full
+  visuals, remaining exact local models, and Linux clean-package.
+
+
+### 2026-10-20 remote synchronization and GPU-only acceptance
+
+- [x] Fetch all remotes/tags and merge both `origin/users/dahailu/v3.9.5`
+  (`5d1486089`) and `origin/main` (`7bc6520bd`) into the current branch.
+  Merge commits are `1688a2896` and `b9a739ce1`. Resolve the command-map and
+  validation-manifest conflicts; preserve all 241 original staged paths and
+  the safety stash `7a8d0cd5`. No unmerged index entries remain. Both remote
+  tips are ancestors of HEAD; the manifest retains 289 unique scenario ids.
+  A later external pull advanced the branch remote to `5a6a40c06` and HEAD
+  to `8db589b2d`; both current remote tips remain ancestors and there are no
+  unmerged files. The additional six upstream files do not change AICore or
+  AnyLabeling. ACloudViewer, QANYLABELING_PLUGIN and QOCR_PLUGIN rebuilds pass.
+- [x] Remove native CPU comparison metrics from the 48 OCR graph release
+  gates. Keep original-framework/stored-weight truth, GPU precision checks
+  and strict CUDA/Vulkan performance audits. GPU comparisons consume the
+  actual original CUDA output when its interpreter is supplied, including
+  accuracy-only developer runs. Tests: 31 probe tests and 100 runner tests.
+- [x] Finish the old OCR page and restored SLANet queues with unchanged
+  library/probe identities. Preserve every failure and incomplete old attempt.
+- [x] Prune four obsolete reference environments/wheel caches only after
+  checking live command lines, mappings and open files. Free 15.21 GiB;
+  preserve current environments, candidate GGUFs and validation evidence.
+  Cleanup plan, removed-file inventory and receipts are under
+  `build_app/Testing/ocr-storage-reference/cleanup-20261020/`.
+- [x] After the final container preflight, retain its complete file/SHA and
+  symlink inventory and command receipts, remove the disposable container and
+  its generated payload copies, freeing another 1.65 GiB (16.87 GiB total).
+  Preserve source builds, the rebuilt OCR plugin, models and test outputs.
+- [x] Add an inline rich-text block editor with Markdown/HTML round-trip,
+  H1-H6, bold/italic/strike, heading/body Enter behavior and Save/Cancel.
+  Thirteen serialization and six heading-metric cases execute actual upstream
+  methods; native window tests cover atomic persistence, unknown fields and
+  stale Save after changing documents. Actual plugin/document/video tests and
+  the same plugin's Chat/VQA regression pass. Qt-version-sensitive APIs go
+  through QtCompat; the GPL source adaptation is attributed explicitly.
+- [x] Match twelve clipboard cases against actual upstream MIME sanitization,
+  block insertion and heading decisions. Ignore local image URLs, strip inline
+  images without losing text, restore pasted headings, and reuse an existing
+  blank block on Enter after an image.
+- [x] Display image-block crop previews from `_ppocr_meta.block_image_paths`,
+  preserving duplicate-key fallback and excluding text blocks. Three preview
+  sizes and six viewport/image-height cases match actual upstream methods;
+  the actual document window also loads the preview and cancels the editor.
+- [x] Match the rich editor's container, body, scrollbar, format buttons,
+  heading active/inactive and Save/Cancel QSS against the actual upstream
+  functions in both light/dark themes. Stop inheriting the list selection's
+  blue background; preserve source toolbar/body margins and spacing.
+- [x] Match the custom six-row heading popup, selected/hovered states,
+  Escape/button dismissal and source-drawn heading/bold/italic/strike icons.
+  Both theme cases execute the upstream selection methods. Match embedded
+  image click selection and its padded blue frame; two cases verify viewport
+  geometry against the source before/after scrolling, cursor/text preservation,
+  ordinary click dismissal and stale-frame removal after deleting the image.
+  Latest native source comparison: `rich-dropdown-reference-s8zurz7a/` under
+  the storage-reference directory. These mini-probe results precede the final
+  merged-branch plugin rebuild.
+- [ ] Complete full-window comparisons, formula rendering and native PDF
+  rendering. Current Qt5 tests do not certify Qt6.
+- [ ] Qualify controlled performance: the latest CUDA/Vulkan release repeats
+  were rejected before timing by real desktop GPU SM activity, so no speed
+  or VRAM qualification was produced. Keep the audit thresholds unchanged.
+- [x] Complete original CUDA truth reruns: new ONNX models 36/36 on CUDA
+  and 36/36 on Vulkan; public Paddle graphs 10 PASS / 2 FAIL per backend.
+  Layout F16/Q8 remain strict argmax precision failures on both GPUs. Fix
+  the virtualenv interpreter symlink bug and eight-head probe export before
+  rerunning; retain the earlier tool failures separately.
+- [x] Repeat all 96 graph rows after rebuilding the merged runtime
+  (SHA-256 `9f2548ef28f6edadbcdbb0658d6fbf67e18dbd73ca2afb28183c2b2e9af59f21`):
+  each GPU has 36/36 ONNX PASS and 10 PASS / 2 FAIL Paddle. Only layout
+  F16/Q8 fail. Receipt: `merged-gpu-truth-20261020-awcjlpee/finished.json`.
+- [x] Finish the fresh 120-scenario labelled-page/SLANet queue against this
+  merged runtime: Vulkan 60/60 PASS and CUDA 59/60 PASS initially; the sole
+  CUDA identity-only failure passes its separate unchanged-condition retry.
+  These page comparisons retain the original CPU source and are developer
+  evidence, not the pending original-CUDA page cohort. Old 54+6 per-GPU page results belong to runtime
+  `154a0b62460edbe0273deeb17f766bd0d949aefc63a4782b0d9c3251665105cf`
+  and remain historical evidence; do not inherit them across library SHAs.
+  Preserve the Japanese XFUND F32 cache-identity failure: its CER/WER deltas
+  are zero, but CMake reconfigured during the row. The original identity-only
+  failure receipt is retained. Formal SLANet source-graph consumers also pass
+  3/3 on each GPU, with unchanged build identity. Controlled release sentinels
+  remain separate. Follow-up receipts use
+  `merged-gpu-followup-path.txt`; a failed receipt is never overwritten.
+- [ ] Finish layout repairs/independent GT, release repeat stability and
+  eligible uploads, then verify catalog SHA,
+  manifest ownership and automatic cold downloads. Local VLM and Linux
+  clean-package remain open; the stale build CPack config is a TBB package
+  and must not be presented as an ACloudViewer installer.
+
+- [x] Reassess the packaging claim against actual GitHub focal jobs and logs.
+  Ubuntu run 39273926284 generated and installed the focal artifact; headless
+  tests have 126 PASS / 1 skip and JSON-RPC has 138 PASS. CUDA focal run
+  39273926321 also passes build/package/install checks. The local Oct 14
+  zero-byte installation is stale local evidence, not a remote CI failure.
+  The later Ubuntu run 39372646030 at `9952ac8d` also completes successfully:
+  all three distributions build/package/install/test; focal again records
+  126 headless PASS / 1 skip and 138 JSON-RPC PASS. Preserve its actual logs
+  separately from the earlier run and current uncommitted worktree.
+- [x] Restore all packaging-related worktree/index changes to synchronized
+  HEAD, including CMake/PostInstall, bundlers, launchers/installer scripts,
+  CI plugin switches and build documentation. Remove the added staging helper
+  and four packaging test files after preserving exact backups and patches.
+  Receipt: `packaging-reassessment-20261020/restoration.json` under the
+  storage-reference directory. Earlier 12-test/local-payload results are
+  historical investigation and do not certify changes that were rolled back.
+- [x] Cancel the local installer and dependent clean-container queue using
+  the withdrawn scripts. Continue the formal plugin/cache tests and OCR GPU
+  queue independently; do not infer model accuracy from installer CI success.
+- [ ] Validate future submitted plugin/model changes through the existing
+  unchanged CI build/install workflow. Historical successful artifacts do not
+  include the current uncommitted worktree; do not reuse the stale local
+  installation as a package acceptance result.
+- [x] Replace the three common `table-structure-*` fixture-only consumers with
+  independent original Paddle graph comparisons, retaining 289 unique scenarios.
+  Pin the official SLANet archive and all three source members. Normalize its
+  leading `./` member paths in the shared extractor while rejecting ambiguous
+  names, links and path escapes; 102 runner tests and the actual shared download/
+  extraction pass. Table/Paddle probe suites: 27 tests pass.
+- [x] Run those source-graph consumers on CUDA/Vulkan for F32/F16/Q8_0 using
+  the uniformly compiled isolated probe: all six scenarios pass, three inputs
+  per scenario and exact EOS-inclusive argmax. Receipts are under
+  `slanet-common-gpu-path.txt`. The formal CMake-target reruns subsequently
+  pass all six consumers in `merged-gpu-followup-path.txt`; controlled release
+  performance and original-CUDA page references remain separate pending gates.
+- [x] Verify one existing published OCR F32 file through an empty, space-containing
+  shared data root: OCR/table C ABI cache paths agree; cold download and SHA,
+  offline reuse and corrupt-offline rejection pass. Do not extend this evidence
+  to unpublished candidates or plugin UI download interaction. Receipt:
+  `ocr-shared-cache-cold-path.txt`.
+- [x] Exercise the actual shared Qt downloader on the same published OCR file
+  with a fresh space-containing data root. Preserve the reproduced stale-ledger
+  failure; fix the shared integrity service to keep rejecting changed pinned
+  files across repeated cheap/empty-pin queries and failed deep checks. qOCR
+  now uses that service for model presence. Cold download/SHA/ledger, warm reuse,
+  corruption rejection and restored deep verification pass with unchanged
+  executable/library identities. Formal shared-service/TRELLIS compatibility
+  and seven AnyLabeling regressions pass (9/9); AICore/OCR probe SHA values are
+  unchanged. The installer queue was canceled after packaging restoration;
+  existing CI must validate future submitted plugin changes.
+- [x] Align Chat/VQA model-discovery triggers and per-provider refresh decisions
+  with the pinned source: initial window, provider change and menu open;
+  Ollama always queries; cached other providers use the source call tracker;
+  explicit refresh bypasses it. The source's first-interval reset keeps timer=0,
+  so later calls refresh again; preserve and test that actual behavior rather
+  than claiming a rolling five-minute cooldown. Fifteen controlled-clock cases
+  match execution of `get_models_data` and `EventTracker`.
+- [x] Keep model discovery asynchronous and independent of completion requests,
+  using two instances of the existing transport and the existing models.json
+  owner. Real plugin HTTP tests cover cache hits, forced refresh, Ollama,
+  provider switching, first empty-menu population and concurrent completion/discovery; native workflow and
+  source comparison pass, followed by 2/2 formal Chat/plugin regressions.
+  Receipts: `chat-model-refresh-path.txt`. Chat Markdown now uses QtCompat;
+  hover dispatch uses the shared Qt5/Qt6 event API. Qt6 visuals remain unverified.
+
+- [x] Match model-popup placement to the actual source method: centered on
+  the selector, resized to the settings panel width and the space above it.
+  A real plugin window exports its geometry and the comparison executes
+  `ChatbotDialog.show_model_dropdown`; light/dark native workflows and 2/2
+  formal Chat/plugin tests pass. Receipt: `chat-model-position-path.txt`.
+  This closes the positioning rule only, not the complete conversation layout.
+
+- [x] Pin all 1,000 official CDLA validation pages and their 8,711 human-labelled
+  regions, including archive/member SHA values and source converter versions.
+  Execute the actual official converter/rasterizer and confirm identical
+  classes, raster-mask areas and bounding boxes. Use positive COCO annotation
+  IDs to avoid its zero/unmatched sentinel. No training-set tuning is involved.
+- [x] Add independent original-Paddle and public-C-ABI layout region exporters
+  plus class-aware COCO page evaluation. Seventeen manual unit tests pass;
+  the original CPU export completes all 1,000 pages and three native CPU pages
+  verify the wiring only. CPU results are diagnostic, never GPU release gates.
+- [x] Verify the shared cold archive download, all 2,000 pinned-member checks
+  and zero-download offline reuse through the existing common downloader.
+- [x] Complete the original CUDA reference and all six native
+  CUDA/Vulkan × F32/F16/Q8_0 exports on the same full 1,000-page selection;
+  every process exits normally. Original CUDA mAP50:95 is 0.8546702421.
+  Native CUDA/Vulkan F32 deltas are -0.0000003951/-0.0000004017;
+  F16 deltas are +0.0000631982 on both, Q8_0 -0.0009133202 on both.
+  Receipt: `layout-cdla-source-path.txt` (`gpu-finished.json`). Formal
+  `test_ocr_layout_gt_eval` passes after reconfiguration. These measured page
+  deltas do not remove strict raw-output failures or qualify performance.
+- [ ] Finish independently reviewed layout page-gate tolerances and common
+  manifest consumers; preserve the existing strict raw-output failures.
+
+
+- [x] Reproduce the remaining source-CPU gate in GPU graph validation: the
+  native probe consumed CPU reference arrays before the original CUDA check,
+  so a later CUDA match could not clear the earlier CPU failure. Prepare an
+  isolated correction for original Paddle/ONNX, stored-weight ONNX and the
+  direction-classifier/CTC source path. Preserve all SHA, probability and exact
+  argmax requirements. Thirty-seven isolated probe tests pass, including
+  CPU/CUDA near-tie disagreement and provider fallback rejection; CPU original/
+  stored-weight and orientation/CTC exports complete only as wiring checks.
+- [x] Apply the reviewed CUDA-reference correction after the frozen graph/table
+  queues. All seven production probe/runner suites pass (184 tests including
+  the 17 CDLA evaluator tests); no native runtime/probe binary changes.
+  Receipt: `gpu-truth-selection-path.txt`.
+- [ ] Rerun the common CUDA/Vulkan graph, orientation and page consumers
+  with original CUDA truth for every accuracy input. Graph/orientation is now
+  complete (128/132 pass); pages remain running. The formal CDLA CTest passes.
+  Production unit tests are not GPU acceptance; layout F16/Q8 strict CUDA
+  failures remain unresolved.
+
+- [x] Extend the isolated CUDA-reference correction to the labelled-page
+  probes: source ONNX uses the supplied CUDA interpreter, verifies provider
+  selection and normal subprocess exit; public Paddle uses the exact original
+  CUDA package and rejects replayed CPU predictions for GPU rows. Keep human
+  GT and the existing Hmean/CER/WER thresholds. The 66 ONNX-page, 21 Paddle-page
+  and 18 orientation manifest consumers receive explicit CUDA reference paths.
+  All 167 isolated probe/runner tests pass. Download/verify the 100 additional
+  held-out SROIE files through the existing common cache before queued reruns.
+- [ ] Validate the new page reference execution on actual CUDA/Vulkan; the
+  older completed page queue uses its original CPU source reference and remains
+  a separate historical/developer cohort. Its original-CUDA-reference replacement
+  is now running. Complete all page runs before claiming GPU-only acceptance.
+
+- [x] Prepare exact-SHA GPU reruns for the two unpublished public Q8 repairs
+  using the current common manifest: two original graph rows and seven human
+  labelled/held-out page rows per backend. Offline shared-cache preflight passes
+  with original Paddle CUDA references; no replayed CPU predictions or changed
+  thresholds. Receipt: `public-q8-gpu-truth-path.txt`.
+- [ ] Finish the queued CUDA/Vulkan repair rows after the complete current-model
+  GPU queue. Keep pending model SHA values separate from published originals;
+  successful preparation does not qualify a new file for upload.
+
+
+### 2026-10-20 Chat source panels and input workflow
+
+- [x] Replace the single-column Chat settings layout with the source's three
+  columns: 200..250-pixel provider panel, expanding conversation and fixed
+  360-pixel preview/settings panel. Reuse the same provider configuration and
+  transport. Match the Backend/Generation tabs, 0..20 temperature slider,
+  model-popup anchor, image navigation/open actions and source constraints.
+- [x] Embed 21 original light/dark QSS pairs as generated compile-time data;
+  record all three source SHA values and reproduce the file with
+  `tests/generate_chat_styles.py`. There is no installed Python or source-path
+  dependency. Verify actual workspace theme actions, panel background and
+  provider foreground colors against source theme constants. Defer scoped
+  overrides until workspace stylesheet propagation completes.
+- [x] Match the plain-text QTextEdit input frame, 20..300-pixel dynamic height,
+  scrollbars, first @image highlight, Enter send/Shift+Enter newline and
+  settings-field Enter suppression. Empty input disables send; generation
+  uses the same button to stop, disables the input, and preserves cancellation
+  and stale-source guards. Clear conversation defaults to No and preserves
+  all other sidecar fields after Yes.
+- [x] Actual plugin workflow and nine source layout/theme comparisons pass.
+  Six formal Chat/plugin/OCR-document/table/rich/shared-integrity CTests pass
+  after integrating the exact tested objects and plugin. Frozen OCR execution
+  artifacts remain byte-identical. Receipt: `chat-three-columns-path.txt`.
+- [ ] Finish conversation message/code/math rendering and full-window visual
+  states, typography/DPI and Qt6/native-platform checks. These source-structure
+  and selected-color checks do not certify complete visual parity.
+
+
+### 2026-10-20 Chat message presentation and GPU failure attribution
+
+- [x] Embed 12 additional original light/dark message style pairs (33 total),
+  including bubbles, assistant role header, actions and editor controls. The
+  generator verifies the pinned source; no runtime Python dependency is added.
+- [x] Match user/assistant context-menu action order and source 1,000-ms copy
+  feedback. Menus call existing message operations and honor disabled actions;
+  owned menus and timers survive source switching without stale mutation.
+- [x] Actual plugin regression verifies source theme surface/text colors,
+  role icons, menu copy/edit, timer reset and deleting the open-menu message
+  during image navigation. Twelve independent source layout/theme/menu checks
+  and all six formal shared-integrity/Chat/OCR-window/plugin CTests pass.
+  All 28 frozen OCR execution identities remain unchanged. Receipt:
+  `chat-message-source-path.txt`.
+- [x] Complete the original-CUDA graph/orientation cohorts: 128/132 pass;
+  only layout F16/Q8_0 fail (two per backend). Read-only retained-tensor
+  comparison finds zero CUDA/Vulkan argmax differences on all eight heads.
+  Both backends have the exact same original-source disagreement masks:
+  F16 22 class + 40 edge flips; Q8_0 253 + 419. Maximum backend tensor
+  difference is below 0.000021. Receipt: `layout-backend-attribution.json`.
+  This argues against a backend-specific defect, without replacing the
+  strict failed gate or qualifying a quantization repair.
+- [ ] Finish all original-CUDA-reference page cohorts, queued public Q8
+  repair rows, strict layout repair and controlled performance. PDF/formula,
+  Markdown syntax highlighting/math, local VLM and full-window/platform
+  acceptance remain open; no model is qualified or uploaded.
+
+
+### 2026-10-20 VQA navigation, clear and refresh
+
+- [x] Match 1-based page input, first/last navigation availability, empty-input
+  restoration, maximum clamping and Enter jump without triggering another
+  dialog button. Match 68×32 page input, 32×32 navigation and 28×28 sidebar
+  controls. Preserve collapsed image-panel state across page switches.
+- [x] Add the source's default-No Clear All confirmation for the current image.
+  Reset all four configured component types through the existing value writer;
+  cancel pending answers and retain unknown VQA/sidecar fields. Execute the
+  original clear/value/save methods independently against the native fixture.
+- [x] Add both source refresh controls; show the right-side refresh/sidebar
+  controls while the image panel is collapsed. Reuse the owning workspace's
+  current-file load path for disk refresh and source-generation invalidation.
+  A real external JSON edit is reloaded without rewriting unrelated fields.
+- [x] Native workflow and independent source page/default/clear comparisons
+  pass; all six formal plugin/OCR-window/Chat/shared-cache CTests pass after
+  integration. All 28 active OCR execution identities remain unchanged.
+  Receipts: `vqa-navigation-source-path.txt`, `vqa-refresh-source-path.txt`.
+- [x] Prepare a serial controlled GPU retry using the unchanged common runner,
+  original CUDA references and preserved same-host baseline. All eight release
+  command preflights pass, including the two exact-SHA public Q8 repairs;
+  actual measurement waits for the active page and
+  public Q8 repair queues. Receipt: `gpu-controlled-retry-path.txt`.
+- [ ] Complete the full VQA layout, component/dialog styles, fonts/DPI and
+  Qt6/platform comparisons. Performance preparation is not a completed gate;
+  strict layout repair, all page cohorts, model publication/download closure,
+  native PDF/formula and local VLM remain open.
+
+
+### 2026-10-20 VQA source styles and dark-to-light repair
+
+- [x] Embed 14 additional original VQA light/dark QSS pairs (47 Chat/VQA
+  pairs total). Replace duplicate prompt/loading/button styles and apply
+  source filename, image-container/preview, page, splitter, panel/navigation
+  and action styles. Match the source image-container eight-pixel margins.
+- [x] Fix dark-to-light switching in the owning workspace: clearing QSS after
+  setting the new palette restored stale dark colors. A minimal Qt5 reproducer
+  distinguishes the faulty order from QSS-before-palette; child dialogs use
+  the same corrected order and Chat reads its owner's theme.
+- [x] Independently execute original VQA style functions and compare all 14
+  actual native widget styles in both modes. Verify rendered container/export
+  colors and filename text after live workspace switches. Native workflow,
+  source configuration/layout/VQA comparisons and six formal CTests pass;
+  all 28 frozen OCR execution identities remain unchanged. Receipt:
+  `vqa-styles-source-path.txt`.
+- [x] Extend read-only layout diagnosis: on the retained source input,
+  F16/Q8_0 raw argmax flips occur below score .5, but respectively one/two
+  anchors cross that score threshold. This does not remove strict raw-output
+  failures or establish page equivalence. Receipt:
+  `layout-decision-confidence.json`.
+- [ ] Full VQA component/layout/dialog, font/DPI/Qt6/platform visuals,
+  Markdown/formula/PDF, local VLM, remaining GPU page/precision/performance
+  gates and qualified publication/download closure remain open.

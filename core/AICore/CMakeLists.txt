@@ -775,6 +775,7 @@ target_include_directories(test_ocr_runtime PRIVATE
 # parity ctest stays runnable while unrelated task sources (e.g. the sam3d
 # vendor migration) break the main-library closure.
 target_link_libraries(test_ocr_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+aicore_apply_compile_definitions(test_ocr_runtime)
 
 # AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
 # Runtime golden fixtures shipped in the anycalib release. Sources are
@@ -811,6 +812,7 @@ target_include_directories(test_table_runtime PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
     ${JSONCPP_INCLUDE_DIRS})
 target_link_libraries(test_table_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+aicore_apply_compile_definitions(test_table_runtime)
 set_target_properties(test_table_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     BUILD_RPATH "$ORIGIN"

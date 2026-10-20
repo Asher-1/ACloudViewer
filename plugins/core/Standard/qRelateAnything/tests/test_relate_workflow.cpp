@@ -110,7 +110,16 @@ int main(int argc, char** argv) {
         check(model && device && list && sample && run && table && video &&
                       tabs,
               "UI controls");
-        check(model->count() == 9, "all nine relation models");
+        {
+            // The picker lists exactly the relation-weight rows of the
+            // catalog (the text students and tokenizer are not models).
+            int weights = 0;
+            for (int i = 0; i < aicore_relation_model_count(); ++i)
+                weights += aicore_relation_model_at(i)->role ==
+                           AICORE_RELATION_MODEL_RELATIONS;
+            check(weights > 0 && model->count() == weights,
+                  "every relation weight row is listed");
+        }
         {
             // Defaults must equal upstream render_video.py / demo_webcam.py.
             auto dbl = [&](const char* name) {

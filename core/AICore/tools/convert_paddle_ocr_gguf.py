@@ -60,6 +60,18 @@ def load_paddle_tensors(model_dir: Path):
 # all 11 quantized gave 0.44 and changed 28% of ICDAR2015 word texts,
 # keeping these three gives 0.0039 for +13 KiB. A dequantized-to-F32 copy
 # reproduces the 0.44 exactly, so it is weight rounding, not a kernel.
+# Additional labelled-page regression (2026-10-19, developer candidates):
+# - ch det conv2d_397: the public Q8_0 scene pipeline exceeded the 0.005 CER
+#   degradation gate. Keeping this one tensor F16 passes both languages on
+#   50 scenes and Chinese SROIE; the English receipt recognizer is separate.
+# - en rec conv2d_161: with that detector candidate, public Q8_0 English
+#   SROIE fixed-region / pipeline WER deltas were +0.006834 / +0.008936.
+#   Keeping this tensor F16 gives -0.005432 / -0.000350, and the CPU scene
+#   pipeline CER delta is +0.003530. The other seven single-tensor candidates
+#   fail the SROIE gate. These sets selected the policy; they are regression
+#   evidence, not an untouched holdout or full backend/performance release.
+# Exact files, parameter storage proportions and source identities remain in
+# the qAnyLabeling per-file ledger; do not publish by filename alone.
 # ch_PP-OCRv4_rec_infer needs none (all 11 quantized: 5.3e-4).
 #
 # Composed-page sets (2026-10-14, table-page-gt composed TEDS attribution).
@@ -83,7 +95,7 @@ def load_paddle_tensors(model_dir: Path):
 #   exist as F16 in the proven F16 containers of the same models.
 Q8_0_KEEP_F16 = {
     "en_PP-OCRv4_rec_infer": {"conv2d_139.w_0", "conv2d_141.w_0",
-                              "conv2d_143.w_0"},
+                              "conv2d_143.w_0", "conv2d_161.w_0"},
     # ch rec: the same three early backbone 1x1 convs as en (same SVTR-mobile
     # architecture, shapes (32,64)/(64,64)/(64,128)). Their q8_0 rounding is
     # invisible on the rec fixture (all 11 quantized: 5.3e-4) but flips greedy
@@ -94,6 +106,7 @@ Q8_0_KEEP_F16 = {
         "conv2d_100.w_0", "conv2d_101.w_0",
         "conv2d_102.w_0", "conv2d_103.w_0"},
     "ch_PP-OCRv4_det_infer": {
+        "conv2d_397.w_0",
         "conv2d_132.w_0", "conv2d_133.w_0", "conv2d_134.w_0",
         "conv2d_136.w_0", "conv2d_138.w_0", "conv2d_142.w_0",
         "conv2d_144.w_0", "conv2d_148.w_0", "conv2d_150.w_0",
@@ -172,15 +185,27 @@ def quantized(name: str, tensor: np.ndarray, kind: str,
             if folded % 32 == 0:
                 reshaped.append(name + ":" +
                                 ",".join(str(d) for d in tensor.shape))
+                values = tensor.reshape(tensor.shape[0], folded)
+                blocks = values.reshape(-1, 32)
+                maxima = np.abs(blocks).max(axis=1)
+                # A subnormal F32 scale can overflow the reference
+                # quantizer's reciprocal. Its stored F16 scale is zero,
+                # so the block necessarily dequantizes to zero. Canonical
+                # zero blocks avoid Inf/NaN -> int8 conversions without
+                # changing any representable reconstructed weight.
+                tiny = (maxima > 0) & (maxima < 127 / np.finfo(np.float32).max)
+                if tiny.any():
+                    values = values.copy()
+                    values.reshape(-1, 32)[tiny] = 0
                 return (gguf.quants.Q8_0.quantize(
-                            tensor.reshape(tensor.shape[0], folded)),
+                            values),
                         gguf.GGMLQuantizationType.Q8_0)
         return tensor.astype(np.float16), gguf.GGMLQuantizationType.F16
     raise SystemExit(f"unknown quant {kind}")
 
 
 def write_gguf(tensors, metadata, output: Path, kind: str,
-               reshaped, keep_f32=(), keep_f16=()):
+               reshaped, keep_f32=(), keep_f16=(), storage_overrides=None):
     import gguf
     writer = gguf.GGUFWriter(str(output), "ocr")
     for key, value in metadata.items():
@@ -211,6 +236,17 @@ def write_gguf(tensors, metadata, output: Path, kind: str,
                         keep_f16=name in keep_f16)
         for name, tensor in tensors.items()
     }
+    if storage_overrides:
+        if kind != "q8_0" or storage_overrides.keys() - tensors.keys():
+            raise ValueError("invalid Q8_0 storage override ownership")
+        for name, (array, storage) in storage_overrides.items():
+            if storage != gguf.GGMLQuantizationType.Q8_0:
+                raise ValueError("calibrated override must contain Q8_0 storage")
+            shape = tensors[name].shape
+            if array.dtype != np.uint8 or array.size != tensors[name].size // 32 * 34:
+                raise ValueError("invalid calibrated Q8_0 storage size")
+            quantized_tensors[name] = (array, storage)
+            reshaped.append(name + ":" + ",".join(str(d) for d in shape))
     if reshaped:
         writer.add_array("ocr.quant.reshaped", reshaped)
     for name, (array, ggml_type) in quantized_tensors.items():
@@ -232,7 +268,7 @@ def main() -> None:
     parser.add_argument("output", type=Path, help="output F32 GGUF stem; "
                         "siblings get -f16/-q8_0 suffixes")
     parser.add_argument("--role", required=True,
-                        choices=["det", "rec", "layout", "table"])
+                        choices=["det", "rec", "cls", "layout", "table"])
     parser.add_argument("--arch", required=True,
                         help="source architecture id, e.g. lcnetv3-db, "
                              "svtr-lcnet")

@@ -106,6 +106,12 @@ complete convenience include for public task contracts and must be updated
 when a task is added. New code should still include only the headers it uses.
 `inference_log.h` is deliberately excluded because it depends on `CVLog.h`.
 
+Tagging keeps the original `aicore_tagging_request` layout and by-value default
+request ABI frozen. The original inference entry retains official Pillow
+bilinear/antialias preprocessing. Consumers requiring X-AnyLabeling's uint8
+OpenCV INTER_LINEAR resize use `aicore_tagging_default_request_v2()` and
+`aicore_tagging_infer_image_v2()` with `AICORE_TAGGING_RESIZE_OPENCV`.
+
 ## Source Layout
 
 ```text

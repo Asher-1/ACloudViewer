@@ -69,6 +69,9 @@ public:
      *        ledger entry exists (exact published size of a catalog model);
      *        0 disables it. Once a ledger entry exists it supersedes this
      *        guard (the entry was recorded from a byte-verified state).
+     * A changed file with pinned ledger evidence is rejected by the cheap
+     * policy, preserving that evidence across repeated presence checks.
+     * DeepVerify can revalidate its bytes and refresh the ledger.
      */
     static bool isVerified(const QString& path,
                            const Anchor& anchor,

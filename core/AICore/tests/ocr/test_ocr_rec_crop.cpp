@@ -50,6 +50,32 @@ uint64_t fnv1a64(const std::vector<uint8_t>& data) {
 }  // namespace
 
 int main(int argc, char** argv) {
+    {
+        // TextDetector's first-index tie ordering on the real val_img_421
+        // diamond repeats a corner. Pinned source OpenCV produces a 36x36
+        // crop filled with the top-left pixel for this singular transform.
+        const float box[4][2] = {
+                {237, 267}, {219, 286}, {255, 285}, {219, 286}};
+        int width = 0, height = 0;
+        aicore::ocr::rotateCropSize(box, &width, &height);
+        AICORE_CHECK(width == 36 && height == 36);
+        aicore::img::Image image;
+        image.width = 1280;
+        image.height = 720;
+        image.channels = 3;
+        image.rgb.assign(static_cast<size_t>(image.width) * image.height * 3,
+                         17);
+        image.rgb[0] = 29;
+        image.rgb[1] = 77;
+        image.rgb[2] = 163;
+        std::vector<uint8_t> crop(static_cast<size_t>(width) * height * 3);
+        AICORE_CHECK(aicore::ocr::warpPerspectiveCubicReplicate(
+                image, box, width, height, crop.data()));
+        bool equal = true;
+        for (size_t i = 0; i < crop.size(); ++i)
+            equal = equal && crop[i] == image.rgb[i % 3];
+        AICORE_CHECK(equal);
+    }
 #ifdef AICORE_OCR_REC_CROP_GOLDEN
     const char* golden = argc > 1 ? argv[1] : AICORE_OCR_REC_CROP_GOLDEN;
 #else

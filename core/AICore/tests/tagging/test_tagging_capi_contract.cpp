@@ -13,6 +13,20 @@
 #include "aicore/tagging_capi.h"
 #include "tests/common/test_macros.hpp"
 static int failures = 0;
+// Frozen declaration from the original public header, independently retained:
+// changing a by-value return size breaks callers before infer can validate it.
+struct OriginalTaggingRequest {
+    uint32_t struct_size;
+    uint32_t abi_version;
+    float threshold;
+    const char* specified_tags;
+    float threshold_epsilon;
+};
+static_assert(sizeof(aicore_tagging_request) == sizeof(OriginalTaggingRequest),
+              "original default_request return ABI changed");
+static_assert(alignof(aicore_tagging_request) ==
+                      alignof(OriginalTaggingRequest),
+              "original request alignment changed");
 int main() {
     aicore_tagging_free(nullptr);
     aicore_tagging_result_free(nullptr);
@@ -39,6 +53,11 @@ int main() {
     auto request = aicore_tagging_default_request();
     AICORE_CHECK(opts.struct_size == sizeof(opts) && request.threshold == -1);
     AICORE_CHECK(opts.cpu_precision == AICORE_TAGGING_CPU_AUTO);
+    const auto extended = aicore_tagging_default_request_v2();
+    AICORE_CHECK(extended.resize_mode == AICORE_TAGGING_RESIZE_OFFICIAL);
+    AICORE_CHECK(extended.struct_size == sizeof(extended));
+    AICORE_CHECK(offsetof(aicore_tagging_request_v2, resize_mode) >=
+                 sizeof(request));
     for (int mode = 0; mode < 5; ++mode) {
         auto invalid = opts;
         if (mode == 1) invalid.struct_size = 0;
@@ -52,6 +71,10 @@ int main() {
         AICORE_CHECK(aicore_tagging_infer_image(ctx, nullptr, &request,
                                                 &result) == -1 &&
                      result == nullptr);
+        result = reinterpret_cast<aicore_tagging_result*>(1);
+        AICORE_CHECK(aicore_tagging_infer_image_v2(ctx, nullptr, &extended,
+                                                   &result) == -1 &&
+                     !result);
         aicore_pipeline_timings timings{};
         AICORE_CHECK(aicore_tagging_last_pipeline_timings(ctx, &timings) == -1);
         aicore_tagging_free(ctx);

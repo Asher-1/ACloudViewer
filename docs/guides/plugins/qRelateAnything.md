@@ -3,7 +3,8 @@
 Enable `AICore_ENABLED` and `PLUGIN_STANDARD_QRELATEANYTHING`, then open the
 RelateAnything plugin. It detects objects with the existing YOLO inference task
 and displays subject–predicate–object relations with scores and an annotated
-preview. Choose among all nine relation models in F32/F16/Q8_0 precision.
+preview. Choose among 24 relation models (12 ViT + 12 ConvNeXt) in F32/F16/Q8_0
+precision.
 
 **Try sample data** downloads and verifies the shared RelateAnything archive. One
 click fills both the six-image list and the video input. Only `horse.jpg` is
@@ -16,9 +17,12 @@ filtered, exported as JSON/CSV/text, or added as an annotated image to the DB.
 the video tab has no separate sample button. Under **Options**, **Object
 detector** lists YOLOE, YOLO-World (497 RA-4M categories), YOLO segmentation,
 RF-DETR and YOLO detection models; the default is `yoloe-26s-seg-pf-f16`.
-**Relation score threshold** (default 0.45) and **Spatial relation threshold**
-(default 0.42) hide relations the calibrated model is less sure about; lower
-them to see more. At most 8 relations are shown, 3 of them spatial.
+**Operating point** offers Official video reel (default) and Official image demo
+presets, which set detection confidence, relation/spatial thresholds, maximum
+objects, and the predicate vocabulary (65 or 35 curated phrases). **Relation
+score threshold** and **Spatial relation threshold** hide relations the
+calibrated model is less sure about; lower them to see more. At most 8 relations
+are shown, 3 of them spatial (adjustable in the default preset).
 
 Optional custom predicates are separated with `|`. The matching text student
 and official tokenizer are downloaded through the same shared model cache.

@@ -1,0 +1,2 @@
+# Preserve the source vocabulary byte-for-byte, including meaningful raw spaces.
+ram_tag_list_chinese.txt whitespace=-blank-at-eol

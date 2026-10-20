@@ -126,6 +126,17 @@ compiler settings, binaries and execution status in
   selection instead of stored raw pointers. L2: Worker null guards after shutdown.
   L9: setBusy() only updates tab state on change to avoid per-frame flicker.
 
+- [x] UI polish complete (2026-10-16): 29/29 defects fixed (5 HIGH, 8 MEDIUM, 16 LOW)
+  covering resource lifecycle, download cancellation, batch error recovery, video
+  loop handling, user-visible error reporting, keyboard navigation, filter behavior,
+  and export correctness. All fixes compiled and annotated in code (H1-H5, M1-M10,
+  L1-L16). H1: Esc cleanup via reject/hideEvent override. H2: Download cancel flow
+  fixed in Dialog and ecvModelDownloader. M4: Video loop stops stream. M7: Skip
+  heavy GUI updates for video frames. L8: Filter summary shows "N of M", sorting
+  enabled with numeric score. L9: Run is default button, focus restored after
+  completion. Backward compatible: settings, signals, API unchanged. Report at
+  `build_app/Testing/relate/ui-polish-current/report.md`.
+
 ## ConvNeXt integration status
 
 - [x] **Graph port complete (2026-10-15)**: ConvNeXt backbone ported from upstream

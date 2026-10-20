@@ -26,6 +26,7 @@ import time
 import urllib.parse
 import urllib.request
 import zipfile
+import tarfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
@@ -642,15 +643,44 @@ def verify_extracted_input(asset: InputAsset, root: Path) -> tuple[bool, str]:
 
 def extract_input_archive(asset: InputAsset, archive: Path, root: Path) -> None:
     try:
-        with zipfile.ZipFile(archive) as stream:
-            names = set(stream.namelist())
+        is_zip = zipfile.is_zipfile(archive)
+        with (zipfile.ZipFile(archive) if is_zip else tarfile.open(archive, "r:*")) as stream:
+            wanted = {str(path) for path, _, _ in asset.extracted_files}
+            members = {}
+            for entry in stream.infolist() if is_zip else stream.getmembers():
+                name = entry.filename if is_zip else entry.name
+                normalized = PurePosixPath(name)
+                # Official Paddle archives may prefix regular members with
+                # './'. Normalize that spelling without accepting traversal,
+                # absolute paths or ambiguous duplicate members.
+                if normalized.is_absolute() or ".." in normalized.parts:
+                    continue
+                key = str(normalized)
+                if key not in wanted:
+                    continue
+                if key in members:
+                    raise RuntimeError(f"ambiguous archive member: {key}")
+                members[key] = entry
             for relative, digest, size in asset.extracted_files:
                 member = str(relative)
-                if member not in names:
+                if member not in members:
                     raise RuntimeError(f"archive is missing {member}")
+                entry = members[member]
                 destination = root.joinpath(*relative.parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                with stream.open(member) as source:
+                if is_zip:
+                    if (entry.is_dir() or
+                            (entry.external_attr >> 16) & 0o170000 == 0o120000 or
+                            (size and entry.file_size != size)):
+                        raise RuntimeError(f"invalid archive member: {member}")
+                    source = stream.open(entry)
+                else:
+                    # Read only pinned regular members. Never extract paths,
+                    # device entries, symbolic links or hard links from a tar.
+                    if not entry.isfile() or (size and entry.size != size):
+                        raise RuntimeError(f"invalid archive member: {member}")
+                    source = stream.extractfile(entry)
+                with source:
                     payload = source.read()
                 if size and len(payload) != size:
                     raise RuntimeError(f"archive member size mismatch: {member}")
@@ -664,7 +694,7 @@ def extract_input_archive(asset: InputAsset, archive: Path, root: Path) -> None:
                     temporary.flush()
                     os.fsync(temporary.fileno())
                 os.replace(partial, destination)
-    except (OSError, zipfile.BadZipFile) as error:
+    except (OSError, zipfile.BadZipFile, tarfile.TarError) as error:
         raise RuntimeError(f"could not extract {asset.relative_path}: {error}") from error
 
 
@@ -732,9 +762,12 @@ def filter_unavailable_specs(
     return runnable, skipped
 
 
-def load_manifest(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as stream:
-        manifest = json.load(stream)
+def load_manifest(path: Path, *, identity: dict[str, Any] | None = None) -> dict[str, Any]:
+    data = path.read_bytes()
+    manifest = json.loads(data)
+    if identity is not None:
+        identity.update(path=str(path), bytes=len(data),
+                        sha256=hashlib.sha256(data).hexdigest())
     if manifest.get("schema") not in (1, 2):
         raise ValueError(f"unsupported manifest schema: {manifest.get('schema')}")
     if (not manifest.get("tasks") or not manifest.get("scenarios") or
@@ -999,7 +1032,9 @@ def parse_references(items: list[str]) -> dict[str, str]:
         name, sep, path = item.partition("=")
         if not sep or not name or not path:
             raise ValueError(f"--reference expects NAME=PATH, got {item!r}")
-        references[name] = str(Path(path).expanduser().resolve())
+        # A venv's python is often a symlink to the base interpreter. Resolving
+        # it changes sys.prefix and silently discards the selected packages.
+        references[name] = str(Path(path).expanduser().absolute())
     return references
 
 
@@ -1179,6 +1214,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                 "warmup_runs": str(args.warmup_runs),
                 "inference_runs": str(args.inference_runs),
                 "gpu_idle_timeout": str(args.gpu_idle_timeout),
+                "profile": getattr(args, "profile", "developer"),
                 "trellis_steps": str(args.trellis_steps),
                 "scenario_model_globs": (
                     ",".join(sorted(
@@ -1275,6 +1311,13 @@ def flatten_json(value: Any, prefix: str = "",
                 "compatibility_accuracy_max_diff", "cpu_arithmetic_probability_max_diff",
                 "cpu_arithmetic_probability_mean_diff",
                 "probability_mean_diff", "argmax_match", "cross_f1",
+                # OCR original CUDA truth and qualification must survive the
+                # common report, including zero error and unqualified timing.
+                "source_gpu_max_diff", "source_gpu_mean_diff",
+                "source_gpu_argmax_match", "source_performance_qualified",
+                "source_performance_pass", "source_gpu_audit_pass",
+                "gpu_audit_pass", "gpu_sampled_process_peak_mib",
+                "source_gpu_sampled_process_peak_mib",
                 "cross_precision", "cross_recall", "upstream_cross_f1",
                 "latency_over_upstream", "pytorch_probability_mae",
                 "pytorch_probability_max_error", "pytorch_probability_error_excess",
@@ -1747,6 +1790,41 @@ def file_identity(path: Path) -> dict[str, Any]:
             "sha256": sha256_file(path)}
 
 
+def execution_artifacts(specs: list[RunSpec], build: Path) -> dict[str, Any]:
+    """Identify command files and build runtimes, without claiming a loader trace."""
+    build = build.resolve()
+    paths = {Path(__file__).resolve()}
+    cache = build / "CMakeCache.txt"
+    if cache.is_file():
+        paths.add(cache)
+    binary_dir = build / "bin"
+    if binary_dir.is_dir():
+        for path in binary_dir.iterdir():
+            name = path.name.lower()
+            if (path.is_file() and name.startswith(("aicore", "libaicore", "ggml", "libggml"))
+                    and (".so" in name or name.endswith((".dll", ".dylib")))):
+                paths.add(path)
+    for spec in specs:
+        for index, argument in enumerate(spec.command):
+            path = Path(argument)
+            if not path.is_absolute():
+                continue
+            if path.is_file() and (index == 0 or path.suffix == ".py" or
+                                   path.is_relative_to(binary_dir)):
+                # A model cache/report in build/Testing is not executable code.
+                if index == 0 or path.suffix != ".gguf":
+                    paths.add(path)
+    return {str(path): {**file_identity(path), "resolved_path": str(path.resolve())}
+            for path in sorted(paths)}
+
+
+def execution_artifact_failures(before: dict[str, Any], after: dict[str, Any],
+                                label: str) -> list[str]:
+    return [f"{label} execution artifact changed during validation: {path}"
+            for path in sorted(before.keys() | after.keys())
+            if before.get(path) != after.get(path)]
+
+
 def vram_skipped_row(spec: RunSpec, gate: dict[str, float]) -> dict[str, Any]:
     """Synthesize a result row for a scenario skipped by the VRAM gate.
 
@@ -2211,7 +2289,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    manifest = select_scenarios(load_manifest(args.manifest), args.scenarios)
+    manifest_identity: dict[str, Any] = {}
+    manifest = select_scenarios(load_manifest(args.manifest, identity=manifest_identity), args.scenarios)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     selected = selected_tasks(manifest, args.tasks)
     try:
@@ -2298,6 +2377,14 @@ def main() -> int:
                 print(f"[{category}] {entry}")
         return 0
 
+    try:
+        artifact_snapshots = {"candidate": execution_artifacts(specs, args.build)}
+        if baseline_args:
+            artifact_snapshots["baseline"] = execution_artifacts(
+                list(baseline_specs.values()), baseline_args.build)
+    except OSError as error:
+        print(f"execution artifact preflight failed: {error}", file=sys.stderr)
+        return 1
     results: list[dict[str, Any]] = []
     baseline_results: list[dict[str, Any]] = []
     failures: list[str] = []
@@ -2387,6 +2474,22 @@ def main() -> int:
         task_assets.update(item["path"] for item in row["model_assets"])
     models_by_task = {task: len(paths)
                       for task, paths in sorted(assets_by_task.items())}
+    try:
+        if file_identity(args.manifest) != manifest_identity:
+            failures.append("validation manifest changed during execution")
+    except OSError as error:
+        failures.append(f"validation manifest unavailable after execution: {error}")
+    artifact_failures = []
+    for label, side_specs, side_build in [
+            ("candidate", specs, args.build),
+            *([("baseline", list(baseline_specs.values()), baseline_args.build)]
+              if baseline_args else [])]:
+        try:
+            artifact_failures.extend(execution_artifact_failures(
+                artifact_snapshots[label], execution_artifacts(side_specs, side_build), label))
+        except OSError as error:
+            artifact_failures.append(f"{label} execution artifact unavailable after validation: {error}")
+    failures.extend(artifact_failures)
     report: dict[str, Any] = {
         "schema": 1,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -2411,7 +2514,10 @@ def main() -> int:
         "baseline_build": str(args.baseline_build) if args.baseline_build else "",
         "model_cache": cache_summary,
         "input_cache": input_summary,
-        "manifest": file_identity(args.manifest),
+        "manifest": manifest_identity,
+        "execution_artifacts": {"before": artifact_snapshots,
+            "unchanged": not artifact_failures,
+            "scope": "selected command files, runner, build AICore/ggml libraries and CMake cache; not a transitive loader trace"},
         "references": dict(getattr(args, "references", {})),
         "inputs": {
             name: file_identity(Path(path))

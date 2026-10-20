@@ -11,7 +11,7 @@
 #include <QString>
 #include <QVector4D>
 #include <QVector>
-#include <utility>
+#include <functional>
 
 #include "PointCloudCuboid.h"
 
@@ -21,15 +21,18 @@ struct PointCloudFrame {
     QVector<QVector4D> points;
     QVector<QColor> rgb;
     QVector<quint32> labels;
-    QVector<PointCloudCuboid> cuboids;
     bool hasIntensity = true;
     bool labelExists = false;
+    QVector<PointCloudCuboid> cuboids;
+    QString cuboidPath;
+    bool cuboidExists = false;
 };
 
 bool loadPointCloudFrame(const QString& path,
                          PointCloudFrame* frame,
                          QString* error,
-                         const QString& labelPath = QString());
+                         const QString& labelPath = QString(),
+                         const std::function<bool()>& cancelled = {});
 bool savePointCloudLabels(const PointCloudFrame& frame,
                           QString* error,
                           const QString& outputPath = QString());
@@ -46,17 +49,19 @@ public:
     };
     void setFrame(PointCloudFrame frame);
     const PointCloudFrame& frame() const { return m_frame; }
-    /** Replace the frame's cuboid list (marks the document dirty; cuboids
-     *  are outside the point-label undo stack by design). */
-    void setCuboids(QVector<PointCloudCuboid> boxes) {
-        m_frame.cuboids = std::move(boxes);
-        m_dirty = true;
-    }
-    void setLabelPath(const QString& path) {
+    void setLabelPath(const QString& path, bool exists = true) {
         m_frame.labelPath = path;
-        m_frame.labelExists = true;
+        m_frame.labelExists = exists;
     }
-    bool dirty() const { return m_dirty; }
+    bool dirty() const { return m_dirty || cuboidsDirty(); }
+    bool labelsDirty() const { return m_dirty; }
+    bool cuboidsDirty() const { return m_frame.cuboids != m_cuboidBaseline; }
+    int nextCuboidId() const;
+    bool setCuboid(const PointCloudCuboid& cuboid, QString* error = nullptr);
+    bool deleteCuboid(int id, QString* error = nullptr);
+    bool replaceCuboids(const QVector<PointCloudCuboid>& cuboids,
+                        QString* error = nullptr);
+    void markCuboidsSaved(const QString& path);
     bool canUndo() const { return !m_undo.isEmpty(); }
     bool canRedo() const { return !m_redo.isEmpty(); }
     void markSaved();
@@ -73,13 +78,18 @@ public:
 
 private:
     struct Edit {
+        bool cuboids = false;
+        QVector<PointCloudCuboid> boxesBefore;
+        QVector<PointCloudCuboid> boxesAfter;
         QVector<int> indices;
         QVector<quint32> before;
         QVector<quint32> after;
     };
     void apply(const Edit& edit, bool forward);
+    bool commitCuboids(const QVector<PointCloudCuboid>& boxes);
     PointCloudFrame m_frame;
     QVector<quint32> m_baseline;
+    QVector<PointCloudCuboid> m_cuboidBaseline;
     QVector<Edit> m_undo;
     QVector<Edit> m_redo;
     bool m_dirty = false;

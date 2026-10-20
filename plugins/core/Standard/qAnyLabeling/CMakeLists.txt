@@ -44,89 +44,18 @@ if(PLUGIN_STANDARD_QANYLABELING)
     endif()
 
     AddPlugin(NAME ${PROJECT_NAME})
-    target_sources(${PROJECT_NAME} PRIVATE
-        include/qAnyLabeling.h
-        include/AnnotationWindow.h
-        include/AnnotationCanvas.h
-        include/AnnotationPopup.h
-        include/AnnotationLabelDialog.h
-        include/AnnotationNavigator.h
-        include/AnnotationWorker.h
-        include/SlicedDetection.h
-        include/AnnotationSemantic.h
-        include/MaskPolygon.h
-        include/AnnotationExporter.h
-        include/AnnotationImporter.h
-        include/AnnotationMot.h
-        include/AnnotationOdvg.h
-        include/AnnotationVlm.h
-        include/AnnotationPpocr.h
-        include/AnnotationMask.h
-        include/VideoSidecar.h
-        include/VideoSegmentExporter.h
-        include/VideoDatasetExporter.h
-        include/VideoFrameExtraction.h
-        include/VideoMaskImport.h
-        include/VideoAnnotationDialog.h
-        include/PointCloudDocument.h
-        include/PointCloudWindow.h
-        include/PointCloudCuboid.h
-        include/PointCloudCamera.h
-        include/LomaBridgeDialog.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/SAM3Types.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/VideoCanvas.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/VideoTimeline.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/VideoWorker.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/VideoTab.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include/VideoMaskArchive.h
-        src/qAnyLabeling.cpp
-        src/AnnotationWindow.cpp
-        src/AnnotationCanvas.cpp
-        src/AnnotationPopup.cpp
-        src/RemoteServerClient.cpp
-        src/RemoteServerDialog.cpp
-        include/RemoteServerClient.h
-        include/RemoteServerDialog.h
-        src/AnnotationLabelDialog.cpp
-        src/AnnotationNavigator.cpp
-        src/AnnotationWorker.cpp
-        src/SlicedDetection.cpp
-        src/AnnotationSemantic.cpp
-        src/MaskPolygon.cpp
-        src/AnnotationExporter.cpp
-        src/AnnotationPose.cpp
-        src/AnnotationYaml.cpp
-        src/AnnotationImporter.cpp
-        src/AnnotationMot.cpp
-        src/AnnotationOdvg.cpp
-        src/AnnotationVlm.cpp
-        src/AnnotationPpocr.cpp
-        src/AnnotationMask.cpp
-        src/VideoSidecar.cpp
-        src/VideoSegmentExporter.cpp
-        src/VideoDatasetExporter.cpp
-        src/VideoFrameExtraction.cpp
-        src/VideoMaskImport.cpp
-        src/VideoAnnotationDialog.cpp
-        src/PointCloudDocument.cpp
-        src/PointCloudWindow.cpp
-        src/PointCloudCuboid.cpp
-        src/PointCloudCamera.cpp
-        src/LomaBridgeDialog.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/src/VideoCanvas.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/src/VideoTimeline.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/src/VideoWorker.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/src/VideoTab.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/src/VideoMaskArchive.cpp
-    )
+    add_subdirectory(include)
+    add_subdirectory(src)
     if(TRANSLATION_RC_FILES)
         target_sources(${PROJECT_NAME} PRIVATE ${TRANSLATION_RC_FILES})
     endif()
     target_include_directories(${PROJECT_NAME} PRIVATE
         include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include)
-    target_link_libraries(${PROJECT_NAME} AICore video_base Qt::OpenGL)
-    target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Concurrent)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../qRelateAnything/include)
+    target_link_libraries(${PROJECT_NAME} AICore CVPluginAPI video_base Qt::OpenGL)
+    target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Concurrent
+        Qt${QT_VERSION_MAJOR}::Network)
     cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME} PLUGIN_NAME ${PROJECT_NAME})
     if(TARGET 3rdparty_opencv)
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)

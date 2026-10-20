@@ -434,8 +434,11 @@ QString OCRDialog::tableFileName() const {
 
 bool OCRDialog::modelPresent(const QString& filename) const {
     if (filename.isEmpty()) return false;
-    QFileInfo info(QDir(cacheDir()).filePath(filename));
-    return info.isFile() && info.size() > 1024 * 1024;
+    const QString path = QDir(cacheDir()).filePath(filename);
+    const ecvAssetIntegrity::Anchor anchor{
+            QCryptographicHash::Sha256,
+            ecvAssetIntegrity::PinnedDigest(filename)};
+    return ecvAssetIntegrity::isVerified(path, anchor, 1024 * 1024, true);
 }
 
 void OCRDialog::onDownloadMissing() {

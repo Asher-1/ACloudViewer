@@ -179,10 +179,19 @@ bool ecvAssetIntegrity::isVerified(const QString& path,
             // silently absorbed by the cheap-check path.
             return false;
         }
-        // Stale entry (the file changed, or an empty-pin entry superseded
-        // by a pinned query): drop it so the miss policy decides and a
-        // fresh state gets recorded.
-        invalidate(path);
+        const bool changedPinnedFile =
+                !statMatches && !entry.digestHex.isEmpty();
+        if (changedPinnedFile &&
+            (onMiss == OnMiss::CheapChecksOnly || anchor.digestHex.isEmpty())) {
+            // A known verified file changed. Presence alone cannot verify
+            // its new bytes. Keep the evidence so a second access (including
+            // an empty-pin presence query) cannot silently accept them.
+            return false;
+        }
+        // DeepVerify may recover an unchanged payload with new metadata.
+        // Keep stale pinned evidence until it succeeds: a failed hash must
+        // not turn the next cheap access into a ledger miss and acceptance.
+        if (!changedPinnedFile) invalidate(path);
     }
 
     if (anchor.digestHex.isEmpty()) {

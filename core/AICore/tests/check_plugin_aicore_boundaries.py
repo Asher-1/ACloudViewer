@@ -23,7 +23,7 @@ FORBIDDEN_ENV = re.compile(r"\b(?:getenv|std::getenv|qEnvironmentVariable)\s*\("
 # A drive-letter path must be a real path prefix.  ``db://`` and prose such
 # as ``error:\n`` otherwise look like ``b:/`` and ``r:\n`` to a broad regex.
 ABSOLUTE_PATH = re.compile(
-    r"(?:/(?:home|Users|tmp|mnt|opt|data)/|"
+    r"(?:(?<![A-Za-z0-9_./~\-])/(?:home|Users|tmp|mnt|opt|data)/|"
     r"(?<![A-Za-z])[A-Za-z]:[\\/](?![nrt])|\\\\[^\\]+\\[^\\]+)")
 PRIVATE_MODEL_OWNER = re.compile(
     r"(?:aicore/asset_digests\.h|QNetworkAccessManager|QNetworkReply|"

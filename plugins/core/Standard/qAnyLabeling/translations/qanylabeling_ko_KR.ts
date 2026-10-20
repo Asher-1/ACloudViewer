@@ -38,6 +38,14 @@
 <context>
     <name>AnnotationWindow</name>
     <message>
+        <source>Place the converted OCR model in %1</source>
+        <translation>변환된 OCR 모델을 %1에 배치하세요</translation>
+    </message>
+    <message>
+        <source>Text orientation</source>
+        <translation>텍스트 방향 분류</translation>
+    </message>
+    <message>
         <location filename="../src/AnnotationWindow.cpp" line="189"/>
         <source>X-AnyLabeling Annotation</source>
         <translation>X-AnyLabeling 어노테이션</translation>
@@ -340,8 +348,8 @@
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1152"/>
-        <source>Run model</source>
-        <translation>모델 실행</translation>
+        <source>Run (i)</source>
+        <translation>실행 (i)</translation>
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1155"/>
@@ -3320,9 +3328,325 @@ AICore GGML 작업으로 구동됩니다.</translation>
         <source>Auto Run stopped: unable to save annotations</source>
         <translation>자동 실행 중지: 어노테이션을 저장할 수 없습니다</translation>
     </message>
+    <message>
+        <source>Describe each detected object with RAM</source>
+        <translation>RAM으로 감지된 각 객체 설명</translation>
+    </message>
+    <message>
+        <source>Object descriptions: off</source>
+        <translation>객체 설명: 끄기</translation>
+    </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>객체 태그 모델을 사용할 수 없습니다</translation>
+    </message>
+    <message>
+        <source>Image Classifier</source>
+        <translation>이미지 분류기</translation>
+    </message>
+    <message>
+        <source>MultiClass</source>
+        <translation>멀티클래스</translation>
+    </message>
+    <message>
+        <source>MultiLabel</source>
+        <translation>멀티레이블</translation>
+    </message>
+    <message>
+        <source>AutoRun</source>
+        <translation>자동 실행</translation>
+    </message>
+    <message>
+        <source>Add Label</source>
+        <translation>라벨 추가</translation>
+    </message>
+    <message>
+        <source>Delete Label</source>
+        <translation>레이블 삭제</translation>
+    </message>
+    <message>
+        <source>Edit Label</source>
+        <translation>라벨 편집</translation>
+    </message>
+    <message>
+        <source>View Statistics</source>
+        <translation>통계 보기</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AI 어시스턴트</translation>
+    </message>
+    <message>
+        <source>Search categories</source>
+        <translation>범주 검색</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>이전</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>다음</translation>
+    </message>
+    <message>
+        <source>Previous image (A) | Previous unlabeled image (Ctrl+A)</source>
+        <translation>이전 이미지 (A) | 이전 레이블이 없는 이미지 (Ctrl + A)</translation>
+    </message>
+    <message>
+        <source>Next image (D) | Next unlabeled image (Ctrl+D)</source>
+        <translation>다음 이미지 (D) | 다음 레이블이 없는 이미지 (Ctrl + D)</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>불러온 이미지가 없습니다</translation>
+    </message>
+    <message>
+        <source> / %1</source>
+        <translation> / %1</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>정보</translation>
+    </message>
+    <message>
+        <source>No unlabeled images found.</source>
+        <translation>레이블이 지정되지 않은 이미지를 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Updating label files...</source>
+        <translation>레이블 파일 업데이트 중...</translation>
+    </message>
+    <message>
+        <source>Invalid annotation: %1</source>
+        <translation>잘못된 주석: %1</translation>
+    </message>
+    <message>
+        <source>Switch Mode</source>
+        <translation>모드 전환</translation>
+    </message>
+    <message>
+        <source>One label per line</source>
+        <translation>한 줄에 레이블 하나</translation>
+    </message>
+    <message>
+        <source>New label</source>
+        <translation>새 레이블</translation>
+    </message>
+    <message>
+        <source>Label already exists</source>
+        <translation>레이블이 이미 존재합니다</translation>
+    </message>
+    <message>
+        <source>Export only supports multi-class tasks!</source>
+        <translation>내보내기는 다중 클래스 작업만 지원합니다!</translation>
+    </message>
+    <message>
+        <source>No labels configured!</source>
+        <translation>구성된 레이블이 없습니다!</translation>
+    </message>
+    <message>
+        <source>Invalid category name: %1</source>
+        <translation>잘못된 범주 이름: %1</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>성공</translation>
+    </message>
+    <message>
+        <source>Exported %1 images to %2</source>
+        <translation>이미지 %1개를 %2에 내보냈습니다</translation>
+    </message>
+    <message>
+        <source>Image classification model</source>
+        <translation>이미지 분류 모델</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>모델</translation>
+    </message>
+    <message>
+        <source>Uses the classification model's trained category labels.</source>
+        <translation>분류 모델이 학습한 범주 레이블을 사용합니다.</translation>
+    </message>
+    <message>
+        <source>Switching to MultiClass mode will only keep the first label for each image. Other labels will be discarded. Continue?</source>
+        <translation>MultiClass 모드로 전환하면 각 이미지의 첫 번째 레이블만 유지되고 나머지는 삭제됩니다. 계속하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Tag options...</source>
+        <translation>태그 옵션…</translation>
+    </message>
+    <message>
+        <source>RAM tag options</source>
+        <translation>RAM 태그 옵션</translation>
+    </message>
+    <message>
+        <source>Chinese</source>
+        <translation>중국어</translation>
+    </message>
+    <message>
+        <source>Tag language</source>
+        <translation>태그 언어</translation>
+    </message>
+    <message>
+        <source>Delete tags (English, one per line)</source>
+        <translation>제외할 태그 (영어, 한 줄에 하나)</translation>
+    </message>
+    <message>
+        <source>Keep only tags (English, one per line)</source>
+        <translation>유지할 태그 (영어, 한 줄에 하나)</translation>
+    </message>
+    <message>
+        <source>Delete tags takes precedence when both lists are set.</source>
+        <translation>두 목록을 모두 설정하면 제외 목록을 우선 적용합니다.</translation>
+    </message>
+    <message>
+        <source>Invalid tag</source>
+        <translation>잘못된 태그</translation>
+    </message>
+    <message>
+        <source>Unknown English RAM tag: %1</source>
+        <translation>알 수 없는 RAM 영어 태그: %1</translation>
+    </message>
+    <message>
+        <source>Layout: off</source>
+        <translation>레이아웃 분석: 끄기</translation>
+    </message>
+    <message>
+        <source>Visualization Video Options</source>
+        <translation>시각화 동영상 옵션</translation>
+    </message>
+    <message>
+        <source>Save Path</source>
+        <translation>저장 경로</translation>
+    </message>
+    <message>
+        <source>FPS:</source>
+        <translation>FPS:</translation>
+    </message>
+    <message>
+        <source>Shape Types</source>
+        <translation>도형 유형</translation>
+    </message>
+    <message>
+        <source>Save Labels</source>
+        <translation>라벨 저장</translation>
+    </message>
+    <message>
+        <source>Save Scores</source>
+        <translation>점수 저장</translation>
+    </message>
+    <message>
+        <source>Save Group IDs</source>
+        <translation>그룹 ID 저장</translation>
+    </message>
+    <message>
+        <source>Save Texts</source>
+        <translation>텍스트 저장</translation>
+    </message>
+    <message>
+        <source>Save Semi-transparent Masks</source>
+        <translation>반투명 마스크 저장</translation>
+    </message>
+    <message>
+        <source>Skip Empty Files</source>
+        <translation>빈 파일 건너뛰기</translation>
+    </message>
+    <message>
+        <source>MP4 Video (*.mp4)</source>
+        <translation>MP4 동영상 (*.mp4)</translation>
+    </message>
+    <message>
+        <source>Shape Types Required</source>
+        <translation>도형 유형 필요</translation>
+    </message>
+    <message>
+        <source>Select at least one shape type before exporting.</source>
+        <translation>내보내기 전에 하나 이상의 도형 유형을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Overwrite %1?</source>
+        <translation>%1을(를) 덮어쓰시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Unable to create output folder</source>
+        <translation>출력 폴더를 만들 수 없습니다</translation>
+    </message>
+    <message>
+        <source>Preparing...</source>
+        <translation>준비 중…</translation>
+    </message>
+    <message>
+        <source>All video frames must have the same dimensions</source>
+        <translation>모든 동영상 프레임의 크기는 같아야 합니다</translation>
+    </message>
+    <message>
+        <source>No files to export.</source>
+        <translation>내보낼 파일이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Exporting...</source>
+        <translation>내보내는 중…</translation>
+    </message>
+    <message>
+        <source>Saved visualization video: %1</source>
+        <translation>시각화 동영상 저장: %1</translation>
+    </message>
+    <message>
+        <source>Local model</source>
+        <translation>로컬 모델</translation>
+    </message>
+    <message>
+        <source>Completed: %1 images, %2 failed.</source>
+        <translation>완료: 이미지 %1개, 실패 %2개.</translation>
+    </message>
+    <message>
+        <source>Processing: %1</source>
+        <translation>처리 중: %1</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation>취소됨</translation>
+    </message>
+    <message>
+        <source>Failed to parse AI result</source>
+        <translation>AI 결과를 파싱할 수 없습니다</translation>
+    </message>
+    <message>
+        <source>AI classification completed!</source>
+        <translation>AI 분류가 완료되었습니다!</translation>
+    </message>
+    <message>
+        <source>Please configure labels first!</source>
+        <translation>먼저 라벨을 설정하세요!</translation>
+    </message>
+    <message>
+        <source>No image loaded!</source>
+        <translation>로드된 이미지가 없습니다!</translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation>확인</translation>
+    </message>
+    <message>
+        <source>Process %1 images with AI?</source>
+        <translation>AI로 이미지 %1개를 처리할까요?</translation>
+    </message>
+    <message>
+        <source>Shapes</source>
+        <translation>도형</translation>
+    </message>
 </context>
 <context>
     <name>AnnotationWorker</name>
+    <message>
+        <source>OCR needs at least three text-region points</source>
+        <translation>OCR에는 텍스트 영역 점이 3개 이상 필요합니다</translation>
+    </message>
+    <message>
+        <source>Invalid OCR region coordinate</source>
+        <translation>잘못된 OCR 영역 좌표입니다</translation>
+    </message>
     <message>
         <location filename="../src/AnnotationWorker.cpp" line="188"/>
         <source>Unable to create depth options</source>
@@ -3556,6 +3880,18 @@ AICore GGML 작업으로 구동됩니다.</translation>
         <source>Unsupported model task: %1</source>
         <translation>지원되지 않는 모델 작업: %1</translation>
     </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>객체 태그 모델을 사용할 수 없습니다</translation>
+    </message>
+    <message>
+        <source>Detected object has an empty crop</source>
+        <translation>감지된 객체의 잘라내기 영역이 비어 있습니다</translation>
+    </message>
+    <message>
+        <source>Object tagging failed</source>
+        <translation>객체 태그 추론에 실패했습니다</translation>
+    </message>
 </context>
 <context>
     <name>LomaBridgeDialog</name>
@@ -3679,6 +4015,12 @@ AICore GGML 작업으로 구동됩니다.</translation>
 </context>
 <context>
     <name>PointCloudWindow</name>
+    <message><source>Loading and validating point cloud…</source><translation>포인트 클라우드를 불러오고 검증하는 중…</translation></message>
+    <message><source>Point-cloud loading failed</source><translation>포인트 클라우드 불러오기 실패</translation></message>
+    <message><source>Point-cloud loading cancelled</source><translation>포인트 클라우드 불러오기 취소됨</translation></message>
+    <message><source>The point-cloud workspace changed during loading</source><translation>불러오는 동안 포인트 클라우드 작업 공간이 변경되었습니다</translation></message>
+    <message><source>Wait for point-cloud loading to finish</source><translation>포인트 클라우드 불러오기가 완료될 때까지 기다려 주세요</translation></message>
+    <message><source>The OpenGL viewport is not ready for selection.</source><translation>OpenGL 뷰포트가 선택할 준비가 되지 않았습니다.</translation></message>
     <message>
         <location filename="../src/PointCloudWindow.cpp" line="414"/>
         <source>Point cloud annotation</source>
@@ -4034,6 +4376,314 @@ AICore GGML 작업으로 구동됩니다.</translation>
         <location filename="../src/PointCloudWindow.cpp" line="1074"/>
         <source>Remove class %1 and clear %2 points in the current frame?</source>
         <translation>클래스 %1을(를) 제거하고 현재 프레임의 점 %2개를 지우시겠습니까?</translation>
+    </message>
+    <message>
+        <source> (locked)</source>
+        <translation> (잠김)</translation>
+    </message>
+    <message>
+        <source>3D object detection</source>
+        <translation>3D 객체 탐지</translation>
+    </message>
+    <message>
+        <source>3D objects</source>
+        <translation>3D 객체</translation>
+    </message>
+    <message>
+        <source>Add camera</source>
+        <translation>카메라 추가</translation>
+    </message>
+    <message>
+        <source>Applying point-cloud annotations</source>
+        <translation>포인트 클라우드 주석 적용 중</translation>
+    </message>
+    <message>
+        <source>Browse</source>
+        <translation>찾아보기</translation>
+    </message>
+    <message>
+        <source>Calibration (*.json)</source>
+        <translation>보정 파일 (*.json)</translation>
+    </message>
+    <message>
+        <source>Calibration JSON (optional)</source>
+        <translation>보정 JSON (선택 사항)</translation>
+    </message>
+    <message>
+        <source>Camera calibration</source>
+        <translation>카메라 보정</translation>
+    </message>
+    <message>
+        <source>Camera image directory</source>
+        <translation>카메라 이미지 디렉터리</translation>
+    </message>
+    <message>
+        <source>Camera overlay</source>
+        <translation>카메라 오버레이</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>중심</translation>
+    </message>
+    <message>
+        <source>Class configuration</source>
+        <translation>클래스 설정</translation>
+    </message>
+    <message>
+        <source>Class configuration requires detection or segmentation classes</source>
+        <translation>클래스 설정에 탐지 또는 분할 클래스가 필요합니다</translation>
+    </message>
+    <message>
+        <source>Configure camera</source>
+        <translation>카메라 설정</translation>
+    </message>
+    <message>
+        <source>Configure camera images</source>
+        <translation>카메라 이미지 설정</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>복사</translation>
+    </message>
+    <message>
+        <source>Dataset</source>
+        <translation>데이터셋</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Delete this class and its %1 objects in the current frame? Point segmentation and other frames are preserved.</source>
+        <translation>이 클래스와 현재 프레임의 객체 %1개를 삭제하시겠습니까? 포인트 분할과 다른 프레임은 유지됩니다.</translation>
+    </message>
+    <message>
+        <source>Detection class names must be unique</source>
+        <translation>탐지 클래스 이름은 중복될 수 없습니다</translation>
+    </message>
+    <message>
+        <source>Draw a rectangle in Top, Side or Front. Esc cancels.</source>
+        <translation>상단, 측면 또는 정면 뷰에서 사각형을 그리세요. Esc 키로 취소합니다.</translation>
+    </message>
+    <message>
+        <source>Draw cuboid</source>
+        <translation>직육면체 그리기</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>복제</translation>
+    </message>
+    <message>
+        <source>Edit object</source>
+        <translation>객체 편집</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids</source>
+        <translation>3D 직육면체 내보내기</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids from all frames. Point segmentation is not included.</source>
+        <translation>모든 프레임의 3D 직육면체를 내보냅니다. 포인트 분할은 포함되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Export point-cloud dataset</source>
+        <translation>포인트 클라우드 데이터셋 내보내기</translation>
+    </message>
+    <message>
+        <source>Exporting point-cloud dataset</source>
+        <translation>포인트 클라우드 데이터셋 내보내는 중</translation>
+    </message>
+    <message>
+        <source>Fit to points</source>
+        <translation>포인트에 맞추기</translation>
+    </message>
+    <message>
+        <source>Focus</source>
+        <translation>초점 맞추기</translation>
+    </message>
+    <message>
+        <source>Format</source>
+        <translation>형식</translation>
+    </message>
+    <message>
+        <source>Front</source>
+        <translation>정면</translation>
+    </message>
+    <message>
+        <source>Image directory</source>
+        <translation>이미지 디렉터리</translation>
+    </message>
+    <message>
+        <source>Import %1 cuboids into %2 matched frames, replacing %3 objects and adding %4 classes?</source>
+        <translation>직육면체 %1개를 일치하는 프레임 %2개에 가져와 객체 %3개를 바꾸고 클래스 %4개를 추가하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Import 3D cuboids</source>
+        <translation>3D 직육면체 가져오기</translation>
+    </message>
+    <message>
+        <source>Import plan does not match this point-cloud sequence</source>
+        <translation>가져오기 계획이 이 포인트 클라우드 시퀀스와 일치하지 않습니다</translation>
+    </message>
+    <message>
+        <source>Import point-cloud dataset</source>
+        <translation>포인트 클라우드 데이터셋 가져오기</translation>
+    </message>
+    <message>
+        <source>Include point-cloud files</source>
+        <translation>포인트 클라우드 파일 포함</translation>
+    </message>
+    <message>
+        <source>Lock / Unlock</source>
+        <translation>잠금 / 해제</translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation>잠김</translation>
+    </message>
+    <message>
+        <source>Object class</source>
+        <translation>객체 클래스</translation>
+    </message>
+    <message>
+        <source>Occluded</source>
+        <translation>가려짐</translation>
+    </message>
+    <message>
+        <source>Open a point-cloud sequence first</source>
+        <translation>먼저 포인트 클라우드 시퀀스를 여세요</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>붙여넣기</translation>
+    </message>
+    <message>
+        <source>Point-cloud annotations imported</source>
+        <translation>포인트 클라우드 주석을 가져왔습니다</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset exported</source>
+        <translation>포인트 클라우드 데이터셋을 내보냈습니다</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset operation cancelled.</source>
+        <translation>포인트 클라우드 데이터셋 작업을 취소했습니다.</translation>
+    </message>
+    <message>
+        <source>Reading point-cloud annotations</source>
+        <translation>포인트 클라우드 주석 읽는 중</translation>
+    </message>
+    <message>
+        <source>Remove camera</source>
+        <translation>카메라 제거</translation>
+    </message>
+    <message>
+        <source>Replace cuboids in matched frames. Point segmentation and unmatched frames are preserved.</source>
+        <translation>일치하는 프레임의 직육면체를 바꿉니다. 포인트 분할과 일치하지 않는 프레임은 유지됩니다.</translation>
+    </message>
+    <message>
+        <source>Replace the existing archive at %1?</source>
+        <translation>%1의 기존 압축 파일을 바꾸시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Replace the existing cuboid file at %1?</source>
+        <translation>%1의 기존 직육면체 파일을 바꾸시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Rotation (deg)</source>
+        <translation>회전 (도)</translation>
+    </message>
+    <message>
+        <source>Segmentation</source>
+        <translation>분할</translation>
+    </message>
+    <message>
+        <source>Select a class configuration for the import</source>
+        <translation>가져오기에 사용할 클래스 설정을 선택하세요</translation>
+    </message>
+    <message>
+        <source>Select a nonzero class before drawing a cuboid.</source>
+        <translation>직육면체를 그리기 전에 0이 아닌 클래스를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Show projected points and cuboids</source>
+        <translation>투영 포인트와 직육면체 표시</translation>
+    </message>
+    <message>
+        <source>Side</source>
+        <translation>측면</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>크기</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed after import preview</source>
+        <translation>가져오기 미리 보기 이후 포인트 클라우드 작업 공간이 변경되었습니다</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import</source>
+        <translation>가져오는 중 포인트 클라우드 작업 공간이 변경되었습니다</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import preview</source>
+        <translation>가져오기 미리 보기 중 포인트 클라우드 작업 공간이 변경되었습니다</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>상단</translation>
+    </message>
+    <message>
+        <source>Unlock the objects before removing this class</source>
+        <translation>이 클래스를 제거하기 전에 객체의 잠금을 해제하세요</translation>
+    </message>
+    <message>
+        <source>ZIP archive</source>
+        <translation>ZIP 압축 파일</translation>
+    </message>
+    <message>
+        <source>ZIP archive (*.zip)</source>
+        <translation>ZIP 압축 파일 (*.zip)</translation>
+    </message>
+    <message>
+        <source>Perspective</source>
+        <translation>원근 투영</translation>
+    </message>
+    <message>
+        <source>%1 (%2) - %3 objects</source>
+        <translation>%1 (%2) - 객체 %3개</translation>
+    </message>
+    <message>
+        <source>Camera preview</source>
+        <translation>카메라 미리보기</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>이전 카메라</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>다음 카메라</translation>
+    </message>
+    <message>
+        <source>Double-click a point in the main view, or draw in Top, Side or Front. Esc cancels.</source>
+        <translation>기본 뷰의 점을 두 번 클릭하거나 평면도, 측면도, 정면도에서 그리세요. Esc로 취소합니다.</translation>
+    </message>
+    <message>
+        <source>Show camera images</source>
+        <translation>카메라 이미지 표시</translation>
+    </message>
+    <message>
+        <source>Hide camera images</source>
+        <translation>카메라 이미지 숨기기</translation>
+    </message>
+    <message>
+        <source>Crop depth to selected cuboid</source>
+        <translation>선택한 직육면체 깊이에 맞춰 자르기</translation>
     </message>
 </context>
 <context>
@@ -4627,6 +5277,348 @@ AICore GGML 작업으로 구동됩니다.</translation>
         <location filename="../src/qAnyLabeling.cpp" line="35"/>
         <source>Open the X-AnyLabeling annotation workspace</source>
         <translation>X-AnyLabeling 어노테이션 작업 공간 열기</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCameraPanel</name>
+    <message>
+        <source>Fit image</source>
+        <translation>이미지 맞춤</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>카메라</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>색상</translation>
+    </message>
+    <message>
+        <source>Configure a camera image directory</source>
+        <translation>카메라 이미지 디렉터리를 설정하세요</translation>
+    </message>
+    <message>
+        <source>Depth</source>
+        <translation>깊이</translation>
+    </message>
+    <message>
+        <source>Image size %1 x %2 does not match calibration %3 x %4. Projection disabled.</source>
+        <translation>이미지 크기 %1 x %2이(가) 보정 크기 %3 x %4와 일치하지 않습니다. 투영이 비활성화되었습니다.</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>다음 카메라</translation>
+    </message>
+    <message>
+        <source>No matching camera image</source>
+        <translation>일치하는 카메라 이미지가 없습니다</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>불투명도</translation>
+    </message>
+    <message>
+        <source>Point cloud colors</source>
+        <translation>포인트 클라우드 색상</translation>
+    </message>
+    <message>
+        <source>Point size</source>
+        <translation>포인트 크기</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>이전 카메라</translation>
+    </message>
+    <message>
+        <source>Projected 3D boxes</source>
+        <translation>투영 3D 상자</translation>
+    </message>
+    <message>
+        <source>Projected points</source>
+        <translation>투영 포인트</translation>
+    </message>
+    <message>
+        <source>Projection settings</source>
+        <translation>투영 설정</translation>
+    </message>
+    <message>
+        <source>Wheel: zoom · Arrows: switch camera</source>
+        <translation>휠: 확대/축소 · 화살표: 카메라 전환</translation>
+    </message>
+    <message>
+        <source>Drag to resize camera image</source>
+        <translation>드래그하여 카메라 이미지 크기 조절</translation>
+    </message>
+    <message>
+        <source>Reset point size (1 px)</source>
+        <translation>점 크기 초기화 (1 px)</translation>
+    </message>
+    <message>
+        <source>Reset opacity (65%)</source>
+        <translation>불투명도 초기화 (65%)</translation>
+    </message>
+    <message>
+        <source>Near → Far</source>
+        <translation>가까움 → 멂</translation>
+    </message>
+    <message>
+        <source>Near %1 → Far %2</source>
+        <translation>가까움 %1 → 멂 %2</translation>
+    </message>
+    <message>
+        <source>Camera depth in point-cloud units. Colors use the 2nd–98th percentile of this frame; values outside the range are clipped.</source>
+        <translation>포인트 클라우드 단위의 카메라 깊이입니다. 현재 프레임의 2~98 백분위수로 색상을 지정하며 범위를 벗어난 값은 잘립니다.</translation>
+    </message>
+    <message>
+        <source>Open a point cloud to view its camera image.</source>
+        <translation>포인트 클라우드를 열어 카메라 이미지를 확인하세요.</translation>
+    </message>
+    <message>
+        <source>No matching camera image for this frame.</source>
+        <translation>이 프레임에 일치하는 카메라 이미지가 없습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotationChat</name>
+    <message>
+        <source>%1 models</source>
+        <translation>모델 %1개</translation>
+    </message>
+    <message>
+        <source>@image Describe this image
+@text, @widget.title, @label.shapes</source>
+        <translation>@image 이 이미지를 설명하세요
+@text, @widget.title, @label.shapes</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AI 어시스턴트</translation>
+    </message>
+    <message>
+        <source>AI Generated Result</source>
+        <translation>AI 생성 결과</translation>
+    </message>
+    <message>
+        <source>API address</source>
+        <translation>API 주소</translation>
+    </message>
+    <message>
+        <source>API key</source>
+        <translation>API 키</translation>
+    </message>
+    <message>
+        <source>Add Component</source>
+        <translation>컴포넌트 추가</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>취소됨</translation>
+    </message>
+    <message>
+        <source>Chatbot</source>
+        <translation>챗봇</translation>
+    </message>
+    <message>
+        <source>Choose a model.</source>
+        <translation>모델을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>지우기</translation>
+    </message>
+    <message>
+        <source>Component</source>
+        <translation>구성 요소</translation>
+    </message>
+    <message>
+        <source>Component titles must be unique.</source>
+        <translation>구성 요소 제목은 중복될 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Current image</source>
+        <translation>현재 이미지</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>기본값</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>편집</translation>
+    </message>
+    <message>
+        <source>Enter an AI prompt.</source>
+        <translation>AI 프롬프트를 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>내보내기</translation>
+    </message>
+    <message>
+        <source>Export VQA labels</source>
+        <translation>VQA 라벨 내보내기</translation>
+    </message>
+    <message>
+        <source>Export chat</source>
+        <translation>대화 내보내기</translation>
+    </message>
+    <message>
+        <source>Generating…</source>
+        <translation>생성 중…</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation>가져오기</translation>
+    </message>
+    <message>
+        <source>Import chat</source>
+        <translation>대화 가져오기</translation>
+    </message>
+    <message>
+        <source>Invalid chat JSON.</source>
+        <translation>대화 JSON이 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Invalid chat message.</source>
+        <translation>대화 메시지가 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Loading models…</source>
+        <translation>모델 불러오는 중…</translation>
+    </message>
+    <message>
+        <source>Max length</source>
+        <translation>최대 길이</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>모델</translation>
+    </message>
+    <message>
+        <source>Model settings</source>
+        <translation>모델 설정</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>다음</translation>
+    </message>
+    <message>
+        <source>No image available for @image reference.</source>
+        <translation>@image로 참조할 이미지가 없습니다.</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>불러온 이미지가 없습니다</translation>
+    </message>
+    <message>
+        <source>Options (one per line)</source>
+        <translation>옵션 (한 줄에 하나)</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>이전</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>제공자</translation>
+    </message>
+    <message>
+        <source>Refresh models</source>
+        <translation>모델 새로 고침</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation>전송</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>중지</translation>
+    </message>
+    <message>
+        <source>System prompt</source>
+        <translation>시스템 프롬프트</translation>
+    </message>
+    <message>
+        <source>Temperature</source>
+        <translation>온도</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>제목</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>유형</translation>
+    </message>
+    <message>
+        <source>Type your message… Use @image to reference the current image.</source>
+        <translation>메시지를 입력하세요… @image로 현재 이미지를 참조할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to export VQA labels.</source>
+        <translation>VQA 라벨을 내보낼 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to export chat.</source>
+        <translation>대화를 내보낼 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>VQA</source>
+        <translation>VQA</translation>
+    </message>
+</context>
+<context>
+    <name>ChatServiceClient</name>
+    <message>
+        <source>Chat request timed out.</source>
+        <translation>대화 요청 시간이 초과되었습니다.</translation>
+    </message>
+    <message>
+        <source>Choose a model and enter a message.</source>
+        <translation>모델을 선택하고 메시지를 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Enter a valid HTTP or HTTPS service address.</source>
+        <translation>유효한 HTTP 또는 HTTPS 서비스 주소를 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Invalid JSON response from chat service.</source>
+        <translation>대화 서비스의 JSON 응답이 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Invalid chat stream event.</source>
+        <translation>대화 스트림 이벤트가 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>The service returned no answer.</source>
+        <translation>서비스에서 답변을 반환하지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>The service returned no model list.</source>
+        <translation>서비스에서 모델 목록을 반환하지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to read image: %1</source>
+        <translation>이미지를 읽을 수 없습니다: %1</translation>
+    </message>
+    <message>
+        <source>Unsupported image: %1</source>
+        <translation>지원하지 않는 이미지: %1</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCuboidView</name>
+    <message>
+        <source>Expand view</source>
+        <translation>뷰 확장</translation>
+    </message>
+    <message>
+        <source>Restore view</source>
+        <translation>뷰 복원</translation>
     </message>
 </context>
 </TS>

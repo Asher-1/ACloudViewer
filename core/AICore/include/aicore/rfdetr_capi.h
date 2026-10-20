@@ -199,6 +199,8 @@ typedef struct aicore_rfdetr_model_entry {
     const char* quant_note;
     const char* license_note;
     int segmentation_capable;
+    // Suggested annotation threshold; appended to this read-only catalog.
+    float confidence_threshold;
 } aicore_rfdetr_model_entry;
 
 /** Number of published catalog entries (all model roles). */

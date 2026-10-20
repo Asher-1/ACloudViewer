@@ -147,3 +147,251 @@ python3 core/AICore/scripts/run_ocr_official_alignment.py \
 ```
 
 发布级证据还需要 `validate_all.py --profile release`、固定模型/输入 digest、受控的候选/基线 A/B，以及有标签的端到端语义门。
+
+## X-AnyLabeling 方向分类与 PP-OCRv5/v6（2026-10-17）
+
+在已有 OCR 任务内增加 `cls` 角色和 ONNX 离线降图，运行时仍只使用 GGML，
+不增加 ONNX Runtime 推理依赖。公开 C ABI 通过 `struct_size` 追加可选分类器、
+分类阈值/批次和 DB 候选数；旧调用方维持原行为。裁剪后的文字先按宽高比分批，
+执行 BGR、`[-1,1]`、`3×48×192` 分类，在 180 度置信度**严格大于** 0.9
+时旋转，再识别。`run` 和指定 quad 的 `recognize` 均支持该路径，结果可查询
+逐框角度、概率和是否旋转。源 ONNX 模型的普通检测链直接裁剪 quad；
+原有 PaddleX 权重保留整数多边形最小外接矩形拟合，避免混用两套裁剪约定。
+中文 v4 动态 attention 形状使用运行时整数形状常量，支持非固定文字宽度。
+ONNX F32 深度卷积超出中间缓冲上限时，逐通道回退也保留 F32 im2col，避免
+默认 F16 中间值改变输出；同一真实 BGR 页面上的 v6 Medium 原始概率图最大误差
+由 `0.001048` 降为 `0.000004`，沿用 `<0.001` 数值门。原有 PaddleX 图不走此分支。
+检测 probe 同时拒绝输出/参考长度不一致及非有限概率值。
+
+`aicore_ocr_preset_*` 是任务拥有的八组配方：已发布 v4 中文/英文、
+精确源中文 v4/日文 v3、v5、v6 Tiny/Small/Medium。它们提供源默认检测阈值、批次和配对模型名，与已发布权重目录
+分开。v6 使用 3000 个 DB 候选和 1.4 unclip；v4/v5 为 1000 和 1.5。
+新六组配方和共享分类器已有本地 F32 及 F16/Q8_0 待验候选；已发布 OCR 目录仍为原有
+12 项，不能据配方推断存在下载 URL。qAnyLabeling 消费公开配方，方向开关默认开启；
+qOCR 的原有无分类器调用保持兼容。
+
+源文件的 URL、字节数、SHA-256 和上游提交见
+[`ocr_onnx_sources.json`](../../../tools/ocr_onnx_sources.json)。转换器读取实际
+ONNX 拓扑/形状/常量，拒绝未支持算子或属性，识别器将源字典及字典 SHA-256
+嵌入 GGUF；安装包无需附加 OCR 字典。源程序及字典来自固定的
+X-AnyLabeling-GGML 提交 `745f6c355f94cddb06f6965b3a4118f82033e935`，
+模型来自其配置指定的 CVHub520 v0.2.2/v2.4.0/v3.0.0 资源。转换保留来源信息，不改变源项目和
+检查点的许可证。F16/Q8 是待验候选；历史策略失败与当前 SHA 的证据分别保留，
+不能因能加载就列为已支持。当前逐文件状态见
+[`OCR_RELEASE_GATES.md`](../../../../../plugins/core/Standard/qAnyLabeling/OCR_RELEASE_GATES.md)。
+
+```bash
+# 先按来源清单验证 SHA；rec 必须指定对应上游字典。
+python3 core/AICore/tools/convert_onnx_ocr_gguf.py SOURCE.onnx OUTPUT_STEM \
+  --role rec --source-sha256 SOURCE_SHA256 --dictionary SOURCE_DICT.txt --quants f32
+
+# 图级、方向分类、实际源 TextSystem 页面及已有 OCR/表格回归；需要
+# 验证环境安装 onnx/onnxruntime/numpy/opencv-python/PyYAML/pyclipper/shapely/six。
+# --reference 指向上述固定提交；不配置时源流程检查跳过并使严格门失败。
+python3 core/AICore/scripts/validate_all.py --build build_app --full \
+  --backend cuda --tasks ocr,table \
+  --reference xanylabeling=/path/to/X-AnyLabeling-GGML \
+  --output build_app/Testing/ocr-table-full-cuda.json
+```
+
+公共清单新增十二个 F32 图级场景、六组十个真实正向/倒置文字 crop、六组真实页面
+及六组选中多边形源流程对照，共三十个本地产物扩展场景。图输出门为 `<0.001`，识别还要求 CTC argmax 相同；方向测试覆盖
+0.9/1.0 严格阈值、混合宽度/批次次序、BGR 非紧凑 stride 和重复上下文生命周期；
+十条文字的预期均来自各自源识别器及固定 SHA-256 字典。
+源页面对照直接调用未修改的上游 `TextSystem`，使用其 YAML/parse_args/字典，
+通过公开 C ABI 比较框数、逐字符串和 quad（最多 2 像素），每个 context 调用两次。
+该页中文 v4 保留 74 条、日文 v3 保留 77 条、v5 保留 81 条，三个 v6 各 73 条；这不是有标签数据集精度或发布性能结论。
+未发布 GGUF 的场景标为 `local_only`，有对应文件才运行，报告必须核对其覆盖数。
+
+KIE 在所检查上游中是实体/有向关系的标注和 PP-OCR 标签格式，不存在已注册的
+SER/RE 自动模型流程。qAnyLabeling 对齐其导入导出；AICore 的 KIE 推理字段仍保留且
+拒绝非空输入。完整模型发布/量化矩阵和数据集精度验收仍待完成。
+
+### 2026-10-19：逐文件验收与发布约束
+
+`ocr_quantization_policies.json` 保存按源 SHA 固定的混合精度候选策略，
+通过 `convert_onnx_ocr_gguf.py --precision-policy` 显式使用；不会自动成为产品默认值。
+24 个 F16/Q8_0 候选重新转换均与受测文件 SHA 完全一致，证据为
+`build_app/Testing/ocr-storage-reference/quant-policy-replay-v7.json`。
+识别字典必须同时匹配对应源模型的 SHA；相同 argmax 索引不证明字典正确。
+容器内记录精度例外，验收报告记录实际 F32/F16/Q8_0 参数数目，不能把混合精度
+描述为全部参数均为 F16 或 Q8_0。
+
+v7 历史候选的 CPU/CUDA/Vulkan F16/Q8_0 多输入概率门分别为 **22/24 PASS**；
+各自加上 12 个方向流程后均为 **33/36 PASS**，报告为
+`build_app/Testing/ocr-storage-reference/quant-v7-{cpu,cuda,vulkan}/matrix.json`。
+分类器覆盖五张词图及对应 180 度图，共十个输入，两个量化的三后端概率、
+argmax 和六组方向流程均通过；Q8_0 分类器实际仅 4.8% 参数为 Q8_0，
+87.2% 为 F16、8.0% 为 F32，属于显式混合精度候选。
+Tiny 识别器 F16 最大误差为 `0.006315589`（门为 `<0.001`）；
+Q8_0 最大误差为 `0.890249828`（门为 `<0.005`），argmax 一致率为 `0.975`（要求 `1`）。
+相同存储权重的独立 ONNX 输出与 GGML 输出仅相差约 `1e-6`，因此这些候选
+仍受存储精度门阻断。敏感核保留 F32/F16 的策略不能代替真实页面验收。
+
+源检测框过滤修复前的 F32 CUDA 开发矩阵 **42/42 PASS**，报告为
+`build_app/Testing/ocr-storage-reference/f32-cuda-current/matrix.json`。
+它包含源图、方向、页面、选区、50 张标注场景及每种语言 50 张 XFUND 页面识别。
+场景集按原始词级标注计算 Hmean，并单独报告固定 GT 区域及完整流程 CER/WER；
+检测器的行级输出与词级标注粒度不同，不能将其绝对 Hmean 当作官方榜单分数。
+XFUND 是语义字段标注，仅用于区域识别，不能据此声明检测 Hmean 或自动 KIE。
+
+街景与 XFUND 不能替代整页检测验收。公共输入清单另固定了 SROIE contributor
+corpus 的 50 张扫描收据及 50 个原始 CSV，共 2,779 个标注；18 个组合/量化
+场景分别检查检测 Hmean、固定区域及完整流程 CER/WER。数据和评测范围见
+`core/AICore/tests/ocr/DATA_CARD.md`。100 个新输入已由公共 runner 完成 SHA
+校验下载；这不是新 GGUF 的公共下载闭环。
+
+逐页门保留所有失败：v7 的 v4 Q8 中/日文组合检测 Hmean 退化超过 `0.005`，
+v5 F16 和 Tiny F16/Q8 的街景完整流程也有失败。原始张量 PASS 不能覆盖这些失败。
+后续修复按新文件 SHA 单独验证，不能继承旧文件的验收状态。
+
+v8 的 v4 detector Q8 候选在新生产库通过三后端概率门、CPU/Vulkan 的中/日文
+街景页，以及 CUDA 的中/日文街景和 SROIE 收据页；`filter-v8-cuda` 为 **5/5 PASS**。
+v5 recognizer 追加真实 `val_img_7.jpg` 的透视裁剪，源概率输入由四个增至五个。
+旧 v5 Q8 在新增输入最大误差为 `0.042550772`、argmax 为 `0.975`，三后端均失败；
+v12 F16 和 v14 Q8 新候选的三后端五输入均通过，CPU 最大误差分别为
+`0.000957310` 和 `0.004976571`，argmax 均为 `1`，CUDA 街景/收据亦通过。
+证据是 `filter-v12-*`、`filter-v14-*`；v8/v12/v14 的当前策略重放 SHA 相同。
+v5 F16 实际为 21.23% F16、78.77% F32；Q8 实际为 2.10% Q8_0、19.13% F16、
+78.77% F32。Q8 误差接近 `0.005` 门限，不能据此声明完整精度或速度达标。
+
+另一个 Tiny recognizer F16 的 v15 候选四输入三后端概率通过（CPU 最大误差
+`0.000872791`），CUDA 收据和方向通过，但 Tiny F16 街景检测 Hmean 下降
+`0.005540166`、完整流程 WER 增加 `0.009803922`，组合仍失败；检测框量化误差
+与识别器存储误差分别定位。v16 detector 将敏感核 `conv2d_112.w_0` 保留 F32，
+新文件 `804a564ad2db0fbd2b95325c167b854a4cba18c36889aab16e51c6ae2a7c0c83`
+通过三后端源图，搭配 v15 recognizer 的 CUDA 街景/收据通过，转换重放 SHA 相同。
+v15/v16 已写入显式实验策略；其他后端页面及 XFUND 继续验收，Tiny Q8 阻断未解决。
+
+以上历史检测概率图使用 max-side 320，页面流程使用源默认 960，两者证据范围不同。
+当前公共清单的 15 个 detector 源图场景已显式改为 960，单独执行
+`default-size-accuracy-*`；320 的旧 PASS 不代表默认尺寸图已通过。
+release 检测测量另强制 960，拒绝以 320/640 或其他尺寸替代；所有额外概率输入
+沿用同一尺寸，仅减少预热/计时次数。原始源 provider 与 native 使用同一输入张量。
+
+960 首轮 CPU 检测图为 **14/15 PASS**（`default-size-accuracy-cpu`）。
+Small detector F16 的源平均误差 `0.000101013` 超过 `<0.0001`，而相同存储
+权重的 native/ONNX 最大误差仅 `0.000008106`；不能放宽源门限。
+逐核存储诊断后，v17 仅将 `conv2d_122.w_0` 保留 F32，新文件
+`73efc76d8b6427363b19c5a88ecf7075febfd5bbbef0b5b7ff67ac4d8f5330c1`
+在 960 CPU 源图的最大/平均误差为 `0.010192215` / `0.000082143`，
+独立相同权重误差为 `0.000007331`。`filter-v17-cpu` 的源图、50 张街景和
+50 张收据 **3/3 PASS**，街景五项源退化均为零，收据最大退化为 `0.000733810`。
+CUDA/Vulkan 街景/收据也各 **2/2 PASS**（`filter-v17-pages-{cuda,vulkan}`）；
+转换 SHA 重放通过不能覆盖其余页面或受控性能门。
+
+当前默认尺寸 CPU 概率矩阵 `default-size-current-cpu` 为 **35/36 PASS**，
+CUDA/Vulkan 的对应矩阵也各为 **35/36 PASS**，唯一失败都是旧 Tiny Q8
+recognizer。该旧失败不会赋给下面不同 SHA 的 v19 文件。
+新的 v19 Tiny detector/recognizer Q8 组合在
+`filter-v19-cpu` 的默认尺寸检测图、四输入识别图、街景及收据为 **4/4 PASS**。
+检测图 max/mean 为 `0.037688673` / `0.000081015`；识别 max 为
+`0.002044559`，argmax 为 `1`。街景五项退化均不大于零，收据最大退化为
+`0.000208960`。新文件 SHA 分别为
+`fa5f6f6efdc79c4a2363c7719d6dd5d7ca999e14cbc71132a65d30ce834c4988` 和
+`f9e6c3793c95fa7e84b10d5fa277f56e22b059c4e1517ba93a223f83fa41d960`；
+两份转换均重放得到相同 SHA。CUDA/Vulkan 的同四项检查也各 **4/4 PASS**
+（`filter-v19-pages-{cuda,vulkan}`），完整页面矩阵、受控性能和发布仍未闭环。
+
+v19 recognizer 在转换时使用训练集 256 个裁剪的原始激活协方差，对
+`conv2d_30.w_0` 执行误差反馈，输出普通 ggml Q8_0 块；不增加运行时格式、
+环境变量或插件推理路径。候选策略需显式传入 `--precision-policy` 和
+`--calibration-root`，校准图片、四边形、算法及 damping 均固定在策略中。
+数据划分和选择偏差见 `tests/ocr/DATA_CARD.md`。detector 实际为 0.23903% Q8_0、
+98.50118% F16、1.25979% F32；recognizer 为 0.57945% Q8_0、14.95273% F16、
+84.46782% F32。不能据文件后缀声称纯 Q8、显著压缩或加速。此策略已纳入显式
+实验配置 `tools/ocr_quantization_policies.json`，SHA 为
+`3f8700eb6ab5672f396ff3c93b73c649ca480de4ec59cb0d2c14b3369d22ccc4`；
+没有注册公共模型、更改产品默认配置或覆盖共享缓存内的旧文件。
+
+后续整页对照修复了遗漏的源 `TextDetector.filter_tag_det_res`：首个极值的
+顶点重排、`width-1/height-1` 裁剪和短边过滤，仅用于 source ONNX 检测路径。
+极值并列产生的重复顶点和奇异透视变换也匹配源 OpenCV 的左上角采样行为。
+13 个源生成的过滤 fixture、真实奇异裁剪及既有几何 golden 均通过；受影响
+OCR/table/plugin/validation 回归 **12/12 PASS，零跳过**。未完成的旧页面 cohort
+已停止并记录；`filter-v7-cuda` 按新的库/探针 SHA 重跑。旧页面 PASS 不能自动
+成为新生产库的发布证据，原始概率图报告则仍明确保留其各自二进制身份。
+
+发布必须逐个文件通过源概率/argmax、标注数据、CUDA/Vulkan 及受控性能门；
+原生 CPU 结果仅作诊断，不参与 GPU 发布门控，独立原始框架真值仍必须保留。
+再上传既有 `PP-OCR` release，注册真实 SHA/catalog/manifest 并检查冷缓存下载。
+禁止先发布 F32 再补验收，也禁止将局部精度 PASS 当作完整发布 PASS。
+GPU release 图测量强制至少两次预热、十次计时，公共 runner 另要求三次进程重复
+及同机 baseline；同时保留原始源 CUDA provider 对照和 GPU 活动审计。
+显存数值是驱动采样的进程高水位，不是分配器精确峰值。GPU 忙碌、外部 compute
+或遥测缺失均使受控门失败；不会终止用户桌面进程。
+每次审计拥有唯一 ID 和独立 `.d/<id>.json`，包括空闲等待失败；进程重复不会
+覆盖原始遥测。当前库的三次 baseline/三次 candidate 分类器尝试仍因桌面或外部
+RelateAnything 基准活动失败，测量结束已恢复自有页面验证队列，没有新发布文件。
+
+
+### 公共 Paddle 原始源复核（2026-10-19）
+
+`run_ocr_paddle_probe.py` 将发布文件与 SHA 固定的原始 Paddle program/parameters
+直接比较，清单注册所需源归档、配置 YAML 和输入 fixture。CPU 的 detector、中文
+及英文 recognizer 各 F32/F16/Q8_0 在 CPU/CUDA/Vulkan 各为 **9/9 PASS**，
+GPU 同时直接比较原生 CPU 概率；新公共页级队列仍未全部完成。
+六个难例裁剪通过，首个中文 F32 的 50 张街景 Hmean、固定区域及完整流程 CER/WER
+五项源差值均为零。这些结果不代表 layout 或完整发布门完成。
+
+源 GPU 子进程隔离继承的 GLOG/MLOG 配置：宿主长 GLOG_log_dir 会触发官方
+Paddle GPU 3.0.0 的退出时静态字符串重复释放。源进程仍必须正常退出。数学模式
+采用初始化前的 `NVIDIA_TF32_OVERRIDE=0`，不使用该版本不存在的 Paddle flag。
+同一 3.0.0 源 GPU 三图正常退出，det/ch-rec/en-rec 对 CPU fixture 最大差为
+0.000017583/0.000006557/0.000000238，识别 argmax 全同；共享 GPU smoke 不作性能
+证据。完整源 benchmark/libpaddle SHA、依赖版本和实际数学模式进入报告。
+公共 Paddle 探针测试现为 **27/27 PASS**。GPU 图参考的独立依赖清单为
+`tools/requirements-ocr-paddle-gpu-reference.txt`，固定官方 3.0.0 wheel SHA 和 CUDA
+库版本；新环境 pip check 通过，三个图与原 GPU 环境输出逐元素相同。
+
+`run_ocr_paddle_layout_probe.py` 另检查原始 PicoDet 的全部 8 头，三个 backend 的
+F32 通过；F16/Q8_0 最差头 argmax 比例为 0.992307692/0.969230769，均失败。
+它们与同 dtype 原生 CPU 的后端比较通过，这不能代替原始源输出的相符性。
+原生探针逐头导出并拒绝 NaN/Inf；真实图注入 NaN 的失败回归通过。
+
+公共页面源子进程统一使用 `ocr_paddle_environment.py`。旧 v2 队列出现 CPU 退出
+堆损坏，已停止并归档；新 v3 中英街景源参考各 50 页正常退出。显式固定 SHA 的
+参考可复用，但先验证正常退出凭据及源库、依赖、代码、配置、GT、完整逐图覆盖，
+并保持相同线程、语言和评价模式；每个量化和后端仍执行自己的原生推理。
+完整三后端页级/受控 A/B/发布闭环仍待完成。
+
+公共中英街景的 F32/F16 页级通过，但 Q8_0 完整流程 CER 退化分别为
+0.009708738/0.005295675，超过 0.005；逐阶段替换确认主要差异来自 Q8 detector，
+保留 F32 detector、使用 Q8 recognizer 时两种语言均通过。详见 qAnyLabeling 审计表。
+图参考依赖报告另修复了 Paddle vendored 元数据覆盖实际选择版本的问题，新增
+`ocr_paddle_metadata.py` 记录全部候选与选择版本；活动页面队列仍使用冻结的旧身份
+实现，不能据此宣称依赖身份门已增强或完整 release 已通过。
+
+`aicore_ocr_recognize_regions` 接收同步借用的三点及以上多边形：坐标先向零截断
+为整数，再执行源 `normalize_custom_detection_boxes` 最小外接矩形和顶点排序。
+选中区域不裁切到图像边界，使用源边界复制采样；按源阅读顺序组织识别批次，
+返回时恢复输入索引。原 `aicore_ocr_recognize` 的已发布 quad 接口保持兼容。
+每套配方的对照包含十个区域：倾斜四边形、五边形、三角形、分数/负坐标和越界区域，
+逐输入比较文本、框和两次调用，quad 容差 `0.001`；低置信度和空文本仍保留原结果槽位。
+同时拒绝少于三点、NaN 和 int32 范围外坐标；合法退化多边形返回空文本/零分。
+
+### CDLA 独立布局页面评价
+
+`tools/ocr_cdla_validation.json` 固定官方 CDLA 验证集全部 1,000 页、8,711 个
+人工区域及归档/成员 SHA。`layout_gt_eval.py` 使用 LabelMe 的实际像素栅格
+语义生成 bbox/area，已逐项对照原始官方转换器；COCO annotation ID 保持
+正整数，防止零值未匹配哨兵。它检查逐页覆盖、输入身份和类别，输出 class-aware
+bbox AP50:95/AP50/AP75/AR100；有限越界框交给 COCO 处理，不擅自裁剪。
+
+`export_cdla_layout_reference.py` 执行固定 SHA 的原始 Paddle 图和官方
+`ppocr/postprocess/picodet_postprocess.py`；观察原 NMS 结果中的分数，不改变
+后处理决策。`export_cdla_layout_native.py` 通过公开 borrowed BGR image 和
+typed-region C ABI 导出结果，以带行填充的输入覆盖 stride 合同。由于现有
+API 要求 det/rec，该脚本用 DB 阈值 1 抑制文本检测并断言零文本框，仅隔离
+布局精度，不测整套 OCR 的性能。两侧保留布局 score=0.5/NMS=0.5。
+
+手动回归命令为 `python3 core/AICore/scripts/test_layout_gt_eval.py`，17 项
+通过；重新配置后的正式 `test_ocr_layout_gt_eval` 也通过。1,000 页原始 CPU
+和三页原生 CPU 接线结果仅作诊断。公共冷缓存下载/2,000 个文件 SHA/零下载
+离线复用通过；原始 CUDA 与两 GPU 三种存储的全部 1,000 页评价均正常退出。
+原始 CUDA mAP50:95 为 0.8546702421，原生 CUDA/Vulkan 的 F32 差值分别为
+-0.0000003951/-0.0000004017，F16 均为 +0.0000631982、Q8_0 均为
+-0.0009133202。这些是实测页面差值，未据此反推发布容差。入口
+`build_app/Testing/ocr-storage-reference/layout-cdla-source-path.txt`。
+独立页面容差与公共 manifest 接入尚待完成，不能以此替换严格原始输出门、
+完整 OCR 页面指标或受控性能门。

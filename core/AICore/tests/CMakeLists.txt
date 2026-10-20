@@ -519,6 +519,8 @@ aicore_add_capi_test(test_reid_capi_load reid LABELS capi;model)
 
 # --- OCR (C API / libAICore) ---
 aicore_add_capi_test(test_ocr_capi_contract ocr LABELS capi;ocr)
+aicore_add_capi_tool(test_ocr_orientation ocr/test_ocr_orientation.cpp
+    LIBS 3rdparty_jsoncpp)
 # Real-model recognize-only ABI against the det path (feedback, order,
 # degenerate quads, BGR); env wired in aicore_configure_model_test_assets,
 # exits 77 without the assets.
@@ -564,7 +566,8 @@ endforeach()
 target_compile_definitions(test_ocr_rec_crop PRIVATE
     AICORE_OCR_REC_CROP_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/rec_crop_golden.txt")
 target_compile_definitions(test_ocr_db_postprocess PRIVATE
-    AICORE_OCR_DB_POSTPROCESS_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/db_postprocess_golden.txt")
+    AICORE_OCR_DB_POSTPROCESS_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/db_postprocess_golden.txt"
+    AICORE_OCR_SOURCE_DET_FILTER_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/source_det_filter_golden.txt")
 
 # --- table (C API / libAICore) ---
 aicore_add_capi_test(test_table_capi_contract table)
@@ -1301,6 +1304,35 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_gt_eval.py)
     set_tests_properties(test_ocr_gt_eval PROPERTIES
         LABELS "fast;validation;ocr")
+
+    add_test(NAME test_ocr_layout_gt_eval
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_layout_gt_eval.py)
+    set_tests_properties(test_ocr_layout_gt_eval PROPERTIES
+        LABELS "fast;validation;ocr" SKIP_RETURN_CODE 77)
+
+    add_test(NAME test_ocr_probability_gate
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_onnx_probe.py)
+    add_test(NAME test_ocr_gpu_measurement_audit
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_gpu_audit.py)
+    add_test(NAME test_ocr_paddle_page_reference
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_pipeline.py)
+    add_test(NAME test_ocr_paddle_graph_reference
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_probe.py)
+    add_test(NAME test_ocr_paddle_layout_reference
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_layout_probe.py)
+    add_test(NAME test_table_paddle_graph_reference
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_paddle_probe.py)
+    set_tests_properties(test_ocr_probability_gate test_ocr_gpu_measurement_audit
+        test_ocr_paddle_page_reference test_ocr_paddle_graph_reference
+        test_ocr_paddle_layout_reference test_table_paddle_graph_reference
+        PROPERTIES LABELS "fast;validation;ocr")
 
     add_test(NAME test_aicore_plugin_boundaries
         COMMAND ${Python3_EXECUTABLE}

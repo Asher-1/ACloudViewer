@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "AnnotationDocument.h"
+
 namespace {
 QString answerText(const QString& text) {
     QString answer = text.trimmed();
@@ -139,7 +141,7 @@ VlmImport importVlm(const QByteArray& jsonLines) {
         result.documents.insert(
                 name,
                 QJsonObject{
-                        {QStringLiteral("version"), QStringLiteral("4.0.6")},
+                        {QStringLiteral("version"), annotationFormatVersion()},
                         {QStringLiteral("flags"), QJsonObject()},
                         {QStringLiteral("shapes"), shapes},
                         {QStringLiteral("imagePath"), name},

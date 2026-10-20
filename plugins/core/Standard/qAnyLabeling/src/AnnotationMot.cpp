@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "AnnotationDocument.h"
+
 namespace {
 int frameId(const QString& fileName) {
     const QString tail = QFileInfo(fileName).completeBaseName().section(
@@ -24,7 +26,7 @@ int frameId(const QString& fileName) {
 }
 
 QJsonObject emptyDocument(const MotImage& image) {
-    return {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    return {{QStringLiteral("version"), annotationFormatVersion()},
             {QStringLiteral("flags"), QJsonObject()},
             {QStringLiteral("shapes"), QJsonArray()},
             {QStringLiteral("imagePath"), image.fileName},

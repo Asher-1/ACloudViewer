@@ -91,6 +91,33 @@ static std::vector<ModelRow> buildModels() {
 
 static const std::vector<ModelRow> kModels = buildModels();
 
+// Exact source recipes at X-AnyLabeling-GGML 745f6c355f94. This list owns
+// pipeline pairing/defaults, while kModels owns published download assets.
+static constexpr aicore_ocr_preset_entry kPresets[] = {
+        {"ppocr-v4-ch", "PP-OCRv4 (ch)", "ppocr-det-ch", "ppocr-rec-ch",
+         "ppocr-cls", .3f, .6f, 1.5f, 1000, 960, 6, 6, .9f, .5f},
+        {"ppocr-v4-en", "PP-OCRv4 (en)", "ppocr-det-ch", "ppocr-rec-en",
+         "ppocr-cls", .3f, .6f, 1.5f, 1000, 960, 6, 6, .9f, .5f},
+        {"ppocr-v4-source", "ch_PP-OCRv4", "ppocrv4-source-det",
+         "ppocrv4-source-rec", "ppocr-cls", .3f, .6f, 1.5f, 1000, 960, 6, 6,
+         .9f, .5f},
+        {"ppocr-v3-japan", "japan_PP-OCRv3", "ppocrv4-source-det",
+         "ppocrv3-japan-rec", "ppocr-cls", .3f, .6f, 1.5f, 1000, 960, 6, 6, .9f,
+         .5f},
+        {"ppocr-v5-mobile", "PP-OCRv5", "ppocrv5-mobile-det",
+         "ppocrv5-mobile-rec", "ppocr-cls", .3f, .6f, 1.5f, 1000, 960, 6, 6,
+         .9f, .5f},
+        {"ppocr-v6-tiny", "PP-OCRv6 Tiny", "ppocrv6-tiny-det",
+         "ppocrv6-tiny-rec", "ppocr-cls", .2f, .4f, 1.4f, 3000, 960, 6, 6, .9f,
+         .5f},
+        {"ppocr-v6-small", "PP-OCRv6 Small", "ppocrv6-small-det",
+         "ppocrv6-small-rec", "ppocr-cls", .2f, .45f, 1.4f, 3000, 960, 6, 6,
+         .9f, .5f},
+        {"ppocr-v6-medium", "PP-OCRv6 Medium", "ppocrv6-medium-det",
+         "ppocrv6-medium-rec", "ppocr-cls", .2f, .45f, 1.4f, 3000, 960, 6, 6,
+         .9f, .5f},
+};
+
 static int modelCount() { return static_cast<int>(kModels.size()); }
 
 static aicore_ocr_model_entry toEntry(const ModelRow& row) {
@@ -101,6 +128,26 @@ static aicore_ocr_model_entry toEntry(const ModelRow& row) {
 }  // namespace
 
 AICORE_CAPI int aicore_ocr_model_count(void) { return modelCount(); }
+
+AICORE_CAPI int aicore_ocr_preset_count(void) {
+    return sizeof(kPresets) / sizeof(kPresets[0]);
+}
+
+AICORE_CAPI const aicore_ocr_preset_entry* aicore_ocr_preset_at(int index) {
+    return index >= 0 && index < aicore_ocr_preset_count() ? &kPresets[index]
+                                                           : nullptr;
+}
+
+AICORE_CAPI const aicore_ocr_preset_entry* aicore_ocr_preset_by_rec_filename(
+        const char* filename) {
+    if (!filename) return nullptr;
+    for (const auto& preset : kPresets)
+        for (const char* quant : kQuantSuffixes)
+            if (std::string(preset.rec_stem) + "-" + quant + ".gguf" ==
+                filename)
+                return &preset;
+    return nullptr;
+}
 
 AICORE_CAPI const aicore_ocr_model_entry* aicore_ocr_model_at(int index) {
     static thread_local aicore_ocr_model_entry entry{};

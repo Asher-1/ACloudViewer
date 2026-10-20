@@ -48,14 +48,16 @@ between them (editing any threshold switches it to Custom):
 | Relations shown (spatial) | 8 (3) | 10 |
 | Spatial / semantic separation | on | off |
 
-Both use class-agnostic dedupe at IoU 0.7 and one edge per (object, predicate)
-and per (subject, object, leading word). **Relation vocabulary** selects the
-curated predicate list of either script (65 or 35 phrases) or the full model
-vocabulary, which also contains unusual phrases such as "has holding"; typing
-in **Custom predicates** switches it to Custom. The decomposed streams are
-re-calibrated with the GGUF `ra.calibration_a/b`
-(`aicore_relation_calibration`), because upstream's native decomposed branch
-reports uncalibrated sigmoid scores. The model's internal pair budget stays 128.
+Image and batch modes use class-agnostic dedupe at IoU 0.7; video mode disables
+dedupe and applies `max_box_frac` through the tracker instead. Both dedupe and
+temporal tracking enforce one edge per (object, predicate) and per (subject,
+object, leading word). **Relation vocabulary** selects the curated predicate list
+of either script (65 or 35 phrases) or the full model vocabulary, which also
+contains unusual phrases such as "has holding"; typing in **Custom predicates**
+switches it to Custom. The decomposed streams are re-calibrated with the GGUF
+`ra.calibration_a/b` (`aicore_relation_calibration`), because upstream's native
+decomposed branch reports uncalibrated sigmoid scores. The model's internal pair
+budget stays 128.
 
 ### Video tracking and smoothing
 
@@ -71,10 +73,11 @@ flag with its default: `--track_high` 0.25, `--iou_thr` 0.3, `--merge_iou`
 `--off_frames` 6, `--max_per_pair` 2, `--topk` 24; `--on_thr`, `--spatial_on_thr`,
 `--max_edges` and `--max_spatial` reuse the relation floors and caps above.
 Tracks and beliefs reset when the stream restarts, seeks, stops or changes
-source. The one deliberate difference is pacing: frames are consumer-driven, so
-every delivered frame is inferred (upstream `--stride` 1) and `--max_age`
-counts inferred frames. Upstream's Kalman box filter has zero position/velocity
-cross terms, so its velocity never moves; the port reproduces that as written.
+source; video loops do not reset tracker state. The one deliberate difference is
+pacing: frames are consumer-driven, so every delivered frame is inferred
+(upstream `--stride` 1) and `--max_age` counts inferred frames. Upstream's
+Kalman box filter has zero position/velocity cross terms, so its velocity never
+moves; the port reproduces that as written.
 
 ## Build
 
@@ -128,7 +131,9 @@ All six images are checkable; only the recommended `horse.jpg` is checked
 initially. Check additional images to include them, or use **Check all** and
 **Uncheck all**. Clicking an image previews it without changing its checkbox.
 The video tab also accepts other video files and cameras. Playback advances after
-inference completes, including cancellation and error paths.
+inference completes. Fatal errors (session load failure) stop the stream;
+non-fatal single-image errors also stop playback, but batch processing continues
+to the next image after logging the error.
 
 Choose a relation model (24 available: 12 ViT + 12 ConvNeXt) and run. The
 default object source detects objects with the selected YOLO model. To use
@@ -146,15 +151,19 @@ students) plus twelve ConvNeXt models are listed by the public catalog (25 total
 including tokenizer). Model downloads use the shared verified downloader and
 existing task cache directories. The catalog pins the published repository
 revision and repairs outdated cached weights by size and SHA-256. Current Q8
-exports retain the vocabulary head in F16, matching upstream. Custom predicates
-are separated by `|`; they load the matching native text student and pinned
-official CLIP tokenizer into an in-memory vocabulary. The three published
-student GGUFs are supported through this pipeline and the public text embedding
-API. For an existing vocabulary, select **Vocabulary vectors** and a matching
-**Vocabulary names** JSON list. Vectors are row-major F32 `[predicate_count,
-512]` values and are normalized by AICore. They replace custom predicate text
-and do not require a student download. An optional predicate type map is a JSON
-object mapping names to booleans (`true` for spatial, `false` for semantic).
+exports retain the vocabulary head in F16, matching upstream.
+
+The default operating point pre-fills **Custom predicates** with the 65-phrase
+video reel vocabulary; the Official image demo uses 35 phrases. Typing in the
+field switches **Relation vocabulary** to Custom. Custom predicates are separated
+by `|`; they load the matching native text student and pinned official CLIP
+tokenizer into an in-memory vocabulary. The three published student GGUFs are
+supported through this pipeline and the public text embedding API. For an
+existing vocabulary, select **Vocabulary vectors** and a matching **Vocabulary
+names** JSON list. Vectors are row-major F32 `[predicate_count, 512]` values and
+are normalized by AICore. They replace custom predicate text and do not require a
+student download. An optional predicate type map is a JSON object mapping names
+to booleans (`true` for spatial, `false` for semantic).
 
 Repeated inputs reuse the worker's loaded session. Editing a model, imported
 box/mask file, vocabulary or predicate type map at the same path reloads the

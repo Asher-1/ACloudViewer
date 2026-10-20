@@ -22,6 +22,7 @@ insertions, so a detector cannot hide recognition misses.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import unicodedata
@@ -48,9 +49,9 @@ def polygon_area(points: Iterable[tuple[float, float]]) -> float:
     polygon = list(points)
     if len(polygon) < 3:
         return 0.0
-    return abs(sum(polygon[i][0] * polygon[(i + 1) % len(polygon)][1] -
-                   polygon[(i + 1) % len(polygon)][0] * polygon[i][1]
-                   for i in range(len(polygon))) / 2.0)
+    return float(abs(sum(polygon[i][0] * polygon[(i + 1) % len(polygon)][1] -
+                         polygon[(i + 1) % len(polygon)][0] * polygon[i][1]
+                         for i in range(len(polygon))) / 2.0))
 
 
 def signed_area(points: list[tuple[float, float]]) -> float:
@@ -144,11 +145,26 @@ def annotation_from_dict(raw: dict) -> Annotation:
 
 
 def load_ground_truth(path: Path) -> dict[str, list[Annotation]]:
+    if path.is_dir():
+        return load_sroie_ground_truth(path)
     records: list[dict] = []
     content = path.read_text(encoding="utf-8-sig")
     if path.suffix.lower() == ".json":
         parsed = json.loads(content)
-        records = parsed.get("images", parsed) if isinstance(parsed, dict) else parsed
+        if isinstance(parsed, dict) and "documents" in parsed:
+            # XFUND annotates semantic fields, sometimes containing multiple
+            # lines. These regions are suitable for fixed-region recognition;
+            # they are not text-line detection ground truth.
+            records = []
+            for document in parsed["documents"]:
+                annotations = []
+                for field in document["document"]:
+                    x0, y0, x1, y1 = field["box"]
+                    annotations.append({"points": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]],
+                                        "transcription": field["text"]})
+                records.append({"image": document["img"]["fname"], "annotations": annotations})
+        else:
+            records = parsed.get("images", parsed) if isinstance(parsed, dict) else parsed
     else:
         for line_number, line in enumerate(content.splitlines(), 1):
             if not line.strip():
@@ -170,6 +186,60 @@ def load_ground_truth(path: Path) -> dict[str, list[Annotation]]:
         if not isinstance(annotations, list):
             raise ValueError(f"{path}: annotations for {image} must be a list")
         result[image] = [annotation_from_dict(annotation) for annotation in annotations]
+    return result
+
+
+def ground_truth_digest(path: Path) -> str:
+    """Pin one label file, or a sorted SROIE directory's names and raw bytes.
+
+    Directory hashes include every CSV basename and its binary SHA-256, so a
+    missing, additional, renamed or modified receipt label invalidates the pin.
+    Images are pinned separately by the common validation input catalog.
+    """
+    if not path.is_dir():
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    files = sorted(path.glob("*.csv"))
+    if not files:
+        raise ValueError("SROIE label directory is empty")
+    digest = hashlib.sha256()
+    for label in files:
+        digest.update(label.name.encode("utf-8") + b"\0")
+        digest.update(hashlib.sha256(label.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+def load_sroie_ground_truth(directory: Path) -> dict[str, list[Annotation]]:
+    """Read original receipt localisation/transcription CSV, without reboxing.
+
+    Only the first eight commas separate coordinates. Commas in the original
+    unquoted transcript, including trailing commas, remain part of the text.
+    A directory contains the predeclared subset supplied by the common runner.
+    """
+    files = sorted(directory.glob("*.csv"))
+    if not files:
+        raise ValueError("SROIE label directory is empty")
+    result = {}
+    for label in files:
+        annotations = []
+        for number, line in enumerate(label.read_text(encoding="utf-8-sig").splitlines(), 1):
+            if not line.strip():
+                continue
+            fields = line.split(",", 8)
+            try:
+                if len(fields) != 9:
+                    raise ValueError("expected eight coordinates and a transcript")
+                values = [float(value) for value in fields[:8]]
+                if not all(math.isfinite(value) for value in values):
+                    raise ValueError("non-finite coordinates")
+                points = tuple(zip(values[::2], values[1::2]))
+                if polygon_area(points) <= 0:
+                    raise ValueError("degenerate text box")
+                annotations.append(Annotation(points, fields[8], fields[8] == "###"))
+            except ValueError as error:
+                raise ValueError(f"{label}:{number}: invalid SROIE annotation") from error
+        if not annotations:
+            raise ValueError(f"{label}: no SROIE text annotations")
+        result[label.with_suffix(".jpg").name] = annotations
     return result
 
 
@@ -252,8 +322,10 @@ def evaluate(predictions: list[Prediction], annotations: list[Annotation],
         expected = normalize_text(annotations[gt_index].text, case_sensitive)
         char_distance += levenshtein(list(predicted), list(expected))
         char_reference += len(expected)
-        word_distance += int(predicted != expected)
-        word_reference += 1
+        # A text line can contain several words. Count word edits, rather
+        # than reporting the fraction of mismatching lines as WER.
+        word_distance += levenshtein(predicted.split(), expected.split())
+        word_reference += len(expected.split())
         exact += int(predicted == expected)
         if predicted != expected:
             errors.append({"kind": "text", "iou": round(iou, 6),
@@ -263,13 +335,13 @@ def evaluate(predictions: list[Prediction], annotations: list[Annotation],
         expected = normalize_text(annotations[gt_index].text, case_sensitive)
         char_distance += len(expected)
         char_reference += len(expected)
-        word_distance += 1
-        word_reference += 1
+        word_distance += len(expected.split())
+        word_reference += len(expected.split())
         errors.append({"kind": "missed_gt", "ground_truth": annotations[gt_index].text})
     for prediction_index in unmatched_predictions:
         predicted = normalize_text(predictions[prediction_index].text, case_sensitive)
         char_distance += len(predicted)
-        word_distance += 1
+        word_distance += len(predicted.split())
         errors.append({"kind": "extra_prediction", "prediction": predictions[prediction_index].text})
     tp = len(pairs)
     fp = len(unmatched_predictions)
@@ -279,12 +351,27 @@ def evaluate(predictions: list[Prediction], annotations: list[Annotation],
     hmean = 2.0 * precision * recall / (precision + recall) if precision + recall else 0.0
     return {"gt_boxes": tp + fn, "predicted_boxes": tp + fp, "matched_boxes": tp,
             "precision": precision, "recall": recall, "hmean": hmean,
-            "exact_text_matches": exact, "word_accuracy": exact / word_reference if word_reference else 0.0,
+            "exact_text_matches": exact, "word_accuracy": exact / (tp + fn) if tp + fn else 0.0,
             "cer": char_distance / char_reference if char_reference else 0.0,
             "wer": word_distance / word_reference if word_reference else 0.0,
             "char_distance": char_distance, "char_reference": char_reference,
             "word_distance": word_distance, "word_reference": word_reference,
             "errors": errors}
+
+
+def aggregate(reports: Iterable[dict]) -> dict:
+    """Micro-average counts; never average per-page rates of unequal size."""
+    rows = list(reports)
+    totals = {key: sum(row[key] for row in rows) for key in (
+        "gt_boxes", "predicted_boxes", "matched_boxes", "exact_text_matches",
+        "char_distance", "char_reference", "word_distance", "word_reference")}
+    precision = totals["matched_boxes"] / totals["predicted_boxes"] if totals["predicted_boxes"] else 0.
+    recall = totals["matched_boxes"] / totals["gt_boxes"] if totals["gt_boxes"] else 0.
+    return {**totals, "images": len(rows), "precision": precision, "recall": recall,
+            "hmean": 2 * precision * recall / (precision + recall) if precision + recall else 0.,
+            "cer": totals["char_distance"] / totals["char_reference"] if totals["char_reference"] else 0.,
+            "wer": totals["word_distance"] / totals["word_reference"] if totals["word_reference"] else 0.,
+            "word_accuracy": totals["exact_text_matches"] / totals["gt_boxes"] if totals["gt_boxes"] else 0.}
 
 
 def main() -> int:

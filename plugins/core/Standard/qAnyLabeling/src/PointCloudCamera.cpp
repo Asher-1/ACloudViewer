@@ -7,51 +7,80 @@
 
 #include "PointCloudCamera.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QHash>
-#include <QImage>
+#include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonValue>
-#include <QPainter>
-#include <QPair>
+#include <QJsonParseError>
+#include <QLineF>
+#include <QSet>
+#include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace {
+struct Vec3 {
+    double x = 0;
+    double y = 0;
+    double z = 0;
+};
 
-// Upstream CORNER_SIGNS order: bit 2 = z sign, bit 1 = y sign, bit 0 =
-// x sign (corners 0-3 are the z=-1 face, 4-7 the z=+1 face).
-constexpr int kCornerCount = 8;
-
-double matrixAt(const QJsonArray& rows, int row, int column, bool* ok) {
-    // Row length is validated by the caller (camera_matrix rows are 3-wide,
-    // transform rows 4-wide); out-of-range reads yield Undefined and fail
-    // the isDouble check below.
-    const QJsonArray values = rows.at(row).toArray();
-    const QJsonValue value = values.at(column);
-    if (!value.isDouble() || !qIsFinite(value.toDouble())) {
-        *ok = false;
-        return 0.0;
-    }
-    return value.toDouble();
+bool fail(QString* error, const QString& message) {
+    if (error) *error = message;
+    return false;
 }
 
-// Distort one normalized pinhole coordinate (upstream _project_camera_points
-// inner step). Returns false when the coordinate is non-finite.
-bool distortPixel(const PointCloudCalibration& calibration,
-                  double x,
-                  double y,
-                  double* outX,
-                  double* outY) {
-    if (calibration.opencv5) {
+bool finiteNumber(const QJsonValue& value, double* result) {
+    if (!value.isDouble()) return false;
+    const double number = value.toDouble();
+    if (!std::isfinite(number)) return false;
+    if (result) *result = number;
+    return true;
+}
+
+bool matrix(const QJsonValue& value, int rows, int columns, double* output) {
+    if (!value.isArray()) return false;
+    const QJsonArray outer = value.toArray();
+    if (outer.size() != rows) return false;
+    for (int row = 0; row < rows; ++row) {
+        if (!outer[row].isArray()) return false;
+        const QJsonArray inner = outer[row].toArray();
+        if (inner.size() != columns) return false;
+        for (int column = 0; column < columns; ++column)
+            if (!finiteNumber(inner[column], &output[row * columns + column]))
+                return false;
+    }
+    return true;
+}
+
+double determinant3(const std::array<double, 16>& m) {
+    return m[0] * (m[5] * m[10] - m[6] * m[9]) -
+           m[1] * (m[4] * m[10] - m[6] * m[8]) +
+           m[2] * (m[4] * m[9] - m[5] * m[8]);
+}
+
+Vec3 cameraPoint(const Vec3& point, const PointCloudCalibration& calibration) {
+    const auto& m = calibration.pointCloudToCamera;
+    return {m[0] * point.x + m[1] * point.y + m[2] * point.z + m[3],
+            m[4] * point.x + m[5] * point.y + m[6] * point.z + m[7],
+            m[8] * point.x + m[9] * point.y + m[10] * point.z + m[11]};
+}
+
+QPointF projectCamera(const Vec3& camera,
+                      const PointCloudCalibration& calibration) {
+    const double z = camera.z;
+    double x = camera.x / z;
+    double y = camera.y / z;
+    if (calibration.distortionModel == QStringLiteral("opencv5")) {
+        const double radius2 = x * x + y * y;
         const double k1 = calibration.distortion[0];
         const double k2 = calibration.distortion[1];
         const double p1 = calibration.distortion[2];
         const double p2 = calibration.distortion[3];
         const double k3 = calibration.distortion[4];
-        const double radius2 = x * x + y * y;
         const double radial =
                 1 + radius2 * (k1 + radius2 * (k2 + radius2 * k3));
         const double distortedX =
@@ -61,411 +90,357 @@ bool distortPixel(const PointCloudCalibration& calibration,
         x = distortedX;
         y = distortedY;
     }
-    *outX = x * calibration.fx + calibration.cx;
-    *outY = y * calibration.fy + calibration.cy;
-    return qIsFinite(*outX) && qIsFinite(*outY);
+    return {x * calibration.cameraMatrix[0] + calibration.cameraMatrix[2],
+            y * calibration.cameraMatrix[4] + calibration.cameraMatrix[5]};
 }
 
-// Project camera-space points to pixels; returns false for non-finite or
-// non-positive depth entries (their output stays (0,0)).
-void projectCameraPoints(const QVector<QVector3D>& camera,
-                         const PointCloudCalibration& calibration,
-                         QVector<QVector2D>* pixels,
-                         QVector<bool>* inFront) {
-    pixels->resize(camera.size());
-    inFront->resize(camera.size());
-    for (int i = 0; i < camera.size(); ++i) {
-        const QVector3D point = camera.at(i);
-        const bool valid = qIsFinite(point.x()) && qIsFinite(point.y()) &&
-                           qIsFinite(point.z()) && point.z() > 0.0;
-        (*inFront)[i] = valid;
-        if (!valid) {
-            (*pixels)[i] = QVector2D(0.0f, 0.0f);
-            continue;
+bool validCalibration(const PointCloudCalibration& c, QString* error) {
+    if (c.imageSize.width() <= 0 || c.imageSize.height() <= 0)
+        return fail(error,
+                    QStringLiteral("Calibration image_size is invalid."));
+    const auto& k = c.cameraMatrix;
+    if (!(k[0] > 0 && k[4] > 0) || k[1] != 0 || k[3] != 0 || k[6] != 0 ||
+        k[7] != 0 || k[8] != 1)
+        return fail(error,
+                    QStringLiteral("Calibration camera_matrix is invalid."));
+    const auto& m = c.pointCloudToCamera;
+    if (m[12] != 0 || m[13] != 0 || m[14] != 0 || m[15] != 1)
+        return fail(error,
+                    QStringLiteral("Calibration transform must be rigid."));
+    for (int row = 0; row < 3; ++row)
+        for (int column = 0; column < 3; ++column) {
+            double dot = 0;
+            for (int axis = 0; axis < 3; ++axis)
+                dot += m[row * 4 + axis] * m[column * 4 + axis];
+            if (std::abs(dot - (row == column ? 1.0 : 0.0)) > 1e-5)
+                return fail(error,
+                            QStringLiteral("Calibration rotation is invalid."));
         }
-        double x = 0.0;
-        double y = 0.0;
-        distortPixel(calibration, double(point.x()) / point.z(),
-                     double(point.y()) / point.z(), &x, &y);
-        (*pixels)[i] = QVector2D(float(x), float(y));
-    }
-}
-
-// Liang-Barsky-style clipping of one segment against the image rect
-// (upstream _clip_image_segments per-segment logic). Returns false when
-// the segment lies fully outside.
-bool clipSegment(const QVector2D& start,
-                 const QVector2D& end,
-                 int width,
-                 int height,
-                 QVector2D* clippedStart,
-                 QVector2D* clippedEnd) {
-    const double dx = double(end.x()) - start.x();
-    const double dy = double(end.y()) - start.y();
-    double lower = 0.0;
-    double upper = 1.0;
-    const double direction[4] = {-dx, dx, -dy, dy};
-    const double distance[4] = {start.x(), width - 1.0 - start.x(), start.y(),
-                                height - 1.0 - start.y()};
-    for (int axis = 0; axis < 4; ++axis) {
-        if (direction[axis] == 0.0) {
-            if (distance[axis] < 0) return false;
-            continue;
-        }
-        const double ratio = distance[axis] / direction[axis];
-        if (direction[axis] < 0)
-            lower = std::max(lower, ratio);
-        else
-            upper = std::min(upper, ratio);
-    }
-    if (lower > upper) return false;
-    *clippedStart = QVector2D(float(start.x() + lower * dx),
-                              float(start.y() + lower * dy));
-    *clippedEnd = QVector2D(float(start.x() + upper * dx),
-                            float(start.y() + upper * dy));
+    if (std::abs(determinant3(m) - 1.0) > 1e-5)
+        return fail(error,
+                    QStringLiteral("Calibration rotation is not proper."));
+    if (c.distortionModel != QStringLiteral("none") &&
+        c.distortionModel != QStringLiteral("opencv5"))
+        return fail(error, QStringLiteral("Unsupported distortion model."));
     return true;
 }
 
-}  // namespace
-
-QVector<QPair<int, int>> pointCloudCuboidEdges() {
-    return {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
-            {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+bool clipSegment(QPointF start,
+                 QPointF end,
+                 double width,
+                 double height,
+                 QLineF* result) {
+    const double dx = end.x() - start.x();
+    const double dy = end.y() - start.y();
+    double lower = 0;
+    double upper = 1;
+    const std::array<double, 4> p{{-dx, dx, -dy, dy}};
+    const std::array<double, 4> q{{start.x(), width - 1 - start.x(), start.y(),
+                                   height - 1 - start.y()}};
+    for (int i = 0; i < 4; ++i) {
+        if (p[i] == 0) {
+            if (q[i] < 0) return false;
+            continue;
+        }
+        const double ratio = q[i] / p[i];
+        if (p[i] < 0)
+            lower = std::max(lower, ratio);
+        else
+            upper = std::min(upper, ratio);
+        if (lower > upper) return false;
+    }
+    *result = QLineF(start + (end - start) * lower,
+                     start + (end - start) * upper);
+    return true;
 }
+}  // namespace
 
 bool loadPointCloudCalibration(const QString& path,
                                PointCloudCalibration* calibration,
                                QString* error) {
     if (!calibration || !error) return false;
     error->clear();
-    if (QFileInfo(path).suffix().compare(QStringLiteral("json"),
-                                         Qt::CaseInsensitive) != 0) {
-        *error = QStringLiteral("Calibration must be a JSON file.");
-        return false;
-    }
     QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) {
-        *error = file.errorString();
-        return false;
-    }
-    const QJsonDocument document = QJsonDocument::fromJson(file.readAll());
-    if (document.isNull() || !document.isObject()) {
-        *error = QStringLiteral("Calibration must be a JSON object.");
-        return false;
-    }
-    const QJsonObject data = document.object();
-    static const char* kRequired[] = {
-            "schema_version",         "image_size",
-            "camera_model",           "camera_matrix",
-            "T_pointcloud_to_camera", "distortion_model",
-            "distortion_coefficients"};
-    for (const char* field : kRequired) {
-        if (!data.contains(QLatin1String(field))) {
-            *error = QStringLiteral("Missing calibration field: %1").arg(field);
-            return false;
-        }
-    }
-    if (data.size() != 7) {
-        *error = QStringLiteral("Unknown calibration fields present.");
-        return false;
-    }
-    if (!data.value(QStringLiteral("schema_version")).isDouble() ||
-        data.value(QStringLiteral("schema_version")).toInt() != 1) {
-        *error = QStringLiteral("schema_version must be 1.");
-        return false;
-    }
-    if (data.value(QStringLiteral("camera_model")).toString() !=
-        QStringLiteral("pinhole")) {
-        *error = QStringLiteral("camera_model must be pinhole.");
-        return false;
-    }
-    const QJsonArray size = data.value(QStringLiteral("image_size")).toArray();
-    if (size.size() != 2 || !size.at(0).isDouble() || !size.at(1).isDouble() ||
-        size.at(0).toInt() <= 0 || size.at(1).toInt() <= 0 ||
-        size.at(0).toDouble() != size.at(0).toInt() ||
-        size.at(1).toDouble() != size.at(1).toInt()) {
-        *error = QStringLiteral(
-                "image_size must contain positive integer width and "
-                "height.");
-        return false;
-    }
-    const QString model =
-            data.value(QStringLiteral("distortion_model")).toString();
-    if (model != QLatin1String("none") && model != QLatin1String("opencv5")) {
-        *error = QStringLiteral("distortion_model must be none or opencv5.");
-        return false;
-    }
-    const QJsonArray cameraMatrix =
-            data.value(QStringLiteral("camera_matrix")).toArray();
-    const QJsonArray transform =
-            data.value(QStringLiteral("T_pointcloud_to_camera")).toArray();
-    const QJsonArray distortion =
-            data.value(QStringLiteral("distortion_coefficients")).toArray();
-    if (cameraMatrix.size() != 3 || transform.size() != 4) {
-        *error = QStringLiteral(
-                "camera_matrix must be 3x3 and "
-                "T_pointcloud_to_camera must be 4x4.");
-        return false;
-    }
-    const int expectedDistortion = model == QLatin1String("opencv5") ? 5 : 0;
-    if (distortion.size() != expectedDistortion) {
-        *error = QStringLiteral("distortion_coefficients must hold %1 values.")
-                         .arg(expectedDistortion);
-        return false;
-    }
-    for (const QJsonValue& value : distortion) {
-        if (!value.isDouble() || !qIsFinite(value.toDouble())) {
-            *error = QStringLiteral(
-                    "distortion_coefficients must be finite numbers.");
-            return false;
-        }
-    }
-
+    if (QFileInfo(path).suffix().compare(QStringLiteral("json"),
+                                         Qt::CaseInsensitive) != 0)
+        return fail(error, QStringLiteral("Calibration must be a JSON file."));
+    if (!file.open(QIODevice::ReadOnly)) return fail(error, file.errorString());
+    QJsonParseError parse;
+    const QJsonDocument document =
+            QJsonDocument::fromJson(file.readAll(), &parse);
+    if (parse.error != QJsonParseError::NoError || !document.isObject())
+        return fail(error,
+                    QStringLiteral("Calibration must be a JSON object."));
+    const QJsonObject object = document.object();
+    const QSet<QString> fields{QStringLiteral("schema_version"),
+                               QStringLiteral("image_size"),
+                               QStringLiteral("camera_model"),
+                               QStringLiteral("camera_matrix"),
+                               QStringLiteral("T_pointcloud_to_camera"),
+                               QStringLiteral("distortion_model"),
+                               QStringLiteral("distortion_coefficients")};
+    for (const QString& field : fields)
+        if (!object.contains(field))
+            return fail(
+                    error,
+                    QStringLiteral("Missing calibration field: %1").arg(field));
+    for (auto it = object.begin(); it != object.end(); ++it)
+        if (!fields.contains(it.key()))
+            return fail(error, QStringLiteral("Unknown calibration field: %1")
+                                       .arg(it.key()));
+    if (!object[QStringLiteral("schema_version")].isDouble() ||
+        object[QStringLiteral("schema_version")].toInt() != 1)
+        return fail(error, QStringLiteral("schema_version must be 1."));
+    if (object[QStringLiteral("camera_model")] !=
+        QJsonValue(QStringLiteral("pinhole")))
+        return fail(error, QStringLiteral("camera_model must be pinhole."));
     PointCloudCalibration parsed;
-    bool ok = true;
-    // Intrinsic: strict [[fx,0,cx],[0,fy,cy],[0,0,1]] shape with positive
-    // focal lengths (upstream rejects any deviation).
-    const double m[3][3] = {{matrixAt(cameraMatrix, 0, 0, &ok),
-                             matrixAt(cameraMatrix, 0, 1, &ok),
-                             matrixAt(cameraMatrix, 0, 2, &ok)},
-                            {matrixAt(cameraMatrix, 1, 0, &ok),
-                             matrixAt(cameraMatrix, 1, 1, &ok),
-                             matrixAt(cameraMatrix, 1, 2, &ok)},
-                            {matrixAt(cameraMatrix, 2, 0, &ok),
-                             matrixAt(cameraMatrix, 2, 1, &ok),
-                             matrixAt(cameraMatrix, 2, 2, &ok)}};
-    if (!ok) {
-        *error = QStringLiteral("camera_matrix must contain finite numbers.");
-        return false;
-    }
-    if (m[0][0] <= 0 || m[1][1] <= 0 || m[0][1] != 0 || m[1][0] != 0 ||
-        m[2][0] != 0 || m[2][1] != 0 || m[2][2] != 1) {
-        *error = QStringLiteral(
-                "camera_matrix must be [[fx,0,cx],[0,fy,cy],[0,0,1]] "
-                "with positive focal lengths.");
-        return false;
-    }
-    parsed.fx = m[0][0];
-    parsed.fy = m[1][1];
-    parsed.cx = m[0][2];
-    parsed.cy = m[1][2];
-
-    // Rigid transform: 4x4, rotation orthonormal with det=+1, last row
-    // exactly [0,0,0,1] (upstream tolerance: atol 1e-5).
-    double rotation[9] = {};
-    double translation[3] = {};
-    const QJsonArray lastRow = transform.at(3).toArray();
-    if (lastRow.size() != 4 || lastRow.at(0).toDouble() != 0.0 ||
-        lastRow.at(1).toDouble() != 0.0 || lastRow.at(2).toDouble() != 0.0 ||
-        lastRow.at(3).toDouble() != 1.0) {
-        *error = QStringLiteral(
-                "T_pointcloud_to_camera must end with [0, 0, 0, 1].");
-        return false;
-    }
-    for (int row = 0; row < 3; ++row) {
-        const QJsonArray transformRow = transform.at(row).toArray();
-        if (transformRow.size() != 4) {
-            *error = QStringLiteral(
-                    "T_pointcloud_to_camera rows must hold 4 values.");
-            return false;
-        }
-        for (int column = 0; column < 3; ++column) {
-            const double value = matrixAt(transform, row, column, &ok);
-            if (!ok) {
-                *error = QStringLiteral(
-                        "T_pointcloud_to_camera must contain finite "
-                        "numbers.");
-                return false;
-            }
-            rotation[row * 3 + column] = value;
-        }
-        translation[row] = transformRow.at(3).toDouble();
-        if (!qIsFinite(translation[row])) {
-            *error = QStringLiteral(
-                    "T_pointcloud_to_camera must contain finite "
-                    "numbers.");
-            return false;
-        }
-    }
-    double determinant = 0.0;
-    for (int column = 0; column < 3; ++column) {
-        const double a = rotation[column];
-        const double b = rotation[3 + column];
-        const double c = rotation[6 + column];
-        determinant += a * (rotation[3 + (column + 1) % 3] *
-                                    rotation[6 + (column + 2) % 3] -
-                            rotation[3 + (column + 2) % 3] *
-                                    rotation[6 + (column + 1) % 3]);
-        // Orthonormality: every column must be a unit vector.
-        if (std::abs(std::sqrt(a * a + b * b + c * c) - 1.0) > 1e-5) {
-            *error = QStringLiteral(
-                    "T_pointcloud_to_camera must be a rigid "
-                    "transform.");
-            return false;
-        }
-    }
-    if (std::abs(determinant - 1.0) > 1e-5) {
-        *error = QStringLiteral(
-                "T_pointcloud_to_camera must be a rigid transform "
-                "with a proper rotation.");
-        return false;
-    }
-    for (int i = 0; i < 9; ++i) parsed.rotation[i] = rotation[i];
-    for (int i = 0; i < 3; ++i) parsed.translation[i] = translation[i];
-
-    parsed.imageSize = QSize(size.at(0).toInt(), size.at(1).toInt());
-    parsed.opencv5 = model == QLatin1String("opencv5");
-    for (int i = 0; i < expectedDistortion; ++i)
-        parsed.distortion[i] = distortion.at(i).toDouble();
-
+    const QJsonArray size = object[QStringLiteral("image_size")].toArray();
+    if (size.size() != 2 || !size[0].isDouble() || !size[1].isDouble() ||
+        size[0].toInt() <= 0 || size[1].toInt() <= 0)
+        return fail(error,
+                    QStringLiteral("image_size must be positive integers."));
+    parsed.imageSize = QSize(size[0].toInt(), size[1].toInt());
+    if (!matrix(object[QStringLiteral("camera_matrix")], 3, 3,
+                parsed.cameraMatrix.data()) ||
+        !matrix(object[QStringLiteral("T_pointcloud_to_camera")], 4, 4,
+                parsed.pointCloudToCamera.data()))
+        return fail(error, QStringLiteral("Calibration matrices are invalid."));
+    if (!object[QStringLiteral("distortion_model")].isString())
+        return fail(error, QStringLiteral("distortion_model is invalid."));
+    parsed.distortionModel =
+            object[QStringLiteral("distortion_model")].toString();
+    const QJsonArray distortion =
+            object[QStringLiteral("distortion_coefficients")].toArray();
+    const int expected =
+            parsed.distortionModel == QStringLiteral("none") ? 0 : 5;
+    if (distortion.size() != expected)
+        return fail(
+                error,
+                QStringLiteral("distortion_coefficients has invalid length."));
+    for (int i = 0; i < distortion.size(); ++i)
+        if (!finiteNumber(distortion[i], &parsed.distortion[i]))
+            return fail(error,
+                        QStringLiteral("distortion_coefficients is invalid."));
+    if (!validCalibration(parsed, error)) return false;
     *calibration = parsed;
     return true;
 }
 
-void projectPointCloudPoints(const QVector<QVector3D>& points,
-                             const PointCloudCalibration& calibration,
-                             QVector<int>* insideIndices,
-                             QVector<QVector2D>* pixels,
-                             QVector<double>* depths) {
-    insideIndices->clear();
+bool projectPointCloud(const QVector<QVector4D>& points,
+                       const PointCloudCalibration& calibration,
+                       QVector<int>* indices,
+                       QVector<QPoint>* pixels,
+                       QString* error) {
+    if (!indices || !pixels || !validCalibration(calibration, error))
+        return false;
+    indices->clear();
     pixels->clear();
-    depths->clear();
-    // Transform into camera space first (rotation is row-major [R|t]).
-    QVector<QVector3D> camera(points.size());
-    for (int i = 0; i < points.size(); ++i) {
-        const QVector3D& point = points.at(i);
-        camera[i] = QVector3D(float(calibration.rotation[0] * point.x() +
-                                    calibration.rotation[1] * point.y() +
-                                    calibration.rotation[2] * point.z() +
-                                    calibration.translation[0]),
-                              float(calibration.rotation[3] * point.x() +
-                                    calibration.rotation[4] * point.y() +
-                                    calibration.rotation[5] * point.z() +
-                                    calibration.translation[1]),
-                              float(calibration.rotation[6] * point.x() +
-                                    calibration.rotation[7] * point.y() +
-                                    calibration.rotation[8] * point.z() +
-                                    calibration.translation[2]));
-    }
-    QVector<QVector2D> projected;
-    QVector<bool> inFront;
-    projectCameraPoints(camera, calibration, &projected, &inFront);
-    // Far-to-near stable order (upstream argsort of -z): collect the valid
-    // in-bounds candidates, then sort by decreasing depth.
-    QVector<QPair<double, int>> candidates;
+    struct Candidate {
+        int index;
+        double depth;
+        QPoint pixel;
+    };
+    QVector<Candidate> candidates;
     candidates.reserve(points.size());
     for (int i = 0; i < points.size(); ++i) {
-        if (!inFront.at(i)) continue;
-        const QVector2D pixel = projected.at(i);
-        if (pixel.x() < 0 || pixel.x() >= calibration.imageSize.width() ||
-            pixel.y() < 0 || pixel.y() >= calibration.imageSize.height())
+        const QVector4D point = points[i];
+        const Vec3 camera =
+                cameraPoint({point.x(), point.y(), point.z()}, calibration);
+        if (!std::isfinite(camera.x) || !std::isfinite(camera.y) ||
+            !std::isfinite(camera.z) || camera.z <= 0)
             continue;
-        candidates.append({double(camera.at(i).z()), i});
+        const QPointF projected = projectCamera(camera, calibration);
+        if (!std::isfinite(projected.x()) || !std::isfinite(projected.y()) ||
+            projected.x() < 0 ||
+            projected.x() >= calibration.imageSize.width() ||
+            projected.y() < 0 ||
+            projected.y() >= calibration.imageSize.height())
+            continue;
+        candidates.append(
+                {i, camera.z, QPoint(int(projected.x()), int(projected.y()))});
     }
-    std::stable_sort(
-            candidates.begin(), candidates.end(),
-            [](const QPair<double, int>& a, const QPair<double, int>& b) {
-                return a.first > b.first;
-            });
-    insideIndices->reserve(candidates.size());
-    pixels->reserve(candidates.size());
-    depths->reserve(candidates.size());
-    for (const auto& candidate : candidates) {
-        insideIndices->append(candidate.second);
-        pixels->append(projected.at(candidate.second));
-        depths->append(candidate.first);
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [](const Candidate& left, const Candidate& right) {
+                         return left.depth > right.depth;
+                     });
+    for (const Candidate& candidate : candidates) {
+        indices->append(candidate.index);
+        pixels->append(candidate.pixel);
     }
+    return true;
 }
 
-void projectPointCloudCuboid(const QVector<QVector3D>& corners,
-                             const PointCloudCalibration& calibration,
-                             QVector<QPair<QVector2D, QVector2D>>* segments) {
+bool projectCuboid(const PointCloudCuboid& cuboid,
+                   const PointCloudCalibration& calibration,
+                   QVector<QLineF>* segments,
+                   QString* error) {
+    if (!segments || !validCalibration(calibration, error)) return false;
     segments->clear();
-    if (corners.size() != kCornerCount) return;
-    constexpr double kNear = 1e-6;
-    // Transform the corners into camera space.
-    QVector<QVector3D> camera(kCornerCount);
-    for (int i = 0; i < kCornerCount; ++i) {
-        const QVector3D& point = corners.at(i);
-        camera[i] = QVector3D(float(calibration.rotation[0] * point.x() +
-                                    calibration.rotation[1] * point.y() +
-                                    calibration.rotation[2] * point.z() +
-                                    calibration.translation[0]),
-                              float(calibration.rotation[3] * point.x() +
-                                    calibration.rotation[4] * point.y() +
-                                    calibration.rotation[5] * point.z() +
-                                    calibration.translation[1]),
-                              float(calibration.rotation[6] * point.x() +
-                                    calibration.rotation[7] * point.y() +
-                                    calibration.rotation[8] * point.z() +
-                                    calibration.translation[2]));
-    }
-    // Per upstream project_cuboid: distorted edges are sampled at 33
-    // fractions so the curved projection stays smooth; undistorted edges
-    // project to straight lines and need only their endpoints.
-    const int samples = calibration.opencv5 ? 33 : 2;
-    for (const auto& edge : pointCloudCuboidEdges()) {
-        QVector3D start = camera.at(edge.first);
-        QVector3D end = camera.at(edge.second);
-        // Near-plane clip: pull a behind endpoint forward along the edge.
-        if (start.z() < kNear && end.z() < kNear) continue;
-        if (start.z() < kNear) {
-            const double fraction = (kNear - start.z()) / (end.z() - start.z());
-            start = start + (end - start) * float(fraction);
-        } else if (end.z() < kNear) {
-            const double fraction = (kNear - end.z()) / (start.z() - end.z());
-            end = end + (start - end) * float(fraction);
+    const auto corners = cuboid.corners();
+    constexpr int edges[12][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0},
+                                  {4, 5}, {5, 6}, {6, 7}, {7, 4},
+                                  {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    for (const auto& edge : edges) {
+        Vec3 a = cameraPoint(
+                {corners[edge[0]][0], corners[edge[0]][1], corners[edge[0]][2]},
+                calibration);
+        Vec3 b = cameraPoint(
+                {corners[edge[1]][0], corners[edge[1]][1], corners[edge[1]][2]},
+                calibration);
+        constexpr double near = 1e-6;
+        if (a.z < near && b.z < near) continue;
+        if (a.z < near || b.z < near) {
+            const double fraction = (near - a.z) / (b.z - a.z);
+            if (a.z < near) {
+                a = {a.x + fraction * (b.x - a.x), a.y + fraction * (b.y - a.y),
+                     near};
+            } else {
+                b = {b.x + fraction * (a.x - b.x), b.y + fraction * (a.y - b.y),
+                     near};
+            }
         }
-        QVector<QVector2D> chain;
-        chain.reserve(samples);
-        for (int sample = 0; sample < samples; ++sample) {
-            const double fraction = double(sample) / (samples - 1);
-            const QVector3D point = start + (end - start) * float(fraction);
-            if (point.z() <= 0) continue;
-            double x = 0.0;
-            double y = 0.0;
-            if (!distortPixel(calibration, double(point.x()) / point.z(),
-                              double(point.y()) / point.z(), &x, &y))
-                continue;
-            chain.append(QVector2D(float(x), float(y)));
-        }
-        for (int i = 0; i + 1 < chain.size(); ++i) {
-            QVector2D clippedStart;
-            QVector2D clippedEnd;
-            if (clipSegment(chain.at(i), chain.at(i + 1),
-                            calibration.imageSize.width(),
-                            calibration.imageSize.height(), &clippedStart,
-                            &clippedEnd))
-                segments->append({clippedStart, clippedEnd});
+        const int samples =
+                calibration.distortionModel == QStringLiteral("opencv5") ? 33
+                                                                         : 2;
+        for (int sample = 0; sample < samples - 1; ++sample) {
+            const double first = double(sample) / double(samples - 1);
+            const double second = double(sample + 1) / double(samples - 1);
+            const Vec3 firstPoint{a.x + first * (b.x - a.x),
+                                  a.y + first * (b.y - a.y),
+                                  a.z + first * (b.z - a.z)};
+            const Vec3 secondPoint{a.x + second * (b.x - a.x),
+                                   a.y + second * (b.y - a.y),
+                                   a.z + second * (b.z - a.z)};
+            const QPointF start = projectCamera(firstPoint, calibration);
+            const QPointF end = projectCamera(secondPoint, calibration);
+            QLineF clipped;
+            if (clipSegment(start, end, calibration.imageSize.width(),
+                            calibration.imageSize.height(), &clipped))
+                segments->append(clipped);
         }
     }
+    return true;
 }
 
-QImage renderPointCloudCameraOverlay(
-        const QImage& image,
-        const PointCloudCalibration& calibration,
-        const QVector<QVector3D>& points,
-        const QVector<quint32>& labels,
-        const QHash<quint16, QColor>& semanticColors,
-        int pointSize) {
-    QImage canvas = image.convertToFormat(QImage::Format_ARGB32);
-    if (canvas.isNull() || points.isEmpty()) return canvas;
-    // Far-to-near projection: painter draws in that order so near points
-    // overlay far ones (upstream project_points ordering semantics).
-    QVector<int> indices;
-    QVector<QVector2D> pixels;
-    QVector<double> depths;
-    projectPointCloudPoints(points, calibration, &indices, &pixels, &depths);
-    QPainter painter(&canvas);
-    const int size = std::max(1, pointSize);
-    for (int i = 0; i < indices.size(); ++i) {
-        const int source = indices.at(i);
-        const quint16 semantic = quint16(labels.value(source) & 0xffffu);
-        const QColor color =
-                semanticColors.value(semantic, QColor(128, 128, 128));
-        painter.fillRect(int(pixels.at(i).x()), int(pixels.at(i).y()), size,
-                         size, color);
+bool listPointCloudCameraImages(const QString& directory,
+                                QHash<QString, QString>* imagePaths,
+                                QString* error) {
+    if (!imagePaths || !error) return false;
+    imagePaths->clear();
+    error->clear();
+    const QDir source(directory);
+    if (!source.exists())
+        return fail(error,
+                    QStringLiteral("Camera image directory does not exist."));
+    QSet<QString> formats;
+    for (const QByteArray& format : QImageReader::supportedImageFormats())
+        formats.insert(QString::fromLatin1(format).toLower());
+    const QFileInfoList entries = source.entryInfoList(
+            QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QFileInfo& entry : entries) {
+        if (!formats.contains(entry.suffix().toLower())) continue;
+        const QString stem = entry.completeBaseName();
+        if (imagePaths->contains(stem))
+            return fail(
+                    error,
+                    QStringLiteral("Multiple images have the same basename: %1")
+                            .arg(stem));
+        imagePaths->insert(stem, entry.absoluteFilePath());
     }
-    painter.end();
-    return canvas;
+    if (imagePaths->isEmpty())
+        return fail(error,
+                    QStringLiteral("No supported images in this directory."));
+    return true;
+}
+
+bool loadPointCloudCameraSource(const QString& directory,
+                                const QString& calibrationPath,
+                                PointCloudCameraSource* source,
+                                QString* error) {
+    if (!source || !error) return false;
+    error->clear();
+    PointCloudCameraSource loaded;
+    loaded.directory = QFileInfo(directory).absoluteFilePath();
+    if (!listPointCloudCameraImages(loaded.directory, &loaded.imagePaths,
+                                    error))
+        return false;
+    const QString calibration = calibrationPath.trimmed();
+    if (!calibration.isEmpty()) {
+        if (!loadPointCloudCalibration(calibration, &loaded.calibration, error))
+            return false;
+        loaded.calibrationPath = QFileInfo(calibration).absoluteFilePath();
+        loaded.hasCalibration = true;
+    }
+    *source = std::move(loaded);
+    return true;
+}
+
+bool pointCloudCameraDepthColors(const QVector<QVector4D>& points,
+                                 const PointCloudCalibration& calibration,
+                                 const QVector<int>& indices,
+                                 QVector<QColor>* colors,
+                                 QString* error,
+                                 double* nearDepth,
+                                 double* farDepth) {
+    if (!colors)
+        return fail(error, QStringLiteral("Missing depth color output."));
+    QVector<double> depths;
+    const auto& transform = calibration.pointCloudToCamera;
+    for (int index : indices) {
+        if (index < 0 || index >= points.size())
+            return fail(error,
+                        QStringLiteral(
+                                "Projected point index is outside the frame."));
+        const auto& point = points[index];
+        const double depth = transform[8] * point.x() +
+                             transform[9] * point.y() +
+                             transform[10] * point.z() + transform[11];
+        if (!std::isfinite(depth))
+            return fail(error,
+                        QStringLiteral("Projected depth must be finite."));
+        depths.append(depth);
+    }
+    QVector<QColor> result;
+    if (nearDepth) *nearDepth = 0;
+    if (farDepth) *farDepth = 0;
+    if (!depths.isEmpty()) {
+        QVector<double> ranked = depths;
+        // Only four order statistics are needed. nth_element keeps expected
+        // O(n) work instead of sorting every projected point for two quantiles.
+        const auto percentile = [&](double quantile) {
+            const double rank = quantile * (ranked.size() - 1);
+            const int low = int(std::floor(rank)), high = int(std::ceil(rank));
+            std::nth_element(ranked.begin(), ranked.begin() + low,
+                             ranked.end());
+            const double lower = ranked[low];
+            std::nth_element(ranked.begin(), ranked.begin() + high,
+                             ranked.end());
+            return lower + (rank - low) * (ranked[high] - lower);
+        };
+        const double near = percentile(0.02), far = percentile(0.98);
+        if (nearDepth) *nearDepth = near;
+        if (farDepth) *farDepth = far;
+        const int stops[5][3] = {{255, 100, 65},
+                                 {255, 215, 64},
+                                 {103, 220, 120},
+                                 {50, 190, 230},
+                                 {90, 100, 235}};
+        for (double depth : depths) {
+            const double position =
+                    std::clamp((depth - near) / std::max(far - near, 1e-6), 0.0,
+                               1.0) *
+                    4;
+            const int low = std::min(3, int(position));
+            const double fraction = position - low;
+            int channels[3];
+            for (int channel = 0; channel < 3; ++channel)
+                channels[channel] = int(stops[low][channel] +
+                                        fraction * (stops[low + 1][channel] -
+                                                    stops[low][channel]));
+            result.append(QColor(channels[0], channels[1], channels[2]));
+        }
+    }
+    *colors = std::move(result);
+    return true;
 }

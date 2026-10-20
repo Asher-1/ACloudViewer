@@ -102,7 +102,8 @@ private:
     QTabWidget* m_tabs = nullptr;
     QProgressBar* m_progress = nullptr;
     QPushButton *m_run = nullptr, *m_cancelButton = nullptr,
-                *m_download = nullptr, *m_sample = nullptr;
+                *m_download = nullptr, *m_sample = nullptr,
+                *m_exportButton = nullptr, *m_addToDbButton = nullptr;  // L1
     RelateAnythingVideoWidget* m_video = nullptr;
     ecvModelDownloader* m_downloader = nullptr;
     QThread m_thread;
@@ -118,6 +119,6 @@ private:
     RelateAnythingSettings m_jobSettings;
     quint64 m_generation = 1;
     bool m_busy = false, m_framePending = false, m_runAfterDownload = false,
-         m_batch = false, m_closed = false;
+         m_batch = false, m_closed = false, m_hasResult = false;  // L1
     bool m_waitingForSample = false;
 };

@@ -3,17 +3,21 @@
 import importlib.util
 import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
+import tarfile
+import io
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 
-MODULE_PATH = Path(__file__).with_name("validate_all.py")
+MODULE_PATH = Path(__file__).resolve().with_name("validate_all.py")
 SPEC = importlib.util.spec_from_file_location("aicore_validate_all", MODULE_PATH)
 assert SPEC and SPEC.loader
 VALIDATE_ALL = importlib.util.module_from_spec(SPEC)
@@ -22,6 +26,243 @@ SPEC.loader.exec_module(VALIDATE_ALL)
 
 
 class ValidateAllTests(unittest.TestCase):
+    def test_execution_artifacts_identify_commands_runtime_and_build_options(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / "build"
+            binary = build / "bin"
+            binary.mkdir(parents=True)
+            expected = [binary / "test_probe", binary / "AICore.dll",
+                        binary / "libggml-cuda.so", binary / "libggml.1.dylib",
+                        root / "probe.py", build / "CMakeCache.txt"]
+            for path in expected:
+                path.write_bytes(b"original executable or configuration")
+            model = binary / "fixture.gguf"
+            model.write_bytes(b"model is recorded separately")
+            spec = SimpleNamespace(command=(str(expected[0]), str(expected[4]), str(model)))
+            artifacts = VALIDATE_ALL.execution_artifacts([spec], build)
+            self.assertTrue({str(p) for p in expected} <= artifacts.keys())
+            self.assertNotIn(str(model), artifacts)
+            for path in expected:
+                self.assertEqual(artifacts[str(path)]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_execution_artifact_changes_fail_even_with_successful_probe_outputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build = Path(directory)
+            binary = build / "bin"
+            binary.mkdir()
+            library = binary / "libAICore.so"
+            library.write_bytes(b"original")
+            before = VALIDATE_ALL.execution_artifacts([], build)
+            self.assertEqual(VALIDATE_ALL.execution_artifact_failures(before, before, "candidate"), [])
+            library.write_bytes(b"rebuilt")
+            after = VALIDATE_ALL.execution_artifacts([], build)
+            self.assertEqual(len(VALIDATE_ALL.execution_artifact_failures(before, after, "candidate")), 1)
+            library.unlink()
+            after = VALIDATE_ALL.execution_artifacts([], build)
+            self.assertEqual(len(VALIDATE_ALL.execution_artifact_failures(before, after, "baseline")), 1)
+            extra = binary / "ggml-vulkan.dll"
+            extra.write_bytes(b"new backend")
+            after = VALIDATE_ALL.execution_artifacts([], build)
+            self.assertEqual(len(VALIDATE_ALL.execution_artifact_failures(before, after, "candidate")), 2)
+
+    def test_manifest_identity_describes_consumed_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            original = VALIDATE_ALL.DEFAULT_MANIFEST.read_bytes()
+            path.write_bytes(original)
+            identity = {}
+            parsed = VALIDATE_ALL.load_manifest(path, identity=identity)
+            path.write_bytes(original + b"\n")
+            self.assertTrue(parsed["scenarios"])
+            self.assertEqual(identity["bytes"], len(original))
+            self.assertEqual(identity["sha256"], hashlib.sha256(original).hexdigest())
+            self.assertNotEqual(identity, VALIDATE_ALL.file_identity(path))
+
+    def test_published_ocr_table_scope_does_not_download_local_onnx_sources(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        published_ids = {s["id"] for s in manifest["scenarios"]
+                         if s["task"] in {"ocr", "table"} and
+                         not s.get("local_only")}
+        inputs = VALIDATE_ALL.parse_input_assets(
+            manifest, {"ocr", "table"}, published_ids)
+        input_ids = {asset.asset_id for asset in inputs}
+        self.assertIn("ppocr-testdata", input_ids)
+        self.assertIn("table-fixtures-index", input_ids)
+        self.assertIn("ocr-rec-reference", input_ids)
+        self.assertFalse(any(a.startswith("ocr-onnx-") for a in input_ids))
+        local_ids = {s["id"] for s in manifest["scenarios"]
+                     if "run_ocr_onnx_probe.py" in str(s.get("args", []))}
+        local_inputs = VALIDATE_ALL.parse_input_assets(
+            manifest, {"ocr"}, local_ids)
+        self.assertEqual(len([a for a in local_inputs
+                             if a.asset_id.startswith("ocr-onnx-")]), 12)
+
+    def test_ocr_local_onnx_rows_own_pinned_sources_and_numeric_gates(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = [s for s in manifest["scenarios"]
+                if "run_ocr_onnx_probe.py" in str(s.get("args", []))]
+        self.assertEqual(len(rows), 54)
+        sources = {a["id"]: a for a in manifest["input_assets"]}
+        self.assertEqual(len([a for a in sources if a.startswith("ocr-onnx-")]), 12)
+        for row in rows:
+            self.assertTrue(row["local_only"])  # no invented published GGUF URLs
+            self.assertEqual(row["executable"], "python")
+            self.assertIn("{scenario_report}", row["args"])
+            self.assertIn("{warmup_runs}", row["args"])
+            source = sources[row["input_ids"][0]]
+            self.assertEqual(row["args"][row["args"].index("--source-sha256") + 1],
+                             source["sha256"])
+            self.assertEqual(source["size_bytes"] > 0, True)
+            self.assertTrue(source["url"].endswith(".onnx"))
+            gate = VALIDATE_ALL.normalize_accuracy_gate(row)
+            orientation = "orientation" in row["id"]
+            if not orientation:
+                self.assertIn("--measurement-profile", row["args"])
+                self.assertEqual(row["args"][row["args"].index("--measurement-profile") + 1],
+                                 "{profile}")
+                self.assertIn("{gpu_idle_timeout}", row["args"])
+                if row["id"].startswith("ppocr-cls-onnx-"):
+                    self.assertIn("--include-rotated", row["args"])
+                if "-det-onnx-" in row["id"]:
+                    self.assertEqual(row["args"][row["args"].index("--max-side") + 1], "960")
+            if orientation:
+                source_path = row["args"][row["args"].index("--rec-source") + 1]
+                rec_source = next(a for a in sources.values()
+                                  if source_path.endswith(a["relative_path"]))
+                self.assertIn(rec_source["id"], row["input_ids"])
+                self.assertEqual(row["args"][row["args"].index("--rec-source-sha256") + 1],
+                                 rec_source["sha256"])
+                self.assertEqual(len(row["args"][row["args"].index("--dictionary-sha256") + 1]), 64)
+            good = ({"orientation_rows": 10, "failures": 0, "thresholds": 2, "repeats": 2} if orientation
+                    else {"max_diff": 0, "mean_diff": 0, "argmax_match": 1,
+                          "stored_max_diff": 0, "stored_argmax_match": 1,
+                          "cpu_max_diff": 0, "cpu_argmax_match": 1,
+                          "accuracy_fixture_count": (1 + row["args"].count("--extra-image")) *
+                          (2 if "--include-rotated" in row["args"] else 1) +
+                          row["args"].count("--extra-crop")})
+            if row["id"].startswith("ppocrv5-mobile-rec-onnx-"):
+                self.assertIn("ocr-detection-labelled-50", row["input_ids"])
+                self.assertEqual(good["accuracy_fixture_count"], 5)
+            with tempfile.TemporaryDirectory() as temp:
+                report = Path(temp) / "report.json"
+                report.write_text(json.dumps(good if orientation else dict(good, fixtures=[good])))
+                metrics, _ = VALIDATE_ALL.parse_output(
+                    "OCR probe report", "generic", report,
+                    VALIDATE_ALL.gate_metric_names(gate))
+                self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+            bad = dict(good)
+            bad["failures" if orientation else "max_diff"] = 1
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, bad))
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, {}))
+
+    def test_ocr_dataset_top_level_metrics_remain_unambiguous_with_nested_metrics(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        for row in manifest["scenarios"]:
+            if row["task"] != "ocr" or "--ground-truth" not in row.get("args", []):
+                continue
+            gate = VALIDATE_ALL.normalize_accuracy_gate(row)
+            payload = {"cer": .1, "wer": .2, "hmean": .9,
+                       "cer_delta": 0, "wer_delta": 0, "hmean_delta": 0,
+                       "e2e_cer_delta": 0, "e2e_wer_delta": 0,
+                       "passes_source_gt_gate": 1,
+                       "aggregates": {"recognition": {"cer": .1, "wer": .2},
+                                      "source_recognition": {"cer": .1, "wer": .2},
+                                      "detection": {"hmean": .9}}}
+            with tempfile.TemporaryDirectory() as temp:
+                report = Path(temp) / "report.json"
+                report.write_text(json.dumps(payload))
+                metrics, _ = VALIDATE_ALL.parse_output("", "generic", report,
+                                                     VALIDATE_ALL.gate_metric_names(gate))
+            self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+            del metrics["json0/cer"]
+            # Source/nested CER must not substitute for a missing native CER.
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics))
+
+    def test_ocr_source_pipeline_requires_complete_real_page_comparison(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = [s for s in manifest["scenarios"]
+                if "run_ocr_source_pipeline.py" in str(s.get("args", []))
+                and "--ground-truth" not in s["args"]]
+        self.assertEqual(len(rows), 12)
+        for row in rows:
+            self.assertTrue(row["local_only"])
+            self.assertIn("{reference:xanylabeling}", row["args"])
+            self.assertEqual(len(row["input_ids"]), 4)
+            gate = VALIDATE_ALL.normalize_accuracy_gate(row)
+            selected = "--selected-regions" in row["args"]
+            good = {"json0/source_count": 10 if selected else 73,
+                    "json0/missing_or_extra": 0,
+                    "json0/text_mismatches": 0, "json0/quad_error": 0,
+                    "json0/repeats": 2}
+            self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, good), [])
+            for count in ((9, 11, 73) if selected else (0, 10, 69)):
+                bad_count = dict(good, **{"json0/source_count": count})
+                self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, bad_count))
+            for metric in ("missing_or_extra", "text_mismatches", "quad_error"):
+                bad = dict(good)
+                bad["json0/" + metric] = 3
+                self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, bad))
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, {}))
+
+    def test_ocr_labelled_gates_cover_all_presets_and_quants_without_using_source_as_gt(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = [s for s in manifest["scenarios"] if "--ground-truth" in s.get("args", [])
+                and "run_ocr_source_pipeline.py" in str(s["args"])]
+        self.assertEqual(len(rows), 54)
+        coverage = {(row["args"][row["args"].index("--stem") + 1],
+                     row["args"][row["args"].index("--quant") + 1],
+                     "receipts" if "-sroie-receipts-" in row["id"] else
+                     "xfund" if "--evaluation" in row["args"] else "scenes") for row in rows}
+        self.assertEqual(coverage, {(stem, quant, dataset)
+                         for stem in ("ppocrv4-source", "ppocrv3-japan", "ppocrv5-mobile",
+                                      "ppocrv6-tiny", "ppocrv6-small", "ppocrv6-medium")
+                         for quant in ("f32", "f16", "q8_0")
+                         for dataset in ("scenes", "xfund", "receipts")})
+        assets = {a["id"]: a for a in manifest["input_assets"]}
+        scenes = assets["ocr-detection-labelled-50"]
+        self.assertTrue(scenes["archive"])
+        self.assertEqual(len(scenes["extracted_files"]), 51)
+        for row in rows:
+            args = row["args"]
+            self.assertTrue(row["local_only"])
+            self.assertIn(args[args.index("--quant") + 1], ("f32", "f16", "q8_0"))
+            label_path = args[args.index("--ground-truth") + 1]
+            digest = args[args.index("--ground-truth-sha256") + 1]
+            candidates = [item for asset_id in row["input_ids"]
+                          for item in assets[asset_id].get("extracted_files", [assets[asset_id]])]
+            if "-sroie-receipts-" in row["id"]:
+                labels = sorted((item for item in candidates
+                                 if item["relative_path"].endswith(".csv")),
+                                key=lambda item: item["relative_path"])
+                images = [item for item in candidates if item["relative_path"].endswith(".jpg")]
+                self.assertEqual({Path(item["relative_path"]).name for item in labels},
+                                 {f"{i:03d}.csv" for i in range(50)})
+                self.assertEqual({Path(item["relative_path"]).name for item in images},
+                                 {f"{i:03d}.jpg" for i in range(50)})
+                combined = hashlib.sha256()
+                for item in labels:
+                    self.assertTrue(label_path.endswith(str(Path(item["relative_path"]).parent)))
+                    combined.update(Path(item["relative_path"]).name.encode() + b"\0")
+                    combined.update(bytes.fromhex(item["sha256"]))
+                self.assertEqual(digest, combined.hexdigest())
+            else:
+                pin = next(item for item in candidates if label_path.endswith(item["relative_path"]))
+                self.assertEqual(digest, pin["sha256"])
+            gate = VALIDATE_ALL.normalize_accuracy_gate(row)
+            names = VALIDATE_ALL.gate_metric_names(gate)
+            self.assertIn("cer_delta", names)
+            self.assertIn("wer_delta", names)
+            recognition = "--evaluation" in args
+            self.assertEqual("hmean_delta" in names, not recognition)
+            good = {name: 0 for name in names}
+            good.update({"json0/hmean": 1, "json0/cer": 0, "json0/wer": 0})
+            good["passes_source_gt_gate"] = 1
+            self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, good), [])
+            for metric in ("cer_delta", "wer_delta"):
+                self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, dict(good, **{metric: .006})))
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, {}))
+
     def test_relation_summary_reaches_numeric_and_performance_gates(self):
         report={"metrics": {"native_max_diff": 0.0,
                             "performance_ratio": 1.06},
@@ -430,6 +671,23 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(fingerprints, {"json0/cpu_output_hash": "ab"})
         self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
 
+    def test_ocr_original_gpu_metrics_keep_zero_and_unqualified_timing(self):
+        metrics, _ = VALIDATE_ALL.parse_output(
+            '{"source_gpu_max_diff":0,"source_gpu_mean_diff":0,'
+            '"source_gpu_argmax_match":1,"source_performance_qualified":0,'
+            '"source_performance_pass":0,"source_gpu_audit_pass":0,'
+            '"gpu_sampled_process_peak_mib":120,"frames":2}',
+            "generic", Path("/nonexistent"))
+        self.assertEqual(metrics, {
+            "json0/source_gpu_max_diff": 0.0,
+            "json0/source_gpu_mean_diff": 0.0,
+            "json0/source_gpu_argmax_match": 1.0,
+            "json0/source_performance_qualified": 0.0,
+            "json0/source_performance_pass": 0.0,
+            "json0/source_gpu_audit_pass": 0.0,
+            "json0/gpu_sampled_process_peak_mib": 120.0,
+        })
+
     def test_lingbot_parity_metrics_are_flattened(self):
         metrics, _ = VALIDATE_ALL.flatten_json({
             "pose_t_rmse": 3.3e-05,
@@ -753,6 +1011,96 @@ class ValidateAllTests(unittest.TestCase):
             self.assertEqual(summary["downloaded"], 1)
             self.assertEqual((root / "extract/images/input.jpg").read_bytes(),
                              payload)
+
+    def test_tar_fixture_extracts_only_pinned_regular_members(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "fixture.tar"
+            payload = b"pinned labels"
+            member = VALIDATE_ALL.PurePosixPath("dataset/val.txt")
+            asset = VALIDATE_ALL.InputAsset(
+                "tar-fixture", frozenset({"ocr"}), VALIDATE_ALL.PurePosixPath("fixture.tar"),
+                source.as_uri(), "0" * 64, 0, True,
+                ((member, hashlib.sha256(payload).hexdigest(), len(payload)),))
+            with tarfile.open(source, "w") as archive:
+                entry = tarfile.TarInfo(str(member))
+                entry.size = len(payload)
+                archive.addfile(entry, io.BytesIO(payload))
+                # Unpinned entries must never be extracted.
+                link = tarfile.TarInfo("../outside")
+                link.type, link.linkname = tarfile.SYMTYPE, "/outside"
+                archive.addfile(link)
+            VALIDATE_ALL.extract_input_archive(asset, source, root / "extract")
+            self.assertEqual((root / "extract" / str(member)).read_bytes(), payload)
+            self.assertFalse((root / "outside").exists())
+            with tarfile.open(source, "w") as archive:
+                link = tarfile.TarInfo(str(member))
+                link.type, link.linkname = tarfile.SYMTYPE, "/outside"
+                archive.addfile(link)
+            with self.assertRaisesRegex(RuntimeError, "invalid archive member"):
+                VALIDATE_ALL.extract_input_archive(asset, source, root / "extract")
+            self.assertEqual((root / "extract" / str(member)).read_bytes(), payload)
+
+    def test_archive_dot_prefix_normalization_and_duplicate_rejection(self):
+        for kind in ("tar", "zip"):
+            for names, error in ((["./dataset/input"], None),
+                                 (["dataset/input", "./dataset/input"], "ambiguous"),
+                                 (["dataset/input", "dataset/input"], "ambiguous"),
+                                 (["../dataset/input", "/dataset/input"], "missing")):
+                with self.subTest(kind=kind, names=names), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    source = root / ("fixture." + kind)
+                    payload = b"original source tensor"
+                    asset = VALIDATE_ALL.InputAsset(
+                        "fixture", frozenset({"table"}),
+                        VALIDATE_ALL.PurePosixPath(source.name), source.as_uri(),
+                        "0" * 64, 0, True,
+                        ((VALIDATE_ALL.PurePosixPath("dataset/input"),
+                          hashlib.sha256(payload).hexdigest(), len(payload)),))
+                    if kind == "tar":
+                        with tarfile.open(source, "w") as archive:
+                            for name in names:
+                                entry = tarfile.TarInfo(name)
+                                entry.size = len(payload)
+                                archive.addfile(entry, io.BytesIO(payload))
+                    else:
+                        with zipfile.ZipFile(source, "w") as archive:
+                            for name in names:
+                                archive.writestr(name, payload)
+                    if error:
+                        with self.assertRaisesRegex(RuntimeError, error):
+                            VALIDATE_ALL.extract_input_archive(asset, source, root / "extract")
+                        self.assertFalse((root / "extract/dataset/input").exists())
+                    else:
+                        VALIDATE_ALL.extract_input_archive(asset, source, root / "extract")
+                        self.assertEqual((root / "extract/dataset/input").read_bytes(), payload)
+
+    def test_dot_prefixed_archive_links_are_rejected_even_with_matching_payload(self):
+        for kind in ("tar", "zip"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                source = root / ("fixture." + kind)
+                payload = b"link-target"
+                asset = VALIDATE_ALL.InputAsset(
+                    "fixture", frozenset({"table"}),
+                    VALIDATE_ALL.PurePosixPath(source.name), source.as_uri(),
+                    "0" * 64, 0, True,
+                    ((VALIDATE_ALL.PurePosixPath("dataset/input"),
+                      hashlib.sha256(payload).hexdigest(), len(payload)),))
+                if kind == "tar":
+                    with tarfile.open(source, "w") as archive:
+                        entry = tarfile.TarInfo("./dataset/input")
+                        entry.type, entry.linkname = tarfile.SYMTYPE, payload.decode()
+                        archive.addfile(entry)
+                else:
+                    with zipfile.ZipFile(source, "w") as archive:
+                        entry = zipfile.ZipInfo("./dataset/input")
+                        entry.create_system = 3
+                        entry.external_attr = (0o120777 << 16)
+                        archive.writestr(entry, payload)
+                with self.assertRaisesRegex(RuntimeError, "invalid archive member"):
+                    VALIDATE_ALL.extract_input_archive(asset, source, root / "extract")
+                self.assertFalse((root / "extract/dataset/input").exists())
 
     def test_corrupt_model_is_replaced_but_offline_mode_fails(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1101,6 +1449,18 @@ class ValidateAllTests(unittest.TestCase):
         for bad in ("up", "=/tmp/x", "up="):
             with self.assertRaisesRegex(ValueError, "NAME=PATH"):
                 VALIDATE_ALL.parse_references([bad])
+
+    def test_reference_interpreter_preserves_virtual_environment(self):
+        import venv
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "reference-env"
+            venv.EnvBuilder(with_pip=False, symlinks=os.name != "nt").create(root)
+            python = root / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+            references = VALIDATE_ALL.parse_references([f"python={python}"])
+            actual = subprocess.check_output(
+                [references["python"], "-c", "import sys; print(sys.prefix)"],
+                text=True).strip()
+            self.assertEqual(Path(actual), root)
 
     def test_reference_row_without_reference_is_a_gate_failure(self):
         spec = VALIDATE_ALL.RunSpec(

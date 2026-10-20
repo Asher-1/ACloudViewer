@@ -11,6 +11,7 @@
 
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QSet>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -18,7 +19,9 @@
 #include <vector>
 
 #include "AnnotationSemantic.h"
+#include "AnnotationTagging.h"
 #include "MaskPolygon.h"
+#include "RelateAnythingDecode.h"
 #include "SlicedDetection.h"
 #include "aicore/aliked_capi.h"
 #include "aicore/deeplsd_capi.h"
@@ -27,9 +30,11 @@
 #include "aicore/gkd_capi.h"
 #include "aicore/image_view.h"
 #include "aicore/ocr_capi.h"
+#include "aicore/relation_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
+#include "aicore/tagging_capi.h"
 #include "aicore/yolo_capi.h"
 
 namespace {
@@ -70,7 +75,27 @@ QImage instanceMask(const uint8_t* data,
 }
 }  // namespace
 
+void AnnotationWorker::releaseRelateDetector() {
+    if (!m_relateDetector) return;
+    if (m_relateDetectorRfdetr)
+        aicore_rfdetr_free(static_cast<aicore_rfdetr_ctx*>(m_relateDetector));
+    else
+        aicore_yolo_free(static_cast<aicore_yolo_ctx*>(m_relateDetector));
+    m_relateDetector = nullptr;
+    m_relateDetectorPath.clear();
+    m_relateDetectorDevice.clear();
+}
+
+void AnnotationWorker::releaseObjectTagger() {
+    aicore_tagging_free(static_cast<aicore_tagging_ctx*>(m_objectTagger));
+    m_objectTagger = nullptr;
+    m_objectTaggerPath.clear();
+    m_objectTaggerDevice.clear();
+}
+
 AnnotationWorker::~AnnotationWorker() {
+    releaseObjectTagger();
+    releaseRelateDetector();
     if (m_landmarkContext)
         aicore_facedetect_free(
                 static_cast<aicore_facedetect_ctx*>(m_landmarkContext));
@@ -92,6 +117,10 @@ AnnotationWorker::~AnnotationWorker() {
         aicore_deeplsd_free(static_cast<aicore_deeplsd_ctx*>(m_context));
     else if (m_kind == ModelKind::ALIKED)
         aicore_aliked_free(static_cast<aicore_aliked_ctx*>(m_context));
+    else if (m_kind == ModelKind::Ram)
+        aicore_tagging_free(static_cast<aicore_tagging_ctx*>(m_context));
+    else if (m_kind == ModelKind::RelateAnything)
+        aicore_relation_free(static_cast<aicore_relation_ctx*>(m_context));
     else
         aicore_yolo_free(static_cast<aicore_yolo_ctx*>(m_context));
 }
@@ -107,18 +136,24 @@ void AnnotationWorker::infer(const QString& modelPath,
                              quint64 promptRevision,
                              const AnnotationPrompt& prompt) {
     AnnotationInference result;
+    if (m_objectTagger &&
+        (prompt.objectTaggingModelPath != m_objectTaggerPath ||
+         device != m_objectTaggerDevice))
+        releaseObjectTagger();
     result.generation = generation;
     result.promptRevision = promptRevision;
     result.imagePath = imagePath;
     result.modelPath = modelPath;
     result.task = task;
-    if (task == QStringLiteral("gkd") ||
+    if (task == QStringLiteral("gkd") || task == QStringLiteral("relate") ||
         (task == QStringLiteral("sam3-pvs") && !prompt.rois.isEmpty())) {
         result.sourceRois = prompt.rois;
         result.sourceIndices = prompt.roiSourceIndices;
     }
     const bool rfdetr = task.startsWith(QStringLiteral("rfdetr-"));
     const bool world = task == QStringLiteral("world");
+    result.replaceShapes = !prompt.objectTaggingModelPath.isEmpty() &&
+                           (world || task == QStringLiteral("detect"));
     const bool yoloe = task == QStringLiteral("yoloe");
     const bool visualPrompt = yoloe && !prompt.visualPrompts.isEmpty();
     QStringList vocabulary;
@@ -140,10 +175,27 @@ void AnnotationWorker::infer(const QString& modelPath,
             : task == QStringLiteral("ocr")     ? ModelKind::Ocr
             : task == QStringLiteral("deeplsd") ? ModelKind::DeepLSD
             : task == QStringLiteral("aliked")  ? ModelKind::ALIKED
-                                                : ModelKind::Yolo;
-    const bool modelChanged = m_modelPath != modelPath ||
-                              m_metricModelPath != metricModelPath ||
-                              m_device != device || m_kind != kind;
+            : (task == QStringLiteral("ram") ||
+               task.startsWith(QStringLiteral("ram-")))
+                    ? ModelKind::Ram
+            : (task == QStringLiteral("relate") ||
+               task.startsWith(QStringLiteral("relate-")))
+                    ? ModelKind::RelateAnything
+                    : ModelKind::Yolo;
+    // The predicate vocabulary is encoded into the relation context at load,
+    // so a different list (or text-student) needs a new context.
+    const QString relateKey = kind == ModelKind::RelateAnything
+                                      ? prompt.relate.predicates.trimmed() +
+                                                QLatin1Char('\n') +
+                                                prompt.relateStudentPath
+                                      : QString();
+    const bool modelChanged =
+            m_modelPath != modelPath || m_metricModelPath != metricModelPath ||
+            m_device != device || m_kind != kind ||
+            (kind == ModelKind::Ocr &&
+             (m_ocrLayoutModelPath != prompt.ocrLayoutModelPath ||
+              m_ocrClassifierModelPath != prompt.ocrClassifierModelPath)) ||
+            (kind == ModelKind::RelateAnything && m_vocabText != relateKey);
     const bool vocabularyChanged =
             (world || yoloe) &&
             (m_textModelPath != prompt.textModelPath ||
@@ -174,6 +226,10 @@ void AnnotationWorker::infer(const QString& modelPath,
             aicore_deeplsd_free(static_cast<aicore_deeplsd_ctx*>(m_context));
         else if (m_kind == ModelKind::ALIKED)
             aicore_aliked_free(static_cast<aicore_aliked_ctx*>(m_context));
+        else if (m_kind == ModelKind::Ram)
+            aicore_tagging_free(static_cast<aicore_tagging_ctx*>(m_context));
+        else if (m_kind == ModelKind::RelateAnything)
+            aicore_relation_free(static_cast<aicore_relation_ctx*>(m_context));
         else
             aicore_yolo_free(static_cast<aicore_yolo_ctx*>(m_context));
         m_context = nullptr;
@@ -356,23 +412,34 @@ void AnnotationWorker::infer(const QString& modelPath,
                     QFileInfo(metricModelPath).absoluteFilePath().toUtf8();
             options.det_model_path = detBytes.constData();
             options.rec_model_path = pathBytes.constData();
-            // Optional layout head: the PicoDet pack lives in the same
-            // catalog cache directory as the det model at the same
-            // quantization tier; when the user picked the layout family
-            // the window has downloaded it there. Regions stay empty
-            // when the pack is absent (the layout stage is an
-            // enhancement, never a requirement).
-            const QFileInfo detInfo(detBytes);
-            const QString layoutName =
-                    QStringLiteral("pplcnet-layout-") +
-                    detInfo.fileName().section(QLatin1Char('-'), -1, -1);
-            const QString layoutPath =
-                    detInfo.absolutePath() + QLatin1Char('/') + layoutName;
-            QByteArray layoutBytes;
-            if (QFileInfo::exists(layoutPath)) {
-                layoutBytes = QFileInfo(layoutPath).absoluteFilePath().toUtf8();
-                options.layout_model_path = layoutBytes.constData();
+            options.device = deviceBytes.constData();
+            // X-AnyLabeling's PPOCRv4.parse_args, rather than the standalone
+            // PaddleOCR 3.x pipeline defaults. All image processing stays in
+            // the public OCR runtime.
+            options.det_limit_type = 1;
+            options.det_max_side = 960;
+            options.det_box_thresh = 0.3f;
+            options.det_box_score_thresh = 0.6f;
+            options.det_unclip_ratio = 1.5f;
+            options.rec_max_batch = 6;
+            const auto* preset = aicore_ocr_preset_by_rec_filename(
+                    QFileInfo(modelPath).fileName().toUtf8().constData());
+            if (preset) {
+                options.det_max_side = preset->det_max_side;
+                options.det_box_thresh = preset->det_thresh;
+                options.det_box_score_thresh = preset->det_box_thresh;
+                options.det_unclip_ratio = preset->det_unclip_ratio;
+                options.det_max_candidates = preset->det_max_candidates;
+                options.rec_max_batch = preset->rec_batch;
+                options.cls_max_batch = preset->cls_batch;
+                options.cls_thresh = preset->cls_thresh;
             }
+            const QByteArray clsBytes = prompt.ocrClassifierModelPath.toUtf8();
+            options.cls_model_path =
+                    clsBytes.isEmpty() ? nullptr : clsBytes.constData();
+            const QByteArray layoutBytes = prompt.ocrLayoutModelPath.toUtf8();
+            options.layout_model_path =
+                    layoutBytes.isEmpty() ? nullptr : layoutBytes.constData();
             m_context = aicore_ocr_context_create(&options);
             if (!m_context) {
                 result.error = QString::fromUtf8(aicore_ocr_last_error());
@@ -381,6 +448,8 @@ void AnnotationWorker::infer(const QString& modelPath,
                 emit finished(result);
                 return;
             }
+            m_ocrLayoutModelPath = prompt.ocrLayoutModelPath;
+            m_ocrClassifierModelPath = prompt.ocrClassifierModelPath;
             m_modelPath = modelPath;
             m_metricModelPath = metricModelPath;
             m_device = device;
@@ -439,6 +508,79 @@ void AnnotationWorker::infer(const QString& modelPath,
             m_modelPath = modelPath;
             m_device = device;
             m_kind = kind;
+        } else if (kind == ModelKind::Ram) {
+            aicore_tagging_options opts = aicore_tagging_default_options();
+            opts.model_path = pathBytes.constData();
+            opts.device = deviceBytes.constData();
+            opts.threads = 8;
+            opts.generate_caption = task.contains(QStringLiteral("caption"));
+            opts.cpu_precision = AICORE_TAGGING_CPU_AUTO;
+
+            m_context = aicore_tagging_create(&opts);
+            if (!m_context ||
+                !aicore_tagging_ready(
+                        static_cast<aicore_tagging_ctx*>(m_context))) {
+                result.error = QString::fromUtf8(aicore_tagging_last_error(
+                        static_cast<aicore_tagging_ctx*>(m_context)));
+                if (result.error.isEmpty())
+                    result.error = tr("Unable to load RAM model");
+                emit finished(result);
+                return;
+            }
+            m_modelPath = modelPath;
+            m_device = device;
+            m_kind = kind;
+        } else if (kind == ModelKind::RelateAnything) {
+            aicore_relation_options relOpts = aicore_relation_default_options();
+            relOpts.model_path = pathBytes.constData();
+            relOpts.device = deviceBytes.constData();
+            relOpts.threads = 8;
+            relOpts.max_boxes = unsigned(prompt.relate.maxBoxes);
+            relOpts.topk = 128;
+            relOpts.decompose = 1;
+            relOpts.raw_logits = 1;
+            // Custom predicates are encoded by the relation model's own text
+            // student + CLIP tokenizer, so no retraining is needed.
+            const QStringList predicates = prompt.relate.predicateList();
+            const QByteArray studentBytes = prompt.relateStudentPath.toUtf8();
+            const QByteArray tokenizerBytes =
+                    prompt.relateTokenizerPath.toUtf8();
+            std::vector<QByteArray> predicateStorage;
+            std::vector<const char*> predicatePointers;
+            for (const QString& name : predicates)
+                predicateStorage.push_back(name.toUtf8());
+            for (const QByteArray& name : predicateStorage)
+                predicatePointers.push_back(name.constData());
+            if (!predicatePointers.empty()) {
+                if (prompt.relateStudentPath.isEmpty() ||
+                    prompt.relateTokenizerPath.isEmpty()) {
+                    result.error =
+                            tr("Custom predicates need the relation text "
+                               "student and tokenizer; download them first");
+                    emit finished(result);
+                    return;
+                }
+                relOpts.text_student_path = studentBytes.constData();
+                relOpts.tokenizer_path = tokenizerBytes.constData();
+                relOpts.predicate_texts = predicatePointers.data();
+                relOpts.predicate_text_count = predicatePointers.size();
+            }
+
+            m_context = aicore_relation_create(&relOpts);
+            if (!m_context ||
+                !aicore_relation_ready(
+                        static_cast<aicore_relation_ctx*>(m_context))) {
+                result.error = QString::fromUtf8(aicore_relation_last_error(
+                        static_cast<aicore_relation_ctx*>(m_context)));
+                if (result.error.isEmpty())
+                    result.error = tr("Unable to load RelateAnything model");
+                emit finished(result);
+                return;
+            }
+            m_modelPath = modelPath;
+            m_device = device;
+            m_kind = kind;
+            m_vocabText = relateKey;
         } else {
             aicore_yolo_options* options = aicore_yolo_options_new();
             if (!options) {
@@ -738,24 +880,40 @@ void AnnotationWorker::infer(const QString& modelPath,
     }
     if (kind == ModelKind::Ocr) {
         auto* context = static_cast<aicore_ocr_ctx*>(m_context);
-        // Skip-detection mode: rois carry selected text-shape rects; run the
-        // rec-only entry and keep the source index mapping so the window can
-        // update those shapes in place.
+        // Selected annotations retain their original polygons and metadata;
+        // the shared OCR task owns source crop normalization and recognition.
         if (!prompt.rois.isEmpty()) {
-            std::vector<float> quads;
-            quads.reserve(static_cast<size_t>(prompt.rois.size()) * 8);
-            for (const QRectF& r : prompt.rois) {
-                const float xs[4] = {float(r.left()), float(r.right()),
-                                     float(r.right()), float(r.left())};
-                const float ys[4] = {float(r.top()), float(r.top()),
-                                     float(r.bottom()), float(r.bottom())};
-                for (int k = 0; k < 4; ++k) {
-                    quads.push_back(xs[k]);
-                    quads.push_back(ys[k]);
+            std::vector<std::vector<float>> coordinates(prompt.rois.size());
+            std::vector<aicore_ocr_text_region> regions(prompt.rois.size());
+            for (int i = 0; i < prompt.rois.size(); ++i) {
+                const QRectF& r = prompt.rois.at(i);
+                const QVector<QPointF> points = prompt.ocrQuads.value(
+                        i, {r.topLeft(), r.topRight(), r.bottomRight(),
+                            r.bottomLeft()});
+                if (points.size() < 3) {
+                    result.error =
+                            tr("OCR needs at least three text-region points");
+                    emit finished(result);
+                    return;
                 }
+                for (const auto& point : points) {
+                    // The source adapter truncates selected coordinates to
+                    // integer pixels before passing them to TextSystem.
+                    for (const double value : {point.x(), point.y()}) {
+                        if (!std::isfinite(value) ||
+                            value < std::numeric_limits<int>::min() ||
+                            value > std::numeric_limits<int>::max()) {
+                            result.error = tr("Invalid OCR region coordinate");
+                            emit finished(result);
+                            return;
+                        }
+                        coordinates[i].push_back(float(int(value)));
+                    }
+                }
+                regions[i] = {coordinates[i].data(), int32_t(points.size())};
             }
-            aicore_ocr_result* rec = aicore_ocr_recognize(
-                    context, &view, quads.data(),
+            aicore_ocr_result* rec = aicore_ocr_recognize_regions(
+                    context, &view, regions.data(),
                     static_cast<int32_t>(prompt.rois.size()));
             if (!rec) {
                 result.error = QString::fromUtf8(aicore_ocr_last_error());
@@ -786,7 +944,8 @@ void AnnotationWorker::infer(const QString& modelPath,
                 result.sourceRois = prompt.rois;
                 aicore_ocr_result_release(rec);
             }
-            result.device = device;
+            result.device =
+                    QString::fromUtf8(aicore_ocr_context_device(context));
             emit finished(result);
             return;
         }
@@ -802,34 +961,32 @@ void AnnotationWorker::infer(const QString& modelPath,
             // rec score gate is the model's drop_score (0.5) - upstream
             // does not wire the generic confidence slider for OCR.
             constexpr float kOcrDropScore = 0.5f;
-            auto squareDist = [](const QPointF& a, const QPointF& b) {
-                const qreal dx = a.x() - b.x();
-                const qreal dy = a.y() - b.y();
+            auto squareDist = [](const QPoint& a, const QPoint& b) {
+                const qint64 dx = qint64(a.x()) - b.x();
+                const qint64 dy = qint64(a.y()) - b.y();
                 return dx * dx + dy * dy;
             };
             const int count = aicore_ocr_box_count(ocr);
+            int textGroup = 0;
             for (int i = 0; i < count; ++i) {
                 const aicore_ocr_box* box = aicore_ocr_box_at(ocr, i);
                 if (!box || !box->text || box->score < kOcrDropScore) continue;
                 const QString text = QString::fromUtf8(box->text);
-                const QPointF corners[4] = {
-                        QPointF(box->quad[0][0], box->quad[0][1]),
-                        QPointF(box->quad[1][0], box->quad[1][1]),
-                        QPointF(box->quad[2][0], box->quad[2][1]),
-                        QPointF(box->quad[3][0], box->quad[3][1])};
+                // The source casts detection corners to int32 before both
+                // shape classification and JSON publication.
+                const QPoint corners[4] = {
+                        QPoint(int(box->quad[0][0]), int(box->quad[0][1])),
+                        QPoint(int(box->quad[1][0]), int(box->quad[1][1])),
+                        QPoint(int(box->quad[2][0]), int(box->quad[2][1])),
+                        QPoint(int(box->quad[3][0]), int(box->quad[3][1]))};
                 AnnotationShape shape;
                 // Upstream is_possible_rectangle: the two smallest
                 // consecutive edge lengths equal the two largest.
-                float edges[4];
+                qint64 edges[4];
                 for (int e = 0; e < 4; ++e)
-                    edges[e] = static_cast<float>(
-                            squareDist(corners[e], corners[(e + 1) % 4]));
+                    edges[e] = squareDist(corners[e], corners[(e + 1) % 4]);
                 std::sort(edges, edges + 4);
-                const float rel = std::max(
-                        {edges[0], edges[1], edges[2], edges[3], 1.0f});
-                constexpr float kRectEps = 0.02f;  // 2% of the longest edge
-                if (std::abs(edges[0] - edges[1]) < kRectEps * rel &&
-                    std::abs(edges[2] - edges[3]) < kRectEps * rel) {
+                if (edges[0] == edges[1] && edges[2] == edges[3]) {
                     shape.type = QStringLiteral("rectangle");
                     // Upstream rebuilds the four corners from the first
                     // and third points so the axis-aligned rectangle
@@ -848,10 +1005,10 @@ void AnnotationWorker::infer(const QString& modelPath,
                 shape.extra.insert(QStringLiteral("score"), double(box->score));
                 shape.extra.insert(QStringLiteral("language"),
                                    QString::fromLatin1(box->language));
-                shape.extra.insert(QStringLiteral("group_id"), i);
+                shape.extra.insert(QStringLiteral("group_id"), textGroup++);
                 result.shapes.append(shape);
             }
-            result.summary = tr("%1 text region(s) recognized").arg(count);
+            result.summary = tr("%1 text region(s) recognized").arg(textGroup);
             // Optional layout stage: PP-Structure region classification
             // becomes a rectangle annotation per region labeled with the
             // CDLA class name; the reading order lands in extra.
@@ -866,15 +1023,12 @@ void AnnotationWorker::infer(const QString& modelPath,
                 shape.type = QStringLiteral("rectangle");
                 shape.points = {tl, QPointF(br.x(), tl.y()), br,
                                 QPointF(tl.x(), br.y())};
-                shape.label = QStringLiteral("layout");
                 // The CDLA class name from the layout GGUF's embedded
                 // table, falling back to the numeric id.
                 const char* className =
                         aicore_ocr_label_at(ocrCtx, region->class_id);
-                shape.extra.insert(QStringLiteral("label"),
-                                   className
-                                           ? QString::fromUtf8(className)
-                                           : QString::number(region->class_id));
+                shape.label = className ? QString::fromUtf8(className)
+                                        : QString::number(region->class_id);
                 shape.extra.insert(QStringLiteral("class_id"),
                                    region->class_id);
                 shape.extra.insert(QStringLiteral("reading_order"),
@@ -888,7 +1042,7 @@ void AnnotationWorker::infer(const QString& modelPath,
             }
             aicore_ocr_result_release(ocr);
         }
-        result.device = device;
+        result.device = QString::fromUtf8(aicore_ocr_context_device(context));
         emit finished(result);
         return;
     }
@@ -995,6 +1149,329 @@ void AnnotationWorker::infer(const QString& modelPath,
             aicore_aliked_free_buffer(info);
         }
         if (result.device.isEmpty()) result.device = device;
+        emit finished(result);
+        return;
+    }
+    if (kind == ModelKind::Ram) {
+        auto* context = static_cast<aicore_tagging_ctx*>(m_context);
+        const QImage rgb = image.convertToFormat(QImage::Format_RGB888);
+        aicore_image_view view{};
+        view.data = rgb.constBits();
+        view.width = rgb.width();
+        view.height = rgb.height();
+        view.row_stride_bytes = size_t(rgb.bytesPerLine());
+        view.format = AICORE_IMAGE_RGB8;
+
+        // Default request: the model's embedded per-class thresholds, as the
+        // upstream RAM adapter does. The confidence slider must not override
+        // them with a single global value.
+        auto req = aicore_tagging_default_request_v2();
+        if (task == QStringLiteral("ram"))
+            req.resize_mode = AICORE_TAGGING_RESIZE_OPENCV;
+
+        aicore_tagging_result* raw = nullptr;
+        int rc = aicore_tagging_infer_image_v2(context, &view, &req, &raw);
+
+        if (rc != 0 || !raw) {
+            result.error =
+                    QString::fromUtf8(aicore_tagging_last_error(context));
+            if (result.error.isEmpty())
+                result.error = tr("RAM inference failed");
+        } else {
+            const QSet<QString> deleted(prompt.ramDeleteTags.cbegin(),
+                                        prompt.ramDeleteTags.cend());
+            const QSet<QString> retained(prompt.ramFilterTags.cbegin(),
+                                         prompt.ramFilterTags.cend());
+            for (size_t i = 0; i < raw->tag_count; ++i) {
+                const auto& t = raw->tags[i];
+                if (!t.selected || !t.name) continue;
+                const QString name = QString::fromUtf8(t.name);
+                if (annotationKeepRamTag(name, deleted, retained))
+                    result.tags.append(
+                            annotationRamTag(name, prompt.ramTagMode));
+            }
+            result.hasTags = true;
+            result.summary = tr("%1 tags").arg(result.tags.size());
+            if (task == QStringLiteral("ram-caption")) {
+                result.description =
+                        QString::fromUtf8(raw->caption ? raw->caption : "");
+                result.hasDescription = true;
+            }
+            if (!result.description.isEmpty()) {
+                result.summary += QStringLiteral(": ") + result.description;
+            }
+
+            aicore_tagging_result_free(raw);
+        }
+
+        const char* resolved = aicore_tagging_context_device(context);
+        result.device = resolved ? QString::fromUtf8(resolved) : device;
+        emit finished(result);
+        return;
+    }
+    if (kind == ModelKind::RelateAnything) {
+        auto* context = static_cast<aicore_relation_ctx*>(m_context);
+        const RelateOptions& options = prompt.relate;
+        const QImage rgb = image.convertToFormat(QImage::Format_RGB888);
+        const aicore_image_view view{rgb.constBits(), rgb.width(), rgb.height(),
+                                     size_t(rgb.bytesPerLine()),
+                                     AICORE_IMAGE_RGB8};
+        // Objects: the caller's selected rectangles when there are at least
+        // two (edges then refer to canvas shape indices), otherwise the
+        // detector stage of the official demos proposes them and they are
+        // returned as ordinary rectangles (edges then refer to positions in
+        // result.shapes, which the window offsets onto the canvas).
+        std::vector<float> boxes;
+        std::vector<float> confidences;
+        QStringList labels;
+        QVector<int> shapeIndex;
+        const bool selected =
+                prompt.rois.size() >= 2 &&
+                prompt.roiSourceIndices.size() == prompt.rois.size();
+        if (selected) {
+            for (int i = 0; i < prompt.rois.size(); ++i) {
+                const QRectF& roi = prompt.rois[i];
+                boxes.insert(boxes.end(),
+                             {float(roi.left()), float(roi.top()),
+                              float(roi.right()), float(roi.bottom())});
+                labels << (i < prompt.roiLabels.size() ? prompt.roiLabels[i]
+                                                       : QString());
+                shapeIndex << prompt.roiSourceIndices.at(i);
+            }
+        } else if (!prompt.relateDetectorPath.isEmpty()) {
+            const QByteArray detectorBytes =
+                    QFileInfo(prompt.relateDetectorPath)
+                            .absoluteFilePath()
+                            .toUtf8();
+            const bool rfdetr = QFileInfo(prompt.relateDetectorPath)
+                                        .fileName()
+                                        .startsWith(QStringLiteral("rfdetr-"));
+            // Confidence, NMS, box cap and the baked vocabulary are load-time
+            // options, so they are part of the reuse key.
+            const QString detectorKey =
+                    prompt.relateDetectorPath + QLatin1Char('\n') + device +
+                    QLatin1Char('\n') +
+                    QString::number(options.detectConfidence) +
+                    QLatin1Char('/') + QString::number(options.detectIou) +
+                    QLatin1Char('/') + QString::number(options.maxBoxes) +
+                    QLatin1Char('\n') + prompt.relateDetectorTextModel;
+            if (!m_relateDetector || m_relateDetectorDevice != detectorKey) {
+                releaseRelateDetector();
+                const QByteArray deviceBytes = device.toUtf8();
+                if (rfdetr) {
+                    aicore_rfdetr_options* o = aicore_rfdetr_options_new();
+                    aicore_rfdetr_options_set_device(o,
+                                                     deviceBytes.constData());
+                    m_relateDetector = aicore_rfdetr_load_opts(
+                            detectorBytes.constData(), o);
+                    aicore_rfdetr_options_free(o);
+                } else {
+                    aicore_yolo_options* o = aicore_yolo_options_new();
+                    aicore_yolo_options_set_device(o, deviceBytes.constData());
+                    aicore_yolo_options_set_conf_thres(
+                            o, options.detectConfidence);
+                    aicore_yolo_options_set_iou_thres(o, options.detectIou);
+                    aicore_yolo_options_set_top_k(
+                            o, uint32_t(std::max(options.maxBoxes * 4, 100)));
+                    QList<QByteArray> classNames;
+                    std::vector<const char*> classPointers;
+                    QByteArray textModel;
+                    if (!prompt.relateDetectorClasses.isEmpty() &&
+                        !prompt.relateDetectorTextModel.isEmpty()) {
+                        for (const auto& name : prompt.relateDetectorClasses)
+                            classNames << name.toUtf8();
+                        for (const auto& name : classNames)
+                            classPointers.push_back(name.constData());
+                        textModel = prompt.relateDetectorTextModel.toUtf8();
+                        aicore_yolo_options_set_classes(
+                                o, classPointers.data(),
+                                int32_t(classPointers.size()));
+                        aicore_yolo_options_set_text_model(
+                                o, textModel.constData());
+                    }
+                    m_relateDetector =
+                            aicore_yolo_load_opts(detectorBytes.constData(), o);
+                    aicore_yolo_options_free(o);
+                }
+                m_relateDetectorRfdetr = rfdetr;
+                m_relateDetectorPath = prompt.relateDetectorPath;
+                m_relateDetectorDevice = detectorKey;
+            }
+            std::vector<RelateDecode::Candidate> found;
+            QString detectorError;
+            if (!m_relateDetector) {
+                detectorError =
+                        tr("Unable to load the RelateAnything "
+                           "detector");
+            } else if (rfdetr) {
+                auto* rf = static_cast<aicore_rfdetr_ctx*>(m_relateDetector);
+                if (aicore_rfdetr_detect_image(
+                            rf, &view, options.detectConfidence,
+                            uint32_t(std::max(options.maxBoxes * 4, 100))) !=
+                    0) {
+                    detectorError =
+                            QString::fromUtf8(aicore_rfdetr_last_error(rf));
+                } else {
+                    for (int i = 0; i < aicore_rfdetr_detection_count(rf);
+                         ++i) {
+                        aicore_rfdetr_detection d{};
+                        if (aicore_rfdetr_detection_at(rf, i, &d) != 0)
+                            continue;
+                        found.push_back(
+                                {{d.x1, d.y1, d.x2, d.y2},
+                                 d.score,
+                                 d.class_name && d.class_name[0]
+                                         ? QString::fromUtf8(d.class_name)
+                                         : tr("object"),
+                                 i});
+                    }
+                }
+            } else {
+                auto* yolo = static_cast<aicore_yolo_ctx*>(m_relateDetector);
+                // Segmenters (the YOLOE prompt-free default) and plain
+                // detectors use different entry points.
+                if (QByteArray(aicore_yolo_context_task(yolo)) == "segment") {
+                    std::unique_ptr<aicore_yolo_segment_result,
+                                    decltype(&aicore_yolo_seg_result_free)>
+                            seg(aicore_yolo_seg_image(yolo, &view),
+                                aicore_yolo_seg_result_free);
+                    if (!seg) {
+                        detectorError =
+                                QString::fromUtf8(aicore_yolo_last_error(yolo));
+                    } else {
+                        for (int i = 0;
+                             i < aicore_yolo_seg_det_count(seg.get()); ++i) {
+                            const auto d = aicore_yolo_seg_det_at(seg.get(), i);
+                            const char* name = aicore_yolo_seg_det_class_name(
+                                    seg.get(), i);
+                            found.push_back({{d.x1, d.y1, d.x2, d.y2},
+                                             d.score,
+                                             name && name[0]
+                                                     ? QString::fromUtf8(name)
+                                                     : tr("object"),
+                                             i});
+                        }
+                    }
+                } else if (aicore_yolo_detect_image(yolo, &view) != 0) {
+                    detectorError =
+                            QString::fromUtf8(aicore_yolo_last_error(yolo));
+                } else {
+                    for (int i = 0; i < aicore_yolo_detection_count(yolo);
+                         ++i) {
+                        const auto d = aicore_yolo_detection_at(yolo, i);
+                        const char* name =
+                                aicore_yolo_detection_class_name(yolo, i);
+                        found.push_back({{d.x1, d.y1, d.x2, d.y2},
+                                         d.score,
+                                         name && name[0]
+                                                 ? QString::fromUtf8(name)
+                                                 : tr("object"),
+                                         i});
+                    }
+                }
+            }
+            if (!detectorError.isEmpty()) {
+                result.error = detectorError;
+            } else {
+                found = RelateDecode::keepBest(std::move(found),
+                                               options.maxBoxes, image.size(),
+                                               options.maxBoxFraction, .7f);
+                for (const auto& c : found) {
+                    boxes.insert(boxes.end(), c.box, c.box + 4);
+                    confidences.push_back(c.score);
+                    labels << c.name;
+                    AnnotationShape shape;
+                    shape.type = QStringLiteral("rectangle");
+                    shape.label = c.name;
+                    shape.points = {QPointF(c.box[0], c.box[1]),
+                                    QPointF(c.box[2], c.box[1]),
+                                    QPointF(c.box[2], c.box[3]),
+                                    QPointF(c.box[0], c.box[3])};
+                    shape.extra.insert(QStringLiteral("score"),
+                                       double(c.score));
+                    shapeIndex << result.shapes.size();
+                    result.shapes.append(shape);
+                }
+                result.relateAddedObjects = true;
+            }
+        }
+        if (result.error.isEmpty() && boxes.size() < 8) {
+            result.shapes.clear();
+            result.relateAddedObjects = false;
+            result.error =
+                    prompt.relateDetectorPath.isEmpty()
+                            ? tr("Select at least two visible rectangles "
+                                 "to relate")
+                            : tr("Fewer than two objects were found; "
+                                 "select rectangles or lower the "
+                                 "detector confidence");
+        }
+        if (result.error.isEmpty()) {
+            aicore_relation_request request = aicore_relation_default_request();
+            request.boxes_xyxy = boxes.data();
+            request.object_count = boxes.size() / 4;
+            aicore_relation_result* raw = nullptr;
+            const int rc =
+                    aicore_relation_infer_image(context, &view, &request, &raw);
+            if (rc != 0 || !raw) {
+                result.shapes.clear();
+                result.relateAddedObjects = false;
+                result.error =
+                        QString::fromUtf8(aicore_relation_last_error(context));
+                if (result.error.isEmpty())
+                    result.error = rc == 1 ? tr("RelateAnything cancelled")
+                                           : tr("RelateAnything failed");
+            } else {
+                const bool decomposed =
+                        raw->spatial_count > 0 || raw->semantic_count > 0;
+                float calA = 1.0f, calB = 0.0f;
+                if (decomposed &&
+                    aicore_relation_calibration(context, &calA, &calB) != 0) {
+                    calA = 1.0f;
+                    calB = 0.0f;
+                }
+                RelateDecode::Params params;
+                params.relationThreshold = options.relationThreshold;
+                params.spatialThreshold = options.spatialThreshold;
+                params.maxRelations = options.maxRelations;
+                params.maxSpatial = options.maxSpatial;
+                const std::vector<RelateDecode::PickedEdge> picked =
+                        RelateDecode::pickEdges(*raw, params, decomposed, calA,
+                                                calB, confidences);
+                const int objects = int(request.object_count);
+                for (const RelateDecode::PickedEdge& p : picked) {
+                    const auto& e = p.edge;
+                    if (int(e.subject) >= objects || int(e.object) >= objects ||
+                        e.subject == e.object || !raw->predicate_names ||
+                        e.predicate >= raw->predicate_count)
+                        continue;
+                    QJsonObject triplet;
+                    triplet.insert(QStringLiteral("subject_index"),
+                                   shapeIndex.at(int(e.subject)));
+                    triplet.insert(QStringLiteral("object_index"),
+                                   shapeIndex.at(int(e.object)));
+                    triplet.insert(QStringLiteral("subject"),
+                                   labels.at(int(e.subject)));
+                    triplet.insert(QStringLiteral("object"),
+                                   labels.at(int(e.object)));
+                    triplet.insert(QStringLiteral("predicate"),
+                                   QString::fromUtf8(
+                                           raw->predicate_names[e.predicate]));
+                    triplet.insert(QStringLiteral("score"), double(e.score));
+                    triplet.insert(QStringLiteral("type"),
+                                   !decomposed ? QStringLiteral("relation")
+                                   : p.spatial ? QStringLiteral("spatial")
+                                               : QStringLiteral("semantic"));
+                    result.relations.append(triplet);
+                }
+                result.summary = tr("%1 relations among %2 objects")
+                                         .arg(result.relations.size())
+                                         .arg(objects);
+                aicore_relation_result_free(raw);
+            }
+        }
+        const char* resolved = aicore_relation_context_device(context);
+        result.device = resolved ? QString::fromUtf8(resolved) : device;
         emit finished(result);
         return;
     }
@@ -1225,7 +1702,8 @@ void AnnotationWorker::infer(const QString& modelPath,
         return;
     }
     auto* context = static_cast<aicore_yolo_ctx*>(m_context);
-    aicore_yolo_set_detect_thresholds(context, float(confidence), 0.7f, 0);
+    aicore_yolo_set_detect_thresholds(context, float(confidence),
+                                      float(prompt.iouThreshold), 0);
     if (task == QStringLiteral("detect") || world) {
         std::vector<QByteArray> names;
         std::vector<const char*> classPointers;
@@ -1469,5 +1947,81 @@ void AnnotationWorker::infer(const QString& modelPath,
     }
     const char* resolved = aicore_yolo_context_device(context);
     result.device = resolved ? QString::fromUtf8(resolved) : device;
+    if (result.error.isEmpty() && !prompt.objectTaggingModelPath.isEmpty() &&
+        !result.shapes.isEmpty() &&
+        (task == QStringLiteral("world") || task == QStringLiteral("detect"))) {
+        if (!m_objectTagger) {
+            auto options = aicore_tagging_default_options();
+            const auto path = prompt.objectTaggingModelPath.toUtf8(),
+                       requested = device.toUtf8();
+            options.model_path = path.constData();
+            options.device = requested.constData();
+            options.threads = 8;
+            m_objectTagger = aicore_tagging_create(&options);
+            m_objectTaggerPath = prompt.objectTaggingModelPath;
+            m_objectTaggerDevice = device;
+        }
+        auto* tagger = static_cast<aicore_tagging_ctx*>(m_objectTagger);
+        if (!tagger || !aicore_tagging_ready(tagger)) {
+            result.error = QString::fromUtf8(aicore_tagging_last_error(tagger));
+            if (result.error.isEmpty())
+                result.error = tr("Object tagging model is unavailable");
+            releaseObjectTagger();
+        } else {
+            // O(boxes) calls, one transient crop: upstream truncates endpoints
+            // to integers and uses half-open NumPy image[y1:y2, x1:x2].
+            const QSet<QString> deleted(prompt.ramDeleteTags.cbegin(),
+                                        prompt.ramDeleteTags.cend());
+            const QSet<QString> retained(prompt.ramFilterTags.cbegin(),
+                                         prompt.ramFilterTags.cend());
+            for (auto& shape : result.shapes) {
+                const QRectF bounds = QPolygonF(shape.points).boundingRect();
+                const int x1 = std::clamp(int(bounds.left()), 0, image.width()),
+                          y1 = std::clamp(int(bounds.top()), 0, image.height()),
+                          x2 = std::clamp(int(bounds.right()), 0,
+                                          image.width()),
+                          y2 = std::clamp(int(bounds.bottom()), 0,
+                                          image.height());
+                if (x2 <= x1 || y2 <= y1) {
+                    result.error = tr("Detected object has an empty crop");
+                    break;
+                }
+                const QImage crop =
+                        image.copy(x1, y1, x2 - x1, y2 - y1)
+                                .convertToFormat(QImage::Format_RGB888);
+                const aicore_image_view cropView{
+                        crop.constBits(), crop.width(), crop.height(),
+                        size_t(crop.bytesPerLine()), AICORE_IMAGE_RGB8};
+                auto request = aicore_tagging_default_request_v2();
+                request.resize_mode = AICORE_TAGGING_RESIZE_OPENCV;
+                aicore_tagging_result* tags = nullptr;
+                if (aicore_tagging_infer_image_v2(tagger, &cropView, &request,
+                                                  &tags) != 0 ||
+                    !tags) {
+                    result.error = QString::fromUtf8(
+                            aicore_tagging_last_error(tagger));
+                    if (result.error.isEmpty())
+                        result.error = tr("Object tagging failed");
+                    aicore_tagging_result_free(tags);
+                    break;
+                }
+                QStringList names;
+                for (size_t i = 0; i < tags->tag_count; ++i) {
+                    const auto& tag = tags->tags[i];
+                    const QString name =
+                            QString::fromUtf8(tag.name ? tag.name : "");
+                    if (tag.selected &&
+                        annotationKeepRamTag(name, deleted, retained))
+                        names.append(annotationRamTag(name, prompt.ramTagMode));
+                }
+                shape.extra.insert(QStringLiteral("description"),
+                                   names.join(QStringLiteral(" | ")));
+                shape.points = {QPointF(x1, y1), QPointF(x2, y1),
+                                QPointF(x2, y2), QPointF(x1, y2)};
+                aicore_tagging_result_free(tags);
+            }
+        }
+        if (!result.error.isEmpty()) result.shapes.clear();
+    }
     emit finished(result);
 }

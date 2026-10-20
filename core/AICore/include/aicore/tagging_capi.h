@@ -26,6 +26,11 @@ typedef enum aicore_tagging_cpu_precision {
     AICORE_TAGGING_CPU_UPSTREAM = 1
 } aicore_tagging_cpu_precision;
 
+typedef enum aicore_tagging_resize {
+    AICORE_TAGGING_RESIZE_OFFICIAL = 0, /**< Pillow bilinear with antialias. */
+    AICORE_TAGGING_RESIZE_OPENCV = 1    /**< OpenCV INTER_LINEAR on uint8. */
+} aicore_tagging_resize;
+
 /** Strings are borrowed for create/infer only. A context owns resident weights
  * and graphs. Calls on one context must be serialized. */
 typedef struct aicore_tagging_options {
@@ -57,6 +62,18 @@ typedef struct aicore_tagging_request {
     float threshold_epsilon;    /**< Tag2Text only: subtract 0..1 from the class
                                      threshold; default 0 matches upstream. */
 } aicore_tagging_request;
+
+/** Versioned request: the original default_request returns its struct by value,
+ * so its layout and return ABI must remain frozen. Use the v2 entry points
+ * when selecting X-AnyLabeling preprocessing. */
+typedef struct aicore_tagging_request_v2 {
+    uint32_t struct_size;
+    uint32_t abi_version;
+    float threshold;
+    const char* specified_tags;
+    float threshold_epsilon;
+    uint64_t resize_mode;
+} aicore_tagging_request_v2;
 
 typedef struct aicore_tagging_tag {
     int32_t index;
@@ -93,6 +110,7 @@ typedef struct aicore_tagging_model_entry {
 
 AICORE_CAPI aicore_tagging_options aicore_tagging_default_options(void);
 AICORE_CAPI aicore_tagging_request aicore_tagging_default_request(void);
+AICORE_CAPI aicore_tagging_request_v2 aicore_tagging_default_request_v2(void);
 /** Returns an error context on load failure; inspect ready/last_error. */
 AICORE_CAPI aicore_tagging_ctx* aicore_tagging_create(
         const aicore_tagging_options* options);
@@ -108,6 +126,11 @@ AICORE_CAPI int aicore_tagging_infer_image(
         aicore_tagging_ctx* ctx,
         const aicore_image_view* image,
         const aicore_tagging_request* request,
+        aicore_tagging_result** output);
+AICORE_CAPI int aicore_tagging_infer_image_v2(
+        aicore_tagging_ctx* ctx,
+        const aicore_image_view* image,
+        const aicore_tagging_request_v2* request,
         aicore_tagging_result** output);
 AICORE_CAPI void aicore_tagging_result_free(aicore_tagging_result* result);
 AICORE_CAPI int aicore_tagging_last_pipeline_timings(

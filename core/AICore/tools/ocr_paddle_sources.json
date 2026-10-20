@@ -1,0 +1,59 @@
+{
+  "det_ch": {
+    "name": "ch_PP-OCRv4_det_infer",
+    "official_model": "PP-OCRv4_mobile_det",
+    "program": {
+      "relative_path": "ch_PP-OCRv4_det_infer/inference.pdmodel",
+      "sha256": "2ad68ed2768fe6c41166a5bc64680cc9f445390acb6528da449a4db2f7b90e14"
+    },
+    "parameters": {
+      "relative_path": "ch_PP-OCRv4_det_infer/inference.pdiparams",
+      "sha256": "49ee815e30cff43cb1057d33bf0d94193e4d4f1ae28451cad15b40be830df915"
+    },
+    "config": {
+      "archive_relative_path": "ocr_paddle_archives/PP-OCRv4_mobile_det-config-source.tar",
+      "archive_sha256": "d212d7a9684e33696f3c817ff1dd8ff23a942c5d4449e6f19c8f3e8259a266ab",
+      "member": "./PP-OCRv4_mobile_det_infer/inference.yml",
+      "size_bytes": 903,
+      "sha256": "4f5bd0def48e20194d87d4c184a3ae3007a1299de7fed0ef763d3e7e873e77f6"
+    }
+  },
+  "rec_ch": {
+    "name": "ch_PP-OCRv4_rec_infer",
+    "official_model": "PP-OCRv4_mobile_rec",
+    "program": {
+      "relative_path": "ch_PP-OCRv4_rec_infer/inference.pdmodel",
+      "sha256": "bf78f3898a004615e69c676259d8171bd7ae99000653b41fd72aaa36ae8bd304"
+    },
+    "parameters": {
+      "relative_path": "ch_PP-OCRv4_rec_infer/inference.pdiparams",
+      "sha256": "a6dbfa63e7ee161688523c954e9e293f77dc24044db81e836ff9c7f103fd191a"
+    },
+    "config": {
+      "archive_relative_path": "ocr_paddle_archives/PP-OCRv4_mobile_rec-config-source.tar",
+      "archive_sha256": "f71ee33646159e43ea5dcb9f0467259ba75e403e6f7e9a9a7d2c6208d36b92ec",
+      "member": "PP-OCRv4_mobile_rec_infer/inference.yml",
+      "size_bytes": 53543,
+      "sha256": "1207e8ba3d3dad6b99115f7febf515f5ffc0d87ed77366d7a4b4b3f1709c005d"
+    }
+  },
+  "rec_en": {
+    "name": "en_PP-OCRv4_rec_infer",
+    "official_model": "en_PP-OCRv4_mobile_rec",
+    "program": {
+      "relative_path": "en_PP-OCRv4_rec_infer/inference.pdmodel",
+      "sha256": "85b952f05f709af259cfe4254012aa7208bef0998f71f57a15495446f25ccd43"
+    },
+    "parameters": {
+      "relative_path": "en_PP-OCRv4_rec_infer/inference.pdiparams",
+      "sha256": "75f64a1ffb70c56b7a25655963ca16f5bf3286202e3f52ac972bee05cdee2f56"
+    },
+    "config": {
+      "archive_relative_path": "ocr_paddle_archives/en_PP-OCRv4_mobile_rec-config-source.tar",
+      "archive_sha256": "42067abe43473ce9d68e3b4bf050765038062acfd810f7e1738af078c3198c8a",
+      "member": "en_PP-OCRv4_mobile_rec_infer/inference.yml",
+      "size_bytes": 1376,
+      "sha256": "5f6b19b6b09b6b6f7924de6c25076d0b3528b6f641e64d4f12e6e6207ec33200"
+    }
+  }
+}

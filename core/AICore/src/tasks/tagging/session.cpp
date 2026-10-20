@@ -1625,14 +1625,15 @@ bool Session::excluded(size_t index) const {
 const std::string &Session::device() const { return impl_->resolved_device; }
 
 Output Session::infer(const img::Image &image,
-                      const aicore_tagging_request &request) {
+                      const aicore_tagging_request &request,
+                      uint64_t resize_mode) {
     using Clock = std::chrono::steady_clock;
     const auto elapsed = [](auto a, auto b) {
         return std::chrono::duration<double, std::milli>(b - a).count();
     };
     const auto start = Clock::now();
     require(!aicore_cancel_requested(), "cancelled");
-    auto pixels = preprocess(image, impl_->threads);
+    auto pixels = preprocess(image, impl_->threads, resize_mode);
     const auto preprocessed = Clock::now();
     auto &s = *impl_;
     auto lock = runtime::lock_backend_leases(

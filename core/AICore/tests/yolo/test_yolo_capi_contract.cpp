@@ -13,6 +13,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
+#include <limits>
 
 #include "aicore/yolo_capi.h"
 #include "tests/common/test_macros.hpp"
@@ -54,6 +56,25 @@ int main() {
 
     AICORE_CHECK(aicore_yolo_options_get_conf_thres(opts) == 0.5f);
     AICORE_CHECK(aicore_yolo_options_get_iou_thres(opts) == 0.6f);
+
+    // Both ends of the UI/source [0,1] range are valid probabilities.
+    // Invalid values, including NaN, must preserve the last accepted value.
+    for (float endpoint : {0.0f, 1.0f}) {
+        aicore_yolo_options_set_conf_thres(opts, endpoint);
+        aicore_yolo_options_set_iou_thres(opts, endpoint);
+        AICORE_CHECK(aicore_yolo_options_get_conf_thres(opts) == endpoint);
+        AICORE_CHECK(aicore_yolo_options_get_iou_thres(opts) == endpoint);
+    }
+    for (float invalid :
+         {-0.01f, 1.01f, std::numeric_limits<float>::quiet_NaN(),
+          std::numeric_limits<float>::infinity()}) {
+        aicore_yolo_options_set_conf_thres(opts, invalid);
+        aicore_yolo_options_set_iou_thres(opts, invalid);
+        AICORE_CHECK(aicore_yolo_options_get_conf_thres(opts) == 1.0f);
+        AICORE_CHECK(aicore_yolo_options_get_iou_thres(opts) == 1.0f);
+    }
+    aicore_yolo_options_set_conf_thres(opts, 0.5f);
+    aicore_yolo_options_set_iou_thres(opts, 0.6f);
 
     // Null guards on every setter (must be safe no-ops).
     aicore_yolo_options_set_device(nullptr, "cpu");

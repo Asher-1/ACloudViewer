@@ -24,9 +24,275 @@
 #include <cmath>
 #include <limits>
 
+#include "AnnotationConfig.h"
 #include "MaskPolygon.h"
 
 namespace {
+bool isCuboid(const AnnotationShape& shape) {
+    return shape.type == QStringLiteral("cuboid") && shape.points.size() == 8;
+}
+
+void syncCuboidDepth(AnnotationShape& shape) {
+    if (!isCuboid(shape)) return;
+    QJsonObject metadata =
+            shape.extra.value(QStringLiteral("cuboid3d")).toObject();
+    const QPointF depth = shape.points[4] - shape.points[0];
+    metadata.insert(QStringLiteral("depth_vector"),
+                    QJsonArray{depth.x(), depth.y()});
+    shape.extra.insert(QStringLiteral("cuboid3d"), metadata);
+}
+
+void drawCuboid(QPainter& painter, const QVector<QPointF>& points) {
+    painter.save();
+    const QPen frontPen = painter.pen();
+    painter.drawPath(
+            annotationCuboid::facePath(points, annotationCuboid::Face::Front));
+    painter.setBrush(Qt::NoBrush);
+    for (int i = 0; i < 4; ++i) painter.drawLine(points[i], points[i + 4]);
+    QPen backPen = frontPen;
+    backPen.setStyle(Qt::DashLine);
+    painter.setPen(backPen);
+    painter.drawPath(
+            annotationCuboid::facePath(points, annotationCuboid::Face::Back));
+    QPen orientationPen = frontPen;
+    orientationPen.setColor(QColor(255, 165, 0, 220));
+    painter.setPen(orientationPen);
+    painter.drawLine(points[0], points[1]);
+    painter.restore();
+}
+
+QRectF circleBounds(const AnnotationShape& shape) {
+    if (shape.points.size() < 2) return {};
+    const double radius = QLineF(shape.points[0], shape.points[1]).length();
+    return QRectF(shape.points[0] - QPointF(radius, radius),
+                  QSizeF(radius * 2, radius * 2));
+}
+
+QRectF shapeBounds(const AnnotationShape& shape) {
+    return shape.type == QStringLiteral("circle")
+                   ? circleBounds(shape)
+                   : QPolygonF(shape.points).boundingRect();
+}
+
+QPen annotationOutlinePen(const AnnotationShape& shape,
+                          const QColor& color,
+                          double width) {
+    QPen pen(color, width);
+    if (shape.type != QStringLiteral("point") &&
+        shape.extra.value(QStringLiteral("difficult")).toBool())
+        pen.setStyle(Qt::DashLine);
+    return pen;
+}
+
+void drawAnnotationVertex(QPainter& painter,
+                          const AnnotationShape& shape,
+                          const QPointF& point,
+                          double radius) {
+    QPainterPath path;
+    if (shape.type == QStringLiteral("point") &&
+        shape.extra.value(QStringLiteral("difficult")).toBool()) {
+        const double extent = radius * 1.5;
+        path.moveTo(point + QPointF(0, -extent));
+        path.lineTo(point + QPointF(-extent, extent));
+        path.lineTo(point + QPointF(extent, extent));
+        path.closeSubpath();
+        // Source round difficult vertices append the triangle twice.
+        const QPainterPath triangle = path;
+        path.addPath(triangle);
+    } else {
+        path.addEllipse(point, radius, radius);
+    }
+    const QBrush fill = painter.brush();
+    painter.save();
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(path);
+    painter.fillPath(path, fill);
+    painter.restore();
+}
+
+void drawGeometryMask(QPainter& painter,
+                      const AnnotationShape& shape,
+                      QColor color,
+                      double width,
+                      int opacity,
+                      bool fill) {
+    if (!shape.mask.isNull() || shape.points.size() < 2) return;
+    QPainterPath path;
+    if (shape.type == QStringLiteral("circle")) {
+        path.addEllipse(circleBounds(shape));
+    } else if (shape.type == QStringLiteral("polygon") ||
+               shape.type == QStringLiteral("rectangle") ||
+               shape.type == QStringLiteral("rotation") ||
+               shape.type == QStringLiteral("quadrilateral")) {
+        if (shape.points.size() < 3) return;
+        path.addPolygon(QPolygonF(shape.points));
+        path.closeSubpath();
+    } else
+        return;
+    painter.save();
+    if (fill) {
+        QColor maskColor = color;
+        maskColor.setAlpha(opacity);
+        painter.fillPath(path, maskColor);
+    }
+    QPen pen(color, width);
+    if (shape.extra.value(QStringLiteral("difficult")).toBool())
+        pen.setStyle(Qt::DashLine);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(path);
+    painter.restore();
+}
+
+void drawRotationDirection(QPainter& painter,
+                           const AnnotationShape& shape,
+                           double scale,
+                           int pointSize,
+                           bool degrees) {
+    if (shape.type != QStringLiteral("rotation") || shape.points.size() != 4)
+        return;
+    const QPointF center = (shape.points[0] + shape.points[2]) / 2;
+    const double size = pointSize / scale;
+    painter.save();
+    if (degrees) {
+        double angle = std::atan2(shape.points[1].y() - shape.points[0].y(),
+                                  shape.points[1].x() - shape.points[0].x()) *
+                       180 / 3.141592653589793;
+        angle = std::fmod(angle + 360.0, 360.0);
+        if (std::abs(angle - 360.0) < .1) angle = 0;
+        const QString text = QString::number(angle, 'f', 2) + QChar(0x00B0);
+        painter.setFont(QFont(QStringLiteral("Arial"),
+                              std::max(6, int(std::nearbyint(8.0 / scale)))));
+        const QRect bounds = QFontMetrics(painter.font()).boundingRect(text);
+        painter.fillRect(QRect(int(bounds.x() + center.x() - size),
+                               int(bounds.y() + center.y() + size),
+                               bounds.width(), bounds.height()),
+                         QColor(255, 153, 0));
+        painter.setPen(Qt::white);
+        painter.drawText(QPoint(int(center.x() - size), int(center.y() + size)),
+                         text);
+    } else {
+        QPainterPath path;
+        path.addRect(QRectF(int(center.x() - size / 2),
+                            int(center.y() - size / 2), int(size), int(size)));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPath(path);
+        painter.fillPath(path, QColor(255, 153, 0));
+    }
+    painter.restore();
+}
+
+// Label coordinates are in device pixels; attribute coordinates follow the
+// image transform, matching the upstream Canvas painting contract.
+void drawAnnotationLabel(QPainter& painter,
+                         const AnnotationShape& shape,
+                         const QString& text,
+                         const QColor& color,
+                         int pointSize) {
+    if (text.isEmpty() || shape.points.isEmpty()) return;
+    const QTransform transform = painter.transform();
+    painter.save();
+    painter.setOpacity(1.0);
+    painter.resetTransform();
+    painter.setFont(
+            QFont(QStringLiteral("Arial"),
+                  annotationConfig::value("canvas/label_font_size").toInt()));
+    const QFontMetrics metrics(painter.font());
+    const int width = metrics.tightBoundingRect(text).width() + 8;
+    const int height = metrics.height() + 4;
+    QPointF anchor = transform.map(shape.points.first());
+    if (shape.type == QStringLiteral("circle")) {
+        anchor -= QPointF(width / 2.0, height / 2.0);
+    } else if (shape.type == QStringLiteral("point") ||
+               shape.type == QStringLiteral("line") ||
+               shape.type == QStringLiteral("linestrip")) {
+        anchor += QPointF(pointSize, -15);
+    } else {
+        anchor =
+                transform.map(QPolygonF(shape.points).boundingRect().topLeft());
+    }
+    const QRect box(int(anchor.x()), int(anchor.y()), width, height);
+    painter.fillRect(box, color);
+    painter.setPen(Qt::black);
+    painter.drawText(
+            QPoint(box.x() + 4, box.y() + height - 2 - metrics.descent()),
+            text);
+    painter.restore();
+}
+
+void drawAnnotationDescription(QPainter& painter,
+                               const AnnotationShape& shape,
+                               double scale) {
+    const QString text =
+            shape.extra.value(QStringLiteral("description")).toString();
+    if (text.isEmpty() || shape.points.isEmpty()) return;
+    painter.save();
+    painter.setOpacity(1.0);
+    painter.setFont(QFont(QStringLiteral("Arial"),
+                          std::max(6, int(std::nearbyint(8.0 / scale)))));
+    const QFontMetrics metrics(painter.font());
+    const QRectF bounds = shapeBounds(shape);
+    const QRect box(int(bounds.x()), int(bounds.y() - metrics.height() - 4),
+                    metrics.tightBoundingRect(text).width() + 8,
+                    metrics.height() + 4);
+    painter.fillRect(box, QColor(QStringLiteral("#007BFF")));
+    painter.setPen(Qt::white);
+    painter.drawText(QPoint(int(bounds.x() + 4),
+                            int(bounds.y() - 2 - metrics.descent())),
+                     text);
+    painter.restore();
+}
+
+void drawAnnotationAttributes(QPainter& painter,
+                              const AnnotationShape& shape,
+                              double scale,
+                              int pointSize) {
+    const QJsonObject attributes =
+            shape.extra.value(QStringLiteral("attributes")).toObject();
+    if (attributes.isEmpty() || shape.points.isEmpty()) return;
+    painter.save();
+    painter.setOpacity(1.0);
+    painter.setFont(QFont(QStringLiteral("Arial"),
+                          std::max(8, int(std::nearbyint(10.0 / scale))),
+                          QFont::Bold));
+    QStringList lines;
+    for (auto it = attributes.constBegin(); it != attributes.constEnd(); ++it) {
+        QString value = it.value().toVariant().toString();
+        if (it.value().isBool())
+            value = it.value().toBool() ? QStringLiteral("True")
+                                        : QStringLiteral("False");
+        lines.append(it.key() + QStringLiteral(": ") + value);
+    }
+    const QFontMetrics metrics(painter.font());
+    int width = 0;
+    for (const QString& line : lines)
+        width = std::max(width, metrics.tightBoundingRect(line).width());
+    QPointF anchor;
+    if (shape.type == QStringLiteral("circle") ||
+        shape.type == QStringLiteral("point") ||
+        shape.type == QStringLiteral("line") ||
+        shape.type == QStringLiteral("linestrip")) {
+        anchor = shape.points.first() + QPointF(pointSize / scale, 1);
+    } else {
+        anchor = QPolygonF(shape.points).boundingRect().bottomLeft() +
+                 QPointF(0, 1);
+    }
+    const QRect box(int(anchor.x()), int(anchor.y()), width + 16,
+                    lines.size() * metrics.height() + 4);
+    painter.fillRect(
+            box, annotationConfig::color("canvas/attributes/background_color"));
+    painter.setPen(
+            QPen(annotationConfig::color("canvas/attributes/border_color"), 1));
+    painter.drawRect(box);
+    painter.setPen(annotationConfig::color("canvas/attributes/text_color"));
+    for (int i = 0; i < lines.size(); ++i)
+        painter.drawText(
+                QPoint(box.x() + 8,
+                       box.y() + 2 + i * metrics.height() + metrics.ascent()),
+                lines[i]);
+    painter.restore();
+}
+
 QPointF mousePosition(const QMouseEvent* event) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return event->position();
@@ -178,6 +444,25 @@ LabColor toLab(const uchar* rgb) {
 }
 }  // namespace
 
+// X-AnyLabeling utils/colormap.py (GPL-3.0-only), palette index 0 is black.
+QColor annotationLabelColor(int labelId) {
+    static const QRgb palette[] = {
+            qRgb(170, 170, 255), qRgb(255, 170, 170), qRgb(170, 255, 170),
+            qRgb(255, 255, 170), qRgb(170, 255, 255), qRgb(255, 170, 255),
+            qRgb(85, 170, 255),  qRgb(255, 170, 0),   qRgb(40, 255, 255),
+            qRgb(0, 255, 127),   qRgb(255, 105, 180), qRgb(127, 255, 212),
+            qRgb(255, 215, 0),   qRgb(100, 149, 237), qRgb(255, 182, 193),
+            qRgb(64, 224, 208),  qRgb(255, 223, 186), qRgb(147, 112, 219),
+            qRgb(0, 191, 255),   qRgb(240, 128, 128), qRgb(152, 251, 152),
+            qRgb(173, 216, 230), qRgb(255, 192, 203), qRgb(221, 160, 221),
+            qRgb(135, 206, 250), qRgb(255, 250, 205), qRgb(175, 238, 238),
+            qRgb(250, 128, 114), qRgb(154, 205, 50),  qRgb(32, 178, 170),
+            qRgb(255, 160, 122), qRgb(176, 224, 230)};
+    const int index = ((labelId % 256) + 256) % 256;
+    return index == 0 ? QColor(Qt::black)
+                      : QColor::fromRgb(palette[(index - 1) % 32]);
+}
+
 QColor annotationShapeColor(const QString& label, const QJsonObject& extra) {
     const QJsonArray rgba =
             extra.value(QStringLiteral("acloudviewer_color")).toArray();
@@ -285,9 +570,90 @@ QJsonObject AnnotationShape::toJson() const {
 }
 
 AnnotationCanvas::AnnotationCanvas(QWidget* parent) : QWidget(parent) {
+    QPalette colors = palette();
+    colors.setColor(QPalette::Window, Qt::white);
+    setPalette(colors);
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
     setCursor(Qt::ArrowCursor);
+    m_magicDefaultThreshold =
+            annotationConfig::value("canvas/magic_wand/default_threshold")
+                    .toInt();
+    m_magicDragSensitivity =
+            annotationConfig::value("canvas/magic_wand/drag_sensitivity")
+                    .toDouble();
+    m_magicLuminanceWeight =
+            annotationConfig::value("canvas/magic_wand/luminance_weight")
+                    .toDouble();
+    m_magicOpacity =
+            annotationConfig::value("canvas/magic_wand/opacity").toDouble();
+    m_magicSimplifyEpsilon =
+            annotationConfig::value("canvas/magic_wand/simplify_epsilon")
+                    .toDouble();
+    m_shapePointSize = annotationConfig::value("shape/point_size").toInt();
+    m_shapeLineWidth = annotationConfig::value("shape/line_width").toDouble();
+    m_hitEpsilon = annotationConfig::value("canvas/epsilon").toDouble();
+    m_crosshairVisible =
+            annotationConfig::value("canvas/crosshair/show").toBool();
+    m_crosshairWidth =
+            annotationConfig::value("canvas/crosshair/width").toDouble();
+    m_crosshairOpacity =
+            annotationConfig::value("canvas/crosshair/opacity").toDouble();
+    m_doubleClickEditLabel =
+            annotationConfig::value("canvas/double_click_edit_label").toBool();
+    m_wheelRectangleEditing =
+            annotationConfig::value("canvas/wheel_rectangle_editing/enable")
+                    .toBool();
+    m_wheelAdjustStep = annotationConfig::value(
+                                "canvas/wheel_rectangle_editing/adjust_step")
+                                .toDouble();
+    m_wheelScaleStep =
+            annotationConfig::value("canvas/wheel_rectangle_editing/scale_step")
+                    .toDouble();
+    m_brushPointDistance =
+            annotationConfig::value("canvas/brush/point_distance").toDouble();
+    m_brushMaxUndoSteps =
+            annotationConfig::value("canvas/brush/max_undo_steps").toInt();
+    m_brushMaxUndoMemoryMb =
+            annotationConfig::value("canvas/brush/max_undo_memory_mb").toInt();
+    m_rotationLargeIncrement =
+            annotationConfig::value("canvas/rotation/large_increment")
+                    .toDouble();
+    m_rotationSmallIncrement =
+            annotationConfig::value("canvas/rotation/small_increment")
+                    .toDouble();
+    m_cuboidMinDepth =
+            annotationConfig::value("canvas/cuboid/min_depth").toDouble();
+    m_maskOpacity = annotationConfig::value("canvas/mask/opacity").toInt();
+    m_shiftAutoShapeColor =
+            annotationConfig::value("shift_auto_shape_color").toInt();
+    m_showShapes = annotationConfig::value("show_shapes").toBool();
+    m_showMasks = annotationConfig::value("show_masks").toBool();
+    m_showLabels = annotationConfig::value("show_labels").toBool();
+    m_showScores = annotationConfig::value("show_scores").toBool();
+    m_showGroups = annotationConfig::value("show_groups").toBool();
+    m_showTexts = annotationConfig::value("show_texts").toBool();
+    m_showAttributes = annotationConfig::value("show_attributes").toBool();
+    m_showDegrees = annotationConfig::value("show_degrees").toBool();
+    m_showLinking = annotationConfig::value("show_linking").toBool();
+    m_crosshairColor = annotationConfig::color("canvas/crosshair/color");
+    m_defaultShapeColor = annotationConfig::color("default_shape_color");
+    m_lineColor = annotationConfig::color("shape/line_color");
+    m_fillColor = annotationConfig::color("shape/fill_color");
+    m_vertexFillColor = annotationConfig::color("shape/vertex_fill_color");
+    m_selectLineColor = annotationConfig::color("shape/select_line_color");
+    m_selectFillColor = annotationConfig::color("shape/select_fill_color");
+    m_hoverVertexFillColor =
+            annotationConfig::color("shape/hvertex_fill_color");
+    m_doubleClickClose =
+            annotationConfig::value("canvas/double_click").toString() ==
+            QStringLiteral("close");
+    const QJsonArray depth =
+            annotationConfig::jsonValue(
+                    QStringLiteral("canvas/cuboid/default_depth_vector"))
+                    .toArray();
+    m_cuboidDepthVector =
+            QPointF(depth.at(0).toDouble(), depth.at(1).toDouble());
 }
 
 void AnnotationCanvas::rebuildDisplayImage() {
@@ -386,6 +752,7 @@ void AnnotationCanvas::rebuildDisplayImage() {
 }
 
 void AnnotationCanvas::setImage(const QImage& image) {
+    clearRelations();
     clearMagicWand();
     clearPrompt();
     m_brushEditing = false;
@@ -401,6 +768,9 @@ void AnnotationCanvas::setImage(const QImage& image) {
     m_selected = -1;
     m_selectedIndices.clear();
     m_creating = false;
+    m_dragging = m_rotating = false;
+    m_dragFace = annotationCuboid::Face::None;
+    m_hoverShape = m_hoverVertex = -1;
     m_pan = QPointF();
     fitImage();
 }
@@ -491,6 +861,14 @@ void AnnotationCanvas::setShiftAutoShapeColor(int shift) {
     update();
 }
 
+void AnnotationCanvas::setLabelOrder(const QStringList& labels) {
+    m_labelColorIds.clear();
+    for (const QString& label : labels)
+        if (!m_labelColorIds.contains(label))
+            m_labelColorIds.insert(label, m_labelColorIds.size() + 1);
+    update();
+}
+
 void AnnotationCanvas::setShapeStyleColors(const QColor& line,
                                            const QColor& fill,
                                            const QColor& vertex,
@@ -504,10 +882,6 @@ void AnnotationCanvas::setShapeStyleColors(const QColor& line,
     if (selectFill.isValid()) m_selectFillColor = selectFill;
     if (hoverVertex.isValid()) m_hoverVertexFillColor = hoverVertex;
     update();
-}
-
-void AnnotationCanvas::setMoveMode(const QString& mode) {
-    m_autoMoveMode = mode == QStringLiteral("auto");
 }
 
 QImage AnnotationCanvas::tintedSilhouette(const QImage& mask,
@@ -551,14 +925,17 @@ QImage AnnotationCanvas::shapeSilhouette(const AnnotationShape& shape,
 QColor AnnotationCanvas::effectiveLineColor(const AnnotationShape& shape,
                                             bool selected) const {
     if (selected) return m_selectLineColor;
+    if (m_lineColor != annotationConfig::color("shape/line_color"))
+        return m_lineColor;
+    if (shape.label == QStringLiteral("AUTOLABEL_ADD"))
+        return QColor(144, 238, 144);
+    if (shape.label == QStringLiteral("AUTOLABEL_REMOVE"))
+        return QColor(255, 182, 193);
+    if (shape.extra.value(QStringLiteral("acloudviewer_color")).isArray())
+        return annotationShapeColor(shape.label, shape.extra);
     if (m_shapeColorMode == ShapeColorMode::Manual) return m_defaultShapeColor;
-    QColor color = annotationShapeColor(shape.label, shape.extra);
-    if (m_shiftAutoShapeColor != 0 && color.isValid()) {
-        const int hue =
-                (color.hue() + m_shiftAutoShapeColor * 72 + 360 * 8) % 360;
-        color.setHsv(hue, color.saturation(), color.value(), color.alpha());
-    }
-    return color;
+    const int index = m_labelColorIds.value(shape.label, 1);
+    return annotationLabelColor(index + m_shiftAutoShapeColor);
 }
 
 void AnnotationCanvas::setCrosshair(bool visible,
@@ -609,21 +986,61 @@ void AnnotationCanvas::setCompareSplit(double split) {
     update();
 }
 
+void AnnotationCanvas::setRelations(const QJsonArray& relations) {
+    m_relations = relations;
+    m_highlightedRelation = -1;
+    update();
+}
+
+void AnnotationCanvas::clearRelations() {
+    if (m_relations.isEmpty() && m_highlightedRelation < 0) return;
+    m_relations = QJsonArray();
+    m_highlightedRelation = -1;
+    update();
+}
+
+void AnnotationCanvas::setHighlightedRelation(int row) {
+    m_highlightedRelation = row;
+    update();
+}
+
 void AnnotationCanvas::setShapes(const QVector<AnnotationShape>& shapes) {
+    m_relations = QJsonArray();
+    m_highlightedRelation = -1;
     m_brushEditing = false;
     m_brushMask = QImage();
     m_brushHistory.clear();
     m_brushRedo.clear();
     m_shapes = shapes;
+    for (const AnnotationShape& shape : shapes)
+        if (!m_labelColorIds.contains(shape.label))
+            m_labelColorIds.insert(shape.label, m_labelColorIds.size() + 1);
     m_selected = -1;
     m_selectedIndices.clear();
     m_creating = false;
+    m_dragging = m_rotating = false;
+    m_dragFace = annotationCuboid::Face::None;
+    m_hoverShape = m_hoverVertex = -1;
     update();
 }
 
 QImage AnnotationCanvas::renderVisualizationImage(
         const QVector<AnnotationShape>& shapes) const {
     const QImage source = m_displayImage.isNull() ? m_image : m_displayImage;
+    return renderVisualizationImage(source, shapes, visualizationOptions());
+}
+
+AnnotationCanvas::VisualizationOptions AnnotationCanvas::visualizationOptions()
+        const {
+    return {m_showLabels,  m_showScores,  m_showGroups,
+            m_showTexts,   m_showMasks,   m_showShapes,
+            m_showLinking, m_showDegrees, m_showAttributes};
+}
+
+QImage AnnotationCanvas::renderVisualizationImage(
+        const QImage& source,
+        const QVector<AnnotationShape>& shapes,
+        const VisualizationOptions& options) const {
     if (source.isNull()) return {};
     QImage result = source.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     QPainter painter(&result);
@@ -632,14 +1049,14 @@ QImage AnnotationCanvas::renderVisualizationImage(
 
     QHash<int, QRectF> groupBounds;
     QHash<int, int> groupCounts;
-    if (m_showGroups || m_showLinking) {
+    if (options.showGroups || options.showLinking) {
         for (const AnnotationShape& shape : shapes) {
             const QJsonValue group =
                     shape.extra.value(QStringLiteral("group_id"));
             if (!group.isDouble() || !shape.visible || shape.points.isEmpty())
                 continue;
             const int groupId = group.toInt();
-            const QRectF bounds = QPolygonF(shape.points).boundingRect();
+            const QRectF bounds = shapeBounds(shape);
             groupBounds[groupId] =
                     groupBounds.contains(groupId)
                             ? groupBounds.value(groupId).united(bounds)
@@ -647,7 +1064,7 @@ QImage AnnotationCanvas::renderVisualizationImage(
             ++groupCounts[groupId];
         }
     }
-    if (m_showLinking) {
+    if (options.showLinking) {
         painter.setPen(QPen(QColor(255, 165, 0, 220), 2.0));
         for (const AnnotationShape& shape : shapes) {
             if (!shape.visible) continue;
@@ -678,7 +1095,7 @@ QImage AnnotationCanvas::renderVisualizationImage(
             }
         }
     }
-    if (m_showGroups) {
+    if (options.showGroups) {
         painter.setPen(QPen(QColor(255, 165, 0, 220), 1.5, Qt::DashLine));
         painter.setBrush(Qt::NoBrush);
         for (auto it = groupBounds.constBegin(); it != groupBounds.constEnd();
@@ -699,102 +1116,96 @@ QImage AnnotationCanvas::renderVisualizationImage(
         }
     }
 
+    if (options.showMasks) {
+        painter.save();
+        painter.setOpacity(m_shapeOpacity / 100.0);
+        for (const AnnotationShape& shape : shapes)
+            if (shape.visible)
+                drawGeometryMask(painter, shape,
+                                 effectiveLineColor(shape, false),
+                                 m_shapeLineWidth, m_maskOpacity, true);
+        painter.restore();
+    }
     for (const AnnotationShape& shape : shapes) {
         if (!shape.visible || (shape.points.isEmpty() && shape.mask.isNull()))
             continue;
-        if (m_showMasks && !shape.mask.isNull()) {
+        if (options.showMasks && !shape.mask.isNull()) {
             painter.save();
             // Source compositing: binary silhouette in the shape color at
             // the mask opacity, not a multiplication of stored alpha.
             painter.setOpacity(m_shapeOpacity / 100.0 * m_maskOpacity / 255.0);
             painter.drawImage(
                     QPointF(0, 0),
-                    shapeSilhouette(shape, annotationShapeColor(shape.label,
-                                                                shape.extra)));
+                    shapeSilhouette(shape, effectiveLineColor(shape, false)));
             painter.restore();
         }
-        if (m_showShapes && !shape.points.isEmpty()) {
-            const QColor color = annotationShapeColor(shape.label, shape.extra);
-            painter.setPen(QPen(color, m_shapeLineWidth));
-            QColor fill = color;
-            fill.setAlpha(std::min(color.alpha(), 60));
-            painter.setBrush(closedType(shape.type) && shape.mask.isNull()
-                                     ? QBrush(fill)
-                                     : QBrush(Qt::NoBrush));
+        if (options.showShapes && !shape.points.isEmpty()) {
+            const QColor color = effectiveLineColor(shape, false);
+            painter.setPen(
+                    annotationOutlinePen(shape, color, m_shapeLineWidth));
+            // Export has no selected or hovered shapes, as upstream does.
+            painter.setBrush(Qt::NoBrush);
             QPainterPath path;
             path.moveTo(shape.points.first());
             if (shape.type == QStringLiteral("circle") &&
                 shape.points.size() >= 2) {
-                painter.drawEllipse(
-                        QRectF(shape.points[0], shape.points[1]).normalized());
+                painter.drawEllipse(circleBounds(shape));
             } else if (shape.type == QStringLiteral("point")) {
-                painter.drawEllipse(shape.points.first(),
-                                    std::max(1.0, m_shapePointSize / 2.0),
-                                    std::max(1.0, m_shapePointSize / 2.0));
+                // The vertex marker is painted below with its fill color.
+            } else if (isCuboid(shape)) {
+                drawCuboid(painter, shape.points);
             } else {
                 for (int i = 1; i < shape.points.size(); ++i)
                     path.lineTo(shape.points[i]);
                 if (closedType(shape.type) && shape.points.size() > 2)
                     path.closeSubpath();
                 painter.drawPath(path);
-                if (shape.type == QStringLiteral("cuboid") &&
-                    shape.points.size() == 8)
-                    for (int i = 0; i < 4; ++i)
-                        painter.drawLine(shape.points[i], shape.points[i + 4]);
             }
         }
         if (shape.points.isEmpty()) continue;
+        if (options.showShapes &&
+            (shape.type == QStringLiteral("point") ||
+             shape.type == QStringLiteral("polygon") ||
+             shape.type == QStringLiteral("quadrilateral") ||
+             shape.type == QStringLiteral("line") ||
+             shape.type == QStringLiteral("linestrip"))) {
+            painter.save();
+            const QColor color = effectiveLineColor(shape, false);
+            painter.setPen(
+                    annotationOutlinePen(shape, color, m_shapeLineWidth));
+            painter.setBrush(color);
+            const int count = shape.type == QStringLiteral("linestrip")
+                                      ? shape.points.size()
+                                      : 1;
+            for (int i = 0; i < count; ++i)
+                drawAnnotationVertex(painter, shape, shape.points[i],
+                                     m_shapePointSize / 2.0);
+            painter.restore();
+        }
+        if (options.showShapes || options.showDegrees)
+            drawRotationDirection(painter, shape, 1.0, m_shapePointSize,
+                                  options.showDegrees);
         const QJsonValue score = shape.extra.value(QStringLiteral("score"));
         QString caption;
-        const QString description =
-                shape.extra.value(QStringLiteral("description")).toString();
-        if (m_showTexts && !description.isEmpty()) caption = description;
-        if (m_showLabels && !shape.label.isEmpty()) {
+        if (options.showTexts) drawAnnotationDescription(painter, shape, 1.0);
+        if (options.showLabels && !shape.label.isEmpty()) {
             if (!caption.isEmpty()) caption += QLatin1Char(' ');
+            const QJsonValue group =
+                    shape.extra.value(QStringLiteral("group_id"));
+            if (group.isDouble())
+                caption += QStringLiteral("id:%1 ").arg(group.toInt());
             caption += shape.label;
         }
-        if (m_showScores && score.isDouble()) {
+        if (options.showLabels && options.showScores && score.isDouble()) {
             if (!caption.isEmpty()) caption += QLatin1Char(' ');
             caption += QString::number(score.toDouble(), 'f', 2);
         }
-        if (!caption.isEmpty()) {
-            painter.save();
-            const QRectF textBounds =
-                    painter.fontMetrics().boundingRect(caption);
-            const QPointF anchor = shape.points.first();
-            const QRectF background(anchor.x(),
-                                    std::max(0.0, anchor.y() - 19.0),
-                                    textBounds.width() + 8.0, 18.0);
-            painter.fillRect(background, QColor(20, 25, 28, 210));
-            painter.setPen(Qt::white);
-            painter.drawText(background.left() + 4.0, background.bottom() - 5.0,
-                             caption);
-            painter.restore();
-        }
-        if (m_showDegrees && shape.type == QStringLiteral("rotation") &&
-            shape.points.size() == 4) {
-            const double angle =
-                    std::atan2(shape.points[1].y() - shape.points[0].y(),
-                               shape.points[1].x() - shape.points[0].x()) *
-                    180.0 / 3.141592653589793;
-            painter.setPen(QColor(255, 165, 0));
-            painter.drawText(shape.points[0] + QPointF(0, 15),
-                             QString::number(angle, 'f', 2) + QChar(0x00B0));
-        }
-        if (m_showAttributes) {
-            const QJsonObject attributes =
-                    shape.extra.value(QStringLiteral("attributes")).toObject();
-            if (!attributes.isEmpty()) {
-                QStringList values;
-                for (auto it = attributes.constBegin();
-                     it != attributes.constEnd(); ++it)
-                    values.append(it.key() + QStringLiteral(": ") +
-                                  it.value().toVariant().toString());
-                painter.setPen(Qt::white);
-                painter.drawText(shape.points[0] + QPointF(0, 16),
-                                 values.join(QStringLiteral(" | ")));
-            }
-        }
+        if (!caption.isEmpty())
+            drawAnnotationLabel(painter, shape, caption,
+                                effectiveLineColor(shape, false),
+                                m_shapePointSize);
+        if (options.showAttributes)
+            drawAnnotationAttributes(painter, shape, 1.0, m_shapePointSize);
     }
     painter.end();
     return result;
@@ -856,7 +1267,8 @@ void AnnotationCanvas::undoLastPoint() {
 void AnnotationCanvas::addPointToEdge() {
     const int index = m_selected;
     if (index < 0 || index >= m_shapes.size() ||
-        m_shapes[index].points.size() < 2 || m_shapes[index].locked)
+        m_shapes[index].points.size() < 2 || m_shapes[index].locked ||
+        m_shapes[index].type == QStringLiteral("cuboid"))
         return;
     AnnotationShape& shape = m_shapes[index];
     int bestEdge = -1;
@@ -889,7 +1301,8 @@ void AnnotationCanvas::addPointToEdge() {
 
 void AnnotationCanvas::removeSelectedPoint() {
     if (m_selected < 0 || m_selected >= m_shapes.size() ||
-        m_shapes[m_selected].locked)
+        m_shapes[m_selected].locked ||
+        m_shapes[m_selected].type == QStringLiteral("cuboid"))
         return;
     AnnotationShape& shape = m_shapes[m_selected];
     if (shape.points.size() <=
@@ -1142,7 +1555,7 @@ QPointF AnnotationCanvas::clamp(const QPointF& point) const {
 
 void AnnotationCanvas::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor(250, 250, 250));
+    painter.fillRect(rect(), palette().color(QPalette::Window));
     if (m_image.isNull()) return;
     updateTransform();
     painter.setRenderHint(QPainter::Antialiasing);
@@ -1196,7 +1609,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             if (!group.isDouble() || !shape.visible || shape.points.isEmpty())
                 continue;
             const int groupId = group.toInt();
-            const QRectF bounds = QPolygonF(shape.points).boundingRect();
+            const QRectF bounds = shapeBounds(shape);
             if (groupBounds.contains(groupId))
                 groupBounds[groupId] =
                         groupBounds.value(groupId).united(bounds);
@@ -1262,6 +1675,18 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             painter.restore();
         }
     }
+    if (m_showMasks) {
+        for (int index = 0; index < m_shapes.size(); ++index) {
+            const AnnotationShape& shape = m_shapes[index];
+            const bool selected = m_selectedIndices.contains(index);
+            if (!shape.visible || (m_brushEditing && index == m_brushTarget))
+                continue;
+            drawGeometryMask(painter, shape,
+                             effectiveLineColor(shape, selected),
+                             m_shapeLineWidth / m_scale, m_maskOpacity,
+                             !(m_dragging && selected));
+        }
+    }
     for (int index = 0; index < m_shapes.size(); ++index) {
         const AnnotationShape& shape = m_shapes[index];
         if (!shape.visible || (shape.points.isEmpty() && shape.mask.isNull()))
@@ -1276,50 +1701,92 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             drawMask(shape.mask, effectiveLineColor(shape, selected), &shape);
         if (m_showShapes && !shape.points.isEmpty()) {
             const QColor line = effectiveLineColor(shape, selected);
-            QPen pen(line);
+            QPen pen = annotationOutlinePen(shape, line, m_shapeLineWidth);
             pen.setWidthF((selected ? std::max(2.5, m_shapeLineWidth)
                                     : m_shapeLineWidth) /
                           m_scale);
             painter.setPen(pen);
-            const QColor fill = selected ? m_selectFillColor : m_fillColor;
+            QColor fill = effectiveLineColor(shape, false);
+            fill.setAlpha(selected ? 155 : 128);
+            if (selected &&
+                m_selectFillColor !=
+                        annotationConfig::color("shape/select_fill_color"))
+                fill = m_selectFillColor;
+            if (!selected &&
+                m_fillColor != annotationConfig::color("shape/fill_color"))
+                fill = m_fillColor;
             const bool isInProgress =
                     m_creating && index == m_shapes.size() - 1;
-            const bool fillShape = closedType(shape.type) &&
-                                   shape.mask.isNull() &&
-                                   (!isInProgress || m_fillDrawing);
+            const bool fillShape =
+                    closedType(shape.type) && shape.mask.isNull() &&
+                    m_fillDrawing &&
+                    (isInProgress ||
+                     ((selected || index == m_hoverShape) && !m_dragging));
             painter.setBrush(fillShape ? QBrush(fill) : QBrush(Qt::NoBrush));
             QPainterPath path;
             path.moveTo(shape.points.first());
             if (shape.type == QStringLiteral("circle") &&
                 shape.points.size() >= 2) {
-                const QRectF bounds(shape.points[0], shape.points[1]);
+                const QRectF bounds = circleBounds(shape);
                 painter.drawEllipse(bounds.normalized());
             } else if (shape.type == QStringLiteral("point")) {
-                const double radius =
-                        std::max(1.0, m_shapePointSize / 2.0) / m_scale;
-                painter.drawEllipse(shape.points.first(), radius, radius);
+                // The vertex marker is painted below with its fill color.
+            } else if (isCuboid(shape)) {
+                drawCuboid(painter, shape.points);
             } else {
                 for (int i = 1; i < shape.points.size(); ++i)
                     path.lineTo(shape.points[i]);
                 if (closedType(shape.type) && shape.points.size() > 2)
                     path.closeSubpath();
                 painter.drawPath(path);
-                if (shape.type == QStringLiteral("cuboid") &&
-                    shape.points.size() == 8) {
-                    for (int i = 0; i < 4; ++i)
-                        painter.drawLine(shape.points[i], shape.points[i + 4]);
-                }
             }
-            if (selected) {
+            if (!selected && shape.mask.isNull() &&
+                (shape.type == QStringLiteral("point") ||
+                 shape.type == QStringLiteral("polygon") ||
+                 shape.type == QStringLiteral("quadrilateral") ||
+                 shape.type == QStringLiteral("line") ||
+                 shape.type == QStringLiteral("linestrip"))) {
+                painter.setBrush(effectiveLineColor(shape, false));
+                const int count = shape.type == QStringLiteral("linestrip")
+                                          ? shape.points.size()
+                                          : 1;
+                for (int i = 0; i < count; ++i)
+                    drawAnnotationVertex(painter, shape, shape.points[i],
+                                         m_shapePointSize / (2.0 * m_scale));
+            }
+            if (selected || (isCuboid(shape) && index == m_hoverShape)) {
                 if (shape.mask.isNull()) {
-                    int vertexIndex = -1;
-                    for (const QPointF& point : shape.points) {
-                        ++vertexIndex;
-                        painter.setBrush(vertexIndex == m_hoverVertex
-                                                 ? m_hoverVertexFillColor
-                                                 : m_vertexFillColor);
-                        painter.drawEllipse(point, 3.5 / m_scale,
-                                            3.5 / m_scale);
+                    QVector<int> controls;
+                    if (isCuboid(shape))
+                        controls =
+                                annotationCuboid::visibleControls(shape.points);
+                    else
+                        for (int i = 0; i < shape.points.size(); ++i)
+                            controls.append(i);
+                    for (int control : controls) {
+                        const QPointF point =
+                                isCuboid(shape)
+                                        ? annotationCuboid::controlPoint(
+                                                  shape.points, control)
+                                        : shape.points[control];
+                        painter.setBrush(
+                                index == m_hoverShape &&
+                                                control == m_hoverVertex
+                                        ? m_hoverVertexFillColor
+                                        : (m_vertexFillColor ==
+                                                           annotationConfig::
+                                                                   color("shape"
+                                                                         "/vert"
+                                                                         "ex_"
+                                                                         "fill_"
+                                                                         "colo"
+                                                                         "r")
+                                                   ? effectiveLineColor(shape,
+                                                                        false)
+                                                   : m_vertexFillColor));
+                        const double radius =
+                                m_shapePointSize / (2.0 * m_scale);
+                        drawAnnotationVertex(painter, shape, point, radius);
                     }
                 }
                 if (shape.type == QStringLiteral("rotation") &&
@@ -1333,66 +1800,107 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                 }
             }
         }
+        if (m_showShapes || m_showDegrees)
+            drawRotationDirection(painter, shape, m_scale, m_shapePointSize,
+                                  m_showDegrees);
         if (shape.points.isEmpty()) continue;
         const QJsonValue score = shape.extra.value(QStringLiteral("score"));
         QString caption;
-        const QString description =
-                shape.extra.value(QStringLiteral("description")).toString();
-        if (m_showTexts && !description.isEmpty()) caption = description;
+        if (m_showTexts) drawAnnotationDescription(painter, shape, m_scale);
         if (m_showLabels && !shape.label.isEmpty()) {
             if (!caption.isEmpty()) caption += QLatin1Char(' ');
+            const QJsonValue group =
+                    shape.extra.value(QStringLiteral("group_id"));
+            if (group.isDouble())
+                caption += QStringLiteral("id:%1 ").arg(group.toInt());
             caption += shape.label;
         }
-        if (m_showScores && score.isDouble()) {
+        if (m_showLabels && m_showScores && score.isDouble()) {
             if (!caption.isEmpty()) caption += QLatin1Char(' ');
             caption += QString::number(score.toDouble(), 'f', 2);
         }
-        if (!caption.isEmpty()) {
+        if (!caption.isEmpty())
+            drawAnnotationLabel(painter, shape, caption,
+                                effectiveLineColor(shape, false),
+                                m_shapePointSize);
+        if (m_showAttributes)
+            drawAnnotationAttributes(painter, shape, m_scale, m_shapePointSize);
+    }
+    // RelateAnything edges: curved arrow from the subject box centre to the
+    // object box centre, coloured by the subject, with a predicate chip.
+    if (m_showShapes && !m_relations.isEmpty()) {
+        for (int row = 0; row < m_relations.size(); ++row) {
+            const QJsonObject edge = m_relations.at(row).toObject();
+            const int from =
+                    edge.value(QStringLiteral("subject_index")).toInt(-1);
+            const int to = edge.value(QStringLiteral("object_index")).toInt(-1);
+            if (from < 0 || to < 0 || from >= m_shapes.size() ||
+                to >= m_shapes.size() || from == to ||
+                !m_shapes[from].visible || !m_shapes[to].visible ||
+                m_shapes[from].points.isEmpty() ||
+                m_shapes[to].points.isEmpty())
+                continue;
+            const QPointF start =
+                    QPolygonF(m_shapes[from].points).boundingRect().center();
+            const QPointF end =
+                    QPolygonF(m_shapes[to].points).boundingRect().center();
+            const QPointF delta = end - start;
+            const double length = std::hypot(delta.x(), delta.y());
+            if (length < 1.0) continue;
+            const bool highlighted = row == m_highlightedRelation;
+            const QColor color = effectiveLineColor(m_shapes[from], false);
+            // Bow each edge by a row-dependent amount so parallel edges
+            // between the same objects stay distinguishable.
+            const QPointF normal(-delta.y() / length, delta.x() / length);
+            const QPointF control =
+                    (start + end) * 0.5 +
+                    normal * ((18.0 + 8.0 * (row % 3)) / m_scale);
+            QPainterPath path(start);
+            path.quadTo(control, end);
             painter.save();
             painter.setOpacity(1.0);
-            painter.resetTransform();
-            const QPointF anchor = m_origin + shape.points.first() * m_scale;
-            const QRectF textBounds =
-                    painter.fontMetrics().boundingRect(caption);
-            painter.fillRect(QRectF(anchor.x(), anchor.y() - 19,
-                                    textBounds.width() + 8, 18),
-                             QColor(20, 25, 28, 210));
-            painter.setPen(Qt::white);
-            painter.drawText(anchor + QPointF(4, -5), caption);
+            painter.setBrush(Qt::NoBrush);
+            painter.setPen(QPen(QColor(0, 0, 0, 160),
+                                (highlighted ? 4.5 : 3.0) / m_scale));
+            painter.drawPath(path);
+            painter.setPen(QPen(color, (highlighted ? 3.0 : 1.8) / m_scale));
+            painter.drawPath(path);
+            const QPointF tangent = end - control;
+            const double tangentLength = std::hypot(tangent.x(), tangent.y());
+            if (tangentLength > 1e-3) {
+                const QPointF unit = tangent / tangentLength;
+                const QPointF side(-unit.y(), unit.x());
+                const double size = 11.0 / m_scale;
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(color);
+                painter.drawPolygon(
+                        QPolygonF({end, end - unit * size + side * size * 0.45,
+                                   end - unit * size - side * size * 0.45}));
+            }
             painter.restore();
-        }
-        if (m_showDegrees && shape.type == QStringLiteral("rotation") &&
-            shape.points.size() == 4) {
-            const double angle =
-                    std::atan2(shape.points[1].y() - shape.points[0].y(),
-                               shape.points[1].x() - shape.points[0].x()) *
-                    180.0 / 3.141592653589793;
-            painter.save();
-            painter.setOpacity(1.0);
-            painter.resetTransform();
-            const QPointF anchor = m_origin + shape.points[0] * m_scale;
-            painter.setPen(QColor(255, 165, 0));
-            painter.drawText(anchor + QPointF(0, 15),
-                             QString::number(angle, 'f', 2) + QChar(0x00B0));
-            painter.restore();
-        }
-        if (m_showAttributes) {
-            const QJsonObject attributes =
-                    shape.extra.value(QStringLiteral("attributes")).toObject();
-            if (!attributes.isEmpty()) {
-                QStringList values;
-                for (auto it = attributes.constBegin();
-                     it != attributes.constEnd(); ++it)
-                    values.append(it.key() + QStringLiteral(": ") +
-                                  it.value().toVariant().toString());
+            if (m_showLabels) {
+                const QPointF mid = 0.25 * start + 0.5 * control + 0.25 * end;
+                const QString text =
+                        edge.value(QStringLiteral("predicate")).toString() +
+                        QStringLiteral(" ") +
+                        QString::number(
+                                edge.value(QStringLiteral("score")).toDouble(),
+                                'f', 2);
                 painter.save();
                 painter.setOpacity(1.0);
                 painter.resetTransform();
-                const QPointF anchor =
-                        m_origin + shape.points.first() * m_scale;
-                painter.setPen(QColor(255, 255, 255));
-                painter.drawText(anchor + QPointF(0, 16),
-                                 values.join(QStringLiteral(" | ")));
+                const QPointF anchor = m_origin + mid * m_scale;
+                const QRectF box =
+                        QRectF(painter.fontMetrics().boundingRect(text))
+                                .adjusted(-5, -3, 5, 3);
+                const QRectF chip(anchor.x() - box.width() / 2,
+                                  anchor.y() - box.height() / 2, box.width(),
+                                  box.height());
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(QColor(22, 24, 28, 225));
+                painter.drawRoundedRect(chip, 4, 4);
+                painter.setPen(Qt::white);
+                painter.drawText(chip, Qt::AlignCenter, text);
                 painter.restore();
             }
         }
@@ -1858,12 +2366,28 @@ void AnnotationCanvas::finishMagicWand() {
     update();
 }
 
-int AnnotationCanvas::hitShape(const QPointF& point, int* vertex) const {
+int AnnotationCanvas::hitShape(const QPointF& point,
+                               int* vertex,
+                               annotationCuboid::Face* face) const {
     *vertex = -1;
+    if (face) *face = annotationCuboid::Face::None;
     const double radius = std::max(0.5, m_hitEpsilon) / m_scale;
     for (int i = m_shapes.size() - 1; i >= 0; --i) {
         const AnnotationShape& shape = m_shapes[i];
         if (!shape.visible) continue;
+        if (isCuboid(shape) && shape.mask.isNull()) {
+            if (!shape.locked) {
+                *vertex = annotationCuboid::nearestControl(shape.points, point,
+                                                           radius);
+                if (*vertex >= 0) return i;
+            }
+            const auto hit = annotationCuboid::hitFace(shape.points, point);
+            if (hit != annotationCuboid::Face::None) {
+                if (face && !shape.locked) *face = hit;
+                return i;
+            }
+            continue;
+        }
         for (int j = 0; shape.mask.isNull() && j < shape.points.size(); ++j) {
             if (QLineF(point, shape.points[j]).length() <= radius) {
                 *vertex = j;
@@ -1885,8 +2409,7 @@ int AnnotationCanvas::hitShape(const QPointF& point, int* vertex) const {
         if (shape.type == QStringLiteral("circle") &&
             shape.points.size() >= 2) {
             path = QPainterPath();
-            path.addEllipse(
-                    QRectF(shape.points[0], shape.points[1]).normalized());
+            path.addEllipse(circleBounds(shape));
         } else if (closedType(shape.type))
             path.closeSubpath();
         QPainterPathStroker stroker;
@@ -1929,6 +2452,13 @@ int AnnotationCanvas::hitGroup(const QPointF& point) const {
 void AnnotationCanvas::moveVertex(AnnotationShape& shape,
                                   int vertex,
                                   const QPointF& point) {
+    if (shape.locked) return;
+    if (isCuboid(shape)) {
+        if (annotationCuboid::moveControl(shape.points, vertex, point,
+                                          m_cuboidMinDepth))
+            syncCuboidDepth(shape);
+        return;
+    }
     if (shape.type == QStringLiteral("rectangle") && shape.points.size() == 4) {
         const QPointF opposite = shape.points[(vertex + 2) % 4];
         shape.points[(vertex + 1) % 4] =
@@ -1952,14 +2482,6 @@ void AnnotationCanvas::moveVertex(AnnotationShape& shape,
             shape.points[(vertex + 3) % 4] =
                     point + v * (dot(diagonal, v) / (vLength * vLength));
         }
-    }
-    if (shape.type == QStringLiteral("cuboid") && shape.points.size() == 8) {
-        const QPointF delta = point - shape.points[vertex];
-        if (vertex < 4)
-            shape.points[vertex + 4] += delta;
-        else
-            for (int i = 4; i < 8; ++i) shape.points[i] += delta;
-        if (vertex >= 4) return;
     }
     shape.points[vertex] = point;
 }
@@ -2060,7 +2582,8 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
             }
         }
         int vertex = -1;
-        int index = hitShape(point, &vertex);
+        annotationCuboid::Face face = annotationCuboid::Face::None;
+        int index = hitShape(rawPoint, &vertex, &face);
         if (event->modifiers() & Qt::ControlModifier) {
             QVector<int> selected;
             selected.reserve(m_selectedIndices.size());
@@ -2090,10 +2613,10 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
                 vertex = -1;
             }
         }
-        // Source "auto" move mode: dragging empty canvas space pans the view.
+        // Dragging empty canvas space pans the view.
         // It must stay behind the group-selection branch above so a click
         // between grouped shapes still selects the whole group.
-        if (index < 0 && m_selectedIndices.isEmpty() && m_autoMoveMode &&
+        if (index < 0 && m_selectedIndices.isEmpty() &&
             m_tool == QStringLiteral("edit")) {
             m_panning = true;
             m_panStart = mousePosition(event);
@@ -2135,7 +2658,8 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
             m_dragChanged = false;
             m_dragVertex =
                     groupDrag || !m_shapes[index].mask.isNull() ? -1 : vertex;
-            m_last = point;
+            m_dragFace = groupDrag ? annotationCuboid::Face::None : face;
+            m_last = isCuboid(m_shapes[index]) ? rawPoint : point;
         }
         return;
     }
@@ -2179,18 +2703,21 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
         return;
     }
     updateTransform();
-    const QPointF point = clamp(toImage(mousePosition(event)));
+    const QPointF rawPoint = toImage(mousePosition(event));
+    const QPointF point = clamp(rawPoint);
     m_hover = point;
     // Match the source vertex_selected hover signal: it drives the
     // Remove-selected-point action without consuming the move event.
     if (!m_promptBoxDragging && !m_brushEditing && !m_rotating && !m_dragging) {
         int hoverVertex = -1;
-        hitShape(point, &hoverVertex);
-        if (hoverVertex != m_hoverVertex) {
+        const int hoverShape = hitShape(rawPoint, &hoverVertex);
+        if (hoverVertex != m_hoverVertex || hoverShape != m_hoverShape) {
             m_hoverVertex = hoverVertex;
+            m_hoverShape = hoverShape;
             update();
         }
-        emit vertexHovered(hoverVertex >= 0);
+        emit vertexHovered(hoverVertex >= 0 &&
+                           (hoverShape < 0 || !isCuboid(m_shapes[hoverShape])));
     } else if (m_hoverVertex != -1) {
         m_hoverVertex = -1;
     }
@@ -2225,10 +2752,38 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
                 shape.points[i] = rotated(m_rotationPoints[i], center, angle);
         }
     } else if (m_dragging && m_selected >= 0) {
-        AnnotationShape& shape = m_shapes[m_selected];
+        const AnnotationShape& current = qAsConst(m_shapes)[m_selected];
+        if (isCuboid(current) && m_dragIndices.size() == 1) {
+            auto next = current.points;
+            bool changed = false;
+            if (m_dragVertex >= 0)
+                changed = annotationCuboid::moveControl(
+                        next, m_dragVertex, rawPoint, m_cuboidMinDepth);
+            else if (m_dragFace == annotationCuboid::Face::Front) {
+                const QPointF delta = rawPoint - m_last;
+                changed = !delta.isNull();
+                for (QPointF& item : next) item += delta;
+            } else
+                changed = annotationCuboid::moveFace(
+                        next, m_dragFace, rawPoint - m_last, m_cuboidMinDepth);
+            if (changed) {
+                if (!m_dragChanged) emit editStarted();
+                // snapshot() shares the outer QVector until the next mutable
+                // access. Acquire the reference after the signal so editing
+                // cannot mutate the undo snapshot through an old reference.
+                AnnotationShape& edited = m_shapes[m_selected];
+                edited.points = next;
+                syncCuboidDepth(edited);
+                m_dragChanged = true;
+            }
+            m_last = rawPoint;
+            update();
+            return;
+        }
         if (QLineF(point, m_last).length() < 1e-8) return;
         if (!m_dragChanged) emit editStarted();
         m_dragChanged = true;
+        AnnotationShape& shape = m_shapes[m_selected];
         if (m_dragVertex >= 0)
             moveVertex(shape, m_dragVertex, point);
         else if (m_dragIndices.size() > 1 &&
@@ -2341,6 +2896,7 @@ void AnnotationCanvas::mouseReleaseEvent(QMouseEvent* event) {
         if (m_dragChanged) emit shapesChanged();
     } else if (m_dragging) {
         m_dragging = false;
+        m_dragFace = annotationCuboid::Face::None;
         if (m_dragChanged) emit shapesChanged();
         m_dragIndices.clear();
         m_dragOriginalPoints.clear();

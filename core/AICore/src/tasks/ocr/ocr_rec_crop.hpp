@@ -38,8 +38,9 @@ void rotateCropSize(const float box[4][2], int* width, int* height);
 // cv2.warpPerspective(src, getPerspectiveTransform(box, (0,0)(w,0)(w,h)
 // (0,h)), (w, h), flags=INTER_CUBIC, borderMode=BORDER_REPLICATE) into a
 // tightly packed w*h*3 destination; output channel c samples
-// src.channel_index(c). Returns false (dst zero-filled) when the transform
-// is singular, where cv2 would also not produce a usable crop.
+// src.channel_index(c). Singular transforms sample the top-left source pixel
+// throughout, matching OpenCV's zero inverse. Returns false for empty inputs
+// or nonpositive destination sizes.
 bool warpPerspectiveCubicReplicate(const aicore::img::Image& src,
                                    const float box[4][2],
                                    int width,

@@ -18,7 +18,8 @@ public:
     explicit Session(const aicore_tagging_options& options);
     ~Session();
     Output infer(const img::Image& image,
-                 const aicore_tagging_request& request);
+                 const aicore_tagging_request& request,
+                 uint64_t resize_mode = AICORE_TAGGING_RESIZE_OFFICIAL);
     const std::vector<std::string>& names() const;
     const std::vector<float>& thresholds() const;
     float selectionThreshold(size_t index,
@@ -30,6 +31,7 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
-std::vector<float> preprocess(const img::Image& image, int threads);
+std::vector<float> preprocess(const img::Image& image, int threads,
+                              uint64_t resize_mode = AICORE_TAGGING_RESIZE_OFFICIAL);
 }  // namespace tagging
 }  // namespace aicore

@@ -407,13 +407,13 @@ AICORE_CAPI void aicore_yolo_options_set_threads(aicore_yolo_options* opts,
 
 AICORE_CAPI void aicore_yolo_options_set_conf_thres(aicore_yolo_options* opts,
                                                     float conf_thres) {
-    if (opts != nullptr && conf_thres > 0.0f && conf_thres < 1.0f)
+    if (opts != nullptr && conf_thres >= 0.0f && conf_thres <= 1.0f)
         opts->conf_thres = conf_thres;
 }
 
 AICORE_CAPI void aicore_yolo_options_set_iou_thres(aicore_yolo_options* opts,
                                                    float iou_thres) {
-    if (opts != nullptr && iou_thres > 0.0f && iou_thres < 1.0f)
+    if (opts != nullptr && iou_thres >= 0.0f && iou_thres <= 1.0f)
         opts->iou_thres = iou_thres;
 }
 
@@ -1479,8 +1479,8 @@ AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
                                                    float iou_thres,
                                                    uint32_t top_k) {
     if (ctx == nullptr) return;
-    if (conf_thres > 0.0f && conf_thres < 1.0f) ctx->conf_thres = conf_thres;
-    if (iou_thres > 0.0f && iou_thres < 1.0f) ctx->iou_thres = iou_thres;
+    if (conf_thres >= 0.0f && conf_thres <= 1.0f) ctx->conf_thres = conf_thres;
+    if (iou_thres >= 0.0f && iou_thres <= 1.0f) ctx->iou_thres = iou_thres;
     ctx->top_k = top_k;
 }
 

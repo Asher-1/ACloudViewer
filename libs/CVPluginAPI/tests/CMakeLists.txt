@@ -30,6 +30,25 @@ add_test(NAME test_cvpluginapi_ui_helpers COMMAND test_cvpluginapi_ui_helpers)
 cloudviewer_set_plugin_test_env(test_cvpluginapi_ui_helpers)
 set_tests_properties(test_cvpluginapi_ui_helpers PROPERTIES LABELS "cvpluginapi")
 
+# Exercise the real shared cache ledger used by model-downloading plugins.
+add_executable(test_cvpluginapi_asset_integrity test_asset_integrity.cpp)
+target_include_directories(test_cvpluginapi_asset_integrity PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_SOURCE_DIR}/core/AICore/include)
+target_link_libraries(test_cvpluginapi_asset_integrity PRIVATE
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core)
+if(NOT MSVC)
+    target_compile_options(test_cvpluginapi_asset_integrity PRIVATE -Wall -Wextra -fPIC)
+    set_target_properties(test_cvpluginapi_asset_integrity PROPERTIES
+        POSITION_INDEPENDENT_CODE ON)
+    target_link_options(test_cvpluginapi_asset_integrity PRIVATE "-no-pie")
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_asset_integrity)
+add_test(NAME test_cvpluginapi_asset_integrity
+    COMMAND test_cvpluginapi_asset_integrity)
+cloudviewer_set_plugin_test_env(test_cvpluginapi_asset_integrity)
+set_tests_properties(test_cvpluginapi_asset_integrity PROPERTIES LABELS "cvpluginapi")
+
 # Focused unit tests for the shared AICore runtime helper header
 # (include/ecvAICoreRuntimeHelpers.h). Header-only under test, but the lock
 # helper exercises the real exported C API, so link libAICore.

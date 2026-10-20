@@ -26,6 +26,8 @@
 #include "AnnotationPpocr.h"
 #include "AnnotationVlm.h"
 #include "AnnotationWorker.h"
+#include "RelateOptions.h"
+#include "RelationFilterWidget.h"
 
 class QActionGroup;
 class QCheckBox;
@@ -72,6 +74,9 @@ public:
     /** Pass the host interface to embedded AICore views (for DB export). */
     void setAppInterface(ecvMainAppInterface* app);
 
+signals:
+    void annotationSourceChanged();
+
 protected:
     void closeEvent(QCloseEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -87,9 +92,9 @@ private:
         QString quant;
         QString task;
         bool supportsText = false;
-        // Catalog interaction defaults (facedetect rows carry the upstream
-        // scrfd/yunet yaml conf); <=0 means "no catalog default".
-        float confDefault = 0.0f;
+        // Interaction defaults from the owning public task catalog.
+        float confDefault = 0.25f;
+        float iouDefault = -1.0f;
     };
 
     void createUi();
@@ -98,13 +103,18 @@ private:
     void refreshQuantizations();
     void openFile(const QString& file);
     void openVideoTracking();
+    void openImageClassifier();
+    void openChatbot();
+    void openVqa();
     void openPointCloudAnnotation();
     void saveCroppedImage();
     void saveVisualizationImage();
+    void saveVisualizationVideo();
     void openShapeConverter();
     void openDirectory();
     void openDirectoryPath(const QString& path);
     void editLabels();
+    void editShapes();
     void updateRecentMenu();
     void rememberRecentFile(const QString& file);
     void refreshFileList();
@@ -170,6 +180,7 @@ private:
     void runDetection();
     void runBatch();
     void startBatchNext();
+    void cancelBatch();
     void finishBatch(const QString& message);
     void startInference(const QString& modelPath);
     void onInference(const AnnotationInference& result);
@@ -226,6 +237,17 @@ private:
     void uploadLabelClasses();
     /** Edit the uploaded shape-attribute template on the selected shape. */
     void editShapeAttributes();
+    /** Highlight a relation edge and select its subject box. */
+    void onRelationSelected(const QJsonObject& relation);
+    /** Drop the transient RelateAnything overlay and its triplet table. */
+    void clearRelationOverlay();
+    /** Popup with the RelateAnything thresholds, caps and predicates. */
+    void openRelateOptions();
+    /** Detector GGUF for the automatic object stage ("" = none cached). */
+    QString relateDetectorFilename() const;
+    QString relateDetectorPath() const;
+    /** Rectangles RelateAnything would relate (selected, visible, usable). */
+    int selectedRelateRectangles() const;
 
     AnnotationCanvas* m_canvas = nullptr;
     QWidget* m_workspace = nullptr;
@@ -249,6 +271,10 @@ private:
     QListWidget* m_labels = nullptr;
     QListWidget* m_flags = nullptr;
     QDockWidget* m_flagsDock = nullptr;
+    RelateOptions m_relateOptions;
+    QPushButton* m_relateOptionsButton = nullptr;
+    RelationFilterWidget* m_relationFilter = nullptr;
+    QDockWidget* m_relationFilterDock = nullptr;
     QStringList m_imageFlagNames;
     QPlainTextEdit* m_description = nullptr;
     QLabel* m_descriptionTitle = nullptr;
@@ -263,6 +289,14 @@ private:
     QComboBox* m_backend = nullptr;
     QComboBox* m_textModel = nullptr;
     QComboBox* m_faceLandmark = nullptr;
+    QComboBox* m_objectTagger = nullptr;
+    QComboBox* m_ocrLayout = nullptr;
+    QCheckBox* m_ocrAngleClassifier = nullptr;
+    QPushButton* m_ocrSkipButton = nullptr;
+    QPushButton* m_ramOptionsButton = nullptr;
+    QString m_ramTagMode = QStringLiteral("en");
+    QStringList m_ramDeleteTags;
+    QStringList m_ramFilterTags;
     QComboBox* m_brushMode = nullptr;
     QComboBox* m_brushTarget = nullptr;
     QSpinBox* m_brushRadius = nullptr;
@@ -270,6 +304,7 @@ private:
     QLineEdit* m_samText = nullptr;
     QPushButton* m_gkdSupportButton = nullptr;
     QDoubleSpinBox* m_confidence = nullptr;
+    QDoubleSpinBox* m_iou = nullptr;
     QCheckBox* m_slicedDetection = nullptr;
     QSpinBox* m_sliceWidth = nullptr;
     QSpinBox* m_sliceHeight = nullptr;
@@ -360,6 +395,7 @@ private:
     // Session-scoped alternate annotation directory (Change Output Dir);
     // the source keeps it as runtime workbench state, not a saved setting.
     QString m_outputDir;
+    QString m_openedLabelPath;
     QStringList m_recentFiles;
     // Source Label Flags / Attributes templates uploaded through the
     // Upload menu: per-label flag names and attribute definitions with
@@ -385,6 +421,9 @@ private:
     int m_pasteCount = 0;
     QJsonArray m_internalShapeClipboard;
     quint64 m_generation = 0;
+    // Service dialogs follow the annotation source, independently of local
+    // model/threshold/prompt revisions used by the inference worker.
+    quint64 m_sourceGeneration = 0;
     quint64 m_promptRevision = 0;
     quint64 m_downloadGeneration = 0;
     QString m_downloadImagePath;
@@ -444,7 +483,7 @@ private:
     QString m_labelFilter;
     int m_gidFilter = -1;
     bool m_displayLabelPopup = true;
-    bool m_fileListCheckboxEditable = true;
+    bool m_fileListCheckboxEditable = false;
     // Source label-dialog and canvas move-mode settings.
     bool m_sortLabels = true;
     bool m_showLabelTextField = true;

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -49,7 +50,8 @@ double percentile(std::vector<double> values, double p) {
 }
 void verify_contracts(aicore_tagging_ctx* ctx,
                       const aicore_tagging_options& options,
-                      const std::string& path) {
+                      const std::string& path,
+                      uint64_t resize_mode) {
     auto require = [](bool condition, const char* message) {
         if (!condition) throw std::runtime_error(message);
     };
@@ -58,14 +60,15 @@ void verify_contracts(aicore_tagging_ctx* ctx,
                                .convertToFormat(QImage::Format_RGB888);
     require(!rgb.isNull() && rgb.bytesPerLine() > rgb.width() * 3,
             "padded image fixture");
-    auto request = aicore_tagging_default_request();
+    auto request = aicore_tagging_default_request_v2();
+    request.resize_mode = resize_mode;
     aicore_image_view view{rgb.constBits(), rgb.width(), rgb.height(),
                            size_t(rgb.bytesPerLine()), AICORE_IMAGE_RGB8};
     auto infer = [&](aicore_tagging_ctx* context,
                      const aicore_image_view& input) {
         aicore_tagging_result* result = nullptr;
-        require(aicore_tagging_infer_image(context, &input, &request,
-                                           &result) == 0 &&
+        require(aicore_tagging_infer_image_v2(context, &input, &request,
+                                              &result) == 0 &&
                         result,
                 "borrowed image inference failed");
         return std::unique_ptr<aicore_tagging_result,
@@ -73,6 +76,44 @@ void verify_contracts(aicore_tagging_ctx* ctx,
                 result, aicore_tagging_result_free);
     };
     auto first = infer(ctx, view);
+    const auto original = aicore_tagging_default_request();
+    aicore_tagging_result* legacyRaw = nullptr;
+    require(aicore_tagging_infer_image(ctx, &view, &original, &legacyRaw) ==
+                            0 &&
+                    legacyRaw,
+            "original request and entry point remain valid");
+    std::unique_ptr<aicore_tagging_result,
+                    decltype(&aicore_tagging_result_free)>
+            legacy(legacyRaw, aicore_tagging_result_free);
+    if (resize_mode == AICORE_TAGGING_RESIZE_OFFICIAL)
+        for (size_t i = 0; i < first->tag_count; ++i)
+            require(legacy->tags[i].logit == first->tags[i].logit,
+                    "original entry point changed preprocessing");
+    request.resize_mode = UINT64_MAX;
+    aicore_tagging_result* invalid_mode =
+            reinterpret_cast<aicore_tagging_result*>(1);
+    require(aicore_tagging_infer_image_v2(ctx, &view, &request,
+                                          &invalid_mode) == -1 &&
+                    !invalid_mode &&
+                    std::strstr(aicore_tagging_last_error(ctx), "resize mode"),
+            "invalid resize mode must report an error and clear output");
+    request.resize_mode = resize_mode;
+    const auto originalSize = request.struct_size;
+    const auto originalAbi = request.abi_version;
+    for (int invalid = 0; invalid < 2; ++invalid) {
+        if (invalid == 0)
+            request.struct_size = originalSize - 1;
+        else
+            request.abi_version = originalAbi + 1;
+        aicore_tagging_result* rejected =
+                reinterpret_cast<aicore_tagging_result*>(1);
+        require(aicore_tagging_infer_image_v2(ctx, &view, &request,
+                                              &rejected) == -1 &&
+                        !rejected,
+                "invalid v2 request header must clear output");
+        request.struct_size = originalSize;
+        request.abi_version = originalAbi;
+    }
     const std::string firstName = first->tags[0].name;
     request.threshold_epsilon = .01f;
     auto margin = infer(ctx, view);
@@ -125,7 +166,7 @@ void verify_contracts(aicore_tagging_ctx* ctx,
     auto invalid = view;
     invalid.row_stride_bytes = 1;
     aicore_tagging_result* output = reinterpret_cast<aicore_tagging_result*>(1);
-    require(aicore_tagging_infer_image(ctx, &invalid, &request, &output) ==
+    require(aicore_tagging_infer_image_v2(ctx, &invalid, &request, &output) ==
                             -1 &&
                     !output,
             "invalid stride must clear output");
@@ -133,7 +174,8 @@ void verify_contracts(aicore_tagging_ctx* ctx,
     require(aicore_tagging_last_pipeline_timings(ctx, &timing) == -1,
             "failed call must clear timings");
     request.threshold_epsilon = -1;
-    require(aicore_tagging_infer_image(ctx, &view, &request, &output) == -1 &&
+    require(aicore_tagging_infer_image_v2(ctx, &view, &request, &output) ==
+                            -1 &&
                     !output,
             "invalid threshold margin must clear output");
     request.threshold_epsilon = 0;
@@ -142,7 +184,7 @@ void verify_contracts(aicore_tagging_ctx* ctx,
     aicore_cancel_token_request(token);
     aicore_cancel_scope_begin(token);
     const int cancelled =
-            aicore_tagging_infer_image(ctx, &view, &request, &output);
+            aicore_tagging_infer_image_v2(ctx, &view, &request, &output);
     aicore_cancel_scope_end(token);
     aicore_cancel_token_free(token);
     require(cancelled == 1 && !output,
@@ -213,11 +255,12 @@ int main(int argc, char** argv) {
         if (!aicore_tagging_ready(ctx.get()))
             throw std::runtime_error(aicore_tagging_last_error(ctx.get()));
 
-        auto request = aicore_tagging_default_request();
+        auto request = aicore_tagging_default_request_v2();
         request.threshold = std::stof(value("--threshold", "-1"));
         request.threshold_epsilon =
                 std::stof(value("--threshold-epsilon", "0"));
         request.specified_tags = specified.c_str();
+        request.resize_mode = std::stoull(value("--resize-mode", "0"));
 
         std::vector<std::string> images;
         const auto manifest = value("--manifest");
@@ -231,7 +274,8 @@ int main(int argc, char** argv) {
         if (images.empty() || images.front().empty())
             throw std::runtime_error("no image inputs");
         if (value("--verify-contracts", "0") == "1")
-            verify_contracts(ctx.get(), options, images.front());
+            verify_contracts(ctx.get(), options, images.front(),
+                             request.resize_mode);
         if (!reference_dir.empty() && images.size() != 1)
             throw std::runtime_error(
                     "demo1 reference requires exactly one image");
@@ -302,8 +346,8 @@ int main(int argc, char** argv) {
                 view.row_stride_bytes = image.bytesPerLine();
                 view.format = AICORE_IMAGE_RGB8;
                 aicore_tagging_result* raw = nullptr;
-                const int status = aicore_tagging_infer_image(ctx.get(), &view,
-                                                              &request, &raw);
+                const int status = aicore_tagging_infer_image_v2(
+                        ctx.get(), &view, &request, &raw);
                 std::unique_ptr<aicore_tagging_result,
                                 decltype(&aicore_tagging_result_free)>
                         result(raw, aicore_tagging_result_free);
@@ -460,6 +504,7 @@ int main(int argc, char** argv) {
                 {"images", int(images.size())},
                 {"threads", options.threads},
                 {"cpu_precision", options.cpu_precision},
+                {"resize_mode", int(request.resize_mode)},
                 {"class_values", int(value_count)},
                 {"pipeline_ms", pipeline_total / images.size()},
                 {"inference_ms", inference_total / images.size()},

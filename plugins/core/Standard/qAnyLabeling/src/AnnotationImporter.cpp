@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 
+#include "AnnotationDocument.h"
 #include "MaskPolygon.h"
 
 namespace {
@@ -228,13 +229,14 @@ YoloImport importYolo(const QByteArray& labels,
                         {QStringLiteral("attributes"), QJsonObject()}});
             }
         }
-        result.document = {{QStringLiteral("version"), QStringLiteral("4.0.6")},
-                           {QStringLiteral("flags"), QJsonObject()},
-                           {QStringLiteral("shapes"), shapes},
-                           {QStringLiteral("imagePath"), imageName},
-                           {QStringLiteral("imageData"), QJsonValue::Null},
-                           {QStringLiteral("imageHeight"), size.height()},
-                           {QStringLiteral("imageWidth"), size.width()}};
+        result.document = {
+                {QStringLiteral("version"), annotationFormatVersion()},
+                {QStringLiteral("flags"), QJsonObject()},
+                {QStringLiteral("shapes"), shapes},
+                {QStringLiteral("imagePath"), imageName},
+                {QStringLiteral("imageData"), QJsonValue::Null},
+                {QStringLiteral("imageHeight"), size.height()},
+                {QStringLiteral("imageWidth"), size.width()}};
         return result;
     }
     if (size.width() <= 0 || size.height() <= 0 || classes.isEmpty()) {
@@ -316,7 +318,7 @@ YoloImport importYolo(const QByteArray& labels,
         shapes.append(shape);
     }
     result.count = shapes.size();
-    result.document = {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    result.document = {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("shapes"), shapes},
                        {QStringLiteral("imagePath"), imageName},
@@ -433,7 +435,7 @@ AnnotationImport importVoc(const QByteArray& xml,
     else
         xmlImageName = imageName;
     result.count = shapes.size();
-    result.document = {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    result.document = {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("shapes"), shapes},
                        {QStringLiteral("imagePath"), xmlImageName},
@@ -507,7 +509,7 @@ AnnotationImport importDota(const QByteArray& text,
                 {QStringLiteral("flags"), QJsonObject()}});
     }
     result.count = shapes.size();
-    result.document = {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    result.document = {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("shapes"), shapes},
                        {QStringLiteral("imagePath"), imageName},
@@ -572,7 +574,7 @@ CocoImport importCoco(const QByteArray& json, CocoFormat format) {
         imageNames.insert(id, name);
         imageSizes.insert(id, QSize(width, height));
         result.documents.insert(
-                name, {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+                name, {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("imagePath"), name},
                        {QStringLiteral("imageData"), QJsonValue::Null},
@@ -889,7 +891,7 @@ AnnotationImport importMask(const QImage& mask,
                  QString::fromLatin1(png.toBase64())}});
     }
     result.count = shapes.size();
-    result.document = {{QStringLiteral("version"), QStringLiteral("4.0.6")},
+    result.document = {{QStringLiteral("version"), annotationFormatVersion()},
                        {QStringLiteral("flags"), QJsonObject()},
                        {QStringLiteral("shapes"), shapes},
                        {QStringLiteral("imagePath"), imageName},

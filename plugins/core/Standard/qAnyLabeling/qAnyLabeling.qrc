@@ -1,6 +1,10 @@
 <RCC>
     <qresource prefix="/CC/plugin/qAnyLabeling">
         <file>info.json</file>
+        <file>resources/ram/ram_tag_list.txt</file>
+        <file>resources/ram/ram_tag_list_chinese.txt</file>
+        <file>resources/theme/dark.qss</file>
+        <file>resources/theme/panels.json</file>
         <file>images/alibaba.png</file>
         <file>images/anthropic.png</file>
         <file>images/panel-left.svg</file>

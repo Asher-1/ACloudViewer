@@ -38,6 +38,14 @@
 <context>
     <name>AnnotationWindow</name>
     <message>
+        <source>Place the converted OCR model in %1</source>
+        <translation>请将转换后的 OCR 模型放到 %1</translation>
+    </message>
+    <message>
+        <source>Text orientation</source>
+        <translation>文本方向分类</translation>
+    </message>
+    <message>
         <location filename="../src/AnnotationWindow.cpp" line="189"/>
         <source>X-AnyLabeling Annotation</source>
         <translation>X-AnyLabeling 标注</translation>
@@ -340,8 +348,8 @@
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1152"/>
-        <source>Run model</source>
-        <translation>运行模型</translation>
+        <source>Run (i)</source>
+        <translation>运行（i）</translation>
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1155"/>
@@ -3320,9 +3328,325 @@ ACloudViewer 的 C++/Qt 适配层
         <source>Auto Run stopped: unable to save annotations</source>
         <translation>自动运行已停止：无法保存标注</translation>
     </message>
+    <message>
+        <source>Describe each detected object with RAM</source>
+        <translation>使用 RAM 描述每个检测对象</translation>
+    </message>
+    <message>
+        <source>Object descriptions: off</source>
+        <translation>对象描述：关闭</translation>
+    </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>对象标签模型不可用</translation>
+    </message>
+    <message>
+        <source>Image Classifier</source>
+        <translation>图像分类器</translation>
+    </message>
+    <message>
+        <source>MultiClass</source>
+        <translation>多分类</translation>
+    </message>
+    <message>
+        <source>MultiLabel</source>
+        <translation>多标签</translation>
+    </message>
+    <message>
+        <source>AutoRun</source>
+        <translation>自动运行</translation>
+    </message>
+    <message>
+        <source>Add Label</source>
+        <translation>添加标签</translation>
+    </message>
+    <message>
+        <source>Delete Label</source>
+        <translation>删除标签</translation>
+    </message>
+    <message>
+        <source>Edit Label</source>
+        <translation>编辑标签</translation>
+    </message>
+    <message>
+        <source>View Statistics</source>
+        <translation>查看统计</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AI助手</translation>
+    </message>
+    <message>
+        <source>Search categories</source>
+        <translation>搜索类别</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>上一步</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>下一步</translation>
+    </message>
+    <message>
+        <source>Previous image (A) | Previous unlabeled image (Ctrl+A)</source>
+        <translation>上一张图像 (A) | 上一张未标注图像 (Ctrl+A)</translation>
+    </message>
+    <message>
+        <source>Next image (D) | Next unlabeled image (Ctrl+D)</source>
+        <translation>下一张图像 (D) | 下一张未标注图像 (Ctrl+D)</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>未加载图像</translation>
+    </message>
+    <message>
+        <source> / %1</source>
+        <translation> / %1</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>信息</translation>
+    </message>
+    <message>
+        <source>No unlabeled images found.</source>
+        <translation>未找到未标注的图像。</translation>
+    </message>
+    <message>
+        <source>Updating label files...</source>
+        <translation>正在更新标签文件...</translation>
+    </message>
+    <message>
+        <source>Invalid annotation: %1</source>
+        <translation>无效的标注：%1</translation>
+    </message>
+    <message>
+        <source>Switch Mode</source>
+        <translation>切换模式</translation>
+    </message>
+    <message>
+        <source>One label per line</source>
+        <translation>每行一个标签</translation>
+    </message>
+    <message>
+        <source>New label</source>
+        <translation>新标签</translation>
+    </message>
+    <message>
+        <source>Label already exists</source>
+        <translation>标签已存在</translation>
+    </message>
+    <message>
+        <source>Export only supports multi-class tasks!</source>
+        <translation>导出仅支持多分类任务！</translation>
+    </message>
+    <message>
+        <source>No labels configured!</source>
+        <translation>未配置标签！</translation>
+    </message>
+    <message>
+        <source>Invalid category name: %1</source>
+        <translation>无效的类别名称：%1</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <source>Exported %1 images to %2</source>
+        <translation>已导出 %1 张图像到 %2</translation>
+    </message>
+    <message>
+        <source>Image classification model</source>
+        <translation>图像分类模型</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>模型</translation>
+    </message>
+    <message>
+        <source>Uses the classification model's trained category labels.</source>
+        <translation>使用分类模型训练时的类别标签。</translation>
+    </message>
+    <message>
+        <source>Switching to MultiClass mode will only keep the first label for each image. Other labels will be discarded. Continue?</source>
+        <translation>切换到多分类模式将仅保留每张图像的第一个标签，其余标签将被丢弃。是否继续？</translation>
+    </message>
+    <message>
+        <source>Tag options...</source>
+        <translation>标签选项…</translation>
+    </message>
+    <message>
+        <source>RAM tag options</source>
+        <translation>RAM 标签选项</translation>
+    </message>
+    <message>
+        <source>Chinese</source>
+        <translation>中文</translation>
+    </message>
+    <message>
+        <source>Tag language</source>
+        <translation>标签语言</translation>
+    </message>
+    <message>
+        <source>Delete tags (English, one per line)</source>
+        <translation>排除标签（英文，每行一个）</translation>
+    </message>
+    <message>
+        <source>Keep only tags (English, one per line)</source>
+        <translation>仅保留标签（英文，每行一个）</translation>
+    </message>
+    <message>
+        <source>Delete tags takes precedence when both lists are set.</source>
+        <translation>同时设置两份列表时，优先使用排除标签。</translation>
+    </message>
+    <message>
+        <source>Invalid tag</source>
+        <translation>无效标签</translation>
+    </message>
+    <message>
+        <source>Unknown English RAM tag: %1</source>
+        <translation>未知的 RAM 英文标签：%1</translation>
+    </message>
+    <message>
+        <source>Layout: off</source>
+        <translation>版面分析：关闭</translation>
+    </message>
+    <message>
+        <source>Visualization Video Options</source>
+        <translation>可视化视频选项</translation>
+    </message>
+    <message>
+        <source>Save Path</source>
+        <translation>保存路径</translation>
+    </message>
+    <message>
+        <source>FPS:</source>
+        <translation>帧率：</translation>
+    </message>
+    <message>
+        <source>Shape Types</source>
+        <translation>形状类型</translation>
+    </message>
+    <message>
+        <source>Save Labels</source>
+        <translation>保存标签</translation>
+    </message>
+    <message>
+        <source>Save Scores</source>
+        <translation>保存置信度</translation>
+    </message>
+    <message>
+        <source>Save Group IDs</source>
+        <translation>保存组 ID</translation>
+    </message>
+    <message>
+        <source>Save Texts</source>
+        <translation>保存文本</translation>
+    </message>
+    <message>
+        <source>Save Semi-transparent Masks</source>
+        <translation>保存半透明掩膜</translation>
+    </message>
+    <message>
+        <source>Skip Empty Files</source>
+        <translation>跳过空标注文件</translation>
+    </message>
+    <message>
+        <source>MP4 Video (*.mp4)</source>
+        <translation>MP4 视频 (*.mp4)</translation>
+    </message>
+    <message>
+        <source>Shape Types Required</source>
+        <translation>请选择形状类型</translation>
+    </message>
+    <message>
+        <source>Select at least one shape type before exporting.</source>
+        <translation>导出前请至少选择一种形状类型。</translation>
+    </message>
+    <message>
+        <source>Overwrite %1?</source>
+        <translation>覆盖 %1？</translation>
+    </message>
+    <message>
+        <source>Unable to create output folder</source>
+        <translation>无法创建输出文件夹</translation>
+    </message>
+    <message>
+        <source>Preparing...</source>
+        <translation>正在准备…</translation>
+    </message>
+    <message>
+        <source>All video frames must have the same dimensions</source>
+        <translation>所有视频帧必须具有相同尺寸</translation>
+    </message>
+    <message>
+        <source>No files to export.</source>
+        <translation>没有可导出的文件。</translation>
+    </message>
+    <message>
+        <source>Exporting...</source>
+        <translation>正在导出…</translation>
+    </message>
+    <message>
+        <source>Saved visualization video: %1</source>
+        <translation>已保存可视化视频：%1</translation>
+    </message>
+    <message>
+        <source>Local model</source>
+        <translation>本地模型</translation>
+    </message>
+    <message>
+        <source>Completed: %1 images, %2 failed.</source>
+        <translation>已完成：%1 张图像，%2 张失败。</translation>
+    </message>
+    <message>
+        <source>Processing: %1</source>
+        <translation>正在处理：%1</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation>已取消</translation>
+    </message>
+    <message>
+        <source>Failed to parse AI result</source>
+        <translation>无法解析 AI 结果</translation>
+    </message>
+    <message>
+        <source>AI classification completed!</source>
+        <translation>AI 分类完成！</translation>
+    </message>
+    <message>
+        <source>Please configure labels first!</source>
+        <translation>请先配置标签！</translation>
+    </message>
+    <message>
+        <source>No image loaded!</source>
+        <translation>尚未加载图像！</translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation>确认</translation>
+    </message>
+    <message>
+        <source>Process %1 images with AI?</source>
+        <translation>使用 AI 处理 %1 张图像？</translation>
+    </message>
+    <message>
+        <source>Shapes</source>
+        <translation>形状</translation>
+    </message>
 </context>
 <context>
     <name>AnnotationWorker</name>
+    <message>
+        <source>OCR needs at least three text-region points</source>
+        <translation>OCR 至少需要三个文字区域顶点</translation>
+    </message>
+    <message>
+        <source>Invalid OCR region coordinate</source>
+        <translation>OCR 区域坐标无效</translation>
+    </message>
     <message>
         <location filename="../src/AnnotationWorker.cpp" line="188"/>
         <source>Unable to create depth options</source>
@@ -3556,6 +3880,18 @@ ACloudViewer 的 C++/Qt 适配层
         <source>Unsupported model task: %1</source>
         <translation>不支持的模型任务：%1</translation>
     </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>对象标签模型不可用</translation>
+    </message>
+    <message>
+        <source>Detected object has an empty crop</source>
+        <translation>检测对象的裁剪区域为空</translation>
+    </message>
+    <message>
+        <source>Object tagging failed</source>
+        <translation>对象标签推理失败</translation>
+    </message>
 </context>
 <context>
     <name>LomaBridgeDialog</name>
@@ -3679,6 +4015,12 @@ ACloudViewer 的 C++/Qt 适配层
 </context>
 <context>
     <name>PointCloudWindow</name>
+    <message><source>Loading and validating point cloud…</source><translation>正在加载并校验点云…</translation></message>
+    <message><source>Point-cloud loading failed</source><translation>点云加载失败</translation></message>
+    <message><source>Point-cloud loading cancelled</source><translation>点云加载已取消</translation></message>
+    <message><source>The point-cloud workspace changed during loading</source><translation>加载期间点云工作区已更改</translation></message>
+    <message><source>Wait for point-cloud loading to finish</source><translation>请等待点云加载完成</translation></message>
+    <message><source>The OpenGL viewport is not ready for selection.</source><translation>OpenGL 视口尚未准备好进行选择。</translation></message>
     <message>
         <location filename="../src/PointCloudWindow.cpp" line="414"/>
         <source>Point cloud annotation</source>
@@ -4034,6 +4376,314 @@ ACloudViewer 的 C++/Qt 适配层
         <location filename="../src/PointCloudWindow.cpp" line="1074"/>
         <source>Remove class %1 and clear %2 points in the current frame?</source>
         <translation>移除类别 %1 并清除当前帧中的 %2 个点？</translation>
+    </message>
+    <message>
+        <source> (locked)</source>
+        <translation>（已锁定）</translation>
+    </message>
+    <message>
+        <source>3D object detection</source>
+        <translation>3D 目标检测</translation>
+    </message>
+    <message>
+        <source>3D objects</source>
+        <translation>3D 对象</translation>
+    </message>
+    <message>
+        <source>Add camera</source>
+        <translation>添加相机</translation>
+    </message>
+    <message>
+        <source>Applying point-cloud annotations</source>
+        <translation>正在应用点云标注</translation>
+    </message>
+    <message>
+        <source>Browse</source>
+        <translation>浏览</translation>
+    </message>
+    <message>
+        <source>Calibration (*.json)</source>
+        <translation>标定文件 (*.json)</translation>
+    </message>
+    <message>
+        <source>Calibration JSON (optional)</source>
+        <translation>标定 JSON（可选）</translation>
+    </message>
+    <message>
+        <source>Camera calibration</source>
+        <translation>相机标定</translation>
+    </message>
+    <message>
+        <source>Camera image directory</source>
+        <translation>相机图像目录</translation>
+    </message>
+    <message>
+        <source>Camera overlay</source>
+        <translation>相机叠加视图</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <source>Class configuration</source>
+        <translation>类别配置</translation>
+    </message>
+    <message>
+        <source>Class configuration requires detection or segmentation classes</source>
+        <translation>类别配置必须包含检测或分割类别</translation>
+    </message>
+    <message>
+        <source>Configure camera</source>
+        <translation>配置相机</translation>
+    </message>
+    <message>
+        <source>Configure camera images</source>
+        <translation>配置相机图像</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <source>Dataset</source>
+        <translation>数据集</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Delete this class and its %1 objects in the current frame? Point segmentation and other frames are preserved.</source>
+        <translation>删除此类别及其在当前帧中的 %1 个对象？将保留点分割和其他帧。</translation>
+    </message>
+    <message>
+        <source>Detection class names must be unique</source>
+        <translation>检测类别名称不能重复</translation>
+    </message>
+    <message>
+        <source>Draw a rectangle in Top, Side or Front. Esc cancels.</source>
+        <translation>在俯视、侧视或前视图中绘制矩形。按 Esc 取消。</translation>
+    </message>
+    <message>
+        <source>Draw cuboid</source>
+        <translation>绘制长方体</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>创建副本</translation>
+    </message>
+    <message>
+        <source>Edit object</source>
+        <translation>编辑对象</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids</source>
+        <translation>导出 3D 长方体</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids from all frames. Point segmentation is not included.</source>
+        <translation>导出所有帧的 3D 长方体，不包含点分割。</translation>
+    </message>
+    <message>
+        <source>Export point-cloud dataset</source>
+        <translation>导出点云数据集</translation>
+    </message>
+    <message>
+        <source>Exporting point-cloud dataset</source>
+        <translation>正在导出点云数据集</translation>
+    </message>
+    <message>
+        <source>Fit to points</source>
+        <translation>拟合到点云</translation>
+    </message>
+    <message>
+        <source>Focus</source>
+        <translation>聚焦</translation>
+    </message>
+    <message>
+        <source>Format</source>
+        <translation>格式</translation>
+    </message>
+    <message>
+        <source>Front</source>
+        <translation>前视图</translation>
+    </message>
+    <message>
+        <source>Image directory</source>
+        <translation>图像目录</translation>
+    </message>
+    <message>
+        <source>Import %1 cuboids into %2 matched frames, replacing %3 objects and adding %4 classes?</source>
+        <translation>将 %1 个长方体导入 %2 个匹配帧，替换 %3 个对象并新增 %4 个类别？</translation>
+    </message>
+    <message>
+        <source>Import 3D cuboids</source>
+        <translation>导入 3D 长方体</translation>
+    </message>
+    <message>
+        <source>Import plan does not match this point-cloud sequence</source>
+        <translation>导入计划与当前点云序列不匹配</translation>
+    </message>
+    <message>
+        <source>Import point-cloud dataset</source>
+        <translation>导入点云数据集</translation>
+    </message>
+    <message>
+        <source>Include point-cloud files</source>
+        <translation>包含点云文件</translation>
+    </message>
+    <message>
+        <source>Lock / Unlock</source>
+        <translation>锁定 / 解锁</translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation>已锁定</translation>
+    </message>
+    <message>
+        <source>Object class</source>
+        <translation>对象类别</translation>
+    </message>
+    <message>
+        <source>Occluded</source>
+        <translation>被遮挡</translation>
+    </message>
+    <message>
+        <source>Open a point-cloud sequence first</source>
+        <translation>请先打开点云序列</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <source>Point-cloud annotations imported</source>
+        <translation>点云标注已导入</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset exported</source>
+        <translation>点云数据集已导出</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset operation cancelled.</source>
+        <translation>点云数据集操作已取消。</translation>
+    </message>
+    <message>
+        <source>Reading point-cloud annotations</source>
+        <translation>正在读取点云标注</translation>
+    </message>
+    <message>
+        <source>Remove camera</source>
+        <translation>移除相机</translation>
+    </message>
+    <message>
+        <source>Replace cuboids in matched frames. Point segmentation and unmatched frames are preserved.</source>
+        <translation>替换匹配帧中的长方体，保留点分割和未匹配帧。</translation>
+    </message>
+    <message>
+        <source>Replace the existing archive at %1?</source>
+        <translation>替换 %1 处的现有归档？</translation>
+    </message>
+    <message>
+        <source>Replace the existing cuboid file at %1?</source>
+        <translation>替换 %1 处的现有长方体文件？</translation>
+    </message>
+    <message>
+        <source>Rotation (deg)</source>
+        <translation>旋转角度（度）</translation>
+    </message>
+    <message>
+        <source>Segmentation</source>
+        <translation>分割</translation>
+    </message>
+    <message>
+        <source>Select a class configuration for the import</source>
+        <translation>请选择导入所用的类别配置</translation>
+    </message>
+    <message>
+        <source>Select a nonzero class before drawing a cuboid.</source>
+        <translation>绘制长方体前请选择非零类别。</translation>
+    </message>
+    <message>
+        <source>Show projected points and cuboids</source>
+        <translation>显示投影点和长方体</translation>
+    </message>
+    <message>
+        <source>Side</source>
+        <translation>侧视图</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed after import preview</source>
+        <translation>导入预览后点云工作区已变化</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import</source>
+        <translation>导入期间点云工作区已变化</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import preview</source>
+        <translation>导入预览期间点云工作区已变化</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>俯视图</translation>
+    </message>
+    <message>
+        <source>Unlock the objects before removing this class</source>
+        <translation>删除此类别前请先解锁对象</translation>
+    </message>
+    <message>
+        <source>ZIP archive</source>
+        <translation>ZIP 归档</translation>
+    </message>
+    <message>
+        <source>ZIP archive (*.zip)</source>
+        <translation>ZIP 归档 (*.zip)</translation>
+    </message>
+    <message>
+        <source>Perspective</source>
+        <translation>透视投影</translation>
+    </message>
+    <message>
+        <source>%1 (%2) - %3 objects</source>
+        <translation>%1 (%2) - %3 个对象</translation>
+    </message>
+    <message>
+        <source>Camera preview</source>
+        <translation>相机预览</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>上一个相机</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>下一个相机</translation>
+    </message>
+    <message>
+        <source>Double-click a point in the main view, or draw in Top, Side or Front. Esc cancels.</source>
+        <translation>在主视图中双击一个点，或在俯视、侧视、前视图中绘制。按 Esc 取消。</translation>
+    </message>
+    <message>
+        <source>Show camera images</source>
+        <translation>显示相机图像</translation>
+    </message>
+    <message>
+        <source>Hide camera images</source>
+        <translation>隐藏相机图像</translation>
+    </message>
+    <message>
+        <source>Crop depth to selected cuboid</source>
+        <translation>裁剪选中长方体的深度</translation>
     </message>
 </context>
 <context>
@@ -4627,6 +5277,348 @@ ACloudViewer 的 C++/Qt 适配层
         <location filename="../src/qAnyLabeling.cpp" line="35"/>
         <source>Open the X-AnyLabeling annotation workspace</source>
         <translation>打开 X-AnyLabeling 标注工作区</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCameraPanel</name>
+    <message>
+        <source>Fit image</source>
+        <translation>适配图像</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>相机</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>颜色</translation>
+    </message>
+    <message>
+        <source>Configure a camera image directory</source>
+        <translation>请配置相机图像目录</translation>
+    </message>
+    <message>
+        <source>Depth</source>
+        <translation>深度</translation>
+    </message>
+    <message>
+        <source>Image size %1 x %2 does not match calibration %3 x %4. Projection disabled.</source>
+        <translation>图像尺寸 %1 x %2 与标定尺寸 %3 x %4 不匹配，投影已禁用。</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>下一台相机</translation>
+    </message>
+    <message>
+        <source>No matching camera image</source>
+        <translation>无匹配的相机图像</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>透明度</translation>
+    </message>
+    <message>
+        <source>Point cloud colors</source>
+        <translation>点云颜色</translation>
+    </message>
+    <message>
+        <source>Point size</source>
+        <translation>点大小</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>上一台相机</translation>
+    </message>
+    <message>
+        <source>Projected 3D boxes</source>
+        <translation>投影 3D 框</translation>
+    </message>
+    <message>
+        <source>Projected points</source>
+        <translation>投影点</translation>
+    </message>
+    <message>
+        <source>Projection settings</source>
+        <translation>投影设置</translation>
+    </message>
+    <message>
+        <source>Wheel: zoom · Arrows: switch camera</source>
+        <translation>滚轮：缩放 · 箭头：切换相机</translation>
+    </message>
+    <message>
+        <source>Drag to resize camera image</source>
+        <translation>拖拽调整相机图像大小</translation>
+    </message>
+    <message>
+        <source>Reset point size (1 px)</source>
+        <translation>重置点大小（1 px）</translation>
+    </message>
+    <message>
+        <source>Reset opacity (65%)</source>
+        <translation>重置透明度（65%）</translation>
+    </message>
+    <message>
+        <source>Near → Far</source>
+        <translation>近 → 远</translation>
+    </message>
+    <message>
+        <source>Near %1 → Far %2</source>
+        <translation>近 %1 → 远 %2</translation>
+    </message>
+    <message>
+        <source>Camera depth in point-cloud units. Colors use the 2nd–98th percentile of this frame; values outside the range are clipped.</source>
+        <translation>以点云单位表示的相机深度。颜色使用当前帧的第 2–98 百分位，范围外的值会被截断。</translation>
+    </message>
+    <message>
+        <source>Open a point cloud to view its camera image.</source>
+        <translation>打开点云以查看其相机图像。</translation>
+    </message>
+    <message>
+        <source>No matching camera image for this frame.</source>
+        <translation>当前帧没有匹配的相机图像。</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotationChat</name>
+    <message>
+        <source>%1 models</source>
+        <translation>%1 个模型</translation>
+    </message>
+    <message>
+        <source>@image Describe this image
+@text, @widget.title, @label.shapes</source>
+        <translation>@image 描述此图像
+@text、@widget.title、@label.shapes</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AI助手</translation>
+    </message>
+    <message>
+        <source>AI Generated Result</source>
+        <translation>AI生成结果</translation>
+    </message>
+    <message>
+        <source>API address</source>
+        <translation>API 地址</translation>
+    </message>
+    <message>
+        <source>API key</source>
+        <translation>API 密钥</translation>
+    </message>
+    <message>
+        <source>Add Component</source>
+        <translation>添加组件</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>已取消</translation>
+    </message>
+    <message>
+        <source>Chatbot</source>
+        <translation>聊天助手</translation>
+    </message>
+    <message>
+        <source>Choose a model.</source>
+        <translation>请选择模型。</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <source>Component</source>
+        <translation>组件</translation>
+    </message>
+    <message>
+        <source>Component titles must be unique.</source>
+        <translation>组件标题不能重复。</translation>
+    </message>
+    <message>
+        <source>Current image</source>
+        <translation>当前图像</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <source>Enter an AI prompt.</source>
+        <translation>请输入 AI 提示词。</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>导出</translation>
+    </message>
+    <message>
+        <source>Export VQA labels</source>
+        <translation>导出 VQA 标注</translation>
+    </message>
+    <message>
+        <source>Export chat</source>
+        <translation>导出聊天记录</translation>
+    </message>
+    <message>
+        <source>Generating…</source>
+        <translation>正在生成…</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation>导入</translation>
+    </message>
+    <message>
+        <source>Import chat</source>
+        <translation>导入聊天记录</translation>
+    </message>
+    <message>
+        <source>Invalid chat JSON.</source>
+        <translation>聊天 JSON 格式无效。</translation>
+    </message>
+    <message>
+        <source>Invalid chat message.</source>
+        <translation>聊天消息格式无效。</translation>
+    </message>
+    <message>
+        <source>Loading models…</source>
+        <translation>正在加载模型…</translation>
+    </message>
+    <message>
+        <source>Max length</source>
+        <translation>最大长度</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>模型</translation>
+    </message>
+    <message>
+        <source>Model settings</source>
+        <translation>模型设置</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>下一步</translation>
+    </message>
+    <message>
+        <source>No image available for @image reference.</source>
+        <translation>没有可供 @image 引用的图像。</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>未加载图像</translation>
+    </message>
+    <message>
+        <source>Options (one per line)</source>
+        <translation>选项（每行一个）</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>上一步</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>服务提供方</translation>
+    </message>
+    <message>
+        <source>Refresh models</source>
+        <translation>刷新模型</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation>发送</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>System prompt</source>
+        <translation>系统提示词</translation>
+    </message>
+    <message>
+        <source>Temperature</source>
+        <translation>温度</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>标题</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <source>Type your message… Use @image to reference the current image.</source>
+        <translation>输入消息… 使用 @image 引用当前图像。</translation>
+    </message>
+    <message>
+        <source>Unable to export VQA labels.</source>
+        <translation>无法导出 VQA 标注。</translation>
+    </message>
+    <message>
+        <source>Unable to export chat.</source>
+        <translation>无法导出聊天记录。</translation>
+    </message>
+    <message>
+        <source>VQA</source>
+        <translation>视觉问答</translation>
+    </message>
+</context>
+<context>
+    <name>ChatServiceClient</name>
+    <message>
+        <source>Chat request timed out.</source>
+        <translation>聊天请求超时。</translation>
+    </message>
+    <message>
+        <source>Choose a model and enter a message.</source>
+        <translation>请选择模型并输入消息。</translation>
+    </message>
+    <message>
+        <source>Enter a valid HTTP or HTTPS service address.</source>
+        <translation>请输入有效的 HTTP 或 HTTPS 服务地址。</translation>
+    </message>
+    <message>
+        <source>Invalid JSON response from chat service.</source>
+        <translation>聊天服务返回的 JSON 响应无效。</translation>
+    </message>
+    <message>
+        <source>Invalid chat stream event.</source>
+        <translation>聊天流事件无效。</translation>
+    </message>
+    <message>
+        <source>The service returned no answer.</source>
+        <translation>服务未返回答案。</translation>
+    </message>
+    <message>
+        <source>The service returned no model list.</source>
+        <translation>服务未返回模型列表。</translation>
+    </message>
+    <message>
+        <source>Unable to read image: %1</source>
+        <translation>无法读取图像：%1</translation>
+    </message>
+    <message>
+        <source>Unsupported image: %1</source>
+        <translation>不支持的图像：%1</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCuboidView</name>
+    <message>
+        <source>Expand view</source>
+        <translation>展开视图</translation>
+    </message>
+    <message>
+        <source>Restore view</source>
+        <translation>还原视图</translation>
     </message>
 </context>
 </TS>

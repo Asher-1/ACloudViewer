@@ -432,8 +432,8 @@ bool inverseWarpMatrix(const Pt2f src[4], const Pt2f dst[4], double M[9]) {
         b[i] = dst[i].x;
         b[i + 4] = dst[i].y;
     }
-    // cv::solve ignores a singular LU here and returns the partial result;
-    // a singular crop box is rejected by the caller instead.
+    // A singular transform has a zero inverse in cv2.warpPerspective; the
+    // caller preserves its top-left BORDER_REPLICATE sampling below.
     if (!luSolve(a, b)) return false;
     double S[9];
     for (int i = 0; i < 8; ++i) S[i] = b[i];
@@ -576,7 +576,7 @@ bool warpPerspectiveCubicReplicate(const aicore::img::Image& src,
                         {(float)width, (float)height},
                         {0, (float)height}};
     double M[9];
-    if (!inverseWarpMatrix(from, to, M)) return false;
+    if (!inverseWarpMatrix(from, to, M)) std::fill(M, M + 9, 0.0);
 
     const BicubicTab& tab = bicubicTab();
     const int sw = src.width, sh = src.height, scn = src.channels;

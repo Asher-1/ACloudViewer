@@ -7,6 +7,7 @@
 
 #include <QCoreApplication>
 #include <QImageReader>
+#include <QJsonDocument>
 #include <QSet>
 #include <QThread>
 #include <QTimer>
@@ -21,7 +22,8 @@ int main(int argc, char** argv) {
     if (argc < 3 || argc > 7) {
         std::fprintf(stderr,
                      "usage: test_qanylabeling_inference MODEL IMAGE [DEVICE] "
-                     "[TASK] [PROMPT_OR_TEXT_MODEL] [LANDMARK_MODEL]\n");
+                     "[TASK] [PROMPT_OR_TEXT_MODEL] "
+                     "[LANDMARK_OR_OBJECT_TAGGER_MODEL]\n");
         return 2;
     }
     const QString device =
@@ -54,6 +56,34 @@ int main(int argc, char** argv) {
     const QString model = QString::fromLocal8Bit(argv[1]);
     const QString path = QString::fromLocal8Bit(argv[2]);
     AnnotationPrompt prompt;
+    if (task == QStringLiteral("ocr") &&
+        promptMode.startsWith(QStringLiteral("layout=")))
+        prompt.ocrLayoutModelPath = promptMode.mid(7);
+    if (task == QStringLiteral("ocr") &&
+        promptMode.startsWith(QStringLiteral("cls=")))
+        prompt.ocrClassifierModelPath = promptMode.mid(4);
+    const bool selectedOcr =
+            task == QStringLiteral("ocr") &&
+            promptMode.startsWith(QStringLiteral("cls-regions="));
+    if (selectedOcr) {
+        prompt.ocrClassifierModelPath = promptMode.mid(12);
+        prompt.ocrQuads = {{{-8.75, -4.25},
+                            {175.75, -2.25},
+                            {180.5, 65.75},
+                            {-5.5, 62.25}},
+                           {{20, 20}, {140, 25}, {145, 70}, {80, 72}, {15, 60}},
+                           {{30, 90}, {210, 100}, {35, 145}}};
+        for (const auto& points : prompt.ocrQuads)
+            prompt.rois.append(QPolygonF(points).boundingRect());
+        prompt.roiSourceIndices = {17, 3, 42};
+    }
+    if (task == QStringLiteral("world") && !landmarkModel.isEmpty())
+        prompt.objectTaggingModelPath = landmarkModel;
+    QJsonArray firstTaggedObjects;
+    const bool nmsCheck = task == QStringLiteral("detect") &&
+                          promptMode == QStringLiteral("nms");
+    int firstNmsCount = -1;
+    if (nmsCheck) prompt.iouThreshold = 0.0;
     prompt.label = QStringLiteral("object");
     if (task == QStringLiteral("sam3-pvs")) {
         if (promptMode == QStringLiteral("boxes")) {
@@ -105,6 +135,19 @@ int main(int argc, char** argv) {
             prompt.textModelPath = promptMode;
         }
     }
+    if (task == QStringLiteral("relate")) {
+        // Person and horse boxes YOLO26s q8_0 detects on the 1280x907
+        // horse.jpg sample, as fractions of the image so other sizes scale.
+        prompt.rois = {
+                QRectF(QPointF(image.width() * 0.3713, image.height() * 0.1503),
+                       QPointF(image.width() * 0.5030,
+                               image.height() * 0.6903)),
+                QRectF(QPointF(image.width() * 0.1026, image.height() * 0.3481),
+                       QPointF(image.width() * 0.7742,
+                               image.height() * 0.9560))};
+        prompt.roiSourceIndices = {2, 5};
+        prompt.roiLabels = {QStringLiteral("person"), QStringLiteral("horse")};
+    }
     if (task == QStringLiteral("detect") &&
         promptMode == QStringLiteral("sahi")) {
         prompt.slicedDetection = true;
@@ -122,15 +165,19 @@ int main(int argc, char** argv) {
                         result.depthPreview.size() == image.size();
                 if (!result.error.isEmpty() ||
                     (result.shapes.isEmpty() && !result.hasFlags &&
+                     !result.hasTags && result.relations.isEmpty() &&
                      !validDepth) ||
                     result.imagePath != path || result.modelPath != model ||
                     result.task != task ||
                     result.generation != quint64(forwards + 1) ||
                     result.promptRevision != 1) {
                     std::fprintf(stderr,
-                                 "Inference failed: %s; detections=%d\n",
+                                 "Inference failed: %s; detections=%d "
+                                 "relations=%d summary=%s\n",
                                  result.error.toLocal8Bit().constData(),
-                                 result.shapes.size());
+                                 result.shapes.size(),
+                                 int(result.relations.size()),
+                                 result.summary.toLocal8Bit().constData());
                     exitCode = 1;
                     app.quit();
                     return;
@@ -320,6 +367,16 @@ int main(int argc, char** argv) {
                     return;
                 }
                 if (task == QStringLiteral("ocr")) {
+                    if (selectedOcr &&
+                        (result.sourceIndices != prompt.roiSourceIndices ||
+                         result.shapes.size() != prompt.rois.size() ||
+                         result.sourceRois != prompt.rois)) {
+                        std::fprintf(stderr,
+                                     "Selected OCR region ownership lost\n");
+                        exitCode = 1;
+                        app.quit();
+                        return;
+                    }
                     // Upstream PP-OCR semantics: every transcription is a
                     // "text" label (rectangle or quadrilateral) whose
                     // description carries the transcription, with a score
@@ -331,14 +388,13 @@ int main(int argc, char** argv) {
                         const QString description =
                                 shape.extra.value(QStringLiteral("description"))
                                         .toString();
-                        if (shape.label == QStringLiteral("layout")) {
-                            // Layout region rectangle: class name in
-                            // extra.label, reading order and score present.
+                        if (shape.extra.contains(
+                                    QStringLiteral("reading_order"))) {
+                            // Layout rectangles publish the actual class name.
                             const bool layoutOk =
                                     shape.type == QStringLiteral("rectangle") &&
                                     shape.points.size() == 4 &&
-                                    shape.extra.contains(
-                                            QStringLiteral("label")) &&
+                                    shape.label != QStringLiteral("layout") &&
                                     shape.extra.contains(
                                             QStringLiteral("reading_order"));
                             if (!layoutOk) {
@@ -357,7 +413,7 @@ int main(int argc, char** argv) {
                                  shape.type ==
                                          QStringLiteral("quadrilateral")) &&
                                 shape.points.size() == 4 &&
-                                !description.isEmpty() &&
+                                (selectedOcr || !description.isEmpty()) &&
                                 shape.extra.contains(QStringLiteral("score")) &&
                                 shape.extra.contains(
                                         QStringLiteral("language"));
@@ -370,6 +426,15 @@ int main(int argc, char** argv) {
                             app.quit();
                             return;
                         }
+                    }
+                    if (prompt.ocrLayoutModelPath.isEmpty() &&
+                        layoutShapeCount) {
+                        std::fprintf(stderr,
+                                     "Cached layout model silently enabled a "
+                                     "stage\n");
+                        exitCode = 1;
+                        app.quit();
+                        return;
                     }
                 }
                 if (task == QStringLiteral("sam3-pvs") &&
@@ -400,6 +465,157 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
+                if (qEnvironmentVariableIsSet("QANYLABELING_PRINT_BOXES")) {
+                    for (const AnnotationShape& shape : result.shapes) {
+                        if (shape.type != QStringLiteral("rectangle") ||
+                            shape.points.size() != 4)
+                            continue;
+                        const QRectF r = QPolygonF(shape.points).boundingRect();
+                        std::fprintf(stdout, "box: %s %.1f %.1f %.1f %.1f\n",
+                                     shape.label.toLocal8Bit().constData(),
+                                     r.left(), r.top(), r.right(), r.bottom());
+                    }
+                }
+                if (!prompt.objectTaggingModelPath.isEmpty()) {
+                    QJsonArray objects;
+                    for (const auto& shape : result.shapes) {
+                        if (shape.type != QStringLiteral("rectangle") ||
+                            shape.points.size() != 4 ||
+                            !shape.extra.contains(
+                                    QStringLiteral("description")) ||
+                            shape.extra.value(QStringLiteral("description"))
+                                    .toString()
+                                    .isEmpty() ||
+                            result.hasTags) {
+                            std::fprintf(stderr,
+                                         "Object descriptions were not mapped "
+                                         "to detector boxes\n");
+                            exitCode = 1;
+                            app.quit();
+                            return;
+                        }
+                        QJsonArray points;
+                        for (const auto& p : shape.points) {
+                            if (p.x() != int(p.x()) || p.y() != int(p.y())) {
+                                exitCode = 1;
+                                app.quit();
+                                return;
+                            }
+                            points.append(QJsonArray{p.x(), p.y()});
+                        }
+                        objects.append(QJsonObject{
+                                {"label", shape.label},
+                                {"points", points},
+                                {"description",
+                                 shape.extra.value(
+                                         QStringLiteral("description"))}});
+                    }
+                    if (!forwards)
+                        firstTaggedObjects = objects;
+                    else if (firstTaggedObjects != objects) {
+                        std::fprintf(stderr,
+                                     "Object descriptions changed on repeat\n");
+                        exitCode = 1;
+                        app.quit();
+                        return;
+                    }
+                    std::fprintf(stdout, "tagged_objects: %s\n",
+                                 QJsonDocument(objects)
+                                         .toJson(QJsonDocument::Compact)
+                                         .constData());
+                }
+                if (task.startsWith(QStringLiteral("ram"))) {
+                    // Image-level tags only: never object shapes, no
+                    // duplicates, none blank (upstream normalize_image_tags).
+                    QSet<QString> seen;
+                    bool ok = result.hasTags && !result.tags.isEmpty() &&
+                              result.shapes.isEmpty();
+                    if (task == QStringLiteral("ram-caption"))
+                        ok = ok && result.hasDescription &&
+                             !result.description.trimmed().isEmpty();
+                    for (const QString& tag : result.tags)
+                        ok = ok && !tag.trimmed().isEmpty() &&
+                             tag == tag.trimmed() && !seen.contains(tag);
+                    for (const QString& tag : result.tags) seen.insert(tag);
+                    if (!ok) {
+                        std::fprintf(stderr,
+                                     "RAM result is not clean image tags\n");
+                        exitCode = 1;
+                        app.quit();
+                        return;
+                    }
+                    std::fprintf(stdout, "tags: %s\n",
+                                 result.tags.join(QStringLiteral(", "))
+                                         .toLocal8Bit()
+                                         .constData());
+                }
+                if (task == QStringLiteral("relate")) {
+                    for (const QJsonValue& value : result.relations) {
+                        const QJsonObject e = value.toObject();
+                        std::fprintf(
+                                stdout, "relation: %s -[%s %.3f %s]-> %s\n",
+                                e.value(QStringLiteral("subject"))
+                                        .toString()
+                                        .toLocal8Bit()
+                                        .constData(),
+                                e.value(QStringLiteral("predicate"))
+                                        .toString()
+                                        .toLocal8Bit()
+                                        .constData(),
+                                e.value(QStringLiteral("score")).toDouble(),
+                                e.value(QStringLiteral("type"))
+                                        .toString()
+                                        .toLocal8Bit()
+                                        .constData(),
+                                e.value(QStringLiteral("object"))
+                                        .toString()
+                                        .toLocal8Bit()
+                                        .constData());
+                    }
+                }
+                if (task == QStringLiteral("relate")) {
+                    // Edges reference the caller's canvas shape indices and
+                    // never re-emit boxes.
+                    bool ok = result.shapes.isEmpty() &&
+                              !result.relations.isEmpty();
+                    for (const QJsonValue& value : result.relations) {
+                        const QJsonObject edge = value.toObject();
+                        const int from =
+                                edge.value(QStringLiteral("subject_index"))
+                                        .toInt(-1);
+                        const int to =
+                                edge.value(QStringLiteral("object_index"))
+                                        .toInt(-1);
+                        const double score =
+                                edge.value(QStringLiteral("score")).toDouble();
+                        ok = ok && prompt.roiSourceIndices.contains(from) &&
+                             prompt.roiSourceIndices.contains(to) &&
+                             from != to &&
+                             !edge.value(QStringLiteral("predicate"))
+                                      .toString()
+                                      .isEmpty() &&
+                             score >= 0.5 && score <= 1.0;
+                    }
+                    if (!ok) {
+                        std::fprintf(stderr, "Relation result malformed\n");
+                        exitCode = 1;
+                        app.quit();
+                        return;
+                    }
+                }
+                if (nmsCheck) {
+                    if (!forwards)
+                        firstNmsCount = result.shapes.size();
+                    else if (result.shapes.size() <= firstNmsCount) {
+                        std::fprintf(stderr,
+                                     "Live IoU change 0 -> 1 did not retain "
+                                     "more overlapping boxes: %d -> %d\n",
+                                     firstNmsCount, result.shapes.size());
+                        exitCode = 1;
+                        app.quit();
+                        return;
+                    }
+                }
                 ++forwards;
                 std::fprintf(stdout,
                              "forward=%d task=%s annotations=%d flags=%d "
@@ -414,6 +630,7 @@ int main(int argc, char** argv) {
                             worker,
                             [=]() {
                                 AnnotationPrompt secondPrompt = prompt;
+                                if (nmsCheck) secondPrompt.iouThreshold = 1.0;
                                 if (!secondPrompt.text.isEmpty() &&
                                     (task == QStringLiteral("world") ||
                                      task == QStringLiteral("yoloe")))

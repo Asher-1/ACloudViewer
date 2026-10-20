@@ -38,6 +38,14 @@
 <context>
     <name>AnnotationWindow</name>
     <message>
+        <source>Place the converted OCR model in %1</source>
+        <translation>変換済み OCR モデルを %1 に配置してください</translation>
+    </message>
+    <message>
+        <source>Text orientation</source>
+        <translation>テキストの向き</translation>
+    </message>
+    <message>
         <location filename="../src/AnnotationWindow.cpp" line="189"/>
         <source>X-AnyLabeling Annotation</source>
         <translation>X-AnyLabeling アノテーション</translation>
@@ -340,8 +348,8 @@
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1152"/>
-        <source>Run model</source>
-        <translation>モデルを実行</translation>
+        <source>Run (i)</source>
+        <translation>実行 (i)</translation>
     </message>
     <message>
         <location filename="../src/AnnotationWindow.cpp" line="1155"/>
@@ -3320,9 +3328,325 @@ AICore GGML タスクで動作。</translation>
         <source>Auto Run stopped: unable to save annotations</source>
         <translation>自動実行を停止：アノテーションを保存できません</translation>
     </message>
+    <message>
+        <source>Describe each detected object with RAM</source>
+        <translation>検出した各オブジェクトを RAM で記述</translation>
+    </message>
+    <message>
+        <source>Object descriptions: off</source>
+        <translation>オブジェクトの説明：オフ</translation>
+    </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>オブジェクトタグモデルを利用できません</translation>
+    </message>
+    <message>
+        <source>Image Classifier</source>
+        <translation>画像分類器</translation>
+    </message>
+    <message>
+        <source>MultiClass</source>
+        <translation>マルチクラス</translation>
+    </message>
+    <message>
+        <source>MultiLabel</source>
+        <translation>マルチラベル</translation>
+    </message>
+    <message>
+        <source>AutoRun</source>
+        <translation>自動実行</translation>
+    </message>
+    <message>
+        <source>Add Label</source>
+        <translation>ラベルを追加</translation>
+    </message>
+    <message>
+        <source>Delete Label</source>
+        <translation>ラベルを削除</translation>
+    </message>
+    <message>
+        <source>Edit Label</source>
+        <translation>ラベルを編集</translation>
+    </message>
+    <message>
+        <source>View Statistics</source>
+        <translation>統計を表示</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AIアシスタント</translation>
+    </message>
+    <message>
+        <source>Search categories</source>
+        <translation>カテゴリを検索</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>前へ</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>次へ</translation>
+    </message>
+    <message>
+        <source>Previous image (A) | Previous unlabeled image (Ctrl+A)</source>
+        <translation>前の画像 (A) | 前の未アノテーション画像 (Ctrl+A)</translation>
+    </message>
+    <message>
+        <source>Next image (D) | Next unlabeled image (Ctrl+D)</source>
+        <translation>次の画像 (D) | 次の未アノテーション画像 (Ctrl+D)</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>画像が読み込まれていません</translation>
+    </message>
+    <message>
+        <source> / %1</source>
+        <translation> / %1</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>情報</translation>
+    </message>
+    <message>
+        <source>No unlabeled images found.</source>
+        <translation>未ラベルの画像が見つかりません。</translation>
+    </message>
+    <message>
+        <source>Updating label files...</source>
+        <translation>ラベルファイルを更新中...</translation>
+    </message>
+    <message>
+        <source>Invalid annotation: %1</source>
+        <translation>無効なアノテーション: %1</translation>
+    </message>
+    <message>
+        <source>Switch Mode</source>
+        <translation>モードを切り替え</translation>
+    </message>
+    <message>
+        <source>One label per line</source>
+        <translation>1 行に 1 つのラベル</translation>
+    </message>
+    <message>
+        <source>New label</source>
+        <translation>新しいラベル</translation>
+    </message>
+    <message>
+        <source>Label already exists</source>
+        <translation>ラベルは既に存在します</translation>
+    </message>
+    <message>
+        <source>Export only supports multi-class tasks!</source>
+        <translation>エクスポートはマルチクラスタスクのみサポートしています！</translation>
+    </message>
+    <message>
+        <source>No labels configured!</source>
+        <translation>ラベルが設定されていません！</translation>
+    </message>
+    <message>
+        <source>Invalid category name: %1</source>
+        <translation>無効なカテゴリ名: %1</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <source>Exported %1 images to %2</source>
+        <translation>%1 枚の画像を %2 にエクスポートしました</translation>
+    </message>
+    <message>
+        <source>Image classification model</source>
+        <translation>画像分類モデル</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>モデル</translation>
+    </message>
+    <message>
+        <source>Uses the classification model's trained category labels.</source>
+        <translation>分類モデルの学習済みカテゴリラベルを使用します。</translation>
+    </message>
+    <message>
+        <source>Switching to MultiClass mode will only keep the first label for each image. Other labels will be discarded. Continue?</source>
+        <translation>MultiClass モードに切り替えると、各画像の最初のラベルのみが保持され、他のラベルは破棄されます。続行しますか？</translation>
+    </message>
+    <message>
+        <source>Tag options...</source>
+        <translation>タグの設定…</translation>
+    </message>
+    <message>
+        <source>RAM tag options</source>
+        <translation>RAM タグの設定</translation>
+    </message>
+    <message>
+        <source>Chinese</source>
+        <translation>中国語</translation>
+    </message>
+    <message>
+        <source>Tag language</source>
+        <translation>タグの言語</translation>
+    </message>
+    <message>
+        <source>Delete tags (English, one per line)</source>
+        <translation>除外するタグ（英語、1 行に 1 個）</translation>
+    </message>
+    <message>
+        <source>Keep only tags (English, one per line)</source>
+        <translation>残すタグ（英語、1 行に 1 個）</translation>
+    </message>
+    <message>
+        <source>Delete tags takes precedence when both lists are set.</source>
+        <translation>両方のリストを設定した場合、除外リストを優先します。</translation>
+    </message>
+    <message>
+        <source>Invalid tag</source>
+        <translation>無効なタグ</translation>
+    </message>
+    <message>
+        <source>Unknown English RAM tag: %1</source>
+        <translation>不明な RAM 英語タグ: %1</translation>
+    </message>
+    <message>
+        <source>Layout: off</source>
+        <translation>レイアウト解析: オフ</translation>
+    </message>
+    <message>
+        <source>Visualization Video Options</source>
+        <translation>可視化動画のオプション</translation>
+    </message>
+    <message>
+        <source>Save Path</source>
+        <translation>保存先</translation>
+    </message>
+    <message>
+        <source>FPS:</source>
+        <translation>FPS:</translation>
+    </message>
+    <message>
+        <source>Shape Types</source>
+        <translation>形状の種類</translation>
+    </message>
+    <message>
+        <source>Save Labels</source>
+        <translation>ラベルを保存</translation>
+    </message>
+    <message>
+        <source>Save Scores</source>
+        <translation>スコアを保存</translation>
+    </message>
+    <message>
+        <source>Save Group IDs</source>
+        <translation>グループ ID を保存</translation>
+    </message>
+    <message>
+        <source>Save Texts</source>
+        <translation>テキストを保存</translation>
+    </message>
+    <message>
+        <source>Save Semi-transparent Masks</source>
+        <translation>半透明マスクを保存</translation>
+    </message>
+    <message>
+        <source>Skip Empty Files</source>
+        <translation>空のファイルをスキップ</translation>
+    </message>
+    <message>
+        <source>MP4 Video (*.mp4)</source>
+        <translation>MP4 動画 (*.mp4)</translation>
+    </message>
+    <message>
+        <source>Shape Types Required</source>
+        <translation>形状の種類が必要です</translation>
+    </message>
+    <message>
+        <source>Select at least one shape type before exporting.</source>
+        <translation>エクスポート前に形状の種類を選択してください。</translation>
+    </message>
+    <message>
+        <source>Overwrite %1?</source>
+        <translation>%1 を上書きしますか？</translation>
+    </message>
+    <message>
+        <source>Unable to create output folder</source>
+        <translation>出力フォルダーを作成できません</translation>
+    </message>
+    <message>
+        <source>Preparing...</source>
+        <translation>準備中…</translation>
+    </message>
+    <message>
+        <source>All video frames must have the same dimensions</source>
+        <translation>すべての動画フレームは同じサイズである必要があります</translation>
+    </message>
+    <message>
+        <source>No files to export.</source>
+        <translation>エクスポートするファイルがありません。</translation>
+    </message>
+    <message>
+        <source>Exporting...</source>
+        <translation>エクスポート中…</translation>
+    </message>
+    <message>
+        <source>Saved visualization video: %1</source>
+        <translation>可視化動画を保存しました: %1</translation>
+    </message>
+    <message>
+        <source>Local model</source>
+        <translation>ローカルモデル</translation>
+    </message>
+    <message>
+        <source>Completed: %1 images, %2 failed.</source>
+        <translation>完了：%1 画像、%2 件失敗。</translation>
+    </message>
+    <message>
+        <source>Processing: %1</source>
+        <translation>処理中：%1</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation>キャンセル済み</translation>
+    </message>
+    <message>
+        <source>Failed to parse AI result</source>
+        <translation>AI 結果を解析できませんでした</translation>
+    </message>
+    <message>
+        <source>AI classification completed!</source>
+        <translation>AI 分類が完了しました！</translation>
+    </message>
+    <message>
+        <source>Please configure labels first!</source>
+        <translation>先にラベルを設定してください！</translation>
+    </message>
+    <message>
+        <source>No image loaded!</source>
+        <translation>画像が読み込まれていません！</translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation>確認</translation>
+    </message>
+    <message>
+        <source>Process %1 images with AI?</source>
+        <translation>AI で %1 枚の画像を処理しますか？</translation>
+    </message>
+    <message>
+        <source>Shapes</source>
+        <translation>シェイプ</translation>
+    </message>
 </context>
 <context>
     <name>AnnotationWorker</name>
+    <message>
+        <source>OCR needs at least three text-region points</source>
+        <translation>OCR には文字領域の頂点が 3 点以上必要です</translation>
+    </message>
+    <message>
+        <source>Invalid OCR region coordinate</source>
+        <translation>OCR 領域の座標が無効です</translation>
+    </message>
     <message>
         <location filename="../src/AnnotationWorker.cpp" line="188"/>
         <source>Unable to create depth options</source>
@@ -3556,6 +3880,18 @@ AICore GGML タスクで動作。</translation>
         <source>Unsupported model task: %1</source>
         <translation>未対応のモデルタスク：%1</translation>
     </message>
+    <message>
+        <source>Object tagging model is unavailable</source>
+        <translation>オブジェクトタグモデルを利用できません</translation>
+    </message>
+    <message>
+        <source>Detected object has an empty crop</source>
+        <translation>検出オブジェクトの切り抜き領域が空です</translation>
+    </message>
+    <message>
+        <source>Object tagging failed</source>
+        <translation>オブジェクトのタグ付けに失敗しました</translation>
+    </message>
 </context>
 <context>
     <name>LomaBridgeDialog</name>
@@ -3679,6 +4015,12 @@ AICore GGML タスクで動作。</translation>
 </context>
 <context>
     <name>PointCloudWindow</name>
+    <message><source>Loading and validating point cloud…</source><translation>点群を読み込み検証しています…</translation></message>
+    <message><source>Point-cloud loading failed</source><translation>点群の読み込みに失敗しました</translation></message>
+    <message><source>Point-cloud loading cancelled</source><translation>点群の読み込みをキャンセルしました</translation></message>
+    <message><source>The point-cloud workspace changed during loading</source><translation>読み込み中に点群ワークスペースが変更されました</translation></message>
+    <message><source>Wait for point-cloud loading to finish</source><translation>点群の読み込みが完了するまでお待ちください</translation></message>
+    <message><source>The OpenGL viewport is not ready for selection.</source><translation>OpenGL ビューポートは選択の準備ができていません。</translation></message>
     <message>
         <location filename="../src/PointCloudWindow.cpp" line="414"/>
         <source>Point cloud annotation</source>
@@ -4034,6 +4376,314 @@ AICore GGML タスクで動作。</translation>
         <location filename="../src/PointCloudWindow.cpp" line="1074"/>
         <source>Remove class %1 and clear %2 points in the current frame?</source>
         <translation>クラス %1 を削除し、現在のフレームの %2 点をクリアしますか？</translation>
+    </message>
+    <message>
+        <source> (locked)</source>
+        <translation>（ロック中）</translation>
+    </message>
+    <message>
+        <source>3D object detection</source>
+        <translation>3D物体検出</translation>
+    </message>
+    <message>
+        <source>3D objects</source>
+        <translation>3Dオブジェクト</translation>
+    </message>
+    <message>
+        <source>Add camera</source>
+        <translation>カメラを追加</translation>
+    </message>
+    <message>
+        <source>Applying point-cloud annotations</source>
+        <translation>点群アノテーションを適用中</translation>
+    </message>
+    <message>
+        <source>Browse</source>
+        <translation>参照</translation>
+    </message>
+    <message>
+        <source>Calibration (*.json)</source>
+        <translation>キャリブレーション (*.json)</translation>
+    </message>
+    <message>
+        <source>Calibration JSON (optional)</source>
+        <translation>キャリブレーションJSON（任意）</translation>
+    </message>
+    <message>
+        <source>Camera calibration</source>
+        <translation>カメラキャリブレーション</translation>
+    </message>
+    <message>
+        <source>Camera image directory</source>
+        <translation>カメラ画像フォルダー</translation>
+    </message>
+    <message>
+        <source>Camera overlay</source>
+        <translation>カメラオーバーレイ</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <source>Class configuration</source>
+        <translation>クラス設定</translation>
+    </message>
+    <message>
+        <source>Class configuration requires detection or segmentation classes</source>
+        <translation>クラス設定には検出またはセグメンテーションのクラスが必要です</translation>
+    </message>
+    <message>
+        <source>Configure camera</source>
+        <translation>カメラを設定</translation>
+    </message>
+    <message>
+        <source>Configure camera images</source>
+        <translation>カメラ画像を設定</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>コピー</translation>
+    </message>
+    <message>
+        <source>Dataset</source>
+        <translation>データセット</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <source>Delete this class and its %1 objects in the current frame? Point segmentation and other frames are preserved.</source>
+        <translation>このクラスと現在のフレーム内の%1個のオブジェクトを削除しますか？点のセグメンテーションと他のフレームは保持されます。</translation>
+    </message>
+    <message>
+        <source>Detection class names must be unique</source>
+        <translation>検出クラス名は重複できません</translation>
+    </message>
+    <message>
+        <source>Draw a rectangle in Top, Side or Front. Esc cancels.</source>
+        <translation>上面・側面・正面ビューに長方形を描画します。Escでキャンセルします。</translation>
+    </message>
+    <message>
+        <source>Draw cuboid</source>
+        <translation>直方体を描画</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>複製</translation>
+    </message>
+    <message>
+        <source>Edit object</source>
+        <translation>オブジェクトを編集</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids</source>
+        <translation>3D直方体をエクスポート</translation>
+    </message>
+    <message>
+        <source>Export 3D cuboids from all frames. Point segmentation is not included.</source>
+        <translation>全フレームの3D直方体をエクスポートします。点のセグメンテーションは含みません。</translation>
+    </message>
+    <message>
+        <source>Export point-cloud dataset</source>
+        <translation>点群データセットをエクスポート</translation>
+    </message>
+    <message>
+        <source>Exporting point-cloud dataset</source>
+        <translation>点群データセットをエクスポート中</translation>
+    </message>
+    <message>
+        <source>Fit to points</source>
+        <translation>点群にフィット</translation>
+    </message>
+    <message>
+        <source>Focus</source>
+        <translation>フォーカス</translation>
+    </message>
+    <message>
+        <source>Format</source>
+        <translation>形式</translation>
+    </message>
+    <message>
+        <source>Front</source>
+        <translation>正面</translation>
+    </message>
+    <message>
+        <source>Image directory</source>
+        <translation>画像フォルダー</translation>
+    </message>
+    <message>
+        <source>Import %1 cuboids into %2 matched frames, replacing %3 objects and adding %4 classes?</source>
+        <translation>%1個の直方体を一致する%2フレームにインポートし、%3個のオブジェクトを置換して%4個のクラスを追加しますか？</translation>
+    </message>
+    <message>
+        <source>Import 3D cuboids</source>
+        <translation>3D直方体をインポート</translation>
+    </message>
+    <message>
+        <source>Import plan does not match this point-cloud sequence</source>
+        <translation>インポート計画がこの点群シーケンスと一致しません</translation>
+    </message>
+    <message>
+        <source>Import point-cloud dataset</source>
+        <translation>点群データセットをインポート</translation>
+    </message>
+    <message>
+        <source>Include point-cloud files</source>
+        <translation>点群ファイルを含める</translation>
+    </message>
+    <message>
+        <source>Lock / Unlock</source>
+        <translation>ロック / 解除</translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation>ロック中</translation>
+    </message>
+    <message>
+        <source>Object class</source>
+        <translation>オブジェクトクラス</translation>
+    </message>
+    <message>
+        <source>Occluded</source>
+        <translation>遮蔽あり</translation>
+    </message>
+    <message>
+        <source>Open a point-cloud sequence first</source>
+        <translation>先に点群シーケンスを開いてください</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>貼り付け</translation>
+    </message>
+    <message>
+        <source>Point-cloud annotations imported</source>
+        <translation>点群アノテーションをインポートしました</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset exported</source>
+        <translation>点群データセットをエクスポートしました</translation>
+    </message>
+    <message>
+        <source>Point-cloud dataset operation cancelled.</source>
+        <translation>点群データセットの操作をキャンセルしました。</translation>
+    </message>
+    <message>
+        <source>Reading point-cloud annotations</source>
+        <translation>点群アノテーションを読み込み中</translation>
+    </message>
+    <message>
+        <source>Remove camera</source>
+        <translation>カメラを削除</translation>
+    </message>
+    <message>
+        <source>Replace cuboids in matched frames. Point segmentation and unmatched frames are preserved.</source>
+        <translation>一致するフレームの直方体を置換します。点のセグメンテーションと未一致のフレームは保持されます。</translation>
+    </message>
+    <message>
+        <source>Replace the existing archive at %1?</source>
+        <translation>%1の既存アーカイブを置換しますか？</translation>
+    </message>
+    <message>
+        <source>Replace the existing cuboid file at %1?</source>
+        <translation>%1の既存の直方体ファイルを置換しますか？</translation>
+    </message>
+    <message>
+        <source>Rotation (deg)</source>
+        <translation>回転（度）</translation>
+    </message>
+    <message>
+        <source>Segmentation</source>
+        <translation>セグメンテーション</translation>
+    </message>
+    <message>
+        <source>Select a class configuration for the import</source>
+        <translation>インポート用のクラス設定を選択してください</translation>
+    </message>
+    <message>
+        <source>Select a nonzero class before drawing a cuboid.</source>
+        <translation>直方体を描画する前に0以外のクラスを選択してください。</translation>
+    </message>
+    <message>
+        <source>Show projected points and cuboids</source>
+        <translation>投影点と直方体を表示</translation>
+    </message>
+    <message>
+        <source>Side</source>
+        <translation>側面</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>サイズ</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed after import preview</source>
+        <translation>インポートのプレビュー後に点群ワークスペースが変更されました</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import</source>
+        <translation>インポート中に点群ワークスペースが変更されました</translation>
+    </message>
+    <message>
+        <source>The point-cloud workspace changed during import preview</source>
+        <translation>インポートのプレビュー中に点群ワークスペースが変更されました</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>上面</translation>
+    </message>
+    <message>
+        <source>Unlock the objects before removing this class</source>
+        <translation>このクラスを削除する前にオブジェクトのロックを解除してください</translation>
+    </message>
+    <message>
+        <source>ZIP archive</source>
+        <translation>ZIPアーカイブ</translation>
+    </message>
+    <message>
+        <source>ZIP archive (*.zip)</source>
+        <translation>ZIPアーカイブ (*.zip)</translation>
+    </message>
+    <message>
+        <source>Perspective</source>
+        <translation>透視投影</translation>
+    </message>
+    <message>
+        <source>%1 (%2) - %3 objects</source>
+        <translation>%1 (%2) - %3 個のオブジェクト</translation>
+    </message>
+    <message>
+        <source>Camera preview</source>
+        <translation>カメラプレビュー</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>前のカメラ</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>次のカメラ</translation>
+    </message>
+    <message>
+        <source>Double-click a point in the main view, or draw in Top, Side or Front. Esc cancels.</source>
+        <translation>メインビューの点をダブルクリックするか、上面・側面・正面ビューで描画します。Esc でキャンセルします。</translation>
+    </message>
+    <message>
+        <source>Show camera images</source>
+        <translation>カメラ画像を表示</translation>
+    </message>
+    <message>
+        <source>Hide camera images</source>
+        <translation>カメラ画像を非表示</translation>
+    </message>
+    <message>
+        <source>Crop depth to selected cuboid</source>
+        <translation>選択した直方体の奥行きで切り抜く</translation>
     </message>
 </context>
 <context>
@@ -4627,6 +5277,348 @@ AICore GGML タスクで動作。</translation>
         <location filename="../src/qAnyLabeling.cpp" line="35"/>
         <source>Open the X-AnyLabeling annotation workspace</source>
         <translation>X-AnyLabeling アノテーションワークスペースを開く</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCameraPanel</name>
+    <message>
+        <source>Fit image</source>
+        <translation>画像を表示領域に合わせる</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>カメラ</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>色</translation>
+    </message>
+    <message>
+        <source>Configure a camera image directory</source>
+        <translation>カメラ画像フォルダーを設定してください</translation>
+    </message>
+    <message>
+        <source>Depth</source>
+        <translation>深度</translation>
+    </message>
+    <message>
+        <source>Image size %1 x %2 does not match calibration %3 x %4. Projection disabled.</source>
+        <translation>画像サイズ%1 x %2がキャリブレーションの%3 x %4と一致しません。投影は無効です。</translation>
+    </message>
+    <message>
+        <source>Next camera</source>
+        <translation>次のカメラ</translation>
+    </message>
+    <message>
+        <source>No matching camera image</source>
+        <translation>一致するカメラ画像がありません</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>不透明度</translation>
+    </message>
+    <message>
+        <source>Point cloud colors</source>
+        <translation>点群の色</translation>
+    </message>
+    <message>
+        <source>Point size</source>
+        <translation>点のサイズ</translation>
+    </message>
+    <message>
+        <source>Previous camera</source>
+        <translation>前のカメラ</translation>
+    </message>
+    <message>
+        <source>Projected 3D boxes</source>
+        <translation>投影3Dボックス</translation>
+    </message>
+    <message>
+        <source>Projected points</source>
+        <translation>投影点</translation>
+    </message>
+    <message>
+        <source>Projection settings</source>
+        <translation>投影設定</translation>
+    </message>
+    <message>
+        <source>Wheel: zoom · Arrows: switch camera</source>
+        <translation>ホイール：ズーム · 矢印：カメラ切替</translation>
+    </message>
+    <message>
+        <source>Drag to resize camera image</source>
+        <translation>ドラッグしてカメラ画像のサイズを変更</translation>
+    </message>
+    <message>
+        <source>Reset point size (1 px)</source>
+        <translation>点サイズをリセット（1 px）</translation>
+    </message>
+    <message>
+        <source>Reset opacity (65%)</source>
+        <translation>不透明度をリセット（65%）</translation>
+    </message>
+    <message>
+        <source>Near → Far</source>
+        <translation>近 → 遠</translation>
+    </message>
+    <message>
+        <source>Near %1 → Far %2</source>
+        <translation>近 %1 → 遠 %2</translation>
+    </message>
+    <message>
+        <source>Camera depth in point-cloud units. Colors use the 2nd–98th percentile of this frame; values outside the range are clipped.</source>
+        <translation>点群単位のカメラ深度。色には現在のフレームの第2～98パーセンタイルを使用し、範囲外の値はクリップします。</translation>
+    </message>
+    <message>
+        <source>Open a point cloud to view its camera image.</source>
+        <translation>点群を開いてカメラ画像を表示します。</translation>
+    </message>
+    <message>
+        <source>No matching camera image for this frame.</source>
+        <translation>このフレームに一致するカメラ画像がありません。</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotationChat</name>
+    <message>
+        <source>%1 models</source>
+        <translation>%1 個のモデル</translation>
+    </message>
+    <message>
+        <source>@image Describe this image
+@text, @widget.title, @label.shapes</source>
+        <translation>@image この画像を説明してください
+@text, @widget.title, @label.shapes</translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation>AIアシスタント</translation>
+    </message>
+    <message>
+        <source>AI Generated Result</source>
+        <translation>AI生成結果</translation>
+    </message>
+    <message>
+        <source>API address</source>
+        <translation>API アドレス</translation>
+    </message>
+    <message>
+        <source>API key</source>
+        <translation>API キー</translation>
+    </message>
+    <message>
+        <source>Add Component</source>
+        <translation>コンポーネントを追加</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>キャンセル済み</translation>
+    </message>
+    <message>
+        <source>Chatbot</source>
+        <translation>チャットボット</translation>
+    </message>
+    <message>
+        <source>Choose a model.</source>
+        <translation>モデルを選択してください。</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>クリア</translation>
+    </message>
+    <message>
+        <source>Component</source>
+        <translation>コンポーネント</translation>
+    </message>
+    <message>
+        <source>Component titles must be unique.</source>
+        <translation>コンポーネントのタイトルは重複できません。</translation>
+    </message>
+    <message>
+        <source>Current image</source>
+        <translation>現在の画像</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>デフォルト</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>編集</translation>
+    </message>
+    <message>
+        <source>Enter an AI prompt.</source>
+        <translation>AI プロンプトを入力してください。</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>エクスポート</translation>
+    </message>
+    <message>
+        <source>Export VQA labels</source>
+        <translation>VQA ラベルをエクスポート</translation>
+    </message>
+    <message>
+        <source>Export chat</source>
+        <translation>チャットをエクスポート</translation>
+    </message>
+    <message>
+        <source>Generating…</source>
+        <translation>生成中…</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation>インポート</translation>
+    </message>
+    <message>
+        <source>Import chat</source>
+        <translation>チャットをインポート</translation>
+    </message>
+    <message>
+        <source>Invalid chat JSON.</source>
+        <translation>チャットの JSON が無効です。</translation>
+    </message>
+    <message>
+        <source>Invalid chat message.</source>
+        <translation>チャットメッセージが無効です。</translation>
+    </message>
+    <message>
+        <source>Loading models…</source>
+        <translation>モデルを読み込み中…</translation>
+    </message>
+    <message>
+        <source>Max length</source>
+        <translation>最大長</translation>
+    </message>
+    <message>
+        <source>Model</source>
+        <translation>モデル</translation>
+    </message>
+    <message>
+        <source>Model settings</source>
+        <translation>モデル設定</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>次へ</translation>
+    </message>
+    <message>
+        <source>No image available for @image reference.</source>
+        <translation>@image で参照できる画像がありません。</translation>
+    </message>
+    <message>
+        <source>No image loaded</source>
+        <translation>画像が読み込まれていません</translation>
+    </message>
+    <message>
+        <source>Options (one per line)</source>
+        <translation>選択肢（1 行に 1 つ）</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>前へ</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>プロバイダー</translation>
+    </message>
+    <message>
+        <source>Refresh models</source>
+        <translation>モデルを更新</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation>送信</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>System prompt</source>
+        <translation>システムプロンプト</translation>
+    </message>
+    <message>
+        <source>Temperature</source>
+        <translation>温度</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>タイトル</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>タイプ</translation>
+    </message>
+    <message>
+        <source>Type your message… Use @image to reference the current image.</source>
+        <translation>メッセージを入力… @image で現在の画像を参照できます。</translation>
+    </message>
+    <message>
+        <source>Unable to export VQA labels.</source>
+        <translation>VQA ラベルをエクスポートできません。</translation>
+    </message>
+    <message>
+        <source>Unable to export chat.</source>
+        <translation>チャットをエクスポートできません。</translation>
+    </message>
+    <message>
+        <source>VQA</source>
+        <translation>VQA</translation>
+    </message>
+</context>
+<context>
+    <name>ChatServiceClient</name>
+    <message>
+        <source>Chat request timed out.</source>
+        <translation>チャットリクエストがタイムアウトしました。</translation>
+    </message>
+    <message>
+        <source>Choose a model and enter a message.</source>
+        <translation>モデルを選択してメッセージを入力してください。</translation>
+    </message>
+    <message>
+        <source>Enter a valid HTTP or HTTPS service address.</source>
+        <translation>有効な HTTP または HTTPS サービスアドレスを入力してください。</translation>
+    </message>
+    <message>
+        <source>Invalid JSON response from chat service.</source>
+        <translation>チャットサービスの JSON 応答が無効です。</translation>
+    </message>
+    <message>
+        <source>Invalid chat stream event.</source>
+        <translation>チャットストリームのイベントが無効です。</translation>
+    </message>
+    <message>
+        <source>The service returned no answer.</source>
+        <translation>サービスから回答が返されませんでした。</translation>
+    </message>
+    <message>
+        <source>The service returned no model list.</source>
+        <translation>サービスからモデル一覧が返されませんでした。</translation>
+    </message>
+    <message>
+        <source>Unable to read image: %1</source>
+        <translation>画像を読み込めません: %1</translation>
+    </message>
+    <message>
+        <source>Unsupported image: %1</source>
+        <translation>未対応の画像: %1</translation>
+    </message>
+</context>
+<context>
+    <name>PointCloudCuboidView</name>
+    <message>
+        <source>Expand view</source>
+        <translation>ビューを拡大</translation>
+    </message>
+    <message>
+        <source>Restore view</source>
+        <translation>ビューを元に戻す</translation>
     </message>
 </context>
 </TS>

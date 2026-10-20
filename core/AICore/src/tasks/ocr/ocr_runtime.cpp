@@ -8,6 +8,7 @@
 #include "ocr_runtime.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -286,10 +287,19 @@ bool OcrProgram::parse(const std::string& json, std::string* error) {
     ops.clear();
     varRanks.clear();
     staticShapes.clear();
+    constants.clear();
+    onnxLowered = root.isObject() &&
+                  root.get("format", "").asString() == "onnx-lowered-v1";
     // Newer exports wrap the op array together with the static logical
     // ranks (from the VarDesc shapes); older exports are a bare array.
     const Json::Value* opArray = &root;
     if (root.isObject()) {
+        for (auto it = root["constants"].begin(); it != root["constants"].end();
+             ++it) {
+            std::vector<int64_t> values;
+            for (const auto& v : *it) values.push_back(v.asInt64());
+            constants[it.key().asString()] = std::move(values);
+        }
         if (root.isMember("ranks") && root["ranks"].isObject()) {
             for (auto it = root["ranks"].begin(); it != root["ranks"].end();
                  ++it)
@@ -863,11 +873,40 @@ bool OcrWeights::load(const std::string& path,
                             d *
                             static_cast<int8_t>(src[b * (kBlock + 2) + 2 + k]);
             }
-            // Stay 1-D: each consuming branch reshapes from the pinned
-            // reshapedDims registry (conv and conv_transpose disagree on
-            // the Cin/Cout axis order, so the registry is the only
+            // Paddle parameters stay 1-D: each consuming branch reshapes from
+            // the pinned reshapedDims registry (conv and conv_transpose
+            // disagree on the Cin/Cout axis order, so the registry is the only
             // consumer-authoritative source).
             t = f32;
+            if (program.onnxLowered) {
+                const std::string key =
+                        std::string(name).compare(0, 4, "ocr.") == 0
+                                ? std::string(name).substr(4)
+                                : name;
+                const auto it = program.staticShapes.find(key);
+                if (it == program.staticShapes.end() || it->second.size() > 4) {
+                    if (error) *error = "ONNX quantized weight shape missing";
+                    return false;
+                }
+                int64_t ne[4] = {1, 1, 1, 1}, product = 1;
+                for (size_t j = 0; j < it->second.size(); ++j) {
+                    const int64_t dim = it->second[j];
+                    if (dim <= 0 || product > n / dim) {
+                        if (error)
+                            *error = "ONNX quantized weight shape invalid";
+                        return false;
+                    }
+                    product *= dim;
+                    ne[it->second.size() - 1 - j] = dim;
+                }
+                if (product != n) {
+                    if (error)
+                        *error = "ONNX quantized weight element mismatch";
+                    return false;
+                }
+                t = ggml_reshape_4d(constCtx, f32, ne[0], ne[1], ne[2], ne[3]);
+                ggml_set_name(t, name);
+            }
         }
         tensors[name] = t;
     }
@@ -1258,7 +1297,7 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             if (!t) *error = std::string(what) + ": missing " + param;
             return t;
         }
-    } state{ctx, weights, {}, {}};
+    } state{ctx, weights, {}, weights.program.constants};
     // Blocked-island dataflow model: the det FPN branches interleave, so an
     // op's input is NOT necessarily the previous op's output. Every island
     // op resolves its own Input var: if the var is tracked in blockedVars
@@ -1444,41 +1483,62 @@ ggml_tensor* buildGraph(ggml_context* ctx,
         }
     }
     bool batchAttnSkip = false;
+    int64_t batchAttnHidden = 120;
     ggml_tensor* batchAttnMerged = nullptr;
 
     for (const GraphOp& op : weights.program.ops) {
         const std::string outName =
                 op.outputs.empty() ? std::string() : op.outputs.front();
 
-        if (op.type == "reshape2" && !op.outputs.empty()) {
-            const auto shape = attrInts(op.attrs, "shape");
-            if (shape.size() == 5 && shape[0] == 0 && shape[1] == -1 &&
-                shape[2] == 3 && input->ne[3] > 1) {
+        if ((op.type == "reshape2" || op.type == "onnx_reshape") &&
+            !op.outputs.empty()) {
+            auto shape = attrInts(op.attrs, "shape");
+            // The exact v4 ONNX checkpoint builds [0,T,3,heads,dim]
+            // through Shape/Cast/Slice/Concat instead of a static attribute.
+            // Those integer operations have already resolved T on the host.
+            if (op.type == "onnx_reshape" && shape.empty()) {
+                for (const auto& io : op.inputs)
+                    if (io.param == "Shape" && !io.args.empty()) {
+                        const auto it = state.constants.find(io.args[0]);
+                        if (it != state.constants.end()) shape = it->second;
+                    }
+            }
+            if (shape.size() == 5 && shape[0] == 0 &&
+                (shape[1] == -1 || shape[1] > 0) && shape[2] == 3 &&
+                (input->ne[3] > 1 || weights.program.onnxLowered)) {
                 // Attention-block head: bypass the whole rank-5 chain.
+                const int64_t heads = shape[3], dim = shape[4];
+                if (heads <= 0 || dim <= 0 || heads > 4096 / dim) {
+                    if (error)
+                        *error = "batched attention: invalid head geometry";
+                    return nullptr;
+                }
+                const int64_t hidden = heads * dim;
+                batchAttnHidden = hidden;
                 ggml_tensor* qkv = nullptr;
                 for (const auto& io : op.inputs)
                     for (const auto& arg : io.args) {
                         auto it = state.values.find(arg);
                         if (it != state.values.end() && it->second &&
-                            it->second->ne[0] == 360)
+                            it->second->ne[0] == 3 * hidden)
                             qkv = it->second;
                     }
                 // T is the attention time axis of the qkv projection
                 // (qkv (360,T,N)); the rec input's ne[1] is the 48-px
                 // image height, not T.
-                const int64_t T = qkv->ne[1];
+                const int64_t T = qkv ? qkv->ne[1] : 0;
                 const int64_t N = input->ne[3];
                 if (attnScale <= 0.f) {
                     if (error) *error = "batched attention: scale attr missing";
                     return nullptr;
                 }
-                if (!qkv || qkv->ne[0] != 360 || qkv->ne[1] != T ||
-                    qkv->ne[2] != N || qkv->ne[3] != 1 ||
-                    !ggml_is_contiguous(qkv)) {
+                if (!qkv || qkv->ne[0] != 3 * hidden || qkv->ne[1] != T ||
+                    (shape[1] > 0 && shape[1] != T) || qkv->ne[2] != N ||
+                    qkv->ne[3] != 1 || !ggml_is_contiguous(qkv)) {
                     if (error) *error = "batched attention: qkv shape drift";
                     return nullptr;
                 }
-                const size_t rowBytes = 360 * sizeof(float);
+                const size_t rowBytes = 3 * hidden * sizeof(float);
                 const size_t nStride = qkv->nb[2];
                 // (d,t,h,n) strided views over the packed [q|k|v] rows.
                 // Paddle packs e = c*120 + h*15 + d (reshape (N,T,3,8,15)),
@@ -1487,11 +1547,12 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 // bytes. The section offsets and the head stride must be
                 // kept distinct: both are numeric 60/240 pairs that swap
                 // easily and every past mix-up here scrambled the text.
-                ggml_tensor* Qdt = ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
-                                                15 * sizeof(float), nStride, 0);
-                ggml_tensor* Kdt =
-                        ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
-                                     15 * sizeof(float), nStride, 480);
+                ggml_tensor* Qdt =
+                        ggml_view_4d(ctx, qkv, dim, T, heads, N, rowBytes,
+                                     dim * sizeof(float), nStride, 0);
+                ggml_tensor* Kdt = ggml_view_4d(
+                        ctx, qkv, dim, T, heads, N, rowBytes,
+                        dim * sizeof(float), nStride, hidden * sizeof(float));
                 // scores(s,t,h,n) = sum_d Q(d,t)K(d,s), batched over (h,n).
                 // The 1/sqrt(d) Q scale is linear, so applying it to the
                 // product keeps the math identical while letting ggml_scale
@@ -1511,8 +1572,9 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 // ctx(d,t,h,n) = sum_s probs(s,t) V(d,s): V must enter
                 // with a contiguous s axis, so materialize (s,d) once.
                 ggml_tensor* Vdt =
-                        ggml_view_4d(ctx, qkv, 15, T, 8, N, rowBytes,
-                                     15 * sizeof(float), nStride, 960);
+                        ggml_view_4d(ctx, qkv, dim, T, heads, N, rowBytes,
+                                     dim * sizeof(float), nStride,
+                                     2 * hidden * sizeof(float));
                 ggml_tensor* Vsd = ggml_cont(ctx, ggml_transpose(ctx, Vdt));
                 ggml_tensor* attnCtx = exactF32(ggml_mul_mat(ctx, Vsd, probs));
                 // Reorder (d,t,h,n) -> (d,h,t,n): after cont, the (h,d)
@@ -1524,13 +1586,15 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 ggml_tensor* dhtn = ggml_permute(ctx, attnCtx, 0, 2, 1, 3);
                 // The audited chain carries a 4-D (N,1,T,120) footprint
                 // into the following transpose's rank-4 perm — keep it.
-                batchAttnMerged = ggml_reshape_4d(ctx, ggml_cont(ctx, dhtn),
-                                                  120, T, 1, N);
+                batchAttnMerged =
+                        ggml_reshape_4d(ctx, ggml_cont(ctx, dhtn), hidden, T,
+                                        weights.program.onnxLowered ? N : 1,
+                                        weights.program.onnxLowered ? 1 : N);
                 batchAttnSkip = true;
                 continue;
             }
             if (batchAttnSkip && shape.size() == 3 && shape[0] == 0 &&
-                shape[2] == 120) {
+                shape[2] == batchAttnHidden) {
                 // Block tail: its output is the merged tensor.
                 if (!op.outputs.empty())
                     state.values[op.outputs[0]] = batchAttnMerged;
@@ -1539,7 +1603,21 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 continue;
             }
         }
-        if (batchAttnSkip) continue;
+        if (batchAttnSkip) {
+            // Dynamic block-tail shapes reuse integer values computed
+            // before the head. Keep evaluating host-only shape operations
+            // while replacing the activation chain with the fused tensor.
+            const bool shapeOp =
+                    op.type == "onnx_cast" || op.type == "onnx_identity" ||
+                    op.type == "onnx_slice" || op.type == "onnx_concat" ||
+                    op.type == "onnx_squeeze" || op.type == "onnx_unsqueeze";
+            bool constantInputs = shapeOp && !op.inputs.empty();
+            for (const auto& io : op.inputs)
+                for (const auto& arg : io.args)
+                    constantInputs =
+                            constantInputs && state.constants.count(arg);
+            if (!constantInputs) continue;
+        }
 
         ggml_tensor* result = nullptr;
         bool isConstant = false;
@@ -1563,7 +1641,334 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             }
         }
 
-        if (op.type == "feed") {
+        if (op.type.compare(0, 5, "onnx_") == 0) {
+            const auto& program = weights.program;
+            std::string xName;
+            for (const auto& io : op.inputs)
+                if (io.param == "X" && !io.args.empty()) xName = io.args[0];
+            const int rank = program.varRanks.count(xName)
+                                     ? program.varRanks.at(xName)
+                                     : 4;
+            if (rank < 0 || rank > 5) {
+                if (error) *error = "ONNX: unsupported logical rank";
+                return nullptr;
+            }
+            auto ci = state.constants.find(xName);
+            ggml_tensor* x = state.byParam(op, "X");
+            const auto shapeOf = [&](ggml_tensor* t, int r) {
+                std::vector<int64_t> dims;
+                if (r == 5) {
+                    dims.push_back(1);
+                    r = 4;
+                }
+                for (int i = 0; i < r; ++i) dims.push_back(t->ne[r - 1 - i]);
+                return dims;
+            };
+            auto reshape = [&](ggml_tensor* t,
+                               const std::vector<int64_t>& dims) {
+                if (dims.size() > 4) return static_cast<ggml_tensor*>(nullptr);
+                int64_t ne[4] = {1, 1, 1, 1};
+                int64_t count = 1;
+                for (size_t i = 0; i < dims.size(); ++i) {
+                    if (dims[i] <= 0) return static_cast<ggml_tensor*>(nullptr);
+                    ne[dims.size() - 1 - i] = dims[i];
+                    if (count > ggml_nelements(t) / dims[i])
+                        return static_cast<ggml_tensor*>(nullptr);
+                    count *= dims[i];
+                }
+                if (count != ggml_nelements(t))
+                    return static_cast<ggml_tensor*>(nullptr);
+                return ggml_reshape_4d(ctx, elemCont(ctx, t), ne[0], ne[1],
+                                       ne[2], ne[3]);
+            };
+            if (op.type == "onnx_shape") {
+                if (!x || rank > 4) {
+                    if (error) *error = "ONNX Shape: invalid input";
+                    return nullptr;
+                }
+                state.constants[outName] = shapeOf(x, rank);
+                isConstant = true;
+                result = constantTensor(cctx, state.constants[outName]);
+            } else if (op.type == "onnx_identity" || op.type == "onnx_cast" ||
+                       op.type == "onnx_squeeze" ||
+                       op.type == "onnx_unsqueeze" ||
+                       op.type == "onnx_reshape") {
+                if (ci != state.constants.end()) {
+                    state.constants[outName] = ci->second;
+                    isConstant = true;
+                    result = constantTensor(cctx, ci->second);
+                } else if (x) {
+                    auto dims = shapeOf(x, rank);
+                    auto axes = attrInts(op.attrs, "axes");
+                    if (op.type == "onnx_squeeze") {
+                        for (auto& axis : axes)
+                            if (axis < 0) axis += rank;
+                        for (auto axis : axes) {
+                            if (axis < 0 || axis >= rank || dims[axis] != 1) {
+                                if (error)
+                                    *error = "ONNX Squeeze: invalid axis";
+                                return nullptr;
+                            }
+                        }
+                        for (int i = rank - 1; i >= 0; --i)
+                            if ((axes.empty() ||
+                                 std::find(axes.begin(), axes.end(), i) !=
+                                         axes.end()) &&
+                                dims[i] == 1)
+                                dims.erase(dims.begin() + i);
+                    } else if (op.type == "onnx_unsqueeze") {
+                        const int outputRank =
+                                rank + static_cast<int>(axes.size());
+                        for (auto& axis : axes)
+                            if (axis < 0) axis += outputRank;
+                        std::sort(axes.begin(), axes.end());
+                        for (auto axis : axes) {
+                            if (axis < 0 ||
+                                axis > static_cast<int64_t>(dims.size())) {
+                                if (error)
+                                    *error = "ONNX Unsqueeze: invalid axis";
+                                return nullptr;
+                            }
+                            dims.insert(dims.begin() + axis, 1);
+                        }
+                        // v5's exported BN adds a leading singleton to NCHW.
+                        // It is storage-neutral; later Squeeze removes it.
+                        if (dims.size() == 5 && dims.front() == 1)
+                            dims.erase(dims.begin());
+                    } else if (op.type == "onnx_reshape") {
+                        std::string shapeName;
+                        for (const auto& io : op.inputs)
+                            if (io.param == "Shape" && !io.args.empty())
+                                shapeName = io.args[0];
+                        auto it = state.constants.find(shapeName);
+                        if (it == state.constants.end()) {
+                            if (error)
+                                *error = "ONNX Reshape: shape is not resolved";
+                            return nullptr;
+                        }
+                        auto target = it->second;
+                        int infer = -1;
+                        int64_t product = 1;
+                        for (size_t i = 0; i < target.size(); ++i) {
+                            if (target[i] == 0 && i < dims.size())
+                                target[i] = dims[i];
+                            if (target[i] == -1) {
+                                if (infer >= 0) {
+                                    if (error)
+                                        *error = "ONNX Reshape: multiple "
+                                                 "inferred axes";
+                                    return nullptr;
+                                }
+                                infer = static_cast<int>(i);
+                            } else {
+                                if (target[i] <= 0 ||
+                                    product > ggml_nelements(x) / target[i]) {
+                                    if (error)
+                                        *error = "ONNX Reshape: invalid "
+                                                 "dimensions";
+                                    return nullptr;
+                                }
+                                product *= target[i];
+                            }
+                        }
+                        if (product <= 0) {
+                            if (error)
+                                *error = "ONNX Reshape: invalid dimensions";
+                            return nullptr;
+                        }
+                        if (infer >= 0)
+                            target[infer] = ggml_nelements(x) / product;
+                        dims = std::move(target);
+                    }
+                    result = reshape(x, dims);
+                }
+            } else if (op.type == "onnx_concat") {
+                std::vector<std::string> names;
+                for (const auto& io : op.inputs)
+                    if (io.param == "X") names = io.args;
+                const bool meta =
+                        std::all_of(names.begin(), names.end(),
+                                    [&](const std::string& name) {
+                                        return state.constants.count(name) != 0;
+                                    });
+                if (meta) {
+                    if (attrInt(op.attrs, "axis", 0) != 0) {
+                        if (error) *error = "ONNX shape Concat: invalid axis";
+                        return nullptr;
+                    }
+                    std::vector<int64_t> joined;
+                    for (const auto& name : names) {
+                        const auto& value = state.constants.at(name);
+                        joined.insert(joined.end(), value.begin(), value.end());
+                    }
+                    state.constants[outName] = joined;
+                    result = constantTensor(cctx, joined);
+                    isConstant = true;
+                } else {
+                    int axis = static_cast<int>(attrInt(op.attrs, "axis", 0));
+                    if (axis < 0) axis += rank;
+                    if (rank > 4 || axis < 0 || axis >= rank) {
+                        if (error) *error = "ONNX Concat: invalid axis";
+                        return nullptr;
+                    }
+                    for (const auto& name : names) {
+                        auto* t = state.resolve(name);
+                        if (!t) {
+                            if (error) *error = "ONNX Concat: missing tensor";
+                            return nullptr;
+                        }
+                        result = result ? ggml_concat(ctx, result, t,
+                                                      rank - 1 - axis)
+                                        : t;
+                    }
+                }
+            } else if (op.type == "onnx_slice") {
+                auto starts = attrInts(op.attrs, "starts"),
+                     ends = attrInts(op.attrs, "ends"),
+                     axes = attrInts(op.attrs, "axes");
+                if (axes.empty() || axes.size() != starts.size() ||
+                    axes.size() != ends.size()) {
+                    if (error) *error = "ONNX Slice: mismatched axes";
+                    return nullptr;
+                }
+                if (ci != state.constants.end()) {
+                    const auto& v = ci->second;
+                    if (axes.size() != 1 || axes[0] != 0) {
+                        if (error) *error = "ONNX shape Slice: invalid axis";
+                        return nullptr;
+                    }
+                    int64_t first = starts[0], last = ends[0], size = v.size();
+                    if (first < 0) first += size;
+                    if (last < 0) last += size;
+                    first = std::clamp(first, int64_t(0), size);
+                    last = std::clamp(last, first, size);
+                    state.constants[outName] = std::vector<int64_t>(
+                            v.begin() + first, v.begin() + last);
+                    result = constantTensor(cctx, state.constants[outName]);
+                    isConstant = true;
+                } else if (x) {
+                    int64_t ne[4] = {x->ne[0], x->ne[1], x->ne[2], x->ne[3]};
+                    size_t offset = 0;
+                    for (size_t i = 0; i < axes.size(); ++i) {
+                        const int axis = axes[i] < 0 ? axes[i] + rank : axes[i];
+                        if (axis < 0 || axis >= rank || rank > 4) {
+                            if (error) *error = "ONNX Slice: invalid axis";
+                            return nullptr;
+                        }
+                        const int d = rank - 1 - axis;
+                        int64_t first = starts[i], last = ends[i], size = ne[d];
+                        if (first < 0) first += size;
+                        if (last < 0) last += size;
+                        first = std::clamp(first, int64_t(0), size);
+                        last = std::clamp(last, first, size);
+                        ne[d] = last - first;
+                        offset += first * x->nb[d];
+                    }
+                    result = ggml_view_4d(ctx, x, ne[0], ne[1], ne[2], ne[3],
+                                          x->nb[1], x->nb[2], x->nb[3], offset);
+                }
+            } else if (op.type == "onnx_transpose" && x) {
+                const auto perm = attrInts(op.attrs, "perm");
+                const std::set<int64_t> permutation(perm.begin(), perm.end());
+                if (perm.empty() || perm.size() > 4 ||
+                    permutation.size() != perm.size() ||
+                    *permutation.begin() < 0 ||
+                    *permutation.rbegin() >=
+                            static_cast<int64_t>(perm.size())) {
+                    if (error) *error = "ONNX Transpose: invalid permutation";
+                    return nullptr;
+                }
+                int k[4];
+                numpyPermToGgml(perm, k);
+                result = ggml_permute(ctx, x, k[0], k[1], k[2], k[3]);
+            } else if (x) {
+                x = elemCont(ctx, x);
+                if (op.type == "onnx_gelu")
+                    result = ggml_gelu_erf(ctx, x);
+                else if (op.type == "onnx_clip")
+                    result = ggml_clamp(ctx, x,
+                                        attrFloat(op.attrs, "minimum", 0),
+                                        attrFloat(op.attrs, "maximum", 6));
+                else if (op.type == "onnx_sqrt")
+                    result = ggml_sqrt(ctx, x);
+                else if (op.type == "onnx_mean")
+                    result = ggml_mean(ctx, x);
+                else if (op.type == "onnx_pad") {
+                    const auto p = attrInts(op.attrs, "pads");
+                    if (p.size() != 4 ||
+                        std::any_of(p.begin(), p.end(), [](int64_t v) {
+                            return v < 0 || v > INT_MAX;
+                        })) {
+                        if (error) *error = "ONNX Pad: invalid padding";
+                        return nullptr;
+                    }
+                    if (attrBool(op.attrs, "edge", false)) {
+                        if (p != std::vector<int64_t>({0, 0, 1, 1})) {
+                            if (error)
+                                *error = "ONNX Pad: unsupported edge padding";
+                            return nullptr;
+                        }
+                        // SAME_UPPER 2x2 max-pool: duplicating the boundary
+                        // cannot change a max and avoids zero-padding negative
+                        // activations (ONNX's max-pool pad is -infinity).
+                        auto* col = ggml_view_4d(ctx, x, 1, x->ne[1], x->ne[2],
+                                                 x->ne[3], x->nb[1], x->nb[2],
+                                                 x->nb[3],
+                                                 (x->ne[0] - 1) * x->nb[0]);
+                        auto* wide = ggml_concat(ctx, x, col, 0);
+                        auto* row = ggml_view_4d(
+                                ctx, wide, wide->ne[0], 1, wide->ne[2],
+                                wide->ne[3], wide->nb[1], wide->nb[2],
+                                wide->nb[3], (wide->ne[1] - 1) * wide->nb[1]);
+                        result = ggml_concat(ctx, wide, row, 1);
+                    } else
+                        result = ggml_pad_ext(ctx, x, p[1], p[3], p[0], p[2], 0,
+                                              0, 0, 0);
+                } else if (op.type == "onnx_resize") {
+                    const auto& scales = op.attrs["scales"];
+                    if (!scales.isArray() || scales.size() != 4 ||
+                        scales[0].asDouble() != 1 ||
+                        scales[1].asDouble() != 1 || scales[2].asDouble() < 1 ||
+                        scales[3].asDouble() < 1 ||
+                        scales[2].asDouble() != scales[2].asInt() ||
+                        scales[3].asDouble() != scales[3].asInt() ||
+                        scales[2].asDouble() * x->ne[1] > INT_MAX ||
+                        scales[3].asDouble() * x->ne[0] > INT_MAX) {
+                        if (error) *error = "ONNX Resize: invalid scales";
+                        return nullptr;
+                    }
+                    result = ggml_interpolate(
+                            ctx, x, x->ne[0] * scales[3].asInt(),
+                            x->ne[1] * scales[2].asInt(), x->ne[2], x->ne[3],
+                            GGML_SCALE_MODE_NEAREST);
+                } else {
+                    auto* y = state.byParam(op, "Y");
+                    if (!y) {
+                        if (error) *error = "ONNX binary: missing Y";
+                        return nullptr;
+                    }
+                    y = elemCont(ctx, y);
+                    if (op.type == "onnx_add" || op.type == "onnx_mul") {
+                        if (ggml_nelements(x) < ggml_nelements(y))
+                            std::swap(x, y);
+                    }
+                    if (!ggml_can_repeat(y, x)) {
+                        if (error) *error = "ONNX binary: invalid broadcast";
+                        return nullptr;
+                    }
+                    if (op.type == "onnx_add")
+                        result = addChk(ctx, x, y);
+                    else if (op.type == "onnx_mul")
+                        result = mulChk(ctx, x, y, "onnx_mul");
+                    else if (op.type == "onnx_sub")
+                        result = ggml_sub(ctx, x, y);
+                    else if (op.type == "onnx_div")
+                        result = ggml_div(ctx, x, y);
+                    else if (op.type == "onnx_pow")
+                        result = ggml_sqr(ctx, x);
+                }
+            }
+        } else if (op.type == "feed") {
             result = input;
         } else if (op.type == "fetch" || op.type == "assign") {
             result = state.firstInput(op);
@@ -1835,8 +2240,30 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                         ggml_tensor* wc = ggml_view_4d(
                                 ctx, w, w->ne[0], w->ne[1], 1, 1, w->nb[1],
                                 w->nb[2], w->nb[3], c * w->nb[3]);
-                        parts.push_back(ggml_conv_2d(ctx, wc, xc, s0, s1, p0,
-                                                     p1, d0, d1));
+                        if (weights.program.onnxLowered &&
+                            wc->type == GGML_TYPE_F32) {
+                            // The bounded per-channel route must retain the
+                            // source graph's F32 activations. ggml_conv_2d's
+                            // default F16 im2col silently rounded them when
+                            // the batched buffer exceeded 256 MiB (v6 Medium
+                            // CPU DB-map error 0.001048 on the BGR page).
+                            auto* cols =
+                                    ggml_im2col(ctx, wc, xc, s0, s1, p0, p1, d0,
+                                                d1, true, GGML_TYPE_F32);
+                            auto* mm = exactF32(ggml_mul_mat(
+                                    ctx,
+                                    ggml_reshape_2d(ctx, cols, cols->ne[0],
+                                                    cols->ne[1] * cols->ne[2] *
+                                                            cols->ne[3]),
+                                    ggml_reshape_2d(ctx, wc,
+                                                    wc->ne[0] * wc->ne[1], 1)));
+                            parts.push_back(
+                                    ggml_reshape_4d(ctx, mm, cols->ne[1],
+                                                    cols->ne[2], 1, xc->ne[3]));
+                        } else {
+                            parts.push_back(ggml_conv_2d(ctx, wc, xc, s0, s1,
+                                                         p0, p1, d0, d1));
+                        }
                     }
                     result = parts.front();
                     for (size_t i = 1; i < parts.size(); ++i)
@@ -1998,7 +2425,16 @@ ggml_tensor* buildGraph(ggml_context* ctx,
             const auto scale = tensorHostFloats(scaleT);
             const auto mean = tensorHostFloats(meanT);
             const auto var = tensorHostFloats(varT);
-            const int64_t C = x->ne[2];
+            int channelDim = 2;
+            if (weights.program.onnxLowered)
+                for (const auto& io : op.inputs)
+                    if (io.param == "X" && !io.args.empty()) {
+                        auto rank = weights.program.varRanks.find(io.args[0]);
+                        if (rank != weights.program.varRanks.end() &&
+                            rank->second <= 4)
+                            channelDim = rank->second - 2;
+                    }
+            const int64_t C = x->ne[channelDim];
             ggml_tensor* mulT = ggml_new_tensor_1d(cctx, GGML_TYPE_F32, C);
             ggml_tensor* addT = ggml_new_tensor_1d(cctx, GGML_TYPE_F32, C);
             auto* mul = static_cast<float*>(mulT->data);
@@ -2008,7 +2444,15 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                 mul[c] = static_cast<float>(scale[c] / stdv);
                 add[c] = static_cast<float>(bias[c] - mean[c] * mul[c]);
             }
-            if (!ggml_can_repeat(state.broadcastChannel(mulT), x)) {
+            int64_t channelShape[4] = {1, 1, 1, 1};
+            channelShape[channelDim] = C;
+            auto* gain =
+                    ggml_reshape_4d(ctx, mulT, channelShape[0], channelShape[1],
+                                    channelShape[2], channelShape[3]);
+            auto* offset =
+                    ggml_reshape_4d(ctx, addT, channelShape[0], channelShape[1],
+                                    channelShape[2], channelShape[3]);
+            if (!ggml_can_repeat(gain, x)) {
                 std::fprintf(stderr,
                              "[bn-mismatch] x ne=%lld,%lld,%lld,%lld "
                              "C=%lld mul ne=%lld,%lld,%lld,%lld\n",
@@ -2019,8 +2463,8 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                              (long long)mulT->ne[3]);
                 std::fflush(stderr);
             }
-            result = mulChk(ctx, x, state.broadcastChannel(mulT), "bn_mul");
-            result = addChk(ctx, result, state.broadcastChannel(addT));
+            result = mulChk(ctx, x, gain, "bn_mul");
+            result = addChk(ctx, result, offset);
         } else if (op.type == "elementwise_add" ||
                    op.type == "elementwise_mul") {
             ggml_tensor* a = state.byParam(op, "X");

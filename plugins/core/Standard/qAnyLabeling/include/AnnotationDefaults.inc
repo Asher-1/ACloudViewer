@@ -1,0 +1,285 @@
+// UI defaults from X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935
+// anylabeling/configs/xanylabeling_config.yaml; GPL-3.0-only, see UPSTREAM-LICENSE.
+// Source SHA-256: c381fbe561aa81691203bcbd345dbf675b08618f3d8f6adb6a7087fd3b8c4bb0
+R"json(
+{
+  "language": "en_US",
+  "theme": "auto",
+  "font_family": null,
+  "model_hub": "github",
+  "device": null,
+  "auto_save": true,
+  "display_label_popup": true,
+  "store_data": false,
+  "keep_prev": false,
+  "keep_prev_scale": false,
+  "keep_prev_brightness": false,
+  "keep_prev_contrast": false,
+  "auto_use_last_label": false,
+  "auto_use_last_gid": false,
+  "auto_highlight_shape": true,
+  "auto_switch_to_edit_mode": true,
+  "exif_scan_enabled": true,
+  "show_groups": false,
+  "show_masks": true,
+  "show_texts": true,
+  "show_labels": true,
+  "show_scores": true,
+  "show_degrees": false,
+  "show_shapes": true,
+  "show_linking": true,
+  "show_attributes": true,
+  "logger_level": "info",
+  "qt_image_allocation_limit": null,
+  "system_clipboard": false,
+  "switch_to_checked": false,
+  "file_list_checkbox_editable": false,
+  "flags": null,
+  "label_flags": null,
+  "labels": null,
+  "file_search": null,
+  "sort_labels": true,
+  "validate_label": null,
+  "default_shape_color": [
+    0,
+    255,
+    0
+  ],
+  "shape_color": "auto",
+  "shift_auto_shape_color": 0,
+  "label_colors": null,
+  "shape": {
+    "line_color": [
+      0,
+      255,
+      0,
+      128
+    ],
+    "fill_color": [
+      220,
+      220,
+      220,
+      150
+    ],
+    "vertex_fill_color": [
+      0,
+      255,
+      0,
+      255
+    ],
+    "select_line_color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "select_fill_color": [
+      0,
+      255,
+      0,
+      155
+    ],
+    "hvertex_fill_color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "point_size": 10,
+    "line_width": 4
+  },
+  "flag_dock": {
+    "show": true,
+    "closable": false,
+    "movable": false,
+    "floatable": false
+  },
+  "label_dock": {
+    "show": true,
+    "closable": false,
+    "movable": false,
+    "floatable": false
+  },
+  "shape_dock": {
+    "show": true,
+    "closable": false,
+    "movable": false,
+    "floatable": false
+  },
+  "description_dock": {
+    "show": true,
+    "closable": false,
+    "movable": false,
+    "floatable": false
+  },
+  "file_dock": {
+    "show": true,
+    "closable": false,
+    "movable": false,
+    "floatable": false
+  },
+  "show_label_text_field": true,
+  "label_completion": "startswith",
+  "move_mode": "auto",
+  "fit_to_content": {
+    "column": true,
+    "row": false
+  },
+  "canvas": {
+    "label_font_size": 8,
+    "epsilon": 10.0,
+    "double_click": "close",
+    "double_click_edit_label": true,
+    "num_backups": 10,
+    "wheel_rectangle_editing": {
+      "enable": true,
+      "adjust_step": 2.0,
+      "scale_step": 0.05
+    },
+    "crosshair": {
+      "show": true,
+      "width": 2.0,
+      "color": "#00FF00",
+      "opacity": 0.5
+    },
+    "attributes": {
+      "background_color": [
+        33,
+        33,
+        33,
+        255
+      ],
+      "border_color": [
+        66,
+        66,
+        66,
+        255
+      ],
+      "text_color": [
+        33,
+        150,
+        243,
+        255
+      ]
+    },
+    "rotation": {
+      "large_increment": 1.0,
+      "small_increment": 0.1
+    },
+    "brush": {
+      "point_distance": 25.0,
+      "simplify_epsilon": 2.0,
+      "max_undo_steps": 30,
+      "max_undo_memory_mb": 128
+    },
+    "magic_wand": {
+      "default_threshold": 15,
+      "drag_sensitivity": 3.0,
+      "luminance_weight": 0.5,
+      "simplify_epsilon": 0.5,
+      "opacity": 0.6
+    },
+    "cuboid": {
+      "default_depth_vector": [
+        24.0,
+        -24.0
+      ],
+      "min_depth": 5.0
+    },
+    "mask": {
+      "opacity": 80
+    }
+  },
+  "shortcuts": {
+    "close": "Ctrl+W",
+    "open": "Ctrl+I",
+    "open_video": "Ctrl+O",
+    "open_dir": "Ctrl+U",
+    "open_chatbot": "Ctrl+1",
+    "open_vqa": "Ctrl+2",
+    "open_image_classifier": "Ctrl+3",
+    "open_paddleocr": "Ctrl+4",
+    "open_video_classifier": "Ctrl+5",
+    "open_pointcloud": "Ctrl+6",
+    "quit": "Ctrl+Q",
+    "save": "Ctrl+S",
+    "save_as": "Ctrl+Shift+S",
+    "save_to": null,
+    "delete_file": "Ctrl+Delete",
+    "delete_image_file": "Ctrl+Shift+Delete",
+    "open_next": "D",
+    "open_prev": "A",
+    "open_next_unchecked": "Ctrl+Shift+D",
+    "open_prev_unchecked": "Ctrl+Shift+A",
+    "toggle_annotation_checked": "Ctrl+Alt+K",
+    "zoom_in": [
+      "Ctrl++"
+    ],
+    "zoom_out": "Ctrl+-",
+    "zoom_to_original": "Ctrl+=",
+    "fit_window": "Ctrl+F",
+    "fit_width": "Ctrl+Shift+F",
+    "show_navigator": "F9",
+    "toggle_image_tags": "Ctrl+Shift+T",
+    "create_polygon": "P",
+    "create_brush_polygon": "Ctrl+N",
+    "create_magic_wand": "Shift+W",
+    "create_rectangle": "R",
+    "create_cuboid": "Ctrl+R",
+    "create_rotation": "O",
+    "create_quadrilateral": "T",
+    "create_circle": "Shift+C",
+    "create_line": "Shift+L",
+    "create_point": "Shift+P",
+    "create_linestrip": "Shift+S",
+    "edit_polygon": "Ctrl+J",
+    "edit_brush_mode": "Shift+B",
+    "delete_polygon": "Delete",
+    "duplicate_polygon": "Ctrl+D",
+    "copy_polygon": "Ctrl+C",
+    "paste_polygon": "Ctrl+V",
+    "undo": "Ctrl+Z",
+    "undo_last_point": "Ctrl+Z",
+    "add_point_to_edge": "Ctrl+Shift+P",
+    "edit_label": "Ctrl+E",
+    "edit_digit_shortcut": "Alt+D",
+    "edit_group_id": "Alt+G",
+    "edit_labels": "Alt+L",
+    "edit_shapes": "Alt+S",
+    "open_settings": "Ctrl+0",
+    "toggle_keep_prev_mode": "Ctrl+P",
+    "remove_selected_point": "Backspace",
+    "group_selected_shapes": "G",
+    "ungroup_selected_shapes": "U",
+    "hide_selected_polygons": "S",
+    "show_hidden_polygons": "W",
+    "show_overview": "Ctrl+G",
+    "show_masks": "Ctrl+M",
+    "show_texts": "Ctrl+T",
+    "show_labels": "Ctrl+L",
+    "show_linking": "Ctrl+K",
+    "show_attributes": "Ctrl+Shift+L",
+    "union_selected_shapes": "Ctrl+Shift+M",
+    "toggle_auto_use_last_label": "Ctrl+Y",
+    "toggle_auto_use_last_gid": "Ctrl+Shift+G",
+    "toggle_visibility_shapes": "Ctrl+H",
+    "toggle_compare_view": "Ctrl+Alt+C",
+    "auto_label": "Ctrl+A",
+    "auto_run": "Ctrl+B",
+    "loop_thru_labels": "Ctrl+Shift+N",
+    "loop_select_labels": "Ctrl+Shift+C",
+    "auto_labeling_add_point": "Q",
+    "auto_labeling_remove_point": "E",
+    "auto_labeling_run": "I",
+    "auto_labeling_clear": "B",
+    "auto_labeling_finish_object": "F"
+  },
+  "custom_models": [],
+  "remote_server_settings": {
+    "server_url": "http://127.0.0.1:8000",
+    "api_key": null,
+    "timeout": 180
+  },
+  "digit_shortcuts": null
+}
+)json"

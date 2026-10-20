@@ -15,9 +15,12 @@
 #include <QColorDialog>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCryptographicHash>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QDockWidget>
+#include <QDoubleSpinBox>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
@@ -41,6 +44,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPluginLoader>
 #include <QPushButton>
@@ -56,10 +60,23 @@
 #include <QToolButton>
 #include <QTranslator>
 #include <QUrl>
+#include <QtEndian>
 #include <cstdio>
+#include <cstdlib>
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    QTimer::singleShot(30000, &app, []() {
+        if (auto* modal = QApplication::activeModalWidget()) {
+            std::fprintf(stderr, "Timed out in dialog: %s (%s)\n",
+                         qPrintable(modal->windowTitle()),
+                         qPrintable(modal->objectName()));
+            for (auto* label : modal->findChildren<QLabel*>())
+                std::fprintf(stderr, "Dialog text: %s\n",
+                             qPrintable(label->text()));
+        }
+        std::exit(1);
+    });
     QTemporaryDir settingsDir;
     if (!settingsDir.isValid()) return 1;
     QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
@@ -71,13 +88,46 @@ int main(int argc, char** argv) {
     // QPluginLoader's metadata pass rejects a non-normalized relative path
     // with "The shared library was not found"; resolve to an absolute path
     // so the harness works from any working directory.
-    QPluginLoader loader(
-            QFileInfo(QString::fromLocal8Bit(argv[1])).absoluteFilePath());
+    // Exercise the shipped binary, from an unrelated Unicode path and cwd.
+    // This target does not link qAnyLabeling.qrc: resource success therefore
+    // proves that the actual plugin contains its deployment data.
+    QTemporaryDir relocated;
+    if (!relocated.isValid()) return 1;
+    const QString relocatedDir =
+            relocated.path() + QString::fromUtf8("/安装插件");
+    if (!QDir().mkpath(relocatedDir)) return 1;
+    const QString pluginPath =
+            relocatedDir + '/' +
+            QFileInfo(QString::fromLocal8Bit(argv[1])).fileName();
+    if (!QFile::copy(
+                QFileInfo(QString::fromLocal8Bit(argv[1])).absoluteFilePath(),
+                pluginPath) ||
+        !QDir::setCurrent(relocatedDir))
+        return 1;
+    QPluginLoader loader(pluginPath);
     QObject* pluginObject = loader.instance();
     if (!pluginObject) {
         std::fprintf(stderr, "Plugin load failed: %s\n",
                      loader.errorString().toLocal8Bit().constData());
         return 1;
+    }
+    for (const auto& entry :
+         {qMakePair(QStringLiteral("ram_tag_list.txt"),
+                    QByteArray("5d96d2f7225527480ad773aaac76b6e5c08a18adf6eae9c"
+                               "a7d2ab923d5e7bd8b")),
+          qMakePair(QStringLiteral("ram_tag_list_chinese.txt"),
+                    QByteArray("c912657a0f30be7b2f5df6ccffa17e1d84561d0bea50852"
+                               "8e38b6d0d711bcfbe"))}) {
+        QFile resource(
+                QStringLiteral(":/CC/plugin/qAnyLabeling/resources/ram/") +
+                entry.first);
+        if (!resource.open(QIODevice::ReadOnly) ||
+            QCryptographicHash::hash(resource.readAll(),
+                                     QCryptographicHash::Sha256)
+                            .toHex() != entry.second) {
+            std::fprintf(stderr, "Relocated plugin RAM resource failed\n");
+            return 1;
+        }
     }
     auto* plugin = qobject_cast<ccStdPluginInterface*>(pluginObject);
     const QList<QAction*> pluginActions =
@@ -158,7 +208,11 @@ int main(int argc, char** argv) {
         toolMenu->actions().at(4)->isEnabled() ||
         toolMenu->actions().at(9)->isEnabled() ||
         !toolMenu->actions().at(11)->isEnabled() ||
-        !toolMenu->actions().at(12)->isEnabled()) {
+        !toolMenu->actions().at(12)->isEnabled() ||
+        toolMenu->actions().at(12)->shortcut() !=
+                QKeySequence(Qt::CTRL + Qt::Key_6) ||
+        toolMenu->actions().at(12)->property("qAnyShortcutId").toString() !=
+                QStringLiteral("open_pointcloud")) {
         std::fprintf(stderr,
                      "Menu contract failed: menus=%s tools=%s instruction=%s\n",
                      actualMenus.join('|').toLocal8Bit().constData(),
@@ -476,7 +530,13 @@ int main(int argc, char** argv) {
         models->findText(QStringLiteral("PP-OCRv4 (ch)")) < 0 ||
         models->findText(QStringLiteral("PP-OCRv4 (en)")) < 0 ||
         models->findText(QStringLiteral("yolov8s-world")) < 0 ||
-        models->findText(QStringLiteral("yoloe-26n-seg-pf")) < 0) {
+        models->findText(QStringLiteral("yoloe-26n-seg-pf")) < 0 ||
+        models->findText(QStringLiteral("ram_plus_swin_large_14m")) < 0 ||
+        models->findText(QStringLiteral("tag2text_swin_14m")) < 0 ||
+        models->findText(QStringLiteral("relsgg-vits16plus")) < 0 ||
+        models->findText(QStringLiteral("relsgg-convnext-tiny")) < 0 ||
+        models->findText(QStringLiteral("relsgg-vits16plus-text-student")) >=
+                0) {
         std::fprintf(stderr,
                      "SAM text prompt visibility or model catalog failed\n");
         std::fprintf(
@@ -511,7 +571,22 @@ int main(int argc, char** argv) {
             }
         }
     }
+    auto* ocrDirection = window->findChild<QCheckBox*>(
+            QStringLiteral("AnnotationOcrAngleClassifier"));
+    if (!ocrDirection || !ocrDirection->isChecked()) return 1;
+    for (const QString& family :
+         {QStringLiteral("ch_PP-OCRv4"), QStringLiteral("japan_PP-OCRv3"),
+          QStringLiteral("PP-OCRv5"), QStringLiteral("PP-OCRv6 Tiny"),
+          QStringLiteral("PP-OCRv6 Small"),
+          QStringLiteral("PP-OCRv6 Medium")}) {
+        if (models->findText(family) < 0) return 1;
+        models->setCurrentText(family);
+        if (!ocrDirection->isVisible() || quantization->count() != 1 ||
+            !quantization->currentData().toString().endsWith("-rec-f32.gguf"))
+            return 1;
+    }
     models->setCurrentText(QStringLiteral("sam3"));
+    if (ocrDirection->isVisible()) return 1;
     if (!samText->isVisible()) {
         std::fprintf(stderr, "SAM 3 text prompt is hidden\n");
         return 1;
@@ -878,6 +953,84 @@ int main(int argc, char** argv) {
                      deleteLabelFile->isEnabled());
         return 1;
     }
+    auto* visualizationVideo = window->findChild<QAction*>(
+            QStringLiteral("AnnotationVisualizationVideoAction"));
+    if (!visualizationVideo) return 1;
+    if (visualizationVideo->isEnabled()) {
+        if (!sidecar.open(QIODevice::ReadOnly)) return 1;
+        const QByteArray annotationBeforeExport = sidecar.readAll();
+        sidecar.close();
+        for (int pass = 0; pass < 2; ++pass) {
+            const QString videoPath = directory.filePath(
+                    QStringLiteral("visualization-%1.mp4").arg(pass));
+            bool controlsMatch = false;
+            QTimer::singleShot(0, [&]() {
+                auto* dialog = qobject_cast<QDialog*>(
+                        QApplication::activeModalWidget());
+                if (!dialog ||
+                    dialog->objectName() !=
+                            QStringLiteral("AnnotationVisualizationVideo"))
+                    return;
+                auto* fps =
+                        dialog->findChild<QSpinBox*>("VisualizationVideoFps");
+                auto* rectangle = dialog->findChild<QCheckBox*>(
+                        "VisualizationType_rectangle");
+                auto* skip =
+                        dialog->findChild<QCheckBox*>("VisualizationSkipEmpty");
+                auto* destination =
+                        dialog->findChild<QLineEdit*>("VisualizationVideoPath");
+                const QString sourceDefaultPath =
+                        QDir::cleanPath(directory.path() +
+                                        QStringLiteral("/../visualizations/") +
+                                        QFileInfo(directory.path()).fileName() +
+                                        QStringLiteral("_visualization.mp4"));
+                controlsMatch = fps && rectangle && skip && destination &&
+                                fps->value() == 25 && fps->minimum() == 1 &&
+                                fps->maximum() == 120 &&
+                                !rectangle->isChecked() && !skip->isChecked() &&
+                                destination->text() == sourceDefaultPath;
+                if (!controlsMatch) {
+                    dialog->reject();
+                    return;
+                }
+                rectangle->setChecked(true);
+                skip->setChecked(pass == 0);
+                fps->setValue(pass == 0 ? 25 : 17);
+                destination->setText(videoPath);
+                dialog->findChild<QDialogButtonBox*>()
+                        ->button(QDialogButtonBox::Ok)
+                        ->click();
+            });
+            visualizationVideo->trigger();
+            QFile video(videoPath);
+            if (!controlsMatch || !video.open(QIODevice::ReadOnly)) {
+                std::fprintf(stderr,
+                             "visualization video dialog/export failed\n");
+                return 1;
+            }
+            const QByteArray encoded = video.readAll();
+            const int sampleTable = encoded.indexOf("stsz");
+            if (!encoded.contains("ftyp") || sampleTable < 0 ||
+                sampleTable + 16 > encoded.size() ||
+                qFromBigEndian<quint32>(reinterpret_cast<const uchar*>(
+                        encoded.constData() + sampleTable + 12)) !=
+                        quint32(pass == 0 ? 1 : 3)) {
+                std::fprintf(stderr,
+                             "visualization skip-empty/frame count mismatch\n");
+                return 1;
+            }
+        }
+        if (!sidecar.open(QIODevice::ReadOnly) ||
+            sidecar.readAll() != annotationBeforeExport) {
+            std::fprintf(stderr,
+                         "visualization export modified annotation document\n");
+            return 1;
+        }
+        sidecar.close();
+    } else if (!visualizationVideo->toolTip().contains(
+                       QStringLiteral("unavailable"))) {
+        return 1;
+    }
     // Selection-driven enable states: one rectangle sidecar shape exists.
     QAction* copyCoordinates = nullptr;
     QAction* loopSelect = nullptr;
@@ -971,22 +1124,29 @@ int main(int argc, char** argv) {
                 "Loop Select Labels did not clear the selection at the end\n");
         return 1;
     }
-    const auto disabledToolbarTodo = [window](const QString& objectName) {
-        QAction* action = window->findChild<QAction*>(objectName);
-        return action && !action->isEnabled() && !action->icon().isNull() &&
-               action->toolTip().contains(QStringLiteral("TODO"));
-    };
-    if (!disabledToolbarTodo(QStringLiteral("AnnotationTODO_open_chatbot")) ||
-        !disabledToolbarTodo(QStringLiteral("AnnotationTODO_open_vqa")) ||
-        !disabledToolbarTodo(
-                QStringLiteral("AnnotationTODO_open_image_classifier"))) {
-        std::fprintf(
-                stderr,
-                "Unsupported AICore entries must stay disabled with TODOs\n");
-        return 1;
+    for (const auto& name : {QStringLiteral("AnnotationOpenChatbot"),
+                             QStringLiteral("AnnotationOpenVQA")}) {
+        auto* action = window->findChild<QAction*>(name);
+        if (!action || !action->isEnabled() || action->icon().isNull())
+            return 1;
+        action->trigger();
+        QCoreApplication::processEvents();
+        auto* dialog = window->findChild<QDialog*>(
+                name.endsWith("VQA") ? QStringLiteral("AnnotationVQA")
+                                     : QStringLiteral("AnnotationChatbot"));
+        if (!dialog || !dialog->isVisible()) return 1;
+        auto* address = dialog->findChild<QLineEdit*>("ChatAddress");
+        auto* temperature =
+                dialog->findChild<QDoubleSpinBox*>("ChatTemperature");
+        auto* tokens = dialog->findChild<QSpinBox*>("ChatMaxTokens");
+        if (!address || address->text() != "http://localhost:11434/v1" ||
+            !temperature || temperature->value() != 1 || !tokens ||
+            tokens->value() != 0)
+            return 1;
+        dialog->close();
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }
-    // PaddleOCR runs in-window through the AICore ocr C API; the toolbar
-    // entry is enabled, carries an icon, and triggers real inference.
+    // Upstream Ctrl+4 opens its dedicated PaddleOCR document workspace.
     {
         QAction* paddleOcr = window->findChild<QAction*>(
                 QStringLiteral("AnnotationOpenPaddleOCR"));
@@ -996,14 +1156,24 @@ int main(int argc, char** argv) {
                          "PaddleOCR toolbar entry must be live with an icon\n");
             return 1;
         }
-        // The action must run OCR in this window (runDetection), not hand
-        // off to the qOCR workspace.
-        if (paddleOcr->statusTip().contains(QStringLiteral("workspace"))) {
+        paddleOcr->trigger();
+        auto* dialog = window->findChild<QDialog*>(
+                QStringLiteral("AnnotationPaddleOCR"));
+        if (!dialog || !dialog->isVisible() ||
+            dialog->minimumSize() != QSize(1200, 760) ||
+            !dialog->findChild<QListWidget*>(QStringLiteral("PpocrRecords"))) {
             std::fprintf(stderr,
-                         "PaddleOCR entry must run OCR in-window, not hand "
-                         "off to the qOCR workspace\n");
+                         "PaddleOCR entry must open its dedicated document "
+                         "workspace\n");
             return 1;
         }
+        paddleOcr->trigger();
+        if (window->findChildren<QDialog*>(
+                          QStringLiteral("AnnotationPaddleOCR"))
+                    .size() != 1)
+            return 1;
+        dialog->close();
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }
     // The zh_CN catalog is embedded in the plugin resources and translates
     // the core menu set; untranslated entries fall back to the source text.
@@ -1014,7 +1184,15 @@ int main(int argc, char** argv) {
         const QString translated =
                 loaded ? catalog.translate("AnnotationWindow", "File")
                        : QString();
-        if (!loaded || translated != QStringLiteral("文件")) {
+        if (!loaded || translated != QStringLiteral("文件") ||
+            catalog.translate("PointCloudWindow", "Perspective") !=
+                    QStringLiteral("透视投影") ||
+            catalog.translate("PointCloudWindow", "Dataset") !=
+                    QStringLiteral("数据集") ||
+            catalog.translate("AnnotationChat", "Model settings") !=
+                    QStringLiteral("模型设置") ||
+            catalog.translate("ChatServiceClient", "Chat request timed out.") !=
+                    QStringLiteral("聊天请求超时。")) {
             std::fprintf(
                     stderr,
                     "zh_CN translation catalog failed to load: "
@@ -1073,6 +1251,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("AnnotationSettingsMaskOpacity"));
             auto* showScores = dialog->findChild<QCheckBox*>(
                     QStringLiteral("AnnotationSettingsShowScores"));
+            auto* fileEditable = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("AnnotationSettingsFileListEditable"));
             auto* shortcuts = dialog->findChild<QTableWidget*>(
                     QStringLiteral("AnnotationShortcutTable"));
             auto* navigation = dialog->findChild<QListWidget*>(
@@ -1080,10 +1260,10 @@ int main(int argc, char** argv) {
             auto* saveShortcut = dialog->findChild<QKeySequenceEdit*>(
                     QStringLiteral("AnnotationShortcutEditor_save"));
             auto* buttons = dialog->findChild<QDialogButtonBox*>();
-            if (!radius || !opacity || !showScores ||
-                !showScores->isChecked() || !shortcuts ||
-                shortcuts->rowCount() == 0 || !navigation || !saveShortcut ||
-                !buttons || navigation->count() != 4 ||
+            if (!radius || !opacity || !showScores || !fileEditable ||
+                fileEditable->isChecked() || !showScores->isChecked() ||
+                !shortcuts || shortcuts->rowCount() == 0 || !navigation ||
+                !saveShortcut || !buttons || navigation->count() != 4 ||
                 navigation->currentItem()->text() !=
                         QStringLiteral("Shortcuts")) {
                 dialog->reject();
@@ -1113,6 +1293,7 @@ int main(int argc, char** argv) {
             radius->setValue(33);
             opacity->setValue(61);
             showScores->setChecked(false);
+            fileEditable->setChecked(true);
             buttons->button(QDialogButtonBox::Ok)->click();
         }
     });
@@ -1127,6 +1308,9 @@ int main(int argc, char** argv) {
         QSettings().value(QStringLiteral("qAnyLabeling/brushRadius")) != 33 ||
         QSettings().value(QStringLiteral("qAnyLabeling/maskOpacity")) != 61 ||
         QSettings().value(QStringLiteral("qAnyLabeling/showScores")).toBool() ||
+        !QSettings()
+                 .value(QStringLiteral("qAnyLabeling/fileListCheckboxEditable"))
+                 .toBool() ||
         save->shortcut() != QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_8) ||
         QSettings().value(QStringLiteral("qAnyLabeling/shortcuts/save")) !=
                 QStringLiteral("Ctrl+Alt+8") ||
@@ -1218,6 +1402,162 @@ int main(int argc, char** argv) {
     sidecar.close();
     if (!storedFlag) {
         std::fprintf(stderr, "Checked image flag was not saved\n");
+        return 1;
+    }
+    // Classification is a view of the main document flags: category changes
+    // must preserve geometry and unrelated sidecar fields under auto-save.
+    auto* classifierAction = window->findChild<QAction*>(
+            QStringLiteral("AnnotationImageClassifierAction"));
+    bool classifierReady = false;
+    int classifierStage = 0;
+    QTimer::singleShot(
+            0, window,
+            [&classifierReady, &classifierStage, save, window, &directory]() {
+                classifierStage = 1;
+                auto* files = window->findChild<QListWidget*>(
+                        QStringLiteral("AnnotationFiles"));
+                auto* dialog = qobject_cast<QDialog*>(
+                        QApplication::activeModalWidget());
+                if (!dialog ||
+                    dialog->objectName() !=
+                            QStringLiteral("AnnotationImageClassifier"))
+                    return;
+                auto* multi = dialog->findChild<QPushButton*>(
+                        QStringLiteral("ClassifierMultiClass"));
+                auto* many = dialog->findChild<QPushButton*>(
+                        QStringLiteral("ClassifierMultiLabel"));
+                auto* search = dialog->findChild<QLineEdit*>(
+                        QStringLiteral("ClassifierSearch"));
+                const auto categories = dialog->findChildren<QCheckBox*>(
+                        QStringLiteral("ClassifierCategory"));
+                if (!multi || !multi->isChecked() || !many || !search ||
+                    categories.size() != 2) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 2;
+                categories[1]->setChecked(true);
+                if (categories[0]->isChecked() || !categories[1]->isChecked()) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 3;
+                many->click();
+                categories[0]->setChecked(true);
+                if (!categories[0]->isChecked() ||
+                    !categories[1]->isChecked()) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 4;
+                search->setText(QStringLiteral("verified missing"));
+                if (!categories[0]->isHidden() || !categories[1]->isHidden()) {
+                    dialog->reject();
+                    return;
+                }
+                search->setText(QStringLiteral("verified"));
+                if (!categories[0]->isHidden() || categories[1]->isHidden()) {
+                    dialog->reject();
+                    return;
+                }
+                search->clear();
+                classifierStage = 5;
+                save->trigger();
+                auto* page = dialog->findChild<QSpinBox*>(
+                        QStringLiteral("ClassifierPage"));
+                if (!page || files->count() < 2) {
+                    dialog->reject();
+                    return;
+                }
+                const int originalPage = page->value();
+                classifierStage = 6;
+                page->setValue(originalPage == 1 ? 2 : 1);
+                if (files->currentRow() + 1 == originalPage) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 7;
+                page->setValue(originalPage);
+                if (files->currentRow() + 1 != originalPage ||
+                    !categories[0]->isChecked() ||
+                    !categories[1]->isChecked()) {
+                    dialog->reject();
+                    return;
+                }
+                QTimer::singleShot(0, dialog, [] {
+                    if (auto* question = qobject_cast<QMessageBox*>(
+                                QApplication::activeModalWidget()))
+                        question->button(QMessageBox::Yes)->click();
+                });
+                classifierStage = 8;
+                multi->click();
+                if (!multi->isChecked()) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 9;
+                const QString exportPath =
+                        directory.path() + QStringLiteral("/classified");
+                if (!QDir().mkpath(exportPath)) {
+                    dialog->reject();
+                    return;
+                }
+                QTimer::singleShot(0, dialog, [exportPath, dialog] {
+                    if (auto* chooser = qobject_cast<QFileDialog*>(
+                                QApplication::activeModalWidget())) {
+                        chooser->setDirectory(exportPath);
+                        chooser->selectFile(exportPath);
+                        QTimer::singleShot(0, dialog, [] {
+                            if (auto* message = qobject_cast<QMessageBox*>(
+                                        QApplication::activeModalWidget()))
+                                message->accept();
+                        });
+                        QMetaObject::invokeMethod(chooser, "accept",
+                                                  Qt::DirectConnection);
+                    }
+                });
+                auto* exportButton = dialog->findChild<QPushButton*>(
+                        QStringLiteral("ClassifierExport"));
+                if (!exportButton) {
+                    dialog->reject();
+                    return;
+                }
+                classifierStage = 10;
+                exportButton->click();
+                classifierStage = 11;
+                const QString sourceName = files->currentItem()->text();
+                if (!QFileInfo::exists(exportPath +
+                                       QStringLiteral("/occluded/") +
+                                       sourceName)) {
+                    dialog->reject();
+                    return;
+                }
+                classifierReady = true;
+                dialog->accept();
+            });
+    if (!classifierAction || !classifierAction->isEnabled()) return 1;
+    classifierAction->trigger();
+    if (!classifierReady) {
+        std::fprintf(
+                stderr,
+                "Image Classifier interaction contract failed at stage %d\n",
+                classifierStage);
+        return 1;
+    }
+    save->trigger();
+    if (!sidecar.open(QIODevice::ReadOnly)) return 1;
+    const QJsonObject classifiedDocument =
+            QJsonDocument::fromJson(sidecar.readAll()).object();
+    sidecar.close();
+    const QJsonObject classifiedFlags =
+            classifiedDocument.value(QStringLiteral("flags")).toObject();
+    if (!classifiedFlags.value(QStringLiteral("occluded")).toBool() ||
+        !classifiedFlags.value(QStringLiteral("verified")).toBool() ||
+        classifiedDocument.value(QStringLiteral("shapes"))
+                .toArray()
+                .isEmpty()) {
+        std::fprintf(stderr,
+                     "Classifier must save flags without losing shapes\n");
         return 1;
     }
     if (!deleteLabelFile->isEnabled()) {
@@ -1978,7 +2318,11 @@ int main(int argc, char** argv) {
         return 1;
     }
     QMimeData invalidMime;
-    invalidMime.setUrls({QUrl::fromLocalFile(sidecarPath)});
+    QFile unsupportedFile(directory.path() +
+                          QStringLiteral("/unsupported.txt"));
+    if (!unsupportedFile.open(QIODevice::WriteOnly)) return 1;
+    unsupportedFile.close();
+    invalidMime.setUrls({QUrl::fromLocalFile(unsupportedFile.fileName())});
     QDragEnterEvent invalidEnter(QPoint(20, 20), Qt::CopyAction, &invalidMime,
                                  Qt::LeftButton, Qt::NoModifier);
     QCoreApplication::sendEvent(window->centralWidget(), &invalidEnter);
@@ -2173,6 +2517,255 @@ int main(int argc, char** argv) {
         models->setCurrentText(QStringLiteral("sam3"));
         samText->setText(QStringLiteral("bus"));
         window->grab().save(QString::fromLocal8Bit(screenshot));
+    }
+    // Exercise the real window snapshot/undo/redo and sidecar path, beyond
+    // the geometry-only cuboid tests. Unknown metadata survives all edits.
+    save->trigger();
+    QImage cuboidImage(400, 400, QImage::Format_RGB32);
+    cuboidImage.fill(Qt::black);
+    const QString cuboidImagePath =
+            directory.path() + QStringLiteral("/cuboid.png");
+    if (!cuboidImage.save(cuboidImagePath)) return 1;
+    const QJsonArray cuboidPoints{QJsonArray{80, 100},  QJsonArray{200, 100},
+                                  QJsonArray{200, 240}, QJsonArray{80, 240},
+                                  QJsonArray{120, 60},  QJsonArray{240, 60},
+                                  QJsonArray{240, 200}, QJsonArray{120, 200}};
+    const QJsonObject cuboidShape{
+            {QStringLiteral("label"), QStringLiteral("car")},
+            {QStringLiteral("shape_type"), QStringLiteral("cuboid")},
+            {QStringLiteral("points"), cuboidPoints},
+            {QStringLiteral("cuboid3d"),
+             QJsonObject{{QStringLiteral("source"), QStringLiteral("fixture")},
+                         {QStringLiteral("custom"), 42}}}};
+    QFile cuboidSidecar(directory.path() + QStringLiteral("/cuboid.json"));
+    if (!cuboidSidecar.open(QIODevice::WriteOnly) ||
+        cuboidSidecar.write(
+                QJsonDocument(QJsonObject{{QStringLiteral("shapes"),
+                                           QJsonArray{cuboidShape}}})
+                        .toJson()) < 0)
+        return 1;
+    cuboidSidecar.close();
+    if (!QMetaObject::invokeMethod(window, "openImage", Qt::DirectConnection,
+                                   Q_ARG(QString, cuboidImagePath)))
+        return 1;
+    editTool->trigger();
+    QCoreApplication::processEvents();
+    zoomOriginal->trigger();
+    QCoreApplication::processEvents();
+    const QPointF cuboidOrigin((canvasWidget->width() - 400) / 2.0,
+                               (canvasWidget->height() - 400) / 2.0);
+    const auto cuboidMouse = [&](QEvent::Type type, const QPointF& point) {
+        QMouseEvent event(type, cuboidOrigin + point, Qt::LeftButton,
+                          type == QEvent::MouseButtonRelease ? Qt::NoButton
+                                                             : Qt::LeftButton,
+                          Qt::NoModifier);
+        QCoreApplication::sendEvent(canvasWidget, &event);
+    };
+    cuboidMouse(QEvent::MouseButtonPress, QPointF(80, 100));
+    cuboidMouse(QEvent::MouseMove, QPointF(60, 80));
+    cuboidMouse(QEvent::MouseButtonRelease, QPointF(60, 80));
+    const auto savedCuboid = [&]() {
+        save->trigger();
+        if (!cuboidSidecar.open(QIODevice::ReadOnly)) return QJsonObject();
+        const QJsonArray shapes =
+                QJsonDocument::fromJson(cuboidSidecar.readAll())
+                        .object()
+                        .value(QStringLiteral("shapes"))
+                        .toArray();
+        cuboidSidecar.close();
+        return shapes.size() == 1 ? shapes.first().toObject() : QJsonObject();
+    };
+    const QJsonObject editedCuboid = savedCuboid();
+    const QJsonArray editedPoints =
+            editedCuboid.value(QStringLiteral("points")).toArray();
+    if (editedPoints.size() != 8 ||
+        editedPoints[0].toArray() != QJsonArray{60, 80} ||
+        editedPoints[1].toArray() != QJsonArray{200, 80}) {
+        std::fprintf(stderr,
+                     "Window cuboid drag/save failed: canvas=%dx%d shapes=%s\n",
+                     canvasWidget->width(), canvasWidget->height(),
+                     QJsonDocument(editedCuboid)
+                             .toJson(QJsonDocument::Compact)
+                             .constData());
+        return 1;
+    }
+    undo->trigger();
+    if (savedCuboid().value(QStringLiteral("points")).toArray() !=
+        cuboidPoints) {
+        std::fprintf(stderr,
+                     "Window cuboid undo did not restore all eight points\n");
+        return 1;
+    }
+    QAction* cuboidRedo = nullptr;
+    for (QAction* action : window->findChildren<QAction*>())
+        if (action->text() == QStringLiteral("Redo")) cuboidRedo = action;
+    if (!cuboidRedo || !cuboidRedo->isEnabled()) return 1;
+    cuboidRedo->trigger();
+    const QJsonObject redoneCuboid = savedCuboid();
+    if (redoneCuboid.value(QStringLiteral("points")).toArray() !=
+                editedPoints ||
+        redoneCuboid.value(QStringLiteral("cuboid3d"))
+                        .toObject()
+                        .value(QStringLiteral("custom"))
+                        .toInt() != 42) {
+        std::fprintf(stderr,
+                     "Window cuboid redo lost geometry or source metadata\n");
+        return 1;
+    }
+    // Open a JSON outside the image folder through the real drag/drop path.
+    // Saving must update that exact file with a path relative to its folder,
+    // and must not overwrite the adjacent image's independent annotations.
+    QDir root(directory.path());
+    if (!root.mkdir(QStringLiteral("labels"))) return 1;
+    QFile external(root.filePath(QStringLiteral("labels/review.json")));
+    QJsonObject externalJson{
+            {QStringLiteral("shapes"), QJsonArray{cuboidShape}},
+            {QStringLiteral("imagePath"), QStringLiteral("../cuboid.png")},
+            {QStringLiteral("imageData"), QJsonValue::Null},
+            {QStringLiteral("custom_document"), 73}};
+    if (!external.open(QIODevice::WriteOnly) ||
+        external.write(QJsonDocument(externalJson).toJson()) < 0)
+        return 1;
+    external.close();
+    QMimeData jsonMime;
+    jsonMime.setUrls({QUrl::fromLocalFile(external.fileName())});
+    QDragEnterEvent jsonEnter(QPoint(20, 20), Qt::CopyAction, &jsonMime,
+                              Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(window->centralWidget(), &jsonEnter);
+    if (!jsonEnter.isAccepted()) return 1;
+    QDropEvent jsonDrop(QPoint(20, 20), Qt::CopyAction, &jsonMime,
+                        Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(window->centralWidget(), &jsonDrop);
+    save->trigger();
+    if (!jsonDrop.isAccepted() || !external.open(QIODevice::ReadOnly)) return 1;
+    const auto savedExternal =
+            QJsonDocument::fromJson(external.readAll()).object();
+    external.close();
+    if (savedExternal.value(QStringLiteral("imagePath")).toString() !=
+                QStringLiteral("../cuboid.png") ||
+        savedExternal.value(QStringLiteral("custom_document")).toInt() != 73 ||
+        savedExternal.value(QStringLiteral("shapes"))
+                        .toArray()
+                        .first()
+                        .toObject()
+                        .value(QStringLiteral("points")) !=
+                cuboidShape.value(QStringLiteral("points"))) {
+        std::fprintf(stderr,
+                     "JSON-first open/save lost path or document identity\n");
+        return 1;
+    }
+    if (!cuboidSidecar.open(QIODevice::ReadOnly)) return 1;
+    const auto adjacent =
+            QJsonDocument::fromJson(cuboidSidecar.readAll()).object();
+    cuboidSidecar.close();
+    if (adjacent.value(QStringLiteral("shapes")).toArray().first().toObject() !=
+        redoneCuboid)
+        return 1;
+    // A malformed document must leave the current document usable and saveable.
+    QFile broken(root.filePath(QStringLiteral("broken.json")));
+    if (!broken.open(QIODevice::WriteOnly) || broken.write("{") != 1) return 1;
+    broken.close();
+    bool errorShown = false;
+    QTimer::singleShot(0, window, [&]() {
+        if (auto* box = qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget())) {
+            errorShown = true;
+            box->accept();
+        }
+    });
+    if (!QMetaObject::invokeMethod(window, "openImage", Qt::DirectConnection,
+                                   Q_ARG(QString, broken.fileName())))
+        return 1;
+    save->trigger();
+    if (!errorShown || !external.open(QIODevice::ReadOnly)) return 1;
+    const auto afterError =
+            QJsonDocument::fromJson(external.readAll()).object();
+    external.close();
+    if (afterError != savedExternal) {
+        std::fprintf(stderr, "Failed JSON load changed the active document\n");
+        return 1;
+    }
+
+    // Drive the real batch dialog through its nested confirmation loop.
+    if (!root.mkdir(QStringLiteral("batch"))) return 1;
+    QDir batch(root.filePath(QStringLiteral("batch")));
+    for (int i = 0; i < 3; ++i)
+        if (!QFile::copy(cuboidImagePath,
+                         batch.filePath(QStringLiteral("%1.png").arg(i))))
+            return 1;
+    QFile firstBatch(batch.filePath(QStringLiteral("0.json")));
+    if (!firstBatch.open(QIODevice::WriteOnly) ||
+        firstBatch.write(QJsonDocument(QJsonObject{{QStringLiteral("shapes"),
+                                                    QJsonArray{cuboidShape}}})
+                                 .toJson()) < 0)
+        return 1;
+    firstBatch.close();
+    if (!QMetaObject::invokeMethod(
+                window, "openImage", Qt::DirectConnection,
+                Q_ARG(QString, batch.filePath(QStringLiteral("0.png")))))
+        return 1;
+    auto* batchObjects = window->findChild<QListWidget*>(
+            QStringLiteral("AnnotationObjects"));
+    auto* managerAction = window->findChild<QAction*>(
+            QStringLiteral("qAnyShortcut_edit_shapes"));
+    if (!batchObjects || batchObjects->count() != 1 || !managerAction ||
+        !managerAction->isEnabled())
+        return 1;
+    batchObjects->item(0)->setSelected(true);
+    bool batchControls = false, batchConfirmed = false;
+    QTimer::singleShot(0, window, [&]() {
+        auto* dialog =
+                qobject_cast<QDialog*>(QApplication::activeModalWidget());
+        if (!dialog ||
+            dialog->objectName() != QStringLiteral("AnnotationShapeManager"))
+            return;
+        auto* from = dialog->findChild<QSpinBox*>(
+                QStringLiteral("AnnotationShapeFrom"));
+        auto* to = dialog->findChild<QSpinBox*>(
+                QStringLiteral("AnnotationShapeTo"));
+        auto* add = dialog->findChild<QCheckBox*>(
+                QStringLiteral("AnnotationShapeOperation3"));
+        auto* remove = dialog->findChild<QCheckBox*>(
+                QStringLiteral("AnnotationShapeOperation2"));
+        auto* go = dialog->findChild<QPushButton*>(
+                QStringLiteral("AnnotationShapeGo"));
+        batchControls = from && to && add && remove && go &&
+                        from->value() == 1 && to->value() == 0 &&
+                        add->isEnabled() && remove->isEnabled();
+        if (!batchControls) {
+            dialog->reject();
+            return;
+        }
+        remove->setChecked(true);
+        add->setChecked(true);
+        batchControls &= !remove->isChecked();
+        to->setValue(3);
+        QTimer::singleShot(0, window, [&]() {
+            if (auto* box = qobject_cast<QMessageBox*>(
+                        QApplication::activeModalWidget())) {
+                batchConfirmed = true;
+                box->button(QMessageBox::Yes)->click();
+            }
+        });
+        go->click();
+    });
+    managerAction->trigger();
+    if (!batchControls || !batchConfirmed) return 1;
+    for (int i = 0; i < 3; ++i) {
+        QFile file(batch.filePath(QStringLiteral("%1.json").arg(i)));
+        if (!file.open(QIODevice::ReadOnly)) return 1;
+        const auto shapes = QJsonDocument::fromJson(file.readAll())
+                                    .object()
+                                    .value(QStringLiteral("shapes"))
+                                    .toArray();
+        if (shapes.size() != 1 ||
+            shapes.first().toObject().value(QStringLiteral("points")) !=
+                    cuboidShape.value(QStringLiteral("points"))) {
+            std::fprintf(stderr,
+                         "Shape Manager add/deduplicate did not persist "
+                         "selected cuboid\n");
+            return 1;
+        }
     }
     window->close();
     QCoreApplication::processEvents();
