@@ -873,6 +873,12 @@ jobs:
           # wedged the pipeline for the remaining ~6h (Ubuntu's
           # run_python_tests passes -v and the same suite passes in ~6min).
           PYTHONUNBUFFERED: '1'
+          # Forensics gate for test_database_management_surface (the Windows
+          # abort diagnosed via test_parity_batches.py): set the repository
+          # variable ACV_WINDOWS_DB_DIAG=1 (repo Settings -> Variables) to run
+          # that test with its step-level stderr markers on; default 0 keeps
+          # it skipped per the upstream verification boundary.
+          ACV_WINDOWS_DB_DIAG: ${{ vars.ACV_WINDOWS_DB_DIAG || '0' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
@@ -907,6 +913,12 @@ jobs:
           # Same forensics as the CPU step above (unbuffered verbose lines
           # name the failing test when a C++ extension aborts mid-run).
           PYTHONUNBUFFERED: '1'
+          # Forensics gate for test_database_management_surface (the Windows
+          # abort diagnosed via test_parity_batches.py): set the repository
+          # variable ACV_WINDOWS_DB_DIAG=1 (repo Settings -> Variables) to run
+          # that test with its step-level stderr markers on; default 0 keeps
+          # it skipped per the upstream verification boundary.
+          ACV_WINDOWS_DB_DIAG: ${{ vars.ACV_WINDOWS_DB_DIAG || '0' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
