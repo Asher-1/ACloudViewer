@@ -91,18 +91,25 @@ jobs:
       # bytes" (ENOSPC). On the pre-maximize root there is ample space.
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
+      # Plain rm instead of easimon/maximize-build-space: that action's
+      # root-reserve-mb did not materialize on the 145GB ubuntu-24.04 image
+      # (20261012.334) - root was left at ~100MB and checkout/ENOSPC races
+      # followed (run 39434156547 cuda-focal died in the runner itself).
+      # Removing the preinstalled toolchains below frees ~45GB on /, enough
+      # for both the docker build (~47GB image) and the checkout, with the
+      # default /var/lib/docker directory on the root fs. Inline rm (not
+      # util/ci_utils.sh): this step runs before checkout.
       - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-          build-mount-path: '/var/lib/docker'
-          build-mount-path-ownership: 'root:root'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet           # ~17GB
+          sudo rm -rf /usr/local/lib/android      # ~11GB
+          sudo rm -rf /opt/ghc                    # ~2.7GB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+          sudo docker image prune --all --force   # ~4.5GB
+          echo "=== Disk space after cleanup ==="
+          df -h /
       - name: Clean runner logs and cache
         run: |
           echo "=== Disk space before cleanup ==="

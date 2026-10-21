@@ -78,18 +78,30 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      # Free disk space with plain rm instead of easimon/maximize-build-space:
+      # that action carves the runner disk into an LVM build volume (mounted at
+      # /var/lib/docker) plus a loop-file-filled root fs, and is documented to
+      # leave the root with at most root-reserve-mb free. On the current 145GB
+      # ubuntu-24.04 image (20261012.334) the configured 10GiB reserve did not
+      # materialize - root was left at ~100MB (run 39434156547 cuda-focal:
+      # "No space left on device" while the runner wrote its own diag log
+      # during checkout; cuda-jammy/noble survived with only ~0.3-1.2GB head
+      # room). The docker image built below needs ~47GB total; the preinstalled
+      # toolchains removed here free ~45GB, leaving >100GB on / for both docker
+      # (default /var/lib/docker directory) and the checkout - no LVM, no loop
+      # files, no third-party action. The 10GB /mnt temp disk stays unused.
+      # Inline rm (not util/ci_utils.sh): this step runs before checkout.
       - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-          build-mount-path: '/var/lib/docker'
-          build-mount-path-ownership: 'root:root'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet           # ~17GB
+          sudo rm -rf /usr/local/lib/android      # ~11GB
+          sudo rm -rf /opt/ghc                    # ~2.7GB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+          sudo docker image prune --all --force   # ~4.5GB
+          echo "=== Disk space after cleanup ==="
+          df -h /
       - name: Clean runner logs and cache before checkout
         run: |
           echo "=== Disk space before cleanup ==="
