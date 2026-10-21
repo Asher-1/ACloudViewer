@@ -274,3 +274,4 @@ agent-integration/examples/test_data
 .trae/
 .qoder/
 core/AICore/models/
+.ccache/

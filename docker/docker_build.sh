@@ -122,6 +122,15 @@ cuda_wheel_build() {
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
         bash -c "cp /root/install/cloudviewer*.whl /opt/mount \
             && chown $(id -u):$(id -g) /opt/mount/cloudviewer*.whl"
+
+    # Export the container's ccache directory (CCACHE_DIR=/root/ACloudViewer/.ccache,
+    # see Dockerfile.wheel) back into the workspace for the workflow's
+    # actions/cache post-step to save; same best-effort contract as ci_build.
+    if docker run --rm cloudviewer-ci:wheel tar -C /root/ACloudViewer -cf - .ccache 2>/dev/null | tar -C "${PWD}" -xf -; then
+        echo "[cuda_wheel_build()] ccache exported to ${PWD}/.ccache"
+    else
+        echo "[cuda_wheel_build()] WARNING: ccache export failed/skipped (next run builds cold)"
+    fi
 }
 
 ci_build() {
@@ -138,11 +147,12 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
 
-    # Cap build parallelism to avoid OOM on memory-constrained GitHub runners.
-    # CUDA compiles (nvcc) are memory-hungry: default to 2 jobs. CPU builds can
-    # afford more (4). Respect an explicit BUILD_JOBS override if set.
+    # Build parallelism: current hosted runners are 4 vCPU / 16 GB (runner
+    # images 2026+), so CUDA builds default to 4 (nvcc peak ~2-4 GB per TU,
+    # -j4 fits in 16 GB). The old 2 was tuned for the 2-core/7 GB era and
+    # left half the CPUs idle. An explicit BUILD_JOBS override still wins.
     if [ "${BUILD_CUDA_MODULE:-OFF}" = "ON" ]; then
-        BUILD_JOBS="${BUILD_JOBS:-2}"
+        BUILD_JOBS="${BUILD_JOBS:-4}"
     else
         BUILD_JOBS="${BUILD_JOBS:-4}"
     fi
@@ -169,6 +179,20 @@ ci_build() {
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /root/install/*run /opt/mount \
                && chown $(id -u):$(id -g) /opt/mount/*run"
+
+    # Export the container's ccache directory (CCACHE_DIR=/root/ACloudViewer/.ccache,
+    # see Dockerfile.ci) back into the workspace, on top of the copy the
+    # actions/cache step restored before the build. The workflow's
+    # actions/cache post-step then saves the updated tree for the next run.
+    # Hosted runners boot a fresh VM every run, so the Docker layer cache is
+    # always empty; the compiler cache in this directory is the only thing
+    # that survives between runs. Best-effort: a missing/failed export must
+    # not fail the build (the next run just recompiles cold).
+    if docker run --rm "${DOCKER_TAG}" tar -C /root/ACloudViewer -cf - .ccache 2>/dev/null | tar -C "${PWD}" -xf -; then
+        echo "[ci_build()] ccache exported to ${PWD}/.ccache"
+    else
+        echo "[ci_build()] WARNING: ccache export failed/skipped (next run builds cold)"
+    fi
 }
 
 cuda-focal_export_env() {
