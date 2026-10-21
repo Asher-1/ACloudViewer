@@ -201,6 +201,16 @@ RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b main ${
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
+# CCACHE_DIR points inside the repo tree on purpose: the repo is COPY'd into
+# the image, the workflow restores the previous run's .ccache/ before the
+# build, and docker_build.sh exports the updated directory back out after the
+# build for the actions/cache post-step to save. ccache is auto-wired as
+# CMAKE_*_COMPILER_LAUNCHER by CMakeLists.txt (find_program(CCACHE)),
+# including the CUDA launcher. 2G per pool keeps the union of all Ubuntu
+# config pools within the 10 GB GitHub Actions cache quota (LRU evicts).
+ENV CCACHE_DIR=/root/ACloudViewer/.ccache \
+    CCACHE_MAXSIZE=2G \
+    CCACHE_COMPILERCHECK=content
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
@@ -233,5 +243,10 @@ RUN echo "Build cloudviewer wheel for ${PYTHON_VERSION}..." \
     && ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION} \
     && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+# Compile-cache visibility: ccache has no daemon, its stats file lives in
+# CCACHE_DIR and survives the build, so this prints the true cumulative
+# hit-rate.
+RUN ccache --show-stats || true
 
 RUN echo "Docker wheel build done."

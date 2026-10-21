@@ -53,30 +53,27 @@ jobs:
       DOCKER_TAG: cloudviewer-prebuild-deps:${{ matrix.codename }}
       TARBALL: vtk-pcl-deps-${{ matrix.codename }}-vtk9.3.1-pcl1.14.1.tar.gz
     steps:
+      # Plain rm instead of easimon/maximize-build-space: that action's
+      # root-reserve-mb did not materialize on the 145GB ubuntu-24.04 image
+      # (20261012.334) - root was left at ~100MB and checkout/ENOSPC races
+      # followed (run 39434156547 cuda-focal died in the runner itself).
+      # Removing the preinstalled toolchains below frees ~45GB on /, enough
+      # for the docker build and the checkout, with the default
+      # /var/lib/docker directory on the root fs. Inline rm (not
+      # util/ci_utils.sh): this step runs before checkout.
       - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-          build-mount-path: '/var/lib/docker'
-          build-mount-path-ownership: 'root:root'
-      # maximize-build-space with build-mount-path=/var/lib/docker remounts
-      # Docker's data root onto a fresh LVM filesystem while dockerd is running,
-      # but does NOT restart the daemon. dockerd/buildkit then still reference
-      # overlay2 layers from the old (now hidden) mount, so the next `docker build`
-      # fails immediately with:
-      #   failed to prepare ... symlink ../<hash>/diff .../overlay2/l/...: no such file or directory
-      # Restarting docker re-initializes overlay2 on the new mount and clears the
-      # stale layer cache. (Verified against all three Ubuntu matrix jobs.)
-      - name: Restart docker after remounting /var/lib/docker
         run: |
-          sudo systemctl restart docker
-          docker info >/dev/null 2>&1 || sudo service docker restart
+          echo "=== Disk space before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet           # ~17GB
+          sudo rm -rf /usr/local/lib/android      # ~11GB
+          sudo rm -rf /opt/ghc                    # ~2.7GB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+          sudo docker image prune --all --force   # ~4.5GB
+          echo "=== Disk space after cleanup ==="
+          df -h /
+      # No docker restart needed here anymore: without the LVM remount of
+      # /var/lib/docker the daemon keeps its original data root throughout.
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Check whether the tarball already exists

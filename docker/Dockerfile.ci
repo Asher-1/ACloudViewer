@@ -211,12 +211,24 @@ RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Cap build parallelism to avoid OOM on memory-constrained GitHub runners.
-# docker_build.sh passes BUILD_JOBS (2 for CUDA, 4 for CPU). NPROC drives the
+# docker_build.sh passes BUILD_JOBS (4 for CUDA and CPU alike, 4 vCPU/16 GB
+# runner). NPROC drives the
 # main ACloudViewer build (build_gui_app.sh / ci_utils.sh) and must not exceed
 # the host memory, otherwise the runner can be starved/OOM-killed and GitHub
 # reports "The hosted runner lost communication with the server".
 ARG BUILD_JOBS=4
+# CCACHE_DIR points inside the repo tree on purpose: the repo is COPY'd into
+# the image, the CI workflow restores the previous run's .ccache/ into the
+# workspace before the build, and docker_build.sh exports the updated
+# directory back out after the build for the actions/cache post-step to save.
+# ccache is auto-wired as CMAKE_*_COMPILER_LAUNCHER by CMakeLists.txt
+# (find_program(CCACHE)), including the CUDA launcher. 2G per pool keeps the
+# union of all Ubuntu config pools within the 10 GB GitHub Actions cache
+# quota (LRU evicts the least recently used).
 ENV NPROC=${BUILD_JOBS} \
+    CCACHE_DIR=/root/ACloudViewer/.ccache \
+    CCACHE_MAXSIZE=2G \
+    CCACHE_COMPILERCHECK=content \
     ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
@@ -259,5 +271,10 @@ RUN if [ "${PREBUILD_DEPS_ONLY}" = "OFF" ]; then \
         && WITH_RDB=ON NINJA_GRAPH_CHECK=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}; \
     fi
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+# Compile-cache visibility: ccache has no daemon, its stats file lives in
+# CCACHE_DIR and survives the build, so this prints the true cumulative
+# hit-rate (unlike the Windows sccache daemon whose stats die with the step).
+RUN ccache --show-stats || true
 
 RUN echo "Docker ci build done."

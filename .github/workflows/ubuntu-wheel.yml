@@ -91,18 +91,25 @@ jobs:
       # bytes" (ENOSPC). On the pre-maximize root there is ample space.
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
+      # Plain rm instead of easimon/maximize-build-space: that action's
+      # root-reserve-mb did not materialize on the 145GB ubuntu-24.04 image
+      # (20261012.334) - root was left at ~100MB and checkout/ENOSPC races
+      # followed (run 39434156547 cuda-focal died in the runner itself).
+      # Removing the preinstalled toolchains below frees ~45GB on /, enough
+      # for both the docker build (~47GB image) and the checkout, with the
+      # default /var/lib/docker directory on the root fs. Inline rm (not
+      # util/ci_utils.sh): this step runs before checkout.
       - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-          build-mount-path: '/var/lib/docker'
-          build-mount-path-ownership: 'root:root'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet           # ~17GB
+          sudo rm -rf /usr/local/lib/android      # ~11GB
+          sudo rm -rf /opt/ghc                    # ~2.7GB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+          sudo docker image prune --all --force   # ~4.5GB
+          echo "=== Disk space after cleanup ==="
+          df -h /
       - name: Clean runner logs and cache
         run: |
           echo "=== Disk space before cleanup ==="
@@ -139,6 +146,22 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
+      - name: Restore compiler cache
+        # Cross-run ccache for the container build. Hosted runners boot a
+        # fresh VM every run, so the Docker layer cache is always empty and
+        # the compiler cache inside .ccache/ is the only thing that survives:
+        # restored here, COPY'd into the image with the repo, and exported
+        # back by docker_build.sh after the build for this action's post-step
+        # to save. Rolling key + prefix restore-keys; 2G per pool keeps the
+        # union of all Ubuntu pools within the 10 GB repo cache quota.
+        # Cache never gates CI.
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: .ccache
+          key: ccache-wheel-py${{ matrix.python_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ccache-wheel-py${{ matrix.python_version }}-
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
