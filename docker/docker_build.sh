@@ -123,12 +123,17 @@ cuda_wheel_build() {
         bash -c "cp /root/install/cloudviewer*.whl /opt/mount \
             && chown $(id -u):$(id -g) /opt/mount/cloudviewer*.whl"
 
-    # Export the container's ccache directory (CCACHE_DIR=/root/ACloudViewer/.ccache,
-    # see Dockerfile.wheel) back into the workspace for the workflow's
-    # actions/cache post-step to save; same best-effort contract as ci_build.
-    if docker run --rm cloudviewer-ci:wheel tar -C /root/ACloudViewer -cf - .ccache 2>/dev/null | tar -C "${PWD}" -xf -; then
+    # Export the container's ccache directory for the workflow's
+    # actions/cache post-step to save; same bind-mounted-file + ccache -p
+    # resolution contract as ci_build (the NVIDIA ENTRYPOINT banner would
+    # corrupt a stdout tar pipe).
+    if docker run --rm -v "${PWD}:/opt/mount" cloudviewer-ci:wheel \
+        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+       && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
+        rm -f "${PWD}/.ccache-export.tgz"
         echo "[cuda_wheel_build()] ccache exported to ${PWD}/.ccache"
     else
+        rm -f "${PWD}/.ccache-export.tgz"
         echo "[cuda_wheel_build()] WARNING: ccache export failed/skipped (next run builds cold)"
     fi
 }
@@ -188,9 +193,23 @@ ci_build() {
     # always empty; the compiler cache in this directory is the only thing
     # that survives between runs. Best-effort: a missing/failed export must
     # not fail the build (the next run just recompiles cold).
-    if docker run --rm "${DOCKER_TAG}" tar -C /root/ACloudViewer -cf - .ccache 2>/dev/null | tar -C "${PWD}" -xf -; then
+    # The tarball goes through a bind-mounted FILE, never through the
+    # container's stdout: the NVIDIA base image ENTRYPOINT prints a banner to
+    # stdout on every docker run, which corrupts a streamed tar pipe (run
+    # 39565766621 cuda-jammy: "tar: This does not look like a tar archive" ->
+    # the cache was silently never saved and every run stayed cold).
+    # ccache -p resolves the live cache_dir (Open3D's pattern) so the export
+    # cannot drift from whatever CCACHE_DIR the image actually uses; the
+    # archive stores the directory's CONTENTS so the on-disk name stays
+    # .ccache/ regardless of that path. The \$ escapes keep ccache -p running
+    # inside the container, not on the runner host.
+    if docker run --rm -v "${PWD}:/opt/mount" "${DOCKER_TAG}" \
+        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+       && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
+        rm -f "${PWD}/.ccache-export.tgz"
         echo "[ci_build()] ccache exported to ${PWD}/.ccache"
     else
+        rm -f "${PWD}/.ccache-export.tgz"
         echo "[ci_build()] WARNING: ccache export failed/skipped (next run builds cold)"
     fi
 }
