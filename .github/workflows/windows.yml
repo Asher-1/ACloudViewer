@@ -185,8 +185,9 @@ jobs:
         # caches, and when the object pool went cold every compile blocked on
         # per-object ghac lookups/uploads during the 2026-10-21 Actions
         # incident, stretching that run from ~2.5 h to 6.03 h. A local disk
-        # pool saved as ONE bounded tarball (below) is immune to both and is
-        # the same pattern the ubuntu docker CI uses for ccache.
+        # pool saved as ONE bounded tarball (below) is immune to both; the
+        # ubuntu/macOS pools live on cloudViewer_downloads release assets
+        # instead, leaving this pool as the actions cache's only consumer.
         if: env.COLD_BUILD != 'true'
         id: sccache
         continue-on-error: true
