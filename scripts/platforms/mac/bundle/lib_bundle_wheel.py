@@ -152,6 +152,15 @@ class CCWheelBundler:
         so_generator = self.config.install_path.rglob("*.so")
         dylib_generator = self.config.install_path.rglob("*.dylib")
         all_libs = set(list(so_generator) + list(dylib_generator))
+        # codesign cannot act through symlinked names, and a concurrent worker
+        # rewriting the link target (libggml.dylib -> libggml.0.dylib -> real,
+        # created by CopyGgmlBackends.cmake COPY_CORE_SHARED) makes the link
+        # transiently dangling, failing remove-signature with "No such file
+        # or directory" (run 39601603941 macos-14 Build wheel). The real file
+        # behind each link is collected separately, so filtering symlinks
+        # here loses no signature; the SOVERSION links stay in the wheel for
+        # runtime @rpath resolution.
+        all_libs = {lib for lib in all_libs if not lib.is_symlink()}
         # create the process pool
         process_pool = multiprocessing.Pool()
 

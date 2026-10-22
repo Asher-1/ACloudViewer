@@ -80,6 +80,11 @@ jobs:
           - STATIC_RUNTIME: OFF
     env:
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
+      # R2 sccache backend credentials (repo Secrets; empty on forks / before
+      # configuration -> the "Select sccache backend" step falls back to the
+      # actions/cache tarball pool below).
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       # Ninja Multi-Config drives cl.exe directly (no MSBuild vcxproj
       # overhead) while keeping the VS-style bin/<Config>/ layout, the
       # per-config output-dir properties and the --config Release build
@@ -172,24 +177,78 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-      - name: Set up sccache (warm runs only)
+      - name: Set up sccache binary (warm runs only)
         # Compile cache is an optimization overlay: cache keys are content-
         # addressed (compiler hash + full command line + preprocessed input),
         # so any source/header/flag/third-party-version change misses and
         # recompiles for real. Infra failures degrade to a vanilla build via
         # continue-on-error + the outcome check below (cache never gates CI).
+        # The action is used ONLY to install the binary. Its ghac backend is
+        # intentionally NOT enabled (no SCCACHE_GHA_ENABLED): one cache entry
+        # per compiled object flooded the 10 GB repo quota (12,640 entries /
+        # 5.76 GB from run 39601603983 alone) and evicted other workflows'
+        # caches, and when the object pool went cold every compile blocked on
+        # per-object ghac lookups/uploads during the 2026-10-21 Actions
+        # incident, stretching that run from ~2.5 h to 6.03 h. A local disk
+        # pool saved as ONE bounded tarball (below) is immune to both and is
+        # the same pattern the ubuntu docker CI uses for ccache.
         if: env.COLD_BUILD != 'true'
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Select sccache backend (R2 if credentials present, tarball fallback)
+        # Two backends, chosen once per job:
+        #   R2      — when R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY secrets are
+        #             configured: per-object store in the dedicated bucket,
+        #             fully decoupled from the 10 GB GitHub cache quota (the
+        #             pattern man-group/ArcticDB, ChainSafe/forest and NVIDIA
+        #             cccl run in production on windows-latest).
+        #   tarball — fallback when the secrets are absent (forks, or before
+        #             configuration): the actions/cache pool below.
+        # The env vars are read by the sccache daemon when it is lazily
+        # spawned by the first compile; R2 has no regions, so SCCACHE_REGION
+        # must be "auto" (sccache docs/S3.md#R2). Bucket/prefix are not
+        # secret: the account id forms the public endpoint and the prefix
+        # scopes the bucket for future non-Windows pools.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if ("$env:AWS_ACCESS_KEY_ID" -ne "") {
+            echo "SCCACHE_R2_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_BUCKET=acloudviewer-cache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_ENDPOINT=https://d1a8964e6553f6843c3b90f203d42ea2.r2.cloudflarestorage.com" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_REGION=auto" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_S3_USE_SSL=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_S3_KEY_PREFIX=windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Host "sccache backend: R2 (bucket acloudviewer-cache, prefix windows)"
+          } else {
+            Write-Host "sccache backend: tarball fallback (R2 credentials not configured)"
+          }
+      - name: Restore sccache cache (tarball fallback only)
+        # Single-tarball pool, used ONLY when R2 credentials are absent, so
+        # the ~1-1.5 GB per-cell tarball is not re-uploaded every run on top
+        # of R2. Gated on Release: Debug matrix cells only run env setup, and
+        # an empty save with the same restore-keys prefix would win the
+        # "most recently created" match and shadow the warm Release pool.
+        if: env.COLD_BUILD != 'true' && env.SCCACHE_R2_ENABLED != 'true' && steps.sccache.outcome == 'success' && matrix.CONFIG == 'Release'
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\sccache
+          key: sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}-
       - name: Enable sccache launcher
-        # Only wire the launcher when the cache backend actually came up;
+        # Only wire the launcher when the binary actually came up;
         # util/ci_utils.ps1 forwards it as CMAKE_C/CXX_COMPILER_LAUNCHER
         # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
-        # CUDA (nvcc) caching is intentionally not enabled initially.
+        # SCCACHE_DIR caps the pool at 2 GB so each saved tarball stays a
+        # single bounded entry within the 10 GB repo quota (3 building cells
+        # per run). CUDA (nvcc) caching is intentionally not enabled.
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install dependencies
@@ -340,19 +399,21 @@ jobs:
           name: windows-build-log-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
           path: ${{ runner.temp }}\windows-build.log
           if-no-files-found: ignore
-      - name: sccache stats
-        # Visibility for cache hit-rate tuning; never gates the job.
-        # NOTE: the sccache daemon lives inside the build step's process tree
-        # and its stats are in-memory. GitHub Actions runners terminate that
-        # tree when the step exits, so this post-build invocation (and the
-        # action's post-run summary) observe a freshly spawned daemon and
-        # report 0 requests on Windows — the real numbers are printed by
-        # build_win_app.ps1 / build_win_wheel.ps1 at the end of the build
-        # step, while the daemon is still alive.
-        if: env.SCCACHE_GHA_ENABLED == 'true'
+      - name: Stop sccache server
+        # Flush the daemon's pending writes (local pool + queued remote
+        # uploads) before the job ends, so both the actions/cache tarball
+        # (fallback mode) and R2 receive everything. The --show-stats here
+        # may print zeros on Windows: the daemon serving the compiles is not
+        # the one this step spawns (measured: runs 39273926318, 39565766428
+        # and 39601603983 all printed 0 while the builds demonstrably hit /
+        # uploaded thousands of objects; same daemon-port-aliasing family as
+        # spiceai/spiceai documents in their setup-sccache action) —
+        # build-log compile rates are the reliable signal, never gates the job.
+        if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         continue-on-error: true
         run: |
           & $env:SCCACHE_PATH --show-stats
+          & $env:SCCACHE_PATH --stop-server
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -604,6 +665,11 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # R2 sccache backend credentials (repo Secrets; empty on forks / before
+      # configuration -> the "Select sccache backend" step falls back to the
+      # actions/cache tarball pool below).
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       # Ninja Multi-Config, same as the app matrix job: the CMAKE_C/CXX
       # COMPILER_LAUNCHER (sccache) is ONLY honored by Makefile/Ninja
       # generators — a Visual Studio generator routes compiles through
@@ -693,24 +759,54 @@ jobs:
           auto-activate-base: true
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
-      - name: Set up sccache (warm runs only)
-        # Same contract as the app matrix job above: compile cache is an
-        # optimization overlay; infra failures degrade to a vanilla build.
+      - name: Set up sccache binary (warm runs only)
+        # Same contract as the app matrix job above: the action installs the
+        # binary only; the ghac backend stays disabled (see the app job for
+        # the thrashing incident that justified the local-pool tarball).
         # This job is the one that hits the 6h runner limit (the CPU pass
         # alone compiles ~3.5h of C++ without cache), so the launcher matters
-        # most here; the cache is shared with the app matrix jobs within the
-        # same run/branch.
+        # most here.
         if: env.COLD_BUILD != 'true'
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Select sccache backend (R2 if credentials present, tarball fallback)
+        # Same contract as the app matrix job: R2 when the credentials exist
+        # (per-object store, decoupled from the GitHub cache quota), tarball
+        # fallback otherwise. This job is the one that hits the 6h runner
+        # limit (the CPU pass alone compiles ~3.5h of C++ without cache), so
+        # the launcher matters most here.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if ("$env:AWS_ACCESS_KEY_ID" -ne "") {
+            echo "SCCACHE_R2_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_BUCKET=acloudviewer-cache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_ENDPOINT=https://d1a8964e6553f6843c3b90f203d42ea2.r2.cloudflarestorage.com" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_REGION=auto" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_S3_USE_SSL=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "SCCACHE_S3_KEY_PREFIX=windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Host "sccache backend: R2 (bucket acloudviewer-cache, prefix windows)"
+          } else {
+            Write-Host "sccache backend: tarball fallback (R2 credentials not configured)"
+          }
+      - name: Restore sccache cache (tarball fallback only)
+        if: env.COLD_BUILD != 'true' && env.SCCACHE_R2_ENABLED != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\sccache
+          key: sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}-
       - name: Enable sccache launcher
         # util/ci_utils.ps1 Build-PipPackage forwards it as
         # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
         # CUDA (nvcc) caching is intentionally not enabled initially.
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads

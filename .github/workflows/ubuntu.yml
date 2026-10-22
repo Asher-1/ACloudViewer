@@ -187,6 +187,25 @@ jobs:
           echo "=== Cleaning Docker build cache ==="
           docker builder prune -af --filter "until=1h" || true
           docker system df
+
+      - name: Report ccache stats
+        # Render the container's ccache counters into the job summary, so
+        # cache effectiveness is visible without digging through logs. MUST
+        # run after "Docker build": .ccache-stats.txt is written by
+        # docker_build.sh inside that step's docker run (next to the exported
+        # .ccache/ tree).
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f .ccache-stats.txt ]; then
+            {
+              echo "### ccache stats (${{ matrix.CI_CONFIG }})"
+              echo '```'
+              cat .ccache-stats.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload Docker build log
         # Persist the full build log (GitHub truncates very long step logs in
         # the UI). if: always() + continue-on-error: upload even when the build

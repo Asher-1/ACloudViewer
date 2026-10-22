@@ -128,7 +128,7 @@ cuda_wheel_build() {
     # resolution contract as ci_build (the NVIDIA ENTRYPOINT banner would
     # corrupt a stdout tar pipe).
     if docker run --rm -v "${PWD}:/opt/mount" cloudviewer-ci:wheel \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[cuda_wheel_build()] ccache exported to ${PWD}/.ccache"
@@ -204,10 +204,10 @@ ci_build() {
     # .ccache/ regardless of that path. The \$ escapes keep ccache -p running
     # inside the container, not on the runner host.
     if docker run --rm -v "${PWD}:/opt/mount" "${DOCKER_TAG}" \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
-        echo "[ci_build()] ccache exported to ${PWD}/.ccache"
+        echo "[ci_build()] ccache exported to ${PWD}/.ccache (stats: .ccache-stats.txt)"
     else
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[ci_build()] WARNING: ccache export failed/skipped (next run builds cold)"
