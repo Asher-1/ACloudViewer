@@ -59,19 +59,24 @@ jobs:
           echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
       - name: Checkout source code
         uses: actions/checkout@v4
-      - name: Setup cache
-        uses: actions/cache@v4
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ccache
+      - name: Restore compiler cache from release assets
+        # Cross-run ccache pool stored as a release asset on the public
+        # cloudViewer_downloads repo (free, no total quota, 2 GB per-asset
+        # limit, persistent name overwritten in place with --clobber). The
+        # GitHub 10 GB actions cache cannot hold every cell's pool on a main
+        # push (~14 GB per cycle), which LRU-evicted freshly saved pools and
+        # turned runs cold. Downloads are plain HTTPS from the public repo
+        # (fork PRs work); uploads use the repo's ACCESS_TOKEN. Cache never
+        # gates CI: every failure path degrades to a cold build.
+        continue-on-error: true
+        run: |
+          ASSET="ccache-macos-app.tar.gz"
+          mkdir -p "$HOME/.ccache"
+          curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
+            && tar -xzf /tmp/ccache-restore.tar.gz -C "$HOME/.ccache" \
+            || echo "[cache] no remote pool yet (first run)"
+          rm -f /tmp/ccache-restore.tar.gz
 
       - name: Set up Python version
         run: |
@@ -106,7 +111,7 @@ jobs:
           rm ~/QtIFW-4.6.1-darwin-ARM64-static.zip
           ls -hal ~/QtIFW-4.6.1-darwin-ARM64-static/bin
 
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 1500M  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build APP
         shell: bash -l {0}
@@ -131,6 +136,23 @@ jobs:
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Save compiler cache to release assets
+        # Overwrite the persistent asset in place (--clobber). Runs
+        # regardless of the build outcome; the pool tarball stays well under
+        # the 2 GB asset limit (CCACHE_MAXSIZE caps at 1.5 G).
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          if [ -d "$HOME/.ccache" ]; then
+            ASSET="ccache-macos-app.tar.gz"
+            tar -C "$HOME/.ccache" -czf "/tmp/${ASSET}" .
+            gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+              || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            rm -f "/tmp/${ASSET}"
+          fi
 
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in
@@ -328,19 +350,19 @@ jobs:
           ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
-      - name: Setup cache
-        uses: actions/cache@v4
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ccache
+      - name: Restore compiler cache from release assets
+        # Cross-run ccache pool stored as a release asset on the public
+        # cloudViewer_downloads repo (same pattern as the MacOS app job;
+        # per-python asset names). Cache never gates CI.
+        continue-on-error: true
+        run: |
+          ASSET="ccache-macos-wheel-py${{ matrix.python_version }}.tar.gz"
+          mkdir -p "$HOME/.ccache"
+          curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
+            && tar -xzf /tmp/ccache-restore.tar.gz -C "$HOME/.ccache" \
+            || echo "[cache] no remote pool yet for wheel py${{ matrix.python_version }} (first run)"
+          rm -f /tmp/ccache-restore.tar.gz
 
       - name: Set up Python version
         run: |
@@ -373,7 +395,7 @@ jobs:
           fi
 
           brew install ccache
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 1500M  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build Wheel
         shell: bash -l {0}
@@ -395,6 +417,22 @@ jobs:
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Save compiler cache to release assets
+        # Overwrite the persistent asset in place (--clobber); see the MacOS
+        # app job for the storage rationale.
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          if [ -d "$HOME/.ccache" ]; then
+            ASSET="ccache-macos-wheel-py${{ matrix.python_version }}.tar.gz"
+            tar -C "$HOME/.ccache" -czf "/tmp/${ASSET}" .
+            gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+              || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            rm -f "/tmp/${ASSET}"
+          fi
 
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in

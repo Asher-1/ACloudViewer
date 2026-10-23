@@ -227,7 +227,7 @@ ARG BUILD_JOBS=4
 # quota (LRU evicts the least recently used).
 ENV NPROC=${BUILD_JOBS} \
     CCACHE_DIR=/root/ACloudViewer/.ccache \
-    CCACHE_MAXSIZE=2G \
+    CCACHE_MAXSIZE=1500M \
     CCACHE_COMPILERCHECK=content \
     ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \

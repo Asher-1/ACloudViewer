@@ -146,22 +146,29 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      - name: Restore compiler cache
+      - name: Restore compiler cache from release assets
         # Cross-run ccache for the container build. Hosted runners boot a
         # fresh VM every run, so the Docker layer cache is always empty and
         # the compiler cache inside .ccache/ is the only thing that survives:
         # restored here, COPY'd into the image with the repo, and exported
-        # back by docker_build.sh after the build for this action's post-step
-        # to save. Rolling key + prefix restore-keys; 2G per pool keeps the
-        # union of all Ubuntu pools within the 10 GB repo cache quota.
-        # Cache never gates CI.
-        uses: actions/cache@v4
+        # back by docker_build.sh after the build for the save step below.
+        # Storage: release assets on the public cloudViewer_downloads repo
+        # (free, no total quota, 2 GB per-asset limit; persistent per-python
+        # names overwritten in place with --clobber). The GitHub 10 GB
+        # actions cache cannot hold every cell's tarball on a main push
+        # (~14 GB per cycle), which LRU-evicted the freshly saved pools and
+        # turned runs cold. Downloads are plain HTTPS from the public repo
+        # (fork PRs work); uploads use the repo's ACCESS_TOKEN. Cache never
+        # gates CI: every failure path degrades to a cold build.
         continue-on-error: true
-        with:
-          path: .ccache
-          key: ccache-wheel-py${{ matrix.python_version }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            ccache-wheel-py${{ matrix.python_version }}-
+        run: |
+          ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+          mkdir -p .ccache
+          curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
+            && tar -xzf /tmp/ccache-restore.tar.gz -C .ccache \
+            || echo "[cache] no remote pool yet for wheel py${{ matrix.python_version }} (first run)"
+          rm -f /tmp/ccache-restore.tar.gz
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
@@ -201,6 +208,43 @@ jobs:
           # Show final disk usage
           df -h
           docker system df
+
+      - name: Save compiler cache to release assets
+        # Overwrite the cell's persistent asset in place (--clobber). Runs
+        # regardless of the build outcome: on failure .ccache/ holds the
+        # restored copy (the in-container export is skipped), which is a
+        # no-op re-upload. Pool tarballs stay well under the 2 GB asset
+        # limit (measured ~1.1 GB per cell; CCACHE_MAXSIZE caps at 1.5 G).
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          if [ -d .ccache ]; then
+            ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+            tar -C .ccache -czf "/tmp/${ASSET}" .
+            gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+              || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            rm -f "/tmp/${ASSET}"
+          fi
+
+      - name: Report ccache stats
+        # Render the container's ccache counters into the job summary, so
+        # cache effectiveness is visible without digging through logs. MUST
+        # run after "Docker build": .ccache-stats.txt is written by
+        # docker_build.sh inside that step's docker run (next to the exported
+        # .ccache/ tree).
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f .ccache-stats.txt ]; then
+            {
+              echo "### ccache stats (wheel py${{ matrix.python_version }})"
+              echo '```'
+              cat .ccache-stats.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload Docker build log
         # Persist the full build log (GitHub truncates very long step logs in

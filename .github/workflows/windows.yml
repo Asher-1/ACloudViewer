@@ -172,24 +172,60 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-      - name: Set up sccache (warm runs only)
+      - name: Set up sccache binary (warm runs only)
         # Compile cache is an optimization overlay: cache keys are content-
         # addressed (compiler hash + full command line + preprocessed input),
         # so any source/header/flag/third-party-version change misses and
         # recompiles for real. Infra failures degrade to a vanilla build via
         # continue-on-error + the outcome check below (cache never gates CI).
+        # The action is used ONLY to install the binary. Its ghac backend is
+        # intentionally NOT enabled (no SCCACHE_GHA_ENABLED): one cache entry
+        # per compiled object flooded the 10 GB repo quota (12,640 entries /
+        # 5.76 GB from run 39601603983 alone) and evicted other workflows'
+        # caches, and when the object pool went cold every compile blocked on
+        # per-object ghac lookups/uploads during the 2026-10-21 Actions
+        # incident, stretching that run from ~2.5 h to 6.03 h. A local disk
+        # pool saved as ONE bounded tarball (below) is immune to both; the
+        # ubuntu/macOS pools live on cloudViewer_downloads release assets
+        # instead, leaving this pool as the actions cache's only consumer.
         if: env.COLD_BUILD != 'true'
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Restore sccache cache from release assets
+        # Persistent per-cell pool stored as a release asset on the public
+        # cloudViewer_downloads repo (free, no total quota, 2 GB per-asset
+        # limit; SCCACHE_CACHE_SIZE=2G caps the pool so its tarball stays
+        # ~1.0-1.2 GB). Unlike actions/cache this storage is shared between
+        # PR and main runs (no refs/pull/N/merge scoping) and never expires
+        # after 7 idle days. Downloads are plain HTTPS (fork PRs work);
+        # uploads use the repo's ACCESS_TOKEN. Cache never gates CI.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && matrix.CONFIG == 'Release'
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $asset = "sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}.tar.gz"
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\sccache" | Out-Null
+          curl.exe -fsSL --retry 3 -o "$env:RUNNER_TEMP\ccache-restore.tar.gz" `
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/$asset"
+          if ($LASTEXITCODE -eq 0) {
+            tar -xzf "$env:RUNNER_TEMP\ccache-restore.tar.gz" -C "${{ runner.temp }}\sccache"
+            Remove-Item "$env:RUNNER_TEMP\ccache-restore.tar.gz" -ErrorAction SilentlyContinue
+            Write-Host "[cache] restored $asset"
+          } else {
+            Write-Host "[cache] no remote pool yet for $asset (first run)"
+          }
       - name: Enable sccache launcher
-        # Only wire the launcher when the cache backend actually came up;
+        # Only wire the launcher when the binary actually came up;
         # util/ci_utils.ps1 forwards it as CMAKE_C/CXX_COMPILER_LAUNCHER
         # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
-        # CUDA (nvcc) caching is intentionally not enabled initially.
+        # SCCACHE_DIR caps the pool at 2 GB so the saved tarball stays under
+        # the 2 GB release-asset limit. CUDA (nvcc) caching is intentionally
+        # not enabled.
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install dependencies
@@ -340,19 +376,40 @@ jobs:
           name: windows-build-log-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
           path: ${{ runner.temp }}\windows-build.log
           if-no-files-found: ignore
-      - name: sccache stats
-        # Visibility for cache hit-rate tuning; never gates the job.
-        # NOTE: the sccache daemon lives inside the build step's process tree
-        # and its stats are in-memory. GitHub Actions runners terminate that
-        # tree when the step exits, so this post-build invocation (and the
-        # action's post-run summary) observe a freshly spawned daemon and
-        # report 0 requests on Windows — the real numbers are printed by
-        # build_win_app.ps1 / build_win_wheel.ps1 at the end of the build
-        # step, while the daemon is still alive.
-        if: env.SCCACHE_GHA_ENABLED == 'true'
+      - name: Stop sccache server
+        # Flush the daemon's pending cache writes before the job ends so the
+        # save step below tars a complete pool. The --show-stats here
+        # may print zeros on Windows: the daemon serving the compiles is not
+        # the one this step spawns (measured: runs 39273926318, 39565766428
+        # and 39601603983 all printed 0 while the builds demonstrably hit /
+        # uploaded thousands of objects; same daemon-port-aliasing family as
+        # spiceai/spiceai documents in their setup-sccache action) —
+        # build-log compile rates are the reliable signal, never gates the job.
+        if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         continue-on-error: true
         run: |
           & $env:SCCACHE_PATH --show-stats
+          & $env:SCCACHE_PATH --stop-server
+      - name: Save sccache cache to release assets
+        # Overwrite the cell's persistent asset in place (--clobber). Runs
+        # regardless of the build outcome; SCCACHE_CACHE_SIZE=2G caps the
+        # pool so the tarball stays under the 2 GB asset limit. Fork PRs
+        # have no ACCESS_TOKEN: the upload fails non-fatally and the pool
+        # simply is not updated.
+        if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && matrix.CONFIG == 'Release'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          if (Test-Path "${{ runner.temp }}\sccache") {
+            $asset = "sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}.tar.gz"
+            tar -czf "$env:RUNNER_TEMP\$asset" -C "${{ runner.temp }}\sccache" .
+            gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+            if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
+            else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            Remove-Item "$env:RUNNER_TEMP\$asset" -ErrorAction SilentlyContinue
+          }
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -693,24 +750,62 @@ jobs:
           auto-activate-base: true
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
-      - name: Set up sccache (warm runs only)
-        # Same contract as the app matrix job above: compile cache is an
-        # optimization overlay; infra failures degrade to a vanilla build.
+      - name: Set up sccache binary (warm runs only)
+        # Same contract as the app matrix job above: the action installs the
+        # binary only; the ghac backend stays disabled (see the app job for
+        # the thrashing incident that justified the local-pool tarball).
         # This job is the one that hits the 6h runner limit (the CPU pass
         # alone compiles ~3.5h of C++ without cache), so the launcher matters
-        # most here; the cache is shared with the app matrix jobs within the
-        # same run/branch.
+        # most here.
         if: env.COLD_BUILD != 'true'
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Restore sccache cache from release assets
+        # Persistent per-python pool on the ci-ccache release assets, same
+        # pattern as the app matrix job. This job is the one that hits the
+        # 6h runner limit (the CPU pass alone compiles ~3.5h of C++ without
+        # cache), so the launcher matters most here.
+        #
+        # Cross-pool restore: the wheel build's two passes (CUDA + CPU)
+        # compile nearly the same 3rdparty/core object set as the two app
+        # jobs, so restoring BOTH app pools (when they exist from a previous
+        # run) turns this job's cold pass into a mostly-hit pass. Without
+        # this the wheel's first cold run (~353-400 min) exceeds the 360 min
+        # hosted-runner job cap and its pool can never be saved — a
+        # chicken-and-egg deadlock. The three pools merge into one local
+        # directory (content-addressed files; overlapping names carry
+        # identical content) and sccache trims the merged pool to
+        # SCCACHE_CACHE_SIZE on first use.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $assets = @(
+            "sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}.tar.gz",
+            "sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}.tar.gz",
+            "sccache-win-app-cudaOFF.tar.gz"
+          ) | Select-Object -Unique
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\sccache" | Out-Null
+          foreach ($a in $assets) {
+            curl.exe -fsSL --retry 3 -o "$env:RUNNER_TEMP\ccache-restore.tar.gz" `
+              "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/$a"
+            if ($LASTEXITCODE -eq 0) {
+              tar -xzf "$env:RUNNER_TEMP\ccache-restore.tar.gz" -C "${{ runner.temp }}\sccache"
+              Write-Host "[cache] restored $a"
+            } else {
+              Write-Host "[cache] no remote pool yet for $a (first run)"
+            }
+            Remove-Item "$env:RUNNER_TEMP\ccache-restore.tar.gz" -ErrorAction SilentlyContinue
+          }
       - name: Enable sccache launcher
         # util/ci_utils.ps1 Build-PipPackage forwards it as
         # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
         # CUDA (nvcc) caching is intentionally not enabled initially.
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads
@@ -768,6 +863,25 @@ jobs:
           path: ${{ runner.temp }}\windows-wheel-build.log
           if-no-files-found: ignore
       
+      - name: Save sccache cache to release assets
+        # Overwrite the cell's persistent asset in place (--clobber); see
+        # the app matrix job for the storage rationale. Runs after the
+        # build step: disk writes for completed compiles are already
+        # durable, and the daemon dies with the step tree either way.
+        if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          if (Test-Path "${{ runner.temp }}\sccache") {
+            $asset = "sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}.tar.gz"
+            tar -czf "$env:RUNNER_TEMP\$asset" -C "${{ runner.temp }}\sccache" .
+            gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+            if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
+            else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            Remove-Item "$env:RUNNER_TEMP\$asset" -ErrorAction SilentlyContinue
+          }
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:

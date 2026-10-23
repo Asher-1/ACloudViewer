@@ -209,7 +209,7 @@ ENV ACloudViewer_DEV=/root \
 # including the CUDA launcher. 2G per pool keeps the union of all Ubuntu
 # config pools within the 10 GB GitHub Actions cache quota (LRU evicts).
 ENV CCACHE_DIR=/root/ACloudViewer/.ccache \
-    CCACHE_MAXSIZE=2G \
+    CCACHE_MAXSIZE=1500M \
     CCACHE_COMPILERCHECK=content
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer

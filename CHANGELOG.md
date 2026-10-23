@@ -10,6 +10,23 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - Windows: falls back to dynamic CUDA::cudart (no static cudart in MSVC CRT model)
     - CI: AICore_USE_CUDA=ON automatically when building with CUDA_MODULE flag
 - CI: add DT_NEEDED regression guard for libAICore.so (VerifyNoDynamicCuda.cmake)
+- CI: compiler cache storage overhaul — all pools moved off the GitHub
+  actions cache onto persistent release assets (cloudViewer_downloads,
+  tag ci-ccache, per-cell names overwritten in place with --clobber):
+    - ubuntu/ubuntu-cuda/ubuntu-wheel: ccache pools as per-cell assets
+      (public HTTPS restore, gh release upload save)
+    - macos: same pattern for the app and wheel pools (ccache -M 1500M)
+    - windows: sccache pools as per-cell assets (curl.exe restore,
+      tar + gh upload after --stop-server flush); removes the sccache
+      ghac per-object backend whose 12k+ entries flooded the 10 GB
+      actions-cache quota and stalled builds (6.03 h run incident)
+    - windows wheel job cross-pool restore: seeds its local pool from
+      both app pools so the cold double pass fits the 360 min runner cap
+    - actions/cache now has zero compiler-cache consumers (immune to the
+      10 GB quota, PR-merge scoping, and 7-day idle eviction)
+- Fix macOS wheel packaging: skip symlinked libraries in the codesign
+  set (a concurrent worker rewriting the link target transiently
+  dangles the link, failing remove-signature)
 - Remove dead duplicate qSIBR/cmake/VerifyNoDynamicCudart.cmake (superseded by common cmake/VerifyNoDynamicCuda.cmake)
 - Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
     - Add multiple 3D windows support with independent per-view rendering state
