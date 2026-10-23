@@ -1,7 +1,8 @@
 # qAnyLabeling
 
-完整的上游差异、模型发布状态、量化门、VLM/KIE、点云视觉和跨平台安装包审计见
-[UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md)。
+See [UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md) for the full upstream
+parity audit, model release status, quantization gates, VLM/KIE, point-cloud
+visual parity, and cross-platform package coverage.
 
 Native Qt image annotation workspace inspired by X-AnyLabeling. Enable with
 `-DAICore_ENABLED=ON -DPLUGIN_STANDARD_QANYLABELING=ON` and open **Image

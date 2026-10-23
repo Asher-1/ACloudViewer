@@ -1,0 +1,9 @@
+# CUDA migration candidate; not enabled in the production dependency entry.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0002-acv-cuda-operators.patch
+  - file: 0003-acv-cuda-dispatch-api.patch
+  - file: 0004-acv-cuda-attention-linkage.patch
+  - file: 0006-acv-cuda-native-output-stride.patch
+  - file: 0007-acv-sam3d-allocation-size.patch
+  - file: 0011-acv-cuda-im2col-spatial-blocks.patch

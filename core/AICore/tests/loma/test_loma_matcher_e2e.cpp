@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "aicore/loma_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -122,6 +123,19 @@ int main() {
         std::fprintf(stderr, "LoMa inference failed: count=%d/%d error=%s\n",
                      first_count, second_count,
                      aicore_loma_matcher_last_error(context));
+    } else {
+        uint64_t output_hash = 1469598103934665603ULL;
+        for (int32_t index = 0; index < first_count; ++index) {
+            output_hash = aicore::test::fnv1aAppend(
+                    output_hash, &first[index].idx0, sizeof(first[index].idx0));
+            output_hash = aicore::test::fnv1aAppend(
+                    output_hash, &first[index].idx1, sizeof(first[index].idx1));
+            output_hash =
+                    aicore::test::fnv1aAppend(output_hash, &first[index].score,
+                                              sizeof(first[index].score));
+        }
+        aicore::test::printValidationResult("loma", device, output_hash,
+                                            nullptr);
     }
     aicore_loma_free_matches(first);
     aicore_loma_free_matches(second);

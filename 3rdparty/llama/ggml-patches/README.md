@@ -11,7 +11,7 @@ the extracted tree by hand.** All changes must live here as reviewable artifacts
 3. Export a unified diff from the ggml repo root:
 
    ```bash
-   git diff > 3rdparty/ggml/patches/<topic>/0001-short-name.patch
+   git diff > 3rdparty/llama/ggml-patches/<topic>/0001-short-name.patch
    ```
 
 4. Register the patch in `manifest.yaml` (order matters).
@@ -52,7 +52,7 @@ malformed multi-hunk context and duplicate merged numbering. Regenerate the
 single patch from a dirty ggml v0.18.1 reference tree with:
 
 ```bash
-3rdparty/ggml/patches/export_merged_aliked_patches.sh [path/to/LightGlue-GGML/third_party/ggml]
+3rdparty/llama/ggml-patches/export_merged_aliked_patches.sh [path/to/LightGlue-GGML/third_party/ggml]
 ```
 
 Enable in AICore: `AICore_USE_VULKAN=ON` → defines `AICORE_VULKAN_ALIKED` when the patch is applied.

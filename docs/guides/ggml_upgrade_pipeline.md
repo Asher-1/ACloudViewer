@@ -30,7 +30,7 @@ Everything else (ctest labels, plugins, CI) is merely a carrier for these three 
 | Upstream fixes / breaking changes | Read the target version's release notes; `git log vOLD..vNEW -- src/ggml-vulkan` etc. | List the fixes relevant to this repo (e.g. Vulkan DeviceLost #26371) and breaking changes (e.g. 0.22 removing `ggml-metal.metal`) |
 | API compatibility | Compare the `ggml_*` symbols used by `core/AICore` against the target version's headers | No removals; additions must not affect us |
 | CMake option compatibility | Compare the options used by `3rdparty/ggml/ggml.cmake` | All retained |
-| Patch-chain dry run | Replay `3rdparty/ggml/patches/manifest.yaml` on a clean source tree | Record the list of failing hunks |
+| Patch-chain dry run | Replay `3rdparty/llama/ggml-patches/manifest.yaml` on a clean source tree | Record the list of failing hunks |
 
 **Deliverable**: feasibility report (target version, list of patches requiring manual handling, known risks).
 
@@ -51,7 +51,8 @@ Historical fact anchors (measured 2026-08):
 4. Replay on a clean tree + **second-replay idempotency check** (the second replay should all report `already applied`):
 
 ```bash
-python3 3rdparty/ggml/patches/apply_ggml_patches.py --verify   # or the script's actual interface
+python3 3rdparty/llama/ggml-patches/apply_ggml_patches.py <clean-ggml-source>
+python3 3rdparty/llama/ggml-patches/apply_ggml_patches.py <same-ggml-source>
 ```
 
 **Criteria**: both replays pass completely.

@@ -67,7 +67,7 @@ and lifecycle, or when it enforces a named cross-cutting invariant.
   live contexts.
 - Options configure task behavior. Production task logic does not read private
   environment variables or developer-machine absolute paths.
-- ggml changes are ordered files in `3rdparty/ggml/patches/manifest.yaml`, not
+- ggml changes are ordered files in `3rdparty/llama/ggml-patches/manifest.yaml`, not
   edits in extracted `build*/ggml/` trees.
 
 ## Classify Before Coding

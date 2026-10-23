@@ -26,6 +26,35 @@ SPEC.loader.exec_module(VALIDATE_ALL)
 
 
 class ValidateAllTests(unittest.TestCase):
+    def test_facedetect_bnkps_default_and_quantized_catalog_rows_have_consumers(self):
+        manifest = VALIDATE_ALL.load_manifest(
+            MODULE_PATH.with_name("validation_manifest.json"))
+        names = ["scrfd_10g_bnkps.gguf", "scrfd_10g_bnkps-f32.gguf",
+                 "scrfd_10g_bnkps-q8_0.gguf"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = root / "assets"
+            models = assets / "facedetect_models"
+            models.mkdir(parents=True)
+            for name in names:
+                (models / name).write_bytes(b"fixture")
+            # Keep the embedding and landmark consumers present as well: they
+            # must not accidentally claim a detection-only default model.
+            (models / "buffalo_l.gguf").write_bytes(b"fixture")
+            (models / "landmarks-2d106-1k3d68.gguf").write_bytes(b"fixture")
+            args = self.relation_args(assets, root, full=True)
+            args.tasks = "facedetect"
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, args, root / "reports")
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        for name in names:
+            consumers = [s for s in specs if s.model_id == name]
+            self.assertEqual(len(consumers), 1, name)
+            self.assertEqual(consumers[0].scenario_id, "facedetect-bnkps")
+            self.assertEqual(Path(consumers[0].command[0]).name,
+                             "test_facedetect_detect_only")
+
     def test_execution_artifacts_identify_commands_runtime_and_build_options(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -65,6 +94,111 @@ class ValidateAllTests(unittest.TestCase):
             extra.write_bytes(b"new backend")
             after = VALIDATE_ALL.execution_artifacts([], build)
             self.assertEqual(len(VALIDATE_ALL.execution_artifact_failures(before, after, "candidate")), 2)
+
+    def test_controlled_ab_rejects_different_cpu_variant_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            baseline = root / "baseline"
+            candidate = root / "candidate"
+            for build in (baseline, candidate):
+                (build / "bin").mkdir(parents=True)
+            (baseline / "bin/libggml-cpu.so").touch()
+            (baseline / "bin/libggml-cpu-haswell.so").touch()
+            (candidate / "bin/libggml-cpu.so").touch()
+            (baseline / "CMakeCache.txt").write_text(
+                "AICore_CPU_ALL_VARIANTS:BOOL=ON\n"
+                "GGML_CPU_ALL_VARIANTS:BOOL=ON\n")
+            (candidate / "CMakeCache.txt").write_text(
+                "GGML_CPU_ALL_VARIANTS:BOOL=OFF\n")
+            baseline_profile = VALIDATE_ALL.cpu_backend_profile(baseline)
+            candidate_profile = VALIDATE_ALL.cpu_backend_profile(candidate)
+            failures = VALIDATE_ALL.cpu_backend_profile_failures(
+                candidate_profile, baseline_profile)
+            self.assertIn("CPU backend configuration mismatch", " ".join(failures))
+            self.assertIn("candidate missing ['haswell']", " ".join(failures))
+
+    def test_controlled_ab_accepts_matching_cpu_variant_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            builds = [root / "baseline", root / "candidate"]
+            for build in builds:
+                (build / "bin").mkdir(parents=True)
+                (build / "bin/libggml-cpu.so").touch()
+                (build / "bin/libggml-cpu-haswell.so").touch()
+            profiles = [VALIDATE_ALL.cpu_backend_profile(build) for build in builds]
+            self.assertEqual(VALIDATE_ALL.cpu_backend_profile_failures(
+                profiles[1], profiles[0]), [])
+
+    def test_staged_candidate_reads_cpu_variants_from_llama_externalproject(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            baseline = root / "build_app"
+            candidate = root / "stride-fix/validation-v5"
+            for build in (baseline, candidate):
+                (build / "bin").mkdir(parents=True)
+                (build / "bin/libggml-cpu.so").touch()
+                (build / "bin/libggml-cpu-haswell.so").touch()
+            (baseline / "CMakeCache.txt").write_text(
+                "AICore_CPU_ALL_VARIANTS:BOOL=ON\n")
+            external = root / "llama/src/ext_llama-build"
+            external.mkdir(parents=True)
+            (external / "CMakeCache.txt").write_text(
+                "GGML_CPU_ALL_VARIANTS:BOOL=ON\n")
+
+            baseline_profile = VALIDATE_ALL.cpu_backend_profile(baseline)
+            candidate_profile = VALIDATE_ALL.cpu_backend_profile(candidate)
+            self.assertEqual(candidate_profile["all_variants_settings"],
+                             {"GGML_CPU_ALL_VARIANTS": "ON"})
+            self.assertEqual(VALIDATE_ALL.cpu_backend_profile_failures(
+                candidate_profile, baseline_profile), [])
+
+    def test_report_comparison_accepts_equivalent_cpu_settings_with_different_keys(self):
+        baseline = {"modules": ["generic", "haswell"],
+                    "all_variants_settings": {
+                        "AICore_CPU_ALL_VARIANTS": "ON",
+                        "GGML_CPU_ALL_VARIANTS": "ON"},
+                    "all_variants_consistent": True}
+        candidate = {"modules": ["generic", "haswell"],
+                     "all_variants_settings": {"GGML_CPU_ALL_VARIANTS": "TRUE"},
+                     "all_variants_consistent": True}
+        self.assertEqual(VALIDATE_ALL.cpu_backend_profile_failures(
+            candidate, baseline), [])
+
+    def test_controlled_ab_accepts_renamed_base_module_with_same_dispatch_score(self):
+        baseline = {
+            "modules": ["generic", "haswell", "x64"],
+            "module_scores": {"generic": 64, "haswell": 64, "x64": 1},
+            "best_dispatch_score": 64,
+            "all_variants_settings": {"GGML_CPU_ALL_VARIANTS": "ON"},
+            "all_variants_consistent": True,
+        }
+        candidate = {
+            "modules": ["haswell", "x64"],
+            "module_scores": {"haswell": 64, "x64": 1},
+            "best_dispatch_score": 64,
+            "all_variants_settings": {"GGML_CPU_ALL_VARIANTS": "ON"},
+            "all_variants_consistent": True,
+        }
+        self.assertEqual(VALIDATE_ALL.cpu_backend_profile_failures(
+            candidate, baseline), [])
+
+    def test_controlled_ab_rejects_different_cpu_dispatch_scores(self):
+        baseline = {
+            "modules": ["generic", "haswell"],
+            "best_dispatch_score": 64,
+            "all_variants_settings": {"GGML_CPU_ALL_VARIANTS": "ON"},
+            "all_variants_consistent": True,
+        }
+        candidate = {
+            "modules": ["generic", "x64"],
+            "best_dispatch_score": 1,
+            "all_variants_settings": {"GGML_CPU_ALL_VARIANTS": "ON"},
+            "all_variants_consistent": True,
+        }
+        failures = VALIDATE_ALL.cpu_backend_profile_failures(
+            candidate, baseline)
+        self.assertIn("CPU backend dispatch capability mismatch",
+                      " ".join(failures))
 
     def test_manifest_identity_describes_consumed_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -648,6 +782,27 @@ class ValidateAllTests(unittest.TestCase):
             {"graph_ms": {"p50": 12.0, "p90": 14.0}})
         self.assertEqual(metrics,
                          {"graph_ms/p50": 12.0, "graph_ms/p90": 14.0})
+
+    def test_ab_compares_candidate_timings_and_peak_not_reference_or_pid_samples(self):
+        row = {"key": "table/table/model.gguf", "model_assets": [],
+               "metrics": {"json0/native/p50_ms": 10.0,
+                           "json0/gpu_sampled_process_peak_mib": 100.0,
+                           "json0/source_p50_ms": 20.0,
+                           "json0/sources/0/metadata/forward_ms/0": 20.0,
+                           "json0/sources/0/audit/samples/0/used_mib": 100.0},
+               "fingerprints": {}}
+        candidate = {**row, "metrics": {
+            "json0/native/p50_ms": 14.0,
+            "json0/gpu_sampled_process_peak_mib": 120.0,
+            "json0/source_p50_ms": 50.0,
+            "json0/sources/0/metadata/forward_ms/0": 50.0,
+            "json0/sources/0/audit/samples/1/used_mib": 300.0}}
+        failures = VALIDATE_ALL.compare_report(
+            self.report([candidate]), self.report([row]), 5.0, 3.0)
+        self.assertEqual(len(failures), 2)
+        self.assertTrue(any("native/p50_ms regressed" in f for f in failures))
+        self.assertTrue(any("gpu_sampled_process_peak_mib regressed" in f
+                            for f in failures))
 
     def test_metrics_named_by_structured_gate_are_flattened(self):
         gate = VALIDATE_ALL.normalize_accuracy_gate({
@@ -1504,6 +1659,38 @@ class ValidateAllTests(unittest.TestCase):
             clean_probe_outputs=clean_probe_outputs,
             clean_model_cache=clean_model_cache)
 
+    def test_baseline_model_identity_is_summarized_before_cache_cleanup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            model = root / "assets/demo_models/m.gguf"
+            model.parent.mkdir(parents=True)
+            model.write_bytes(b"verified model")
+
+            def make_spec():
+                return VALIDATE_ALL.RunSpec(
+                    scenario_id="s", task="demo", model_id="m",
+                    model_paths=(model,), command=(), env={},
+                    accuracy_gate="probe", metric_parser="generic",
+                    fingerprint_policy="none", require_fingerprint=False,
+                    report_path=root / "report.json")
+
+            attempt = [VALIDATE_ALL.Attempt(0, 1.0)]
+            row, failures, baseline_row, baseline_failures = (
+                VALIDATE_ALL.summarize_attempt_pair(
+                    make_spec(), attempt, make_spec(), attempt, False))
+            self.assertEqual((row["status"], baseline_row["status"]),
+                             ("pass", "pass"))
+            self.assertEqual(failures, [])
+            self.assertEqual(baseline_failures, [])
+            self.assertEqual(row["model_assets"], baseline_row["model_assets"])
+
+            VALIDATE_ALL.release_finished_task_outputs(
+                "demo", {"demo": 1}, {"demo": {model}}, {model: {"demo"}},
+                self.cleanup_args(root, clean_model_cache=True))
+            self.assertFalse(model.exists())
+            self.assertEqual(row["model_assets"][0]["sha256"],
+                             baseline_row["model_assets"][0]["sha256"])
+
     def test_task_outputs_are_kept_unless_cleanup_is_explicitly_enabled(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -1683,25 +1870,70 @@ class ValidateAllTests(unittest.TestCase):
             }
 
         output = "\n".join(json.dumps(item) for item in (
-            row("demo", "demo_models/tiny_q8.gguf"),
-            row("demo", "demo_models/heavy_f16.gguf"),
-            row("plain", "plain_models/ok.gguf"),
+            row("yolo", "yolo_models/yolo26n-obb-q8_0.gguf"),
+            row("yolo", "yolo_models/yolo26l-cls-f32.gguf"),
+            # A shared catalog owner may describe the selected physical file.
+            row("reid", "yolo_models/yolo26n-obb-q8_0.gguf"),
+            row("reid", "yolo_models/yolo26l-cls-f32.gguf"),
         ))
         selection = {
-            "demo": {"*/heavy_f16", "*/heavy_f16.gguf"},
-            # plain has no matching row: its catalog rows drop out entirely
-            "plain": {"*/does-not-match"},
+            "*/yolo26n-obb-q8_0.gguf",
         }
         assets = VALIDATE_ALL.parse_catalog_output(
-            output, {"demo", "plain"}, task_selection=selection)
+            output, {"yolo"}, dependency_patterns=selection,
+            task_selection={"yolo": selection})
         self.assertEqual(
             {str(asset.relative_path) for asset in assets},
-            {"demo_models/heavy_f16.gguf"})
+            {"yolo_models/yolo26n-obb-q8_0.gguf"})
         with self.assertRaisesRegex(ValueError, "matched no catalog rows"):
             VALIDATE_ALL.parse_catalog_output(
-                output, {"demo", "plain"},
-                task_selection={
-                    "demo": {"*/nothing"}, "plain": {"*/nothing"}})
+                output, {"yolo"}, task_selection={"yolo": {"*/nothing"}})
+
+    def test_load_catalog_explicit_model_excludes_unrelated_task_models(self):
+        def row(task, relative):
+            return {
+                "task": task, "relative_path": relative,
+                "url": f"https://example.invalid/{relative}",
+                "sha256": "a" * 64, "size_bytes": 1,
+            }
+
+        output = "\n".join(json.dumps(item) for item in (
+            row("demo", "demo_models/selected.gguf"),
+            row("demo", "demo_models/sibling.gguf"),
+            row("other", "shared_models/common.gguf"),
+            row("other", "other_models/unrelated.gguf"),
+        ))
+        manifest = {
+            "tasks": ["demo", "other"],
+            "scenarios": [
+                {"id": "demo-selected", "task": "demo",
+                 "owned_globs": ["demo_models/selected.gguf"],
+                 "required_globs": ["shared_models/common.gguf"],
+                 "for_each_model": True},
+                {"id": "demo-sibling", "task": "demo",
+                 "owned_globs": ["demo_models/sibling.gguf"],
+                 "for_each_model": True},
+                {"id": "other", "task": "other",
+                 "owned_globs": ["other_models/unrelated.gguf"],
+                 "for_each_model": True},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root / "test_catalog_dump_urls"
+            binary.touch()
+            args = SimpleNamespace(
+                catalog_binary=binary, build=root, models="selected",
+                full=False)
+            completed = SimpleNamespace(
+                returncode=0, stdout=output, stderr="")
+            with mock.patch.object(VALIDATE_ALL.subprocess, "run",
+                                   return_value=completed):
+                assets = VALIDATE_ALL.load_model_catalog(
+                    args, manifest, {"demo"})
+        self.assertEqual(
+            {str(asset.relative_path) for asset in assets},
+            {"demo_models/selected.gguf", "shared_models/common.gguf"})
 
     def test_bundle_partial_selection_prefetches_fixed_dependencies(self):
         manifest = {
@@ -1994,7 +2226,7 @@ class ValidateAllTests(unittest.TestCase):
         self.assertEqual(VALIDATE_ALL.extract_error_summary(tail),
                          "GPU overlap persisted after 4 attempts: /tmp/sample.log")
         self.assertIn("/tmp/idle.log", VALIDATE_ALL.extract_error_summary(
-            "GPU did not become idle within 60s; audit: /tmp/idle.log"))
+            "GPU preflight timed out with foreign compute activity; audit: /tmp/idle.log"))
 
     def test_markdown_reports_totals_and_vram_section(self):
         report = self.report([

@@ -256,8 +256,8 @@ endif()
 if(AICore_ENABLED AND TARGET AICore)
     list(APPEND PYTHON_PACKAGE_DEPENDS AICore)
 endif()
-if(TARGET ext_ggml)
-    list(APPEND PYTHON_PACKAGE_DEPENDS ext_ggml)
+if(TARGET "${GGML_EXTERNAL_TARGET}")
+    list(APPEND PYTHON_PACKAGE_DEPENDS ${GGML_EXTERNAL_TARGET})
 endif()
 # Contract tests run separately in CI (util/ci_utils.*); do not gate wheel
 # packaging on ctest — parallel make + jobserver caused macOS wheel failures.

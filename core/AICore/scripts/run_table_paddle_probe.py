@@ -219,6 +219,8 @@ def main():
     parser.add_argument('--max-diff', type=float, required=True)
     parser.add_argument('--loc-max-diff', type=float, required=True)
     args = parser.parse_args()
+    if args.threads == 0:
+        args.threads = 4
     if args.warmups < 0 or args.runs < 1 or args.threads < 1:
         parser.error('invalid measurement counts')
     args.report.parent.mkdir(parents=True, exist_ok=True)

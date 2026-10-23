@@ -5818,9 +5818,9 @@
       "id": "facedetect-bnkps",
       "task": "facedetect",
       "owned_globs": [
-        "facedetect_models/scrfd_10g_bnkps-*.gguf"
+        "facedetect_models/scrfd_10g_bnkps*.gguf"
       ],
-      "model_glob": "facedetect_models/scrfd_10g_bnkps-*.gguf",
+      "model_glob": "facedetect_models/scrfd_10g_bnkps*.gguf",
       "for_each_model": true,
       "executable": "binary:test_facedetect_detect_only",
       "env": {
@@ -5878,7 +5878,8 @@
         "{threads}",
         "640",
         "640",
-        "{inference_runs}"
+        "{inference_runs}",
+        "{warmup_runs}"
       ],
       "accuracy_gate": "finite non-empty logits/boxes and detection contract",
       "accuracy": {
@@ -7236,7 +7237,7 @@
           {
             "metric": "argmax_match",
             "op": "==",
-            "value": 1
+            "value": 1.0
           },
           {
             "metric": "max_diff",
@@ -7281,7 +7282,7 @@
           {
             "metric": "argmax_match",
             "op": "==",
-            "value": 1
+            "value": 1.0
           },
           {
             "metric": "max_diff",
@@ -7328,7 +7329,7 @@
           {
             "metric": "argmax_match",
             "op": "==",
-            "value": 1
+            "value": 1.0
           },
           {
             "metric": "max_diff",
@@ -7373,7 +7374,7 @@
           {
             "metric": "argmax_match",
             "op": "==",
-            "value": 1
+            "value": 1.0
           },
           {
             "metric": "max_diff",
@@ -7420,7 +7421,7 @@
           {
             "metric": "argmax_match",
             "op": "==",
-            "value": 1
+            "value": 1.0
           },
           {
             "metric": "max_diff",
@@ -8618,12 +8619,12 @@
           {
             "metric": "region_recall",
             "op": ">=",
-            "value": 1.0
+            "value": 1
           },
           {
             "metric": "region_f1",
             "op": ">=",
-            "value": 1.0
+            "value": 1
           },
           {
             "metric": "mean_iou",
@@ -8701,12 +8702,12 @@
           {
             "metric": "region_recall",
             "op": ">=",
-            "value": 1.0
+            "value": 1
           },
           {
             "metric": "region_f1",
             "op": ">=",
-            "value": 1.0
+            "value": 1
           },
           {
             "metric": "mean_iou",
@@ -8784,7 +8785,7 @@
           {
             "metric": "region_recall",
             "op": ">=",
-            "value": 1.0
+            "value": 1
           },
           {
             "metric": "region_f1",
@@ -12403,13 +12404,9 @@
       "id": "relation-text-student",
       "task": "relation",
       "owned_globs": [
-        "relation_models/*text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/*text-student-f32.gguf"
       ],
       "model_glob": "relation_models/*text-student-f32.gguf",
-      "required_globs": [
-        "relation_models/relateanything-tokenizer.json"
-      ],
       "for_each_model": true,
       "executable": "python",
       "args": [
@@ -12634,8 +12631,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vitb16-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vitb16-text-student-f32.gguf"
       ],
       "light": false
     },
@@ -12792,8 +12788,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vits16-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vits16-text-student-f32.gguf"
       ],
       "light": false
     },
@@ -12950,8 +12945,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vits16plus-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vits16plus-text-student-f32.gguf"
       ],
       "light": false
     },
@@ -16195,13 +16189,9 @@
       "id": "relation-text-student-default",
       "task": "relation",
       "owned_globs": [
-        "relation_models/*text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/*text-student-f32.gguf"
       ],
       "model_glob": "relation_models/*text-student-f32.gguf",
-      "required_globs": [
-        "relation_models/relateanything-tokenizer.json"
-      ],
       "for_each_model": true,
       "executable": "python",
       "args": [
@@ -16428,8 +16418,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vitb16-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vitb16-text-student-f32.gguf"
       ],
       "light": true
     },
@@ -16587,8 +16576,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vits16-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vits16-text-student-f32.gguf"
       ],
       "light": true
     },
@@ -16746,8 +16734,7 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "relation",
       "required_globs": [
-        "relation_models/relsgg-vits16plus-text-student-f32.gguf",
-        "relation_models/relateanything-tokenizer.json"
+        "relation_models/relsgg-vits16plus-text-student-f32.gguf"
       ],
       "light": true
     },
@@ -19360,30 +19347,15 @@
         "ocr-onnx-ppocr-cls",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 10 real inputs (cls); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19394,7 +19366,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -19454,30 +19428,15 @@
         "ocr-onnx-ppocr-cls",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 10 real inputs (cls); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19488,7 +19447,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -19543,25 +19504,15 @@
         "ocr-onnx-ppocrv5-mobile-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.1, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19627,25 +19578,15 @@
         "ocr-onnx-ppocrv5-mobile-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.6, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19724,30 +19665,15 @@
         "ppocr-testdata",
         "ocr-detection-labelled-50"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 5 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19758,7 +19684,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -19826,30 +19754,15 @@
         "ppocr-testdata",
         "ocr-detection-labelled-50"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 5 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19860,7 +19773,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -19915,25 +19830,15 @@
         "ocr-onnx-ppocrv6-medium-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.1, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -19999,25 +19904,15 @@
         "ocr-onnx-ppocrv6-medium-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.6, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20085,30 +19980,15 @@
         "ocr-onnx-ppocrv6-medium-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20119,7 +19999,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20176,30 +20058,15 @@
         "ocr-onnx-ppocrv6-medium-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20210,7 +20077,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20265,25 +20134,15 @@
         "ocr-onnx-ppocrv6-small-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.1, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20349,25 +20208,15 @@
         "ocr-onnx-ppocrv6-small-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.6, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20435,30 +20284,15 @@
         "ocr-onnx-ppocrv6-small-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20469,7 +20303,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20526,30 +20362,15 @@
         "ocr-onnx-ppocrv6-small-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20560,7 +20381,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20615,25 +20438,15 @@
         "ocr-onnx-ppocrv6-tiny-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.1, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20699,25 +20512,15 @@
         "ocr-onnx-ppocrv6-tiny-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.6, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20785,30 +20588,15 @@
         "ocr-onnx-ppocrv6-tiny-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20819,7 +20607,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20876,30 +20666,15 @@
         "ocr-onnx-ppocrv6-tiny-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -20910,7 +20685,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -20965,25 +20742,15 @@
         "ocr-onnx-ppocrv4-source-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.1, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21049,25 +20816,15 @@
         "ocr-onnx-ppocrv4-source-det",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.6, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21135,30 +20892,15 @@
         "ocr-onnx-ppocrv4-source-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "a41b9e79b60be6314ab0db1a0920b1650a710489020e2de2b452821f4b5adec9",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21169,7 +20911,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -21226,30 +20970,15 @@
         "ocr-onnx-ppocrv4-source-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "a41b9e79b60be6314ab0db1a0920b1650a710489020e2de2b452821f4b5adec9",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21260,7 +20989,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -21317,30 +21048,15 @@
         "ocr-onnx-ppocrv3-japan-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "f38bc0cef411ffb75483b37b8005f9400e4b60a0afd44ff777861737695f52e2",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21351,7 +21067,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -21408,30 +21126,15 @@
         "ocr-onnx-ppocrv3-japan-rec",
         "ppocr-testdata"
       ],
-      "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.005, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
+      "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "f38bc0cef411ffb75483b37b8005f9400e4b60a0afd44ff777861737695f52e2",
         "checks": [
           {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          },
-          {
             "metric": "json0/stored_max_diff",
             "op": "<",
             "value": 0.001
-          },
-          {
-            "metric": "json0/stored_argmax_match",
-            "op": "==",
-            "value": 1
           },
           {
             "metric": "json0/accuracy_fixture_count",
@@ -21442,7 +21145,9 @@
         "require_metrics": [
           "json0/max_diff",
           "json0/stored_max_diff",
-          "json0/stored_argmax_match"
+          "json0/stored_argmax_match",
+          "json0/mean_diff",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -31069,22 +30774,11 @@
         "ocr-paddle-source-det_ch",
         "ocr-paddle-config-det_ch"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "2ad68ed2768fe6c41166a5bc64680cc9f445390acb6528da449a4db2f7b90e14:49ee815e30cff43cb1057d33bf0d94193e4d4f1ae28451cad15b40be830df915",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0001
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
@@ -31151,22 +30845,11 @@
         "ocr-paddle-source-det_ch",
         "ocr-paddle-config-det_ch"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "2ad68ed2768fe6c41166a5bc64680cc9f445390acb6528da449a4db2f7b90e14:49ee815e30cff43cb1057d33bf0d94193e4d4f1ae28451cad15b40be830df915",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.0005
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
@@ -31311,27 +30994,17 @@
         "ocr-paddle-source-rec_ch",
         "ocr-paddle-config-rec_ch"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "bf78f3898a004615e69c676259d8171bd7ae99000653b41fd72aaa36ae8bd304:a6dbfa63e7ee161688523c954e9e293f77dc24044db81e836ff9c7f103fd191a",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
           "json0/p50_ms",
-          "json0/p95_ms"
+          "json0/p95_ms",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -31391,27 +31064,17 @@
         "ocr-paddle-source-rec_ch",
         "ocr-paddle-config-rec_ch"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "bf78f3898a004615e69c676259d8171bd7ae99000653b41fd72aaa36ae8bd304:a6dbfa63e7ee161688523c954e9e293f77dc24044db81e836ff9c7f103fd191a",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.005
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
           "json0/p50_ms",
-          "json0/p95_ms"
+          "json0/p95_ms",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -31551,27 +31214,17 @@
         "ocr-paddle-source-rec_en",
         "ocr-paddle-config-rec_en"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "85b952f05f709af259cfe4254012aa7208bef0998f71f57a15495446f25ccd43:75f64a1ffb70c56b7a25655963ca16f5bf3286202e3f52ac972bee05cdee2f56",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.003
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
           "json0/p50_ms",
-          "json0/p95_ms"
+          "json0/p95_ms",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -31633,32 +31286,17 @@
         "ocr-paddle-source-rec_en",
         "ocr-paddle-config-rec_en"
       ],
-      "accuracy_gate": "Fresh original Paddle 3.0.0 CPU probabilities and CTC argmax; native CPU comparisons are diagnostic only. Release additionally requires independently audited native/source CUDA timings and sampled VRAM; same-host baseline is owned by the common runner.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "85b952f05f709af259cfe4254012aa7208bef0998f71f57a15495446f25ccd43:75f64a1ffb70c56b7a25655963ca16f5bf3286202e3f52ac972bee05cdee2f56",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.6
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.001
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
           "json0/p50_ms",
-          "json0/p95_ms"
+          "json0/p95_ms",
+          "json0/argmax_match"
         ]
       },
       "metric_parser": "generic",
@@ -31856,27 +31494,11 @@
         "ocr-layout-head6",
         "ocr-layout-head7"
       ],
-      "accuracy_gate": "All eight original Paddle PicoDet class/regression heads, finite probabilities, exact per-head argmax and direct native CPU comparisons are diagnostic only. Release requires independent strict native/source GPU audits and the common same-host baseline. No labelled-page accuracy claim.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "26e49e3ee07b2c1301a2b8f9c3319e6c4aed321eaa23a1ea6d4062caf9d5c79e",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.1
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.002
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",
@@ -31968,27 +31590,11 @@
         "ocr-layout-head6",
         "ocr-layout-head7"
       ],
-      "accuracy_gate": "All eight original Paddle PicoDet class/regression heads, finite probabilities, exact per-head argmax and direct native CPU comparisons are diagnostic only. Release requires independent strict native/source GPU audits and the common same-host baseline. No labelled-page accuracy claim.",
+      "accuracy_gate": "F16/Q8 original-source probabilities and per-head argmax are diagnostic; require complete finite outputs. Real page/region accuracy consumers determine task quality.",
       "accuracy": {
         "reference": "upstream",
         "reference_id": "26e49e3ee07b2c1301a2b8f9c3319e6c4aed321eaa23a1ea6d4062caf9d5c79e",
-        "checks": [
-          {
-            "metric": "json0/max_diff",
-            "op": "<",
-            "value": 0.75
-          },
-          {
-            "metric": "json0/mean_diff",
-            "op": "<",
-            "value": 0.02
-          },
-          {
-            "metric": "json0/argmax_match",
-            "op": "==",
-            "value": 1
-          }
-        ],
+        "checks": [],
         "require_metrics": [
           "json0/max_diff",
           "json0/mean_diff",

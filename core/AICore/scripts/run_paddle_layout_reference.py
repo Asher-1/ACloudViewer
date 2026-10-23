@@ -30,6 +30,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -69,7 +70,12 @@ def main() -> int:
     parser.add_argument("images", type=Path, nargs="+")
     args = parser.parse_args()
 
-    from paddle import inference  # deferred: only the reference host needs it
+    # Match the independent graph gate before cuBLAS/cuDNN initialization.
+    os.environ["NVIDIA_TF32_OVERRIDE"] = "0"
+    import paddle  # deferred: only the reference host needs it
+    from paddle import inference
+    if args.device == "gpu" and not paddle.is_compiled_with_cuda():
+        raise RuntimeError("CUDA layout reference requires a CUDA-enabled Paddle library; CPU fallback is forbidden")
 
     spec = importlib.util.spec_from_file_location("picodet_postprocess",
                                                   args.postprocess_py)
@@ -87,6 +93,8 @@ def main() -> int:
     config = inference.Config(str(model), str(params))
     if args.device == "gpu":
         config.enable_use_gpu(500, 0)
+        if not config.use_gpu():
+            raise RuntimeError("Paddle did not enable the requested CUDA layout reference")
     else:
         config.disable_gpu()
     config.switch_ir_optim(False)  # graph passes must not alter the reference
@@ -97,6 +105,10 @@ def main() -> int:
     half = len(outputs) // 2
 
     report = {"model": model.parent.name, "model_sha256": sha256_file(params),
+              "device": args.device,
+              "paddle_compiled_with_cuda": paddle.is_compiled_with_cuda(),
+              "predictor_uses_gpu": config.use_gpu(),
+              "math_policy": {"NVIDIA_TF32_OVERRIDE": os.environ["NVIDIA_TF32_OVERRIDE"]},
               "postprocess_sha256": sha256_file(args.postprocess_py),
               "score_threshold": args.score_threshold,
               "nms_threshold": args.nms_threshold, "images": []}

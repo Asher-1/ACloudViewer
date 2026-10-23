@@ -23,7 +23,7 @@ from types import SimpleNamespace
 
 from gen_ocr_fixtures import Gguf
 from ocr_paddle_environment import source_environment
-from run_ocr_source_pipeline import (Box, Options, View,
+from run_ocr_source_pipeline import (Box, Options, View, aicore_library_path,
                                      evaluate_labeled_pages, sha256)
 
 
@@ -333,6 +333,10 @@ def main():
     parser.add_argument("--source-reference-sha256")
     parser.add_argument("--export-reference", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.threads == 0:
+        args.threads = 4
+    if args.threads < 1:
+        parser.error("--threads must be nonnegative")
     if bool(args.source_reference) != bool(args.source_reference_sha256):
         parser.error("source reference and SHA-256 must be supplied together")
     args.source_device = "cuda" if args.backend in ("cuda", "vulkan") else "cpu"
@@ -368,11 +372,8 @@ def main():
     actual_sources = source_digests(sources)
     if source_result["source_files"] != actual_sources:
         raise ValueError("Paddle source changed before native evaluation")
-    if args.library.is_dir():
-        name = "AICore.dll" if os.name == "nt" else "libAICore.dylib" if sys.platform == "darwin" else "libAICore.so"
-        args.library = next((path for path in (args.library / name, args.library / "Release" / name)
-                             if path.is_file()), args.library / name)
-    library = C.CDLL(str(args.library.resolve()))
+    args.library = aicore_library_path(args.library)
+    library = C.CDLL(str(args.library))
     library.aicore_ocr_context_create.argtypes = [C.POINTER(Options)]
     library.aicore_ocr_context_create.restype = C.c_void_p
     library.aicore_ocr_context_destroy.argtypes = [C.c_void_p]

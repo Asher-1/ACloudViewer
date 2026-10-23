@@ -789,6 +789,34 @@ include(CMakeExternalLibs)
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
+# AICore's CUDA inference backend is independent of BUILD_CUDA_MODULE. The
+# llama/ggml backend can therefore be enabled while the application CUDA module
+# stays off; enable CUDA as a language as well so AICore-owned .cu sources are
+# compiled into libAICore.
+if(AICore_ENABLED AND AICore_CUDA_ENABLED AND NOT BUILD_CUDA_MODULE
+        AND NOT CMAKE_CUDA_COMPILER_LOADED)
+    if(NOT CMAKE_CUDA_COMPILER AND CUDAToolkit_NVCC_EXECUTABLE)
+        set(CMAKE_CUDA_COMPILER "${CUDAToolkit_NVCC_EXECUTABLE}")
+    endif()
+    if(NOT CMAKE_CUDA_COMPILER)
+        message(FATAL_ERROR
+            "AICore CUDA is enabled, but the root project cannot find nvcc. "
+            "Set CMAKE_CUDA_COMPILER or CUDAToolkit_ROOT.")
+    endif()
+
+    include(CloudViewerMakeCudaArchitectures)
+    cloudViewer_make_cuda_architectures(_AICORE_CUDA_ARCHITECTURES)
+    if(_AICORE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES "${_AICORE_CUDA_ARCHITECTURES}")
+    endif()
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    message(STATUS
+        "AICore CUDA language enabled independently of BUILD_CUDA_MODULE "
+        "(architectures: ${CMAKE_CUDA_ARCHITECTURES})")
+endif()
+
 # Default debug suffix for libraries.
 # Note: must put after include(3rdparty/find_dependencies.cmake)
 set(CMAKE_DEBUG_POSTFIX "d")

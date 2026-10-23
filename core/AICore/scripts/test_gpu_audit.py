@@ -2,6 +2,7 @@
 import json
 import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -27,11 +28,24 @@ class AuditTests(unittest.TestCase):
             {"pid": 99, "type": "C", "used_mib": 1})
         self.assertFalse(gpu_audit.summarize_samples([sample], 123)["passed"])
 
-    def test_active_desktop_is_not_silently_exempted(self):
+    def test_graphics_only_activity_does_not_invalidate_measurement(self):
         sample = self.sample()
-        sample["activity"].append({"pid": 99, "type": "G", "sm_pct": 6})
-        self.assertEqual(gpu_audit.external_activity(sample, 123), [99])
-        self.assertFalse(gpu_audit.summarize_samples([sample], 123)["passed"])
+        sample["devices"][0]["utilization_pct"] = 82
+        sample["activity"].append({"pid": 99, "type": "G", "sm_pct": 96})
+        self.assertEqual(gpu_audit.external_activity(sample, 123), [])
+        summary = gpu_audit.summarize_samples([sample], 123)
+        self.assertTrue(summary["passed"])
+        self.assertEqual(summary["normal_graphics_pids"], [99])
+
+    def test_external_compute_and_mixed_compute_graphics_contexts_block(self):
+        for kind in ("C", "C+G"):
+            sample = self.sample()
+            sample["devices"][0]["processes"].append(
+                {"pid": 99, "type": kind, "used_mib": 1})
+            sample["activity"].append(
+                {"pid": 99, "type": kind, "sm_pct": 0})
+            self.assertEqual(gpu_audit.external_activity(sample, 123), [99])
+            self.assertFalse(gpu_audit.summarize_samples([sample], 123)["passed"])
 
     def test_missing_process_memory_cannot_pass(self):
         for samples in ([], [self.sample(memory=None)], [self.sample(pid=99, kind="G")]):
@@ -58,6 +72,42 @@ class AuditTests(unittest.TestCase):
                     gpu_audit.run_audited(["probe"], report, strict=True)
             process.assert_not_called()
             self.assertIn('"passed": false', report.read_text())
+
+    def test_strict_preflight_allows_desktop_graphics_and_high_utilization(self):
+        desktop = self.sample(pid=99, kind="G", utilization=82)
+        desktop["activity"][0]["sm_pct"] = 96
+        measured = self.sample(utilization=82)
+        measured["devices"][0]["processes"].append(
+            {"pid": 99, "type": "G", "used_mib": 100})
+        measured["activity"].append({"pid": 99, "type": "G", "sm_pct": 96})
+        sampled = 0
+        monitor_sampled = threading.Event()
+
+        def driver_sample():
+            nonlocal sampled
+            sampled += 1
+            if sampled <= 3:
+                return desktop
+            monitor_sampled.set()
+            return measured
+
+        with tempfile.TemporaryDirectory() as temp:
+            child = unittest.mock.Mock(pid=123, returncode=0)
+            def communicate():
+                if not monitor_sampled.wait(3):
+                    child.returncode = 1
+                    return "", "monitor timeout"
+                return "ok", ""
+            child.communicate.side_effect = communicate
+            with patch.object(gpu_audit, "sample_driver", side_effect=driver_sample), \
+                 patch.object(subprocess, "Popen", return_value=child):
+                result, audit = gpu_audit.run_audited(
+                    ["probe"], Path(temp) / "audit.json", strict=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertTrue(audit["preflight_passed"])
+        self.assertTrue(audit["passed"])
+        self.assertEqual(audit["normal_graphics_pids"], [99])
+        self.assertEqual(audit["waiting_samples"][-1]["devices"][0]["utilization_pct"], 82)
 
     def test_observational_run_never_becomes_controlled_pass(self):
         with tempfile.TemporaryDirectory() as temp:

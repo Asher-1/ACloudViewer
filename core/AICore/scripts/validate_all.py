@@ -394,9 +394,7 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
             selection.update(expanded)
         task_selection = {task: set(selection) for task in selected}
         return parse_catalog_output(
-            completed.stdout, selected,
-            manifest_model_patterns(
-                manifest, selected, full=True, tiered=tiered),
+            completed.stdout, selected, selection,
             task_selection=task_selection)
     light_patterns = {
         task: manifest_model_patterns(
@@ -1706,7 +1704,7 @@ def extract_error_summary(output_tail: str, limit: int = 5) -> str:
     """
     markers = re.compile(
         r"\b(?:FAIL|failed|error|assert\w*|Traceback|TIMEOUT|SKIP|[A-Za-z]*Error)\b"
-        r"|GPU overlap persisted|GPU did not become idle", re.IGNORECASE)
+        r"|GPU overlap persisted|GPU (?:did not become idle|preflight timed out)", re.IGNORECASE)
     evidence: list[str] = []
     for raw in output_tail.splitlines():
         line = raw.strip()
@@ -1785,9 +1783,167 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
     }, failures
 
 
+def summarize_attempt_pair(
+        spec: RunSpec, attempts: list[Attempt],
+        baseline_spec: RunSpec | None, baseline_attempts: list[Attempt],
+        allow_incomplete: bool
+        ) -> tuple[dict[str, Any], list[str], dict[str, Any] | None, list[str]]:
+    """Summarize both build owners before task cache cleanup can unlink assets."""
+    row, failures = summarize_attempts(spec, attempts, allow_incomplete)
+    baseline_row = None
+    baseline_failures: list[str] = []
+    if baseline_spec is not None:
+        baseline_row, baseline_failures = summarize_attempts(
+            baseline_spec, baseline_attempts, allow_incomplete, baseline=True)
+    return row, failures, baseline_row, baseline_failures
+
+
 def file_identity(path: Path) -> dict[str, Any]:
     return {"path": str(path), "bytes": path.stat().st_size,
             "sha256": sha256_file(path)}
+
+
+def cpu_backend_module_score(module: Path, build: Path) -> tuple[int | None, str | None]:
+    """Read the same host-compatibility score used by ggml CPU dispatch."""
+    script = (
+        "import ctypes, sys; "
+        "backend = ctypes.CDLL(sys.argv[1]); "
+        "print(int(backend.ggml_backend_score()))"
+    )
+    env = os.environ.copy()
+    path_key = ("PATH" if os.name == "nt" else
+                "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else
+                "LD_LIBRARY_PATH")
+    library_path = os.pathsep.join(
+        [str(build / "bin"), env.get(path_key, "")]).rstrip(os.pathsep)
+    env[path_key] = library_path
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", script, str(module)],
+            capture_output=True, text=True, timeout=15, env=env)
+    except subprocess.TimeoutExpired:
+        return None, "timed out loading CPU backend module"
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or f"exit {completed.returncode}"
+        return None, detail
+    try:
+        return int(completed.stdout.strip()), None
+    except ValueError:
+        return None, f"invalid score output: {completed.stdout.strip()!r}"
+
+
+def cpu_backend_profile(build: Path) -> dict[str, Any]:
+    """Describe the CPU dispatch modules that can run GPU fallback ops."""
+    build = build.resolve()
+    module_names: set[str] = set()
+    module_paths: dict[str, Path] = {}
+    for directory in (build / "bin", build / "bin" / "aicore_tests"):
+        if not directory.is_dir():
+            continue
+        for path in directory.glob("*ggml-cpu*"):
+            if not path.is_file():
+                continue
+            name = path.name
+            for suffix in (".so", ".dylib", ".dll"):
+                if name.endswith(suffix):
+                    name = name[:-len(suffix)]
+                    break
+            if name.startswith("libggml-cpu-"):
+                module_name = name.removeprefix("libggml-cpu-")
+            elif name.startswith("ggml-cpu-"):
+                module_name = name.removeprefix("ggml-cpu-")
+            elif name in {"libggml-cpu", "ggml-cpu"}:
+                module_name = "generic"
+            else:
+                continue
+            module_names.add(module_name)
+            module_paths.setdefault(module_name, path)
+
+    module_scores: dict[str, int | None] = {}
+    score_errors: dict[str, str] = {}
+    for module_name, module_path in sorted(module_paths.items()):
+        score, error = cpu_backend_module_score(module_path, build)
+        module_scores[module_name] = score
+        if error:
+            score_errors[module_name] = error
+    supported_scores = [score for score in module_scores.values()
+                        if score is not None and score > 0]
+
+    settings: dict[str, str] = {}
+    caches = [build / "CMakeCache.txt"]
+    # A staged validation build may contain only selected installed binaries;
+    # its llama ExternalProject cache lives beside that staging directory.
+    for parent in build.parents:
+        external_cache = parent / "llama/src/ext_llama-build/CMakeCache.txt"
+        if external_cache.is_file():
+            caches.append(external_cache)
+            break
+    for cache in caches:
+        if not cache.is_file():
+            continue
+        for line in cache.read_text(errors="replace").splitlines():
+            if ":" not in line or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            name = key.split(":", 1)[0]
+            if name in {"AICore_CPU_ALL_VARIANTS", "GGML_CPU_ALL_VARIANTS"}:
+                settings[name] = value.strip().upper()
+    effective = {"ON" if value in {"ON", "TRUE", "1"} else "OFF"
+                 for value in settings.values()
+                 if value in {"ON", "OFF", "TRUE", "FALSE", "1", "0"}}
+    return {
+        "modules": sorted(module_names),
+        "module_scores": module_scores,
+        "module_score_errors": score_errors,
+        "best_dispatch_score": max(supported_scores, default=None),
+        "best_dispatch_modules": sorted(
+            name for name, score in module_scores.items()
+            if score is not None and score > 0 and
+            score == max(supported_scores, default=None)),
+        "all_variants_settings": settings,
+        "all_variants_consistent": len(effective) <= 1,
+    }
+
+
+def cpu_backend_profile_failures(candidate: dict[str, Any],
+                                 baseline: dict[str, Any]) -> list[str]:
+    failures = []
+    if not candidate.get("all_variants_consistent", True):
+        failures.append("candidate has conflicting AICore/GGML CPU variant settings")
+    if not baseline.get("all_variants_consistent", True):
+        failures.append("baseline has conflicting AICore/GGML CPU variant settings")
+    label = "AICore_CPU_ALL_VARIANTS/GGML_CPU_ALL_VARIANTS"
+    def effective_values(profile: dict[str, Any]) -> set[str]:
+        values = profile.get("all_variants_settings", {}).values()
+        return {"ON" if value in {"ON", "TRUE", "1"} else "OFF"
+                for value in values
+                if value in {"ON", "OFF", "TRUE", "FALSE", "1", "0"}}
+
+    left_values = effective_values(baseline)
+    right_values = effective_values(candidate)
+    if left_values and right_values and left_values != right_values:
+        failures.append(f"CPU backend configuration mismatch {label}: "
+                        f"{sorted(left_values)} -> {sorted(right_values)}")
+    baseline_score = baseline.get("best_dispatch_score")
+    candidate_score = candidate.get("best_dispatch_score")
+    if baseline_score is not None or candidate_score is not None:
+        if baseline_score is None or candidate_score is None:
+            failures.append("CPU backend dispatch score unavailable: "
+                            f"baseline={baseline_score}, candidate={candidate_score}")
+        elif baseline_score != candidate_score:
+            failures.append("CPU backend dispatch capability mismatch: "
+                            f"baseline score {baseline_score}, "
+                            f"candidate score {candidate_score}")
+    else:
+        baseline_modules = set(baseline.get("modules", []))
+        candidate_modules = set(candidate.get("modules", []))
+        if baseline_modules != candidate_modules:
+            missing = sorted(baseline_modules - candidate_modules)
+            extra = sorted(candidate_modules - baseline_modules)
+            failures.append("CPU backend module mismatch without runtime scores: "
+                            f"candidate missing {missing or 'none'}, "
+                            f"candidate extra {extra or 'none'}")
+    return failures
 
 
 def execution_artifacts(specs: list[RunSpec], build: Path) -> dict[str, Any]:
@@ -1872,6 +2028,22 @@ def command_output(command: list[str]) -> str:
     return completed.stdout.strip() if completed.returncode == 0 else ""
 
 
+def is_candidate_performance_metric(key: str, backend: str) -> bool:
+    """Compare candidate work, retaining reference/audit data as diagnostics.
+
+    Source-framework runs and per-PID device samples are not measurements of
+    the candidate runtime. Their own qualification gates remain mandatory.
+    The summarized candidate process peak and native timings are comparable.
+    """
+    parts = key.lower().split("/")
+    if any(part in {"audit", "sources"} for part in parts):
+        return False
+    if any(part.startswith("source_") for part in parts):
+        return False
+    return (any(part.endswith(TIMING_SUFFIXES) for part in parts)
+            and not (backend != "cpu" and "cpu" in parts))
+
+
 def compare_report(current: dict[str, Any], baseline: dict[str, Any],
                    threshold: float, absolute_noise_floor: float,
                    allow_incomplete: bool = False) -> list[str]:
@@ -1886,6 +2058,13 @@ def compare_report(current: dict[str, Any], baseline: dict[str, Any],
             failures.append(
                 f"validation protocol mismatch {key}: "
                 f"{baseline_value!r} -> {current_value!r}")
+    current_cpu_profile = current.get("cpu_backend_profiles", {}).get("candidate")
+    baseline_cpu_profile = baseline.get("cpu_backend_profiles", {}).get("candidate")
+    if (current_cpu_profile is None) != (baseline_cpu_profile is None):
+        failures.append("CPU backend dispatch profile changed or is missing")
+    elif current_cpu_profile is not None:
+        failures.extend(cpu_backend_profile_failures(
+            current_cpu_profile, baseline_cpu_profile))
     if baseline.get("manifest", {}).get("sha256") != current.get(
             "manifest", {}).get("sha256"):
         failures.append("validation manifest identity changed")
@@ -1933,15 +2112,11 @@ def compare_report(current: dict[str, Any], baseline: dict[str, Any],
             continue
         performance_keys = {
             key for key in row["metrics"]
-            if any(part.lower().endswith(TIMING_SUFFIXES)
-                   for part in key.split("/"))
-            and not (current.get("backend") != "cpu" and "/cpu/" in key.lower())
+            if is_candidate_performance_metric(key, current.get("backend"))
         }
         base_performance_keys = {
             key for key in base.get("metrics", {})
-            if any(part.lower().endswith(TIMING_SUFFIXES)
-                   for part in key.split("/"))
-            and not (current.get("backend") != "cpu" and "/cpu/" in key.lower())
+            if is_candidate_performance_metric(key, current.get("backend"))
         }
         for key in sorted(base_performance_keys - performance_keys):
             failures.append(f"{row['key']}: missing candidate metric {key}")
@@ -2289,6 +2464,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    cpu_backend_profiles = {"candidate": cpu_backend_profile(args.build)}
+    if args.baseline_build:
+        cpu_backend_profiles["baseline"] = cpu_backend_profile(args.baseline_build)
+        profile_failures = cpu_backend_profile_failures(
+            cpu_backend_profiles["candidate"], cpu_backend_profiles["baseline"])
+        if profile_failures and not args.list:
+            print("controlled A/B CPU backend preflight failed:", file=sys.stderr)
+            for failure in profile_failures:
+                print(f"- {failure}", file=sys.stderr)
+            print("Rebuild the candidate until its CPU fallback dispatch "
+                  "capability matches the baseline.", file=sys.stderr)
+            return 1
     manifest_identity: dict[str, Any] = {}
     manifest = select_scenarios(load_manifest(args.manifest, identity=manifest_identity), args.scenarios)
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -2452,21 +2639,20 @@ def main() -> int:
                     print(f"  candidate {repeat + 1}/{args.repeats}: "
                           f"rc={attempt.returncode} "
                           f"wall={attempt.duration_ms:.1f} ms", flush=True)
-        row, row_failures = summarize_attempts(
-            spec, attempts, args.allow_incomplete)
+        row, row_failures, baseline_row, baseline_row_failures = (
+            summarize_attempt_pair(spec, attempts, baseline_spec,
+                                   baseline_attempts, args.allow_incomplete))
         results.append(row)
-        release_task_outputs(spec.task)
         failures.extend(row_failures)
         if args.baseline_build:
             if not baseline_spec:
                 failures.append(f"{spec.key}: missing baseline build scenario")
             else:
-                baseline_row, baseline_row_failures = summarize_attempts(
-                    baseline_spec, baseline_attempts, args.allow_incomplete,
-                    baseline=True)
+                assert baseline_row is not None
                 baseline_results.append(baseline_row)
                 failures.extend(f"baseline: {failure}"
                                 for failure in baseline_row_failures)
+        release_task_outputs(spec.task)
 
     assets_by_task: dict[str, set[str]] = {}
     for row in results:
@@ -2501,6 +2687,7 @@ def main() -> int:
                      "nvidia-smi", "--query-gpu=name,driver_version,memory.total",
                      "--format=csv,noheader"])},
         "build": str(args.build), "assets": str(args.assets),
+        "cpu_backend_profiles": cpu_backend_profiles,
         "backend": args.backend,
         "profile": args.profile,
         "tier": "full" if args.full else "light",

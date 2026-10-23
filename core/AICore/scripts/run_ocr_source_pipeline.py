@@ -23,7 +23,6 @@ import numpy as np
 import onnxruntime as ort
 import yaml
 
-
 class Options(C.Structure):
     _fields_ = [("struct_size", C.c_size_t), ("abi_version", C.c_uint32),
                 ("det", C.c_char_p), ("rec", C.c_char_p), ("layout", C.c_char_p),
@@ -60,6 +59,25 @@ class Preset(C.Structure):
 
 def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def aicore_library_path(path):
+    """Return an absolute lexical path, preserving symlink-based build layouts.
+
+    AICore discovers dynamically loaded ggml backends beside the path used to
+    load libAICore. Resolving a build/bin symlink can redirect that search to a
+    staging directory that contains the core library but not its backends.
+    """
+    library = Path(os.path.abspath(os.fspath(path)))
+    if not library.is_dir():
+        return library
+    name = ("AICore.dll" if os.name == "nt" else
+            "libAICore.dylib" if sys.platform == "darwin" else
+            "libAICore.so")
+    for candidate in (library / name, library / "Release" / name):
+        if candidate.is_file():
+            return candidate
+    raise ValueError(f"built AICore library unavailable under {library}")
 
 
 def evaluate_labeled_pages(args, system, library, ctx, preset, identity):
@@ -263,8 +281,12 @@ def main():
     args = parser.parse_args()
     if args.source_root:
         args.source_python = args.source_root / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    # The common runner uses zero for the probe default. Resolve it once
+    # before configuring either the original graph or the native context.
+    if args.threads == 0:
+        args.threads = 4
     if args.threads < 1:
-        parser.error("--threads must be positive")
+        parser.error("--threads must be nonnegative")
     if args.ground_truth and args.selected_regions:
         parser.error("labelled evaluation and custom-region diagnostic are separate scenarios")
     if args.backend in ("cuda", "vulkan") and not args.source_cuda_child:
@@ -344,12 +366,7 @@ def main():
             expected[index] = {"quad": normalized[index].tolist(), "text": text, "score": float(score)}
         if any(row is None for row in expected):
             raise ValueError("source custom workflow did not retain all regions")
-    library_path = args.library.resolve()
-    if library_path.is_dir():
-        name = "AICore.dll" if os.name == "nt" else "libAICore.dylib" if sys.platform == "darwin" else "libAICore.so"
-        paths = [library_path / name, library_path / "Release" / name]
-        library_path = next((path for path in paths if path.is_file()), None)
-        if library_path is None: raise ValueError("built AICore library unavailable")
+    library_path = aicore_library_path(args.library)
     library = C.CDLL(str(library_path))
     library.aicore_ocr_context_create.argtypes = [C.POINTER(Options)]
     library.aicore_ocr_context_create.restype = C.c_void_p

@@ -1,0 +1,29 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -6706,7 +6706,24 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& subctx,
+     const uint64_t y_ne = padded_n * ne10 * ne12 * ne13;
+     const uint64_t d_ne = ggml_nelements(dst);
+ 
+-    const uint32_t split_k = ggml_vk_guess_split_k(ctx, ne01, ne11, ne10, disable_split_k, pipeline);
++    // DA3 DPT convolutions retain the pre-upgrade half-accumulator order.
++    // Splitting a short im2col matrix changes rounding at every K slice;
++    // the 224-target resize convolution then changes dense depth/confidence.
++    // These are the DPT checkpoint's weight namespaces, not input values or
++    // a global split-K override. Other matmuls retain upstream routing.
++    const bool dpt_half_conv =
++        dst->op_params[0] == GGML_PREC_DEFAULT &&
++        src0->type == GGML_TYPE_F16 && src1->type == GGML_TYPE_F32 &&
++        src0->op == GGML_OP_RESHAPE && src0->src[0] != nullptr &&
++        src0->src[0]->op == GGML_OP_IM2COL;
++    bool preserve_dpt_order = false;
++    if (dpt_half_conv && ne01 < pipeline->wg_denoms[0]) {
++        const std::string name = ggml_vk_rmbg_tensor_name(src1);
++        preserve_dpt_order = name.compare(0, 12, "head.resize.") == 0 ||
++                             name.compare(0, 13, "head.scratch.") == 0;
++    }
++    const uint32_t split_k = ggml_vk_guess_split_k(
++        ctx, ne01, ne11, ne10, disable_split_k || preserve_dpt_order, pipeline);
+ 
+     const uint64_t qx_sz = ggml_type_size(src0->type) * x_ne / ggml_blck_size(src0->type);
+     const uint64_t qy_sz = ggml_type_size(src1->type) * y_ne / ggml_blck_size(src1->type);

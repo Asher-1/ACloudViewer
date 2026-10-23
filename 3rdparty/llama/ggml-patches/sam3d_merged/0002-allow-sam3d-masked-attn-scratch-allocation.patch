@@ -1,0 +1,10 @@
+diff --git a/src/ggml-backend.cpp b/src/ggml-backend.cpp
+--- a/src/ggml-backend.cpp
++++ b/src/ggml-backend.cpp
+@@ -2221,5 +2221,6 @@ bool ggml_op_alloc_size_may_expand(enum ggml_op op) {
+     switch (op) {
+         case GGML_OP_FLASH_ATTN_EXT:
++        case GGML_OP_SAM3D_F16_MASKED_ATTN:
+         case GGML_OP_MUL_MAT:
+         case GGML_OP_MUL_MAT_ID:
+         case GGML_OP_CUMSUM:

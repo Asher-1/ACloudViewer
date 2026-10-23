@@ -66,14 +66,24 @@ def parse_activity(output):
     return rows
 
 
-def external_activity(sample, owner_pid=None, graphics_threshold=5):
+def external_activity(sample, owner_pid=None):
     busy = set()
     for device in sample["devices"]:
         busy.update(p["pid"] for p in device["processes"]
-                    if "C" in p["type"] and p["pid"] != owner_pid)
-    busy.update(p["pid"] for p in sample["activity"] if p["pid"] != owner_pid
-                and p["sm_pct"] is not None and p["sm_pct"] > graphics_threshold)
+                    if "C" in (p["type"] or "") and p["pid"] != owner_pid)
+    busy.update(p["pid"] for p in sample["activity"]
+                if "C" in (p["type"] or "") and p["pid"] != owner_pid)
     return sorted(busy)
+
+
+def graphics_activity(sample, owner_pid=None):
+    graphics = set()
+    for device in sample["devices"]:
+        graphics.update(p["pid"] for p in device["processes"]
+                        if "G" in (p["type"] or "") and p["pid"] != owner_pid)
+    graphics.update(p["pid"] for p in sample["activity"]
+                    if "G" in (p["type"] or "") and p["pid"] != owner_pid)
+    return sorted(graphics)
 
 
 def sample_driver():
@@ -86,10 +96,12 @@ def sample_driver():
 
 def summarize_samples(samples, owner_pid, errors=()):
     active = sorted({pid for s in samples for pid in external_activity(s, owner_pid)})
+    graphics = sorted({pid for s in samples for pid in graphics_activity(s, owner_pid)})
     owned = [p["used_mib"] for s in samples for d in s["devices"]
              for p in d["processes"] if p["pid"] == owner_pid and p["used_mib"] is not None]
     return {"passed": bool(samples and owned and not active and not errors),
-            "external_active_pids": active, "errors": list(errors),
+            "external_active_pids": active, "external_compute_pids": active,
+            "normal_graphics_pids": graphics, "errors": list(errors),
             "sample_count": len(samples), "owner_memory_sample_count": len(owned),
             "sampled_process_peak_mib": max(owned) if owned else None,
             "sampled_device_peak_mib": max((d["used_mib"] for s in samples
@@ -99,15 +111,15 @@ def summarize_samples(samples, owner_pid, errors=()):
 def run_audited(command, audit_path, *, strict=False, idle_timeout=60, **kwargs):
     """Run one native probe and retain telemetry, including rejected samples.
 
-    Compute contexts from other processes are always rejected. Desktop
-    graphics must stay at or below 5% SM in pmon. A strict run additionally
-    requires three pre-run samples at <=10% total utilization. No process is
-    killed, ignored through an allow-list, or assigned to the measurement.
+    Compute contexts from other processes are rejected. Graphics-only contexts
+    and total device utilization are informational because desktop and remote
+    desktop rendering are expected on this host. A strict run requires three
+    consecutive pre-run samples without foreign compute contexts.
     """
     if idle_timeout <= 0:
         raise ValueError("GPU idle timeout must be positive")
-    audit = {"schema": 1, "audit_id": uuid.uuid4().hex, "strict": strict,
-             "graphics_sm_threshold_pct": 5, "idle_total_threshold_pct": 10,
+    audit = {"schema": 2, "audit_id": uuid.uuid4().hex, "strict": strict,
+             "preflight_rule": "three samples without foreign C or C+G contexts; graphics-only activity and total utilization are informational",
              "memory_scope": "sampled driver process/device memory; not exact allocator peak",
              "waiting_samples": [], "samples": []}
     errors = []
@@ -124,13 +136,12 @@ def run_audited(command, audit_path, *, strict=False, idle_timeout=60, **kwargs)
                     raise RuntimeError("GPU audit telemetry unavailable") from error
                 break
             audit["waiting_samples"].append(sample)
-            idle = (not external_activity(sample) and
-                    all(d["utilization_pct"] <= 10 for d in sample["devices"]))
-            consecutive = consecutive + 1 if idle else 0
+            compute_free = not external_activity(sample)
+            consecutive = consecutive + 1 if compute_free else 0
             if not strict or consecutive >= 3:
                 break
             if time.monotonic() >= deadline:
-                raise RuntimeError("GPU did not become idle before measurement")
+                raise RuntimeError("GPU preflight timed out with foreign compute activity")
             time.sleep(min(.2, max(0, deadline - time.monotonic())))
 
         begin = time.monotonic()
@@ -164,8 +175,8 @@ def run_audited(command, audit_path, *, strict=False, idle_timeout=60, **kwargs)
             stop.set()
             worker.join()
         audit.update(summarize_samples(audit["samples"], process.pid, errors))
-        audit["idle_passed"] = consecutive >= 3
-        audit["passed"] = bool(audit["passed"] and audit["idle_passed"])
+        audit["preflight_passed"] = bool(strict and consecutive >= 3)
+        audit["passed"] = bool(audit["passed"] and audit["preflight_passed"])
         completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
         return completed, audit
     except BaseException as error:

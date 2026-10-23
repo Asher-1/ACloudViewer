@@ -635,7 +635,7 @@ together (new task = enum value + switch branch).
 flowchart TB
     A["Read the pinned version (3rdparty/ggml/ggml.cmake)<br/>replay the full current manifest patch chain"] --> B["Experiment only inside a disposable<br/>extracted tree (build*/ggml/)"]
     B --> C["Generate the minimal semantic patch<br/>against the fully patched baseline"]
-    C --> D["Register it in dependency order in<br/>3rdparty/ggml/patches/manifest.yaml"]
+    C --> D["Register it in dependency order in<br/>3rdparty/llama/ggml-patches/manifest.yaml"]
     D --> E["Force a clean ExternalProject replay"]
     E --> F["Verify all existing pipelines still pass<br/>(not just the new operator)"]
     F --> G{"Does it change any numerical default path?"}
@@ -919,7 +919,7 @@ The current matrix protocol and acceptance thresholds live in
 |---|---|
 | Full build-switch table | [`../../BUILD.md`](../../BUILD.md), [`../../cmake/AICoreOptions.cmake`](../../cmake/AICoreOptions.cmake) |
 | ggml version/digest | [`../../3rdparty/ggml/ggml.cmake`](../../3rdparty/ggml/ggml.cmake) |
-| Ordered ggml patches | [`../../3rdparty/ggml/patches/manifest.yaml`](../../3rdparty/ggml/patches/manifest.yaml) |
+| Ordered ggml patches | [`../../3rdparty/llama/ggml-patches/manifest.yaml`](../../3rdparty/llama/ggml-patches/manifest.yaml) |
 | Engineering contract (review checklist/gates) | [`../../../.agents/skills/acloudviewer-aicore-plugin/SKILL.md`](../../../.agents/skills/acloudviewer-aicore-plugin/SKILL.md) |
 | ggml ExternalProject rules | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
 | Qt plugin structure/UI rules | `.agents/rules/acloudviewer-plugin-dev.mdc` |

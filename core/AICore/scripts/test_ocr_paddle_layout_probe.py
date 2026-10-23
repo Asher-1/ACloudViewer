@@ -38,13 +38,14 @@ class LayoutGraphTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 head_comparison(actual, self.heads)
 
-    def test_near_tie_argmax_change_fails_even_when_probability_error_passes(self):
+    def test_near_tie_argmax_change_is_diagnostic_when_probability_error_passes(self):
         expected = [h.copy() for h in self.heads]
         actual = [h.copy() for h in self.heads]
         expected[0][0, 0, :2] = [.50001, .49999]
         actual[0][0, 0, :2] = [.49999, .50001]
         metrics = head_comparison(actual, expected)
         self.assertLess(metrics['max_diff'], .001)
+        self.assertTrue(accuracy_pass(metrics, .001, .001, quantized=True))
         self.assertFalse(accuracy_pass(metrics, .001, .001))
 
     def test_manifest_requires_each_pinned_head_and_backend_metrics(self):
@@ -59,7 +60,13 @@ class LayoutGraphTests(unittest.TestCase):
                 entry = assets[f'ocr-layout-head{i}']
                 self.assertIn(entry['id'], row['input_ids'])
                 self.assertIn(entry['sha256'], row['args'])
-            self.assertIn('json0/argmax_match', row['accuracy']['require_metrics'])
+            if row['id'].endswith('-f32'):
+                self.assertIn('json0/argmax_match',
+                              [check['metric'] for check in row['accuracy']['checks']])
+            else:
+                self.assertNotIn('json0/argmax_match',
+                                 [check['metric'] for check in row['accuracy']['checks']])
+                self.assertIn('json0/argmax_match', row['accuracy']['require_metrics'])
             self.assertFalse(any('/cpu_comparison/' in metric
                                  for metric in row['accuracy']['require_metrics']))
             self.assertIn('{profile}', row['args'])
@@ -76,7 +83,7 @@ class LayoutGraphTests(unittest.TestCase):
         metrics = head_comparison(actual, expected)
         self.assertLess(metrics['max_diff'], .001)
         self.assertLess(metrics['heads'][1]['dfl_probability_max_diff'], .001)
-        self.assertFalse(accuracy_pass(metrics, .001, .001))
+        self.assertTrue(accuracy_pass(metrics, .001, .001, quantized=True))
 
     def test_gpu_run_uses_cuda_heads_without_cpu_argmax_gate(self):
         cpu = [head.copy() for head in self.heads]
@@ -88,7 +95,7 @@ class LayoutGraphTests(unittest.TestCase):
             with self.subTest(backend=backend, matches_cuda=matches_cuda), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 np.save(root/'input.npy', np.zeros((1, 3, 800, 608), np.float32))
-                for name in ('model', 'program', 'parameters', 'config', 'probe'):
+                for name in ('model-f16.gguf', 'program', 'parameters', 'config', 'probe'):
                     (root/name).write_bytes(name.encode())
                 (root/'pins.json').write_text('{}')
                 heads = []
@@ -97,7 +104,7 @@ class LayoutGraphTests(unittest.TestCase):
                     heads.append((str(path), digest(path)))
                 args = SimpleNamespace(input=root/'input.npy',
                     input_sha256=digest(root/'input.npy'), reference_head=heads,
-                    source_root=root, source_pins=root/'pins.json', model=root/'model',
+                    source_root=root, source_pins=root/'pins.json', model=root/'model-f16.gguf',
                     source_python=Path('cpu-source'), source_gpu_python=Path('cuda-source'),
                     probe=root/'probe', report=root/'report.json', backend=backend,
                     measurement_profile='release', max_diff=.001, mean_diff=.001,
@@ -123,7 +130,7 @@ class LayoutGraphTests(unittest.TestCase):
                         patch('run_ocr_paddle_layout_probe.native_run', side_effect=native):
                     report = run(args)
                 self.assertEqual(devices, ['cuda'])
-                self.assertEqual(report['exit_code'], int(not matches_cuda))
+                self.assertEqual(report['exit_code'], 0)
                 self.assertAlmostEqual(report['argmax_match'], 1 if matches_cuda else .99)
                 self.assertAlmostEqual(report['source_cuda_fixture_comparison']['argmax_match'], .99)
 

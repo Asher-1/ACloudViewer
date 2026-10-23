@@ -1277,12 +1277,25 @@ int cmd_e2e(const E2eOptions& opt) {
     if (opt.philox_blocks > 0) {
         distribution_blocks = opt.philox_blocks;
     } else if (!uses_cuda_rng) {
+#if defined(SAM3D_USE_CUDA)
+        // Vulkan and CPU must use the same distribution grid as the upstream
+        // PyTorch CUDA oracle. When CUDA is available in this build, derive
+        // that grid from the active CUDA device instead of requiring every
+        // caller to duplicate the device-specific value.
+        std::string rng_contract_error;
+        if (!PytorchCudaNormalRng::distribution_blocks(distribution_blocks,
+                                                       rng_contract_error)) {
+            LOGE("e2e: %s", rng_contract_error.c_str());
+            return 1;
+        }
+#else
         std::string rng_contract_error;
         if (!pytorch_philox_distribution_blocks_from_environment(
                     distribution_blocks, rng_contract_error)) {
             LOGE("e2e: %s", rng_contract_error.c_str());
             return 1;
         }
+#endif
     }
     // CUDA materializes normal samples with the verified device kernel, while
     // this parallel state tracks the same counter for the later randperm.

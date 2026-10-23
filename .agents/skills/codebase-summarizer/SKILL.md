@@ -229,7 +229,7 @@ public:
 
 **ggml fix works locally but not in CI**
 
-- Changes must go through the patch flow (`3rdparty/ggml/patches/` + `manifest.yaml`), never edit `build*/ggml/` directly
+- Changes must go through the patch flow (`3rdparty/llama/ggml-patches/` + `manifest.yaml`), never edit `build*/ggml/` directly
 
 ## Additional Resources
 

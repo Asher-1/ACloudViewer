@@ -1,0 +1,11 @@
+# Vulkan migration candidate; production promotion requires all-task gates.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0005-acv-vulkan-operators.patch
+  - file: 0008-acv-vulkan-q4-k-copy-route.patch
+  - file: 0009-acv-vulkan-pattern-short-circuit.patch
+    note: "Short-circuit failed fusion-pattern matches without changing graph ordering, alias dependencies or supported fusions; model performance qualification remains required."
+  - file: 0010-acv-vulkan-dependency-metadata.patch
+    note: "Cache source and view-base metadata within one optimizer call; retain every direct and alias dependency. Requires predicate, graph-order and model regression."
+  - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
+    note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."

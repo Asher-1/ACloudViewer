@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 
 from layout_gt_eval import CDLA_LABELS, digest, verified_path
-from run_ocr_source_pipeline import Options, View
+from run_ocr_source_pipeline import Options, View, aicore_library_path
 
 
 class Region(C.Structure):
@@ -43,7 +43,8 @@ def main():
     dependencies = {str(path): digest(path) for path in (Path(__file__), args.library,
         args.det, args.rec, args.layout, args.pins, Path(digest.__code__.co_filename),
         Path(__file__).with_name("run_ocr_source_pipeline.py"))}
-    library = C.CDLL(str(args.library.resolve()))
+    args.library = aicore_library_path(args.library)
+    library = C.CDLL(str(args.library))
     for name, inputs, output in (
         ("context_create", [C.POINTER(Options)], C.c_void_p),
         ("context_destroy", [C.c_void_p], None),

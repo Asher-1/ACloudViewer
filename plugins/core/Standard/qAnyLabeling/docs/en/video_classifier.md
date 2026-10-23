@@ -84,7 +84,7 @@ The model should return JSON, for example:
 }
 ```
 
-`start_time` and `end_time` should use the `HH:mm:ss` format, and `event` is saved as the segment description. If a label is currently selected, generated segments use that label; otherwise, built-in label names such as `片段1` and `片段2` are assigned automatically.
+`start_time` and `end_time` should use the `HH:mm:ss` format, and `event` is saved as the segment description. If a label is currently selected, generated segments use that label; otherwise, built-in label names such as `Segment 1` and `Segment 2` are assigned automatically.
 
 ## Editing Segments
 

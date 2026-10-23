@@ -36,6 +36,10 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+GGML_BUILD_DIR="$(sed -n 's/^GGML_BUILD_DIR:INTERNAL=//p' "$INTEGRATED/CMakeCache.txt")"
+# Pre-migration baselines do not have the source-owner directory export.
+GGML_BUILD_DIR="${GGML_BUILD_DIR:-$INTEGRATED/ggml/src/ext_ggml-build}"
+
 if [ ! -x "$TEST_BIN" ]; then
     echo "error: test binary not found: $TEST_BIN (build AICore with CUDA first)" >&2
     exit 1
@@ -105,9 +109,9 @@ echo
 
 # 3) Compile-definition diff for the ggml-cuda translation units.
 echo "== [3/4] ggml-cuda compile definitions diff =="
-find "$INTEGRATED/ggml/src/ext_ggml-build" -name flags.make \
+find "$GGML_BUILD_DIR" -name flags.make \
     -path '*ggml-cuda*' -print -quit >/dev/null 2>&1 || true
-INT_FLAGS="$(find "$INTEGRATED/ggml/src/ext_ggml-build" -name flags.make 2>/dev/null | grep -i cuda | head -1 || true)"
+INT_FLAGS="$(find "$GGML_BUILD_DIR" -name flags.make 2>/dev/null | grep -i cuda | head -1 || true)"
 UP_FLAGS="$(find "$UPSTREAM/build" -name flags.make 2>/dev/null | grep -i cuda | head -1 || true)"
 if [ -n "$INT_FLAGS" ] && [ -n "$UP_FLAGS" ]; then
     grep -oE '\-D[A-Za-z0-9_]+(=[0-9]+)?' "$INT_FLAGS" | sort -u \
@@ -130,7 +134,7 @@ echo
 # 4) SASS dump (optional; requires cuobjdump from the CUDA toolkit).
 if command -v cuobjdump >/dev/null 2>&1; then
     echo "== [4/4] SASS dumps =="
-    INT_CUBINS="$(find "$INTEGRATED/ggml/src/ext_ggml-build" -name '*.cubin' -path '*ggml-cuda*' 2>/dev/null | head -1 || true)"
+    INT_CUBINS="$(find "$GGML_BUILD_DIR" -name '*.cubin' -path '*ggml-cuda*' 2>/dev/null | head -1 || true)"
     UP_CUBINS="$(find "$UPSTREAM/build" -name '*.cubin' -path '*ggml-cuda*' 2>/dev/null | head -1 || true)"
     if [ -n "$INT_CUBINS" ]; then
         cuobjdump -sass "$INT_CUBINS" > "$OUT_DIR/integrated.sass" 2>/dev/null || true

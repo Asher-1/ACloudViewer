@@ -67,6 +67,11 @@ class PaddleGraphTests(unittest.TestCase):
         self.assertLess(metrics["max_diff"], .001)
         self.assertFalse(passes(metrics, .001, argmax=True))
 
+    def test_quantized_raw_argmax_is_diagnostic_when_values_are_finite(self):
+        metrics = comparison(np.array([[.50001, .49999]]),
+                             np.array([[.49999, .50001]]), argmax=True)
+        self.assertTrue(passes(metrics, .001, argmax=True, quantized=True))
+
     def test_mean_and_maximum_are_independent_gates(self):
         metrics = comparison(np.array([[.2, .2]]), np.array([[.1, .1]]))
         self.assertFalse(passes(metrics, .5, .01))

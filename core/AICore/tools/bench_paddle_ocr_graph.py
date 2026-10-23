@@ -56,15 +56,20 @@ def main():
     os.environ["NVIDIA_TF32_OVERRIDE"] = "0"
     import paddle
     from paddle.inference import Config, create_predictor
+    if args.device == "cuda" and not paddle.is_compiled_with_cuda():
+        raise RuntimeError("CUDA reference requires a CUDA-enabled Paddle library; CPU fallback is forbidden")
     config = Config(str(args.program), str(args.parameters))
     if args.device == "cuda":
         config.enable_use_gpu(256, 0)
+        if not config.use_gpu():
+            raise RuntimeError("Paddle did not enable the requested CUDA reference")
     else:
         config.disable_gpu()
     config.switch_ir_optim(False)
     config.disable_mkldnn()
     config.disable_glog_info()
     config.set_cpu_math_library_num_threads(args.threads)
+    predictor_uses_gpu = config.use_gpu()
     predictor = create_predictor(config)
     x = np.load(args.input)
     if x.dtype != np.float32 or not np.isfinite(x).all():
@@ -106,6 +111,8 @@ def main():
         input_shape=list(x.shape), output_shape=list(outputs[0].shape),
         output_names=output_names, output_shapes=[list(output.shape) for output in outputs],
         output_sha256=digest(output_path), device=args.device,
+        paddle_compiled_with_cuda=paddle.is_compiled_with_cuda(),
+        predictor_uses_gpu=predictor_uses_gpu,
         paddle_version=importlib.metadata.version(distribution),
         **distribution_environment(),
         distribution_identity_sha256=identity_sha256,

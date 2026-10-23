@@ -584,7 +584,7 @@ target_include_directories(test_table_postprocess PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/table
     ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(test_table_postprocess PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+target_link_libraries(test_table_postprocess PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
 set_target_properties(test_table_postprocess PROPERTIES
     CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 _aicore_test_common(test_table_postprocess)
@@ -1311,6 +1311,12 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set_tests_properties(test_ocr_layout_gt_eval PROPERTIES
         LABELS "fast;validation;ocr" SKIP_RETURN_CODE 77)
 
+    add_test(NAME test_ocr_paddle_stored_weights
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_export_paddle_ocr_stored_weights.py)
+    set_tests_properties(test_ocr_paddle_stored_weights PROPERTIES
+        LABELS "fast;validation;ocr")
+
     add_test(NAME test_ocr_probability_gate
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_onnx_probe.py)
@@ -1326,12 +1332,19 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     add_test(NAME test_ocr_paddle_layout_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_layout_probe.py)
+    add_test(NAME test_ocr_paddle_reference_device
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_paddle_reference_device.py)
     add_test(NAME test_table_paddle_graph_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_paddle_probe.py)
+    add_test(NAME test_table_capi_measurement
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_capi_probe.py)
     set_tests_properties(test_ocr_probability_gate test_ocr_gpu_measurement_audit
         test_ocr_paddle_page_reference test_ocr_paddle_graph_reference
         test_ocr_paddle_layout_reference test_table_paddle_graph_reference
+        test_ocr_paddle_reference_device test_table_capi_measurement
         PROPERTIES LABELS "fast;validation;ocr")
 
     add_test(NAME test_aicore_plugin_boundaries

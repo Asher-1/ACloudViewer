@@ -26,15 +26,15 @@
 #
 # Build:   libAICore.so
 # Exports: all public headers under include/aicore/
-# Depends: 3rdparty_ggml (PRIVATE build dep), CVCoreLib, Qt::Core + Qt::Gui
+# Depends: GGML_DEPENDENCY_TARGET (PRIVATE build dep), CVCoreLib, Qt::Core + Qt::Gui
 
 if(NOT AICore_ENABLED)
     message(STATUS "AICore module is disabled (set AICore_ENABLED=ON to enable)")
     return()
 endif()
 
-if(NOT TARGET 3rdparty_ggml)
-    message(WARNING "AICore: 3rdparty_ggml not available. Enable AICore_ENABLED in CMake.")
+if(NOT TARGET "${GGML_DEPENDENCY_TARGET}")
+    message(WARNING "AICore: inference dependency not available. Enable AICore_ENABLED in CMake.")
     set(AICore_ENABLED OFF CACHE BOOL "" FORCE)
     return()
 endif()
@@ -200,7 +200,7 @@ add_library(${PROJECT_NAME} SHARED
 # resulting 1-ULP drift propagates through all 24 transformer blocks into
 # visibly different depth/pose output. Disabling contraction on the
 # lingbot TUs restores the reference bit-exact contract; ggml kernels are
-# unaffected (they are compiled in ext_ggml without -march).
+# unaffected (they are compiled in the dependency project without -march).
 set_source_files_properties(
     ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp
     ${AICORE_LINGBOT_SRC_DIR}/lingbot_capi.cpp
@@ -217,7 +217,7 @@ set_source_files_properties(
 # transformer blocks and visibly changing depth/pose output versus the
 # upstream parity feeds. Disabling contraction on the map_anything TUs
 # restores the reference bit-exact contract; ggml kernels are unaffected
-# (they are compiled in ext_ggml without -march).
+# (they are compiled in the dependency project without -march).
 set_source_files_properties(
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_capi.cpp
@@ -312,10 +312,10 @@ target_include_directories(${PROJECT_NAME}
         ${EIGEN_INCLUDE_DIRS}
 )
 
-add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
+add_dependencies(${PROJECT_NAME} ${GGML_DEPENDENCY_TARGET})
 add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer 3rdparty_jsoncpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer 3rdparty_jsoncpp)
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
     # literals (em-dashes in UI strings, the multilingual-bridge docs) — match
@@ -332,13 +332,13 @@ if(OpenMP_CXX_FOUND)
         # component required), so the ALIKED SIMD/collapse kernels keep their
         # full performance on Windows instead of being disabled.
         #
-        # ggml.cmake links OpenMP::OpenMP_CXX INTERFACE on 3rdparty_ggml,
+        # The dependency owner links OpenMP::OpenMP_CXX on its interface,
         # propagating /openmp. Strip it here first — /openmp:experimental
         # subsumes standard /openmp, and having both triggers MSVC D9025.
-        get_target_property(_ggml_omp 3rdparty_ggml INTERFACE_LINK_LIBRARIES)
+        get_target_property(_ggml_omp ${GGML_DEPENDENCY_TARGET} INTERFACE_LINK_LIBRARIES)
         if(_ggml_omp MATCHES "OpenMP::OpenMP_CXX")
             list(REMOVE_ITEM _ggml_omp "OpenMP::OpenMP_CXX")
-            set_target_properties(3rdparty_ggml PROPERTIES
+            set_target_properties(${GGML_DEPENDENCY_TARGET} PROPERTIES
                 INTERFACE_LINK_LIBRARIES "${_ggml_omp}")
         endif()
         target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
@@ -452,7 +452,7 @@ endif()
 # CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
 include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
 aicore_trellis_wire_cumesh(${PROJECT_NAME} ${AICORE_TRELLIS_SRC_DIR})
-# Vulkan ALIKED custom compute: 3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch
+# Vulkan ALIKED custom compute: 3rdparty/llama/ggml-patches/aliked_merged/0001-vulkan-aliked.patch
 # (AICORE_VULKAN_ALIKED when AICore_VULKAN_ENABLED — see AICoreCompileDefinitions.cmake)
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
@@ -693,9 +693,9 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
             $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
         )
-        add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
+        add_dependencies(AICore_test ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer)
         target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
-        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
+        target_link_libraries(AICore_test PUBLIC ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
         endif()
@@ -707,12 +707,12 @@ if(AICore_BUILD_TESTS)
         find_package(OpenMP)
         if(OpenMP_CXX_FOUND)
             if(MSVC)
-                # Same as AICore: strip inherited /openmp from 3rdparty_ggml
+                # Same as AICore: strip inherited /openmp from the owner target
                 # to avoid D9025 before adding /openmp:experimental.
-                get_target_property(_ggml_omp_t 3rdparty_ggml INTERFACE_LINK_LIBRARIES)
+                get_target_property(_ggml_omp_t ${GGML_DEPENDENCY_TARGET} INTERFACE_LINK_LIBRARIES)
                 if(_ggml_omp_t MATCHES "OpenMP::OpenMP_CXX")
                     list(REMOVE_ITEM _ggml_omp_t "OpenMP::OpenMP_CXX")
-                    set_target_properties(3rdparty_ggml PROPERTIES
+                    set_target_properties(${GGML_DEPENDENCY_TARGET} PROPERTIES
                         INTERFACE_LINK_LIBRARIES "${_ggml_omp_t}")
                 endif()
                 target_compile_options(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
@@ -774,7 +774,7 @@ target_include_directories(test_ocr_runtime PRIVATE
 # ocr interpreter sources are compiled into this target directly, so the
 # parity ctest stays runnable while unrelated task sources (e.g. the sam3d
 # vendor migration) break the main-library closure.
-target_link_libraries(test_ocr_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+target_link_libraries(test_ocr_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
 aicore_apply_compile_definitions(test_ocr_runtime)
 
 # AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
@@ -811,7 +811,7 @@ target_include_directories(test_table_runtime PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
     ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(test_table_runtime PRIVATE 3rdparty_ggml 3rdparty_jsoncpp)
+target_link_libraries(test_table_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
 aicore_apply_compile_definitions(test_table_runtime)
 set_target_properties(test_table_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON

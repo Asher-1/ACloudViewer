@@ -7,10 +7,20 @@ from unittest.mock import patch
 from pathlib import Path
 from types import SimpleNamespace
 
-from run_ocr_onnx_probe import accuracy_crops, accuracy_inputs, aggregate_fixtures, detector_input_limit, probability_command, source_performance_pass
+from run_ocr_onnx_probe import (accuracy_crops, accuracy_inputs,
+    aggregate_fixtures, detector_input_limit, native_exit_is_diagnostic,
+    probability_command, probability_gate, source_performance_pass)
 
 
 class ProbabilityGateTests(unittest.TestCase):
+    def test_quantized_raw_exit_needs_complete_outputs(self):
+        self.assertTrue(native_exit_is_diagnostic(1, quantized=True,
+                                                  outputs_complete=True))
+        self.assertFalse(native_exit_is_diagnostic(1, quantized=True,
+                                                   outputs_complete=False))
+        self.assertFalse(native_exit_is_diagnostic(1, quantized=False,
+                                                   outputs_complete=True))
+
     def test_release_detector_cannot_use_small_developer_input(self):
         self.assertEqual(detector_input_limit("developer", "det"), 320)
         self.assertEqual(detector_input_limit("release", "det"), 960)
@@ -25,6 +35,18 @@ class ProbabilityGateTests(unittest.TestCase):
         self.assertEqual(detector_input_limit("release", "cls"), 320)
         with self.assertRaisesRegex(ValueError, "at least 32"):
             detector_input_limit("developer", "det", 0)
+
+    def test_quantized_source_probability_and_argmax_are_diagnostic(self):
+        metrics = dict(max_diff=.02, mean_diff=.001, stored_max_diff=.0001,
+                       stored_mean_diff=.00001, argmax_match=.9,
+                       stored_argmax_match=.9)
+        self.assertTrue(probability_gate(metrics, "rec", quantized=True,
+                                         max_diff=.001, stored_max_diff=.001))
+        self.assertFalse(probability_gate(metrics, "rec", quantized=False,
+                                          max_diff=.001, stored_max_diff=.001))
+        metrics["stored_max_diff"] = .002
+        self.assertFalse(probability_gate(metrics, "rec", quantized=True,
+                                          max_diff=.001, stored_max_diff=.001))
 
     def fixture(self, **kwargs):
         result = {"role": "rec", "max_diff": .00001, "mean_diff": .000001,
@@ -56,6 +78,35 @@ class ProbabilityGateTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 0)
         self.assertEqual(result["p50_ms"], 10)
         self.assertEqual(result["accuracy_fixture_count"], 2)
+        self.assertEqual(result["accuracy_fixture_requested_count"], 2)
+        self.assertEqual(result["fixture_pass_count"], 2)
+        self.assertEqual(result["fixture_incomplete_indices"], [])
+
+    def test_preinference_audit_rejection_does_not_count_as_accuracy_coverage(self):
+        rejected = {"role": "cls", "exit_code": 1, "gpu_audit_pass": 0,
+                    "error": "device was not idle"}
+        result = aggregate_fixtures([rejected, self.fixture(role="cls")], [1, 0])
+        self.assertEqual(result["accuracy_fixture_requested_count"], 2)
+        self.assertEqual(result["accuracy_fixture_count"], 1)
+        self.assertEqual(result["fixture_pass_count"], 1)
+        self.assertEqual(result["fixture_incomplete_indices"], [0])
+        self.assertEqual(result["exit_code"], 1)
+
+    def test_completed_numeric_failure_is_coverage_but_not_a_pass(self):
+        result = aggregate_fixtures([self.fixture(argmax_match=.9, exit_code=1)], [1])
+        self.assertEqual(result["accuracy_fixture_count"], 1)
+        self.assertEqual(result["fixture_pass_count"], 0)
+        self.assertEqual(result["fixture_incomplete_indices"], [])
+        self.assertEqual(result["exit_code"], 1)
+
+    def test_detector_coverage_does_not_require_classifier_argmax(self):
+        fixture = self.fixture(role="det")
+        fixture.pop("argmax_match")
+        fixture.pop("stored_argmax_match")
+        result = aggregate_fixtures([fixture], [0])
+        self.assertEqual(result["accuracy_fixture_count"], 1)
+        self.assertEqual(result["fixture_pass_count"], 1)
+        self.assertEqual(result["exit_code"], 0)
 
     def test_native_cpu_diagnostics_are_not_required_for_gpu_qualification(self):
         rows = [self.fixture(), self.fixture(cpu_argmax_match=0, cpu_max_diff=1)]
@@ -126,6 +177,25 @@ class ProbabilityGateTests(unittest.TestCase):
 
 
 class CudaTruthFlowTests(unittest.TestCase):
+    def test_failed_export_cannot_leave_a_previous_success_report(self):
+        from run_ocr_onnx_probe import run_probe
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            report = root / "report.json"
+            report.write_text(json.dumps(ProbabilityGateTests().fixture()))
+            args = SimpleNamespace(report=report, role="cls", backend="cpu",
+                source=root / "source.onnx", source_sha256="pinned", image=root / "word.png",
+                model=root / "model.gguf", max_side=320, threads=4)
+            failed = subprocess.CompletedProcess([], 9, "", "export failed")
+            with patch("run_ocr_onnx_probe.subprocess.run", return_value=failed):
+                self.assertEqual(run_probe(args), 9)
+            current = json.loads(report.read_text())
+            self.assertEqual(current["exit_code"], 9)
+            self.assertEqual(current["error"], "source fixture export failed")
+            self.assertNotIn("output_sha256", current)
+            self.assertNotIn("argmax_match", current)
+            self.assertEqual(aggregate_fixtures([current], [9])["accuracy_fixture_count"], 0)
+
     def test_gpu_native_is_judged_against_cuda_for_original_and_stored_weights(self):
         import numpy as np
         from run_ocr_onnx_probe import run_probe

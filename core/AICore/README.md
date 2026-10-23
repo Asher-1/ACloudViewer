@@ -12,7 +12,7 @@ ggml and its CPU/GPU backends remain private implementation details.
 | Model, parity, and performance tests | [`tests/TESTING.md`](tests/TESTING.md) |
 | Build switches | [`../../BUILD.md`](../../BUILD.md), [`../../cmake/AICoreOptions.cmake`](../../cmake/AICoreOptions.cmake) |
 | ggml version and archive digest | [`../../3rdparty/ggml/ggml.cmake`](../../3rdparty/ggml/ggml.cmake) |
-| Ordered downstream ggml changes | [`../../3rdparty/ggml/patches/manifest.yaml`](../../3rdparty/ggml/patches/manifest.yaml) |
+| Ordered downstream ggml changes | [`../../3rdparty/llama/ggml-patches/manifest.yaml`](../../3rdparty/llama/ggml-patches/manifest.yaml) |
 | Agent engineering contract | [`../../.agents/skills/acloudviewer-aicore-plugin/SKILL.md`](../../.agents/skills/acloudviewer-aicore-plugin/SKILL.md) |
 
 Do not duplicate current version numbers, patch counts, or benchmark snapshots
@@ -163,7 +163,7 @@ The unified library exposes all 17 tasks. Task-specific plugin switches only
 control their Qt consumers; they do not remove task contracts from AICore.
 
 ggml is an ExternalProject. Persistent modifications are ordered unified diff
-patches in `3rdparty/ggml/patches/manifest.yaml`. Extracted sources under any
+patches in `3rdparty/llama/ggml-patches/manifest.yaml`. Extracted sources under any
 `build*/ggml/` tree are disposable and must not be committed.
 
 ## Test Entry Points

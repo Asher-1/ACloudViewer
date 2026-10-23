@@ -1,0 +1,131 @@
+{
+  "status": "SOURCE_IDENTITY_GUARD_AND_FRESH_CPU_BUILD_VERIFIED_NO_GPU_MODEL_CLAIM",
+  "raw_directory": "build_llama_owner_verified_lu26f3a5",
+  "checked_input_sha256": {
+    "3rdparty/ggml/ggml.cmake": "84939f38c69b9f00d6e45e19f88ab1b3819089e404ab2abb459254df8c5dae6e",
+    "3rdparty/ggml/ggml_runtime.cmake": "c3957d263f37fa4d6725e1dbf188c07bf4e990076a785eaac3563ba7c5109db3",
+    "3rdparty/llama/llama_cpp.cmake": "5689274092ab5059879095744be6236279f2285dffb705333b9db4e150108578",
+    "3rdparty/llama/experimental/test_cmake_contract.py": "6d72f0e8bd66f53715ab830a1db446bf2831dd1c45c099a449baad3178f9ff80",
+    "3rdparty/llama/experimental/CMakeLists.txt": "1b5e08a6f5e4a2fc1ad4c79c6088cc09992e2f1e7c7b551290a3516c93fb4ea1",
+    "3rdparty/llama/migration-source.json": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2",
+    "3rdparty/llama/experimental/patches/manifest.yaml": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126",
+    "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8",
+    "3rdparty/ggml/patches/apply_ggml_patches.py": "5fc6b6d67041001463d85075ca2a8d037b8b9ae71de412020687b10464bb6230",
+    "3rdparty/llama/experimental/runtime_smoke.cpp": "b4074e077f96c4fe49427208789684636cf58183d37faddea4ab0cb5b9fad4bc"
+  },
+  "source_identity": [
+    "ext_llama",
+    "SHA256=a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759"
+  ],
+  "before_cross_configure_reproduction": [
+    {
+      "initial_owner": "ggml",
+      "requested_owner": "ggml",
+      "returncode": 0
+    },
+    {
+      "initial_owner": "ggml",
+      "requested_owner": "llama",
+      "returncode": 0
+    },
+    {
+      "initial_owner": "llama",
+      "requested_owner": "llama",
+      "returncode": 0
+    },
+    {
+      "initial_owner": "llama",
+      "requested_owner": "ggml",
+      "returncode": 0
+    }
+  ],
+  "build_steps": [
+    {
+      "step": "configure",
+      "exit_code": 0
+    },
+    {
+      "step": "build",
+      "exit_code": 0
+    },
+    {
+      "step": "ctest",
+      "exit_code": 0
+    }
+  ],
+  "configure_contract_methods": 9,
+  "runtime_loaded_libraries": [
+    "lib/libggml-base.so.0.27.0",
+    "lib/libggml.so.0.27.0",
+    "lib/libllama.so.0.7.0",
+    "lib/libmtmd.so.0.7.0",
+    "bin/libggml-cpu.so"
+  ],
+  "relocations": [
+    {
+      "path": "lib/libggml.so",
+      "sha256": "27b840c15bb280d50bbb1fe016f1740c7221ccec1044fb8408d8941022947b37",
+      "exit_code": 0
+    },
+    {
+      "path": "lib/libggml-base.so",
+      "sha256": "0f5d81b942da8843db0f75c60764c3d7838d174f217e3d547d0d13bf43b98dee",
+      "exit_code": 0
+    },
+    {
+      "path": "bin/libggml-cpu.so",
+      "sha256": "93f2929ac31e71064248d8b7ed39605ab12f3feae5be709c3515255c3b4f4057",
+      "exit_code": 0
+    },
+    {
+      "path": "lib/libllama.so",
+      "sha256": "8e5b420dee7cc9a5c43cfded8529e436fd66b66edbf76c8b3124b0e64e23d139",
+      "exit_code": 0
+    },
+    {
+      "path": "lib/libmtmd.so",
+      "sha256": "32c09573a2bddf0ff2826948e152e5a3a61ce173cfe7e7b536f80094f0b712dd",
+      "exit_code": 0
+    }
+  ],
+  "sonames": {
+    "production_ggml_021": "libggml.so.0",
+    "candidate_ggml_027": "libggml.so.0"
+  },
+  "legacy_ggml_configure_exit": 0,
+  "gpu_model_inference_executed": false,
+  "full_model_regression_executed": false,
+  "production_source_owner": "3rdparty/ggml/ggml.cmake",
+  "initial_fresh_build_input_sha256": {
+    "3rdparty/ggml/ggml.cmake": "84939f38c69b9f00d6e45e19f88ab1b3819089e404ab2abb459254df8c5dae6e",
+    "3rdparty/ggml/ggml_runtime.cmake": "c3957d263f37fa4d6725e1dbf188c07bf4e990076a785eaac3563ba7c5109db3",
+    "3rdparty/llama/llama_cpp.cmake": "551b19fa5fa4d2005946e31573ec386f10d8933cb93356c06dd15cf57a1b3f04",
+    "3rdparty/llama/experimental/test_cmake_contract.py": "e999184d987544f023eb875c0690048e9c2787e446a9ad8628f7fb030077ee5c",
+    "3rdparty/llama/experimental/CMakeLists.txt": "1b5e08a6f5e4a2fc1ad4c79c6088cc09992e2f1e7c7b551290a3516c93fb4ea1"
+  },
+  "final_configuration_verification": [
+    {
+      "step": "pin-tracking-build",
+      "exit_code": 0
+    },
+    {
+      "step": "final-ctest",
+      "exit_code": 0
+    }
+  ],
+  "native_libraries_unchanged_after_pin_tracking_fix": true,
+  "untracked_pin_negative_control": {
+    "configure_exit": 0,
+    "build_after_pin_change_exit": 0,
+    "pin_change_detected": false
+  },
+  "raw_log_sha256": {
+    "build_llama_owner_verified_lu26f3a5/configure.log": "536161d297fd607ce1be05299f7d13b411e971d4b12f4623ca80b276fffba9eb",
+    "build_llama_owner_verified_lu26f3a5/build.log": "2ca75cdabd56ff225a2dd7629cdf1921f44cf9beeda952c36821e1537420d33d",
+    "build_llama_owner_verified_lu26f3a5/ctest.log": "4bd17419c21e6730e2651f745eed999388aef75fe2afb590f4cdd9e2d67956ca",
+    "build_llama_owner_verified_lu26f3a5/pin-tracking-build.log": "6e9f2134fad7df67d332f24fddeb68e7a41881efc9d35ab7b85bc61d9e52667c",
+    "build_llama_owner_verified_lu26f3a5/final-ctest.log": "aa56ae8e29f8c9a831f572633e6ee8dbb079f4a3174737b080c4baf4fc7a36a9",
+    "build_llama_owner_verified_lu26f3a5/loader.log": "b58b0bd7662b618ea37845108945f86c659731267bfc13339f1d45150b34dea8",
+    "build_llama_owner_audit_puc7zoov/pin-without-dependency/build-after-pin-change.log": "6dcea1c678f6b22a08f3fe73b99c778ed420c64581ff41e438c9dccbc0d3b2c7"
+  }
+}

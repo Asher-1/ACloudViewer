@@ -8,7 +8,7 @@ set -euo pipefail
 
 PATCHES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${PATCHES_DIR}/../../.." && pwd)"
-REF_GGML="${1:-${GGML_PATCHED_SOURCE:-${REPO_ROOT}/build_app/ggml/src/ext_ggml}}"
+REF_GGML="${1:-${GGML_PATCHED_SOURCE:-}}"
 BASE_ARCHIVE="${GGML_V0181_ARCHIVE:-${REPO_ROOT}/3rdparty_downloads/ggml/v0.18.1.tar.gz}"
 OUT_DIR="${PATCHES_DIR}/aliked_merged"
 OUT_PATCH="${OUT_DIR}/0001-vulkan-aliked.patch"

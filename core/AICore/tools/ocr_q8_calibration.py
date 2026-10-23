@@ -1,7 +1,8 @@
-"""Conversion-only activation-weighted Q8_0; never part of AICore inference.
+"""Conversion-only activation-weighted F16/Q8_0; not AICore inference.
 
 Calibration uses pinned images distinct from acceptance fixtures. The output
-is ordinary ggml Q8_0 bytes, and still needs independent source/page gates.
+is actual F16 values or ordinary ggml Q8_0 bytes and still needs independent
+source/page gates. F16 calibration is an experimental standalone helper.
 """
 import copy
 import hashlib
@@ -11,6 +12,53 @@ import numpy as np
 
 
 ALGORITHM = "activation-error-feedback-q8_0-v1"
+
+
+def activation_f16(weight, activation, damping):
+    """Conversion-only F16 rounding with cross-channel error feedback.
+
+    The returned array contains actual F16 values, never an F32 residual.
+    Calibration output error selects between feedback and nearest rounding;
+    independent original-source outputs still own acceptance.
+    """
+    source = np.asarray(weight)
+    if (source.ndim not in (2, 4) or
+            (source.ndim == 4 and tuple(source.shape[2:]) != (1, 1)) or
+            not source.size or not np.isfinite(source).all() or
+            np.abs(source).max() > np.finfo(np.float16).max):
+        raise ValueError("activation F16 requires finite pointwise weights in F16 range")
+    if not np.isfinite(damping) or damping <= 0:
+        raise ValueError("activation F16 damping must be positive and finite")
+    w = source.reshape(source.shape[0], -1).astype(np.float64)
+    x = np.asarray(activation, np.float64)
+    if (x.ndim != 2 or x.shape[0] != w.shape[1] or not x.shape[1] or
+            not np.isfinite(x).all()):
+        raise ValueError("activation F16 covariance shape/value mismatch")
+    covariance = x @ x.T / x.shape[1]
+    signal = float(np.diag(covariance).mean())
+    if signal <= 0:
+        raise ValueError("activation F16 covariance has no signal")
+    # O(C^3), only during conversion: off-diagonal covariance allows a
+    # rounded channel's error to be compensated by the remaining channels.
+    regularized = covariance + np.eye(w.shape[1]) * (signal * damping)
+    inverse = np.linalg.cholesky(np.linalg.inv(regularized)).T
+    adjusted = w.copy()
+    candidate = np.empty(w.shape, dtype=np.float16)
+    for column in range(w.shape[1]):
+        candidate[:, column] = np.clip(adjusted[:, column], -65504, 65504)
+        error = ((adjusted[:, column] - candidate[:, column].astype(np.float64)) /
+                 inverse[column, column])
+        adjusted[:, column:] -= error[:, None] * inverse[column, column:]
+    nearest = w.astype(np.float16)
+
+    def loss(rounded):
+        delta = w - rounded.astype(np.float64)
+        return np.sum((delta @ covariance) * delta, axis=1)
+
+    # Select per output channel without worsening this calibration objective.
+    use_feedback = loss(candidate) < loss(nearest)
+    nearest[use_feedback] = candidate[use_feedback]
+    return nearest.reshape(source.shape)
 
 
 def activation_q8_0(weight, activation, damping):

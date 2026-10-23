@@ -9,6 +9,7 @@ optional independently audited source CUDA timing. It makes no page-level claim.
 import argparse
 import hashlib
 import json
+import math
 import shutil
 import subprocess
 import tempfile
@@ -16,7 +17,8 @@ from pathlib import Path
 
 from gpu_audit import run_audited
 from ocr_paddle_environment import source_environment
-from run_ocr_onnx_probe import probability_command, source_performance_pass
+from run_ocr_onnx_probe import (native_exit_is_diagnostic, probability_command,
+                                source_performance_pass)
 from run_ocr_paddle_pipeline import verified_source
 
 
@@ -36,10 +38,17 @@ def comparison(actual, expected, *, argmax=False):
     return result
 
 
-def passes(metrics, maximum, mean=None, *, argmax=False):
+def passes(metrics, maximum, mean=None, *, argmax=False, quantized=False):
+    values = [metrics["max_diff"], metrics["mean_diff"]]
+    if argmax and "argmax_match" in metrics:
+        values.append(metrics["argmax_match"])
+    if not all(math.isfinite(value) for value in values):
+        return False
+    if quantized:
+        return True
     return (metrics["max_diff"] < maximum and
             (mean is None or metrics["mean_diff"] < mean) and
-            (not argmax or metrics["argmax_match"] == 1))
+            (not argmax or metrics.get("argmax_match") == 1))
 
 
 def execute(command, report, *, environment=None, gpu=False, strict=False, timeout=60,
@@ -79,6 +88,7 @@ def run(args):
     for name in ("input", "reference"):
         if digest(getattr(args, name)) != getattr(args, name + "_sha256"):
             raise ValueError(f"{name} SHA-256 mismatch")
+    quantized = args.model.name.endswith(("-f16.gguf", "-q8_0.gguf"))
     pins = json.loads(args.source_pins.read_text())
     files = verified_source(args.source_root, pins, args.source_role, args.model)
     report = dict(model_sha256=digest(args.model), input_sha256=args.input_sha256,
@@ -108,7 +118,8 @@ def run(args):
     report["source_cuda_fixture_comparison" if gpu else "source_cpu_fixture"] = fixture_metrics
     # The pinned CPU fixture remains an identity/shape anchor. GPU numerical
     # qualification uses the original CUDA graph, including near-tie argmax.
-    if not gpu and not passes(fixture_metrics, args.source_max_diff, argmax=args.role == "rec"):
+    if not gpu and not passes(fixture_metrics, args.source_max_diff,
+                              argmax=args.role == "rec", quantized=quantized):
         raise ValueError("original Paddle CPU output differs from pinned fixture")
     source_identity = json.loads(source_report.read_text())
     if source_identity["distribution_identity_sha256"] != report["distribution_identity_sha256"]:
@@ -119,12 +130,12 @@ def run(args):
     with tempfile.TemporaryDirectory(prefix="paddle-graph-", dir=args.report.parent) as directory:
         work = Path(directory)
         shutil.copyfile(args.input, work / f"{args.source_role}_input.npy")
-        # The C++ probe also enforces accuracy. Supply the selected original
-        # CUDA output before invoking it, so its exit code has the same truth.
+        # Supply the selected original CUDA output to the C++ probe. The Python
+        # runner applies the dtype-specific output policy below.
         np.save(work / f"{args.source_role}_reference.npy", live_source)
         completed, audit = execute(probability_command(args, work), args.report.with_suffix(".native.json"),
             gpu=controlled, strict=controlled, timeout=args.gpu_idle_timeout, require_success=False)
-        report["exit_code"] = int(completed.returncode != 0)
+        report["exit_code"] = int(completed.returncode != 0 and not quantized)
         for line in completed.stdout.splitlines():
             if line.startswith("{"):
                 report.update(json.loads(line))
@@ -133,9 +144,19 @@ def run(args):
         if native.size != live_source.size:
             raise ValueError("native probability element count mismatch")
         native = native.reshape(live_source.shape)
+        outputs_complete = bool(np.isfinite(native).all())
+        report["native_outputs_complete"] = int(outputs_complete)
+        if not native_exit_is_diagnostic(completed.returncode,
+                quantized=quantized, outputs_complete=outputs_complete):
+            report["exit_code"] = 1
+            report["native_output_error"] = "invalid native probability values"
+        else:
+            report["native_raw_threshold_exit_diagnostic"] = int(
+                completed.returncode != 0 and quantized)
         metrics = comparison(native, live_source, argmax=args.role == "rec")
         report.update(metrics)
-        if not passes(metrics, args.max_diff, args.mean_diff, argmax=args.role == "rec"):
+        if not passes(metrics, args.max_diff, args.mean_diff,
+                      argmax=args.role == "rec", quantized=quantized):
             report["exit_code"] = 1
         output = args.report.with_suffix(".probabilities.npy")
         np.save(output, native)

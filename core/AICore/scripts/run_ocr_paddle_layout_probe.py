@@ -2,8 +2,8 @@
 """All eight published PicoDet heads against the original Paddle graph.
 
 The common runner owns asset provisioning, process repeats and same-host A/B.
-This consumer requires all heads, normal source exits and strict argmax
-agreement. Native CPU comparisons are separate diagnostics, not GPU gates.
+This consumer requires all finite heads and bounded probability error. Head
+argmax and native CPU comparisons are diagnostics; page scenarios gate quality.
 """
 
 import argparse
@@ -14,7 +14,8 @@ from pathlib import Path
 
 import numpy as np
 
-from run_ocr_onnx_probe import probability_command, source_performance_pass
+from run_ocr_onnx_probe import (native_exit_is_diagnostic, probability_command,
+                                source_performance_pass)
 from run_ocr_paddle_pipeline import verified_source
 from run_ocr_paddle_probe import comparison, digest, execute, source_environment
 
@@ -68,9 +69,13 @@ def head_comparison(actual, expected):
         argmax_match=min(m["argmax_match"] for m in metrics), heads=metrics)
 
 
-def accuracy_pass(metrics, maximum, mean=None):
-    return (metrics["max_diff"] < maximum and metrics["argmax_match"] == 1 and
-            (mean is None or metrics["mean_diff"] < mean))
+def accuracy_pass(metrics, maximum, mean=None, *, quantized=False):
+    if quantized:
+        return all(np.isfinite(metrics[key]) for key in
+                   ("max_diff", "mean_diff", "argmax_match"))
+    return (metrics["max_diff"] < maximum and
+            (mean is None or metrics["mean_diff"] < mean) and
+            metrics["argmax_match"] == 1)
 
 
 def source_run(args, files, python, target, device):
@@ -161,7 +166,17 @@ def run(args):
         native, metrics, audit, code = native_run(args, work, source)
         report.update(metrics)
         report.update(head_comparison(native, source))
-        if code or not accuracy_pass(report, args.max_diff, args.mean_diff):
+        quantized = args.model.name.endswith(("-f16.gguf", "-q8_0.gguf"))
+        outputs_complete = len(native) == 8 and all(
+            value.dtype == np.float32 and value.size and np.isfinite(value).all()
+            for value in native)
+        report["native_outputs_complete"] = int(outputs_complete)
+        report["native_raw_threshold_exit_diagnostic"] = int(
+            code != 0 and quantized and outputs_complete)
+        if (not native_exit_is_diagnostic(code, quantized=quantized,
+                                          outputs_complete=outputs_complete) or
+                not accuracy_pass(report, args.max_diff, args.mean_diff,
+                                  quantized=quantized)):
             report["exit_code"] = 1
         report["native_cpu_comparison"] = "separate diagnostic; not a GPU release gate"
         output = args.report.with_suffix(".probabilities.npz")

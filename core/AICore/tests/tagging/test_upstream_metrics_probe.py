@@ -13,12 +13,29 @@ import tagging_reference
 import cpu_precision_reference
 from upstream_metrics_probe import (active_graphics_processes,
                                     aicore_latency_ms, execute_audited,
+                                    candidate_build_settings,
                                     gpu_overlap_pids, include_graphics_audit,
                                     metrics_for_backend, probability_alignment,
                                     truth_cache, upstream_backend_env)
 
 
 class IndependentAccuracyTests(unittest.TestCase):
+    def test_candidate_flags_follow_exported_llama_owner_and_old_baselines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = root / "ggml/src/ext_ggml-build/CMakeCache.txt"
+            new = root / "llama/src/ext_llama-build/CMakeCache.txt"
+            for path, flag in ((old, "ON"), (new, "OFF")):
+                path.parent.mkdir(parents=True)
+                path.write_text(f"GGML_CUDA_FAST_MATH:BOOL={flag}\n")
+            self.assertEqual(candidate_build_settings(root)["GGML_CUDA_FAST_MATH"], "ON")
+            cache = root / "CMakeCache.txt"
+            cache.write_text(f"GGML_BUILD_DIR:INTERNAL={new.parent}\n")
+            self.assertEqual(candidate_build_settings(root)["GGML_CUDA_FAST_MATH"], "OFF")
+            new.unlink()
+            with self.assertRaisesRegex(RuntimeError, "settings unavailable"):
+                candidate_build_settings(root)
+
     def test_annotation_mode_requires_source_and_has_a_distinct_reference_cache(self):
         with self.assertRaisesRegex(RuntimeError, "annotation-upstream"):
             demo_reference_probe.annotation_preprocess(Path("unused.png"), "")

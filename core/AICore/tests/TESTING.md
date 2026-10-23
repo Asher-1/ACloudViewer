@@ -271,7 +271,7 @@ but that is a different benchmark configuration and must be reported as such.
 
 Each experiment must re-run `run_upstream_parity.sh --devices cuda --limit 5`
 and keep the +5% e2e gate. Do not hand-edit build-tree ggml sources; durable
-changes go through `3rdparty/ggml/patches/`.
+changes go through `3rdparty/llama/ggml-patches/`.
 
 ## Evidence semantics
 

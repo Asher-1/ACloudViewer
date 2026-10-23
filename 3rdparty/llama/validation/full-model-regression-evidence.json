@@ -1,0 +1,474 @@
+{
+  "schema": 1,
+  "updated_at": "2026-10-21T10:57:00+00:00",
+  "scope": "In-progress all-task diagnostic. Not a full regression PASS, upstream-truth acceptance, controlled performance, package or source-owner promotion receipt.",
+  "catalog": {
+    "rows": 556,
+    "unique_assets": 526,
+    "tasks": 22,
+    "identity": {
+      "path": "build_llama_dual_gpu_3nl01j4j/validation/catalog.json",
+      "sha256": "47725354e1bf7ba2ef2907e8a109b227ab4b5ecb223de2c8761c1ee5cadd854e"
+    }
+  },
+  "fresh_build": {
+    "aicore": {
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation/aicore-link/compile-report.json",
+        "sha256": "f5337d7ac4cec9de6eb11b2ffb5fe2b6d723a7e75664ef797ff240a9ae9a241f"
+      },
+      "units": 239,
+      "failed": 0
+    },
+    "probe": {
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation/probe-compile-report.json",
+        "sha256": "dda2e689c20fdf757a9085e1dad351540067babfa02c3d6326950bd46c4df47a"
+      },
+      "units": 81,
+      "failed": 0
+    },
+    "static_aicore_test": {
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/static-compile-report.json",
+        "sha256": "c8d8878e3a5ac82dc45cbae04ce73fa4d34447c3c7dc49e63994c3ccc358c078"
+      },
+      "units": 178,
+      "failed": 0
+    },
+    "links": {
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation/fresh-link-report.json",
+        "sha256": "ffdc10137e978fa64d3505a200fa8562bd611a606a05af742e46895dbb3df415"
+      },
+      "units": 36,
+      "failed": 0
+    }
+  },
+  "baseline": "build_app; no reconfigure, rebuild or binary replacement",
+  "candidate": "llama embedded ggml 0.27 fresh AICore and probes; production remains pinned ggml 0.21",
+  "initial_matrix": {
+    "state_file": "build_llama_dual_gpu_3nl01j4j/validation/matrix-state.json",
+    "current_backend": "cuda",
+    "expanded_available_rows": 346,
+    "known_harness_failure": "Initial RF-DETR bench retained the old static AICore_test archive and lacked modules beside executable; those initial failures do not isolate a runtime regression.",
+    "known_numeric_failure": "SAM3 F16 native GEMM output stride halved cuBLAS ldc; fixed by ordered CUDA patch. Focused corrected real model now PASS; all-task final build rerun still open.",
+    "priority_pause_receipt": "build_llama_dual_gpu_3nl01j4j/validation-v2/priority-diagnostics.json",
+    "state": "superseded_incomplete",
+    "handoff_receipt": {
+      "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/corrected-matrix-handoff.json",
+      "sha256": "4a69c86606f11499f45c7a8ef705244209ed3cc020287dca646b0c47b91706e2"
+    },
+    "last_started_row": "128/346 sam3/sam3-q4_0.gguf; partial logs are not a completed report"
+  },
+  "corrected_followup": {
+    "queue": "build_llama_dual_gpu_3nl01j4j/validation-v2/run_staged_followup.py",
+    "state": "build_llama_dual_gpu_3nl01j4j/validation-v2/followup-state.json",
+    "rf_detr": {
+      "fresh_static_units": 178,
+      "nano_q8_smoke": "CUDA and Vulkan both exit 0; full model/backend rerun remains queued",
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/rfdetr-fresh-smoke.json",
+        "sha256": "0d1855e4fa44cb35737ab196ce8ad4143931adf08ee5a9dffe568f9150874215"
+      }
+    },
+    "tasks": [
+      "rfdetr",
+      "ocr",
+      "table",
+      "relation",
+      "yolo",
+      "reid",
+      "anycalib",
+      "deeplsd",
+      "gkd",
+      "lightglue",
+      "loma",
+      "rmbg",
+      "aliked",
+      "depth",
+      "facedetect",
+      "gaussian",
+      "sam3",
+      "tagging",
+      "lingbot",
+      "sam3d",
+      "trellis",
+      "map_anything"
+    ],
+    "unpublished_ocr_overlay": 36,
+    "scope": "Full tier, 22 tasks, CUDA/Vulkan with frozen baseline. Missing assets, source references and VRAM rows remain incomplete. Per-attempt outputs are checkpointed.",
+    "private_staging": "Verify SHA before consumption; prune only own regular downloads after both backend task reports. Never remove shared-cache symlinks or original OCR candidates.",
+    "candidate": "build_llama_dual_gpu_3nl01j4j/stride-fix/validation-v4",
+    "state_at_update": "Warmup-corrected RF-DETR completed on CUDA and Vulkan; all 44 numeric rows per backend pass, overall timing FAIL for six/22 models. Corrected 168-scenario OCR CUDA full rerun now active, followed by OCR Vulkan, table/relation and the remaining tasks.",
+    "sam3_f16_fix": {
+      "path": "3rdparty/llama/cuda-native-stride-evidence.json",
+      "sha256": "3d559ed5097085570ba0dcb43969532476c1af7ce252f48b89e881c6f0ce8ec7"
+    },
+    "isolated_loader_layout": {
+      "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/elf-layout-receipt.json",
+      "sha256": "b1f216773e602ec3f33647751f36c496abf9c05603128642ea202c03feb0368e"
+    },
+    "rfdetr_cuda_completed": {
+      "report": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/Testing/rfdetr/cuda-full.json",
+        "sha256": "7b6c72b776628e19c94f238800af1c15c93d44aec0592b2849b56c719b8c549d"
+      },
+      "verdict": "FAIL",
+      "model_rows": 44,
+      "statuses": {
+        "pass": 44
+      },
+      "failure_count": 10,
+      "affected_performance_rows": [
+        "rfdetr/rfdetr/rfdetr-large-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-large-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-nano-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-nano-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-medium-q4_K.gguf"
+      ],
+      "scope": "Original no-warmup probe, two process repeats and two measured forwards; numeric execution succeeds, overall timing FAIL retained. Warmup-corrected same-source A/B queued; no thresholds changed."
+    },
+    "live_state": "build_llama_dual_gpu_3nl01j4j/validation-v2/followup-state.json",
+    "rfdetr_vulkan_completed": {
+      "report": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/Testing/rfdetr/vulkan-full.json",
+        "sha256": "72d83e03aad8279c469e9f78adb665e6ffe8c5af31d69de8a3c869c799547538"
+      },
+      "verdict": "FAIL",
+      "model_rows": 44,
+      "statuses": {
+        "pass": 44
+      },
+      "failure_count": 78,
+      "affected_performance_rows": [
+        "rfdetr/rfdetr/rfdetr-base-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-base-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-base-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-large-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-large-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-medium-f16.gguf",
+        "rfdetr/rfdetr/rfdetr-medium-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-medium-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-medium-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-nano-f16.gguf",
+        "rfdetr/rfdetr/rfdetr-nano-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-nano-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-large-f16.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-large-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-large-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-large-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-medium-f16.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-medium-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-medium-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-medium-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-nano-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-nano-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-small-f32.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-small-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-small-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-xlarge-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-seg-xlarge-q8_0.gguf",
+        "rfdetr/rfdetr/rfdetr-small-q4_K.gguf",
+        "rfdetr/rfdetr/rfdetr-small-q8_0.gguf"
+      ],
+      "scope": "Original no-warmup probe, two process repeats and two measured forwards; numeric execution succeeds, overall timing FAIL retained. Warmup-corrected same-source A/B queued; no thresholds changed."
+    },
+    "input_preflight": {
+      "initial_failed_tasks": [
+        "ocr",
+        "table",
+        "relation"
+      ],
+      "root_cause": "Private extracted assets overlay omitted sibling download archive cache. Eight OCR archives already existed in the shared pinned cache. Added read-only-use links and retry with offline verification; previous preflight failures remain incomplete, not numeric failures.",
+      "archive_retry_receipt": "build_llama_dual_gpu_3nl01j4j/validation-v2/ocr-cache-retry-state.json",
+      "source_environment_receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/ocr-source-environment-handoff.json",
+        "sha256": "69f3249ef351cc0e64d5c3e6d613b0c144a3bb48eea943c072eeb74aeeb2b7cb"
+      },
+      "environment_root_cause": "Original ORT CUDA reference environment lacked onnx after PYTHONNOUSERSITE=1 isolated imports; replacement existing isolated environment includes onnx. Source classification F32 and v5 mobile detector/recognizer F32 repeat successfully; no import failure counted as numeric failure.",
+      "clean_onnx_environment": {
+        "requirements": {
+          "path": "core/AICore/tools/requirements-ocr-onnx-gpu-reference.txt",
+          "sha256": "71017c8246b2924f27e3061dc22b40538820301b9e454580dd373debd7d4237a"
+        },
+        "installation": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-onnx-reference-clean/installation-receipt.json",
+          "sha256": "95d07579e828404b2b23e3ec607fc117c788e33952a623ef4f1a3b9782b1c182"
+        },
+        "cuda_library_resolution": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-onnx-reference-clean/cuda-library-resolution.json",
+          "sha256": "b773938fb0daccdf44a0901d761cb73b9fbb89a49003fcea6e9a72481070f9fd"
+        },
+        "scope": "10 package and upstream TextSystem isolated imports, pip check and CUDA library resolution passed. Real source-page GPU smoke runs separately; no import-only numeric PASS."
+      },
+      "thread_protocol": {
+        "handoff": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/handoff.json",
+          "sha256": "f80f8b74dff1919c2b18c6ec8b6283739843df365618b1ebaabc09d36af48143"
+        },
+        "root_cause": "validate_all default threads=0 rejected by original-source ONNX pages and SLANet probes; published Paddle pages also lacked matched resolution.",
+        "fix": "Resolve zero to consumer default 4 before configuring either source or native. Preserve explicit counts; reject negative counts.",
+        "tests": {
+          "new_protocol": 3,
+          "paddle_pages": 19,
+          "table_graph": 9,
+          "all_passed": true,
+          "original_negative_control_failed_as_expected": true
+        },
+        "queue": "build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/run_corrected_serial.py",
+        "ocr_script_suite": {
+          "tests": 66,
+          "passed": true
+        },
+        "source_page_gpu_smokes": [
+          {
+            "backend": "cuda",
+            "report": {
+              "path": "build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/Testing/smoke/cuda-page.json",
+              "sha256": "db467b4335ed3db2e713986f06283573895504531602b0430897ce1a1a777739"
+            },
+            "verdict": "PASS",
+            "rows": 1,
+            "scope": "PP-OCRv5 mobile F32 complete real page against original-source CUDA TextSystem; frozen baseline/new library each repeated twice. Developer accuracy check, not full model or controlled throughput."
+          },
+          {
+            "backend": "vulkan",
+            "report": {
+              "path": "build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/Testing/smoke/vulkan-page.json",
+              "sha256": "4b558504af9c8d2931537ee495341beacc4f605a6f77fb811a31c0cd4dda5c90"
+            },
+            "verdict": "PASS",
+            "rows": 1,
+            "scope": "PP-OCRv5 mobile F32 complete real page against original-source CUDA TextSystem; frozen baseline/new library each repeated twice. Developer accuracy check, not full model or controlled throughput."
+          }
+        ]
+      }
+    },
+    "warmup_corrected_rfdetr": {
+      "source": {
+        "path": "core/AICore/tests/rfdetr/bench_rfdetr_perf.cpp",
+        "sha256": "55f86a04c49aef3a7449099eb7c7830d94b7b52d78e3ce5313e5ad3925783564"
+      },
+      "build": {
+        "path": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/build-receipt.json",
+        "sha256": "3c160a9faf665f927374637dd40648c028d5ffc08c118b59e279ceafd077b00d"
+      },
+      "live_state": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/state.json",
+      "same_probe_source_for_baseline_and_candidate": true,
+      "baseline_binary_mutations": false,
+      "scope": "Same corrected probe source linked separately against frozen baseline and candidate archives. Both GPUs completed 44 numeric/repeated hash rows with baseline-identical fingerprints. Overall CUDA timing FAIL for six models; Vulkan timing FAIL for 22 models. No thresholds changed or release promotion.",
+      "sampling_protocol_check": {
+        "path": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/sampling-protocol-receipt.json",
+        "sha256": "8a0a2720347e1b572088c9b71b3f8e502763eb6c43d2d7a40d26ee75e79e3e54",
+        "scope": "Both real nano Q8 probes: 6 paths, exactly 2 excluded warmups and 3 measured samples each; JSON medians equal medians of measured-only samples. CPU execution validates harness only, not OCR acceptance or GPU throughput."
+      },
+      "cuda_completed": {
+        "report": {
+          "path": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/Testing/cuda-full.json",
+          "sha256": "8ab52886d0bc57b52daf92180024b2208cce737a0e00fe3f9b9b4f98834735e6"
+        },
+        "verdict": "FAIL",
+        "model_rows": 44,
+        "row_statuses": {
+          "pass": 44
+        },
+        "baseline_fingerprint_mismatches": [],
+        "performance_failure_count": 14,
+        "affected_models": [
+          "rfdetr/rfdetr/rfdetr-large-f16.gguf",
+          "rfdetr/rfdetr/rfdetr-medium-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-medium-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-nano-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-nano-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-large-q4_K.gguf"
+        ],
+        "performance_regression_range_pct": [
+          5.94,
+          28.48
+        ],
+        "execution_artifacts_unchanged": true,
+        "scope": "44 models with three repeats, three warmups and ten measured forwards. Developer diagnostic; complete CUDA numeric/fingerprint checks succeeded but overall timing FAIL. External desktop activity is not controlled; no source of latency regression yet isolated."
+      },
+      "future_build_visibility_fix": {
+        "receipt": {
+          "path": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/visibility-config-receipt.json",
+          "sha256": "27c64e48a5a46d760381dfc69d69837c945d5bd709c589e87fc8b6ebbe3096a5"
+        },
+        "original_negative_control_failed": true,
+        "fixed_configure_tests_passed": 12,
+        "active_runtime_replaced": false,
+        "latency_root_cause_confirmed": false
+      },
+      "vulkan_completed": {
+        "report": {
+          "path": "build_llama_dual_gpu_3nl01j4j/rfdetr-warmup-ab/Testing/vulkan-full.json",
+          "sha256": "3f185baced503b6f12ae01dbe9e689a6d28a10845a866b71923240c4a0cbde3a"
+        },
+        "verdict": "FAIL",
+        "model_rows": 44,
+        "row_statuses": {
+          "pass": 44
+        },
+        "baseline_fingerprint_mismatches": [],
+        "performance_failure_count": 45,
+        "affected_models": [
+          "rfdetr/rfdetr/rfdetr-base-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-large-f16.gguf",
+          "rfdetr/rfdetr/rfdetr-large-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-large-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-large-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-medium-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-medium-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-medium-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-nano-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-2xlarge-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-large-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-large-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-large-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-medium-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-medium-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-nano-f16.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-nano-q4_K.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-small-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-xlarge-f32.gguf",
+          "rfdetr/rfdetr/rfdetr-seg-xlarge-q8_0.gguf",
+          "rfdetr/rfdetr/rfdetr-small-f16.gguf",
+          "rfdetr/rfdetr/rfdetr-small-f32.gguf"
+        ],
+        "performance_regression_range_pct": [
+          5.02,
+          18.04
+        ],
+        "execution_artifacts_unchanged": true,
+        "scope": "All 44 model numeric/repeated-output checks and baseline fingerprints pass. Overall timing FAIL for 22 models, 45 metrics. Developer diagnostic with external desktop activity; controlled throughput remains unqualified."
+      }
+    },
+    "ocr_cuda_checkpoint": {
+      "path": "build_llama_dual_gpu_3nl01j4j/validation-v2/Testing/ocr/cuda-source-env-retry.attempts.jsonl",
+      "completed_candidate_attempts": 92,
+      "distinct_candidate_scenarios": 46,
+      "nonzero_exit_attempts": 24,
+      "state": "superseded_incomplete",
+      "scope": "Stopped after active child naturally completed. Twelve ONNX page/region scenarios rejected threads=0 before inference; no model accuracy attribution or completed-gate verdict. Fresh corrected full rerun queued."
+    },
+    "active_corrected_queue": "build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/state.json",
+    "map_anything_reference_preparation": {
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/map-anything-reference-prepare/source-contract.json",
+        "sha256": "25a185b0fa8da29a97eca6541bbd94927ae9b957ef12857b578efed005aefb06"
+      },
+      "source_identity_matches_frozen_manifest": true,
+      "patch_replay_idempotent": true,
+      "reference_binaries_built": false,
+      "inference_executed": false,
+      "scope": "Pinned independent repository, ggml revision and ordered patch diff reproduced exactly. Reference GPU builds must be scheduled outside active inference timings; existing queue still lacks the binaries and reference argument.",
+      "queued_followup": {
+        "script": {
+          "path": "build_llama_dual_gpu_3nl01j4j/map-anything-reference-prepare/run_serial_after_full_queue.py",
+          "sha256": "60895df2e7430040e663f92058a2f91014cbccc2c3284edde5df389713115407"
+        },
+        "state": "build_llama_dual_gpu_3nl01j4j/map-anything-reference-prepare/serial-followup-state.json",
+        "scope": "Waits for both existing serial queues to finish and the original controller to exit. Then builds exact CUDA/Vulkan references with two build jobs, rechecks identity/loader and executes the full MapAnything matrix with explicit reference. Waiting is not build/inference evidence."
+      }
+    }
+  },
+  "ocr": [
+    {
+      "experiment": "ocr-calibration",
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/gpu-serialized/results.json",
+        "sha256": "19a93992f5f74b6f4464b8142348fac4db78d332c985c2900301ce9cebc7e897"
+      },
+      "serialization": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/serialized-candidates.json",
+        "sha256": "ccd1f26d0c23117ea1ffab31d832df32811ca9c0251a10c083e445eafd05d5c7"
+      },
+      "native_cases": 14,
+      "stored_weight_argmax_failures": 0,
+      "original_weight_argmax_failures": 12,
+      "release_qualified": false
+    },
+    {
+      "experiment": "cdla-train",
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/cdla-train/gpu-serialized/results.json",
+        "sha256": "a8453afb8662175715f1fdcb8fe130bf20a10347f2e08524b605203231b09199"
+      },
+      "serialization": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/cdla-train/serialized-candidates.json",
+        "sha256": "35d1b4ac695807032667f2afdbc49e2a27d08a3a0c94bc4bb5bed2203b50939e"
+      },
+      "native_cases": 14,
+      "stored_weight_argmax_failures": 0,
+      "original_weight_argmax_failures": 12,
+      "release_qualified": false
+    },
+    {
+      "experiment": "cdla-train-final-projection-block-reconstruction",
+      "receipt": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/cdla-train/block-reconstruction/gpu-serialized/results.json",
+        "sha256": "5562cbcdc4b4bfb97a12ba56fda77b4390eed082cb691ea31752267571f91a94"
+      },
+      "serialization": {
+        "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/cdla-train/block-reconstruction/serialized-candidates.json",
+        "sha256": "43d82cc59bff3d25feeb43eeb7d1d1fcc3c00394d40e97e3161e7f6057cbee1e"
+      },
+      "native_cases": 6,
+      "stored_weight_argmax_failures": 0,
+      "original_weight_argmax_failures": 4,
+      "release_qualified": false,
+      "note": "F32 control passes; F16 9 class/16 DFL flips, Q8_0 105/174 on both GPUs. Four final projection kernels explicitly F32."
+    }
+  ],
+  "ocr_storage_qat_pilot": {
+    "report": {
+      "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-pilot/gpu-serialized/results.json",
+      "sha256": "f78cb48a66384941b376eed19bda6d4eae26d00b2d14a13a6475029759011636"
+    },
+    "serialization": {
+      "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-pilot/serialized-candidates.json",
+      "sha256": "03f4d7c25765f8a6c79a907582f23add31b707a3fe253dc45cc7c3861892cdbe"
+    },
+    "steps_per_storage": 64,
+    "all_486_parameters_roundtrip_exact": true,
+    "f32_control_original_argmax_flips_both_gpus": [0, 0],
+    "f16_original_class_dfl_flips_both_gpus": [13, 11],
+    "q8_0_original_class_dfl_flips_both_gpus": [205, 347],
+    "stored_reference_argmax_flips_both_gpus": 0,
+    "release_qualified": false,
+    "verdict": "FAIL",
+    "scope": "Original F32 target unchanged. MSE storage-aware QAT improves some flips but fails strict original-head ranking; exact stored-reference parity is attribution only. Page accuracy and controlled performance not qualified."
+  },
+  "ocr_ranking_qat_pilot": {
+    "state": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-ranking-pilot/state.json",
+    "report": {
+      "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-ranking-pilot/gpu-serialized/results.json",
+      "sha256": "5a316b47ec10cc007f22e97f146fe7e846ea058bc1aa171c9194df5e5d7750a1"
+    },
+    "serialization": {
+      "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-ranking-pilot/serialized-candidates.json",
+      "sha256": "2695ae93f2cc409d1a34cf58c8a099776b6c9b9fafe48814f8785f0f9f6e7703"
+    },
+    "f16_original_class_dfl_flips_both_gpus": [11, 12],
+    "q8_0_original_class_dfl_flips_both_gpus": [258, 405],
+    "stored_reference_argmax_flips_both_gpus": 0,
+    "verdict": "FAIL",
+    "parent_full_queue_resumed": true,
+    "margin_diagnostic": {
+      "path": "build_llama_dual_gpu_3nl01j4j/ocr-calibration/head-margin-diagnostics.json",
+      "sha256": "0daea59e04eb89ab5fc3ba7db078491faca42a50899a1916be27ec0eac321f47"
+    },
+    "scope": "Fixed training-only ranking experiment; four epochs, same 16 pinned disjoint train pages and learning rates, weight 64 and margin 1e-6 frozen before training. Five actual Paddle graph tests pass. Serialized dual-GPU acceptance still FAIL; Q8_0 ranking did not improve. Original target unchanged.",
+    "release_qualified": false
+  },
+  "entry_removal_allowed": false,
+  "open": [
+    "Complete every required model/backend accuracy, stability and controlled A/B gate; developer profile does not qualify release.",
+    "Complete every subsequent all-task regression after the focused SAM3 F16 native stride fix; no source promotion from a focused PASS.",
+    "Preserve original OCR all-head argmax 100%; calibrated candidates still fail.",
+    "Build and execute both GPU MapAnything reference CLIs from the restored exact source pin; add the explicit reference argument to a fresh full rerun. No skip promotion.",
+    "Metal migration and platform-specific hardware gates remain unverified.",
+    "Finish exact-file release/catalog/manifest/cold-download and clean-package gates after qualification."
+  ]
+}

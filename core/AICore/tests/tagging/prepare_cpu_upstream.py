@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 
 from demo_reference_probe import REVISION, sha256
-from upstream_metrics_probe import build_settings
+from upstream_metrics_probe import build_settings, candidate_build_settings
 
 
 GGML_REVISION = "8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b"
@@ -61,7 +61,7 @@ def main():
     if args.jobs < 1:
         parser.error("--jobs must be positive")
     upstream = args.upstream.resolve()
-    settings = build_settings(args.candidate_build.resolve() / "ggml/src/ext_ggml-build")
+    settings = candidate_build_settings(args.candidate_build.resolve())
     if settings.get("GGML_BACKEND_DL") != "ON" or settings.get("GGML_CPU_ALL_VARIANTS") != "ON":
         parser.error("candidate must use dynamic CPU modules and GGML_CPU_ALL_VARIANTS")
     args.output_root.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ def main():
     # This compiler capability patch changes which modules can be built, not
     # their arithmetic. Upstream CMake owns and applies its arithmetic patches.
     patch = Path(__file__).resolve().parents[4] / (
-        "3rdparty/ggml/patches/cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch")
+        "3rdparty/llama/ggml-patches/cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch")
     subprocess.run(["git", "-C", str(ggml), "apply", str(patch)], check=True)
     main_cpp = source / "cpp_ggml/src/main.cpp"
     original = main_cpp.read_text()

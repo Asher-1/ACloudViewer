@@ -618,7 +618,7 @@ Please refer to the [official export guide](https://github.com/ArgoHA/D-FINE-seg
 | Publishing Units | Intellindust AI Lab & Xiamen University  |
 | Publication Date | Arxiv'25                                 |
 
-请参考此[教程](../../tools/onnx_exporter/export_deimv2_onnx.py)。
+See this [tutorial](../../tools/onnx_exporter/export_deimv2_onnx.py).
 
 ## Segment Anything
 

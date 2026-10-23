@@ -22,11 +22,14 @@
 //   detect-total         all of the above as one call (via rfdetr_detect)
 //
 // Usage:
-//   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters]
-//   defaults:            -          cpu      0         1920   1080    15
+//   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters] [warmups]
+//   defaults:            -          cpu      0         1920   1080    15       2
+// Each path records its cold call separately. Lazy graph allocation and backend
+// kernel setup must not be mixed into the steady-state frame median.
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -58,6 +61,31 @@ double median_of(std::vector<double>& v) {
     return (n % 2) ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
 }
 
+void record_sample(const char* stage, int iteration, double elapsed,
+                   std::vector<double>& measured) {
+    std::fprintf(stderr, "[bench-sample] stage=%s phase=%s index=%d ms=%.6f\n",
+                 stage, iteration < 0 ? "warmup" : "measured", iteration,
+                 elapsed);
+    if (iteration >= 0) measured.push_back(elapsed);
+}
+
+bool valid_forward(const rfdetr::ForwardOutput& output) {
+    const auto finite = [](const std::vector<float>& values) {
+        return std::all_of(values.begin(), values.end(),
+                           [](float value) { return std::isfinite(value); });
+    };
+    return !output.class_logits.empty() && !output.bbox_cxcywh.empty() &&
+           finite(output.class_logits) && finite(output.bbox_cxcywh) &&
+           finite(output.masks);
+}
+
+void print_samples(const char* stage, const std::vector<double>& samples) {
+    std::fprintf(stderr, "[bench-raw] stage=%s measured_ms=[", stage);
+    for (size_t i = 0; i < samples.size(); ++i)
+        std::fprintf(stderr, "%s%.6f", i ? "," : "", samples[i]);
+    std::fprintf(stderr, "]\n");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -75,6 +103,7 @@ int main(int argc, char** argv) {
     const int src_w = argc > 4 ? std::atoi(argv[4]) : 1920;
     const int src_h = argc > 5 ? std::atoi(argv[5]) : 1080;
     const int iters = argc > 6 ? std::max(1, std::atoi(argv[6])) : 15;
+    const int warmups = argc > 7 ? std::max(0, std::atoi(argv[7])) : 2;
 
     /* --- model + backend, mirroring rfdetr_init ------------------------- */
     rfdetr_status st = RFDETR_OK;
@@ -109,9 +138,9 @@ int main(int argc, char** argv) {
                  m->config.has_segmentation_head ? 1 : 0);
     std::fprintf(stderr,
                  "[bench] device=%s resolved=%s threads=%d src=%dx%d "
-                 "iters=%d\n",
+                 "iters=%d warmups=%d\n",
                  device, bctx.device_name.c_str(), bctx.n_threads, src_w, src_h,
-                 iters);
+                 iters, warmups);
 
     /* --- deterministic synthetic frame (1920x1080 default) --------------- */
     std::vector<uint8_t> rgb((size_t)src_w * src_h * 3);
@@ -135,7 +164,7 @@ int main(int argc, char** argv) {
     /* --- A. preprocess, both conventions -------------------------------- */
     std::vector<double> t_legacy, t_bilinear;
     float* px_legacy = nullptr;
-    for (int i = 0; i < iters; ++i) {
+    for (int i = -warmups; i < iters; ++i) {
         float* data = nullptr;
         int w = 0, h = 0;
         const auto t0 = Clock::now();
@@ -147,13 +176,13 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "legacy preprocess failed\n");
             return 1;
         }
-        t_legacy.push_back(dt);
-        if (i == 0)
+        record_sample("preprocess-legacy", i, dt, t_legacy);
+        if (i == -warmups)
             px_legacy = data; /* keep one for the forward bench */
         else
             std::free(data);
     }
-    for (int i = 0; i < iters; ++i) {
+    for (int i = -warmups; i < iters; ++i) {
         float* data = nullptr;
         int w = 0, h = 0;
         const auto t0 = Clock::now();
@@ -165,27 +194,29 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "bilinear preprocess failed\n");
             return 1;
         }
-        t_bilinear.push_back(dt);
+        record_sample("preprocess-bilinear", i, dt, t_bilinear);
         std::free(data);
     }
 
     /* --- B. forward on the legacy-convention input ----------------------- */
     std::vector<double> t_forward;
     rfdetr::ForwardOutput fout;
-    for (int i = 0; i < iters; ++i) {
+    double cold_forward = 0.0;
+    for (int i = -warmups; i < iters; ++i) {
         const auto t0 = Clock::now();
         fout = rfdetr::rfdetr_model_forward(*m, px_legacy, S, bctx);
         const double dt = ms_since(t0);
-        if (fout.class_logits.empty() || fout.bbox_cxcywh.empty()) {
+        if (!valid_forward(fout)) {
             std::fprintf(stderr, "forward failed on iter %d\n", i);
             return 1;
         }
-        t_forward.push_back(dt);
+        if (i == -warmups) cold_forward = dt;
+        record_sample("forward", i, dt, t_forward);
     }
 
     /* --- C. select (postprocess) ----------------------------------------- */
     std::vector<double> t_select;
-    for (int i = 0; i < iters; ++i) {
+    for (int i = -warmups; i < iters; ++i) {
         rfdetr_detection* dets = nullptr;
         size_t n = 0;
         const auto t0 = Clock::now();
@@ -202,25 +233,34 @@ int main(int argc, char** argv) {
                                      /*threshold*/ 0.5f, /*top_k*/ 300, nullptr,
                                      0, src_w, src_h, &dets, &n);
         }
-        t_select.push_back(ms_since(t0));
+        record_sample("select", i, ms_since(t0), t_select);
         rfdetr_detections_free(dets, n);
     }
 
     /* --- D. full detect pass (preprocess + forward + select, exactly the
      *      sequence rfdetr_detect runs; the model's own resize convention) */
     std::vector<double> t_total;
+    double cold_total = 0.0;
     {
         const bool model_bilinear = m->config.preprocess_bilinear_no_antialias;
-        for (int i = 0; i < iters; ++i) {
+        for (int i = -warmups; i < iters; ++i) {
             rfdetr_detection* dets = nullptr;
             size_t n = 0;
             const auto t0 = Clock::now();
             float* px = nullptr;
             int pw = 0, ph = 0;
-            rfdetr_preprocess(img, S, S, mean, sd, model_bilinear, &px, &pw,
-                              &ph);
+            if (rfdetr_preprocess(img, S, S, mean, sd, model_bilinear, &px,
+                                  &pw, &ph) != RFDETR_OK) {
+                std::fprintf(stderr, "full detect preprocess failed\n");
+                return 1;
+            }
             rfdetr::ForwardOutput fo =
                     rfdetr::rfdetr_model_forward(*m, px, pw, bctx);
+            if (fo.class_logits.empty() || fo.bbox_cxcywh.empty()) {
+                std::free(px);
+                std::fprintf(stderr, "full detect forward failed\n");
+                return 1;
+            }
             if (!fo.masks.empty()) {
                 rfdetr_select_detections_with_masks(
                         fo.class_logits.data(), fo.bbox_cxcywh.data(),
@@ -231,9 +271,16 @@ int main(int argc, char** argv) {
                         fo.class_logits.data(), fo.bbox_cxcywh.data(), nq, nc,
                         0.5f, 300, nullptr, 0, src_w, src_h, &dets, &n);
             }
-            t_total.push_back(ms_since(t0));
+            const double dt = ms_since(t0);
+            const bool finite_output = valid_forward(fo);
             rfdetr_detections_free(dets, n);
             std::free(px);
+            if (!finite_output) {
+                std::fprintf(stderr, "full detect produced non-finite output\n");
+                return 1;
+            }
+            if (i == -warmups) cold_total = dt;
+            record_sample("detect-total", i, dt, t_total);
         }
     }
 
@@ -241,6 +288,9 @@ int main(int argc, char** argv) {
      *      (exactly what aicore_rfdetr_load_opts runs). Prints the resolved
      *      auto threads and backend device so silent CPU fallbacks and the
      *      auto→physical-cores mapping are visible. */
+    bool plugin_ok = false;
+    double cold_plugin = 0.0;
+    std::vector<double> t_plugin;
     {
         rfdetr_params p{};
         p.model_path = model_path;
@@ -258,8 +308,7 @@ int main(int argc, char** argv) {
                          "device=%s\n",
                          rfdetr_context_n_threads(ctx),
                          rfdetr_context_device_name(ctx));
-            std::vector<double> t_plugin;
-            for (int i = 0; i < iters; ++i) {
+            for (int i = -warmups; i < iters; ++i) {
                 rfdetr_detect_params dp{};
                 dp.threshold = 0.5f;
                 dp.top_k = 300;
@@ -272,16 +321,23 @@ int main(int argc, char** argv) {
                     std::fprintf(stderr, "[bench] plugin-path detect failed\n");
                     break;
                 }
-                t_plugin.push_back(dt);
+                if (i == -warmups) cold_plugin = dt;
+                record_sample("detect-plugin-path", i, dt, t_plugin);
                 rfdetr_detections_free(dets, n);
             }
-            if (!t_plugin.empty()) {
+            plugin_ok = t_plugin.size() == static_cast<size_t>(iters);
+            if (plugin_ok) {
                 std::fprintf(stderr, "  detect-plugin-path : %8.1f\n",
                              median_of(t_plugin));
             }
             rfdetr_free(ctx);
         }
     }
+
+    std::fprintf(stderr,
+                 "[bench] cold calls (ms): forward=%.6f detect-total=%.6f "
+                 "detect-plugin-path=%.6f; excluded by warmups=%d\n",
+                 cold_forward, cold_total, cold_plugin, warmups);
 
     std::fprintf(stderr, "\n[bench] medians (ms, %d iters):\n", iters);
     std::fprintf(stderr, "  preprocess-legacy   : %8.1f\n",
@@ -293,6 +349,9 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "  select              : %8.1f\n",
                  median_of(t_select));
     std::fprintf(stderr, "  detect-total        : %8.1f\n", median_of(t_total));
+    print_samples("forward", t_forward);
+    print_samples("detect-total", t_total);
+    print_samples("detect-plugin-path", t_plugin);
 
     uint64_t output_hash = aicore::test::fnv1a(
             fout.class_logits.data(), fout.class_logits.size() * sizeof(float));
@@ -310,5 +369,5 @@ int main(int argc, char** argv) {
     rfdetr_image_free(img);
     rfdetr::free_backend_ctx(bctx);
     rfdetr::model_free(m);
-    return 0;
+    return plugin_ok ? 0 : 1;
 }

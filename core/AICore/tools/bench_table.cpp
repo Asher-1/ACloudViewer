@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "aicore/map_anything_capi.h"
@@ -82,7 +83,8 @@ int main(int argc, char** argv) {
     const char* recPath = nullptr;
     const char* layoutPath = nullptr;
     const char* device = "auto";
-    int threads = 0, warmups = 1, detLimitType = 0, detMaxSide = 0;
+    int threads = 0, warmups = 1, runs = 1, auditHoldMs = 0;
+    int detLimitType = 0, detMaxSide = 0;
     unsigned long regionFallbackMask = 0;
     bool layoutRegions = false;
     std::vector<std::string> images;
@@ -112,6 +114,10 @@ int main(int argc, char** argv) {
             threads = std::atoi(next());
         else if (a == "--warmups")
             warmups = std::atoi(next());
+        else if (a == "--runs")
+            runs = std::atoi(next());
+        else if (a == "--audit-hold-ms")
+            auditHoldMs = std::atoi(next());
         else if (a == "--det-limit-type")
             detLimitType = std::atoi(next());
         else if (a == "--det-max-side")
@@ -130,10 +136,12 @@ int main(int argc, char** argv) {
         }
     }
     if (!tablePath || images.empty() || (!detPath) != (!recPath) ||
-        (layoutRegions && !layoutPath)) {
+        (layoutRegions && !layoutPath) || warmups < 0 || runs < 1 ||
+        auditHoldMs < 0 || threads < 0) {
         std::fprintf(stderr,
                      "usage: %s --table <gguf> [--det d --rec r [--layout l "
                      "--layout-regions]] [--device dev] [--list file] "
+                     "[--warmups N --runs N --audit-hold-ms N] "
                      "[images...]\n",
                      argv[0]);
         return 2;
@@ -171,6 +179,8 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "[device] table=%s ocr=%s\n",
                  aicore_table_context_device(table),
                  ocr ? aicore_ocr_context_device(ocr) : "-");
+    if (auditHoldMs)
+        std::this_thread::sleep_for(std::chrono::milliseconds(auditHoldMs));
 
     aicore_table_run_options ropt{};
     ropt.struct_size = sizeof(ropt);
@@ -198,9 +208,13 @@ int main(int argc, char** argv) {
         view.height = h;
         view.format = AICORE_IMAGE_RGB8;
         view.row_stride_bytes = static_cast<size_t>(w) * 3;
-        const int passes = idx == 0 ? warmups + 1 : 1;
+        // Keep the legacy one-result-per-image behavior with --runs=1.
+        // Warm every input when explicitly measuring repeated forwards;
+        // image dimensions and decoder lengths may differ between inputs.
+        const int inputWarmups = idx == 0 || runs > 1 ? warmups : 0;
+        const int passes = inputWarmups + runs;
         for (int pass = 0; pass < passes; ++pass) {
-            const bool timed = pass == passes - 1;
+            const bool timed = pass >= inputWarmups;
             const auto t0 = std::chrono::steady_clock::now();
             aicore_ocr_result* ocrResult =
                     ocr ? aicore_ocr_run(ocr, &view) : nullptr;
@@ -244,12 +258,19 @@ int main(int argc, char** argv) {
                             "%s{\"box\":[%.1f,%.1f,%.1f,%.1f],\"rows\":%d,"
                             "\"cols\":%d,\"cells\":%d,\"tokens\":%d,"
                             "\"score\":%.4f,\"layout_region\":%d,"
-                            "\"html\":%s,\"csv\":%s}",
+                            "\"html\":%s,\"csv\":%s,\"structure_tokens\":[",
                             k ? "," : "", tb->box[0], tb->box[1], tb->box[2],
                             tb->box[3], tb->rows, tb->cols, tb->cell_count,
                             tb->token_count, tb->structure_score,
                             tb->layout_region, jsonString(tb->html).c_str(),
                             jsonString(tb->csv).c_str());
+                    for (int token = 0; token < tb->token_count; ++token) {
+                        std::printf("%s%s", token ? "," : "",
+                                    jsonString(aicore_table_token_at(
+                                                       result, k, token))
+                                            .c_str());
+                    }
+                    std::printf("]}");
                 }
                 std::printf("]}\n");
                 std::fflush(stdout);
@@ -259,13 +280,17 @@ int main(int argc, char** argv) {
         }
         aicore_map_anything_free_buffer(rgb);
     }
+    if (auditHoldMs)
+        std::this_thread::sleep_for(std::chrono::milliseconds(auditHoldMs));
     std::printf(
             "{\"summary\":true,\"device\":%s,\"images\":%zu,"
+            "\"warmups\":%d,\"runs\":%d,\"threads\":%d,"
+            "\"timing_scope\":\"borrowed decoded image through public table/OCR C ABI\","
             "\"failures\":%d,\"table_p50_ms\":%.2f,\"table_p95_ms\":%.2f,"
             "\"ocr_p50_ms\":%.2f,\"total_p50_ms\":%.2f,"
             "\"total_p95_ms\":%.2f}\n",
             jsonString(aicore_table_context_device(table)).c_str(),
-            tableMs.size(), failures, percentile(tableMs, 0.5),
+            tableMs.size(), warmups, runs, threads, failures, percentile(tableMs, 0.5),
             percentile(tableMs, 0.95), percentile(ocrMs, 0.5),
             percentile(totalMs, 0.5), percentile(totalMs, 0.95));
     if (ocr) aicore_ocr_context_destroy(ocr);

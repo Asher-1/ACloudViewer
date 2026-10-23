@@ -35,7 +35,7 @@ threshold defaults to +5% with a 3% noise floor.
 ## Hard rules
 
 - Never hand-edit ggml sources; every change is a patch in
-  `3rdparty/ggml/patches/` registered in `manifest.yaml`
+  `3rdparty/llama/ggml-patches/` registered in `manifest.yaml`
   (see `.agents/rules/acloudviewer-ggml-aicore.mdc`).
 - Never declare "fixed"/"regression-free" without a measured number
   (same probe, same asset, same machine, both trees).

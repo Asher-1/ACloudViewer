@@ -2178,8 +2178,12 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                         ggml_mul_mat_set_prec(mm, GGML_PREC_F32);
                     result = ggml_reshape_4d(ctx, mm, cols->ne[1], cols->ne[2],
                                              cols->ne[3], w->ne[3]);
-                    result = ggml_cont(ctx,
-                                       ggml_permute(ctx, result, 0, 1, 3, 2));
+                    result = ggml_permute(ctx, result, 0, 1, 3, 2);
+                    // N=1 already has contiguous NCHW storage after the
+                    // permutation. Keep the GEMM arithmetic unchanged and
+                    // materialize only when a real batch needs reordering.
+                    if (!ggml_is_contiguous(result))
+                        result = ggml_cont(ctx, result);
                 }
             } else if (op.type == "depthwise_conv2d") {
                 // Folded q8_0 kernels restore to {kw,kh,1,cin} from the

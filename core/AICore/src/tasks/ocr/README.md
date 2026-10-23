@@ -2,6 +2,14 @@
 
 本目录实现 AICore `ocr` 任务的模型加载、图构建与 C ABI。Qt 工作流和下载 UI 属于 [qOCR](../../../../../plugins/core/Standard/qOCR/README.md)。
 
+2026-10-21 当前门控状态：布局 F16/Q8_0 对原始 F32 八头的严格 argmax 门
+仍失败，DFL 按四组独立 8-bin 分布逐组检查。下面历史区域级可选框或页面
+指标的通过不替代此门。独立 Paddle 存储权重图已在 CUDA/Vulkan 复现剩余
+翻转，两轮实际存储 QAT 仍未消除它们；最新逐文件证据见
+[OCR_RELEASE_GATES.md](../../../../../plugins/core/Standard/qAnyLabeling/OCR_RELEASE_GATES.md)。
+所有模型/任务回归完成前保留独立 ggml 入口，不将已执行的开发诊断写为
+发布合格。
+
 ## 数据流与所有权
 
 ```text
@@ -129,7 +137,7 @@ q8_0 recall = 1、F1 0.964。表格还原的语义门（TEDS）见 [`../table/RE
 
 ## Vulkan 延迟离散性
 
-根因（2026-10-12 更正）：不是 CPU 降频。RTX 4090 宿主未开启 Resizable BAR，Vulkan 的 DEVICE_LOCAL|HOST_VISIBLE heap 只有 246 MiB（nvidia-smi BAR1 256 MiB），而 ggml-vulkan 会把它当 ReBAR 优先用于设备缓冲。OCR + SLANet 同进程时 BAR1 占用涨到 238 MiB，窗口接近饱和后 CPU 向映射缓冲的 memmove 坍塌约 100 倍（upload p50 113 ms，perf 显示 73% 进程时间在 `ggml_backend_tensor_set` 的 memmove）；页错误、futex/poll/ioctl 耗时与 fence 等待在快慢两组间相同。`3rdparty/ggml/patches/vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` 在设备初始化时检测「最大 host-visible VRAM heap < 最大 device-local heap 的一半」，自动改用 device-local 缓冲 + staging 上传（等价于上游 `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM`，但由内存属性决定、不读环境变量）。同主机交替 3 轮 A/B：wall p50 134.6 → 22.0 ms，p95 约 325 → 49 ms，upload 113 → 1.47 ms，BAR1 238 → 10 MiB；1200 个输出哈希逐位一致，精度不受影响。在用户报告的完整表格 pipeline（det + rec + SLANet，100 张 `table_rec`，f16，每臂 300 样本，交替 2 轮，只替换 `libggml-vulkan.so`）上：p50 150.3/148.1 → 35.5/37.3 ms，p95 355.6/356.8 → 72.0/77.0 ms，BAR1 峰值 226 → 11–14 MiB，两臂输出逐字节相同（详见 [`../table/README.md`](../table/README.md)）。早先 `layout_doc_test` 68–92 ms 双峰与 powersave 归因均出自该问题之前的测量，不再作为结论。
+根因（2026-10-12 更正）：不是 CPU 降频。RTX 4090 宿主未开启 Resizable BAR，Vulkan 的 DEVICE_LOCAL|HOST_VISIBLE heap 只有 246 MiB（nvidia-smi BAR1 256 MiB），而 ggml-vulkan 会把它当 ReBAR 优先用于设备缓冲。OCR + SLANet 同进程时 BAR1 占用涨到 238 MiB，窗口接近饱和后 CPU 向映射缓冲的 memmove 坍塌约 100 倍（upload p50 113 ms，perf 显示 73% 进程时间在 `ggml_backend_tensor_set` 的 memmove）；页错误、futex/poll/ioctl 耗时与 fence 等待在快慢两组间相同。`3rdparty/llama/ggml-patches/vulkan_small_bar/0001-vulkan-no-rebar-small-bar-window.patch` 在设备初始化时检测「最大 host-visible VRAM heap < 最大 device-local heap 的一半」，自动改用 device-local 缓冲 + staging 上传（等价于上游 `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM`，但由内存属性决定、不读环境变量）。同主机交替 3 轮 A/B：wall p50 134.6 → 22.0 ms，p95 约 325 → 49 ms，upload 113 → 1.47 ms，BAR1 238 → 10 MiB；1200 个输出哈希逐位一致，精度不受影响。在用户报告的完整表格 pipeline（det + rec + SLANet，100 张 `table_rec`，f16，每臂 300 样本，交替 2 轮，只替换 `libggml-vulkan.so`）上：p50 150.3/148.1 → 35.5/37.3 ms，p95 355.6/356.8 → 72.0/77.0 ms，BAR1 峰值 226 → 11–14 MiB，两臂输出逐字节相同（详见 [`../table/README.md`](../table/README.md)）。早先 `layout_doc_test` 68–92 ms 双峰与 powersave 归因均出自该问题之前的测量，不再作为结论。
 
 ## 复现
 
@@ -244,6 +252,15 @@ corpus 的 50 张扫描收据及 50 个原始 CSV，共 2,779 个标注；18 个
 逐页门保留所有失败：v7 的 v4 Q8 中/日文组合检测 Hmean 退化超过 `0.005`，
 v5 F16 和 Tiny F16/Q8 的街景完整流程也有失败。原始张量 PASS 不能覆盖这些失败。
 后续修复按新文件 SHA 单独验证，不能继承旧文件的验收状态。
+
+ONNX 原始/存储权重的 CUDA 参考环境需要同时安装 `onnxruntime-gpu`、`onnx`
+和 `gguf`。仅装 runtime 会在恢复 GGUF 常量时失败。Linux CPython 3.11 /
+CUDA 11.8 的依赖版本见
+[`requirements-ocr-onnx-gpu-reference.txt`](../../../tools/requirements-ocr-onnx-gpu-reference.txt)。
+在独立 venv 中安装，使用 `PYTHONNOUSERSITE=1` 且清除 `PYTHONPATH` 验证
+导入，不能依靠用户级包补齐环境。将该 venv 根目录传给
+`--reference ocr_cuda=/path/to/venv`；图导出仍强制实际 CUDA provider，
+不会因 CUDA 库缺失而把 CPU fallback 当作 GPU 真值。
 
 v8 的 v4 detector Q8 候选在新生产库通过三后端概率门、CPU/Vulkan 的中/日文
 街景页，以及 CUDA 的中/日文街景和 SROIE 收据页；`filter-v8-cuda` 为 **5/5 PASS**。

@@ -214,7 +214,7 @@ bool model::forward(const float *images,
     const float eps = h.ln_eps;
 
     // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched (see
-    // 3rdparty/ggml/patches/manifest.yaml: metal_merged) to remove the
+    // 3rdparty/llama/ggml-patches/manifest.yaml: metal_merged) to remove the
     // assert and auto-tune command-buffer splitting, so only non-Apple GPU
     // backends need capping.
 #ifndef __APPLE__

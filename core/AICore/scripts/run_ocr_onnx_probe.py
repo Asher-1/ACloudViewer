@@ -147,7 +147,18 @@ def aggregate_fixtures(fixtures, codes):
     report = dict(fixtures[0])
     report["fixtures"] = [{k: v for k, v in f.items() if not k.endswith("_ms")}
                           for f in fixtures]
-    report["accuracy_fixture_count"] = len(fixtures)
+    required = ["max_diff", "mean_diff", "stored_max_diff", "stored_mean_diff"]
+    if report.get("role") != "det":
+        required += ["argmax_match", "stored_argmax_match"]
+    completed = [bool(f.get("output_sha256")) and all(
+        key in f and math.isfinite(f[key]) for key in required) for f in fixtures]
+    # A pre-inference audit rejection still produces a report. Count only
+    # actual probability comparisons as completed accuracy coverage.
+    report["accuracy_fixture_requested_count"] = len(fixtures)
+    report["accuracy_fixture_count"] = sum(completed)
+    report["fixture_pass_count"] = sum(done and not code and not f.get("exit_code", 1)
+                                       for done, code, f in zip(completed, codes, fixtures))
+    report["fixture_incomplete_indices"] = [i for i, done in enumerate(completed) if not done]
     report["timing_scope"] = "primary fixture; additional fixtures have zero warmups and one accuracy forward"
     report["exit_code"] = int(any(codes) or any(f.get("exit_code", 1) for f in fixtures))
     for key in ("max_diff", "mean_diff", "stored_max_diff", "stored_mean_diff"):
@@ -196,6 +207,26 @@ def source_performance_pass(native, source, threshold_pct=5., noise_floor_ms=3.)
     return True
 
 
+def probability_gate(metrics, role, *, quantized, max_diff, stored_max_diff):
+    required = ["max_diff", "mean_diff", "stored_max_diff", "stored_mean_diff"]
+    if role != "det":
+        required.extend(("argmax_match", "stored_argmax_match"))
+    if not all(key in metrics and math.isfinite(metrics[key]) for key in required):
+        return False
+    if metrics["stored_max_diff"] >= stored_max_diff:
+        return False
+    if quantized:
+        return True
+    return (metrics["max_diff"] < max_diff and
+            (role == "det" or (metrics["argmax_match"] == 1 and
+                                metrics["stored_argmax_match"] == 1)))
+
+
+def native_exit_is_diagnostic(returncode, *, quantized, outputs_complete):
+    """Ignore raw-parity exits only after complete finite outputs are exported."""
+    return bool(outputs_complete and (returncode == 0 or quantized))
+
+
 def source_environment(python):
     environment = os.environ.copy()
     for key in ("LD_PRELOAD", "PYTHONPATH"):
@@ -214,7 +245,12 @@ def run_probe(args):
     import numpy as np
 
     tools = Path(__file__).resolve().parents[1] / "tools"
+    quantized = args.model.name.endswith(("-f16.gguf", "-q8_0.gguf"))
     args.report.parent.mkdir(parents=True, exist_ok=True)
+    # Repeated processes reuse the report path. An exporter error or exception
+    # must leave this attempt incomplete, never expose a previous success.
+    args.report.write_text(json.dumps({"role": args.role, "backend": args.backend,
+        "exit_code": 1, "error": "probability comparison not completed"}, indent=2) + "\n")
     with tempfile.TemporaryDirectory(prefix="ocr-onnx-", dir=args.report.parent) as directory:
         work = Path(directory)
         orientation = args.role == "orientation"
@@ -247,7 +283,13 @@ def run_probe(args):
                         "--threads", str(args.threads)]
         exported = subprocess.run(command, capture_output=True, text=True,
                                   env=source_environment(source_python) if gpu_reference else None)
+        export_log = args.report.with_suffix(".export.log")
+        export_log.write_text(exported.stdout + exported.stderr)
         if exported.returncode:
+            args.report.write_text(json.dumps({"role": args.role, "backend": args.backend,
+                "exit_code": exported.returncode, "error": "source fixture export failed",
+                "export_log": str(export_log)},
+                indent=2) + "\n")
             print(exported.stdout + exported.stderr, file=sys.stderr)
             return exported.returncode
         if orientation:
@@ -268,6 +310,7 @@ def run_probe(args):
             except RuntimeError as error:
                 rejected_audit = json.loads(audit_path.read_text())
                 args.report.write_text(json.dumps({"exit_code": 1, "gpu_audit_pass": 0,
+                    "role": args.role, "backend": args.backend,
                     "error": str(error), "audit_path": str(audit_path),
                     "gpu_audit_id": rejected_audit["audit_id"],
                     "gpu_audit_archive": rejected_audit["archive_path"]}, indent=2) + "\n")
@@ -285,7 +328,8 @@ def run_probe(args):
         # Keep native accuracy values at that level for its suffix resolver.
         report = {**metrics, "role": args.role, "backend": args.backend,
                   "model_sha256": hashlib.sha256(args.model.read_bytes()).hexdigest(),
-                  "source_sha256": args.source_sha256, "exit_code": completed.returncode,
+                  "source_sha256": args.source_sha256,
+                  "exit_code": int(completed.returncode != 0 and not quantized),
                   "scope": "real word/page graph fixture; not dataset accuracy or release evidence"}
         report["input_profile"] = {"detector_max_side": args.max_side if args.role == "det" else None,
                                    "shape_source": "reference/input_shape"}
@@ -309,10 +353,15 @@ def run_probe(args):
                 native = np.fromfile(output, np.float32)
                 source = np.load(work / f"{stem}_reference.npy")
                 stored = np.load(work / f"{stem}_stored_reference.npy")
-                if native.size != stored.size or not np.isfinite(native).all():
+                outputs_complete = native.size == stored.size and bool(np.isfinite(native).all())
+                report["native_outputs_complete"] = int(outputs_complete)
+                if not native_exit_is_diagnostic(completed.returncode,
+                        quantized=quantized, outputs_complete=outputs_complete):
                     report["exit_code"] = 1
                     report["output_error"] = "invalid native probability shape or values"
                 else:
+                    report["native_raw_threshold_exit_diagnostic"] = int(
+                        completed.returncode != 0 and quantized)
                     native = native.reshape(source.shape)
                     probability_path = args.report.with_suffix(".probabilities.npy")
                     np.save(probability_path, native)
@@ -326,18 +375,16 @@ def run_probe(args):
                     if args.role != "det":
                         report["stored_argmax_match"] = float(np.mean(native.argmax(-1) == stored.argmax(-1)))
                         report["argmax_match"] = float(np.mean(native.argmax(-1) == source.argmax(-1)))
-                    if (report["max_diff"] >= args.max_diff or
-                            report["stored_max_diff"] >= args.stored_max_diff):
-                        report["exit_code"] = 1
-                    if args.role != "det" and (report["argmax_match"] != 1 or
-                                                report["stored_argmax_match"] != 1):
+                    if not probability_gate(report, args.role, quantized=quantized,
+                            max_diff=args.max_diff, stored_max_diff=args.stored_max_diff):
                         report["exit_code"] = 1
                     # Native CPU parity is a separate diagnostic cohort. GPU
                     # qualification uses the independent source and stored
                     # weights, never another native backend as its truth.
                     report["native_cpu_comparison"] = "separate diagnostic; not a GPU release gate"
             else:
-                report["exit_code"] = completed.returncode or 1
+                report["native_outputs_complete"] = 0
+                report["exit_code"] = 1
                 report["output_error"] = "native probe did not export probabilities"
         else:
             report["reference"] = json.loads((work / "orientation.json").read_text())

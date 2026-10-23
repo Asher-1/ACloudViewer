@@ -983,7 +983,7 @@ labels:
 - car
 - '1'
 - '2'
-- 苹果
+- Apple
 - _phone
 ```
 

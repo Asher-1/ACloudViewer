@@ -16,10 +16,31 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
+from run_ocr_source_pipeline import aicore_library_path
 import run_ocr_paddle_pipeline as probe
 
 
 class PaddleReferenceTest(unittest.TestCase):
+    def test_aicore_path_keeps_backend_search_directory_when_library_is_symlinked(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "new-runtime"
+            build_bin = root / "candidate" / "bin"
+            runtime.mkdir()
+            build_bin.mkdir(parents=True)
+            target = runtime / "libAICore.so"
+            target.write_bytes(b"runtime")
+            link = build_bin / "libAICore.so"
+            try:
+                link.symlink_to(target)
+            except OSError as error:
+                self.skipTest(f"symlinks unavailable: {error}")
+
+            resolved = aicore_library_path(build_bin)
+            self.assertEqual(resolved, link.absolute())
+            self.assertEqual(resolved.parent, build_bin.absolute())
+            self.assertEqual(resolved.resolve(), target.resolve())
+
     def test_recognition_sort_keeps_original_gt_indices(self):
         crops = [np.zeros((10, 40, 3)), np.zeros((10, 10, 3)), np.zeros((10, 20, 3))]
         recognize = Mock(return_value=[{"rec_text": text, "rec_score": .9}
@@ -71,13 +92,13 @@ class SourceIdentityTest(unittest.TestCase):
                 self.assertEqual(row["args"][index + 1], "{threads}")
         argv = ["probe", "--upstream", "unused", "--assets", "unused",
                 "--library", "unused", "--backend", "cpu", "--stem",
-                "ppocrv4-source", "--report", "unused", "--threads", "0"]
+                "ppocrv4-source", "--report", "unused", "--threads", "-1"]
         with patch.object(sys, "argv", argv), \
                 patch.object(sys, "stderr", io.StringIO()) as error, \
                 self.assertRaises(SystemExit) as failure:
             source.main()
         self.assertEqual(failure.exception.code, 2)
-        self.assertIn("--threads must be positive", error.getvalue())
+        self.assertIn("--threads must be nonnegative", error.getvalue())
 
     def test_holdout_pins_are_disjoint_and_cover_both_languages_and_quants(self):
         scripts = Path(__file__).resolve().parent

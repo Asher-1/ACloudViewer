@@ -457,6 +457,7 @@ jobs:
               - 'plugins/core/Standard/qRMBG/**'
               - 'plugins/core/Standard/qYOLO/**'
               - '3rdparty/ggml/**'
+              - '3rdparty/llama/**'
               - 'cmake/AICoreOptions.cmake'
               - '.github/workflows/ubuntu.yml'
       - name: Gate (non-PR/push events always run)

@@ -2321,3 +2321,648 @@ Remaining OCR/point-cloud acceptance:
 - [ ] Full VQA component/layout/dialog, font/DPI/Qt6/platform visuals,
   Markdown/formula/PDF, local VLM, remaining GPU page/precision/performance
   gates and qualified publication/download closure remain open.
+
+
+### 2026-10-20 Native llama.cpp / embedded ggml migration audit
+
+- [x] Audit current native Chat/VQA HTTP transport and VLM-R1 annotation I/O.
+  Neither embeds a local language/vision model. Pin audited llama.cpp master
+  `707616feb5f379e99ff7442680a55b4a1704c7c9` and its archive SHA; it embeds
+  ggml 0.27.0 versus the application's patched 0.21.0.
+- [x] Replay the existing 40 patches on the old pristine baseline; inventory
+  the new three-way merge: 119 modified files, 24 conflicted files / 78 blocks,
+  and one upstream-deleted Metal shader. Resolve three common/CPU files and
+  register a standalone CPU migration patch under `3rdparty/llama/experimental`.
+- [x] Recompile 239 AICore units and link an isolated candidate to llama, mtmd
+  and one embedded ggml. Rebuild 33 contract executables / 72 units; all
+  36 public-contract CTests pass. Verify actual loader paths after correcting
+  the experimental executable RPATHs. Repeat all 36 against the clean
+  ExternalProject install and verify its library paths. This does not certify GPU operators or
+  local language/vision model inference.
+- [x] Inventory all 22 catalog tasks: 335 explicit F16/Q8 rows, plus eight
+  unmarked mixed/F32 bundles; 343 conservative rows / 323 unique files. Identify
+  the common runner's dot-separated quantization bug; a focused repair passes
+  103 runner tests in the isolated tree and is retained as a pending patch
+  while the production OCR execution identities remain frozen.
+- [ ] Finish CUDA/Vulkan/Metal operator rebasing (the source-owner CMake
+  entry is verified below),
+  preserving SAM3D strict math, RAM precision and MapAnything attention paths.
+  Complete every selected model's upstream accuracy, backend parity, stability
+  and controlled baseline/candidate performance before production promotion.
+- [ ] Add the private local LLM/VLM AICore task, typed C ABI, model/projector
+  catalog/cache and AnyLabeling worker/UI. The audited llama.cpp has no
+  Florence-2 implementation; its 14 upstream tasks and beam-search defaults
+  require separate implementation/acceptance, not a generic VLM substitution.
+  Scope, reproducible CPU experiment, evidence and per-task model table:
+  `3rdparty/llama/README.md`, `migration-evidence.json`.
+
+### 2026-10-20 OCR release follow-up and shared llama CMake entry
+
+- [x] Add independent stored-GGUF-weight Paddle parameter reconstruction with
+  exact SHA/name/shape/order checks. Six tests pass; F32 is byte-identical to
+  the original. All eight stored-weight Paddle CPU heads agree in argmax with
+  existing native CUDA/Vulkan outputs. This attributes rounding only; original
+  CUDA truth and strict layout F16/Q8 failures remain mandatory.
+- [x] Attempt unchanged controlled CUDA/Vulkan sentinel A/B. Desktop GPU audit
+  rejects measurement; preserve rejection/cancellation receipts, restore page
+  dispatchers and schedule an exact-condition retry for the page timeout
+  caused by the scheduling pause. No new model is upload-qualified.
+- [x] Create `3rdparty/llama/llama_cpp.cmake`; share backend flags, ordered patch
+  replay/invalidation and install/export logic with the ggml source owner.
+  Build/install the pinned parent archive, replay the CPU patch twice and
+  verify installed llama/mtmd/ggml loading. Runtime and five configure contract
+  checks pass. Production ggml configure exports/signature/arguments remain
+  identical to HEAD. Production source ownership has not switched.
+- [ ] Finish all current original-CUDA page cohorts, repaired public Q8 files,
+  strict layout precision repair and controlled GPU release gates; publish only
+  qualified exact SHAs, then complete catalog/cache/cold-download acceptance.
+  User explicitly retained 100% argmax agreement for every original head,
+  including low-confidence classes and DFL intermediates; stored-weight graph
+  agreement and CDLA page mAP cannot replace this gate. The old table probe
+  path is a symlink to the candidate, so SLANet still needs an independent
+  baseline rather than treating that path as a preserved old executable.
+- [x] Add repeated public table C ABI timing with exact structure tokens and
+  independently preserved old/current libraries. Final harness loader/stability
+  wiring, seven failure-case tests and both offline runner preflights pass.
+  Three lossless image inputs reproduce the pinned original NCHW arrays exactly.
+- [ ] Finish the queued CUDA/Vulkan SLANet F32/F16/Q8_0 release-profile A/B
+  against those libraries and original Paddle CUDA, retaining independent raw
+  probability/location and labelled GT gates. CPU wiring and queued commands
+  are not GPU performance evidence. Receipt: `table-capi-baseline-path.txt`.
+- [ ] Rebase and validate remaining llama embedded CUDA/Vulkan/Metal operators,
+  promote its source owner only after the full required task regression, and
+  implement local LLM/VLM inference through AICore's public contracts.
+
+### 2026-10-20 Source ownership and layout rounding clarification
+
+- [x] Trace `llama_cpp.cmake -> llama_runtime.cmake -> ExternalProject_Add(ext_llama)`.
+  The entry already uses ExternalProject; the active application still uses
+  `ext_ggml`. Final removal of `3rdparty/ggml` must also migrate the shared
+  build helper, patch runner and SAM3D dependencies and update all callers.
+- [x] Expand the migration audit to report full-catalog consumer gaps: all
+  556 rows / 526 unique files / 22 tasks, including F32, have static consumers.
+  Four audit tests pass, including detection of an uncovered F32 row outside
+  the 343-row conservative F16/Q8 subset. Full model execution remains open.
+- [x] Reverify 27 layout input/output identities and all eight heads from
+  retained tensors. F16 and Q8_0 fail original Paddle CUDA argmax on both GPUs;
+  unchanged Paddle graphs populated with stored weights reproduce the flips.
+  Fixed CPU-only storage interventions isolate the actual Q8_0 tensors
+  (59 tensors: 244 class / 411 DFL flips) and F16 fallback tensors (427:
+  22 / 48). Both can independently flip decisions. These are attribution
+  experiments; they do not replace original CUDA truth or grant release PASS.
+  See `OCR_RELEASE_GATES.md` and `layout-storage-factorial-path.txt`.
+- [x] Register the embedded-ggml CUDA source port as ordered migration patches;
+  resolve 11 conflicted CUDA files / 35 blocks and adapt the new matrix/vector
+  scheduling API while preserving owner-specific precision. Replay all four
+  patches on pristine pinned ggml twice; final source SHA matches the compiled
+  tree. Linux CUDA 11.8 / SM86 ggml CUDA/CPU modules, llama and mtmd build;
+  all four dynamic relocation checks pass. Preserve the initial unresolved
+  attention helper and intermediate ADL failure logs; the final registered
+  patch fixes both. Receipt: `3rdparty/llama/validation/cuda-rebase-evidence.json`.
+  This is build/linkage evidence only, with no GPU model or performance claim.
+- [ ] Finish four conflicted Vulkan files / 30 blocks, six Metal files / eight
+  blocks and the removed Metal shader; complete original-framework accuracy,
+  stability and controlled baseline/candidate performance for the entire
+  556-row catalog plus unpublished OCR. Do not promote/delete the old owner
+  based on the CPU contract tier or the CUDA compilation result.
+
+### 2026-10-20 Quantization acceptance review and dependency collision audit
+
+- [x] Review whether raw-head disagreement can coexist with useful quantized
+  task accuracy. Recompute all six retained GPU layout comparisons and their
+  decision margins against original Paddle CUDA; preserve per-head and DFL
+  semantics. F16/Q8_0 also cross the 0.5 audit threshold at 1/2 candidates on
+  this fixture. Record a conditional, per-model acceptance design in
+  `OCR_RELEASE_GATES.md`; existing strict gates remain active, with no release
+  qualification from this analysis.
+- [x] Audit the complete `ggml.cmake` / `llama_cpp.cmake` source, target, link,
+  install and runtime chain. Both entries share one ExternalProject definition;
+  production still uses only the old source. Record the final removal closure
+  and open model/backend/install work in `3rdparty/llama/README.md`.
+- [x] Reproduce both cross-configure source switches being accepted. Bind build
+  and dependency install directories to source target plus archive SHA, reject
+  conflicting shared prefixes and unidentified candidate installations before
+  fetch/overwrite. Fresh CPU build/install, installed runtime/relocation checks
+  and nine configure tests pass. Evidence:
+  `3rdparty/llama/validation/source-owner-guard-evidence.json`. This is not a GPU model or
+  complete migration regression result.
+- [x] Track the llama JSON pin as an automatic CMake regeneration dependency.
+  A negative control without tracking silently ignores a changed archive SHA;
+  the final test rejects it during a normal build without explicit configure
+  or download. Reconfigure/build and both CTests pass; five installed library
+  SHAs are unchanged, with initial/final input fingerprints retained separately.
+- [ ] Optimize independent mixed-precision candidates and validate on held-out
+  original-framework/page inputs with CUDA/Vulkan. A relaxed quantization
+  acceptance policy has not replaced the user's retained 100% original-head
+  gate; neither an optimization proposal nor source-owner isolation grants
+  model upload eligibility.
+
+### 2026-10-21 llama source-owner resource and caller migration
+
+- [x] Move the shared ExternalProject implementation, ordered original ggml
+  patches/runner and all SAM3D support sources into `3rdparty/llama`; retain
+  only the 14-line old archive entry as the production regression baseline.
+  Record the pre-move 247-file identity inventory and pristine legacy replay
+  twice. Replayed sources match the previous patched baseline exactly.
+- [x] Candidate creates only `ext_llama` / `3rdparty_llama`, with one embedded
+  ggml. AICore links/test dependencies, Python package dependencies and RAM/YOLO
+  build-flag discovery consume source-owner exports. Add the new path to the
+  existing CI change filter and update the engineering patch locations.
+- [x] Select the rebased CUDA operator manifest through `llama_cpp.cmake` and
+  resolve the CUDA architecture helper from its repository location. Validate
+  the real entry in a fresh prefix with the complete SAM3D source closure.
+  Build support and source relocation do not certify model inference.
+- [x] CPU relocated entry build/install and two CTests pass; ten configure
+  contract tests cover unique ownership, CUDA manifest selection, unported
+  backend rejection, stale-source and shared-install collision cases.
+- [x] Fresh CUDA parent build/install with full SAM3D closure and all three
+  CTests pass. Isolated rebuilt OCR/table probes execute 158 input checks over
+  53 exact model SHAs; every output is element-wise identical to its retained
+  pre-migration native output. Keep original-source layout F16/Q8 failures and
+  missing controlled performance/page coverage explicit. Receipt:
+  `3rdparty/llama/validation/resource-migration-evidence.json`.
+- [x] Rebase the 33-file Vulkan operator/shader delta and register standalone
+  Vulkan plus combined CUDA/Vulkan manifests under the llama source owner.
+  Fresh parent build/install and three CTests (eleven configure contracts)
+  pass; replay is idempotent and all 225 Vulkan files match the reviewed port.
+  Installed Vulkan executes the same 53 model SHAs / 158 OCR inputs with no
+  new applicable head argmax flips against retained native outputs. Probability
+  and SLANet location deltas, retained original-source failures and initial
+  corrected build failures are explicit in
+  `3rdparty/llama/validation/vulkan-rebase-evidence.json`. No release/performance claim.
+- [x] Build/install the real parent entry with CPU/CUDA/Vulkan enabled together
+  and the full SAM3D source closure. Four entry CTests and 36 retained public
+  contracts pass with no skips; the monolithic AICore is relinked from retained
+  candidate objects. All 158 OCR inputs per GPU execute, CUDA bitwise equal and
+  Vulkan with no new applicable head decisions. Actual loader paths, the initial
+  incorrect local CUDA runtime selection, corrected rerun and precise scope
+  limits are recorded in `3rdparty/llama/validation/dual-gpu-evidence.json`.
+- [ ] Finish Metal porting and every required task/model original-source
+  numeric and controlled performance regression before switching the production
+  archive and deleting the remaining independent entry. Local LLM/VLM task,
+  projector/model catalog and template/image/output acceptance remain open.
+
+### 2026-10-21 OCR follow-up
+
+- [x] Verify the two repaired public Q8 SHA identities against completed original
+  CUDA-source reports: CUDA/Vulkan each 9/9 PASS (two graphs plus seven combined
+  page scenarios). Keep their evidence separate from old published files.
+- [x] Diagnose two role-based mixed-precision layout policies in the independent
+  Paddle CPU graph. F32 norm/bias leaves 13 class / 16 DFL flips; adding final
+  heads leaves 10 / 15. Neither is an original-source GPU gate PASS.
+- [x] Recover the SLANet queue from its dead predecessor's missing terminal
+  receipt; verify frozen identities before execution. Four 120-second CUDA
+  idle-audit attempts fail before measurement. Stop redundant own retries and
+  preserve INCOMPLETE; do not promote missing samples or unexecuted Vulkan.
+- [ ] Resolve remaining strict layout accuracy, controlled CUDA/Vulkan A/B and
+  exact-file release/catalog/manifest/cold-download gates. Qualified new uploads
+  remain zero. See `OCR_RELEASE_GATES.md` and its 2026-10-21 evidence link.
+
+### 2026-10-21 full regression execution and calibration experiments
+
+- [x] Freshly compile the isolated candidate's 239 AICore units and 81 probe
+  units; link 36 probes against the llama-owned runtime. Preserve production
+  `build_app` binaries. Start the full-tier available-cache CUDA matrix with
+  346 expanded scenarios; missing catalog assets remain incomplete coverage.
+- [x] Correct the isolated RF-DETR harness's retained legacy static archive and
+  executable-local backend staging. Freshly compile 178 static test units;
+  nano Q8 CUDA/Vulkan smoke both exit 0. Full RF-DETR acceptance remains open.
+- [x] Fix MapAnything's remaining parity-patch resource path after relocation
+  to `3rdparty/llama/ggml-patches`; its six existing tests pass.
+- [x] Restore the independent MapAnything reference from its pinned repository
+  and ggml commits. Its ordered upstream patches reproduce the manifest's exact
+  `8e87111a...` diff SHA; repeat application and the vendored attention-source
+  comparison pass. See `map-anything-reference-prepare/source-contract.json`
+  under the isolated build. GPU reference binaries and the explicit reference
+  argument in a fresh full rerun remain pending; source recovery is not inference.
+- [x] Run independent offline F16 error-feedback, Q8 feedback, F32 exceptions
+  and bias/affine correction. Repeat using 16 pinned upstream CDLA training
+  pages separate from acceptance. Serialize six real GGUF candidates per
+  experiment and round-trip all 486 parameters before native GPU inference.
+  Both GPUs match stored-weight Paddle argmax; original unquantized heads
+  still fail. Preserve failures and do not publish these experiments.
+- [ ] Finish the full CUDA/Vulkan matrix and the queued 22-task reruns with
+  catalog-verified missing downloads and the corrected probes. Include the
+  repaired SAM3 F16 candidate in that full rerun. Keep missing sources,
+  VRAM skips and incomplete rows visible. See
+  `3rdparty/llama/validation/full-model-regression-evidence.json` and the live state files
+  it references; none is a completed release or controlled performance gate.
+- [ ] Finish the remaining source/backend, strict OCR and controlled A/B gates
+  before deleting the preserved production `3rdparty/ggml/ggml.cmake` entry.
+
+### 2026-10-21 full-matrix CUDA stride diagnosis
+
+- [x] Reproduce the SAM3 F16 migration abort and fix native GEMM's output
+  leading dimension in the ordered llama CUDA manifests. The six-case scalar
+  test fails with the old module and passes exactly with the fix; two corrected
+  real-model candidate repeats pass with baseline-identical output hashes.
+  Preserve the invalid first focused rerun that loaded old modules through
+  executable symlinks/RPATHs. See `3rdparty/llama/validation/cuda-native-stride-evidence.json`.
+- [x] Try final-projection block reconstruction on 16 pinned CDLA training
+  pages, without fitting acceptance outputs. F16 still has 9 class / 16 DFL
+  flips; Q8_0 has 105 / 174 in the independent source CPU diagnostic. Serialize
+  both real GGUFs and verify all 486 parameter round-trips. These mixed models
+  retain four explicit F32 projection kernels and are not release qualified.
+- [x] Complete both projection-reconstructed GGUFs' CUDA/Vulkan checks with
+  original Paddle CUDA rerun. F32 control passes, each GPU matches stored-weight
+  Paddle argmax, but original-weight flips remain 9 / 16 and 105 / 174.
+  SAM3 F16's complete focused old/new repeated report is PASS.
+- [ ] Complete the corrected full 22-task CUDA/Vulkan queue. Keep the
+  obsolete matrix explicitly incomplete, retain
+  per-attempt outputs, and resolve every remaining failure before promotion.
+- [x] Add offline real-storage F16/Q8_0 QAT graph plumbing and isolate imported
+  Paddle variable names from newly created loss expressions. Independent GGUF
+  storage checks pass (4 tests); a real original layout graph has 102 finite
+  kernel gradients and all eight F32 outputs exactly match its unmodified
+  source on one pinned, disjoint training page. This is training plumbing,
+  not a qualified model or a replacement for independent source validation.
+- [x] Evaluate the fixed 16-train-page, four-epoch storage-aware QAT pilot after
+  exact GGUF round trips on all 486 parameters. Keep original raw-head argmax
+  at 100%; preserve every failure and run both native GPUs against fresh
+  original-source CUDA outputs. Training loss and stored-weight parity cannot
+  qualify the unchanged source, real-page or controlled performance gates.
+  All 486 parameters round-trip exactly and both GPUs match stored-weight
+  Paddle, but original F32 head flips remain: F16 13 class / 11 DFL, Q8_0
+  205 / 347. The strict verdict is FAIL; neither candidate qualifies for release.
+- [ ] Resolve remaining original-head ranking failures without changing the
+  100% criterion. The optional teacher-derived ranking loss has five passing
+  actual Paddle graph tests (including four independent DFL groups); a new
+  fixed 16-page/four-epoch experiment with weight 64 and margin 1e-6 completed
+  in `ocr-calibration/qat-ranking-pilot/`: both GPUs still fail (F16 11 class /
+  12 DFL, Q8_0 258 / 405), with zero stored-reference flips. Original and
+  stored-reference diagnostics remain separate; the unchanged strict gate is open.
+- [ ] Resolve RF-DETR CUDA performance failures in the corrected full matrix:
+  all 44 model rows execute successfully, but large F32/Q8_0, nano Q4_K/Q8_0
+  and segmentation-medium Q4_K trigger timing comparisons (5.10% to 20.31%).
+  The two-repeat developer samples do not yet isolate the cause or qualify
+  controlled throughput. Preserve the overall FAIL and existing thresholds;
+  Vulkan's 44 models also execute, but 29 trigger timing failures. The probe
+  mixed cold setup into two measured forwards; identical new probes with
+  explicit warmups, cold latency and raw samples are built against both
+  archives in isolated directories. Full GPU A/B is running after the corrected
+  real-page CUDA/Vulkan smoke (3 process repeats / 3 warmups / 10 measured forwards). Keep failures
+  open pending results.
+- [ ] Resolve the warmup-corrected RF-DETR CUDA result: all 44 numeric/repeated
+  fingerprints match the baseline, but six models trigger 14 timing metrics
+  (+5.94% to +28.48%). Vulkan subsequently completes 44 numeric rows with matching
+  baseline fingerprints but 22 models / 45 timing metrics fail (+5.02% to +18.04%).
+  Both overall verdicts remain FAIL. Preserve
+  this distinct report and identify sustained runtime regressions versus external
+  GPU interference with controlled repeats before accepting the migration.
+- [x] Repair the private full-matrix input overlay's missing sibling archive
+  links. Reuse and verify existing shared downloads; preserve the original
+  OCR/table/relation preflight failures and retry them. Replace the original
+  ONNX CUDA reference environment, which lacks `onnx` with user-site imports
+  disabled, with the existing isolated dependency-complete environment.
+  Classifier F32 and v5 mobile det/rec F32 repeat successfully afterward;
+  this does not complete all OCR source/page/performance acceptance.
+- [x] Resolve the common runner's `threads=0` before ONNX/Paddle page and
+  SLANet graph consumers configure either engine; preserve explicit counts and
+  reject negatives. The old script fails the new regression check; the repaired
+  OCR script suite passes 66 tests and SLANet passes 9 tests. Preserve the
+  interrupted partial matrix as incomplete and rerun against immutable scripts.
+- [x] Build an ONNX CUDA reference venv from pinned requirements without system
+  site packages. Isolated imports include original TextSystem polygon/image
+  dependencies. PP-OCRv5 mobile F32 real-page comparisons pass on CUDA/Vulkan
+  with both frozen baseline and candidate repeated twice; full OCR acceptance
+  remains open. Current serial state:
+  `build_llama_dual_gpu_3nl01j4j/ocr-thread-protocol-fix/state.json`.
+- [x] Match the experimental ExternalProject driver's hidden symbol visibility
+  to the production dependency flags. The actual generated external configure
+  command fails the new check before the fix; all 12 CMake contract tests pass
+  afterward. Existing measured binaries remain unchanged. This configuration
+  repair has not yet been shown to resolve the RF-DETR latency failures.
+- [ ] Finish the queued independent MapAnything CUDA/Vulkan reference builds
+  and full matrix rerun with the explicit reference argument. The new follower
+  waits for both current serial queues to finish before building; exact source
+  pins, foreign-loader rejection and private-cache verification stay enforced.
+  `map-anything-reference-prepare/serial-followup-state.json` currently records
+  waiting, not completed build or inference evidence.
+- [x] Refactor the dependency configuration into `llama_cpp.cmake` (pin and
+  owner), `llama_runtime.cmake` (ExternalProject/install/exports), and backend
+  and patch helpers. Replace the source-pin JSON with CMake constants; archive
+  the twelve historical JSON receipts without changing their SHA-256 values.
+  Four generated configure commands/source identities/patch signatures remain
+  identical. A clean isolated CPU build/install, two CTests (fourteen configure
+  contracts), five relation closure tests and installed loader trace pass.
+  Requested Vulkan dependencies now fail explicitly for the candidate; preserve
+  the baseline's existing behavior. Evidence: `build_llama_config_refactor_glj5ibw7/`.
+- [x] Audit the pinned pristine embedded ggml against all five custom operation
+  enum values and seventeen additional helper APIs. Record official alternatives,
+  tensor/precision differences and required gates in
+  `3rdparty/llama/KERNEL_AUDIT.md`. Retain required custom semantics; already reuse
+  official native CUDA GEMM with the verified F16 output-stride patch. The
+  combined manifest replays twice unchanged and all 1503 files match the active
+  candidate. No unmeasured official-kernel speedup or all-model pass is claimed.
+- [ ] Complete the immutable OCR CUDA/Vulkan queue and resolve every remaining
+  original-head, page, controlled source-speed and migration A/B failure.
+  The read-only 11:25 UTC snapshot completes 61/168 CUDA scenarios: baseline and
+  candidate each pass 122 structured accuracy attempts. Candidate source-speed
+  comparisons still fail ten attempts across seven scenarios; all 56 recorded
+  candidate source-performance qualifications and GPU audits are zero. This
+  developer snapshot is INCOMPLETE, cannot qualify a release, and does not
+  supersede the failed layout F16/Q8 original-head gates. See
+  `OCR_RELEASE_GATES.md` and `build_llama_config_refactor_glj5ibw7/Testing/ocr-cuda-progress.json`.
+
+### 2026-10-21 QAT target and migration A/B audit
+
+- [x] Correct the layout QAT ranking target: enforce the unchanged teacher
+  winner with a configured positive margin, without reconstructing its full
+  top-1/top-2 probability gap; retain energy-normalized head MSE and four
+  independent DFL distributions. The six actual Paddle graph/gradient tests
+  pass through the default runner, including clean process exit.
+- [ ] Retrain F16 and Q8_0 with the corrected ranking loss using only the
+  pinned 16 CDLA train pages. The prior MSE/ranking pilots remain failures and
+  cannot serve as evidence for this objective. Re-serialize every parameter,
+  then require original F32 versus stored model raw argmax 100%, full page
+  metrics, CUDA/Vulkan parity and controlled performance before release. The
+  serialized experiment is deferred until the active GPU comparison queue
+  yields; its latest log is at OCR CUDA scenario 91/168.
+- [x] Match future isolated llama validation builds to the frozen baseline's
+  `GGML_CPU_ALL_VARIANTS=ON`; verify the value reaches the nested configure
+  command in the 14-test CMake contract suite.
+- [ ] Rebuild both RF-DETR A/B owners with matching CPU ISA variants and hidden
+  visibility after the active GPU queue reaches a child-free boundary. The
+  prior warmup report remains FAIL (CUDA: 14 failed metrics / 6 models;
+  Vulkan: 45 / 22) despite matching numeric fingerprints. RF-DETR's custom
+  deformable-attention callback runs on CPU, making the module difference a
+  plausible contributor, not a proven cause. The production
+  `AICore_CPU_ALL_VARIANTS` default and existing binaries were not changed.
+- [ ] Port the Metal patch to llama's split `ggml-metal/kernels/*.metal`
+  layout and validate on macOS. The old patch changes 11 files, including a
+  monolithic shader absent from the pinned source; the migration inventory has
+  six conflicted Objective-C/C++ files and eight blocks. Upstream 0.27 already
+  has newer command-buffer error handling, so the old lifecycle hunks need
+  semantic review. Linux cannot provide the required Metal compile, numerical
+  regression or performance gate. Keep Metal disabled for the candidate until
+  those checks pass. Source inspection confirms `kernels/conv.metal` already
+  indexes the batch dimension and uses `nb3`; drop the old v0.21 MapAnything
+  batch-index backport during rebase. The separate parallel-channel tree
+  reduction remains an unmeasured Metal optimization.
+
+### 2026-10-22 verified corrections and remaining acceptance
+
+- [x] Reject CPU-only Paddle before creating a CUDA-teacher experiment, and
+  verify the inference configuration actually enables GPU. Preserve the earlier
+  CPU-teacher run as invalid CUDA evidence. Fix the default zero-ranking Q8
+  training feed; seven real forward/gradient cases now pass in the isolated
+  GPU-wheel environment with normal process exit. See `OCR_RELEASE_GATES.md`.
+- [ ] Finish the replacement 256-page, four-epoch fixed training experiment
+  `build_llama_dual_gpu_3nl01j4j/ocr-calibration/qat-cdla256-gpu-teacher-v2-20261022/`.
+  It uses a real CUDA teacher and disjoint pinned train pages, then serializes
+  every parameter and independently compares all original class/DFL winners on
+  CUDA/Vulkan. The prior 16-page pilots and mislabeled CPU-teacher run do not
+  qualify the replacement. Keep the 100% original-head gate unchanged.
+- [x] Build the isolated dual-GPU candidate with matching CPU variants; loader
+  evidence confirms Haswell/AVX2 selection for both owners. Complete RF-DETR
+  44-model numeric fingerprints match on CUDA/Vulkan. Timing still fails (14
+  CUDA metrics, 44 Vulkan metrics); matching ISA does not repair the regression.
+- [ ] Resolve all full-tier task numerical/stability/performance failures;
+  the immutable serial matrix currently runs SAM3 Vulkan. Earlier Vulkan
+  private-cache audit ordering failures and the two SAM3 CUDA artifact-change
+  failures remain invalid evidence requiring a fresh frozen rerun. Never edit
+  active probes or sources to turn an existing report into a pass.
+- [x] Port Metal changes to the pinned split-kernel layout as an ordered patch;
+  replay and idempotence checks, four host C++ syntax checks, 16 exact CPU
+  transpose-convolution cases and 17 CMake contracts pass. Drop the redundant
+  old batch-index backport. See `3rdparty/llama/KERNEL_AUDIT.md`.
+- [ ] Compile MSL and execute Metal accuracy/performance gates on macOS through
+  the isolated opt-in; Linux source/CPU checks do not satisfy this requirement.
+  Keep production source ownership and the final `3rdparty/ggml/ggml.cmake`
+  baseline entry until the complete regression passes.
+
+### 2026-10-22 serialized OCR truth and frozen llama follow-up
+
+- [x] Complete the replacement 256-page, eight-epoch CUDA-teacher and CUDA-
+  optimizer layout pilot using log-probability class ranking and four separate
+  DFL distributions. Independently reload all 486 serialized parameters and
+  verify their values against the Paddle storage graph. On the held-out input,
+  CUDA and Vulkan each match the stored-weight Paddle argmax exactly. Original
+  F32 truth still fails: F16 has 13 class / 18 DFL flips; Q8_0 has 140 / 232.
+  These candidates are unqualified and have not been uploaded. The earlier
+  unchecked training items remain historical; see `OCR_RELEASE_GATES.md` for
+  artifacts, SHA-256 values and the strict original-head gate.
+- [x] Diagnose the remaining serialized-layout flips with original winner
+  margins: no original ties; quantization perturbations cross small, nonzero
+  margins. Verify STE forwarding reproduces actual storage values for all
+  1,794,568 trainable parameters without cancellation discrepancies. This
+  excludes backend disagreement and STE cancellation for the checked pilot;
+  it does not establish a solution to the original F32 argmax requirement.
+- [x] Fix the SCRFD manifest glob so the published unsuffixed default model has
+  exactly one inference consumer alongside F32/Q8_0. All 108 validator tests
+  pass. Preserve the active Gaussian CUDA report invalidated by this edit;
+  its isolated retry with an explicit frozen manifest passes all nine rows.
+- [x] Verify the Vulkan dependency-cache optimization with 3,062,201 original
+  versus cached predicate comparisons, zero mismatches, and pristine replay /
+  idempotence of all ten ordered patches. Audit actual loaded module paths:
+  the executable directory takes precedence over `LD_LIBRARY_PATH`. Mark the
+  earlier two patch-timing experiments invalid where the loader used the old
+  module; retain their independent source and semantic checks.
+- [x] Repeat the two-model Vulkan A/B with copied executables and verified
+  module hashes, four interleaved processes and 5 warmups / 30 forwards. RF-DETR
+  base F32 forward regression changes from +3.79% to +1.32%; base Q8_0 from
+  +8.19% to +3.73%. All output hashes and candidate optimizer node orders match.
+  This developer-profile result is not controlled release qualification.
+- [ ] Complete the fixed-module full 44-model RF-DETR Vulkan retry, followed
+  by AnyCalib and ALIKED, in
+  `stride-fix/vulkan-fixed-full-validation-9aqib7e8/`. Keep both probe-directory
+  module links audited and the original candidate immutable. Other full-tier
+  failures and required independent source-reference bindings remain open.
+  Update: RF-DETR Vulkan now passes 44/44 and AnyCalib Vulkan 3/3 under the
+  unchanged developer-profile gates. ALIKED stopped before inference on a
+  missing F32 cache file; the existing catalog/SHA downloader has restored it,
+  and its replacement inference run is still required.
+- [ ] Resolve actual Depth tensor differences; do not suppress the fingerprint
+  failures. With the original 224 resize protocol, base F16 maximum absolute
+  depth differences are 0.000495 on CUDA and 0.008865 on Vulkan. Camera outputs
+  and dimensions match in these two GPU checks. The separate 504-size Vulkan
+  run is bit-exact and cannot substitute for this failed input profile.
+- [ ] Resolve LightGlue Vulkan fingerprints with typed match-index / score
+  diagnostics and retry the isolated GKD CUDA preprocessing timing failure.
+  Neither has been accepted by changing the fingerprint policy or threshold.
+- [ ] Finish remaining task, independent upstream truth, controlled performance
+  and macOS Metal gates before removing the independent ggml baseline entry.
+
+### 2026-10-22 teacher math policy and migration causal controls
+
+- [x] Reproduce the original Paddle CUDA teacher with and without TF32 in
+  separate processes on four pinned training pages. Each untrained F32 QAT
+  graph is bit-exact to its own teacher, but the two teacher policies disagree
+  on 39 class / 81 DFL winners. Set `NVIDIA_TF32_OVERRIDE=0` before importing
+  CUDA dependencies in the offline trainer and record it in the recipe.
+- [x] Complete the replacement 256-page/eight-epoch F16/Q8_0 run with the
+  corrected math policy and independent serialized-weight checks. Held-out
+  original-source flips remain F16 10 / 14 on both GPUs, Q8_0 140 / 243 on
+  CUDA and 140 / 244 on Vulkan. The latter also has one stored-source DFL
+  disagreement at a top-two gap of `6.556511e-7`; backend exactness from the
+  earlier pilot does not qualify this new checkpoint. No candidate is released.
+- [x] Confirm Depth Vulkan's first changed operation by one-variable control:
+  restoring the old short-M split-K guard restores all five final public arrays
+  and 619 captured intermediate tensors for base F16 at target 224. Keep the
+  global guard as an experiment; a DPT-only candidate patch still needs device
+  positive/negative controls, task coverage and performance evidence.
+- [x] Replace the invalid copied LoMa matcher probe with one identical portable
+  executable and verify both AICore library identities. All six selected CUDA
+  rows pass; Vulkan retains one published G-model process-wall regression
+  (+8.77%). Do not substitute the earlier mixed-runtime failures for this result.
+- [ ] Finish the running RF-DETR CUDA 44-row longer retry, DPT-only patch
+  qualification, LightGlue first-operation diagnosis and reference-bound OCR
+  release measurements. The immutable full-task matrix and its remaining
+  fingerprint/performance failures remain open. Keep the baseline ggml entry.
+  RF-DETR CUDA has now completed: 44/44 pass with three process repeats,
+  five warmups and ten forwards under unchanged developer thresholds. Together
+  with the separate fixed-module Vulkan 44/44, this closes that task's current
+  developer retry; it does not qualify controlled release performance or the
+  remaining task families.
+
+### 2026-10-22 remaining gate attribution and current-source queue
+
+- [x] Check the new Q8_0 checkpoint against its independent stored-weight
+  Paddle CUDA truth on both old/new runtimes: CUDA 0 class / 0 DFL flips,
+  Vulkan 0 / 1 in each runtime. CUDA's eight old/new heads are bit-exact.
+  The Vulkan stored-source flip predates the upgrade and remains unresolved;
+  original-source quantization failures remain separate release blockers.
+- [x] Complete DPT-only patch device controls: five final arrays and 619
+  captured nodes restored; unrelated names and non-im2col negative controls
+  retain new upstream results. Actual loaded module identities verified.
+  Keep the patch unregistered until full model/performance qualification.
+- [x] Locate LightGlue's first difference to the new one-row GEMV dispatch,
+  with identical actual operands and independently verified final-output
+  invariance. Its F64 mathematical error is substantially lower than the old
+  operation's. Exact fingerprints still fail; upstream task truth remains
+  required. Do not call the new, more accurate operation a numeric regression.
+- [x] Finish both source-bound OCR direction-classifier release sentinels.
+  Both reports FAIL GPU activity audits; most attempts execute only nine of
+  ten numeric fixtures after the timed fixture's idle wait fails. No qualified
+  speed/VRAM claim or upload follows from these partial measurements.
+- [x] Verify the interrupted SAM3 base-plus F32 model independently under the
+  original standard gate: PASS. Retain the interrupted process-wall sample as
+  invalid and link its separate replacement instead of rewriting that sample.
+- [ ] Finish the current full matrix (SAM3 39 models is running), full DPT
+  patch coverage, remaining numeric/performance failures and Metal hardware
+  validation. Production ggml retirement remains blocked on these results.
+- [ ] Complete current-candidate reference-bound OCR/table/tagging/relation
+  and MapAnything follow-ups. Replaced the obsolete waiting controller, which
+  still pointed at validation-v4, with
+  `build_llama_dual_gpu_3nl01j4j/current-reference-followup-buca6r5k/run.py`.
+  It waits for the current complete matrix, binds explicit source references,
+  then builds the pinned MapAnything CUDA/Vulkan references outside inference
+  timing and runs the full task without `--allow-incomplete`. Queued work is
+  not completed evidence; it cannot qualify a release or remove the baseline.
+
+### 2026-10-22 serialized-update and independent framework checks
+
+- [x] Verify all 486 QAT deployment parameters again. Actual F16/Q8_0 values
+  equal freshly serialized masters; F16 changes 446,690 stored values and Q8_0
+  changes 25,866 integer codes plus 7,561 block scales. Updates are retained,
+  but the original-source strict argmax failures remain open.
+- [x] Fix host environment removal in both offline Paddle entry points:
+  updating a cleaned dictionary alone retained removed logging/PYTHONPATH
+  keys. Two real Paddle import/normal-exit checks pass with injected dirty
+  host keys. This is not a new model or GPU acceptance result.
+- [x] Replay official pinned LightGlue transformer/assignment modules with
+  exact stored GGUF weights and the common captured input projection. Both
+  runtimes keep all 64 ALIKED/SIFT indices; new score MAE improves slightly,
+  maximum error increases slightly. Preserve both metrics and the existing
+  fingerprint failure; this diagnostic does not replace original-checkpoint
+  or real-image acceptance.
+- [ ] Close the remaining full task groups and original-source/controlled
+  performance gates. The scope table in `3rdparty/llama/KERNEL_AUDIT.md`
+  distinguishes complete retries, six-row LoMa selections, active work and
+  queued work. No new OCR model or production runtime is qualified yet.
+- [x] Make the independent Paddle graph and legacy layout-reference entries
+  reject an actual CPU library or disabled CUDA configuration before creating
+  a predictor. Fix the layout entry's pre-import TF32 policy and record its
+  actual device configuration. All 23 focused tests pass, including mixed
+  package metadata and disabled-GPU negative cases. Four real-wheel entry
+  preflights also pass; CUDA checks intercept predictor creation and are not
+  new inference or performance acceptance. See the latest OCR gate section.
+- [x] Separate requested ONNX inputs from completed probability comparisons
+  and passing fixture rows; retain incomplete indices and reject stale success
+  reports when a repeated source export fails. The 34 focused tests pass.
+  Read-only historical reaggregation confirms requested 10 / completed 9 for
+  both retained controlled classification reports; both remain FAIL.
+- [x] Add a Q8-only Adam learning-rate multiplier with default 1, keeping F16
+  kernels and F32 affine rates unchanged. Eleven real Paddle graph tests pass,
+  including actual parameter-update ratios; this does not qualify a model.
+- [x] Finish the predeclared Q8 step sweep and F16 small-step training, using
+  training-only checkpoint selection, actual serialization, independent source
+  CUDA and native CUDA/Vulkan raw heads. Preserve the original 100% class and
+  per-edge DFL argmax gates, all failures and exact loaded-module identities.
+  Both new Q8 step multipliers fail to improve training and are not exported.
+  F16 training improves 2,621 to 580 total flips, but its actual serialized
+  model still has 7 class / 12 DFL flips on each GPU against original Paddle
+  CUDA. Both GPUs have 0 / 0 against the actual stored-weight source. This
+  completes those experiments, not the original-source or release gates;
+  retain the unresolved checkbox and numeric evidence in OCR_RELEASE_GATES.md.
+
+### 2026-10-22 maintenance and user-approved regression scope
+
+- [x] Move the migration source/catalog audit and its tests from the root
+  `scripts/` directory to `3rdparty/llama/scripts/`. Update the documented
+  invocation; all four audit tests pass. This source inventory is separate
+  from the shared inference gate and never certifies model compatibility.
+- [x] Translate Chinese development prose under `plugins/` to English,
+  including both OCR/parity audit ledgers. Preserve all SHA-256 identities,
+  per-file evidence rows and historical evidence locators. Keep localized
+  manuals/translations, Chinese RAM tags, language names, prompt dictionaries
+  and Unicode/OCR test fixtures in their original languages.
+- [x] Review the Ubuntu workflow diff against HEAD: its sole addition is
+  `3rdparty/llama/**` in the AICore path filter. Changes to the new source owner
+  must trigger the existing CI job; no packaging step was changed.
+- [x] Apply the user's waiver to expensive large-model migration gates:
+  SAM3D/TRELLIS/MapAnything/LingBot full reconstruction, SAM3 large variants,
+  RAM-family F32, and large YOLO/ReID/relation variants. Keep their catalog
+  entries; record compatibility as user-accepted rather than measured.
+- [ ] Finish explicit smaller-model CUDA/Vulkan selections through the common
+  validation runner and diagnose every remaining numerical/performance failure.
+  OCR remains subject to real-page quality, CUDA/Vulkan source-speed, stability,
+  provenance and release-download gates. Text-detector/recognizer quantization
+  probability/argmax differences are diagnostic under the later user acceptance;
+  the explicitly retained layout raw-class/per-edge DFL argmax 100% gate remains
+  mandatory.
+  Current Q8 graph/page results and the desktop GPU audit rule are recorded in
+  `OCR_RELEASE_GATES.md` (2026-10-23); no OCR model is release-qualified yet.
+- [x] Reject the earlier RMBG IM2COL-first attribution: its interposer marked
+  retained tensors after the explicit allocation reserve. Independent old/new
+  host controls prove that later nodes overwrite those captures despite final
+  output invariance. Corrected before-reserve capture is queued separately;
+  the actual matte differences and regression failures remain open.
+- [x] Check constant DFL head-bias feasibility for the best F16 candidate
+  without changing any parameters. Four head/edge groups contain contradictory
+  zero-margin constraints; constant bias cannot recover all original winners
+  even on this fixture. Preserve the negative-cycle evidence and continue to
+  require every original raw-head comparison; this is not a release pass.
+
+### 2026-10-23 continuation: selection preflight and current verification
+
+- [x] Fix the common validation runner's explicit `--models` catalog filter.
+  It now prefetches the selected model and manifest-declared fixed dependencies,
+  rather than every catalog row matched by the task-wide globs. A unit test
+  covers shared cross-task dependencies and excludes sibling/unrelated model
+  files. All 109 `test_validate_all.py` tests pass. An offline YOLO preflight
+  narrowed from 20 catalog rows to five; it then stopped on the baseline
+  catalog's SHA mismatch for the cached current-candidate OBB file. The
+  migrated candidate catalog is not present on disk, so no candidate inference
+  is claimed from that check.
+- [x] Re-run the current qAnyLabeling CTest set: 36/36 pass, including plugin
+  entry, Chat, OCR document/table/rich-text, video, point-cloud UI/camera/3D
+  cuboid and LightGlue bridge tests. The ten GPU audit unit tests also pass.
+- [ ] Repeat and retain current-candidate selected CUDA/Vulkan results. The
+  prior short diagnostic batch recorded ALIKED n16rot Q8 accuracy agreement
+  (median keypoint delta 0 px; descriptor cosine 1.000), RF-DETR nano Q8
+  release-profile runner PASS, and selected DeepLSD/LoMa process PASS rows.
+  LightGlue Vulkan still fails the exact output fingerprint despite stable
+  candidate runs and preserved match indices. These receipts were in the
+  temporary `build_llama_dual_gpu_3nl01j4j/` tree, which is absent now; treat
+  the rows as historical diagnostics and rerun them into persistent reports
+  before any migration/release conclusion.
+- [ ] Resolve English Q8's 50-page SROIE recognition gate, then rerun and
+  archive the complete per-file page/source-speed/stability matrix. Chinese Q8
+  passed that page-quality cohort; English Q8 exceeded the declared word-error
+  delta. See the dated OCR gate entry for exact metrics and the evidence limit.
+- [ ] Complete the still-open full-window visual comparison, local VLM and
+  advanced Chat/VQA, native PDF/formula/rich-text workflows, remaining model
+  families, full point-cloud camera interaction, Metal device validation and
+  Linux clean-package acceptance. The feature checklists above remain the
+  authoritative work inventory; this continuation does not close them.

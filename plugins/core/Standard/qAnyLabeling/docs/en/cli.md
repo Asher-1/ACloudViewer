@@ -18,7 +18,7 @@ X-AnyLabeling provides a powerful command-line interface for label format conver
     - [3.2 Show Detailed Help for a Specific Task](#32-show-detailed-help-for-a-specific-task)
     - [3.3 Run a Conversion Task](#33-run-a-conversion-task)
     - [3.4 Conversion Parameters](#34-conversion-parameters)
-- [4. FAQ](#4-faq)
+- [4. FAQ](./faq.md)
 
 ## 1. GUI Launch Options
 

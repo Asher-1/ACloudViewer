@@ -1,0 +1,5 @@
+# Metal migration validation only; macOS device/model acceptance is pending.
+# The parent is the same pinned llama.cpp archive as the CUDA/Vulkan candidates.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0007-acv-metal-operators.patch

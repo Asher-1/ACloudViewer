@@ -415,7 +415,7 @@ QString translatePromptToEnglish(const QString& text, bool* translated) {
 
     QString out = text;
 
-    // Template rule: 戴<attr>帽子 的 <person>  ->  "<person> with <attr> hat"
+    // Translate Chinese person-with-hat phrases to "<person> with <attr> hat"
     // (the dominant detection-prompt pattern; attr may carry colors).
     static const QRegularExpression hatPerson(
             QStringLiteral("戴([\\x{4e00}-\\x{9fff}]{0,6}?)帽子?的?"
@@ -448,7 +448,7 @@ QString translatePromptToEnglish(const QString& text, bool* translated) {
     }
 
     // Word-level dictionary replacement for everything else (longest keys
-    // first so 红 inside 红色 never wins).
+    // first so a shorter synonym never replaces part of a longer word).
     QStringList keys;
     for (auto keyIt = zhWordMap().constBegin(); keyIt != zhWordMap().constEnd();
          ++keyIt)

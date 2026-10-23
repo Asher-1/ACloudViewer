@@ -56,12 +56,12 @@ All ggml source modifications MUST go through patch files. The flow is:
 
 1. **Local edit**: modify and verify in the ggml source copy under `build/` or `build_app/`
 2. **Generate patch**: produce a unified diff with `diff -ruN` or `git diff` between the pristine ggml source and the modified version
-3. **Store patch**: put the patch file under `3rdparty/ggml/patches/<subdir>/0001-description.patch`
-4. **Register patch**: add an entry to `3rdparty/ggml/patches/manifest.yaml` (order matters)
+3. **Store patch**: put the patch file under `3rdparty/llama/ggml-patches/<subdir>/0001-description.patch`
+4. **Register patch**: add an entry to `3rdparty/llama/ggml-patches/manifest.yaml` (order matters)
 5. **Build verification**: clean the build directory, rebuild, and confirm `apply_ggml_patches.py` applies the patch correctly
 
 ```
-3rdparty/ggml/patches/
+3rdparty/llama/ggml-patches/
 ├── manifest.yaml                        # registers all patches (order matters)
 ├── apply_ggml_patches.py                # applied automatically at build time
 ├── aliked_merged/0001-vulkan-aliked.patch
@@ -74,12 +74,16 @@ All ggml source modifications MUST go through patch files. The flow is:
 
 ## ggml ExternalProject Architecture
 
-- ggml is built via CMake `ExternalProject_Add(ext_ggml ...)` in `3rdparty/ggml/ggml.cmake`
-- Config changes to `ggml.cmake` require `cmake ..` reconfigure AND deleting the ext_ggml stamp:
-  ```bash
-  rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
-  cmake --build build_app --target ext_ggml -j4
-  ```
+- The shared ExternalProject implementation is `3rdparty/llama/llama_runtime.cmake`.
+  The production baseline `ggml/ggml.cmake` selects `ext_ggml`; the isolated
+  `llama/llama_cpp.cmake` candidate selects `ext_llama` and embedded ggml.
+  A build/install prefix must have exactly one source owner. Use exported
+  `GGML_DEPENDENCY_TARGET`, `GGML_EXTERNAL_TARGET`, and `GGML_BUILD_DIR` in
+  consumers; do not introduce new hardcoded baseline target/path dependencies.
+- Reconfigure after dependency option changes. Patch-content changes invalidate
+  the selected owner's generated source/build/stamp directories automatically.
+  Use a fresh build/install prefix for source-owner changes and regression A/B;
+  do not delete stamps or replace binaries belonging to frozen validation runs.
 - ggml backends (cpu, metal, vulkan, cuda) are MODULE libraries (`.so` even on macOS)
 - `GGML_BACKEND_DL=ON` (shared mode): backends are `dlopen`'d at runtime, NOT linked into AICore
 - `libAICore.{so,dylib}` only links `libggml.{so,dylib}` + `libggml-base.{so,dylib}`

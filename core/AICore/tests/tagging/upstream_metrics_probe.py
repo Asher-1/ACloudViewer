@@ -226,6 +226,16 @@ def build_settings(build):
     return settings
 
 
+def candidate_build_settings(build):
+    """Read the selected source owner's flags, retaining old baseline support."""
+    selected = build_settings(build).get("GGML_BUILD_DIR")
+    dependency = Path(selected) if selected else build / "ggml/src/ext_ggml-build"
+    settings = build_settings(dependency)
+    if not settings:
+        raise RuntimeError(f"candidate ggml build settings unavailable: {dependency}")
+    return settings
+
+
 def probability_alignment(scores, baseline_scores, truth_scores):
     """Bound independent error and detect added error beyond GGUF quantization."""
     error = abs(truth_scores - scores)
@@ -590,8 +600,7 @@ def main():
               "candidate_runtime_sha256": hashlib.sha256(
                   (args.probe.parents[1] / "libAICore.so").read_bytes()).hexdigest()
                   if (args.probe.parents[1] / "libAICore.so").is_file() else None,
-              "candidate_ggml_build_settings": build_settings(
-                  args.probe.parents[2] / "ggml/src/ext_ggml-build"),
+              "candidate_ggml_build_settings": candidate_build_settings(args.probe.parents[2]),
               "upstream_binary_sha256": hashlib.sha256((upstream_build / "ram-ggml").read_bytes()).hexdigest(),
               "upstream_source_sha256": hashlib.sha256((upstream / "cpp_ggml/src/main.cpp").read_bytes()).hexdigest(),
               "upstream_compiled_source": str(compiled_main),

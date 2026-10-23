@@ -1,0 +1,20 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -15604,13 +15604,13 @@
+         // Check for fusion patterns and avoid reordering them
+         auto const &match_pattern = [&](const std::initializer_list<ggml_op> &pattern, int start) -> bool {
+             if (start + (int)pattern.size() <= graph->n_nodes) {
+-                bool is_pattern = true;
+                 for (size_t j = 0; j < pattern.size(); ++j) {
+                     if (graph->nodes[start + j]->op != pattern.begin()[j] || used[start + j]) {
+-                        is_pattern = false;
++                        // Most nodes differ at the first op. Later elements cannot restore a match.
++                        return false;
+                     }
+                 }
+-                return is_pattern;
++                return true;
+             }
+             return false;
+         };
