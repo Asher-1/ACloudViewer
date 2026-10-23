@@ -195,8 +195,9 @@ jobs:
       - name: Restore sccache cache from release assets
         # Persistent per-cell pool stored as a release asset on the public
         # cloudViewer_downloads repo (free, no total quota, 2 GB per-asset
-        # limit; SCCACHE_CACHE_SIZE=2G caps the pool so its tarball stays
-        # ~1.0-1.2 GB). Unlike actions/cache this storage is shared between
+        # limit; SCCACHE_CACHE_SIZE=1900M caps the pool so its tarball stays
+        # ~1.0-1.2 GB with ~350 MB headroom to the 2 GB asset limit).
+        # Unlike actions/cache this storage is shared between
         # PR and main runs (no refs/pull/N/merge scoping) and never expires
         # after 7 idle days. Downloads are plain HTTPS (fork PRs work);
         # uploads use the repo's ACCESS_TOKEN. Cache never gates CI.
@@ -225,7 +226,7 @@ jobs:
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
           echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=1900M" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install dependencies
@@ -392,8 +393,9 @@ jobs:
           & $env:SCCACHE_PATH --stop-server
       - name: Save sccache cache to release assets
         # Overwrite the cell's persistent asset in place (--clobber). Runs
-        # regardless of the build outcome; SCCACHE_CACHE_SIZE=2G caps the
-        # pool so the tarball stays under the 2 GB asset limit. Fork PRs
+        # regardless of the build outcome; SCCACHE_CACHE_SIZE=1900M caps the
+        # pool ~350 MB below the 2 GB asset limit (a pool at the old 2G cap
+        # produced 2143 MB tarballs, only ~5 MB under the limit). Fork PRs
         # have no ACCESS_TOKEN: the upload fails non-fatally and the pool
         # simply is not updated.
         if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && matrix.CONFIG == 'Release'
@@ -805,7 +807,7 @@ jobs:
         if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         run: |
           echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "SCCACHE_CACHE_SIZE=2G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=1900M" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install 3rdparty_downloads

@@ -128,7 +128,7 @@ cuda_wheel_build() {
     # resolution contract as ci_build (the NVIDIA ENTRYPOINT banner would
     # corrupt a stdout tar pipe).
     if docker run --rm -v "${PWD}:/opt/mount" cloudviewer-ci:wheel \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache -p | awk '\$1 == \"cache_dir\" {print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[cuda_wheel_build()] ccache exported to ${PWD}/.ccache"
@@ -202,9 +202,13 @@ ci_build() {
     # cannot drift from whatever CCACHE_DIR the image actually uses; the
     # archive stores the directory's CONTENTS so the on-disk name stays
     # .ccache/ regardless of that path. The \$ escapes keep ccache -p running
-    # inside the container, not on the runner host.
+    # inside the container, not on the runner host. The awk matches the exact
+    # cache_dir key only: focal's ccache 3.7.7 also prints
+    # cache_dir_levels = 2, which the old /cache_dir/ substring match
+    # absorbed into the path (tar -C '/root/.../.ccache\n2' -> export aborted,
+    # measured in the 95622928 round).
     if docker run --rm -v "${PWD}:/opt/mount" "${DOCKER_TAG}" \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache -p | awk '\$1 == \"cache_dir\" {print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[ci_build()] ccache exported to ${PWD}/.ccache (stats: .ccache-stats.txt)"
