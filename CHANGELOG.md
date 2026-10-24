@@ -24,6 +24,19 @@ v3.9.5-Beta (Asher) - 08/04/2026
       both app pools so the cold double pass fits the 360 min runner cap
     - actions/cache now has zero compiler-cache consumers (immune to the
       10 GB quota, PR-merge scoping, and 7-day idle eviction)
+    - fix focal (ccache 3.7.7) export: its -p output is "(origin) key =
+      value" so the field-position awk matched nothing; read the dir via
+      ccache --get-config=cache_dir, version-proof on 3.7.x and 4.x
+    - windows: set SCCACHE_IDLE_TIMEOUT=36000 (the 600 s default
+      self-exited during the ~11 min packaging window, so every stats
+      observer reported a fresh 0-request server and the real hit/miss
+      tally was invisible) and start the daemon explicitly with a
+      location/size printout proving the restored pool is visible
+    - all save steps refuse uploads below 50 MB so a cancelled run can no
+      longer clobber a healthy pool with a near-empty tarball, and retry
+      one --clobber to soften the main-push vs PR-save race; pool names
+      stay branch-agnostic (content-addressed keys) and need no periodic
+      cleanup, matching Open3D's fixed-name GCS pools
 - Fix macOS wheel packaging: skip symlinked libraries in the codesign
   set (a concurrent worker rewriting the link target transiently
   dangles the link, failing remove-signature)
