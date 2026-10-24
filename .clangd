@@ -1,13 +1,43 @@
 CompileFlags:
-  CompilationDatabase: /Users/asher/develop/code/github/ACloudViewer
+  # Cross-platform: each platform's CMake configure also symlinks its own
+  # compile_commands.json to the repo root (see root CMakeLists.txt), so
+  # clangd auto-discovers the right database even when the build dir name
+  # differs (build_app on Linux/Windows, build on macOS). The explicit
+  # directory below covers the common Linux/Windows layout directly.
+  CompilationDatabase: build_app
   Add:
     - "-std=c++17"
-    - "-DQT_CORE_LIB"
-    - "-DQT_WIDGETS_LIB"
-    - "-DQT_GUI_LIB"
-    - "-DAICore_ENABLED"
-    - "-I/Users/asher/develop/code/github/ACloudViewer/libs/CVPluginAPI/include"
+  Remove:
+    # LLVM >= 19 dropped the KNL target, so clangd rejects these two
+    # GCC-originated flags (still emitted by this project's CMake flags)
+    # as unknown arguments. Strip them for clangd only; real builds keep
+    # them for GCC.
+    - "-mno-avx512pf"
+    - "-mno-avx512er"
 
 Diagnostics:
   Suppress:
+    # Generated headers that do not exist yet on a fresh checkout/build tree
+    # (e.g. mocs/ui_*.h before CMake runs) would otherwise spam every file
+    # that includes them transitively.
     - "pp_file_not_found"
+
+# KNOWN REMAINING NOISE (machine/toolchain dependent, not fixable here):
+# On very large TUs (16-43 MB preambles: heavy Qt + ggml + filament header
+# stacks), clangd's precompiled-preamble machinery can deserialize classes
+# without their base-class relations or members, producing false errors like
+#   "cannot initialize object parameter of type 'X' with an expression of
+#    type 'Y'" (Y derives from X),
+#   "no member named '...' in '...'",
+#   "no viable conversion from 'shared_ptr<Derived>' to 'shared_ptr<Base>'".
+# Verified reproduction: clangd 19/21/22, empty-preamble probe parses the same
+# file with zero errors, and both g++ and clang++ accept the file with the
+# exact compile_commands.json flags. When in doubt, verify with the real
+# compiler using the DB command before "fixing" anything:
+#   python3 -c "import json,subprocess; e=[x for x in
+#     json.load(open('build_app/compile_commands.json'))
+#     if x['file'].endswith('<FILE>.cpp')][0];
+#     r=subprocess.run(e['command'].replace(' -c ',
+#     ' -fsyntax-only -c '), shell=True, cwd=e['directory']);
+#     print(r.returncode, r.stderr[:500])"
+# EXIT=0 means the IDE diagnostic is a preamble artifact, not a code bug.

@@ -10,6 +10,36 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - Windows: falls back to dynamic CUDA::cudart (no static cudart in MSVC CRT model)
     - CI: AICore_USE_CUDA=ON automatically when building with CUDA_MODULE flag
 - CI: add DT_NEEDED regression guard for libAICore.so (VerifyNoDynamicCuda.cmake)
+- CI: compiler cache storage overhaul — all pools moved off the GitHub
+  actions cache onto persistent release assets (cloudViewer_downloads,
+  tag ci-ccache, per-cell names overwritten in place with --clobber):
+    - ubuntu/ubuntu-cuda/ubuntu-wheel: ccache pools as per-cell assets
+      (public HTTPS restore, gh release upload save)
+    - macos: same pattern for the app and wheel pools (ccache -M 1500M)
+    - windows: sccache pools as per-cell assets (curl.exe restore,
+      tar + gh upload after --stop-server flush); removes the sccache
+      ghac per-object backend whose 12k+ entries flooded the 10 GB
+      actions-cache quota and stalled builds (6.03 h run incident)
+    - windows wheel job cross-pool restore: seeds its local pool from
+      both app pools so the cold double pass fits the 360 min runner cap
+    - actions/cache now has zero compiler-cache consumers (immune to the
+      10 GB quota, PR-merge scoping, and 7-day idle eviction)
+    - fix focal (ccache 3.7.7) export: its -p output is "(origin) key =
+      value" so the field-position awk matched nothing; read the dir via
+      ccache --get-config=cache_dir, version-proof on 3.7.x and 4.x
+    - windows: set SCCACHE_IDLE_TIMEOUT=36000 (the 600 s default
+      self-exited during the ~11 min packaging window, so every stats
+      observer reported a fresh 0-request server and the real hit/miss
+      tally was invisible) and start the daemon explicitly with a
+      location/size printout proving the restored pool is visible
+    - all save steps refuse uploads below 50 MB so a cancelled run can no
+      longer clobber a healthy pool with a near-empty tarball, and retry
+      one --clobber to soften the main-push vs PR-save race; pool names
+      stay branch-agnostic (content-addressed keys) and need no periodic
+      cleanup, matching Open3D's fixed-name GCS pools
+- Fix macOS wheel packaging: skip symlinked libraries in the codesign
+  set (a concurrent worker rewriting the link target transiently
+  dangles the link, failing remove-signature)
 - Remove dead duplicate qSIBR/cmake/VerifyNoDynamicCudart.cmake (superseded by common cmake/VerifyNoDynamicCuda.cmake)
 - Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
     - Add multiple 3D windows support with independent per-view rendering state
@@ -82,9 +112,6 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
-    - macOS: use dmgbuild for polished installer DMG (background image, correct icon
-      position, window size matching background); fallback to plain hdiutil if unavailable
-    - macOS: auto-launch ACloudViewer.app after installation when launch checkbox is checked
     - CI: fix Windows, macOS, and Ubuntu-focal test issues
     - Expand agent-integration docs: CLI-QUICK-REFERENCE with full command catalog,
       COMMAND-MAPPING with CLI↔MCP↔RPC cross-reference tables (including PCV, Compass,
@@ -307,7 +334,120 @@ v3.9.5-Beta (Asher) - 08/04/2026
         download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
         JSON export, Model Info mode
       - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
-  
+    - Add qManualCalib plugin: manual multi-sensor extrinsic calibration
+      (sensor / AVM / LiDAR-camera fusion)
+      - **Manual Sensor Calibration** dialog: Load Config (cameras/lidars/ground `.cfg`)
+        → Load Bag → 6-DOF per-sensor extrinsic fine-tune → Save Config / export
+      - Bird's Eye View (BEV) stitching with distance-weighted alpha fusion;
+        CUDA / OpenCL / CPU remap backends
+      - LiDAR-Camera fusion with depth coloring; BEV / LiDAR Projection / Single Frame modes
+      - Native ROS Bag v2.0 reader (BZ2/LZ4), multi-bag Flat / Nested / SingleFile layout
+        auto-discovery, topic-group time sync, HEVC/H.264 online camera decode (FFmpeg)
+      - **“use test data”** button (Sensor Calibration & AVM Adjust dialogs):
+        one-click download/cache/extract of sample bag + configs from
+        `cloudViewer_downloads` into `~/cloudViewer_data/extract/qcalib_test_data/`
+        with a live Qt download/extract progress bar; custom user data still
+        supported via Load Config / Load Bag
+      - Optional CLI tools (`MCALIB_BUILD_TOOLS`) and `test_bag_reader` (`MCALIB_BUILD_TESTS`)
+      - CMake: `PLUGIN_STANDARD_QMANUAL_CALIB=ON` + `BUILD_OPENCV=ON`
+    - Add qGKD plugin: general (open-world) keypoint detection with the GKDT-L
+      transformer (ECCV 2026) running natively on ggml — no Python at runtime
+      - Four prompt modes: Text, Visual (1-shot), Multimodal (official fusion
+        semantics), and Multi-object (YOLO-World boxes → GKD per box;
+        class-aware NMS IoU 0.6, calibrated defaults l-world + conf 0.25)
+      - Model catalog via `aicore_gkd_model_*`; missing GGUFs auto-download
+        from Hugging Face with SHA-256 verification; custom paths accepted
+      - One-click sample data per mode panel; DB results (`GKD_` prefix) with
+        labeled keypoints/boxes, metadata timings, and PNG export
+      - Multi-object presets aligned with the upstream predefined_keypoints
+        schemas (statues: coco full-body 17 texts; dish washing: `human_hand`
+        + onehand10k 21 texts; car: carfusion `car keypoint 1..14`); scene
+        conf override for the fish school (0.10, 25 → 46 real-fish boxes)
+        and plural `pigs` class prompt (2 → 4 boxes) — all measured via the
+        public C ABI on the bundled scenes
+      - Official-demo skeleton rendering: preset scenarios carry the upstream
+        `--skeleton` / predefined_keypoints.py bone topology (coco,
+        animal_pose, carfusion, onehand10k, keypoint5, face demos) and draw
+        the bone connections between shown keypoints; x-ray/awa_pose (empty
+        upstream) and scenarios without an official schema render points only
+      - Official pipeline parity: batched multi-ROI GKD forward (new
+        `aicore_gkd_detect_*_multi` C API + per-ROI accessors; the multi-object
+        mode and multi-box ROI rows run one N-box batch like the official
+        top-down pipeline, byte-identical to the upstream gkd-cli on CPU),
+        preset scenarios for tiger/penguin/fish/birds aligned with the
+        official predefined_keypoints retrieval (awa_pose 39 / animalweb 9 +
+        skeleton / CUB 15 / NABird 11 — all measured on the bundled scenes),
+        and an official-style COCO prediction JSON export (categories with
+        keypoint names + skeleton, xywh boxes with detector scores)
+      - CMake: `PLUGIN_STANDARD_QGKD=ON` + `AICore_ENABLED=ON`
+    - AICore VRAM admission guard on the yolo/gkd model loads: when free
+      device memory cannot hold the GGUF plus a fixed compute headroom, the
+      load fails with an actionable message instead of a fatal backend
+      abort under memory pressure (the reported x-world "CUDA crash" was
+      exactly this — cuBLAS hitting GGML_ABORT while an unrelated process
+      held most of the VRAM; the model itself measures clean end-to-end).
+      qGKD retries such loads once on CPU
+    - Add qLingbotMap plugin: LingBot-Map (GCT) streaming RGB-D 3D reconstruction
+      from an ordered image folder or video, native on ggml (CPU / CUDA / Vulkan / Metal)
+      - Per-frame colored point clouds + camera trajectory polyline in the DB tree
+        (`LingbotMap_*` groups; visibility-confidence and optional sky filtering)
+      - Video input via the shared `video_base` module (optional `BUILD_OPENCV=ON`),
+        native sky-segmentation GGUF, official demo test-data scenes
+      - Upstream-parity advanced KV-cache/sampling options with VRAM auto-tiering
+        (f16 default; GGUF auto-download from Hugging Face with pinned SHA-256)
+      - CMake: `PLUGIN_STANDARD_QLINGBOTMAP=ON` + `AICore_ENABLED=ON`
+    - Add qOCR plugin: PP-OCRv4 text detection + recognition natively on ggml
+      - First-party Paddle inference → GGUF conversion
+        (`core/AICore/tools/convert_paddle_ocr_gguf.py`); recognition
+        dictionaries embedded in the rec GGUFs, published with pinned SHA-256
+        in `asset_digests.h`
+      - **OCR Workspace** dialog: recognition language / quantization (det+rec
+        GGUF pairs from the published catalog), device / threads, one-click
+        sample data, and the unified model downloader with SHA-256 verification
+      - Background `OCRWorker` runs on the shared AICore device task queue with
+        cooperative cancellation, stage-based progress, and a console heartbeat
+      - **Add result to DB** exports an annotated image (boxes + transcriptions
+        drawn over the source) with metadata, named via `ecvPluginDbNaming`
+      - CMake: `PLUGIN_STANDARD_QOCR=ON` + `AICore_ENABLED=ON`
+    - Add qSAM3D plugin: SAM 3D Objects single-image → 3D reconstruction on the
+      in-tree ggml runtime (`libAICore` task `sam3d`)
+      - Gaussian splat PLY (full neural pipeline) + optional FlexiCubes mesh
+        (101-channel sparse mesh decoder) registered to the DB tree
+      - Multi-object scene mode: SAM3 text-prompt segmentation builds per-object
+        masks, with a masks-over-image preview to tune the prompt set before the
+        per-object reconstruction; official per-object mask directories also supported
+      - Object isolation via the shared RMBG model, image alpha channels, or
+        mask images (binary alpha contract)
+      - Optional official PBR texture bake (xatlas UV unwrap → PBR → Y-up GLB;
+        CUDA, build-capability gated) replacing the projection bake
+      - Device / quantization / steps / seed controls following the official
+        trajectory gate (q4_k, 25 steps, seed 42); GGUF auto-download with
+        pinned SHA-256 from Asher-1/SAM_3D_OBJECTS_GGUF
+      - CMake: `PLUGIN_STANDARD_QSAM3D=ON` + `AICore_ENABLED=ON`
+    - Add qAnyLabeling plugin: native Qt image / video / point-cloud annotation
+      workspace inspired by X-AnyLabeling (upstream images under GPL-3.0;
+      independent C++ implementation on Qt + AICore)
+      - Image workspace: X-AnyLabeling JSON sidecars, polygon / rectangle /
+        rotation / quadrilateral / circle / line / point / line-strip / cuboid
+        shapes, brush + magic-wand editing, exact-alpha semantic masks,
+        undo/redo, label / shape / tag managers, Navigator + Compare View,
+        canvas display panel (opacity / brightness / contrast), and i18n
+        (en / zh_CN / ja_JP / ko_KR)
+      - Import / export: YOLO (boxes, segments, OBB, pose), COCO (det / seg /
+        keypoints incl. RLE masks), VOC, DOTA, MOT / MOTS, ODVG, VLM-R1 OVD,
+        PP-OCR Rec / KIE, image-flag templates, and video classification sidecars
+      - AI model panel over the AICore catalogs: DA3 depth, DeepLSD, ALIKED,
+        YOLO / YOLO-World / YOLOE (text, prompt-free, SAVPE visual prompts),
+        RF-DETR, SAM 2.1 / SAM 3 (point / box / text prompts), RMBG, GKD
+        keypoints, FaceDetect (+ dense landmarks), and the LoMa bridge;
+        Auto Run batch inference with atomic per-image saves
+      - SAM3 video tracking: text / box / point prompts, per-instance masks
+        with track IDs, archive export / import (`manifest.json` + PNG masks),
+        video classifier segments, clip export, and per-label dataset export
+      - Point-cloud annotation: `.bin` XYZI + PLY with `.label` semantic /
+        instance streams (16-bit semantic + 16-bit instance), orbit / top /
+        front / side views, brush and polygon assignment, and class definition JSON
+      - CMake: `PLUGIN_STANDARD_QANYLABELING=ON` + `AICore_ENABLED=ON`
 - New features:
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)
       - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules

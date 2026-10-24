@@ -1,0 +1,81 @@
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -906,6 +906,11 @@
+     vk_matmul_pipeline pipeline_matmul_f16_scalar {};
+     vk_matmul_pipeline pipeline_matmul_f16_f32_scalar {};
+ 
++    // LingBot-Map (GCT streaming reconstruction) scalar F32-destination
++    // matmul pipelines; allocated via the standard make_shared guards below.
++    vk_matmul_pipeline pipeline_matmul_f32_lingbot {};
++    vk_matmul_pipeline pipeline_matmul_f32_f16_lingbot {};
++
+     vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat[GGML_TYPE_COUNT];
+     vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat_f16[GGML_TYPE_COUNT];
+     vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat_q8_1[GGML_TYPE_COUNT];
+@@ -4527,6 +4532,12 @@
+     if (!device->pipeline_matmul_id_bf16) {
+         device->pipeline_matmul_id_bf16 = std::make_shared<vk_matmul_pipeline_struct>();
+     }
++    if (!device->pipeline_matmul_f32_lingbot) {
++        device->pipeline_matmul_f32_lingbot = std::make_shared<vk_matmul_pipeline_struct>();
++    }
++    if (!device->pipeline_matmul_f32_f16_lingbot) {
++        device->pipeline_matmul_f32_f16_lingbot = std::make_shared<vk_matmul_pipeline_struct>();
++    }
+ 
+     auto const &ggml_vk_create_pipeline = [&](vk_device& device, vk_pipeline& base_pipeline, const char *name, size_t spv_size, const void* spv_data, const char *entrypoint,
+                                               uint32_t parameter_count, uint32_t push_constant_size, std::array<uint32_t, 3> wg_denoms, const std::vector<uint32_t>& specialization_constants,
+@@ -5339,6 +5350,27 @@
+     CREATE_RMBG_SCALAR(GGML_TYPE_F16, pipeline_matmul_f16_f32_scalar, matmul_f16_f32)
+ #undef CREATE_RMBG_SCALAR
+ 
++    // lingbot patch: same scalar-F32 shaders, but with the runtime dot2
++    // selection (device->dot2_f16) for the large tiles; registered under the
++    // "lingbot_scalar_" owner routing.
++#define CREATE_LINGBOT_SCALAR(TYPE, PIPELINE_NAME, NAMELC) \
++    if (device->mul_mat_l[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->l, #NAMELC "_lingbot_l", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {128, 128, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_l, false), 1); \
++    if (device->mul_mat_m[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->m, #NAMELC "_lingbot_m", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {64, 64, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_m, false), 1); \
++    if (device->mul_mat_s[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->s, #NAMELC "_lingbot_s", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {32, 32, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_s, false), 1); \
++    if (device->mul_mat_l[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->a_l, #NAMELC "_lingbot_aligned_l", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {128, 128, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_l, true), 128); \
++    if (device->mul_mat_m[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->a_m, #NAMELC "_lingbot_aligned_m", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {64, 64, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_m, true), 64); \
++    if (device->mul_mat_s[TYPE]) \
++        ggml_vk_create_pipeline(device, device->PIPELINE_NAME->a_s, #NAMELC "_lingbot_aligned_s", (device->dot2_f16 ? NAMELC##_dot2_len : NAMELC##_fp32_len), (device->dot2_f16 ? NAMELC##_dot2_data : NAMELC##_fp32_data), "main", 3, sizeof(vk_mat_mat_push_constants), {32, 32, 1}, ggml_vk_mul_mm_spec(rmbg_scalar_s, true), 32);
++
++    CREATE_LINGBOT_SCALAR(GGML_TYPE_F32, pipeline_matmul_f32_lingbot, matmul_f32_f32)
++    CREATE_LINGBOT_SCALAR(GGML_TYPE_F32, pipeline_matmul_f32_f16_lingbot, matmul_f32_f16)
++#undef CREATE_LINGBOT_SCALAR
++
+     // reusing CREATE_MM from the fp32 path
+     if ((device->coopmat2 || device->coopmat_support)
+ #if defined(GGML_VULKAN_BFLOAT16_GLSLC_SUPPORT)
+@@ -9561,6 +9593,25 @@
+             mmp = scalar;
+             quantize_y = false;
+         }
++        // lingbot patch: lingbot_scalar_-marked outputs run the exact scalar
++        // pipelines with the large-GEMM tiles (the RMBG getter above returns
++        // the small-tile RMBG pipelines for them, or nullptr); the F32xF32 and
++        // F32xF16 pairs match the two registered lingbot pipelines.
++        else if (ctx->device->coopmat_support &&
++                 ggml_vk_rmbg_force_scalar_matmul(ctx->device, src0, src1, dst) &&
++                 ggml_vk_rmbg_tensor_name(dst).compare(0, 15, "lingbot_scalar_") == 0) {
++            const ggml_type scalar_src1_type = y_non_contig ? f16_type : src1->type;
++            vk_matmul_pipeline scalar = nullptr;
++            if (src0->type == GGML_TYPE_F32 && scalar_src1_type == GGML_TYPE_F32) {
++                scalar = ctx->device->pipeline_matmul_f32_lingbot;
++            } else if (src0->type == GGML_TYPE_F32 && scalar_src1_type == GGML_TYPE_F16) {
++                scalar = ctx->device->pipeline_matmul_f32_f16_lingbot;
++            }
++            if (scalar) {
++                mmp = scalar;
++                quantize_y = false;
++            }
++        }
+     }
+ 
+     const bool qx_needs_dequant = mmp == nullptr || x_non_contig;

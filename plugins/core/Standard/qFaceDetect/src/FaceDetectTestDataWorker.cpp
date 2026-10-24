@@ -163,6 +163,15 @@ int estimateTotalWeight(const FaceDetectTestDataWorker::Job& job,
 FaceDetectTestDataWorker::FaceDetectTestDataWorker(QObject* parent)
     : QThread(parent) {}
 
+FaceDetectTestDataWorker::~FaceDetectTestDataWorker() {
+    // Owned by the dialog: destroying a running QThread aborts, so stop at
+    // the next gallery/probe entry and join before the members go away.
+    if (isRunning()) {
+        requestInterruption();
+        wait();
+    }
+}
+
 void FaceDetectTestDataWorker::setJob(Job job) { m_job = std::move(job); }
 
 void FaceDetectTestDataWorker::run() {
@@ -285,6 +294,10 @@ void FaceDetectTestDataWorker::run() {
 
         const int total = entries.size();
         for (int i = 0; i < total; ++i) {
+            if (isInterruptionRequested()) {
+                emit finished(false, registered, 0, 0);
+                return;
+            }
             const FaceDetectGalleryEntry& entry = entries.at(i);
 
             if (!job.clearExistingEntries) {
@@ -454,6 +467,10 @@ void FaceDetectTestDataWorker::run() {
                     tr("Detected %1 face(s) — matching…").arg(authFaces));
 
             for (int i = 0; i < authFaces; ++i) {
+                if (isInterruptionRequested()) {
+                    emit finished(false, registered, authFaces, authMatched);
+                    return;
+                }
                 const FaceDetectBox& box = boxes[static_cast<size_t>(i)];
                 progress.report(progress.completed(),
                                 tr("Verifying face %1/%2 (det %3) — embedding…")

@@ -76,6 +76,23 @@ static void test_filter_and_scale() {
     FD_CHECK(std::abs(faces[0].x2 - 100.f) < 1e-4f);
 }
 
+static void test_offset_face_boxes() {
+    // Regression: the old implementation wrote "box.y1 += box.x2 += dx",
+    // which corrupted y1 with the translated x2 value.
+    std::vector<FaceDetectBox> faces = {makeBox(10, 20, 30, 40, 0.9f)};
+    faces[0].landmarks[0][0] = 12.f;
+    faces[0].landmarks[0][1] = 22.f;
+    FaceDetectEmbed::offsetFaceBoxes(&faces, 5.f, 7.f);
+    FD_CHECK(std::abs(faces[0].x1 - 15.f) < 1e-4f);
+    FD_CHECK(std::abs(faces[0].y1 - 27.f) < 1e-4f);
+    FD_CHECK(std::abs(faces[0].x2 - 35.f) < 1e-4f);
+    FD_CHECK(std::abs(faces[0].y2 - 47.f) < 1e-4f);
+    FD_CHECK(std::abs(faces[0].landmarks[0][0] - 17.f) < 1e-4f);
+    FD_CHECK(std::abs(faces[0].landmarks[0][1] - 29.f) < 1e-4f);
+    // Corrupt-old-behavior check: y1 must not be y1 + (x2 + dx).
+    FD_CHECK(std::abs(faces[0].y1 - (20.f + 30.f + 5.f)) > 1e-4f);
+}
+
 static void test_expand_face_box() {
     const FaceDetectBox box = makeBox(40, 40, 60, 60, 0.9f);
     const FaceDetectBox expanded = FaceDetectEmbed::expandFaceBox(
@@ -247,6 +264,7 @@ int main() {
     test_parse_analyze_json();
     test_parse_dense_json();
     test_filter_and_scale();
+    test_offset_face_boxes();
     test_expand_face_box();
     test_format_labels();
     test_registry_store_match();

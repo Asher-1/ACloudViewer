@@ -112,7 +112,7 @@ struct choose_policy<T*>
     typedef small_any_policy<T*> type;
 };
 
-struct any;
+class any;
 
 /// Choosing the policy for an any type is illegal, but should never happen.
 /// This is designed to throw a compiler error.

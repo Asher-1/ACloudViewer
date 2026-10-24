@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "base/reconstruction.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
 #include "util/threading.h"
 
 namespace colmap {
@@ -22,7 +22,8 @@ public:
 private:
     void Run();
 
-    const OptionManager options_;
+    // Upstream parity: reference semantics; the caller outlives the run.
+    const OptionManager& options_;
     Reconstruction* reconstruction_;
 };
 

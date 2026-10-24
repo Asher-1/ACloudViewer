@@ -7,7 +7,7 @@
 
 #include "ReconstructionOptionsWidget.h"
 
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
 
 namespace cloudViewer {
 
@@ -23,7 +23,7 @@ MapperGeneralOptionsWidget::MapperGeneralOptionsWidget(QWidget* parent,
     AddOptionInt(&options->mapper->min_num_matches, "min_num_matches");
     AddOptionBool(&options->mapper->ignore_watermarks, "ignore_watermarks");
     AddOptionDirPath(&options->mapper->snapshot_path, "snapshot_path");
-    AddOptionInt(&options->mapper->snapshot_images_freq, "snapshot_images_freq",
+    AddOptionInt(&options->mapper->snapshot_frames_freq, "snapshot_frames_freq",
                  0);
 }
 
@@ -97,7 +97,7 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
     AddSpacer();
 
     AddSection("Local Bundle Adjustment");
-    AddOptionInt(&options->mapper->ba_local_num_images, "num_images");
+    AddOptionInt(&options->mapper->mapper.ba_local_num_images, "num_images");
     AddOptionInt(&options->mapper->ba_local_max_num_iterations,
                  "max_num_iterations");
     AddOptionInt(&options->mapper->ba_local_max_refinements, "max_refinements",
@@ -108,14 +108,8 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
     AddSpacer();
 
     AddSection("Global Bundle Adjustment");
-#ifdef PBA_ENABLED
-    AddOptionBool(&options->mapper->ba_global_use_pba,
-                  "use_pba\n(requires SIMPLE_RADIAL)");
-    AddOptionInt(&options->mapper->ba_global_pba_gpu_index, "pba_gpu_index",
-                 -1);
-#endif
-    AddOptionDouble(&options->mapper->ba_global_images_ratio, "images_ratio");
-    AddOptionInt(&options->mapper->ba_global_images_freq, "images_freq");
+    AddOptionDouble(&options->mapper->ba_global_frames_ratio, "frames_ratio");
+    AddOptionInt(&options->mapper->ba_global_frames_freq, "frames_freq");
     AddOptionDouble(&options->mapper->ba_global_points_ratio, "points_ratio");
     AddOptionInt(&options->mapper->ba_global_points_freq, "points_freq");
     AddOptionInt(&options->mapper->ba_global_max_num_iterations,

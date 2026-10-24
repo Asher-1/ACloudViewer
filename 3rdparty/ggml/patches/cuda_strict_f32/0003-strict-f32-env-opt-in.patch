@@ -1,0 +1,18 @@
+--- a/src/ggml-cuda/common.cuh
++++ b/src/ggml-cuda/common.cuh
+@@ -1516,7 +1516,14 @@
+         if (cublas_handles[device][curr_stream_no] == nullptr) {
+             ggml_cuda_set_device(device);
+             CUBLAS_CHECK(cublasCreate(&cublas_handles[device][curr_stream_no]));
+-            CUBLAS_CHECK(cublasSetMathMode(cublas_handles[device][curr_stream_no], CUBLAS_TF32_TENSOR_OP_MATH));
++            // The default keeps the tensor-core throughput path. Strict F32
++            // is an explicit opt-in for graphs with numerically sensitive
++            // residual branches (for example MoGe's later DINO blocks).
++            // Pedantic math prohibits implicit TF32 tensor-core reductions.
++            const bool strict_f32 = getenv("GGML_CUDA_STRICT_F32") != nullptr;
++            CUBLAS_CHECK(cublasSetMathMode(cublas_handles[device][curr_stream_no],
++                                           strict_f32 ? CUBLAS_PEDANTIC_MATH
++                                                      : CUBLAS_TF32_TENSOR_OP_MATH));
+             CUBLAS_CHECK(cublasSetStream(cublas_handles[device][curr_stream_no], stream()));
+ #if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA) && (CUBLAS_VER_MAJOR > 11 || (CUBLAS_VER_MAJOR == 11 && CUBLAS_VER_MINOR >= 2))
+             if (cublas_workspace_sizes[device] == 0) {

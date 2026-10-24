@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-#include "backend.hpp"
-#include "dpt_head.hpp"
-#include "model_loader.hpp"
-#include "parity.hpp"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/dpt_head.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");

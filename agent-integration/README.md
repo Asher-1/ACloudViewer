@@ -85,6 +85,17 @@ cli-anything-acloudviewer reconstruct sparse ./workspace/
 cli-anything-acloudviewer reconstruct dense-stereo ./workspace/
 cli-anything-acloudviewer reconstruct poisson ./workspace/
 
+# Discover and run every registered AICore plugin batch command
+cli-anything-acloudviewer --json ai list
+cli-anything-acloudviewer --json --mode headless ai schema ocr
+cli-anything-acloudviewer --json --mode headless ai run ocr \
+  --image ./scan-1.png --image ./scan-2.png --out-dir ./ocr-out \
+  --option LANG=en --option SAVE_VIS=true
+
+# Generic passthrough for ordinary/third-party plugin commands
+cli-anything-acloudviewer --mode headless plugin run ANIMATION \
+  --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
+
 # Windows-specific: use safe wrapper scripts (force headless mode)
 # See agent-integration/scripts/ for acv-convert-safe.ps1 and acv-batch-convert-safe.ps1
 
@@ -155,11 +166,11 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 
 | Level | Tests | Dependencies |
 |-------|-------|-------------|
-| 1 | C++ plugin source, build, dispatch table, SIBR commands | cmake (optional) |
-| 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
-| 3 | Format conversion (incl. LAZ, SHP, PTX load, DXF export), round-trip checks, `process crop`, subsample, normals, batch, CLI surface | `ACloudViewer binary` |
+| 1 | C++ plugin source/build, AICore batch headers, RPC whitelist, ownership boundary | cmake (optional) |
+| 2 | CLI commands plus exact 17-task AICore registry and generic plugin passthrough | `cli-anything-acloudviewer` |
+| 3 | Installed-binary processing plus machine-readable schema discovery for all 17 AICore commands | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
-| 5 | MCP tools (178 tools, names, Colmap, SIBR, PCL, plugins), entry point | `mcp` Python package |
+| 5 | MCP tools, including `list_ai_tasks`, `get_ai_schema`, `run_ai_batch`, and `run_plugin_command` | `mcp` Python package |
 
 ## Architecture
 
@@ -235,7 +246,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **72 methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **82 methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 
@@ -333,7 +344,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **178 tools** (integration tests cover the full set) for AI agent use:
+The MCP server exposes **187 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|

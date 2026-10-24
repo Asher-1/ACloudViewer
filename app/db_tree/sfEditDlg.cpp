@@ -7,6 +7,8 @@
 
 #include "sfEditDlg.h"
 
+#include <QElapsedTimer>
+
 #include "ui_sfEditDlg.h"
 
 // LOCAL
@@ -89,6 +91,8 @@ sfEditDlg::sfEditDlg(QWidget* parent /*=0*/)
 sfEditDlg::~sfEditDlg() { delete m_ui; }
 
 void sfEditDlg::fillDialogWith(ccScalarField* sf) {
+    QElapsedTimer sfdTimer;
+    sfdTimer.start();
     m_associatedSF = sf;
     if (!sf) {
         assert(false);
@@ -200,6 +204,10 @@ void sfEditDlg::fillDialogWith(ccScalarField* sf) {
         m_ui->minSatSpinBox->blockSignals(false);
         m_ui->maxSatSpinBox->blockSignals(false);
         m_ui->maxValSpinBox->blockSignals(false);
+    }
+    if (sfdTimer.elapsed() > 20) {
+        CVLog::Print("[selection] sfEditDlg::fillDialogWith took %lld ms",
+                     static_cast<long long>(sfdTimer.elapsed()));
     }
 }
 

@@ -17,7 +17,7 @@
 #include <cstring>
 #include <vector>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \

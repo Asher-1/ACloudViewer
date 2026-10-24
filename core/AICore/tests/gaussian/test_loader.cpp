@@ -15,7 +15,7 @@
 #include <filesystem>
 #include <string>
 
-#include "gguf_loader.h"
+#include "tasks/gaussian/gguf_loader.h"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \

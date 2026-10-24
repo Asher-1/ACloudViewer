@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lsd.h"
+#include "tasks/deeplsd/lsd.h"
 
 #include <cfloat>
 #include <climits>

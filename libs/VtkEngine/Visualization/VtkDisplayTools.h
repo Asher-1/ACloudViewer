@@ -160,6 +160,7 @@ public:  // inherit from ecvDisplayTools
 
     virtual void removeEntities(const CC_DRAW_CONTEXT& context) override;
     virtual bool hideShowEntities(const CC_DRAW_CONTEXT& context) override;
+    void setCameraAggregationSuspended(bool suspended) override;
 
     void updateApplyViewportPreviewOverlay(ecvGenericGLDisplay* display,
                                            unsigned sensorId);
@@ -217,6 +218,32 @@ public:  // inherit from ecvDisplayTools
                                        int viewport) override {
         m_visualizer3D->rotateWithAxis(pos, axis, angle, viewport);
     }
+
+public:
+    /// Per-pass draw-cost probe: reset before a redraw pass, log after.
+    /// Attributes the draw-tree pass time to entity categories so stalls on
+    /// massive scenes are attributable from the log alone.
+    void resetDrawProbe() {
+        m_probeMeshMs = m_probeMeshFullMs = m_probeMeshSyncMs = 0.0;
+        m_probeCloudMs = m_probeHideShowMs = m_probeOtherMs = 0.0;
+        m_probeMeshN = m_probeMeshFullN = m_probeMeshSyncN = 0;
+        m_probeCloudN = m_probeHideShowN = m_probeOtherN = 0;
+    }
+    void logDrawProbe(const std::string& passLabel);
+
+private:
+    double m_probeMeshMs = 0.0;
+    double m_probeMeshFullMs = 0.0;
+    double m_probeMeshSyncMs = 0.0;
+    double m_probeCloudMs = 0.0;
+    double m_probeHideShowMs = 0.0;
+    double m_probeOtherMs = 0.0;
+    int m_probeMeshN = 0;
+    int m_probeMeshFullN = 0;
+    int m_probeMeshSyncN = 0;
+    int m_probeCloudN = 0;
+    int m_probeHideShowN = 0;
+    int m_probeOtherN = 0;
 
 public:
     // set and get camera parameters
@@ -567,6 +594,8 @@ public:
     void setObjectLightIntensity(const QString& viewID,
                                  double intensity,
                                  bool triggerRender = true) override;
+    bool hasCompositeGroup(const QString& viewID) override;
+    bool isCompositeLeafEntity(const QString& viewID) override;
 
     /**
      * @brief Get light intensity for a specific object

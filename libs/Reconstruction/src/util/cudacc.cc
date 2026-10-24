@@ -66,7 +66,7 @@ void CudaSafeCall(const cudaError_t error, const std::string& file,
 }
 
 void CudaCheck(const char* file, const int line) {
-  const cudaError error = cudaGetLastError();
+  const cudaError_t error = cudaGetLastError();
   while (error != cudaSuccess) {
     std::cerr << StringPrintf("CUDA error at %s:%i - %s", file, line,
                               cudaGetErrorString(error))
@@ -77,7 +77,7 @@ void CudaCheck(const char* file, const int line) {
 
 void CudaSyncAndCheck(const char* file, const int line) {
   // Synchronizes the default stream which is a nullptr.
-  const cudaError error = cudaStreamSynchronize(nullptr);
+  const cudaError_t error = cudaStreamSynchronize(nullptr);
   if (cudaSuccess != error) {
     std::cerr << StringPrintf("CUDA error at %s:%i - %s", file, line,
                               cudaGetErrorString(error))

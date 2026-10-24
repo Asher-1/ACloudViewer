@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "GKD General Keypoint Detection",
+  "icon": ":/CC/plugin/qGKD/images/qGKD.svg",
+  "description": "GKDT (General Keypoint Detection Transformer, ECCV 2026) open-world keypoints from text and/or 1-shot visual prompts via native GGML inference; multi-object mode composes the YOLO-World open-vocabulary detector.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "General-Keypoint-Detection-GGML: https://github.com/Asher-1/General-Keypoint-Detection-GGML" },
+    { "text": "GKDT: General Keypoint Detection Transformer (ECCV 2026): https://arxiv.org/pdf/2607.00752" },
+    { "text": "Models: https://huggingface.co/Asher-1/GKD_GGUF" }
+  ]
+}

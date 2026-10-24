@@ -47,6 +47,10 @@ std::optional<std::string> DownloadFile(
 // Computes SHA256 digest for given string.
 std::string ComputeSHA256(const std::string_view& str);
 
+// Computes SHA256 digest for a file on disk (streamed, constant memory).
+// Returns an empty string when the file cannot be opened.
+std::string ComputeFileSHA256(const std::filesystem::path& path);
+
 // Downloads and caches file from given URI. The URI must take the format
 // "<url>;<name>;<sha256>". The file will be cached under
 // $HOME/.cache/colmap/<sha256>-<name>. File integrity is checked against the

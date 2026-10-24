@@ -21,6 +21,10 @@ ExternalProject_Add(ext_zlib
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         $<$<BOOL:${MSVC}>:-DBUILD_SHARED_LIBS=OFF>
+        # The static libz.a is linked into the shared libOpenImageIO, which
+        # requires position-independent objects. GCC defaults to non-PIC on
+        # Linux; AppleClang emits PIC by default, where the flag is a no-op.
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         # zlib needs visible symbols for examples. Disabling example building causes
         # assember error in GPU CI. zlib symbols are hidden during linking.
         ${ExternalProject_CMAKE_ARGS}

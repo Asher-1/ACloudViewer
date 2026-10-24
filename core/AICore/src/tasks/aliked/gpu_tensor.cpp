@@ -5,16 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gpu_tensor.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
 
 #include <ggml-backend.h>
 #include <ggml.h>
 
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_sync.hpp"
-#include "score_debug.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/score_debug.hpp"
+
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 
 #include <cstdint>
@@ -23,7 +25,7 @@
 #include <cstring>
 #include <vector>
 
-#include "ggml_cnn.hpp"
+#include "tasks/aliked/ggml_cnn.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -47,10 +49,10 @@ bool CopyScoreToVulkanScratch(internal::Backend *backend,
     }
     AlikedVulkanDkdScratch *scratch = cache->vulkan_dkd_scratch();
     // Score maps are small, while the custom dense-copy path has exhibited
-    // zero-filled output for cropped Vulkan views on NVIDIA drivers. Keep the
-    // correctness path as the default and retain the device copy only as an
-    // explicit diagnostic opt-in.
-    const char *device_pin = std::getenv("LIGHTGLUE_ALIKED_SCORE_DEVICE_PIN");
+    // zero-filled output for cropped Vulkan views on NVIDIA drivers. The
+    // historical LIGHTGLUE_ALIKED_SCORE_DEVICE_PIN diagnostic opt-in is
+    // removed; the correctness path below is always taken.
+    const char *device_pin = nullptr;
     if (device_pin == nullptr || device_pin[0] == '0') {
         std::vector<float> nchw;
         if (!score->DownloadNchw(backend, &nchw, 1, h, w, error)) {
@@ -516,8 +518,10 @@ void LogTensorStrideIfDebug(const char *label,
     if (tensor == nullptr || label == nullptr) {
         return;
     }
-    const char *stride_env = std::getenv("LIGHTGLUE_ALIKED_CONV_STRIDE_DEBUG");
-    const bool stride_debug = stride_env != nullptr && stride_env[0] != '0';
+    // The historical LIGHTGLUE_ALIKED_CONV_STRIDE_DEBUG dump gate was
+    // development scaffolding and is removed; DkdDebugEnabled() is likewise
+    // dormant, so this diagnostic dumper is a no-op.
+    const bool stride_debug = false;
     const bool offset_dkd =
             DkdDebugEnabled() && std::strstr(label, ".offset") != nullptr;
     if (!stride_debug && !offset_dkd) {

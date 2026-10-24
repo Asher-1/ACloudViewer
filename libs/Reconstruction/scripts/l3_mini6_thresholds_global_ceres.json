@@ -1,0 +1,48 @@
+{
+  "registered_images_relative_difference": 0.0,
+  "sparse_points_relative_difference": 0.0,
+  "track_observations_relative_difference": 0.0,
+  "mean_track_length_relative_difference": 0.0,
+  "point_reprojection_rms_px_relative_difference": 8e-5,
+  "camera_center_p95": 3e-6,
+  "camera_rotation_p95_deg": 0.0001,
+  "point_nn_p95": 0.0002,
+  "configuration": {
+    "input_manifest_sha256": "4bcb9b883f732a50d60b9e8c52f617645fe26f2273a688f32c0e9dadd2a17f8c",
+    "pipeline": "global",
+    "max_features": 2048,
+    "camera_model": "SIMPLE_RADIAL",
+    "single_camera": true,
+    "sift_gpu": false,
+    "seed": 20261009,
+    "mapper_options": [
+      "GlobalMapper.min_num_matches=20",
+      "GlobalMapper.num_threads=1"
+    ],
+    "candidate_mapper_options": [
+      "GlobalMapper.ra_backend=CERES"
+    ]
+  },
+  "provenance": {
+    "fixture": "dataset_monstree/mini6 (configuration above, enforced by the runner). The candidate global mapper runs with RotationAveragingBackend::CERES via GlobalMapper.ra_backend; the upstream baseline has no rotation-averaging backend CLI knob (RotationEstimatorOptions), so this gate measures the fork CERES production path against the upstream global pipeline, not backend parity.",
+    "upstream_revision": "3e5c915ca426e9661041d0696aff088dfc49fd90",
+    "rule": "Count metrics are discrete, so any difference is algorithmic and the threshold is 0. Each continuous threshold is the log-space midpoint sqrt(lower_input * upper_input), rounded to one significant digit. It is never fitted to the candidate.",
+    "lower_input": {
+      "method": "The measured cross-binary divergence of the CERES variant is the effective noise floor of this comparison: two repeated runs were bit-identical (candidate metrics and model identical across runs), so the fork-CERES/upstream delta below is stable and reproducible, not run noise",
+      "point_reprojection_rms_px_relative_difference": 9.82e-7,
+      "camera_center_p95": 2.34e-8,
+      "camera_rotation_p95_deg": 9.06e-7,
+      "point_nn_p95": 1.33e-6,
+      "notes": "The rotation delta was measured as exactly 0, so the acos resolution near identity (acos(1 - 2^-53) = 8.5e-7 deg) is used as the lower input. CERES and upstream L1 rotation averaging converge to the identical structure (counts, mean track length and rotations are identical); the deltas are final-BA residuals."
+    },
+    "smallest_algorithmic_divergence": {
+      "method": "Upper input = smallest real algorithmic perturbation measured on this fixture (incremental pipeline, std::unordered hash containers versus upstream boost::unordered 1.92, i.e. SfM gauge and BA residual-order divergence). A real CERES-path regression is expected at or above this scale",
+      "track_observations_relative_difference": 0.00323,
+      "point_reprojection_rms_px_relative_difference": 0.00715,
+      "camera_center_p95": 0.000414,
+      "camera_rotation_p95_deg": 0.0131,
+      "point_nn_p95": 0.0274
+    },
+    "scope": "Same-host gate only. A different CPU, compiler, or BLAS can move the floating-point floor and requires re-measuring both inputs of the rule."
+  }
+}

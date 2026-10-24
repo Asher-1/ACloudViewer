@@ -89,7 +89,7 @@ Write-Host "conda env create and activate..."
 $env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
 
 Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destination "$env:TEMP\conda_windows.yml"
-(Get-Content "$env:TEMP\conda_windows.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows.yml"
+(Get-Content "$env:TEMP\conda_windows.yml") -replace "3.10", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows.yml"
 
 conda env create -f "$env:TEMP\conda_windows.yml"
 conda activate $env:ENV_NAME
@@ -205,6 +205,19 @@ if ($env:IGNORE_TEST -ne "ON") {
             exit $LASTEXITCODE
         }
     }
+}
+
+# Print sccache stats while the daemon is still alive: it is spawned inside
+# this step's process tree, its stats are in-memory, and GitHub Actions
+# runners terminate that tree on step exit — post-build stats observers
+# therefore always report 0 requests on Windows. With the default
+# SCCACHE_IDLE_TIMEOUT of 600 s the daemon also self-exits during packaging;
+# windows.yml now sets SCCACHE_IDLE_TIMEOUT=36000, so these numbers are the
+# real tally of the run. This job is the one that
+# hits the 6h runner limit, so the hit rate is also the key tuning signal.
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+    Write-Host "=== sccache stats (in-step, daemon alive) ==="
+    & $env:CLOUDVIEWER_COMPILER_LAUNCHER --show-stats
 }
 
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"

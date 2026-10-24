@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- deep violet background: SAM family palette -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1543"/>
+      <stop offset="1" stop-color="#2a1e5e"/>
+    </linearGradient>
+    <!-- photo canvas fill -->
+    <linearGradient id="photoGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3468"/>
+      <stop offset="1" stop-color="#2b2652"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded panel background -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="url(#bgGrad)"/>
+
+  <!-- SAM3 label tag (top center) -->
+  <rect x="20" y="4" width="24" height="11" rx="2" fill="#7c4dff"/>
+  <text x="32" y="12.5" font-family="sans-serif" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">SAM3</text>
+
+  <!-- photo canvas -->
+  <rect x="7" y="17" width="33" height="33" rx="3" fill="url(#photoGrad)"/>
+  <!-- abstract image content: sun + hills -->
+  <circle cx="13" cy="24" r="2.8" fill="#c9c2f2" opacity="0.9"/>
+  <path d="M7 50 L19 33 L26 41 L31 35 L40 50 Z" fill="#8f86c9" opacity="0.55"/>
+
+  <!-- segmentation mask overlay (irregular region) -->
+  <path d="M15 35 L23 29 L32 32 L37 40 L29 48 L18 46 Z"
+        fill="#ff4d8d" fill-opacity="0.45" stroke="#ff7aa8" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- box prompt (cyan dashed) -->
+  <rect x="23" y="23" width="11" height="9" rx="1"
+        fill="none" stroke="#26c6da" stroke-width="1.5"
+        stroke-dasharray="3 2"/>
+
+  <!-- positive point prompt (green) -->
+  <circle cx="16" cy="36" r="2.8" fill="#3dff7a" stroke="#ffffff" stroke-width="1"/>
+  <!-- negative point prompt (red) -->
+  <circle cx="33" cy="41" r="2.8" fill="#ff5252" stroke="#ffffff" stroke-width="1"/>
+
+  <!-- text prompt input (SAM3 text-detector feature) -->
+  <rect x="8" y="55" width="22" height="7" rx="1.5" fill="#3a3168" stroke="#7c4dff" stroke-width="1"/>
+  <rect x="10.5" y="57.5" width="8" height="0.9" rx="0.45" fill="#b39ddb"/>
+  <rect x="20" y="57.5" width="3" height="0.9" rx="0.45" fill="#26c6da"/>
+</svg>

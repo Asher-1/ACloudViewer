@@ -1,8 +1,9 @@
-name: python3.8
+name: python3.10
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - cmake=3.31.8
+  - python=3.10
   - pip
   - ninja
   - pkg-config
@@ -12,5 +13,6 @@ dependencies:
   - qt=5.15.* # reconstruction
   - xerces-c=3.2.* # reconstruction
   - cgal=5.* # facets
+  - llvm-openmp # AppleClang does not ship OpenMP runtime; required by reconstruction/CVCoreLib
   - ffmpeg=6.1.*
   - typing_extensions # fix pytorch import missing issues

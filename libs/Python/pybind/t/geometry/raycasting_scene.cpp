@@ -14,7 +14,7 @@ namespace t {
 namespace geometry {
 
 void pybind_raycasting_scene(py::module& m) {
-    py::class_<RaycastingScene> raycasting_scene(m, "RaycastingScene", R"doc( 
+    py::class_<RaycastingScene> raycasting_scene(m, "RaycastingScene", R"doc(
 A scene class with basic ray casting and closest point queries.
 
 The RaycastingScene allows to compute ray intersections with triangle meshes
@@ -38,11 +38,11 @@ The following shows how to create a scene and compute ray intersections::
 
     # Rays are 6D vectors with origin and ray direction.
     # Here we use a helper function to create rays for a pinhole camera.
-    rays = scene.create_rays_pinhole(fov_deg=60, 
-                                     center=[0.5,0.5,0.5], 
-                                     eye=[-1,-1,-1], 
-                                     up=[0,0,1], 
-                                     width_px=320, 
+    rays = scene.create_rays_pinhole(fov_deg=60,
+                                     center=[0.5,0.5,0.5],
+                                     eye=[-1,-1,-1],
+                                     up=[0,0,1],
+                                     width_px=320,
                                      height_px=240)
 
     # Compute the ray intersections.
@@ -120,7 +120,7 @@ Returns:
     geometry_ids
         A tensor with the geometry IDs. The shape is {..}. If there
         is no intersection the ID is *INVALID_ID*.
-    
+
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.  If there is no intersection the ID is

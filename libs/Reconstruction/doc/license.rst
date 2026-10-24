@@ -2,13 +2,14 @@ License
 =======
 
 The COLMAP library is licensed under the new BSD license. Note that this text
-refers only to the license for COLMAP itself, independent of its dependencies,
-which are separately licensed. Building COLMAP with these dependencies may
-affect the resulting COLMAP license.
+refers only to the license for COLMAP itself, independent of its thirdparty
+dependencies, which are separately licensed. Building COLMAP with these
+dependencies may affect the resulting COLMAP license.
 
 .. code-block:: text
 
-    Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
+    Copyright (c) 2016, ETH Zurich and UNC Chapel Hill.
+    Copyright (c) 2016-2026, The COLMAP Contributors.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,5 +37,3 @@ affect the resulting COLMAP license.
     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
-
-    Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)

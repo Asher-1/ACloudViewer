@@ -19,6 +19,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardItemModel>
@@ -27,6 +28,8 @@
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/model_catalog_capi.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -71,51 +74,50 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 
 }  // namespace
 
-static const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "DA3/";
-
-static const int kInputPreviewSize = 96;
+// QComboBox data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the combo text is only the entity name).
+static constexpr int kDbFullImageRole = Qt::UserRole + 1;
 
 QVector<DA3BuiltinModel> DA3Dialog::builtinModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("Base Q8_0 (recommended)"), "depth-anything-base-q8_0.gguf",
-             base + "depth-anything-base-q8_0.gguf"},
-            {tr("Base Q4_K (smallest)"), "depth-anything-base-q4_k.gguf",
-             base + "depth-anything-base-q4_k.gguf"},
-            {tr("Base F16 (half precision)"), "depth-anything-base-f16.gguf",
-             base + "depth-anything-base-f16.gguf"},
-            {tr("Large Q8_0 (better quality)"),
-             "depth-anything-large-q8_0.gguf",
-             base + "depth-anything-large-q8_0.gguf"},
-            {tr("Large Q4_K (compact)"), "depth-anything-large-q4_k.gguf",
-             base + "depth-anything-large-q4_k.gguf"},
-            {tr("Giant Q8_0 (best quality)"), "depth-anything-giant-q8_0.gguf",
-             base + "depth-anything-giant-q8_0.gguf"},
-            {tr("Giant Q4_K (balanced)"), "depth-anything-giant-q4_k.gguf",
-             base + "depth-anything-giant-q4_k.gguf"},
-    };
+    QVector<DA3BuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_DEPTH);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_DEPTH, i);
+        if (!entry || !entry->filename || !entry->download_url ||
+            !entry->role || QString::fromUtf8(entry->role) != "depth") {
+            continue;
+        }
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QVector<DA3BuiltinModel> DA3Dialog::builtinMetricModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("Nested Metric F32"), "depth-anything-nested-metric.gguf",
-             base + "depth-anything-nested-metric.gguf"},
-            {tr("Nested AnyView Q8_0"),
-             "depth-anything-nested-anyview-q8_0.gguf",
-             base + "depth-anything-nested-anyview-q8_0.gguf"},
-            {tr("Nested AnyView Q4_K"),
-             "depth-anything-nested-anyview-q4_k.gguf",
-             base + "depth-anything-nested-anyview-q4_k.gguf"},
-    };
+    QVector<DA3BuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_DEPTH);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_DEPTH, i);
+        if (!entry || !entry->filename || !entry->download_url ||
+            !entry->role || QString::fromUtf8(entry->role) != "metric") {
+            continue;
+        }
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QString DA3Dialog::modelCacheDir() {
     char* dir = aicore_depth_model_cache_dir();
     QString result = QString::fromUtf8(dir);
-    aicore_depth_free_string(dir);
+    aicore_depth_free_buffer(dir);
     return result;
 }
 
@@ -130,14 +132,27 @@ void DA3Dialog::updateInputPreview() {
     }
 
     QImage img;
-    const QFileInfo fi(path);
-    if (fi.isDir()) {
-        const QStringList files = listImageFilesInDir(path);
-        if (!files.isEmpty()) {
-            img = QImage(files.first());
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image so the
+        // click-to-enlarge preview works for DB inputs too.
+        const QString name = path.mid(5);
+        for (int i = 0; i < m_dbImageCombo->count(); ++i) {
+            if (m_dbImageCombo->itemData(i).toString() == name) {
+                img = m_dbImageCombo->itemData(i, kDbFullImageRole)
+                              .value<QImage>();
+                break;
+            }
         }
-    } else if (isSupportedImageFile(path)) {
-        img = QImage(path);
+    } else {
+        const QFileInfo fi(path);
+        if (fi.isDir()) {
+            const QStringList files = listImageFilesInDir(path);
+            if (!files.isEmpty()) {
+                img = QImage(files.first());
+            }
+        } else if (isSupportedImageFile(path)) {
+            img = QImage(path);
+        }
     }
 
     if (img.isNull()) {
@@ -145,12 +160,12 @@ void DA3Dialog::updateInputPreview() {
         m_inputPreview->setText(tr("Preview"));
         return;
     }
-    m_inputPreview->setPreviewImage(img, kInputPreviewSize);
+    m_inputPreview->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Depth Anything V3");
-    setMinimumWidth(620);
+    setMinimumSize(ecvAICoreUi::dpiScaled(620), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -205,6 +220,7 @@ void DA3Dialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void DA3Dialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(mainLayout);
 
     // --- Mode selection ---
     auto* modeGroup = new QGroupBox("Operation Mode");
@@ -221,42 +237,45 @@ void DA3Dialog::setupUi() {
     m_modeCombo->addItem("Export COLMAP", static_cast<int>(Mode::ExportCOLMAP));
     m_modeCombo->addItem("Quantize Model", static_cast<int>(Mode::Quantize));
     m_modeCombo->addItem("Model Info", static_cast<int>(Mode::ModelInfo));
-    modeLayout->addWidget(new QLabel("Mode:"));
+    modeLayout->addWidget(ecvAICoreUi::makeLabel("Mode:"));
     modeLayout->addWidget(m_modeCombo, 1);
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DA3Dialog::onModeChanged);
+    ecvAICoreUi::tightenGroupBox(modeGroup);
     mainLayout->addWidget(modeGroup);
 
     // --- Model selection ---
     auto* modelGroup = new QGroupBox("Model");
     auto* modelLayout = new QGridLayout(modelGroup);
+    ecvAICoreUi::setupFormGrid(modelLayout, 92);
 
-    modelLayout->addWidget(new QLabel("GGUF Model:"), 0, 0);
+    modelLayout->addWidget(ecvAICoreUi::makeLabel("GGUF Model:"), 0, 0);
     m_modelCombo = new QComboBox;
     m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 2);
+    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 3);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DA3Dialog::onModelComboChanged);
 
     m_customModelRow = new QWidget;
     auto* customModelLayout = new QHBoxLayout(m_customModelRow);
     customModelLayout->setContentsMargins(0, 0, 0, 0);
+    customModelLayout->setSpacing(ecvAICoreUi::hSpacing());
     m_customModelPath = new QLineEdit;
     m_customModelPath->setPlaceholderText("Path to custom .gguf file");
     customModelLayout->addWidget(m_customModelPath, 1);
-    m_browseCustomModelBtn = new QPushButton("Browse...");
+    m_browseCustomModelBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(m_browseCustomModelBtn, &QPushButton::clicked, this,
             &DA3Dialog::onBrowseCustomModel);
     customModelLayout->addWidget(m_browseCustomModelBtn);
     m_customModelRow->setVisible(false);
-    modelLayout->addWidget(m_customModelRow, 1, 0, 1, 3);
+    modelLayout->addWidget(m_customModelRow, 1, 0, 1, 4);
 
-    m_metricLabel = new QLabel("Metric Model:");
+    m_metricLabel = ecvAICoreUi::makeLabel("Metric Model:");
     modelLayout->addWidget(m_metricLabel, 2, 0);
     m_metricModelCombo = new QComboBox;
     m_metricModelCombo->setSizePolicy(QSizePolicy::Expanding,
                                       QSizePolicy::Fixed);
-    modelLayout->addWidget(m_metricModelCombo, 2, 1, 1, 2);
+    modelLayout->addWidget(m_metricModelCombo, 2, 1, 1, 3);
     connect(m_metricModelCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &DA3Dialog::onMetricModelComboChanged);
@@ -264,17 +283,17 @@ void DA3Dialog::setupUi() {
     m_customMetricRow = new QWidget;
     auto* customMetricLayout = new QHBoxLayout(m_customMetricRow);
     customMetricLayout->setContentsMargins(0, 0, 0, 0);
+    customMetricLayout->setSpacing(ecvAICoreUi::hSpacing());
     m_customMetricPath = new QLineEdit;
     m_customMetricPath->setPlaceholderText("Path to custom metric .gguf file");
     customMetricLayout->addWidget(m_customMetricPath, 1);
-    m_browseCustomMetricBtn = new QPushButton("Browse...");
+    m_browseCustomMetricBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(m_browseCustomMetricBtn, &QPushButton::clicked, this,
             &DA3Dialog::onBrowseCustomMetricModel);
     customMetricLayout->addWidget(m_browseCustomMetricBtn);
     m_customMetricRow->setVisible(false);
-    modelLayout->addWidget(m_customMetricRow, 3, 0, 1, 3);
+    modelLayout->addWidget(m_customMetricRow, 3, 0, 1, 4);
 
-    modelLayout->addWidget(new QLabel("Device:"), 4, 0);
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* d = aicore_device_at(i);
@@ -283,14 +302,15 @@ void DA3Dialog::setupUi() {
     }
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
-    modelLayout->addWidget(m_deviceCombo, 4, 1);
 
-    modelLayout->addWidget(new QLabel("Threads:"), 5, 0);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
-    modelLayout->addWidget(m_threads, 5, 1);
 
+    auto* deviceRow = ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads);
+    modelLayout->addWidget(deviceRow, 4, 0, 1, 4);
+
+    ecvAICoreUi::tightenGroupBox(modelGroup);
     mainLayout->addWidget(modelGroup);
 
     populateModelCombos();
@@ -298,55 +318,52 @@ void DA3Dialog::setupUi() {
     // --- I/O configuration ---
     auto* ioGroup = new QGroupBox("Input / Output");
     auto* ioLayout = new QGridLayout(ioGroup);
+    ecvAICoreUi::setupFormGrid(ioLayout, 92);
 
     int row = 0;
-    ioLayout->addWidget(new QLabel("Input:"), row, 0);
+    ioLayout->addWidget(ecvAICoreUi::makeLabel("Input:"), row, 0);
     m_inputPath = new QLineEdit;
     m_inputPath->setPlaceholderText("Image file(s) or directory path");
     connect(m_inputPath, &QLineEdit::textChanged, this,
             [this](const QString&) { updateInputPreview(); });
-    ioLayout->addWidget(m_inputPath, row, 1);
+    ioLayout->addWidget(m_inputPath, row, 1, 1, 2);
     auto* inputBtnLayout = new QHBoxLayout;
-    auto* browseFileBtn = new QPushButton("File...");
+    inputBtnLayout->setContentsMargins(0, 0, 0, 0);
+    inputBtnLayout->setSpacing(ecvAICoreUi::tightHSpacing());
+    auto* browseFileBtn = ecvAICoreUi::makeBrowseBtn("File...");
     browseFileBtn->setToolTip("Select one or more image files");
     connect(browseFileBtn, &QPushButton::clicked, this,
             &DA3Dialog::onBrowseFile);
     inputBtnLayout->addWidget(browseFileBtn);
-    auto* browseFolderBtn = new QPushButton("Folder...");
+    auto* browseFolderBtn = ecvAICoreUi::makeBrowseBtn("Folder...");
     browseFolderBtn->setToolTip(
             "Select a folder for batch depth estimation on all images inside");
     connect(browseFolderBtn, &QPushButton::clicked, this,
             &DA3Dialog::onBrowseFolder);
     inputBtnLayout->addWidget(browseFolderBtn);
-    inputBtnLayout->setContentsMargins(0, 0, 0, 0);
-    inputBtnLayout->setSpacing(4);
     auto* inputBtnWidget = new QWidget;
     inputBtnWidget->setLayout(inputBtnLayout);
-    ioLayout->addWidget(inputBtnWidget, row, 2);
+    ioLayout->addWidget(inputBtnWidget, row, 3);
 
     row++;
     m_inputPreview = new ecvClickableImageLabel;
-    m_inputPreview->setFixedSize(kInputPreviewSize, kInputPreviewSize);
+    const int ps = ecvAICoreUi::previewSize();
+    m_inputPreview->setFixedSize(ps, ps);
     m_inputPreview->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_inputPreview->setText(tr("Preview"));
     ioLayout->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
                                 m_inputPreview, this),
-                        row, 0, 1, 3, Qt::AlignLeft);
+                        row, 0, 1, 4, Qt::AlignLeft);
 
     row++;
-    m_dbToggleBtn = new QToolButton;
-    m_dbToggleBtn->setArrowType(Qt::RightArrow);
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
-    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    auto* dbSectionWidget = new QWidget;
+    auto* dbSectionLayout = new QVBoxLayout(dbSectionWidget);
+    dbSectionLayout->setContentsMargins(0, 0, 0, 0);
+    dbSectionLayout->setSpacing(ecvAICoreUi::tightVSpacing());
+    m_dbToggleBtn = ecvAICoreUi::makeDbSection(nullptr);
     m_dbToggleBtn->setText(tr("DB Images"));
-    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
-    m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
-    ioLayout->addWidget(m_dbToggleBtn, row, 0);
+    dbSectionLayout->addWidget(m_dbToggleBtn);
 
     m_dbContentWidget = new QWidget;
     auto* dbContentLayout = new QHBoxLayout(m_dbContentWidget);
@@ -362,31 +379,30 @@ void DA3Dialog::setupUi() {
     dbContentLayout->addWidget(m_dbImageCombo, 1);
     auto* refreshDbBtn = new QPushButton("Refresh");
     refreshDbBtn->setToolTip("Refresh list of images from DB tree");
+    refreshDbBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     connect(refreshDbBtn, &QPushButton::clicked, this,
             &DA3Dialog::refreshDbImagesRequested);
     dbContentLayout->addWidget(refreshDbBtn);
     m_dbContentWidget->setVisible(false);
-    ioLayout->addWidget(m_dbContentWidget, row, 1, 1, 2);
+    dbSectionLayout->addWidget(m_dbContentWidget);
+    ioLayout->addWidget(dbSectionWidget, row, 0, 1, 4);
 
-    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
-        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
-        m_dbContentWidget->setVisible(checked);
-    });
+    ecvAICoreUi::connectDbToggle(m_dbToggleBtn, m_dbContentWidget);
 
     row++;
-    ioLayout->addWidget(new QLabel("Output Dir:"), row, 0);
+    ioLayout->addWidget(ecvAICoreUi::makeLabel("Output Dir:"), row, 0);
     m_outputDir = new QLineEdit;
     m_outputDir->setPlaceholderText("Output directory for depth maps / export");
-    ioLayout->addWidget(m_outputDir, row, 1);
-    auto* browseOutputBtn = new QPushButton("Browse...");
+    ioLayout->addWidget(m_outputDir, row, 1, 1, 2);
+    auto* browseOutputBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(browseOutputBtn, &QPushButton::clicked, this,
             &DA3Dialog::onBrowseOutput);
-    ioLayout->addWidget(browseOutputBtn, row, 2);
+    ioLayout->addWidget(browseOutputBtn, row, 3);
 
     row++;
     m_invertCheck = new QCheckBox("Invert depth visualization");
     m_invertCheck->setChecked(true);
-    ioLayout->addWidget(m_invertCheck, row, 0, 1, 2);
+    ioLayout->addWidget(m_invertCheck, row, 0, 1, 4);
 
     row++;
     m_unprojectCheck = new QCheckBox("3D unprojection (requires pose)");
@@ -394,14 +410,15 @@ void DA3Dialog::setupUi() {
     m_unprojectCheck->setToolTip(
             "When enabled with Depth+Pose mode, generates real 3D point "
             "clouds using camera intrinsics and depth values.");
-    ioLayout->addWidget(m_unprojectCheck, row, 0, 1, 2);
+    ioLayout->addWidget(m_unprojectCheck, row, 0, 1, 4);
 
     row++;
-    m_downsampleLabel = new QLabel("Downsample step:");
+    m_downsampleLabel = ecvAICoreUi::makeLabel("Downsample step:");
     ioLayout->addWidget(m_downsampleLabel, row, 0);
     m_downsampleStep = new QSpinBox;
     m_downsampleStep->setRange(1, 16);
     m_downsampleStep->setValue(2);
+    ecvAICoreUi::setCompactSpin(m_downsampleStep);
     m_downsampleStep->setToolTip(
             "Sample every Nth pixel. 1=full resolution, 2=every 2nd pixel.");
     ioLayout->addWidget(m_downsampleStep, row, 1);
@@ -409,60 +426,44 @@ void DA3Dialog::setupUi() {
     row++;
     m_colmapBinaryCheck = new QCheckBox("COLMAP binary format");
     m_colmapBinaryCheck->setChecked(true);
-    ioLayout->addWidget(m_colmapBinaryCheck, row, 0, 1, 2);
+    ioLayout->addWidget(m_colmapBinaryCheck, row, 0, 1, 4);
 
+    ecvAICoreUi::tightenGroupBox(ioGroup);
     mainLayout->addWidget(ioGroup);
 
     // --- Quantize group ---
     m_quantGroup = new QGroupBox("Quantization");
     auto* quantLayout = new QGridLayout(m_quantGroup);
-    quantLayout->addWidget(new QLabel("Input GGUF:"), 0, 0);
+    ecvAICoreUi::setupFormGrid(quantLayout, 92);
+    quantLayout->addWidget(ecvAICoreUi::makeLabel("Input GGUF:"), 0, 0);
     m_quantInput = new QLineEdit;
-    quantLayout->addWidget(m_quantInput, 0, 1);
-    quantLayout->addWidget(new QLabel("Output GGUF:"), 1, 0);
+    quantLayout->addWidget(m_quantInput, 0, 1, 1, 3);
+    quantLayout->addWidget(ecvAICoreUi::makeLabel("Output GGUF:"), 1, 0);
     m_quantOutput = new QLineEdit;
-    quantLayout->addWidget(m_quantOutput, 1, 1);
-    quantLayout->addWidget(new QLabel("Type:"), 2, 0);
+    quantLayout->addWidget(m_quantOutput, 1, 1, 1, 3);
+    quantLayout->addWidget(ecvAICoreUi::makeLabel("Type:"), 2, 0);
     m_quantType = new QComboBox;
     m_quantType->addItems({"q8_0", "q4_k", "q4_0", "q5_0", "q5_1"});
     quantLayout->addWidget(m_quantType, 2, 1);
+    ecvAICoreUi::tightenGroupBox(m_quantGroup);
     m_quantGroup->setVisible(false);
     mainLayout->addWidget(m_quantGroup);
 
     // --- Download / Progress ---
-    m_downloadLabel = new QLabel;
-    m_downloadLabel->setVisible(false);
-    mainLayout->addWidget(m_downloadLabel);
-
-    m_progressBar = new QProgressBar;
-    m_progressBar->setRange(0, 100);
-    m_progressBar->setValue(0);
-    mainLayout->addWidget(m_progressBar);
+    ecvAICoreUi::setupProgressSection(mainLayout, m_downloadLabel,
+                                      m_progressBar);
 
     // --- Buttons ---
-    auto* btnLayout = new QHBoxLayout;
-    btnLayout->addStretch();
-
-    m_useTestDataBtn =
-            new QPushButton(QStringLiteral("\U0001f9ea  Try sample data"));
+    m_useTestDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_useTestDataBtn->setToolTip(
             "Load Monstree multi-view test images for depth estimation.\n"
             "Downloads on first use, then cached locally.");
-    // Prominent teal accent — consistent with qFreeSplatter / qFaceDetect.
-    m_useTestDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_useTestDataBtn, &QPushButton::clicked, this,
             &DA3Dialog::onUseTestData);
-    btnLayout->addWidget(m_useTestDataBtn);
 
     m_runBtn = new QPushButton("Run");
     m_runBtn->setDefault(true);
     connect(m_runBtn, &QPushButton::clicked, this, &DA3Dialog::onRun);
-    btnLayout->addWidget(m_runBtn);
 
     m_exportDepthBtn = new QPushButton("Export Last Depth");
     m_exportDepthBtn->setEnabled(false);
@@ -470,7 +471,6 @@ void DA3Dialog::setupUi() {
             "Save the last depth estimation as a grayscale image file");
     connect(m_exportDepthBtn, &QPushButton::clicked, this,
             &DA3Dialog::exportDepthRequested);
-    btnLayout->addWidget(m_exportDepthBtn);
 
     m_exportAllBtn = new QPushButton("Export All Depths");
     m_exportAllBtn->setEnabled(false);
@@ -478,17 +478,23 @@ void DA3Dialog::setupUi() {
             "Export all depth maps to the output directory as images");
     connect(m_exportAllBtn, &QPushButton::clicked, this,
             &DA3Dialog::onExportAllDepths);
-    btnLayout->addWidget(m_exportAllBtn);
 
     m_cancelBtn = new QPushButton("Cancel");
     m_cancelBtn->setEnabled(false);
     connect(m_cancelBtn, &QPushButton::clicked, this, &DA3Dialog::onCancel);
-    btnLayout->addWidget(m_cancelBtn);
 
     m_closeBtn = new QPushButton("Close");
     connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::close);
-    btnLayout->addWidget(m_closeBtn);
 
+    auto* btnLayout = new QHBoxLayout;
+    btnLayout->setSpacing(ecvAICoreUi::hSpacing());
+    btnLayout->addStretch();
+    btnLayout->addWidget(m_useTestDataBtn);
+    btnLayout->addWidget(m_runBtn);
+    btnLayout->addWidget(m_exportDepthBtn);
+    btnLayout->addWidget(m_exportAllBtn);
+    btnLayout->addWidget(m_cancelBtn);
+    btnLayout->addWidget(m_closeBtn);
     mainLayout->addLayout(btnLayout);
 
     onModeChanged(0);
@@ -516,7 +522,11 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+        if (ecvAssetIntegrity::isVerified(
+                    fi.absoluteFilePath(),
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
                     QString(" [%1] \u2713")
                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
@@ -538,7 +548,11 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+        if (ecvAssetIntegrity::isVerified(
+                    fi.absoluteFilePath(),
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
                     QString(" [%1] \u2713")
                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
@@ -677,14 +691,23 @@ bool DA3Dialog::ensureAllModelsAvailable() {
                               const QVector<DA3BuiltinModel>& catalog) {
         QString data = combo->currentData().toString();
         if (data == "CUSTOM" || data == "NONE") return;
-        QString cached = cacheDir + "/" + data;
-        if (ecvModelDownloader::isValidCachedFile(cached)) return;
-        for (const auto& bm : catalog) {
-            if (bm.filename == data) {
-                needed.append(bm);
+        const DA3BuiltinModel* selected = nullptr;
+        for (const auto& model : catalog) {
+            if (model.filename == data) {
+                selected = &model;
                 break;
             }
         }
+        if (!selected) return;
+        QString cached = cacheDir + "/" + data;
+        if (ecvAssetIntegrity::isVerified(
+                    cached,
+                    {QCryptographicHash::Sha256, selected->sha256.toLatin1()},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+            return;
+        }
+        needed.append(*selected);
     };
 
     collectMissing(m_modelCombo, builtinModels());
@@ -736,6 +759,9 @@ void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
     ecvModelDownloader::Request req;
     req.url = model.downloadUrl;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256, model.sha256.toLatin1()};
     m_downloader->download(req);
 }
 
@@ -760,14 +786,36 @@ void DA3Dialog::onCancel() {
 }
 
 void DA3Dialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataInProgress) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A DA3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     QDialog::closeEvent(event);
 }
 
-void DA3Dialog::setDbImages(const QStringList& imageNames) {
+void DA3Dialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress || m_testDataInProgress)) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A DA3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
+}
+
+void DA3Dialog::setDbImages(const QList<DA3DbImageEntry>& images) {
     m_dbImageCombo->blockSignals(true);
     m_dbImageCombo->clear();
-    if (imageNames.isEmpty()) {
+    if (images.isEmpty()) {
         m_dbImageCombo->addItem(tr("(no images in DB)"));
         m_dbImageCombo->setEnabled(false);
         if (m_dbToggleBtn) {
@@ -776,13 +824,16 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
         }
     } else {
         m_dbImageCombo->addItem(
-                tr("-- Select from DB (%1 images) --").arg(imageNames.size()));
-        for (const auto& name : imageNames) {
-            m_dbImageCombo->addItem(name, name);
+                tr("-- Select from DB (%1 images) --").arg(images.size()));
+        for (const auto& entry : images) {
+            const int idx = m_dbImageCombo->count();
+            m_dbImageCombo->addItem(entry.name, entry.name);
+            // Full-resolution image for the click-to-enlarge preview.
+            m_dbImageCombo->setItemData(idx, entry.preview, kDbFullImageRole);
         }
         m_dbImageCombo->setEnabled(true);
         if (m_dbToggleBtn) {
-            m_dbToggleBtn->setText(tr("DB Images (%1)").arg(imageNames.size()));
+            m_dbToggleBtn->setText(tr("DB Images (%1)").arg(images.size()));
             m_dbToggleBtn->setChecked(true);
         }
     }
@@ -843,6 +894,7 @@ void DA3Dialog::onModeChanged(int index) {
 }
 
 void DA3Dialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_runBtn->setEnabled(!running && !m_downloadInProgress);
     m_cancelBtn->setEnabled(running || m_downloadInProgress);
     m_modeCombo->setEnabled(!running && !m_downloadInProgress);

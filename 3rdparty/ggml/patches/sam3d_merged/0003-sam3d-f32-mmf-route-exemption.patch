@@ -1,0 +1,81 @@
+sam3d upstream-parity exemption for the F32 MMF route.
+
+The sam-3d-objects-ggml upstream carries NO F32 cuBLAS route (their combined
+patch leaves mmf.cu at the v0.21.0 base), so every F32 mul_mat in their runs
+executes the Ampere TF32 MMF path. Our upstream_accuracy patch routes F32
+through cuBLAS for PyTorch equivalence, which broke sam3d conditioning parity
+(DINO/PointPatch tokens diverged at ~1%, TF32-mantissa scale). Exempt nodes
+named sam3d_* from the F32 cuBLAS route so they keep the base TF32 MMF
+behavior and match the upstream reference bit-for-bit; every other task
+keeps the PyTorch-equivalent cuBLAS F32 route unchanged.
+
+--- a/src/ggml-cuda/mmf.cu
++++ b/src/ggml-cuda/mmf.cu
+@@ -1,4 +1,6 @@
+ #include "ggml.h"
++#include <cstring>
++
+ #include "mmf.cuh"
+ #include "mmid.cuh"
+ 
+@@ -131,12 +133,18 @@
+ }
+ 
+ bool ggml_cuda_should_use_mmf(enum ggml_type type, int cc, int warp_size, const int64_t * src0_ne,
+-        const size_t * src0_nb, const int src1_ncols, bool mul_mat_id) {
++        const size_t * src0_nb, const int src1_ncols, bool mul_mat_id, const char * dst_name) {
+     // The Ampere F32 MMF implementation uses tf32.tf32.f32 MMA operands.
+     // TF32 truncates the 23-bit F32 mantissa and is not numerically equivalent
+     // to PyTorch F32, which is especially visible in World attention GEMMs.
+     // Route F32 through the existing cuBLAS F32 path; keep MMF for F16/BF16.
+-    if (type == GGML_TYPE_F32) {
++    // sam3d exemption: the sam-3d-objects-ggml reference keeps the base TF32
++    // MMF F32 behavior (its combined patch has no F32 cuBLAS route), so F32
++    // GEMMs inside sam3d graphs (DINO/PointPatch conditioning, SS flow) must
++    // reproduce TF32 operands for upstream parity. Every other task keeps the
++    // PyTorch-equivalent cuBLAS F32 route.
++    const bool sam3d_f32 = dst_name && strncmp(dst_name, "sam3d_", 6) == 0;
++    if (type == GGML_TYPE_F32 && !sam3d_f32) {
+         return false;
+     }
+     if (ggml_is_quantized(type)) {
+--- a/src/ggml-cuda/mmf.cuh
++++ b/src/ggml-cuda/mmf.cuh
+@@ -43,7 +43,7 @@
+ 
+ void ggml_cuda_mul_mat_f(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * ids, ggml_tensor * dst);
+ 
+-bool ggml_cuda_should_use_mmf(enum ggml_type type, int cc, int warp_size, const int64_t * scr0_ne, const size_t * src0_nb, const int src1_ncols, bool mul_mat_id);
++bool ggml_cuda_should_use_mmf(enum ggml_type type, int cc, int warp_size, const int64_t * scr0_ne, const size_t * src0_nb, const int src1_ncols, bool mul_mat_id, const char * dst_name);
+ 
+ template <typename T, int rows_per_block, int cols_per_block, int nwarps, bool has_ids>
+ __launch_bounds__(ggml_cuda_get_physical_warp_size()*nwarps, 1)
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -2062,7 +2062,7 @@
+         ggml_cuda_mul_mat_vec_f(ctx, src1, src0, nullptr, &dst_vec);
+         return;
+     }
+-    if (!prec_f32 && ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false)) {
++    if (!prec_f32 && ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false, dst->name)) {
+         ggml_cuda_mul_mat_f(ctx, src0, src1, nullptr, dst);
+         return;
+     }
+@@ -2101,7 +2101,7 @@
+         return false;
+     }
+ 
+-    if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {
++    if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true, dst->name)) {
+         return false;
+     }
+ 
+@@ -2143,7 +2143,7 @@
+             return;
+         }
+ 
+-        if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {
++        if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true, dst->name)) {
+             ggml_cuda_mul_mat_f(ctx, src0, src1, ids, dst);
+             return;
+         }

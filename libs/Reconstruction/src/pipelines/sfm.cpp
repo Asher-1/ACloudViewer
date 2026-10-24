@@ -7,6 +7,7 @@
 
 #include "exe/sfm.h"
 
+#include "controllers/global_mapper.h"
 #include "pipelines/option_utils.h"
 #include "pipelines/sfm.h"
 
@@ -118,7 +119,7 @@ int NormalMapper(
         const std::string& input_path,
         const std::string& output_path,
         const std::string& image_list_path /*= ""*/,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
@@ -138,7 +139,7 @@ int HierarchicalMapper(
         int num_workers /*= -1*/,
         int image_overlap /*= 50*/,
         int leaf_max_num_images /*= 500*/,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
@@ -150,6 +151,27 @@ int HierarchicalMapper(
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunHierarchicalMapper(parser.getArgc(), parser.getArgv());
+}
+
+int GlobalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& output_path,
+        int num_workers /*= -1*/,
+        int min_component_size /*= 2*/,
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options) {
+    colmap::GlobalMapperController::Options options;
+    options.database_path = database_path;
+    options.image_path = image_path;
+    options.num_workers = num_workers;
+    options.min_component_size = min_component_size;
+    colmap::ReconstructionManager manager;
+    colmap::GlobalMapperController controller(
+            options, incremental_mapper_options, &manager);
+    controller.Start();
+    controller.Wait();
+    manager.Write(output_path, nullptr);
+    return EXIT_SUCCESS;
 }
 
 int FilterPoints(const std::string& input_path,
@@ -174,7 +196,7 @@ int TriangulatePoints(
         const std::string& input_path,
         const std::string& output_path,
         bool clear_points /*= false*/,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
@@ -186,28 +208,6 @@ int TriangulatePoints(
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunPointTriangulator(parser.getArgc(), parser.getArgv());
-}
-
-int RigBundleAdjust(
-        const std::string& input_path,
-        const std::string& output_path,
-        const std::string& rig_config_path,
-        bool estimate_rig_relative_poses /*= true*/,
-        bool refine_relative_poses /*= true*/,
-        const colmap::BundleAdjustmentOptions& bundle_adjustment_options) {
-    OptionsParser parser;
-    parser.registerOption("input_path", &input_path);
-    parser.registerOption("output_path", &output_path);
-    parser.registerOption("rig_config_path", &rig_config_path);
-    // Whether to optimize the relative poses of the camera rigs.
-    parser.registerOption("estimate_rig_relative_poses",
-                          &estimate_rig_relative_poses);
-    parser.registerOption("RigBundleAdjustment.refine_relative_poses",
-                          &refine_relative_poses);
-    parser.addBundleAdjustmentOptions(bundle_adjustment_options);
-    if (!parser.parseOptions()) return EXIT_FAILURE;
-
-    return colmap::RunRigBundleAdjuster(parser.getArgc(), parser.getArgv());
 }
 
 }  // namespace cloudViewer

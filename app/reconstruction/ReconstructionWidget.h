@@ -24,19 +24,19 @@
 #include "ReconstructionManagerWidget.h"
 #include "ReconstructionStatsWidget.h"
 #include "UndistortionWidget.h"
-#include "base/reconstruction.h"
-#include "base/reconstruction_manager.h"
-#include "controllers/incremental_mapper.h"
-#include "util/bitmap.h"
-#include "util/option_manager.h"
+#include "controllers/incremental_pipeline.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
+#include "scene/reconstruction_manager.h"
+#include "sensor/bitmap.h"
 
 class MainWindow;
 
 namespace cloudViewer {
 
 // Directly use colmap's types
-using IncrementalMapperController = colmap::IncrementalMapperController;
-using IncrementalMapperOptions = colmap::IncrementalMapperOptions;
+using IncrementalPipeline = colmap::IncrementalPipeline;
+using IncrementalPipelineOptions = colmap::IncrementalPipelineOptions;
 using OptionManager = colmap::OptionManager;
 using RenderOptions = colmap::RenderOptions;
 
@@ -143,7 +143,7 @@ private:
     OptionManager options_;
 
     colmap::ReconstructionManager reconstruction_manager_;
-    std::unique_ptr<IncrementalMapperController> mapper_controller_;
+    std::unique_ptr<IncrementalPipeline> mapper_controller_;
 
     colmap::Timer timer_;
 

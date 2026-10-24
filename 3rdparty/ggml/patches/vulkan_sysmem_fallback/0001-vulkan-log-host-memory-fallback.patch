@@ -1,0 +1,36 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index e2a78cb..dd4777e 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -3610,6 +3610,12 @@ static vk_buffer ggml_vk_create_buffer(vk_device& device, size_t size, const std
+         } catch (const vk::SystemError& e) {
+         }
+     } else {
++        // Track whether a DeviceLocal candidate failed: a later success on
++        // host-visible memory is a silent sysmem fallback that makes every
++        // access to this buffer PCIe-bound (100x slower compute). Surface
++        // it instead of degrading invisibly.
++        bool device_local_failed = false;
++
+         for (auto it = req_flags_list.begin(); it != req_flags_list.end(); it++) {
+             const auto & req_flags = *it;
+ 
+@@ -3626,8 +3632,18 @@ static vk_buffer ggml_vk_create_buffer(vk_device& device, size_t size, const std
+                     buf->device_memory = device->device.allocateMemory({ mem_req.size, *mtype_it, &mem_flags_info });
+                     buf->memory_property_flags = mem_props.memoryTypes[*mtype_it].propertyFlags;
+                     done = true;
++                    // On UMA devices host memory is unified (not a slow
++                    // degradation), so only discrete cards warn here.
++                    if (device_local_failed && !device->uma &&
++                        !(buf->memory_property_flags & vk::MemoryPropertyFlagBits::eDeviceLocal)) {
++                        GGML_LOG_WARN("ggml_vulkan: %s: %zu byte allocation degraded to HOST memory (device-local allocation failed); compute on this buffer is PCIe-bound and will be much slower\n",
++                                      device->name.c_str(), (size_t) mem_req.size);
++                    }
+                     break;
+                 } catch (const vk::SystemError& e) {
++                    if (req_flags & vk::MemoryPropertyFlagBits::eDeviceLocal) {
++                        device_local_failed = true;
++                    }
+                     // loop and retry
+                     // during last attempt throw the exception
+                     if (it + 1 == req_flags_list.end() && mtype_it + 1 == memory_type_indices.end()) {

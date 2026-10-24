@@ -22,7 +22,7 @@
 #include "mvs/mat.h"
 #include "mvs/workspace.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/misc.h"
 #include "util/reconstruction_log.h"
 #include "util/threading.h"

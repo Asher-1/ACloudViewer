@@ -90,4 +90,9 @@ ggml_tensor* batchnorm(ggml_context* ctx, const ModelLoader& ml, ggml_tensor* x,
 void bn_fold_params(const ModelLoader& ml, const char* prefix, float eps,
                     const float** scale, const float** shift, int64_t* count);
 
+// Remove folded constants owned by one model before its tensor context is
+// destroyed. This prevents pointer reuse by a later model from false-hitting a
+// process-level cache entry while leaving other live models untouched.
+void invalidate_bn_fold_cache(const ModelLoader& ml);
+
 } // namespace fd

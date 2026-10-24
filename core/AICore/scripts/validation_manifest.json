@@ -1,0 +1,4446 @@
+{
+  "schema": 2,
+  "tasks": [
+    "aliked",
+    "anycalib",
+    "deeplsd",
+    "depth",
+    "facedetect",
+    "gaussian",
+    "gkd",
+    "lightglue",
+    "loma",
+    "rfdetr",
+    "rmbg",
+    "sam3",
+    "sam3d",
+    "trellis",
+    "yolo",
+    "map_anything",
+    "lingbot",
+    "reid",
+    "ocr",
+    "table"
+  ],
+  "input_assets": [
+    {
+      "id": "sacre-coeur-1",
+      "tasks": [
+        "depth",
+        "gaussian",
+        "aliked",
+        "deeplsd",
+        "trellis",
+        "sam3d",
+        "map_anything"
+      ],
+      "relative_path": "lightglue_test_images/sacre_coeur1.jpg",
+      "url": "https://raw.githubusercontent.com/cvg/LightGlue/main/assets/sacre_coeur1.jpg",
+      "sha256": "d274c3780b671fe637040bc976166962e2e48f8f512fb7ce939b71b07c85af83",
+      "size_bytes": 201537
+    },
+    {
+      "id": "sacre-coeur-2",
+      "tasks": [
+        "gaussian",
+        "map_anything"
+      ],
+      "relative_path": "lightglue_test_images/sacre_coeur2.jpg",
+      "url": "https://raw.githubusercontent.com/cvg/LightGlue/main/assets/sacre_coeur2.jpg",
+      "sha256": "c6c0339235087c7c6c38faca5c6545250699bb59120b94b06f0fcf8227fbe64e",
+      "size_bytes": 259462
+    },
+    {
+      "id": "friends-faces",
+      "tasks": [
+        "facedetect"
+      ],
+      "relative_path": "friends_faces.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qFaceDetect/friends_faces.zip",
+      "sha256": "eb2c2daff249f8bf50e9f95ae1a37c3ce7de06bc7e2a798c4512a179265a637b",
+      "size_bytes": 35590353,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "friends_faces/query/friends1.jpg",
+          "sha256": "461e238252eb786eab2e455af2e83123a6bc360e34e194d641c679835b60ec8e",
+          "size_bytes": 226027
+        }
+      ]
+    },
+    {
+      "id": "sam3-samples",
+      "tasks": [
+        "sam3"
+      ],
+      "relative_path": "sam_test_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam_test_data/sam_test_data.zip",
+      "sha256": "3c1d97fddc540dfbc134738aa29fa1607bba329c03aa5c0df37f1e6e13317e87",
+      "size_bytes": 31694047,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "sam_test_data/images/cand1.jpg",
+          "sha256": "6ea2a7111a7de3006d9c38c35966cec7b85c6c8cae473b53142dac8f3533ad0c",
+          "size_bytes": 592578
+        }
+      ]
+    },
+    {
+      "id": "objects-detection-samples",
+      "tasks": [
+        "yolo"
+      ],
+      "relative_path": "objects_detection_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/objects_detection_data/objects_detection_data.zip",
+      "sha256": "f6dc7755a124d3ffa4454e5d0b52c8f97d149f2807ac877420c4fd319feaddd2",
+      "size_bytes": 105537126,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "objects_detection_data/images/bus.jpg",
+          "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+          "size_bytes": 137419
+        },
+        {
+          "relative_path": "objects_detection_data/videos/people-walking.mp4",
+          "sha256": "822671fb20ed13ef9ead91d1f3678863b5aa078dd3b2ed45953fda39a61c979d",
+          "size_bytes": 7606633
+        },
+        {
+          "relative_path": "objects_detection_data/videos/traffic.mp4",
+          "sha256": "9e18115c6dd7ec9fb41734d497c71effaa4f6184e7df5acaca4185a4f72f6794",
+          "size_bytes": 21966072
+        },
+        {
+          "relative_path": "objects_detection_data/videos/vehicles.mp4",
+          "sha256": "ac81100d9310bd4e9c02bc0b13b6492781d009742ced347766b2601be3c44ad4",
+          "size_bytes": 35345757
+        },
+        {
+          "relative_path": "objects_detection_data/videos/supervision_demo.mp4",
+          "sha256": "02a842ce04ada498923173ad7400684e4b791f2982f6db5e63208dc08633be06",
+          "size_bytes": 39236015
+        }
+      ]
+    },
+    {
+      "id": "gkd-official-demos",
+      "tasks": [
+        "gkd"
+      ],
+      "relative_path": "general_keypoint_detection_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/general_keypoint_detection_data/general_keypoint_detection_data.zip",
+      "sha256": "14da5f5296fcac60a248cde7623f8d93d9fa6b29b8cc9a94a0258f5da4189e23",
+      "size_bytes": 3836798,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "general_keypoint_detection_data/2007_007524.jpg",
+          "sha256": "cc46566551624543508b79dc5cab318ff674e6f68e8ee21f793ae1c68860df06",
+          "size_bytes": 72643
+        },
+        {
+          "relative_path": "general_keypoint_detection_data/2007_003778.jpg",
+          "sha256": "14741e33b9571b266fe705e60a630a940af8da32193e37246263a5e9c73cbb4f",
+          "size_bytes": 150644
+        }
+      ]
+    },
+    {
+      "id": "lingbot-parity-00000000",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000000.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000000.png",
+      "sha256": "8b07befd90f26e87411e64f7fd433c6b96b2dec6d640ce1e3c78f35402043b8c",
+      "size_bytes": 250946
+    },
+    {
+      "id": "lingbot-parity-00000001",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000001.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000001.png",
+      "sha256": "382233d33a4e6c4c596d09cf8d44c361962df502a180bfa9c1a64e8cf10e3425",
+      "size_bytes": 253281
+    },
+    {
+      "id": "lingbot-parity-00000002",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000002.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000002.png",
+      "sha256": "234711bff562f68da4e8515d0788404d406591a93f0efe4391c34ff6c7f3f1e2",
+      "size_bytes": 257494
+    },
+    {
+      "id": "lingbot-parity-00000003",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000003.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000003.png",
+      "sha256": "54549d7a0a6386d1e2279060836edddd20b68c4c5f3acfe7198ed20cc0c869b4",
+      "size_bytes": 256887
+    },
+    {
+      "id": "lingbot-parity-00000004",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000004.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000004.png",
+      "sha256": "52a808711be5309c8be9041acd947d2adba0d754da0c35da6537c1fb1b210c9f",
+      "size_bytes": 254207
+    },
+    {
+      "id": "lingbot-parity-00000005",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000005.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000005.png",
+      "sha256": "7d44bf8ecaa77e06567a431cb0d731bf31c486fa7c397ee76d8571d43a4f6c87",
+      "size_bytes": 257942
+    },
+    {
+      "id": "lingbot-parity-00000006",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000006.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000006.png",
+      "sha256": "b4c6aa89f28d696c3acdb6b06917ed7d51a21dbb1a770b6e7b4ec2262fc8030a",
+      "size_bytes": 243505
+    },
+    {
+      "id": "lingbot-parity-00000007",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000007.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000007.png",
+      "sha256": "e94422026dee320f1c1455ec461df9dbff80c10557a582ec5f62d0a57dd66eea",
+      "size_bytes": 225809
+    },
+    {
+      "id": "lingbot-parity-00000008",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000008.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000008.png",
+      "sha256": "b18bfeb7f53b4a24e873eb466ec10f6dae41a430defbe82566c9b2d587c6a3ad",
+      "size_bytes": 212422
+    },
+    {
+      "id": "lingbot-parity-00000009",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000009.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000009.png",
+      "sha256": "34e0b857cdc4283c120b8b459e1dc9c4f74bd48b6d2f466e423e3ab9f004d4a1",
+      "size_bytes": 223683
+    },
+    {
+      "id": "lingbot-parity-00000010",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000010.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000010.png",
+      "sha256": "284d286be98c402a7f7c9ba042bd2bc816dd874d05793da91092e605fc515de4",
+      "size_bytes": 237418
+    },
+    {
+      "id": "lingbot-parity-00000011",
+      "tasks": [
+        "lingbot"
+      ],
+      "relative_path": "lingbot_parity/00000011.png",
+      "url": "https://raw.githubusercontent.com/Asher-1/lingbot-map-ggml/156117fffedf27421a44f5c918a983a6d8cdec34/example/courthouse/000011.png",
+      "sha256": "c5218ca179da1c8e7cbaa94ac5af6f6fd2f2b86d76d120a5d600d7a017da25b0",
+      "size_bytes": 238558
+    },
+    {
+      "id": "ocr-rec-input",
+      "tasks": [
+        "ocr"
+      ],
+      "relative_path": "ocr_fixtures/rec_ch_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_page_input.npy",
+      "sha256": "634b6c42cb75bb2fa93ae6a24a4985ff6a7871c1213fc3fb188ff6e95a56682e",
+      "size_bytes": 184448,
+      "path": "rec_ch_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR rec fixture input (1,3,48,320): official imgs_words_ch/word_1.jpg through OCRReisizeNormImg"
+    },
+    {
+      "id": "ocr-rec-reference",
+      "tasks": [
+        "ocr"
+      ],
+      "relative_path": "ocr_fixtures/rec_ch_reference.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_ch_page_reference.npy",
+      "sha256": "6ae5c9d54a2206ae31f9a67212ff6d4893aafe3aaa7c78251bd1a5b4d95cef05",
+      "size_bytes": 1060128,
+      "path": "rec_ch_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR rec fixture reference (1,40,6625) softmax from the Paddle Inference predictor of ch_PP-OCRv4_rec_infer (4 non-blank CTC steps)"
+    },
+    {
+      "id": "ocr-det-input",
+      "tasks": [
+        "ocr"
+      ],
+      "relative_path": "ocr_fixtures/det_ch_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_page_input.npy",
+      "sha256": "0e9bedae1dc5c6c248f08222c002ecd0cf8027b02b86a69ab82a0639f2a65060",
+      "size_bytes": 5505152,
+      "path": "det_ch_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR det fixture input (1,3,512,896): official imgs/00006737.jpg through DetResizeForTest(max 960)+NormalizeImage (export_ocr_fixture.py)"
+    },
+    {
+      "id": "ocr-det-reference",
+      "tasks": [
+        "ocr"
+      ],
+      "relative_path": "ocr_fixtures/det_ch_reference.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/det_ch_page_reference.npy",
+      "sha256": "4ebf682711f8fd49732ce281041efb004fb9b472d5cf58becc9909384da61eb7",
+      "size_bytes": 1835136,
+      "path": "det_ch_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR det fixture reference (1,1,512,896) sigmoid map from the Paddle Inference predictor of ch_PP-OCRv4_det_infer (prob max 1.0, 7.6% text pixels)"
+    },
+    {
+      "id": "ocr-layout-input",
+      "release": "ocr-fixtures",
+      "path": "layout_input.npy",
+      "sha256": "3c7b54af472b90f0ce88ec1aa4e1b9b73d37521024485ee23175ec096d630937",
+      "size_bytes": 5836928,
+      "description": "PicoDet layout fixture input: official table_page_1.png resized to 608x800 and ImageNet-normalized by export_ocr_fixture.py",
+      "relative_path": "ocr_fixtures/layout_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_input.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head0",
+      "release": "ocr-fixtures",
+      "path": "layout_head0.npy",
+      "sha256": "d278cbb640a1e1c5979af442c7b64a8f0ccee8d1c734cd70b056220aa1e9b9e7",
+      "size_bytes": 304128,
+      "description": "PicoDet official Paddle predictor reference head 0 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head0.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head0.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head1",
+      "release": "ocr-fixtures",
+      "path": "layout_head1.npy",
+      "sha256": "20d1e1ef87f6764c0aad0a1de0022d208280736b3d8dfe568b1cbdbb1713cf1b",
+      "size_bytes": 76128,
+      "description": "PicoDet official Paddle predictor reference head 1 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head1.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head1.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head2",
+      "release": "ocr-fixtures",
+      "path": "layout_head2.npy",
+      "sha256": "dc9146bac11ce043d9100e130865bfd744d598e28a22514932c1bf9ddc9b79cb",
+      "size_bytes": 19128,
+      "description": "PicoDet official Paddle predictor reference head 2 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head2.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head2.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head3",
+      "release": "ocr-fixtures",
+      "path": "layout_head3.npy",
+      "sha256": "225df469295c565161cb746763e158674974036f740c50adec65c70d9e88f289",
+      "size_bytes": 5328,
+      "description": "PicoDet official Paddle predictor reference head 3 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head3.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head3.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head4",
+      "release": "ocr-fixtures",
+      "path": "layout_head4.npy",
+      "sha256": "0ee4882b230746b687208f70b15a79efdff81a1fb62ea200dc1fd607d106f0e8",
+      "size_bytes": 972928,
+      "description": "PicoDet official Paddle predictor reference head 4 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head4.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head4.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head5",
+      "release": "ocr-fixtures",
+      "path": "layout_head5.npy",
+      "sha256": "0b371bb315a3496c950547ac59c63b39afe83cc4c8e03072038dfbaffff3e943",
+      "size_bytes": 243328,
+      "description": "PicoDet official Paddle predictor reference head 5 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head5.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head5.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head6",
+      "release": "ocr-fixtures",
+      "path": "layout_head6.npy",
+      "sha256": "a192246c5ea363e90d6b006eb59b18dbf73ed59abfa4526bc3bc311f804975f9",
+      "size_bytes": 60928,
+      "description": "PicoDet official Paddle predictor reference head 6 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head6.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head6.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-layout-head7",
+      "release": "ocr-fixtures",
+      "path": "layout_head7.npy",
+      "sha256": "1cd2560fae4d2fb0a101e387c4426b8d857b0b61441c6b8137de36816b797000",
+      "size_bytes": 16768,
+      "description": "PicoDet official Paddle predictor reference head 7 on table_page_1.png",
+      "relative_path": "ocr_fixtures/layout_head7.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_head7.npy",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ocr-rec-en-input",
+      "tasks": [
+        "ocr"
+      ],
+      "path": "rec_en_page_input.npy",
+      "sha256": "a1d582c6dd7cb69e41a583e536498cc9c5d8c474aa52b17b378eba7fb541c479",
+      "size_bytes": 184448,
+      "relative_path": "ocr_fixtures/rec_en_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_page_input.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR English rec fixture input (1,3,48,320): official words_en/word_1.png through OCRReisizeNormImg"
+    },
+    {
+      "id": "ocr-rec-en-reference",
+      "tasks": [
+        "ocr"
+      ],
+      "path": "rec_en_page_reference.npy",
+      "sha256": "11975a6b9ef84dccd3d9b52be4bf704ac3cc1216b629abab7c34db9e2ff686bb",
+      "size_bytes": 15648,
+      "relative_path": "ocr_fixtures/rec_en_reference.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/rec_en_page_reference.npy",
+      "release": "ocr-fixtures",
+      "description": "PP-OCR English rec fixture reference (1,40,97) softmax from the Paddle Inference predictor of en_PP-OCRv4_rec_infer (5 non-blank CTC steps)"
+    },
+    {
+      "id": "table-fixture-0-input",
+      "release": "ocr-fixtures",
+      "path": "table_0_input.npy",
+      "sha256": "6b4a15e9fb559c8dffaaf22a731cb556cb5a36f2839dc6ef3f352224fc00caf8",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 0 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-0-probs",
+      "release": "ocr-fixtures",
+      "path": "table_0_probs.npy",
+      "sha256": "662d41835c55c64d7a8c793b6b3f50243e7f8248f34f1699b3e11237d1b589c2",
+      "size_bytes": 5128,
+      "description": "SLANet_plus fixture 0 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-0-loc",
+      "release": "ocr-fixtures",
+      "path": "table_0_loc.npy",
+      "sha256": "9d34f7e4f876a48948e973bfd8e39c4ba14a2ed41797a5e34f3435be42704e60",
+      "size_bytes": 928,
+      "description": "SLANet_plus fixture 0 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_0_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_0_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-input",
+      "release": "ocr-fixtures",
+      "path": "table_1_input.npy",
+      "sha256": "bb795685d59776f135cf4d34cb89af2a0ec03cd029b54088e90c286a795013da",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 1 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-probs",
+      "release": "ocr-fixtures",
+      "path": "table_1_probs.npy",
+      "sha256": "1498215c199046d6d5dc36e175ebc3764897856017210aa143c3eaab18e3d187",
+      "size_bytes": 15728,
+      "description": "SLANet_plus fixture 1 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-1-loc",
+      "release": "ocr-fixtures",
+      "path": "table_1_loc.npy",
+      "sha256": "e3be9ad9ddcc6d51cac283f9acab73dfe3870f4e54ba8d33fb49469649a2cc72",
+      "size_bytes": 2624,
+      "description": "SLANet_plus fixture 1 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_1_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_1_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-input",
+      "release": "ocr-fixtures",
+      "path": "table_2_input.npy",
+      "sha256": "d9bca855e1d1f83dd6a18c2c3140497263a25d69d33d06d981fb243242ce8105",
+      "size_bytes": 2857856,
+      "description": "SLANet_plus fixture 2 network input (1,3,488,488), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_input.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_input.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-probs",
+      "release": "ocr-fixtures",
+      "path": "table_2_probs.npy",
+      "sha256": "1b13d0b7aa315624ace868e2628b1da5dceee17cca6bfe61d70f53bb391ca8ae",
+      "size_bytes": 37128,
+      "description": "SLANet_plus fixture 2 Paddle per-step structure softmax, PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_probs.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_probs.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixture-2-loc",
+      "release": "ocr-fixtures",
+      "path": "table_2_loc.npy",
+      "sha256": "51a87a5a199ba67630435b122150e0bb56636cee9b60cb0922693a7f37092289",
+      "size_bytes": 6048,
+      "description": "SLANet_plus fixture 2 Paddle per-step cell polygons (sigmoid), PaddleX 3.0.1 reference",
+      "relative_path": "ocr_fixtures/table_2_loc.npy",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_2_loc.npy",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "table-fixtures-index",
+      "release": "ocr-fixtures",
+      "path": "table_fixtures.json",
+      "sha256": "5e5088f42191aad769b29f48da4644c2a3f2361b5f0a0f62a0f21cac7bb0b09e",
+      "size_bytes": 1750,
+      "description": "SLANet_plus fixture index (source crops, steps, digests)",
+      "relative_path": "ocr_fixtures/table_fixtures.json",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/table_fixtures.json",
+      "tasks": [
+        "table"
+      ]
+    },
+    {
+      "id": "ocr-layout-regions",
+      "release": "ocr-fixtures",
+      "path": "layout_regions.json",
+      "sha256": "1d3bb3926e041dae807ef76903e41fee0f41c00feb7c8aa5b9b67ea9e85327aa",
+      "size_bytes": 4602,
+      "description": "official PP-Structure CDLA regions on 3 pinned pages (run_paddle_layout_reference.py)",
+      "relative_path": "ocr_fixtures/layout_regions.json",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ocr-fixtures/layout_regions.json",
+      "tasks": [
+        "ocr"
+      ]
+    },
+    {
+      "id": "ppocr-testdata",
+      "tasks": [
+        "ocr",
+        "table"
+      ],
+      "relative_path": "ppocr_testdata.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/PP-OCR/ppocr_testdata.zip",
+      "sha256": "9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484",
+      "size_bytes": 17317673,
+      "archive": true,
+      "description": "PaddleOCR test images + layout pages + real-document table crops (tables/) + PaddleX table_rec val GT (synthetic tables; MANIFEST.txt pins every member and its source)",
+      "extracted_files": [
+        {
+          "relative_path": "ppocr_testdata/test_files/table.jpg",
+          "sha256": "acd113bb3a89b488941ee0962776a28e45897fa2802cd306ec3bb68d9043115c",
+          "size_bytes": 16208
+        },
+        {
+          "relative_path": "ppocr_testdata/layout_doc_test.png",
+          "sha256": "852258f594b695d1e7421f052810f3a3ae405820e1d8351d60895395db29744f",
+          "size_bytes": 69009
+        },
+        {
+          "relative_path": "ppocr_testdata/layout/table_page_1.png",
+          "sha256": "4b6e3d1aef64cd90c92d5be3bed628f486affd4e4b2ce85f8da2695edb9069fc",
+          "size_bytes": 776050
+        },
+        {
+          "relative_path": "ppocr_testdata/layout/table_page_layout.jpg",
+          "sha256": "c05f6c65efc2cb1c6514537716e26e3488268f288f8cd54edf52e1c8c2e2f561",
+          "size_bytes": 687574
+        },
+        {
+          "relative_path": "ppocr_testdata/tables/ppstructure_table.jpg",
+          "sha256": "d754f91e263b0392708e48050971722f86a3a863c2497e73869802066b7dfc06",
+          "size_bytes": 59389
+        },
+        {
+          "relative_path": "ppocr_testdata/tables/table_recognition_v2.jpg",
+          "sha256": "c76d5cbeeb4466cb597f672182d1fc91c627038e877185843a3ae09489f7dc04",
+          "size_bytes": 70355
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/val.txt",
+          "sha256": "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+          "size_bytes": 802973
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_2945_L7MSRHBZRW6Y347G39O6.jpg",
+          "sha256": "a1c29bc33626bd3ce8c705ad1ef849fc75a04a9f186be66e99d5b08dea244fe1",
+          "size_bytes": 109317
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_4825_LH9WI6X104CP3VFXPSON.jpg",
+          "sha256": "cca1909e29fd4025ef49dd25d1e32216222a14d49feac01a441e03c387966d4a",
+          "size_bytes": 21040
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_16837_79KHWU9WDM9ZQHNBGQAL.jpg",
+          "sha256": "44e9a8acce8b02d9381bf9ac4b41ec981c9497ff36daa8a3abe59775503cf6cd",
+          "size_bytes": 69886
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_10107_9ENLLC29SQ6XI8WZY53E.jpg",
+          "sha256": "91bd3136fd6288420825d9b4f3d8da28b9cf58909c21512ba650e966f5085e1c",
+          "size_bytes": 41705
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_16668_JIS0YFDZKTKETZIEKCKX.jpg",
+          "sha256": "c60ffe7e9cad64eec903c2bc25dc689e5de4c8119963c88bb883e29d8bf483e1",
+          "size_bytes": 47345
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_18653_J9SSKHLFTRJD4J8W17OW.jpg",
+          "sha256": "571477b0b587811317c13769c8da83ae9bc8b10652310d26de89d962a9f2cf46",
+          "size_bytes": 32059
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8396_VJ3QJ3I0DP63P4JR77FE.jpg",
+          "sha256": "219d03e480092f2da3d302dbb57a2a754c7feba1c1c6fc3c3e6e793820ab0c1b",
+          "size_bytes": 26017
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9017_K2V7QBWSU2BA4R3AJSO7.jpg",
+          "sha256": "c4fb34018c56c575967ee759aa02b74789a66f32a5b0ea381dbcd5c23fa4b2ae",
+          "size_bytes": 51170
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_19494_SDFMWP92NOB2OT7109FI.jpg",
+          "sha256": "56d13c3f8bb7497dde4b5d4849a3a8bcf6dab0c1b6717edc4085fe9a1fe80e7c",
+          "size_bytes": 91200
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_288_6LK683JUCMOQ38V5BV29.jpg",
+          "sha256": "1cefdba21990747c5db8334d704156d66a3c0bd9f2fba407807873c788ff6fdb",
+          "size_bytes": 66194
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_15463_PF9RBVRNKZE869039D0R.jpg",
+          "sha256": "857657d7f047ceb467ddbc24299c3767944c3bd5a8ba0aad13293aeef90f0e0a",
+          "size_bytes": 31192
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_7845_SUB4GLYSCWHZYD5XMG5F.jpg",
+          "sha256": "7abcb44351552a279535ae9c4b13fd92277b24dc818b51f25bd62d66fdc514e3",
+          "size_bytes": 18692
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_8218_WXEN1YG5TBD13TG8IQRV.jpg",
+          "sha256": "c82db3ff9da528231d9715494beaeab5e12aead72e93040dbe6f7cdb09b4cd67",
+          "size_bytes": 89273
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_7419_H1E493INMIP9STVYRZC3.jpg",
+          "sha256": "0d101ae09f97cac05f48a73f96940dc555fd1f389d4edf9eac916b405c46f8f9",
+          "size_bytes": 84712
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_9873_KI0M97B4J0MGC11ICUB2.jpg",
+          "sha256": "bc8c200a9e29313a9a682bb9e7837deec14d2dfaacfecc3011fb1a839e3abbb2",
+          "size_bytes": 54133
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_19624_SU8OKUCYCI3IP9XSQEMD.jpg",
+          "sha256": "524b9a6f622cfb228cde3d9d4b0d8d616b368bb7fa61dfd517aa6411e166e121",
+          "size_bytes": 29588
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_5827_593WYP9J6BS5VIL08M9C.jpg",
+          "sha256": "fb3b21716c19b530c6cc13ef52310f2175f37f842abdcf25e048a7fc37aaf6b3",
+          "size_bytes": 21939
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_318_USPRK6YD0V9A5HZBXYYF.jpg",
+          "sha256": "675a07fa8c41fd8b85140c8b2ee1be355fa21569c49049c4ae2e271bdb123089",
+          "size_bytes": 20870
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_15527_UDCNC9UJQYT2YB8BGWIM.jpg",
+          "sha256": "65a161999d63b81e94cc3d6032f1a5c4837966f8b8a0d07e438fb0df422e848c",
+          "size_bytes": 16804
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_5626_HDUMPDCW3G35NF0XJ3X6.jpg",
+          "sha256": "3ddc82241bb66181b59d8946b372dbf99993b476c8a62711d3589c53f1c8df19",
+          "size_bytes": 38328
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_2593_ESRTK8YJE3QO7L37YYGG.jpg",
+          "sha256": "1561dbfe03e0f4b6da594b1a63b8ca63406206b514d0f35cefd7a4e37d2533b2",
+          "size_bytes": 58614
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_17510_QLZWGTYH521OXAWZ8JIW.jpg",
+          "sha256": "af839a50994901c6e73e6cf6ed804f03a32999c64684c87ef390ed48e3ea1a58",
+          "size_bytes": 23784
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_18309_8F9CXIKWIPXE56HUZWXQ.jpg",
+          "sha256": "4bc2fd4996b27de275465b28607c30832d1fc7b092395b49f61f4504d7ea504d",
+          "size_bytes": 57942
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_18685_OFXZ1U8UH1R9UNEB4JEZ.jpg",
+          "sha256": "f90938c02d9d9414f8f7be0473abc9c05e64c963f20b002c57ebcd88b894444d",
+          "size_bytes": 8422
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_10248_SWHFHH8YM91YHHOSDMAY.jpg",
+          "sha256": "2eedf2e9b07600c750652347b906ef45c6af037412916835fe73fb4e3a99f4f5",
+          "size_bytes": 35628
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_2125_IFPQTN9AQCJO9P8ZVAAR.jpg",
+          "sha256": "17cf2aef7446189987d0db453a6b84994c9e86b74c31c3f043e1951922059c90",
+          "size_bytes": 25650
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_4886_B6P4IVZP7AEHDDBTJ9YF.jpg",
+          "sha256": "a890d59e0db9c1f8f5e93e91386274881e568f29b463d196d184e0c324ccff5a",
+          "size_bytes": 34937
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_5385_QU3N173ATRWHKBSAJ00S.jpg",
+          "sha256": "5da253adda461c16cbf04feb875093b2202d86e3e2c3b2f55ea7e5906991b233",
+          "size_bytes": 68021
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_1236_BM93BBMF9I5IF5LFL7XX.jpg",
+          "sha256": "68e774ed46ad597c2c0cd4943b3ba0d007dcc3975d519d9d6d74016721ecdcc5",
+          "size_bytes": 55048
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_4390_LDQ0FXT4XUPG0A5PYQIN.jpg",
+          "sha256": "632d1a1cbcf54cab51a857a183aa6213151502e2dd4c5404475e52b7369c19d2",
+          "size_bytes": 55008
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_8935_WBWHYGPFSYJ55ML98XSI.jpg",
+          "sha256": "6e5bcb42afd33ec79efe6a1e91e3dcdc1ad5ed3857a88dacc167aad42b59a412",
+          "size_bytes": 45392
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_2132_UB0ULCG9NEF8Y14F8QXD.jpg",
+          "sha256": "200929e191bfe0123a853b73dc7da5390118fb9db8e289bb650a7ee046bc2931",
+          "size_bytes": 25198
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_7990_ZIOS48Z4Y7VIUJ3SS8DC.jpg",
+          "sha256": "5fe478b86e63282f4a45261f12254cb7dec79404d4380d119db9e4bf587221aa",
+          "size_bytes": 21782
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_1585_YZGRLI947Z5ICPSI3HAL.jpg",
+          "sha256": "57adca03e0aae323c69e1caf9219fc52f5f344d88e90854e8cc2473a1dd85bab",
+          "size_bytes": 36132
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_1565_AMZ0ZHLFUZX7C6LW0EJE.jpg",
+          "sha256": "0f90059fe5b92514a094c2d324346be8af032c8f643519eaf8f1ab8070a19523",
+          "size_bytes": 78687
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_6409_KURIIT2JIUSHID0XQIRJ.jpg",
+          "sha256": "72972470927f8d876b90bcff71c0e798fd933662e730d603d004893889ce2bb5",
+          "size_bytes": 83982
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_18833_XKIE52BLV7OLK79YD4SV.jpg",
+          "sha256": "4886ea1f1425833baec4121089da5d4fc051237520d65e51c3baf48d013828b8",
+          "size_bytes": 51711
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_18024_X8V1L8KNAGJNI3RHR9N2.jpg",
+          "sha256": "ad256d72543fe1c15b65f248e6f854a16eacea6090fc0db42d007d1fee2b70d5",
+          "size_bytes": 37766
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_9131_4XB305X9Y5GT994EBRP5.jpg",
+          "sha256": "a2c60cbde7847e1ea7f6df6060b9c2768046ba004b83469246cc59315c13bfac",
+          "size_bytes": 69944
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_10536_ZFT44INZNNQJ3ZH1244K.jpg",
+          "sha256": "b1feab9b031a7bc14c8ca651d5b806a4452d5bca69a9ee256d607ab3c3736c16",
+          "size_bytes": 10071
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_17389_FF0NN9ANTT48ODWYM6NW.jpg",
+          "sha256": "b7f709d8f4b8cc365917ebbdd16ad4303a45ef0f2ff55a268e6343f10849d78d",
+          "size_bytes": 25549
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_3281_PB0SP43UY168P5KOQ42G.jpg",
+          "sha256": "e00a5c983b4bebda023940be68d6c2f92d4697325408fda6882c0bf7455a9d30",
+          "size_bytes": 12034
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8026_3NVN480DKI2RWTKIJH98.jpg",
+          "sha256": "eacfadd8b7717d1d8ed3332716b706eb90602e4a0556c98e66f472f74dc0dd96",
+          "size_bytes": 17998
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_6893_H2KRNX7OC5YRN79ZN1AE.jpg",
+          "sha256": "182768f1c2df83ca49015ce7937f31167ae7b03bbb8fd30bdce8c3dd53bd9f50",
+          "size_bytes": 33258
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_3453_HHQ4U8CQQ3668KMP2QEP.jpg",
+          "sha256": "296f3bc436d2936f3bf4df2ad4539420de137e18b8f1a04d9ba3f6a13fd0e4ef",
+          "size_bytes": 27670
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19060_JJDP0XWILJIES84C8GJO.jpg",
+          "sha256": "14fef60e7ff79b7efba77f457780d9ea3e4866b87fc46c7e2641d7f3c9955d8b",
+          "size_bytes": 55600
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_17193_BZIEO4BUM371SWC3I477.jpg",
+          "sha256": "c808cf43a3085c4a7803bf81e823b342b4d2af49f83ae9eaf779051bdbe5e3a4",
+          "size_bytes": 104243
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_8574_K55DTTMQV60KMKT73AQH.jpg",
+          "sha256": "488de8c0edc72dee541c53e9d64808ddf435d6a35c1a34eeaee4e238530d35cf",
+          "size_bytes": 32736
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_8153_QHEO97ME5DKQNLH2EHGO.jpg",
+          "sha256": "99be60c4df5d80fa89c7c54290858026f419d506b3bf2ba6d79feb4231949adc",
+          "size_bytes": 30682
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_7661_JD05P78F388NB9O6YVE7.jpg",
+          "sha256": "155e5a55cc5d1f7c39146727535cd16f3df8774ff0349be4f1353caf06fe8469",
+          "size_bytes": 18959
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_18508_NC47FH2P0Z0HWA248FL3.jpg",
+          "sha256": "35fbe53fa3892d33d0f5d903437f0439ba5300c9fb15342713b768b383bd1d8b",
+          "size_bytes": 30745
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_2946_8RXSG6FVVB21OW3EARF5.jpg",
+          "sha256": "b602cee66866192223da68604ea7a5d32f98467cdc7896a33a806446316e669f",
+          "size_bytes": 20074
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_6430_82HYEZ3KQB0PK04U1GGI.jpg",
+          "sha256": "1a509f814244e68094dfe6ac9807ea2d02af8fa772c131a6b08fe48e056ee8b0",
+          "size_bytes": 19366
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_14829_LMQZP4HT395QSH9RGTR3.jpg",
+          "sha256": "96cba7183b8250599751d1518152158a2ddf443499a5344492420343aeba5ed3",
+          "size_bytes": 109638
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_3574_PU6TOXTMK6AUG3XEQ8GK.jpg",
+          "sha256": "40abcad6f96277a6b8a01b7b41fbb565249c8cb1bb92066e72028b00eeca471f",
+          "size_bytes": 77869
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_8226_54SBE3ELNIUAKLO7D87C.jpg",
+          "sha256": "3069d43a4be7c64f50d5f56a5e9e326d466bb4259e2cebf9eca06f3b72b097df",
+          "size_bytes": 78756
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_10267_IKMLJKIRO20SSLHW3EBU.jpg",
+          "sha256": "444e2487f255b2d80edcd39b35a7d9d004b0c4eade3cf2cc65b8e4dd585d614c",
+          "size_bytes": 35633
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_4188_V3CAUWQ9MFZVXEM312N7.jpg",
+          "sha256": "40e046fd89a6672d5d90f202b14b2aa37bbb595a067035d42ffefd1e37cabb1e",
+          "size_bytes": 18414
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_16109_DL0OMPAIRTJ9CGBV4R96.jpg",
+          "sha256": "c26f04514b5b9608e383269cca3e2ff411c11bc0c5fbd6af95119849382627ff",
+          "size_bytes": 41321
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_10300_S7RRMKNVQQPDP76BS4QX.jpg",
+          "sha256": "870ca2c553bee84be082053d4be7167c9bb8039a2cf7c5a9e1068d8b8776a8ee",
+          "size_bytes": 77216
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_7140_NN5KWTYAXV7FLER4IVL5.jpg",
+          "sha256": "ada3f11b46e18d33ecf1f6d61db06ddeaad4c4807abfda5cbc581af05b9162a0",
+          "size_bytes": 45679
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_9976_XQ6WQUU4POE0ND53V2MN.jpg",
+          "sha256": "7371e8bfc0e1a3105eab7d2c97cad881012c6e38777d0e693956d861f078997f",
+          "size_bytes": 17020
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_19487_AZ1JNK1S4E9PIQTYK90L.jpg",
+          "sha256": "4b3a14d970866c1abb5c1759105d28d69ce507a929d39545ab2065aac0d8e09c",
+          "size_bytes": 29953
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_5294_T7KEXZBDE90DR9DQTZEB.jpg",
+          "sha256": "6137cc18ede5157263fec69fbbbbecbbba66ad717674836492aa73eaea74b98a",
+          "size_bytes": 30944
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19132_O1HHN7TRZQYE4XWVSV3M.jpg",
+          "sha256": "2853c0b284361dbae0f8f7e1bef25101e58117d7e2250762bd88081db8e9e463",
+          "size_bytes": 40681
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_18679_1P2E1R7O62PJMB5Y7QEZ.jpg",
+          "sha256": "9d61673c20f0b23b097983798e930fec38f9062044300e6c6429b8ff8b8a00ab",
+          "size_bytes": 41947
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_14373_HE411L6KO87L1WE1QBCS.jpg",
+          "sha256": "67cb39bde788e0bac8bc5a8e15813e71a157a8425062e75137a7fc849d8bf6ae",
+          "size_bytes": 25845
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/head_border_bottom_15920_MXR51HQYZ28ALV9DJJOO.jpg",
+          "sha256": "ad195e4846c7338a06522a7187af4d06bc5021f52d527540cb347d670db96216",
+          "size_bytes": 64416
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_15152_9R9IDOVI6EI5PPCPOV5I.jpg",
+          "sha256": "cbc6d42dff9dd3b8ca0f5fba37659d7f386685612136ac852c2429c6a9c41445",
+          "size_bytes": 15665
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_16029_O0T64GAVKGZJFWE5HDIG.jpg",
+          "sha256": "d852cfc832945466361c1556338bd9611531da23c11fcf04377a2a5b0ed78ee5",
+          "size_bytes": 18522
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_14338_Z5CU30JKD00GF89AYAY7.jpg",
+          "sha256": "1d28b3f001ae30dc86ad1209f426fe1e555f402cdabba957511352f55ba50cdf",
+          "size_bytes": 55615
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_10166_SYLWF6PYO544AVMOC63B.jpg",
+          "sha256": "425ec74d2cc410bec2d03560362d4370c6952b7a5ea348e389018dd4c13af4a2",
+          "size_bytes": 42413
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_13603_0V20QOPGCO910W0TZS92.jpg",
+          "sha256": "e7e43fc48732049f5e67422133c58ac1b99faaa48f80de8b0767c2218fd8ce78",
+          "size_bytes": 77354
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_15546_Y2MYRAAXTIP9XBDA83BT.jpg",
+          "sha256": "e940fc0ee1845eb9d004da87be304f2989312d3b0d5a76e2b913e0b533376c63",
+          "size_bytes": 23002
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_2100_W1A7ANSGRWITB94GYE36.jpg",
+          "sha256": "a448b334686c39855c0a12d89a6446f4bbb40e87bb9e8d8a3a9a9a9e4a7e785b",
+          "size_bytes": 49103
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9701_9SP40F16783XKG03SK8J.jpg",
+          "sha256": "15759082d53bdb0c985ddea96e925c9aed58cdde75cc5f12698e83a897d3a37f",
+          "size_bytes": 60343
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_15368_QKRXB5N3RHXGUHKDNJ18.jpg",
+          "sha256": "797a0996552401d2850e3c34c868466024716c528bc76b6b9af72a667a761e8d",
+          "size_bytes": 35602
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_510_7B66FBWJ1SL9IIHHLB43.jpg",
+          "sha256": "071b64a8f3bafac9cce1a618018a33889552cf7cacf0f18b0464faf9edf54ad5",
+          "size_bytes": 21710
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_783_ERZT8JDLENUPD577CBDB.jpg",
+          "sha256": "1a236d06cfcd4d88963f5b3d4f8e5c5eb756a36a37af2053f07d5551e7ef81bd",
+          "size_bytes": 55652
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_5578_B455Z7XBJYO5175AK31H.jpg",
+          "sha256": "58311d82ac68400c1512509451e6ca914d63e0b0f3193b3c438297ce780c74d6",
+          "size_bytes": 83236
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_3579_H4V4NDZTJ139V8AOLALV.jpg",
+          "sha256": "8c96c6a4a511e27e69010dcceec9bd27e680b340e60f451dbbdde5a9cbb001bb",
+          "size_bytes": 60385
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_19742_PSLEB7ONEH4ER3TZ1TQ2.jpg",
+          "sha256": "251129f86f9e27e968e9de2500e60f7721b245caeed069fc4d60f4e4e9c6aed4",
+          "size_bytes": 82081
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_3391_3N2N0ZGM239C9TGANXVX.jpg",
+          "sha256": "1fce7173b2638b9e159298e8e69261a1c1d948cd08f3fb4a4c685bd52dea45a6",
+          "size_bytes": 27800
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_632_AQUOKM22MM4VFI3BC6DL.jpg",
+          "sha256": "ff86372d49737207fd6721c9577773305ebfc3187b9727abea92c9df9c767bf6",
+          "size_bytes": 120471
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_14858_KGO86GLPQ3MFI3KWEVZM.jpg",
+          "sha256": "024dbcc7fb1816d551a3b76f06eec07452c84708d310e274569a4d5204410374",
+          "size_bytes": 47018
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_14082_R1TFM9DHYARH8BB32M0P.jpg",
+          "sha256": "233c0a7323d4e03b6e88e9a895c4f4a74d66884afe0c477832697f56823da94e",
+          "size_bytes": 34661
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_6962_0DE4JHN1GX6QN7TGQISH.jpg",
+          "sha256": "39ea1b8943a816baa9732bd582c1474c8de895a055ef4e2eabf24014184d5cbc",
+          "size_bytes": 30469
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_4388_SXFJ006WE8WK5WPOWXF2.jpg",
+          "sha256": "fef1d75e3263b9ae120dfce7d30342720f3d9108f32bf988f18e3dbcd84c6b70",
+          "size_bytes": 98625
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_3256_J4BT6ATDYDCJTF92OY4X.jpg",
+          "sha256": "0383d979fbed2bc81163f8ecbf911051589e54028af8ca5c910302f33085379e",
+          "size_bytes": 34855
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_9966_W9QXUK7HLZLJN51GLMJ5.jpg",
+          "sha256": "f41676d8ae516ca92d3ed3a8df349a5f1932935d38b55b3cb70129abb67b9c56",
+          "size_bytes": 33560
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_5337_KNVGX1VE2WIYSM7OXNGK.jpg",
+          "sha256": "c40ad0a11cf09f445ffd4c971184eb8f31ca09ddb895960c40d5f7948b52160e",
+          "size_bytes": 39821
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_5067_E3LFA3DKPLLZBQHG57JF.jpg",
+          "sha256": "03b5cb239d167305ee68f7a6b281e263c54946b10b09d5627241f645fbcfe57f",
+          "size_bytes": 32621
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_3949_BM9CEE8STL5WQI476X3C.jpg",
+          "sha256": "49cd44300ef14a84ff42d73e2a45972668c624d9e13535da30f4ab382d7c5c24",
+          "size_bytes": 44491
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_7131_QD2TLRSJX7VRLD82797C.jpg",
+          "sha256": "45c6daa3e0ac7818e416deaa1b7daf4f80f2113513873dbad159e70042cd12d8",
+          "size_bytes": 61053
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/no_border_2900_BYGU7MIZMZIPK867X5SE.jpg",
+          "sha256": "f86105c715323e7aaaa949cda312fa02f3c052a79c2154777f92f52efca0346a",
+          "size_bytes": 21586
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_left_1298_OT0BN1MDFP8H3SD93F7T.jpg",
+          "sha256": "00b670a4bd90b8b52fd7692f368285953621f4f596cce8f559f5c7e79d6003d0",
+          "size_bytes": 18238
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_4852_VR56QA1U7GMF9HQYMCY2.jpg",
+          "sha256": "d9cb4db28a607bcbc469ca563dc58e0dbaefc1cc93d30067f59e41a101b2e3cb",
+          "size_bytes": 65988
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_right_14935_UNYM9J2DIE2CN33NPISK.jpg",
+          "sha256": "a858be0ebbc674544685e9af4078d52853607dd3db9c5ef49dea560fc0f92f79",
+          "size_bytes": 35030
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_bottom_6349_1ASGR3V6J4P1ZEVKTJJM.jpg",
+          "sha256": "720db4e95525248b8fb027d13badfc4535077260d3267a23ebd5bc08dbb1f1c6",
+          "size_bytes": 42508
+        },
+        {
+          "relative_path": "ppocr_testdata/table_rec/images/border_top_7250_B2WDCIIPVFXLTF3SKUIK.jpg",
+          "sha256": "9e39f85542ad8b9a511b853562ad957a24f52f3080bf02f574d6c111b083b8d5",
+          "size_bytes": 110018
+        }
+      ]
+    },
+    {
+      "id": "anycalib-ref-golden",
+      "tasks": [
+        "anycalib"
+      ],
+      "relative_path": "anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/anycalib/anycalib_gen_v1.0.0_322x322.ref.npz",
+      "sha256": "fb3d549e082d033936dfb35def098cbe67e2f262820f460088cdbc6c9d7bd82f",
+      "size_bytes": 3318592,
+      "path": "anycalib_gen_v1.0.0_322x322.ref.npz",
+      "release": "anycalib",
+      "description": "AnyCalib parity golden: pinned reference input image plus ONNX Runtime CPU rays/tangent outputs of the pinned upstream anycalib_gen_v1.0.0_322x322.onnx export (ZIP_STORED members image/rays/tangent_coords)"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "depth",
+      "task": "depth",
+      "model_glob": "da3_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_depth_capi_load",
+      "env": {
+        "AICORE_TEST_DEPTH_GGUF": "{model}",
+        "AICORE_TEST_DEPTH_IMAGE": "{image}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "finite non-empty depth output and model contract",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:depth",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "depth-backend-parity",
+      "task": "depth",
+      "model_glob": "da3_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_depth_capi_backend_parity",
+      "env": {
+        "AICORE_TEST_DEPTH_GGUF": "{model}",
+        "AICORE_TEST_DEPTH_IMAGE": "{image}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "CPU/backend dense depth, confidence, pose and intrinsics relative-MAE parity",
+      "accuracy": {
+        "reference": "cpu_reference",
+        "reference_id": "test_depth_capi_backend_parity",
+        "checks": [
+          {
+            "metric": "depth_relative_mae",
+            "op": "<=",
+            "value": 0.015,
+            "label": "dense depth relative MAE vs CPU"
+          },
+          {
+            "metric": "pose_relative_mae",
+            "op": "<=",
+            "value": 0.02,
+            "label": "camera pose relative MAE vs CPU"
+          },
+          {
+            "metric": "intrinsics_relative_mae",
+            "op": "<=",
+            "value": 0.02,
+            "label": "intrinsics relative MAE vs CPU"
+          }
+        ],
+        "require_metrics": [
+          "depth_relative_mae",
+          "pose_relative_mae",
+          "intrinsics_relative_mae"
+        ]
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "gaussian",
+      "task": "gaussian",
+      "model_glob": "freesplatter_models/*.gguf",
+      "light_globs": [
+        "freesplatter_models/freesplatter-scene-q8_0.gguf",
+        "freesplatter_models/freesplatter-object-q8_0.gguf",
+        "freesplatter_models/freesplatter-object-2dgs-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_gaussian_capi_load",
+      "env": {
+        "AICORE_TEST_GAUSSIAN_GGUF": "{model}",
+        "AICORE_TEST_GAUSSIAN_IMAGE_0": "{image}",
+        "AICORE_TEST_GAUSSIAN_IMAGE_1": "{image2}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "finite non-empty Gaussian output and geometry contract",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:gaussian",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "aliked",
+      "task": "aliked",
+      "model_glob": "lightglue_models/aliked-n16rot-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_aliked_capi_parity",
+      "args": [
+        "{model}",
+        "{image}",
+        "1024",
+        "1024"
+      ],
+      "env": {
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_ALIKED_BENCH_RUNS": "{inference_runs}"
+      },
+      "accuracy_gate": "CPU/backend keypoint and descriptor numeric parity",
+      "accuracy": {
+        "reference": "cpu_reference",
+        "reference_id": "test_aliked_capi_parity",
+        "checks": [
+          {
+            "metric": "kpt_median_px",
+            "op": "<=",
+            "value": 0.005
+          },
+          {
+            "metric": "descriptor_cosine_median",
+            "op": ">=",
+            "value": 0.9996
+          }
+        ],
+        "require_metrics": [
+          "kpt_median_px",
+          "descriptor_cosine_median"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "lightglue",
+      "task": "lightglue",
+      "model_glob": "lightglue_models/*-lightglue-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_lightglue_model_validation",
+      "args": [
+        "{model}",
+        "{backend}",
+        "{warmup_runs}",
+        "{inference_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "model-role-correct deterministic features, finite non-empty stable matches",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lightglue",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-default-triplet",
+      "task": "loma",
+      "light": true,
+      "owned_globs": [
+        "loma_models/loma_detector.f32.gguf",
+        "loma_models/loma_descriptor_dedode_g.f32.gguf",
+        "loma_models/loma_matcher_B.f32.gguf"
+      ],
+      "covered_globs": [
+        "loma_models/loma_detector.f32.gguf",
+        "loma_models/loma_descriptor_dedode_g.f32.gguf",
+        "loma_models/loma_matcher_B.f32.gguf"
+      ],
+      "executable": "binary:test_loma_default_triplet",
+      "env": {
+        "AICORE_TEST_LOMA_DETECTOR_GGUF": "{assets}/loma_models/loma_detector.f32.gguf",
+        "AICORE_TEST_LOMA_DESCRIPTOR_GGUF": "{assets}/loma_models/loma_descriptor_dedode_g.f32.gguf",
+        "AICORE_TEST_LOMA_MATCHER_GGUF": "{assets}/loma_models/loma_matcher_B.f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "DaD, DeDoDe-G and LoMa-B load and produce finite non-empty self-matches",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:loma-default-triplet",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-b128-triplet",
+      "task": "loma",
+      "owned_globs": [
+        "loma_models/loma_descriptor_dedode_b.f32.gguf",
+        "loma_models/loma_matcher_B128.f32.gguf"
+      ],
+      "covered_globs": [
+        "loma_models/loma_descriptor_dedode_b.f32.gguf",
+        "loma_models/loma_matcher_B128.f32.gguf"
+      ],
+      "executable": "binary:test_loma_default_triplet",
+      "env": {
+        "AICORE_TEST_LOMA_DETECTOR_GGUF": "{assets}/loma_models/loma_detector.f32.gguf",
+        "AICORE_TEST_LOMA_DESCRIPTOR_GGUF": "{assets}/loma_models/loma_descriptor_dedode_b.f32.gguf",
+        "AICORE_TEST_LOMA_MATCHER_GGUF": "{assets}/loma_models/loma_matcher_B128.f32.gguf",
+        "AICORE_TEST_LOMA_EXPECTED_DESCRIPTOR_DIM": "128",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "DaD, DeDoDe-B and LoMa-B128 load with the required 128D feature contract",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:loma-b128-triplet",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-matcher-variants",
+      "task": "loma",
+      "model_glob": "loma_models/loma_matcher_[RLG].f32.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_loma_matcher_e2e",
+      "env": {
+        "AICORE_TEST_LOMA_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "LoMa R/L/G load and produce deterministic finite 256D matches",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:loma-matcher-variants",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-published-models",
+      "task": "loma",
+      "model_glob": "loma_models/*.gguf",
+      "owned_globs": [
+        "loma_models/*.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_loma_published_model_gate",
+      "env": {
+        "AICORE_TEST_LOMA_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "each published GGUF loads into its declared LoMa graph and returns finite deterministic role output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:loma-published-models",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "deeplsd",
+      "task": "deeplsd",
+      "model_glob": "deeplsd_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_deeplsd_capi_load",
+      "env": {
+        "AICORE_TEST_DEEPLSD_GGUF": "{model}",
+        "AICORE_TEST_DEEPLSD_IMAGE": "{image}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "finite non-empty distance and angle fields",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:deeplsd",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "facedetect-pack",
+      "task": "facedetect",
+      "owned_globs": [
+        "facedetect_models/*.gguf"
+      ],
+      "model_glob": "facedetect_models/[!ls]*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_facedetect_embed_capi",
+      "env": {
+        "AICORE_TEST_FACEDETECT_GGUF": "{model}",
+        "AICORE_TEST_FACEDETECT_IMAGE": "{face_image}",
+        "AICORE_TEST_FACEDETECT_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "repeat embedding cosine distance and RGB/path parity",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:facedetect-pack",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "facedetect-bnkps",
+      "task": "facedetect",
+      "owned_globs": [
+        "facedetect_models/scrfd_10g_bnkps-*.gguf"
+      ],
+      "model_glob": "facedetect_models/scrfd_10g_bnkps-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_facedetect_detect_only",
+      "env": {
+        "AICORE_TEST_FACEDETECT_GGUF": "{model}",
+        "AICORE_TEST_FACEDETECT_IMAGE": "{face_image}",
+        "AICORE_TEST_FACEDETECT_DEVICE": "{backend}",
+        "AICORE_TEST_WARMUP_RUNS": "{warmup_runs}",
+        "AICORE_TEST_INFERENCE_RUNS": "{inference_runs}"
+      },
+      "accuracy_gate": "real-image detection: >=1 face, finite 5-point landmarks, repeated typed-output drift <= 1e-4",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:facedetect-bnkps",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "facedetect-landmarks",
+      "task": "facedetect",
+      "model_glob": "facedetect_models/landmarks-*.gguf",
+      "for_each_model": true,
+      "required_globs": [
+        "facedetect_models/buffalo_l.gguf"
+      ],
+      "executable": "binary:test_facedetect_dense_validation",
+      "args": [
+        "{assets}/facedetect_models/buffalo_l.gguf",
+        "{model}",
+        "{face_image}",
+        "{backend}",
+        "{warmup_runs}",
+        "{inference_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "detector/landmark role pairing, finite 106-point 2D and 68-point 3D output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:facedetect-landmarks",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "generic"
+    },
+    {
+      "id": "rfdetr",
+      "task": "rfdetr",
+      "model_glob": "rfdetr_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:bench_rfdetr_perf",
+      "args": [
+        "{model}",
+        "{backend}",
+        "{threads}",
+        "640",
+        "640",
+        "{inference_runs}"
+      ],
+      "accuracy_gate": "finite non-empty logits/boxes and detection contract",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:rfdetr",
+        "checks": [],
+        "require_metrics": []
+      },
+      "metric_parser": "rfdetr"
+    },
+    {
+      "id": "rmbg",
+      "task": "rmbg",
+      "model_glob": "rmbg_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_rmbg_capi_performance",
+      "args": [
+        "{backend}"
+      ],
+      "env": {
+        "AICORE_TEST_RMBG_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "non-degenerate alpha and exact repeated-output hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:rmbg",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "rmbg"
+    },
+    {
+      "id": "rmbg-strict",
+      "task": "rmbg",
+      "model_glob": "rmbg_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_rmbg_capi_performance",
+      "args": [
+        "{backend}",
+        "strict"
+      ],
+      "env": {
+        "AICORE_TEST_RMBG_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "non-degenerate alpha and exact repeated-output hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:rmbg-strict",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "rmbg"
+    },
+    {
+      "id": "sam3",
+      "task": "sam3",
+      "model_glob": "sam3_models/*.gguf",
+      "light_globs": [
+        "sam3_models/sam2_hiera_tiny_q8_0.gguf",
+        "sam3_models/sam2.1_hiera_tiny_q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:bench_sam3_backend_acceptance",
+      "args": [
+        "{model}",
+        "{sam_image}",
+        "{inference_runs}",
+        "{backend}"
+      ],
+      "env": {},
+      "accuracy_gate": "finite non-empty mask, box/score gates, and repeat propagation",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:sam3",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "sam3",
+      "vram_overhead_mib": 2560
+    },
+    {
+      "id": "trellis-coarse-f16",
+      "task": "trellis",
+      "owned_globs": [
+        "trellis_models/[dsst]*.gguf"
+      ],
+      "covered_globs": [
+        "trellis_models/dino_f16.gguf",
+        "trellis_models/ss_flow_f16.gguf",
+        "trellis_models/ss_dec_f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "coarse",
+        "--quant",
+        "f16",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-coarse-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "trellis-coarse-q8",
+      "task": "trellis",
+      "light": true,
+      "covered_globs": [
+        "trellis_models/dino_q8.gguf",
+        "trellis_models/ss_flow_q8.gguf",
+        "trellis_models/ss_dec_q8.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "coarse",
+        "--quant",
+        "q8",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-coarse-q8",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 6144
+    },
+    {
+      "id": "trellis-coarse-f32",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_f32.gguf",
+        "trellis_models/ss_flow_f32.gguf",
+        "trellis_models/ss_dec_f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "coarse",
+        "--quant",
+        "f32",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite f32 coarse mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-coarse-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 12288
+    },
+    {
+      "id": "trellis-512-f16",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_f16.gguf",
+        "trellis_models/ss_flow_f16.gguf",
+        "trellis_models/ss_dec_f16.gguf",
+        "trellis_models/slat_flow_f16.gguf",
+        "trellis_models/shape_dec_f16.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "512",
+        "--quant",
+        "f16",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite 512 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-512-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "trellis-512-q8",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_q8.gguf",
+        "trellis_models/ss_flow_q8.gguf",
+        "trellis_models/ss_dec_q8.gguf",
+        "trellis_models/slat_flow_q8.gguf",
+        "trellis_models/shape_dec_f16.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_q8.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "512",
+        "--quant",
+        "q8",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite 512 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-512-q8",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 7168
+    },
+    {
+      "id": "trellis-512-f32",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_f32.gguf",
+        "trellis_models/ss_flow_f32.gguf",
+        "trellis_models/ss_dec_f32.gguf",
+        "trellis_models/slat_flow_f32.gguf",
+        "trellis_models/shape_dec_f32.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "512",
+        "--quant",
+        "f32",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite f32 512 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-512-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 14336
+    },
+    {
+      "id": "trellis-1024-f16",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_f16.gguf",
+        "trellis_models/ss_flow_f16.gguf",
+        "trellis_models/ss_dec_f16.gguf",
+        "trellis_models/slat_flow_f16.gguf",
+        "trellis_models/slat_flow_1024_f16.gguf",
+        "trellis_models/shape_dec_f16.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_f16.gguf",
+        "trellis_models/tex_slat_flow_1024_f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "1024",
+        "--quant",
+        "f16",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-1024-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 12288
+    },
+    {
+      "id": "trellis-1024-q8",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_q8.gguf",
+        "trellis_models/ss_flow_q8.gguf",
+        "trellis_models/ss_dec_q8.gguf",
+        "trellis_models/slat_flow_q8.gguf",
+        "trellis_models/slat_flow_1024_q8.gguf",
+        "trellis_models/shape_dec_f16.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_q8.gguf",
+        "trellis_models/tex_slat_flow_1024_q8.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "1024",
+        "--quant",
+        "q8",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-1024-q8",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "trellis-1024-f32",
+      "task": "trellis",
+      "covered_globs": [
+        "trellis_models/dino_f32.gguf",
+        "trellis_models/ss_flow_f32.gguf",
+        "trellis_models/ss_dec_f32.gguf",
+        "trellis_models/slat_flow_f32.gguf",
+        "trellis_models/slat_flow_1024_f32.gguf",
+        "trellis_models/shape_dec_f32.gguf",
+        "trellis_models/shape_enc_f16.gguf",
+        "trellis_models/tex_dec_f16.gguf",
+        "trellis_models/tex_slat_flow_512_f16.gguf",
+        "trellis_models/tex_slat_flow_1024_f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py",
+        "--models",
+        "{assets}/trellis_models",
+        "--image",
+        "{image}",
+        "--device",
+        "{backend}",
+        "--pipeline",
+        "1024",
+        "--quant",
+        "f32",
+        "--steps",
+        "{trellis_steps}",
+        "--seed",
+        "42",
+        "--lib",
+        "{build}/bin/libAICore.so"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite f32 1024 mesh geometry hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:trellis-1024-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "trellis",
+      "vram_estimate_mib": 18432
+    },
+    {
+      "id": "sam3d-e2e-q4k",
+      "task": "sam3d",
+      "executable": "binary:bench_sam3d_backend_acceptance",
+      "args": [
+        "{assets}/sam3d_models",
+        "{image}",
+        "{inference_runs}",
+        "{backend}",
+        "q4_k",
+        "25",
+        "42"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite FlexiCubes geometry hash and non-degenerate Gaussian/mesh outputs",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:sam3d-e2e-q4k",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "sam3d",
+      "vram_estimate_mib": 6144,
+      "light": true,
+      "owned_globs": [
+        "sam3d_models/ss_generator-q4_k.gguf",
+        "sam3d_models/ss_decoder-q4_k.gguf",
+        "sam3d_models/slat_generator-q4_k.gguf",
+        "sam3d_models/slat_decoder_gs-q4_k.gguf",
+        "sam3d_models/slat_decoder_mesh-q4_k.gguf",
+        "sam3d_models/moge_vitl-f16.gguf"
+      ],
+      "covered_globs": [
+        "sam3d_models/ss_generator-q4_k.gguf",
+        "sam3d_models/ss_decoder-q4_k.gguf",
+        "sam3d_models/slat_generator-q4_k.gguf",
+        "sam3d_models/slat_decoder_gs-q4_k.gguf",
+        "sam3d_models/slat_decoder_mesh-q4_k.gguf",
+        "sam3d_models/moge_vitl-f16.gguf"
+      ]
+    },
+    {
+      "id": "sam3d-e2e-f16",
+      "task": "sam3d",
+      "executable": "binary:bench_sam3d_backend_acceptance",
+      "args": [
+        "{assets}/sam3d_models",
+        "{image}",
+        "{inference_runs}",
+        "{backend}",
+        "f16",
+        "25",
+        "42"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite FlexiCubes geometry hash and non-degenerate Gaussian/mesh outputs",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:sam3d-e2e-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "sam3d",
+      "vram_estimate_mib": 11264,
+      "covered_globs": [
+        "sam3d_models/ss_generator-f16.gguf",
+        "sam3d_models/ss_decoder-f16.gguf",
+        "sam3d_models/slat_generator-f16.gguf",
+        "sam3d_models/slat_decoder_gs-f16.gguf",
+        "sam3d_models/slat_decoder_mesh-f16.gguf",
+        "sam3d_models/moge_vitl-f16.gguf"
+      ]
+    },
+    {
+      "id": "sam3d-e2e-q8",
+      "task": "sam3d",
+      "executable": "binary:bench_sam3d_backend_acceptance",
+      "args": [
+        "{assets}/sam3d_models",
+        "{image}",
+        "{inference_runs}",
+        "{backend}",
+        "q8_0",
+        "25",
+        "42"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite FlexiCubes geometry hash and non-degenerate Gaussian/mesh outputs",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:sam3d-e2e-q8",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "sam3d",
+      "vram_estimate_mib": 9216,
+      "covered_globs": [
+        "sam3d_models/ss_generator-q8_0.gguf",
+        "sam3d_models/ss_decoder-q8_0.gguf",
+        "sam3d_models/slat_generator-q8_0.gguf",
+        "sam3d_models/slat_decoder_gs-q8_0.gguf",
+        "sam3d_models/slat_decoder_mesh-q8_0.gguf",
+        "sam3d_models/moge_vitl-f16.gguf"
+      ]
+    },
+    {
+      "id": "sam3d-e2e-f32",
+      "task": "sam3d",
+      "executable": "binary:bench_sam3d_backend_acceptance",
+      "args": [
+        "{assets}/sam3d_models",
+        "{image}",
+        "{inference_runs}",
+        "{backend}",
+        "f32",
+        "25",
+        "42"
+      ],
+      "env": {},
+      "accuracy_gate": "fixed-seed finite FlexiCubes geometry hash and non-degenerate Gaussian/mesh outputs",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:sam3d-e2e-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "sam3d",
+      "vram_estimate_mib": 21504,
+      "covered_globs": [
+        "sam3d_models/ss_generator-f32.gguf",
+        "sam3d_models/ss_decoder-f32.gguf",
+        "sam3d_models/slat_generator-f32.gguf",
+        "sam3d_models/slat_decoder_gs-f32.gguf",
+        "sam3d_models/slat_decoder_mesh-f32.gguf",
+        "sam3d_models/moge_vitl-f16.gguf"
+      ]
+    },
+    {
+      "id": "yolo-text-clip",
+      "task": "yolo",
+      "light": false,
+      "owned_globs": [
+        "yolo_models/clip-*.gguf"
+      ],
+      "model_glob": "yolo_models/clip-*.gguf",
+      "for_each_model": true,
+      "required_globs": [
+        "yolo_models/yolov8s-world-f16.gguf"
+      ],
+      "executable": "binary:test_yolo_text_model_validation",
+      "args": [
+        "{model}",
+        "{assets}/yolo_models/yolov8s-world-f16.gguf",
+        "{yolo_image}",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "compatible YOLO-World inference, finite non-empty exact repeated output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:yolo-text-clip",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "yolo-text-mobileclip",
+      "task": "yolo",
+      "light": true,
+      "owned_globs": [
+        "yolo_models/mobileclip*.gguf"
+      ],
+      "model_glob": "yolo_models/mobileclip*.gguf",
+      "for_each_model": true,
+      "required_globs": [
+        "yolo_models/yoloe-26n-seg-f16.gguf"
+      ],
+      "executable": "binary:test_yolo_text_model_validation",
+      "args": [
+        "{model}",
+        "{assets}/yolo_models/yoloe-26n-seg-f16.gguf",
+        "{yolo_image}",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "compatible YOLOE inference, finite non-empty exact repeated output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:yolo-text-mobileclip",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "yolo-text-mclip",
+      "task": "yolo",
+      "light": true,
+      "owned_globs": [
+        "yolo_models/mclip-*.gguf"
+      ],
+      "model_glob": "yolo_models/mclip-*.gguf",
+      "for_each_model": true,
+      "required_globs": [
+        "yolo_models/yolov8s-world-f16.gguf"
+      ],
+      "executable": "binary:test_yolo_text_model_validation",
+      "args": [
+        "{model}",
+        "{assets}/yolo_models/yolov8s-world-f16.gguf",
+        "{yolo_image}",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "compatible multilingual YOLO-World inference, finite non-empty exact repeated output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:yolo-text-mclip",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "yolo",
+      "task": "yolo",
+      "light": true,
+      "owned_globs": [
+        "yolo_models/yolo*.gguf"
+      ],
+      "covered_globs": [
+        "yolo_models/yolo*.gguf"
+      ],
+      "light_globs": [
+        "yolo_models/yolo26n-q8_0.gguf",
+        "yolo_models/yolo26n-seg-q8_0.gguf",
+        "yolo_models/yolo26n-cls-q8_0.gguf",
+        "yolo_models/yolo26n-obb-q8_0.gguf",
+        "yolo_models/yolo26n-pose-q8_0.gguf",
+        "yolo_models/yolo26n-depth-q8_0.gguf",
+        "yolo_models/yolo26n-sem-q8_0.gguf",
+        "yolo_models/yolo26n-obb-1024-q8_0.gguf",
+        "yolo_models/yolo26n-sem-1024-q8_0.gguf",
+        "yolo_models/yolov8n-q8_0.gguf",
+        "yolo_models/yolov8s-world-q8_0.gguf"
+      ],
+      "required_globs": [
+        "yolo_models/clip-ViT-B-32-f16.gguf",
+        "yolo_models/mobileclip2_b-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/tests/yolo/run_yolo_model_matrix.py",
+        "--benchmark",
+        "{binary:test_yolo_capi_performance}",
+        "--parity",
+        "{binary:test_yolo_capi_parity}",
+        "--models-dir",
+        "{assets}/yolo_models",
+        "--image",
+        "{yolo_image}",
+        "--classes",
+        "person,car,bus,dog",
+        "--world-text-model",
+        "{assets}/yolo_models/clip-ViT-B-32-f16.gguf",
+        "--yoloe-text-model",
+        "{assets}/yolo_models/mobileclip2_b-f16.gguf",
+        "--backends",
+        "cpu,{backend}",
+        "--warmup",
+        "{warmup_runs}",
+        "--iters",
+        "{inference_runs}",
+        "--model-globs",
+        "{scenario_model_globs}",
+        "--report",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "CPU/backend task-specific numeric parity for every model",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "run_yolo_model_matrix",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "yolo",
+      "vram_estimate_mib": 4096
+    },
+    {
+      "id": "gkd",
+      "task": "gkd",
+      "owned_globs": [
+        "gkd_models/gkd_fullset-*.gguf"
+      ],
+      "model_glob": "gkd_models/gkd_fullset-*.gguf",
+      "light_globs": [
+        "gkd_models/gkd_fullset-q4_K.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_gkd_capi_load",
+      "args": [
+        "{model}",
+        "{assets}/general_keypoint_detection_data/2007_007524.jpg",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "finite keypoints with descending-free scores, bounded ROI recovery, and exact repeated-output hash",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:gkd",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "lingbot-stream",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "executable": "binary:test_lingbot_capi_load",
+      "owned_globs": [
+        "lingbot_models/lingbot-map-*.gguf",
+        "lingbot_models/lingbot-map-skyseg-*.gguf"
+      ],
+      "covered_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-parity",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "executable": "binary:test_lingbot_stream_parity",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_INPUT_DIR": "{assets}/lingbot_parity",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "engine-vs-upstream numeric parity on the pinned courthouse fixtures: pose_enc/intrinsics/depth/depth-conf within the calibrated per-backend tolerance of the captured upstream lingbot-map-cli goldens (same profile, byte-identical preprocessed stream; per-backend goldens, unknown backends skip)",
+      "accuracy": {
+        "reference": "upstream_lingbot_map_ggml_cli",
+        "reference_id": "lingbot-map-ggml@156117fffedf27421a44f5c918a983a6d8cdec34 cpp_ggml lingbot-map-cli --kv-f16 strict --kv-scale 2 --kv-window 8 on courthouse frames 000000-000011, preprocessed by aicore_lingbot_preprocess_image; goldens captured per backend by core/AICore/tests/lingbot/gen_stream_parity_golden.py",
+        "checks": [
+          {
+            "metric": "pose_t_rmse",
+            "op": "<=",
+            "value": 0.02,
+            "label": "camera-translation RMSE vs upstream (scene units)"
+          },
+          {
+            "metric": "pose_quat_maxdiff",
+            "op": "<=",
+            "value": 0.005,
+            "label": "elementwise quaternion drift vs upstream"
+          },
+          {
+            "metric": "intr_maxdiff",
+            "op": "<=",
+            "value": 0.5,
+            "label": "elementwise fx/fy/cx/cy drift vs upstream (fov->fx rounding dominates on Vulkan/CPU; convention errors are O(100))"
+          },
+          {
+            "metric": "depth_pool_rel_rmse",
+            "op": "<=",
+            "value": 0.02,
+            "label": "16x16 block-mean depth RMSE relative to the golden mean"
+          },
+          {
+            "metric": "conf_mean_maxdiff",
+            "op": "<=",
+            "value": 0.05,
+            "label": "per-frame depth-confidence mean drift vs upstream"
+          }
+        ],
+        "require_metrics": [
+          "pose_t_rmse",
+          "pose_quat_maxdiff",
+          "intr_maxdiff",
+          "depth_pool_rel_rmse",
+          "conf_mean_maxdiff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "lingbot-stream-keyframe",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-q8.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4",
+        "AICORE_TEST_LINGBOT_KF": "2"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (official keyframe policy: the 3-frame probe covers one keyframe and one attend-but-do-not-persist streaming frame)",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-keyframe",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-skyseg",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf",
+        "lingbot_models/lingbot-map-skyseg-f16.gguf"
+      ],
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": [
+        "lingbot_models/lingbot-map-skyseg-f16.gguf"
+      ],
+      "covered_globs": [
+        "lingbot_models/lingbot-map-skyseg-f16.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-skyseg",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-f16",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-f16.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "lingbot-stream-q4",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-q4.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q4.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-q4",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 6144
+    },
+    {
+      "id": "lingbot-stream-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-f32.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 14336
+    },
+    {
+      "id": "lingbot-stream-long-q8",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-long-q8.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-long-q8",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-long-f16",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-long-f16.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-long-f16",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "lingbot-stream-long-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": [
+        "lingbot_models/lingbot-map-long-f32.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-long-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 14336
+    },
+    {
+      "id": "lingbot-stream-skyseg-q8_0",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": [
+        "lingbot_models/lingbot-map-skyseg-q8_0.gguf"
+      ],
+      "covered_globs": [
+        "lingbot_models/lingbot-map-skyseg-q8_0.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-q8_0.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-skyseg-q8_0",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-skyseg-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": [
+        "lingbot_models/lingbot-map-skyseg-f32.gguf"
+      ],
+      "covered_globs": [
+        "lingbot_models/lingbot-map-skyseg-f32.gguf"
+      ],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:lingbot-stream-skyseg-f32",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8704
+    },
+    {
+      "id": "reid-embed",
+      "task": "reid",
+      "required_globs": [
+        "yolo_models/yolo26n-cls-q8_0.gguf"
+      ],
+      "covered_globs": [
+        "yolo_models/yolo26n-cls-q8_0.gguf"
+      ],
+      "executable": "binary:test_reid_capi_load",
+      "args": [
+        "{assets}/yolo_models/yolo26n-cls-q8_0.gguf",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "finite embeddings of consistent dimension, exact repeated-output hash, count=0 batch returns an empty result, honest timing valid_fields, context destroy/recreate reproduces the output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:reid-embed",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "reid-native-models",
+      "task": "reid",
+      "owned_globs": [
+        "yolo_models/reid-yolo26[nsmlx]-*.gguf"
+      ],
+      "model_glob": "yolo_models/reid-yolo26[nsmlx]-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_reid_capi_load",
+      "args": [
+        "{model}",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "finite 512-d embeddings (official reid.onnx conversion), exact repeated-output hash, count=0 batch returns an empty result, honest timing valid_fields, context destroy/recreate reproduces the output",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:reid-native-models",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "map_anything",
+      "task": "map_anything",
+      "owned_globs": [
+        "map_anything_models/*.gguf"
+      ],
+      "model_glob": "map_anything_models/*.gguf",
+      "light_globs": [
+        "map_anything_models/vggt-omega-1b-512-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_map_anything_capi_load",
+      "args": [
+        "{model}",
+        "{image}",
+        "{image2}",
+        "{backend}",
+        "{inference_runs}",
+        "{warmup_runs}"
+      ],
+      "env": {},
+      "accuracy_gate": "image-path structural invariants: finite positive dense geometry, architecture-consistent camera layout (pose_enc FoV floor or c2w bottom row), exact repeated-output hash, borrowed-view layout equivalence (BGR8/RGBA8/BGRA8/padded RGB8 hash-equal to tight RGB8, GRAY8 equal to replicated RGB8, short stride / unknown format -> -1), resize-mode contract (unknown mode not-ready before load, square grid H == W with the long side spanning it); upstream truth is the map_anything-upstream-frames row",
+      "accuracy": {
+        "reference": "probe_invariant",
+        "reference_id": "probe:map_anything",
+        "checks": [],
+        "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "map_anything-upstream-frames",
+      "task": "map_anything",
+      "owned_globs": [
+        "map_anything_models/*.gguf"
+      ],
+      "model_glob": "map_anything_models/*.gguf",
+      "light_globs": [
+        "map_anything_models/vggt-omega-1b-512-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_map_anything_upstream_parity.py",
+        "--probe",
+        "{binary:test_map_anything_upstream_frames}",
+        "--build",
+        "{build}",
+        "--model",
+        "{model}",
+        "--image",
+        "{image}",
+        "--image2",
+        "{image2}",
+        "--backend",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--views",
+        "3",
+        "--reference",
+        "{reference:map_anything_ggml}",
+        "--expect-revision",
+        "774f3c8d9ccd75b10705247826d2fe84cecdded6",
+        "--expect-ggml-revision",
+        "456172ec733a135778adcd32d00e576a58232e45",
+        "--expect-ggml-diff-sha256",
+        "8e87111a7131134c09537a2e3aae15410f46b7965f66aea0569be5d908608a66",
+        "--out",
+        "{scenario_report}.upstream.d"
+      ],
+      "env": {},
+      "accuracy_gate": "bit-exact upstream truth: the same f32 (S,3,H,W) tensor through aicore_map_anything_run_frames and the pinned map-anything-ggml vggt-cli --bin on the same backend kind; every common typed output (pose/depth/conf/points/local_points/mask/scale/text_embedding) max_abs == 0, no uncompared candidate output",
+      "accuracy": {
+        "reference": "upstream_map_anything_ggml_cli",
+        "reference_id": "map-anything-ggml@774f3c8d9ccd75b10705247826d2fe84cecdded6 cpp_ggml vggt-cli --bin, ggml v0.24.0 (456172ec) + local conv2d-transpose k==s CUDA kernel + cuda-tf32-disable env knob (working-tree diff sha256 8e87111a...), build-<backend>; 3 views (dust3r 2) from sacre_coeur1/2, views>=3 mirrored",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<=",
+            "value": 0.0,
+            "label": "max |candidate - upstream| over all common raw outputs"
+          },
+          {
+            "metric": "raw_files_compared",
+            "op": ">=",
+            "value": 3,
+            "label": "typed outputs compared (pose/depth/conf at minimum)"
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "raw_files_compared"
+        ]
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-f32",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-ch-f32.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.001"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.001
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-en-f32",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-en-f32.gguf",
+      "light_globs": [],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.002"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-en-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.002
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-f16",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-ch-f16.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.001"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.001
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-en-f16",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-en-f16.gguf",
+      "light_globs": [],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.003"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-en-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.003
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-q8_0",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-ch-q8_0.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.005"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-rec-en-q8_0",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-rec-en-q8_0.gguf",
+      "light_globs": [],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "rec",
+        "{backend}",
+        "-1",
+        "-",
+        "0.6"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level per-step softmax max|diff| plus identical CTC argmax sequence against the Paddle Inference predictor of the GGUF source archive on a real official word crop (export_ocr_fixture.py rec; ch imgs_words_ch/word_1.jpg 4 non-blank steps, en words_en/word_1.png 5 non-blank steps). Measured maxima over cpu/cuda/vulkan: ch f32/f16/q8_0 2e-5/8.5e-5/5.3e-4; en f32/f16/q8_0 4.4e-4/7.9e-4/0.51 (q8_0 moves one step's confidence, the argmax stays identical). Not an end-to-end semantic accuracy claim.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-rec-en-reference",
+        "checks": [
+          {
+            "metric": "argmax_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.6
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.001
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-det-f32",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-det-ch-f32.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-det-ch-f32.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "det",
+        "{backend}",
+        "-1",
+        "-",
+        "0.03"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-det-reference",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.03
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 3e-05
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-det-f16",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-det-ch-f16.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-det-ch-f16.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "det",
+        "{backend}",
+        "-1",
+        "-",
+        "0.1"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-det-reference",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.1
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.0001
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-det-q8_0",
+      "task": "ocr",
+      "model_glob": "ocr_models/ppocr-det-ch-q8_0.gguf",
+      "light_globs": [
+        "ocr_models/ppocr-det-ch-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "det",
+        "{backend}",
+        "-1",
+        "-",
+        "0.6"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level element-wise comparison of the DB sigmoid map against the Paddle Inference predictor of the GGUF source archive on a real official page (export_ocr_fixture.py det, imgs/00006737.jpg). The strict CUDA 2x2/stride-2 conv_transpose path and OCR-scoped Vulkan exact-F32 matmul reduce the F32 CPU/CUDA/Vulkan max_diff to about 2e-5; F16/Q8_0 retain weight-quantization noise at transition pixels and are gated separately. Complete pipeline box/text agreement is separately diagnostic (run_ocr_official_alignment.py).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-det-reference",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.6
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.0005
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-f32",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
+      "model_glob": "ocr_models/pplcnet-layout-f32.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "layout",
+        "{backend}",
+        "-1",
+        "-",
+        "0.02"
+      ],
+      "env": {},
+      "fingerprint_policy": "stability_only",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-layout-head0",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.02
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 2e-06
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
+      "metric_parser": "generic",
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ]
+    },
+    {
+      "id": "ocr-layout-f16",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
+      "model_glob": "ocr_models/pplcnet-layout-f16.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "layout",
+        "{backend}",
+        "-1",
+        "-",
+        "0.1"
+      ],
+      "env": {},
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "fingerprint_policy": "stability_only",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-layout-head0",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.1
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.002
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-q8_0",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-input",
+        "ocr-layout-head0",
+        "ocr-layout-head1",
+        "ocr-layout-head2",
+        "ocr-layout-head3",
+        "ocr-layout-head4",
+        "ocr-layout-head5",
+        "ocr-layout-head6",
+        "ocr-layout-head7"
+      ],
+      "model_glob": "ocr_models/pplcnet-layout-q8_0.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_ocr_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "layout",
+        "{backend}",
+        "-1",
+        "-",
+        "0.75"
+      ],
+      "env": {},
+      "light_globs": [
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "fingerprint_policy": "stability_only",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "ocr-layout-head0",
+        "checks": [
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.75
+          },
+          {
+            "metric": "mean_diff",
+            "op": "<",
+            "value": 0.02
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff"
+        ]
+      },
+      "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-f32",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-f32.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.01",
+        "0.005"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-f16",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-f16.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.01",
+        "0.01"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.01
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-structure-q8_0",
+      "task": "table",
+      "model_glob": "ocr_models/slanet-plus-table-q8_0.gguf",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf"
+      ],
+      "for_each_model": true,
+      "executable": "binary:test_table_runtime",
+      "args": [
+        "{assets}/ocr_fixtures",
+        "{model}",
+        "{backend}",
+        "0.05",
+        "0.05"
+      ],
+      "env": {},
+      "accuracy_gate": "graph-level SLANet_plus parity on three pinned official crops: encoder + autoregressive decoder must emit the identical structure-token sequence as Paddle, per-step softmax and cell-polygon max|diff| within the quantization tolerance. Structure semantics are gated separately by the table-gt rows (TEDS on labelled GT).",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "table-fixture-0-probs",
+        "checks": [
+          {
+            "metric": "token_match",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "max_diff",
+            "op": "<",
+            "value": 0.05
+          },
+          {
+            "metric": "loc_max_diff",
+            "op": "<",
+            "value": 0.05
+          }
+        ],
+        "require_metrics": [
+          "max_diff",
+          "mean_diff",
+          "loc_max_diff",
+          "token_match"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-gt-f32",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f32",
+        "--ocr-quant",
+        "f32",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-page-gt-f32",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f32.gguf",
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf",
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f32",
+        "--ocr-quant",
+        "f32",
+        "--layout-quant",
+        "f32",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--teds-tolerance",
+        "0.006",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure'). Composed-page TEDS is a placement lottery: a sub-pixel layout-region delta crosses the int-truncation crop boundary and flips the SLANet structure decode (measured: 0.3 px -> 13x3 -> 13x4 columns, -0.22 TEDS on one pinned page), so the measured nominal-draw band on the pinned 100 pages is 0.5409-0.5453 across f32/f16/q8_0 artifacts; the composed TEDS tolerance is 0.006 (Paddle-0.006 = 0.5403327) to cover that band, and run_table_gt_matrix.py --jitter-ensemble provides a placement-robust diagnostic (f32 0.5344 vs q8_0 0.5329 under +-1 px draws: the quantization gap shrinks to ~0.0015).",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5403327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-gt-f16",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f16",
+        "--ocr-quant",
+        "f16",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ]
+    },
+    {
+      "id": "table-page-gt-f16",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf",
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "f16",
+        "--ocr-quant",
+        "f16",
+        "--layout-quant",
+        "f16",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--teds-tolerance",
+        "0.006",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure'). Composed-page TEDS is a placement lottery: a sub-pixel layout-region delta crosses the int-truncation crop boundary and flips the SLANet structure decode (measured: 0.3 px -> 13x3 -> 13x4 columns, -0.22 TEDS on one pinned page), so the measured nominal-draw band on the pinned 100 pages is 0.5409-0.5453 across f32/f16/q8_0 artifacts; the composed TEDS tolerance is 0.006 (Paddle-0.006 = 0.5403327) to cover that band, and run_table_gt_matrix.py --jitter-ensemble provides a placement-robust diagnostic (f32 0.5344 vs q8_0 0.5329 under +-1 px draws: the quantization gap shrinks to ~0.0015).",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5403327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "light_globs": [
+        "ocr_models/slanet-plus-table-f16.gguf",
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf",
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ]
+    },
+    {
+      "id": "table-gt-q8_0",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "q8_0",
+        "--ocr-quant",
+        "q8_0",
+        "--paddle-teds",
+        "0.9646149",
+        "--paddle-teds-s",
+        "0.995918",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT: PubTabNet TEDS/TEDS-S of the full det/rec + SLANet_plus chain (one uniform quantization, as qOCR runs it) on the 100-table PaddleX table_rec_dataset_examples val split, against the official PaddleX 3.0.1 table_recognition pipeline with the same upstream models on the same images (run_paddle_table_baseline.py on the digest-verified source det/rec weights of the GGUFs, ocr.source.sha256 via paddle_source_models.py - the PaddleX default PP-OCRv4_mobile_det is a different checkpoint: TEDS 0.9646149 / TEDS-S 0.9959180); tolerance 0.005 / 0.002.",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.9596149
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.993918
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "structure_exact"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "table-page-gt-q8_0",
+      "task": "table",
+      "covered_globs": [
+        "ocr_models/slanet-plus-table-q8_0.gguf",
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf",
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/run_table_gt_matrix.py",
+        "--ground-truth",
+        "{assets}/ppocr_testdata/table_rec/val.txt",
+        "--ground-truth-sha256",
+        "10e200ec714af4041f883cd5f07cb00cabd9c68d2c2eb93d6c6868ec3f3500ea",
+        "--dataset-revision",
+        "paddlex table_rec_dataset_examples.tar sha256 493078ef076fbd0899c505340d51bc7b8066afe76496ef5a8a95eab71f53f104 (val)",
+        "--image-root",
+        "{assets}/ppocr_testdata/table_rec",
+        "--bench",
+        "{binary:bench_table}",
+        "--models-dir",
+        "{assets}/ocr_models",
+        "--backends",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--quants",
+        "q8_0",
+        "--ocr-quant",
+        "q8_0",
+        "--layout-quant",
+        "q8_0",
+        "--compose-pages",
+        "--pages-sha256",
+        "7550b01166e40ee2faa60493f8bb3b51e575d2a78b3c572a233df2b03aa932c2",
+        "--paddle-teds",
+        "0.5463327",
+        "--paddle-teds-s",
+        "0.5926333",
+        "--paddle-table-recall",
+        "0.64",
+        "--teds-tolerance",
+        "0.006",
+        "--output",
+        "{scenario_report}.d"
+      ],
+      "env": {},
+      "accuracy_gate": "semantic GT of the composed layout -> table -> det/rec chain: each GT table pasted into a deterministic document page (make_table_layout_pages.py, pages.txt pinned), the table found by layout over the pasted box scored by TEDS; gated against the official composed chain (PP-Structure CDLA layout fed to PaddleX table_recognition as layout_det_res, det/rec on the digest-verified GGUF source weights: TEDS 0.5463327, TEDS-S 0.5926333, table recall 0.64 - the upstream CDLA model labels synthetic left/right-border tables 'figure'). Composed-page TEDS is a placement lottery: a sub-pixel layout-region delta crosses the int-truncation crop boundary and flips the SLANet structure decode (measured: 0.3 px -> 13x3 -> 13x4 columns, -0.22 TEDS on one pinned page), so the measured nominal-draw band on the pinned 100 pages is 0.5409-0.5453 across f32/f16/q8_0 artifacts; the composed TEDS tolerance is 0.006 (Paddle-0.006 = 0.5403327) to cover that band, and run_table_gt_matrix.py --jitter-ensemble provides a placement-robust diagnostic (f32 0.5344 vs q8_0 0.5329 under +-1 px draws: the quantization gap shrinks to ~0.0015).",
+      "accuracy": {
+        "reference": "ground_truth",
+        "reference_id": "ppocr-testdata",
+        "checks": [
+          {
+            "metric": "teds",
+            "op": ">=",
+            "value": 0.5403327
+          },
+          {
+            "metric": "teds_s",
+            "op": ">=",
+            "value": 0.5906333
+          },
+          {
+            "metric": "table_recall",
+            "op": ">=",
+            "value": 0.64
+          },
+          {
+            "metric": "passes_paddle_gate",
+            "op": "==",
+            "value": 1
+          }
+        ],
+        "require_metrics": [
+          "teds",
+          "teds_s",
+          "table_recall"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-f32",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ],
+      "required_globs": [
+        "ocr_models/ppocr-det-ch-f32.gguf",
+        "ocr_models/ppocr-rec-ch-f32.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f32.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-f32.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-f32.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-f32.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--min-f1",
+        "1.0",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-f16",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "required_globs": [
+        "ocr_models/ppocr-det-ch-f16.gguf",
+        "ocr_models/ppocr-rec-ch-f16.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-f16.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-f16.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-f16.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-f16.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--optional-region",
+        "layout/table_page_1.png",
+        "5",
+        "69.621",
+        "318.138",
+        "706.748",
+        "357.105",
+        "--min-f1",
+        "1.0",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found except the table_page_1 table_caption whose upstream score is 0.50031 against the 0.5 threshold (the same Paddle graph with float16-rounded weights scores it 0.4998), which --optional-region exempts for the rounded-weight rows; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "ocr-layout-regions-q8_0",
+      "task": "ocr",
+      "input_ids": [
+        "ocr-layout-regions",
+        "ppocr-testdata"
+      ],
+      "covered_globs": [
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "required_globs": [
+        "ocr_models/ppocr-det-ch-q8_0.gguf",
+        "ocr_models/ppocr-rec-ch-q8_0.gguf"
+      ],
+      "light_globs": [
+        "ocr_models/pplcnet-layout-q8_0.gguf"
+      ],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/scripts/check_layout_regions.py",
+        "--reference",
+        "{assets}/ocr_fixtures/layout_regions.json",
+        "--image-root",
+        "{assets}/ppocr_testdata",
+        "--bench",
+        "{binary:bench_ocr}",
+        "--det",
+        "{assets}/ocr_models/ppocr-det-ch-q8_0.gguf",
+        "--rec",
+        "{assets}/ocr_models/ppocr-rec-ch-q8_0.gguf",
+        "--layout",
+        "{assets}/ocr_models/pplcnet-layout-q8_0.gguf",
+        "--device",
+        "{backend}",
+        "--threads",
+        "{threads}",
+        "--optional-region",
+        "layout/table_page_1.png",
+        "5",
+        "69.621",
+        "318.138",
+        "706.748",
+        "357.105",
+        "--min-f1",
+        "0.95",
+        "--min-recall",
+        "1.0",
+        "--min-mean-iou",
+        "0.99"
+      ],
+      "env": {},
+      "accuracy_gate": "region-level layout contract: decoded, per-class NMS-filtered, image-mapped aicore_ocr_run regions vs the official PP-Structure CDLA output of the same upstream model on 3 pinned pages (27 regions; same-class greedy IoU>=0.5 matching). Every reference region must be found except the table_page_1 table_caption whose upstream score is 0.50031 against the 0.5 threshold (the same Paddle graph with float16-rounded weights scores it 0.4998), which --optional-region exempts for the rounded-weight rows; Q8_0 may add near-threshold (score ~0.5) extras.",
+      "accuracy": {
+        "reference": "upstream_ppstructure_layout",
+        "reference_id": "ocr-layout-regions",
+        "checks": [
+          {
+            "metric": "region_recall",
+            "op": ">=",
+            "value": 1.0
+          },
+          {
+            "metric": "region_f1",
+            "op": ">=",
+            "value": 0.95
+          },
+          {
+            "metric": "mean_iou",
+            "op": ">=",
+            "value": 0.99
+          }
+        ],
+        "require_metrics": [
+          "region_precision",
+          "region_recall",
+          "region_f1",
+          "mean_iou",
+          "min_iou"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "anycalib-parity-f32",
+      "task": "anycalib",
+      "owned_globs": [
+        "anycalib_models/anycalib_gen_v1.0.0_322x322.f32.gguf"
+      ],
+      "model_glob": "anycalib_models/anycalib_gen_v1.0.0_322x322.f32.gguf",
+      "light": true,
+      "for_each_model": true,
+      "input_ids": [
+        "anycalib-ref-golden"
+      ],
+      "executable": "binary:anycalib_parity_probe",
+      "args": [
+        "{model}",
+        "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
+        "--max-abs",
+        "5e-3",
+        "--rel-rms",
+        "8e-3",
+        "--device",
+        "{backend}"
+      ],
+      "env": {},
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. Attention runs as fused flash attention (Q f32, K/V f16), matching the PyTorch SDPA; measured rel-RMS/max|diff| over cpu/cuda/vulkan (F32 weights on-device): rays 6.3e-6/5.4e-5/1.1e-4, tangent 3.5e-5/2.9e-4/6.3e-4; thresholds carry >=8x headroom over the worst backend. CUDA inference 15.5 ms / Vulkan 12.1 ms warm p50 vs the PyTorch CUDA baseline 19.3 ms.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "anycalib-ref-golden",
+        "checks": [
+          {
+            "metric": "rays_rel_rms",
+            "op": "<",
+            "value": 0.0015
+          },
+          {
+            "metric": "tangent_rel_rms",
+            "op": "<",
+            "value": 0.008
+          },
+          {
+            "metric": "rays_max_abs",
+            "op": "<",
+            "value": 0.005
+          },
+          {
+            "metric": "tangent_max_abs",
+            "op": "<",
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "rays_rel_rms",
+          "tangent_rel_rms",
+          "rays_max_abs",
+          "tangent_max_abs"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "anycalib-parity-f16",
+      "task": "anycalib",
+      "owned_globs": [
+        "anycalib_models/anycalib_gen_v1.0.0_322x322.f16.gguf"
+      ],
+      "model_glob": "anycalib_models/anycalib_gen_v1.0.0_322x322.f16.gguf",
+      "light": true,
+      "for_each_model": true,
+      "input_ids": [
+        "anycalib-ref-golden"
+      ],
+      "executable": "binary:anycalib_parity_probe",
+      "args": [
+        "{model}",
+        "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
+        "--max-abs",
+        "5e-3",
+        "--rel-rms",
+        "8e-3",
+        "--device",
+        "{backend}"
+      ],
+      "env": {},
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. F16 storage rounding persists through the load-time F32 expansion on non-CPU backends; measured rel-RMS/max|diff| over cpu/cuda/vulkan: rays 1.1e-4/7.5e-5/1.5e-4, tangent 6.1e-4/4.1e-4/8.4e-4; thresholds carry >=8x headroom over the worst backend.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "anycalib-ref-golden",
+        "checks": [
+          {
+            "metric": "rays_rel_rms",
+            "op": "<",
+            "value": 0.0015
+          },
+          {
+            "metric": "tangent_rel_rms",
+            "op": "<",
+            "value": 0.008
+          },
+          {
+            "metric": "rays_max_abs",
+            "op": "<",
+            "value": 0.005
+          },
+          {
+            "metric": "tangent_max_abs",
+            "op": "<",
+            "value": 0.005
+          }
+        ],
+        "require_metrics": [
+          "rays_rel_rms",
+          "tangent_rel_rms",
+          "rays_max_abs",
+          "tangent_max_abs"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "anycalib-parity-q8_0",
+      "task": "anycalib",
+      "owned_globs": [
+        "anycalib_models/anycalib_gen_v1.0.0_322x322.q8_0.gguf"
+      ],
+      "model_glob": "anycalib_models/anycalib_gen_v1.0.0_322x322.q8_0.gguf",
+      "light": true,
+      "for_each_model": true,
+      "input_ids": [
+        "anycalib-ref-golden"
+      ],
+      "executable": "binary:anycalib_parity_probe",
+      "args": [
+        "{model}",
+        "{assets}/anycalib_models/anycalib_gen_v1.0.0_322x322.ref.npz",
+        "--max-abs",
+        "1e-2",
+        "--rel-rms",
+        "3e-2",
+        "--device",
+        "{backend}"
+      ],
+      "env": {},
+      "accuracy_gate": "Typed rays/tangent outputs reproduce the ONNX Runtime CPU golden shipped as the release ref.npz (pinned upstream anycalib_gen_v1.0.0_322x322.onnx) element-wise on the pinned reference crop. The Q8_0 tier quantizes only the ViT transformer matmul weights (pre-transposed, ~99% of parameters); CPU runs quantized mul_mat natively while cuda/vulkan dequantize the weights to F32 at load. Measured rel-RMS/max|diff| over cpu/cuda/vulkan: rays 3.9e-4/4.8e-4/3.9e-4, tangent 2.1e-3/2.6e-3/2.1e-3; thresholds carry >=8x headroom over the worst backend.",
+      "accuracy": {
+        "reference": "fixture",
+        "reference_id": "anycalib-ref-golden",
+        "checks": [
+          {
+            "metric": "rays_rel_rms",
+            "op": "<",
+            "value": 0.005
+          },
+          {
+            "metric": "tangent_rel_rms",
+            "op": "<",
+            "value": 0.03
+          },
+          {
+            "metric": "rays_max_abs",
+            "op": "<",
+            "value": 0.01
+          },
+          {
+            "metric": "tangent_max_abs",
+            "op": "<",
+            "value": 0.01
+          }
+        ],
+        "require_metrics": [
+          "rays_rel_rms",
+          "tangent_rel_rms",
+          "rays_max_abs",
+          "tangent_max_abs"
+        ]
+      },
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic"
+    }
+  ]
+}

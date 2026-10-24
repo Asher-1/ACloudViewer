@@ -81,12 +81,75 @@ matmul to cuBLAS), so driver-only Linux/Windows installers need this ON to ship\
 libcublas.so.* next to the app; without it the CUDA backend silently fails to load\
 on machines that only have the NVIDIA driver installed."
     OFF)
+option(AICore_CUDA_FORCE_MMQ
+    "Force ggml-cuda MMQ kernels instead of cuBLAS for quantized matmul.\
+OFF (default): performance-parity with upstream ggml/ultralytics-ggml builds\
+(cuBLAS stays linked, so libggml-cuda.so has a libcublas DT_NEEDED — driver-only\
+deployments must also set AICore_BUNDLE_CUDA_RUNTIME=ON).\
+ON: self-contained libggml-cuda.so (no libcudart/libcublas DT_NEEDED) at the\
+cost of slower small conv/matmul kernels (see core/AICore/tests/TESTING.md)."
+    OFF)
+option(AICore_CUDA_FAST_MATH
+    "Compile ggml-cuda kernels with nvcc -use_fast_math (pristine ggml default).\
+ON (default): bit-parity with external cpp_ggml references built on pristine ggml\
+(map-anything-ggml: MapAnything CUDA pose/depth/conf are bit-exact only with ON).\
+The SAM 3D graphs (nodes named sam3d_*) keep the fast-math-free numerics of the\
+sam-3d-objects-ggml production build inside this ON build through the precise\
+kernel twins of ggml patch sam3d_merged/0005 (per-TU -use_fast_math plus a\
+second, namespace-isolated copy of norm/unary/softmax/upscale/fattn-mma).\
+Measured on the kidsroom f16 input (CUDA sm_89, seed 42, 25 steps): ON without the\
+twins 841760 gaussians, OFF 842560, ON with the twins 842560 and all 352\
+deterministic stage tensors bit-identical to OFF.\
+OFF: mirrors the sam-3d-objects-ggml production build for every task (no twins\
+are compiled); breaks the MapAnything frames parity gate."
+    ON)
 set(AICore_OPENCL_TARGET_VERSION "200" CACHE STRING
     "OpenCL host API target for AICore (120, 200, or 300)")
 set_property(CACHE AICore_OPENCL_TARGET_VERSION PROPERTY STRINGS 120 200 300)
 option(AICore_CPU_ALL_VARIANTS
     "Build all ggml CPU micro-architecture backend variants (llama.cpp release style; +~15MB on x86)"
     OFF)
+
+# --- task-private build wiring (declared here, wired by the owning task) ---
+# These options belong to one task under core/AICore/src/tasks/; the wiring
+# itself lives next to the task (sam3d/cmake/pbr.cmake,
+# trellis/cmake/cumesh.cmake) and is included from
+# core/AICore/CMakeLists.txt. They are DECLARED here —
+# before find_dependencies.cmake — so the bundled OpenCV build
+# (3rdparty/opencv/opencv_build.cmake) can wire its photo module from the
+# SAM3D PBR switch; core/AICore keeps only the cross-module CUDA linkage
+# check. Keep option names/strings in sync with the docs (BUILD.md; CuMesh
+# rows live in core/AICore/docs/ARCHITECTURE.md).
+#
+# PLUGIN_STANDARD_QSAM3D is pre-declared here for the same reason: the PBR
+# auto-enable below reads it, and the photo wiring inherits the result —
+# both run before plugins/core/Standard/qSAM3D/CMakeLists.txt (root L800,
+# after core) gets to declare it. That plugin-side option() then no-ops on
+# this cache entry — keep the docstring identical.
+option( PLUGIN_STANDARD_QSAM3D "Install qSAM3D (SAM 3D Objects image-to-3D GGML) plugin" OFF )
+
+# SAM3D PBR auto-enable: CUDA + the qSAM3D plugin. An explicit
+# -DAICore_USE_SAM3D_PBR=ON/OFF always wins (option() never overwrites an
+# existing cache entry). 3rdparty_vtk availability cannot be known this
+# early (the VTK section of find_dependencies runs later) — pbr.cmake
+# degrades with a warning (CuMesh-style ladder) when the target was never
+# created, so the auto-enabled default stays build-safe.
+set(_sam3d_pbr_auto OFF)
+if(AICore_USE_CUDA AND PLUGIN_STANDARD_QSAM3D)
+    set(_sam3d_pbr_auto ON)
+endif()
+option(AICore_USE_SAM3D_PBR
+    "SAM3D: official native PBR pipeline (CUDA-only; auto-ON with AICore_USE_CUDA=ON + PLUGIN_STANDARD_QSAM3D=ON; opt-in vendors: nvdiffrast NC, mip-splatting NC, pymeshfix GPL)"
+    ${_sam3d_pbr_auto})
+option(AICore_USE_SAM3D_PBR_NVDIFFRAST
+    "SAM3D PBR: compile+link the vendored nvdiffrast 253ac4f cudaraster core (NVIDIA non-commercial license acknowledgment)"
+    ON)
+option(AICore_USE_SAM3D_PBR_MESHFIX
+    "SAM3D PBR: compile+link the vendored pymeshfix 79adef9 TMesh boundary repair (GPL-3.0-or-commercial license acknowledgment)"
+    ON)
+option(AICore_USE_CUMESH
+    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; auto-disabled with a warning when CUDA/libtorch/Python headers are unavailable)"
+    ON)
 
 # Read-only configure results: set only in aicore_sync_results_from_ggml() as CACHE
 # entries. Do NOT initialize normal variables here — they would shadow the cache
@@ -118,6 +181,8 @@ function(aicore_sync_options_to_ggml)
     _aicore_clear_stale_ggml_cache(GGML_SYCL_USE_DNN AICore_SYCL_USE_DNN)
     _aicore_clear_stale_ggml_cache(GGML_USE_OPENCL AICore_USE_OPENCL)
     _aicore_clear_stale_ggml_cache(GGML_BUNDLE_CUDA_RUNTIME AICore_BUNDLE_CUDA_RUNTIME)
+    _aicore_clear_stale_ggml_cache(GGML_CUDA_FORCE_MMQ AICore_CUDA_FORCE_MMQ)
+    _aicore_clear_stale_ggml_cache(GGML_CUDA_FAST_MATH AICore_CUDA_FAST_MATH)
     _aicore_clear_stale_ggml_cache(GGML_OPENCL_TARGET_VERSION AICore_OPENCL_TARGET_VERSION)
     _aicore_clear_stale_ggml_cache(GGML_CPU_ALL_VARIANTS AICore_CPU_ALL_VARIANTS)
 
@@ -144,6 +209,14 @@ function(aicore_sync_options_to_ggml)
         "Internal: synced from AICore_USE_OPENCL" FORCE)
     set(GGML_BUNDLE_CUDA_RUNTIME ${AICore_BUNDLE_CUDA_RUNTIME} CACHE BOOL
         "Internal: synced from AICore_BUNDLE_CUDA_RUNTIME" FORCE)
+    set(GGML_CUDA_FORCE_MMQ ${AICore_CUDA_FORCE_MMQ} CACHE BOOL
+        "Internal: synced from AICore_CUDA_FORCE_MMQ" FORCE)
+    set(GGML_CUDA_FAST_MATH ${AICore_CUDA_FAST_MATH} CACHE BOOL
+        "Internal: synced from AICore_CUDA_FAST_MATH" FORCE)
+    # SAM3D is part of the unified AICore task set. This private flag only
+    # tells the fetched ggml build to wire its task-specific CUDA sources.
+    set(GGML_USE_SAM3D_OPS ON CACHE BOOL
+        "Internal: required by the unified AICore task set" FORCE)
     set(GGML_OPENCL_TARGET_VERSION ${AICore_OPENCL_TARGET_VERSION} CACHE STRING
         "Internal: synced from AICore_OPENCL_TARGET_VERSION" FORCE)
     set(GGML_CPU_ALL_VARIANTS ${AICore_CPU_ALL_VARIANTS} CACHE BOOL
@@ -157,7 +230,8 @@ function(aicore_sync_options_to_ggml)
 
     mark_as_advanced(
         GGML_USE_METAL GGML_USE_VULKAN GGML_USE_CUDA GGML_USE_SYCL GGML_SYCL_USE_DNN
-        GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_OPENCL_TARGET_VERSION
+        GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_CUDA_FORCE_MMQ GGML_CUDA_FAST_MATH
+        GGML_USE_SAM3D_OPS GGML_OPENCL_TARGET_VERSION
         GGML_CPU_ALL_VARIANTS GGML_BUILD_SHARED GGML_USE_LLAMAFILE)
 endfunction()
 

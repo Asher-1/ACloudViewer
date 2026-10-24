@@ -1,0 +1,359 @@
+// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//
+//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
+//       its contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+
+#include "math/polynomial.h"
+
+#include <algorithm>
+#include <cmath>
+
+#include <Eigen/Eigenvalues>
+
+#include "util/logging.h"
+
+namespace colmap {
+namespace {
+
+// Remove leading zero coefficients.
+Eigen::VectorXd RemoveLeadingZeros(const Eigen::VectorXd& coeffs) {
+  Eigen::VectorXd::Index num_zeros = 0;
+  for (; num_zeros < coeffs.size(); ++num_zeros) {
+    if (coeffs(num_zeros) != 0) {
+      break;
+    }
+  }
+  return coeffs.tail(coeffs.size() - num_zeros);
+}
+
+// Remove trailing zero coefficients.
+Eigen::VectorXd RemoveTrailingZeros(const Eigen::VectorXd& coeffs) {
+  Eigen::VectorXd::Index num_zeros = 0;
+  for (; num_zeros < coeffs.size(); ++num_zeros) {
+    if (coeffs(coeffs.size() - 1 - num_zeros) != 0) {
+      break;
+    }
+  }
+  return coeffs.head(coeffs.size() - num_zeros);
+}
+
+}  // namespace
+
+bool FindLinearPolynomialRoots(const Eigen::VectorXd& coeffs,
+                               Eigen::VectorXd* real, Eigen::VectorXd* imag) {
+  CHECK_EQ(coeffs.size(), 2);
+
+  if (coeffs(0) == 0) {
+    return false;
+  }
+
+  if (real != nullptr) {
+    real->resize(1);
+    (*real)(0) = -coeffs(1) / coeffs(0);
+  }
+
+  if (imag != nullptr) {
+    imag->resize(1);
+    (*imag)(0) = 0;
+  }
+
+  return true;
+}
+
+bool FindQuadraticPolynomialRoots(const Eigen::VectorXd& coeffs,
+                                  Eigen::VectorXd* real,
+                                  Eigen::VectorXd* imag) {
+  CHECK_EQ(coeffs.size(), 3);
+
+  const double a = coeffs(0);
+  if (a == 0) {
+    return FindLinearPolynomialRoots(coeffs.tail(2), real, imag);
+  }
+
+  const double b = coeffs(1);
+  const double c = coeffs(2);
+  if (b == 0 && c == 0) {
+    if (real != nullptr) {
+      real->resize(1);
+      (*real)(0) = 0;
+    }
+    if (imag != nullptr) {
+      imag->resize(1);
+      (*imag)(0) = 0;
+    }
+    return true;
+  }
+
+  // Upstream parity (4a6d0cbe #4838): scale the discriminant products by a
+  // common power of two so that widely-spaced or subnormal coefficients do
+  // not overflow the discriminant or erase the smaller coefficient.
+  int a_exp, b_exp, c_exp;
+  const double a_frac = std::frexp(a, &a_exp);
+  const double b_frac = std::frexp(b, &b_exp);
+  const double c_frac = std::frexp(c, &c_exp);
+  // Floor of half the 4*a*c exponent sum. Plain integer division truncates
+  // toward zero, which rounds up for negative odd sums and would leave the
+  // scaled 4*a*c term a factor of two smaller than intended.
+  const int ac_sum = a_exp + c_exp + 2;
+  const int ac_exp = ac_sum / 2 - ((ac_sum < 0 && ac_sum % 2 != 0) ? 1 : 0);
+  const int exponent =
+      b == 0 ? ac_exp : (c == 0 ? b_exp : std::max(b_exp, ac_exp));
+  const double scaled_b = std::scalbn(b_frac, b_exp - exponent);
+  const double d =
+      scaled_b * scaled_b -
+      std::scalbn(4 * a_frac * c_frac, a_exp + c_exp - 2 * exponent);
+
+  if (d >= 0) {
+    const double sqrt_d = std::sqrt(d);
+    if (real != nullptr) {
+      real->resize(2);
+      if (b >= 0) {
+        const double q = (-scaled_b - sqrt_d) / 2;
+        (*real)(0) = std::scalbn(q / a_frac, exponent - a_exp);
+        (*real)(1) = std::scalbn(c_frac / q, c_exp - exponent);
+      } else {
+        const double q = (-scaled_b + sqrt_d) / 2;
+        (*real)(0) = std::scalbn(c_frac / q, c_exp - exponent);
+        (*real)(1) = std::scalbn(q / a_frac, exponent - a_exp);
+      }
+    }
+    if (imag != nullptr) {
+      imag->resize(2);
+      imag->setZero();
+    }
+  } else {
+    if (real != nullptr) {
+      real->resize(2);
+      real->setConstant(std::scalbn(-b_frac / (2 * a_frac), b_exp - a_exp));
+    }
+    if (imag != nullptr) {
+      imag->resize(2);
+      (*imag)(0) = std::scalbn(std::sqrt(-d) / (2 * a_frac), exponent - a_exp);
+      (*imag)(1) = -(*imag)(0);
+    }
+  }
+
+  return true;
+}
+
+bool FindPolynomialRootsDurandKerner(const Eigen::VectorXd& coeffs_all,
+                                     Eigen::VectorXd* real,
+                                     Eigen::VectorXd* imag) {
+  CHECK_GE(coeffs_all.size(), 2);
+
+  const Eigen::VectorXd coeffs = RemoveLeadingZeros(coeffs_all);
+
+  const int degree = coeffs.size() - 1;
+
+  if (degree <= 0) {
+    return false;
+  } else if (degree == 1) {
+    return FindLinearPolynomialRoots(coeffs, real, imag);
+  } else if (degree == 2) {
+    return FindQuadraticPolynomialRoots(coeffs, real, imag);
+  }
+
+  // Initialize roots.
+  Eigen::VectorXcd roots(degree);
+  roots(degree - 1) = std::complex<double>(1, 0);
+  for (int i = degree - 2; i >= 0; --i) {
+    roots(i) = roots(i + 1) * std::complex<double>(1, 1);
+  }
+
+  // Iterative solver.
+  const int kMaxNumIterations = 100;
+  const double kMaxRootChange = 1e-10;
+  for (int iter = 0; iter < kMaxNumIterations; ++iter) {
+    double max_root_change = 0.0;
+    for (int i = 0; i < degree; ++i) {
+      const std::complex<double> root_i = roots(i);
+      std::complex<double> numerator = coeffs[0];
+      std::complex<double> denominator = coeffs[0];
+      for (int j = 0; j < degree; ++j) {
+        numerator = numerator * root_i + coeffs[j + 1];
+        if (i != j) {
+          denominator = denominator * (root_i - roots(j));
+        }
+      }
+      const std::complex<double> root_i_change = numerator / denominator;
+      roots(i) = root_i - root_i_change;
+      max_root_change =
+          std::max(max_root_change, std::abs(root_i_change.real()));
+      max_root_change =
+          std::max(max_root_change, std::abs(root_i_change.imag()));
+    }
+
+    // Break, if roots do not change anymore.
+    if (max_root_change < kMaxRootChange) {
+      break;
+    }
+  }
+
+  if (real != nullptr) {
+    real->resize(degree);
+    *real = roots.real();
+  }
+  if (imag != nullptr) {
+    imag->resize(degree);
+    *imag = roots.imag();
+  }
+
+  return true;
+}
+
+bool FindPolynomialRootsCompanionMatrix(const Eigen::VectorXd& coeffs_all,
+                                        Eigen::VectorXd* real,
+                                        Eigen::VectorXd* imag) {
+  CHECK_GE(coeffs_all.size(), 2);
+
+  Eigen::VectorXd coeffs = RemoveLeadingZeros(coeffs_all);
+
+  const int degree = coeffs.size() - 1;
+
+  if (degree <= 0) {
+    return false;
+  } else if (degree == 1) {
+    return FindLinearPolynomialRoots(coeffs, real, imag);
+  } else if (degree == 2) {
+    return FindQuadraticPolynomialRoots(coeffs, real, imag);
+  }
+
+  // Remove the coefficients where zero is a solution.
+  coeffs = RemoveTrailingZeros(coeffs);
+
+  // Check if only zero is a solution.
+  if (coeffs.size() == 1) {
+    if (real != nullptr) {
+      real->resize(1);
+      (*real)(0) = 0;
+    }
+    if (imag != nullptr) {
+      imag->resize(1);
+      (*imag)(0) = 0;
+    }
+    return true;
+  }
+
+  // Fill the companion matrix.
+  Eigen::MatrixXd C(coeffs.size() - 1, coeffs.size() - 1);
+  C.setZero();
+  for (Eigen::MatrixXd::Index i = 1; i < C.rows(); ++i) {
+    C(i, i - 1) = 1;
+  }
+  C.row(0) = -coeffs.tail(coeffs.size() - 1) / coeffs(0);
+
+  // Solve for the roots of the polynomial.
+  Eigen::EigenSolver<Eigen::MatrixXd> solver(C, false);
+  if (solver.info() != Eigen::Success) {
+    return false;
+  }
+
+  // If there are trailing zeros, we must add zero as a solution.
+  const int effective_degree =
+      coeffs.size() - 1 < degree ? coeffs.size() : coeffs.size() - 1;
+
+  if (real != nullptr) {
+    real->resize(effective_degree);
+    real->head(coeffs.size() - 1) = solver.eigenvalues().real();
+    if (effective_degree > coeffs.size() - 1) {
+      (*real)(real->size() - 1) = 0;
+    }
+  }
+  if (imag != nullptr) {
+    imag->resize(effective_degree);
+    imag->head(coeffs.size() - 1) = solver.eigenvalues().imag();
+    if (effective_degree > coeffs.size() - 1) {
+      (*imag)(imag->size() - 1) = 0;
+    }
+  }
+
+  return true;
+}
+
+
+int FindCubicPolynomialRoots(double c2,
+                             double c1,
+                             double c0,
+                             Eigen::Vector3d* real) {
+  constexpr double k2PiOver3 = 2.09439510239319526263557236234192;
+  constexpr double k4PiOver3 = 4.18879020478639052527114472468384;
+  const double c2_over_3 = c2 / 3.0;
+  const double a = c1 - c2 * c2_over_3;
+  double b = (2.0 * c2 * c2 * c2 - 9.0 * c2 * c1) / 27.0 + c0;
+  double c = b * b / 4.0 + a * a * a / 27.0;
+  int num_roots = 0;
+  if (c > 0) {
+    c = std::sqrt(c);
+    b *= -0.5;
+    (*real)[0] = std::cbrt(b + c) + std::cbrt(b - c) - c2_over_3;
+    num_roots = 1;
+  } else if (c == 0) {
+    const double root = std::cbrt(-b / 2.0);
+    (*real)[0] = 2 * root - c2_over_3;
+    (*real)[1] = -root - c2_over_3;
+    (*real)[2] = (*real)[1];
+    // Repeated roots have zero derivatives, so skip Newton refinement.
+    return 3;
+  } else {
+    // Clamp the argument, as rounding errors may push it outside [-1, 1]
+    // near repeated roots, where std::acos returns NaN.
+    c = std::clamp(3.0 * b / (2.0 * a) * std::sqrt(-3.0 / a), -1.0, 1.0);
+    double d = 2.0 * std::sqrt(-a / 3.0);
+    const double acos_over_3 = std::acos(c) / 3.0;
+    (*real)[0] = d * std::cos(acos_over_3) - c2_over_3;
+    (*real)[1] = d * std::cos(acos_over_3 - k2PiOver3) - c2_over_3;
+    (*real)[2] = d * std::cos(acos_over_3 - k4PiOver3) - c2_over_3;
+    num_roots = 3;
+  }
+
+  // Single Newton iteration. The update is only kept if it reduces the
+  // residual: near repeated roots, both the function value and the
+  // derivative are rounding noise, so the update is meaningless there and
+  // must not corrupt the closed-form estimate.
+  for (int i = 0; i < num_roots; ++i) {
+    const double x = (*real)[i];
+    const double x2 = x * x;
+    const double x3 = x * x2;
+    const double fx = x3 + c2 * x2 + c1 * x + c0;
+    const double denom = 3 * x2 + 2 * c2 * x + c1;
+    if (denom != 0) {
+      const double x_new = x - fx / denom;
+      const double x_new2 = x_new * x_new;
+      const double x_new3 = x_new * x_new2;
+      const double fx_new = x_new3 + c2 * x_new2 + c1 * x_new + c0;
+      if (std::abs(fx_new) <= std::abs(fx)) {
+        (*real)[i] = x_new;
+      }
+    }
+  }
+
+  return num_roots;
+}
+
+}  // namespace colmap

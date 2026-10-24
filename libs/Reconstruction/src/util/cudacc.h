@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <string>
+
+#include "util/cuda_to_hip.h"
 
 #define CUDA_SAFE_CALL(error) CudaSafeCall(error, __FILE__, __LINE__)
 #define CUDA_CHECK() CudaCheck(__FILE__, __LINE__)

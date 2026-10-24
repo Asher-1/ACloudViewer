@@ -18,9 +18,9 @@
 #include <cmath>
 
 #include "ModelViewerWidget.h"
-#include "base/pose.h"
-#include "base/projection.h"
 #include "controllers/ViewInterpolate.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
 #include "ui/qt_utils.h"
 #include "ui/render_options.h"
 
