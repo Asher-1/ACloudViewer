@@ -426,9 +426,20 @@ jobs:
           if (Test-Path "${{ runner.temp }}\sccache") {
             $asset = "sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}.tar.gz"
             tar -czf "$env:RUNNER_TEMP\$asset" -C "${{ runner.temp }}\sccache" .
-            gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
-            if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
-            else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            # A cancelled/aborted run may clobber the pool with a near-empty
+            # tarball; a real pool is ~2 GB. Branch policy and cleanup
+            # rationale: see ubuntu.yml's save step.
+            $size = (Get-Item "$env:RUNNER_TEMP\$asset").Length
+            if ($size -lt 52428800) {
+              Write-Host "[cache] $asset is only $size bytes (cancelled/aborted run); skip upload to keep the previous pool"
+            } else {
+              gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+              if ($LASTEXITCODE -ne 0) {
+                gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+              }
+              if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
+              else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            }
             Remove-Item "$env:RUNNER_TEMP\$asset" -ErrorAction SilentlyContinue
           }
       - name: Upload ACloudViewer to GitHub artifacts
@@ -908,9 +919,19 @@ jobs:
           if (Test-Path "${{ runner.temp }}\sccache") {
             $asset = "sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}.tar.gz"
             tar -czf "$env:RUNNER_TEMP\$asset" -C "${{ runner.temp }}\sccache" .
-            gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
-            if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
-            else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            # Cancelled/aborted-run guard and branch policy: see the app
+            # matrix job's save step (real pools are ~2 GB).
+            $size = (Get-Item "$env:RUNNER_TEMP\$asset").Length
+            if ($size -lt 52428800) {
+              Write-Host "[cache] $asset is only $size bytes (cancelled/aborted run); skip upload to keep the previous pool"
+            } else {
+              gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+              if ($LASTEXITCODE -ne 0) {
+                gh release upload ci-ccache "$env:RUNNER_TEMP\$asset" -R Asher-1/cloudViewer_downloads --clobber
+              }
+              if ($LASTEXITCODE -eq 0) { Write-Host "[cache] uploaded $asset" }
+              else { Write-Host "[cache] upload failed (non-fatal; next run restores the previous pool)" }
+            }
             Remove-Item "$env:RUNNER_TEMP\$asset" -ErrorAction SilentlyContinue
           }
       - name: Upload Wheel to GitHub artifacts
