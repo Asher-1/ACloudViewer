@@ -152,7 +152,7 @@ jobs:
             # Cancelled/aborted runs clobber the pool with near-empty tarballs;
             # a real pool is >=500 MB. Branch policy and cleanup rationale:
             # see ubuntu.yml's save step.
-            SIZE=$(stat -c%s "/tmp/${ASSET}" 2>/dev/null || echo 0)
+            SIZE=$(wc -c < "/tmp/${ASSET}" 2>/dev/null | tr -d " " || echo 0)
             if [ "${SIZE}" -lt 52428800 ]; then
               echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
             else
@@ -441,7 +441,7 @@ jobs:
             # Cancelled/aborted runs clobber the pool with near-empty tarballs;
             # a real pool is >=500 MB. Branch policy and cleanup rationale:
             # see ubuntu.yml's save step.
-            SIZE=$(stat -c%s "/tmp/${ASSET}" 2>/dev/null || echo 0)
+            SIZE=$(wc -c < "/tmp/${ASSET}" 2>/dev/null | tr -d " " || echo 0)
             if [ "${SIZE}" -lt 52428800 ]; then
               echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
             else
