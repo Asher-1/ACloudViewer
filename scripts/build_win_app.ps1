@@ -174,7 +174,12 @@ if ($env:IGNORE_TEST -ne "ON") {
 # this step's process tree, its stats are in-memory, and GitHub Actions
 # runners terminate that tree on step exit — the workflow-level stats step
 # and the action post-run summary therefore always report 0 requests on
-# Windows (measured: run 38918190501).
+# Windows (measured: run 38918190501). Additionally, with the default
+# SCCACHE_IDLE_TIMEOUT of 600 s the daemon self-exits during the ~11 min
+# packaging window after the last compile (runs 39904120017/39944134589/
+# 39994107226 all printed a fresh 0-request server here too), so windows.yml
+# now sets SCCACHE_IDLE_TIMEOUT=36000 — these numbers are the real tally of
+# the run and the authoritative hit/miss signal for the release-asset pool.
 if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
     Write-Host "=== sccache stats (in-step, daemon alive) ==="
     & $env:CLOUDVIEWER_COMPILER_LAUNCHER --show-stats
