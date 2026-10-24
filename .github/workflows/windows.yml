@@ -192,6 +192,14 @@ jobs:
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          # Pin the sccache binary: the action without a version pulls the
+          # latest release, and 0.19.0 (published 2026-10-24T10:25Z) fixed
+          # #2740 "include validation in the preprocessor cache" — the exact
+          # bug that made rounds 2-4 (0.18.0) miss every MSVC compile while
+          # the pool grew. A silent bump to 0.20+ would re-shuffle the key
+          # space and cost one full-cold round per cell.
+          version: "0.19.0"
       - name: Restore sccache cache from release assets
         # Persistent per-cell pool stored as a release asset on the public
         # cloudViewer_downloads repo (free, no total quota, 2 GB per-asset
@@ -793,6 +801,14 @@ jobs:
         id: sccache
         continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          # Pin the sccache binary: the action without a version pulls the
+          # latest release, and 0.19.0 (published 2026-10-24T10:25Z) fixed
+          # #2740 "include validation in the preprocessor cache" — the exact
+          # bug that made rounds 2-4 (0.18.0) miss every MSVC compile while
+          # the pool grew. A silent bump to 0.20+ would re-shuffle the key
+          # space and cost one full-cold round per cell.
+          version: "0.19.0"
       - name: Restore sccache cache from release assets
         # Persistent per-python pool on the ci-ccache release assets, same
         # pattern as the app matrix job. This job is the one that hits the
