@@ -19,7 +19,7 @@ jobs:
   # Python analysis - lightweight, no compilation needed
   analyze-python:
     name: Analyze Python
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       # Required for all workflows
@@ -89,7 +89,7 @@ jobs:
   # C++ analysis - uses project's dependency installation script
   analyze-cpp:
     name: Analyze C++
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360  # GitHub Actions max limit is 6 hours (360 minutes)
     permissions:
       security-events: write
