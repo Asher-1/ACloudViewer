@@ -427,7 +427,13 @@ void JobQueue<T>::Wait() {
 
 template <typename T>
 void JobQueue<T>::Stop() {
-    stop_ = true;
+    // Upstream parity: set the flag under the mutex. Otherwise a Pop()/Push()
+    // that already saw !stop_ but has not entered wait() misses the notify
+    // and blocks forever (controllers_feature_extraction_test hung 4 h).
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        stop_ = true;
+    }
     push_condition_.notify_all();
     pop_condition_.notify_all();
 }

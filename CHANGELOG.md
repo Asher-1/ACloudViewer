@@ -54,6 +54,12 @@ v3.9.5-Beta (Asher) - 08/04/2026
       0.9-1.0 GB at 84%; focal compiled for 135 min instead of 27 and was
       the 3 h critical path of both workflows. The focal shaderc (glslc)
       source build now uses ccache as well
+- Fix reconstruction JobQueue::Stop lost wakeup (upstream COLMAP parity):
+  stop_ was set without the mutex, so a Pop()/Push() between its predicate
+  check and wait() missed the notify and blocked forever; it hung
+  controllers_feature_extraction_test for 4 h until the 360 min job cap.
+  The reconstruction ctest gates now pass --timeout 1200 so a hang fails
+  fast
 - Fix macOS wheel packaging: skip symlinked libraries in the codesign
   set (a concurrent worker rewriting the link target transiently
   dangles the link, failing remove-signature)

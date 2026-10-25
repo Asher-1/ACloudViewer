@@ -226,7 +226,10 @@ if (TESTS_ENABLED)
     # ${CMAKE_BINARY_DIR} working directory would silently discover zero tests.
     # Every gate also passes --no-tests=error: ctest otherwise exits 0 when its
     # regex selects nothing, so a renamed or relocated test would turn the gate
-    # into a green no-op.
+    # into a green no-op. --timeout turns a hung test into a failure: the
+    # slowest test (feature/loma_test) takes up to ~410 s on CI, while a
+    # JobQueue lost-wakeup once held a gate until the 360 min job cap.
+    set(RECONSTRUCTION_CTEST_TIMEOUT 1200)
     # Unified C++ test gate for the whole reconstruction subtree: runs
     # every COLMAP_ADD_TEST gtest (scene/estimators/geometry/mvs/image/
     # sensor/optim/math/util/sfm/controllers/feature/retrieval) except the
@@ -242,6 +245,7 @@ if (TESTS_ENABLED)
                  COLMAP_RECONSTRUCTION_TESTS)
     add_custom_target(reconstruction_cpp_tests_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                --timeout ${RECONSTRUCTION_CTEST_TIMEOUT}
                 -R "^(scene|estimators|feature|geometry|image|math|mvs|optim|retrieval|sensor|sfm|util|controllers)/[a-z_0-9]+_test$"
                 -E "^(feature/sift_test|util/opengl_utils_test)$"
                 -LE "^gpu$"
@@ -252,6 +256,7 @@ if (TESTS_ENABLED)
 
     add_custom_target(reconstruction_oiio_parity_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                --timeout ${RECONSTRUCTION_CTEST_TIMEOUT}
                 -R "^(sensor/bitmap_test|image/undistortion_test|mvs/texture_mapping_test)$"
         DEPENDS bitmap_test undistortion_test texture_mapping_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -280,6 +285,7 @@ if (TESTS_ENABLED)
            ${RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS})
     add_custom_target(reconstruction_camera_rig_parity_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                --timeout ${RECONSTRUCTION_CTEST_TIMEOUT}
                 -R "^(${RECONSTRUCTION_CAMERA_RIG_PARITY_REGEX})$"
         DEPENDS ${RECONSTRUCTION_CAMERA_RIG_PARITY_DEPS}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -292,6 +298,7 @@ if (TESTS_ENABLED)
     # refused instead of being silently misread.
     add_custom_target(reconstruction_db_migration_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                --timeout ${RECONSTRUCTION_CTEST_TIMEOUT}
                 -R "^scene/database_test$"
         DEPENDS database_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
@@ -374,6 +381,7 @@ if (TESTS_ENABLED AND RECONSTRUCTION_CASPAR_ENABLED)
     # after the registering directory), not from optim/.
     add_custom_target(reconstruction_caspar_parity_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
+                --timeout ${RECONSTRUCTION_CTEST_TIMEOUT}
                 -R "^estimators/bundle_adjustment_caspar_test$"
         DEPENDS bundle_adjustment_caspar_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
