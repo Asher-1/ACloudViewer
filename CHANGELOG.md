@@ -37,6 +37,16 @@ v3.9.5-Beta (Asher) - 08/04/2026
       one --clobber to soften the main-push vs PR-save race; pool names
       stay branch-agnostic (content-addressed keys) and need no periodic
       cleanup, matching Open3D's fixed-name GCS pools
+    - windows: sccache pools moved from release assets to
+      apache/infrastructure-actions/stash (Apache Arrow's Windows MSVC
+      cache backend, one artifact per cell and branch). The 2 GiB asset
+      limit forced SCCACHE_CACHE_SIZE=1900M below the ~4 GB working set,
+      so every pool sat at the cap and LRU thrashed (62.15% -> 5.89% hits
+      on the same image, MSVC and sources). Pools now trim to the entries
+      the job touched (DuckDB evict-old-files: job semantics) before save;
+      cached builds stop at 330 min and failed, timed-out or cancelled
+      builds save their partial pool, so a near-cold round can no longer
+      hit the 360 min cap without saving and stay cold forever
 - Fix macOS wheel packaging: skip symlinked libraries in the codesign
   set (a concurrent worker rewriting the link target transiently
   dangles the link, failing remove-signature)
