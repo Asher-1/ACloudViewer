@@ -173,6 +173,7 @@ jobs:
           mkdir -p build && cd build
           cmake \
             -DBUILD_SHARED_LIBS=OFF \
+            -DUSE_QT6=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DUSE_SYSTEM_TBB=ON \
             -DBUILD_JUPYTER_EXTENSION=OFF \
