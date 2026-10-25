@@ -222,12 +222,16 @@ ARG BUILD_JOBS=4
 # workspace before the build, and docker_build.sh exports the updated
 # directory back out after the build for the actions/cache post-step to save.
 # ccache is auto-wired as CMAKE_*_COMPILER_LAUNCHER by CMakeLists.txt
-# (find_program(CCACHE)), including the CUDA launcher. 2G per pool keeps the
-# union of all Ubuntu config pools within the 10 GB GitHub Actions cache
-# quota (LRU evicts the least recently used).
+# (find_program(CCACHE)), including the CUDA launcher. 1500M per pool keeps
+# each tarball under the 2 GiB release-asset limit. CCACHE_COMPRESS=1 is
+# required for focal: its ccache 3.7.7 stores objects uncompressed by default
+# (ccache 4.x on jammy/noble compresses with zstd), so the focal working set
+# overflowed the cap and LRU thrashed - 1.4/1.5 GB, 193 cleanups and <25 %
+# hits vs 0.9 GB and 84 % on jammy/noble, a 135 min compile instead of 27.
 ENV NPROC=${BUILD_JOBS} \
     CCACHE_DIR=/root/ACloudViewer/.ccache \
     CCACHE_MAXSIZE=1500M \
+    CCACHE_COMPRESS=1 \
     CCACHE_COMPILERCHECK=content \
     ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \

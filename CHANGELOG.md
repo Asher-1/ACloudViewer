@@ -47,6 +47,13 @@ v3.9.5-Beta (Asher) - 08/04/2026
       cached builds stop at 330 min and failed, timed-out or cancelled
       builds save their partial pool, so a near-cold round can no longer
       hit the 360 min cap without saving and stay cold forever
+    - ubuntu/ubuntu-cuda focal: CCACHE_COMPRESS=1. ccache 3.7.7 stores
+      objects uncompressed by default, so the focal pools overflowed the
+      1500M cap (1.4/1.5 GB, 193 cleanups, 7.7-23% hits) while the zstd
+      pools of ccache 4.x on jammy/noble/wheel hold the same tree in
+      0.9-1.0 GB at 84%; focal compiled for 135 min instead of 27 and was
+      the 3 h critical path of both workflows. The focal shaderc (glslc)
+      source build now uses ccache as well
 - Fix macOS wheel packaging: skip symlinked libraries in the codesign
   set (a concurrent worker rewriting the link target transiently
   dangles the link, failing remove-signature)
