@@ -1,18 +1,18 @@
-# Throwaway measurement (branch ci/probe-nvcc-sccache only, never merged):
-# can sccache v0.19.0 cache the CMake/Ninja-generated nvcc compiles of the
-# Windows cudaON app build, and what does it save?
-#
-# Reproduces the cudaON app cell of windows.yml on the exact tree of run
-# 40266789621 (PR #150 merge commit cc5a64d2) with that run's warm C++ pool,
-# plus CMAKE_CUDA_COMPILER_LAUNCHER=sccache. After the full build it
-# re-compiles only the *.cu.obj set in isolated phases on the same runner:
-#   vanilla  nvcc without sccache (baseline cost)
-#   recache  through sccache, SCCACHE_RECACHE=1 (cold cost incl. overhead)
-#   warm     through sccache (hit cost)
-#   cu-mut   one .cu gets a new declaration      -> must miss
-#   cu-rev   reverted                            -> must hit
-#   hdr-mut  shared rasterizer header mutated    -> its 3 .cu must miss
-#   hdr-rev  reverted                            -> must hit
+# Throwaway measurement (branch ci/probe-nvcc-sccache only, never merged).
+# Round 2: close the evidence still missing before the Windows nvcc launcher
+# goes to production (round 1, run 40292871767: 33 objects, vanilla 2177.6 s
+# vs warm 195 s; warm==recache 33/33, recache==vanilla 0/33).
+#   1. WHY two real compiles differ: vanilla nvcc twice (A/B) vs the
+#      sccache-compiled build objects (S1), section-level + fatbin bytes,
+#      SASS/PTX only where the fatbin differs              -> seed-app
+#   2. cross-runner replay: a fresh runner restores the seed cell's
+#      production-trimmed pool; CUDA misses must be 0 and every replayed
+#      object byte-identical to what the seed runner compiled -> cross-*
+#   3. the wheel job (Windows critical path, 131 min build in run
+#      40266789621): build wall with nvcc cold (seed) and warm (cross)
+#   4. pool size kept by the production trim vs the 10G / 20G ceilings
+# Each cell runs the production job's own steps with the candidate change
+# (see probe-nvcc-sccache-cell.yml).
 name: Probe nvcc sccache
 permissions: {}
 
@@ -21,260 +21,38 @@ on:
     branches:
       - ci/probe-nvcc-sccache
 
-env:
-  CUDA_VERSION: "12.6.0"
-  SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
-  INSTALL_DIR: "C:\\dev\\cloudViewer_install"
-  NPROC: 8
-  DEVELOPER_BUILD: "ON"
-  VULKAN_SDK_VERSION: 1.4.350.0
-  CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
-  CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
-  PROBE_REF: cc5a64d2bc0c609165693641fcbd379d4792e76b
-  POOL_RUN_ID: "40266789621"
-  POOL_NAME: sccache-win-app-cudaON-150_merge
-
 jobs:
-  probe:
+  seed-app:
     permissions:
       contents: read
-      actions: read   # download the pool artifact of another run
-    runs-on: windows-2022
-    timeout-minutes: 360
-    steps:
-      - name: Install CUDA
-        uses: Jimver/cuda-toolkit@v0.2.23
-        id: cuda-toolkit
-        with:
-          cuda: "${{ env.CUDA_VERSION }}"
-          sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust", "nvtx", "curand", "curand_dev", "nvrtc_dev"]'
-          method: 'network'
-          use-github-cache: 'false'
-          use-local-cache: 'false'
-      - name: Setup ENV
-        run: |
-          $CUDA_PATH = "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
-          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CUDA_PATH_V12_6=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - name: Checkout source code (tree of the pool's run)
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.PROBE_REF }}
-      - name: Install Vulkan SDK
-        shell: powershell
-        run: |
-          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
-          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
-          .\util\vulkan\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
-      - name: Sync ACloudViewer Vulkan env
-        shell: powershell
-        run: .\util\vulkan\sync_vulkan_env_from_sdk.ps1
-      - name: Set up python version
-        run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "3.12" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
-      - name: Set up Python environment
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          architecture: 'x64'
-          activate-environment: cloudViewer
-          auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
-      - name: Set up fixed CMake
-        uses: ./.github/actions/setup-cmake
-      - name: Set up MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-      - name: Set up sccache binary
-        id: sccache
-        uses: mozilla-actions/sccache-action@v0.0.11
-        with:
-          version: "v0.19.0"
-          disable_annotations: "true"
-      - name: Restore warm pool of run ${{ env.POOL_RUN_ID }}
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.POOL_NAME }}
-          path: ${{ runner.temp }}\sccache
-          run-id: ${{ env.POOL_RUN_ID }}
-          github-token: ${{ github.token }}
-      - name: Enable sccache launcher (C, C++ and CUDA)
-        run: |
-          $pool = Get-ChildItem "${{ runner.temp }}\sccache" -Recurse -File
-          Write-Host ("[probe] restored pool = {0} files, {1:N2} GB" -f @($pool).Count, (($pool | Measure-Object Length -Sum).Sum / 1GB))
-          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "SCCACHE_CACHE_SIZE=10G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
-          $env:SCCACHE_CACHE_SIZE = "10G"
-          $env:SCCACHE_IDLE_TIMEOUT = "36000"
-          & $env:SCCACHE_PATH --start-server
-          & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
-      - name: Candidate change - forward the launcher to CUDA as well
-        # Attempt 1 (run 40287316481) set the CMAKE_CUDA_COMPILER_LAUNCHER
-        # environment variable instead: CMake then also wraps its own
-        # try_compile, whose Debug check compiles with -Zi -Fd, and sccache's
-        # nvcc decomposition failed the compile outright ("Cannot cache(shared
-        # pdb)" on the host cl.exe step) instead of running it uncached. A -D
-        # cache entry, like the C/C++ launcher, is not forwarded to try_compile.
-        run: |
-          $f = "util\ci_utils.ps1"
-          $c = Get-Content $f -Raw
-          $old = '$cmakeGuiOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"'
-          if (-not $c.Contains($old)) { throw "anchor not found" }
-          $c = $c.Replace($old, $old + "`n        `$cmakeGuiOptions += `"-DCMAKE_CUDA_COMPILER_LAUNCHER=`$env:CLOUDVIEWER_COMPILER_LAUNCHER`"")
-          Set-Content $f $c -NoNewline
-          Select-String -Path $f -Pattern 'COMPILER_LAUNCHER=' | ForEach-Object { Write-Host $_ }
-      - name: Install dependencies
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
-          Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && Remove-Item "C:\QtIFW-4.6.1-win.zip"
-          $env:PATH = "C:\QtIFW-4.6.1-win\bin;$env:PATH"
-          echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
-          Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
-      - name: Fix Windows 11 appverifUI issues
-        run: |
-          $ErrorActionPreference = 'Continue'
-          & "${{ env.SRC_DIR }}\scripts\platforms\windows\fix_win11_appverifUI.bat"
-          $global:LASTEXITCODE = 0
-      - name: Build ACloudViewer App (round 1, nvcc cold through sccache)
-        id: build
-        timeout-minutes: 260
-        continue-on-error: true
-        working-directory: ${{ env.SRC_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $env:STATIC_RUNTIME = "OFF"
-          $env:BUILD_SHARED_LIBS = "OFF"
-          $env:BUILD_CUDA_MODULE = "ON"
-          $env:IGNORE_TEST = "ON"
-          $env:ONLY_BUILD_CUDA = "ON"
-          $t = [Diagnostics.Stopwatch]::StartNew()
-          & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" `
-            -PythonVersion "3.12" `
-            -ACloudViewerInstall "${{ env.INSTALL_DIR }}" 2>&1 | `
-            Tee-Object -FilePath "${{ runner.temp }}\windows-build.log"
-          $rc = $LASTEXITCODE
-          Write-Host ("[probe] round-1 build wall = {0:N1} min, exit {1}" -f $t.Elapsed.TotalMinutes, $rc)
-          if ($rc -ne 0) { exit $rc }
-      - name: Probe nvcc phases
-        if: always()
-        working-directory: ${{ env.SRC_DIR }}\build
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $sc = $env:SCCACHE_PATH
-          $b = (Get-Location).Path
-          $np = [Environment]::ProcessorCount
-          $ninja = (Select-String -Path CMakeCache.txt -Pattern '^CMAKE_MAKE_PROGRAM:[A-Z]+=(.*)$').Matches[0].Groups[1].Value
-          $nf = 'build-Release.ninja'
-          $poolDir = $env:SCCACHE_DIR
-          $out = "${{ runner.temp }}\probe"
-          New-Item -ItemType Directory -Force -Path $out | Out-Null
-          function Pool { $f = Get-ChildItem $poolDir -Recurse -File; "{0} files, {1:N3} GB" -f @($f).Count, (($f | Measure-Object Length -Sum).Sum / 1GB) }
-          function Stats($tag) {
-            $raw = & $sc --show-stats --stats-format=json
-            $raw | Out-File -FilePath "$out\stats-$tag.json" -Encoding utf8
-            $s = ($raw | ConvertFrom-Json).stats
-            $sum = { param($c) $t = 0L; if ($c) { foreach ($p in $c.counts.PSObject.Properties) { $t += [long]$p.Value } }; $t }
-            [ordered]@{ requests = $s.compile_requests; hits = (& $sum $s.cache_hits); misses = (& $sum $s.cache_misses); errors = (& $sum $s.cache_errors)
-                        hits_by = ($s.cache_hits.counts | ConvertTo-Json -Compress); misses_by = ($s.cache_misses.counts | ConvertTo-Json -Compress) }
-          }
-          function Hashes { $h = @{}; foreach ($o in $objs) { $p = Join-Path $b $o; $h[$o] = if (Test-Path $p) { (Get-FileHash $p -Algorithm SHA256).Hash } else { 'MISSING' } }; $h }
-          function Drop($list) { foreach ($o in $list) { Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $b $o) } }
-          function NinjaPhase($tag, $list) {
-            Drop $list
-            & $sc --zero-stats | Out-Null
-            $t = [Diagnostics.Stopwatch]::StartNew()
-            & $ninja -f $nf -j $np @list | Out-File -FilePath "$out\ninja-$tag.log" -Encoding utf8
-            $rc = $LASTEXITCODE
-            $r = Stats $tag
-            $r.phase = $tag; $r.objects = @($list).Count; $r.wall_s = [math]::Round($t.Elapsed.TotalSeconds, 1); $r.rc = $rc; $r.pool = Pool
-            Write-Host "[probe] $tag : $($r | ConvertTo-Json -Compress)"
-            & $sc --show-stats
-            [pscustomobject]$r
-          }
-
-          Write-Host "=== round-1 (full build) stats, pool $(Pool) ==="
-          & $sc --show-stats
-          Stats 'round1' | ConvertTo-Json | Write-Host
-
-          $objs = @(Get-ChildItem $b -Recurse -Filter '*.cu.obj' | ForEach-Object { $_.FullName.Substring($b.Length + 1) } |
-                    Where-Object { & $ninja -f $nf -t query $_ *> $null; $LASTEXITCODE -eq 0 })
-          Write-Host "[probe] $($objs.Count) CUDA objects; ninja $ninja; -j $np"
-          if ($objs.Count -eq 0) { Write-Host "::error::no CUDA objects found"; exit 1 }
-
-          # vanilla: the exact ninja command lines minus the launcher. Lines are
-          # ~8.4k chars (> cmd.exe's 8191), so start nvcc via CreateProcess.
-          $cmds = foreach ($o in $objs) {
-            $c = @(& $ninja -f $nf -t commands -s $o)[-1]
-            $v = $c -replace '^"?[^"\s]*sccache(\.exe)?"?\s+', ''
-            [pscustomobject]@{ obj = $o; cmd = $v; launched = ($c -ne $v) }
-          }
-          Write-Host "[probe] launcher present on $(@($cmds | Where-Object launched).Count)/$($cmds.Count) CUDA command lines"
-          Write-Host "[probe] sample: $($cmds[0].cmd.Substring(0, [math]::Min(300, $cmds[0].cmd.Length)))"
-          Drop $objs
-          $t = [Diagnostics.Stopwatch]::StartNew()
-          $per = $cmds | ForEach-Object -ThrottleLimit $np -Parallel {
-            $c = $_.cmd
-            if ($c -match '^"([^"]+)"\s+(.*)$' -or $c -match '^(\S+)\s+(.*)$') { $exe = $Matches[1]; $a = $Matches[2] }
-            $psi = [Diagnostics.ProcessStartInfo]::new($exe, $a)
-            $psi.UseShellExecute = $false
-            $psi.WorkingDirectory = $using:b
-            $w = [Diagnostics.Stopwatch]::StartNew()
-            $p = [Diagnostics.Process]::Start($psi); $p.WaitForExit()
-            [pscustomobject]@{ obj = $_.obj; sec = [math]::Round($w.Elapsed.TotalSeconds, 1); rc = $p.ExitCode }
-          }
-          $vanilla = [pscustomobject][ordered]@{ phase = 'vanilla'; objects = $objs.Count; wall_s = [math]::Round($t.Elapsed.TotalSeconds, 1)
-                       rc = (@($per | Where-Object rc -ne 0).Count); cpu_sum_s = [math]::Round(($per | Measure-Object sec -Sum).Sum, 1); pool = Pool }
-          $per | Sort-Object sec -Descending | Format-Table -AutoSize | Out-String -Width 300 | Write-Host
-          $per | ConvertTo-Json | Out-File "$out\vanilla-per-object.json" -Encoding utf8
-          $hVanilla = Hashes
-
-          $env:SCCACHE_RECACHE = '1'
-          $recache = NinjaPhase 'recache' $objs
-          Remove-Item Env:SCCACHE_RECACHE
-          $hRecache = Hashes
-          $warm = NinjaPhase 'warm' $objs
-          $hWarm = Hashes
-
-          # Invalidation: pick the cheapest object for the .cu mutation.
-          $cheap = ($per | Sort-Object sec | Select-Object -First 1).obj
-          $cheapCmd = ($cmds | Where-Object obj -eq $cheap).cmd
-          $cuSrc = [regex]::Match($cheapCmd, '-c\s+("?)([^"\s]+\.cu)\1').Groups[2].Value
-          Add-Content -Path $cuSrc -Value "`nint sccache_probe_cu_mutation();"
-          $cuMut = NinjaPhase 'cu-mut' @($cheap)
-          git -C "${{ env.SRC_DIR }}" checkout -- $cuSrc
-          $cuRev = NinjaPhase 'cu-rev' @($cheap)
-          $hdr = "${{ env.SRC_DIR }}\plugins\core\Standard\qSIBR\3rdparty\CudaRasterizer\cuda_rasterizer\auxiliary.h"
-          $rast = @($objs | Where-Object { $_ -like '*CudaRasterizer.dir*' })
-          Add-Content -Path $hdr -Value "`nnamespace sccache_probe { int hdr_mutation(); }"
-          $hdrMut = NinjaPhase 'hdr-mut' $rast
-          git -C "${{ env.SRC_DIR }}" checkout -- $hdr
-          $hdrRev = NinjaPhase 'hdr-rev' $rast
-
-          $same = { param($x, $y) @($objs | Where-Object { $x[$_] -eq $y[$_] -and $x[$_] -ne 'MISSING' }).Count }
-          $rows = @($vanilla, $recache, $warm, $cuMut, $cuRev, $hdrMut, $hdrRev)
-          $md = @("### nvcc through sccache v0.19.0 (Windows, CUDA ${{ env.CUDA_VERSION }}, $np vCPU)", "",
-                  "cu mutation: ``$cuSrc``; header mutation: ``auxiliary.h`` -> $($rast.Count) objects", "",
-                  "| phase | objects | wall s | rc | requests | hits | misses | errors | hits by | misses by | pool |", "|---|---|---|---|---|---|---|---|---|---|---|")
-          foreach ($r in $rows) { $md += "| $($r.phase) | $($r.objects) | $($r.wall_s) | $($r.rc) | $($r.requests) | $($r.hits) | $($r.misses) | $($r.errors) | $($r.hits_by) | $($r.misses_by) | $($r.pool) |" }
-          $md += ""
-          $md += "vanilla per-object CPU sum: $($vanilla.cpu_sum_s) s"
-          $md += "identical objects: warm==recache $(& $same $hWarm $hRecache)/$($objs.Count), recache==vanilla $(& $same $hRecache $hVanilla)/$($objs.Count)"
-          $md -join "`n" | Tee-Object -FilePath "$out\summary.md" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          $md -join "`n" | Write-Host
-          $rows | ConvertTo-Json | Out-File "$out\phases.json" -Encoding utf8
-          & $sc --stop-server
-      - name: Upload probe results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: probe-nvcc-sccache
-          path: |
-            ${{ runner.temp }}\probe
-            ${{ runner.temp }}\windows-build.log
-          if-no-files-found: ignore
-          retention-days: 14
+      actions: read
+    uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
+    with:
+      lane: app
+      stage: seed
+  seed-wheel:
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
+    with:
+      lane: wheel
+      stage: seed
+  cross-app:
+    needs: seed-app
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
+    with:
+      lane: app
+      stage: cross
+  cross-wheel:
+    needs: seed-wheel
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
+    with:
+      lane: wheel
+      stage: cross

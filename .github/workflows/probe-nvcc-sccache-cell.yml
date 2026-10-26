@@ -1,0 +1,301 @@
+# Throwaway measurement cell (branch ci/probe-nvcc-sccache only, never
+# merged); called by probe-nvcc-sccache.yml. One cell = one production job
+# (app cudaON Release or wheel cudaON py3.12) on the tree of run 40266789621
+# (PR #150 merge commit cc5a64d2) with the candidate change applied: the
+# sccache launcher forwarded to nvcc as -DCMAKE_CUDA_COMPILER_LAUNCHER in
+# BOTH Build-GuiApp and Build-PipPackage.
+#   seed   pool = that run's production pool (C/C++ warm, nvcc cold)
+#   cross  pool = the seed cell's production-trimmed pool, on another runner
+name: Probe nvcc sccache cell
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      lane:
+        type: string   # app | wheel
+        required: true
+      stage:
+        type: string   # seed | cross
+        required: true
+
+jobs:
+  cell:
+    name: ${{ inputs.stage }}-${{ inputs.lane }}
+    permissions:
+      contents: read
+      actions: read   # download the pool artifact of another run
+    runs-on: windows-2022
+    timeout-minutes: 360
+    env:
+      CUDA_VERSION: "12.6.0"
+      SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
+      INSTALL_DIR: "C:\\dev\\cloudViewer_install"
+      NPROC: 8
+      DEVELOPER_BUILD: "ON"
+      VULKAN_SDK_VERSION: 1.4.350.0
+      CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
+      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      PROBE_REF: cc5a64d2bc0c609165693641fcbd379d4792e76b
+      POOL_RUN_ID: "40266789621"
+      POOL_NAME: ${{ inputs.lane == 'app' && 'sccache-win-app-cudaON-150_merge' || 'sccache-win-wheel-cudaON-py3.12-150_merge' }}
+      # Production ceilings of the two jobs (windows.yml Enable steps).
+      POOL_CAP: ${{ inputs.lane == 'app' && '10G' || '20G' }}
+    steps:
+      # Step order mirrors each production job (PATH precedence).
+      - name: Set up MSVC environment (wheel order)
+        if: inputs.lane == 'wheel'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Install CUDA
+        uses: Jimver/cuda-toolkit@v0.2.23
+        id: cuda-toolkit
+        with:
+          cuda: "${{ env.CUDA_VERSION }}"
+          sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust", "nvtx", "curand", "curand_dev", "nvrtc_dev"]'
+          method: 'network'
+          use-github-cache: 'false'
+          use-local-cache: 'false'
+      - name: Setup ENV
+        run: |
+          $CUDA_PATH = "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V12_6=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Checkout source code (tree of the pool's run)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PROBE_REF }}
+      - name: Checkout probe tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: _probe
+          sparse-checkout: .github/probe
+      - name: Move probe tools out of the source tree
+        run: |
+          $dst = "${{ runner.temp }}\probe-tools"
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          Copy-Item "_probe\.github\probe\coff.py", "_probe\.github\probe\probe.psm1" $dst
+          Remove-Item -Recurse -Force _probe
+          echo "PROBE_TOOLS=$dst" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          git status --short
+      - name: Install Vulkan SDK
+        shell: powershell
+        run: |
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\vulkan\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+      - name: Sync ACloudViewer Vulkan env
+        shell: powershell
+        run: .\util\vulkan\sync_vulkan_env_from_sdk.ps1
+      - name: Wheel job env
+        if: inputs.lane == 'wheel'
+        run: |
+          foreach ($kv in 'BUILD_PYTORCH_OPS=ON', 'BUILD_TENSORFLOW_OPS=OFF', 'BUILD_JUPYTER_EXTENSION=ON', 'BUILD_AZURE_KINECT=ON', 'BUILD_LIBREALSENSE=ON') {
+            echo $kv | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+      - name: Checkout CloudViewer-ML source code
+        if: inputs.lane == 'wheel'
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CloudViewer-ML
+          ref: main
+          path: ${{ env.CLOUDVIEWER_ML_ROOT }}
+      - name: Set up python version (app)
+        if: inputs.lane == 'app'
+        run: |
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "3.12" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python environment (app)
+        if: inputs.lane == 'app'
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          architecture: 'x64'
+          activate-environment: cloudViewer
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python environment (wheel)
+        if: inputs.lane == 'wheel'
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: "3.12"
+          auto-activate-base: true
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      - name: Set up MSVC environment (app order)
+        if: inputs.lane == 'app'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Set up sccache binary
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: "v0.19.0"
+          disable_annotations: "true"
+      - name: Restore production pool of run ${{ env.POOL_RUN_ID }}
+        if: inputs.stage == 'seed'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.POOL_NAME }}
+          path: ${{ runner.temp }}\sccache
+          run-id: ${{ env.POOL_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Restore the seed cell's trimmed pool
+        if: inputs.stage == 'cross'
+        uses: actions/download-artifact@v4
+        with:
+          name: probe-pool-${{ inputs.lane }}
+          path: ${{ runner.temp }}\sccache
+      - name: Restore the seed cell's results
+        if: inputs.stage == 'cross'
+        uses: actions/download-artifact@v4
+        with:
+          name: probe-seed-${{ inputs.lane }}
+          path: ${{ runner.temp }}\seed
+      - name: Enable sccache launcher (production Enable step)
+        run: |
+          $pool = Get-ChildItem "${{ runner.temp }}\sccache" -Recurse -File
+          Write-Host ("[probe] restored pool = {0} files, {1:N3} GB" -f @($pool).Count, (($pool | Measure-Object Length -Sum).Sum / 1GB))
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=$env:POOL_CAP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_POOL_T0=$((Get-Date).ToUniversalTime().Ticks)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
+          $env:SCCACHE_CACHE_SIZE = $env:POOL_CAP
+          $env:SCCACHE_IDLE_TIMEOUT = "36000"
+          & $env:SCCACHE_PATH --start-server
+          & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
+      - name: Candidate change - forward the launcher to nvcc in both build paths
+        run: |
+          $f = "util\ci_utils.ps1"
+          $c = Get-Content $f -Raw
+          foreach ($v in 'cmakeGuiOptions', 'cmakeOptions') {
+            $old = "`$$v += `"-DCMAKE_CXX_COMPILER_LAUNCHER=`$env:CLOUDVIEWER_COMPILER_LAUNCHER`""
+            $n = ([regex]::Matches($c, [regex]::Escape($old))).Count
+            if ($n -ne 1) { throw "anchor for `$$v found $n times" }
+            $c = $c.Replace($old, $old + "`n        `$$v += `"-DCMAKE_CUDA_COMPILER_LAUNCHER=`$env:CLOUDVIEWER_COMPILER_LAUNCHER`"")
+          }
+          Set-Content $f $c -NoNewline
+          $hits = @(Select-String -Path $f -Pattern 'CMAKE_CUDA_COMPILER_LAUNCHER=')
+          $hits | ForEach-Object { Write-Host $_ }
+          if ($hits.Count -ne 2) { throw "expected 2 CUDA launcher lines, got $($hits.Count)" }
+      - name: Install dependencies
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          if ('${{ inputs.lane }}' -eq 'app') {
+            Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
+            Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && Remove-Item "C:\QtIFW-4.6.1-win.zip"
+            $env:PATH = "C:\QtIFW-4.6.1-win\bin;$env:PATH"
+            echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+          Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
+          Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
+      - name: Fix Windows 11 appverifUI issues
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & "${{ env.SRC_DIR }}\scripts\platforms\windows\fix_win11_appverifUI.bat"
+          $global:LASTEXITCODE = 0
+      - name: Build (production build step)
+        id: build
+        timeout-minutes: ${{ inputs.lane == 'app' && 200 || 300 }}
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          Write-Probe "## ${{ inputs.stage }} / ${{ inputs.lane }} (runner $env:RUNNER_NAME, image $env:ImageVersion)"
+          $env:IGNORE_TEST = "ON"
+          $log = Join-Path $env:RUNNER_TEMP 'probe\build.log'
+          $t = [Diagnostics.Stopwatch]::StartNew()
+          if ('${{ inputs.lane }}' -eq 'app') {
+            $env:STATIC_RUNTIME = "OFF"
+            $env:BUILD_SHARED_LIBS = "OFF"
+            $env:BUILD_CUDA_MODULE = "ON"
+            $env:ONLY_BUILD_CUDA = "ON"
+            & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" -PythonVersion "3.12" `
+              -ACloudViewerInstall "${{ env.INSTALL_DIR }}" 2>&1 | Tee-Object -FilePath $log
+          } else {
+            & "${{ env.SRC_DIR }}\scripts\build_win_wheel.ps1" -PythonVersion "3.12" `
+              -ACloudViewerInstall "${{ env.INSTALL_DIR }}" `
+              -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}" 2>&1 | Tee-Object -FilePath $log
+          }
+          $rc = $LASTEXITCODE
+          Write-Probe ("build wall = {0:N1} min, exit {1}" -f $t.Elapsed.TotalMinutes, $rc)
+          $s = Get-ScStats 'build'
+          Write-Probe "build stats: $($s | ConvertTo-Json -Compress)"
+          if ($rc -ne 0) { exit $rc }
+      - name: Probe
+        if: always() && steps.build.outcome != 'skipped'
+        continue-on-error: true
+        timeout-minutes: 140
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $b = "${{ env.SRC_DIR }}\build"
+          Write-Probe "pool after build: $(Get-PoolSize ([long]$env:SCCACHE_POOL_T0)) (cap $env:POOL_CAP)"
+          Copy-NinjaLogs $b
+          $o = Get-CudaObjects $b
+          if ('${{ inputs.stage }}' -eq 'cross') {
+            # Bytes replayed from the seed runner's pool vs what the seed
+            # runner compiled: expected identical, object for object.
+            Save-Snapshot $b $o.All 'X' | Out-Null
+            Compare-Snapshot 'S1' 'X' "${{ runner.temp }}\seed"
+          } else {
+            Save-Snapshot $b $o.All 'S1' | Out-Null
+          }
+          if ('${{ inputs.stage }}${{ inputs.lane }}' -eq 'seedapp') {
+            # Where do two real compiles of one command differ? A/B = vanilla
+            # nvcc twice (nvcc's own determinism), S1 = compiled through
+            # sccache by the build, W = replayed from the pool.
+            $cmds = Get-VanillaCommands $b $o.Root
+            Write-Probe "| phase | objects | wall s | rc | detail |"
+            Write-Probe "|---|---|---|---|---|"
+            Invoke-Vanilla 'A' $b $cmds | Out-Null
+            Save-Snapshot $b $o.Root 'A' | Out-Null
+            Invoke-Vanilla 'B' $b $cmds | Out-Null
+            Save-Snapshot $b $o.Root 'B' | Out-Null
+            Invoke-NinjaPhase 'warm' $b $o.Root
+            Save-Snapshot $b $o.Root 'W' | Out-Null
+            Compare-Snapshot 'A' 'B'
+            Compare-Snapshot 'S1' 'A'
+            Compare-Snapshot 'S1' 'B'
+            Compare-Snapshot 'S1' 'W'
+            Save-RawSamples 'A', 'B', 'S1'
+            $tool = Install-Cuobjdump
+            Write-Probe "cuobjdump: $tool"
+            Compare-DeviceCode $tool 'A' 'B'
+            Compare-DeviceCode $tool 'S1' 'A'
+          }
+      - name: Trim pool (production trim) and report
+        if: always() && steps.build.outcome != 'skipped'
+        continue-on-error: true
+        run: |
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $s = Get-ScStats 'final'
+          Write-Probe "final stats: $($s | ConvertTo-Json -Compress)"
+          & $env:SCCACHE_PATH --stop-server 2>$null
+          $t0 = [long]$env:SCCACHE_POOL_T0
+          $all = @(Get-ChildItem $env:SCCACHE_DIR -Recurse -File)
+          $stale = @($all | Where-Object { $_.LastWriteTimeUtc.Ticks -lt $t0 })
+          $stale | Remove-Item -Force -ErrorAction SilentlyContinue
+          $kept = ($all | Measure-Object Length -Sum).Sum - ($stale | Measure-Object Length -Sum).Sum
+          Write-Probe ("trimmed {0} untouched entries; pool = {1} files, {2:N3} GB (cap {3})" -f $stale.Count, ($all.Count - $stale.Count), ($kept / 1GB), $env:POOL_CAP)
+          Get-Content (Join-Path $env:RUNNER_TEMP 'probe\summary.md') | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+      - name: Upload probe results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ inputs.stage }}-${{ inputs.lane }}
+          path: ${{ runner.temp }}\probe
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload trimmed pool for the cross cell
+        if: inputs.stage == 'seed' && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-pool-${{ inputs.lane }}
+          path: ${{ runner.temp }}\sccache
+          compression-level: 0
+          retention-days: 3
