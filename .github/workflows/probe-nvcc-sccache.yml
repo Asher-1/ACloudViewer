@@ -106,15 +106,27 @@ jobs:
           echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "SCCACHE_CACHE_SIZE=10G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          # The candidate change: CMake >= 3.17 initializes
-          # CMAKE_CUDA_COMPILER_LAUNCHER from this environment variable.
-          echo "CMAKE_CUDA_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
           $env:SCCACHE_CACHE_SIZE = "10G"
           $env:SCCACHE_IDLE_TIMEOUT = "36000"
           & $env:SCCACHE_PATH --start-server
           & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
+      - name: Candidate change - forward the launcher to CUDA as well
+        # Attempt 1 (run 40287316481) set the CMAKE_CUDA_COMPILER_LAUNCHER
+        # environment variable instead: CMake then also wraps its own
+        # try_compile, whose Debug check compiles with -Zi -Fd, and sccache's
+        # nvcc decomposition failed the compile outright ("Cannot cache(shared
+        # pdb)" on the host cl.exe step) instead of running it uncached. A -D
+        # cache entry, like the C/C++ launcher, is not forwarded to try_compile.
+        run: |
+          $f = "util\ci_utils.ps1"
+          $c = Get-Content $f -Raw
+          $old = '$cmakeGuiOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"'
+          if (-not $c.Contains($old)) { throw "anchor not found" }
+          $c = $c.Replace($old, $old + "`n        `$cmakeGuiOptions += `"-DCMAKE_CUDA_COMPILER_LAUNCHER=`$env:CLOUDVIEWER_COMPILER_LAUNCHER`"")
+          Set-Content $f $c -NoNewline
+          Select-String -Path $f -Pattern 'COMPILER_LAUNCHER=' | ForEach-Object { Write-Host $_ }
       - name: Install dependencies
         run: |
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
