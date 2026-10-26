@@ -199,6 +199,11 @@ jobs:
           # the pool grew. A silent bump to 0.20+ would re-shuffle the key
           # space and cost one full-cold round per cell.
           version: "v0.19.0"
+          # Its post step queries --show-stats after "Stop sccache server",
+          # i.e. a fresh empty daemon, and annotated every warm round as
+          # "0% - 0 hits" (run 40235417998: real rate 95.67-98.97 %). The
+          # stop step below reports the live daemon's numbers instead.
+          disable_annotations: "true"
       - name: Restore sccache pool (stash)
         # apache/infrastructure-actions/stash — the artifact-backed cache
         # Apache Arrow uses for its Windows MSVC ccache: no 10 GB repo quota
@@ -405,21 +410,26 @@ jobs:
           if-no-files-found: ignore
       - name: Stop sccache server
         # Flush the daemon's pending cache writes before the job ends so the
-        # save step below tars a complete pool. The --show-stats here
-        # may print zeros on Windows: the daemon serving the compiles dies
-        # with the build step's process tree (runner kills it at step exit)
-        # or has already self-exited (SCCACHE_IDLE_TIMEOUT, default 600 s,
-        # vs an 11-12 min packaging window — the in-step stats in runs
-        # 39904120017/39944134589/39994107226 were all fresh 0-request
-        # servers), so this step lazily spawns yet another empty one.
-        # The authoritative numbers are the in-step stats printed by
-        # scripts/build_win_app.ps1 / build_win_wheel.ps1 right after
-        # packaging — real since SCCACHE_IDLE_TIMEOUT=36000. Never gates
-        # the job; build-log compile rates remain the reliable signal.
+        # save step below tars a complete pool. The stats are kept only in
+        # the daemon's memory, so this is the last point where they are
+        # real (SCCACHE_IDLE_TIMEOUT=36000 keeps it alive past packaging);
+        # they are published here as the job's notice and summary. A
+        # 0-request daemon is a freshly spawned one (build never started or
+        # daemon died) and is not reported. Never gates the job.
         if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
         continue-on-error: true
         run: |
           & $env:SCCACHE_PATH --show-stats
+          try {
+            $s = (& $env:SCCACHE_PATH --show-stats --stats-format=json | ConvertFrom-Json).stats
+            $sum = { param($c) $t = 0L; foreach ($p in $c.counts.PSObject.Properties) { $t += [long]$p.Value }; $t }
+            $h = & $sum $s.cache_hits; $m = & $sum $s.cache_misses; $e = & $sum $s.cache_errors
+            if ($s.compile_requests -gt 0) {
+              $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $h / [math]::Max(1, $h + $m + $e)), $h, $m, $e, $s.compile_requests
+              Write-Host "::notice title=sccache stats - app cuda${{ matrix.BUILD_CUDA_MODULE }}::$line"
+              "### sccache stats (app cuda${{ matrix.BUILD_CUDA_MODULE }})`n`n$line" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            }
+          } catch { Write-Host "[cache] stats report skipped: $_" }
           & $env:SCCACHE_PATH --stop-server
       - name: Trim sccache pool to this job's working set
         # Same semantics as DuckDB's ccache-action `evict-old-files: job` and
@@ -817,6 +827,9 @@ jobs:
           # the pool grew. A silent bump to 0.20+ would re-shuffle the key
           # space and cost one full-cold round per cell.
           version: "v0.19.0"
+          # See the app matrix job: the post step would annotate a fresh
+          # empty daemon as "0% - 0 hits"; the trim step reports instead.
+          disable_annotations: "true"
       - name: Restore sccache pool (stash)
         # Same stash backend as the app matrix job (see there for why the
         # release-asset pool thrashed).
@@ -939,6 +952,18 @@ jobs:
         continue-on-error: true
         run: |
           & $env:SCCACHE_PATH --show-stats
+          # Publish the live daemon's stats before stopping it (see the app
+          # matrix job "Stop sccache server").
+          try {
+            $s = (& $env:SCCACHE_PATH --show-stats --stats-format=json | ConvertFrom-Json).stats
+            $sum = { param($c) $t = 0L; foreach ($p in $c.counts.PSObject.Properties) { $t += [long]$p.Value }; $t }
+            $h = & $sum $s.cache_hits; $m = & $sum $s.cache_misses; $e = & $sum $s.cache_errors
+            if ($s.compile_requests -gt 0) {
+              $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $h / [math]::Max(1, $h + $m + $e)), $h, $m, $e, $s.compile_requests
+              Write-Host "::notice title=sccache stats - wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }}::$line"
+              "### sccache stats (wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }})`n`n$line" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            }
+          } catch { Write-Host "[cache] stats report skipped: $_" }
           & $env:SCCACHE_PATH --stop-server 2>$null
           $global:LASTEXITCODE = 0
           if ('${{ steps.build.outcome }}' -ne 'success') {
