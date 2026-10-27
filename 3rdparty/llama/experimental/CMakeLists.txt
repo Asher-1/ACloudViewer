@@ -44,6 +44,18 @@ if(BUILD_TESTING)
     target_compile_definitions(llama_runtime_smoke PRIVATE
         ACV_GGML_MODULE_DIR="${GGML_MODULE_DIR}")
     add_test(NAME llama_runtime_smoke COMMAND llama_runtime_smoke)
+    add_executable(llama_elementwise_epilogue_test elementwise_epilogue_test.cpp)
+    target_link_libraries(llama_elementwise_epilogue_test PRIVATE 3rdparty_llama)
+    add_test(NAME llama_cpu_elementwise_epilogue
+        COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" CPU)
+    add_executable(llama_depthwise_bias_test depthwise_bias_test.cpp)
+    target_link_libraries(llama_depthwise_bias_test PRIVATE 3rdparty_llama)
+    add_test(NAME llama_cpu_depthwise_bias
+        COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" CPU)
+    add_executable(llama_pool2d_test pool2d_test.cpp)
+    target_link_libraries(llama_pool2d_test PRIVATE 3rdparty_llama)
+    add_test(NAME llama_cpu_pool2d
+        COMMAND llama_pool2d_test "${GGML_MODULE_DIR}" CPU)
     add_executable(llama_conv_transpose_regression conv_transpose_regression.cpp)
     target_link_libraries(llama_conv_transpose_regression PRIVATE 3rdparty_llama)
     add_test(NAME llama_cpu_conv_transpose_regression
@@ -51,8 +63,36 @@ if(BUILD_TESTING)
     if(GGML_USE_CUDA OR GGML_USE_VULKAN)
         add_executable(llama_im2col_test im2col_test.cpp)
         target_link_libraries(llama_im2col_test PRIVATE 3rdparty_llama)
+        add_executable(llama_conv2d_accumulation_test conv2d_accumulation_test.cpp)
+        target_link_libraries(llama_conv2d_accumulation_test PRIVATE 3rdparty_llama)
     endif()
     if(GGML_USE_CUDA)
+        add_executable(llama_cuda_numerics_probe cuda_llama_numerics_probe.cpp)
+        target_link_libraries(llama_cuda_numerics_probe PRIVATE 3rdparty_llama)
+        set(LLAMA_NUMERICS_UPSTREAM_DIR "" CACHE PATH "Pristine pinned llama backend modules")
+        set(LLAMA_NUMERICS_BASELINE_DIR "" CACHE PATH "Frozen pre-change backend modules")
+        if(LLAMA_NUMERICS_UPSTREAM_DIR AND LLAMA_NUMERICS_BASELINE_DIR)
+            add_test(NAME llama_cuda_numerics_scope
+                COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test_cuda_llama_numerics.py
+                    --probe $<TARGET_FILE:llama_cuda_numerics_probe>
+                    --candidate ${GGML_MODULE_DIR}
+                    --upstream ${LLAMA_NUMERICS_UPSTREAM_DIR}
+                    --baseline ${LLAMA_NUMERICS_BASELINE_DIR}
+                    --report ${CMAKE_BINARY_DIR}/Testing/llama-cuda-numerics-scope.json)
+            set_tests_properties(llama_cuda_numerics_scope PROPERTIES RESOURCE_LOCK gpu)
+        endif()
+        add_test(NAME llama_cuda_pool2d
+            COMMAND llama_pool2d_test "${GGML_MODULE_DIR}" CUDA0)
+        set_tests_properties(llama_cuda_pool2d PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_cuda_conv2d_accumulation
+            COMMAND llama_conv2d_accumulation_test "${GGML_MODULE_DIR}" CUDA0)
+        set_tests_properties(llama_cuda_conv2d_accumulation PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_cuda_depthwise_bias
+            COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" CUDA0)
+        set_tests_properties(llama_cuda_depthwise_bias PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_cuda_elementwise_epilogue
+            COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" CUDA0)
+        set_tests_properties(llama_cuda_elementwise_epilogue PROPERTIES RESOURCE_LOCK gpu)
         add_test(NAME llama_cuda_runtime_smoke COMMAND llama_runtime_smoke cuda)
         set_tests_properties(llama_cuda_runtime_smoke PROPERTIES RESOURCE_LOCK gpu)
         add_executable(llama_cuda_matmul_stride_test cuda_matmul_stride_test.cpp)
@@ -65,6 +105,29 @@ if(BUILD_TESTING)
         set_tests_properties(llama_cuda_im2col PROPERTIES RESOURCE_LOCK gpu)
     endif()
     if(GGML_USE_VULKAN)
+        add_test(NAME llama_vulkan_conv2d_accumulation
+            COMMAND llama_conv2d_accumulation_test "${GGML_MODULE_DIR}" Vulkan0)
+        set_tests_properties(llama_vulkan_conv2d_accumulation PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_vulkan_pool2d
+            COMMAND llama_pool2d_test "${GGML_MODULE_DIR}" Vulkan0)
+        set_tests_properties(llama_vulkan_pool2d PROPERTIES RESOURCE_LOCK gpu)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
+           CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+            # 真正的 checker clone 数值回归；仅覆盖 Linux x86 host/F32 路径。
+            add_test(NAME llama_vulkan_dw_debug_clone
+                COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_LIST_DIR}/test_vulkan_dw_debug_clone.py
+                    --build ${CMAKE_BINARY_DIR}
+                    --output ${CMAKE_BINARY_DIR}/Testing/dw-debug-clone)
+            set_tests_properties(llama_vulkan_dw_debug_clone PROPERTIES
+                LABELS "ggml;contract")
+        endif()
+        add_test(NAME llama_vulkan_depthwise_bias
+            COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" Vulkan0)
+        set_tests_properties(llama_vulkan_depthwise_bias PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_vulkan_elementwise_epilogue
+            COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" Vulkan0)
+        set_tests_properties(llama_vulkan_elementwise_epilogue PROPERTIES RESOURCE_LOCK gpu)
         add_test(NAME llama_vulkan_runtime_smoke COMMAND llama_runtime_smoke vulkan)
         set_tests_properties(llama_vulkan_runtime_smoke PROPERTIES RESOURCE_LOCK gpu)
         add_test(NAME llama_vulkan_im2col

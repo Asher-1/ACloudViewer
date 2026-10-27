@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include "ggml.h"
+
 namespace aicore {
 
 struct GgmlEnvOverrides {
@@ -97,6 +99,12 @@ void apply_vulkan_runtime_defaults();
  *  ggml_common::load_backends_once() before any backend registration; INFO
  *  and below stay on stderr so the app log keeps a low noise floor. */
 void install_ggml_log_bridge();
+
+/** The bridge callback itself. llama_log_set() also replaces ggml's
+ *  process-wide logger, so the llm task hands llama this same callback:
+ *  ggml routing stays identical and llama's own messages follow the same
+ *  WARN/ERROR-to-app-log policy. */
+ggml_log_callback ggml_log_bridge_callback();
 
 /** Internal: records that ggml backends have been registered, so later
  *  apply_ggml_env_overrides() calls can warn about the snapshot semantics.

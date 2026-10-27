@@ -23,8 +23,7 @@
 namespace {
 
 static constexpr const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "anycalib/";
+        "https://huggingface.co/Asher-1/AnyCalib_GGUF/resolve/main/";
 
 // (release stem, user-facing role label, role, resolution). Stems match the
 // converter output naming.

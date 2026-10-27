@@ -22,8 +22,9 @@
 //   detect-total         all of the above as one call (via rfdetr_detect)
 //
 // Usage:
-//   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters] [warmups]
-//   defaults:            -          cpu      0         1920   1080    15       2
+//   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters]
+//   [warmups] defaults:            -          cpu      0         1920   1080 15
+//   2
 // Each path records its cold call separately. Lazy graph allocation and backend
 // kernel setup must not be mixed into the steady-state frame median.
 
@@ -61,7 +62,9 @@ double median_of(std::vector<double>& v) {
     return (n % 2) ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
 }
 
-void record_sample(const char* stage, int iteration, double elapsed,
+void record_sample(const char* stage,
+                   int iteration,
+                   double elapsed,
                    std::vector<double>& measured) {
     std::fprintf(stderr, "[bench-sample] stage=%s phase=%s index=%d ms=%.6f\n",
                  stage, iteration < 0 ? "warmup" : "measured", iteration,
@@ -249,8 +252,8 @@ int main(int argc, char** argv) {
             const auto t0 = Clock::now();
             float* px = nullptr;
             int pw = 0, ph = 0;
-            if (rfdetr_preprocess(img, S, S, mean, sd, model_bilinear, &px,
-                                  &pw, &ph) != RFDETR_OK) {
+            if (rfdetr_preprocess(img, S, S, mean, sd, model_bilinear, &px, &pw,
+                                  &ph) != RFDETR_OK) {
                 std::fprintf(stderr, "full detect preprocess failed\n");
                 return 1;
             }
@@ -276,7 +279,8 @@ int main(int argc, char** argv) {
             rfdetr_detections_free(dets, n);
             std::free(px);
             if (!finite_output) {
-                std::fprintf(stderr, "full detect produced non-finite output\n");
+                std::fprintf(stderr,
+                             "full detect produced non-finite output\n");
                 return 1;
             }
             if (i == -warmups) cold_total = dt;

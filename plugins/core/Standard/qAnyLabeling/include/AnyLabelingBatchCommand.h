@@ -14,6 +14,7 @@
 #ifdef AICore_ENABLED
 #include <QtCompat.h>
 #include <aicore/aliked_capi.h>
+#include <aicore/attribute_capi.h>
 #include <aicore/deeplsd_capi.h>
 #include <aicore/depth_capi.h>
 #include <aicore/facedetect_capi.h>
@@ -46,7 +47,7 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
                  "choice:detect|segment|semantic|pose|obb|classify|"
                  "world|yoloe|rfdetr-detect|rfdetr-segment|sam3-pvs|"
                  "sam3-pcs|rmbg|gkd|facedetect|facedetect-dense|ocr|"
-                 "depth|depth-nested|deeplsd|aliked",
+                 "depth|depth-nested|deeplsd|aliked|attribute",
                  "detect", "qAnyLabeling inference workflow"},
                 {"METRIC_MODEL", "string", "",
                  "Dependency: nested metric / face landmark / OCR detector"},
@@ -90,7 +91,7 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
                 "facedetect",    "facedetect-dense",
                 "ocr",           "depth",
                 "depth-nested",  "deeplsd",
-                "aliked"};
+                "aliked",        "attribute"};
         return allowed.contains(value) ? value : QString();
     }
 
@@ -167,6 +168,10 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
 
     static QString cacheDir(const QString& taskName) {
         namespace B = ecvAICoreBatch;
+        if (taskName == QLatin1String("attribute"))
+            return B::takeCString(aicore_attribute_model_cache_dir(), [](void* p) {
+                aicore_attribute_free_buffer(static_cast<char*>(p));
+            });
         if (taskName.startsWith("depth"))
             return B::takeCString(aicore_depth_model_cache_dir(),
                                   aicore_depth_free_buffer);
@@ -202,6 +207,8 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
     static ecvAICoreBatch::ModelSource source(const QString& taskName,
                                               const QString& path) {
         const QByteArray name = QFileInfo(path).fileName().toUtf8();
+        // 本地 recipe 没有 published URL/digest；不能退到 YOLO catalog 或虚构下载。
+        if (taskName == QLatin1String("attribute")) return {};
         if (taskName.startsWith("depth"))
             return ecvAICoreBatch::familySource(AICORE_MODEL_FAMILY_DEPTH,
                                                 QString::fromUtf8(name));
@@ -253,7 +260,12 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
                            QString::fromUtf8(url ? url : ""),
                            QDir(cache).filePath(fn), role});
         };
-        if (taskName.startsWith("rfdetr")) {
+        if (taskName == QLatin1String("attribute")) {
+            for (int i = 0; i < aicore_attribute_preset_count(); ++i) {
+                const auto* e = aicore_attribute_preset_at(i);
+                if (e) append(e->filename, e->display_name, nullptr, "attribute");
+            }
+        } else if (taskName.startsWith("rfdetr")) {
             for (int i = 0; i < aicore_rfdetr_model_count(); ++i) {
                 const auto* e = aicore_rfdetr_model_at(i);
                 if (e)

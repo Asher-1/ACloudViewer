@@ -31,20 +31,33 @@ static constexpr const char* kQuantNotes[] = {
         "F16 \xe2\x80\x94 half precision (recommended)",
         "Q8_0 \xe2\x80\x94 8-bit block quant, best size trade"};
 
-// (release stem, user-facing role label, role, language). Stems match
-// the converter output.
+// (release stem, user-facing role label, role, language, family label).
+// Stems match the converter output; family prefixes the display name.
 struct VariantInfo {
     const char* stem;
     const char* label;
     const char* role;
     const char* language;
+    const char* family;
 };
 
 static constexpr const VariantInfo kVariants[] = {
-        {"ppocr-det-ch", "Det", "det", "ch"},
-        {"ppocr-rec-ch", "Rec", "rec", "ch"},
-        {"ppocr-rec-en", "Rec", "rec", "en"},
-        {"pplcnet-layout", "Layout", "layout", "cdla"},
+        {"ppocr-det-ch", "Det", "det", "ch", "PP-OCRv4"},
+        {"ppocr-rec-ch", "Rec", "rec", "ch", "PP-OCRv4"},
+        {"ppocr-rec-en", "Rec", "rec", "en", "PP-OCRv4"},
+        {"pplcnet-layout", "Layout", "layout", "cdla", "PP-OCRv4"},
+        {"ppocr-cls", "Cls", "cls", "ch", "PP-OCRv4"},
+        {"ppocrv4-source-det", "Det", "det", "ch", "ch_PP-OCRv4 (source)"},
+        {"ppocrv4-source-rec", "Rec", "rec", "ch", "ch_PP-OCRv4 (source)"},
+        {"ppocrv3-japan-rec", "Rec", "rec", "ja", "japan_PP-OCRv3"},
+        {"ppocrv5-mobile-det", "Det", "det", "ch", "PP-OCRv5 Mobile"},
+        {"ppocrv5-mobile-rec", "Rec", "rec", "ch", "PP-OCRv5 Mobile"},
+        {"ppocrv6-tiny-det", "Det", "det", "ch", "PP-OCRv6 Tiny"},
+        {"ppocrv6-tiny-rec", "Rec", "rec", "ch", "PP-OCRv6 Tiny"},
+        {"ppocrv6-small-det", "Det", "det", "ch", "PP-OCRv6 Small"},
+        {"ppocrv6-small-rec", "Rec", "rec", "ch", "PP-OCRv6 Small"},
+        {"ppocrv6-medium-det", "Det", "det", "ch", "PP-OCRv6 Medium"},
+        {"ppocrv6-medium-rec", "Rec", "rec", "ch", "PP-OCRv6 Medium"},
 };
 
 static constexpr int kVariantCount = sizeof(kVariants) / sizeof(kVariants[0]);
@@ -74,13 +87,16 @@ static std::vector<ModelRow> buildModels() {
             std::string filename = std::string(variant.stem) + "-" +
                                    kQuantSuffixes[qi] + ".gguf";
             std::string url = std::string(kDownloadBase) + filename;
-            std::string display =
-                    std::string("PP-OCRv4 ") + variant.label +
-                    (std::string(variant.language) == "ch" ? " (Chinese) "
-                     : std::string(variant.language) == "en"
-                             ? " (English) "
-                             : " (CDLA document regions) ") +
-                    kQuantNotes[qi];
+            std::string display = std::string(variant.family) + " " +
+                                   variant.label +
+                                   (std::string(variant.language) == "ch"
+                                            ? " (Chinese) "
+                                    : std::string(variant.language) == "en"
+                                            ? " (English) "
+                                    : std::string(variant.language) == "ja"
+                                            ? " (Japanese) "
+                                            : " (CDLA document regions) ") +
+                                   kQuantNotes[qi];
             rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
                             dupString(display.c_str()), dupString(variant.role),
                             dupString(variant.language)});

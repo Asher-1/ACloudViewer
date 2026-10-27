@@ -11,6 +11,12 @@ endif()
 set(LLAMA_REVISION "707616feb5f379e99ff7442680a55b4a1704c7c9")
 set(LLAMA_URL "https://github.com/ggml-org/llama.cpp/archive/${LLAMA_REVISION}.tar.gz")
 set(LLAMA_SHA256 "a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759")
+# Descriptive labels for the pinned archive (see LLAMA_URL/LLAMA_SHA256
+# below). Upstream llama.cpp vendors ggml as an in-repo subtree and neither
+# project() declares a VERSION, so no official (llama, ggml) version pair
+# exists — these two labels name the llama API generation and the embedded
+# ggml capability generation of the SAME pinned commit. Pinning one archive
+# pins both; when the pin moves, re-derive both labels from the new tree.
 set(LLAMA_VERSION "0.7.0-dev")
 set(GGML_VERSION "0.27.0")
 set(LLAMA_SOURCE_ARCHIVE "" CACHE FILEPATH
@@ -52,7 +58,7 @@ set(GGML_SHA256 "${LLAMA_SHA256}")
 set(_GGML_OWNER_TARGET ext_llama)
 set(_GGML_OWNER_PREFIX llama)
 set(_GGML_OWNER_SUBDIR "ggml/")
-set(_GGML_OWNER_PATCH_DIR "${CMAKE_CURRENT_LIST_DIR}/experimental/patches")
+set(_GGML_OWNER_PATCH_DIR "${CMAKE_CURRENT_LIST_DIR}/llama-patches")
 set(_GGML_OWNER_PATCH_MANIFEST "${_GGML_OWNER_PATCH_DIR}/manifest.yaml")
 if(GGML_USE_CUDA)
     set(_GGML_OWNER_PATCH_MANIFEST "${_GGML_OWNER_PATCH_DIR}/cuda-manifest.yaml")
@@ -83,6 +89,13 @@ set(_GGML_OWNER_CMAKE_ARGS
     -DLLAMA_OPENSSL=OFF
     -DLLAMA_SUBPROCESS=OFF
     -DMTMD_VIDEO=OFF
+    # CUDA graphs collapse the per-kernel launch overhead that dominates the
+    # 600+-node OCR detector graph (det hotspot table: ~2.5 ms of dispatch
+    # cost over ~8.3 ms of GPU work). Capture is per-graph: ggml-cuda's
+    # ggml_cuda_graph_check_compability() falls back to plain launches for
+    # any graph holding unsupported ops (AICore custom ops included), and a
+    # replay runs the identical kernel sequence, so numerics are unchanged.
+    -DGGML_CUDA_GRAPHS=ON
     -DCMAKE_INSTALL_LIBDIR=${CloudViewer_INSTALL_LIB_DIR})
 if(DEFINED GGML_BUILD_SHARED AND NOT GGML_BUILD_SHARED)
     set(_llama_link_prefix "${CMAKE_STATIC_LIBRARY_PREFIX}")

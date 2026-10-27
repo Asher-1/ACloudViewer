@@ -7,6 +7,8 @@
 
 #include "tasks/yolo/yolo_image.hpp"
 
+#include "common/image_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -71,7 +73,7 @@ void letterbox_image(const Image& img,
                      int imgsz,
                      LetterboxInfo& info,
                      std::vector<float>& out) {
-    const float r = std::min((float)imgsz / img.w, (float)imgsz / img.h);
+    const double r = std::min(double(imgsz) / img.w, double(imgsz) / img.h);
     // nearbyint = round-half-to-even, matching Python round().
     const int new_w = (int)std::nearbyint(img.w * r);
     const int new_h = (int)std::nearbyint(img.h * r);
@@ -87,7 +89,8 @@ void letterbox_image(const Image& img,
     const int canvas_w = new_w + left + right;
     const int canvas_h = new_h + top + bottom;
 
-    info = LetterboxInfo{r, left, top, new_w, new_h, canvas_w, canvas_h};
+    info = LetterboxInfo{static_cast<float>(r), left, top, new_w, new_h,
+                         canvas_w, canvas_h};
 
     const size_t plane = (size_t)canvas_w * canvas_h;
     out.resize(3 * plane);
@@ -106,17 +109,20 @@ void letterbox_image(const Image& img,
         }
     }
 
-    const float fx = (float)img.w / new_w;
-    const float fy = (float)img.h / new_h;
-    std::vector<int> x0(new_w), x1(new_w);
-    std::vector<float> wx(new_w);
-    for (int x = 0; x < new_w; x++) {
-        const float sx = (x + 0.5f) * fx - 0.5f;
-        const int ix0 = (int)std::floor(sx);
-        x0[x] = std::clamp(ix0, 0, img.w - 1);
-        x1[x] = std::clamp(ix0 + 1, 0, img.w - 1);
-        wx[x] = sx - ix0;
-    }
+    // OpenCV 8U 的系数为 11-bit 定点，纵向还有两阶段截断；浮点
+    // bilinear + 0.5 会改变输入像素。复用共同所有者，保留真实 stride。
+    aicore::img::Image source;
+    source.width = img.w;
+    source.height = img.h;
+    source.borrowed_data = img.rgb;
+    source.row_stride_bytes = img.row_stride_bytes != 0
+                                      ? img.row_stride_bytes
+                                      : static_cast<size_t>(img.w) * img.channels;
+    source.channels = img.channels;
+    source.bgr = img.bgr;
+    // 临时空间为 3*new_w*new_h 字节（640x480 时约 0.88 MiB）。
+    std::vector<uint8_t> resized(static_cast<size_t>(new_w) * new_h * 3);
+    aicore::img::cv_resize_linear_u8(source, resized.data(), new_w, new_h, 3);
 
     // Each output row writes disjoint positions, so the resize loop is
     // embarrassingly parallel; OpenMP mirrors the upstream yolo-cli path
@@ -127,22 +133,11 @@ void letterbox_image(const Image& img,
 #pragma omp parallel for schedule(static) num_threads(8) if (new_h >= 64)
 #endif
     for (int y = 0; y < new_h; y++) {
-        const float sy = (y + 0.5f) * fy - 0.5f;
-        const int iy0 = (int)std::floor(sy);
-        const int yc0 = std::clamp(iy0, 0, img.h - 1);
-        const int yc1 = std::clamp(iy0 + 1, 0, img.h - 1);
-        const float wy = sy - iy0;
         for (int x = 0; x < new_w; x++) {
             const size_t dst = (size_t)(y + top) * canvas_w + x + left;
+            const size_t src = (static_cast<size_t>(y) * new_w + x) * 3;
             for (int c = 0; c < 3; c++) {
-                const float p00 = image_channel(img, x0[x], yc0, c);
-                const float p01 = image_channel(img, x1[x], yc0, c);
-                const float p10 = image_channel(img, x0[x], yc1, c);
-                const float p11 = image_channel(img, x1[x], yc1, c);
-                const float v0 = p00 + (p01 - p00) * wx[x];
-                const float v1 = p10 + (p11 - p10) * wx[x];
-                const uint8_t value = (uint8_t)(v0 + (v1 - v0) * wy + 0.5f);
-                out[(size_t)c * plane + dst] = value / 255.0f;
+                out[(size_t)c * plane + dst] = resized[src + c] / 255.0f;
             }
         }
     }

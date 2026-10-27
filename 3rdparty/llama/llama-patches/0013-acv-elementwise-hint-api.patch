@@ -1,0 +1,36 @@
+diff --git a/include/ggml.h b/include/ggml.h
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -1557,6 +1557,11 @@
+             enum ggml_op_hint    hint);
+     GGML_API enum ggml_op_hint ggml_mul_mat_get_hint(const struct ggml_tensor * a);
+ 
++    // 优化注解，不改变 ADD 的数学定义；未融合 backend 保留独立 GELU。
++    #define GGML_EPILOGUE_GELU 0x1
++    GGML_API void ggml_elementwise_set_epilogue_hint(struct ggml_tensor * a, int32_t epilogue);
++    GGML_API int32_t ggml_elementwise_get_epilogue_hint(const struct ggml_tensor * a);
++
+     // indirect matrix multiplication
+     //
+     // [TAG_MUL_MAT_ID_DUPLICATE_ID]
+diff --git a/src/ggml.c b/src/ggml.c
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -3466,6 +3466,17 @@
+     return (enum ggml_op_hint) ggml_get_op_params_i32(a, 1);
+ }
+ 
++void ggml_elementwise_set_epilogue_hint(struct ggml_tensor * a, int32_t epilogue) {
++    GGML_ASSERT(a && a->op == GGML_OP_ADD);
++    GGML_ASSERT(epilogue == 0 || epilogue == GGML_EPILOGUE_GELU);
++    ggml_set_op_params_i32(a, 2, epilogue);
++}
++
++int32_t ggml_elementwise_get_epilogue_hint(const struct ggml_tensor * a) {
++    GGML_ASSERT(a && a->op == GGML_OP_ADD);
++    return ggml_get_op_params_i32(a, 2);
++}
++
+ // ggml_mul_mat_id
+ 
+ /*

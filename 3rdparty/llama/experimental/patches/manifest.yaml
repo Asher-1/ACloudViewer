@@ -1,3 +1,0 @@
-# CPU migration experiment only. Not the production GPU patch chain.
-patches:
-  - file: 0001-acv-cpu-operators.patch

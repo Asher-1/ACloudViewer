@@ -400,8 +400,19 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         task: manifest_model_patterns(
             manifest, {task}, full=False, tiered=tiered)
         for task in tiered}
+    # 仅有明确 local_only 场景的 task 没有下载资产；空 task 或混合发布场景仍须有 catalog。
+    # 单次遍历保留 task 的发布责任，不因某个本地场景而豁免同 task 的已发布模型。
+    tasks_with_scenarios: set[str] = set()
+    published_tasks: set[str] = set()
+    for scenario in manifest['scenarios']:
+        task = scenario['task']
+        if task in selected:
+            tasks_with_scenarios.add(task)
+            if not scenario.get('local_only'):
+                published_tasks.add(task)
+    catalog_selected = published_tasks | (selected - tasks_with_scenarios)
     return parse_catalog_output(
-        completed.stdout, selected,
+        completed.stdout, catalog_selected,
         manifest_model_patterns(manifest, selected, full=full, tiered=tiered),
         task_light_patterns=None if full else light_patterns)
 
@@ -1298,11 +1309,17 @@ def flatten_json(value: Any, prefix: str = "",
                 child, f"{prefix}/{index}", gate_metrics)
             metrics.update(child_metrics)
             fingerprints.update(child_fingerprints)
-    elif isinstance(value, (int, float)) and not isinstance(value, bool):
+    elif isinstance(value, bool):
+        # 仅显式精度契约消费布尔值；信息标志不能自动成为计时或性能指标。
+        if prefix.rsplit("/", 1)[-1].lower() in gate_metrics:
+            metrics[prefix] = float(value)
+    elif isinstance(value, (int, float)):
         leaf = prefix.rsplit("/", 1)[-1].lower()
-        path_parts = (part.lower() for part in prefix.split("/"))
+        path_parts = [part.lower() for part in prefix.split("/")]
         is_timing = any(part.endswith(TIMING_SUFFIXES) for part in path_parts)
-        if (is_timing and float(value) > 0.0) or leaf in gate_metrics or leaf in {
+        # 原始 measured 序列允许零；标量 timing 仍沿用原非零采样规则。
+        is_raw_sample = any(part.endswith("_samples_ms") for part in path_parts)
+        if (is_raw_sample and float(value) >= 0.0) or (is_timing and float(value) > 0.0) or leaf in gate_metrics or leaf in {
                 "mask_iou", "box_error", "score_error", "worst_rel_mae",
                 "kpt_median_px", "descriptor_cosine_median",
                 "max_diff", "mean_diff", "accuracy_max_diff", "upstream_cpu_max_diff", "probability_max_diff",
@@ -1604,6 +1621,109 @@ def configured_qt_library_dir(build: Path) -> Path | None:
     return next((path.resolve() for path in candidates if path.is_dir()), None)
 
 
+def _elf_runtime_dirs(binary: Path) -> list[Path]:
+    """Extract DT_RUNPATH/DT_RPATH entries from an ELF binary (Linux)."""
+    readelf = shutil.which("readelf")
+    if not readelf:
+        return []
+    try:
+        result = subprocess.run([readelf, "-d", str(binary)],
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    dirs: list[Path] = []
+    for line in result.stdout.splitlines():
+        if "RPATH" not in line and "RUNPATH" not in line:
+            continue
+        match = re.search(r"\[(.*)\]", line)
+        if not match:
+            continue
+        for entry in match.group(1).split(":"):
+            entry = entry.replace("$ORIGIN", str(binary.parent))
+            entry = entry.replace("${ORIGIN}", str(binary.parent))
+            if entry:
+                dirs.append(Path(entry))
+    return dirs
+
+
+def _macho_runtime_dirs(binary: Path) -> list[Path]:
+    """Extract LC_RPATH entries from a Mach-O binary (macOS)."""
+    otool = shutil.which("otool")
+    if not otool:
+        return []
+    try:
+        result = subprocess.run([otool, "-l", str(binary)],
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    dirs: list[Path] = []
+    lines = result.stdout.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() == "cmd LC_RPATH" and i + 1 < len(lines):
+            match = re.search(r"path\s+(.+)\s*\(offset\s+\d+\)", lines[i + 1])
+            if match:
+                entry = match.group(1).replace("@loader_path", str(binary.parent))
+                if entry:
+                    dirs.append(Path(entry))
+    return dirs
+
+
+def _qt_core_names() -> tuple[str, ...]:
+    if os.name == "nt":
+        return ("Qt6Core.dll", "Qt5Core.dll")
+    if sys.platform == "darwin":
+        return ("libQt6Core.6.dylib", "libQt5Core.5.dylib", "libQt6Core.dylib",
+                "libQt5Core.dylib")
+    return ("libQt6Core.so.6", "libQt5Core.so.5")
+
+
+def embedded_qt_library_dir(build: Path) -> Path | None:
+    """Resolve the Qt runtime directory from the binaries' embedded paths.
+
+    The loader resolves a shared library's own DT_NEEDED entries with that
+    library's DT_RUNPATH, not the executable's, so fronting only the probe
+    path still lets libAICore's Qt dependency fall through to a host Qt of a
+    different minor version (Qt_5.15 symbol-version failure). The build
+    bakes the absolute Qt runtime directory into every linked binary's
+    RUNPATH/LC_RPATH, so reading it back from disk is machine-independent
+    for in-place builds and needs no hardcoded path anywhere.
+    """
+    core_names = _qt_core_names()
+    bin_dir = build / "bin"
+    candidates: list[Path] = []
+    if os.name == "nt":
+        # PE has no runpath; Qt runtimes are deployed next to the binaries.
+        candidates.append(bin_dir)
+        tests_dir = bin_dir / "aicore_tests"
+        if tests_dir.is_dir():
+            candidates.append(tests_dir)
+    else:
+        binaries = [bin_dir / ("libAICore.dylib" if sys.platform == "darwin"
+                               else "libAICore.so")]
+        tests_dir = bin_dir / "aicore_tests"
+        if tests_dir.is_dir():
+            for probe in sorted(tests_dir.iterdir()):
+                if probe.is_file() and os.access(probe, os.X_OK):
+                    binaries.append(probe)
+                    break
+        for binary in binaries:
+            if not binary.is_file():
+                continue
+            dirs = (_macho_runtime_dirs(binary) if sys.platform == "darwin"
+                    else _elf_runtime_dirs(binary))
+            candidates.extend(dirs)
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if not resolved.is_dir():
+            continue
+        if any((resolved / name).is_file() for name in core_names):
+            return resolved
+    return None
+
+
 def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
     if os.name == "nt":
         variable = "PATH"
@@ -1616,6 +1736,12 @@ def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
     if not qt_library_dir:
         configured_qt = configured_qt_library_dir(build)
         qt_library_dir = str(configured_qt) if configured_qt else ""
+    if not qt_library_dir:
+        # Fall back to the paths baked into the binaries themselves: the
+        # CMakeCache only exists for in-place builds, while the RUNPATH
+        # resolution also covers relocated build trees on the build machine.
+        embedded_qt = embedded_qt_library_dir(build)
+        qt_library_dir = str(embedded_qt) if embedded_qt else ""
     if qt_library_dir:
         parts.append(qt_library_dir)
     # Same rationale as the ctest AICORE_TEST_ENV_EXTRA plumbing: a dlopen'ed
@@ -2040,6 +2166,9 @@ def is_candidate_performance_metric(key: str, backend: str) -> bool:
         return False
     if any(part.startswith("source_") for part in parts):
         return False
+    # 序列用于尾延迟归因；逐索引既不对齐相同运行条件，也不属于原 p50/p95 门。
+    if any(part.endswith("_samples_ms") for part in parts):
+        return False
     return (any(part.endswith(TIMING_SUFFIXES) for part in parts)
             and not (backend != "cpu" and "cpu" in parts))
 
@@ -2303,7 +2432,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--assets", type=Path,
                         default=Path(os.environ.get(
                             "AICORE_TEST_ASSET_ROOT",
-                            Path.home() / "cloudViewer_data" / "extract")))
+                            # Mirror the C++ data-root override
+                            # (core/AICore/src/common/data_root_util.cpp):
+                            # CLOUDVIEWER_DATA_ROOT relocates the whole
+                            # cloudViewer_data tree, enabling cold-cache
+                            # download verification in an isolated root.
+                            str(Path(os.environ.get(
+                                "CLOUDVIEWER_DATA_ROOT",
+                                Path.home() / "cloudViewer_data"))
+                                / "extract"))))
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--catalog-binary", type=Path,
                         help="override test_catalog_dump_urls executable")

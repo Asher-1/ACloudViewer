@@ -56,7 +56,7 @@ UPSTREAM_ONLY_OUTPUTS = {"pose_raw.bin", "points_conf.bin"}
 # for mapany_* nodes (src/ggml-cuda/mapany/mapany-fattn.cuh): CUDA stream-k
 # partitions by the compiled kernel's occupancy, so only the reference's own
 # kernel source reproduces its reduction order.
-MAPANY_PATCH = (SCRIPT_DIR.parents[2] / "3rdparty" / "llama" / "ggml-patches" /
+MAPANY_PATCH = (SCRIPT_DIR.parents[2] / "3rdparty" / "llama" / "llama-patches" /
                 "map_anything_merged" / "0001-map-anything-ggml-parity.patch")
 MAPANY_TWIN_DIR = "src/ggml-cuda/mapany/ggml-v0.24.0/"
 

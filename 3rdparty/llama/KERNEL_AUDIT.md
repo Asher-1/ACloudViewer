@@ -56,7 +56,7 @@ The v0.21 Metal batch-index change in `map_anything_merged` must therefore be
 dropped when rebasing; it is not a remaining correctness fix. The separate
 Metal input-channel parallel tree reduction in `metal_merged` is still a
 performance change, with a different accumulation order. It is now ported in
-`experimental/patches/0007-acv-metal-operators.patch`, but has not been measured
+`llama-patches/0007-acv-metal-operators.patch`, but has not been measured
 on macOS. The port chooses a power-of-two reduction width and strides over all
 input channels, including non-power-of-two counts above 256. Sixteen independent
 CPU scatter-oracle cases cover F32/F16, batch 1/2 and 3/48/192/257 input
@@ -70,7 +70,7 @@ kernel.
 The migration keeps upstream CUDA native GEMM rather than restoring the old
 implementation wholesale. Its F16 destination exposed a stride bug:
 `nb1 / sizeof(float)` gives the wrong cuBLAS leading dimension. Ordered patch
-[`0006-acv-cuda-native-output-stride.patch`](experimental/patches/0006-acv-cuda-native-output-stride.patch)
+[`0006-acv-cuda-native-output-stride.patch`](llama-patches/0006-acv-cuda-native-output-stride.patch)
 uses `nb1 / ggml_element_size(dst)`. The retained negative control fails with
 the old module; the corrected module passes all six scalar-reference
 single/batch/broadcast F16/F32 cases. Real SAM3 F16 repeats pass the focused
@@ -126,7 +126,7 @@ condition has the same output hash. This localizes a substantial part of that
 experiment's regression to the optimizer path, without proving which optimizer
 change is responsible. Desktop activity prevents release qualification.
 
-Candidate patch `experimental/patches/0009-acv-vulkan-pattern-short-circuit.patch`
+Candidate patch `llama-patches/0009-acv-vulkan-pattern-short-circuit.patch`
 returns immediately on a failed fusion-pattern element. It changes neither the
 match result nor reordering, allocation dependencies, or supported fusions. The
 new upstream view-alias dependencies remain necessary for correctness; see

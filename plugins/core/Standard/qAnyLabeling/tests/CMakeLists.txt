@@ -57,9 +57,10 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_rich)
 cloudviewer_add_plugin_test(test_qanylabeling_chat
     SOURCES test_chat.cpp ${QAL_DIR}/src/ChatServiceClient.cpp
         ${QAL_DIR}/include/ChatServiceClient.h
+        ${QAL_DIR}/src/LocalChatEngine.cpp ${QAL_DIR}/include/LocalChatEngine.h
     INCLUDES ${QAL_DIR}/include
-    LIBS CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets
-         Qt${QT_VERSION_MAJOR}::Network)
+    LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets
+         Qt${QT_VERSION_MAJOR}::Network Threads::Threads)
 add_test(NAME test_qanylabeling_chat
     COMMAND test_qanylabeling_chat $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_chat)
@@ -455,6 +456,21 @@ set_tests_properties(test_qanylabeling_classifier_run_path PROPERTIES TIMEOUT 60
 add_test(NAME test_qanylabeling_ocr_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --ocr)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ocr_run_path)
 set_tests_properties(test_qanylabeling_ocr_run_path PROPERTIES TIMEOUT 600)
+# 本地属性模型由测试环境显式注入；缺失时失败，不下载或跳过。
+add_test(NAME test_qanylabeling_attribute_run_path
+    COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --attribute)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_run_path)
+set_tests_properties(test_qanylabeling_attribute_run_path PROPERTIES TIMEOUT 600)
+
+# 真实插件注册的原生命令；外部本地模型与输入缺失必须失败，不自动下载。
+cloudviewer_add_plugin_test(test_qanylabeling_attribute_batch
+    SOURCES test_attribute_batch.cpp
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub)
+add_test(NAME test_qanylabeling_attribute_batch
+    COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN>)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_batch)
+set_tests_properties(test_qanylabeling_attribute_batch PROPERTIES
+    TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
 
 add_test(NAME test_qanylabeling_lightglue_bridge COMMAND test_qanylabeling_loma_bridge)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_lightglue_bridge)

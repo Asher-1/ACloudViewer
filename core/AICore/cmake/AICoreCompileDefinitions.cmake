@@ -42,7 +42,7 @@ function(aicore_apply_compile_definitions target)
         target_compile_definitions(${target} PRIVATE AICORE_CUDA_ALIKED)
     endif()
     if(AICore_VULKAN_ENABLED)
-        # 3rdparty/llama/ggml-patches/aliked_merged/0001-vulkan-aliked.patch
+        # 3rdparty/llama/llama-patches/aliked_merged/0001-vulkan-aliked.patch
         # (ALIKED-only: compiles the vulkan dispatch sources and enables the
         # patched ggml-vulkan-aliked custom compute ops.)
         target_compile_definitions(${target} PRIVATE AICORE_VULKAN_ALIKED)

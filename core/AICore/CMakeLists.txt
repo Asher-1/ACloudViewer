@@ -22,6 +22,7 @@
 #   src/tasks/loma/       — LoMa feature extraction and matching
 #   src/tasks/reid/       — appearance embeddings for multi-object tracking
 #   src/tasks/anycalib/   — AnyCalib single-image intrinsics (catalog; runtime gates pending)
+#   src/tasks/llm/        — local chat LLM / VLM over the pinned llama.cpp (libllama + libmtmd)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -108,6 +109,8 @@ file(GLOB AICORE_ANYCALIB_SOURCES CONFIGURE_DEPENDS ${AICORE_ANYCALIB_SRC_DIR}/*
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RELATION_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/relation/*.cpp)
 file(GLOB AICORE_TAGGING_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/tagging/*.cpp)
+file(GLOB AICORE_LLM_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/llm/*.cpp)
+file(GLOB AICORE_ATTRIBUTE_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/attribute/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
     ${AICORE_MAP_ANYTHING_SRC_DIR}/*.cpp)
@@ -185,6 +188,8 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_RELATION_SOURCES}
     ${AICORE_TAGGING_SOURCES}
+    ${AICORE_LLM_SOURCES}
+    ${AICORE_ATTRIBUTE_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_MAP_ANYTHING_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
@@ -452,7 +457,7 @@ endif()
 # CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
 include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
 aicore_trellis_wire_cumesh(${PROJECT_NAME} ${AICORE_TRELLIS_SRC_DIR})
-# Vulkan ALIKED custom compute: 3rdparty/llama/ggml-patches/aliked_merged/0001-vulkan-aliked.patch
+# Vulkan ALIKED custom compute: 3rdparty/llama/llama-patches/0005-acv-vulkan-operators.patch
 # (AICORE_VULKAN_ALIKED when AICore_VULKAN_ENABLED — see AICoreCompileDefinitions.cmake)
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
@@ -633,7 +638,7 @@ endif()
 
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
-    reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo)
+    reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo llm)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -759,6 +764,7 @@ target_link_libraries(bench_table PRIVATE AICore)
 
 add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
+    src/common/paddle_graph.cpp
     # Winograd conv custom op (routed by the CPU-session graph build).
     src/common/winograd.cpp
     # Blocked-layout island ops (routed by the CPU-session graph build).
@@ -797,12 +803,35 @@ set_target_properties(test_ocr_runtime PROPERTIES
 # copies (batch C test-layout fix; the probe does not go through the
 # tests/CMakeLists.txt that already applies the layout function).
 cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
+if(TARGET aicore-fast-tests)
+    # 无模型图契约使用同一 OCR interpreter target，避免另建推理实现。
+    add_dependencies(aicore-fast-tests test_ocr_runtime)
+    add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
+    set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")
+    add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
+        --dw-bias-contract CPU "${GGML_MODULE_DIR}")
+    set_tests_properties(test_ocr_dw_bias_cpu PROPERTIES LABELS "ocr;ggml"
+        SKIP_RETURN_CODE 77)
+    if(AICore_CUDA_ENABLED)
+        add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
+            --dw-bias-contract CUDA0 "${GGML_MODULE_DIR}")
+        set_tests_properties(test_ocr_dw_bias_cuda PROPERTIES LABELS "ocr;ggml;gpu"
+            SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    endif()
+    if(AICore_VULKAN_ENABLED)
+        add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
+            --dw-bias-contract Vulkan0 "${GGML_MODULE_DIR}")
+        set_tests_properties(test_ocr_dw_bias_vulkan PROPERTIES LABELS "ocr;ggml;gpu"
+            SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    endif()
+endif()
 
 # Table-structure parity probe: the SLANet encoder runs on the OCR
 # interpreter, so it compiles the same closure plus the table runtime.
 add_executable(test_table_runtime tests/test_table_runtime.cpp
     src/tasks/table/table_runtime.cpp
     src/tasks/ocr/ocr_runtime.cpp
+    src/common/paddle_graph.cpp
     src/common/winograd.cpp
     src/common/blocked_conv.cpp
     src/common/ggml_env_bridge.cpp)

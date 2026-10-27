@@ -32,18 +32,32 @@ int main() {
             aicore_ocr_preset_by_rec_filename("ppocrv3-japan-rec-f32.gguf");
     const auto* sourceV4 =
             aicore_ocr_preset_by_rec_filename("ppocrv4-source-rec-f32.gguf");
-    if (!japan || !sourceV4 ||
-        std::strcmp(japan->det_stem, sourceV4->det_stem) ||
-        std::strcmp(japan->display_name, "japan_PP-OCRv3") || !tiny || !small ||
-        tiny->det_thresh != .2f || tiny->det_box_thresh != .4f ||
-        small->det_box_thresh != .45f || tiny->det_max_candidates != 3000 ||
-        tiny->cls_thresh != .9f || tiny->rec_batch != 6 ||
-        aicore_ocr_preset_at(-1) ||
-        aicore_ocr_preset_at(aicore_ocr_preset_count()) ||
-        aicore_ocr_preset_by_rec_filename("unknown.gguf") ||
-        // Recipes are not fictitious published download assets.
-        aicore_ocr_model_by_filename("ppocrv6-tiny-rec-f32.gguf"))
-        ++failures;
+    const bool recipeGate[] = {
+            !japan || !sourceV4,
+            (bool)std::strcmp(japan->det_stem, sourceV4->det_stem),
+            (bool)std::strncmp(japan->display_name, "japan_PP-OCRv3", 14),
+            !tiny || !small,
+            tiny->det_thresh != .2f,
+            tiny->det_box_thresh != .4f,
+            small->det_box_thresh != .45f,
+            tiny->det_max_candidates != 3000,
+            tiny->cls_thresh != .9f,
+            tiny->rec_batch != 6,
+            aicore_ocr_preset_at(-1) != nullptr,
+            aicore_ocr_preset_at(aicore_ocr_preset_count()) != nullptr,
+            aicore_ocr_preset_by_rec_filename("unknown.gguf") != nullptr,
+            // Since the v5/v6 families were published (Plan B), recipes double
+            // as real download assets: the recipe lookup and the model catalog
+            // must agree on the same stem.
+            aicore_ocr_preset_by_rec_filename("ppocrv6-tiny-rec-f32.gguf") ==
+                    nullptr,
+            !aicore_ocr_model_by_filename("ppocrv6-tiny-rec-f32.gguf"),
+    };
+    for (size_t gi = 0; gi < sizeof(recipeGate) / sizeof(recipeGate[0]); ++gi)
+        if (recipeGate[gi]) {
+            std::printf("[ocr-contract] preset gate %zu failed\n", gi);
+            ++failures;
+        }
 
     aicore_ocr_options options{};
     options.struct_size = offsetof(aicore_ocr_options, device);

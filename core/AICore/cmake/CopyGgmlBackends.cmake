@@ -2,7 +2,9 @@
 # Invoked as a POST_BUILD / packaging script so globs run after ExternalProject.
 #
 # Modes (pass via -D):
-#   COPY_CORE_SHARED=ON — copy libggml + libggml-base without duplicating symlink
+#   COPY_CORE_SHARED=ON — copy libggml + libggml-base + libllama + libmtmd
+#                         (the llama.cpp source owner's shared core, all
+#                         DT_NEEDED by libAICore) without duplicating symlink
 #                         targets (configure_file/wheel/archive flattening fix)
 #   COPY_BACKEND_MODULES=ON — copy CPU module(s) + optional GPU modules
 #   REQUESTED_FILES_PIPE — legacy explicit backend module list (| separated)
@@ -35,17 +37,20 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
     file(MAKE_DIRECTORY "${dest_dir}")
     string(REPLACE "." "\\." _lib_suffix_regex "${lib_suffix}")
 
-    file(GLOB _stale
-        "${dest_dir}/${lib_prefix}ggml${lib_suffix}*"
-        "${dest_dir}/${lib_prefix}ggml-base${lib_suffix}*"
-        "${dest_dir}/${lib_prefix}ggml.*${lib_suffix}"
-        "${dest_dir}/${lib_prefix}ggml-base.*${lib_suffix}")
+    set(_core_bases ggml ggml-base llama mtmd)
+    set(_stale "")
+    foreach(_base IN LISTS _core_bases)
+        file(GLOB _base_stale
+            "${dest_dir}/${lib_prefix}${_base}${lib_suffix}*"
+            "${dest_dir}/${lib_prefix}${_base}.*${lib_suffix}")
+        list(APPEND _stale ${_base_stale})
+    endforeach()
     if(_stale)
         file(REMOVE ${_stale})
     endif()
 
     set(_versioned_files "")
-    foreach(_base IN ITEMS ggml ggml-base)
+    foreach(_base IN LISTS _core_bases)
         # The ExternalProject install directory can retain physical libraries from
         # older ggml versions.  The unversioned linker name is the authoritative
         # current version; following it avoids packaging every stale glob match.
@@ -90,13 +95,13 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
         message(STATUS "CopyGgmlBackends: ${_name}")
 
         # Linux: libggml.so.<full-version> → soname libggml.so.<major> → link libggml.so
-        if(_name MATCHES "^${lib_prefix}(ggml-base|ggml)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
+        if(_name MATCHES "^${lib_prefix}(ggml-base|ggml|llama|mtmd)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}${lib_suffix}.${_soname_major}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
         # macOS: libggml.<full-version>.dylib → soname libggml.<major>.dylib → link libggml.dylib
-        elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
+        elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml|llama|mtmd)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}.${_soname_major}${lib_suffix}")

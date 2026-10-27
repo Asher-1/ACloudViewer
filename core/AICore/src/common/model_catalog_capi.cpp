@@ -19,44 +19,44 @@ using Entry = aicore_model_entry;
 
 constexpr Entry kDepthModels[] = {
         {"depth-anything-base-q8_0.gguf", "Base Q8_0 (recommended)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-base-q8_0.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-base-q8_0.gguf",
          "depth", 0, nullptr},
         {"depth-anything-base-q4_k.gguf", "Base Q4_K (smallest)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-base-q4_k.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-base-q4_k.gguf",
          "depth", 0, nullptr},
         {"depth-anything-base-f16.gguf", "Base F16 (half precision)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-base-f16.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-base-f16.gguf",
          "depth", 0, nullptr},
         {"depth-anything-large-q8_0.gguf", "Large Q8_0 (better quality)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-large-q8_0.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-large-q8_0.gguf",
          "depth", 0, nullptr},
         {"depth-anything-large-q4_k.gguf", "Large Q4_K (compact)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-large-q4_k.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-large-q4_k.gguf",
          "depth", 0, nullptr},
         {"depth-anything-giant-q8_0.gguf", "Giant Q8_0 (best quality)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-giant-q8_0.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-giant-q8_0.gguf",
          "depth", 0, nullptr},
         {"depth-anything-giant-q4_k.gguf", "Giant Q4_K (balanced)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-giant-q4_k.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-giant-q4_k.gguf",
          "depth", 0, nullptr},
         {"depth-anything-nested-metric.gguf", "Nested Metric F32",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-nested-metric.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-nested-metric.gguf",
          "metric", 0, nullptr},
         {"depth-anything-nested-anyview-q8_0.gguf", "Nested AnyView Q8_0",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-nested-anyview-q8_0.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-nested-anyview-q8_0.gguf",
          "metric", 0, nullptr},
         {"depth-anything-nested-anyview-q4_k.gguf", "Nested AnyView Q4_K",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "DA3/depth-anything-nested-anyview-q4_k.gguf",
+         "https://huggingface.co/Asher-1/DA3_GGUF/resolve/main/"
+         "depth-anything-nested-anyview-q4_k.gguf",
          "metric", 0, nullptr},
 };
 
@@ -131,41 +131,41 @@ constexpr Entry kAlikedModels[] = {
 
 constexpr Entry kGaussianModels[] = {
         {"freesplatter-scene-q8_0.gguf", "Scene Q8_0 (recommended)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-scene-q8_0.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-scene-q8_0.gguf",
          "scene", 0, nullptr},
         {"freesplatter-scene-f16.gguf", "Scene F16",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-scene-f16.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-scene-f16.gguf",
          "scene", 0, nullptr},
         {"freesplatter-scene-f32.gguf", "Scene F32 (full precision)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-scene-f32.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-scene-f32.gguf",
          "scene", 0, nullptr},
         {"freesplatter-object-2dgs-q8_0.gguf", "Object-2DGS Q8_0 (recommended)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-2dgs-q8_0.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-2dgs-q8_0.gguf",
          "object", 0, nullptr},
         {"freesplatter-object-2dgs-f16.gguf", "Object-2DGS F16",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-2dgs-f16.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-2dgs-f16.gguf",
          "object", 0, nullptr},
         {"freesplatter-object-2dgs-f32.gguf",
          "Object-2DGS F32 (full precision)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-2dgs-f32.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-2dgs-f32.gguf",
          "object", 0, nullptr},
         {"freesplatter-object-q8_0.gguf", "Object-3DGS Q8_0 (deprecated)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-q8_0.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-q8_0.gguf",
          "object", 0, nullptr},
         {"freesplatter-object-f16.gguf", "Object-3DGS F16 (deprecated)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-f16.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-f16.gguf",
          "object", 0, nullptr},
         {"freesplatter-object-f32.gguf", "Object-3DGS F32 (deprecated)",
-         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-         "3dgs/freesplatter-object-f32.gguf",
+         "https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/"
+         "freesplatter-object-f32.gguf",
          "object", 0, nullptr},
 };
 

@@ -1,0 +1,22 @@
+# Vulkan migration candidate; production promotion requires all-task gates.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0005-acv-vulkan-operators.patch
+  - file: 0008-acv-vulkan-q4-k-copy-route.patch
+  - file: 0009-acv-vulkan-pattern-short-circuit.patch
+    note: "Short-circuit failed fusion-pattern matches without changing graph ordering, alias dependencies or supported fusions; model performance qualification remains required."
+  - file: 0010-acv-vulkan-dependency-metadata.patch
+    note: "Cache source and view-base metadata within one optimizer call; retain every direct and alias dependency. Requires predicate, graph-order and model regression."
+  - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
+    note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
+  - file: 0013-acv-elementwise-epilogue.patch
+    note: "显式 ADD/GELU 融合，保持最终写出偏移和 allocation dependency；未满足融合条件时保留独立节点。"
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+  - file: 0014-acv-depthwise-bias-vulkan.patch
+    note: "DW 写出舍入后加 F32 bias；保留四个 descriptor 的真实偏移。"
+  - file: 0016-acv-vulkan-dw-bias-rounding.patch
+    note: "F16 中间结果用整数 RNE 固定舍入，要求独立单点真值与 ADD、WHCN/CWHN 和偏移逐位回归。"
+  - file: 0017-acv-vulkan-pool2d-dispatch.patch
+    note: "F16 POOL_2D 使用显式 local-size specialization，dispatch 输入已是 workgroup 数；要求 sentinel 全域写出与独立窗口 oracle 回归。"
+  - file: 0018-acv-vulkan-dw-debug-bias.patch
+    note: "结果检查器的 DW CPU clone 保留可选 bias；真实 checker 的正、负、无 bias 数值回归。"

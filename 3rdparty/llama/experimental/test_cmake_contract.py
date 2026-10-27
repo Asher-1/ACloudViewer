@@ -10,6 +10,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 LLAMA = ROOT / "3rdparty/llama/llama_cpp.cmake"
+# The 0.21.0 standalone ggml entry was retired with the 0.27 re-anchoring;
+# only its absence is contracted now.
 GGML = ROOT / "3rdparty/ggml/ggml.cmake"
 PREAMBLE = '''cmake_minimum_required(VERSION 3.19)
 project(SourceOwnerContract LANGUAGES C CXX)
@@ -165,7 +167,7 @@ class SourceOwnerTests(unittest.TestCase):
                 self.assertFalse(any(p.is_file() for p in (build / "downloads").rglob("*")))
 
     def test_cuda_manifests_allow_sam3d_attention_scratch_allocation(self):
-        patch_dir = LLAMA.parent / "experimental/patches"
+        patch_dir = LLAMA.parent / "llama-patches"
         for name in ("cuda-manifest.yaml", "cuda-vulkan-manifest.yaml"):
             with self.subTest(manifest=name):
                 manifest = (patch_dir / name).read_text()
@@ -175,7 +177,7 @@ class SourceOwnerTests(unittest.TestCase):
                                 manifest.index("0007-acv-sam3d-allocation-size.patch"))
 
     def test_vulkan_manifests_route_q4_k_quantized_copy(self):
-        patch_dir = LLAMA.parent / "experimental/patches"
+        patch_dir = LLAMA.parent / "llama-patches"
         for name in ("vulkan-manifest.yaml", "cuda-vulkan-manifest.yaml"):
             with self.subTest(manifest=name):
                 manifest = (patch_dir / name).read_text()
@@ -189,7 +191,6 @@ class SourceOwnerTests(unittest.TestCase):
             thirdparty = Path(directory)
             entry = thirdparty / "llama"
             shutil.copytree(LLAMA.parent, entry)
-            (thirdparty / "ggml").symlink_to(GGML.parent, target_is_directory=True)
             result, build = self.configure(f'include("{entry / "llama_cpp.cmake"}")\n')
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             signature = (build / "llama-patch-signature.txt").read_bytes()
@@ -201,7 +202,7 @@ class SourceOwnerTests(unittest.TestCase):
             for file in generated + preserved:
                 file.parent.mkdir(parents=True, exist_ok=True)
                 file.write_text("retain unrelated data")
-            patch = next((entry / "experimental/patches").glob("*.patch"))
+            patch = next((entry / "llama-patches").glob("*.patch"))
             patch.write_bytes(patch.read_bytes() + b"\n")
             repeat = subprocess.run(["cmake", "-S", str(build.parent), "-B", str(build)],
                                     capture_output=True, text=True)
@@ -219,53 +220,11 @@ class SourceOwnerTests(unittest.TestCase):
         self.assertFalse((build / "llama").exists())
         self.assertFalse(any(p.is_file() for p in (build / "downloads").rglob("*")))
 
-    def test_baseline_preserves_its_missing_vulkan_dependency_behavior(self):
-        result, build = self.configure(f'include("{GGML}")\n'
-            'if(GGML_VULKAN_ENABLED OR NOT TARGET ext_ggml)\n'
-            'message(FATAL_ERROR "baseline backend behavior changed")\nendif()\n',
-            "-DGGML_USE_VULKAN=ON", "-DCMAKE_DISABLE_FIND_PACKAGE_Vulkan=TRUE")
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertFalse(any(p.is_file() for p in (build / "downloads").rglob("*")))
-
-    def test_including_both_source_owners_fails(self):
-        for first, second in ((GGML, LLAMA), (LLAMA, GGML)):
-            with self.subTest(first=first):
-                result, _ = self.configure(f'include("{first}")\ninclude("{second}")\n')
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn("exactly one ggml source owner", result.stdout + result.stderr)
-
-    def test_switching_source_owner_between_configures_fails(self):
-        for first, second in ((GGML, LLAMA), (LLAMA, GGML)):
-            with self.subTest(first=first):
-                result, build = self.configure(f'include("{first}")\n')
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                marker = build / "install/.acloudviewer-ggml-source-owner"
-                identity = marker.read_bytes() if marker.exists() else None
-                (build.parent / "CMakeLists.txt").write_text(
-                    PREAMBLE + f'include("{second}")\n')
-                repeat = subprocess.run(["cmake", "-S", str(build.parent), "-B", str(build)],
-                                        capture_output=True, text=True)
-                self.assertNotEqual(repeat.returncode, 0)
-                self.assertIn("ggml source identity differs", repeat.stdout + repeat.stderr)
-                self.assertEqual(identity, marker.read_bytes())
-                self.assertFalse((build / second.parent.name).exists())
-
-    def test_separate_builds_cannot_install_different_owners_into_one_prefix(self):
-        for first, second in ((GGML, LLAMA), (LLAMA, GGML)):
-            with self.subTest(first=first):
-                result, build = self.configure(f'include("{first}")\n')
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                prefix = build / "install"
-                marker = prefix / ".acloudviewer-ggml-source-owner"
-                identity = marker.read_bytes() if marker.exists() else None
-                result, other = self.configure(
-                    f'set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "{prefix}")\n'
-                    f'include("{second}")\n')
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn("ggml source identity differs", result.stdout + result.stderr)
-                self.assertEqual(identity, marker.read_bytes())
-                self.assertFalse((other / ".acloudviewer-ggml-source-owner").exists())
-                self.assertFalse((other / second.parent.name).exists())
+    def test_retired_ggml_entry_stays_absent(self):
+        self.assertFalse(GGML.exists(),
+                         "the 0.21.0 ggml entry must stay retired (0.27 anchoring)")
+        dependencies = (ROOT / "3rdparty/find_dependencies.cmake").read_text()
+        self.assertNotIn("ggml/ggml.cmake", dependencies)
 
     def test_llama_does_not_adopt_unidentified_ggml_installation(self):
         for relative in ("lib/libggml.so.0", "bin/ggml-cpu.dll", "include/ggml.h"):
@@ -290,7 +249,6 @@ class SourceOwnerTests(unittest.TestCase):
             entry = thirdparty / "llama"
             shutil.copytree(LLAMA.parent, entry)
             pin = entry / LLAMA.name
-            (thirdparty / "ggml").symlink_to(GGML.parent, target_is_directory=True)
             result, build = self.configure(f'include("{entry / LLAMA.name}")\n'
                                            'add_custom_target(source_identity_probe)\n')
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

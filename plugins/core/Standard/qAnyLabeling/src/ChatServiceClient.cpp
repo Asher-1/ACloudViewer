@@ -9,12 +9,16 @@
 
 // aicore-boundary: remote-inference-transport
 #include <QFile>
+#include <QFileInfo>
+#include <QDir>
 #include <QJsonDocument>
 #include <QMimeDatabase>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QTimer>
 #include <algorithm>
+
+#include "ecvModelDownloader.h"
 
 namespace {
 QString serviceError(const QJsonObject& json) {
@@ -62,6 +66,18 @@ QJsonObject ChatServiceClient::userMessage(const QString& text,
 }
 
 void ChatServiceClient::cancel() {
+    ++m_localTicket;
+    if (m_localId) {
+        LocalChatEngine::cancel(m_localId);
+        m_localId = 0;
+    }
+    if (m_download) {
+        auto* download = m_download.data();
+        m_download.clear();
+        download->disconnect(this);
+        download->cancel();
+        download->deleteLater();
+    }
     if (!m_reply) return;
     auto* reply = m_reply.data();
     m_reply.clear();
@@ -72,6 +88,16 @@ void ChatServiceClient::cancel() {
 }
 
 void ChatServiceClient::fetchModels(const Settings& settings) {
+    if (LocalChatEngine::isLocal(settings.baseUrl)) {
+        cancel();
+        // Asynchronous like the HTTP path; cancel() drops the pending list.
+        const quint64 ticket = m_localTicket;
+        QTimer::singleShot(0, this, [this, ticket]() {
+            if (ticket == m_localTicket)
+                emit modelsReady(LocalChatEngine::models(), {});
+        });
+        return;
+    }
     start(settings, QStringLiteral("models"), nullptr, true, false);
 }
 
@@ -82,12 +108,93 @@ void ChatServiceClient::complete(const Settings& settings,
         emit finished({}, tr("Choose a model and enter a message."));
         return;
     }
+    if (LocalChatEngine::isLocal(settings.baseUrl)) {
+        completeLocal(settings, messages, stream);
+        return;
+    }
     QJsonObject body{{"model", settings.model},
                      {"messages", messages},
                      {"temperature", settings.temperature},
                      {"stream", stream}};
     if (settings.maxTokens > 0) body.insert("max_tokens", settings.maxTokens);
     start(settings, QStringLiteral("chat/completions"), &body, false, stream);
+}
+
+void ChatServiceClient::completeLocal(const Settings& settings,
+                                      const QJsonArray& messages,
+                                      bool stream) {
+    cancel();
+    QString error;
+    if (!LocalChatEngine::missingAssets(settings.model.trimmed(), &m_missing,
+                                        &error)) {
+        emit finished({}, error);
+        return;
+    }
+    if (!m_missing.isEmpty()) {
+        downloadNext(settings, messages, stream);
+        return;
+    }
+    // No HTTP timeout: model load and CPU generation are bounded by the
+    // request's max tokens and the user's cancel, not by a network clock.
+    emit statusChanged(tr("Running local model %1").arg(settings.model));
+    LocalChatEngine::Callbacks callbacks;
+    if (stream)
+        callbacks.delta = [this](const QString& delta) {
+            m_text += delta;
+            emit textReceived(delta);
+        };
+    callbacks.done = [this](const QString& text, const QString& error) {
+        m_localId = 0;
+        m_text = text;
+        emit finished(text, error);
+    };
+    m_text.clear();
+    m_localId = LocalChatEngine::submit(settings.model.trimmed(), messages,
+                                        settings.temperature,
+                                        settings.maxTokens, this,
+                                        std::move(callbacks));
+}
+
+// Missing catalog files download one at a time through the shared verified
+// downloader, then the request continues unchanged.
+void ChatServiceClient::downloadNext(const Settings& settings,
+                                     const QJsonArray& messages,
+                                     bool stream) {
+    const auto asset = m_missing.takeFirst();
+    QDir().mkpath(QFileInfo(asset.path).absolutePath());
+    auto* download = new ecvModelDownloader(this);
+    m_download = download;
+    const QString name = QFileInfo(asset.path).fileName();
+    connect(download, &ecvModelDownloader::progress, this,
+            [this, name](qint64 received, qint64 total) {
+                emit statusChanged(
+                        tr("Downloading %1: %2")
+                                .arg(name, ecvModelDownloader::
+                                                   formatDownloadProgress(
+                                                           received, total)));
+            });
+    connect(download, &ecvModelDownloader::finished, this,
+            [this, download, settings, messages, stream, name](bool ok,
+                                                               const QString&) {
+                if (m_download != download) return;
+                m_download.clear();
+                download->deleteLater();
+                if (!ok) {
+                    m_missing.clear();
+                    emit finished({}, tr("Download failed: %1").arg(name));
+                } else if (!m_missing.isEmpty()) {
+                    downloadNext(settings, messages, stream);
+                } else {
+                    completeLocal(settings, messages, stream);
+                }
+            });
+    ecvModelDownloader::Request request;
+    request.url = asset.url;
+    request.destPath = asset.path;
+    request.minBytes = 1024 * 1024;
+    request.contentAnchor = {QCryptographicHash::Sha256, asset.sha256};
+    emit statusChanged(tr("Downloading %1").arg(name));
+    download->download(request);
 }
 
 void ChatServiceClient::start(const Settings& settings,

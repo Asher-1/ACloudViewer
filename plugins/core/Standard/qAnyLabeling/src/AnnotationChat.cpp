@@ -1015,8 +1015,10 @@ public:
         auto* form = new QFormLayout(this);
         provider = new QComboBox(this);
         provider->setObjectName(QStringLiteral("ChatProvider"));
-        const QStringList names{"custom", "anthropic", "deepseek",   "google",
-                                "ollama", "openai",    "openrouter", "qwen"};
+        // "local" runs the AICore llm task in-process (aicore://llm).
+        const QStringList names{"custom", "anthropic", "deepseek",
+                                "google", "local",     "ollama",
+                                "openai", "openrouter", "qwen"};
         const auto defaults = AnnotationChatConfig::defaultProviders();
         for (const auto& name : names)
             provider->addItem(name, defaults.value(name)
@@ -1177,6 +1179,8 @@ public:
         for (auto* edit : {address, key, system})
             connect(edit, &QLineEdit::editingFinished, this,
                     [this]() { settings(); });
+        connect(client, &ChatServiceClient::statusChanged, status,
+                &QLabel::setText);
         connect(model->lineEdit(), &QLineEdit::editingFinished, this,
                 [this]() { settings(); });
         connect(model, QOverload<int>::of(&QComboBox::activated), this,
@@ -1232,9 +1236,11 @@ public:
             if (!title.isEmpty()) title[0] = title[0].toUpper();
             auto* button = new QPushButton(title, panel);
             button->setObjectName("ChatProviderButton_" + name);
-            const auto icon = name == "qwen" ? "alibaba" : name;
-            button->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/" + icon +
-                                  ".png"));
+            const auto icon = name == "qwen"    ? "alibaba"
+                              : name == "local" ? "brain"
+                                                : name;
+            button->setIcon(
+                    QIcon(":/CC/plugin/qAnyLabeling/images/" + icon + ".png"));
             button->setIconSize(QSize(16, 16));
             button->setFixedHeight(40);
             button->setCheckable(true);
@@ -1293,7 +1299,8 @@ public:
         visibility->setObjectName("ChatApiKeyVisibility");
         visibility->setCheckable(true);
         visibility->setFixedSize(32, 32);
-        visibility->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/eye-off.svg"));
+        visibility->setIcon(
+                QIcon(":/CC/plugin/qAnyLabeling/images/eye-off.svg"));
         visibility->setToolTip(chatTr("Show API key"));
         connect(visibility, &QPushButton::toggled, key,
                 [key = key, visibility](bool visible) {
@@ -1346,8 +1353,9 @@ public:
                     value->setText(QString::number(position / 10.0, 'f', 1));
                     settings();
                 });
-        connect(temperature, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                slider, [slider](double value) {
+        connect(temperature,
+                QOverload<double>::of(&QDoubleSpinBox::valueChanged), slider,
+                [slider](double value) {
                     slider->setValue(qRound(value * 10));
                 });
         parameters->addWidget(slider);
@@ -1584,7 +1592,8 @@ public:
         m_content->setOpenExternalLinks(role != "user");
         m_content->setMinimumHeight(10);
         m_content->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        m_content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        m_content->setSizePolicy(QSizePolicy::Expanding,
+                                 QSizePolicy::Preferred);
         layout->addWidget(m_content);
         auto* controls = new QHBoxLayout;
         controls->setContentsMargins(0, 2, 0, 2);
@@ -1644,9 +1653,8 @@ public:
             m_copy->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/copy.svg"));
             setProperty("copyFeedback", false);
         });
-        connect(copy, &QPushButton::clicked, this, [this]() {
-            copyContent(true);
-        });
+        connect(copy, &QPushButton::clicked, this,
+                [this]() { copyContent(true); });
         connect(edit, &QPushButton::clicked, this, [this]() {
             m_editing = true;
             m_editor->setPlainText(m_text);
@@ -1690,7 +1698,7 @@ public:
                     menu->setObjectName("ChatMessageMenu");
                     menu->setStyleSheet(chatStyle("menu", m_dark));
                     auto action = [menu](const char* title, const char* name,
-                                           QPushButton* button) {
+                                         QPushButton* button) {
                         auto* item = menu->addAction(chatTr(title));
                         item->setObjectName(name);
                         item->setEnabled(button->isEnabled());
@@ -1700,15 +1708,14 @@ public:
                     auto* copyAction = menu->addAction(chatTr("Copy message"));
                     copyAction->setObjectName("ChatMessageMenuCopy");
                     copyAction->setEnabled(copy->isEnabled());
-                    connect(copyAction, &QAction::triggered, this,
-                            [this]() {
-                                if (m_copy->isEnabled()) copyContent(false);
-                            });
+                    connect(copyAction, &QAction::triggered, this, [this]() {
+                        if (m_copy->isEnabled()) copyContent(false);
+                    });
                     menu->addSeparator();
                     action("Edit message", "ChatMessageMenuEdit", edit);
                     if (regenerate)
-                        action("Regenerate response", "ChatMessageMenuRegenerate",
-                               regenerate);
+                        action("Regenerate response",
+                               "ChatMessageMenuRegenerate", regenerate);
                     menu->addSeparator();
                     action("Delete message", "ChatMessageMenuDelete", remove);
                     // A nested menu can outlive a source change. QObject
@@ -1727,17 +1734,18 @@ public:
         if (image.isNull())
             image.load(":/CC/plugin/qAnyLabeling/images/brain.png");
         m_roleIcon->setPixmap(image.scaled(16, 16, Qt::KeepAspectRatio,
-                                          Qt::SmoothTransformation));
+                                           Qt::SmoothTransformation));
         m_roleIcon->setProperty("provider", provider);
     }
     void applyStyles(bool dark) {
         m_dark = dark;
         m_bubble->setStyleSheet(chatStyle(m_role == "user"
-                                                 ? "message_bubble_user"
-                                                 : "message_bubble_assistant",
-                                         dark));
+                                                  ? "message_bubble_user"
+                                                  : "message_bubble_assistant",
+                                          dark));
         if (m_roleFrame) {
-            m_roleFrame->setStyleSheet(chatStyle("message_role_background", dark));
+            m_roleFrame->setStyleSheet(
+                    chatStyle("message_role_background", dark));
             m_roleIcon->setStyleSheet(chatStyle("message_role", dark));
         }
         m_content->setStyleSheet(chatStyle("message_content", dark));
@@ -1881,8 +1889,8 @@ public:
             auto* button = new QPushButton(preview);
             button->setObjectName(name);
             button->setFixedSize(32, 32);
-            button->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/" + icon +
-                                  ".svg"));
+            button->setIcon(
+                    QIcon(":/CC/plugin/qAnyLabeling/images/" + icon + ".svg"));
             button->setToolTip(tooltip);
             return button;
         };
@@ -2019,9 +2027,11 @@ public:
         auto* datasets = new QHBoxLayout;
         previewLayout->addLayout(datasets);
         const QVector<QPair<QPushButton*, QString>> datasetButtons{
-                {importButton, "open"}, {exportButton, "export"},
+                {importButton, "open"},
+                {exportButton, "export"},
                 {importDatasetButton, "import-export"},
-                {exportDataset, "download"}, {m_autoRun, "run"}};
+                {exportDataset, "download"},
+                {m_autoRun, "run"}};
         for (const auto& item : datasetButtons) {
             auto* button = item.first;
             button->setToolTip(button->text());
@@ -2082,7 +2092,8 @@ public:
             QString text = m_input->toPlainText().trimmed();
             if (text.isEmpty()) return;
             const auto source = m_source();
-            const bool image = text.contains("@image") || text.contains("<image>");
+            const bool image =
+                    text.contains("@image") || text.contains("<image>");
             if (image && source.path.isEmpty()) {
                 m_service->status->setText(
                         chatTr("No image available for @image reference."));
@@ -2176,8 +2187,8 @@ public:
             updateSendState();
             render();
         });
-        for (auto* edit : {m_service->address, m_service->key,
-                            m_service->model->lineEdit()})
+        for (auto* edit :
+             {m_service->address, m_service->key, m_service->model->lineEdit()})
             edit->installEventFilter(this);
         if (auto* selector = findChild<QPushButton*>("ChatBrowseModels"))
             selector->installEventFilter(this);
@@ -2261,8 +2272,9 @@ private:
         m_styling = true;
         // This dialog's QSS also changes its palette. The workspace owns the
         // selected theme; reading our styled palette can lock it in dark mode.
-        const bool dark = parentWidget()->palette().color(QPalette::Window)
-                                  .lightness() < 128;
+        const bool dark =
+                parentWidget()->palette().color(QPalette::Window).lightness() <
+                128;
         const QString dialog =
                 chatStyle("dialog", dark) + chatStyle("menu", dark);
         if (styleSheet() != dialog) setStyleSheet(dialog);
@@ -2288,8 +2300,9 @@ private:
         apply("ChatSystemPrompt", "settings_edit");
         apply("ChatTemperatureSlider", "slider");
         if (auto* panel = findChild<QGroupBox*>("ChatSettingsPanel"))
-            panel->setStyleSheet("QGroupBox { border: none; margin: 0; "
-                                "padding: 0; }");
+            panel->setStyleSheet(
+                    "QGroupBox { border: none; margin: 0; "
+                    "padding: 0; }");
         if (auto* tabs = findChild<QTabWidget*>("ChatSettingsTabs")) {
             tabs->setStyleSheet(chatStyle("tab_widget", dark));
             tabs->tabBar()->setStyleSheet(chatStyle("settings_tabs", dark));
@@ -2319,11 +2332,12 @@ private:
     void updateSendState() {
         const bool streaming = m_service->client->busy();
         m_input->setEnabled(!m_batchActive && !streaming);
-        m_send->setEnabled(!m_batchActive &&
-                          (streaming || !m_input->toPlainText().trimmed().isEmpty()));
-        m_send->setIcon(QIcon(streaming
-                                    ? ":/CC/plugin/qAnyLabeling/images/stop.svg"
-                                    : ":/CC/plugin/qAnyLabeling/images/send.svg"));
+        m_send->setEnabled(
+                !m_batchActive &&
+                (streaming || !m_input->toPlainText().trimmed().isEmpty()));
+        m_send->setIcon(
+                QIcon(streaming ? ":/CC/plugin/qAnyLabeling/images/stop.svg"
+                                : ":/CC/plugin/qAnyLabeling/images/send.svg"));
         m_send->setToolTip(chatTr(streaming ? "Stop" : "Send"));
     }
     void stopGeneration() {
@@ -2644,13 +2658,16 @@ private:
 
 // Pure source QSS, embedded with Chat styles at build time.
 QString vqaStyle(const char* name, const QWidget* owner) {
-    const auto* themeOwner = owner->parentWidget() ? owner->parentWidget() : owner;
-    return chatStyle(name, themeOwner->palette().color(QPalette::Window)
-                                  .lightness() < 128);
+    const auto* themeOwner =
+            owner->parentWidget() ? owner->parentWidget() : owner;
+    return chatStyle(
+            name,
+            themeOwner->palette().color(QPalette::Window).lightness() < 128);
 }
 QString vqaButtonStyle(const QWidget* owner, bool primary) {
     return vqaStyle(primary ? "vqa_dialog_button_primary"
-                            : "vqa_dialog_button_secondary", owner);
+                            : "vqa_dialog_button_secondary",
+                    owner);
 }
 
 class VqaLoadingDialog final : public QDialog {
@@ -2857,14 +2874,16 @@ public:
         header->addWidget(m_filename, 1);
         const auto refresh = [this]() {
             if (m_current.path.isEmpty()) {
-                m_service->status->setText(chatTr("No images loaded in main window!"));
+                m_service->status->setText(
+                        chatTr("No images loaded in main window!"));
                 return;
             }
             m_navigate(0);
         };
         auto* refreshButton = new QPushButton(left);
         refreshButton->setObjectName("VQARefresh");
-        refreshButton->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/refresh.svg"));
+        refreshButton->setIcon(
+                QIcon(":/CC/plugin/qAnyLabeling/images/refresh.svg"));
         refreshButton->setIconSize(QSize(16, 16));
         refreshButton->setFixedSize(28, 28);
         refreshButton->setToolTip(chatTr("Refresh Data"));
@@ -2902,7 +2921,8 @@ public:
             button->setFixedSize(32, 32);
             button->setIconSize(QSize(32, 32));
         }
-        previous->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/arrow-left.svg"));
+        previous->setIcon(
+                QIcon(":/CC/plugin/qAnyLabeling/images/arrow-left.svg"));
         previous->setToolTip(chatTr("Previous"));
         next->setIcon(QIcon(":/CC/plugin/qAnyLabeling/images/arrow-right.svg"));
         next->setToolTip(chatTr("Next"));
@@ -2926,16 +2946,19 @@ public:
         navigation->addWidget(next);
         connect(previous, &QPushButton::clicked, this,
                 [this]() { m_navigate(-1); });
-        connect(next, &QPushButton::clicked, this,
-                [this]() { m_navigate(1); });
-        connect(m_page, &QLineEdit::textChanged, this, [this](const QString& text) {
-            const int maximum =
-                    std::max(1, static_cast<int>(m_files().size()));
-            if (text.toInt() > maximum) m_page->setText(QString::number(maximum));
-        });
+        connect(next, &QPushButton::clicked, this, [this]() { m_navigate(1); });
+        connect(m_page, &QLineEdit::textChanged, this,
+                [this](const QString& text) {
+                    const int maximum =
+                            std::max(1, static_cast<int>(m_files().size()));
+                    if (text.toInt() > maximum)
+                        m_page->setText(QString::number(maximum));
+                });
         connect(m_page, &QLineEdit::editingFinished, this, [this]() {
-            if (m_page->text().isEmpty()) updateNavigation();
-            else if (m_page->text().toInt() < 1) m_page->setText("1");
+            if (m_page->text().isEmpty())
+                updateNavigation();
+            else if (m_page->text().toInt() < 1)
+                m_page->setText("1");
         });
         connect(new QShortcut(QKeySequence(Qt::Key_A), this),
                 &QShortcut::activated, previous, &QPushButton::click);
@@ -2970,8 +2993,9 @@ public:
         const auto toggleSidebar = [this]() {
             const bool expand = m_splitter->sizes().first() == 0;
             const int width = m_splitter->width();
-            m_splitter->setSizes(expand ? QList<int>{width / 2, width - width / 2}
-                                        : QList<int>{0, width});
+            m_splitter->setSizes(
+                    expand ? QList<int>{width / 2, width - width / 2}
+                           : QList<int>{0, width});
             m_refreshRight->setVisible(!expand);
             m_toggleRight->setVisible(!expand);
             updatePreview();
@@ -2989,14 +3013,15 @@ public:
         controls->addWidget(clear);
         connect(clear, &QPushButton::clicked, this, [this]() {
             const auto source = m_source();
-            if (QMessageBox::question(
-                        this, chatTr("Confirm Clear"),
-                        chatTr("Are you sure you want to clear all current annotations?"),
-                        QMessageBox::Yes | QMessageBox::No,
-                        QMessageBox::No) != QMessageBox::Yes)
+            if (QMessageBox::question(this, chatTr("Confirm Clear"),
+                                      chatTr("Are you sure you want to clear "
+                                             "all current annotations?"),
+                                      QMessageBox::Yes | QMessageBox::No,
+                                      QMessageBox::No) != QMessageBox::Yes)
                 return;
             const auto current = m_source();
-            if (source.path != current.path || source.generation != current.generation)
+            if (source.path != current.path ||
+                source.generation != current.generation)
                 return;
             cancelRequest();
             for (auto& component : m_components)
@@ -3448,7 +3473,8 @@ private:
     }
     void updatePreview() {
         m_preview->setPixmap(QPixmap::fromImage(m_current.image)
-                                     .scaled(m_preview->size(), Qt::KeepAspectRatio,
+                                     .scaled(m_preview->size(),
+                                             Qt::KeepAspectRatio,
                                              Qt::SmoothTransformation));
     }
     void updateNavigation() {
@@ -3456,7 +3482,8 @@ private:
         const int index = files.indexOf(m_current.path);
         m_previous->setEnabled(index > 0);
         m_next->setEnabled(index >= 0 && index + 1 < files.size());
-        m_pageValidator->setRange(1, std::max(1, static_cast<int>(files.size())));
+        m_pageValidator->setRange(1,
+                                  std::max(1, static_cast<int>(files.size())));
         m_page->setText(QString::number(index >= 0 ? index + 1 : 1));
     }
     void loadValues() {

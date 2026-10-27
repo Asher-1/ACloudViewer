@@ -36,7 +36,7 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ocr_runtime.hpp"
+#include "common/paddle_graph.hpp"
 
 namespace aicore {
 namespace table {
@@ -102,7 +102,7 @@ private:
     bool buildPrepGraph(std::string& error);
     bool buildStepGraph(std::string& error);
 
-    ocr::OcrWeights encoder_;
+    paddle::OcrWeights encoder_;
     std::vector<std::string> vocab_;
     int padSize_ = 488;
     int maxLen_ = 488;
@@ -120,13 +120,13 @@ private:
     std::vector<std::pair<std::string, HostTensor>> hostDecoder_;
 
     // Encoder graph (fixed padded geometry -> built once per context).
-    ocr::OcrExecPlan encPlan_;
+    paddle::OcrExecPlan encPlan_;
     ggml_context* encCtx_ = nullptr;
     ggml_cgraph* encGraph_ = nullptr;
     ggml_tensor* encInput_ = nullptr;
     ggml_tensor* encOutput_ = nullptr;
-    ocr::OcrGraphExec encExec_;
-    std::shared_ptr<ocr::OcrFoldPool> encFold_;
+    paddle::OcrGraphExec encExec_;
+    std::shared_ptr<paddle::OcrFoldPool> encFold_;
     std::vector<float> feature_;  // Ft: T x C, channel-major (ne={T, C})
 
     // Decoder state on one backend.

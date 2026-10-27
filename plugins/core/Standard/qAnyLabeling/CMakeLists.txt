@@ -55,7 +55,7 @@ if(PLUGIN_STANDARD_QANYLABELING)
         ${CMAKE_CURRENT_SOURCE_DIR}/../qRelateAnything/include)
     target_link_libraries(${PROJECT_NAME} AICore CVPluginAPI video_base Qt::OpenGL)
     target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Concurrent
-        Qt${QT_VERSION_MAJOR}::Network)
+        Qt${QT_VERSION_MAJOR}::Network Threads::Threads)
     cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME} PLUGIN_NAME ${PROJECT_NAME})
     if(TARGET 3rdparty_opencv)
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)

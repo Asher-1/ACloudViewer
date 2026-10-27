@@ -804,6 +804,28 @@ class ValidateAllTests(unittest.TestCase):
         self.assertTrue(any("gpu_sampled_process_peak_mib regressed" in f
                             for f in failures))
 
+    def test_raw_measured_samples_do_not_add_indexwise_performance_gates(self):
+        row = {"key": "llm/chat/model.gguf", "model_assets": [],
+               "metrics": {"json0/e2e_p50_ms": 100.0,
+                           "json0/e2e_p95_ms": 200.0,
+                           "json0/e2e_samples_ms/0": 100.0,
+                           "json0/process_cpu_samples_ms/0": 20.0},
+               "fingerprints": {}, "fingerprint_policy": "stability_only"}
+        current = {**row, "metrics": {
+            "json0/e2e_p50_ms": 100.0, "json0/e2e_p95_ms": 220.0,
+            "json0/e2e_samples_ms/0": 500.0,
+            "json0/process_cpu_samples_ms/0": 100.0}}
+        failures = VALIDATE_ALL.compare_report(
+            self.report([current]), self.report([row]), 5.0, 3.0)
+        self.assertEqual(len(failures), 1, failures)
+        self.assertIn("e2e_p95_ms regressed 10.00%", failures[0])
+
+    def test_raw_measured_samples_retain_zero_without_changing_scalar_timing_rules(self):
+        metrics, _ = VALIDATE_ALL.flatten_json({
+            "prefill_samples_ms": [0.0, 4.0], "e2e_ms": 0.0})
+        self.assertEqual(metrics, {
+            "prefill_samples_ms/0": 0.0, "prefill_samples_ms/1": 4.0})
+
     def test_metrics_named_by_structured_gate_are_flattened(self):
         gate = VALIDATE_ALL.normalize_accuracy_gate({
             "id": "depth-backend-parity", "accuracy_gate": "prose",
@@ -825,6 +847,42 @@ class ValidateAllTests(unittest.TestCase):
                                    "json0/pose_relative_mae": 0.0001})
         self.assertEqual(fingerprints, {"json0/cpu_output_hash": "ab"})
         self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+
+    def test_declared_boolean_accuracy_metric_preserves_true_false_and_missing(self):
+        gate = VALIDATE_ALL.normalize_accuracy_gate({
+            "id": "boolean-quality", "accuracy": {
+                "reference": "upstream", "reference_id": "fixture",
+                "checks": [{"metric": "stable", "op": "==", "value": 1}],
+            }})
+        for value, expected in ((True, 1.0), (False, 0.0)):
+            with self.subTest(value=value):
+                payload = json.dumps({"stable": value, "informational": True,
+                                      "e2e_ms": True, "output_hash": "ab"})
+                metrics, fingerprints = VALIDATE_ALL.parse_output(
+                    payload, "generic", Path("/nonexistent"),
+                    VALIDATE_ALL.gate_metric_names(gate))
+                self.assertEqual(metrics, {"json0/stable": expected})
+                self.assertEqual(fingerprints, {"json0/output_hash": "ab"})
+                failures = VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics)
+                self.assertEqual(failures, [] if value else
+                                 ["accuracy gate failed: stable 0 == 1.0"])
+        missing, _ = VALIDATE_ALL.parse_output(
+            '{}', "generic", Path("/nonexistent"),
+            VALIDATE_ALL.gate_metric_names(gate))
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, missing),
+                         ["accuracy metric missing/non-finite: stable"])
+
+    def test_declared_boolean_quality_is_consumed_from_probe_report(self):
+        gate = {"checks": [{"metric": "quality/stable", "op": "==", "value": 1}]}
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "probe.json"
+            report.write_text('{"quality":{"stable":true},"informational":false}')
+            metrics, _ = VALIDATE_ALL.parse_output(
+                "", "generic", report, VALIDATE_ALL.gate_metric_names(gate))
+        self.assertEqual(metrics, {"json0/quality/stable": 1.0})
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics), [])
+        undeclared, _ = VALIDATE_ALL.flatten_json({"stable": True, "e2e_ms": True})
+        self.assertEqual(undeclared, {})
 
     def test_ocr_original_gpu_metrics_keep_zero_and_unqualified_timing(self):
         metrics, _ = VALIDATE_ALL.parse_output(
@@ -1069,6 +1127,34 @@ class ValidateAllTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no assets for tasks: yolo"):
             VALIDATE_ALL.parse_catalog_output(
                 json.dumps(row) + "\n", {"depth", "yolo"})
+
+    def test_unpublished_only_task_runs_without_inventing_download_catalog(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            catalog = root / 'catalog'
+            row = {'task': 'depth', 'relative_path': 'da3_models/model.gguf',
+                   'url': 'https://example.invalid/model.gguf', 'sha256': 'a' * 64, 'size_bytes': 123}
+            catalog.write_text('#!' + sys.executable + '\nprint(' + repr(json.dumps(row)) + ')\n')
+            catalog.chmod(0o755)
+            args = SimpleNamespace(build=root, catalog_binary=catalog, full=True, models='')
+            manifest = {'tasks': ['attribute', 'depth'], 'scenarios': [
+                {'id': 'local', 'task': 'attribute', 'local_only': True,
+                 'covered_globs': ['attribute_models/person-f32.gguf']},
+                {'id': 'published', 'task': 'depth', 'model_glob': 'da3_models/model.gguf'}]}
+            try:
+                assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
+            except ValueError as error:
+                self.fail('本地-only task 不应要求虚构下载 catalog：' + str(error))
+            self.assertEqual(assets, [])
+            assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute', 'depth'})
+            self.assertEqual([str(asset.relative_path) for asset in assets], ['da3_models/model.gguf'])
+            # 任一非 local_only 场景或空 task 不得豁免已发布 catalog 责任。
+            manifest['scenarios'].append({'id': 'must-publish', 'task': 'attribute',
+                                          'model_glob': 'da3_models/model.gguf'})
+            with self.assertRaisesRegex(ValueError, 'no assets for tasks: attribute'):
+                VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
+            with self.assertRaisesRegex(ValueError, 'no assets for tasks: empty'):
+                VALIDATE_ALL.load_model_catalog(args, {'scenarios': []}, {'empty'})
 
     def test_catalog_parser_rejects_path_traversal(self):
         row = {
@@ -1467,6 +1553,173 @@ class ValidateAllTests(unittest.TestCase):
                               "demo/demo/tiny_q8.gguf",
                               "plain/plain/ok.gguf"])
             self.assertEqual(diagnostics["uncovered_assets"], [])
+
+    def test_yolo_official_runtime_locator_handles_platform_layouts(self):
+        source = MODULE_PATH.parent.parent / "tests/yolo/test_yolo_official_reference.py"
+        spec = importlib.util.spec_from_file_location("yolo_reference", source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertTrue(hasattr(module, "runtime_library"), "缺少跨平台运行库解析")
+        for name, folder in (("libAICore.so", "bin"), ("libAICore.dylib", "bin"),
+                             ("AICore.dll", "bin/Release")):
+            with tempfile.TemporaryDirectory() as directory:
+                build = Path(directory)
+                library = build / folder / name
+                library.parent.mkdir(parents=True)
+                library.write_bytes(b"fixture")
+                self.assertEqual(module.runtime_library(build), library)
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(FileNotFoundError):
+                module.runtime_library(Path(directory))
+
+    def test_yolo_official_source_audit_rejects_changed_python_reference(self):
+        source = MODULE_PATH.parent.parent / "tests/yolo/test_yolo_official_reference.py"
+        spec = importlib.util.spec_from_file_location("yolo_reference", source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertTrue(hasattr(module, "source_identity"), "缺少参照源码审计")
+        revision = "a" * 40
+        responses = [revision.encode(), b"", b" m cpp_ggml/third_party/ggml\n",
+                     b" submodule-revision\n", b"submodule diff"]
+        with mock.patch.object(module.subprocess, "check_output", side_effect=responses):
+            identity = module.source_identity(Path("reference"), revision)
+        self.assertTrue(identity["consumed_python_clean"])
+        self.assertEqual(identity["source_revision"], revision)
+        self.assertEqual(identity["working_tree_diff_sha256"],
+                         hashlib.sha256(b"submodule diff").hexdigest())
+        with mock.patch.object(module.subprocess, "check_output",
+                               side_effect=[revision.encode(), b" M ultralytics/engine/predictor.py\n"]):
+            with self.assertRaisesRegex(RuntimeError, "modified.*Python"):
+                module.source_identity(Path("reference"), revision)
+        with mock.patch.object(module.subprocess, "check_output", return_value=b"b" * 40):
+            with self.assertRaisesRegex(RuntimeError, "revision"):
+                module.source_identity(Path("reference"), revision)
+
+    def test_yolo_official_manifest_preserves_independent_numeric_gates(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        ids = ("yolo26n-official-f32", "yolo26n-official-quantized")
+        rows = [row for row in manifest["scenarios"] if row["id"] in ids]
+        self.assertEqual({row["id"] for row in rows}, set(ids))
+        for row in rows:
+            self.assertEqual(row["accuracy"]["reference"], "upstream")
+            bounds = {check["metric"]: check["value"]
+                      for check in row["accuracy"]["checks"]}
+            self.assertEqual(bounds["unmatched_reference"], 0)
+            self.assertEqual(bounds["unmatched_candidate"], 0)
+            self.assertEqual(bounds["stable"], 1)
+            self.assertEqual(bounds["maximum_score_error"],
+                             0.005 if row["id"].endswith("f32") else 0.02)
+            self.assertEqual(bounds["maximum_center_error_px"],
+                             1.0 if row["id"].endswith("f32") else 2.5)
+            self.assertNotIn("--canonical-canvas", row["args"])
+            self.assertIn("{reference:ultralytics}", row["args"])
+            self.assertIn("{inference_runs}", row["args"])
+            self.assertIn("{warmup_runs}", row["args"])
+
+    def test_yolo_official_matching_preserves_class_and_per_box_errors(self):
+        source = MODULE_PATH.parent.parent / "tests/yolo/test_yolo_official_reference.py"
+        spec = importlib.util.spec_from_file_location("yolo_reference", source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        reference = [[0, 0, 100, 100, 0.9, 0], [200, 200, 300, 300, 0.8, 1]]
+        candidate = [[201, 200, 301, 300, 0.84, 1], reference[0]]
+        metrics = module.compare(reference, candidate)
+        self.assertEqual(metrics["unmatched_reference"], 0)
+        self.assertEqual(metrics["unmatched_candidate"], 0)
+        self.assertAlmostEqual(metrics["maximum_score_error"], 0.04)
+        self.assertEqual(metrics["maximum_center_error_px"], 1.0)
+        self.assertEqual(metrics["per_detection"][0]["candidate_index"], 1)
+        wrong_class = module.compare(reference, [reference[0], [200, 200, 300, 300, 0.8, 0]])
+        self.assertEqual(wrong_class["unmatched_reference"], 1)
+        self.assertEqual(wrong_class["unmatched_candidate"], 1)
+        duplicate = module.compare(reference, reference + [reference[0]])
+        self.assertEqual(duplicate["unmatched_candidate"], 1)
+        self.assertEqual(module.compare(reference, [])["unmatched_reference"], 2)
+
+    def test_llm_reference_preserves_production_toolchain_and_arithmetic(self):
+        source = MODULE_PATH.parent.parent / "tests/llm/prepare_upstream_reference.py"
+        spec = importlib.util.spec_from_file_location("llm_reference", source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            build = Path(directory)
+            cache = build / "llama/src/ext_llama-build/CMakeCache.txt"
+            cache.parent.mkdir(parents=True)
+            expected = {
+                "GGML_CUDA": "ON", "GGML_VULKAN": "ON",
+                "CMAKE_CUDA_ARCHITECTURES": "86-real",
+                "CMAKE_CUDA_COMPILER": "/fixture/toolkit/bin/nvcc",
+                "GGML_CUDA_FAST_MATH": "ON", "GGML_CUDA_GRAPHS": "ON",
+                "GGML_CPU_ALL_VARIANTS": "ON", "GGML_NATIVE": "OFF",
+                                "GGML_BACKEND_DL": "ON", "GGML_AVX2": "ON",
+                                "GGML_AVX512": "OFF", "GGML_F16C": "ON",
+            }
+            cache.write_text("\n".join(f"{key}:UNINITIALIZED={value}"
+                                       for key, value in expected.items()))
+            self.assertEqual(module.production_backends(build), expected)
+            self.assertEqual(module.production_backends(build / "absent"), {})
+
+    def test_llm_rows_cover_every_catalog_file_and_tier(self):
+        # The shipped llm rows: every catalog GGUF (models and projectors) is
+        # consumed, the light tier is the upstream-gated SmolVLM-500M Q8 plus
+        # Qwen q8, vision rows pair the projector through the catalog and
+        # read the pinned image, and an unconfigured upstream reference
+        # expands to "" (the probe then exits 77, never passes silently).
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        catalog = [f"SmolVLM-{size}-Instruct-{quant}.gguf"
+                   for size in ("256M", "500M") for quant in ("Q8_0", "f16")]
+        catalog += ["mmproj-" + name for name in catalog]
+        catalog += ["qwen2.5-0.5b-instruct-q8_0.gguf",
+                    "qwen2.5-0.5b-instruct-fp16.gguf"]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = root / "assets"
+            (assets / "llm_models").mkdir(parents=True)
+            (assets / "llm_test_images").mkdir(parents=True)
+            for name in catalog:
+                (assets / "llm_models" / name).write_bytes(b"GGUF")
+            (assets / "llm_test_images/test-1.jpeg").write_bytes(b"jpg")
+            args = self.tier_args(assets, root, full=False)
+            args.tasks = "llm"
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, args, root / "reports")
+            self.assertEqual(sorted(spec.key for spec in specs), [
+                "llm/llm-chat-capital/qwen2.5-0.5b-instruct-q8_0.gguf",
+                "llm/llm-chat-poem/qwen2.5-0.5b-instruct-q8_0.gguf",
+                "llm/llm-vqa-describe-500m-q8_0/SmolVLM-500M-Instruct-Q8_0.gguf",
+                "llm/llm-vqa-newspaper-500m-q8_0/SmolVLM-500M-Instruct-Q8_0.gguf"])
+            self.assertEqual(diagnostics["uncovered_assets"], [])
+            for spec in specs:
+                command = spec.command
+                upstream = command[command.index("--upstream-dir") + 1]
+                self.assertEqual(upstream, "")
+                vision = "SmolVLM" in spec.key
+                self.assertEqual("--mmproj" in command, vision)
+                if vision:
+                    self.assertEqual(
+                        command[command.index("--mmproj") + 1], "auto")
+                    self.assertTrue(command[command.index("--image") + 1]
+                                    .endswith("llm_test_images/test-1.jpeg"))
+                self.assertEqual(spec.accuracy["require_metrics"][0],
+                                 "upstream_text_match")
+            args = self.tier_args(assets, root, full=True)
+            args.tasks = "llm"
+            args.references = {"llama_upstream": str(root / "bin")}
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, args, root / "reports")
+            # 4 vision models x 2 VQA rows + 2 text models x 2 chat rows;
+            # each vision row names its exact projector as a dependency.
+            self.assertEqual(len(specs), 12)
+            for spec in specs:
+                if "SmolVLM" in spec.key:
+                    model = spec.key.rsplit("/", 1)[1]
+                    self.assertEqual({path.name for path in spec.model_paths},
+                                     {model, "mmproj-" + model})
+            self.assertEqual(diagnostics["uncovered_assets"], [])
+            for spec in specs:
+                self.assertEqual(
+                    spec.command[spec.command.index("--upstream-dir") + 1],
+                    str(root / "bin"))
 
     def test_light_tier_reports_missing_light_models_like_any_asset(self):
         with tempfile.TemporaryDirectory() as temp:

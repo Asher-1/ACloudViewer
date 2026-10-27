@@ -664,6 +664,26 @@ and distinct output names. The actual-window OCR test also accepts
 `test_qanylabeling_run_path <absolute-plugin-path> --ocr <backend>`; the
 YOLO-World/RAM workflow accepts `--tagged <backend>`. These verify autosave,
 replacement (including empty results), metadata, undo/redo and stale results.
+本地 PULC person/vehicle F32 recipe 通过公共 attribute ABI 接入同一 worker。
+`ANYLABEL_INFER TASK attribute` 保持现有 `anylabel` 命令身份和共享 HELP/RESULT_JSON schema；
+`LIST_MODELS 1` 列出 owning public recipe 的本地文件名、cache 路径和缓存状态。
+这些 recipe 没有下载 URL 或 published GGUF digest；缺失文件即使传 `DOWNLOAD 1` 也明确失败。
+默认本地模型为 person；`MODEL pulc-vehicle-f32.gguf` 切换 vehicle，完整属性写入全图 rectangle，
+不写成分类 flags。`CONFIDENCE` 不改变 task 内建的属性阈值。
+
+```bash
+ACloudViewer -SILENT -ANYLABEL_INFER TASK attribute HELP RESULT_JSON schema.json
+ACloudViewer -SILENT -ANYLABEL_INFER TASK attribute LIST_MODELS 1 RESULT_JSON models.json
+ACloudViewer -SILENT -ANYLABEL_INFER TASK attribute MODEL pulc-person-f32.gguf \
+  IMAGE /path/to/image.jpg DEVICE cpu OUT_DIR /path/to/output
+```
+
+维护中的 `test_qanylabeling_attribute_batch <absolute-plugin-path> [backend]` 消费真实插件注册的
+原生命令，验证 schema、本地列表、缺失模型不下载、两模型/两图、task 阈值与错误 manifest。
+外部模型和输入由 `AICORE_TEST_ATTRIBUTE_{PERSON,VEHICLE}_GGUF`、`AICORE_TEST_ATTRIBUTE_IMAGE`
+注入；测试在临时共享 data root 下装配，不改默认模型缓存。公共 C ABI、基础 UI、common runner
+和 release 的当前逐门状态见 [MODEL_MATRIX.md](MODEL_MATRIX.md)，不把本地 recipe 当作已发布资产。
+
 Runtime library paths must match the configured build; leave Qt's offscreen
 selection to CTest so its OpenGL point-cloud fixture can use Xvfb.
 The original exact-source OCR extension covered 30 F32 graph, orientation,

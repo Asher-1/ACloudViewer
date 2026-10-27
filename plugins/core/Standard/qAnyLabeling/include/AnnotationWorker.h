@@ -83,7 +83,8 @@ private:
         DeepLSD,
         ALIKED,
         Ram,            // Recognize Anything Model (image-level tagging)
-        RelateAnything  // Scene relation inference (object + relation edges)
+        RelateAnything,  // Scene relation inference (object + relation edges)
+        Attribute
     };
     void* m_context = nullptr;
     void* m_landmarkContext = nullptr;

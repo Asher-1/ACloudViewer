@@ -95,6 +95,16 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     form->addRow(ecvAICoreUi::makeLabel(tr("Recognition language:")),
                  m_language);
 
+    m_preset = new QComboBox(this);
+    m_preset->setObjectName(QStringLiteral("qOCRPreset"));
+    for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
+        const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(i);
+        if (p && p->display_name && p->id)
+            m_preset->addItem(QString::fromUtf8(p->display_name),
+                              QString::fromUtf8(p->id));
+    }
+    form->addRow(ecvAICoreUi::makeLabel(tr("Model recipe:")), m_preset);
+
     m_quant = new QComboBox(this);
     m_quant->setObjectName(QStringLiteral("qOCRQuant"));
     m_quant->addItem(QStringLiteral("F32"), QStringLiteral("f32"));
@@ -369,6 +379,18 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
             this, &OCRDialog::showRunResult);
     connect(m_saveAllButton, &QPushButton::clicked, this,
             &OCRDialog::exportAllTables);
+    connect(m_preset, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int index) {
+                // Keep the language combo (test-data chooser) consistent with
+                // the selected recipe's recognition family.
+                const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(index);
+                if (!p || !p->rec_stem) return;
+                const QString stem = QString::fromUtf8(p->rec_stem);
+                const int lang = stem.contains("-en") ? 1 : 0;
+                if (m_language->currentIndex() != lang)
+                    m_language->setCurrentIndex(lang);
+                updateRunState();
+            });
     connect(m_language, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) { updateRunState(); });
     connect(m_quant, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
@@ -400,17 +422,27 @@ QString OCRDialog::cacheDir() const {
     return out;
 }
 
+const aicore_ocr_preset_entry* OCRDialog::currentPreset() const {
+    const QString id = m_preset->currentData().toString();
+    for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
+        const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(i);
+        if (p && p->id && id == QString::fromUtf8(p->id)) return p;
+    }
+    return aicore_ocr_preset_at(0);
+}
+
 QString OCRDialog::detFileName() const {
-    // The DB detector is script-agnostic; the catalog publishes it under
-    // the Chinese stem and both languages share it.
-    const QString quant = m_quant->currentData().toString();
-    return QStringLiteral("ppocr-det-ch-%1.gguf").arg(quant);
+    // The recipe owns the det/rec/cls stem pairing; the quantization tier is
+    // the only user-facing axis. The DB detector is script-agnostic.
+    const aicore_ocr_preset_entry* p = currentPreset();
+    return QStringLiteral("%1-%2.gguf")
+            .arg(QString::fromUtf8(p->det_stem), m_quant->currentData().toString());
 }
 
 QString OCRDialog::recFileName() const {
-    const QString lang = m_language->currentData().toString();
-    const QString quant = m_quant->currentData().toString();
-    return QStringLiteral("ppocr-rec-%1-%2.gguf").arg(lang, quant);
+    const aicore_ocr_preset_entry* p = currentPreset();
+    return QStringLiteral("%1-%2.gguf")
+            .arg(QString::fromUtf8(p->rec_stem), m_quant->currentData().toString());
 }
 
 QString OCRDialog::layoutFileName() const {

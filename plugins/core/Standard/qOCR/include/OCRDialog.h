@@ -51,6 +51,8 @@ struct OCRRunSettings {
 
 Q_DECLARE_METATYPE(OCRRunSettings)
 
+struct aicore_ocr_preset_entry;
+
 class OCRDialog final : public QDialog {
     Q_OBJECT
 public:
@@ -115,6 +117,7 @@ private slots:
 
 private:
     QString cacheDir() const;
+    const aicore_ocr_preset_entry* currentPreset() const;
     QString detFileName() const;
     QString recFileName() const;
     QString layoutFileName() const;
@@ -142,6 +145,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
     // ---- model selection -------------------------------------------------
+    QComboBox* m_preset = nullptr;    // catalog recipe (det/rec/cls pairing)
     QComboBox* m_language = nullptr;  // Chinese / English
     QComboBox* m_quant = nullptr;     // F32 / F16 / Q8_0
 

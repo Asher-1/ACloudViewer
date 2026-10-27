@@ -22,7 +22,8 @@
     "ocr",
     "table",
     "tagging",
-    "relation"
+    "relation",
+    "llm"
   ],
   "input_assets": [
     {
@@ -125,6 +126,13 @@
           "size_bytes": 39236015
         }
       ]
+    },
+    {
+      "id": "yolo26n-official-checkpoint",
+      "tasks": ["yolo"],
+      "relative_path": "framework_references/yolo26n.pt",
+      "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt",
+      "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef"
     },
     {
       "id": "gkd-official-demos",
@@ -5518,6 +5526,16 @@
           "size_bytes": 2035
         }
       ]
+    },
+    {
+      "id": "llama-mtmd-test-1",
+      "tasks": [
+        "llm"
+      ],
+      "relative_path": "llm_test_images/test-1.jpeg",
+      "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/707616feb5f379e99ff7442680a55b4a1704c7c9/tools/mtmd/test-1.jpeg",
+      "sha256": "2dff664c0c8aaea18aff8cbe7e868845b775e90cdd7a0bac98df709b131deaa3",
+      "size_bytes": 124071
     }
   ],
   "scenarios": [
@@ -6598,6 +6616,80 @@
         "reference_id": "probe:yolo-text-mclip",
         "checks": [],
         "require_metrics": []
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "yolo26n-official-f32",
+      "task": "yolo",
+      "model_glob": "yolo_models/yolo26n-f32.gguf",
+      "for_each_model": true,
+      "input_ids": ["objects-detection-samples", "yolo26n-official-checkpoint"],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/tests/yolo/test_yolo_official_reference.py",
+        "--build", "{build}", "--model", "{model}",
+        "--image", "{yolo_image}",
+        "--source", "{reference:ultralytics}",
+        "--source-revision", "7c3e610a2a1f05c2be533e63a6f91e547bd17398",
+        "--checkpoint", "{assets}/framework_references/yolo26n.pt",
+        "--checkpoint-sha256", "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+        "--backend", "{backend}", "--threads", "{threads}",
+        "--warmups", "{warmup_runs}", "--repeats", "{inference_runs}",
+        "--json-out", "{scenario_report}"
+      ],
+      "accuracy_gate": "同解码像素及 stride-auto LetterBox 的官方 YOLO26n PyTorch checkpoint；逐框类别、IoU、分数及中心误差",
+      "accuracy": {
+        "reference": "upstream",
+        "reference_id": "ultralytics@7c3e610a2a1f05c2be533e63a6f91e547bd17398:yolo26n.pt:9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+        "checks": [
+          {"metric": "reference_count", "op": ">", "value": 0},
+          {"metric": "unmatched_reference", "op": "==", "value": 0},
+          {"metric": "unmatched_candidate", "op": "==", "value": 0},
+          {"metric": "minimum_iou", "op": ">=", "value": 0.9},
+          {"metric": "maximum_score_error", "op": "<=", "value": 0.005},
+          {"metric": "maximum_center_error_px", "op": "<=", "value": 1.0},
+          {"metric": "stable", "op": "==", "value": 1}
+        ]
+      },
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "yolo26n-official-quantized",
+      "task": "yolo",
+      "owned_globs": ["yolo_models/yolo26n-f16.gguf", "yolo_models/yolo26n-q8_0.gguf"],
+      "model_glob": "yolo_models/yolo26n-[fq][18]*.gguf",
+      "light_globs": ["yolo_models/yolo26n-q8_0.gguf"],
+      "for_each_model": true,
+      "input_ids": ["objects-detection-samples", "yolo26n-official-checkpoint"],
+      "executable": "python",
+      "args": [
+        "{repo}/core/AICore/tests/yolo/test_yolo_official_reference.py",
+        "--build", "{build}", "--model", "{model}",
+        "--image", "{yolo_image}",
+        "--source", "{reference:ultralytics}",
+        "--source-revision", "7c3e610a2a1f05c2be533e63a6f91e547bd17398",
+        "--checkpoint", "{assets}/framework_references/yolo26n.pt",
+        "--checkpoint-sha256", "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+        "--backend", "{backend}", "--threads", "{threads}",
+        "--warmups", "{warmup_runs}", "--repeats", "{inference_runs}",
+        "--json-out", "{scenario_report}"
+      ],
+      "accuracy_gate": "F16/Q8_0 对独立官方 PyTorch checkpoint 的逐框绝对误差；不以 CPU parity 或平均值替代",
+      "accuracy": {
+        "reference": "upstream",
+        "reference_id": "ultralytics@7c3e610a2a1f05c2be533e63a6f91e547bd17398:yolo26n.pt:9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+        "checks": [
+          {"metric": "reference_count", "op": ">", "value": 0},
+          {"metric": "unmatched_reference", "op": "==", "value": 0},
+          {"metric": "unmatched_candidate", "op": "==", "value": 0},
+          {"metric": "minimum_iou", "op": ">=", "value": 0.9},
+          {"metric": "maximum_score_error", "op": "<=", "value": 0.02},
+          {"metric": "maximum_center_error_px", "op": "<=", "value": 2.5},
+          {"metric": "stable", "op": "==", "value": 1}
+        ]
       },
       "fingerprint_policy": "exact",
       "metric_parser": "generic"
@@ -32781,6 +32873,596 @@
       },
       "metric_parser": "generic",
       "fingerprint_policy": "stability_only"
+    },
+    {
+      "id": "llm-vqa-newspaper-500m-q8_0",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-500M-Instruct-Q8_0.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "what is the publisher name of the newspaper?",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}",
+        "--contains",
+        "new york"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          },
+          {
+            "metric": "answer_contains_hit",
+            "op": "==",
+            "value": 1,
+            "label": "answer contains 'new york' (upstream tools/mtmd/tests.sh acceptance)"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match",
+          "answer_contains_hit"
+        ]
+      },
+      "metric_parser": "generic",
+      "owned_globs": [
+        "llm_models/*.gguf"
+      ],
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-500M-Instruct-Q8_0.gguf"
+      ],
+      "light_globs": [
+        "llm_models/SmolVLM-500M-Instruct-Q8_0.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-newspaper-500m-f16",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-500M-Instruct-f16.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "what is the publisher name of the newspaper?",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}",
+        "--contains",
+        "new york"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          },
+          {
+            "metric": "answer_contains_hit",
+            "op": "==",
+            "value": 1,
+            "label": "answer contains 'new york' (upstream tools/mtmd/tests.sh acceptance)"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match",
+          "answer_contains_hit"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-500M-Instruct-f16.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-newspaper-256m-q8_0",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-256M-Instruct-Q8_0.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "what is the publisher name of the newspaper?",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}",
+        "--contains",
+        "new york"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          },
+          {
+            "metric": "answer_contains_hit",
+            "op": "==",
+            "value": 1,
+            "label": "answer contains 'new york' (upstream tools/mtmd/tests.sh acceptance)"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match",
+          "answer_contains_hit"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-newspaper-256m-f16",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-256M-Instruct-f16.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "what is the publisher name of the newspaper?",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}",
+        "--contains",
+        "new york"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          },
+          {
+            "metric": "answer_contains_hit",
+            "op": "==",
+            "value": 1,
+            "label": "answer contains 'new york' (upstream tools/mtmd/tests.sh acceptance)"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match",
+          "answer_contains_hit"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-256M-Instruct-f16.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-describe-500m-q8_0",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-500M-Instruct-Q8_0.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "Describe this image in detail.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-500M-Instruct-Q8_0.gguf"
+      ],
+      "light_globs": [
+        "llm_models/SmolVLM-500M-Instruct-Q8_0.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-describe-500m-f16",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-500M-Instruct-f16.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "Describe this image in detail.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-500M-Instruct-f16.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-describe-256m-q8_0",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-256M-Instruct-Q8_0.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "Describe this image in detail.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf"
+      ]
+    },
+    {
+      "id": "llm-vqa-describe-256m-f16",
+      "task": "llm",
+      "model_glob": "llm_models/SmolVLM-256M-Instruct-f16.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--mmproj",
+        "auto",
+        "--image",
+        "{assets}/llm_test_images/test-1.jpeg",
+        "--prompt",
+        "Describe this image in detail.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match"
+        ]
+      },
+      "metric_parser": "generic",
+      "input_ids": [
+        "llama-mtmd-test-1"
+      ],
+      "required_globs": [
+        "llm_models/mmproj-SmolVLM-256M-Instruct-f16.gguf"
+      ]
+    },
+    {
+      "id": "llm-chat-capital",
+      "task": "llm",
+      "model_glob": "llm_models/qwen2.5-0.5b-instruct-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--prompt",
+        "What is the capital of France? Answer in one word.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}",
+        "--contains",
+        "paris"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-completion -cnv -st greedy",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          },
+          {
+            "metric": "answer_contains_hit",
+            "op": "==",
+            "value": 1,
+            "label": "answer contains 'paris'"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match",
+          "answer_contains_hit"
+        ]
+      },
+      "metric_parser": "generic",
+      "light_globs": [
+        "llm_models/qwen2.5-0.5b-instruct-q8_0.gguf"
+      ]
+    },
+    {
+      "id": "llm-chat-poem",
+      "task": "llm",
+      "model_glob": "llm_models/qwen2.5-0.5b-instruct-*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_llm_probe",
+      "args": [
+        "--model",
+        "{model}",
+        "--prompt",
+        "Write a short poem about the sea.",
+        "--max-tokens",
+        "128",
+        "--device",
+        "{backend}",
+        "--repeats",
+        "{inference_runs}",
+        "--warmups",
+        "{warmup_runs}",
+        "--threads",
+        "{threads}",
+        "--upstream-dir",
+        "{reference:llama_upstream}",
+        "--json-out",
+        "{scenario_report}"
+      ],
+      "env": {},
+      "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+      "accuracy": {
+        "reference": "upstream_llama_cpp_tools",
+        "reference_id": "llama.cpp@707616fe llama-completion -cnv -st greedy",
+        "checks": [
+          {
+            "metric": "upstream_text_match",
+            "op": "==",
+            "value": 1,
+            "label": "greedy text == upstream llama.cpp tool"
+          }
+        ],
+        "require_metrics": [
+          "upstream_text_match"
+        ]
+      },
+      "metric_parser": "generic",
+      "light_globs": [
+        "llm_models/qwen2.5-0.5b-instruct-q8_0.gguf"
+      ]
     }
   ]
 }

@@ -1,0 +1,132 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-push-constants.h b/src/ggml-vulkan/ggml-vulkan-push-constants.h
+--- a/src/ggml-vulkan/ggml-vulkan-push-constants.h
++++ b/src/ggml-vulkan/ggml-vulkan-push-constants.h
+@@ -904,6 +904,8 @@
+     int32_t pad_y;
+     int32_t dilation_x;
+     int32_t dilation_y;
++    uint32_t has_bias;
++    uint32_t a_offset, b_offset, c_offset, d_offset;
+ };
+ 
+ struct vk_op_upscale_push_constants {
+@@ -1002,6 +1004,14 @@
+     GGML_ASSERT(!dst  || get_misalign_bytes(ctx, dst) == 0);
+ }
+ 
++template <> inline void init_pushconst_tensor_offsets(ggml_backend_vk_context * ctx, vk_op_conv2d_dw_push_constants &p, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * src2, const ggml_tensor * src3, ggml_tensor * dst) {
++    p.a_offset = get_misalign_bytes(ctx, src0) / ggml_type_size(src0->type);
++    p.b_offset = get_misalign_bytes(ctx, src1) / ggml_type_size(src1->type);
++    p.c_offset = src2 ? get_misalign_bytes(ctx, src2) / ggml_type_size(src2->type) : 0;
++    p.d_offset = get_misalign_bytes(ctx, dst) / ggml_type_size(dst->type);
++    GGML_UNUSED(src3);
++}
++
+ template <> inline void init_pushconst_tensor_offsets(ggml_backend_vk_context * ctx, vk_mat_vec_p021_push_constants &p, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * src2, const ggml_tensor * src3, ggml_tensor * dst) {
+     const uint32_t b_offset = get_misalign_bytes(ctx, src1) / ggml_type_size(src1->type);
+     const uint32_t d_offset = get_misalign_bytes(ctx, dst) / ggml_type_size(dst->type);
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -4099,12 +4099,12 @@
+ #undef CREATE_CONV3D
+     }
+ 
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f32, "conv2d_dw_whcn_f32", conv2d_dw_whcn_f32_len, conv2d_dw_whcn_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f32, "conv2d_dw_cwhn_f32", conv2d_dw_cwhn_f32_len, conv2d_dw_cwhn_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16_f32, "conv2d_dw_whcn_f16_f32", conv2d_dw_whcn_f16_f32_len, conv2d_dw_whcn_f16_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16_f32, "conv2d_dw_cwhn_f16_f32", conv2d_dw_cwhn_f16_f32_len, conv2d_dw_cwhn_f16_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16, "conv2d_dw_whcn_f16", conv2d_dw_whcn_f16_len, conv2d_dw_whcn_f16_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+-    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16, "conv2d_dw_cwhn_f16", conv2d_dw_cwhn_f16_len, conv2d_dw_cwhn_f16_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f32, "conv2d_dw_whcn_f32", conv2d_dw_whcn_f32_len, conv2d_dw_whcn_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f32, "conv2d_dw_cwhn_f32", conv2d_dw_cwhn_f32_len, conv2d_dw_cwhn_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16_f32, "conv2d_dw_whcn_f16_f32", conv2d_dw_whcn_f16_f32_len, conv2d_dw_whcn_f16_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16_f32, "conv2d_dw_cwhn_f16_f32", conv2d_dw_cwhn_f16_f32_len, conv2d_dw_cwhn_f16_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16, "conv2d_dw_whcn_f16", conv2d_dw_whcn_f16_len, conv2d_dw_whcn_f16_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16, "conv2d_dw_cwhn_f16", conv2d_dw_cwhn_f16_len, conv2d_dw_cwhn_f16_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+ 
+     for (uint32_t use_push = 0; use_push < 2; ++use_push) {
+         for (uint32_t i = 0; i < num_topk_moe_pipelines; ++i) {
+@@ -10138,7 +10138,7 @@
+     } else if (op == GGML_OP_OPT_STEP_SGD) {
+         // OPT_STEP_SGD works on src0, it does not need dst
+         ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { src0_buf, src1_buf, src2_buf }, pc, elements);
+-    } else if (op == GGML_OP_CONV_2D || op == GGML_OP_CONV_TRANSPOSE_2D) {
++    } else if (op == GGML_OP_CONV_2D || op == GGML_OP_CONV_TRANSPOSE_2D || op == GGML_OP_CONV_2D_DW) {
+         // Direct convolution always declares the optional FP32 bias binding.
+         ggml_vk_dispatch_pipeline(ctx, subctx, pipeline,
+             { src0_buf, src1_buf, dst_buf, use_src2 ? src2_buf : src0_buf }, pc, elements);
+@@ -12873,7 +12873,8 @@
+     GGML_ASSERT(src0->ne[3] == p.channels);
+     GGML_ASSERT(src1->ne[3] == p.batches);
+ 
+-    ggml_vk_op_f32(ctx, subctx, src0, src1, nullptr, nullptr, dst, GGML_OP_CONV_2D_DW, std::move(p));
++    p.has_bias = dst->src[2] != nullptr;
++    ggml_vk_op_f32(ctx, subctx, src0, src1, dst->src[2], nullptr, dst, GGML_OP_CONV_2D_DW, std::move(p));
+ }
+ 
+ void ggml_vk_leaky_relu(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, ggml_tensor * dst) {
+@@ -16807,6 +16808,7 @@
+         case GGML_OP_TIMESTEP_EMBEDDING:
+             return op->src[0]->type == GGML_TYPE_F32;
+         case GGML_OP_CONV_2D_DW:
++            if (op->src[2] && (op->src[2]->type != GGML_TYPE_F32 || !ggml_is_contiguous(op->src[2]))) return false;
+             return (op->src[0]->type == GGML_TYPE_F32 || op->src[0]->type == GGML_TYPE_F16) &&
+                 op->src[1]->type == op->type &&
+                 (op->type == GGML_TYPE_F32 ||
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+--- a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
++++ b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+@@ -19,11 +19,14 @@
+     int pad_y;
+     int dilation_x;
+     int dilation_y;
++    uint has_bias;
++    uint a_offset, b_offset, c_offset, d_offset;
+ } p;
+ 
+ layout (binding = 0) readonly buffer A {A_TYPE knl_data[];};
+ layout (binding = 1) readonly buffer B {B_TYPE src_data[];};
+ layout (binding = 2) writeonly buffer D {D_TYPE dst_data[];};
++layout (binding = 3) readonly buffer C {float bias_data[];};
+ 
+ layout(local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
+ 
+@@ -49,8 +52,8 @@
+             if (src_x >= p.src_w) { // src_x < 0 will wrap to a large unsigned int
+                 continue;
+             }
+-            FLOAT_TYPE v = FLOAT_TYPE(src_data[src_i + src_y * p.src_w + src_x]);
+-            FLOAT_TYPE k = FLOAT_TYPE(knl_data[knl_i + knl_y * p.knl_w + knl_x]);
++            FLOAT_TYPE v = FLOAT_TYPE(src_data[p.b_offset + src_i + src_y * p.src_w + src_x]);
++            FLOAT_TYPE k = FLOAT_TYPE(knl_data[p.a_offset + knl_i + knl_y * p.knl_w + knl_x]);
+             sum = fma(v, k, sum);
+         }
+     }
+@@ -80,8 +83,8 @@
+             if (src_x >= p.src_w) { // src_x < 0 will wrap to a large unsigned int
+                 continue;
+             }
+-            FLOAT_TYPE v = FLOAT_TYPE(src_data[src_i + src_y * src_row + src_x * p.channels + c]);
+-            FLOAT_TYPE k = FLOAT_TYPE(knl_data[        knl_y * knl_row + knl_x * p.channels + c]);
++            FLOAT_TYPE v = FLOAT_TYPE(src_data[p.b_offset + src_i + src_y * src_row + src_x * p.channels + c]);
++            FLOAT_TYPE k = FLOAT_TYPE(knl_data[p.a_offset + knl_y * knl_row + knl_x * p.channels + c]);
+             sum = fma(v, k, sum);
+         }
+     }
+@@ -100,6 +103,14 @@
+ #else
+         conv_2d_dw_cwhn(idx);
+ #endif
+-    dst_data[idx] = D_TYPE(result);
++    // 保留 F16/F32 卷积写出舍入，bias 是下一步独立加法。
++    precise FLOAT_TYPE rounded = FLOAT_TYPE(D_TYPE(result));
++#ifdef WHCN
++    uint c = (idx / (p.dst_w * p.dst_h)) % p.channels;
++#else
++    uint c = idx % p.channels;
++#endif
++    precise FLOAT_TYPE final_value = p.has_bias != 0 ? rounded + FLOAT_TYPE(bias_data[p.c_offset + c]) : rounded;
++    dst_data[p.d_offset + idx] = D_TYPE(final_value);
+ }
+ 

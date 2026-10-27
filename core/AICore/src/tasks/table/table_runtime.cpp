@@ -305,7 +305,7 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
                                      const float* nchw,
                                      std::string& error) {
     if (!encGraph_) {
-        encPlan_ = ocr::makeExecPlan(gpu, cpu, encoder_.sched_gpu_tagging);
+        encPlan_ = paddle::makeExecPlan(gpu, cpu, encoder_.sched_gpu_tagging);
         encoder_.resetFoldPool();
         const size_t tensorSize = ggml_tensor_overhead() * 500000;
         encCtx_ = ggml_init({tensorSize * 2, nullptr, /*no_alloc=*/true});
@@ -316,8 +316,8 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
         encInput_ = ggml_new_tensor_4d(encCtx_, GGML_TYPE_F32, padSize_,
                                        padSize_, 3, 1);
         ggml_set_input(encInput_);
-        const ocr::OcrBuildOptions options = ocr::execBuildOptions(encPlan_);
-        encOutput_ = ocr::buildGraph(encCtx_, encoder_, encInput_, &error,
+        const paddle::OcrBuildOptions options = paddle::execBuildOptions(encPlan_);
+        encOutput_ = paddle::buildGraph(encCtx_, encoder_, encInput_, &error,
                                      nullptr, nullptr, &options);
         if (!encOutput_) {
             if (error.empty()) error = "table: encoder graph build failed";
@@ -332,7 +332,7 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
             release();
             return false;
         }
-        if (!ocr::prepareGraph(encoder_, encCtx_, encPlan_, {encOutput_},
+        if (!paddle::prepareGraph(encoder_, encCtx_, encPlan_, {encOutput_},
                                &encGraph_, encExec_, error)) {
             release();
             return false;
@@ -341,7 +341,7 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
         tokens_ = encOutput_->ne[0] * encOutput_->ne[1];
     }
     ggml_backend_tensor_set(encInput_, nchw, 0, ggml_nbytes(encInput_));
-    ocr::computeGraph(encPlan_, encExec_, encGraph_);
+    paddle::computeGraph(encPlan_, encExec_, encGraph_);
     // NCHW (1, C, H', W') is ne{W', H', C}: flattening (W', H') gives
     // Ft = ne{T, C} with t = h * W' + w, the order of Paddle's
     // reshape(-1, C, -1) + transpose(0, 2, 1).

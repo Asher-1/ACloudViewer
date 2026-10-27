@@ -106,6 +106,7 @@
 #include "VideoSegmentExporter.h"
 #include "VideoTab.h"
 #include "aicore/backend_capi.h"
+#include "aicore/attribute_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/facedetect_capi.h"
@@ -6058,6 +6059,18 @@ void AnnotationWindow::populateModels() {
         m_models.append(model);
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
+    // 本地属性 recipe 由 owning task 提供；无下载 URL，不代表已发布资产。
+    for (int i = 0; i < aicore_attribute_preset_count(); ++i) {
+        const auto* preset = aicore_attribute_preset_at(i);
+        if (!preset) continue;
+        Model model;
+        model.filename = QString::fromUtf8(preset->filename);
+        model.family = QString::fromUtf8(preset->display_name);
+        model.quant = quantization(model.filename);
+        model.task = QStringLiteral("attribute");
+        m_models.append(model);
+        if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
+    }
     // Converted local recipes are useful before weights are published. They
     // never invent a URL; runDetection names the exact missing local file.
     for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
@@ -6203,6 +6216,7 @@ void AnnotationWindow::refreshQuantizations() {
             (selected->task == QStringLiteral("ram") ||
              selected->task == QStringLiteral("ram-caption") ||
              selected->task == QStringLiteral("ocr") ||
+             selected->task == QStringLiteral("attribute") ||
              selected->task == QStringLiteral("relate"));
     if (m_relateOptionsButton)
         m_relateOptionsButton->setVisible(selected != m_models.cend() &&
@@ -10280,7 +10294,9 @@ void AnnotationWindow::runDetection() {
     const bool tagging = found->task == QStringLiteral("ram") ||
                          found->task == QStringLiteral("ram-caption");
     const bool relate = found->task == QStringLiteral("relate");
-    char* cache = depthModel ? aicore_depth_model_cache_dir()
+    const bool attribute = found->task == QStringLiteral("attribute");
+    char* cache = attribute ? aicore_attribute_model_cache_dir()
+                  : depthModel ? aicore_depth_model_cache_dir()
                   : deeplsd  ? aicore_deeplsd_model_cache_dir()
                   : aliked   ? aicore_aliked_model_cache_dir()
                   : sam      ? aicore_sam3_model_cache_dir()
@@ -10315,6 +10331,8 @@ void AnnotationWindow::runDetection() {
         aicore_facedetect_free_buffer(cache);
     else if (ocr)
         aicore_ocr_free_buffer(cache);
+    else if (attribute)
+        aicore_attribute_free_buffer(cache);
     else if (tagging)
         aicore_tagging_free_buffer(cache);
     else if (relate)
@@ -10549,8 +10567,9 @@ void AnnotationWindow::runDetection() {
     }
     if (found->url.isEmpty()) {
         m_status->setText(
-                ocr ? tr("Place the converted OCR model in %1").arg(path)
-                    : tr("Model download URL is unavailable"));
+                attribute ? tr("Place the converted attribute model in %1").arg(path)
+                : ocr ? tr("Place the converted OCR model in %1").arg(path)
+                      : tr("Model download URL is unavailable"));
         return;
     }
     QDir().mkpath(QFileInfo(path).absolutePath());

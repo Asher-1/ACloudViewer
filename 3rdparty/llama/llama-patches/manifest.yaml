@@ -1,0 +1,7 @@
+# CPU migration experiment only. Not the production GPU patch chain.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0013-acv-elementwise-hint-api.patch
+    note: "保持跨 backend 相同的图注解 API；CPU 使用独立 ADD/GELU 回退。"
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+    note: "DW F32 写出后加 bias；覆盖 F32/F16 权重、通道及 batch。"

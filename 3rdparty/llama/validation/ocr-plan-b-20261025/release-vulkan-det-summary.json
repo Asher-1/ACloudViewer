@@ -1,0 +1,12 @@
+[
+  {
+    "quant": "f16",
+    "exit_code": 1,
+    "report": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-vulkan-det-f16.json"
+  },
+  {
+    "quant": "q8_0",
+    "exit_code": 0,
+    "report": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-vulkan-det-q8_0.json"
+  }
+]

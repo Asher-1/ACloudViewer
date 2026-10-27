@@ -38,6 +38,25 @@ AICORE_CAPI int aicore_yolo_abi_version(void);
 typedef struct aicore_yolo_ctx aicore_yolo_ctx;
 typedef struct aicore_yolo_options aicore_yolo_options;
 
+/** PSA 两处矩阵乘的累加模式；不改变权重、激活或输出的存储类型。 */
+typedef enum aicore_yolo_attention_accumulation {
+    AICORE_YOLO_ATTENTION_UPSTREAM = 0,
+    AICORE_YOLO_ATTENTION_F32 = 1
+} aicore_yolo_attention_accumulation;
+
+/** 设置加载时复制的累加模式（默认 UPSTREAM）。
+ *  成功返回 0；NULL 或非法模式返回 -1，且不覆盖最后有效值。
+ *  F32 请求仅作用于 PSA 的两处矩阵乘，不表示全图均采用 F32 运算。 */
+AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
+        aicore_yolo_options* opts, int mode);
+/** 返回已配置模式；NULL 返回 -1。 */
+AICORE_CAPI int aicore_yolo_options_get_attention_accumulation(
+        const aicore_yolo_options* opts);
+/** 返回已加载会话的配置模式；NULL 或无模型的 context 返回 -1。
+ *  这是配置请求，不保证每个后端采用相同的 operand 算术路径。 */
+AICORE_CAPI int aicore_yolo_context_attention_accumulation(
+        const aicore_yolo_ctx* ctx);
+
 /** Creates a default options struct (device "auto", threads 0 = backend
  *  default). Release with aicore_yolo_options_free. */
 AICORE_CAPI aicore_yolo_options* aicore_yolo_options_new(void);

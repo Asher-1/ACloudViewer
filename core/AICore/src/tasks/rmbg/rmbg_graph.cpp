@@ -346,12 +346,12 @@ struct GraphBuilder {
         char custom_name[GGML_MAX_NAME];
         ggml_tensor *out = nullptr;
         // CUDA: no custom-op dispatch anymore (the cuDNN conv was removed from
-        // 3rdparty/llama/ggml-patches). ggml_conv_2d_direct is NOT used here either:
-        // its generic layout contract does not match the RMBG graph (verified
-        // numerically broken during the cuDNN-removal A/B). CUDA conv runs the
-        // im2col decomposition below: F16 im2col + F16 weights on the fast
-        // profile (F16 matrix-unit GEMM, mirrors the Metal branch), pure F32
-        // under strict_math.
+        // 3rdparty/llama/ggml-patches). ggml_conv_2d_direct is NOT used here
+        // either: its generic layout contract does not match the RMBG graph
+        // (verified numerically broken during the cuDNN-removal A/B). CUDA conv
+        // runs the im2col decomposition below: F16 im2col + F16 weights on the
+        // fast profile (F16 matrix-unit GEMM, mirrors the Metal branch), pure
+        // F32 under strict_math.
         if (use_vulkan_direct_conv) {
             out = ggml_conv_2d_direct(ctx, w, input, stride, stride, pad, pad,
                                       1, 1);

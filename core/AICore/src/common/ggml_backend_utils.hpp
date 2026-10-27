@@ -146,6 +146,13 @@ inline void load_backends_once() {
     (void)done;
 }
 
+// AICore's ggml log callback, for libraries whose logger setter also replaces
+// ggml's process-wide logger (llama_log_set): handing them this callback keeps
+// ggml routing identical while their messages follow the same policy.
+inline ggml_log_callback log_bridge_callback() {
+    return aicore::ggml_log_bridge_callback();
+}
+
 // Set CPU thread count through the backend registry.
 // In a DL build the symbol lives in the variant .so, not the linked base;
 // in a static build ggml_backend_cpu_set_n_threads is directly available.

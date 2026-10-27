@@ -27,6 +27,7 @@
 #include "aicore/facedetect_capi.h"
 #include "aicore/gkd_capi.h"
 #include "aicore/lingbot_capi.h"
+#include "aicore/llm_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
@@ -127,6 +128,11 @@ void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_tagging_model_count(); ++i) {
         const auto* e = aicore_tagging_model_at(i);
         emitAsset("tagging", "ram_models", e->filename, e->download_url,
+                  e->size_bytes);
+    }
+    for (int i = 0; i < aicore_llm_model_count(); ++i) {
+        const auto* e = aicore_llm_model_at(i);
+        emitAsset("llm", "llm_models", e->filename, e->download_url,
                   e->size_bytes);
     }
 

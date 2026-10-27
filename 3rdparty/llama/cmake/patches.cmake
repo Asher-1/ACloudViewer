@@ -5,7 +5,7 @@
 # validates and applies its ordered unified diffs using git. Disabled backend
 # sections stay inert; candidate manifests must first port those sections.
 set(_GGML_PATCH_SCRIPT
-    "${_LLAMA_RUNTIME_DIR}/ggml-patches/apply_ggml_patches.py")
+    "${_LLAMA_RUNTIME_DIR}/llama-patches/apply_ggml_patches.py")
 set(_GGML_PATCH_MANIFEST
     "${_GGML_OWNER_PATCH_MANIFEST}")
 file(GLOB_RECURSE _GGML_PATCH_FILES CONFIGURE_DEPENDS

@@ -1,0 +1,36 @@
+# Combined GPU candidate: one llama source owner and one embedded ggml.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+  - file: 0002-acv-cuda-operators.patch
+  - file: 0003-acv-cuda-dispatch-api.patch
+  - file: 0004-acv-cuda-attention-linkage.patch
+  - file: 0005-acv-vulkan-operators.patch
+  - file: 0006-acv-cuda-native-output-stride.patch
+  - file: 0007-acv-sam3d-allocation-size.patch
+  - file: 0008-acv-vulkan-q4-k-copy-route.patch
+  - file: 0009-acv-vulkan-pattern-short-circuit.patch
+    note: "Short-circuit failed fusion-pattern matches without changing graph ordering, alias dependencies or supported fusions; model performance qualification remains required."
+  - file: 0010-acv-vulkan-dependency-metadata.patch
+    note: "Cache source and view-base metadata within one optimizer call; retain every direct and alias dependency. Requires predicate, graph-order and model regression."
+  - file: 0011-acv-cuda-im2col-spatial-blocks.patch
+    note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
+  - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
+    note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
+  - file: 0013-acv-elementwise-epilogue.patch
+    note: "显式 ADD/GELU epilogue：完整单消费者融合域、最终输出偏移和输入分配依赖；CPU/CUDA 保留独立计算，必须通过逐位及模型回归。"
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+  - file: 0014-acv-depthwise-bias-cuda.patch
+  - file: 0014-acv-depthwise-bias-vulkan.patch
+    note: "DW 写出舍入后加 F32 bias；覆盖通道、batch、F16 舍入与非对齐 bias view。"
+  - file: 0015-acv-llama-cuda-numerics.patch
+    note: "LLM 与非 LLM 逐位作用域回归；CUDA Graph 命名语义独立缓存。"
+  - file: 0016-acv-vulkan-dw-bias-rounding.patch
+    note: "Vulkan F16 中间存储舍入显式化；保持独立 ADD 的算术。"
+  - file: 0017-acv-vulkan-pool2d-dispatch.patch
+    note: "F16 POOL_2D 的 workgroup 与 local-size 元数据一致；独立 sentinel/oracle 和真实 YOLO 门验证。"
+  - file: 0018-acv-vulkan-dw-debug-bias.patch
+    note: "DW 结果检查器的 CPU clone 复制 bias 输入，保持诊断与实际计算语义一致。"
+  - file: 0019-acv-cuda-pool2d-average.patch
+    note: "AVG 在 F32 中先求和再 RNE 除面积；scalar/warp 独立 oracle 和真实消费者门必需。"
+  - file: 0020-acv-cuda-igemm-plan-owner.patch
+    note: "读取 task 的单调计划身份，防止同地址/形状跨模型复用旧权重；公共 ABI 模型切换及原精度/性能门必需。"

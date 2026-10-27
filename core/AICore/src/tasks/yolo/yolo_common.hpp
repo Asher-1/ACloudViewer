@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "aicore/yolo_capi.h"
 #include "common/aicore_log.hpp"
 
 #include "ggml.h"
@@ -81,6 +82,8 @@ struct SessionOptions {
     // session_prepare_visual_masks.
     int visual_count = 0;
     std::vector<float> visual_boxes;  // [4 * visual_count], original pixels
+    aicore_yolo_attention_accumulation attention_accumulation =
+            AICORE_YOLO_ATTENTION_UPSTREAM;
 };
 
 // Detection result -----------------------------------------------------------

@@ -1,5 +1,6 @@
 # Shared backend/install contract for the ggml and llama source owners.
-# Owned by llama; the old ../ggml/ggml.cmake entry is a regression baseline.
+# Owned by llama; the old ../ggml/ggml.cmake entry was retired when every
+# task re-anchored its numeric baseline on the 0.27 embedded ggml.
 # Exports: ${GGML_INCLUDE_DIRS}
 # Exports: ${GGML_LIB_DIR}
 # Exports: ${GGML_LIBRARIES}

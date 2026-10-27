@@ -162,4 +162,6 @@ void install_ggml_log_bridge() {
     (void)installed;
 }
 
+ggml_log_callback ggml_log_bridge_callback() { return ggml_log_forward_cb; }
+
 }  // namespace aicore

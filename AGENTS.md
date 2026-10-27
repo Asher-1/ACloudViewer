@@ -14,7 +14,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | GitHub Actions runner failures | `.agents/skills/github-ci-runner-debugging/SKILL.md`, `.agents/rules/acloudviewer-ci-debugging.mdc` |
 
 For AICore work, the skill is the engineering contract. Current public headers,
-CMake, `3rdparty/llama/ggml-patches/manifest.yaml`, and current test output override
+CMake, `3rdparty/llama/llama-patches/manifest.yaml`, and current test output override
 stale prose or historical benchmark reports.
 
 ## Project Overview
@@ -116,7 +116,7 @@ Plugin entry: each plugin implements `QObject` + `ccStdPluginInterface`, ships `
   live contexts.
 - Task behavior is configured through options, never task-local environment
   variables. Production code contains no developer-machine absolute paths.
-- ggml changes are ordered patches in `3rdparty/llama/ggml-patches/manifest.yaml`;
+- ggml changes are ordered patches in `3rdparty/llama/llama-patches/manifest.yaml`;
   extracted `build*/ggml/` trees are disposable.
 - Accuracy requires task-specific numeric gates. Backend parity does not replace
   upstream-framework truth. Performance claims require controlled A/B evidence.

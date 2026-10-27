@@ -24,6 +24,7 @@
 #include "RelateAnythingDecode.h"
 #include "SlicedDetection.h"
 #include "aicore/aliked_capi.h"
+#include "aicore/attribute_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/facedetect_capi.h"
@@ -113,6 +114,8 @@ AnnotationWorker::~AnnotationWorker() {
         aicore_facedetect_free(static_cast<aicore_facedetect_ctx*>(m_context));
     else if (m_kind == ModelKind::Ocr)
         aicore_ocr_context_destroy(static_cast<aicore_ocr_ctx*>(m_context));
+    else if (m_kind == ModelKind::Attribute)
+        aicore_attribute_free(static_cast<aicore_attribute_ctx*>(m_context));
     else if (m_kind == ModelKind::DeepLSD)
         aicore_deeplsd_free(static_cast<aicore_deeplsd_ctx*>(m_context));
     else if (m_kind == ModelKind::ALIKED)
@@ -173,6 +176,7 @@ void AnnotationWorker::infer(const QString& modelPath,
             : task.startsWith(QStringLiteral("facedetect"))
                     ? ModelKind::FaceDetect
             : task == QStringLiteral("ocr")     ? ModelKind::Ocr
+            : task == QStringLiteral("attribute") ? ModelKind::Attribute
             : task == QStringLiteral("deeplsd") ? ModelKind::DeepLSD
             : task == QStringLiteral("aliked")  ? ModelKind::ALIKED
             : (task == QStringLiteral("ram") ||
@@ -222,6 +226,8 @@ void AnnotationWorker::infer(const QString& modelPath,
                     static_cast<aicore_facedetect_ctx*>(m_context));
         else if (m_kind == ModelKind::Ocr)
             aicore_ocr_context_destroy(static_cast<aicore_ocr_ctx*>(m_context));
+        else if (m_kind == ModelKind::Attribute)
+            aicore_attribute_free(static_cast<aicore_attribute_ctx*>(m_context));
         else if (m_kind == ModelKind::DeepLSD)
             aicore_deeplsd_free(static_cast<aicore_deeplsd_ctx*>(m_context));
         else if (m_kind == ModelKind::ALIKED)
@@ -394,6 +400,21 @@ void AnnotationWorker::infer(const QString& modelPath,
             }
             m_modelPath = modelPath;
             m_metricModelPath = metricModelPath;
+            m_device = device;
+            m_kind = kind;
+        } else if (kind == ModelKind::Attribute) {
+            auto options = aicore_attribute_default_options();
+            options.model_path = pathBytes.constData();
+            options.device = deviceBytes.constData();
+            auto* context = aicore_attribute_create(&options);
+            if (!aicore_attribute_ready(context)) {
+                result.error = QString::fromUtf8(aicore_attribute_last_error(context));
+                aicore_attribute_free(context);
+                emit finished(result);
+                return;
+            }
+            m_context = context;
+            m_modelPath = modelPath;
             m_device = device;
             m_kind = kind;
         } else if (kind == ModelKind::Ocr) {
@@ -748,6 +769,32 @@ void AnnotationWorker::infer(const QString& modelPath,
     const aicore_image_view view{pixels.constBits(), pixels.width(),
                                  pixels.height(), size_t(pixels.bytesPerLine()),
                                  AICORE_IMAGE_RGBA8};
+    if (kind == ModelKind::Attribute) {
+        auto* context = static_cast<aicore_attribute_ctx*>(m_context);
+        aicore_attribute_result* output = nullptr;
+        if (aicore_attribute_run(context, &view, &output) != 0 || !output) {
+            result.error = QString::fromUtf8(aicore_attribute_last_error(context));
+        } else {
+            AnnotationShape shape;
+            shape.type = QStringLiteral("rectangle");
+            shape.label = QString::fromUtf8(output->label);
+            shape.points = {{0, 0}, {double(output->width), 0},
+                {double(output->width), double(output->height)}, {0, double(output->height)}};
+            QJsonObject attributes;
+            for (size_t i = 0; i < output->attribute_count; ++i) {
+                const auto& attribute = output->attributes[i];
+                attributes.insert(QString::fromUtf8(attribute.name), QString::fromUtf8(attribute.value));
+            }
+            shape.extra.insert(QStringLiteral("attributes"), attributes);
+            result.shapes.append(shape);
+            result.replaceShapes = true;
+            result.summary = tr("%1 attributes: %2").arg(shape.label).arg(output->attribute_count);
+        }
+        aicore_attribute_result_free(output);
+        result.device = QString::fromUtf8(aicore_attribute_context_device(context));
+        emit finished(result);
+        return;
+    }
     if (kind == ModelKind::Depth) {
         auto* context = static_cast<aicore_depth_ctx*>(m_context);
         aicore_depth_dense_result dense{};

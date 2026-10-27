@@ -3,6 +3,7 @@ target_sources(${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/qAnyLabeling.h
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationWindow.h
         ${CMAKE_CURRENT_LIST_DIR}/ChatServiceClient.h
+        ${CMAKE_CURRENT_LIST_DIR}/LocalChatEngine.h
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationChatConfig.h
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationChatStyles.inc
         ${CMAKE_CURRENT_LIST_DIR}/ChatPromptDialog.h

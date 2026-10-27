@@ -130,6 +130,35 @@ int runCase3() {
     return 0;
 }
 
+int runOpenCvLetterboxCase() {
+    // 捕获浮点插值 + 0.5 舍入替代 OpenCV 8U 定点路径的错误。
+    // 独立 cv2.INTER_LINEAR 参照：3x2 RGB -> 5x3；中间行包含半整数。
+    const uint8_t source[] = {10, 20, 30, 40, 50, 60, 70, 80, 90,
+                             11, 21, 31, 41, 51, 61, 71, 81, 91};
+    const uint8_t expected[] = {
+            10, 20, 30, 22, 32, 42, 40, 50, 60, 58, 68, 78, 70, 80, 90,
+            11, 21, 31, 22, 32, 42, 41, 51, 61, 59, 69, 79, 71, 81, 91,
+            11, 21, 31, 23, 33, 43, 41, 51, 61, 59, 69, 79, 71, 81, 91};
+    yolo::LetterboxInfo info;
+    std::vector<float> canvas;
+    yolo::letterbox_image(yolo::Image{3, 2, source}, 5, info, canvas);
+    CHECK(info.new_w == 5 && info.new_h == 3);
+    CHECK(info.pad_w == 0 && info.pad_h == 1);
+    CHECK(info.imgsz_w == 5 && info.imgsz_h == 5);
+    CHECK(canvas.size() == 75);
+    for (int c = 0; c < 3; ++c) {
+        for (int y = 0; y < 5; ++y) {
+            for (int x = 0; x < 5; ++x) {
+                const uint8_t value = y == 0 || y == 4
+                                              ? 114
+                                              : expected[((y - 1) * 5 + x) * 3 + c];
+                CHECK(canvas[c * 25 + y * 5 + x] == value / 255.0f);
+            }
+        }
+    }
+    return 0;
+}
+
 int runStrideAwarePreprocessCase() {
     constexpr int w = 3;
     constexpr int h = 2;
@@ -200,6 +229,8 @@ int main() {
     rc = runCase3();
     if (rc != 0) return rc;
     rc = runStrideAwarePreprocessCase();
+    if (rc != 0) return rc;
+    rc = runOpenCvLetterboxCase();
     if (rc != 0) return rc;
     std::printf("test_yolo_unscale_masks: all checks passed\n");
     return 0;

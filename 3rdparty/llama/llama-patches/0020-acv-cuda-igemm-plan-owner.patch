@@ -1,0 +1,47 @@
+diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -946,6 +946,8 @@ struct igemm_conv_plan {
+     void * nhwc_input  = nullptr;
+     void * nhwc_output = nullptr;
+     void * nhwc_weight = nullptr;
++    // 地址和形状可在 context 销毁后复用；task 的单调身份区分不同模型权重。
++    uint64_t owner_id = 0;
+     // Full (input, dst, kernel) geometry snapshot. The cache is keyed by the
+     // dst POINTER, and byte sizes alone cannot distinguish two convs that a
+     // rebuilt graph placed at the same pointer with equal byte counts but
+@@ -1015,5 +1017,6 @@ static igemm_conv_plan * igemm_create_plan(ggml_tensor * dst, cudaStream_t stream) {
+ 
+     auto plan = std::make_unique<igemm_conv_plan>();
++    memcpy(&plan->owner_id, &dst->op_params[8], sizeof(plan->owner_id));
+     const int64_t in_nbytes  = ggml_nbytes(input);
+     const int64_t out_nbytes = ggml_nbytes(dst);
+     for (int i = 0; i < 4; ++i) {
+@@ -1118,6 +1121,9 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+         // shape. (The historical op_params[8..9] owner_id read a constant 0
+         // for constructors that never write it and carried no information.)
+-        bool geometry_changed = plan && (plan->in_type != input->type ||
++        uint64_t owner_id = 0;
++        memcpy(&owner_id, &dst->op_params[8], sizeof(owner_id));
++        bool geometry_changed = plan && (plan->owner_id != owner_id ||
++                                         plan->in_type != input->type ||
+                                          plan->w_type != kernel->type);
+         for (int i = 0; plan && i < 4 && !geometry_changed; ++i) {
+             geometry_changed = plan->in_ne[i] != input->ne[i] ||
+@@ -1131,5 +1137,7 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+             // buffers only after every queued kernel has retired.
+             cudaStreamSynchronize(ctx.stream());
++            // 在释放 owning plan 前移除它发布的布局副本，禁止陈旧指针继续命中。
++            g_nhwc_copies.erase(dst);
+             g_igemm_plans.erase(it);
+             plan = igemm_create_plan(dst, ctx.stream());
+             if (!plan) g_igemm_plans.emplace(dst, std::unique_ptr<igemm_conv_plan>(nullptr));
+@@ -1176,6 +1184,8 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const bool chained = cit != g_nhwc_copies.end() &&
+                          cit->second.plan != nullptr &&
+                          cit->second.plan == owner &&
++                         input->op == GGML_OP_CONV_2D &&
++                         owner->owner_id == plan->owner_id &&
+                          cit->second.type == input->type &&
+                          cit->second.ne[0] == input->ne[0] &&
+                          cit->second.ne[1] == input->ne[1] &&

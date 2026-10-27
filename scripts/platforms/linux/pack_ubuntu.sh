@@ -33,13 +33,15 @@ should_exclude_lib() {
     return 1
 }
 
-# ggml dynamic backends (libggml-cpu*.so, libggml-vulkan.so, …) are copied by
-# CopyGgmlBackends / InstallGgmlBackends, not linked via DT_NEEDED. Running ldd
-# on them only flattens symlink chains and never discovers dlopen modules.
+# ggml dynamic backends (libggml-cpu*.so, libggml-vulkan.so, …) and the shared
+# core (libggml, libggml-base, libllama, libmtmd) are copied by
+# CopyGgmlBackends / InstallGgmlBackends with their soname symlink chains.
+# Running ldd on them only flattens those chains and never discovers dlopen
+# modules.
 should_skip_pack_target() {
     local base_name="$1"
     case "$base_name" in
-        libggml.so*|libggml-base.so*|libggml-cpu*.so|libggml-*.so)
+        libggml.so*|libggml-base.so*|libggml-cpu*.so|libggml-*.so|libllama.so*|libmtmd.so*)
             return 0
             ;;
     esac

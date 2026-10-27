@@ -56,6 +56,7 @@
 
 #include "AnnotationChatConfig.h"
 #include "ChatServiceClient.h"
+#include "LocalChatEngine.h"
 
 #define REQUIRE(x)                                               \
     do {                                                         \
@@ -118,6 +119,151 @@ int main(int argc, char** argv) {
                               .filePath("chat-model-refresh-native.json"));
         REQUIRE(fixture.open(QIODevice::WriteOnly) &&
                 fixture.write(QJsonDocument(refreshCases).toJson()) > 0);
+    }
+    // Local provider: aicore://llm lists the AICore llm catalog (models, not
+    // projectors) asynchronously and runs generation on the shared worker.
+    {
+        ChatServiceClient::Settings local;
+        local.baseUrl = QUrl(AnnotationChatConfig::defaultProviders()
+                                     .value("local")
+                                     .toObject()
+                                     .value("api_address")
+                                     .toString());
+        REQUIRE(LocalChatEngine::isLocal(local.baseUrl));
+        ChatServiceClient client;
+        QJsonArray models;
+        QString error = "unset";
+        int lists = 0;
+        QObject::connect(&client, &ChatServiceClient::modelsReady,
+                         [&](const QJsonArray& value, const QString& why) {
+                             models = value;
+                             error = why;
+                             ++lists;
+                         });
+        client.fetchModels(local);
+        REQUIRE(lists == 0);  // asynchronous like the HTTP transport
+        client.cancel();      // a cancelled listing is never delivered
+        QCoreApplication::processEvents();
+        REQUIRE(lists == 0);
+        client.fetchModels(local);
+        REQUIRE(waitFor([&]() { return lists == 1; }) && error.isEmpty());
+        QStringList ids;
+        for (const auto& value : models) {
+            const auto object = value.toObject();
+            ids << object.value("id").toString();
+            REQUIRE(!ids.last().startsWith("mmproj-"));
+            REQUIRE(object.value("vision").toBool() ==
+                    ids.last().startsWith("SmolVLM"));
+        }
+        REQUIRE(ids.contains("SmolVLM-500M-Instruct-Q8_0.gguf") &&
+                ids.contains("qwen2.5-0.5b-instruct-q8_0.gguf"));
+
+        QString text, finalError, streamed;
+        int done = 0;
+        QObject::connect(&client, &ChatServiceClient::textReceived,
+                         [&](const QString& delta) { streamed += delta; });
+        QObject::connect(&client, &ChatServiceClient::finished,
+                         [&](const QString& value, const QString& why) {
+                             text = value;
+                             finalError = why;
+                             ++done;
+                         });
+        local.model = "not-a-catalog-model.gguf";
+        client.complete(local, QJsonArray{QJsonObject{{"role", "user"},
+                                                      {"content", "hi"}}});
+        REQUIRE(done == 1 && finalError.contains("Unknown local model"));
+
+        // Real generation only when the catalog files are already verified
+        // in the data root: a unit test never downloads hundreds of MB.
+        const auto waitLong = [](const std::function<bool()>& predicate) {
+            QElapsedTimer time;
+            time.start();
+            while (!predicate() && time.elapsed() < 300000)
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+            return predicate();
+        };
+        QVector<LocalChatEngine::Asset> missing;
+        local.model = "qwen2.5-0.5b-instruct-q8_0.gguf";
+        local.temperature = 0;
+        if (LocalChatEngine::missingAssets(local.model, &missing, &error) &&
+            missing.isEmpty()) {
+            const QJsonArray question{QJsonObject{
+                    {"role", "user"},
+                    {"content",
+                     "What is the capital of France? Answer in one word."}}};
+            done = 0;
+            streamed.clear();
+            client.complete(local, question);
+            REQUIRE(client.busy());
+            REQUIRE(waitLong([&]() { return done == 1; }));
+            REQUIRE(finalError.isEmpty() && text.contains("Paris") &&
+                    streamed == text && !client.busy());
+            // Cancel after the first fragment: nothing is delivered later,
+            // and the shared engine serves the next request normally.
+            local.maxTokens = 256;
+            done = 0;
+            streamed.clear();
+            QMetaObject::Connection stop = QObject::connect(
+                    &client, &ChatServiceClient::textReceived,
+                    [&](const QString&) { client.cancel(); });
+            client.complete(local, QJsonArray{QJsonObject{
+                                           {"role", "user"},
+                                           {"content",
+                                            "Write a long story about the "
+                                            "sea."}}});
+            REQUIRE(waitLong([&]() { return !streamed.isEmpty(); }));
+            QObject::disconnect(stop);
+            const QString partial = streamed;
+            QElapsedTimer settle;
+            settle.start();
+            while (settle.elapsed() < 1500)
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+            REQUIRE(done == 0 && streamed == partial && !client.busy());
+            local.maxTokens = 0;
+            client.complete(local, question);
+            REQUIRE(waitLong([&]() { return done == 1; }) &&
+                    finalError.isEmpty() && text.contains("Paris"));
+            // Destroying a client mid-request must not deliver into it.
+            {
+                ChatServiceClient doomed;
+                doomed.complete(local, question);
+            }
+            QElapsedTimer drain;
+            drain.start();
+            while (drain.elapsed() < 1500)
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+        } else {
+            std::puts("local provider generation: catalog model not cached, "
+                      "skipped");
+        }
+        local.model = "SmolVLM-500M-Instruct-Q8_0.gguf";
+        if (LocalChatEngine::missingAssets(local.model, &missing, &error) &&
+            missing.isEmpty()) {
+            // Image parts arrive as OpenAI data URLs (userMessage) and are
+            // decoded for the projector inside the engine.
+            QImage image(64, 48, QImage::Format_RGB888);
+            image.fill(Qt::red);
+            // Kept out of temp.path(): later VQA cases list that folder.
+            REQUIRE(QDir(temp.path()).mkpath("local-llm"));
+            const QString path = temp.filePath("local-llm/red.png");
+            REQUIRE(image.save(path));
+            QString imageError;
+            const auto message = ChatServiceClient::userMessage(
+                    "What color is this image? Answer in one word.", path,
+                    &imageError);
+            REQUIRE(imageError.isEmpty());
+            done = 0;
+            client.complete(local, QJsonArray{message});
+            REQUIRE(waitLong([&]() { return done == 1; }));
+            REQUIRE(finalError.isEmpty() &&
+                    text.toLower().contains("red"));
+            // A text-only model rejects images with a typed error.
+            local.model = "qwen2.5-0.5b-instruct-q8_0.gguf";
+            done = 0;
+            client.complete(local, QJsonArray{message});
+            REQUIRE(waitLong([&]() { return done == 1; }) &&
+                    finalError.contains("does not accept images"));
+        }
     }
     QTcpServer server;
     REQUIRE(server.listen(QHostAddress::LocalHost));
@@ -502,9 +648,11 @@ int main(int argc, char** argv) {
     const auto clearVqa = [&](QMessageBox::StandardButton answer) {
         bool defaultNo = false;
         QTimer::singleShot(0, vqa, [&]() {
-            auto* question = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+            auto* question = qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget());
             if (question) {
-                defaultNo = question->defaultButton() == question->button(QMessageBox::No);
+                defaultNo = question->defaultButton() ==
+                            question->button(QMessageBox::No);
                 question->button(answer)->click();
             }
         });
@@ -514,7 +662,8 @@ int main(int argc, char** argv) {
     REQUIRE(clearVqa(QMessageBox::No) &&
             readJson(sidecar.fileName()) == beforeVqaClear);
     REQUIRE(clearVqa(QMessageBox::Yes));
-    const auto clearedVqa = readJson(sidecar.fileName()).value("vqaData").toObject();
+    const auto clearedVqa =
+            readJson(sidecar.fileName()).value("vqaData").toObject();
     REQUIRE(clearedVqa.value("Caption") == "" &&
             clearedVqa.value("Radio").isNull() &&
             clearedVqa.value("Choice").isNull() &&
@@ -580,7 +729,8 @@ int main(int argc, char** argv) {
     REQUIRE(vqaPage->text() == "2");
     vqaPrevious->click();
     REQUIRE(vqaPage->text() == "1" && !vqaPrevious->isEnabled() &&
-            vqaNext->isEnabled() && caption->toPlainText() == "manual caption" &&
+            vqaNext->isEnabled() &&
+            caption->toPlainText() == "manual caption" &&
             vqaSplitter->sizes().first() == 0);
     // The current path is unchanged: refresh must reload disk data through
     // the owning workspace rather than reuse the VQA dialog's snapshot.
@@ -618,31 +768,36 @@ int main(int argc, char** argv) {
         const auto text = filename->palette().color(QPalette::WindowText);
         const auto exportColor = exportButton->grab().toImage().pixelColor(
                 exportButton->width() / 2, 5);
-        std::fprintf(stderr, "VQA theme %s: surface=%s text=%s export=%s workspace=%s\n",
-                     qPrintable(mode), qPrintable(surface.name()),
-                     qPrintable(text.name()), qPrintable(exportColor.name()),
-                     qPrintable(window->palette().color(QPalette::Window).name()));
+        std::fprintf(
+                stderr,
+                "VQA theme %s: surface=%s text=%s export=%s workspace=%s\n",
+                qPrintable(mode), qPrintable(surface.name()),
+                qPrintable(text.name()), qPrintable(exportColor.name()),
+                qPrintable(window->palette().color(QPalette::Window).name()));
         REQUIRE(surface == QColor(mode == "dark" ? "#2c2c2e" : "#F9F9F9") &&
                 text == QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f") &&
                 exportColor == QColor("#10b981"));
         QJsonObject styles;
-        for (const char* name : {"VQAMainSplitter", "VQAFilename",
-                                 "VQAImageContainer", "VQAImagePreview",
-                                 "VQAPageInput", "VQARefresh", "VQARefreshRight",
-                                 "VQAToggleSidebar", "VQAToggleSidebarRight",
-                                 "VQAPrevious", "VQANext", "VQAAddComponent",
-                                 "VQAExport", "VQAClearCurrent"}) {
+        for (const char* name :
+             {"VQAMainSplitter", "VQAFilename", "VQAImageContainer",
+              "VQAImagePreview", "VQAPageInput", "VQARefresh",
+              "VQARefreshRight", "VQAToggleSidebar", "VQAToggleSidebarRight",
+              "VQAPrevious", "VQANext", "VQAAddComponent", "VQAExport",
+              "VQAClearCurrent"}) {
             auto* widget = vqa->findChild<QWidget*>(name);
             REQUIRE(widget);
             styles.insert(name, widget->styleSheet());
         }
-        vqaThemes.append(QJsonObject{{"mode", mode}, {"styles", styles},
-                                     {"image_container_surface", surface.name()},
-                                     {"filename_text", text.name()},
-                                     {"export_background", exportColor.name()}});
+        vqaThemes.append(
+                QJsonObject{{"mode", mode},
+                            {"styles", styles},
+                            {"image_container_surface", surface.name()},
+                            {"filename_text", text.name()},
+                            {"export_background", exportColor.name()}});
         if (argc == 3)
-            REQUIRE(vqa->grab().save(QDir(QString::fromLocal8Bit(argv[2]))
-                                            .filePath("vqa-window-" + mode + ".png")));
+            REQUIRE(vqa->grab().save(
+                    QDir(QString::fromLocal8Bit(argv[2]))
+                            .filePath("vqa-window-" + mode + ".png")));
     }
     if (argc == 3) {
         QFile fixture(QDir(QString::fromLocal8Bit(argv[2]))
@@ -654,15 +809,24 @@ int main(int argc, char** argv) {
         QFile fixture(QDir(QString::fromLocal8Bit(argv[2]))
                               .filePath("vqa-navigation-native.json"));
         REQUIRE(fixture.open(QIODevice::WriteOnly));
-        fixture.write(QJsonDocument(QJsonObject{
-                {"page_size", QJsonArray{vqaPage->width(), vqaPage->height()}},
-                {"splitter_handle", vqaSplitter->handleWidth()},
-                {"panel_button_size", QJsonArray{vqaToggle->width(), vqaToggle->height()}},
-                {"nav_button_size", QJsonArray{vqaPrevious->width(), vqaPrevious->height()}},
-                {"cleared_vqa", clearedVqa},
-                {"first_page", QJsonArray{false, true}},
-                {"last_page", QJsonArray{true, false}},
-                {"empty_restored", "2"}, {"over_maximum", "2"}}).toJson());
+        fixture.write(
+                QJsonDocument(
+                        QJsonObject{
+                                {"page_size", QJsonArray{vqaPage->width(),
+                                                         vqaPage->height()}},
+                                {"splitter_handle", vqaSplitter->handleWidth()},
+                                {"panel_button_size",
+                                 QJsonArray{vqaToggle->width(),
+                                            vqaToggle->height()}},
+                                {"nav_button_size",
+                                 QJsonArray{vqaPrevious->width(),
+                                            vqaPrevious->height()}},
+                                {"cleared_vqa", clearedVqa},
+                                {"first_page", QJsonArray{false, true}},
+                                {"last_page", QJsonArray{true, false}},
+                                {"empty_restored", "2"},
+                                {"over_maximum", "2"}})
+                        .toJson());
     }
     auto* exportLabels = vqa->findChild<QPushButton*>("VQAExport");
     REQUIRE(exportLabels);
@@ -1325,11 +1489,12 @@ int main(int argc, char** argv) {
             temperatureSlider->value() == 13);
     temperatureSlider->setValue(17);
     REQUIRE(chatTemperature->value() == 1.7 &&
-            readJson(modelsConfig).value("settings").toObject()
+            readJson(modelsConfig)
+                            .value("settings")
+                            .toObject()
                             .value("temperature") == 17);
     temperatureSlider->setValue(13);
-    auto* visibility =
-            chat->findChild<QPushButton*>("ChatApiKeyVisibility");
+    auto* visibility = chat->findChild<QPushButton*>("ChatApiKeyVisibility");
     REQUIRE(visibility && chatKey->echoMode() == QLineEdit::Password);
     visibility->click();
     REQUIRE(chatKey->echoMode() == QLineEdit::Normal);
@@ -1347,32 +1512,37 @@ int main(int argc, char** argv) {
                 providersPanel->grab().toImage().pixelColor(5, 5);
         const auto middleColor =
                 conversationPanel->grab().toImage().pixelColor(5, 5);
-        const auto providerText = ollamaButton->palette().color(QPalette::ButtonText);
+        const auto providerText =
+                ollamaButton->palette().color(QPalette::ButtonText);
         std::fprintf(stderr, "Chat theme %s: provider=%s middle=%s\n",
                      qPrintable(mode), qPrintable(providerColor.name()),
                      qPrintable(middleColor.name()));
-        REQUIRE(providerColor == QColor(mode == "dark" ? "#2c2c2e" : "#f5f5f7") &&
+        REQUIRE(providerColor ==
+                        QColor(mode == "dark" ? "#2c2c2e" : "#f5f5f7") &&
                 middleColor == QColor(mode == "dark" ? "#1c1c1e" : "#ffffff"));
         if (providerText != QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f"))
             std::fprintf(stderr, "Provider foreground %s; stylesheet=%s\n",
                          qPrintable(providerText.name()),
                          qPrintable(ollamaButton->styleSheet()));
         REQUIRE(providerText == QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f"));
-        themeSamples.append(QJsonObject{{"mode", mode},
-                                        {"provider_surface", providerColor.name()},
-                                        {"provider_text", providerText.name()},
-                                        {"conversation_background", middleColor.name()}});
+        themeSamples.append(
+                QJsonObject{{"mode", mode},
+                            {"provider_surface", providerColor.name()},
+                            {"provider_text", providerText.name()},
+                            {"conversation_background", middleColor.name()}});
         if (argc == 3)
-            REQUIRE(chat->grab().save(QDir(QString::fromLocal8Bit(argv[2]))
-                                             .filePath("chat-window-" + mode + ".png")));
+            REQUIRE(chat->grab().save(
+                    QDir(QString::fromLocal8Bit(argv[2]))
+                            .filePath("chat-window-" + mode + ".png")));
     }
     if (argc > 2) {
         QJsonArray columns;
-        for (auto* panel : {providersPanel, conversationPanel,
-                            previewSettingsPanel}) {
-            columns.append(QJsonObject{{"name", panel->objectName()},
-                                       {"minimum_width", panel->minimumWidth()},
-                                       {"maximum_width", panel->maximumWidth()}});
+        for (auto* panel :
+             {providersPanel, conversationPanel, previewSettingsPanel}) {
+            columns.append(
+                    QJsonObject{{"name", panel->objectName()},
+                                {"minimum_width", panel->minimumWidth()},
+                                {"maximum_width", panel->maximumWidth()}});
         }
         const auto margins = chat->layout()->contentsMargins();
         QJsonObject layout{
@@ -1380,20 +1550,21 @@ int main(int argc, char** argv) {
                 {"main_handle_width", chatSplitter->handleWidth()},
                 {"right_handle_width", rightSplitter->handleWidth()},
                 {"root_margins", QJsonArray{margins.left(), margins.top(),
-                                             margins.right(), margins.bottom()}},
+                                            margins.right(), margins.bottom()}},
                 {"root_spacing", chat->layout()->spacing()},
                 {"settings_tabs", QJsonArray{settingsTabs->tabText(0),
-                                              settingsTabs->tabText(1)}},
+                                             settingsTabs->tabText(1)}},
                 {"theme_samples", themeSamples},
                 {"preview_minimum_height", chatPreview->minimumHeight()},
-                {"temperature_range", QJsonArray{temperatureSlider->minimum(),
-                                                  temperatureSlider->maximum()}}};
+                {"temperature_range",
+                 QJsonArray{temperatureSlider->minimum(),
+                            temperatureSlider->maximum()}}};
         QFile output(QDir(QString::fromLocal8Bit(argv[2]))
                              .filePath("chat-layout-native.json"));
         REQUIRE(output.open(QIODevice::WriteOnly));
         output.write(QJsonDocument(layout).toJson());
         REQUIRE(chat->grab().save(QDir(QString::fromLocal8Bit(argv[2]))
-                                         .filePath("chat-window.png")));
+                                          .filePath("chat-window.png")));
     }
     chat->resize(chat->width() - 200, chat->height());
     QCoreApplication::processEvents();
@@ -1456,8 +1627,7 @@ int main(int argc, char** argv) {
     browseModels->click();
     auto* popup = chat->findChild<QWidget*>("ChatModelPopup");
     REQUIRE(popup);
-    auto* settingsPanel =
-            chat->findChild<QWidget*>("ChatPreviewSettingsPanel");
+    auto* settingsPanel = chat->findChild<QWidget*>("ChatPreviewSettingsPanel");
     REQUIRE(settingsPanel);
     const auto buttonPosition = browseModels->mapToGlobal(QPoint(0, 0));
     const auto panelPosition = settingsPanel->mapToGlobal(QPoint(0, 0));
@@ -1465,17 +1635,16 @@ int main(int argc, char** argv) {
             popup->height() == buttonPosition.y() - panelPosition.y() &&
             popup->y() == panelPosition.y());
     if (argc == 3) {
-        const QJsonObject geometry{
-                {"button_x", buttonPosition.x()},
-                {"button_y", buttonPosition.y()},
-                {"button_width", browseModels->width()},
-                {"panel_top", panelPosition.y()},
-                {"panel_width", settingsPanel->width()},
-                {"initial_width", 360},
-                {"popup_x", popup->x()},
-                {"popup_y", popup->y()},
-                {"popup_width", popup->width()},
-                {"popup_height", popup->height()}};
+        const QJsonObject geometry{{"button_x", buttonPosition.x()},
+                                   {"button_y", buttonPosition.y()},
+                                   {"button_width", browseModels->width()},
+                                   {"panel_top", panelPosition.y()},
+                                   {"panel_width", settingsPanel->width()},
+                                   {"initial_width", 360},
+                                   {"popup_x", popup->x()},
+                                   {"popup_y", popup->y()},
+                                   {"popup_width", popup->width()},
+                                   {"popup_height", popup->height()}};
         QFile fixture(QDir(QString::fromLocal8Bit(argv[2]))
                               .filePath("chat-model-geometry-native.json"));
         REQUIRE(fixture.open(QIODevice::WriteOnly) &&
@@ -1756,25 +1925,31 @@ int main(int argc, char** argv) {
     };
     REQUIRE(!messageWidgets()[0]->findChild<QLabel*>("ChatMessageRoleIcon") &&
             messageWidgets()[1]->findChild<QLabel*>("ChatMessageRoleIcon") &&
-            messageWidgets()[1]->findChild<QLabel*>("ChatMessageRoleIcon")
+            messageWidgets()[1]
+                            ->findChild<QLabel*>("ChatMessageRoleIcon")
                             ->property("provider") == "ollama");
     QJsonArray messageThemes;
     for (const auto& mode : {QStringLiteral("dark"), QStringLiteral("light")}) {
         window->findChild<QAction*>("AnnotationTheme_" + mode)->trigger();
         QCoreApplication::processEvents();
-        auto* userBubble = messageWidgets()[0]->findChild<QWidget*>("messageBubble");
+        auto* userBubble =
+                messageWidgets()[0]->findChild<QWidget*>("messageBubble");
         const auto surface = userBubble->grab().toImage().pixelColor(
                 userBubble->width() / 2, userBubble->height() - 8);
-        const auto textColor = messageWidgets()[0]
-                                       ->findChild<QLabel*>("ChatMessageContent")
-                                       ->palette().color(QPalette::WindowText);
+        const auto textColor =
+                messageWidgets()[0]
+                        ->findChild<QLabel*>("ChatMessageContent")
+                        ->palette()
+                        .color(QPalette::WindowText);
         REQUIRE(surface == QColor(mode == "dark" ? "#2c2c2e" : "#f5f5f7") &&
                 textColor == QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f"));
-        messageThemes.append(QJsonObject{{"mode", mode}, {"surface", surface.name()},
+        messageThemes.append(QJsonObject{{"mode", mode},
+                                         {"surface", surface.name()},
                                          {"text", textColor.name()}});
         if (argc == 3)
-            REQUIRE(chat->grab().save(QDir(QString::fromLocal8Bit(argv[2]))
-                                             .filePath("chat-messages-" + mode + ".png")));
+            REQUIRE(chat->grab().save(
+                    QDir(QString::fromLocal8Bit(argv[2]))
+                            .filePath("chat-messages-" + mode + ".png")));
     }
     messageFixture.insert("themes", messageThemes);
     QJsonArray messageMenus;
@@ -1783,7 +1958,8 @@ int main(int argc, char** argv) {
         bool selected = false;
         auto* widget = messageWidgets()[index];
         QTimer::singleShot(0, widget, [&]() {
-            auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+            auto* menu =
+                    qobject_cast<QMenu*>(QApplication::activePopupWidget());
             if (!menu || menu->objectName() != "ChatMessageMenu") return;
             for (auto* action : menu->actions()) {
                 if (!action->isSeparator()) items.append(action->text());
@@ -1797,8 +1973,9 @@ int main(int argc, char** argv) {
         QMetaObject::invokeMethod(widget, "customContextMenuRequested",
                                   Qt::DirectConnection,
                                   Q_ARG(QPoint, QPoint(20, 20)));
-        messageMenus.append(QJsonObject{{"role", widget->property("role").toString()},
-                                        {"items", items}});
+        messageMenus.append(
+                QJsonObject{{"role", widget->property("role").toString()},
+                            {"items", items}});
         return selected;
     };
     REQUIRE(messageMenu(1, "ChatMessageMenuCopy") &&
@@ -1806,7 +1983,8 @@ int main(int argc, char** argv) {
                     messageWidgets()[1]->property("content").toString() &&
             !messageWidgets()[1]->property("copyFeedback").toBool());
     REQUIRE(messageMenu(0, "ChatMessageMenuEdit") &&
-            messageWidgets()[0]->findChild<QPlainTextEdit*>("ChatMessageEditor")
+            messageWidgets()[0]
+                    ->findChild<QPlainTextEdit*>("ChatMessageEditor")
                     ->isVisible());
     messageButton(0, "ChatMessageCancel")->click();
     messageButton(0, "ChatMessageCopy")->click();
@@ -2352,7 +2530,8 @@ int main(int argc, char** argv) {
             auto* confirm = qobject_cast<QMessageBox*>(
                     QApplication::activeModalWidget());
             if (!confirm) return;
-            valid = confirm->defaultButton() == confirm->button(QMessageBox::No) &&
+            valid = confirm->defaultButton() ==
+                            confirm->button(QMessageBox::No) &&
                     confirm->icon() == QMessageBox::Warning;
             confirm->button(answer)->click();
         });

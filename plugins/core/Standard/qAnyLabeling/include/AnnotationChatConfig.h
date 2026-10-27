@@ -144,6 +144,13 @@ inline QJsonObject defaultProviders() {
     "api_docs_url": "https://ai.google.dev/gemini-api/docs",
     "model_docs_url": "https://ai.google.dev/gemini-api/docs/models"
   },
+  "local": {
+    "api_address": "aicore://llm",
+    "api_key": "",
+    "api_key_url": null,
+    "api_docs_url": null,
+    "model_docs_url": null
+  },
   "ollama": {
     "api_address": "http://localhost:11434/v1",
     "api_key": "ollama",

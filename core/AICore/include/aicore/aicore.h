@@ -31,6 +31,7 @@
  */
 
 #include "aicore/aliked_capi.h"
+#include "aicore/attribute_capi.h"
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
@@ -46,6 +47,7 @@
 // directly where CVLog is available (plugins, app-side code).
 #include "aicore/lightglue_capi.h"
 #include "aicore/lingbot_capi.h"
+#include "aicore/llm_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/pipeline_timing.h"

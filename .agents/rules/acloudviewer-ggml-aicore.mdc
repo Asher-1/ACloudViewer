@@ -1,9 +1,8 @@
 ---
 description: Rules for ggml ExternalProject, AICore build, and backend loading on all platforms
 globs:
-  - 3rdparty/ggml/**
-  - build/ggml/**
-  - build_app/ggml/**
+  - 3rdparty/llama/**
+  - build*/llama/**
   - core/AICore/**
   - docker/docker_test.sh
   - docker/test_wheel_runtime.sh
@@ -54,20 +53,24 @@ rules. This rule only provides fail-fast guards.
 **Directly modifying ggml source files in build directories is absolutely forbidden** (`build/ggml/`, `build_app/ggml/`, etc.).
 All ggml source modifications MUST go through patch files. The flow is:
 
-1. **Local edit**: modify and verify in the ggml source copy under `build/` or `build_app/`
-2. **Generate patch**: produce a unified diff with `diff -ruN` or `git diff` between the pristine ggml source and the modified version
-3. **Store patch**: put the patch file under `3rdparty/llama/ggml-patches/<subdir>/0001-description.patch`
-4. **Register patch**: add an entry to `3rdparty/llama/ggml-patches/manifest.yaml` (order matters)
-5. **Build verification**: clean the build directory, rebuild, and confirm `apply_ggml_patches.py` applies the patch correctly
+1. **最小复现**：先用真实失败测试确认根因，不修改 extracted build 源码。
+2. **编写补丁**：以 pinned llama.cpp 的 `ggml/` 子树为锚点编写 unified diff。
+3. **唯一目录**：存入 `3rdparty/llama/llama-patches/NNNN-description.patch`；
+   旧 `ggml-patches/` 和 `experimental/patches/` 均已退役。
+4. **注册重放**：更新所有受影响 backend manifests，用同一 runner 验证
+   pristine forward、reverse 和幂等重放。
+5. **构建验收**：signature 变更触发该 owner 重建；逐项运行算子、真实模型、
+   独立真值及受控 A/B 门。冻结目录、二进制和失败收据保持不变。
 
 ```
-3rdparty/llama/ggml-patches/
-├── manifest.yaml                        # registers all patches (order matters)
-├── apply_ggml_patches.py                # applied automatically at build time
-├── aliked_merged/0001-vulkan-aliked.patch
-├── cpu_all_variants/0001-*.patch
-├── metal_merged/0001-metal-optimizations.patch
-└── msvc_vulkan/0001-*.patch
+3rdparty/llama/llama-patches/
+├── manifest.yaml
+├── cuda-manifest.yaml
+├── vulkan-manifest.yaml
+├── cuda-vulkan-manifest.yaml
+├── metal-manifest.yaml
+├── apply_ggml_patches.py
+└── NNNN-description.patch
 ```
 
 **Why**: ggml is an ExternalProject — every clean build re-extracts it from a tarball. Files modified directly in build directories will not take effect in CI or on other machines; only patch files get applied.
@@ -75,8 +78,8 @@ All ggml source modifications MUST go through patch files. The flow is:
 ## ggml ExternalProject Architecture
 
 - The shared ExternalProject implementation is `3rdparty/llama/llama_runtime.cmake`.
-  The production baseline `ggml/ggml.cmake` selects `ext_ggml`; the isolated
-  `llama/llama_cpp.cmake` candidate selects `ext_llama` and embedded ggml.
+  正式入口 `3rdparty/llama/llama_cpp.cmake` 选择唯一 owner `ext_llama`，
+  同一 pinned archive 提供 llama/mtmd 及嵌入式 ggml；`ext_ggml` 入口已删除。
   A build/install prefix must have exactly one source owner. Use exported
   `GGML_DEPENDENCY_TARGET`, `GGML_EXTERNAL_TARGET`, and `GGML_BUILD_DIR` in
   consumers; do not introduce new hardcoded baseline target/path dependencies.
@@ -86,7 +89,7 @@ All ggml source modifications MUST go through patch files. The flow is:
   do not delete stamps or replace binaries belonging to frozen validation runs.
 - ggml backends (cpu, metal, vulkan, cuda) are MODULE libraries (`.so` even on macOS)
 - `GGML_BACKEND_DL=ON` (shared mode): backends are `dlopen`'d at runtime, NOT linked into AICore
-- `libAICore.{so,dylib}` only links `libggml.{so,dylib}` + `libggml-base.{so,dylib}`
+- `libAICore.{so,dylib}` links the shared core only: `libggml` + `libggml-base` + `libllama` + `libmtmd` (all staged beside it by `CopyGgmlBackends.cmake COPY_CORE_SHARED`)
 - `PATCH_COMMAND` uses a generated Python runner script to avoid shell quoting issues on Windows
 
 ## Platform Backend Support
@@ -132,7 +135,7 @@ All ggml source modifications MUST go through patch files. The flow is:
 ## CopyGgmlBackends.cmake
 
 - Copies backend `.so` files from ExternalProject install dir to `build_app/bin/`
-- Handles versioned symlinks for core libs (libggml.so.0 → libggml.so.0.17.0)
+- Handles versioned symlinks for core libs (当前 pin：libggml.so.0 → libggml.so.0.27.0)
 - Uses `COPY_CORE_SHARED` / `COPY_BACKEND_MODULES` / `REQUESTED_FILES_PIPE` modes
 - Stale backends are cleaned before copy (prevents old `.so` files lingering)
 
@@ -163,9 +166,10 @@ See `docs/guides/metal-inference-optimization.md`, which covers:
 
 ## ggml Version Upgrade (mandatory pipeline)
 
-Upgrading the pinned `GGML_VERSION` in `3rdparty/ggml/ggml.cmake` MUST follow
-`docs/guides/ggml_upgrade_pipeline.md` (5 fail-stop stages: research → patch
-chain replay → contract tier → parity tier → performance A/B).
+升级 `3rdparty/llama/llama_cpp.cmake` 中的 llama revision/archive SHA 时，
+遵循 `.agents/skills/ggml-upgrade/SKILL.md` 与
+`docs/guides/ggml_upgrade_pipeline.md`：源码调查 → 补丁重放 → 契约 →
+独立真值/后端验证 → 受控性能 A/B。版本标签随同一 archive 重新派生。
 
 - One-click verification: `scripts/ggml_upgrade_verify.py --baseline <dir> --candidate <dir>`
   (regression threshold +5%, noise floor 3%, prints coverage of (task, backend) pairs).

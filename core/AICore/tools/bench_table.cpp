@@ -266,8 +266,8 @@ int main(int argc, char** argv) {
                             jsonString(tb->csv).c_str());
                     for (int token = 0; token < tb->token_count; ++token) {
                         std::printf("%s%s", token ? "," : "",
-                                    jsonString(aicore_table_token_at(
-                                                       result, k, token))
+                                    jsonString(aicore_table_token_at(result, k,
+                                                                     token))
                                             .c_str());
                     }
                     std::printf("]}");
@@ -285,14 +285,16 @@ int main(int argc, char** argv) {
     std::printf(
             "{\"summary\":true,\"device\":%s,\"images\":%zu,"
             "\"warmups\":%d,\"runs\":%d,\"threads\":%d,"
-            "\"timing_scope\":\"borrowed decoded image through public table/OCR C ABI\","
+            "\"timing_scope\":\"borrowed decoded image through public "
+            "table/OCR C ABI\","
             "\"failures\":%d,\"table_p50_ms\":%.2f,\"table_p95_ms\":%.2f,"
             "\"ocr_p50_ms\":%.2f,\"total_p50_ms\":%.2f,"
             "\"total_p95_ms\":%.2f}\n",
             jsonString(aicore_table_context_device(table)).c_str(),
-            tableMs.size(), warmups, runs, threads, failures, percentile(tableMs, 0.5),
-            percentile(tableMs, 0.95), percentile(ocrMs, 0.5),
-            percentile(totalMs, 0.5), percentile(totalMs, 0.95));
+            tableMs.size(), warmups, runs, threads, failures,
+            percentile(tableMs, 0.5), percentile(tableMs, 0.95),
+            percentile(ocrMs, 0.5), percentile(totalMs, 0.5),
+            percentile(totalMs, 0.95));
     if (ocr) aicore_ocr_context_destroy(ocr);
     aicore_table_context_destroy(table);
     aicore_table_runtime_shutdown();

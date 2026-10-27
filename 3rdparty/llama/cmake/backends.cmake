@@ -70,8 +70,8 @@ if(GGML_USE_CUDA)
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_NCCL=OFF)
     # FORCE_MMQ is synced from AICore_CUDA_FORCE_MMQ (default OFF = upstream
     # performance parity; ON = self-contained libggml-cuda.so without cuBLAS
-    # DT_NEEDED for driver-only deployments). The companion patch in
-    # ggml-patches/cuda_mmq/ is inert when GGML_CUDA_FORCE_MMQ=OFF.
+    # DT_NEEDED for driver-only deployments). The historical companion MMQ
+    # patch of the retired 0.21 chain is inert when GGML_CUDA_FORCE_MMQ=OFF.
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=${GGML_CUDA_FORCE_MMQ})
     # FAST_MATH is synced from AICore_CUDA_FAST_MATH (default ON = pristine
     # ggml `-use_fast_math`, the numerics every external cpp_ggml reference

@@ -2364,7 +2364,8 @@ import_3rdparty_library(3rdparty_ransacSD
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
 # llama.cpp: the single source owner for AICore's embedded ggml runtime.
-# Keep the standalone ggml entry available only to isolated regression builds;
+# The standalone ggml entry was retired when every task re-anchored its
+# numeric baseline on the 0.27 embedded ggml (3rdparty/ggml removed);
 # GGML_* switches remain the backend configuration contract for AICore.
 if(AICore_ENABLED)
     aicore_sync_options_to_ggml()

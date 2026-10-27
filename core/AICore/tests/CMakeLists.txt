@@ -493,6 +493,8 @@ aicore_add_capi_test(test_deeplsd_capi_load deeplsd LABELS capi;model)
 
 aicore_add_capi_test(test_gkd_capi_contract gkd)
 aicore_add_capi_test(test_gkd_capi_load gkd LABELS capi;model)
+aicore_add_capi_test(test_anycalib_capi_contract anycalib)
+aicore_add_capi_test(test_map_anything_capi_contract map_anything)
 aicore_add_capi_test(test_map_anything_capi_load map_anything LABELS capi;model)
 # Candidate half of the upstream cpp_ggml frames parity gate (NOT a ctest: it
 # needs the external vggt-cli reference; driven by the manifest row
@@ -615,6 +617,24 @@ if(UNIX AND NOT APPLE)
     target_link_options(test_tagging_probe PRIVATE -no-pie)
 endif()
 _aicore_test_common(test_tagging_probe NO_CTEST)
+
+aicore_add_capi_test(test_llm_capi_contract llm)
+aicore_add_capi_test(test_attribute_capi_contract attribute)
+aicore_add_capi_test(test_attribute_capi_e2e attribute LIBS 3rdparty_jsoncpp LABELS capi;model;e2e)
+target_include_directories(test_attribute_capi_e2e PRIVATE ${JSONCPP_INCLUDE_DIRS})
+add_executable(test_llm_probe llm/test_llm_probe.cpp)
+target_link_libraries(test_llm_probe PRIVATE AICore)
+_aicore_capi_link(test_llm_probe)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(test_llm_probe PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(test_llm_probe PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_llm_probe PRIVATE -fPIC)
+    target_link_options(test_llm_probe PRIVATE -no-pie)
+endif()
+_aicore_test_common(test_llm_probe NO_CTEST)
 
 
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
@@ -844,6 +864,7 @@ function(aicore_add_yolo_whitebox_test name)
 endfunction()
 
 aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
+aicore_add_yolo_whitebox_test(test_yolo_f32_convolution)
 aicore_add_yolo_whitebox_test(test_yolo_mask_upsample)
 aicore_add_yolo_capi_test(test_yolo_mask_upsample_capi)
 
@@ -1192,6 +1213,7 @@ add_custom_target(aicore-model-tests
 if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set(_aicore_validation_targets
         test_tagging_probe
+        test_llm_probe
         test_relation_probe
         test_depth_capi_load
         test_gaussian_capi_load
@@ -1263,11 +1285,23 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         USES_TERMINAL
         VERBATIM)
 
+    add_test(NAME test_capi_coverage_audit
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/common/test_capi_coverage_audit.py)
+    set_tests_properties(test_capi_coverage_audit PROPERTIES LABELS "fast;validation")
+
     add_test(NAME test_aicore_validation_runner
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
         LABELS "fast;validation")
+
+    add_test(NAME test_attribute_probe_contract
+        COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
+                ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/attribute/test_attribute_probe_contract.py
+                --library $<TARGET_FILE:AICore>)
+    set_tests_properties(test_attribute_probe_contract PROPERTIES LABELS "model;attribute;validation" TIMEOUT 120)
 
     add_test(NAME test_tagging_timing_audit
         COMMAND ${Python3_EXECUTABLE}

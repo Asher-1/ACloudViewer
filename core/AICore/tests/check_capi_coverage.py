@@ -32,12 +32,20 @@ CONSUMER_DIRS = [
 ]
 
 
+def code_only(text):
+    # 保留 token 间隔，去掉字符串及注释；文档中的类型或示例不是声明/调用。
+    return re.sub(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+                  ' ', text)
+
+
 def api_functions():
     funcs = set()
     for h in glob.glob(f"{REPO}/core/AICore/include/aicore/*_capi.h"):
         with open(h, encoding="utf-8") as f:
             txt = f.read()
-        for m in re.finditer(r"\b(aicore_[a-z0-9_]+)\s*\(", txt):
+        for m in re.finditer(
+                r"\bAICORE_CAPI\b[^;]*?\b(aicore_[a-z0-9_]+)\s*\(",
+                code_only(txt)):
             funcs.add(m.group(1))
     return funcs
 
@@ -48,7 +56,7 @@ def referenced_functions():
         for t in glob.glob(f"{REPO}/{base}/**/*.cpp", recursive=True):
             with open(t, encoding="utf-8", errors="ignore") as f:
                 txt = f.read()
-            for m in re.finditer(r"\b(aicore_[a-z0-9_]+)\s*\(", txt):
+            for m in re.finditer(r"\b(aicore_[a-z0-9_]+)\s*\(", code_only(txt)):
                 referenced.add(m.group(1))
     return referenced
 

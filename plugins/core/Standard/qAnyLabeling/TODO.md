@@ -588,6 +588,199 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   architecture branch + catalog rows/digests/probe, R2 plugin sidecar
   fields. The ram digests join `asset_digests.h` together with their
   catalog rows so no digest is published without a consumer.
+  当前核查更正：上述“softmax 分类 ABI 足够表达 PULC”的历史假设不成立。
+  PULC 是独立 Sigmoid 属性组，按原 YAML 执行严格阈值/组内 argmax；原 source
+  返回携带 attributes 的全图 rectangle（不是检测到的目标框），replace=True。
+  不得将其替换为单类别 flags 或仅 sidecar。原图已复用现有 ONNX lowering
+  隔离转换 F32/F16/Q8，并执行 CPU 原生 ggml 数据面：F32/F16 的输出及全部
+  属性选择通过候选门，Q8 person/vehicle 最大误差 0.020849/0.048914 超过
+  预先声明的 0.02 候选门，即便属性选择相同也保持 FAIL。收据位于
+  `build_app/Testing/g8-pulc-native-graphs/native-cpu/report.json`；这份历史
+  OCR test adapter 收据不能证明公共 task/API/catalog 或完整数据集/release 资格。CUDA/Vulkan 各六行后续执行完成，F32/F16 均通过候选门，
+  Q8 两行均失败。独立同存储权重 ONNX 归因见同目录
+  `stored-attribution/report.json`：Q8 原权重量化误差 0.02084890/0.04891500，
+  三后端相对同权重参照最大附加误差 ≤1.55e-6；原精度门及失败不变。
+  `precision-sensitivity/report.json` 后续隔离候选仅把 person 1 个、vehicle 2 个
+  kernel 保留 F16，仍分别有 1601536/1568768 个 Q8 元素，三后端各六行候选门
+  通过（Q8 误差约 0.01444/0.00667）。这是固定单图选择的存储候选，原模型
+  未替换，untouched holdout、公共 ABI、catalog 和 release 门继续开放。
+  冻结候选后 `holdout-cpu/report.json` 执行 11 张未参与选择的真实图片，
+  F32/F16 44/44 通过，Q8 仅 4/22 通过，总 48/66、FAIL；person/vehicle 最大
+  误差 0.0855134/0.0764870。原门与权重 SHA 不变，逐输出/属性及同存储误差
+  保留；不能用校准单图 GREEN 宣称泛化，这些图片亦无属性 dataset GT。
+  后续真实公共 `attribute` task/C ABI 已落地；公共多属性结果独立持有，原始概率
+  完整保留，严格 threshold/argmax 仍在 owning task 中。图执行 owner 已提升到
+  `common/paddle_graph`，OCR/table 共用；feed/fetch metadata 专项 RED→GREEN。
+  person/vehicle F32/F16 公共 ABI 在 CPU/CUDA/Vulkan 的数值、属性、stride、结果
+  所有权和 shutdown 后 live context 存活通过。`pulc-public-holdout-{cpu,cuda,vulkan}/`
+  三份各 48/66、FAIL（F32/F16 44/44，Q8 4/22），原门、候选 SHA 和失败不变。
+  公共本地 F32 recipe/cache API、qAnyLabeling picker 和 worker 已接通，CPU/CUDA/Vulkan
+  真实基础 Run 的全图 attributes、replace、保存、模型切换、stale 拒收、teardown 通过。
+  维护中的 F32 C ABI E2E 与基础 table E2E 三后端通过；table 未配置 layout page。
+  缺失本地模型明确提示 cache 路径，不尝试虚构下载；检测 confidence 不影响属性阈值。
+  公共 probe 追加 pinned source identity/全部属性门，数值通过但属性失配的真实负例
+  RED→GREEN。common runner local-only catalog 前置检查专项已修复，123 tests 通过。
+  初次六行 CPU 收据因 json0/json1 双来源与裸指标歧义为 0/6 FAIL；旧收据保留，
+  配置完整 json0 路径回归 RED→GREEN。新 `attribute-common-runner-*-pathfix/report.json`
+  三后端各 4/6：F32/F16 通过，Q8 原 0.02 门两行仍 FAIL，不替换资产或降低门限。
+  现有 `ANYLABEL_INFER` 支持 attribute TASK/schema/local recipe/cache；真实隔离插件
+  CPU/CUDA/Vulkan 的两模型/两图、confidence 不改变属性、缺失模型不下载及错误 manifest
+  通过，GPU 收据为 `shared-owner-acceptance/attribute-batch-{cuda,vulkan}-v2/receipt.json`。
+  正式模块/消费者重建仍等待原 OCR 全量队列完整结束，不把隔离批处理称为 release。
+  `shared-owner-acceptance/attribute-ui-lifecycle-{cpu,cuda,vulkan}-v1/` 新增真实窗口验收
+  三后端通过：两图 Auto Run、在途取消/不调度下一图、取消后重跑、源图/模型 stale、
+  无效模型的真实 worker 错误恢复、推理中销毁窗口。源码/消费者/模型前后 SHA 不变，
+  未修改生产逻辑；不是 live frame、跨平台 installer、正式库或 release 门通过。
+  仍缺已发布 catalog/digest、独立属性 dataset GT、完整 live/cancel/UI 自动化和 release A/B。
+  标准 manifest/正式 runtime 在原 OCR 长队列结束前保持，不把本地接入称为发布闭合。
+  后续 conv112 graph 的同 SHA、960 主输入、原 3×2×10 release A/B：CUDA 总 PASS，
+  CPU p95 74.480 → 85.560 ms（+14.88%）总 FAIL；Vulkan 第三次候选 source p95
+  8.16 ms 对 2.666369 ms，原双门 FAIL 保留。Vulkan 同协议尾部复验已结束，candidate
+  `[0,0,1]` / baseline `[1,0,0]` 总 FAIL；candidate attempt 3、baseline attempt 1 实为
+  外部 GPU 活动导致的 preflight timeout，各只有 1/2 fixture，不是测得的 source-speed FAIL。
+  成功进程不补齐其 GPU 资格；baseline veto、首轮原性能 FAIL 和旧收据均保留。
+  最新 `conv112-release-vulkan-preflight-recheck-v2/report.json` 两侧各 `[1,1,1]`，总 FAIL。
+  candidate attempt 1 fixture 0 的 GPU/source 审计合格，p95 5.31 对 2.105774 ms 超原
+  5%/3 ms 双门；其余采样另有 preflight timeout、GPU/source 审计失败或 fixture 不全。
+  末次单 log 5.35/7.80 对 baseline 4.30/5.03 ms 不具完整 A/B 资格，不把全部 FAIL 归为污染。
+  真实 NVTX 范围 current/frozen CPU 通过，measured CUDA 主 consumer 选择正/负例
+  RED→GREEN，恢复后的 3 项回归再次通过。完整 raw CPU 两侧各 12/12 正确性/稳定性，
+  5 场景/6 项性能 FAIL。`llm-cpu-attribution-resume-v2.json` 审计 12 行/720 次 measured：
+  原产物身份、输入/输出可比性、逐进程样本完整均通过；六项原失败保留，六测试 RED→GREEN。
+  Haswell 编译/ISA/OpenMP 相同；llama/mtmd 源文件 232/69 全相同，CPU 69 文件仅 DW bias
+  分支不同，不能据此断言整个调用链或性能相同。冻结原 3×2×10 A/A 的 256M Q8 单行
+  `llm-cpu-frozen-aa-resume-v1/` PASS，仅为诊断，不替换原 baseline。完整 post-AA CPU A/B
+  已结束：两侧各 12/12 正确且稳定，三项原性能 FAIL：500M newspaper Q8/F16 decode p50
+  +11.08%/+6.60%，256M newspaper Q8 e2e p95 +5.20%。
+  `llm-cpu-complete-post-aa-attribution-v1.json` 的 720 measured 样本/产物/编译参数审计通过，
+  原三项 FAIL 和旧六项 FAIL 均保留，尚非 CPU release PASS。
+  `llm-cpu-complete-flags-closure-v3.json` 扩展底层源码审计，scheduler/alloc/threading 字节相同；
+  Haswell/ggml-base flags 相同，但 AICore 的 AVX2/frounding-math/宏与直接依赖闭包不同。
+  分模块审计两项负例 RED→GREEN、共 8/8；差异尚无性能因果证明。非特权 CPU 采样被本机
+  perf paranoid=4 拒绝，未调整系统权限。后续 `llm-flags-{control,frozenopts}-ab-v2/report-cpu.json`
+  两轮各三行，原冻结 baseline/3×2×10，共 360 measured；两侧正确稳定、产物 unchanged。
+  current 链接闭包补编 llm/paddle_graph/attribute 三 TU，仅改 CXX_FLAGS、不改宏/includes。
+  control 五项性能 FAIL，冻结 flags 的 500M Q8/F16 decode p50 仍 +8.65%/+6.11%、两项 FAIL。
+  两份 attribution 审计、46 项前后保护 PASS，装配/原 baseline 保护三行为 RED→GREEN。
+  换 flags 未关闭原门，不改生产 flags，不把局部诊断称为完整 release 或因果修复。
+  隔离 builder 的 shell `\$ORIGIN` 转义缺陷另经真实旁置 `.so` RED→GREEN，分析器/
+  装配 10 项和 baseline 保护两项 PASS；`llm-origin-probe-v3/standalone-cpu.json` 在无
+  LD_LIBRARY_PATH 时真实 CPU 推理 PASS，仅为独立加载资格，不覆盖原 v2 收据。
+  原 OCR 两后端 168 场景现已全部结束、仍 FAIL；Vulkan 执行身份 unchanged，七个失败
+  场景涉及 tiny Q8 rec/label/XFUND/orientation、tiny F16 label 及 public/heldout en Q8。
+  `passes_source_gt_gate=0` 是 candidate 相对 source 的 GT 指标 delta 超过 0.005，
+  不是 source 自身质量 veto；CER 改善不能抵消 WER 回退。tiny F16 label 的 hmean/e2e
+  CER/e2e WER delta 为 0.005540/0.006178/0.009804；tiny Q8 label 的 WER/e2e WER
+  为 0.009804，XFUND Q8 WER 为 0.018738，public/heldout en Q8 WER 为
+  0.006834/0.006208，均保留 FAIL。完整数值与历史错误归因纠正在 `OCR_RELEASE_GATES.md`。
+  orientation 的两次失败均为文本一致性断言，不是 angle/score/rotation 断言；wrapper
+  rc=0 不绕过 failures=2。tiny Q8 rec 四 fixture 完整、stored max_diff=1.317e-5，
+  但 benchmark 分支仍因原 source max_diff/argmax 拒绝，不能把非 release audit=0 单独
+  解释为其 rc=1 原因；量化诊断/benchmark gate 的不一致尚未修改，原 FAIL 保留。
+  CUDA 身份变化 veto 保留。`owned-validation-continuum/` 的正式重建、三项契约与
+  三后端 attribute e2e/batch/UI、table、pool 现已全部 rc=0；pool CPU 40/40、
+  CUDA/Vulkan 各 80/80、零失败。正式库 SHA `7b5b28b7...`，冻结库及标准 manifest
+  保护通过；complete=true 仅为所列步骤结束，all_six_tasks_complete=false。
+  table 真实 demo/OCR 消费者通过不覆盖日志明确未配置的可选 layout 页组合。
+  正式 Vulkan `conv112-release-formal-vulkan-v3/report.json` 已结束、总 FAIL：candidate
+  `[0,0,1]` / 原冻结 baseline `[0,1,0]`，每进程 2/2 fixture，主输入 audits 全合格。
+  baseline attempt 2 p95 6.43 对 source 3.277795 ms；candidate attempt 3 p50 5.76 对
+  source 2.430157 ms，绝对差 3.152205 / 3.329843 ms，均超原 5%/3 ms 双门。
+  不归为 preflight timeout；成功进程和聚合字段不抵消失败进程，产物/模型保护通过。
+  后续 loader 取证确认 v3/v4 串侧：当前 `.so` 被当作测试导入 baseline，runner
+  resolve symlink 又跳回当前 probe；原冻结 ggml 不含当前 probe 的 DW bias API。
+  相邻 module/resolved 路径真实 RED 保留；最终仅复制各侧原 probe 字节与 owner modules，
+  `conv112-original-consumer-green-v3.log` 的真实 CPU 加载通过，不重建/补符号到冻结库。
+  v5 `conv112-release-formal-vulkan-v5-original-owner/report.json` candidate `[0,0,0]` /
+  baseline `[0,0,1]`、每进程 2/2 fixture、主输入 audits 合格，仍总 FAIL：baseline 第三
+  进程 p95 5.39 对 source 2.225544 ms，绝对差 3.164456 ms，原双门/baseline veto 保留。
+  原 baseline probe SHA `0be29828...` 未变，v3/v4 不称为合格原 baseline A/B。
+  新正式 LLM CPU 三行 `llm-raw-formal-ab-v1/report-cpu.json` 两侧全部 rc=77，指定的
+  独立 upstream 工具不可用，无 measured 推理或性能比较资格；原性能 FAIL 保留。
+  在独立目录恢复同 pin pristine 参照，不修改冻结 baseline、不混用生产补丁库。
+  `owned-yolo-formal-lifecycle-v1/` 的正式公共生命周期三后端 PASS；
+  `yolo-owner-formal-oracle-cuda-v1.log` 的当前正式 CUDA module owner oracle rc=0。
+  原独立 checkpoint Q8 0.02 门不由这些 PASS 撤销。
+  orientation 同存储权重 exporter 的真实负例 RED→GREEN，新增 native 方法前 OCR owner 套件 75 PASS；
+  额外 native 原文本门三后端均实际 FAIL。`orientation-stored-{cpu,cuda}-v1/`
+  及 `orientation-native-{cpu-red-v2,cuda-red-v1,vulkan-red-v1}.log` 定位到倒置
+  word_1（index=1）：独立 source=LNIO，存储 Q8/native=LNIOF，重复两次一致，
+  .9 门下 native-stored 文本无附加失配；不把 threshold=1 的未旋转文本与 .9 真值比较。
+  仅此 fixture 的存储归因不证明全部页面或 release 通过，原文本 FAIL 保留。
+  完整 raw CUDA candidate 12/12、冻结 baseline 四行文本 FAIL，
+  500m newspaper F16 e2e p95 +5.71% 使总门 FAIL。四份 measured profile 首轮 JPEG
+  解码失败；补齐 Qt plugin 路径后的插入在任务开始前被外部 GPU 负载拒绝，OCR 已恢复。
+  `owned-measured-profile-pluginfix-wait/status.json` 自动等待空闲再串行采集，不触发正式重建。
+  此轮随后四份 probe 均成功，四份 routes 因每范围 0 个 kernel 节点仍 FAIL（同线程 API
+  各 522）；本机 Nsight 默认 graph 粒度不采集 graph 节点。后续
+  `owned-measured-profile-nodefix-wait/` 的四份 node 重采 probe/routes 8/8 PASS，256M
+  的 40 范围均有主 consumer kernel/同线程 API；恢复真实回归 4/4 PASS，收据为
+  `llm-measured-nodefix-resume-v1.log`。旧失败与 profiling-only 边界保留，生产 Graphs
+  不关闭。`owned-measured-500m-nodefix-wait/` 的对应 500M 补采也已结束：四份
+  probe/routes 8/8 PASS，额外 40 measured 范围通过同一真实回归；原外部 GPU 拒绝
+  保留、OCR 已恢复。F16 current/frozen 主 GEMM h1688/s1688 可见；插桩时延不进入
+  release，不混用模型资格或撤销原 CPU/CUDA FAIL。
+  0019 pool AVG 隔离 80 GREEN；正式重建前 CPU 40/40、Vulkan 80/80 PASS，CUDA 80/27 FAIL。
+  YOLO26 独立 GGUF→checkpoint 参数注入复验核验 204 映射，Q8 分数误差仍 0.14595002，
+  超原 0.02 门；不替换原资产，不将权重量化归因写成全部执行误差或 release 闭合。
+  公共 CPU mode 1 的 `yolo-quantization-execution-cpu-resume-v3.json` 进一步保留 Q8 同
+  权重附加误差 0.02269834、独立 checkpoint 总误差 0.12325168；原 0.02 门仍 FAIL。
+  后端选择/独立误差记录真实测试 RED→GREEN，三测试通过；GPU 六行
+  `yolo-quantization-execution-{cuda,vulkan}-resume-v4.json` 已完成：F32/F16 PASS；Q8
+  CUDA 同权重误差 0.18532050、总误差 0.18347186、缺四框，Vulkan 0.00550228/0.15145230
+  且五框匹配，两者原总门仍 FAIL，均十次稳定、资产前后 SHA 不变。不能把 CUDA 缺框
+  当作只有存储误差。当前源码两 GPU 都 host 展开 Q8 为 F16。空档 scope 收据已结束：
+  `owned-yolo-q8-optrace-llm-scope-v1/coordinator-2/llm-cuda-arithmetic-scope.log` 11/11 PASS，
+  全部 0 changed elements；不替代 LLM 原文本/p95 门。初次 optrace 装配退出 77 保留；
+  模块旁 executable 的 `owned-yolo-q8-optrace-resume-v2/coordinator-1/` 两项完成
+  162/162、0 null，CPU→CUDA 首超诊断 op61，Vulkan→CUDA op149，均 rc=1，不是公共库资格。
+  新公共 ABI 生命周期 `owned-yolo-q8-public-lifecycle-v1/`：CUDA 冷 Q8 五框，切换
+  F32/F16 后 Q8 一框，再建 context 仍一框；每 context 十二轮稳定，Vulkan PASS。
+  禁用 IGEMM 的同测试 PASS，取得缓存路径 RED。维护 CUDA 计划未消费 task 已写入的
+  plan_owner_id；有序 `0020-acv-cuda-igemm-plan-owner.patch` 补 owner 检查和 NHWC 失效处理，
+  仅 CUDA/combined，原正式树只读 apply --check 通过。`yolo-igemm-owner-candidate-v1/`
+  的四链正反向/幂等重放与单 TU 编译已通过；原链接缺 80 个对象，正从 verified combined
+  replay 和 pinned llama parent 完整重建隔离 CUDA backend。继承原 ISA/Graphs/算术选项，
+  构建成功，最终 receipt 的 module SHA `4b6ad3c8...` 与保护 unchanged 已核实；同二进制
+  oracle SHA `900a4a2f...` 已装配 RED/GREEN。`owned-yolo-igemm-owner-green-v1/coordinator-3/`
+  已完成真实 oracle RED rc=1→GREEN rc=0，CUDA/Vulkan 公共模型切换/再建 context 生命周期
+  PASS；后续 `owned-llm-flags-attribution-v2/coordinator-1/` 同一 CPU 生命周期亦 PASS，
+  三后端齐全。前两次插入拒绝及恢复收据保留。`yolo-quantization-execution-cuda-ownerfix-v5.json`
+  的 Q8 五框匹配、十次稳定，同权重执行附加分数误差为 0.0021265149，独立 checkpoint
+  总误差 0.1480765343 仍超原 0.02 门、FAIL；资产/runtime 前后 SHA unchanged，不将编排
+  成功称为精度 PASS。隔离模块含 0019 但不替代 pool 正式门，不改模型/原门/正式或冻结
+  产物，所有原失败仍保留。
+  本次源码检查：913/913 C ABI、strict plugin boundary、17 source-owner 契约、123 runner
+  测试及 L1/L2/L5 197 项通过；公共属性错误参照负例复跑 PASS，输入 unchanged，见
+  `shared-owner-acceptance/attribute-probe-resume-v3/`。这些不替代正式消费者或 release。
+  冻结 release CPU F32 三进程五框匹配且稳定，但分数误差均为 0.1101961732，正常
+  执行后被原精度门拒绝；不是 loader/新 attention API 缺失，性能 veto 不绕过。
+  全部 Q8 单 tensor 临时 F16 恢复方案均未过原门；最佳 `op.109.w` 最大分数误差
+  0.03684449196 仍 FAIL。`yolo-q8-single-tensor-sensitivity-resume-v1.json` 保留每轮
+  Q8 baseline 恢复与资产前后 SHA；固定单图诊断不写模型、不代替原生/留出/release。
+  指定 tensor 恢复/未知名称拒绝两真实测试 RED→GREEN；三个 `op.109.w` 配对
+  `op.110.w/op.107.w/op.20.w` 的误差 0.04792762/0.08504459/0.08508769 仍 FAIL。
+  用户选择仅使用原冻结基线，原 release veto 保持，不新建替代基线。
+  Linux 原构建 L3 schema 16 PASS/1 FAIL 保留。实际配置为
+  PLUGIN_STANDARD_QMAPANYTHING=OFF；原队列全部结束后正常启用并构建消费者，
+  `mapanything-consumer-{configure,build}-v1.log` 成功，
+  `automation-l3-schema-formal-green-v1.log` 现为 17/17 PASS，无 skip；
+  不代表跨平台 installer 或 packaged GUI L4。PA100K 官方归档 SHA 固定为
+  `65e2ab37519aacf307c8c0ce04c6ab8edac3b4199e0448d4de625cfd60cd5cc0`，
+  `pulc-pa100k-gt-v1/` 已提取 val/test 各 10000 张及 26 维 GT，未消费训练集。
+  下载/旧路径覆盖拒绝/GT 准备/路径穿越负例及公共 CPU 两图原始三量化回归通过；
+  `pulc-pa100k-val-cpu-v1/report.json` 已完成 val 10000 图原始三量化：F32 10000/10000
+  PASS、max 3.93391e-6；F16 9969/10000，max 0.00992972 未超概率门，但 31 图属性
+  失配仍 FAIL；Q8 2707/10000、max 0.27434349 仍 FAIL。source/模型/runtime/GT 前后
+  SHA unchanged，逐图与逐属性 GT 计数保留，不以个别属性改善抵消回退或修改原门。
+  `pulc-pa100k-test-cpu-resume-v2/report.json` 的独立 test 10000 图亦完成：F32
+  10000/10000 PASS；F16 9955/10000，45 图属性失配；Q8 2497/10000，max 0.34178510
+  仍 FAIL。两 split 20000 图/60000 行完整且全稳定，收据审计四测试 RED→GREEN；
+  Q8 原概率失败分别 7275/7480 图，存储误差失败数相同，最大同权重执行附加误差
+  为 3.40e-6/3.87e-6。全部逐属性 GT 计数保留，不校准、训练、替换资产或事后改门。
+  首次 loader 失败保留；数据集诊断不代表正式/三后端/release 性能资格。
+  VeRi 由用户自行申请后提供，vehicle dataset GT 仍开放。
+  RAM 当前由独立 `tagging` task 持有，不沿用旧 YOLO 分支计划。
 - [ ] Other detection/pose/lane architectures: `damo_yolo`, `gold_yolo`,
   `yolo_nas`, `yolov6`, `yolov6_face`, `yolov7`, `yolov9`, `yolov10`,
   `yolo12`, `yolox`, `rtdetr`, `rtdetrv2`, `u_rtdetr`, `dfine`,
@@ -614,9 +807,10 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   `rtmdet_pose`/`yolox_dwpose` -> POSE role (COCO-17 skeletons only —
   whole-body 133-point skeletons stay exact-weights-unsupported);
   `yolov8_obb` -> OBB role; `grounding_*` -> WORLD/YOLOE
-  open-vocabulary roles; `yolov8_cls`/`pulc_attribute`/
-  `internimage_cls` -> CLASSIFY role (RAM covers the multi-label
-  tagging use case). Every enabled mapping must cite its catalog row;
+  open-vocabulary roles; `yolov8_cls`/`internimage_cls` -> CLASSIFY role
+  (RAM covers the multi-label tagging use case). `pulc_attribute` 由后续公共
+  attribute task 表达独立 Sigmoid 属性组，不能映射为 CLASSIFY 单类别 flags。
+  Every enabled mapping must cite its catalog row;
   unmatched official entries keep their names disabled with TODOs,
   and `clrnet` stays exact-weights-unsupported until a polyline typed
   result exists.

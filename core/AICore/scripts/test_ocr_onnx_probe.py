@@ -6,6 +6,9 @@ import subprocess
 from unittest.mock import patch
 from pathlib import Path
 from types import SimpleNamespace
+import hashlib
+import os
+import sys
 
 from run_ocr_onnx_probe import (accuracy_crops, accuracy_inputs,
     aggregate_fixtures, detector_input_limit, native_exit_is_diagnostic,
@@ -325,6 +328,142 @@ class ProviderContractTests(unittest.TestCase):
                     self.assertEqual(probe.run_probe(args), 0)
                 self.assertEqual(json.loads(args.report.read_text())["accuracy_reference"],
                     "original ONNX CUDA orientation and CTC")
+
+
+@unittest.skipUnless(os.environ.get("AICORE_TEST_ORIENTATION_ASSETS"),
+                     "需要显式指定真实 OCR 资产与独立 source 环境")
+class OrientationStoredTruthTests(unittest.TestCase):
+    def test_stored_recognition_is_separate_from_original_truth(self):
+        # 捕获缺陷：忽略存储权重，或用量化文本覆盖独立 source 的原文本门。
+        assets = Path(os.environ["AICORE_TEST_ORIENTATION_ASSETS"])
+        dictionary = Path(os.environ["AICORE_TEST_ORIENTATION_DICTIONARY"])
+        python = os.environ["AICORE_TEST_ORIENTATION_PYTHON"]
+        classifier = assets / "ocr_onnx/ch_ppocr_mobile_v2.0_cls_infer.onnx"
+        recognizer = assets / "ocr_onnx/ppocrv6_tiny_rec_infer.onnx"
+        weights = assets / "ocr_models/ppocrv6-tiny-rec-q8_0.gguf"
+        paths = (classifier, recognizer, weights, dictionary)
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        before = {str(path): sha(path) for path in paths}
+        exporter = Path(__file__).resolve().parents[1] / "tools/export_ocr_orientation_fixture.py"
+        command = [python, str(exporter), str(classifier),
+            str(assets / "ppocr_testdata/words_en"), "OUTPUT",
+            "--source-sha256", sha(classifier), "--rec-source", str(recognizer),
+            "--rec-source-sha256", sha(recognizer), "--dictionary", str(dictionary),
+            "--dictionary-sha256", sha(dictionary), "--provider", "cpu", "--threads", "4"]
+        with tempfile.TemporaryDirectory() as temporary:
+            original, stored = Path(temporary) / "original", Path(temporary) / "stored"
+            command[4] = str(original)
+            completed = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            truth = json.loads((original / "orientation.json").read_text())
+            command[4] = str(stored)
+            completed = subprocess.run(command + ["--rec-weights", str(weights)],
+                                       capture_output=True, text=True)
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            report = json.loads((stored / "orientation.json").read_text())
+            self.assertEqual(report["rows"], truth["rows"], "独立真值被诊断覆盖")
+            self.assertEqual(report["image_sha256"], truth["image_sha256"])
+            diagnostic = report["rec_stored_weights"]
+            self.assertEqual(diagnostic["container_sha256"], before[str(weights)])
+            self.assertGreater(diagnostic["storage_elements"]["Q8_0"], 0)
+            self.assertEqual(diagnostic["provider"][0], "CPUExecutionProvider")
+            self.assertEqual(len(diagnostic["texts"]), 10)
+            self.assertGreater(diagnostic["source_max_diff"], 0, "未消费实际量化权重")
+            self.assertTrue(all(isinstance(text, str) for text in diagnostic["texts"]))
+            self.assertNotIn("rec_stored_weights", truth)
+        self.assertEqual({str(path): sha(path) for path in paths}, before)
+
+    @unittest.skipUnless(os.environ.get("AICORE_TEST_ORIENTATION_RUNTIME"),
+                         "native 归因需要显式指定正式 runtime 与 fixture")
+    def test_native_orientation_preserves_original_text_gate(self):
+        # 原准确性门保持 RED 时也输出逐行诊断；不能将诊断完成称为任务通过。
+        import ctypes as c
+        import numpy as np
+        import cv2
+        from run_ocr_source_pipeline import Options, View, Box
+        class Orientation(c.Structure):
+            _fields_ = [("angle", c.c_int32), ("score", c.c_float), ("rotated", c.c_int32)]
+        assets = Path(os.environ["AICORE_TEST_ORIENTATION_ASSETS"])
+        runtime = Path(os.environ["AICORE_TEST_ORIENTATION_RUNTIME"]).absolute()
+        fixture = Path(os.environ["AICORE_TEST_ORIENTATION_FIXTURE"])
+        backend = os.environ.get("AICORE_TEST_ORIENTATION_DEVICE", "cpu")
+        self.assertIn(backend, ("cpu", "cuda", "vulkan"))
+        models = [assets / f"ocr_models/{name}-q8_0.gguf"
+                  for name in ("ppocrv6-tiny-det", "ppocrv6-tiny-rec", "ppocr-cls")]
+        paths = [runtime / "libAICore.so", *models, fixture / "orientation.json",
+                 fixture / "orientation.png", *runtime.glob("libggml*.so")]
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        before = {str(path): sha(path) for path in paths}
+        reference = json.loads((fixture / "orientation.json").read_text())
+        image = cv2.imread(str(fixture / "orientation.png"))
+        self.assertIsNotNone(image)
+        height, width = image.shape[:2]
+        padded = np.full((height, width * 3 + 19), 0x7f, np.uint8)
+        padded[:, :width * 3] = image.reshape(height, width * 3)
+        view = View(padded.ctypes.data, width, height, padded.strides[0], 4)
+        quads = np.asarray([row["quad"] for row in reference["rows"]], np.float32).reshape(-1)
+        library = c.CDLL(str(runtime / "libAICore.so"))
+        library.aicore_ocr_context_create.argtypes = [c.POINTER(Options)]
+        library.aicore_ocr_context_create.restype = c.c_void_p
+        library.aicore_ocr_context_destroy.argtypes = [c.c_void_p]
+        library.aicore_ocr_context_device.argtypes = [c.c_void_p]
+        library.aicore_ocr_context_device.restype = c.c_char_p
+        library.aicore_ocr_recognize.argtypes = [c.c_void_p, c.POINTER(View), c.POINTER(c.c_float), c.c_int32]
+        library.aicore_ocr_recognize.restype = c.c_void_p
+        library.aicore_ocr_box_count.argtypes = [c.c_void_p]
+        library.aicore_ocr_box_at.argtypes = [c.c_void_p, c.c_int32]
+        library.aicore_ocr_box_at.restype = c.POINTER(Box)
+        library.aicore_ocr_orientation_at.argtypes = [c.c_void_p, c.c_int32]
+        library.aicore_ocr_orientation_at.restype = c.POINTER(Orientation)
+        library.aicore_ocr_result_release.argtypes = [c.c_void_p]
+        library.aicore_ocr_last_error.restype = c.c_char_p
+        count = len(reference["rows"])
+        rows, original_mismatches, stored_mismatches = [], [], []
+        for threshold in (.9, 1.):
+            options = Options()
+            options.struct_size, options.abi_version = c.sizeof(options), 1
+            options.det, options.rec, options.cls = [str(path).encode() for path in models]
+            options.device, options.threads = backend.encode(), 4
+            options.batch, options.clsbatch, options.clsthresh = 6, 6, threshold
+            context = library.aicore_ocr_context_create(c.byref(options))
+            self.assertTrue(context, library.aicore_ocr_last_error())
+            try:
+                device = library.aicore_ocr_context_device(context).decode()
+                self.assertIn(backend, device.lower())
+                for repeat in range(2):
+                    result = library.aicore_ocr_recognize(context, c.byref(view),
+                        quads.ctypes.data_as(c.POINTER(c.c_float)), count)
+                    self.assertTrue(result, library.aicore_ocr_last_error())
+                    try:
+                        self.assertEqual(library.aicore_ocr_box_count(result), count)
+                        for index, expected in enumerate(reference["rows"]):
+                            box = library.aicore_ocr_box_at(result, index).contents
+                            orientation = library.aicore_ocr_orientation_at(result, index).contents
+                            self.assertEqual(orientation.angle, expected["angle"])
+                            self.assertLess(abs(orientation.score - expected["score"]), .001)
+                            self.assertEqual(orientation.rotated, int(expected["angle"] == 180 and expected["score"] > threshold))
+                            self.assertEqual(list(box.quad), quads[index * 8:index * 8 + 8].tolist())
+                            actual = box.text.decode()
+                            stored_text = reference["rec_stored_weights"]["texts"][index]
+                            row = dict(index=index, repeat=repeat, threshold=threshold,
+                                actual=actual, original=expected["text"], stored=stored_text,
+                                angle=orientation.angle, score=orientation.score, rotated=orientation.rotated)
+                            rows.append(row)
+                            if threshold == .9:
+                                if actual != expected["text"]: original_mismatches.append(row)
+                                if actual != stored_text: stored_mismatches.append(row)
+                    finally:
+                        library.aicore_ocr_result_release(result)
+            finally:
+                library.aicore_ocr_context_destroy(context)
+        after = {str(path): sha(path) for path in paths}
+        print(json.dumps(dict(backend=backend, device=device, rows=rows,
+            original_text_mismatches=original_mismatches, stored_text_mismatches=stored_mismatches,
+            original_gate_pass=not original_mismatches, artifacts_before=before,
+            artifacts_after=after, artifacts_unchanged=before == after,
+            scope="逐行存储/执行归因；保留原独立 source 文本门，不是 release 性能"), ensure_ascii=False), flush=True)
+        self.assertEqual(after, before)
+        self.assertEqual(original_mismatches, [], "原独立 source 文本门仍 FAIL")
 
 
 if __name__ == "__main__":

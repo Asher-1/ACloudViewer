@@ -176,15 +176,8 @@ HAS_BINARY = BINARY_PATH is not None
 # ── CLI harness detection ────────────────────────────────────────────────
 
 def _check_cli_available() -> bool:
-    if shutil.which("cli-anything-acloudviewer") is None:
-        return False
-    try:
-        r = subprocess.run(
-            ["cli-anything-acloudviewer", "--help"],
-            capture_output=True, timeout=10)
-        return r.returncode == 0
-    except Exception:
-        return False
+    """仅检测安装入口；已安装但损坏的 CLI 由实际测试报 FAIL，不能伪装缺依赖。"""
+    return shutil.which("cli-anything-acloudviewer") is not None
 
 
 HAS_CLI = _check_cli_available()
@@ -636,6 +629,30 @@ class TestLevel1_CppPlugin:
         server = data["mcpServers"]["acloudviewer"]
         assert server["command"] == "cli-anything-acloudviewer-mcp"
 
+    def test_level1_installed_broken_cli_is_not_classified_as_missing(self, monkeypatch):
+        # 安装入口存在但执行失败是回归，不是缺依赖；不能让整层 CLI 测试跳过。
+        monkeypatch.setattr(shutil, "which", lambda name: "/installed/cli-anything-acloudviewer")
+        monkeypatch.setattr(subprocess, "run", lambda command, **kwargs:
+                            subprocess.CompletedProcess(command, 1, b"", b"broken CLI"))
+        assert _check_cli_available()
+
+    @pytest.mark.parametrize("macos,suffix", [(False, "so"), (True, "dylib")])
+    def test_level1_existing_prefixed_plugin_avoids_rebuild(self, tmp_path, monkeypatch, macos, suffix):
+        # 只隔离外部构建操作；真实路径存在性/大小判断仍执行原入口。
+        (tmp_path / "CMakeCache.txt").write_text("configured")
+        plugin = tmp_path / "bin/plugins" / f"libQJSON_RPC_PLUGIN.{suffix}"
+        plugin.parent.mkdir(parents=True)
+        plugin.write_bytes(b"existing-build-artifact")
+        monkeypatch.setattr(sys.modules[__name__], "BUILD_DIR", tmp_path)
+        monkeypatch.setattr(sys.modules[__name__], "IS_WINDOWS", False)
+        monkeypatch.setattr(sys.modules[__name__], "IS_MACOS", macos)
+
+        def reject_build(*args, **kwargs):
+            pytest.fail("已有带 lib 前缀的平台插件不得触发重建")
+
+        monkeypatch.setattr(subprocess, "run", reject_build)
+        self.test_level1_plugin_builds()
+
     def test_level1_plugin_builds(self):
         if not (BUILD_DIR / "CMakeCache.txt").exists():
             pytest.skip("No build directory")
@@ -649,10 +666,12 @@ class TestLevel1_CppPlugin:
             ]
         elif IS_MACOS:
             plugin_paths = [
+                BUILD_DIR / "bin/plugins/libQJSON_RPC_PLUGIN.dylib",
                 BUILD_DIR / "bin/plugins/QJSON_RPC_PLUGIN.dylib",
             ]
         else:
             plugin_paths = [
+                BUILD_DIR / "bin/plugins/libQJSON_RPC_PLUGIN.so",
                 BUILD_DIR / "bin/plugins/QJSON_RPC_PLUGIN.so",
             ]
         

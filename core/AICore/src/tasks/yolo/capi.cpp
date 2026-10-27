@@ -125,6 +125,8 @@ struct aicore_yolo_options {
     // per box; empty = text/vocabulary path. See
     // aicore_yolo_options_set_visual_prompts.
     std::vector<float> visual_boxes;
+    aicore_yolo_attention_accumulation attention_accumulation =
+            AICORE_YOLO_ATTENTION_UPSTREAM;
 };
 
 struct aicore_yolo_segment_result {
@@ -395,6 +397,29 @@ AICORE_CAPI void aicore_yolo_options_free(aicore_yolo_options* opts) {
     delete opts;
 }
 
+AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
+        aicore_yolo_options* opts, int mode) {
+    if (opts == nullptr ||
+        (mode != AICORE_YOLO_ATTENTION_UPSTREAM &&
+         mode != AICORE_YOLO_ATTENTION_F32))
+        return -1;
+    opts->attention_accumulation =
+            static_cast<aicore_yolo_attention_accumulation>(mode);
+    return 0;
+}
+
+AICORE_CAPI int aicore_yolo_options_get_attention_accumulation(
+        const aicore_yolo_options* opts) {
+    return opts != nullptr ? static_cast<int>(opts->attention_accumulation) : -1;
+}
+
+AICORE_CAPI int aicore_yolo_context_attention_accumulation(
+        const aicore_yolo_ctx* ctx) {
+    return ctx != nullptr && ctx->engine != nullptr
+                   ? static_cast<int>(ctx->engine->opts.attention_accumulation)
+                   : -1;
+}
+
 AICORE_CAPI void aicore_yolo_options_set_device(aicore_yolo_options* opts,
                                                 const char* device) {
     if (opts != nullptr) aicore::capi::set_device(opts->common, device);
@@ -575,6 +600,7 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
             sopts.keep_all_ops = opts->keep_all_ops;
             sopts.profile_ops = opts->profile_ops;
             sopts.profile_gaps = opts->profile_gaps;
+            sopts.attention_accumulation = opts->attention_accumulation;
             // The class count fixes the graph text-input shape, so it must
             // ride into the session options at creation.
             if (!opts->classes.empty())
