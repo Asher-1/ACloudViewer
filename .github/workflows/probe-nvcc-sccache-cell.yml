@@ -16,7 +16,7 @@ on:
         type: string   # app | wheel
         required: true
       stage:
-        type: string   # seed | cross | strict | replay
+        type: string   # seed | cross | strict | replay | benefit
         required: true
 
 jobs:
@@ -108,11 +108,17 @@ jobs:
       CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
       PROBE_REF: cc5a64d2bc0c609165693641fcbd379d4792e76b
-      POOL_RUN_ID: ${{ inputs.stage == 'strict' && '40358505262' || '40266789621' }}
-      POOL_NAME: ${{ inputs.stage == 'strict' && format('probe-pool-{0}', inputs.lane) || (inputs.lane == 'app' && 'sccache-win-app-cudaON-150_merge' || 'sccache-win-wheel-cudaON-py3.12-150_merge') }}
+      POOL_RUN_ID: ${{ (inputs.stage == 'strict' || inputs.stage == 'benefit') && '40358505262' || '40266789621' }}
+      POOL_NAME: ${{ (inputs.stage == 'strict' || inputs.stage == 'benefit') && format('probe-pool-{0}', inputs.lane) || (inputs.lane == 'app' && 'sccache-win-app-cudaON-150_merge' || 'sccache-win-wheel-cudaON-py3.12-150_merge') }}
       # Production ceilings of the two jobs (windows.yml Enable steps).
       POOL_CAP: ${{ inputs.lane == 'app' && '10G' || '20G' }}
     steps:
+      - name: 预留完整失败留证与上传预算
+        if: inputs.stage == 'benefit'
+        run: |
+          # 360 分钟总预算中预留末尾 50 分钟，补测不得耗尽留证时间。
+          $deadline = [DateTime]::UtcNow.AddMinutes(310).ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ')
+          "PROBE_MEASUREMENT_DEADLINE=$deadline" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
       # Step order mirrors each production job (PATH precedence).
       - name: Set up MSVC environment (wheel order)
         if: inputs.lane == 'wheel'
@@ -211,7 +217,7 @@ jobs:
           & "$env:PROBE_TOOLS\test_probe.ps1"
           if ($LASTEXITCODE -ne 0) { throw "PowerShell 负例门禁失败" }
       - name: Restore production pool of run ${{ env.POOL_RUN_ID }}
-        if: inputs.stage == 'seed' || inputs.stage == 'strict'
+        if: inputs.stage == 'seed' || inputs.stage == 'strict' || inputs.stage == 'benefit'
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.POOL_NAME }}
@@ -276,7 +282,7 @@ jobs:
           $global:LASTEXITCODE = 0
       - name: Build (production build step)
         id: build
-        timeout-minutes: ${{ inputs.lane == 'app' && 200 || 300 }}
+        timeout-minutes: ${{ inputs.stage == 'benefit' && 200 || (inputs.lane == 'app' && 200 || 300) }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -327,8 +333,78 @@ jobs:
             --out (Join-Path $env:RUNNER_TEMP 'probe\strict') --lane '${{ inputs.lane }}'
           if ($LASTEXITCODE -ne 0) { throw "全量 COFF/cubin/PTX 门禁失败，禁止正式接入" }
           Write-Probe '全量 COFF/cubin/PTX 门禁通过（不代表 GPU 运行时验证）'
+      - name: 分配剩余补测预算
+        id: benefit-budget
+        if: inputs.stage == 'benefit' && inputs.lane == 'wheel' && steps.build.outcome == 'success'
+        run: |
+          $deadline = [DateTime]::Parse($env:PROBE_MEASUREMENT_DEADLINE).ToUniversalTime()
+          $minutes = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMinutes)
+          if ($minutes -lt 1) { throw '构建已用尽测量预算，保留原物并拒绝收益结论' }
+          "minutes=$([Math]::Min(210, $minutes))" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: wheel 同机全量收益与静态门禁
+        id: benefit
+        if: inputs.stage == 'benefit' && inputs.lane == 'wheel' && steps.build.outcome == 'success' && steps.benefit-budget.outcome == 'success'
+        timeout-minutes: ${{ fromJSON(steps.benefit-budget.outputs.minutes || '1') }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $b = "${{ env.SRC_DIR }}\build"
+          Copy-NinjaLogs $b
+          $o = Get-CudaObjects $b
+          if ($o.Root.Count -ne 55 -or $o.All.Count -ne 58) { throw "wheel CUDA 对象覆盖不符" }
+          $cmds = @(Get-VanillaCommands $b $o.All)
+          if ($cmds.Count -ne 58) { throw "wheel 实际命令覆盖不符" }
+          $manifest = Join-Path $env:RUNNER_TEMP 'probe\commands.json'
+          $record = [ordered]@{
+            schema = 'nvcc-benefit/1'; lane = 'wheel'; expected = 58
+            head = '${{ github.sha }}'; source_ref = $env:PROBE_REF
+            runner = $env:RUNNER_NAME; image = $env:ImageVersion
+            pool_run = $env:POOL_RUN_ID; pool_name = $env:POOL_NAME
+            sequence = @('A', 'W1', 'B', 'W2')
+            manifest_sha = (Get-FileHash $manifest -Algorithm SHA256).Hash.ToLower()
+          }
+          $record | ConvertTo-Json -Depth 5 | Out-File (Join-Path $env:RUNNER_TEMP 'probe\benefit.json') -Encoding utf8
+          Write-Probe "pool before measurements: $(Get-PoolSize ([long]$env:SCCACHE_POOL_T0))"
+          Save-Snapshot $b $o.All 'S1' | Out-Null
+          # 裸编译/热回放交错，固定命令及并行度；计时不含快照和静态审计。
+          foreach ($pair in @(@{ bare = 'A'; warm = 'W1' }, @{ bare = 'B'; warm = 'W2' })) {
+            # 执行器在查询 stats 前保存该轮快照，异常另保存部分实物。
+            Invoke-Vanilla $pair.bare $b $cmds | Out-Null
+            Invoke-Cached $pair.warm $b $cmds | Out-Null
+            Assert-WarmStats $pair.warm 58
+            Assert-SnapshotReplay 'S1' $pair.warm $o.All
+          }
+          Assert-SnapshotReplay 'W1' 'W2' $o.All
+          Write-Probe "pool after measurements: $(Get-PoolSize ([long]$env:SCCACHE_POOL_T0))"
+          $tool = Install-Cuobjdump
+          python "$env:PROBE_TOOLS\strict_gate.py" --tool $tool --snap 'C:\probe-snap' `
+            --manifest $manifest --out (Join-Path $env:RUNNER_TEMP 'probe\strict') --lane 'wheel'
+          if ($LASTEXITCODE -ne 0) { throw "wheel 同机实物全量静态门禁失败" }
+          $a = Get-Content (Join-Path $env:RUNNER_TEMP 'probe\phase-A.json') -Raw | ConvertFrom-Json
+          $bPhase = Get-Content (Join-Path $env:RUNNER_TEMP 'probe\phase-B.json') -Raw | ConvertFrom-Json
+          $w1 = Get-Content (Join-Path $env:RUNNER_TEMP 'probe\phase-W1.json') -Raw | ConvertFrom-Json
+          $w2 = Get-Content (Join-Path $env:RUNNER_TEMP 'probe\phase-W2.json') -Raw | ConvertFrom-Json
+          if ($w1.wall_sec -ge $a.wall_sec -or $w2.wall_sec -ge $bPhase.wall_sec) { throw "两组同机测量未均取得正收益" }
+          Write-Probe ("BENEFIT PASS: A/W1 {0:N3}x, B/W2 {1:N3}x; 58 objects, same runner/commands/parallelism; static evidence only" -f ($a.wall_sec / $w1.wall_sec), ($bPhase.wall_sec / $w2.wall_sec))
+      - name: 独立恢复失败或超时阶段实物
+        if: inputs.stage == 'benefit' && always() && steps.benefit.outcome != 'success'
+        timeout-minutes: 10
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $active = Join-Path $env:RUNNER_TEMP 'probe\active-phase.json'
+          if (Test-Path $active) {
+            $phase = Get-Content $active -Raw | ConvertFrom-Json
+            Save-PhaseFailure $phase.build @($phase.objects) $phase.tag '补测步骤失败或超时后的独立恢复'
+          } elseif (Test-Path '${{ env.SRC_DIR }}\build') {
+            $b = '${{ env.SRC_DIR }}\build'
+            $objects = @(Get-ChildItem $b -Recurse -File -Filter '*.cu.obj' | ForEach-Object { [IO.Path]::GetRelativePath($b, $_.FullName) })
+            Save-PhaseFailure $b $objects 'build' '未进入测量阶段；仅保存已生成对象，不代表完整覆盖'
+          } else {
+            Write-Probe '失败发生在构建树建立前，没有生成对象；禁止通过验收'
+          }
       - name: Probe
-        if: inputs.stage != 'strict' && always() && steps.build.outcome != 'skipped'
+        if: inputs.stage != 'strict' && inputs.stage != 'benefit' && always() && steps.build.outcome != 'skipped'
         continue-on-error: true
         timeout-minutes: 140
         run: |
@@ -372,6 +448,7 @@ jobs:
       - name: Trim pool (production trim) and report
         if: always() && steps.build.outcome != 'skipped'
         continue-on-error: true
+        timeout-minutes: 2
         run: |
           Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
           $s = Get-ScStats 'final'
@@ -386,19 +463,21 @@ jobs:
           Get-Content (Join-Path $env:RUNNER_TEMP 'probe\summary.md') | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
       - name: Upload probe results
         if: always()
+        timeout-minutes: 10
         uses: actions/upload-artifact@v4
         with:
           name: probe-${{ inputs.stage }}-${{ inputs.lane }}
           path: ${{ runner.temp }}\probe
-          if-no-files-found: ignore
+          if-no-files-found: ${{ inputs.stage == 'benefit' && 'error' || 'ignore' }}
           retention-days: 14
       - name: 保存全部独立编译原始对象
-        if: inputs.stage == 'strict' && always()
+        if: (inputs.stage == 'strict' || inputs.stage == 'benefit') && always()
+        timeout-minutes: 25
         uses: actions/upload-artifact@v4
         with:
           name: probe-raw-${{ inputs.lane }}
           path: C:\probe-snap
-          if-no-files-found: warn
+          if-no-files-found: error
           compression-level: 9
           retention-days: 14
       - name: Upload trimmed pool for the cross cell
