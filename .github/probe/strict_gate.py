@@ -119,6 +119,11 @@ def compare_object(tool, pa, pb, work, owner=None):
 
 
 def main():
+    # Windows 重定向输出默认 cp1252；诊断必须可输出全部中文，不能中断全量遍历。
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="strict")
     parser = argparse.ArgumentParser()
     parser.add_argument("--tool", required=True)
     parser.add_argument("--snap", required=True)
@@ -132,7 +137,8 @@ def main():
     expected_count, expected_fat = (33, 33) if args.lane == "app" else (58, 58)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8-sig"))
     expected = [m["obj"].replace("\\", "__").replace("/", "__").replace(":", "__") for m in manifest]
-    report = dict(schema="nvcc-equivalence/3", controls="fully-decoded-physical-lengths", lane=args.lane,
+    report = dict(schema="nvcc-equivalence/4", controls="fully-decoded-physical-lengths",
+                  ptx_extraction="exact-or-windows-lf-expansion", lane=args.lane,
                   expected=expected_count, manifest_sha=sha(Path(args.manifest).read_bytes()), pairs={}, equivalent=False)
     try:
         require(len(expected) == len(set(expected)) == expected_count, "命令清单对象数量/映射不符")

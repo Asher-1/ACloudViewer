@@ -168,7 +168,7 @@ def fatbin_entries(raw):
 
 
 def check_extracted(raw, manifest, directory):
-    """证明 cuobjdump 没有省略载荷；仅 PTX 的单个 C 终止符允许不写入文本文件。"""
+    """绑定完整载荷；PTX 只允许单个终止 NUL 省略及确定的 Windows LF 扩展。"""
     files = {(m["kind"], m["arch"]): m for m in manifest}
     require(len(files) == len(manifest), "同架构载荷映射歧义")
     seen = set()
@@ -178,8 +178,15 @@ def check_extracted(raw, manifest, directory):
         seen.add(key)
         extracted = (Path(directory) / files[key]["file"]).read_bytes()
         if item["kind"] == 1:
-            require(b"\0" not in extracted and item["decoded"] == extracted + b"\0",
-                    "PTX 提取省略了非终止内容/物理解码不符")
+            decoded = item["decoded"]
+            require(decoded.endswith(b"\0") and b"\0" not in decoded[:-1] and b"\0" not in extracted,
+                    "PTX 单个终止 NUL 合同不符")
+            exact = decoded[:-1] == extracted
+            # Windows cuobjdump 的文本模式对每个 LF 加一个 CR，包括原有 CRLF。
+            # 比较完整正向转换；不任意 strip，不允许部分转换或其它内容变化。
+            windows_text = not exact and decoded[:-1].replace(b"\n", b"\r\n") == extracted
+            require(exact or windows_text, "PTX 提取省略了非终止内容/物理解码不符")
+            files[key]["windows_text"] = windows_text
         else:
             require(item["decoded"] == extracted, "cubin 提取字节与完整物理解码不符")
         files[key]["decoded_sha"] = sha(item["decoded"])
@@ -221,12 +228,17 @@ def extract(tool, raw, directory):
     return manifest, expected
 
 
-def ptx(path, names):
+def ptx(path, names, windows_text=False):
     digest = hashlib.sha256()
     lines = 0
     targets = []
-    with Path(path).open(encoding="utf-8", errors="strict") as src:
+    # 仅按 LF 分行，避免 universal-newline 把 Windows 扩展产生的 CRCRLF 拆成两行。
+    with Path(path).open(encoding="utf-8", errors="strict", newline="\n") as src:
         for line in src:
+            if windows_text:
+                line = line.replace("\r\n", "\n")
+            line = line.replace("\r\n", "\n")
+            require("\r" not in line, "未验证的 PTX 单独 CR")
             lines += 1
             line = names(line)
             digest.update(line.encode("utf-8"))
@@ -248,13 +260,14 @@ def verify(tool, raw_a, raw_b, work, na=None, nb=None):
     errors = []
     for index, (a, b) in enumerate(zip(ma, mb)):
         pa, pb = root / "a" / a["file"], root / "b" / b["file"]
-        x = elf(pa.read_bytes(), na) if a["kind"] == 2 else ptx(pa, na)
-        y = elf(pb.read_bytes(), nb) if b["kind"] == 2 else ptx(pb, nb)
+        x = elf(pa.read_bytes(), na) if a["kind"] == 2 else ptx(pa, na, a["windows_text"])
+        y = elf(pb.read_bytes(), nb) if b["kind"] == 2 else ptx(pb, nb, b["windows_text"])
         good = x == y
         rows.append(dict(index=index, kind=a["kind"], arch=a["arch"], identical=good, canonical_a=sha(json.dumps(x, sort_keys=True).encode()),
                          canonical_b=sha(json.dumps(y, sort_keys=True).encode()),
                          decoded_sha_a=a["decoded_sha"], decoded_sha_b=b["decoded_sha"],
-                         decoded_size_a=a["decoded_size"], decoded_size_b=b["decoded_size"]))
+                         decoded_size_a=a["decoded_size"], decoded_size_b=b["decoded_size"],
+                         windows_text_a=a.get("windows_text"), windows_text_b=b.get("windows_text")))
         if not good:
             errors.append(dict(index=index, a=x, b=y))
     (root / "differences.json").write_text(json.dumps(errors, indent=1), encoding="utf-8")

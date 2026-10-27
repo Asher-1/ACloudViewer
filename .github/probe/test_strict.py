@@ -1,7 +1,7 @@
 """严格校验器的破坏性负例，以及格式/布局正例；无第三方依赖。"""
 import copy
 import io
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import json
 import os
 from pathlib import Path
@@ -225,9 +225,9 @@ class DeviceTests(unittest.TestCase):
                 with self.assertRaises(Invalid):
                     check_extracted(ptx_raw, manifest, temp)
 
-    def ptx_container(self, pid, instruction="ret;", hsize=80):
+    def ptx_container(self, pid, instruction="ret;", hsize=80, newline="\n", terminator=b"\0"):
         name = NamesTests().mangled(pid)
-        decoded = (f".version 8.5\n.target sm_90\n.address_size 64\n.visible .entry {name}()\n{{\n{instruction}\n}}\n").encode() + b"\0"
+        decoded = (f".version 8.5\n.target sm_90\n.address_size 64\n.visible .entry {name}()\n{{\n{instruction}\n}}\n").replace("\n", newline).encode() + terminator
         length = len(decoded)
         encoded = bytes([min(15, length) << 4])
         if length >= 15:
@@ -244,18 +244,84 @@ class DeviceTests(unittest.TestCase):
         struct.pack_into("<Q", header, 56, length)
         return struct.pack("<IHHQ", 0xba55ed50, 1, 16, hsize + len(encoded)) + header + encoded
 
-    def verify_ptx_fixture(self, a, b):
+    def verify_ptx_fixture(self, a, b, windows=(False, False)):
         def extracted(tool, raw, directory):
             # 仅替换外部工具；物理解码、精确提取绑定和完整 PTX 比较均运行真实逻辑。
             directory = Path(directory)
             directory.mkdir()
             item, = decoded_entries(raw)
-            (directory / "test.ptx").write_bytes(item["decoded"][:-1])
+            text = item["decoded"][:-1]
+            if windows[0 if directory.name == "a" else 1]:
+                text = text.replace(b"\n", b"\r\n")
+            (directory / "test.ptx").write_bytes(text)
             manifest = [dict(kind=1, arch=90, file="test.ptx")]
             check_extracted(raw, manifest, directory)
             return manifest, fatbin_entries(raw)
         with tempfile.TemporaryDirectory() as temp, patch("strict_device.extract", side_effect=extracted):
             return verify("fixture", a, b, Path(temp) / "compare", Names("FixedRadiusSearchOps.cu"), Names("FixedRadiusSearchOps.cu"))
+
+    def test_exact_and_windows_text_are_bound_to_complete_ptx(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "test.ptx"
+            for newline in ("\n", "\r\n"):
+                raw = self.ptx_container("1904", newline=newline)
+                item, = decoded_entries(raw)
+                exact = item["decoded"][:-1]
+                expected = None
+                for windows in (False, True):
+                    with self.subTest(newline=newline, windows=windows):
+                        path.write_bytes(exact.replace(b"\n", b"\r\n") if windows else exact)
+                        manifest = [dict(kind=1, arch=90, file=path.name)]
+                        check_extracted(raw, manifest, temp)
+                        self.assertIs(manifest[0]["windows_text"], windows)
+                        self.assertEqual(manifest[0]["decoded_size"], len(item["decoded"]))
+                        result = ptx(path, Names("FixedRadiusSearchOps.cu"), manifest[0]["windows_text"])
+                        if expected is None:
+                            expected = result
+                        self.assertEqual(expected, result)
+                        self.assertEqual(result["lines"], 7)
+                expanded = exact.replace(b"\n", b"\r\n")
+                for bad in (exact.replace(b"\n", b"\r\n", 1), expanded + b"\r",
+                            expanded[:-1], expanded.replace(b"ret;", b"trap;"),
+                            expanded + b"\0", expanded + b"\0trailing", expanded.replace(b"\r\n", b"\r\r\n", 1)):
+                    path.write_bytes(bad)
+                    with self.subTest(newline=newline, bad=bad), self.assertRaises(Invalid):
+                        check_extracted(raw, [dict(kind=1, arch=90, file=path.name)], temp)
+
+    def test_ptx_requires_one_terminal_nul_and_no_embedded_nul(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "test.ptx"
+            for terminator, instruction in ((b"", "ret;"), (b"\0\0", "ret;"), (b"\0", "re\0t;")):
+                raw = self.ptx_container("1904", instruction, terminator=terminator)
+                item, = decoded_entries(raw)
+                path.write_bytes(item["decoded"].rstrip(b"\0"))
+                with self.subTest(terminator=terminator, instruction=instruction), self.assertRaises(Invalid):
+                    check_extracted(raw, [dict(kind=1, arch=90, file=path.name)], temp)
+
+    def test_windows_mode_is_per_entry_and_does_not_hide_instruction_changes(self):
+        a, b = self.ptx_container("1904"), self.ptx_container("19040", newline="\r\n")
+        for windows in ((False, False), (False, True), (True, False), (True, True)):
+            with self.subTest(windows=windows):
+                report = self.verify_ptx_fixture(a, b, windows)
+                self.assertTrue(report["equivalent"])
+                entry = report["entries"][0]
+                self.assertIs(entry["windows_text_a"], windows[0])
+                self.assertIs(entry["windows_text_b"], windows[1])
+                changed = self.ptx_container("19040", "trap;", newline="\r\n")
+                self.assertFalse(self.verify_ptx_fixture(a, changed, windows)["equivalent"])
+
+    def test_standalone_cr_and_unbound_crcrlf_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "test.ptx"
+            item, = decoded_entries(self.ptx_container("1904"))
+            exact = item["decoded"][:-1]
+            for raw in (exact.replace(b"ret;", b"re\rt;"), exact.replace(b"\n", b"\r\r\n")):
+                path.write_bytes(raw)
+                with self.assertRaises(Invalid):
+                    ptx(path, Names("FixedRadiusSearchOps.cu"))
+            path.write_bytes(exact.replace(b"ret;", b"re\rt;").replace(b"\n", b"\r\n"))
+            with self.assertRaises(Invalid):
+                ptx(path, Names("FixedRadiusSearchOps.cu"), True)
 
     def test_generated_name_length_is_not_a_control_field(self):
         a, b = self.ptx_container("1904"), self.ptx_container("19040")
@@ -518,7 +584,7 @@ class MappingGateTests(unittest.TestCase):
 
 
 class GateExecutionTests(unittest.TestCase):
-    def execute(self, row=None, exception=None, inventory_error=False, lane="app", rows=None):
+    def execute(self, row=None, exception=None, inventory_error=False, lane="app", rows=None, encoding=None):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             manifest = root / "commands.json"
@@ -527,16 +593,54 @@ class GateExecutionTests(unittest.TestCase):
                             original=f"sccache nvcc -c D:\\repo\\{i}.cu -o {i}.cu.obj", launched=True) for i in range(count)]
             manifest.write_text(json.dumps(records))
             argv = ["strict_gate.py", "--tool", "unused", "--snap", temp, "--manifest", str(manifest), "--out", temp, "--lane", lane]
-            output = io.StringIO()
-            with patch.object(sys, "argv", argv), patch.object(strict_gate, "inventory") as inv, patch.object(strict_gate, "compare_object") as compare, redirect_stdout(output):
+            buffer = io.BytesIO() if encoding else None
+            output = io.TextIOWrapper(buffer, encoding=encoding, errors="strict") if encoding else io.StringIO()
+            with patch.object(sys, "argv", argv), patch.object(strict_gate, "inventory") as inv, patch.object(strict_gate, "compare_object") as compare, redirect_stdout(output), redirect_stderr(output):
                 if inventory_error:
-                    inv.side_effect = Invalid("missing-object-fixture")
+                    inv.side_effect = inventory_error if isinstance(inventory_error, Exception) else Invalid("missing-object-fixture")
                 else:
                     inv.return_value = {r["obj"]: root / r["obj"] for r in records}
                 compare.side_effect = exception if rows is None else [(r, {}) for r in rows] * 3
                 compare.return_value = (row, {})
                 code = strict_gate.main()
-            return code, json.loads((root / "gate.json").read_text()), output.getvalue()
+            if encoding:
+                self.assertEqual(output.encoding, "utf-8")
+                self.assertEqual(output.errors, "strict")
+                output.flush()
+                log = buffer.getvalue().decode("utf-8", "strict")
+                output.close()
+            else:
+                log = output.getvalue()
+            return code, json.loads((root / "gate.json").read_text(encoding="utf-8")), log
+
+    def test_cp1252_chinese_errors_do_not_interrupt_full_traversal(self):
+        for lane, count in (("app", 33), ("wheel", 58)):
+            with self.subTest(lane=lane):
+                code, report, log = self.execute(exception=Invalid("物理解码不符"), lane=lane, encoding="cp1252")
+                self.assertEqual(code, 1)
+                self.assertFalse(report["equivalent"])
+                self.assertNotIn("fatal", report)
+                self.assertEqual(log.count("OBJECT FAIL"), count * 3)
+                self.assertEqual(log.count("物理解码不符"), count * 3)
+                self.assertEqual(len(report["pairs"]), 3)
+                for pair in report["pairs"].values():
+                    self.assertEqual(len(pair["objects"]), count)
+                    self.assertTrue(all(row["error"] == "Invalid: 物理解码不符" for row in pair["objects"].values()))
+
+    def test_cp1252_chinese_fatal_is_preserved_and_never_green(self):
+        code, report, log = self.execute(inventory_error=Invalid("对象集合不符"), encoding="cp1252")
+        self.assertEqual(code, 1)
+        self.assertEqual(report["fatal"], "Invalid: 对象集合不符")
+        self.assertIn("GATE FATAL Invalid: 对象集合不符", log)
+        self.assertEqual(report["pairs"], {})
+
+    def test_schema4_reports_exact_presentation_contract(self):
+        row = dict(equivalent=True, device=dict(equivalent=True), identity_map={})
+        code, report, _ = self.execute(row=row)
+        self.assertEqual(code, 0)
+        self.assertEqual(report["schema"], "nvcc-equivalence/4")
+        self.assertEqual(report["controls"], "fully-decoded-physical-lengths")
+        self.assertEqual(report["ptx_extraction"], "exact-or-windows-lf-expansion")
 
     def test_object_exception_is_reported_and_never_green(self):
         code, report, log = self.execute(exception=Invalid("binding-fixture"))
