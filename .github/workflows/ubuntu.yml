@@ -202,6 +202,20 @@ jobs:
         # restored copy (the in-container export is skipped), which is a
         # no-op re-upload. Pool tarballs stay well under the 2 GB asset
         # limit (measured 0.7-1.1 GB per cell; CCACHE_MAXSIZE caps at 1.5 G).
+        # Branch policy: pool names deliberately have NO branch dimension.
+        # Cache keys are content-addressed, so a PR run restores main's pool
+        # and hits everything it shares with main; its own new objects join
+        # the same pool and are reused after merge. A cancelled run may
+        # still have run this step under if: always() and clobbered the pool
+        # with a near-empty tarball (measured: 0 MB uploads), so tars below
+        # 50 MB are NOT uploaded and the previous pool survives. A main-push
+        # save and a PR save racing on the same asset is mitigated by the
+        # single retry (last writer wins; both write a valid union pool).
+        # If sibling long-lived branches ever build in parallel, gate the
+        # save to main-only like Open3D's `if: github.ref == 'refs/heads/main'`.
+        # Cleanup: pools are single in-place-overwritten files, so storage is
+        # constant and no periodic deletion is needed (same as Open3D, whose
+        # GCS lifecycle only covers append-only devel/ wheels/ prefixes).
         if: always()
         continue-on-error: true
         env:
@@ -210,8 +224,14 @@ jobs:
           if [ -d .ccache ]; then
             ASSET="ccache-ubuntu-${CI_CONFIG}.tar.gz"
             tar -C .ccache -czf "/tmp/${ASSET}" .
-            gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-              || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            SIZE=$(stat -c%s "/tmp/${ASSET}" 2>/dev/null || echo 0)
+            if [ "${SIZE}" -lt 52428800 ]; then
+              echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
+            else
+              gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            fi
             rm -f "/tmp/${ASSET}"
           fi
 

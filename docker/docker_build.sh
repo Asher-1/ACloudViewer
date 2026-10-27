@@ -128,7 +128,7 @@ cuda_wheel_build() {
     # resolution contract as ci_build (the NVIDIA ENTRYPOINT banner would
     # corrupt a stdout tar pipe).
     if docker run --rm -v "${PWD}:/opt/mount" cloudviewer-ci:wheel \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache --get-config=cache_dir) && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[cuda_wheel_build()] ccache exported to ${PWD}/.ccache"
@@ -202,9 +202,15 @@ ci_build() {
     # cannot drift from whatever CCACHE_DIR the image actually uses; the
     # archive stores the directory's CONTENTS so the on-disk name stays
     # .ccache/ regardless of that path. The \$ escapes keep ccache -p running
-    # inside the container, not on the runner host.
+    # inside the container, not on the runner host. The cache dir is resolved
+    # via --get-config, NOT via parsing `ccache -p`: 3.7.7 (focal) prints
+    # -p output as "(origin) key = value" with a cache_dir_levels key, so
+    # every field-position awk variant either absorbed "2" into the path
+    # (substring match) or matched nothing (exact $1 match) — both aborted
+    # the export and left the focal pools empty (95622928/702727a6 rounds).
+    # --get-config prints just the value on 3.7.x and 4.x alike.
     if docker run --rm -v "${PWD}:/opt/mount" "${DOCKER_TAG}" \
-        bash -c "D=\$(ccache -p | awk '/cache_dir/{print \$NF}') && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
+        bash -c "D=\$(ccache --get-config=cache_dir) && ccache --show-stats > /opt/mount/.ccache-stats.txt || true && tar -C \"\$D\" -czf /opt/mount/.ccache-export.tgz ." \
        && mkdir -p "${PWD}/.ccache" && tar -C "${PWD}/.ccache" -xzf "${PWD}/.ccache-export.tgz"; then
         rm -f "${PWD}/.ccache-export.tgz"
         echo "[ci_build()] ccache exported to ${PWD}/.ccache (stats: .ccache-stats.txt)"

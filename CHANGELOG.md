@@ -24,6 +24,46 @@ v3.9.5-Beta (Asher) - 08/04/2026
       both app pools so the cold double pass fits the 360 min runner cap
     - actions/cache now has zero compiler-cache consumers (immune to the
       10 GB quota, PR-merge scoping, and 7-day idle eviction)
+    - fix focal (ccache 3.7.7) export: its -p output is "(origin) key =
+      value" so the field-position awk matched nothing; read the dir via
+      ccache --get-config=cache_dir, version-proof on 3.7.x and 4.x
+    - windows: set SCCACHE_IDLE_TIMEOUT=36000 (the 600 s default
+      self-exited during the ~11 min packaging window, so every stats
+      observer reported a fresh 0-request server and the real hit/miss
+      tally was invisible) and start the daemon explicitly with a
+      location/size printout proving the restored pool is visible
+    - all save steps refuse uploads below 50 MB so a cancelled run can no
+      longer clobber a healthy pool with a near-empty tarball, and retry
+      one --clobber to soften the main-push vs PR-save race; pool names
+      stay branch-agnostic (content-addressed keys) and need no periodic
+      cleanup, matching Open3D's fixed-name GCS pools
+    - windows: sccache pools moved from release assets to
+      apache/infrastructure-actions/stash (Apache Arrow's Windows MSVC
+      cache backend, one artifact per cell and branch). The 2 GiB asset
+      limit forced SCCACHE_CACHE_SIZE=1900M below the ~4 GB working set,
+      so every pool sat at the cap and LRU thrashed (62.15% -> 5.89% hits
+      on the same image, MSVC and sources). Pools now trim to the entries
+      the job touched (DuckDB evict-old-files: job semantics) before save;
+      cached builds stop at 330 min and failed, timed-out or cancelled
+      builds save their partial pool, so a near-cold round can no longer
+      hit the 360 min cap without saving and stay cold forever
+    - windows: the sccache stats notice and job summary now come from the
+      live daemon before --stop-server. sccache-action's post step queried
+      a freshly spawned daemon after the stop and annotated every warm
+      round as "0% - 0 hits" while the builds hit 95.67-98.97%
+    - ubuntu/ubuntu-cuda focal: CCACHE_COMPRESS=1. ccache 3.7.7 stores
+      objects uncompressed by default, so the focal pools overflowed the
+      1500M cap (1.4/1.5 GB, 193 cleanups, 7.7-23% hits) while the zstd
+      pools of ccache 4.x on jammy/noble/wheel hold the same tree in
+      0.9-1.0 GB at 84%; focal compiled for 135 min instead of 27 and was
+      the 3 h critical path of both workflows. The focal shaderc (glslc)
+      source build now uses ccache as well
+- Fix reconstruction JobQueue::Stop lost wakeup (upstream COLMAP parity):
+  stop_ was set without the mutex, so a Pop()/Push() between its predicate
+  check and wait() missed the notify and blocked forever; it hung
+  controllers_feature_extraction_test for 4 h until the 360 min job cap.
+  The reconstruction ctest gates now pass --timeout 1200 so a hang fails
+  fast
 - Fix macOS wheel packaging: skip symlinked libraries in the codesign
   set (a concurrent worker rewriting the link target transiently
   dangles the link, failing remove-signature)

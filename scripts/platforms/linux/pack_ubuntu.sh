@@ -7,6 +7,12 @@
 # libggml-cuda.so always needs libcublas.so.* at runtime (ggml hardwires
 # non-quantized matmul to cuBLAS), so keep AICore_BUNDLE_CUDA_RUNTIME=ON
 # for CUDA-enabled installers.
+# libsystemd MUST stay out of lib/: its symbol version (LIBSYSTEMD_254...)
+# drifts per distro, and ACloudViewer.sh exports LD_LIBRARY_PATH before
+# calling coreutils (basename/dirname/uname) — a focal/jammy-built
+# libsystemd in lib/ crashes those on a noble host (run 40099941829:
+# agent-integration 121 tests failed with exit 126, "LIBSYSTEMD_254 not
+# found"), while noble-built ones break on older hosts the same way.
 
 should_exclude_lib() {
     local base_name="$1"
@@ -15,7 +21,8 @@ should_exclude_lib() {
     case "$base_name" in
         libc.so.*|libdl.so.*|libselinux.so.*|libpthread.so.*|librt.so.*|\
         ld-linux-*.so.*|libdrm.so.*|libdrm_*.so.*|libm.so.*|libstdc++.so.*|\
-        libgcc_s.so.*|libutil.so.*|libresolv.so.*|libnss_*.so.*|libnsl.so.*)
+        libgcc_s.so.*|libutil.so.*|libresolv.so.*|libnss_*.so.*|libnsl.so.*|\
+        libsystemd.so.*)
             return 0
             ;;
     esac

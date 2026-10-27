@@ -210,7 +210,10 @@ if ($env:IGNORE_TEST -ne "ON") {
 # Print sccache stats while the daemon is still alive: it is spawned inside
 # this step's process tree, its stats are in-memory, and GitHub Actions
 # runners terminate that tree on step exit — post-build stats observers
-# therefore always report 0 requests on Windows. This job is the one that
+# therefore always report 0 requests on Windows. With the default
+# SCCACHE_IDLE_TIMEOUT of 600 s the daemon also self-exits during packaging;
+# windows.yml now sets SCCACHE_IDLE_TIMEOUT=36000, so these numbers are the
+# real tally of the run. This job is the one that
 # hits the 6h runner limit, so the hit rate is also the key tuning signal.
 if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
     Write-Host "=== sccache stats (in-step, daemon alive) ==="

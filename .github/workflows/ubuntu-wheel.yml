@@ -223,8 +223,17 @@ jobs:
           if [ -d .ccache ]; then
             ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
             tar -C .ccache -czf "/tmp/${ASSET}" .
-            gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-              || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            # Cancelled/aborted runs clobber the pool with near-empty tarballs;
+            # a real pool is >=500 MB. Branch policy and cleanup rationale:
+            # see ubuntu.yml's save step.
+            SIZE=$(stat -c%s "/tmp/${ASSET}" 2>/dev/null || echo 0)
+            if [ "${SIZE}" -lt 52428800 ]; then
+              echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
+            else
+              gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            fi
             rm -f "/tmp/${ASSET}"
           fi
 
