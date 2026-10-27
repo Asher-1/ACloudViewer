@@ -81,22 +81,110 @@ def elf(data, names):
     return dict(header=[ident.hex(), type_, machine, version, entry, flags], programs=programs, section_order=secnames, sections=out)
 
 
-def fatbin_entries(raw):
+def decompress_payload(data, expected):
+    """有界 LZ4 block 解码，O(输入＋输出)；不信任声明长度，不预分配该长度。"""
+    output = bytearray()
+    pos = 0
+
+    def extended(length):
+        nonlocal pos
+        if length == 15:
+            while True:
+                require(pos < len(data), "压缩长度扩展被截断")
+                extra = data[pos]
+                pos += 1
+                length += extra
+                if extra != 255:
+                    break
+        return length
+
+    while pos < len(data):
+        token = data[pos]
+        pos += 1
+        literal = extended(token >> 4)
+        require(pos + literal <= len(data) and len(output) + literal <= expected,
+                "压缩 literal 越界/超过声明输出")
+        output.extend(data[pos:pos + literal])
+        pos += literal
+        if pos == len(data):
+            break
+        require(pos + 2 <= len(data), "压缩引用被截断")
+        back = int.from_bytes(data[pos:pos + 2], "little")
+        pos += 2
+        count = extended(token & 15) + 4
+        require(0 < back <= len(output) and len(output) + count <= expected,
+                "压缩引用越界/超过声明输出")
+        # 重叠引用重复已有周期，按块构造，避免逐字节 Python 循环。
+        pattern = output[len(output) - back:len(output) - back + min(back, count)]
+        output.extend((pattern * ((count + len(pattern) - 1) // len(pattern)))[:count])
+    require(pos == len(data) and len(output) == expected and expected > 0,
+            "压缩输入未完全消费/解压长度不符")
+    return bytes(output)
+
+
+def decoded_entries(raw):
+    """逐条目验证物理编码并返回完整解码载荷；未知格式失败。"""
     magic, version, header, size = struct.unpack("<IHHQ", blob(raw, 0, 16))
     require(magic == 0xba55ed50 and version == 1 and header == 16 and header + size == len(raw),
             "未知 fatbin 容器或未核查尾部")
     pos = header
-    entries = []
     while pos < len(raw):
         kind, version, hsize, payload = struct.unpack("<HHIQ", blob(raw, pos, 16))
-        require(kind in (1, 2) and hsize >= 32 and payload > 0, "未知 fatbin entry")
+        require(version == 0x101 and payload > 0 and
+                ((kind == 2 and hsize == 64) or (kind == 1 and hsize in (80, 104))),
+                "未知 fatbin entry")
         entry = blob(raw, pos, hsize + payload)
-        # 除压缩后的 payload 大小，全部控制字段保留供配对；identifier 单独检查。
-        architecture = struct.unpack_from("<I", entry, 28)[0]
-        entries.append((kind, architecture, version, hsize, sha(entry[16:hsize])))
+        compressed = struct.unpack_from("<I", entry, 16)[0]
+        flags = struct.unpack_from("<Q", entry, 40)[0]
+        declared = struct.unpack_from("<Q", entry, 56)[0]
+        require(flags in (0x41, 0x2041), "未验证 fatbin flags")
+        encoded = entry[hsize:]
+        if flags & 0x2000:
+            require(0 < compressed <= payload and payload == (compressed + 7) // 8 * 8,
+                    "fatbin 压缩长度/对齐错误")
+            require(not any(encoded[compressed:]), "fatbin 压缩 padding 非零")
+            decoded = decompress_payload(encoded[:compressed], declared)
+        else:
+            require(compressed == 0 and declared == 0, "未压缩 fatbin 存在压缩长度")
+            decoded = encoded
+        yield dict(kind=kind, arch=struct.unpack_from("<I", entry, 28)[0],
+                   version=version, hsize=hsize, header=entry[:hsize],
+                   compressed_size=compressed, payload_size=payload,
+                   declared_size=declared, decoded=decoded)
         pos += hsize + payload
-    require(pos == len(raw) and entries, "fatbin 覆盖失败")
+    require(pos == len(raw) and pos > header, "fatbin 覆盖失败")
+
+
+def fatbin_entries(raw):
+    entries = []
+    for item in decoded_entries(raw):
+        # 完整消费压缩数据、padding 和精确解压长度后，物理长度不作为语义控制字段。
+        # [56:64] 是已验证的解码长度，生成名称位数可令它变化；全部载荷仍须独立比较。
+        # flags、保留字段和 [64:hsize] 附加控制内容全部保留；未知格式仍失败。
+        entries.append((item["kind"], item["arch"], item["version"], item["hsize"],
+                        sha(item["header"][20:56] + item["header"][64:])))
+    require(entries, "fatbin 无载荷")
     return entries
+
+
+def check_extracted(raw, manifest, directory):
+    """证明 cuobjdump 没有省略载荷；仅 PTX 的单个 C 终止符允许不写入文本文件。"""
+    files = {(m["kind"], m["arch"]): m for m in manifest}
+    require(len(files) == len(manifest), "同架构载荷映射歧义")
+    seen = set()
+    for item in decoded_entries(raw):
+        key = (item["kind"], item["arch"])
+        require(key in files and key not in seen, "物理解码与提取条目覆盖不符")
+        seen.add(key)
+        extracted = (Path(directory) / files[key]["file"]).read_bytes()
+        if item["kind"] == 1:
+            require(b"\0" not in extracted and item["decoded"] == extracted + b"\0",
+                    "PTX 提取省略了非终止内容/物理解码不符")
+        else:
+            require(item["decoded"] == extracted, "cubin 提取字节与完整物理解码不符")
+        files[key]["decoded_sha"] = sha(item["decoded"])
+        files[key]["decoded_size"] = len(item["decoded"])
+    require(seen == files.keys(), "存在未验证提取条目")
 
 
 def run(tool, args, cwd):
@@ -129,6 +217,7 @@ def extract(tool, raw, directory):
             manifest.append(dict(kind=kind, arch=int(arch[1]), file=name))
     require(collections.Counter((m["kind"], m["arch"]) for m in manifest) == collections.Counter((e[0], e[1]) for e in expected),
             "fatbin 架构覆盖不完整")
+    check_extracted(raw, manifest, directory)
     return manifest, expected
 
 
@@ -163,7 +252,9 @@ def verify(tool, raw_a, raw_b, work, na=None, nb=None):
         y = elf(pb.read_bytes(), nb) if b["kind"] == 2 else ptx(pb, nb)
         good = x == y
         rows.append(dict(index=index, kind=a["kind"], arch=a["arch"], identical=good, canonical_a=sha(json.dumps(x, sort_keys=True).encode()),
-                         canonical_b=sha(json.dumps(y, sort_keys=True).encode())))
+                         canonical_b=sha(json.dumps(y, sort_keys=True).encode()),
+                         decoded_sha_a=a["decoded_sha"], decoded_sha_b=b["decoded_sha"],
+                         decoded_size_a=a["decoded_size"], decoded_size_b=b["decoded_size"]))
         if not good:
             errors.append(dict(index=index, a=x, b=y))
     (root / "differences.json").write_text(json.dumps(errors, indent=1), encoding="utf-8")

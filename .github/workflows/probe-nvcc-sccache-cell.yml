@@ -16,11 +16,81 @@ on:
         type: string   # app | wheel
         required: true
       stage:
-        type: string   # seed | cross
+        type: string   # seed | cross | strict | replay
         required: true
 
 jobs:
+  replay:
+    name: replay-${{ inputs.lane }}
+    if: inputs.stage == 'replay'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      CUDA_VERSION: "12.6.0"
+      PROBE_TOOLS: ${{ github.workspace }}\.github\probe
+    steps:
+      - name: Checkout repaired probe tools
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/probe
+      - name: Set up validation Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 校验器严格负例
+        run: |
+          python "$env:PROBE_TOOLS\test_strict.py" -v
+          if ($LASTEXITCODE -ne 0) { throw "严格校验器负例失败" }
+      - name: 恢复失败轮全部原始对象
+        uses: actions/download-artifact@v4
+        with:
+          name: probe-raw-${{ inputs.lane }}
+          path: ${{ runner.temp }}\replay-raw
+          run-id: 40443832739
+          github-token: ${{ github.token }}
+      - name: 恢复失败轮实际命令与编译记录
+        uses: actions/download-artifact@v4
+        with:
+          name: probe-strict-${{ inputs.lane }}
+          path: ${{ runner.temp }}\replay-source
+          run-id: 40443832739
+          github-token: ${{ github.token }}
+      - name: 原始产物全量 COFF/cubin/PTX 重放
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $source = Join-Path $env:RUNNER_TEMP 'replay-source'
+          $manifest = @(Get-Content "$source\commands.json" -Raw | ConvertFrom-Json)
+          $count = if ('${{ inputs.lane }}' -eq 'app') { 33 } else { 58 }
+          foreach ($label in 'A', 'B') {
+            $records = @(Get-Content "$source\vanilla-$label.json" -Raw | ConvertFrom-Json)
+            if ($records.Count -ne $count -or @($records | Where-Object { $_.rc -ne 0 -or $_.sec -le 0 }).Count -ne 0) {
+              throw "裸编译 $label 记录不完整/失败"
+            }
+            if (@(Compare-Object ($manifest.obj | Sort-Object) ($records.obj | Sort-Object)).Count -ne 0) {
+              throw "裸编译 $label 对象覆盖不符"
+            }
+          }
+          $tool = Install-Cuobjdump
+          python "$env:PROBE_TOOLS\strict_gate.py" --tool $tool `
+            --snap (Join-Path $env:RUNNER_TEMP 'replay-raw') --manifest "$source\commands.json" `
+            --out (Join-Path $env:RUNNER_TEMP 'replay-gate') --lane '${{ inputs.lane }}'
+          if ($LASTEXITCODE -ne 0) { throw "全量重放门禁失败，禁止正式接入" }
+          "全量静态等价重放通过；来源 run 40443832739，不代表 GPU 运行时验证。" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+      - name: 保存完整重放证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-replay-${{ inputs.lane }}
+          path: ${{ runner.temp }}\replay-gate
+          if-no-files-found: error
+          retention-days: 14
+
   cell:
+    if: inputs.stage != 'replay'
     name: ${{ inputs.stage }}-${{ inputs.lane }}
     permissions:
       contents: read

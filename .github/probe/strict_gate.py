@@ -2,10 +2,11 @@
 import argparse
 import collections
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+import re
 import struct
 import sys
-from strict_coff import Coff, Invalid, Names, require, sha
+from strict_coff import Coff, Invalid, Names, lambda_bijection, namespace_bijection, require, sha
 import strict_device
 
 
@@ -34,9 +35,54 @@ def bound_fatbin(coff, section):
                 require(int.from_bytes(sec["raw"][offset:offset + width], "little") == 0, "宿主引用 fatbin 带非零 addend")
 
 
-def compare_object(tool, pa, pb, work):
+def source_owner(record):
+    """所有权来自实际 -c 输入；仅支持本实验已确认的显式 CUDA 编译命令。"""
+    pattern = r'(?:^|\s)-c\s+(?:"([^"\r\n]+\.cu)"|(\S+\.cu))(?=\s|$)'
+    sources = []
+    for field in ("cmd", "original"):
+        matches = re.findall(pattern, record[field])
+        require(len(matches) == 1, "实际编译源缺失/歧义")
+        sources.append(matches[0][0] or matches[0][1])
+    require(sources[0] == sources[1], "launcher 与裸编译源不符")
+    owner = PureWindowsPath(sources[0]).name
+    require(PureWindowsPath(record["obj"]).name == owner + ".obj", "实际源与对象所有权不符")
+    return owner
+
+
+def identity_tokens(coff):
+    pattern = r"<lambda_[0-9a-f]{32}>|\?A0x[0-9a-f]{8}(?=@@)"
+    tokens = set()
+    for symbol in coff.symbols.values():
+        tokens.update(re.findall(pattern, symbol["name"]))
+    for sec in coff.sections.values():
+        if sec["name"] == ".rdata":
+            for text in re.findall(rb"[\x20-\x7e]{6,}\x00", sec["raw"]):
+                tokens.update(re.findall(pattern, text.decode("latin1")))
+    return tokens
+
+
+def merge_identity_maps(forward, reverse, mapping):
+    # 所有对象共同约束同一身份；稳定 token 也必须作为不可更换锚点。
+    for original, target in mapping.items():
+        require(forward.setdefault(original, target) == target, "跨对象生成身份映射冲突")
+        require(reverse.setdefault(target, original) == original, "跨对象生成身份映射碰撞")
+
+
+def check_composition(pairs):
+    sa, ab, sb = (pairs[label]["identity_map"] for label in ("S1-vs-A", "A-vs-B", "S1-vs-B"))
+    require(set(ab) == set(sb) and set(ab.values()) == set(sa), "三快照身份覆盖不符")
+    require({token: sa[mid] for token, mid in ab.items()} == sb, "三快照身份映射组合不一致")
+
+
+def compare_object(tool, pa, pb, work, owner=None):
     a, b = Coff(pa.read_bytes()), Coff(pb.read_bytes())
-    na, nb = Names(), Names()
+    namespace_map = namespace_bijection(a, b, owner)
+    mapping = lambda_bijection(a, b, Names(owner), Names(owner, namespace_map=namespace_map))
+    na, nb = Names(owner), Names(owner, mapping, namespace_map)
+    tokens_a, tokens_b = identity_tokens(a), identity_tokens(b)
+    changed = dict(mapping, **namespace_map)
+    identities = {token: changed.get(token, token) for token in tokens_b}
+    require(set(identities.values()) == tokens_a and len(set(identities.values())) == len(identities), "完整生成身份覆盖/一一映射不符")
     x, y = a.canonical(na), b.canonical(nb)
     ignored_a, ignored_b = x.pop("ignored"), y.pop("ignored")
     require([(r[0], r[1], r[2]) for r in ignored_a] == [(r[0], r[1], r[2]) for r in ignored_b],
@@ -66,9 +112,10 @@ def compare_object(tool, pa, pb, work):
     errors = {}
     if not good:
         errors = dict(host_a=x, host_b=y)
-    return dict(equivalent=good, full_bytes_equal=a.data == b.data, host_a=sha(json.dumps(x, sort_keys=True).encode()),
-                host_b=sha(json.dumps(y, sort_keys=True).encode()), device=device, names_a=na.changes, names_b=nb.changes,
-                ignored_a=ignored_a, ignored_b=ignored_b), errors
+    return dict(equivalent=good, full_bytes_equal=a.data == b.data, raw_sha_a=sha(a.data), raw_sha_b=sha(b.data),
+                owner=owner, identity_map=identities, namespace_map=namespace_map, lambda_map=mapping,
+                host_a=sha(json.dumps(x, sort_keys=True).encode()), host_b=sha(json.dumps(y, sort_keys=True).encode()),
+                device=device, names_a=na.changes, names_b=nb.changes, ignored_a=ignored_a, ignored_b=ignored_b), errors
 
 
 def main():
@@ -81,33 +128,51 @@ def main():
     args = parser.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    expected_count, expected_fat = (33, 31) if args.lane == "app" else (58, 56)
+    # run 40443832739 的完整 S1/A/B 实物：app 33/33，wheel 58/58；不从旧解析失败数推断覆盖。
+    expected_count, expected_fat = (33, 33) if args.lane == "app" else (58, 58)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8-sig"))
     expected = [m["obj"].replace("\\", "__").replace("/", "__").replace(":", "__") for m in manifest]
-    report = dict(schema="nvcc-equivalence/1", lane=args.lane, expected=expected_count, pairs={}, equivalent=False)
+    report = dict(schema="nvcc-equivalence/3", controls="fully-decoded-physical-lengths", lane=args.lane,
+                  expected=expected_count, manifest_sha=sha(Path(args.manifest).read_bytes()), pairs={}, equivalent=False)
     try:
         require(len(expected) == len(set(expected)) == expected_count, "命令清单对象数量/映射不符")
         require(all(m["launched"] for m in manifest), "存在未经过 launcher 的对象")
+        owners = {name: source_owner(record) for name, record in zip(expected, manifest)}
         files = {s: inventory(Path(args.snap) / s, expected) for s in ("S1", "A", "B")}
         for left, right in (("S1", "A"), ("A", "B"), ("S1", "B")):
             label = left + "-vs-" + right
-            pair = report["pairs"][label] = dict(objects={}, errors={}, fatbin=0, equivalent=False)
+            pair = report["pairs"][label] = dict(objects={}, errors={}, fatbin=0, identity_map={}, equivalent=False)
+            reverse = {}
             for name in sorted(expected):
                 print(label, name, flush=True)
                 try:
-                    row, errors = compare_object(args.tool, files[left][name], files[right][name], out / label / name)
+                    work = out / label / name
+                    row, errors = compare_object(args.tool, files[left][name], files[right][name], work, owners[name])
+                    merge_identity_maps(pair["identity_map"], reverse, row["identity_map"])
                     pair["objects"][name] = row
                     pair["fatbin"] += row["device"] is not None
                     if errors:
-                        pair["errors"][name] = errors
+                        work.mkdir(parents=True, exist_ok=True)
+                        detail = work / "host-differences.json"
+                        detail.write_text(json.dumps(errors, indent=1), encoding="utf-8")
+                        pair["errors"][name] = dict(file=str(detail.relative_to(out)), sha=sha(detail.read_bytes()))
+                        print("OBJECT FAIL", label, name, "完整宿主/设备结构不同；详情", pair["errors"][name]["file"], flush=True)
+                    del row, errors
                 except Exception as err:
                     pair["objects"][name] = dict(equivalent=False, error=type(err).__name__ + ": " + str(err))
-            pair["equivalent"] = len(pair["objects"]) == expected_count and pair["fatbin"] == expected_fat and all(r["equivalent"] for r in pair["objects"].values())
+                    print("OBJECT FAIL", label, name, pair["objects"][name]["error"], flush=True)
+            pair["equivalent"] = len(pair["objects"]) == expected_count and pair["fatbin"] == expected_fat and not pair["errors"] and all(r["equivalent"] for r in pair["objects"].values())
+            print("PAIR", label, "objects", len(pair["objects"]), "/", expected_count,
+                  "fatbin", pair["fatbin"], "/", expected_fat,
+                  "failed", sum(not row["equivalent"] for row in pair["objects"].values()),
+                  "PASS" if pair["equivalent"] else "FAIL", flush=True)
             # 每对比较立即刷新完整报告；远程超时也保留已取得的证据。
             (out / "gate.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
+        check_composition(report["pairs"])
         report["equivalent"] = all(p["equivalent"] for p in report["pairs"].values())
     except Exception as err:
         report["fatal"] = type(err).__name__ + ": " + str(err)
+        print("GATE FATAL", report["fatal"], flush=True)
     (out / "gate.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     print("STRICT GATE", "PASS" if report["equivalent"] else "FAIL", flush=True)
     return 0 if report["equivalent"] else 1

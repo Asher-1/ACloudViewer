@@ -13,7 +13,7 @@
 #   4. pool size kept by the production trim vs the 10G / 20G ceilings
 # Each cell runs the production job's own steps with the candidate change
 # (see probe-nvcc-sccache-cell.yml).
-# 第三轮只补独立编译全量等价性；复用第二轮热池，不重跑已通过的跨 runner 四格。
+# 修复轮重放 run 40443832739 的全部 S1/A/B 原始对象；不重编、不改写原失败报告。
 name: Probe nvcc sccache
 permissions: {}
 
@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
     with:
       lane: app
-      stage: strict
+      stage: replay
   strict-wheel:
     permissions:
       contents: read
@@ -38,4 +38,4 @@ jobs:
     uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
     with:
       lane: wheel
-      stage: strict
+      stage: replay

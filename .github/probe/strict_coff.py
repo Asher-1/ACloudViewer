@@ -40,9 +40,26 @@ def cstring(data, offset):
 
 class Names:
     """仅规范编译单元生成 id；声明长度限定范围，不吞掉后续函数长度。"""
-    def __init__(self):
+    def __init__(self, unit_owner=None, lambda_map=None, namespace_map=None):
+        self.lambda_map = lambda_map or {}
+        self.namespace_map = namespace_map or {}
+        require(len(set(self.lambda_map.values())) == len(self.lambda_map), "lambda 改名非一一映射")
+        require(len(set(self.namespace_map.values())) == len(self.namespace_map), "namespace 改名非一一映射")
+        require(not self.namespace_map or unit_owner, "namespace 改名缺少实际源所有权")
+        require(all(re.fullmatch(r"\?A0x[0-9a-f]{8}", t) for pair in self.namespace_map.items() for t in pair), "未知 namespace 映射 token")
         self.originals = {}
         self.changes = {}
+        self.unit_owner = unit_owner.replace(".", "_") if unit_owner else None
+        self.unit_ids = {}
+
+    def unit_hash(self, source, source_hash):
+        if self.unit_owner is None:
+            return source_hash
+        require(source == self.unit_owner, "生成单元名称与实际编译源不符")
+        previous = self.unit_ids.setdefault(source, source_hash)
+        require(previous == source_hash, "同一对象存在多个生成单元 ID")
+        # 第二段 ID 不是稳定源码哈希；只为已绑定到实际源文件的单元改名。
+        return "ID"
 
     def remember(self, original, canonical):
         if original != canonical:
@@ -68,26 +85,36 @@ class Names:
                 count = int(parsed[3])
                 source, suffix = parsed[4][:count], parsed[4][count:]
                 if source.endswith("_cu") and re.fullmatch(r"_[0-9a-f]{8}(?:_\d+)?", suffix):
-                    candidates.append((cut, length, token, parsed[1] + "UNIT_" + parsed[3] + "_" + source + suffix[:9]))
+                    candidates.append((cut, length, token, parsed[1] + "UNIT_" + parsed[3] + "_" + source,
+                                       source, suffix[1:9]))
             require(len(candidates) == 1, "生成名称长度不唯一/未知: " + text[token_start:token_start + 100])
-            cut, length, token, canonical = candidates[0]
+            cut, length, token, canonical, source, source_hash = candidates[0]
+            canonical += "_" + self.unit_hash(source, source_hash)
             start = pos + match.start() + cut
             self.remember(token, canonical)
             replacement = str(len(canonical)) + canonical
             text = text[:start] + replacement + text[token_start + length:]
             pos = start + len(replacement)
-        # MSVC 的匿名 namespace 不带 Itanium 长度；保留源文件标识与源 hash。
+        # MSVC 的匿名 namespace 不带 Itanium 长度；源文件所有权约束相同。
         def msvc(match):
-            canonical = "_GLOBAL__N__UNIT_" + match[1] + "_" + match[2] + "_" + match[3]
+            require(int(match[1]) == len(match[2]), "MSVC 生成单元源名称长度错误")
+            canonical = "_GLOBAL__N__UNIT_" + match[1] + "_" + match[2] + "_" + self.unit_hash(match[2], match[3])
             return self.remember(match[0], canonical)
         text = re.sub(r"_GLOBAL__N__[0-9a-f]{8}_(\d+)_([A-Za-z0-9_]+?_cu)_([0-9a-f]{8})(?:_\d+)?(?=@)", msvc, text)
-        return text
+        def namespace(match):
+            original = match[0]
+            return self.remember(original, self.namespace_map.get(original, original))
+        text = re.sub(r"\?A0x[0-9a-f]{8}(?=@@)", namespace, text)
+        def renamed(match):
+            original = match[0]
+            return self.remember(original, self.lambda_map.get(original, original))
+        return re.sub(r"<lambda_[0-9a-f]{32}>", renamed, text)
 
     def data(self, raw):
         # 只处理完整 ASCII C 字符串；数值、指令和其它二进制不参与名称替换。
         def replace(match):
             text = match[0][:-1].decode("latin1")
-            if "_INTERNAL_" in text or "_GLOBAL__N__" in text:
+            if "_INTERNAL_" in text or "_GLOBAL__N__" in text or "<lambda_" in text or "?A0x" in text:
                 text = self(text)
             if re.fullmatch(r"[A-Za-z]:[\\/].*\.cu", text):
                 text = text.replace("\\", "/")
@@ -121,12 +148,28 @@ class Coff:
         strings = blob(data, table, length)
         require(table + length == len(data), "对象存在未知尾部数据")
 
+        def table_name(offset):
+            require(4 <= offset < len(strings), "COFF 字符串偏移越界/指向表头")
+            return cstring(strings, offset)
+
         def name(raw, section=False):
             if section and raw.startswith(b"/"):
-                require(raw.rstrip(b"\0")[1:].isdigit(), "无效 section 名称")
-                return cstring(strings, int(raw.rstrip(b"\0")[1:]))
+                label = raw.rstrip(b"\0")
+                if label.startswith(b"//"):
+                    # COFF 的 // 六位 base64 表示大字符串偏移，不是被忽略的名称。
+                    digits = label[2:]
+                    alphabet = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+                    require(1 <= len(digits) <= 6 and all(c in alphabet for c in digits), "无效 COFF base64 section 名称")
+                    offset = 0
+                    for digit in digits:
+                        offset = offset * 64 + alphabet.index(digit)
+                    require(offset <= 0xffffffff, "COFF base64 偏移溢出")
+                else:
+                    require(label[1:].isdigit(), "无效 section 名称")
+                    offset = int(label[1:])
+                return table_name(offset)
             if raw[:4] == b"\0" * 4:
-                return cstring(strings, struct.unpack_from("<I", raw, 4)[0])
+                return table_name(struct.unpack_from("<I", raw, 4)[0])
             return raw.rstrip(b"\0").decode("latin1")
 
         self.sections = {}
@@ -252,6 +295,171 @@ class Coff:
                 auxiliary = s["aux"].hex()
             symrows.append([normal[i], s["value"], key(s["section"]), s["type"], s["storage"], auxiliary])
         return dict(header=self.header, sections=result, symbols=sorted(symrows, key=lambda s: json.dumps(s)), ignored=ignored)
+
+
+def namespace_bijection(a, b, owner):
+    """只为实物确认的静态 nvcc helper namespace 构造唯一候选，不宣称等价。
+
+    helper 定义名称没有 lambda，因而可先锚定 namespace，再细化 lambda；
+    所有 incoming/outgoing 重定位仍由后续 lambda 指纹及完整 canonical 核查。
+    本实验每个源最多一个这种 namespace；未知形态、多候选、外部绑定均失败。
+    定义多重集排序 O(n log n)，不按十六进制值或物理顺序选择映射。
+    """
+    pattern = r"\?A0x[0-9a-f]{8}(?=@@)"
+    def profile(coff):
+        found = set()
+        rows = []
+        targets = set()
+        for index, symbol in coff.symbols.items():
+            tokens = re.findall(pattern, symbol["name"])
+            if not tokens:
+                continue
+            require(owner and len(tokens) == 1, "namespace 缺少实际源所有权/名称歧义")
+            require(symbol["section"] > 0 and symbol["storage"] == 3 and symbol["type"] == 0 and not symbol["aux"], "namespace 存在非静态 helper 绑定")
+            require(re.match(r"\?fp_(?:copier|caller|deleter|noobject_caller)@\?\$__nv_hdl_helper@", symbol["name"]) and "<lambda_" not in symbol["name"], "未验证 namespace 定义形态")
+            sec = coff.sections[symbol["section"]]
+            require(sec["name"] == ".bss" and not sec["rel"], "未验证 namespace 存储 section")
+            found.update(tokens)
+            targets.add(index)
+            rows.append([re.sub(pattern, "?A0xSELF", symbol["name"]), symbol["value"], symbol["type"], symbol["storage"],
+                         sec["name"], sec["flags"], sec["virtual"], sec["address"], sec["size"], sha(sec["raw"]),
+                         None if sec["aux"] is None else [sec["aux"][k] for k in ("length", "reloc", "selection", "parent")]])
+        require(len(found) <= 1, "同一实际源存在多个 namespace，拒绝任意映射")
+        for sec in coff.sections.values():
+            for offset, target, kind in sec["rel"]:
+                if target in targets:
+                    require(kind == 4, "未验证 namespace 引用类型")
+        return found, sorted(rows, key=lambda row: json.dumps(row))
+    ga, pa = profile(a)
+    gb, pb = profile(b)
+    require(len(ga) == len(gb) and pa == pb, "namespace 完整定义/数据绑定指纹不符")
+    if ga == gb:
+        return {}
+    # 两侧各唯一，且完整定义多重集相同；后续不得省略任何重定位或实际载荷。
+    return {next(iter(gb)): next(iter(ga))}
+
+
+def lambda_records(coff, names):
+    """仅构造候选指纹；最终等价仍由完整 canonical 和设备门禁决定。"""
+    pattern = r"<lambda_[0-9a-f]{32}>"
+    symbols, sections = coff.symbols, coff.sections
+    labels = {}
+    defined = collections.defaultdict(list)
+    for i, symbol in symbols.items():
+        if symbol["name"].startswith("??_C@"):
+            sec = sections[symbol["section"]]
+            labels[i] = "literal:" + names.data(sec["raw"]).decode("latin1")
+        else:
+            labels[i] = names(symbol["name"])
+        if symbol["section"] > 0 and not (symbol["storage"] == 3 and symbol["name"] == sections[symbol["section"]]["name"]):
+            defined[symbol["section"]].append([labels[i], symbol["value"], symbol["type"], symbol["storage"]])
+    identities = {}
+
+    def identity(number, active=()):
+        if number <= 0:
+            return str(number)
+        if number in identities:
+            return identities[number]
+        require(number not in active, "COMDAT 关联环")
+        sec = sections[number]
+        aux = sec["aux"]
+        row = dict(name=sec["name"], definitions=defined[number])
+        if aux and aux["selection"] == 5:
+            require(aux["parent"] in sections and aux["parent"] != number, "无效 COMDAT parent")
+            row["parent"] = identity(aux["parent"], active + (number,))
+        identities[number] = row
+        return row
+
+    def binding(index):
+        symbol = symbols[index]
+        return [labels[index], symbol["value"], identity(symbol["section"]), symbol["type"], symbol["storage"]]
+
+    records = []
+    for number, sec in sections.items():
+        raw = names.data(sec["raw"]) if sec["name"] == ".rdata" else sec["raw"]
+        # 设备载荷和被丢弃校验和不是 GUID 映射锚点，最终门禁另行完整验证。
+        separate = sec["name"] in (".nv_fatbin", ".chks64")
+        content = "separate-gate" if separate else raw.decode("latin1") if sec["name"] == ".rdata" else sha(raw)
+        aux = sec["aux"]
+        metadata = [sec["flags"], sec["virtual"], sec["address"],
+                    "separate-gate" if separate else len(raw) if raw else sec["size"], content,
+                    None if aux is None else [aux["reloc"], aux["selection"],
+                                             identity(aux["parent"]) if aux["selection"] == 5 else aux["parent"]]]
+        records.append(["section", identity(number), metadata])
+        for offset, target, kind in sec["rel"]:
+            # incoming/outgoing 引用都出现在记录内；原始数据摘要保留 addend。
+            records.append(["relocation", identity(number), metadata, offset, kind, binding(target)])
+    for index, symbol in symbols.items():
+        if symbol["storage"] == 105:
+            target, search = struct.unpack_from("<II", symbol["aux"])
+            require(target in symbols, "weak external 目标缺失")
+            auxiliary = [binding(target), search]
+        elif symbol["storage"] == 3 and symbol["section"] > 0 and symbol["name"] == sections[symbol["section"]]["name"]:
+            auxiliary = "section-definition"
+        else:
+            auxiliary = symbol["aux"].hex()
+        records.append(["symbol", binding(index), auxiliary])
+    mentions = collections.defaultdict(list)
+    for row in records:
+        text = json.dumps(row, separators=(",", ":"))
+        for guid in set(re.findall(pattern, text)):
+            mentions[guid].append(text)
+    return mentions
+
+
+def lambda_bijection(a, b, na, nb):
+    """结构细化只接受唯一映射，绝不穷举歧义图；改名本身不是等价证明。
+
+    每轮扫描引用记录并排序其多重集 O(n log n)，最多 g 轮 O(g*n log n)。
+    迭代只细分候选类；相同 GUID 为不可更换的锚点，稳定不分裂即拒绝。
+    """
+    pattern = r"<lambda_[0-9a-f]{32}>"
+    ma, mb = lambda_records(a, na), lambda_records(b, nb)
+    shared = ma.keys() & mb.keys()
+    ga, gb = ma.keys() - shared, mb.keys() - shared
+    require(len(ga) == len(gb), "lambda 生成身份数量不符")
+    if not ga:
+        return {}
+    colors_a = dict.fromkeys(ga, "candidate")
+    colors_b = dict.fromkeys(gb, "candidate")
+    previous_groups = 1
+    for iteration in range(len(ga) + 1):
+        def profiles(mentions, colors):
+            result = {}
+            for guid in colors:
+                def replace(match):
+                    token = match[0]
+                    return "SELF" if token == guid else colors.get(token, token)
+                def unordered_definitions(value):
+                    if isinstance(value, list):
+                        return [unordered_definitions(v) for v in value]
+                    if isinstance(value, dict):
+                        transformed = {k: unordered_definitions(v) for k, v in value.items()}
+                        if "definitions" in transformed:
+                            # 改名后才排序定义多重集，不能让物理符号顺序制造唯一映射。
+                            transformed["definitions"] = sorted(transformed["definitions"], key=lambda v: json.dumps(v, sort_keys=True))
+                        return transformed
+                    return value
+                rows = sorted(json.dumps(unordered_definitions(json.loads(re.sub(pattern, replace, row))),
+                                         sort_keys=True, separators=(",", ":")) for row in mentions[guid])
+                result[guid] = sha(json.dumps([colors[guid], rows], separators=(",", ":")).encode())
+            return result
+        ca, cb = profiles(ma, colors_a), profiles(mb, colors_b)
+        ba, bb = collections.defaultdict(list), collections.defaultdict(list)
+        for guid, color in ca.items():
+            ba[color].append(guid)
+        for guid, color in cb.items():
+            bb[color].append(guid)
+        require({c: len(v) for c, v in ba.items()} == {c: len(v) for c, v in bb.items()},
+                "lambda 指令/常量/定义/引用指纹不符")
+        if all(len(v) == 1 for v in ba.values()):
+            mapping = {bb[color][0]: values[0] for color, values in ba.items()}
+            require(set(mapping) == gb and set(mapping.values()) == ga, "lambda 映射覆盖不完整")
+            return mapping
+        require(len(ba) > previous_groups, "lambda 结构映射歧义，拒绝任意排列")
+        previous_groups = len(ba)
+        colors_a, colors_b = ca, cb
+    raise Invalid("lambda 结构细化未收敛")
 
 
 def diagnose(root):
