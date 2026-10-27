@@ -38,8 +38,8 @@ jobs:
       CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
       PROBE_REF: cc5a64d2bc0c609165693641fcbd379d4792e76b
-      POOL_RUN_ID: "40266789621"
-      POOL_NAME: ${{ inputs.lane == 'app' && 'sccache-win-app-cudaON-150_merge' || 'sccache-win-wheel-cudaON-py3.12-150_merge' }}
+      POOL_RUN_ID: ${{ inputs.stage == 'strict' && '40358505262' || '40266789621' }}
+      POOL_NAME: ${{ inputs.stage == 'strict' && format('probe-pool-{0}', inputs.lane) || (inputs.lane == 'app' && 'sccache-win-app-cudaON-150_merge' || 'sccache-win-wheel-cudaON-py3.12-150_merge') }}
       # Production ceilings of the two jobs (windows.yml Enable steps).
       POOL_CAP: ${{ inputs.lane == 'app' && '10G' || '20G' }}
     steps:
@@ -78,10 +78,12 @@ jobs:
         run: |
           $dst = "${{ runner.temp }}\probe-tools"
           New-Item -ItemType Directory -Force -Path $dst | Out-Null
-          Copy-Item "_probe\.github\probe\coff.py", "_probe\.github\probe\probe.psm1" $dst
+          Copy-Item "_probe\.github\probe\*.py", "_probe\.github\probe\*.ps1", "_probe\.github\probe\probe.psm1" $dst
           Remove-Item -Recurse -Force _probe
           echo "PROBE_TOOLS=$dst" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           git status --short
+          python "$dst\test_strict.py" -v
+          if ($LASTEXITCODE -ne 0) { throw "严格校验器负例失败" }
       - name: Install Vulkan SDK
         shell: powershell
         run: |
@@ -134,8 +136,12 @@ jobs:
         with:
           version: "v0.19.0"
           disable_annotations: "true"
+      - name: PowerShell 命令与失败门禁负例
+        run: |
+          & "$env:PROBE_TOOLS\test_probe.ps1"
+          if ($LASTEXITCODE -ne 0) { throw "PowerShell 负例门禁失败" }
       - name: Restore production pool of run ${{ env.POOL_RUN_ID }}
-        if: inputs.stage == 'seed'
+        if: inputs.stage == 'seed' || inputs.stage == 'strict'
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.POOL_NAME }}
@@ -226,8 +232,33 @@ jobs:
           $s = Get-ScStats 'build'
           Write-Probe "build stats: $($s | ConvertTo-Json -Compress)"
           if ($rc -ne 0) { exit $rc }
+      - name: 严格全量独立编译门禁
+        if: inputs.stage == 'strict' && steps.build.outcome == 'success'
+        timeout-minutes: 210
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $b = "${{ env.SRC_DIR }}\build"
+          Copy-NinjaLogs $b
+          $o = Get-CudaObjects $b
+          $expectedRoot = if ('${{ inputs.lane }}' -eq 'app') { 33 } else { 55 }
+          $expectedAll = if ('${{ inputs.lane }}' -eq 'app') { 33 } else { 58 }
+          if ($o.Root.Count -ne $expectedRoot -or $o.All.Count -ne $expectedAll) { throw "CUDA 对象覆盖数量不符" }
+          Save-Snapshot $b $o.All 'S1' | Out-Null
+          $cmds = @(Get-VanillaCommands $b $o.All)
+          Invoke-Vanilla 'A' $b $cmds | Out-Null
+          Save-Snapshot $b $o.All 'A' | Out-Null
+          Invoke-Vanilla 'B' $b $cmds | Out-Null
+          Save-Snapshot $b $o.All 'B' | Out-Null
+          $tool = Install-Cuobjdump
+          Write-Probe "cuobjdump: $tool"
+          python "$env:PROBE_TOOLS\strict_gate.py" --tool $tool --snap 'C:\probe-snap' `
+            --manifest (Join-Path $env:RUNNER_TEMP 'probe\commands.json') `
+            --out (Join-Path $env:RUNNER_TEMP 'probe\strict') --lane '${{ inputs.lane }}'
+          if ($LASTEXITCODE -ne 0) { throw "全量 COFF/cubin/PTX 门禁失败，禁止正式接入" }
+          Write-Probe '全量 COFF/cubin/PTX 门禁通过（不代表 GPU 运行时验证）'
       - name: Probe
-        if: always() && steps.build.outcome != 'skipped'
+        if: inputs.stage != 'strict' && always() && steps.build.outcome != 'skipped'
         continue-on-error: true
         timeout-minutes: 140
         run: |
@@ -290,6 +321,15 @@ jobs:
           name: probe-${{ inputs.stage }}-${{ inputs.lane }}
           path: ${{ runner.temp }}\probe
           if-no-files-found: ignore
+          retention-days: 14
+      - name: 保存全部独立编译原始对象
+        if: inputs.stage == 'strict' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-raw-${{ inputs.lane }}
+          path: C:\probe-snap
+          if-no-files-found: warn
+          compression-level: 9
           retention-days: 14
       - name: Upload trimmed pool for the cross cell
         if: inputs.stage == 'seed' && steps.build.outcome == 'success'

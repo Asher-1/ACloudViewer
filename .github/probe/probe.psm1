@@ -59,7 +59,7 @@ function Copy-NinjaLogs([string]$Build) {
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
     Get-ChildItem $Build -Recurse -Force -Filter '.ninja_log' | ForEach-Object {
         $rel = $_.FullName.Substring($Build.Length + 1) -replace '[\\/:]', '__'
-        Copy-Item $_.FullName (Join-Path $dst $rel) -Force
+        Copy-Item $_.FullName (Join-Path $dst ("ninja" + $rel)) -Force
     }
 }
 
@@ -78,9 +78,12 @@ function Save-Snapshot([string]$Build, [string[]]$Objs, [string]$Name) {
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
     foreach ($o in $Objs) {
         $src = Join-Path $Build $o
-        if (Test-Path $src) { Copy-Item $src (Join-Path $dst ($o -replace '[\\/:]', '__')) -Force }
+        if (-not (Test-Path $src)) { throw "snapshot $Name missing object $o" }
+        Copy-Item $src (Join-Path $dst ($o -replace '[\\/:]', '__')) -Force
     }
+    if (@(Get-ChildItem $dst -Filter '*.obj').Count -ne $Objs.Count) { throw "snapshot $Name count/collision" }
     python $script:Coff digest (Join-Path $script:Out "digest-$Name.json") $dst
+    if ($LASTEXITCODE -ne 0) { throw "snapshot digest $Name failed" }
     $dst
 }
 
@@ -98,15 +101,39 @@ function Remove-Objects([string]$Build, [string[]]$Objs) {
 # nvcc without the launcher: the exact Ninja command lines with sccache
 # stripped. Lines exceed cmd.exe's 8191 chars, so start nvcc directly.
 function Get-VanillaCommands([string]$Build, [string[]]$Objs) {
-    $ninja = Get-Ninja $Build
-    Push-Location $Build
-    $cmds = foreach ($o in $Objs) {
-        $c = @(& $ninja -f build-Release.ninja -t commands -s $o)[-1]
-        $v = $c -replace '^"?[^"\s]*sccache(\.exe)?"?\s+', ''
-        [pscustomobject]@{ obj = $o; cmd = $v; launched = ($c -ne $v) }
-    }
-    Pop-Location
-    Write-Probe "launcher present on $(@($cmds | Where-Object launched).Count)/$(@($cmds).Count) CUDA command lines"
+    $cmds = @(foreach ($o in $Objs) {
+        $found = $null
+        $directory = [IO.DirectoryInfo](Split-Path (Join-Path $Build $o))
+        while ($directory -and $directory.FullName.StartsWith($Build, [StringComparison]::OrdinalIgnoreCase)) {
+            $cwd = $directory.FullName
+            if (Test-Path (Join-Path $cwd 'CMakeCache.txt')) {
+                $ninja = Get-Ninja $cwd
+                $target = [IO.Path]::GetRelativePath($cwd, (Join-Path $Build $o)) -replace '\\', '/'
+                foreach ($graph in 'build-Release.ninja', 'build.ninja') {
+                    if (-not (Test-Path (Join-Path $cwd $graph))) { continue }
+                    Push-Location $cwd
+                    try {
+                        & $ninja -f $graph -t query $target *> $null
+                        if ($LASTEXITCODE -ne 0) { continue }
+                        $lines = @(& $ninja -f $graph -t commands -s $target)
+                        if ($LASTEXITCODE -ne 0 -or $lines.Count -eq 0) { throw "no command for $o" }
+                        $c = $lines[-1]
+                        $v = $c -replace '^"?[^"\s]*sccache(\.exe)?"?\s+', ''
+                        if ($v -eq $c) { throw "launcher missing on $o" }
+                        if ($v -notmatch '^"?[^"\r\n]*nvcc\.exe"?\s+' -or $v.Contains(' && ')) { throw "not a direct nvcc command: $o" }
+                        $found = [pscustomobject]@{ obj = $o; cmd = $v; original = $c; cwd = $cwd; graph = $graph; target = $target; launched = $true }
+                        break
+                    } finally { Pop-Location }
+                }
+            }
+            if ($found) { break }
+            $directory = $directory.Parent
+        }
+        if (-not $found) { throw "no owning Ninja graph for $o" }
+        $found
+    })
+    $cmds | ConvertTo-Json -Depth 5 | Out-File (Join-Path $script:Out 'commands.json') -Encoding utf8
+    Write-Probe "launcher present on $($cmds.Count)/$($Objs.Count) CUDA command lines (all owning graphs)"
     $cmds
 }
 
@@ -119,7 +146,7 @@ function Invoke-Vanilla([string]$Tag, [string]$Build, $Cmds) {
         if ($c -match '^"([^"]+)"\s+(.*)$' -or $c -match '^(\S+)\s+(.*)$') { $exe = $Matches[1]; $a = $Matches[2] }
         $psi = [Diagnostics.ProcessStartInfo]::new($exe, $a)
         $psi.UseShellExecute = $false
-        $psi.WorkingDirectory = $using:Build
+        $psi.WorkingDirectory = $_.cwd
         $w = [Diagnostics.Stopwatch]::StartNew()
         $p = [Diagnostics.Process]::Start($psi); $p.WaitForExit()
         [pscustomobject]@{ obj = $_.obj; sec = [math]::Round($w.Elapsed.TotalSeconds, 1); rc = $p.ExitCode }
@@ -127,6 +154,8 @@ function Invoke-Vanilla([string]$Tag, [string]$Build, $Cmds) {
     $per | ConvertTo-Json | Out-File (Join-Path $script:Out "vanilla-$Tag.json") -Encoding utf8
     Write-Probe ("| {0} | {1} | {2:N1} | {3} | cpu-sum {4:N1} s |" -f $Tag, @($per).Count, $t.Elapsed.TotalSeconds,
         @($per | Where-Object rc -ne 0).Count, ($per | Measure-Object sec -Sum).Sum)
+    if (@($per).Count -ne @($Cmds).Count -or @($per | Where-Object rc -ne 0).Count -ne 0) { throw "vanilla $Tag failed/incomplete" }
+    foreach ($command in $Cmds) { if (-not (Test-Path (Join-Path $Build $command.obj))) { throw "vanilla $Tag missing $($command.obj)" } }
     $per
 }
 
@@ -154,8 +183,10 @@ function Install-Cuobjdump {
     $base = 'https://developer.download.nvidia.com/compute/cuda/redist/'
     $j = Invoke-RestMethod "${base}redistrib_$($env:CUDA_VERSION).json"
     foreach ($pkg in 'cuda_cuobjdump', 'cuda_nvdisasm') {
-        $rel = $j.$pkg.'windows-x86_64'.relative_path
+        $row = $j.$pkg.'windows-x86_64'
+        $rel = $row.relative_path
         Invoke-WebRequest "$base$rel" -OutFile "$dst\$pkg.zip"
+        if ((Get-FileHash "$dst\$pkg.zip" -Algorithm SHA256).Hash.ToLower() -ne $row.sha256) { throw "CUDA redist digest mismatch: $pkg" }
         Expand-Archive "$dst\$pkg.zip" $dst -Force
     }
     $env:PATH = ((Get-ChildItem $dst -Recurse -Directory -Filter bin).FullName -join ';') + ";$env:PATH"
