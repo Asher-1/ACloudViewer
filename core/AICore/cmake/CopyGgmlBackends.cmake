@@ -22,6 +22,17 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+# A successful install must mean every runtime file and alias was produced.
+# Use RESULT_VARIABLE instead of COMMAND_ERROR_IS_FATAL for CMake 3.16 support.
+function(ggml_run_file_command)
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E ${ARGN}
+        RESULT_VARIABLE _result ERROR_VARIABLE _error)
+    if(NOT "${_result}" STREQUAL "0")
+        message(FATAL_ERROR
+            "CopyGgmlBackends: file operation failed (${_result}): ${ARGN}\n${_error}")
+    endif()
+endfunction()
+
 function(_ggml_list_contains list value out_var)
     set(_found FALSE)
     foreach(_item IN LISTS ${list})
@@ -90,7 +101,7 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
 
     foreach(_path IN LISTS _versioned_files)
         get_filename_component(_name "${_path}" NAME)
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ggml_run_file_command(copy_if_different
             "${_path}" "${dest_dir}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
 
@@ -115,9 +126,9 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
                 file(REMOVE "${dest_dir}/${_alias}")
             endif()
         endforeach()
-        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ggml_run_file_command(create_symlink
             "${_name}" "${dest_dir}/${_soname}")
-        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ggml_run_file_command(create_symlink
             "${_soname}" "${dest_dir}/${_link_name}")
         message(STATUS "CopyGgmlBackends: ${_soname} -> ${_name}")
         message(STATUS "CopyGgmlBackends: ${_link_name} -> ${_soname}")
@@ -156,7 +167,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                 continue()
             endif()
             get_filename_component(_name "${_path}" NAME)
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_path}" "${dest_dir}/${_name}")
             message(STATUS "CopyGgmlBackends: ${_name}")
         endforeach()
@@ -179,7 +190,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                         continue()
                     endif()
                     get_filename_component(_name "${_path}" NAME)
-                    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ggml_run_file_command(copy_if_different
                         "${_path}" "${dest_dir}/${_name}")
                     message(STATUS "CopyGgmlBackends: ${_name}")
                 endforeach()
@@ -188,7 +199,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                     "CopyGgmlBackends: required CPU backend missing: ${_cpu_path}")
             endif()
         else()
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_cpu_path}" "${dest_dir}/${_cpu_name}")
             message(STATUS "CopyGgmlBackends: ${_cpu_name}")
         endif()
@@ -206,7 +217,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                 message(FATAL_ERROR
                     "CopyGgmlBackends: configured GPU backend is missing: ${_source}")
             endif()
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_source}" "${dest_dir}/${_name}")
             message(STATUS "CopyGgmlBackends: ${_name}")
         endforeach()
@@ -259,7 +270,7 @@ if(REQUESTED_FILES_PIPE)
             message(FATAL_ERROR
                 "CopyGgmlBackends: configured backend is missing: ${_source}")
         endif()
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ggml_run_file_command(copy_if_different
                         "${_source}" "${DEST_DIR}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
     endforeach()
@@ -286,8 +297,6 @@ foreach(_lib ${_ggml_libs})
     endif()
     list(APPEND _seen_realpaths "${_real}")
     get_filename_component(_name "${_lib}" NAME)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_lib}" "${DEST_DIR}/${_name}"
-    )
+    ggml_run_file_command(copy_if_different "${_lib}" "${DEST_DIR}/${_name}")
     message(STATUS "CopyGgmlBackends: ${_name}")
 endforeach()

@@ -19,6 +19,8 @@
 #include <cmath>
 #include <memory>
 
+#include "QtCompat.h"
+
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -253,7 +255,7 @@ bool exportVideoSegment(const VideoSegmentExportRequest& request,
         temporaryVideo = outputInfo.absoluteDir().filePath(
                 QStringLiteral(".%1.%2.%3")
                         .arg(outputInfo.completeBaseName(),
-                             QUuid::createUuid().toString(QUuid::WithoutBraces),
+                             qtCompatUuidWithoutBraces(QUuid::createUuid()),
                              extension));
         if (progress && !progress(0, 1))
             return fail(QStringLiteral("Export cancelled"));

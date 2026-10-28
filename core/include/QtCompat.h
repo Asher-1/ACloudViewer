@@ -42,6 +42,7 @@
 //    - Functions: qtCompatCodecForLocale(), qtCompatCodecForName()
 //
 // 6. Text Stream:
+//    - Function: qtCompatSetTextStreamUtf8() (codec / encoding)
 //    - QTextStream::endl (Qt5) / Qt::endl (Qt6)
 //    - Namespace: QtCompat::endl
 //    - Macro: QTCOMPAT_ENDL
@@ -112,6 +113,19 @@
 //    - QTextDocument Markdown / QTextBlockFormat headings (Qt5.14+, Qt6)
 //    - Functions: qtCompatSetMarkdown(), qtCompatToMarkdown(),
 //                 qtCompatHeadingLevel(), qtCompatSetHeadingLevel()
+//
+// 19. Optional Image Formats and Palette Roles:
+//    - Functions: qtCompatQImageFormatGrayscale16() (Qt5.13+),
+//                 qtCompatSetPlaceholderTextColor() (Qt5.12+)
+//    - Older Qt returns Format_Invalid / preserves all palette roles.
+//
+// 20. UUID Formatting:
+//    - QUuid formatting enums/overloads are unavailable before Qt5.11.
+//    - Functions: qtCompatUuidWithoutBraces(), qtCompatUuidId128()
+//
+// 21. Exclusive File Creation:
+//    - Function: qtCompatOpenNewFile() (QIODevice::NewOnly, Qt5.11+)
+//    - Older Qt uses atomic native O_EXCL creation, never exists()+truncate.
 //
 // USAGE EXAMPLES:
 //
@@ -188,6 +202,67 @@
 #include <QStringRef>
 #include <QVector>
 #endif
+
+#include <QFile>
+#include <QUuid>
+#if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
+#include <fcntl.h>
+#include <sys/stat.h>
+
+#include <cerrno>
+#include <cstring>
+#if defined(Q_OS_WIN)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+#endif
+
+inline bool qtCompatOpenNewFile(QFile& file, QString* error = nullptr) {
+    if (error) error->clear();
+    if (file.isOpen()) {
+        if (error) *error = QStringLiteral("File is already open");
+        return false;
+    }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    const bool opened = file.open(QIODevice::WriteOnly | QIODevice::NewOnly);
+    if (!opened && error) *error = file.errorString();
+    return opened;
+#else
+    // Creation and the non-overwrite check must be one atomic operation.
+#if defined(Q_OS_WIN)
+    const int fd =
+            ::_wopen(reinterpret_cast<const wchar_t*>(file.fileName().utf16()),
+                     _O_WRONLY | _O_CREAT | _O_EXCL | _O_BINARY | _O_NOINHERIT,
+                     _S_IREAD | _S_IWRITE);
+#else
+    const int fd = ::open(QFile::encodeName(file.fileName()).constData(),
+                          O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
+#endif
+    if (fd < 0) {
+        if (error) *error = QString::fromLocal8Bit(std::strerror(errno));
+        return false;
+    }
+    if (file.open(fd, QIODevice::WriteOnly, QFileDevice::AutoCloseHandle))
+        return true;
+    if (error) *error = file.errorString();
+#if defined(Q_OS_WIN)
+    ::_close(fd);
+#else
+    ::close(fd);
+#endif
+    return false;
+#endif
+}
+
+// Default toString() is the same braced canonical UUID on all supported Qt.
+inline QString qtCompatUuidWithoutBraces(const QUuid& uuid) {
+    return uuid.toString().mid(1, 36);
+}
+
+inline QString qtCompatUuidId128(const QUuid& uuid) {
+    return qtCompatUuidWithoutBraces(uuid).remove(QLatin1Char('-'));
+}
 
 // ----------------------------------------------------------------------------
 // QRegExp / QRegularExpression Compatibility
@@ -765,6 +840,15 @@ inline QTextStream& endl(QTextStream& stream) {
 #define QTCOMPAT_ENDL QtCompat::endl
 #endif
 
+// Keep label imports and exports independent of the process locale.
+inline void qtCompatSetTextStreamUtf8(QTextStream& stream) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    stream.setEncoding(QStringConverter::Utf8);
+#else
+    stream.setCodec("UTF-8");
+#endif
+}
+
 // ----------------------------------------------------------------------------
 // QWheelEvent Compatibility
 // ----------------------------------------------------------------------------
@@ -792,7 +876,7 @@ inline QPointF qtCompatWheelEventPos(const QWheelEvent* event) noexcept {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return event->position();
 #else
-    return QPointF(event->pos());
+    return event->posF();
 #endif
 }
 
@@ -811,7 +895,8 @@ inline QPointF qtCompatMouseEventPos(const QMouseEvent* event) noexcept {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return event->position();
 #else
-    return QPointF(event->pos());
+    // Preserve subpixel coordinates until the consumer requests integer pixels.
+    return event->localPos();
 #endif
 }
 
@@ -820,7 +905,7 @@ inline QPointF qtCompatMouseEventGlobalPos(const QMouseEvent* event) noexcept {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return event->globalPosition();
 #else
-    return QPointF(event->globalPos());
+    return event->screenPos();
 #endif
 }
 
@@ -1186,6 +1271,32 @@ constexpr QImage::Format qtCompatQImageFormatBgr888() noexcept {
 #endif
 }
 
+// A non-null image never reports Format_Invalid, so older Qt cannot enter
+// a consumer's Grayscale16 path. Check for null images before comparing
+// formats.
+constexpr QImage::Format qtCompatQImageFormatGrayscale16() noexcept {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+    return QImage::Format_Grayscale16;
+#else
+    return QImage::Format_Invalid;
+#endif
+}
+
+#include <QPalette>
+
+inline void qtCompatSetPlaceholderTextColor(QPalette& palette,
+                                            QPalette::ColorGroup group,
+                                            const QColor& color) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+    palette.setColor(group, QPalette::PlaceholderText, color);
+#else
+    // No substitute role: changing Text would recolor actual user input.
+    Q_UNUSED(palette);
+    Q_UNUSED(group);
+    Q_UNUSED(color);
+#endif
+}
+
 // ----------------------------------------------------------------------------
 // QFont Family Fallback Compatibility
 // ----------------------------------------------------------------------------
@@ -1239,23 +1350,82 @@ inline QDataStream::Version qtCompatDataStreamVersion() noexcept {
 // QTextDocument Markdown / QTextBlockFormat Heading Compatibility
 // ----------------------------------------------------------------------------
 // QTextDocument Markdown and heading metadata were added in Qt 5.14.
-// Keep older supported Qt builds on the source editor's plain-text fallback.
+// Older Qt keeps plain-text import but must not discard basic format edits.
+#include <QRegularExpression>
+#include <QTextBlock>
 #include <QTextBlockFormat>
+#include <QTextCursor>
 #include <QTextDocument>
+#include <QTextDocumentFragment>
+#include <QTextFragment>
 
 inline void qtCompatSetMarkdown(QTextDocument& document, const QString& text) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     document.setMarkdown(text);
 #else
-    document.setPlainText(text);
+    // 共享导出可能返回保真 HTML；普通 Markdown 仍保持旧版的纯文本边界。
+    if (Qt::mightBeRichText(text))
+        document.setHtml(text);
+    else
+        document.setPlainText(text);
 #endif
 }
 
 inline QString qtCompatToMarkdown(const QTextDocument& document) {
+    // 图像、链接、下划线、删除线和列表不能在共享导出时丢失。
+    // HTML 是 Markdown 的保真边界；旧 Qt 的完整 Markdown 导入仍未实现。
+    bool preserveHtml = false;
+    for (auto block = document.begin(); block.isValid(); block = block.next()) {
+        preserveHtml |= block.textList() != nullptr;
+        for (auto it = block.begin(); !it.atEnd(); ++it) {
+            const auto fragment = it.fragment();
+            if (!fragment.isValid()) continue;
+            const auto format = fragment.charFormat();
+            preserveHtml |= format.fontStrikeOut() || format.fontUnderline() ||
+                            format.isImageFormat() || format.isAnchor();
+        }
+    }
+    if (preserveHtml) {
+        QTextCursor cursor(document.begin());
+        cursor.select(QTextCursor::Document);
+        QString result = cursor.selection().toHtml().trimmed();
+        const auto body =
+                QRegularExpression(
+                        "<body[^>]*>(.*)</body>",
+                        QRegularExpression::CaseInsensitiveOption |
+                                QRegularExpression::DotMatchesEverythingOption)
+                        .match(result);
+        if (body.hasMatch()) result = body.captured(1).trimmed();
+        return result.replace("<!--StartFragment-->", "")
+                .replace("<!--EndFragment-->", "")
+                .trimmed();
+    }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     return document.toMarkdown();
 #else
-    return document.toPlainText();
+    // Linear export of the editable basic formats. This is not a full Markdown
+    // parser: plain-text import on older Qt remains an explicit limitation.
+    QString result;
+    for (auto block = document.begin(); block.isValid(); block = block.next()) {
+        if (block != document.begin()) result += QLatin1Char('\n');
+        const int heading = block.blockFormat()
+                                    .property(QTextFormat::UserProperty + 1)
+                                    .toInt();
+        if (heading >= 1 && heading <= 6)
+            result += QString(heading, QLatin1Char('#')) + QLatin1Char(' ');
+        for (auto it = block.begin(); !it.atEnd(); ++it) {
+            const QTextFragment fragment = it.fragment();
+            if (!fragment.isValid()) continue;
+            const auto format = fragment.charFormat();
+            QString text = fragment.text();
+            if (format.fontWeight() >= QFont::Bold)
+                text = QStringLiteral("**") + text + QStringLiteral("**");
+            if (format.fontItalic())
+                text = QLatin1Char('*') + text + QLatin1Char('*');
+            result += text;
+        }
+    }
+    return result;
 #endif
 }
 

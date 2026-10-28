@@ -38,6 +38,8 @@
 #include <functional>
 #include <limits>
 
+#include "QtCompat.h"
+
 namespace {
 // Separate from the application's other plugins, using the same source keys
 // within qAnyLabeling's settings namespace.
@@ -241,7 +243,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override {
         if (event->button() != Qt::LeftButton) return;
         dragging = true;
-        origin = globalPosition(event);
+        origin = qtCompatMouseEventGlobalPosInt(event);
         originalSize = panel->size();
         event->accept();
     }
@@ -251,7 +253,7 @@ protected:
             dragging = false;
             return;
         }
-        const QPoint delta = globalPosition(event) - origin;
+        const QPoint delta = qtCompatMouseEventGlobalPosInt(event) - origin;
         panel->resizeImageRegion(QSize(originalSize.width() - delta.x(),
                                        originalSize.height() + delta.y()));
         event->accept();
@@ -264,13 +266,6 @@ protected:
     }
 
 private:
-    static QPoint globalPosition(const QMouseEvent* event) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        return event->globalPosition().toPoint();
-#else
-        return event->globalPos();
-#endif
-    }
     PointCloudCameraPanel* panel;
     QPoint origin;
     QSize originalSize;
@@ -389,7 +384,7 @@ PointCloudCameraPanel::PointCloudCameraPanel(QWidget* parent)
                 new QLabel(QString::number(slider->value()) + suffix, content);
         value->setObjectName(slider->objectName() + "Value");
         value->setMinimumWidth(
-                value->fontMetrics().horizontalAdvance("100 px"));
+                QTCOMPAT_FONTMETRICS_WIDTH(value->fontMetrics(), "100 px"));
         value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         connect(slider, &QSlider::valueChanged, value,
                 [value, suffix](int number) {

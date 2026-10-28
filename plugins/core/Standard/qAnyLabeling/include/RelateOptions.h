@@ -13,6 +13,8 @@
 #include <QString>
 #include <QStringList>
 
+#include "QtCompat.h"
+
 struct RelateOptions {
     enum class Profile { VideoReel = 0, ImageDemo = 1, Custom = 2 };
     // Edge selection (see RelateDecode::Params).
@@ -87,13 +89,8 @@ struct RelateOptions {
     // Predicates as the list the relation task expects, trimmed, no blanks.
     QStringList predicateList() const {
         QStringList out;
-        for (const QString& name : predicates.split(QLatin1Char('|'),
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-                                                    Qt::SkipEmptyParts
-#else
-                                                    QString::SkipEmptyParts
-#endif
-                                                    )) {
+        for (const QString& name :
+             predicates.split(QLatin1Char('|'), QtCompat::SkipEmptyParts)) {
             const QString trimmed = name.trimmed();
             if (!trimmed.isEmpty()) out << trimmed;
         }

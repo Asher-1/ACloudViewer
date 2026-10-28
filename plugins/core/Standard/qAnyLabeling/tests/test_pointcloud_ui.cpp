@@ -19,6 +19,7 @@
 #include <QFile>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QHash>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -55,6 +56,7 @@
 #include "PointCloudCuboidView.h"
 #include "PointCloudDatasetExporter.h"
 #include "PointCloudWindow.h"
+#include "QtCompat.h"
 #define REQUIRE(x)                                               \
     do {                                                         \
         if (!(x)) {                                              \
@@ -62,6 +64,19 @@
             return 1;                                            \
         }                                                        \
     } while (false)
+
+static QWheelEvent wheelEvent(const QPointF& position,
+                              const QPointF& globalPosition,
+                              int delta) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+    return QWheelEvent(position, globalPosition, QPoint(), QPoint(0, delta),
+                       Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+#else
+    return QWheelEvent(position, globalPosition, QPoint(), QPoint(0, delta),
+                       delta, Qt::Vertical, Qt::NoButton, Qt::NoModifier,
+                       Qt::NoScrollPhase, Qt::MouseEventNotSynthesized, false);
+#endif
+}
 
 // Fixed-metric cases also run in ctest without Python or the upstream checkout.
 static int testOrthographicEditEvents() {
@@ -485,8 +500,9 @@ int main(int argc, char** argv) {
                             .toJson()) > 0);
     classesFile.close();
     REQUIRE(window.loadClassDefinitions(classesPath));
-    QTimer::singleShot(250, &app, &QCoreApplication::quit);
-    app.exec();
+    QEventLoop initialRender;
+    QTimer::singleShot(250, &initialRender, &QEventLoop::quit);
+    initialRender.exec();
     auto* view = window.findChild<QOpenGLWidget*>();
     if (!view) return 1;
     const QImage image = view->grabFramebuffer();
@@ -541,6 +557,21 @@ int main(int argc, char** argv) {
         for (int x = 0; x < sideColors.width(); ++x)
             semanticColorPixels +=
                     sideColors.pixelColor(x, y) == QColor("#D92D20");
+    if (!semanticColorPixels) {
+        std::fprintf(stderr, "Semantic render: %dx%d, dpr %.3f, visible %d\n",
+                     sideView->width(), sideView->height(),
+                     sideView->devicePixelRatioF(), int(sideView->isVisible()));
+        const QString artifacts = qEnvironmentVariable("QAL_UI_ARTIFACT_DIR");
+        if (!artifacts.isEmpty())
+            sideColors.save(QDir(artifacts).filePath("semantic-side.png"));
+        QHash<QRgb, int> colors;
+        for (int y = 0; y < sideColors.height(); ++y)
+            for (int x = 0; x < sideColors.width(); ++x)
+                ++colors[sideColors.pixel(x, y)];
+        for (auto it = colors.cbegin(); it != colors.cend(); ++it)
+            if (it.value() > 10)
+                std::fprintf(stderr, "Color %08x: %d pixels\n", unsigned(it.key()), it.value());
+    }
     REQUIRE(semanticColorPixels > 0);
     auto* cropAction = window.findChild<QAction*>("PointCloudCropDepth");
     auto* orthographic =
@@ -1072,15 +1103,23 @@ int main(int argc, char** argv) {
         const QPointF screen = handle->mapToGlobal(QPoint(8, 8));
         QMouseEvent press(QEvent::MouseButtonPress, QPointF(8, 8), screen,
                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        const auto pressScreen = qtCompatMouseEventGlobalPos(&press);
+        QApplication::sendEvent(handle, &press);
         QMouseEvent move(QEvent::MouseMove, QPointF(-16, 24),
                          screen + QPointF(-24, 16), Qt::NoButton,
                          Qt::LeftButton, Qt::NoModifier);
+        const auto moveScreen = qtCompatMouseEventGlobalPos(&move);
+        QApplication::sendEvent(handle, &move);
         QMouseEvent release(QEvent::MouseButtonRelease, QPointF(8, 8),
                             screen + QPointF(-24, 16), Qt::LeftButton,
                             Qt::NoButton, Qt::NoModifier);
-        QApplication::sendEvent(handle, &press);
-        QApplication::sendEvent(handle, &move);
         QApplication::sendEvent(handle, &release);
+        if (cameraPanel->geometry() != QRect(208, 8, 424, 316)) {
+            const auto geometry = cameraPanel->geometry();
+            std::fprintf(stderr, "Camera drag: %d,%d %dx%d; screen delta %.3f,%.3f\n",
+                         geometry.x(), geometry.y(), geometry.width(), geometry.height(),
+                         moveScreen.x() - pressScreen.x(), moveScreen.y() - pressScreen.y());
+        }
         REQUIRE(cameraPanel->geometry() == QRect(208, 8, 424, 316));
         REQUIRE(handle->pos() == QPoint(0, 300));
         cameraPanel->attachToViewport(originalHost);
@@ -1278,10 +1317,8 @@ int main(int argc, char** argv) {
     cameraPanel->setPointColorStyle(PointCloudColorMode::Rgb, {});
     const double fittedScale = cameraView->transform().m11();
     const QPointF cameraMouse(40, 40);
-    QWheelEvent zoom(cameraMouse,
-                     cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()),
-                     QPoint(), QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
-                     Qt::NoScrollPhase, false);
+    QWheelEvent zoom = wheelEvent(
+            cameraMouse, cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()), 120);
     QApplication::sendEvent(cameraView->viewport(), &zoom);
     REQUIRE(std::abs(cameraView->transform().m11() / fittedScale - 1.2) < 1e-8);
     REQUIRE(projectedPixel(32, 32) == cameraFrame.rgb[0]);
@@ -1290,11 +1327,8 @@ int main(int argc, char** argv) {
     QApplication::sendEvent(cameraView->viewport(), &fitImage);
     REQUIRE(std::abs(cameraView->transform().m11() - fittedScale) < 1e-8);
     const auto wheelCamera = [&](int delta) {
-        QWheelEvent event(
-                cameraMouse,
-                cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()),
-                QPoint(), QPoint(0, delta), Qt::NoButton, Qt::NoModifier,
-                Qt::NoScrollPhase, false);
+        QWheelEvent event = wheelEvent(
+                cameraMouse, cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()), delta);
         QApplication::sendEvent(cameraView->viewport(), &event);
     };
     for (int i = 0; i < 60; ++i) wheelCamera(120);
@@ -1718,10 +1752,8 @@ int main(int argc, char** argv) {
         QEvent leavePreview(QEvent::Leave);
         QApplication::sendEvent(viewport, &leavePreview);
         REQUIRE(goldPixels() == 0);
-        QWheelEvent previewZoom(mainCenter,
-                                viewport->mapToGlobal(mainCenter.toPoint()),
-                                QPoint(), QPoint(0, 120), Qt::NoButton,
-                                Qt::NoModifier, Qt::NoScrollPhase, false);
+        QWheelEvent previewZoom = wheelEvent(
+                mainCenter, viewport->mapToGlobal(mainCenter.toPoint()), 120);
         QApplication::sendEvent(viewport, &previewZoom);
         REQUIRE(goldPixels() > 50);
         QApplication::sendEvent(viewport, &preview);

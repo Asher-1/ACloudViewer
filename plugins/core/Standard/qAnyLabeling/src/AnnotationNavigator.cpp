@@ -12,6 +12,8 @@
 #include <QPainterPath>
 #include <algorithm>
 
+#include "QtCompat.h"
+
 AnnotationNavigator::AnnotationNavigator(QWidget* parent) : QWidget(parent) {
     setMinimumSize(180, 180);
     setMouseTracking(true);
@@ -95,12 +97,8 @@ void AnnotationNavigator::paintEvent(QPaintEvent*) {
 void AnnotationNavigator::mousePressEvent(QMouseEvent* event) {
     if (event->button() != Qt::LeftButton || m_image.isNull()) return;
     const QRectF target = imageRect();
-    if (!target.contains(event->pos())) return;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    const QPointF position = event->position();
-#else
-    const QPointF position = event->localPos();
-#endif
+    const QPointF position = qtCompatMouseEventPos(event);
+    if (!target.contains(position)) return;
     const double x = std::clamp((position.x() - target.left()) / target.width(),
                                 0.0, 1.0);
     const double y = std::clamp((position.y() - target.top()) / target.height(),

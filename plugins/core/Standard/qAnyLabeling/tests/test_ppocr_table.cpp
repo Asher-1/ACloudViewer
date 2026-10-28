@@ -27,6 +27,7 @@
 #include <cstdio>
 
 #include "PpocrTableEditor.h"
+#include "QtCompat.h"
 #define REQUIRE(condition)                                               \
     do {                                                                 \
         if (!(condition)) {                                              \
@@ -297,8 +298,8 @@ int main(int argc, char** argv) {
             for (int r = 0; r < table->rowCount(); ++r)
                 for (int c = 0; c < table->columnCount(); ++c) {
                     const auto text = table->item(r, c)->text();
-                    advances[text] =
-                            table->fontMetrics().horizontalAdvance(text);
+                    advances[text] = QTCOMPAT_FONTMETRICS_WIDTH(
+                            table->fontMetrics(), text);
                 }
             QJsonArray columns, rows;
             for (int c = 0; c < table->columnCount(); ++c)

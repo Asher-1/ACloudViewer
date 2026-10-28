@@ -16,6 +16,8 @@
 #include <QVector>
 #include <limits>
 
+#include "QtCompat.h"
+
 namespace {
 struct ZipEntry {
     QByteArray name;
@@ -41,10 +43,7 @@ bool writeZipDirectory(const QString& directory,
                        QString* error,
                        bool includeRootDirectory) {
     QFile zip(zipPath);
-    if (!zip.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
-        if (error) *error = zip.errorString();
-        return false;
-    }
+    if (!qtCompatOpenNewFile(zip, error)) return false;
     QVector<ZipEntry> entries;
     QDirIterator iterator(directory, QDir::Files | QDir::NoSymLinks,
                           QDirIterator::Subdirectories);

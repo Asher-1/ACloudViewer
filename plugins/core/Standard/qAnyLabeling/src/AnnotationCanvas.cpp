@@ -26,6 +26,7 @@
 
 #include "AnnotationConfig.h"
 #include "MaskPolygon.h"
+#include "QtCompat.h"
 
 namespace {
 bool isCuboid(const AnnotationShape& shape) {
@@ -291,14 +292,6 @@ void drawAnnotationAttributes(QPainter& painter,
                        box.y() + 2 + i * metrics.height() + metrics.ascent()),
                 lines[i]);
     painter.restore();
-}
-
-QPointF mousePosition(const QMouseEvent* event) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return event->position();
-#else
-    return event->localPos();
-#endif
 }
 
 bool closedType(const QString& type) {
@@ -669,10 +662,8 @@ void AnnotationCanvas::rebuildDisplayImage() {
         return;
     }
 
-    // Format_Grayscale16 exists since Qt 5.13. On Qt 5.12 (Ubuntu focal)
-    // no image can carry that format, so the 16-bit path is dead code.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
-    if (m_image.format() == QImage::Format_Grayscale16) {
+    // Null images were rejected above; older Qt cannot carry this format.
+    if (m_image.format() == qtCompatQImageFormatGrayscale16()) {
         const int width = m_image.width();
         const int height = m_image.height();
         double mean = 0.0;
@@ -682,7 +673,8 @@ void AnnotationCanvas::rebuildDisplayImage() {
             for (int x = 0; x < width; ++x) mean += row[x];
         }
         mean /= std::max(1, width * height);
-        m_displayImage = QImage(m_image.size(), QImage::Format_Grayscale16);
+        m_displayImage =
+                QImage(m_image.size(), qtCompatQImageFormatGrayscale16());
         for (int y = 0; y < height; ++y) {
             const auto* source =
                     reinterpret_cast<const quint16*>(m_image.constScanLine(y));
@@ -699,7 +691,6 @@ void AnnotationCanvas::rebuildDisplayImage() {
         }
         return;
     }
-#endif
 
     const QImage source = m_image.convertToFormat(QImage::Format_ARGB32);
     m_displayImage = QImage(source.size(), QImage::Format_ARGB32);
@@ -1107,7 +1098,9 @@ QImage AnnotationCanvas::renderVisualizationImage(
                                           .arg(groupCounts.value(it.key()));
             const QRectF textRect(
                     bounds.left(), std::max(0.0, bounds.top() - 18.0),
-                    painter.fontMetrics().horizontalAdvance(title) + 8.0, 17.0);
+                    QTCOMPAT_FONTMETRICS_WIDTH(painter.fontMetrics(), title) +
+                            8.0,
+                    17.0);
             painter.fillRect(textRect, QColor(120, 70, 0, 220));
             painter.setPen(Qt::white);
             painter.drawText(textRect.left() + 4.0, textRect.bottom() - 5.0,
@@ -1666,11 +1659,12 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                                           .arg(it.key())
                                           .arg(groupCounts.value(it.key()));
             painter.setPen(Qt::white);
-            painter.fillRect(
-                    QRectF(anchor.x(), anchor.y() - 18,
-                           painter.fontMetrics().horizontalAdvance(title) + 8,
-                           17),
-                    QColor(120, 70, 0, 220));
+            painter.fillRect(QRectF(anchor.x(), anchor.y() - 18,
+                                    QTCOMPAT_FONTMETRICS_WIDTH(
+                                            painter.fontMetrics(), title) +
+                                            8,
+                                    17),
+                             QColor(120, 70, 0, 220));
             painter.drawText(anchor + QPointF(4, -5), title);
             painter.restore();
         }
@@ -2498,7 +2492,7 @@ void AnnotationCanvas::cancelShape() {
 void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
     if (m_image.isNull()) return;
     updateTransform();
-    const QPointF screenPoint = mousePosition(event);
+    const QPointF screenPoint = qtCompatMouseEventPos(event);
     if (event->button() == Qt::MiddleButton ||
         (event->button() == Qt::LeftButton && m_spaceHeld)) {
         m_panning = true;
@@ -2619,7 +2613,7 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
         if (index < 0 && m_selectedIndices.isEmpty() &&
             m_tool == QStringLiteral("edit")) {
             m_panning = true;
-            m_panStart = mousePosition(event);
+            m_panStart = qtCompatMouseEventPos(event);
             return;
         }
         // Keep an existing multi-selection when the user presses one of its
@@ -2688,14 +2682,14 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
 void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
     if (m_image.isNull()) return;
     if (m_panning) {
-        m_pan += mousePosition(event) - m_panStart;
-        m_panStart = mousePosition(event);
+        m_pan += qtCompatMouseEventPos(event) - m_panStart;
+        m_panStart = qtCompatMouseEventPos(event);
         emit viewChanged();
         update();
         return;
     }
     if (m_magicActive) {
-        const QPointF delta = mousePosition(event) - m_magicAnchor;
+        const QPointF delta = qtCompatMouseEventPos(event) - m_magicAnchor;
         const int threshold =
                 m_magicDefaultThreshold +
                 int(std::hypot(delta.x(), delta.y()) / m_magicDragSensitivity);
@@ -2703,7 +2697,7 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
         return;
     }
     updateTransform();
-    const QPointF rawPoint = toImage(mousePosition(event));
+    const QPointF rawPoint = toImage(qtCompatMouseEventPos(event));
     const QPointF point = clamp(rawPoint);
     m_hover = point;
     // Match the source vertex_selected hover signal: it drives the
@@ -2736,7 +2730,7 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
     if (m_rotating && m_selected >= 0) {
         const QPointF center =
                 (m_rotationPoints[0] + m_rotationPoints[2]) / 2.0;
-        const QPointF rawPoint = toImage(mousePosition(event));
+        const QPointF rawPoint = toImage(qtCompatMouseEventPos(event));
         double angle = std::atan2(rawPoint.y() - center.y(),
                                   rawPoint.x() - center.x()) -
                        m_rotationStart;
@@ -2867,9 +2861,9 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
 void AnnotationCanvas::mouseReleaseEvent(QMouseEvent* event) {
     if (m_promptBoxDragging && event->button() == Qt::LeftButton) {
         updateTransform();
-        m_prompt.box =
-                QRectF(m_promptBoxStart, clamp(toImage(mousePosition(event))))
-                        .normalized();
+        m_prompt.box = QRectF(m_promptBoxStart,
+                              clamp(toImage(qtCompatMouseEventPos(event))))
+                               .normalized();
         m_promptBoxDragging = false;
         if (m_prompt.box.width() < 2 || m_prompt.box.height() < 2)
             m_prompt.useBox = false;
@@ -2918,7 +2912,7 @@ void AnnotationCanvas::mouseDoubleClickEvent(QMouseEvent* event) {
         updateTransform();
         int vertex = -1;
         const int index =
-                hitShape(clamp(toImage(mousePosition(event))), &vertex);
+                hitShape(clamp(toImage(qtCompatMouseEventPos(event))), &vertex);
         if (index >= 0) {
             selectShape(index);
             emit shapeDoubleClicked(index);
@@ -2954,11 +2948,7 @@ void AnnotationCanvas::wheelEvent(QWheelEvent* event) {
         return;
     }
     updateTransform();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    const QPointF cursor = event->position();
-#else
-    const QPointF cursor = event->posF();
-#endif
+    const QPointF cursor = qtCompatWheelEventPos(event);
     const QPointF anchor = toImage(cursor);
     if (m_wheelRectangleEditing && m_tool == QStringLiteral("edit") &&
         m_selected >= 0 && m_selected < m_shapes.size() &&

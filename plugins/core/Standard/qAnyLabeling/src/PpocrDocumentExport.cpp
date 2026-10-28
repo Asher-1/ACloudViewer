@@ -20,6 +20,7 @@
 
 #include "AnnotationArchive.h"
 #include "PpocrDocument.h"
+#include "QtCompat.h"
 
 namespace PpocrDocument {
 namespace {
@@ -32,11 +33,7 @@ QString richMarkdown(const QString& text) {
     if (!html.match(text).hasMatch()) return text;
     QTextDocument document;
     document.setHtml(text);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    return document.toMarkdown().trimmed();
-#else
-    return document.toPlainText();
-#endif
+    return qtCompatToMarkdown(document).trimmed();
 }
 QImage readImage(const QString& path) {
     QImageReader reader(path);

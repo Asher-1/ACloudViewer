@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <aicore/ocr_capi.h>
 #include <ecvStdPluginInterface.h>
 
 #include <QAction>
@@ -50,6 +51,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSettings>
+#include <QSet>
 #include <QSlider>
 #include <QSpinBox>
 #include <QSplitter>
@@ -573,17 +575,45 @@ int main(int argc, char** argv) {
     }
     auto* ocrDirection = window->findChild<QCheckBox*>(
             QStringLiteral("AnnotationOcrAngleClassifier"));
-    if (!ocrDirection || !ocrDirection->isChecked()) return 1;
-    for (const QString& family :
-         {QStringLiteral("ch_PP-OCRv4"), QStringLiteral("japan_PP-OCRv3"),
-          QStringLiteral("PP-OCRv5"), QStringLiteral("PP-OCRv6 Tiny"),
-          QStringLiteral("PP-OCRv6 Small"),
-          QStringLiteral("PP-OCRv6 Medium")}) {
-        if (models->findText(family) < 0) return 1;
-        models->setCurrentText(family);
-        if (!ocrDirection->isVisible() || quantization->count() != 1 ||
-            !quantization->currentData().toString().endsWith("-rec-f32.gguf"))
+    if (!ocrDirection || !ocrDirection->isChecked()) {
+        std::fprintf(stderr, "OCR方向分类器缺失或未默认启用\n");
+        return 1;
+    }
+    // 公共 catalog 是文件集合参照；真实 picker 不得丢失已发布量化、混合
+    // 不同 recipe 或重复同一文件。未发布 recipe 只保留本地 F32 回退。
+    // O(P*C)：preset/catalog 均为小型有限表，独立枚举以验证 UI 投影。
+    for (int pi = 0; pi < aicore_ocr_preset_count(); ++pi) {
+        const auto* preset = aicore_ocr_preset_at(pi);
+        if (!preset || !preset->display_name || !preset->rec_stem) return 1;
+        const QString family = QString::fromUtf8(preset->display_name);
+        QSet<QString> expectedFiles;
+        for (int ci = 0; ci < aicore_ocr_model_count(); ++ci) {
+            const auto* entry = aicore_ocr_model_at(ci);
+            if (!entry || !entry->filename || !entry->role ||
+                qstrcmp(entry->role, "rec") != 0) continue;
+            if (aicore_ocr_preset_by_rec_filename(entry->filename) == preset)
+                expectedFiles.insert(QString::fromUtf8(entry->filename));
+        }
+        if (expectedFiles.isEmpty())
+            expectedFiles.insert(QString::fromUtf8(preset->rec_stem) +
+                                 QStringLiteral("-f32.gguf"));
+        if (models->findText(family) < 0) {
+            std::fprintf(stderr, "OCR recipe家族缺失: %s\n", qPrintable(family));
             return 1;
+        }
+        models->setCurrentText(family);
+        QSet<QString> actualFiles;
+        for (int qi = 0; qi < quantization->count(); ++qi)
+            actualFiles.insert(quantization->itemData(qi).toString());
+        if (!ocrDirection->isVisible() || actualFiles != expectedFiles ||
+            actualFiles.size() != quantization->count()) {
+            std::fprintf(stderr,
+                         "OCR catalog/picker不匹配: %s actual=%s expected=%s\n",
+                         qPrintable(family),
+                         qPrintable(QStringList(actualFiles.values()).join(',')),
+                         qPrintable(QStringList(expectedFiles.values()).join(',')));
+            return 1;
+        }
     }
     models->setCurrentText(QStringLiteral("sam3"));
     if (ocrDirection->isVisible()) return 1;

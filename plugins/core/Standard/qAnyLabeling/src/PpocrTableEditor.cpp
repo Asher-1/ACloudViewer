@@ -43,6 +43,8 @@
 #include <memory>
 #include <optional>
 
+#include "QtCompat.h"
+
 namespace {
 using Cell = QPair<int, int>;
 QIcon formatIcon(int style, const QColor& color) {
@@ -419,10 +421,10 @@ void syncTableGeometry(QTableWidget* grid) {
         for (int r = 0; r < grid->rowCount(); ++r) {
             if (owner.value({r, c}) != Cell(r, c) || !grid->item(r, c))
                 continue;
-            textWidth = std::max(
-                    textWidth,
-                    metrics.horizontalAdvance(grid->item(r, c)->text()) /
-                            std::max(1, grid->columnSpan(r, c)));
+            textWidth = std::max(textWidth,
+                                 QTCOMPAT_FONTMETRICS_WIDTH(
+                                         metrics, grid->item(r, c)->text()) /
+                                         std::max(1, grid->columnSpan(r, c)));
         }
         const int content = std::max(36, std::min(560, textWidth + 28));
         grid->setColumnWidth(

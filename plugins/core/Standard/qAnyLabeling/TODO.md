@@ -1,5 +1,76 @@
 # qAnyLabeling parity TODO
 
+## Active continuation (2026-10-28)
+
+当前上游 HEAD 为 `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`；下面旧
+`745f6c35` 章节仅保留历史来源。完整上游对齐仍未完成。本轮用户选择先复验
+证据，暂不实施新增审核三态。
+
+- [x] 删除 OCR picker 两 preset 私有白名单，已发布 rec 的全部量化/URL
+  来自公共 catalog，family 来自 preset；仅未发布文件保留 local F32 fallback。
+  `ocr-picker-catalog-red-v1.log` 实际 RED，修后两项 GREEN；带原 F32 attribute
+  资产的 `ocr-picker-catalog-suite-v3.log` 38/38，无 skip。
+- [x] 对最新上游执行真实 config comparator；
+  `upstream-cd26942-config-red-v2.json` 为 FAIL：缺两审核动作、默认配置不同、
+  九项 palette 差异、四项 panel 样式差异。系统 Python 缺 PyQt6 的初次错误
+  保留；后续使用现存上游环境执行，不修改或模拟 reference。
+- [x] 最新 LabelFile 路径/像素优先级 8 例、RAM 展示/过滤 16 例及 qOCR sibling
+  两项复验通过；模型无关 capi 契约 40/40。广泛 capi 80 项的缺资产失败与
+  16 skipped 保留；补齐原 source reference 后 attribute F32 E2E 单项通过。
+- [ ] `upstream-cd26942-render-v1/report.json` 实际 FAIL：19 项错误，含三项
+  polygon geometry-only 像素差异和 16 项文本绘制超原界。保留原容差，待定位根因。
+- [ ] 补齐 `checked=false/true/"failed"` 的载入、即刻保存、动作/列表同步及
+  未审核导航；当前 `toBool()` 会丢失 failed。先写真实保存/重开回归取 RED。
+- [ ] 对齐上游 review/checked 搜索、默认禁用 rectangle wheel editing、
+  image-tags 默认可见与新增 canvas display/measurement 行为；旧 suite 不覆盖它们。
+- [ ] 在外部编译结束后的安静主机上完成当前正式 LLM 全 12 行原协议 A/B；
+  `llm-current-full-preflight.log` 仅离线 catalog/input 校验与命令展开，非推理。
+  `llm-external-build-wait-v1.log` 曾三次无 compiler，随后新外部编译已启动；
+  不在竞争负载下采样，也不终止用户的其他工作。
+
+- [x] Reproduce fractional Qt5 event loss and navigator border hit-testing,
+  then verify the shared helper and real canvas consumer RED -> GREEN.
+- [x] Exercise real Linux Qt5.10.1 and Qt6.5.3 SDKs for helper,
+  canvas/navigation, OCR document/table/rich-text builds and tests. Preserve
+  the Qt5.10 constructor/API/build failures as diagnostic receipts.
+- [x] Keep UUID, UTF-8, optional image/palette and atomic non-overwrite file
+  creation in `QtCompat.h`; do not add plugin-local version branches.
+- [x] Reproduce unsuccessful runtime copying that incorrectly returned success;
+  propagate copy/symlink failures. Source-owner plus real copy/install tests:
+  23 PASS, including Windows filenames and Linux/macOS aliases.
+- [ ] Complete current-HEAD app/plugin rebuild, complete UI states and native
+  Windows/macOS install/relocation/loader checks; validate Metal on Apple hardware.
+- [ ] Complete old-Qt Markdown import and all Markdown/code/math semantics;
+  basic format export and focused rich-text tests are not complete parity.
+- [ ] Resolve original LLM CPU/CUDA release, YOLO Q8 independent-checkpoint,
+  OCR/attribute GT and Vulkan original-owner baseline veto. No model replacement,
+  threshold relaxation, baseline reset, deletion or publication is authorized.
+
+Receipts live under `build_app/Testing/`: `qt-events-{red,green}-v1.log`,
+`qt-consumers-{red,green}-v1.log`, `qt510-consumers-runtime-v3.log`,
+`qt6-consumers-runtime-v2.log`, `llama-copy-{red-v1,owner-green-v2}.log`.
+Continuation (2026-10-28): the first current-HEAD formal full rebuild
+(`continuation-formal-build-v2.log`, exit 0) exposed a missing `core/include`
+path for the semantic test target (RED kept in
+`continuation-formal-build-v1.log`); the target now owns its QtCompat include.
+Focused Qt5.15 rows pass 6/6 (`continuation-formal-qt-focused-v1.log`); the
+Qt5.10.1/Qt6.5.3 SDK matrices rebuild and pass 7/7 each with the SDK's own
+runtime pinned (`continuation-qt510-{ctest-v1,runtime-v2}.log` records the
+host-Qt5.15 mismatch diagnostic; `continuation-qt6-ctest-runtime-v1.log`).
+此前 picker 的 `continuation-ocr-picker-green-v1.log` 和
+`continuation-qany-ctest-v2.log` 是历史通过，但单 F32 测试已经过期，不能证明
+已发布全家族支持。把 source/v5/v6 catalog 行称为 validation-only 并隐藏量化
+是错误判断，已由上方公共 catalog 集合回归纠正；历史日志仍保留。
+Re-verified in that earlier scope: C ABI coverage 913/913,
+strict plugin boundary, capi 40/40, runner 123, cmake contracts 23, CLI
+L1/L2/L5 197, installed-plugin L3 17. The label-only cvpluginapi rerun keeps
+`test_qanylabeling_attribute_batch` failing without its asset environment
+(`continuation-cvpluginapi-ctest-v1.log`); the same row passes inside the
+environmented full suite. Linux 当前证据仅覆盖构建/契约/schema/局部 relocation，
+不能称为全部 native qualification 完成；完整 installer、clean-machine、L4/live/UI
+与 Windows/macOS install/relocation/loader、Apple Metal 仍开放。
+The historical sections below retain their original scope and failures.
+
 Upstream synchronization (2026-10-17): ACloudViewer
 `origin/users/dahailu/v3.9.5` at `aff48cd6a` is merged into the current branch.
 The earlier local OCR experiments were withdrawn at synchronization. The
@@ -695,9 +766,13 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   baseline `[0,0,1]`、每进程 2/2 fixture、主输入 audits 合格，仍总 FAIL：baseline 第三
   进程 p95 5.39 对 source 2.225544 ms，绝对差 3.164456 ms，原双门/baseline veto 保留。
   原 baseline probe SHA `0be29828...` 未变，v3/v4 不称为合格原 baseline A/B。
-  新正式 LLM CPU 三行 `llm-raw-formal-ab-v1/report-cpu.json` 两侧全部 rc=77，指定的
-  独立 upstream 工具不可用，无 measured 推理或性能比较资格；原性能 FAIL 保留。
-  在独立目录恢复同 pin pristine 参照，不修改冻结 baseline、不混用生产补丁库。
+  The initial `llm-raw-formal-ab-v1/report-cpu.json` remains INCOMPLETE:
+  rc=77 because its independent source tools were unavailable. The later
+  `llm-raw-formal-cpu-ref-v2/report-cpu.json` completes both sides' 3x2x10
+  samples, but 256M Q8 decode p50 97.441397 -> 104.047370 ms still fails
+  (+6.7794%, +6.606 ms). Selected CUDA `llm-raw-formal-cuda-ref-v3/report-cuda.json`
+  passes three rows at revision `e659cd3b`, not the original full release.
+  Independent source tools do not replace the frozen performance baseline.
   `owned-yolo-formal-lifecycle-v1/` 的正式公共生命周期三后端 PASS；
   `yolo-owner-formal-oracle-cuda-v1.log` 的当前正式 CUDA module owner oracle rc=0。
   原独立 checkpoint Q8 0.02 门不由这些 PASS 撤销。

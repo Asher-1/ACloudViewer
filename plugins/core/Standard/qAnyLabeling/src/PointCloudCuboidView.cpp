@@ -18,6 +18,8 @@
 #include <cmath>
 #include <limits>
 
+#include "QtCompat.h"
+
 namespace {
 // Source perimeter order also determines ties between equally near handles.
 constexpr int kHandleSigns[8][2] = {{-1, -1}, {0, -1}, {1, -1}, {1, 0},
@@ -413,7 +415,7 @@ void PointCloudCuboidView::mousePressEvent(QMouseEvent* e) {
     if (m_dragging || m_panning) return;
     m_focusAnimation->stop();
     setFocus();
-    m_start = m_last = e->localPos();
+    m_start = m_last = qtCompatMouseEventPos(e);
     if (e->button() == Qt::MiddleButton ||
         (e->button() == Qt::LeftButton &&
          e->modifiers().testFlag(Qt::ControlModifier))) {
@@ -451,7 +453,7 @@ void PointCloudCuboidView::mousePressEvent(QMouseEvent* e) {
     updateHandleHover(handle);
 }
 void PointCloudCuboidView::mouseMoveEvent(QMouseEvent* e) {
-    const auto current = e->localPos();
+    const auto current = qtCompatMouseEventPos(e);
     if (m_panning)
         m_pan += current - m_last;
     else if (m_dragging && !m_creating) {
@@ -516,7 +518,7 @@ void PointCloudCuboidView::finishEdit() {
 void PointCloudCuboidView::mouseReleaseEvent(QMouseEvent* e) {
     if (e->button() != m_gestureButton) return;
     if (m_panning) {
-        m_pan += e->localPos() - m_last;
+        m_pan += qtCompatMouseEventPos(e) - m_last;
         m_panning = false;
         m_gestureButton = Qt::NoButton;
         update();
@@ -524,8 +526,9 @@ void PointCloudCuboidView::mouseReleaseEvent(QMouseEvent* e) {
     }
     if (!m_dragging) return;
     if (m_creating) {
-        const QRectF rect(m_start, e->localPos());
-        if (QLineF(m_start, e->localPos()).length() >= 5 && onCreated) {
+        const QRectF rect(m_start, qtCompatMouseEventPos(e));
+        if (QLineF(m_start, qtCompatMouseEventPos(e)).length() >= 5 &&
+            onCreated) {
             CuboidVector center{}, size{{1.6, 1.6, 1.6}};
             center = localDelta(rect.center() - boxCenter());
             const auto originLocal = cuboidTransform(
@@ -555,8 +558,8 @@ void PointCloudCuboidView::mouseReleaseEvent(QMouseEvent* e) {
         }
     } else {
         // A release can contain a newer position than the last MouseMove.
-        if (QRectF(rect()).contains(e->localPos()))
-            updateDrag(e->localPos(), e->modifiers());
+        if (QRectF(rect()).contains(qtCompatMouseEventPos(e)))
+            updateDrag(qtCompatMouseEventPos(e), e->modifiers());
         finishEdit();
         return;
     }

@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloudDatasetImporter.h"
+#include "QtCompat.h"
 
 #include <zlib.h>
 
@@ -79,7 +80,7 @@ bool safeName(const QString& name) {
                 .hasMatch())
         return false;
     const QStringList parts =
-            normalized.split(QLatin1Char('/'), Qt::KeepEmptyParts);
+            normalized.split(QLatin1Char('/'), QtCompat::KeepEmptyParts);
     for (int i = 0; i < parts.size(); ++i)
         if (parts.at(i).isEmpty() &&
             (i != parts.size() - 1 || !normalized.endsWith(QLatin1Char('/'))))
@@ -1211,7 +1212,8 @@ bool preparePointCloudDatasetImport(
     const QStringList names = exportedFrameNames(targets);
     QSet<QString> importedNames;
     for (const auto& frame : imported.frames) importedNames.insert(frame.name);
-    const QSet<QString> exportedNames(names.begin(), names.end());
+    const QSet<QString> exportedNames =
+                qtCompatQSetFromVector(names.toVector());
     const bool exact = importedNames == exportedNames;
     QMap<QString, QVector<int>> byName;
     QSet<QString> protectedPaths{resolvedPath(archivePath)};

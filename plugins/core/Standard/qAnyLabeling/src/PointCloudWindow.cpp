@@ -85,16 +85,9 @@
 #include "PointCloudCuboidView.h"
 #include "PointCloudDatasetExporter.h"
 #include "PointCloudViewTransform.h"
+#include "QtCompat.h"
 
 namespace {
-QPointF mousePosition(const QMouseEvent* event) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return event->position();
-#else
-    return event->localPos();
-#endif
-}
-
 QColor idColor(quint32 id) {
     if (!id) return QColor(145, 151, 158);
     return QColor::fromHsv(int((id * 137) % 360), 170, 230);
@@ -499,7 +492,7 @@ protected:
     }
     void mousePressEvent(QMouseEvent* event) override {
         m_focusAnimation.stop();
-        m_last = mousePosition(event);
+        m_last = qtCompatMouseEventPos(event);
         if (detection && m_creating) {
             updateCreationPreview(m_last);
             return;
@@ -526,7 +519,7 @@ protected:
         m_orbiting = event->button() == Qt::LeftButton && !m_panning;
     }
     void mouseMoveEvent(QMouseEvent* event) override {
-        const QPointF current = mousePosition(event);
+        const QPointF current = qtCompatMouseEventPos(event);
         if (detection && m_creating) {
             updateCreationPreview(current);
             return;
@@ -560,7 +553,7 @@ protected:
     }
     void mouseReleaseEvent(QMouseEvent* event) override {
         if (m_selectClick && !m_navigationDragged && onCuboidSelected)
-            onCuboidSelected(hitCuboid(mousePosition(event)));
+            onCuboidSelected(hitCuboid(qtCompatMouseEventPos(event)));
         m_selectClick = false;
         if (event->button() == Qt::LeftButton && m_brushing) {
             m_brushing = false;
@@ -578,12 +571,12 @@ protected:
         if (detection && event->button() == Qt::LeftButton &&
             !event->modifiers()) {
             if (m_creating) {
-                updateCreationPreview(mousePosition(event));
+                updateCreationPreview(qtCompatMouseEventPos(event));
                 if (m_hasCreationPreview && onCuboidCreated)
                     onCuboidCreated(m_creationPreview.center,
                                     m_creationPreview.size);
             } else {
-                const int id = hitCuboid(mousePosition(event));
+                const int id = hitCuboid(qtCompatMouseEventPos(event));
                 if (onCuboidSelected) onCuboidSelected(id);
                 if (id && m_frame) {
                     for (const auto& box : m_frame->cuboids)
@@ -620,11 +613,7 @@ protected:
         event->accept();
         update();
         if (detection && m_creating) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-            updateCreationPreview(event->position());
-#else
-            updateCreationPreview(event->posF());
-#endif
+            updateCreationPreview(qtCompatWheelEventPos(event));
         }
     }
     void keyPressEvent(QKeyEvent* event) override {

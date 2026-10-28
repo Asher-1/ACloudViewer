@@ -10,6 +10,7 @@ add_executable(test_cvpluginapi_ui_helpers test_ui_helpers.cpp)
 
 target_include_directories(test_cvpluginapi_ui_helpers PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_SOURCE_DIR}/core/include
 )
 
 target_link_libraries(test_cvpluginapi_ui_helpers PRIVATE

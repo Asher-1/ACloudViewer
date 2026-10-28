@@ -3818,10 +3818,7 @@ void AnnotationWindow::applyTheme(const QString& mode) {
                          {QPalette::Dark, "#1c1c1e"},
                          {QPalette::Shadow, "#1c1c1e"}})
                 palette.setColor(group, entry.first, QColor(entry.second));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
-            palette.setColor(group, QPalette::PlaceholderText,
-                             QColor("#8e8e93"));
-#endif
+            qtCompatSetPlaceholderTextColor(palette, group, QColor("#8e8e93"));
         }
         for (const auto role :
              {QPalette::WindowText, QPalette::Text, QPalette::ButtonText})
@@ -6046,6 +6043,8 @@ void AnnotationWindow::populateModels() {
                                  QString::fromUtf8(entry->filename));
         }
         if (QString::fromLatin1(entry->role) != QStringLiteral("rec")) continue;
+        const auto* preset =
+                aicore_ocr_preset_by_rec_filename(entry->filename);
         Model model;
         model.filename = QString::fromUtf8(entry->filename);
         model.url = QString::fromUtf8(entry->download_url ? entry->download_url
@@ -6053,9 +6052,11 @@ void AnnotationWindow::populateModels() {
         model.quant = quantization(model.filename);
         model.task = QStringLiteral("ocr");
         model.family =
-                QStringLiteral("PP-OCRv4 (%1)")
-                        .arg(QString::fromUtf8(entry->language ? entry->language
-                                                               : "ch"));
+                preset ? QString::fromUtf8(preset->display_name)
+                       : QStringLiteral("PP-OCRv4 (%1)")
+                             .arg(QString::fromUtf8(entry->language
+                                                            ? entry->language
+                                                            : "ch"));
         m_models.append(model);
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
@@ -6075,12 +6076,14 @@ void AnnotationWindow::populateModels() {
     // never invent a URL; runDetection names the exact missing local file.
     for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
         const auto* preset = aicore_ocr_preset_at(i);
+        if (!preset) continue;
         // Half/quantized conversion candidates are withheld until their
         // source-framework accuracy gates pass. F32 is the verified route.
         for (const QString& quant : {QStringLiteral("f32")}) {
             const QString filename = QString::fromUtf8(preset->rec_stem) +
                                      QLatin1Char('-') + quant +
                                      QStringLiteral(".gguf");
+            // 已发布文件由目录提供量化、URL 和 family；仅未发布时本地回退。
             if (aicore_ocr_model_by_filename(filename.toUtf8().constData()))
                 continue;
             Model model;
@@ -8792,7 +8795,7 @@ void AnnotationWindow::updateTags() {
                                                     : QColor(Qt::white));
         item->setSizeHint(QSize(
                 std::min(240,
-                         fontMetrics().horizontalAdvance(item->text()) + 26),
+                         QTCOMPAT_FONTMETRICS_WIDTH(fontMetrics(), item->text()) + 26),
                 28));
     }
 }

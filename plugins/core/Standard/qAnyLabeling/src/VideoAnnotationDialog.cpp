@@ -41,6 +41,8 @@
 #include <QSet>
 #include <QShortcut>
 
+#include "QtCompat.h"
+
 // Qt 5.14 compatibility: the QShortcut(QKeySequence, QObject*, Functor)
 // overload only exists from Qt 5.15. Route every shortcut through this
 // helper, which connects activated() to the functor explicitly.
@@ -242,9 +244,7 @@ bool editVideoLabels(QWidget* parent,
             return;
         }
         QTextStream stream(&file);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-        stream.setCodec("UTF-8");
-#endif
+        qtCompatSetTextStreamUtf8(stream);
         QSet<QString> existing;
         for (int row = 0; row < table->rowCount(); ++row) {
             existing.insert(table->item(row, 0)->data(Qt::UserRole).toString());
@@ -1550,10 +1550,8 @@ void VideoAnnotationDialog::addSegment(qint64 startMs, qint64 endMs) {
         return;
     }
     VideoSegment segment;
-    segment.id = QStringLiteral("s") + QUuid::createUuid()
-                                               .toString(QUuid::WithoutBraces)
-                                               .remove(QLatin1Char('-'))
-                                               .left(10);
+    segment.id = QStringLiteral("s") +
+                 qtCompatUuidId128(QUuid::createUuid()).left(10);
     segment.label = label;
     segment.startMs = startMs;
     segment.endMs =
@@ -1603,18 +1601,14 @@ void VideoAnnotationDialog::splitSelectedSegment() {
     }
 
     VideoSegment first = original;
-    first.id = QStringLiteral("s") + QUuid::createUuid()
-                                             .toString(QUuid::WithoutBraces)
-                                             .remove(QLatin1Char('-'))
-                                             .left(10);
+    first.id = QStringLiteral("s") +
+               qtCompatUuidId128(QUuid::createUuid()).left(10);
     first.endMs = splitMs;
     first.startFrame = videoFrameAt(first.startMs, m_data.fps);
     first.endFrame = videoFrameAt(first.endMs, m_data.fps);
     VideoSegment second = original;
-    second.id = QStringLiteral("s") + QUuid::createUuid()
-                                              .toString(QUuid::WithoutBraces)
-                                              .remove(QLatin1Char('-'))
-                                              .left(10);
+    second.id = QStringLiteral("s") +
+                qtCompatUuidId128(QUuid::createUuid()).left(10);
     second.startMs = splitMs;
     second.startFrame = videoFrameAt(second.startMs, m_data.fps);
     second.endFrame = videoFrameAt(second.endMs, m_data.fps);

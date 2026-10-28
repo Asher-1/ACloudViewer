@@ -123,11 +123,10 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
         }
     }
     if (resultPath.isEmpty()) {
-        resultPath =
-                QDir(QDir::tempPath())
-                        .filePath(QStringLiteral("acv_aicore_rpc_%1.json")
-                                          .arg(QUuid::createUuid().toString(
-                                                  QUuid::Id128)));
+        resultPath = QDir(QDir::tempPath())
+                             .filePath(QStringLiteral("acv_aicore_rpc_%1.json")
+                                               .arg(qtCompatUuidId128(
+                                                       QUuid::createUuid())));
         temporaryResult = true;
         argList << "RESULT_JSON" << resultPath;
     } else if (!options.contains("RESULT_JSON") &&

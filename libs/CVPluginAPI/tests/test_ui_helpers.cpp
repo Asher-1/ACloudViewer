@@ -28,12 +28,15 @@
 #include <QPushButton>
 #include <QScreen>
 #include <QSizePolicy>
+#include <QTemporaryDir>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <cmath>
 #include <cstdio>
 #include <initializer_list>
 
+#include "QtCompat.h"
 #include "ecvAICoreUiHelper.h"
 
 int g_test_failures = 0;
@@ -143,6 +146,87 @@ static void test_widget_factory_invariants() {
     delete sample;
 }
 
+static void test_exclusive_file_creation() {
+    QTemporaryDir directory;
+    UI_CHECK(directory.isValid());
+    const QString path =
+            directory.filePath(QString::fromUtf8("archive \xc3\xa9.zip"));
+    QFile first(path);
+    QString error;
+    UI_CHECK(qtCompatOpenNewFile(first, &error));
+    UI_CHECK(first.write("original") == 8);
+    UI_CHECK(first.flush());
+    QFile second(path);
+    UI_CHECK(!qtCompatOpenNewFile(second, &error));
+    UI_CHECK(!error.isEmpty() && !second.isOpen());
+    first.close();
+    QFile read(path);
+    UI_CHECK(read.open(QIODevice::ReadOnly));
+    UI_CHECK(read.readAll() == QByteArray("original"));
+    QFile missing(directory.filePath(QStringLiteral("missing/child.zip")));
+    UI_CHECK(!qtCompatOpenNewFile(missing, &error) && !error.isEmpty());
+}
+
+static void test_qt_compat_text_and_palette() {
+    // Import/export must use UTF-8 regardless of the process locale.
+    QByteArray bytes = QByteArray::fromHex("c3a90ae282ac0a");
+    QTextStream input(&bytes, QIODevice::ReadOnly);
+    qtCompatSetTextStreamUtf8(input);
+    UI_CHECK(input.readLine() == QString::fromUtf8("\xc3\xa9"));
+    UI_CHECK(input.readLine() == QString::fromUtf8("\xe2\x82\xac"));
+    QByteArray outputBytes;
+    QTextStream output(&outputBytes, QIODevice::WriteOnly);
+    qtCompatSetTextStreamUtf8(output);
+    output << QString::fromUtf8("\xc3\xa9\n\xe2\x82\xac\n");
+    output.flush();
+    UI_CHECK(outputBytes == bytes);
+
+    const QUuid uuid(QStringLiteral("{01234567-89ab-cdef-0123-456789abcdef}"));
+    UI_CHECK(qtCompatUuidWithoutBraces(uuid) ==
+             QStringLiteral("01234567-89ab-cdef-0123-456789abcdef"));
+    UI_CHECK(qtCompatUuidId128(uuid) ==
+             QStringLiteral("0123456789abcdef0123456789abcdef"));
+    UI_CHECK(qtCompatUuidId128(QUuid()) == QString(32, QLatin1Char('0')));
+
+    QPalette palette;
+    const QColor text = palette.color(QPalette::Active, QPalette::Text);
+    const QColor placeholder("#8e8e93");
+    qtCompatSetPlaceholderTextColor(palette, QPalette::Active, placeholder);
+    UI_CHECK(palette.color(QPalette::Active, QPalette::Text) == text);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+    UI_CHECK(palette.color(QPalette::Active, QPalette::PlaceholderText) ==
+             placeholder);
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+    QImage image(2, 1, qtCompatQImageFormatGrayscale16());
+    UI_CHECK(!image.isNull() && image.depth() == 16);
+#else
+    UI_CHECK(qtCompatQImageFormatGrayscale16() == QImage::Format_Invalid);
+#endif
+}
+
+static void test_fractional_event_positions() {
+    // Rounding before canvas scaling makes Qt5 and Qt6 choose different pixels.
+    QMouseEvent mouse(QEvent::MouseMove, QPointF(10.25, 20.75),
+                      QPointF(100.25, 200.75), Qt::NoButton, Qt::NoButton,
+                      Qt::NoModifier);
+    UI_CHECK(qtCompatMouseEventPos(&mouse) == QPointF(10.25, 20.75));
+    UI_CHECK(qtCompatMouseEventGlobalPos(&mouse) == QPointF(100.25, 200.75));
+    UI_CHECK(qtCompatMouseEventPosInt(&mouse) == QPoint(10, 21));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+    QWheelEvent wheel(QPointF(10.25, 20.75), QPointF(100.25, 200.75), QPoint(),
+                      QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                      Qt::NoScrollPhase, false);
+#else
+    QWheelEvent wheel(QPointF(10.25, 20.75), QPointF(100.25, 200.75), QPoint(),
+                      QPoint(0, 120), 120, Qt::Vertical, Qt::NoButton,
+                      Qt::NoModifier, Qt::NoScrollPhase,
+                      Qt::MouseEventNotSynthesized, false);
+#endif
+    UI_CHECK(qtCompatWheelEventPos(&wheel) == QPointF(10.25, 20.75));
+    UI_CHECK(qtCompatWheelEventDelta(&wheel) == 120);
+}
+
 int main(int argc, char** argv) {
     // Never require a display: all assertions run offscreen on every CI
     // runner (Linux/macOS/Windows).  An externally set platform (e.g. a
@@ -156,9 +240,12 @@ int main(int argc, char** argv) {
     test_dpi_scaling_invariants();
     test_compact_layout_invariants();
     test_widget_factory_invariants();
+    test_fractional_event_positions();
+    test_qt_compat_text_and_palette();
+    test_exclusive_file_creation();
 
     if (g_test_failures == 0) {
-        fprintf(stderr, "test_cvpluginapi_ui_helpers ok\n");
+        fprintf(stderr, "test_cvpluginapi_ui_helpers ok (Qt %s)\n", qVersion());
         return 0;
     }
     fprintf(stderr, "test_cvpluginapi_ui_helpers: %d failure(s)\n",

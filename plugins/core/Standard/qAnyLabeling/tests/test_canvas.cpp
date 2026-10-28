@@ -16,6 +16,7 @@
 #include <cstdio>
 
 #include "AnnotationCanvas.h"
+#include "AnnotationNavigator.h"
 
 namespace {
 void mouse(AnnotationCanvas& canvas,
@@ -51,6 +52,32 @@ bool check(bool condition, const char* message) {
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    // A fractional click just outside the image must not navigate, even when
+    // rounding it to an integer would land on the image border.
+    AnnotationNavigator navigator;
+    navigator.resize(200, 200);
+    navigator.setImage(QImage(100, 100, QImage::Format_RGB32));
+    int navigationCount = 0;
+    QPointF navigation;
+    QObject::connect(&navigator, &AnnotationNavigator::navigationRequested,
+                     [&](const QPointF& point) {
+                         ++navigationCount;
+                         navigation = point;
+                     });
+    QMouseEvent outside(QEvent::MouseButtonPress, QPointF(9.75, 50.25),
+                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(&navigator, &outside);
+    if (!check(navigationCount == 0,
+               "Navigator must reject fractional clicks outside the image"))
+        return 1;
+    QMouseEvent inside(QEvent::MouseButtonPress, QPointF(10.25, 50.25),
+                       Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(&navigator, &inside);
+    if (!check(navigationCount == 1 &&
+                       std::abs(navigation.x() - 0.25 / 180.0) < 1e-9 &&
+                       std::abs(navigation.y() - 40.25 / 180.0) < 1e-9,
+               "Navigator must normalize the original fractional coordinates"))
+        return 1;
     AnnotationCanvas canvas;
     canvas.resize(400, 400);
     canvas.setImage(QImage(100, 100, QImage::Format_RGB32));

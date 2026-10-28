@@ -1,13 +1,15 @@
 # llama.cpp — single source owner for AICore's embedded ggml runtime
 
-Status on 2026-10-24: **every task re-anchors its numeric baseline on the
-0.27 embedded ggml**. The 0.21.0 standalone ggml entry and `3rdparty/ggml/`
-have been **removed** (the fingerprint-vs-0.21 comparison was a migration
-bridge, not a correctness anchor; correctness is owned by the official
-reference gates of each task). The split-K bridge patch `0013` was reverted
-with it. 本地 LLM/VLM 已有公共 `llm` task、catalog 和 worker，并在正式
-`build_app` 上完成 CPU/CUDA/Vulkan 各 12/12 developer 场景复验。
-Metal、完整真实模型/release A/B 和 OCR 发布门仍开放；局部通过不等于完整验收。
+当前状态（2026-10-28）：**llama 集成仍未完整验收**。各任务仍须通过自己的
+独立数值门；切换至 embedded ggml 0.27 不自动重置原门或冻结性能 baseline。
+0.21.0 standalone ggml 源码入口与 `3rdparty/ggml/` 已移除；历史指纹比较只是
+迁移证据，独立 correctness 仍由各任务的官方参照门拥有。
+The split-K bridge patch `0013` was reverted
+with it. The local LLM/VLM public `llm` task, catalog and worker are implemented;
+historical developer checks cover 12 scenarios on each CPU/CUDA/Vulkan backend.
+The original frozen production build remains read-only evidence for performance
+A/B; retiring a source entry does not authorize replacing or deleting it.
+Metal, complete release A/B and current OCR qualification remain open.
 
 ## 1. What this directory is
 
@@ -147,7 +149,7 @@ RAM and YOLO inspect the exported dependency build directory for assets.
 Run the narrowest checks first, then the real matrix:
 
 ```sh
-# 无模型公共 ABI/lifecycle 契约；模型 tier 单独执行
+# Model-free public ABI/lifecycle contracts; run the model tier separately
 cmake --build build_app --target aicore-contract-tests -j4
 ctest --test-dir build_app -L capi -LE model --output-on-failure -j1
 
@@ -187,7 +189,80 @@ the waiver. Unpublished OCR candidates additionally require their own
 exact-SHA gates; see
 [`OCR_RELEASE_GATES.md`](../../plugins/core/Standard/qAnyLabeling/OCR_RELEASE_GATES.md).
 
-### Current gate status
+### Current integration assessment (2026-10-27, continued 2026-10-28)
+
+Integration is **not fully qualified**. This continuation changes Qt-layer
+compatibility and propagates runtime-copy failures; it does not change model
+bytes, numerical thresholds, the frozen baseline or historical FAIL receipts.
+
+- Real Linux Qt 5.10.1 and Qt 6.5.3 SDKs are available for focused consumer
+  builds. Shared helpers, canvas/navigation, OCR document, table and rich-text
+  tests are exercised against those SDKs, separately from the Qt5.15 app build.
+  Fractional event coordinates, UUID formatting, UTF-8 streams, optional palette
+  roles/formats and atomic non-overwrite archive creation use `QtCompat.h`.
+  Older Qt still has plain-text Markdown import; basic format export is not
+  complete Markdown/code/math parity.
+- `build_app/Testing/llama-copy-owner-green-v2.log`: 23 checks (17 source-owner
+  plus six executed runtime-copy/install tests) pass. Tests cover current
+  Linux/macOS aliases, Windows DLL filenames, CPU variants, missing mtmd/GPU,
+  paths with spaces and hard failure on unsuccessful copies. Filename-layout
+  tests are not native Windows/macOS build or package qualification.
+- `llm-raw-formal-cpu-ref-v2/report-cpu.json` is an effective three-scenario
+  original-baseline A/B at revision `e659cd3b`: both sides complete 3x2x10,
+  correctness/stability pass, but the overall verdict remains **FAIL**.
+  256M Q8 decode p50 is 97.441397 -> 104.047370 ms (+6.7794%, +6.606 ms).
+- `llm-raw-formal-cuda-ref-v3/report-cuda.json` passes only its three selected
+  newspaper scenarios (500M F16, 256M Q8/F16), at the same older revision.
+  It does not overwrite the original full CUDA baseline's four text failures
+  or establish a current-HEAD full release.
+- Native Windows/macOS compile/install/relocation and Apple-device Metal
+  execution are still required. The Metal migration guard remains enabled.
+  No commit, publication, model replacement or build-directory cleanup occurs.
+- Continuation (2026-10-28): the first current-HEAD formal full rebuild is
+  green (`continuation-formal-build-v2.log`) after the semantic test target
+  started owning its QtCompat include path (RED kept in
+  `continuation-formal-build-v1.log`). Focused Qt5.15 rows pass 6/6; the
+  Qt5.10.1/Qt6.5.3 SDK matrices rebuild and pass 7/7 each once the SDK's own
+  runtime is pinned (`continuation-qt510-ctest-v1.log` keeps the host-Qt5.15
+  library mismatch as a diagnostic). Re-verified without skips: C ABI coverage
+  913/913 + strict plugin boundary, capi ctest 40/40, runner 123, cmake
+  source-owner contracts 23, CLI L1/L2/L5 197, installed-plugin L3 schema 17.
+  该轮 `continuation-ocr-picker-green-v1.log` 与 38 项 suite 是历史收据，
+  当时测试仍要求 source/v5/v6 单 F32，未覆盖已发布量化全集。此前把这些
+  catalog 行称为 validation-only、并用插件白名单隐藏 F16/Q8 是错误的。
+  当前 picker 已删除白名单，family 来自公共 preset，已发布文件的量化与
+  URL 来自公共 catalog；仅 catalog 缺失才允许本地 F32 fallback。
+  `ocr-picker-catalog-red-v1.log` 实际复现 source-rec F16/Q8 丢失；修后
+  `ocr-picker-catalog-green-v2.log` 两项通过，逐 preset 验证文件集合相等且
+  无重复。`ocr-picker-catalog-suite-v3.log` 以原 attribute F32 资产复跑
+  38/38，通过不代表全模型精度、速度或完整 UI 资格。
+  缺资产环境的 `continuation-cvpluginapi-ctest-v1.log` 失败仍保留。
+
+### 2026-10-28：当前证据复验边界
+
+- 当前 ACloudViewer HEAD `a624587d7af8f6b11c44339de55cdc0f8b85d860`，
+  工作树有未提交修改。本轮 `llm-current-probe-build-v1.log` 已构建正式
+  `test_llm_probe`；未改模型、补丁、原门或冻结构建。
+- 冻结 AICore、raw probe、CUDA/Vulkan module SHA 与旧收据一致；旧完整
+  报告引用的 `build_llama_upstream_ref` 当前不存在。现存独立 reference
+  为 `framework-references/llama-formal-pristine-v1`，revision stamp 与 pin
+  相等，`ldd -r` 无缺符号，实际枚举 CUDA0/Vulkan0。它不是冻结性能 baseline。
+- `llm-current-full-preflight.log` 离线核验 10 个模型/projector 文件及一张
+  输入，展开全部 12 行原 3×2×10、threads=4 命令；`--list` 不执行推理，
+  不是 release PASS。外部 Bazel/PCL 编译仍在运行，等待记录见
+  `llm-external-build-wait-v1.log`；不得在该负载下宣称受控速度复验。
+- 本轮补充：模型无关 capi `evidence-continuation-capi-contract-v2.log`
+  40/40、qOCR sibling 两项通过；广泛 capi 的 16 skipped 和缺 attribute
+  资产/参照失败保留，完整注入原 reference 后单项 E2E 通过，不宣称 80/80。
+  最新上游 document 8/RAM 16 例通过，config/render 比较仍实际 FAIL。
+- 安静等待曾完成三次无 compiler 检查，但采样前已有新一轮外部编译，完整
+  LLM A/B 未启动。冻结关键产物 SHA 记录在 `llm-original-artifact-sha-v1.log`，
+  当前库/probe/plugin/manifest SHA 记录在 `evidence-continuation-artifact-sha-v1.log`。
+- Linux 的构建、契约、schema 和局部 relocation 证据不等于完整 installer、
+  clean-machine 或全部 L4/live/UI 验收。macOS/Windows/Metal 原生门仍开放；
+  原 CPU/CUDA release FAIL 不由上述 preflight 或 picker 通过撤销。
+
+### Historical gate evidence
 
 当前正式模块复验收据位于 `build_app/Testing/`：
 - `production-contract-ctest.log`：无模型 C ABI 契约 39/39，通过且无 skip。
@@ -517,9 +592,12 @@ exact-SHA gates; see
   baseline `[0,0,1]`，2/2 fixture 完整、主输入 audits 全合格，总 FAIL：baseline 第三
   进程 p95 5.39 对 source 2.225544 ms，绝对差 3.164456 ms，原双门/baseline veto 保留。
   原 baseline probe SHA `0be29828...` 未变；v3/v4 不再称为合格原 baseline A/B。
-  新正式 LLM CPU 三行 `llm-raw-formal-ab-v1/report-cpu.json` 两侧全部 rc=77，指定的
-  独立 upstream 工具不可用，无 measured 推理或性能比较资格；原性能 FAIL 保留。
-  参照恢复在独立目录进行，不修改冻结 baseline、不混用生产补丁库。
+  The earlier `llm-raw-formal-ab-v1/report-cpu.json` remains INCOMPLETE (all
+  rc=77 because its independent upstream tools were unavailable). The later
+  `llm-raw-formal-cpu-ref-v2/report-cpu.json` contains real 3x2x10 samples on
+  both sides but retains the 256M Q8 decode performance FAIL. Selected CUDA
+  `llm-raw-formal-cuda-ref-v3/report-cuda.json` passes three rows only. These
+  independent reference tools do not replace the original frozen baseline.
   `owned-yolo-formal-lifecycle-v1/` 的正式公共生命周期三后端 PASS；
   `yolo-owner-formal-oracle-cuda-v1.log` 的当前正式 CUDA module owner oracle rc=0。
   orientation 同权重诊断 exporter 真实 RED→GREEN，新增 native 方法前 OCR owner 套件 75 PASS；

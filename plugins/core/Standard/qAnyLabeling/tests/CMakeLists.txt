@@ -84,7 +84,7 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_config)
 # workspace object graph (review-toast open-time-hidden contract included).
 cloudviewer_add_plugin_test(test_qanylabeling_plugin
     SOURCES test_plugin.cpp
-    LIBS CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
+    LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_plugin
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_plugin)
@@ -268,6 +268,8 @@ endif()
 
 cloudviewer_add_plugin_test(test_qanylabeling_canvas
     SOURCES test_canvas.cpp
+        ${QAL_DIR}/src/AnnotationNavigator.cpp
+        ${QAL_DIR}/include/AnnotationNavigator.h
         ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
@@ -456,13 +458,13 @@ set_tests_properties(test_qanylabeling_classifier_run_path PROPERTIES TIMEOUT 60
 add_test(NAME test_qanylabeling_ocr_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --ocr)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ocr_run_path)
 set_tests_properties(test_qanylabeling_ocr_run_path PROPERTIES TIMEOUT 600)
-# 本地属性模型由测试环境显式注入；缺失时失败，不下载或跳过。
+# The test environment supplies local attribute models; missing assets fail.
 add_test(NAME test_qanylabeling_attribute_run_path
     COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --attribute)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_run_path)
 set_tests_properties(test_qanylabeling_attribute_run_path PROPERTIES TIMEOUT 600)
 
-# 真实插件注册的原生命令；外部本地模型与输入缺失必须失败，不自动下载。
+# Exercise the plugin's native command; missing local models or inputs fail.
 cloudviewer_add_plugin_test(test_qanylabeling_attribute_batch
     SOURCES test_attribute_batch.cpp
     LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub)
@@ -477,3 +479,19 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_lightglue_bridge)
 set_property(TEST test_qanylabeling_lightglue_bridge APPEND PROPERTY
     ENVIRONMENT "QANY_LIGHTGLUE_TEST=1")
 set_tests_properties(test_qanylabeling_lightglue_bridge PROPERTIES TIMEOUT 600)
+
+# Sources that consume QtCompat must own its include path, not rely on the
+# GUI plugin's transitive include directories.
+foreach(_qt_compat_test IN ITEMS test_qanylabeling_ppocr_table
+        test_qanylabeling_semantic
+        test_qanylabeling_canvas test_qanylabeling_cuboid
+        test_qanylabeling_pointcloud_ui test_qanylabeling_video_ui
+        test_qanylabeling_video_dataset test_qanylabeling_pointcloud_dataset
+        test_qanylabeling_pointcloud_dataset_importer
+        test_qanylabeling_relate_options test_qanylabeling_document
+        probe_qanylabeling_render)
+    if(TARGET ${_qt_compat_test})
+        target_include_directories(${_qt_compat_test} PRIVATE
+            ${CMAKE_SOURCE_DIR}/core/include)
+    endif()
+endforeach()

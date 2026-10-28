@@ -106,6 +106,110 @@ int main(int argc, char** argv) {
                             {"html", cursor.selection().toHtml()},
                             {"strike", strike}});
     }
+    for (const auto& input :
+         QStringList{"<p><img src='missing.png'></p>",
+                     "<p><a href='https://example.org/path'>link</a></p>",
+                     "<p><u>underlined</u></p>",
+                     "<ul><li>first</li><li>second</li></ul>"}) {
+        PpocrRichTextEditor original(input);
+        auto* before = original.findChild<QTextEdit*>("PpocrRichContent");
+        REQUIRE(before);
+        PpocrRichTextEditor reopened(original.content());
+        PpocrRichTextEditor exported(qtCompatToMarkdown(*before->document()));
+        auto* exportedText = exported.findChild<QTextEdit*>("PpocrRichContent");
+        REQUIRE(exportedText);
+        REQUIRE(exportedText->toPlainText() == before->toPlainText());
+        REQUIRE(exportedText->document()
+                        ->begin()
+                        .begin()
+                        .fragment()
+                        .charFormat()
+                        .isImageFormat() == before->document()
+                                                    ->begin()
+                                                    .begin()
+                                                    .fragment()
+                                                    .charFormat()
+                                                    .isImageFormat());
+        REQUIRE(exportedText->document()
+                        ->begin()
+                        .begin()
+                        .fragment()
+                        .charFormat()
+                        .fontUnderline() == before->document()
+                                                    ->begin()
+                                                    .begin()
+                                                    .fragment()
+                                                    .charFormat()
+                                                    .fontUnderline());
+        REQUIRE(exportedText->document()
+                        ->begin()
+                        .begin()
+                        .fragment()
+                        .charFormat()
+                        .anchorHref() == before->document()
+                                                 ->begin()
+                                                 .begin()
+                                                 .fragment()
+                                                 .charFormat()
+                                                 .anchorHref());
+        REQUIRE(bool(exportedText->document()->begin().textList()) ==
+                bool(before->document()->begin().textList()));
+        QTextDocument sharedImport;
+        qtCompatSetMarkdown(sharedImport,
+                            qtCompatToMarkdown(*before->document()));
+        REQUIRE(sharedImport.toPlainText() == before->toPlainText());
+        auto expectedImport = before->document()->begin();
+        auto actualImport = sharedImport.begin();
+        while (expectedImport.isValid()) {
+            REQUIRE(actualImport.isValid());
+            REQUIRE(bool(actualImport.textList()) ==
+                    bool(expectedImport.textList()));
+            auto expectedFragment = expectedImport.begin();
+            auto actualFragment = actualImport.begin();
+            for (; !expectedFragment.atEnd();
+                 ++expectedFragment, ++actualFragment) {
+                REQUIRE(!actualFragment.atEnd());
+                const auto expectedFormat =
+                        expectedFragment.fragment().charFormat();
+                const auto actualFormat =
+                        actualFragment.fragment().charFormat();
+                REQUIRE(actualFormat.isImageFormat() ==
+                        expectedFormat.isImageFormat());
+                REQUIRE(actualFormat.anchorHref() ==
+                        expectedFormat.anchorHref());
+                REQUIRE(actualFormat.fontUnderline() ==
+                        expectedFormat.fontUnderline());
+                if (expectedFormat.isImageFormat())
+                    REQUIRE(actualFormat.toImageFormat().name() ==
+                            expectedFormat.toImageFormat().name());
+            }
+            expectedImport = expectedImport.next();
+            actualImport = actualImport.next();
+        }
+        auto* after = reopened.findChild<QTextEdit*>("PpocrRichContent");
+        REQUIRE(after);
+        REQUIRE(after->toPlainText() == before->toPlainText());
+        auto expected = before->document()->begin();
+        auto actual = after->document()->begin();
+        while (expected.isValid()) {
+            REQUIRE(actual.isValid());
+            REQUIRE(bool(actual.textList()) == bool(expected.textList()));
+            auto e = expected.begin(), a = actual.begin();
+            for (; !e.atEnd(); ++e, ++a) {
+                REQUIRE(!a.atEnd());
+                const auto ef = e.fragment().charFormat();
+                const auto af = a.fragment().charFormat();
+                REQUIRE(af.isImageFormat() == ef.isImageFormat());
+                REQUIRE(af.anchorHref() == ef.anchorHref());
+                REQUIRE(af.fontUnderline() == ef.fontUnderline());
+                if (ef.isImageFormat())
+                    REQUIRE(af.toImageFormat().name() ==
+                            ef.toImageFormat().name());
+            }
+            expected = expected.next();
+            actual = actual.next();
+        }
+    }
     PpocrRichTextEditor editor("alpha beta");
     auto* text = editor.findChild<QTextEdit*>("PpocrRichContent");
     auto cursor = text->textCursor();

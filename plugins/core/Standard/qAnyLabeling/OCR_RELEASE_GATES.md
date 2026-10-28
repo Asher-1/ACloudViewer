@@ -1,6 +1,77 @@
 # OCR per-file release gates
 
-Latest update: 2026-10-23 (evening). The CUDA detector source-speed recheck now
+Latest assessment: 2026-10-28. **Complete current qualification remains open.**
+The 2026-10-25 Plan B record below reports 36 published files plus one
+replacement; the pre-publication zero-upload snapshot is historical, not the
+current publication inventory. This continuation performs no upload or model
+replacement and does not revoke or overwrite any historical receipt.
+
+The current OCR Vulkan matrix still has seven original failures; the original
+CUDA identity veto and Vulkan conv112 original-owner baseline veto remain.
+Shared pool/table success does not qualify all OCR pages or source-speed gates.
+
+The later LLM CPU `build_app/Testing/llm-raw-formal-cpu-ref-v2/report-cpu.json`
+contains real 3x2x10 samples for three scenarios on both original-baseline A/B
+sides. Correctness/stability pass, but its verdict is FAIL: 256M Q8 decode p50
+97.441397 -> 104.047370 ms (+6.7794%, +6.606 ms). Selected CUDA
+`llm-raw-formal-cuda-ref-v3/report-cuda.json` passes three newspaper scenarios
+only, at revision `e659cd3b`; it does not clear the original full release.
+The initial exit-77 receipts remain INCOMPLETE and are preserved.
+
+Focused real Qt5.10/Qt6 consumers and runtime-copy/install contracts are separate
+from model accuracy. Native Windows/macOS packages, Apple Metal execution,
+complete Markdown/code/math and full-window UI qualification are still open.
+Keep this ledger and `UPSTREAM_PARITY_AUDIT.md`: neither is a completion report
+that can be removed while its release/GT/platform failures remain unresolved.
+
+## 2026-10-28：本轮复验与声明纠正
+
+当前 ACloudViewer HEAD `a624587d7af8f6b11c44339de55cdc0f8b85d860`，工作树 dirty；
+用户本轮选择先完成证据复验，不实施新增审核三态。不改模型、原门、冻结 baseline，
+不上传、提交、发布或清理历史收据。
+
+- **发布全集 picker：修复并复验。** 公共 catalog 已有 48 行；此前插件的
+  两 preset 白名单隐藏 source/v5/v6 F16/Q8，单 F32 回归是过期发布前契约。
+  `ocr-picker-catalog-red-v1.log` 实际复现 source-rec 集合不等；修后
+  `ocr-picker-catalog-green-v2.log` 两项通过，逐公共 preset 核对全部 rec 文件且
+  无重复。原 F32 person/vehicle 资产环境下，`ocr-picker-catalog-suite-v3.log`
+  为 38/38、无 skip。family/URL/量化由 task catalog/preset 提供，catalog 缺失
+  才 local F32 fallback。此通过不证明全部 det/rec/cls 组合或独立精度/release。
+- **上游完整对齐：仍否。** 对实际 `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`
+  执行 `upstream-cd26942-config-red-v2.json`，总 FAIL：两审核动作缺失，defaults、
+  九项 palette 与四项 panel 样式不等。审核三态、review/checked 搜索、wheel
+  默认、tags/canvas 新行为尚未补齐；旧 `745f6c35` 对齐证据不能提升为当前全部对齐。
+- **当前上游追加复验。** `upstream-cd26942-document-v1.json` 的路径/像素
+  优先级 8 例和 `upstream-cd26942-tagging-v1.json` 的 RAM 展示/过滤 16 例通过；
+  `upstream-cd26942-render-v1/report.json` 总 FAIL，19 项原门错误，其中三项是
+  polygon geometry-only 像素差异。它们不是 OCR 推理精度或全窗口验收。
+- **当前 owner 契约与 sibling。** `ocr-picker-sibling-qocr-v1.log` 两项通过；
+  模型无关 `evidence-continuation-capi-contract-v2.log` 40/40。广泛 capi 日志
+  `evidence-continuation-capi-v1.log` 保留 16 skipped 与缺 attribute 资产/参照的一项
+  FAIL；补齐原 F32/source reference 后 `evidence-continuation-attribute-v3.log`
+  单项通过，不把原 80 项诊断写成完整 PASS。
+- **llama 完整集成：仍否。** 原冻结关键 runtime/probe SHA 与旧收据一致；
+  当前正式 probe 已构建，`llm-current-full-preflight.log` 仅离线校验 10 个权重/
+  projector 与一张输入并展开 12 行原 3×2×10、threads=4 命令，尚非推理结果。
+  旧完整报告的 `build_llama_upstream_ref` 当前缺失；现存 pinned pristine reference
+  的 loader/device 核验不替代原 release 收据。外部 Bazel/PCL 编译造成采样污染，
+  等待记录为 `llm-external-build-wait-v1.log`：曾连续三次无 compiler，但采样前
+  再检查已有新一轮外部 Bazel/编译，故未启动完整 A/B；原 CPU/CUDA FAIL 不撤销。
+- **OCR 原门：仍未全部闭合。** 下文原 Vulkan 全 168 场景七个 FAIL、CUDA
+  execution-identity veto、conv112 原 owner baseline veto 全部保留。pool/table
+  consumer PASS 不覆盖 layout-page composition（原日志明确 skipped）或全部 source GT。
+- **平台与 UI：仍开放。** Linux build/test/schema/局部 relocation 不等于全部
+  native qualification；完整 installer/clean-machine/L4/live、Qt 全窗口及
+  macOS/Windows/Metal 仍无完整原生验收。Markdown/code/math、native PDF/formula
+  与 exact model families 缺口见 upstream audit，不由本轮 38 项 suite 填绿。
+
+后文“qAnyLabeling zero changes needed”是 2026-10-25 的历史判断，本轮集合 RED 已
+推翻该结论；“LLM skeleton 是下一项”也仅描述当时状态，公共 llm ABI/catalog/worker
+现已存在，但完整 release 仍开放。历史指标和原始 FAIL/INCOMPLETE 不重写或撤销。
+
+## Historical status (2026-10-23 evening)
+
+The CUDA detector source-speed recheck now
 passes for published F16 and repaired Q8 after exact-gather scheduling and copy
 elision. The Vulkan sibling scheduling patch preserves outputs bit-for-bit
 (15/15 model/batch rows), but the Vulkan detector release-profile recheck still
@@ -1539,6 +1610,10 @@ baseline 第三进程 p95 5.39 对 source 2.2255440708249807 ms，绝对差 3.16
 超原 5%/3 ms 双门；不能以 candidate 全通过撤销原 baseline veto。
 原 baseline probe SHA `0be29828...` 与 staged copy 相同，日志加载其 owner modules；
 baseline/current 图分别 805/754 nodes。v3/v4 的旧数值保留，但不称为合格原 baseline A/B。
-新正式 LLM CPU 三失败行复验 `llm-raw-formal-ab-v1/report-cpu.json` 两侧全部 rc=77：
-指定的独立 `build_llama_upstream_ref/build/bin/llama-mtmd-cli` 不可用，尚无 measured
-推理样本，不能用于性能比较。参照恢复与后续有效 A/B 独立于原冻结 baseline。
+The initial LLM CPU recheck `llm-raw-formal-ab-v1/report-cpu.json` remains
+INCOMPLETE (all rc=77; its independent upstream tool was unavailable). Later
+`llm-raw-formal-cpu-ref-v2/report-cpu.json` completes the original-baseline
+3x2x10 protocol with measured samples but retains the 256M Q8 decode FAIL.
+`llm-raw-formal-cuda-ref-v3/report-cuda.json` passes three selected rows only.
+Independent source tools remain distinct from the frozen performance baseline;
+these later receipts do not overwrite the initial failure or full release gates.

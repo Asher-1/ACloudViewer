@@ -54,13 +54,14 @@ QIcon richIcon(QChar character, const QColor& color) {
         font.setWeight(QFont::Medium);
         painter.setFont(font);
         const auto primary = painter.fontMetrics();
-        const int primaryWidth = primary.horizontalAdvance('T');
+        const int primaryWidth = QTCOMPAT_FONTMETRICS_WIDTH(primary, 'T');
         QFont secondary("Georgia");
         secondary.setPixelSize(12);
         painter.setFont(secondary);
-        const qreal start = (size - primaryWidth -
-                             painter.fontMetrics().horizontalAdvance('T') + 2) /
-                            2.;
+        const qreal start =
+                (size - primaryWidth -
+                 QTCOMPAT_FONTMETRICS_WIDTH(painter.fontMetrics(), 'T') + 2) /
+                2.;
         const qreal baseline =
                 (size + primary.ascent() - primary.descent()) / 2.;
         painter.setFont(font);
@@ -673,29 +674,7 @@ PpocrRichTextEditor::PpocrRichTextEditor(const QString& text,
 }
 
 QString PpocrRichTextEditor::content() const {
-    bool strike = false;
-    for (auto block = m_text->document()->begin(); block.isValid();
-         block = block.next())
-        for (auto it = block.begin(); !it.atEnd(); ++it)
-            strike |= it.fragment().isValid() &&
-                      it.fragment().charFormat().fontStrikeOut();
-    QString result;
-    if (strike) {
-        QTextCursor cursor(m_text->document());
-        cursor.select(QTextCursor::Document);
-        result = cursor.selection().toHtml().trimmed();
-        const auto body =
-                QRegularExpression(
-                        "<body[^>]*>(.*)</body>",
-                        QRegularExpression::CaseInsensitiveOption |
-                                QRegularExpression::DotMatchesEverythingOption)
-                        .match(result);
-        if (body.hasMatch()) result = body.captured(1).trimmed();
-        return result.replace("<!--StartFragment-->", "")
-                .replace("<!--EndFragment-->", "")
-                .trimmed();
-    }
-    result = qtCompatToMarkdown(*m_text->document());
+    QString result = qtCompatToMarkdown(*m_text->document());
     while (result.endsWith('\n')) result.chop(1);
     return result;
 }

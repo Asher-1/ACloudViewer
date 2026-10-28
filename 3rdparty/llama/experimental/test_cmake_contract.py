@@ -1,6 +1,7 @@
 """Configure the real dependency entries without fetching/building sources."""
 
 from pathlib import Path
+import os
 import re
 import shutil
 import subprocess
@@ -275,6 +276,130 @@ class SourceOwnerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((build / "llama-patch-signature.txt").exists())
         self.assertFalse((build / "install/.acloudviewer-ggml-source-owner").exists())
+
+
+@unittest.skipUnless(shutil.which("cmake"), "CMake is required")
+class RuntimeCopyTests(unittest.TestCase):
+    """Execute the production copy script; filenames do not simulate an SDK."""
+
+    SCRIPT = ROOT / "core/AICore/cmake/CopyGgmlBackends.cmake"
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory(prefix="llama runtime copy ")
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.source = self.root / "source with spaces"
+        self.dest = self.root / "package with spaces"
+        self.source.mkdir()
+        self.dest.mkdir()
+
+    def run_copy(self, prefix, suffix, **options):
+        return subprocess.run(
+            ["cmake", f"-DGGML_BACKEND_DIR={self.source}",
+             f"-DDEST_DIR={self.dest}", f"-DLIB_PREFIX={prefix}",
+             f"-DLIB_SUFFIX={suffix}",
+             *[f"-D{key}={value}" for key, value in options.items()],
+             "-P", str(self.SCRIPT)], capture_output=True, text=True)
+
+    def create_core(self, prefix, suffix):
+        for name in ("ggml", "ggml-base", "llama", "mtmd"):
+            link = f"{prefix}{name}{suffix}"
+            if suffix == ".dll":
+                (self.source / link).write_bytes(name.encode())
+            else:
+                current = (f"{prefix}{name}.0.27.0{suffix}" if suffix == ".dylib"
+                           else f"{link}.0.27.0")
+                stale = (f"{prefix}{name}.0.21.0{suffix}" if suffix == ".dylib"
+                         else f"{link}.0.21.0")
+                (self.source / current).write_bytes(name.encode())
+                (self.source / stale).write_bytes(b"stale")
+                (self.source / link).symlink_to(current)
+
+    def test_core_copy_preserves_current_aliases_on_all_filename_layouts(self):
+        # Windows DLLs have no aliases; POSIX hosts can exercise both alias
+        # layouts without requiring Windows developer-mode symlink privileges.
+        layouts = (("", ".dll"),) if os.name == "nt" else (
+            ("lib", ".so"), ("lib", ".dylib"), ("", ".dll"))
+        for prefix, suffix in layouts:
+            with self.subTest(suffix=suffix):
+                self.create_core(prefix, suffix)
+                result = self.run_copy(prefix, suffix, COPY_CORE_SHARED="ON")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                for name in ("ggml", "ggml-base", "llama", "mtmd"):
+                    link = self.dest / f"{prefix}{name}{suffix}"
+                    self.assertEqual(link.read_bytes(), name.encode())
+                    if suffix != ".dll":
+                        self.assertTrue(link.is_symlink())
+                        self.assertEqual(link.resolve().parent, self.dest)
+                self.assertFalse(any("0.21.0" in p.name for p in self.dest.iterdir()))
+
+    def test_missing_mtmd_is_a_hard_failure(self):
+        for name in ("ggml", "ggml-base", "llama"):
+            (self.source / f"{name}.dll").write_bytes(name.encode())
+        result = self.run_copy("", ".dll", COPY_CORE_SHARED="ON")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("mtmd.dll", result.stderr)
+
+    def test_cpu_variants_and_requested_gpu_modules_are_copied(self):
+        for name in ("ggml-cpu-x64.dll", "ggml-cpu-avx2.dll", "ggml-vulkan.dll"):
+            (self.source / name).write_bytes(name.encode())
+        result = self.run_copy("", ".dll", COPY_BACKEND_MODULES="ON",
+                               CPU_ALL_VARIANTS="ON", GPU_FILES_PIPE="ggml-vulkan.dll")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual({p.name for p in self.dest.iterdir()},
+                         {p.name for p in self.source.iterdir()})
+
+    def test_configured_missing_gpu_is_a_hard_failure(self):
+        (self.source / "ggml-cpu.dll").write_bytes(b"cpu")
+        result = self.run_copy("", ".dll", COPY_BACKEND_MODULES="ON",
+                               GPU_FILES_PIPE="ggml-vulkan.dll")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("configured GPU backend is missing", result.stderr)
+
+    def test_install_template_runs_both_modes_with_space_containing_paths(self):
+        self.create_core("", ".dll")
+        for name in ("ggml-cpu-x64.dll", "ggml-cpu-avx2.dll", "ggml-vulkan.dll"):
+            (self.source / name).write_bytes(name.encode())
+        template = ROOT / "core/AICore/cmake/InstallGgmlBackends.cmake.in"
+        values = {
+            "_AICORE_COPY_GGML_SCRIPT": self.SCRIPT.as_posix(),
+            "_AICORE_GGML_INSTALL_SUBDIR": "bin",
+            "GGML_RUNTIME_LIB_DIR": self.source.as_posix(),
+            "GGML_BACKEND_DIR": self.source.as_posix(),
+            "CMAKE_SHARED_LIBRARY_PREFIX": "",
+            "CMAKE_SHARED_LIBRARY_SUFFIX": ".dll",
+            "GGML_MODULE_SUFFIX": ".dll",
+            "_AICORE_GPU_PIPE": "ggml-vulkan.dll",
+            "_AICORE_CPU_ALL_VARIANTS": "ON",
+            "CMAKE_COMMAND": Path(shutil.which("cmake")).as_posix(),
+        }
+        script = self.root / "install runtime.cmake"
+        script.write_text(re.sub(r"@(\w+)@", lambda m: values[m[1]],
+                                 template.read_text()))
+        result = subprocess.run(
+            ["cmake", f"-DCMAKE_INSTALL_PREFIX={self.dest}", "-P", str(script)],
+            capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual({p.name for p in (self.dest / "bin").iterdir()},
+                         {p.name for p in self.source.iterdir()})
+        for source in self.source.iterdir():
+            self.assertEqual((self.dest / "bin" / source.name).read_bytes(),
+                             source.read_bytes())
+
+    @unittest.skipUnless(os.name == "posix" and os.geteuid() != 0,
+                         "Requires POSIX non-root write permission checks")
+    def test_failed_copy_cannot_report_a_successful_package(self):
+        self.create_core("", ".dll")
+        (self.source / "ggml-cpu.dll").write_bytes(b"cpu")
+        self.dest.chmod(0o555)
+        try:
+            for mode in ("COPY_CORE_SHARED", "COPY_BACKEND_MODULES"):
+                with self.subTest(mode=mode):
+                    result = self.run_copy("", ".dll", **{mode: "ON"})
+                    self.assertNotEqual(result.returncode, 0,
+                                        result.stdout + result.stderr)
+        finally:
+            self.dest.chmod(0o755)
 
 
 if __name__ == "__main__":
