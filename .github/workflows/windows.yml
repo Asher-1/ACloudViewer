@@ -223,12 +223,14 @@ jobs:
           path: ${{ runner.temp }}\sccache
       - name: Enable sccache launcher
         # Only wire the launcher when the binary actually came up;
-        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX_COMPILER_LAUNCHER
+        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER
         # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
         # SCCACHE_CACHE_SIZE is only a ceiling well above the working set;
         # the pool size itself is bounded by the job-scoped trim before
         # save. SCCACHE_POOL_T0 marks the restore boundary for that trim.
-        # CUDA (nvcc) caching is intentionally not enabled.
+        # CUDA (nvcc) caching is included: see the gate evidence recorded at
+        # the forwarding site in util/ci_utils.ps1. Both caps were exercised
+        # unchanged under that gate, with zero CUDA misses in the warm rounds.
         # SCCACHE_IDLE_TIMEOUT must exceed the packaging time after the last
         # compile (installer + import checks ran 11-12 min past it, run 39994107226);
         # at the 600 s default the server self-exits, and every --show-stats
@@ -863,8 +865,9 @@ jobs:
           path: ${{ runner.temp }}\sccache
       - name: Enable sccache launcher
         # util/ci_utils.ps1 Build-PipPackage forwards it as
-        # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
-        # CUDA (nvcc) caching is intentionally not enabled initially.
+        # CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is included; the gate evidence is recorded at
+        # the forwarding site in util/ci_utils.ps1.
         # SCCACHE_IDLE_TIMEOUT=36000 keeps the daemon alive past packaging so
         # the in-step stats are real numbers (see the app-matrix job for the
         # full 600 s default autopsy). The explicit --start-server also

@@ -527,12 +527,18 @@ function Build-GuiApp {
 
     # Optional compile-cache launcher (CI-only hook; cold runs leave it unset
     # for a vanilla from-scratch build). ExternalProject_CMAKE_ARGS forwards
-    # the launcher to VTK/OpenCV/COLMAP/ggml. CUDA (nvcc) caching is
-    # intentionally not enabled until the MSVC+nvcc path has soak time.
+    # all three launchers to VTK/OpenCV/COLMAP/ggml, nvcc included. The nvcc
+    # path is gated, not assumed: on windows-2022 every *.cu.obj of the tree
+    # (ExternalProject sub-build graphs included) was rebuilt bare and cached
+    # with identical commands and parallelism, then adjudicated
+    # byte/instruction-wise over COFF, cubin and PTX with zero cache misses.
+    # Evidence: objects from run 40503002099, adjudicated by run 40677327810.
+    # The measured gain is that nvcc phase alone, not a whole-CI speedup.
     if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
         Write-Host "Compile cache launcher: $env:CLOUDVIEWER_COMPILER_LAUNCHER"
         $cmakeGuiOptions += "-DCMAKE_C_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
         $cmakeGuiOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeGuiOptions += "-DCMAKE_CUDA_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
     }
 
     Write-Host ""
@@ -722,6 +728,7 @@ function Build-PipPackage {
         Write-Host "Compile cache launcher: $env:CLOUDVIEWER_COMPILER_LAUNCHER"
         $cmakeOptions += "-DCMAKE_C_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
         $cmakeOptions += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
+        $cmakeOptions += "-DCMAKE_CUDA_COMPILER_LAUNCHER=$env:CLOUDVIEWER_COMPILER_LAUNCHER"
     }
 
     Write-Host "Executing cmake command..."
