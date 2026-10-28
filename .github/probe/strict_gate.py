@@ -137,7 +137,8 @@ def main():
     expected_count, expected_fat = (33, 33) if args.lane == "app" else (58, 58)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8-sig"))
     expected = [m["obj"].replace("\\", "__").replace("/", "__").replace(":", "__") for m in manifest]
-    report = dict(schema="nvcc-equivalence/4", controls="fully-decoded-physical-lengths",
+    report = dict(schema="nvcc-equivalence/5",
+                  controls="fully-decoded-physical-lengths+proven-minimal-zero-load-padding",
                   ptx_extraction="exact-or-windows-lf-expansion", lane=args.lane,
                   expected=expected_count, manifest_sha=sha(Path(args.manifest).read_bytes()), pairs={}, equivalent=False)
     try:

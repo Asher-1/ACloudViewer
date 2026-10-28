@@ -13,10 +13,10 @@ import subprocess
 from strict_coff import Names, blob, cstring, require, sha
 
 
-def elf(data, names):
+def elf(data, names, layout_evidence=None):
     require(data[:7] == b"\x7fELF\x02\x01\x01", "非 little-endian ELF64")
     header = struct.unpack("<16sHHIQQQIHHHHHH", blob(data, 0, 64))
-    ident, type_, machine, version, entry, phoff, shoff, flags, ehsize, phsize, phnum, shsize, shnum, shstr = header
+    ident, elf_type, machine, version, entry, phoff, shoff, flags, ehsize, phsize, phnum, shsize, shnum, shstr = header
     require(machine == 190 and version == 126 and ehsize == 64 and shsize == 64 and shnum > 0,
             "未知 CUDA ELF header")
     require(shstr < shnum, "无效 ELF shstr index")
@@ -71,14 +71,70 @@ def elf(data, names):
         out[secnames[i]] = [type_, sflags, address, secnames[link],
                            secnames[info] if type_ in (4, 9) else info, align, entsize,
                            size if type_ not in (2, 3, 4, 9, 11) else None, payload]
-    # program header 是加载合同；不忽略实际地址/大小/权限，仅文件偏移可漂移。
+    # program header 是加载合同；权限、地址、对齐、覆盖集合、bss 量均不忽略。
+    # 但 filesz/memsz 是文件坐标的派生量：nvcc 把编译进程 PID 嵌入匿名 namespace
+    # 名称，PID 的十进制位数变化改变 .shstrtab/.strtab 的 size —— 上面已允许该
+    # 漂移 —— 后续 section 偏移随之移位，并被 .text 的 128 字节对齐吸收成变长零
+    # padding，于是段长变化而段内容一字节未变。只对能逐项证明为「最小零对齐
+    # padding」的段归一长度；非零间隙、非最小间隙、物理重叠、被段部分截断的
+    # section、首尾未绑定 section 边界一律失败，无 section 覆盖的段（PT_PHDR 及
+    # 装载它的 PT_LOAD）仍按原 filesz 比较。O(phnum * shnum)，shnum 为几十量级。
     programs = []
     require(phnum == 0 or phsize == 56, "未知 ELF program header")
     for n in range(phnum):
         ptype, pflags, poff, vaddr, paddr, filesz, memsz, align = struct.unpack("<IIQQQQQQ", blob(data, phoff + n * phsize, phsize))
-        covered = [secnames[i] for i, s in enumerate(sections) if s[1] != 8 and s[5] and poff <= s[4] and s[4] + s[5] <= poff + filesz]
-        programs.append([ptype, pflags, vaddr, paddr, filesz, memsz, align, sorted(covered)])
-    return dict(header=[ident.hex(), type_, machine, version, entry, flags], programs=programs, section_order=secnames, sections=out)
+        stop = poff + filesz
+        blob(data, poff, filesz)
+        require(ptype != 1 or memsz >= filesz, "PT_LOAD memsz 小于 filesz")
+        inside, covered = [], []
+        for i, s in enumerate(sections):
+            if s[1] == 8 or not s[5]:
+                continue
+            start, end = s[4], s[4] + s[5]
+            if not filesz or end <= poff or start >= stop:
+                continue
+            require(poff <= start and end <= stop, "program 部分截断 section")
+            inside.append((start, end, s[8], i))
+            covered.append(secnames[i])
+        length, memory = filesz, memsz
+        # 只许可实测的 CUDA ET_EXEC=2、零地址 RX PT_LOAD 且无 BSS 的代码/常量段。
+        # 未知 ELF 类型、RW/R 段、非零地址、无覆盖和含未知 section 均保留原大小，
+        # 不把其它加载格式中 padding 的内存含义推断成相同。
+        eligible = (elf_type == 2 and ptype == 1 and pflags == 5 and
+                    vaddr == paddr == 0 and filesz == memsz and inside and
+                    all(sections[i][1] == 1 and sections[i][3] == 0 and
+                        secnames[i].startswith(('.text.', '.nv.constant'))
+                        for _, _, _, i in inside))
+        sequence = None
+        if eligible:
+            # O(s log s)：排序是逐项证明物理区间覆盖的必要步骤，不能靠总字节数。
+            inside.sort()
+            require(inside[0][0] == poff and inside[-1][1] == stop,
+                    "program 首尾未绑定 section 边界")
+            content, cursor, gaps = 0, poff, []
+            for start, end, salign, i in inside:
+                require(start >= cursor, "program 内 section 物理重叠")
+                require(salign > 0 and not salign & (salign - 1) and start % salign == 0,
+                        "program 内 section 对齐无效")
+                if start > cursor:
+                    require(not any(data[cursor:start]), "program 内间隙非零")
+                    require(start == (cursor + salign - 1) // salign * salign,
+                            "program 内间隙非最小 section 对齐")
+                    gaps.append(dict(start=cursor, end=start, section=secnames[i], align=salign))
+                content += end - start
+                cursor = end
+            require(cursor == stop and filesz == content + sum(g['end'] - g['start'] for g in gaps),
+                    "program 内容长度核对失败")
+            length = memory = content
+            # 归一长度后仍保留物理 section 顺序，防止同总长的布局被误认为相同。
+            sequence = [secnames[i] for _, _, _, i in inside]
+            if layout_evidence is not None:
+                layout_evidence.append(dict(program=n, elf_type=elf_type, flags=pflags,
+                    vaddr=vaddr, paddr=paddr, offset=poff, filesz=filesz, memsz=memsz,
+                    section_bytes=content, removed_padding=filesz-content,
+                    section_sequence=sequence, gaps=gaps))
+        programs.append([ptype, pflags, vaddr, paddr, length, memory, align, sorted(covered), sequence])
+    return dict(header=[ident.hex(), elf_type, machine, version, entry, flags], programs=programs, section_order=secnames, sections=out)
 
 
 def decompress_payload(data, expected):
@@ -260,14 +316,16 @@ def verify(tool, raw_a, raw_b, work, na=None, nb=None):
     errors = []
     for index, (a, b) in enumerate(zip(ma, mb)):
         pa, pb = root / "a" / a["file"], root / "b" / b["file"]
-        x = elf(pa.read_bytes(), na) if a["kind"] == 2 else ptx(pa, na, a["windows_text"])
-        y = elf(pb.read_bytes(), nb) if b["kind"] == 2 else ptx(pb, nb, b["windows_text"])
+        layout_a, layout_b = [], []
+        x = elf(pa.read_bytes(), na, layout_a) if a["kind"] == 2 else ptx(pa, na, a["windows_text"])
+        y = elf(pb.read_bytes(), nb, layout_b) if b["kind"] == 2 else ptx(pb, nb, b["windows_text"])
         good = x == y
         rows.append(dict(index=index, kind=a["kind"], arch=a["arch"], identical=good, canonical_a=sha(json.dumps(x, sort_keys=True).encode()),
                          canonical_b=sha(json.dumps(y, sort_keys=True).encode()),
                          decoded_sha_a=a["decoded_sha"], decoded_sha_b=b["decoded_sha"],
                          decoded_size_a=a["decoded_size"], decoded_size_b=b["decoded_size"],
-                         windows_text_a=a.get("windows_text"), windows_text_b=b.get("windows_text")))
+                         windows_text_a=a.get("windows_text"), windows_text_b=b.get("windows_text"),
+                         load_layout_a=layout_a, load_layout_b=layout_b))
         if not good:
             errors.append(dict(index=index, a=x, b=y))
     (root / "differences.json").write_text(json.dumps(errors, indent=1), encoding="utf-8")

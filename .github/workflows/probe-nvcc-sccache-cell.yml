@@ -16,7 +16,7 @@ on:
         type: string   # app | wheel
         required: true
       stage:
-        type: string   # seed | cross | strict | replay | benefit
+        type: string   # seed | cross | strict | replay | benefit | benefit-replay
         required: true
 
 jobs:
@@ -89,8 +89,97 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  benefit-replay:
+    name: benefit-replay-${{ inputs.lane }}
+    if: inputs.stage == 'benefit-replay' && inputs.lane == 'wheel'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      CUDA_VERSION: "12.6.0"
+      PROBE_TOOLS: ${{ github.workspace }}\.github\probe
+    steps:
+      - name: Checkout repaired probe tools
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/probe
+      - name: Set up validation Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 严格校验器和 PowerShell 全部正负例
+        run: |
+          $ErrorActionPreference = 'Stop'
+          "PROBE_SNAP=$(Join-Path $env:RUNNER_TEMP 'benefit-replay/raw')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          python "$env:PROBE_TOOLS\test_strict.py" -v
+          if ($LASTEXITCODE -ne 0) { throw '严格校验器测试失败' }
+          & "$env:PROBE_TOOLS\test_probe.ps1"
+          if ($LASTEXITCODE -ne 0) { throw 'PowerShell 重放测试失败' }
+      - name: 核验并恢复 run 40503002099 的完整原 ZIP
+        env:
+          PROBE_READ_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          if ($env:GITHUB_REPOSITORY -cne 'Asher-1/ACloudViewer') { throw '原件仓库不符' }
+          $api = "https://api.github.com/repos/$env:GITHUB_REPOSITORY"
+          $headers = @{ Authorization = "Bearer $env:PROBE_READ_TOKEN"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' }
+          $head = '47136622fac901e999ebded6df55875a23fbf482'
+          $run = Invoke-RestMethod "$api/actions/runs/40503002099" -Headers $headers
+          if ($run.id -ne 40503002099 -or $run.head_sha -cne $head -or $run.head_branch -cne 'ci/probe-nvcc-sccache' -or
+              $run.status -cne 'completed' -or $run.conclusion -cne 'failure') { throw '原失败 run 身份/终局不符' }
+          $root = Join-Path $env:RUNNER_TEMP 'benefit-replay'
+          New-Item -ItemType Directory -Path (Join-Path $root 'archives') -Force | Out-Null
+          $frozen = @(
+            @{ id = 12749525321; name = 'probe-raw-wheel'; size = 856439327; sha256 = 'f1dc414593e5d007068a894543bb4c524483c1c6ae07ff23b008d7e5f75efd24'; directory = 'raw' },
+            @{ id = 12748197623; name = 'probe-benefit-wheel'; size = 448783491; sha256 = '518744c7f463db1aef16a58b42b4109066c21065814f9567f08f01e04cdb5daa'; directory = 'source' }
+          )
+          @{ schema = 'nvcc-benefit-replay-source/1'; source_run = $run.id; source_head = $head; candidate_head = $env:GITHUB_SHA; artifacts = $frozen } |
+            ConvertTo-Json -Depth 8 | Out-File (Join-Path $root 'source-identity.json') -Encoding utf8
+          foreach ($expected in $frozen) {
+            $artifact = Invoke-RestMethod "$api/actions/artifacts/$($expected.id)" -Headers $headers
+            if ($artifact.id -ne $expected.id -or $artifact.name -cne $expected.name -or $artifact.expired -cne $false -or
+                $artifact.workflow_run.id -ne $run.id -or $artifact.workflow_run.head_sha -cne $head -or
+                $artifact.size_in_bytes -ne $expected.size -or $artifact.digest -cne "sha256:$($expected.sha256)") {
+              throw "原 artifact 身份/大小/摘要不符: $($expected.name)"
+            }
+            $zip = Join-Path (Join-Path $root 'archives') ($expected.name + '.zip')
+            if (Test-Path $zip) { throw '拒绝覆盖已有原 ZIP' }
+            Invoke-WebRequest "$api/actions/artifacts/$($expected.id)/zip" -Headers $headers -OutFile $zip
+            Expand-VerifiedProbeArchive $zip $expected.size $expected.sha256 (Join-Path $root $expected.directory)
+          }
+      - name: 五快照全量等价重放与原同机收益核验
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module "$env:PROBE_TOOLS\probe.psm1" -Force
+          $root = Join-Path $env:RUNNER_TEMP 'benefit-replay'
+          $source = Join-Path $root 'source'
+          $gate = Join-Path $root 'candidate-gate'
+          if (Test-Path $gate) { throw '拒绝覆盖已有候选门禁' }
+          if (-not $IsWindows) { throw '此入口必须在 Windows 重放' }
+          $tool = Install-Cuobjdump
+          python "$env:PROBE_TOOLS\strict_gate.py" --tool $tool --snap $env:PROBE_SNAP `
+            --manifest (Join-Path $source 'commands.json') --out $gate --lane wheel
+          if ($LASTEXITCODE -ne 0) { throw '完整原件门禁失败，禁止正式接入' }
+          Assert-BenefitReplay $source $gate
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'probe/benefit-replay.json') $root
+          '本轮 Windows 原件重放已通过；原 run 40503002099 仍为失败。收益仅属原 58 个 CUDA 对象阶段，不是整个 CI 加速或新测量。' |
+            Out-File $env:GITHUB_STEP_SUMMARY -Append
+      - name: 保存原 ZIP、完整候选门禁及失败证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-benefit-replay-wheel
+          path: |
+            ${{ runner.temp }}\benefit-replay
+            ${{ runner.temp }}\probe
+          if-no-files-found: error
+          retention-days: 14
+
   cell:
-    if: inputs.stage != 'replay'
+    if: contains(fromJSON('["seed","cross","strict","benefit"]'), inputs.stage)
     name: ${{ inputs.stage }}-${{ inputs.lane }}
     permissions:
       contents: read

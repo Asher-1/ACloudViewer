@@ -14,6 +14,7 @@ from strict_coff import Coff, Invalid, Names, lambda_bijection, namespace_biject
 from strict_device import check_extracted, decoded_entries, decompress_payload, elf, extract, fatbin_entries, ptx, run, verify
 from strict_gate import check_composition, compare_object, identity_tokens, inventory, merge_identity_maps, source_owner
 import strict_gate
+from coff import is_fatbin, parse_coff
 
 
 def object_bytes(big=False):
@@ -148,6 +149,218 @@ class HostTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaises(Invalid):
                 inventory(temp, ["missing.obj"])
+
+
+class SummaryNameTests(unittest.TestCase):
+    def sample(self, label, big=False):
+        data = bytearray(object_bytes(big))
+        base = 56 if big else 20
+        data[base:base + 8] = label.ljust(8, b'\0')
+        name = b'.nv_fatbin\0'
+        data[-4:] = struct.pack('<I', 4 + len(name)) + name
+        return bytes(data)
+
+    def test_decimal_base64_and_bigobj_match_strict_decoder(self):
+        for big in (False, True):
+            for label in (b'/4', b'//AAAAAE'):
+                with self.subTest(big=big, label=label):
+                    data = self.sample(label, big)
+                    decoded = parse_coff(data)[2][0][1]
+                    self.assertEqual(decoded, '.nv_fatbin')
+                    self.assertEqual(decoded, Coff(data).sections[1]['name'])
+                    self.assertTrue(is_fatbin(decoded))
+
+    def test_invalid_long_names_never_fall_back_to_literal(self):
+        for label in (b'//', b'/bad', b'//AA!AAA', b'////////',
+                      b'/0', b'/3', b'/9999999', b'//AAAAAA', b'//AAAAAD'):
+            for big in (False, True):
+                with self.subTest(label=label, big=big), self.assertRaises(ValueError):
+                    parse_coff(self.sample(label, big))
+
+    def test_unterminated_and_truncated_string_table_fail(self):
+        for length in (0, 3, 10000):
+            data = bytearray(self.sample(b'/4'))
+            struct.pack_into('<I', data, len(data)-15, length)
+            with self.subTest(length=length), self.assertRaises(ValueError):
+                parse_coff(bytes(data))
+        data = bytearray(self.sample(b'//AAAAAE'))
+        data[-1] = ord('x')
+        with self.assertRaises(ValueError):
+            parse_coff(bytes(data))
+
+
+def load_cubin_bytes(hole=0, pad=None, gapbyte=0, textalign=128,
+                     textsize=256, bss=512, phdr_filesz=112, overlap=0,
+                     truncate=0, textaddr=0, flags=5, elf_type=2):
+    """最小带 PT_LOAD 的 cubin，和实物 sm_75 cubin 同构。
+
+    布局：[.shstrtab][hole][.nv.constant0][零 padding][.text(align)][phdr]。
+    hole 模拟 nvcc PID 位数引起的上游字符表长度漂移：段起点文件偏移
+    移动（poff 本来不入 canonical），.text 的对齐吸收成变长零 padding。
+    """
+    labels = ["", ".shstrtab", ".nv.constant0.func", ".text.func", ".nv.global"]
+    shstrings = b"\0" + b"\0".join(n.encode() for n in labels[1:]) + b"\0"
+    constant = bytes(range(64))
+    text = bytes((i * 7) % 251 for i in range(textsize))
+    coff = 64 + len(shstrings) + hole
+    cend = coff + len(constant)
+    toff = (cend + textalign - 1) // textalign * textalign if pad is None else cend + pad
+    tend = toff + len(text)
+    phoff = (tend + 7) // 8 * 8
+    phnum = 2
+    shoff = phoff + phnum * 56
+    body = bytearray(shoff - 64)
+    body[0:len(shstrings)] = shstrings
+    body[coff - 64:cend - 64] = constant
+    if toff > cend and gapbyte:
+        body[cend - 64:toff - 64] = bytes([gapbyte]) * (toff - cend)
+    body[toff - 64:tend - 64] = text
+    sections = [(0, 0, 0, 0, 0, 0),
+                (shstrings.index(b".shstrtab"), 3, 0, 64, len(shstrings), 1),
+                (shstrings.index(b".nv.constant0.func"), 1, 0, coff, len(constant), 4),
+                (shstrings.index(b".text.func"), 1, textaddr, toff - overlap,
+                 len(text) + overlap, textalign),
+                (shstrings.index(b".nv.global"), 8, 0, shoff, bss, 1)]
+    table = b"".join(struct.pack("<IIQQQQIIQQ", n, t, 0, a, o, s, 0, 0, al, 0)
+                     for n, t, a, o, s, al in sections)
+    load = (1, flags, coff, 0, 0, tend - coff - truncate, tend - coff - truncate, 8)
+    phdr = (6, 5, phoff, 0, 0, phdr_filesz, phdr_filesz, 8)
+    programs = b"".join(struct.pack("<IIQQQQQQ", *p) for p in (load, phdr))
+    body[phoff - 64:phoff - 64 + len(programs)] = programs
+    ident = b"\x7fELF\x02\x01\x013\x07" + bytes(7)
+    header = struct.pack("<16sHHIQQQIHHHHHH", ident, elf_type, 190, 126, 0, phoff, shoff,
+                         90, 64, 56, phnum, 64, len(sections), 1)
+    return header + bytes(body) + table
+
+
+class LoadSegmentTests(unittest.TestCase):
+    """PT_LOAD 长度只归一可证明的最小零对齐 padding；其余差异均不得通过。"""
+
+    def canonical(self, **kw):
+        return elf(load_cubin_bytes(**kw), Names("x.cu"))
+
+    def segment(self, data):
+        return struct.unpack_from("<IIQQQQQQ", data, struct.unpack_from("<Q", data, 0x20)[0])
+
+    def test_upstream_length_shift_moves_padding_but_not_canonical(self):
+        # 实物机制：上游字符表长度变化 -> constant 结束位置移动 -> .text
+        # 的 128 字节对齐吸收该移位 -> 段内 padding 变长 -> filesz 变化，
+        # 而段内容、终点、覆盖集合与所有 section 字节一律不变。
+        base, moved = load_cubin_bytes(hole=0), load_cubin_bytes(hole=8)
+        a, b = elf(base, Names("x.cu")), elf(moved, Names("x.cu"))
+        pa, pb = self.segment(base), self.segment(moved)
+        self.assertNotEqual(pa[5], pb[5])            # 物理段长确实不同
+        self.assertEqual(pa[2] + pa[5], pb[2] + pb[5])   # 段终点相同
+        self.assertEqual(a, b)
+        self.assertEqual(a["programs"][0][4], 64 + 256)   # 归一为内容字节数
+        self.assertEqual(a["programs"][0][5], 64 + 256)  # 无 BSS 的内存段大小同步归一
+
+    def test_nonzero_padding_fails(self):
+        with self.assertRaises(Invalid):
+            self.canonical(hole=8, gapbyte=0x90)
+
+    def test_non_minimal_padding_fails(self):
+        # 零填充但多出一个对齐周期：不是后继 section 所必需的最小 padding。
+        start = self.segment(load_cubin_bytes())[2]
+        minimum = (start + 64 + 127) // 128 * 128 - (start + 64)
+        with self.assertRaisesRegex(Invalid, '非最小'):
+            self.canonical(pad=minimum + 128)
+
+    def test_overlapping_section_in_segment_fails(self):
+        with self.assertRaisesRegex(Invalid, '物理重叠'):
+            self.canonical(overlap=128)
+
+    def test_segment_truncating_section_fails(self):
+        with self.assertRaises(Invalid):
+            self.canonical(truncate=16)
+
+    def test_content_size_change_is_not_absorbed(self):
+        self.assertNotEqual(self.canonical()["programs"],
+                            self.canonical(textsize=256 + 128)["programs"])
+
+    def test_bss_growth_is_not_absorbed(self):
+        head = load_cubin_bytes()
+        grown = bytearray(head)
+        phoff = struct.unpack_from("<Q", head, 0x20)[0]
+        memsz = struct.unpack_from("<Q", head, phoff + 40)[0]
+        struct.pack_into("<Q", grown, phoff + 40, memsz + 512)
+        self.assertNotEqual(elf(bytes(head), Names("x.cu"))["programs"],
+                            elf(bytes(grown), Names("x.cu"))["programs"])
+
+    def test_segment_permissions_are_not_absorbed(self):
+        self.assertNotEqual(self.canonical()["programs"],
+                            self.canonical(flags=6)["programs"])
+
+    def test_section_address_and_alignment_are_still_compared(self):
+        # 段长归一后，地址与对齐仍由 section canonical 逐字节比较。
+        base = self.canonical()
+        for kw in (dict(textaddr=0x1000), dict(textalign=64)):
+            with self.subTest(**kw):
+                self.assertNotEqual(base["sections"], self.canonical(**kw)["sections"])
+
+    def test_segment_without_section_coverage_keeps_raw_filesz(self):
+        a, b = self.canonical(), self.canonical(phdr_filesz=56)
+        self.assertEqual(a["programs"][1][7], [])
+        self.assertNotEqual(a["programs"][1], b["programs"][1])
+
+    def test_other_elf_types_and_rw_segments_keep_physical_sizes(self):
+        for kw in (dict(elf_type=8), dict(elf_type=99), dict(flags=6), dict(textaddr=4096)):
+            with self.subTest(**kw):
+                a = self.canonical(hole=0, **kw)
+                b = self.canonical(hole=8, **kw)
+                self.assertNotEqual(a['programs'], b['programs'])
+
+    def test_header_type_is_not_overwritten_by_last_nobits_section(self):
+        for kind in (2, 8, 99):
+            with self.subTest(elf_type=kind):
+                data = load_cubin_bytes(elf_type=kind)
+                self.assertEqual(struct.unpack_from('<H', data, 16)[0], kind)
+                self.assertEqual(elf(data, Names('x.cu'))['header'][1], kind)
+        # 没有 program header 时也必须保留类型，而非末 section 的类型。
+        original = bytearray(cubin_bytes())
+        changed = bytearray(original)
+        struct.pack_into('<H', changed, 16, 99)
+        self.assertNotEqual(elf(bytes(original), Names('x.cu')),
+                            elf(bytes(changed), Names('x.cu')))
+
+    def test_program_addresses_alignment_type_and_bss_stay_significant(self):
+        data = load_cubin_bytes()
+        base = elf(data, Names('x.cu'))
+        phoff = struct.unpack_from('<Q', data, 0x20)[0]
+        for offset, value, fmt in ((0, 4, '<I'), (16, 4096, '<Q'),
+                                    (24, 4096, '<Q'), (48, 16, '<Q')):
+            b = bytearray(data)
+            struct.pack_into(fmt, b, phoff + offset, value)
+            with self.subTest(offset=offset):
+                self.assertNotEqual(base['programs'], elf(bytes(b), Names('x.cu'))['programs'])
+        b = bytearray(data)
+        struct.pack_into('<Q', b, phoff + 40, 1)
+        with self.assertRaises(Invalid):
+            elf(bytes(b), Names('x.cu'))
+
+    def test_layout_proof_is_separate_from_canonical(self):
+        evidence = []
+        a = elf(load_cubin_bytes(hole=8), Names('x.cu'), evidence)
+        self.assertEqual(a, self.canonical(hole=8))
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0]['elf_type'], 2)
+        self.assertEqual(evidence[0]['section_bytes'], 320)
+        self.assertEqual(evidence[0]['removed_padding'],
+                         sum(g['end']-g['start'] for g in evidence[0]['gaps']))
+        self.assertEqual(evidence[0]['filesz'], evidence[0]['section_bytes']+evidence[0]['removed_padding'])
+
+    def test_constant_bytes_still_compared(self):
+        a = load_cubin_bytes()
+        b = bytearray(a)
+        b[self.segment(a)[2]] ^= 0xff
+        self.assertNotEqual(elf(a, Names('x.cu')), elf(bytes(b), Names('x.cu')))
+
+    def test_instruction_bytes_still_compared(self):
+        a = load_cubin_bytes()
+        b = bytearray(a)
+        b[a.index(bytes((i * 7) % 251 for i in range(16)))] ^= 0xff
+        self.assertNotEqual(elf(bytes(a), Names("x.cu"))["sections"],
+                            elf(bytes(b), Names("x.cu"))["sections"])
 
 
 class DeviceTests(unittest.TestCase):
@@ -634,12 +847,13 @@ class GateExecutionTests(unittest.TestCase):
         self.assertIn("GATE FATAL Invalid: 对象集合不符", log)
         self.assertEqual(report["pairs"], {})
 
-    def test_schema4_reports_exact_presentation_contract(self):
+    def test_schema5_reports_exact_presentation_contract(self):
         row = dict(equivalent=True, device=dict(equivalent=True), identity_map={})
         code, report, _ = self.execute(row=row)
         self.assertEqual(code, 0)
-        self.assertEqual(report["schema"], "nvcc-equivalence/4")
-        self.assertEqual(report["controls"], "fully-decoded-physical-lengths")
+        self.assertEqual(report["schema"], "nvcc-equivalence/5")
+        self.assertEqual(report["controls"],
+                         "fully-decoded-physical-lengths+proven-minimal-zero-load-padding")
         self.assertEqual(report["ptx_extraction"], "exact-or-windows-lf-expansion")
 
     def test_object_exception_is_reported_and_never_green(self):

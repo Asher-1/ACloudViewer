@@ -33,6 +33,9 @@ def sha(b):
     return hashlib.sha256(b).hexdigest()
 
 
+B64 = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+
 def parse_coff(data):
     """Return (timestamp, header-with-zeroed-timestamp, sections, symtab)."""
     if data[:4] == b"\x00\x00\xff\xff" and struct.unpack_from("<H", data, 4)[0] >= 2:
@@ -48,14 +51,36 @@ def parse_coff(data):
     strtab = b""
     if symptr and str_off + 4 <= len(data):
         (strsz,) = struct.unpack_from("<I", data, str_off)
+        if strsz < 4 or str_off + strsz > len(data):
+            raise ValueError("invalid COFF string table length")
         strtab = data[str_off:str_off + strsz]
 
     def name(raw):
-        raw = raw.rstrip(b"\0")
-        if raw[:1] == b"/" and raw[1:].isdigit() and strtab:
-            off = int(raw[1:])
-            return strtab[off:strtab.index(b"\0", off)].decode("latin1")
-        return raw.decode("latin1")
+        label = raw.rstrip(b"\0")
+        if label[:1] != b"/":
+            return label.decode("latin1")
+        # 长 section 名称有两种偏移编码：/十进制 与 //base64（微软对超出
+        # 十进制字段宽度的偏移改用后者）。只解十进制会把 .nv_fatbin 读成
+        # 字面 "//ABQDup"，令 is_fatbin 静默少算该对象；无法解码时必须失败，
+        # 回退字面名称正是这个漏计的来源。
+        if label[:2] == b"//":
+            digits = label[2:]
+            if not (1 <= len(digits) <= 6 and all(c in B64 for c in digits)):
+                raise ValueError("invalid COFF base64 section name: %r" % label)
+            off = 0
+            for digit in digits:
+                off = off * 64 + B64.index(digit)
+            if off > 0xffffffff:
+                raise ValueError("COFF base64 string offset overflow: %r" % label)
+        elif label[1:].isdigit():
+            off = int(label[1:])
+        else:
+            raise ValueError("invalid COFF long section name: %r" % label)
+        end = strtab.find(b"\0", off)
+        if not 4 <= off < len(strtab) or end < 0:
+            raise ValueError("COFF string offset out of range: %r -> %d/%d"
+                             % (label, off, len(strtab)))
+        return strtab[off:end].decode("latin1")
 
     secs = []
     for i in range(nsec):

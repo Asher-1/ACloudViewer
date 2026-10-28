@@ -14,8 +14,8 @@
 # Each cell runs the production job's own steps with the candidate change
 # (see probe-nvcc-sccache-cell.yml).
 # 修复轮重放 run 40443832739 的全部 S1/A/B 原始对象；不重编、不改写原失败报告。
-# 本轮仅补 wheel 同机 A/W1/B/W2：58 个实际命令、逐对象字节回放及 schema4 全量门禁。
-# 推送前必须已完成修复轮 40486446283 双 lane 的完整实物关联审计。
+# 本轮重放 benefit run 40503002099 的五快照原件：schema5 全量门禁及原同机收益审计。
+# 冻结原 ZIP 身份/SHA，不重新编译、不改写原失败结论；正式接入仍须远程证据闭合。
 name: Probe nvcc sccache
 permissions: {}
 
@@ -25,11 +25,11 @@ on:
       - ci/probe-nvcc-sccache
 
 jobs:
-  benefit-wheel:
+  benefit-replay-wheel:
     permissions:
       contents: read
       actions: read
     uses: ./.github/workflows/probe-nvcc-sccache-cell.yml
     with:
       lane: wheel
-      stage: benefit
+      stage: benefit-replay

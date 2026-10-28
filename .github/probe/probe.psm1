@@ -118,7 +118,7 @@ function Compare-Snapshot([string]$A, [string]$B, [string]$DigestDirA = $script:
     Write-Probe "bytes $r"
 }
 
-function Assert-SnapshotReplay([string]$A, [string]$B, [string[]]$Objs) {
+function Assert-SnapshotReplay([string]$A, [string]$B, [string[]]$Objs, [switch]$RequireFatbin) {
     # 全对象字节绑定；逐文件哈希，内存不随快照总大小增长。
     # 小型对象索引排序 O(n log n)，用于唯一性、覆盖核对和确定的差异顺序。
     Compare-Snapshot $A $B
@@ -130,6 +130,9 @@ function Assert-SnapshotReplay([string]$A, [string]$B, [string[]]$Objs) {
         @($report.objects.PSObject.Properties | Where-Object { $_.Value -cne 'identical' }).Count -ne 0 -or
         @(Compare-Object $expected @($report.objects.PSObject.Properties.Name | Sort-Object)).Count -ne 0) {
         throw "snapshot replay $A/$B missing/different objects"
+    }
+    if ($RequireFatbin -and ($report.fatbin_objects -ne $expected.Count -or @($report.fatbin_differs).Count -ne 0)) {
+        throw "snapshot replay $A/$B incomplete fatbin coverage"
     }
     foreach ($label in $A, $B) {
         $directory = Join-Path $script:Snap $label
@@ -170,6 +173,208 @@ function Assert-WarmStats([string]$Tag, [int]$Count) {
         if ($s.$key -ne 0) { throw "warm $Tag error/recache: $key" }
     }
     Write-Probe "CUDA HITS PASS $Tag $Count objects; C/C++ counts remain separately reported"
+}
+
+function Expand-VerifiedProbeArchive([string]$Archive, [long]$Size, [string]$Sha256, [string]$Destination) {
+    # 冻结 ZIP 长度和 SHA 绑定原件；CRC、路径校验完成后才解压，不覆盖已有证据。
+    if ($Size -le 0 -or $Sha256 -cnotmatch '^[0-9a-f]{64}$' -or (Get-Item $Archive).Length -ne $Size -or
+        (Get-FileHash $Archive -Algorithm SHA256).Hash.ToLower() -cne $Sha256 -or (Test-Path $Destination)) {
+        throw '原始 ZIP 大小/SHA/独立目标不符'
+    }
+    # ZIP 按成员流式校验/解压；数据缓冲约 1 MiB，索引仅保存成员路径。
+    python -I -c @'
+import stat, sys, zipfile
+from pathlib import Path, PureWindowsPath
+root = Path(sys.argv[2]).resolve()
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    members = archive.infolist()
+    names = [str(PureWindowsPath(m.filename)).casefold() for m in members]
+    if not members or len(names) != len(set(names)):
+        raise ValueError('empty or duplicate/case-colliding ZIP members')
+    for member in members:
+        path = PureWindowsPath(member.filename)
+        if (path.drive or path.root or '..' in path.parts or
+                stat.S_ISLNK(member.external_attr >> 16) or
+                not (root / member.filename).resolve().is_relative_to(root)):
+            raise ValueError('unsafe ZIP member path')
+    if archive.testzip() is not None:
+        raise ValueError('ZIP CRC mismatch')
+    root.mkdir(parents=True, exist_ok=False)
+    archive.extractall(root)
+'@ $Archive $Destination
+    if ($LASTEXITCODE -ne 0) { throw '原始 ZIP CRC/路径/解包失败' }
+}
+
+function Assert-BenefitReplay([string]$Source, [string]$Gate) {
+    # 输入是已校验 ZIP 的独立解包目录；原失败门禁只读，候选另存。
+    $sourceRoot = [IO.Path]::GetFullPath($Source).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if ([IO.Path]::GetFullPath($Gate).StartsWith($sourceRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        [IO.Path]::GetFullPath($script:Out).StartsWith($sourceRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw '候选门禁/摘要不可写入原始证据目录'
+    }
+    $benefit = Get-Content (Join-Path $Source 'benefit.json') -Raw | ConvertFrom-Json
+    $originalPath = Join-Path $Source 'strict/gate.json'
+    $originalGate = Get-Content $originalPath -Raw | ConvertFrom-Json
+    $originalSha = (Get-FileHash $originalPath -Algorithm SHA256).Hash.ToLower()
+    $gatePath = Join-Path $Gate 'gate.json'
+    $candidate = Get-Content $gatePath -Raw | ConvertFrom-Json
+    $manifestPath = Join-Path $Source 'commands.json'
+    $commands = @(Get-Content $manifestPath -Raw | ConvertFrom-Json)
+    $manifestSha = (Get-FileHash $manifestPath -Algorithm SHA256).Hash.ToLower()
+    if ($benefit.schema -cne 'nvcc-benefit/1' -or $benefit.head -cne '47136622fac901e999ebded6df55875a23fbf482' -or
+        $benefit.source_ref -cne 'cc5a64d2bc0c609165693641fcbd379d4792e76b' -or $benefit.pool_run -cne '40358505262' -or
+        $benefit.pool_name -cne 'probe-pool-wheel' -or $benefit.lane -cne 'wheel' -or $benefit.expected -ne 58 -or
+        ($benefit.sequence -join ',') -cne 'A,W1,B,W2' -or $benefit.manifest_sha -cne $manifestSha -or
+        -not $benefit.runner -or -not $benefit.image -or $originalGate.equivalent -cne $false) {
+        throw '本轮补测来源或原失败门禁身份不符'
+    }
+    $expected = @($commands.obj | Sort-Object)
+    $children = @($commands | Where-Object { $_.obj.StartsWith('librealsense') })
+    if ($commands.Count -ne 58 -or @($expected | Sort-Object -Unique).Count -ne 58 -or $children.Count -ne 3 -or
+        @($children | Where-Object { -not $_.cwd.EndsWith('ext_librealsense-build') }).Count -ne 0 -or
+        @($commands | Where-Object { $_.launched -cne $true -or -not $_.cmd.Contains('nvcc.exe') -or
+            -not $_.original.EndsWith($_.cmd) -or -not $_.original.Contains('sccache') }).Count -ne 0) {
+        throw '本轮 58 命令或 librealsense 三个子图覆盖不符'
+    }
+    if ($candidate.schema -cne 'nvcc-equivalence/5' -or
+        $candidate.controls -cne 'fully-decoded-physical-lengths+proven-minimal-zero-load-padding' -or
+        $candidate.ptx_extraction -cne 'exact-or-windows-lf-expansion' -or $candidate.lane -cne 'wheel' -or
+        $candidate.expected -ne 58 -or $candidate.manifest_sha -cne $manifestSha -or
+        $candidate.equivalent -cne $true -or $candidate.fatal -or
+        (($candidate.pairs.PSObject.Properties.Name | Sort-Object) -join ',') -cne 'A-vs-B,S1-vs-A,S1-vs-B') {
+        throw '本轮候选全量门禁未成功或身份不符'
+    }
+    $flat = @($expected | ForEach-Object { $_ -replace '[\\/:]', '__' } | Sort-Object)
+    foreach ($pair in $candidate.pairs.PSObject.Properties.Value) {
+        if ($pair.equivalent -cne $true -or $pair.fatbin -ne 58 -or @($pair.errors.PSObject.Properties).Count -ne 0 -or
+            @(Compare-Object -CaseSensitive $flat @($pair.objects.PSObject.Properties.Name | Sort-Object)).Count -ne 0 -or
+            @($pair.objects.PSObject.Properties.Value | Where-Object { $_.equivalent -cne $true -or $_.error }).Count -ne 0) {
+            throw '候选三组对照存在失败或缺项'
+        }
+    }
+    $byObject = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+    foreach ($command in $commands) { $byObject.Add($command.obj, $command) }
+    $phases = @{}; $parallelism = $null; $previousEnd = $null
+    foreach ($tag in 'A', 'W1', 'B', 'W2') {
+        $mode = if ($tag.StartsWith('W')) { 'cached' } else { 'vanilla' }
+        $phaseRaw = Get-Content (Join-Path $Source "phase-$tag.json") -Raw
+        $phase = $phaseRaw | ConvertFrom-Json
+        $records = @(Get-Content (Join-Path $Source "$mode-$tag.json") -Raw | ConvertFrom-Json)
+        $wall = [double]$phase.wall_sec
+        if ($phase.tag -cne $tag -or $phase.mode -cne $mode -or $phase.objects -ne 58 -or $records.Count -ne 58 -or
+            ($phase.parallelism -isnot [long] -and $phase.parallelism -isnot [int]) -or $phase.parallelism -le 0 -or
+            [double]::IsNaN($wall) -or [double]::IsInfinity($wall) -or $wall -le 0 -or
+            @(Compare-Object -CaseSensitive $expected @($records.obj | Sort-Object)).Count -ne 0) {
+            throw "补测 phase $tag 数量/计时/模式不符"
+        }
+        if ($null -eq $parallelism) { $parallelism = $phase.parallelism }
+        if ($phase.parallelism -ne $parallelism) { throw '补测 phase 并行度不同' }
+        # ConvertFrom-Json 自动生成 DateTime；再转字符串会丢失 Kind/时区。
+        # 从原 JSON 取时间字符串，不能把非 UTC 输入悄悄转换成 UTC。
+        $document = [System.Text.Json.JsonDocument]::Parse($phaseRaw)
+        try {
+            $startText = $document.RootElement.GetProperty('started_utc').GetString()
+            $endText = $document.RootElement.GetProperty('ended_utc').GetString()
+        } finally { $document.Dispose() }
+        $utcPattern = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$'
+        if ($startText -cnotmatch $utcPattern -or $endText -cnotmatch $utcPattern) { throw "补测 phase $tag 原时间不是显式 UTC" }
+        $started = [DateTimeOffset]::Parse($startText, [Globalization.CultureInfo]::InvariantCulture)
+        $ended = [DateTimeOffset]::Parse($endText, [Globalization.CultureInfo]::InvariantCulture)
+        if ($started.Offset -ne [TimeSpan]::Zero -or $ended.Offset -ne [TimeSpan]::Zero -or $ended -le $started -or
+            ($null -ne $previousEnd -and $started -lt $previousEnd) -or
+            [math]::Abs(($ended-$started).TotalSeconds-$wall) -gt [math]::Max(0.05, $wall*0.0001)) {
+            throw "补测 phase $tag UTC/Stopwatch 或顺序不符"
+        }
+        $previousEnd = $ended; $sum = 0.0
+        foreach ($record in $records) {
+            if (-not $byObject.ContainsKey($record.obj)) { throw "补测 phase $tag 对象来源未知" }
+            $command = $byObject[$record.obj]
+            $line = if ($mode -eq 'cached') { $command.original } else { $command.cmd }
+            $seconds = [double]$record.sec
+            if ($record.rc -ne 0 -or $record.cwd -cne $command.cwd -or $record.executed -cne $line -or
+                [double]::IsNaN($seconds) -or [double]::IsInfinity($seconds) -or $seconds -le 0 -or $seconds -gt $wall) {
+                throw "补测 phase $tag 实际命令/cwd/退出码/计时不符"
+            }
+            $sum += $seconds
+        }
+        if ($sum -gt [math]::Min(58, $parallelism)*$wall+58e-6) { throw "补测 phase $tag 逐对象耗时超出并行上界" }
+        if ($mode -eq 'cached') {
+            $sample = Get-Content (Join-Path $Source "stats-$tag.json") -Raw | ConvertFrom-Json
+            if ($sample.version -cne '0.19.0' -or $sample.max_cache_size -ne 20GB -or
+                ($sample.cache_size -isnot [long] -and $sample.cache_size -isnot [int]) -or
+                $sample.cache_size -le 0 -or $sample.cache_size -gt $sample.max_cache_size) {
+                throw "补测热轮 $tag sccache 版本/容量不符"
+            }
+            Copy-Item (Join-Path $Source "stats-$tag.json") (Join-Path $script:Out "stats-$tag.json")
+            Assert-WarmStats $tag 58
+        }
+        $phases[$tag] = $phase
+    }
+    foreach ($tag in 'S1', 'A', 'B', 'W1', 'W2') {
+        python $script:Coff digest (Join-Path $script:Out "digest-$tag.json") (Join-Path $script:Snap $tag)
+        if ($LASTEXITCODE -ne 0) { throw "独立派生摘要 $tag 失败" }
+    }
+    foreach ($pair in @(@('S1','W1'), @('S1','W2'), @('W1','W2'))) { Assert-SnapshotReplay $pair[0] $pair[1] $expected -RequireFatbin }
+    $digests = @{}
+    foreach ($tag in 'S1', 'A', 'B', 'W1', 'W2') {
+        $digests[$tag] = Get-Content (Join-Path $script:Out "digest-$tag.json") -Raw | ConvertFrom-Json
+        $actual = @(Get-ChildItem (Join-Path $script:Snap $tag) -File -Filter '*.obj' | ForEach-Object Name)
+        if (@(Compare-Object -CaseSensitive $flat $actual).Count -ne 0) { throw "快照 $tag 对象覆盖不符" }
+    }
+    foreach ($label in 'S1-vs-A', 'A-vs-B', 'S1-vs-B') {
+        $left, $right = $label -split '-vs-'
+        foreach ($name in $flat) {
+            $row = $candidate.pairs.$label.objects.PSObject.Properties[$name].Value
+            if ($row.raw_sha_a -cne $digests[$left].PSObject.Properties[$name].Value.full -or
+                $row.raw_sha_b -cne $digests[$right].PSObject.Properties[$name].Value.full) {
+                throw "候选门禁与原快照 $label/$name 未绑定"
+            }
+        }
+    }
+    $allowed = @('S1', 'A', 'B', 'W1', 'W2', 'failures')
+    if (@(Get-ChildItem $script:Snap | Where-Object { $_.Name -notin $allowed -or -not $_.PSIsContainer }).Count -ne 0) {
+        throw '原快照根目录含未知项'
+    }
+    $recovery = @()
+    $failureRoot = Join-Path $script:Snap 'failures'
+    if (Test-Path $failureRoot) {
+        $directories = @(Get-ChildItem $failureRoot)
+        if ($directories.Count -eq 0) { throw '原失败留证目录为空' }
+        foreach ($directory in $directories) {
+            if (-not $directory.PSIsContainer) { throw '原失败留证含未知文件' }
+            $recordPath = Join-Path $directory.FullName 'failure.json'
+            $record = Get-Content $recordPath -Raw | ConvertFrom-Json
+            if ($record.schema -cne 'nvcc-phase-failure/1' -or $record.partial -cne $true -or $record.expected -ne 58 -or
+                $record.tag -cnotin @('S1','A','B','W1','W2') -or @($record.copied).Count -ne 58 -or
+                @($record.missing).Count -ne 0 -or @($record.errors).Count -ne 0 -or
+                @(Compare-Object -CaseSensitive $expected @($record.copied.obj)).Count -ne 0 -or
+                @(Compare-Object -CaseSensitive @($flat + 'failure.json') @(Get-ChildItem $directory.FullName | ForEach-Object Name)).Count -ne 0) {
+                throw '原失败恢复实物不完整或身份不符'
+            }
+            foreach ($item in $record.copied) {
+                $name = $item.obj -replace '[\\/:]', '__'
+                $path = Join-Path $directory.FullName $name
+                $identity = $digests[$record.tag].PSObject.Properties[$name].Value
+                if ((Get-Item $path).Length -ne $item.size -or $item.size -ne $identity.size -or
+                    (Get-FileHash $path -Algorithm SHA256).Hash.ToLower() -cne $item.sha256 -or $item.sha256 -cne $identity.full) {
+                    throw '原失败恢复对象与完整快照/记录不符'
+                }
+            }
+            $recovery += @{ tag = $record.tag; objects = 58; record_sha = (Get-FileHash $recordPath).Hash.ToLower() }
+        }
+    }
+    if ((Get-FileHash $originalPath -Algorithm SHA256).Hash.ToLower() -cne $originalSha) { throw '原失败门禁被修改' }
+    $ratios = @{ 'A/W1' = $phases.A.wall_sec/$phases.W1.wall_sec; 'B/W2' = $phases.B.wall_sec/$phases.W2.wall_sec }
+    if ($ratios['A/W1'] -le 1 -or $ratios['B/W2'] -le 1) { throw '两组同机收益未均为正' }
+    [ordered]@{ schema = 'nvcc-benefit-replay/1'; source_run = 40503002099;
+        verification_kind = if ($IsWindows) { 'windows-original-artifact-replay' } else { 'non-windows-original-artifact-replay' };
+        runtime_os = [Runtime.InteropServices.RuntimeInformation]::OSDescription; recovery_evidence = $recovery;
+        source_head = $benefit.head; manifest_sha = $manifestSha; original_equivalent = $originalGate.equivalent;
+        original_gate_sha = $originalSha;
+        candidate_gate_sha = (Get-FileHash $gatePath -Algorithm SHA256).Hash.ToLower();
+        raw_objects = 290; speedup = $ratios; equivalent = $true;
+        scope = '静态全量原件重放与原同机计时核验；不是 GPU 算法功能或新的编译测量'
+    } | ConvertTo-Json -Depth 6 | Out-File (Join-Path $script:Out 'benefit-replay.json') -Encoding utf8
 }
 
 function Remove-Objects([string]$Build, [string[]]$Objs) {

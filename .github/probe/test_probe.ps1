@@ -170,7 +170,185 @@ build $output`: cuda
         try { Assert-WarmStats 'bad' 2 } catch { $failed = $true }
         if (-not $failed) { throw "错误统计 $kind 被放行" }
     }
-    Write-Host 'PowerShell 全量命令、热回放字节绑定及失败门禁测试通过'
+    # ZIP 校验使用真实压缩文件；错误输入不得生成解包目录。
+    function Write-ZipFixture([string]$Path, [string[]]$Names) {
+        $archive = [IO.Compression.ZipFile]::Open($Path, [IO.Compression.ZipArchiveMode]::Create)
+        try {
+            foreach ($name in $Names) {
+                $entry = $archive.CreateEntry($name, [IO.Compression.CompressionLevel]::NoCompression)
+                $stream = $entry.Open()
+                try { $stream.WriteByte(42) } finally { $stream.Dispose() }
+            }
+        } finally { $archive.Dispose() }
+    }
+    $zip = Join-Path $root 'valid.zip'
+    Write-ZipFixture $zip @('input.json')
+    $zipSize = (Get-Item $zip).Length; $zipSha = (Get-FileHash $zip).Hash.ToLower()
+    $unpacked = Join-Path $root 'valid-unpacked'
+    Expand-VerifiedProbeArchive $zip $zipSize $zipSha $unpacked
+    if ([IO.File]::ReadAllBytes((Join-Path $unpacked 'input.json'))[0] -ne 42) { throw 'ZIP 正例未解包原字节' }
+    foreach ($kind in 'size', 'sha', 'existing', 'crc', 'traversal', 'case-collision') {
+        $path = $zip; $size = $zipSize; $digest = $zipSha; $destination = Join-Path $root "bad-zip-$kind"
+        if ($kind -eq 'size') { $size++ }
+        if ($kind -eq 'sha') { $digest = '0' * 64 }
+        if ($kind -eq 'existing') { $destination = $unpacked }
+        if ($kind -eq 'crc') {
+            $path = Join-Path $root 'crc.zip'
+            $data = [IO.File]::ReadAllBytes($zip)
+            $offset = 30 + [BitConverter]::ToUInt16($data, 26) + [BitConverter]::ToUInt16($data, 28)
+            $data[$offset] = $data[$offset] -bxor 1
+            [IO.File]::WriteAllBytes($path, $data)
+            $digest = (Get-FileHash $path).Hash.ToLower()
+        }
+        if ($kind -in @('traversal', 'case-collision')) {
+            $path = Join-Path $root "$kind.zip"
+            $names = if ($kind -eq 'traversal') { @('../outside') } else { @('same', 'SAME') }
+            Write-ZipFixture $path $names
+            $size = (Get-Item $path).Length; $digest = (Get-FileHash $path).Hash.ToLower()
+        }
+        $failed = $false
+        try { Expand-VerifiedProbeArchive $path $size $digest $destination } catch { $failed = $true }
+        if (-not $failed -or ($kind -ne 'existing' -and (Test-Path $destination))) { throw "ZIP 负例被放行/提前解包: $kind" }
+    }
+    # 独立补测重放使用完整 58 项 metadata fixture；不伪装成真实静态门禁。
+    $env:PROBE_SNAP = Join-Path $root 'benefit-snap'
+    Import-Module (Join-Path $PSScriptRoot 'probe.psm1') -Force
+    $fixtureBytes = [byte[]]::new(64); $fixtureBytes[0] = 0x64; $fixtureBytes[1] = 0x86; $fixtureBytes[2] = 1
+    [Array]::Copy([Text.Encoding]::ASCII.GetBytes('.fatbin'), 0, $fixtureBytes, 20, 7)
+    $fixtureBytes[36] = 4; $fixtureBytes[40] = 60
+    $fixtureSha = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($fixtureBytes)).ToLower()
+    $source = Join-Path $root 'benefit-source'
+    $gate = Join-Path $root 'benefit-gate'
+    New-Item -ItemType Directory -Path (Join-Path $source 'strict'), $gate -Force | Out-Null
+    $manifest = @(foreach ($i in 0..57) {
+        $obj = if ($i -lt 3) { "librealsense\\$i.cu.obj" } else { "$i.cu.obj" }
+        $cmd = "nvcc.exe -c $i.cu -o $obj"
+        [ordered]@{ obj = $obj; cmd = $cmd; original = "sccache.exe $cmd"; launched = $true;
+            cwd = if ($i -lt 3) { 'D:\\build\\ext_librealsense-build' } else { 'D:\\build' } }
+    })
+    function Write-BenefitFixture([string]$Name, $Value) {
+        ConvertTo-Json -InputObject $Value -Depth 20 | Set-Content (Join-Path $source $Name)
+    }
+    Write-BenefitFixture 'commands.json' $manifest
+    Write-BenefitFixture 'benefit.json' ([ordered]@{ schema = 'nvcc-benefit/1'; lane = 'wheel'; expected = 58;
+        head = '47136622fac901e999ebded6df55875a23fbf482'; source_ref = 'cc5a64d2bc0c609165693641fcbd379d4792e76b';
+        pool_run = '40358505262'; pool_name = 'probe-pool-wheel'; runner = 'fixture'; image = 'fixture';
+        sequence = @('A','W1','B','W2'); manifest_sha = (Get-FileHash (Join-Path $source 'commands.json')).Hash.ToLower() })
+    Write-BenefitFixture 'strict/gate.json' @{ equivalent = $false }
+    $originalSha = (Get-FileHash (Join-Path $source 'strict/gate.json')).Hash
+    $pairs = @{}
+    foreach ($label in 'S1-vs-A', 'A-vs-B', 'S1-vs-B') {
+        $rows = @{}
+        foreach ($c in $manifest) { $rows[($c.obj -replace '[\\/:]', '__')] = @{ equivalent = $true; raw_sha_a = $fixtureSha; raw_sha_b = $fixtureSha } }
+        $pairs[$label] = @{ equivalent = $true; fatbin = 58; errors = @{}; objects = $rows }
+    }
+    $candidate = @{ schema = 'nvcc-equivalence/5'; controls = 'fully-decoded-physical-lengths+proven-minimal-zero-load-padding';
+        ptx_extraction = 'exact-or-windows-lf-expansion'; lane = 'wheel'; expected = 58; equivalent = $true;
+        manifest_sha = (Get-FileHash (Join-Path $source 'commands.json')).Hash.ToLower(); pairs = $pairs }
+    $candidate | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $gate 'gate.json')
+    $order = 0
+    foreach ($tag in 'A', 'W1', 'B', 'W2') {
+        $mode = if ($tag.StartsWith('W')) { 'cached' } else { 'vanilla' }
+        $wall = if ($mode -eq 'cached') { 2 } else { 20 }
+        Write-BenefitFixture "phase-$tag.json" @{ tag = $tag; mode = $mode; objects = 58; parallelism = 8; wall_sec = $wall;
+            started_utc = "2026-10-28T18:0${order}:00.1234567Z"; ended_utc = ('2026-10-28T18:0{0}:{1:00}.1234567Z' -f $order,$wall) }
+        Write-BenefitFixture "$mode-$tag.json" @(foreach ($c in $manifest) {
+            @{ obj = $c.obj; cwd = $c.cwd; rc = 0; sec = 0.1; executed = if ($mode -eq 'cached') { $c.original } else { $c.cmd } }
+        })
+        if ($mode -eq 'cached') {
+            $stats = $global:ProbeStatsFixture | ConvertFrom-Json
+            $stats | Add-Member version '0.19.0'
+            $stats | Add-Member max_cache_size 20GB
+            $stats | Add-Member cache_size 1GB
+            $stats.stats.compile_requests = 58
+            $stats.stats.cache_hits.counts.CUDA = 58; $stats.stats.cache_hits.counts.'CUDA (Device code)' = 58
+            $stats.stats.cache_hits.counts.PTX = 290; $stats.stats.cache_hits.counts.CUBIN = 290
+            Write-BenefitFixture "stats-$tag.json" $stats
+        }
+        $order++
+    }
+    # 最小 COFF 仅用于摘要/字节回放，静态门禁由上面的明确 fixture 隔离。
+    foreach ($tag in 'S1', 'A', 'B', 'W1', 'W2') {
+        $directory = Join-Path $env:PROBE_SNAP $tag
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+        foreach ($c in $manifest) {
+            [IO.File]::WriteAllBytes((Join-Path $directory ($c.obj -replace '[\\/:]', '__')), $fixtureBytes)
+        }
+        # 前面测试留下的无关对象移至其它 fixture 目录，不能混进 58 项正例。
+        foreach ($file in Get-ChildItem $directory -Filter '*.obj') {
+            if ($file.Name -notin @($manifest.obj | ForEach-Object { $_ -replace '[\\/:]', '__' })) {
+                Move-Item $file.FullName (Join-Path $root ($tag+'-'+$file.Name))
+            }
+        }
+    }
+    $recovery = Join-Path $env:PROBE_SNAP 'failures/W2-fixture'
+    New-Item -ItemType Directory -Path $recovery -Force | Out-Null
+    foreach ($c in $manifest) { Copy-Item (Join-Path (Join-Path $env:PROBE_SNAP 'W2') ($c.obj -replace '[\\/:]', '__')) $recovery }
+    @{ schema = 'nvcc-phase-failure/1'; partial = $true; tag = 'W2'; expected = 58; missing = @(); errors = @();
+        copied = @(foreach ($c in $manifest) { @{ obj = $c.obj; size = 64; sha256 = $fixtureSha } })
+    } | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $recovery 'failure.json')
+    Assert-BenefitReplay $source $gate
+    $result = Get-Content (Join-Path $root 'probe/benefit-replay.json') -Raw | ConvertFrom-Json
+    if ($result.original_equivalent -cne $false -or $result.speedup.'A/W1' -ne 10 -or $result.raw_objects -ne 290 -or
+        (Get-FileHash (Join-Path $source 'strict/gate.json')).Hash -cne $originalSha -or
+        @($result.recovery_evidence).Count -ne 1 -or $result.recovery_evidence[0].objects -ne 58 -or
+        ($IsWindows -and $result.verification_kind -cne 'windows-original-artifact-replay') -or
+        (-not $IsWindows -and $result.verification_kind -cne 'non-windows-original-artifact-replay')) { throw '独立重放覆盖了原失败或计时/平台归因错误' }
+    foreach ($case in @(
+        @{ path = 'benefit.json'; mutate = { param($x) $x.head = 'wrong' } },
+        @{ path = 'benefit.json'; mutate = { param($x) $x.sequence = @('A','B','W1','W2') } },
+        @{ path = 'benefit.json'; mutate = { param($x) $x.manifest_sha = 'wrong' } },
+        @{ path = 'strict/gate.json'; mutate = { param($x) $x.equivalent = $true } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.parallelism = 4 } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.wall_sec = 0 } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.started_utc = '2026-10-28T18:00:00Z' } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.ended_utc = '2026-10-28T18:01:30Z' } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.started_utc = '2026-10-28T18:01:00+08:00' } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.started_utc = '2026-10-28T18:01:00' } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.started_utc = $null } },
+        @{ path = 'phase-W1.json'; mutate = { param($x) $x.started_utc = '2026-13-28T18:01:00Z' } },
+        @{ path = 'cached-W1.json'; mutate = { param($x) $x[0].rc = 7 } },
+        @{ path = 'cached-W1.json'; mutate = { param($x) $x[0].cwd = 'wrong' } },
+        @{ path = 'cached-W1.json'; mutate = { param($x) $x[0].executed = 'wrong' } },
+        @{ path = 'cached-W1.json'; mutate = { param($x) foreach ($p in $x) { $p.sec = 1 } } },
+        @{ path = 'stats-W1.json'; mutate = { param($x) $x.stats.cache_hits.counts.PTX = 289 } },
+        @{ path = 'stats-W1.json'; mutate = { param($x) $x.version = 'wrong' } },
+        @{ path = 'stats-W1.json'; mutate = { param($x) $x.max_cache_size = 10GB } },
+        @{ path = 'stats-W1.json'; mutate = { param($x) $x.cache_size = 0 } }
+    )) {
+        $path = Join-Path $source $case.path
+        $saved = Get-Content $path -Raw
+        $value = $saved | ConvertFrom-Json
+        & $case.mutate $value
+        Write-BenefitFixture $case.path $value
+        $failed = $false
+        try { Assert-BenefitReplay $source $gate } catch { $failed = $true }
+        Set-Content $path $saved -NoNewline
+        if (-not $failed) { throw "补测重放负例被放行: $($case.path)" }
+    }
+    $saved = Get-Content (Join-Path $gate 'gate.json') -Raw
+    $bad = $saved | ConvertFrom-Json
+    foreach ($kind in 'fatbin', 'raw-sha') {
+        $bad = $saved | ConvertFrom-Json
+        if ($kind -eq 'fatbin') { $bad.pairs.'A-vs-B'.fatbin = 56 }
+        else { $bad.pairs.'A-vs-B'.objects.PSObject.Properties[$manifest[0].obj -replace '[\\/:]', '__'].Value.raw_sha_b = 'wrong' }
+        $bad | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $gate 'gate.json')
+        $failed = $false
+        try { Assert-BenefitReplay $source $gate } catch { $failed = $true }
+        if (-not $failed) { throw "候选负例被放行: $kind" }
+        Set-Content (Join-Path $gate 'gate.json') $saved -NoNewline
+    }
+    $copiedPath = Join-Path $recovery ($manifest[0].obj -replace '[\\/:]', '__')
+    [IO.File]::WriteAllBytes($copiedPath, [byte[]]::new(64))
+    $failed = $false
+    try { Assert-BenefitReplay $source $gate } catch { $failed = $true }
+    if (-not $failed) { throw '原失败恢复副本被篡改后仍放行' }
+    [IO.File]::WriteAllBytes($copiedPath, $fixtureBytes)
+    [IO.File]::WriteAllBytes((Join-Path (Join-Path $env:PROBE_SNAP 'W2') ($manifest[0].obj -replace '[\\/:]', '__')), [byte[]]::new(20))
+    $failed = $false
+    try { Assert-BenefitReplay $source $gate } catch { $failed = $true }
+    if (-not $failed) { throw '补测热回放原对象被篡改后仍放行' }
+    Write-Host 'PowerShell 全量命令、热回放字节绑定、补测来源和失败门禁测试通过'
     $global:LASTEXITCODE = 0
 } finally {
     foreach ($name in $original.Keys) { [Environment]::SetEnvironmentVariable($name, $original[$name]) }
