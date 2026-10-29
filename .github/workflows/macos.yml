@@ -413,6 +413,10 @@ jobs:
           brew install ccache
           ccache -M 1500M  # See .github/workflows/readme.md for ccache strategy.
 
+      - name: Check Filament source patch
+        shell: bash -l {0}
+        run: python 3rdparty/filament/test_filament_patch.py
+
       - name: Config and build Wheel
         shell: bash -l {0}
         run: |
