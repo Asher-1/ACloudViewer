@@ -19,7 +19,6 @@ function Get-CMakeGeneratorArgs {
     return $genArgs
 }
 
-# 两个构建入口共用计时；保持原生命令输出和退出码，诊断写入不能改变构建结果。
 function Invoke-CMakeStage {
     param([string]$Name, [string[]]$CMakeArgs)
     $started = [DateTime]::UtcNow
@@ -30,7 +29,6 @@ function Invoke-CMakeStage {
         $code = $LASTEXITCODE
     } finally {
         $timer.Stop()
-        # 即使命令抛异常，诊断也必须恢复进入 finally 时的原生退出码。
         $nativeExitCode = $global:LASTEXITCODE
         try {
             Write-Host ("[timing] {0}: {1:N2}s; exit={2}" -f $Name, $timer.Elapsed.TotalSeconds, $code)
@@ -53,7 +51,6 @@ function Invoke-CMakeStage {
                     arguments = $CMakeArgs
                 } | ConvertTo-Json -Compress | Out-File -FilePath (Join-Path $env:RUNNER_TEMP "build-timings.jsonl") -Encoding utf8 -Append -ErrorAction Stop
                 if ($CMakeArgs[0] -eq "--build") {
-                    # O(n) 遍历当前构建树，逐文件复制；隔离 CPU/CUDA pass 的子图快照。
                     $root = (Get-Location).Path
                     $snapshot = Join-Path $env:RUNNER_TEMP "ninja-$Name"
                     Get-ChildItem -Path $root -Filter ".ninja_log" -Recurse -File -Force -ErrorAction Stop | ForEach-Object {
@@ -64,19 +61,17 @@ function Invoke-CMakeStage {
                     }
                 }
             }
-        } catch { Write-Warning "[timing] 写入失败: $_" }
+        } catch { Write-Warning "[timing] write failed: $_" }
         finally {
-            # 计时文件写入失败不能阻止实时缓存统计，也不能覆盖构建失败。
             try {
                 if ($CMakeArgs[0] -eq "--build" -and $env:SCCACHE_PATH -and $env:CLOUDVIEWER_COMPILER_LAUNCHER) {
-                    Write-SccacheStats -Label "$Name (累计)" -FileName "sccache-$Name.json"
+                    Write-SccacheStats -Label "$Name (cumulative)" -FileName "sccache-$Name.json"
                 }
             } finally { $global:LASTEXITCODE = $nativeExitCode }
         }
     }
 }
 
-# 保留上游分类：CUDA、Device、PTX、CUBIN 是分层事件，不等同于源文件数。
 function Write-SccacheStats {
     param([string]$Label, [string]$FileName = "sccache-stats.json")
     $previousExitCode = $global:LASTEXITCODE
@@ -84,7 +79,6 @@ function Write-SccacheStats {
         $raw = (& $env:SCCACHE_PATH --show-stats "--stats-format=json") -join "`n"
         if ($LASTEXITCODE -ne 0) { throw "sccache stats exit=$LASTEXITCODE" }
         if ($env:RUNNER_TEMP) {
-            # 先留存原始响应，损坏或不兼容的 JSON 仍可供追溯。
             $raw | Out-File -FilePath (Join-Path $env:RUNNER_TEMP $FileName) -Encoding utf8 -ErrorAction Stop
         }
         $s = ($raw | ConvertFrom-Json -ErrorAction Stop).stats
@@ -92,13 +86,12 @@ function Write-SccacheStats {
             throw 'missing or invalid compile_requests in sccache stats'
         }
         if ($s.compile_requests -eq 0) {
-            Write-Host "[cache] 空统计进程，不报告命中率"
+            Write-Host "[cache] empty stats process; hit rate not reported"
             return
         }
         $counters = @($s.cache_hits, $s.cache_misses, $s.cache_errors)
         $total = [long[]]@(0, 0, 0)
         $table = @()
-        # counts 按语言分类；adv_counts 按语言／编译器分类，两表不能相加。
         foreach ($field in @('counts', 'adv_counts')) {
             $keys = @{}
             foreach ($counter in $counters) {
@@ -110,15 +103,14 @@ function Write-SccacheStats {
             }
             if ($keys.Count -eq 0) {
                 if ($field -eq 'counts') {
-                    Write-Host "[cache] 无缓存事件，不报告命中率 ($($s.compile_requests) compile requests)"
+                    Write-Host "[cache] no cache events; hit rate not reported ($($s.compile_requests) compile requests)"
                     return
                 }
-                $table += "`n编译器明细不可用（adv_counts 缺失或为空）。"
+                $table += "`nCompiler breakdown unavailable (adv_counts is missing or empty)."
                 continue
             }
             $table += "`n#### $field`n"
-            $table += @("| 类别 | hits | misses | errors | hit % |", "| --- | ---: | ---: | ---: | ---: |")
-            # O(k log k)：仅排序少量分类，让两轮报告可逐行比较。
+            $table += @("| Category | hits | misses | errors | hit % |", "| --- | ---: | ---: | ---: | ---: |")
             foreach ($key in ($keys.Keys | Sort-Object)) {
                 $values = @()
                 $i = 0
@@ -134,10 +126,10 @@ function Write-SccacheStats {
             }
         }
         $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $total[0] / [math]::Max(1, $total[0] + $total[1] + $total[2])), $total[0], $total[1], $total[2], $s.compile_requests
-        Write-Host "::notice title=sccache stats - ${Label}::$line (含 CUDA 子阶段事件)"
+        Write-Host "::notice title=sccache stats - ${Label}::$line (includes CUDA sub-stage events)"
         Write-Host ($table -join "`n")
         if ($env:GITHUB_STEP_SUMMARY) {
-            "### sccache stats ($Label)`n`n$line`n`n统计包含 CUDA 子阶段事件，不能作为源文件命中率或整轮加速比。`n`n$($table -join "`n")" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            "### sccache stats ($Label)`n`n$line`n`nStatistics include CUDA sub-stage events and cannot be used as a source-file hit rate or an end-to-end speedup ratio.`n`n$($table -join "`n")" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
         }
     } catch { Write-Host "[cache] stats report skipped: $_" }
     finally { $global:LASTEXITCODE = $previousExitCode }

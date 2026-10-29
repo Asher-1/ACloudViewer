@@ -97,7 +97,6 @@ jobs:
           brew install ccache pkg-config
 
           if [[ ${{ runner.arch }} == "ARM64" ]]; then
-            # 使用未锁版本的 Homebrew 编译器，同时满足 FC 和 find_program(gfortran)。
             brew install gcc
             FC="$(brew --prefix)/bin/gfortran"
             test -x "$FC"
@@ -403,7 +402,6 @@ jobs:
           install_python_dependencies
           
           if [[ ${{ runner.arch }} == "ARM64" ]]; then
-            # 与 app 使用同一 Homebrew 编译器，不依赖 runner 的预装 GCC 版本。
             brew install gcc
             FC="$(brew --prefix)/bin/gfortran"
             test -x "$FC"

@@ -173,7 +173,6 @@ jobs:
         with:
           arch: x64
       - name: Check build diagnostics contracts
-        # 用假命令验证参数、输出和失败传播；不编译、不连接真实缓存 daemon。
         if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF'
         run: |
           $ErrorActionPreference = 'Stop'
@@ -198,24 +197,24 @@ jobs:
             $output = Invoke-CMakeStage -Name 'fixture-CPU' -CMakeArgs @('--build', 'path with spaces')
             if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or
                 $global:capturedArgs.Count -ne 2 -or $global:capturedArgs[1] -ne 'path with spaces') {
-              throw 'CMake 诊断包装改变了输出、参数或退出码'
+              throw 'CMake diagnostics wrapper changed output, arguments or exit code'
             }
             $timingPath = Join-Path $env:RUNNER_TEMP 'build-timings.jsonl'
             $timing = Get-Content $timingPath | ConvertFrom-Json
             if ($timing.exit_code -ne 7 -or $timing.seconds -lt 0 -or
                 $timing.arguments[1] -ne 'path with spaces' -or $timing.build_directory -ne $fixtureBuild) {
-              throw '阶段计时没有绑定命令和构建目录'
+              throw 'Stage timing is not bound to the command and build directory'
             }
             'root-CUDA' | Set-Content '.ninja_log'
             'child-CUDA' | Set-Content 'child/.ninja_log'
             $global:fixtureCode = 0
             $output = Invoke-CMakeStage -Name 'fixture-CUDA' -CMakeArgs @('--build', '.')
-            if ($LASTEXITCODE -ne 0 -or $output -ne 'fixture-output') { throw '成功退出码被改变' }
+            if ($LASTEXITCODE -ne 0 -or $output -ne 'fixture-output') { throw 'Successful exit code was changed' }
             foreach ($pass in @('CPU', 'CUDA')) {
               $snapshot = Join-Path $env:RUNNER_TEMP "ninja-fixture-$pass"
               if ((Get-Content (Join-Path $snapshot '.ninja_log')) -ne "root-$pass" -or
                   (Get-Content (Join-Path $snapshot 'child/.ninja_log')) -ne "child-$pass") {
-                throw 'CPU/CUDA pass 的根图或子图快照丢失'
+                throw 'CPU/CUDA pass root or child graph snapshot is missing'
               }
             }
             function global:Invoke-SccacheFixture {
@@ -235,25 +234,25 @@ jobs:
                 $report -notmatch '\| cuda \[nvcc\] \| 0 \| 3 \| 0 \|' -or
                 $report -notmatch '\| c\+\+ \[msvc\] \| 2 \| 0 \| 0 \|' -or $report -notmatch '2 hits, 4 misses, 0 errors' -or
                 (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $global:statsFixture -or
-                (Get-Content $env:GITHUB_STEP_SUMMARY -Raw) -notmatch '不能作为源文件命中率或整轮加速比') {
-              throw 'sccache 分类、原始响应、收益边界或退出码保护失败'
+                (Get-Content $env:GITHUB_STEP_SUMMARY -Raw) -notmatch 'cannot be used as a source-file hit rate or an end-to-end speedup ratio') {
+              throw 'sccache categories, raw response, performance claim boundary or exit-code preservation failed'
             }
             foreach ($empty in @('{"stats":{"compile_requests":0}}', '{"stats":{"compile_requests":3,"cache_hits":{"counts":{}},"cache_misses":{"counts":{}},"cache_errors":{"counts":{}}}}')) {
               $global:statsFixture = $empty
               $report = (Write-SccacheStats -Label 'empty' 6>&1) -join "`n"
-              if ($LASTEXITCODE -ne 9 -or $report -match '::notice' -or $report -match 'skipped') { throw '空统计被错误报告' }
+              if ($LASTEXITCODE -ne 9 -or $report -match '::notice' -or $report -match 'skipped') { throw 'Empty stats were incorrectly reported' }
             }
             foreach ($invalid in @('{invalid', '{}', '{"stats":{"compile_requests":3}}')) {
               $global:statsFixture = $invalid
               $report = (Write-SccacheStats -Label 'invalid' 6>&1) -join "`n"
               if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped' -or $report -match '::notice' -or
                   (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $invalid) {
-                throw '损坏统计未被留存或影响了退出码'
+                throw 'Invalid stats were not preserved or changed the exit code'
               }
             }
             $global:statsCode = 5
             $report = (Write-SccacheStats -Label 'failed-stats' 6>&1) -join "`n"
-            if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped') { throw '统计命令失败覆盖了上游退出码' }
+            if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped') { throw 'Stats command failure overwrote the upstream exit code' }
             $global:statsCode = 0
             $global:statsFixture = '{"stats":{"compile_requests":0}}'
             $global:fixtureCode = 17
@@ -263,7 +262,7 @@ jobs:
             catch { if ($_ -notmatch 'fixture-command-error') { throw }; $thrown = $true }
             $lastTiming = Get-Content $timingPath | Select-Object -Last 1 | ConvertFrom-Json
             if (-not $thrown -or $LASTEXITCODE -ne 17 -or $null -ne $lastTiming.exit_code) {
-              throw '原异常或退出码被诊断覆盖'
+              throw 'Diagnostics overwrote the original exception or exit code'
             }
             $global:fixtureThrow = $false
             $global:fixtureCode = 7
@@ -271,7 +270,7 @@ jobs:
             $env:RUNNER_TEMP = Join-Path $fixtureBuild '.ninja_log'
             $output = Invoke-CMakeStage -Name 'failed-write' -CMakeArgs @('--build', '.')
             if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or $global:statsCalls -ne ($beforeCalls + 1)) {
-              throw '诊断写入失败影响构建或阻止了缓存统计'
+              throw 'Diagnostics write failure affected the build or prevented cache stats collection'
             }
             $env:RUNNER_TEMP = ''
             $env:GITHUB_STEP_SUMMARY = ''
@@ -279,15 +278,15 @@ jobs:
             function global:cmake { & $global:fixtureNative -NoProfile -Command "Write-Output 'native-output'; exit 7" }
             $PSNativeCommandUseErrorActionPreference = $false
             $output = Invoke-CMakeStage -Name 'native-exit' -CMakeArgs @('--build', '.')
-            if ($LASTEXITCODE -ne 7 -or $output -ne 'native-output') { throw '原生进程的退出码或输出被改变' }
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'native-output') { throw 'Native process exit code or output was changed' }
             $PSNativeCommandUseErrorActionPreference = $true
             $thrown = $false
             try { Invoke-CMakeStage -Name 'native-exception' -CMakeArgs @('--build', '.') | Out-Null }
             catch [System.Management.Automation.NativeCommandExitException] { $thrown = $true }
-            if (-not $thrown -or $LASTEXITCODE -ne 7) { throw '原生异常退出码被覆盖' }
+            if (-not $thrown -or $LASTEXITCODE -ne 7) { throw 'Native exception exit code was overwritten' }
           } finally { Pop-Location }
           $global:LASTEXITCODE = 0
-          Write-Host '构建诊断契约通过（文件、分项、异常、写入失败、原生退出码）'
+          Write-Host 'Build diagnostics contracts passed (files, categories, exceptions, write failures, native exit codes)'
 
       - name: Set up sccache binary (warm runs only)
         # Compile cache is an optimization overlay: cache keys are content-
@@ -543,7 +542,6 @@ jobs:
           Write-SccacheStats -Label "app cuda${{ matrix.BUILD_CUDA_MODULE }}"
           & $env:SCCACHE_PATH --stop-server
       - name: Upload build profiling evidence
-        # 原始统计在停止 daemon 前采集；Ninja 日志包含根图和 ExternalProject 子图。
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v4
@@ -1095,7 +1093,6 @@ jobs:
           $kept = ($all | Measure-Object -Property Length -Sum).Sum - ($stale | Measure-Object -Property Length -Sum).Sum
           Write-Host ("[cache] trimmed {0} untouched entries; pool = {1} files, {2:N2} GB" -f @($stale).Count, (@($all).Count - @($stale).Count), ($kept / 1GB))
       - name: Upload build profiling evidence
-        # 分别保留 CPU/CUDA pass 的根图快照，避免下一次 Ninja 压缩日志丢失证据。
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v4
