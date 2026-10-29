@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-15]
         python_version: ['3.12']
     env:
       BUILD_SHARED_LIBS: OFF
@@ -96,10 +96,14 @@ jobs:
         run: |
           brew install ccache pkg-config
 
-          if [[ ${{ runner.arch }} == "ARM64"  ]]; then
-            # Fix gfortran not found issue
+          if [[ ${{ runner.arch }} == "ARM64" ]]; then
+            # 使用未锁版本的 Homebrew 编译器，同时满足 FC 和 find_program(gfortran)。
             brew install gcc
-            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
+            FC="$(brew --prefix)/bin/gfortran"
+            test -x "$FC"
+            "$FC" --version
+            echo "FC=$FC" >> "$GITHUB_ENV"
+            echo "$(dirname "$FC")" >> "$GITHUB_PATH"
           fi
 
           # Native ARM64 Qt IFW with STATIC Qt (built via scripts/platforms/mac/build_static_qt_ifw.sh).
@@ -118,7 +122,7 @@ jobs:
         run: |
           set -o pipefail
           export PATH="${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$PATH"
-          export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
+          export PATH="$(brew --prefix ccache)/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
@@ -211,7 +215,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-15]
 
     steps:
       - name: Checkout ACloudViewer
@@ -323,7 +327,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        os: [macos-14]
+        os: [macos-15]
         python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
@@ -335,9 +339,9 @@ jobs:
 
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
-      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      # Keep PyTorch builds and tests enabled on the macOS 15 Apple Silicon runner.
+      BUILD_PYTORCH_OPS: ON
+      # Keep TensorFlow disabled; the runner migration does not change ML coverage.
       BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
@@ -398,9 +402,14 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
           
-          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+          if [[ ${{ runner.arch }} == "ARM64" ]]; then
+            # 与 app 使用同一 Homebrew 编译器，不依赖 runner 的预装 GCC 版本。
+            brew install gcc
+            FC="$(brew --prefix)/bin/gfortran"
+            test -x "$FC"
+            "$FC" --version
+            echo "FC=$FC" >> "$GITHUB_ENV"
+            echo "$(dirname "$FC")" >> "$GITHUB_PATH"
           fi
 
           brew install ccache
@@ -410,7 +419,7 @@ jobs:
         shell: bash -l {0}
         run: |
           set -o pipefail
-          export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
+          export PATH="$(brew --prefix ccache)/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
@@ -499,7 +508,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-15]
         python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
@@ -510,9 +519,9 @@ jobs:
             python_version: '3.11'
 
     env:
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
-      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      # Keep PyTorch builds and tests enabled on the macOS 15 Apple Silicon runner.
+      BUILD_PYTORCH_OPS: ON
+      # Keep TensorFlow disabled; the runner migration does not change ML coverage.
       BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:

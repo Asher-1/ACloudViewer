@@ -18,6 +18,131 @@ function Get-CMakeGeneratorArgs {
     }
     return $genArgs
 }
+
+# 两个构建入口共用计时；保持原生命令输出和退出码，诊断写入不能改变构建结果。
+function Invoke-CMakeStage {
+    param([string]$Name, [string[]]$CMakeArgs)
+    $started = [DateTime]::UtcNow
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    $code = $null
+    try {
+        & cmake @CMakeArgs
+        $code = $LASTEXITCODE
+    } finally {
+        $timer.Stop()
+        # 即使命令抛异常，诊断也必须恢复进入 finally 时的原生退出码。
+        $nativeExitCode = $global:LASTEXITCODE
+        try {
+            Write-Host ("[timing] {0}: {1:N2}s; exit={2}" -f $Name, $timer.Elapsed.TotalSeconds, $code)
+            if ($env:RUNNER_TEMP) {
+                [ordered]@{
+                    stage = $Name
+                    started_utc = $started.ToString("o")
+                    seconds = $timer.Elapsed.TotalSeconds
+                    exit_code = $code
+                    generator = $env:GENERATOR
+                    parallelism = $env:NPROC
+                    cold_build = $env:COLD_BUILD
+                    image_version = $env:ImageVersion
+                    msvc_version = $env:VCToolsVersion
+                    cuda_version = $env:CUDA_VERSION
+                    run_id = $env:GITHUB_RUN_ID
+                    run_attempt = $env:GITHUB_RUN_ATTEMPT
+                    revision = $env:GITHUB_SHA
+                    build_directory = (Get-Location).Path
+                    arguments = $CMakeArgs
+                } | ConvertTo-Json -Compress | Out-File -FilePath (Join-Path $env:RUNNER_TEMP "build-timings.jsonl") -Encoding utf8 -Append -ErrorAction Stop
+                if ($CMakeArgs[0] -eq "--build") {
+                    # O(n) 遍历当前构建树，逐文件复制；隔离 CPU/CUDA pass 的子图快照。
+                    $root = (Get-Location).Path
+                    $snapshot = Join-Path $env:RUNNER_TEMP "ninja-$Name"
+                    Get-ChildItem -Path $root -Filter ".ninja_log" -Recurse -File -Force -ErrorAction Stop | ForEach-Object {
+                        $relative = $_.FullName.Substring($root.Length).TrimStart([char[]]@('/', '\'))
+                        $destination = Join-Path $snapshot $relative
+                        New-Item -ItemType Directory -Force -Path (Split-Path $destination) -ErrorAction Stop | Out-Null
+                        Copy-Item -LiteralPath $_.FullName -Destination $destination -Force -ErrorAction Stop
+                    }
+                }
+            }
+        } catch { Write-Warning "[timing] 写入失败: $_" }
+        finally {
+            # 计时文件写入失败不能阻止实时缓存统计，也不能覆盖构建失败。
+            try {
+                if ($CMakeArgs[0] -eq "--build" -and $env:SCCACHE_PATH -and $env:CLOUDVIEWER_COMPILER_LAUNCHER) {
+                    Write-SccacheStats -Label "$Name (累计)" -FileName "sccache-$Name.json"
+                }
+            } finally { $global:LASTEXITCODE = $nativeExitCode }
+        }
+    }
+}
+
+# 保留上游分类：CUDA、Device、PTX、CUBIN 是分层事件，不等同于源文件数。
+function Write-SccacheStats {
+    param([string]$Label, [string]$FileName = "sccache-stats.json")
+    $previousExitCode = $global:LASTEXITCODE
+    try {
+        $raw = (& $env:SCCACHE_PATH --show-stats "--stats-format=json") -join "`n"
+        if ($LASTEXITCODE -ne 0) { throw "sccache stats exit=$LASTEXITCODE" }
+        if ($env:RUNNER_TEMP) {
+            # 先留存原始响应，损坏或不兼容的 JSON 仍可供追溯。
+            $raw | Out-File -FilePath (Join-Path $env:RUNNER_TEMP $FileName) -Encoding utf8 -ErrorAction Stop
+        }
+        $s = ($raw | ConvertFrom-Json -ErrorAction Stop).stats
+        if ($null -eq $s -or $null -eq $s.compile_requests -or $s.compile_requests -lt 0) {
+            throw 'missing or invalid compile_requests in sccache stats'
+        }
+        if ($s.compile_requests -eq 0) {
+            Write-Host "[cache] 空统计进程，不报告命中率"
+            return
+        }
+        $counters = @($s.cache_hits, $s.cache_misses, $s.cache_errors)
+        $total = [long[]]@(0, 0, 0)
+        $table = @()
+        # counts 按语言分类；adv_counts 按语言／编译器分类，两表不能相加。
+        foreach ($field in @('counts', 'adv_counts')) {
+            $keys = @{}
+            foreach ($counter in $counters) {
+                if ($counter.$field -isnot [PSCustomObject]) {
+                    if ($field -eq 'counts') { throw 'missing or invalid sccache counts' }
+                    continue
+                }
+                foreach ($p in $counter.$field.PSObject.Properties) { $keys[$p.Name] = $true }
+            }
+            if ($keys.Count -eq 0) {
+                if ($field -eq 'counts') {
+                    Write-Host "[cache] 无缓存事件，不报告命中率 ($($s.compile_requests) compile requests)"
+                    return
+                }
+                $table += "`n编译器明细不可用（adv_counts 缺失或为空）。"
+                continue
+            }
+            $table += "`n#### $field`n"
+            $table += @("| 类别 | hits | misses | errors | hit % |", "| --- | ---: | ---: | ---: | ---: |")
+            # O(k log k)：仅排序少量分类，让两轮报告可逐行比较。
+            foreach ($key in ($keys.Keys | Sort-Object)) {
+                $values = @()
+                $i = 0
+                foreach ($counter in $counters) {
+                    $property = if ($null -eq $counter.$field) { $null } else { $counter.$field.PSObject.Properties[$key] }
+                    $value = if ($null -eq $property) { 0L } else { [long]$property.Value }
+                    $values += $value
+                    if ($field -eq 'counts') { $total[$i] += $value }
+                    $i++
+                }
+                $rate = 100.0 * $values[0] / [math]::Max(1, $values[0] + $values[1] + $values[2])
+                $table += "| {0} | {1} | {2} | {3} | {4:N2} |" -f $key, $values[0], $values[1], $values[2], $rate
+            }
+        }
+        $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $total[0] / [math]::Max(1, $total[0] + $total[1] + $total[2])), $total[0], $total[1], $total[2], $s.compile_requests
+        Write-Host "::notice title=sccache stats - ${Label}::$line (含 CUDA 子阶段事件)"
+        Write-Host ($table -join "`n")
+        if ($env:GITHUB_STEP_SUMMARY) {
+            "### sccache stats ($Label)`n`n$line`n`n统计包含 CUDA 子阶段事件，不能作为源文件命中率或整轮加速比。`n`n$($table -join "`n")" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+        }
+    } catch { Write-Host "[cache] stats report skipped: $_" }
+    finally { $global:LASTEXITCODE = $previousExitCode }
+}
+
 $env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
 $env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
 $env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
@@ -544,7 +669,7 @@ function Build-GuiApp {
     Write-Host ""
     Write-Host "Running cmake $($cmakeGuiOptions -join ' ') .."
     $generatorArgs = Get-CMakeGeneratorArgs
-    & cmake @generatorArgs $cmakeGuiOptions ..
+    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-configure" -CMakeArgs (@($generatorArgs) + $cmakeGuiOptions + @(".."))
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake configure failed with exit code $LASTEXITCODE"
@@ -553,7 +678,7 @@ function Build-GuiApp {
     Write-Host ""
     Write-Host "Build & install ACloudViewer..."
     
-    & cmake --build . --config Release --verbose --parallel $env:NPROC
+    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-build" -CMakeArgs @("--build", ".", "--config", "Release", "--verbose", "--parallel", "$env:NPROC")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
@@ -562,7 +687,7 @@ function Build-GuiApp {
     # The aicore-contract-tests target only exists when AICore tests are built
     # (core/AICore/CMakeLists.txt guards add_subdirectory(tests)).
     if ($AICORE_BUILD_TESTS -eq "ON") {
-        & cmake --build . --target aicore-contract-tests --config Release --parallel $env:NPROC
+        Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-contract-tests" -CMakeArgs @("--build", ".", "--target", "aicore-contract-tests", "--config", "Release", "--parallel", "$env:NPROC")
         if ($LASTEXITCODE -ne 0) {
             Pop-Location
             throw "AICore contract tests failed with exit code $LASTEXITCODE"
@@ -571,7 +696,7 @@ function Build-GuiApp {
         Write-Host "Skipping AICore contract tests (AICore_BUILD_TESTS=$AICORE_BUILD_TESTS)"
     }
 
-    & cmake --install . --config Release --verbose
+    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-install-and-package" -CMakeArgs @("--install", ".", "--config", "Release", "--verbose")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --install failed with exit code $LASTEXITCODE"
@@ -733,14 +858,14 @@ function Build-PipPackage {
 
     Write-Host "Executing cmake command..."
     $generatorArgs = Get-CMakeGeneratorArgs
-    cmake @generatorArgs -DBUILD_CUDA_MODULE=OFF $cmakeOptions ..
+    Invoke-CMakeStage -Name "wheel-CPU-configure" -CMakeArgs (@($generatorArgs) + @("-DBUILD_CUDA_MODULE=OFF") + $cmakeOptions + @(".."))
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake configure (CPU) failed with exit code $LASTEXITCODE"
     }
 
     Write-Host "`nPackaging CloudViewer CPU pip package..."
-    cmake --build . --target pip-package --config Release --parallel $env:NPROC
+    Invoke-CMakeStage -Name "wheel-CPU-build-and-package" -CMakeArgs @("--build", ".", "--target", "pip-package", "--config", "Release", "--parallel", "$env:NPROC")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build (CPU pip-package) failed with exit code $LASTEXITCODE"
@@ -771,16 +896,14 @@ function Build-PipPackage {
         }
 
         Write-Host "Executing cmake command with CUDA..."
-        cmake   -DBUILD_CUDA_MODULE=ON `
-                -DBUILD_COMMON_CUDA_ARCHS=ON `
-                $cmakeOptions ..
+        Invoke-CMakeStage -Name "wheel-CUDA-configure" -CMakeArgs (@("-DBUILD_CUDA_MODULE=ON", "-DBUILD_COMMON_CUDA_ARCHS=ON") + $cmakeOptions + @(".."))
         if ($LASTEXITCODE -ne 0) {
             Pop-Location
             throw "cmake configure (CUDA) failed with exit code $LASTEXITCODE"
         }
 
         Write-Host "`ncmake --build with cuda..."
-        cmake --build . --target pip-package --config Release --parallel $env:NPROC
+        Invoke-CMakeStage -Name "wheel-CUDA-build-and-package" -CMakeArgs @("--build", ".", "--target", "pip-package", "--config", "Release", "--parallel", "$env:NPROC")
         if ($LASTEXITCODE -ne 0) {
             Pop-Location
             throw "cmake --build (CUDA pip-package) failed with exit code $LASTEXITCODE"
