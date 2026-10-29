@@ -16,6 +16,11 @@ v3.9.5-Beta (Asher) - 08/04/2026
   build timing and compilation inventories, and skip disk cleanup when an
   80 GiB free-space budget is already available.
 - Fix VTK LOD compilation with system VTK: include vtkWeakPointer.h directly.
+- Fix complete CodeQL builds with VTK 9.1: only use chart matrix padding on
+  VTK 9.2+, preserving the existing gutter and borders on older versions.
+- Fix octree constant linkage at low optimization levels: use C++17 constexpr
+  storage for subdivision limits and the invalid-cell sentinel; add a regression
+  test that requires their addresses to resolve.
 - Fix pinned Filament libpng on modern Apple SDKs: select math.h instead of
   the classic Mac fp.h without disabling floating-point PNG support.
 - CI: compiler cache storage overhaul — all pools moved off the GitHub
