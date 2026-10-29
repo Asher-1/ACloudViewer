@@ -30,6 +30,25 @@ ZUTIL_SOURCE = """#include <stddef.h>
 #endif
 """
 
+PNG_OLD = (
+    "#  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \\\n"
+    "    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)")
+PNG_NEW = (
+    "#  if !defined(__APPLE__) && ((defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \\\n"
+    "    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC))")
+# The exact header-selection branch from pinned libpng; no Apple SDK needed.
+PNG_SOURCE = (
+    "#if defined(PNG_FLOATING_POINT_SUPPORTED) ||\\\n"
+    "    defined(PNG_FLOATING_ARITHMETIC_SUPPORTED)\n"
+    "#  include <float.h>\n" + PNG_OLD + "\n"
+    "#    if !defined(__MATH_H__) && !defined(__MATH_H) && !defined(__cmath__)\n"
+    "#      include <fp.h>\n"
+    "#    endif\n"
+    "#  else\n"
+    "#    include <math.h>\n"
+    "#  endif\n"
+    "#endif\n")
+
 
 class FilamentPatchTests(unittest.TestCase):
     def setUp(self):
@@ -39,14 +58,18 @@ class FilamentPatchTests(unittest.TestCase):
         self.memalign = self.root / "libs/utils/include/utils/memalign.h"
         self.sampler = self.root / "libs/image/src/ImageSampler.cpp"
         self.zutil = self.root / "third_party/libz/zutil.h"
+        self.pngpriv = self.root / "third_party/libpng/pngpriv.h"
+        self.paths = (self.memalign, self.sampler, self.zutil, self.pngpriv)
         self.memalign.parent.mkdir(parents=True)
         self.sampler.parent.mkdir(parents=True)
         self.zutil.parent.mkdir(parents=True)
+        self.pngpriv.parent.mkdir(parents=True)
         self.memalign.write_text(
             "#include <type_traits>\n#include <stddef.h>\n"
             "using Difference = std::ptrdiff_t;\n")
         self.sampler.write_text("constexpr float M_PIf = 3.1415926f;\n")
         self.zutil.write_text(ZUTIL_SOURCE)
+        self.pngpriv.write_text(PNG_SOURCE)
 
     def apply(self, source=True):
         args = ["cmake"]
@@ -65,14 +88,16 @@ class FilamentPatchTests(unittest.TestCase):
                          "constexpr float M_PI_f = 3.1415926f;\n")
         self.assertEqual(self.zutil.read_text(),
                          ZUTIL_SOURCE.replace(ZUTIL_OLD, ZUTIL_NEW))
+        self.assertEqual(self.pngpriv.read_text(),
+                         PNG_SOURCE.replace(PNG_OLD, PNG_NEW))
 
     def test_repeated_application_does_not_rewrite(self):
         self.assertEqual(self.apply().returncode, 0)
         before = [(p.read_bytes(), p.stat().st_mtime_ns)
-                  for p in (self.memalign, self.sampler, self.zutil)]
+                  for p in self.paths]
         self.assertEqual(self.apply().returncode, 0)
         after = [(p.read_bytes(), p.stat().st_mtime_ns)
-                 for p in (self.memalign, self.sampler, self.zutil)]
+                 for p in self.paths]
         self.assertEqual(before, after)
 
     def test_already_fixed_header_needs_no_old_anchor(self):
@@ -107,7 +132,7 @@ class FilamentPatchTests(unittest.TestCase):
 
     def test_missing_zutil_anchor_fails_before_mutation(self):
         self.zutil.write_text("#define OS_CODE 19\n")
-        paths = (self.memalign, self.sampler, self.zutil)
+        paths = self.paths
         before = [p.read_bytes() for p in paths]
         result = self.apply()
         self.assertNotEqual(result.returncode, 0)
@@ -119,6 +144,87 @@ class FilamentPatchTests(unittest.TestCase):
         before = (self.zutil.read_bytes(), self.zutil.stat().st_mtime_ns)
         self.assertEqual(self.apply().returncode, 0)
         self.assertEqual((self.zutil.read_bytes(), self.zutil.stat().st_mtime_ns), before)
+
+    def test_missing_pngpriv_fails_before_mutation(self):
+        self.pngpriv.rename(self.root / "pngpriv.saved")
+        before = [p.read_bytes() for p in self.paths[:-1]]
+        self.assertNotEqual(self.apply().returncode, 0)
+        self.assertEqual([p.read_bytes() for p in self.paths[:-1]], before)
+
+    def test_missing_pngpriv_anchor_fails_before_mutation(self):
+        self.pngpriv.write_text("#include <math.h>\n")
+        before = [p.read_bytes() for p in self.paths]
+        result = self.apply()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pngpriv.h patch anchor is missing", result.stderr)
+        self.assertEqual([p.read_bytes() for p in self.paths], before)
+
+    def test_already_fixed_pngpriv_needs_no_old_anchor(self):
+        self.pngpriv.write_text(PNG_SOURCE.replace(PNG_OLD, PNG_NEW))
+        before = (self.pngpriv.read_bytes(), self.pngpriv.stat().st_mtime_ns)
+        self.assertEqual(self.apply().returncode, 0)
+        self.assertEqual((self.pngpriv.read_bytes(), self.pngpriv.stat().st_mtime_ns), before)
+
+    def compile_pngpriv(self, defines, mode):
+        platform_macros = ("__APPLE__", "TARGET_OS_MAC", "__MWERKS__", "macintosh",
+                           "applec", "THINK_C", "__SC__", "__MATH_H__",
+                           "__MATH_H", "__cmath__")
+        args = ["cc", "-std=c11", "-x", "c",
+                *("-U" + macro for macro in platform_macros),
+                "-I", str(self.root), *defines, *mode, "-"]
+        return subprocess.run(args, input=f'#include "{self.pngpriv.as_posix()}"\n',
+                              capture_output=True, text=True, check=False)
+
+    @unittest.skipUnless(shutil.which("cc"), "C compiler is unavailable")
+    def test_modern_apple_missing_fp_header_is_fixed(self):
+        for feature in ("PNG_FLOATING_POINT_SUPPORTED", "PNG_FLOATING_ARITHMETIC_SUPPORTED"):
+            for target in ("0", "1"):
+                with self.subTest(feature=feature, target=target):
+                    defines = ["-D__APPLE__=1", f"-DTARGET_OS_MAC={target}", "-D" + feature]
+                    result = self.compile_pngpriv(defines, ["-fsyntax-only"])
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("fp.h", result.stderr)
+        result = self.apply()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for feature in ("PNG_FLOATING_POINT_SUPPORTED", "PNG_FLOATING_ARITHMETIC_SUPPORTED"):
+            for target in ("0", "1"):
+                with self.subTest(patched_feature=feature, patched_target=target):
+                    result = self.compile_pngpriv(
+                        ["-D__APPLE__=1", f"-DTARGET_OS_MAC={target}", "-D" + feature],
+                        ["-fsyntax-only"])
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(shutil.which("cc"), "C compiler is unavailable")
+    def test_pngpriv_platform_headers_are_preserved(self):
+        # Marker-only headers isolate selection from the host's SDK headers.
+        (self.root / "fp.h").write_text("#define FILAMENT_TEST_FP_HEADER 1\n")
+        (self.root / "math.h").write_text("#define FILAMENT_TEST_MATH_HEADER 1\n")
+        result = self.apply()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        cases = (
+            (["__APPLE__"], False),
+            (["__APPLE__", "TARGET_OS_MAC=0"], False),
+            (["__APPLE__", "TARGET_OS_MAC=1"], False),
+            (["__APPLE__", "THINK_C"], False),
+            (["__APPLE__", "TARGET_OS_MAC", "__MATH_H__"], False),
+            (["TARGET_OS_MAC=0"], True),
+            (["TARGET_OS_MAC=1"], True),
+            (["__MWERKS__", "macintosh"], True),
+            (["applec"], True), (["THINK_C"], True), (["__SC__"], True),
+            (["__MWERKS__"], False), ([], False),
+        )
+        for macros, classic in cases:
+            with self.subTest(macros=macros):
+                result = self.compile_pngpriv(
+                    ["-DPNG_FLOATING_POINT_SUPPORTED", *("-D" + m for m in macros)],
+                    ["-E", "-dM"])
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual("#define FILAMENT_TEST_FP_HEADER" in result.stdout, classic)
+                self.assertEqual("#define FILAMENT_TEST_MATH_HEADER" in result.stdout, not classic)
+        result = self.compile_pngpriv(["-D__APPLE__", "-DTARGET_OS_MAC"], ["-E", "-dM"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("FILAMENT_TEST_FP_HEADER", result.stdout)
+        self.assertNotIn("FILAMENT_TEST_MATH_HEADER", result.stdout)
 
     def compile_zutil(self, defines, mode, declaration=""):
         # Undefine host platform macros before selecting a simulated target.

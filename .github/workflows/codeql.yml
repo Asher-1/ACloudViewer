@@ -10,9 +10,15 @@ on:
     # Run every Monday at 00:00 UTC
     - cron: '0 0 * * 1'
   workflow_dispatch:
+    inputs:
+      cpp-optimization:
+        description: 'C++ code generation: O1 for scanning, O3 for same-revision baseline'
+        type: choice
+        default: O1
+        options: [O1, O3]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.cpp-optimization || 'O1' }}
   cancel-in-progress: true
 
 jobs:
@@ -104,6 +110,7 @@ jobs:
       QT_ROOT: /usr/lib/x86_64-linux-gnu/qt5
       QTDIR: /usr/lib/x86_64-linux-gnu/qt5
       PARALLEL_JOBS: 4
+      CPP_OPTIMIZATION: ${{ inputs.cpp-optimization || 'O1' }}
 
     steps:
       - name: Checkout repository
@@ -112,14 +119,21 @@ jobs:
           submodules: 'recursive'
 
       - name: Maximize build space
+        shell: bash
         run: |
-          echo "=== Before cleanup ==="
+          set -euo pipefail
           df -h /
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
-                      /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get clean
-          echo "=== After cleanup ==="
-          df -h /
+          # The observed image already had 85 GiB free; deleting its tool cache
+          # cost 214 seconds. Keep an 80 GiB budget for build/database growth.
+          free_kib=$(df -Pk / | awk 'NR == 2 { print $4 }')
+          if (( free_kib < 80 * 1024 * 1024 )); then
+            sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+                        /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+            sudo apt-get clean
+            df -h /
+          else
+            echo "Skipping unnecessary cleanup: at least 80 GiB is free"
+          fi
 
       - name: Install system dependencies
         run: |
@@ -168,13 +182,25 @@ jobs:
       # CodeQL sets LD_PRELOAD to trace all processes, which causes cmake configure
       # to hang on try_compile checks and FetchContent downloads. The configure step
       # does not compile any project code, so CodeQL tracing is not needed here.
+      # O1 preserves __OPTIMIZE__ and NDEBUG while avoiding O3 code-generation
+      # work that scanning does not consume. Do not change the enabled targets.
       - name: Configure CMake
+        shell: bash
         run: |
-          mkdir -p build && cd build
+          set -euo pipefail
+          case "$CPP_OPTIMIZATION" in
+            O1|O3) ;;
+            *) echo "Unsupported C++ optimization: $CPP_OPTIMIZATION" >&2; exit 1 ;;
+          esac
+          mkdir -p build codeql-evidence
+          cd build
           cmake \
             -DBUILD_SHARED_LIBS=OFF \
             -DUSE_QT6=OFF \
             -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_C_FLAGS_RELEASE=-${CPP_OPTIMIZATION} -DNDEBUG" \
+            "-DCMAKE_CXX_FLAGS_RELEASE=-${CPP_OPTIMIZATION} -DNDEBUG" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DUSE_SYSTEM_TBB=ON \
             -DBUILD_JUPYTER_EXTENSION=OFF \
             -DBUILD_LIBREALSENSE=OFF \
@@ -253,20 +279,36 @@ jobs:
             -DPLUGIN_STANDARD_QSAM3D=OFF \
             -DPLUGIN_STANDARD_QANYLABELING=OFF \
             -DPLUGIN_STANDARD_QMAPANYTHING=OFF \
-            ..
+            .. 2>&1 | tee ../codeql-evidence/configure.log
+          cp compile_commands.json ../codeql-evidence/
+          {
+            git rev-parse HEAD
+            printf 'Optimization: %s\nBuild jobs: %s\n' "$CPP_OPTIMIZATION" "$PARALLEL_JOBS"
+            nproc
+            free -m
+            cmake --version
+            c++ --version
+          } > ../codeql-evidence/environment.txt
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
+          build-mode: manual
           queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build
+        shell: bash
         run: |
-          cd build
-          make -j${PARALLEL_JOBS} || true
+          set -euo pipefail
+          # A failed build must stop analysis: partial extraction is not a baseline.
+          # Compile every enabled target; do not replay cached first-party objects.
+          /usr/bin/time -v -o codeql-evidence/build-time.txt \
+            cmake --build build --parallel "$PARALLEL_JOBS" \
+            2>&1 | tee codeql-evidence/build.log
+          echo "Complete configured C++ build succeeded" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
@@ -274,6 +316,21 @@ jobs:
           category: "/language:c-cpp"
           output: sarif-results
           upload: failure-only
+
+      # Keep failure logs and the compilation inventory for coverage/timing A/B.
+      # Successful builds are necessary, but this inventory alone is not proof
+      # of extraction parity; also compare CodeQL diagnostics and query results.
+      - name: Upload C++ build evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-cpp-evidence-${{ env.CPP_OPTIMIZATION }}-${{ github.run_id }}
+          path: |
+            codeql-evidence/
+            sarif-results/cpp.sarif
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Filter third-party alerts
         uses: advanced-security/filter-sarif@v1.1

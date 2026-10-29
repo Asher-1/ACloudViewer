@@ -6,9 +6,11 @@ endif()
 set(_memalign "${SOURCE_DIR}/libs/utils/include/utils/memalign.h")
 set(_sampler "${SOURCE_DIR}/libs/image/src/ImageSampler.cpp")
 set(_zutil "${SOURCE_DIR}/third_party/libz/zutil.h")
+set(_pngpriv "${SOURCE_DIR}/third_party/libpng/pngpriv.h")
 file(READ "${_memalign}" _memalign_source)
 file(READ "${_sampler}" _sampler_source)
 file(READ "${_zutil}" _zutil_source)
+file(READ "${_pngpriv}" _pngpriv_source)
 set(_memalign_patched "${_memalign_source}")
 
 # <stddef.h> need not declare std::ptrdiff_t. Do not rely on transitive
@@ -34,12 +36,28 @@ if(_zutil_anchor EQUAL -1 AND _zutil_fixed EQUAL -1)
 endif()
 string(REPLACE "${_zutil_old}" "${_zutil_new}" _zutil_patched "${_zutil_source}")
 
+# The classic Mac fp.h header is absent from modern Apple SDKs. Select math.h
+# on __APPLE__ even when TargetConditionals.h has defined TARGET_OS_MAC.
+set(_pngpriv_old [=[#  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
+    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)]=])
+set(_pngpriv_new [=[#  if !defined(__APPLE__) && ((defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
+    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC))]=])
+string(FIND "${_pngpriv_source}" "${_pngpriv_old}" _pngpriv_anchor)
+string(FIND "${_pngpriv_source}" "${_pngpriv_new}" _pngpriv_fixed)
+if(_pngpriv_anchor EQUAL -1 AND _pngpriv_fixed EQUAL -1)
+    message(FATAL_ERROR "Filament pngpriv.h patch anchor is missing")
+endif()
+string(REPLACE "${_pngpriv_old}" "${_pngpriv_new}" _pngpriv_patched "${_pngpriv_source}")
+
 # Validate all inputs and anchors before writing any of the patched sources.
 if(NOT _memalign_patched STREQUAL _memalign_source)
     file(WRITE "${_memalign}" "${_memalign_patched}")
 endif()
 if(NOT _zutil_patched STREQUAL _zutil_source)
     file(WRITE "${_zutil}" "${_zutil_patched}")
+endif()
+if(NOT _pngpriv_patched STREQUAL _pngpriv_source)
+    file(WRITE "${_pngpriv}" "${_pngpriv_patched}")
 endif()
 
 # Preserve the existing ImageSampler macro fix without BSD/GNU sed differences.
