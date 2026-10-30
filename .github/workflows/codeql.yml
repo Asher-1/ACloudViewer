@@ -184,6 +184,7 @@ jobs:
       # does not compile any project code, so CodeQL tracing is not needed here.
       # O1 preserves __OPTIMIZE__ and NDEBUG while avoiding O3 code-generation
       # work that scanning does not consume. Do not change the enabled targets.
+      # 扫描策略也转发到子构建，并在目标创建后追加选项，防止上游重置为 O3。
       - name: Configure CMake
         shell: bash
         run: |
@@ -200,6 +201,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             "-DCMAKE_C_FLAGS_RELEASE=-${CPP_OPTIMIZATION} -DNDEBUG" \
             "-DCMAKE_CXX_FLAGS_RELEASE=-${CPP_OPTIMIZATION} -DNDEBUG" \
+            "-DCLOUDVIEWER_CODEQL_OPTIMIZATION=${CPP_OPTIMIZATION}" \
+            "-DCMAKE_PROJECT_INCLUDE=${GITHUB_WORKSPACE}/.github/codeql/compiler-policy.cmake" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DUSE_SYSTEM_TBB=ON \
             -DBUILD_JUPYTER_EXTENSION=OFF \
@@ -292,6 +295,7 @@ jobs:
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.
       - name: Initialize CodeQL
+        id: init-cpp
         uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
@@ -308,14 +312,90 @@ jobs:
           /usr/bin/time -v -o codeql-evidence/build-time.txt \
             cmake --build build --parallel "$PARALLEL_JOBS" \
             2>&1 | tee codeql-evidence/build.log
+          # 核查实际生成命令，不用顶层 cache 中的 O1 代替子构建证据。
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import shlex
+          expected = '-' + os.environ['CPP_OPTIMIZATION']
+          counts = {}
+          for inventory in Path('build').rglob('compile_commands.json'):
+              count = 0
+              for row in json.loads(inventory.read_text()):
+                  if Path(row['file']).suffix.lower() not in ('.c', '.cc', '.cpp', '.cxx', '.c++'):
+                      continue
+                  tokens = row.get('arguments') or shlex.split(row['command'])
+                  levels = [token for token in tokens if re.fullmatch(r'-O[0-3sg]|-Ofast', token)]
+                  if not levels or levels[-1] != expected:
+                      raise SystemExit(f'Unexpected optimization in {inventory}: {row}')
+                  count += 1
+              counts[str(inventory)] = count
+          if not sum(counts.values()):
+              raise SystemExit('Missing C/C++ compilation inventory')
+          Path('codeql-evidence/compiler-policy.json').write_text(
+              json.dumps({'optimization': expected, 'configured_commands': counts}, indent=2))
+          print('Verified compiler policy:', counts)
+          PY
           echo "Complete configured C++ build succeeded" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sample C++ analysis resources
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p codeql-evidence
+          # 主机累计计数器，不是单查询 CPU 或峰值 RSS；按 UTC 与 evaluator 对齐。
+          # 每 30 秒流式保存，六小时约数 MiB；不扫描进程参数或环境变量。
+          (
+            for sample in {1..720}; do
+              [[ ! -f codeql-evidence/analysis-resources.stop ]] || break
+              date -u '+UTC %Y-%m-%dT%H:%M:%SZ'
+              head -n 1 /proc/stat
+              cat /proc/uptime
+              grep -E '^(MemTotal|MemAvailable|SwapTotal|SwapFree|Dirty|Writeback):' /proc/meminfo
+              grep -E '^(pgmajfault|pswpin|pswpout|pgpgin|pgpgout|pgscan_.*|pgsteal_.*|oom_kill) ' /proc/vmstat
+              for resource in cpu memory io; do
+                if [[ -r /proc/pressure/$resource ]]; then
+                  printf 'Pressure %s\n' "$resource"
+                  cat "/proc/pressure/$resource"
+                fi
+              done
+              df -Pk .
+              sleep 30
+            done
+          ) > codeql-evidence/analysis-resources.log 2>&1 < /dev/null &
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
+        env:
+          # 仅记录评估过程，不改变查询集、线程数、内存预算或磁盘缓存策略。
+          CODEQL_ACTION_EXTRA_OPTIONS: >-
+            {"database":{"run-queries":["--evaluator-log=${{ github.workspace }}/codeql-evidence/evaluator.jsonl","--evaluator-log-minify"]}}
         with:
           category: "/language:c-cpp"
           output: sarif-results
           upload: failure-only
+
+      - name: Summarize C++ evaluator performance
+        if: always()
+        continue-on-error: true
+        shell: bash
+        env:
+          CODEQL_BIN: ${{ steps.init-cpp.outputs.codeql-path }}
+        run: |
+          set -euo pipefail
+          # 成功或失败都停止采样；最后一个完整快照已直接写入日志。
+          mkdir -p codeql-evidence
+          touch codeql-evidence/analysis-resources.stop
+          # 保留原始日志；用 CLI 自带汇总器解析，避免依赖不稳定的事件格式。
+          if [[ -s codeql-evidence/evaluator.jsonl && -x "$CODEQL_BIN" ]]; then
+            for format in overall predicates text; do
+              "$CODEQL_BIN" generate log-summary --format="$format" --utc \
+                codeql-evidence/evaluator.jsonl "codeql-evidence/evaluator-$format.log"
+            done
+          fi
 
       # Keep failure logs and the compilation inventory for coverage/timing A/B.
       # Successful builds are necessary, but this inventory alone is not proof
@@ -328,6 +408,8 @@ jobs:
           name: codeql-cpp-evidence-${{ env.CPP_OPTIMIZATION }}-${{ github.run_id }}
           path: |
             codeql-evidence/
+            build/**/compile_commands.json
+            ${{ runner.temp }}/codeql_databases/cpp/log/
             sarif-results/cpp.sarif
           if-no-files-found: warn
           retention-days: 14

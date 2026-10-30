@@ -40,6 +40,7 @@ ExternalProject_Add(ext_poisson
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_CXX_STANDARD=17
                -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+               ${ExternalProject_CODEQL_CMAKE_ARGS}
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config $<CONFIG>
     INSTALL_COMMAND ${CMAKE_COMMAND} --install . --config $<CONFIG>
     # Ninja-family generators (the CI Ninja-Multi-Config graph check, the

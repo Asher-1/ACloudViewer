@@ -15,6 +15,10 @@ on:
       - '.github/actions/checkout-agent-harness/**'
       - '.github/actions/setup-cmake/**'
       - '.github/workflows/macos.yml'
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+      - '3rdparty/find_dependencies.cmake'
+      - '3rdparty/PoissonRecon/**'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
@@ -28,6 +32,10 @@ on:
       - '.github/actions/checkout-agent-harness/**'
       - '.github/actions/setup-cmake/**'
       - '.github/workflows/macos.yml'
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+      - '3rdparty/find_dependencies.cmake'
+      - '3rdparty/PoissonRecon/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
