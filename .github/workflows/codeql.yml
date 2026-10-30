@@ -184,7 +184,7 @@ jobs:
       # does not compile any project code, so CodeQL tracing is not needed here.
       # O1 preserves __OPTIMIZE__ and NDEBUG while avoiding O3 code-generation
       # work that scanning does not consume. Do not change the enabled targets.
-      # 扫描策略也转发到子构建，并在目标创建后追加选项，防止上游重置为 O3。
+      # Forward the scan policy to sub-builds and append options after target creation to prevent upstream O3 resets.
       - name: Configure CMake
         shell: bash
         run: |
@@ -312,7 +312,7 @@ jobs:
           /usr/bin/time -v -o codeql-evidence/build-time.txt \
             cmake --build build --parallel "$PARALLEL_JOBS" \
             2>&1 | tee codeql-evidence/build.log
-          # 核查实际生成命令，不用顶层 cache 中的 O1 代替子构建证据。
+          # Verify generated commands; top-level O1 cache entries do not prove sub-build optimization.
           python3 - <<'PY'
           import json
           import os
@@ -346,8 +346,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p codeql-evidence
-          # 主机累计计数器，不是单查询 CPU 或峰值 RSS；按 UTC 与 evaluator 对齐。
-          # 每 30 秒流式保存，六小时约数 MiB；不扫描进程参数或环境变量。
+          # Host cumulative counters, not per-query CPU or peak RSS; align with evaluator timestamps in UTC.
+          # Stream every 30 seconds, a few MiB over six hours; do not inspect process arguments or environments.
           (
             for sample in {1..720}; do
               [[ ! -f codeql-evidence/analysis-resources.stop ]] || break
@@ -370,7 +370,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         env:
-          # 仅记录评估过程，不改变查询集、线程数、内存预算或磁盘缓存策略。
+          # Record evaluation without changing queries, thread counts, memory budgets or disk-cache policy.
           CODEQL_ACTION_EXTRA_OPTIONS: >-
             {"database":{"run-queries":["--evaluator-log=${{ github.workspace }}/codeql-evidence/evaluator.jsonl","--evaluator-log-minify"]}}
         with:
@@ -386,10 +386,10 @@ jobs:
           CODEQL_BIN: ${{ steps.init-cpp.outputs.codeql-path }}
         run: |
           set -euo pipefail
-          # 成功或失败都停止采样；最后一个完整快照已直接写入日志。
+          # Stop sampling on success or failure; the last complete snapshot is already written to the log.
           mkdir -p codeql-evidence
           touch codeql-evidence/analysis-resources.stop
-          # 保留原始日志；用 CLI 自带汇总器解析，避免依赖不稳定的事件格式。
+          # Preserve raw logs and use the CLI summarizer instead of depending on unstable event formats.
           if [[ -s codeql-evidence/evaluator.jsonl && -x "$CODEQL_BIN" ]]; then
             for format in overall predicates text; do
               "$CODEQL_BIN" generate log-summary --format="$format" --utc \

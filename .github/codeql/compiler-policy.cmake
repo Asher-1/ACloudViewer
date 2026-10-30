@@ -1,4 +1,4 @@
-# 仅用于显式启用的 CodeQL 扫描，不改变生产构建的优化策略。
+# Only for explicitly enabled CodeQL scans; production optimization stays unchanged.
 include_guard(GLOBAL)
 
 if(CMAKE_VERSION VERSION_LESS 3.19)
@@ -17,13 +17,13 @@ foreach(language C CXX)
     endif()
 endforeach()
 
-# 主工程会自动探测 ccache；扫描必须真实编译，不能重放缓存对象跳过提取。
+# The main project auto-detects ccache; scans must compile rather than replay cached objects.
 set(CMAKE_C_COMPILER_LAUNCHER "")
 set(CMAKE_CXX_COMPILER_LAUNCHER "")
 
-# O(目录数 + 目标数)，只保存当前目录的列表；不修改源码、链接或导出属性。
+# O(directories + targets), retaining only the current directory's lists; source, link and export properties stay unchanged.
 function(cloudviewer_codeql_apply_options directory)
-    # Draco 在 project() 之后才设置默认 Release，验证也必须等配置结束。
+    # Draco defaults to Release after project(); validation must also wait until configuration ends.
     if(directory STREQUAL CMAKE_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
         message(FATAL_ERROR "CodeQL compiler policy requires a Release build")
     endif()
@@ -31,8 +31,8 @@ function(cloudviewer_codeql_apply_options directory)
     foreach(target IN LISTS targets)
         get_target_property(type "${target}" TYPE)
         if(type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
-            # 配置末尾追加目标选项，抵抗 Embree 等上游重置 Release flags。
-            # 保留 NDEBUG、ISA、PIC、OpenMP 和数值选项，只选择代码生成优化级别。
+            # Append target options at configuration end to override upstream Release flag resets, including Embree's.
+            # Preserve NDEBUG, ISA, PIC, OpenMP and numerical options; only select the code-generation optimization level.
             target_compile_options("${target}" PRIVATE
                 "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:C,CXX>>:-$CACHE{CLOUDVIEWER_CODEQL_OPTIMIZATION}>")
             set_target_properties("${target}" PROPERTIES
@@ -45,6 +45,6 @@ function(cloudviewer_codeql_apply_options directory)
     endforeach()
 endfunction()
 
-# project() 入口早于上游 flags 重置和目标创建，必须延迟到根目录配置结束。
+# project() runs before upstream flag resets and target creation; defer until root configuration ends.
 cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}"
     CALL cloudviewer_codeql_apply_options "${CMAKE_SOURCE_DIR}")

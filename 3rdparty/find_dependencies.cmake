@@ -211,7 +211,7 @@ endfunction()
 # version by default.
 set(ExternalProject_CODEQL_CMAKE_ARGS)
 if(DEFINED CLOUDVIEWER_CODEQL_OPTIMIZATION)
-    # 仅扫描模式转发策略；普通构建保留上游的原有参数和默认优化级别。
+    # Forward policy only for scans; normal builds retain upstream arguments and default optimization.
     get_filename_component(codeql_compiler_policy
         "${CloudViewer_3RDPARTY_DIR}/../.github/codeql/compiler-policy.cmake" ABSOLUTE)
     set(ExternalProject_CODEQL_CMAKE_ARGS

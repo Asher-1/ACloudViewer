@@ -327,7 +327,16 @@ def _find_cloud_id(result) -> int | None:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestLevel1_CodeQL:
-    """验证扫描策略、真实子构建命令和失败传播，不依赖完整应用构建。"""
+    """Verify scan policy, real sub-build commands and failure propagation without a full app build."""
+
+    @pytest.mark.parametrize("source", [
+        ".github/codeql/compiler-policy.cmake", ".github/workflows/codeql.yml",
+        ".github/workflows/agent-integration.yml", "3rdparty/find_dependencies.cmake",
+        "3rdparty/PoissonRecon/PoissonRecon.cmake", "agent-integration/tests/test_integration.py"])
+    def test_level1_codeql_engineering_text_is_english(self, source):
+        text = _read_repo_text(REPO_ROOT / source)
+        assert re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U000323af]", text) is None, (
+            f"Engineering comments and diagnostic text must be English: {source}")
 
     def test_level1_codeql_workflow_contract(self):
         source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
@@ -368,7 +377,7 @@ class TestLevel1_CodeQL:
                      "3rdparty/find_dependencies.cmake", "3rdparty/PoissonRecon/**"):
             assert agent.count(f"- '{path}'") == 2
 
-    @pytest.mark.skipif(platform.system() != "Linux", reason="工作流使用 Linux time 和 Bash")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The workflow uses Linux time and Bash")
     @pytest.mark.parametrize("optimization,build_status,actual", [
         ("O1", 0, "O1"), ("O3", 0, "O3"), ("O1", 3, "O1"),
         ("O1", 0, "O3"), ("O1", 0, None)])
@@ -399,13 +408,13 @@ class TestLevel1_CodeQL:
         if success:
             assert (tmp_path / "codeql-evidence/compiler-policy.json").exists()
 
-    @pytest.mark.skipif(platform.system() != "Linux", reason="资源采样读取 Linux procfs")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="Resource sampling reads Linux procfs")
     def test_level1_codeql_resource_sampling(self, tmp_path):
         source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
         sampler = source.split("      - name: Sample C++ analysis resources\n", 1)[1]
         sampler = sampler.split("      - name:", 1)[0].split("        run: |\n", 1)[1]
         script = "\n".join(line[10:] for line in sampler.splitlines())
-        # 替换等待而不是 procfs 数据，真实采样一次后以工作流相同的标记退出。
+        # Replace the wait, not procfs data; take a real sample and exit using the workflow's stop marker.
         tools = tmp_path / "tools"
         tools.mkdir()
         sleep = tools / "sleep"
@@ -420,7 +429,7 @@ class TestLevel1_CodeQL:
         assert "MemAvailable:" in log and "pgmajfault " in log and "cpu " in log
         assert "cmdline" not in script and "/environ" not in script
 
-    @pytest.mark.skipif(platform.system() != "Linux", reason="工作流汇总使用 Bash")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The workflow summarizer uses Bash")
     @pytest.mark.parametrize("evaluator,cli_status", [(False, 0), (True, 0), (True, 2)])
     def test_level1_codeql_evaluator_summary(self, tmp_path, evaluator, cli_status):
         source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
@@ -449,7 +458,7 @@ class TestLevel1_CodeQL:
         if evaluator:
             assert (evidence / "evaluator.jsonl").read_text() == "fixture\n"
 
-    @pytest.mark.skipif(platform.system() != "Linux", reason="扫描策略只支持 Linux")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The scan policy supports Linux only")
     @pytest.mark.parametrize("optimization,build_type", [
         (None, "Release"), ("O1", "Release"), ("O3", "Release"), ("O1", "")])
     def test_level1_codeql_subproject_commands(self, tmp_path, optimization, build_type):
@@ -543,17 +552,17 @@ ExternalProject_Add(ext_child
         assert ("CMAKE_PROJECT_INCLUDE" in command) == bool(optimization)
         assert ("CLOUDVIEWER_CODEQL_OPTIMIZATION" in command) == bool(optimization)
         if optimization:
-            # 同一生成树再次配置，不能重复追加目标选项。
+            # Reconfiguring the same build tree must not duplicate target options.
             before = (binary / "compile_commands.json").read_bytes()
             subprocess.run(args, capture_output=True, text=True, timeout=60, check=True)
             assert (binary / "compile_commands.json").read_bytes() == before
-            # 真实编译失败必须传给调用方，不能留下虚假的成功基线。
+            # Real compilation failures must propagate instead of leaving a false successful baseline.
             (source / "cpp.cpp").write_text("#error forced failure\n", encoding="utf-8")
             failed = subprocess.run([cmake, "--build", str(binary), "--parallel", "2"],
                                     capture_output=True, text=True, timeout=60)
             assert failed.returncode != 0 and "forced failure" in failed.stderr
 
-    @pytest.mark.skipif(platform.system() != "Linux", reason="扫描策略只支持 Linux")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The scan policy supports Linux only")
     @pytest.mark.parametrize("optimization,build_type", [("O2", "Release"), ("O1", "Debug")])
     def test_level1_codeql_invalid_policy_rejected(self, tmp_path, optimization, build_type):
         cmake = shutil.which("cmake")
