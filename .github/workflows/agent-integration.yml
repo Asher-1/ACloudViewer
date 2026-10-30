@@ -13,6 +13,8 @@ on:
       - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
       - '.github/actions/checkout-agent-harness/**'
+      - '.github/actions/setup-cmake/**'
+      - '.github/workflows/macos.yml'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
@@ -24,6 +26,8 @@ on:
       - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
       - '.github/actions/checkout-agent-harness/**'
+      - '.github/actions/setup-cmake/**'
+      - '.github/workflows/macos.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

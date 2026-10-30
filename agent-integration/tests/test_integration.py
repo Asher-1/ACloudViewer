@@ -370,6 +370,90 @@ class TestLevel1_CppPlugin:
         assert "$env:GITHUB_ENV" in setup
         assert '[[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]' in source
         assert 'export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"' in source
+        workflow = _read_repo_text(REPO_ROOT / ".github/workflows/agent-integration.yml")
+        assert workflow.count("- '.github/actions/setup-cmake/**'") == 2
+        assert workflow.count("- '.github/workflows/macos.yml'") == 2
+
+    def test_level1_ci_cmake_regression_cannot_skip_in_ci(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("CI", "true")
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        with pytest.raises(pytest.fail.Exception, match="CI must execute"):
+            self.test_level1_ci_cmake_path_is_single_executable(tmp_path, "3.31.8", 0)
+
+    @pytest.mark.parametrize("version,exit_code", [
+        ("3.31.8", 0), ("3.31.7", 0), ("3.31.8", 7)])
+    def test_level1_ci_cmake_path_is_single_executable(self, tmp_path, version, exit_code):
+        pwsh = shutil.which("pwsh")
+        if pwsh is None:
+            if os.environ.get("CI") == "true":
+                pytest.fail("CI must execute the PowerShell action regression")
+            pytest.skip("PowerShell is unavailable locally")
+        setup = _read_repo_text(REPO_ROOT / ".github/actions/setup-cmake/action.yml")
+        # Execute the action itself, not a reimplementation of its resolution.
+        script = "\n".join(line[8:] for line in setup.split("      run: |\n", 1)[1].splitlines())
+        paths = [tmp_path / "preferred tools", tmp_path / "shadow tools"]
+        executables = []
+        for directory, candidate_version, candidate_exit in (
+                (paths[0], version, exit_code), (paths[1], "3.31.8", 0)):
+            directory.mkdir()
+            executable = directory / ("cmake.cmd" if IS_WINDOWS else "cmake")
+            if IS_WINDOWS:
+                text = (f"@echo off\necho cmake version {candidate_version}\n"
+                        f"exit /b {candidate_exit}\n")
+            else:
+                text = (f"#!/bin/sh\nprintf 'cmake version {candidate_version}\\n'\n"
+                        f"exit {candidate_exit}\n")
+            executable.write_text(text, encoding="utf-8")
+            executable.chmod(0o755)
+            executables.append(executable)
+        github_env = tmp_path / "github env"
+        env = dict(os.environ, GITHUB_ENV=str(github_env))
+        env["PATH"] = os.pathsep.join([str(path) for path in paths] + [env["PATH"]])
+        result = subprocess.run(
+            [pwsh, "-NoLogo", "-NoProfile", "-NonInteractive",
+             "-Command", script], env=env, capture_output=True, text=True, timeout=30)
+        recorded = github_env.read_text(encoding="utf-8-sig") if github_env.exists() else ""
+        if version == "3.31.8" and exit_code == 0:
+            assert result.returncode == 0, result.stdout + result.stderr
+            assert recorded.splitlines() == [f"CLOUDVIEWER_CMAKE_BIN={executables[0]}"]
+        else:
+            # A valid shadow must not hide a bad selected executable.
+            assert result.returncode != 0, result.stdout + result.stderr
+            assert "CLOUDVIEWER_CMAKE_BIN=" not in recorded
+
+    @pytest.mark.skipif(IS_WINDOWS, reason="Requires a Unix login shell")
+    @pytest.mark.parametrize("job,step_name", [
+        ("MacOS", "Config and build APP"),
+        ("build-wheel", "Config and build Wheel"),
+        ("build-wheel", "Install dependencies")])
+    def test_level1_ci_macos_failure_propagates(self, tmp_path, job, step_name):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/macos.yml")
+        job_source = source.split(f"  {job}:\n", 1)[1]
+        step = job_source.split(f"      - name: {step_name}\n", 1)[1]
+        step = step.split("      - name:", 1)[0]
+        assert "shell: bash -l {0}" in step
+        script = step.split("        run: |\n", 1)[1]
+        script = "\n".join(line[10:] for line in script.splitlines())
+        script = re.sub(r"\$\{\{.*?\}\}", "ci-placeholder", script)
+        script = script.replace("/tmp/macos-", str(tmp_path / "macos-"))
+        # Keep the workflow's shell/options; stub only expensive external work.
+        stubs = ("source() { :; }\nccache() { echo cache-stats; }\n"
+                 "python() { :; }\npip() { :; }\ncmake() { :; }\n"
+                 "brew() { :; }\n"
+                 "build_gui_app() { return 23; }\n"
+                 "build_mac_wheel() { return 23; }\n"
+                 "install_python_dependencies() { return 23; }\n")
+        step_file = tmp_path / "step.sh"
+        step_file.write_text(stubs + script, encoding="utf-8")
+        env = dict(os.environ, CONDA_PREFIX=str(tmp_path), PKG_CONFIG_PATH="",
+                   GITHUB_ENV=str(tmp_path / "github-env"))
+        result = subprocess.run(["bash", "-l", str(step_file)], cwd=tmp_path,
+                                env=env, capture_output=True, text=True, timeout=30)
+        assert result.returncode == 23, result.stdout + result.stderr
+        recorded = Path(env["GITHUB_ENV"]).read_text() if Path(env["GITHUB_ENV"]).exists() else ""
+        assert "DEVEL_PKG_NAME=" not in recorded and "PIP_PKG_NAME=" not in recorded
+        if step_name.startswith("Config and build"):
+            assert "cache-stats" in result.stdout  # EXIT stats survive failure.
 
     @pytest.mark.parametrize("drift", ["extra", "missing"])
     def test_level1_registry_drift_is_rejected(self, drift):
