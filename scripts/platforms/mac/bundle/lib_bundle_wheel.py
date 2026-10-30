@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import filecmp
 import json
 import logging
 import os
+import re
 import shutil
+import struct
 import subprocess
 import sys
+import sysconfig
+import zipfile
 from pathlib import Path
 
 import multiprocessing
@@ -23,6 +28,159 @@ logger = logging.getLogger(__name__)
 
 # Be sure to use system codesign and not one embedded into the conda env
 CODESIGN_FULL_PATH = "/usr/bin/codesign"
+
+# Mach-O constants (mach-o/loader.h, mach-o/fat.h).
+_MH_MAGIC_LE = b"\xce\xfa\xed\xfe"
+_MH_MAGIC_64_LE = b"\xcf\xfa\xed\xfe"
+_FAT_MAGIC = 0xCAFEBABE
+_FAT_MAGIC_64 = 0xCAFEBABF
+_LC_VERSION_MIN_MACOSX = 0x24
+_LC_BUILD_VERSION = 0x32
+_PLATFORM_MACOS = 1
+
+
+def select_embedded_libraries(candidates, preferred: dict[str, Path]) -> dict[str, Path]:
+    """Map each lib/ destination name to exactly one source file.
+
+    Different rpaths can resolve the same @rpath name to different files:
+    conda's libomp.dylib for our own libraries and torch/lib/libomp.dylib
+    for the bundled libtorch_cpu.dylib. Copying both into lib/ let the set
+    iteration order (the per-process string hash seed) pick the survivor,
+    so the shipped libomp and the wheel platform tag (bdist_wheel raises it
+    to the highest Mach-O minimum macOS version: torch's copy requires
+    14.0) changed between builds. Byte-identical copies are interchangeable;
+    a name with a build-linked file in `preferred` takes that file; any
+    other conflict fails the packaging instead of overwriting silently.
+
+    Args:
+    ----
+        candidates: source files that would be copied into lib/.
+        preferred: destination name -> the file the build linked.
+
+    Returns:
+    -------
+        dict[str, Path]: destination name -> selected source file.
+
+    """
+    by_name: dict[str, set[Path]] = {}
+    for lib in candidates:
+        by_name.setdefault(lib.name, set()).add(lib)
+    selected = {}
+    for name, paths in sorted(by_name.items()):
+        # Sorted so that the choice never depends on set iteration order.
+        ordered = sorted(paths)
+        if all(filecmp.cmp(ordered[0], other, shallow=False) for other in ordered[1:]):
+            selected[name] = ordered[0]
+            continue
+        linked = preferred.get(name)
+        matches = [p for p in ordered if linked is not None and os.path.samefile(p, linked)]
+        if not matches:
+            raise RuntimeError(
+                f"CCWheelBundler: {len(ordered)} different files resolve to "
+                f"lib/{name}: {[str(p) for p in ordered]}; only one can be "
+                f"embedded and none is the build-linked library "
+                f"({linked}). Make the consumers resolve the same file.")
+        selected[name] = matches[0]
+        logger.warning("lib/%s: embedding build-linked %s instead of %s", name, matches[0],
+                       [str(p) for p in ordered if p != matches[0]])
+    return selected
+
+
+def _decode_macho_version(value: int) -> tuple[int, int, int]:
+    """Decode the xxxx.yy.zz nibble encoding of Mach-O versions."""
+    return value >> 16, (value >> 8) & 0xFF, value & 0xFF
+
+
+def _thin_min_macos_versions(stream, head: bytes) -> list[tuple[int, int, int]]:
+    """Minimum macOS versions of the thin Mach-O whose first 8 bytes are head."""
+    if head[:4] not in (_MH_MAGIC_LE, _MH_MAGIC_64_LE):
+        return []
+    header_size = 32 if head[:4] == _MH_MAGIC_64_LE else 28
+    header = head + stream.read(header_size - len(head))
+    if len(header) < header_size:
+        return []
+    ncmds, sizeofcmds = struct.unpack_from("<II", header, 16)
+    cmds = stream.read(sizeofcmds)
+    versions = []
+    offset = 0
+    for _ in range(ncmds):
+        if offset + 8 > len(cmds):
+            break
+        cmd, size = struct.unpack_from("<II", cmds, offset)
+        if cmd == _LC_BUILD_VERSION and offset + 16 <= len(cmds):
+            platform, minos = struct.unpack_from("<II", cmds, offset + 8)
+            if platform == _PLATFORM_MACOS:
+                versions.append(_decode_macho_version(minos))
+        elif cmd == _LC_VERSION_MIN_MACOSX and offset + 12 <= len(cmds):
+            versions.append(_decode_macho_version(struct.unpack_from("<I", cmds, offset + 8)[0]))
+        if size < 8:
+            break
+        offset += size
+    return versions
+
+
+def macho_min_macos_versions(stream) -> list[tuple[int, int, int]]:
+    """Minimum macOS version of every Mach-O slice in a seekable stream.
+
+    Empty for non-Mach-O content and for slices that declare none. Only the
+    headers and load commands are read (a few KB per slice), so multi-
+    hundred-MB wheel members are never loaded into memory.
+    """
+    head = stream.read(8)
+    if len(head) < 8:
+        return []
+    magic, nfat = struct.unpack(">II", head)
+    if magic not in (_FAT_MAGIC, _FAT_MAGIC_64):
+        return _thin_min_macos_versions(stream, head)
+    # Java class files share 0xCAFEBABE; their "slice count" is the class
+    # file version (>= 45), far above any real number of architectures.
+    if not 0 < nfat <= 20:
+        return []
+    entry, offset_format = (20, ">I") if magic == _FAT_MAGIC else (32, ">Q")
+    table = stream.read(nfat * entry)
+    if len(table) < nfat * entry:
+        return []
+    versions = []
+    # Ascending offsets: a compressed zip member seeks backward by re-reading.
+    for offset in sorted(struct.unpack_from(offset_format, table, i * entry + 8)[0] for i in range(nfat)):
+        stream.seek(offset)
+        versions += _thin_min_macos_versions(stream, stream.read(8))
+    return versions
+
+
+def check_wheel(wheel: Path, deployment_target: str) -> list[str]:
+    """Return the violations of the macOS deployment-target contract.
+
+    bdist_wheel silently raises the platform tag to the highest Mach-O
+    minimum version it finds, and the CI test runner uses the newest macOS,
+    so a wheel that cannot install on the declared target only shows up as
+    a warning. Fail on both the cause (a Mach-O above the target) and the
+    effect (a tag other than the target's).
+    """
+    major, minor = (int(part) for part in (deployment_target.split(".") + ["0"])[:2])
+    target = (major, minor, 0)
+    # The wheel tag drops the minor version from macOS 11 on.
+    expected = f"macosx_{major}_{minor if major == 10 else 0}"
+    errors = []
+    platform_tag = wheel.name[:-len(".whl")].split("-")[-1]
+    if not re.fullmatch(rf"{expected}_(arm64|x86_64|universal2)", platform_tag):
+        errors.append(f"wheel platform tag {platform_tag} is not {expected}_<arch> "
+                      f"(MACOSX_DEPLOYMENT_TARGET={deployment_target})")
+    with zipfile.ZipFile(wheel) as archive:
+        for info in archive.infolist():
+            if info.is_dir():
+                continue
+            with archive.open(info) as member:
+                for version in macho_min_macos_versions(member):
+                    if version > target:
+                        errors.append(f"{info.filename} requires macOS "
+                                      f"{'.'.join(map(str, version))} > {deployment_target}")
+    return errors
+
+
+def _default_deployment_target() -> str:
+    """The base macOS version bdist_wheel starts from (same precedence)."""
+    return os.environ.get("MACOSX_DEPLOYMENT_TARGET") or sysconfig.get_platform().split("-")[1]
 
 
 class CCWheelBundleConfig:
@@ -48,6 +206,7 @@ class CCWheelBundleConfig:
             extra_pathlib: Path,
             signature: str,
             output_dependencies: bool,
+            preferred_libs: dict[str, Path] | None = None,
     ) -> None:
         """Construct a configuration.
 
@@ -57,9 +216,12 @@ class CCWheelBundleConfig:
             extra_pathlib (str): A Path where additional libs can be found.
             output_dependencies (bool): boolean that control the level of debug. If true some extra
             files will be created (macos_bundle_warnings.json macos_bundle_dependencies.json).
+            preferred_libs (dict[str, Path]): lib/ name -> build-linked file that wins a
+            same-name conflict (see select_embedded_libraries).
 
         """
         self.signature = signature
+        self.preferred_libs = preferred_libs or {}
         self.install_path = install_path
         self.extra_pathlib = extra_pathlib
         self.output_dependencies = output_dependencies
@@ -496,7 +658,7 @@ class CCWheelBundler:
 
         libs_in_frameworks = set(self.config.lib_path.iterdir())
 
-        nb_libs_added = 0
+        libs_to_copy = []
         for lib in libs_found:
             if lib in self.config.cpu_bin_list or lib in self.config.cuda_bin_list:
                 continue
@@ -505,9 +667,11 @@ class CCWheelBundler:
                 continue
             base = self.config.lib_path / lib.name
             if base not in libs_in_frameworks and (lib not in libs_in_plugins):
-                shutil.copy2(lib, self.config.lib_path)
-                nb_libs_added += 1
-        logger.info("number of libs added to lib: %i", nb_libs_added)
+                libs_to_copy.append(lib)
+        selected = select_embedded_libraries(libs_to_copy, self.config.preferred_libs)
+        for lib in selected.values():
+            shutil.copy2(lib, self.config.lib_path)
+        logger.info("number of libs added to lib: %i", len(selected))
 
         logger.info(" --- Qt PlugIns libs: add rpath to lib, number of qt libs: %i", len(libs_in_plugins))
         for file in libs_in_plugins:
@@ -584,6 +748,18 @@ if __name__ == "__main__":
         "install_path",
         help="Path where the cloudViewer python package is installed (CMake install dir)",
         type=Path,
+        nargs="?",
+    )
+    parser.add_argument(
+        "--openmp_library",
+        help="libomp the build linked; embedded when other same-named copies are reachable",
+        type=Path,
+    )
+    parser.add_argument(
+        "--check_wheel",
+        help="Only verify a built wheel (or the newest wheel in a directory) against "
+        "MACOSX_DEPLOYMENT_TARGET and exit",
+        type=Path,
     )
     parser.add_argument(
         "--extra_pathlib",
@@ -603,6 +779,25 @@ if __name__ == "__main__":
     )
 
     arguments = parser.parse_args()
+
+    if arguments.check_wheel is not None:
+        wheel = arguments.check_wheel
+        if wheel.is_dir():
+            wheels = sorted(wheel.glob("*.whl"), key=lambda p: p.stat().st_mtime)
+            if not wheels:
+                logger.error("no wheel found in %s", wheel)
+                sys.exit(1)
+            wheel = wheels[-1]
+        deployment_target = _default_deployment_target()
+        violations = check_wheel(wheel, deployment_target)
+        for violation in violations:
+            logger.error("%s: %s", wheel.name, violation)
+        if violations:
+            sys.exit(1)
+        logger.info("%s satisfies macOS %s", wheel.name, deployment_target)
+        sys.exit(0)
+    if arguments.install_path is None:
+        parser.error("install_path is required unless --check_wheel is given")
 
     signature = os.environ.get("ACLOUDVIEWER_BUNDLE_SIGN")
     if signature is None:
@@ -626,11 +821,16 @@ if __name__ == "__main__":
             )
             sys.exit(1)
 
+    preferred_libs = {}
+    if arguments.openmp_library is not None:
+        preferred_libs[arguments.openmp_library.name] = arguments.openmp_library
+
     config = CCWheelBundleConfig(
         arguments.install_path,
         extra_pathlib,
         signature,
         arguments.output_dependencies,
+        preferred_libs,
     )
 
     bundler = CCWheelBundler(config)

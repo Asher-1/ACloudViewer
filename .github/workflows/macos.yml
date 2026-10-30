@@ -120,6 +120,11 @@ jobs:
 
           # Disk cache only, not resident RAM; leave room for the complete working set.
           ccache -M 10G
+          # A stash restored on a different macos-15 image version must still
+          # hit: key on compiler bytes instead of the image-local compiler
+          # mtime, and ignore LANG/LC_* (they only localize diagnostics).
+          ccache --set-config=compiler_check=content
+          ccache --set-config=sloppiness=locale
 
       - name: Config and build APP
         id: build
@@ -138,6 +143,7 @@ jobs:
           trap 'ccache -s' EXIT
           echo "Start to build GUI package On MacOS..."
           source util/ci_utils.sh
+          print_ccache_key_inputs
           # Tee the full build log to a file so it can be uploaded as an
           # artifact below (GitHub truncates very long step logs in the UI).
           build_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log
@@ -408,10 +414,17 @@ jobs:
           brew install ccache
           # Disk cache only, not resident RAM; leave room for the complete working set.
           ccache -M 10G
+          # Same cross-image cache key policy as the App job.
+          ccache --set-config=compiler_check=content
+          ccache --set-config=sloppiness=locale
 
       - name: Check Filament source patch
         shell: bash -l {0}
         run: python 3rdparty/filament/test_filament_patch.py
+
+      - name: Check wheel bundler
+        shell: bash -l {0}
+        run: python scripts/platforms/mac/bundle/test_lib_bundle_wheel.py
 
       - name: Config and build Wheel
         id: build
@@ -428,6 +441,7 @@ jobs:
           trap 'ccache -s' EXIT
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
+          print_ccache_key_inputs
           # Tee the full build log to a file so it can be uploaded as an
           # artifact below (GitHub truncates very long step logs in the UI).
           build_mac_wheel with_conda build_realsense 2>&1 | tee /tmp/macos-wheel-build.log
