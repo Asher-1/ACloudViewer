@@ -13,3 +13,6 @@ runs:
         if ($cmakeVersion -ne '3.31.8') {
           throw "Expected CMake 3.31.8, got $cmakeVersion"
         }
+        # Login shells can replace GITHUB_PATH; retain the verified executable.
+        $cmakeBin = (Get-Command cmake -CommandType Application).Source
+        "CLOUDVIEWER_CMAKE_BIN=$cmakeBin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

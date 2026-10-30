@@ -12,6 +12,7 @@ on:
       - '.agents/mcp.json'
       - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
+      - '.github/actions/checkout-agent-harness/**'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
@@ -22,6 +23,7 @@ on:
       - '.agents/mcp.json'
       - '.agents/skills/acloudviewer-aicore-plugin/**'
       - '.github/workflows/agent-integration.yml'
+      - '.github/actions/checkout-agent-harness/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -56,12 +58,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout CLI-Anything (agent harness)
-        uses: actions/checkout@v4
-        with:
-          repository: Asher-1/CLI-Anything
-          path: _cli-anything
-          sparse-checkout: |
-            acloudviewer/agent-harness
+        uses: ./.github/actions/checkout-agent-harness
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -77,7 +74,7 @@ jobs:
       - name: Verify CLI entry point
         run: |
           cli-anything-acloudviewer --help
-          cli-anything-acloudviewer-mcp --help || true
+          cli-anything-acloudviewer-mcp --help
 
       - name: Level 1 — C++ plugin source verification
         run: |

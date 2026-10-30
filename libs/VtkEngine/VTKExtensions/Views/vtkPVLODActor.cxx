@@ -15,6 +15,7 @@
 #include "vtkTexture.h"
 #include "vtkTimerLog.h"
 #include "vtkTransform.h"
+#include "vtkVersion.h"
 
 #include <algorithm>
 #include <cmath>
@@ -218,7 +219,12 @@ double* vtkPVLODActor::GetBounds()
   // bounds need to be recomputed in this case as well.
   // NOLINTNEXTLINE(bugprone-suspicious-memory-comparison)
   if ((memcmp(this->MapperBounds, bounds, 6 * sizeof(double)) != 0) ||
-    (this->GetMTime() > this->BoundsMTime) || (this->CoordinateSystem != vtkProp3D::WORLD))
+    (this->GetMTime() > this->BoundsMTime)
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 0)
+    // VTK 9.1 supports only world coordinates; keep its bounds cache behavior.
+    || (this->CoordinateSystem != vtkProp3D::WORLD)
+#endif
+    )
   {
     vtkDebugMacro(<< "Recomputing bounds...");
 

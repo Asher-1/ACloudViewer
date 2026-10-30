@@ -680,12 +680,7 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Checkout CLI-Anything (agent harness)
-        uses: actions/checkout@v4
-        with:
-          repository: Asher-1/CLI-Anything
-          path: _cli-anything
-          sparse-checkout: |
-            acloudviewer/agent-harness
+        uses: ./.github/actions/checkout-agent-harness
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4

@@ -46,6 +46,7 @@ jobs:
       BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
@@ -59,23 +60,26 @@ jobs:
           echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
       - name: Checkout source code
         uses: actions/checkout@v4
-      - name: Restore compiler cache from release assets
-        # Cross-run ccache pool stored as a release asset on the public
-        # cloudViewer_downloads repo (free, no total quota, 2 GB per-asset
-        # limit, persistent name overwritten in place with --clobber). The
-        # GitHub 10 GB actions cache cannot hold every cell's pool on a main
-        # push (~14 GB per cycle), which LRU-evicted freshly saved pools and
-        # turned runs cold. Downloads are plain HTTPS from the public repo
-        # (fork PRs work); uploads use the repo's ACCESS_TOKEN. Cache never
-        # gates CI: every failure path degrades to a cold build.
+      - name: Restore compiler cache (stash)
+        # AppleClang 15 -> 17 invalidated the old seed. The full 1.5 GB pool also
+        # churned: run 40901140533 added 12,732 calls, 526 hits and 526 cleanups.
+        # Retain the new toolchain's working set in the artifact-backed backend.
+        id: ccache-restore
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: ccache-macos-${{ runner.arch }}-app
+          path: ${{ env.CCACHE_DIR }}
+      - name: Seed compiler cache from legacy release asset
+        if: steps.ccache-restore.outputs.stash-hit != 'true'
         continue-on-error: true
         run: |
           ASSET="ccache-macos-app.tar.gz"
-          mkdir -p "$HOME/.ccache"
+          mkdir -p "$CCACHE_DIR"
           curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
             "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
-            && tar -xzf /tmp/ccache-restore.tar.gz -C "$HOME/.ccache" \
-            || echo "[cache] no remote pool yet (first run)"
+            && tar -xzf /tmp/ccache-restore.tar.gz -C "$CCACHE_DIR" \
+            || echo "[cache] no legacy pool; using a cold build"
           rm -f /tmp/ccache-restore.tar.gz
 
       - name: Set up Python version
@@ -114,57 +118,46 @@ jobs:
           rm ~/QtIFW-4.6.1-darwin-ARM64-static.zip
           ls -hal ~/QtIFW-4.6.1-darwin-ARM64-static/bin
 
-          ccache -M 1500M  # See .github/workflows/readme.md for ccache strategy.
+          # Disk cache only, not resident RAM; leave room for the complete working set.
+          ccache -M 10G
 
       - name: Config and build APP
+        id: build
         shell: bash -l {0}
         run: |
           set -o pipefail
           export PATH="${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$PATH"
-          export PATH="$(brew --prefix ccache)/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
           echo "INSTALL_DIR is ${{ env.INSTALL_DIR }}"
 
+          ccache -z
           ccache -s
+          trap 'ccache -s' EXIT
           echo "Start to build GUI package On MacOS..."
           source util/ci_utils.sh
           # Tee the full build log to a file so it can be uploaded as an
           # artifact below (GitHub truncates very long step logs in the UI).
           build_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log
-          ccache -s
 
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Save compiler cache to release assets
-        # Overwrite the persistent asset in place (--clobber). Runs
-        # regardless of the build outcome; the pool tarball stays well under
-        # the 2 GB asset limit (CCACHE_MAXSIZE caps at 1.5 G).
-        if: always()
+      - name: Save compiler cache (stash)
+        # Preserve restored entries even after a failed build; no partial-run pruning.
+        if: ${{ always() && !cancelled() && contains(fromJSON('["success","failure"]'), steps.build.outcome) }}
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          if [ -d "$HOME/.ccache" ]; then
-            ASSET="ccache-macos-app.tar.gz"
-            tar -C "$HOME/.ccache" -czf "/tmp/${ASSET}" .
-            # Cancelled/aborted runs clobber the pool with near-empty tarballs;
-            # a real pool is >=500 MB. Branch policy and cleanup rationale:
-            # see ubuntu.yml's save step.
-            SIZE=$(wc -c < "/tmp/${ASSET}" 2>/dev/null | tr -d " " || echo 0)
-            if [ "${SIZE}" -lt 52428800 ]; then
-              echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
-            else
-              gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-                || gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-                || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
-            fi
-            rm -f "/tmp/${ASSET}"
-          fi
+        uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: ccache-macos-${{ runner.arch }}-app
+          path: ${{ env.CCACHE_DIR }}
+          retention-days: 14
+          compression-level: 0
+          include-hidden-files: true
+          if-no-files-found: ignore
 
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in
@@ -221,12 +214,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout CLI-Anything (agent harness)
-        uses: actions/checkout@v4
-        with:
-          repository: Asher-1/CLI-Anything
-          path: _cli-anything
-          sparse-checkout: |
-            acloudviewer/agent-harness
+        uses: ./.github/actions/checkout-agent-harness
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -338,6 +326,7 @@ jobs:
 
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
       # Keep PyTorch builds and tests enabled on the macOS 15 Apple Silicon runner.
       BUILD_PYTORCH_OPS: ON
       # Keep TensorFlow disabled; the runner migration does not change ML coverage.
@@ -362,18 +351,23 @@ jobs:
           ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
-      - name: Restore compiler cache from release assets
-        # Cross-run ccache pool stored as a release asset on the public
-        # cloudViewer_downloads repo (same pattern as the MacOS app job;
-        # per-python asset names). Cache never gates CI.
+      - name: Restore compiler cache (stash)
+        id: ccache-restore
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: ccache-macos-${{ runner.arch }}-wheel-py${{ matrix.python_version }}
+          path: ${{ env.CCACHE_DIR }}
+      - name: Seed compiler cache from legacy release asset
+        if: steps.ccache-restore.outputs.stash-hit != 'true'
         continue-on-error: true
         run: |
           ASSET="ccache-macos-wheel-py${{ matrix.python_version }}.tar.gz"
-          mkdir -p "$HOME/.ccache"
+          mkdir -p "$CCACHE_DIR"
           curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
             "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
-            && tar -xzf /tmp/ccache-restore.tar.gz -C "$HOME/.ccache" \
-            || echo "[cache] no remote pool yet for wheel py${{ matrix.python_version }} (first run)"
+            && tar -xzf /tmp/ccache-restore.tar.gz -C "$CCACHE_DIR" \
+            || echo "[cache] no legacy wheel pool; using a cold build"
           rm -f /tmp/ccache-restore.tar.gz
 
       - name: Set up Python version
@@ -411,57 +405,46 @@ jobs:
           fi
 
           brew install ccache
-          ccache -M 1500M  # See .github/workflows/readme.md for ccache strategy.
+          # Disk cache only, not resident RAM; leave room for the complete working set.
+          ccache -M 10G
 
       - name: Check Filament source patch
         shell: bash -l {0}
         run: python 3rdparty/filament/test_filament_patch.py
 
       - name: Config and build Wheel
+        id: build
         shell: bash -l {0}
         run: |
           set -o pipefail
-          export PATH="$(brew --prefix ccache)/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
 
+          ccache -z
           ccache -s
+          trap 'ccache -s' EXIT
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
           # Tee the full build log to a file so it can be uploaded as an
           # artifact below (GitHub truncates very long step logs in the UI).
           build_mac_wheel with_conda build_realsense 2>&1 | tee /tmp/macos-wheel-build.log
-          ccache -s
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Save compiler cache to release assets
-        # Overwrite the persistent asset in place (--clobber); see the MacOS
-        # app job for the storage rationale.
-        if: always()
+      - name: Save compiler cache (stash)
+        if: ${{ always() && !cancelled() && contains(fromJSON('["success","failure"]'), steps.build.outcome) }}
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          if [ -d "$HOME/.ccache" ]; then
-            ASSET="ccache-macos-wheel-py${{ matrix.python_version }}.tar.gz"
-            tar -C "$HOME/.ccache" -czf "/tmp/${ASSET}" .
-            # Cancelled/aborted runs clobber the pool with near-empty tarballs;
-            # a real pool is >=500 MB. Branch policy and cleanup rationale:
-            # see ubuntu.yml's save step.
-            SIZE=$(wc -c < "/tmp/${ASSET}" 2>/dev/null | tr -d " " || echo 0)
-            if [ "${SIZE}" -lt 52428800 ]; then
-              echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
-            else
-              gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-                || gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
-                || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
-            fi
-            rm -f "/tmp/${ASSET}"
-          fi
+        uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: ccache-macos-${{ runner.arch }}-wheel-py${{ matrix.python_version }}
+          path: ${{ env.CCACHE_DIR }}
+          retention-days: 14
+          compression-level: 0
+          include-hidden-files: true
+          if-no-files-found: ignore
 
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in

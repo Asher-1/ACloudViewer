@@ -26,6 +26,17 @@ else
     set -euo pipefail
 fi
 
+# Keep the verified CI executable ahead of login-shell/Homebrew PATH changes.
+# Local builds without setup-cmake retain their existing tool selection.
+if [[ -n "${CLOUDVIEWER_CMAKE_BIN:-}" ]]; then
+    if [[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]; then
+        echo "Fixed CMake executable is unavailable: $CLOUDVIEWER_CMAKE_BIN" >&2
+        return 1 2>/dev/null || exit 1
+    fi
+    export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"
+    hash -r
+fi
+
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
 UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS

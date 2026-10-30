@@ -27,3 +27,15 @@ add_test(NAME composite_block_registry
          COMMAND test_composite_block_registry)
 cloudviewer_set_bin_runtime_output_directory(test_composite_block_registry)
 cloudviewer_set_plugin_test_env(composite_block_registry)
+
+# Exercise old-VTK world bounds and the VTK 9.2+ non-world cache boundary.
+add_executable(test_lod_actor_bounds test_lod_actor_bounds.cpp)
+set_target_properties(test_lod_actor_bounds PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(NOT MSVC)
+    target_compile_options(test_lod_actor_bounds PRIVATE -fPIC)
+endif()
+target_include_directories(test_lod_actor_bounds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(test_lod_actor_bounds PRIVATE QVTK_ENGINE_LIB 3rdparty_vtk gtest_main)
+add_test(NAME lod_actor_bounds COMMAND test_lod_actor_bounds)
+cloudviewer_set_bin_runtime_output_directory(test_lod_actor_bounds)
+cloudviewer_set_plugin_test_env(lod_actor_bounds)

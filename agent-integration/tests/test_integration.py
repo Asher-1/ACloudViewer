@@ -86,6 +86,16 @@ AICORE_BATCH_COMMANDS = (
 )
 
 
+def _assert_aicore_registry(rows) -> None:
+    actual = {(row["name"], row["command"]) for row in rows}
+    expected = {(task, command) for task, command, _ in AICORE_BATCH_COMMANDS}
+    # Sort only diagnostics to keep cross-platform failure reports deterministic.
+    assert actual == expected, (
+        "CLI/native batch contract mismatch; use the paired harness revision in "
+        ".github/actions/checkout-agent-harness/action.yml. "
+        f"Missing: {sorted(expected - actual)}; unexpected: {sorted(actual - expected)}")
+
+
 def _read_repo_text(path: Path) -> str:
     """Read repository sources as UTF-8.
 
@@ -321,6 +331,58 @@ class TestLevel1_CppPlugin:
 
     def test_level1_plugin_cpp_exists(self):
         assert PLUGIN_CPP.exists()
+
+    def test_level1_ci_harness_revision_is_paired(self):
+        action = REPO_ROOT / ".github/actions/checkout-agent-harness/action.yml"
+        text = _read_repo_text(action)
+        assert re.search(r"^        ref: [0-9a-f]{40}$", text, re.MULTILINE)
+        consumers = {"agent-integration.yml", "ubuntu.yml", "ubuntu-cuda.yml",
+                     "macos.yml", "windows.yml"}
+        workflows = list((REPO_ROOT / ".github/workflows").glob("*.yml"))
+        assert consumers <= {workflow.name for workflow in workflows}
+        for workflow in workflows:
+            source = _read_repo_text(workflow)
+            assert "repository: Asher-1/CLI-Anything" not in source, workflow
+            if workflow.name in consumers:
+                assert source.count("uses: ./.github/actions/checkout-agent-harness") == 1
+
+    def test_level1_ci_macos_cache_wiring(self):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/macos.yml")
+        saves = re.findall(
+            r"^      - name: Save compiler cache \(stash\)\n(.*?)(?=^      - name:|\Z)",
+            source, re.MULTILINE | re.DOTALL)
+        assert len(saves) == 2
+        for save in saves:
+            # The cache directory is hidden; artifact uploads otherwise omit it.
+            assert "include-hidden-files: true" in save
+            assert "compression-level: 0" in save
+            assert "path: ${{ env.CCACHE_DIR }}" in save
+            assert "!cancelled()" in save
+        assert source.count("ccache -M 10G") == 2
+        assert source.count("ccache -z") == 2
+        assert source.count("trap 'ccache -s' EXIT") == 2
+
+    def test_level1_ci_cmake_pin_is_retained(self):
+        setup = _read_repo_text(REPO_ROOT / ".github/actions/setup-cmake/action.yml")
+        source = _read_repo_text(REPO_ROOT / "util/ci_utils.sh")
+        assert "Get-Command cmake -CommandType Application" in setup
+        assert "CLOUDVIEWER_CMAKE_BIN=$cmakeBin" in setup
+        assert "$env:GITHUB_ENV" in setup
+        assert '[[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]' in source
+        assert 'export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"' in source
+
+    @pytest.mark.parametrize("drift", ["extra", "missing"])
+    def test_level1_registry_drift_is_rejected(self, drift):
+        rows = [{"name": task, "command": command}
+                for task, command, _ in AICORE_BATCH_COMMANDS]
+        _assert_aicore_registry(rows)
+        if drift == "extra":
+            rows += [{"name": "llm", "command": "LLM_GENERATE"},
+                     {"name": "openpcdet", "command": "OPENPCDET_DETECT"}]
+        else:
+            rows.pop()
+        with pytest.raises(AssertionError, match="CLI/native batch contract mismatch"):
+            _assert_aicore_registry(rows)
 
     def test_level1_plugin_h_exists(self):
         assert PLUGIN_H.exists()
@@ -713,17 +775,19 @@ class TestLevel2_CLIHarness:
         assert "ai" in r.stdout
         assert "plugin" in r.stdout
 
+    def test_level2_mcp_entrypoint_help(self):
+        r = subprocess.run(["cli-anything-acloudviewer-mcp", "--help"],
+                           capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, r.stderr
+        assert "--mode" in r.stdout and "--rpc-url" in r.stdout
+
     def test_level2_aicore_registry_complete(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "ai", "list"],
             capture_output=True, text=True, timeout=10)
         assert r.returncode == 0, r.stderr
-        rows = json.loads(r.stdout)
-        actual = {(row["name"], row["command"]) for row in rows}
-        expected = {(task, command)
-                    for task, command, _ in AICORE_BATCH_COMMANDS}
-        assert actual == expected
+        _assert_aicore_registry(json.loads(r.stdout))
 
     @pytest.mark.parametrize("command", [
         ["ai", "--help"],
