@@ -33,6 +33,8 @@
 #include "OpenPCDetWorker.h"
 #include "ecvTestDataRepository.h"
 
+#include <ecvPluginDbNaming.h>
+
 namespace {
 
 bool SameEdge(const OpenPCDetHelpers::EdgePair& a,
@@ -983,4 +985,169 @@ TEST(OpenPCDetDualInput, DbExportAnnotatedCloudMetadataAndTint) {
         }
     }
     delete annotated;
+}
+
+/** Captures the worker's resultReady payload on the worker thread
+ *  (direct connection), mirroring the plugin's queued onResultReady. */
+class ResultCatcher : public QObject {
+    Q_OBJECT
+public:
+    OpenPCDetRunResult result;
+    bool got = false;
+public slots:
+    void onResult(const OpenPCDetRunResult& r) {
+        result = r;
+        got = true;
+    }
+};
+
+#include "test_openpcdet_dual_input.moc"
+
+TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
+    // Real cached assets (the layout the AICore model cache and the
+    // sample-data download populate). Skip — do not fail — when the
+    // machine has not populated them.
+    const QString extractRoot = ecvTestDataRepository::extractDir();
+    const QString model = extractRoot +
+                          QStringLiteral("/openpcdet_models/"
+                                         "kitti_pointpillar.f32.gguf");
+    const QString bin = extractRoot +
+                        QStringLiteral("/openpcdet_inputs/kitti_000008.bin");
+    if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
+        GTEST_SKIP() << "OpenPCDet assets not cached under "
+                     << extractRoot.toStdString();
+    }
+
+    // ---- DB-tree input: the ccPointCloud exactly as the sample-fill
+    // path hands it to the worker (points + intensity scalar field). ----
+    QFile binFile(bin);
+    ASSERT_TRUE(binFile.open(QIODevice::ReadOnly));
+    const QByteArray bytes = binFile.readAll();
+    binFile.close();
+    ASSERT_FALSE(bytes.isEmpty());
+
+    std::vector<float> fileBuffer;
+    int fileCount = 0;
+    QString error;
+    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &fileBuffer,
+                                                 &fileCount, &error))
+            << error.toStdString();
+    ASSERT_GT(fileCount, 0);
+
+    ccPointCloud cloud(QStringLiteral("kitti_000008"));
+    ASSERT_TRUE(cloud.reserve(static_cast<unsigned>(fileCount)));
+    for (int i = 0; i < fileCount; ++i) {
+        cloud.addPoint(CCVector3(fileBuffer[i * 4 + 0], fileBuffer[i * 4 + 1],
+                                 fileBuffer[i * 4 + 2]));
+    }
+    auto* intensity = new ccScalarField("intensity");
+    ASSERT_TRUE(intensity->reserveSafe(static_cast<unsigned>(fileCount)));
+    for (int i = 0; i < fileCount; ++i) {
+        intensity->addElement(fileBuffer[i * 4 + 3]);
+    }
+    intensity->computeMinAndMax();
+    ASSERT_GE(cloud.addScalarField(intensity), 0);
+
+    // ---- Run the real worker: once with the DB-tree cloud, once with
+    // the raw file, mirroring the two GUI input paths. ----
+    auto runWorker = [&](const OpenPCDetWorker::Settings& ws,
+                         ccPointCloud* src, OpenPCDetRunResult* out) {
+        OpenPCDetWorker worker(ws, src);
+        ResultCatcher catcher;
+        QObject::connect(&worker, &OpenPCDetWorker::resultReady, &catcher,
+                         &ResultCatcher::onResult, Qt::DirectConnection);
+        worker.start();
+        const bool finished = worker.wait(180000);
+        worker.releaseContextOnMainThread();
+        if (catcher.got) *out = catcher.result;
+        return finished && catcher.got;
+    };
+
+    OpenPCDetWorker::Settings cloudWs;
+    cloudWs.modelPath = model;
+    cloudWs.device = QStringLiteral("cpu");
+    cloudWs.threads = 4;
+    OpenPCDetWorker::Settings fileWs = cloudWs;
+    fileWs.pointsFile = bin;
+
+    OpenPCDetRunResult cloudResult;
+    OpenPCDetRunResult fileResult;
+    ASSERT_TRUE(runWorker(cloudWs, &cloud, &cloudResult))
+            << "worker run (DB-tree cloud input) produced no result";
+    ASSERT_TRUE(runWorker(fileWs, nullptr, &fileResult))
+            << "worker run (file input) produced no result";
+
+    // ---- Dual-path parity on REAL data through the REAL engine. ----
+    ASSERT_FALSE(cloudResult.detections.isEmpty())
+            << "kitti_pointpillar found no object in KITTI 000008";
+    ASSERT_EQ(fileResult.detections.size(), cloudResult.detections.size());
+    for (int i = 0; i < cloudResult.detections.size(); ++i) {
+        const OpenPCDetDetection& a = cloudResult.detections[i];
+        const OpenPCDetDetection& b = fileResult.detections[i];
+        EXPECT_EQ(a.label, b.label) << "box " << i;
+        EXPECT_EQ(a.className, b.className) << "box " << i;
+        EXPECT_FLOAT_EQ(a.x, b.x) << "box " << i;
+        EXPECT_FLOAT_EQ(a.y, b.y) << "box " << i;
+        EXPECT_FLOAT_EQ(a.z, b.z) << "box " << i;
+        EXPECT_FLOAT_EQ(a.dx, b.dx) << "box " << i;
+        EXPECT_FLOAT_EQ(a.dy, b.dy) << "box " << i;
+        EXPECT_FLOAT_EQ(a.dz, b.dz) << "box " << i;
+        EXPECT_FLOAT_EQ(a.heading, b.heading) << "box " << i;
+        EXPECT_FLOAT_EQ(a.score, b.score) << "box " << i;
+    }
+    EXPECT_EQ(cloudResult.numPoints, fileResult.numPoints);
+
+    // ---- Export flow exactly as onResultReady consumes it. ----
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(model);
+    ccHObject* group = BuildDetectionGroup(cloudResult, modelTag);
+    ASSERT_NE(group, nullptr);
+    EXPECT_TRUE(group->getMetaData(QStringLiteral("OpenPCDet")).toBool());
+    EXPECT_EQ(group->getMetaData(QStringLiteral("OpenPCDet/Model")),
+              QFileInfo(model).fileName());
+    EXPECT_EQ(group->getMetaData(QStringLiteral("OpenPCDet/Count")),
+              static_cast<qlonglong>(cloudResult.detections.size()));
+    EXPECT_GT(group->getMetaData(QStringLiteral("Runtime (ms)")).toDouble(),
+              0.0);
+    ASSERT_EQ(group->getChildrenNumber(),
+              static_cast<unsigned>(cloudResult.detections.size()));
+    const std::vector<int> wire = OpenPCDetHelpers::boxWireIndices();
+    for (int i = 0; i < cloudResult.detections.size(); ++i) {
+        const OpenPCDetDetection& d = cloudResult.detections[i];
+        auto* box = static_cast<ccPolyline*>(
+                group->getChild(static_cast<unsigned>(i)));
+        EXPECT_EQ(box->size(), wire.size()) << "box " << i;
+        EXPECT_EQ(box->getMetaData(QStringLiteral("OpenPCDet/Label")),
+                  static_cast<qlonglong>(d.label))
+                << "box " << i;
+        const double score =
+                box->getMetaData(QStringLiteral("OpenPCDet/Score"))
+                        .toDouble();
+        EXPECT_GT(score, 0.0) << "box " << i;
+        EXPECT_LE(score, 1.0) << "box " << i;
+        const OpenPCDetHelpers::OpenPCDetClassColor cls =
+                OpenPCDetHelpers::classColor(d.label, cloudResult.numClass);
+        const ecvColor::Rgb got = box->getColor();
+        EXPECT_EQ(got.r, cls.r) << "box " << i;
+        EXPECT_EQ(got.g, cls.g) << "box " << i;
+        EXPECT_EQ(got.b, cls.b) << "box " << i;
+    }
+
+    unsigned tinted = 0;
+    error.clear();
+    ccPointCloud* annotated = BuildAnnotatedCloud(&cloud, cloudResult,
+                                                  modelTag, &tinted, &error);
+    ASSERT_NE(annotated, nullptr) << error.toStdString();
+    EXPECT_EQ(annotated->size(), cloud.size());
+    EXPECT_GT(tinted, 0u)
+            << "real detections must tint at least one LiDAR point";
+    EXPECT_EQ(
+            annotated->getMetaData(QStringLiteral("OpenPCDet/TintedPoints")),
+            static_cast<qlonglong>(tinted));
+    EXPECT_TRUE(annotated->hasColors());
+    EXPECT_EQ(annotated->getMetaData(QStringLiteral("OpenPCDet/Model")),
+              QFileInfo(model).fileName())
+            << "annotated cloud must carry the model filename (the "
+               "runInference modelPath fix)";
+    delete annotated;
+    delete group;
 }
