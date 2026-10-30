@@ -14,7 +14,7 @@ diff --git a/src/ggml-cuda/conv2d-dw.cu b/src/ggml-cuda/conv2d-dw.cu
          }
      }
  
-+    // 先保留原卷积写出舍入，再单独加 bias，禁止与最后一次 FMA 合并。
++    // Preserve convolution write-out rounding before separate bias addition; never fuse bias into the final FMA.
 +    const Y rounded = ggml_cuda_cast<Y>(accumulator);
      output[Layout::output_index(batch_idx, channel_idx, out_y_idx, out_x_idx, params)] =
 -        ggml_cuda_cast<Y>(accumulator);

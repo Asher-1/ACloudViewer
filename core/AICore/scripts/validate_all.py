@@ -203,6 +203,24 @@ def select_scenarios(manifest: dict[str, Any], scenario_text: str) -> dict[str, 
     return narrowed
 
 
+def scenario_glob_excluded(path: Path, scenario: dict[str, Any]) -> bool:
+    """True when the scenario's model_glob_exclude rules reject this model.
+
+    Excludes exist for multi-modal models (BEVFusion, CaDDN) that share a
+    family glob with point-only models but need the dedicated scene scenario.
+    Patterns are catalog-relative (``openpcdet_models/kitti_caddn.*.gguf``)
+    while callers may hold absolute paths, so the bare file name matches too.
+    """
+    name = path.name
+    for pattern in scenario.get("model_glob_exclude") or []:
+        if fnmatch.fnmatchcase(str(path), pattern):
+            return True
+        base = pattern.rsplit("/", 1)[-1]
+        if base != pattern and fnmatch.fnmatchcase(name, base):
+            return True
+    return False
+
+
 def manifest_model_patterns(manifest: dict[str, Any],
                             selected: set[str], *, full: bool = True,
                             tiered: set[str] | None = None) -> set[str]:
@@ -400,8 +418,8 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         task: manifest_model_patterns(
             manifest, {task}, full=False, tiered=tiered)
         for task in tiered}
-    # 仅有明确 local_only 场景的 task 没有下载资产；空 task 或混合发布场景仍须有 catalog。
-    # 单次遍历保留 task 的发布责任，不因某个本地场景而豁免同 task 的已发布模型。
+    # Only tasks with exclusively explicit local_only scenarios need no downloads; empty or mixed published tasks still require a catalog.
+    # Keep task publication responsibility in one pass; one local scenario must not exempt its published models.
     tasks_with_scenarios: set[str] = set()
     published_tasks: set[str] = set()
     for scenario in manifest['scenarios']:
@@ -1150,14 +1168,19 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                 "owned_globs",
                 raw.get("covered_globs", [raw.get("model_glob", "")]))
             for pattern in filter(None, owned_patterns):
-                scenario_owned.update(existing_files(args.assets, pattern))
+                scenario_owned.update(
+                    path for path in existing_files(args.assets, pattern)
+                    if not scenario_glob_excluded(path, raw))
         owned[task].update(scenario_owned)
 
         model_patterns = light_globs if light_active else (
-            [raw["model_glob"]] if raw.get("model_glob") else [])
+            [raw["model_glob"]] if isinstance(raw.get("model_glob"), str)
+            else list(raw.get("model_glob") or []))
         models: list[Path] = []
         for pattern in model_patterns:
             models.extend(existing_files(args.assets, pattern))
+        models = [model for model in models
+                  if not scenario_glob_excluded(model, raw)]
         if model_filter and raw.get("for_each_model"):
             models = [model for model in models
                       if model_id_matches(model.name, model_filter)]
@@ -1181,7 +1204,9 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
             "covered_globs", [])
         if not raw.get("for_each_model"):
             for pattern in covered_source:
-                matches = existing_files(args.assets, pattern)
+                matches = [
+                    path for path in existing_files(args.assets, pattern)
+                    if not scenario_glob_excluded(path, raw)]
                 if not matches:
                     if raw.get("local_only"):
                         local_only_missing.append(pattern)
@@ -1310,14 +1335,14 @@ def flatten_json(value: Any, prefix: str = "",
             metrics.update(child_metrics)
             fingerprints.update(child_fingerprints)
     elif isinstance(value, bool):
-        # 仅显式精度契约消费布尔值；信息标志不能自动成为计时或性能指标。
+        # Only explicit accuracy contracts consume booleans; informational flags are not timing/performance metrics.
         if prefix.rsplit("/", 1)[-1].lower() in gate_metrics:
             metrics[prefix] = float(value)
     elif isinstance(value, (int, float)):
         leaf = prefix.rsplit("/", 1)[-1].lower()
         path_parts = [part.lower() for part in prefix.split("/")]
         is_timing = any(part.endswith(TIMING_SUFFIXES) for part in path_parts)
-        # 原始 measured 序列允许零；标量 timing 仍沿用原非零采样规则。
+        # Raw measured sequences may contain zero; scalar timing retains the original nonzero-sample rule.
         is_raw_sample = any(part.endswith("_samples_ms") for part in path_parts)
         if (is_raw_sample and float(value) >= 0.0) or (is_timing and float(value) > 0.0) or leaf in gate_metrics or leaf in {
                 "mask_iou", "box_error", "score_error", "worst_rel_mae",
@@ -2166,7 +2191,7 @@ def is_candidate_performance_metric(key: str, backend: str) -> bool:
         return False
     if any(part.startswith("source_") for part in parts):
         return False
-    # 序列用于尾延迟归因；逐索引既不对齐相同运行条件，也不属于原 p50/p95 门。
+    # Sequences support tail-latency attribution; index pairs neither align run conditions nor constitute the original p50/p95 gate.
     if any(part.endswith("_samples_ms") for part in parts):
         return False
     return (any(part.endswith(TIMING_SUFFIXES) for part in parts)

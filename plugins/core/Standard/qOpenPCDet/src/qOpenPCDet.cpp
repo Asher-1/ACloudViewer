@@ -178,6 +178,13 @@ void qOpenPCDet::cancelTask() {
 }
 
 void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
+    m_dialog->appendLog(
+            tr("[OpenPCDet] Result ready: source=%1, model=%2, %3 box(es), "
+               "runtime %4 ms")
+                    .arg(result.sourceLabel)
+                    .arg(QFileInfo(result.modelPath).fileName())
+                    .arg(result.detections.size())
+                    .arg(result.runtimeMs, 0, 'f', 1));
     m_dialog->showDetectionSummary(result);
     if (m_currentSettings.addBoxesToDb) {
         addBoxesToDb(result);
@@ -185,6 +192,7 @@ void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
     if (m_currentSettings.annotatedCloudToDb) {
         exportAnnotatedCloud(result);
     }
+    m_dialog->appendLog(tr("[OpenPCDet] Result export flow done."));
 }
 
 void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
@@ -196,8 +204,16 @@ void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
     const QString groupName = ecvPluginDbNaming::makeUnique(
             QStringLiteral("OpenPCDet detections (%1)").arg(modelTag),
             m_app);
+    m_dialog->appendLog(tr("[OpenPCDet] Building wireframe group for %1 "
+                           "box(es) (model %2).")
+                                .arg(result.detections.size())
+                                .arg(modelTag));
     ccHObject* group = BuildDetectionGroup(result, modelTag);
-    if (!group) return;
+    if (!group) {
+        m_dialog->appendLog(
+                tr("[Error] Wireframe group build failed."));
+        return;
+    }
     // makeUnique renamed the top group; keep the tree name consistent.
     group->setName(groupName);
     group->setMetaData(QStringLiteral("OpenPCDet/Model"),
@@ -222,6 +238,11 @@ void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
     const QString modelTag =
             ecvPluginDbNaming::modelTagFromFilename(
                     m_currentSettings.modelPath);
+    m_dialog->appendLog(tr("[OpenPCDet] Building annotated cloud from '%1' "
+                           "(%2 point(s), model %3).")
+                                .arg(source->getName())
+                                .arg(source->size())
+                                .arg(modelTag));
     unsigned tinted = 0;
     QString error;
     ccPointCloud* annotated =

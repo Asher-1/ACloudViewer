@@ -7,7 +7,7 @@ diff --git a/src/ggml-cuda/common.cuh b/src/ggml-cuda/common.cuh
      return name != nullptr && strncmp(name, "mapany_", 7) == 0;
 +}
 +
-+// pinned llama 的 FFN 输出命名；其他 AICore 节点保持既有严格 SiLU。
++// Match pinned llama FFN output naming; other AICore nodes retain existing strict SiLU.
 +static inline bool ggml_cuda_llama_swiglu_node(const char * name) {
 +    return name && strncmp(name, "ffn_swiglu-", 11) == 0 && name[11] >= '0' && name[11] <= '9';
  }
@@ -28,7 +28,7 @@ diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
          // the upstream numerics; every other task keeps the RMBG optimization.
          // mapany_* nodes likewise keep the pristine F16-output path (see
          // ggml_cuda_mapany_pristine_node in common.cuh).
-+        // 匿名 projector 由 v./mm. 输入权重识别，不能只查输出名。
++        // Identify anonymous projectors from v./mm. input weights, not only output names.
 +        const bool llama_model_gemm =
 +            strncmp(src0->name, "blk.", 4) == 0 ||
 +            strncmp(src0->name, "v.", 2) == 0 ||
@@ -50,7 +50,7 @@ diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
          mix(node->nb, sizeof(node->nb));
          mix(node->op_params, sizeof(node->op_params));
          mix(&node->flags, sizeof(node->flags));
-+        // 名称决定 owner-scoped 数值路由；相同 shape 不能复用另一任务的捕获。
++        // Names determine owner-scoped numeric routes; identical shapes must not reuse another task's capture.
 +        mix(node->name, strlen(node->name) + 1);
          for (int j = 0; j < GGML_MAX_SRC; ++j) {
              const bool present = node->src[j] != nullptr;
@@ -102,7 +102,7 @@ diff --git a/src/ggml-cuda/mmvq.cu b/src/ggml-cuda/mmvq.cu
      float         *  dst_d =       (float         *)  dst->data;
  
      ggml_cuda_mm_fusion_args_device fusion_local{};
-+    // fusion 的最终输出沿用 llama ffn_swiglu 命名；设备端显式传递算术选择。
++    // Fused final outputs retain llama ffn_swiglu naming; pass the arithmetic choice explicitly to the device.
 +    fusion_local.llama_pristine_silu = ggml_cuda_llama_swiglu_node(dst->name);
  
      if (fusion) {
@@ -123,7 +123,7 @@ diff --git a/src/ggml-cuda/mmvf.cu b/src/ggml-cuda/mmvf.cu
      float         *  dst_d =       (float         *)  dst->data;
  
      ggml_cuda_mm_fusion_args_device fusion_local{};
-+    // fusion 的最终输出沿用 llama ffn_swiglu 命名；设备端显式传递算术选择。
++    // Fused final outputs retain llama ffn_swiglu naming; pass the arithmetic choice explicitly to the device.
 +    fusion_local.llama_pristine_silu = ggml_cuda_llama_swiglu_node(dst->name);
  
      if (fusion) {

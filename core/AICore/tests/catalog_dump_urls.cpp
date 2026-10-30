@@ -32,6 +32,7 @@
 #include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/ocr_capi.h"
+#include "aicore/openpcdet_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
@@ -148,8 +149,14 @@ void emitRuntimeCatalogs() {
     }
     for (int i = 0; i < aicore_rfdetr_model_count(); ++i) {
         const aicore_rfdetr_model_entry* e = aicore_rfdetr_model_at(i);
-        if (e)
-            emitAsset("rfdetr", "rfdetr_models", e->filename, e->download_url);
+        if (e) emitAsset("rfdetr", "rfdetr_models", e->filename, e->download_url);
+    }
+    for (int i = 0; i < aicore_openpcdet_model_count(); ++i) {
+        const aicore_openpcdet_model_entry* e = aicore_openpcdet_model_at(i);
+        if (e) {
+            emitAsset("openpcdet", "openpcdet_models", e->filename,
+                      e->download_url);
+        }
     }
     for (int i = 0; i < aicore_rmbg_model_count(); ++i) {
         const aicore_rmbg_model_entry* e = aicore_rmbg_model_at(i);

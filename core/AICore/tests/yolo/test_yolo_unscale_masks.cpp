@@ -131,8 +131,10 @@ int runCase3() {
 }
 
 int runOpenCvLetterboxCase() {
-    // 捕获浮点插值 + 0.5 舍入替代 OpenCV 8U 定点路径的错误。
-    // 独立 cv2.INTER_LINEAR 参照：3x2 RGB -> 5x3；中间行包含半整数。
+    // Catches float interpolation with +0.5 rounding replacing the OpenCV 8U
+    // fixed-point path.
+    // Independent cv2.INTER_LINEAR reference: 3x2 RGB -> 5x3; the middle row
+    // contains half-integers.
     const uint8_t source[] = {10, 20, 30, 40, 50, 60, 70, 80, 90,
                              11, 21, 31, 41, 51, 61, 71, 81, 91};
     const uint8_t expected[] = {

@@ -62,6 +62,7 @@ target_sources(${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/RemoteServerDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationLogging.h
         ${CMAKE_CURRENT_LIST_DIR}/AnyLabelingBatchCommand.h
+        ${CMAKE_CURRENT_LIST_DIR}/LLMBatchCommand.h
         ${CMAKE_CURRENT_LIST_DIR}/../../qSAM3/include/SAM3Types.h
         ${CMAKE_CURRENT_LIST_DIR}/../../qSAM3/include/VideoCanvas.h
         ${CMAKE_CURRENT_LIST_DIR}/../../qSAM3/include/VideoTimeline.h

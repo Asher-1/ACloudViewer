@@ -1,4 +1,5 @@
-// MapAnything 无模型公共契约：目录元数据、无效设备和空上下文访问。
+// MapAnything model-free public contract: catalog metadata, invalid devices
+// and empty-context access.
 #include "aicore/map_anything_capi.h"
 #include "tests/common/test_macros.hpp"
 

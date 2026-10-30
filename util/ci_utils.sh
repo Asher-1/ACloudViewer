@@ -672,6 +672,7 @@ build_gui_app() {
                 "-DBUILD_SPIRULA=ON"
                 "-DPLUGIN_STANDARD_QSPIRULA=ON"
                 "-DPLUGIN_STANDARD_QMAPANYTHING=ON"
+                "-DPLUGIN_STANDARD_QOPENPCDET=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

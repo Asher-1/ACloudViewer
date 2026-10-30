@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""公共多属性真实模型 probe；独立 reference 为外部、已固定输入的原框架输出。"""
+"""Public multi-attribute real-model probe; the independent reference is an external, pinned-input original-framework output."""
 import argparse
 import ctypes as C
 import hashlib
@@ -82,7 +82,7 @@ def infer(lib, args, image):
             raise RuntimeError(lib.aicore_attribute_last_error(context).decode())
         device = lib.aicore_attribute_context_device(context).decode()
         if args.backend.lower() not in device.lower():
-            raise RuntimeError('请求的 backend 未实际使用：' + device)
+            raise RuntimeError('the requested backend was not actually used: ' + device)
         label = None
         for index in range(args.warmups + args.repeats):
             output = C.POINTER(Result)()
@@ -92,15 +92,15 @@ def infer(lib, args, image):
                 result = output.contents
                 if result.struct_size != C.sizeof(Result) or result.abi_version != 1 or (
                         result.width, result.height) != (image.shape[1], image.shape[0]):
-                    raise RuntimeError('输出 ABI/全图几何不匹配')
+                    raise RuntimeError('output ABI/full-image geometry mismatch')
                 current = np.ctypeslib.as_array(result.probabilities, shape=(result.probability_count,)).copy()
                 attrs = {result.attributes[i].name.decode(): result.attributes[i].value.decode()
                          for i in range(result.attribute_count)}
                 if not np.isfinite(current).all() or not attrs:
-                    raise RuntimeError('无效概率或空属性')
+                    raise RuntimeError('invalid probabilities or empty attributes')
                 timing = Timings(1, 0)
                 if lib.aicore_attribute_last_pipeline_timings(context, C.byref(timing)) != 0 or timing.valid_fields != 23:
-                    raise RuntimeError('缺少公共 typed pipeline timing')
+                    raise RuntimeError('missing the common typed pipeline timing')
                 if index >= args.warmups:
                     values.append(current)
                     attributes.append(attrs)
@@ -112,7 +112,7 @@ def infer(lib, args, image):
     finally:
         lib.aicore_attribute_free(context)
     if hashlib.sha256(padded.tobytes()).hexdigest() != before:
-        raise RuntimeError('调用方像素被修改')
+        raise RuntimeError('caller pixels were modified')
     return values, attributes, durations, identities, device, label
 
 
@@ -134,24 +134,24 @@ def main():
     parser.add_argument('--json-out', type=Path, required=True)
     args = parser.parse_args()
     if args.warmups < 0 or args.repeats < 1 or args.threads < 1:
-        parser.error('无效采样协议')
+        parser.error('invalid sampling protocol')
     if digest(args.reference) != args.reference_sha256:
-        raise ValueError('独立原框架输出 SHA-256 不匹配')
+        raise ValueError('independent original-framework output SHA-256 mismatch')
     if bool(args.source_identity) != bool(args.source_identity_sha256):
-        parser.error('source identity 与 SHA-256 必须同时提供')
+        parser.error('source identity and its SHA-256 must be provided together')
     source = None
     if args.source_identity:
         if digest(args.source_identity) != args.source_identity_sha256:
-            raise ValueError('独立 source identity SHA-256 不匹配')
+            raise ValueError('independent source identity SHA-256 mismatch')
         source = json.loads(args.source_identity.read_text())
         if not source.get('source_revision') or not isinstance(source.get('attributes'), dict) or not source['attributes']:
-            raise ValueError('独立 source identity 缺少 revision/属性参照')
+            raise ValueError('independent source identity lacks a revision/attribute reference')
     reference = np.load(args.reference).reshape(-1)
     if not np.isfinite(reference).all():
-        raise ValueError('原框架输出非有限')
+        raise ValueError('original-framework output is not finite')
     image = cv2.imread(str(args.image))
     if image is None:
-        raise ValueError('输入解码失败')
+        raise ValueError('input decoding failed')
     library = args.library.absolute()
     lib = bind(library)
     values, attributes, durations, hashes, device, label = infer(lib, args, image)
@@ -163,13 +163,13 @@ def main():
         presets = [lib.aicore_attribute_preset_at(i).contents for i in range(lib.aicore_attribute_preset_count())]
         if not any(entry.label.decode() == label and entry.source_sha256.decode() == source.get('source_sha256')
                    for entry in presets) or source.get('family') != label:
-            raise ValueError('独立 source 身份与公共 task recipe 不匹配')
+            raise ValueError('independent source identity does not match the public task recipe')
         expected = np.asarray(source.get('probabilities'), dtype=np.float32).reshape(-1)
         if not np.array_equal(expected, reference):
-            raise ValueError('属性参照与概率 reference 不是同一 source 输出')
+            raise ValueError('the attribute reference and the probability reference are not the same source output')
         attributes_match = all(row == source['attributes'] for row in attributes)
     if any(row.shape != reference.shape for row in values):
-        raise ValueError('原始概率输出形状不匹配')
+        raise ValueError('original probability output shape mismatch')
     errors = np.maximum.reduce([np.abs(row.astype(np.float64) - reference) for row in values])
     threshold = {'f32': .001, 'f16': .01, 'q8_0': .02}[args.quant]
     stable = len(set(hashes)) == 1
@@ -189,7 +189,7 @@ def main():
         'image_sha256': digest(args.image), 'reference_sha256': args.reference_sha256,
         'warmups': args.warmups, 'repeats': args.repeats, 'threads': args.threads,
         'public_attribute_api': True,
-        'scope': '公共 task 与固定原框架输出的数值/稳定性；提供 pinned source identity 时同时验证全部属性，否则属性真值未验证；不代表发布资格'}
+        'scope': 'numeric/stability agreement between the public task and a pinned original-framework output; when a pinned source identity is supplied all attributes are verified as well, otherwise attribute truth is unverified; not a release qualification'}
     if args.raw_out:
         values[0].tofile(args.raw_out)
     args.json_out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')

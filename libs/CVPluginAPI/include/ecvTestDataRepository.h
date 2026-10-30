@@ -81,7 +81,12 @@ public:
         MapAnythingRelief,        ///< relief scene
         MapAnythingRelief2,       ///< relief_2 scene
         MapAnythingTerrace,       ///< terrace scene
-        MapAnythingTerrains       ///< terrains scene
+        MapAnythingTerrains,      ///< terrains scene
+        /** OpenPCDet detection sample (qOpenPCDet): one raw KITTI LiDAR
+         *  frame (plus its PointRCNN pre-sampled 16384-point variant), one
+         *  nuScenes 5-feature sweep and the two multi-modal scene bundles
+         *  (CaDDN single-camera / BEVFusion 6-camera) the panels map onto. */
+        OpenPCDetSample  ///< KITTI + nuScenes LiDAR frames and scene bundles
     };
 
     /** Dataset metadata. */

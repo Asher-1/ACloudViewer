@@ -610,12 +610,25 @@ python plugins/core/Standard/qAnyLabeling/tests/compare_render_upstream.py \
 
 The current control comparison covers 80 shortcut groups, 35 exact model
 threshold defaults, 13 checkable actions and five docks. The rendering probe
-checks 768 palette indices and 36 rectangle/polygon/circle/line/point/rotation
+checks 768 palette indices and the original 36 rectangle/polygon/circle/line/point/rotation
 scenarios, including labels, scores, descriptions, attributes, difficult
 annotations and mask visibility. Its 18 geometry-only cases require exact
 pixels. Text cases permit one-pixel Qt 5/6 font-metric differences, with both
 whole-image and cropped error gates; reports retain reference, C++ and diff
 images. These checks do not establish full-window/theme or all-state parity.
+
+2026-10-28: on top of the original 36 cases and the original tolerances, eight
+anchor, edge, display-toggle, prompt and multi-label-order regressions were
+added; the real Qt5.10.1/Qt5.15.2/Qt6.5.3 runs each pass 44/44. Canvas export
+and interaction share the merged-caption, edge-avoidance and leader drawing
+rules. The comparator still pins 96 DPI; the test probe explicitly sets the
+shared AA_Use96Dpi so fonts under older Qt offscreen follow that protocol too,
+and production fonts are unchanged. The report adds native Qt/font metrics, the
+reference Qt version and the probe SHA. The original RED, the intermediate DPI
+failure and the GREEN receipts are in
+[OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md); after the rebuild the config
+comparison still FAILs, and the review tri-state, the new canvas modes and all
+window/native-platform acceptance remain open.
 
 Image Classifier (`Ctrl+3`) now edits the active document's image flags. It
 supports MultiClass/MultiLabel, category search/editing, A/D navigation,
@@ -664,12 +677,16 @@ and distinct output names. The actual-window OCR test also accepts
 `test_qanylabeling_run_path <absolute-plugin-path> --ocr <backend>`; the
 YOLO-World/RAM workflow accepts `--tagged <backend>`. These verify autosave,
 replacement (including empty results), metadata, undo/redo and stale results.
-本地 PULC person/vehicle F32 recipe 通过公共 attribute ABI 接入同一 worker。
-`ANYLABEL_INFER TASK attribute` 保持现有 `anylabel` 命令身份和共享 HELP/RESULT_JSON schema；
-`LIST_MODELS 1` 列出 owning public recipe 的本地文件名、cache 路径和缓存状态。
-这些 recipe 没有下载 URL 或 published GGUF digest；缺失文件即使传 `DOWNLOAD 1` 也明确失败。
-默认本地模型为 person；`MODEL pulc-vehicle-f32.gguf` 切换 vehicle，完整属性写入全图 rectangle，
-不写成分类 flags。`CONFIDENCE` 不改变 task 内建的属性阈值。
+The local PULC person/vehicle F32 recipes reach the same worker through the
+public attribute ABI. `ANYLABEL_INFER TASK attribute` keeps the existing
+`anylabel` command identity and the shared HELP/RESULT_JSON schema;
+`LIST_MODELS 1` lists the owning public recipes' local file names, cache paths
+and cache state. These recipes have no download URL and no published GGUF
+digest; a missing file fails explicitly even with `DOWNLOAD 1`. The default
+local model is person; `MODEL pulc-vehicle-f32.gguf` switches to vehicle and the
+complete attributes are written to a full-image rectangle rather than as
+classification flags. `CONFIDENCE` does not change the task's built-in attribute
+thresholds.
 
 ```bash
 ACloudViewer -SILENT -ANYLABEL_INFER TASK attribute HELP RESULT_JSON schema.json
@@ -678,11 +695,49 @@ ACloudViewer -SILENT -ANYLABEL_INFER TASK attribute MODEL pulc-person-f32.gguf \
   IMAGE /path/to/image.jpg DEVICE cpu OUT_DIR /path/to/output
 ```
 
-维护中的 `test_qanylabeling_attribute_batch <absolute-plugin-path> [backend]` 消费真实插件注册的
-原生命令，验证 schema、本地列表、缺失模型不下载、两模型/两图、task 阈值与错误 manifest。
-外部模型和输入由 `AICORE_TEST_ATTRIBUTE_{PERSON,VEHICLE}_GGUF`、`AICORE_TEST_ATTRIBUTE_IMAGE`
-注入；测试在临时共享 data root 下装配，不改默认模型缓存。公共 C ABI、基础 UI、common runner
-和 release 的当前逐门状态见 [MODEL_MATRIX.md](MODEL_MATRIX.md)，不把本地 recipe 当作已发布资产。
+The maintained `test_qanylabeling_attribute_batch <absolute-plugin-path>
+[backend]` consumes the native command registered by the real plugin and
+verifies the schema, the local list, that a missing model is not downloaded,
+two models/two images, the task thresholds and the error manifest. External
+models and inputs are injected through
+`AICORE_TEST_ATTRIBUTE_{PERSON,VEHICLE}_GGUF` and
+`AICORE_TEST_ATTRIBUTE_IMAGE`; the test stages them under a temporary shared
+data root and does not touch the default model cache. The current per-gate state
+of the public C ABI, the basic UI, the common runner and release is in
+[MODEL_MATRIX.md](MODEL_MATRIX.md); a local recipe is not treated as a published
+asset.
+
+The current source also registers the independent `LLM_GENERATE` command,
+consuming the public LLM/VLM C ABI rather than an `ANYLABEL_INFER TASK`.
+Use the agent toolchain to discover the selected binary's schema before running
+it; binaries built before this adapter report a missing command.
+
+```bash
+cli-anything-acloudviewer --json --mode headless ai schema llm
+cli-anything-acloudviewer --json --mode headless ai run llm \
+  --model qwen2.5-0.5b-instruct-q8_0.gguf --device cpu --threads 4 \
+  --out-dir ./llm-out --option 'PROMPT=What is the capital of France?' \
+  --option MAX_TOKENS=32 --option TEMPERATURE=0
+```
+
+Text requests need no image. Image requests reuse one context and decode one
+current RGB image at a time with its actual row stride; unset `MMPROJ` uses the
+public catalog recommendation, while a text-only model rejects images.
+`SYSTEM` is optional; output token/temperature defaults come from the public
+request API. Models, projector URLs, roles and digests remain catalog-owned;
+known files are size/SHA-256 checked without rewriting their integrity records.
+The shared manifest exports text, finish reason, token counts and valid timing
+fields. Cancellation is failure, not a successful partial result.
+
+The existing real-plugin host additionally accepts `--llm-schema` (no model)
+and `--llm-model [backend]`. Its model test requires resolved external assets
+in `AICORE_TEST_LLM_TEXT_MODEL`, `AICORE_TEST_LLM_VISION_MODEL` and
+`AICORE_TEST_LLM_MMPROJ`; missing assets fail rather than skip. Tests cover
+repeated text commands, two row-padded RGB images, text-model image rejection
+and corrupt-image stop/error manifest behavior. Source contracts and discovery
+do not prove these model tests passed: current execution and remaining build,
+RPC, independent accuracy/performance and platform gates are recorded in
+[OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md).
 
 Runtime library paths must match the configured build; leave Qt's offscreen
 selection to CTest so its OpenGL point-cloud fixture can use Xvfb.

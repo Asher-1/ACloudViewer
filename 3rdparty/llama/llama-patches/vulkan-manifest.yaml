@@ -10,13 +10,15 @@ patches:
   - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
     note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
   - file: 0013-acv-elementwise-epilogue.patch
-    note: "显式 ADD/GELU 融合，保持最终写出偏移和 allocation dependency；未满足融合条件时保留独立节点。"
+    note: "Explicit ADD/GELU fusion preserves final output offsets and allocation dependencies; ineligible nodes remain separate."
   - file: 0014-acv-depthwise-bias-api-cpu.patch
   - file: 0014-acv-depthwise-bias-vulkan.patch
-    note: "DW 写出舍入后加 F32 bias；保留四个 descriptor 的真实偏移。"
+    note: "Add F32 bias after DW write-out rounding; preserve actual offsets for all four descriptors."
   - file: 0016-acv-vulkan-dw-bias-rounding.patch
-    note: "F16 中间结果用整数 RNE 固定舍入，要求独立单点真值与 ADD、WHCN/CWHN 和偏移逐位回归。"
+    note: "Round F16 intermediate results with integer RNE; require independent scalar truth and bitwise ADD, WHCN/CWHN and offset regression."
   - file: 0017-acv-vulkan-pool2d-dispatch.patch
-    note: "F16 POOL_2D 使用显式 local-size specialization，dispatch 输入已是 workgroup 数；要求 sentinel 全域写出与独立窗口 oracle 回归。"
+    note: "F16 POOL_2D uses explicit local-size specialization; dispatch inputs are workgroup counts. Require full-domain sentinel and independent window-oracle regression."
   - file: 0018-acv-vulkan-dw-debug-bias.patch
-    note: "结果检查器的 DW CPU clone 保留可选 bias；真实 checker 的正、负、无 bias 数值回归。"
+    note: "The result checker's DW CPU clone preserves optional bias; test the real checker with positive, negative and absent bias."
+  - file: 0024-acv-vulkan-depthwise7.patch
+    note: "RelateAnything 14c9744 CWHN DW7 specialization preserves actual offsets for all four descriptors and original fallbacks; original numeric/performance gates remain unchanged."

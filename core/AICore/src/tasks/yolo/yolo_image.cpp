@@ -109,8 +109,8 @@ void letterbox_image(const Image& img,
         }
     }
 
-    // OpenCV 8U 的系数为 11-bit 定点，纵向还有两阶段截断；浮点
-    // bilinear + 0.5 会改变输入像素。复用共同所有者，保留真实 stride。
+    // OpenCV 8U uses 11-bit fixed-point coefficients and two-stage vertical truncation;
+    // floating-point bilinear + 0.5 changes input pixels. Reuse the shared owner and actual stride.
     aicore::img::Image source;
     source.width = img.w;
     source.height = img.h;
@@ -120,7 +120,7 @@ void letterbox_image(const Image& img,
                                       : static_cast<size_t>(img.w) * img.channels;
     source.channels = img.channels;
     source.bgr = img.bgr;
-    // 临时空间为 3*new_w*new_h 字节（640x480 时约 0.88 MiB）。
+    // Scratch uses 3*new_w*new_h bytes (about 0.88 MiB at 640x480).
     std::vector<uint8_t> resized(static_cast<size_t>(new_w) * new_h * 3);
     aicore::img::cv_resize_linear_u8(source, resized.data(), new_w, new_h, 3);
 

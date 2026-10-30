@@ -52,6 +52,32 @@ def main():
             cases.append({"name": f"{kind}-{profile}", "shapes": [extra],
                           "show_labels": not profile.endswith("no_label"),
                           "show_masks": profile != "no_masks-no_label"})
+    # These cases catch the first point mistaken for the anchor, clipped edge
+    # labels, ineffective toggles and leaders drawn over labels.
+    # The original 36 cases and all pixel/font tolerances are unchanged, and the
+    # reference still performs the real upstream drawing.
+    for name, kind, points, overrides in [
+        ("polygon-top-anchor", "polygon", [[200, 220], [60, 200], [60, 100], [200, 120]], {}),
+        ("point-right-edge", "point", [[620, 140]], {}),
+        ("point-top-edge", "point", [[80, 8]], {}),
+        ("point-bottom-edge", "point", [[620, 475]], {}),
+        ("rectangle-description-only", "rectangle", shapes[0][1],
+         {"show_labels": False, "description": "parked vehicle"}),
+        ("rectangle-scores-off", "rectangle", shapes[0][1], {"show_scores": False}),
+        ("point-prompt-no-caption", "point", [[100, 160]], {"label": "AUTOLABEL_OBJECT"}),
+    ]:
+        data = {"label": overrides.get("label", "car"), "shape_type": kind,
+                "points": points, "group_id": 4, "score": 0.87, "flags": {}}
+        if "description" in overrides:
+            data["description"] = overrides["description"]
+        cases.append({"name": name, "shapes": [data], "show_masks": False,
+                      "show_labels": overrides.get("show_labels", True),
+                      "show_scores": overrides.get("show_scores", True)})
+    cases.append({"name": "point-leaders-below-labels", "show_masks": False,
+                  "show_labels": True, "shapes": [
+                      {"label": "car", "shape_type": "point", "points": [point],
+                       "group_id": 4, "score": 0.87, "flags": {}}
+                      for point in ([300, 220], [330, 190])]})
     request = args.output / "cases.json"
     request.write_text(json.dumps({"cases": cases}, indent=2))
     cpp = args.output / "cpp"
@@ -85,6 +111,8 @@ def main():
         image.fill(QtCore.Qt.GlobalColor.white)
         reference = canvas.render_visualization(image, source_shapes,
                                                  show_labels=case["show_labels"],
+                                                 show_scores=case.get("show_scores", True),
+                                                 show_texts=case.get("show_texts", True),
                                                  show_masks=case["show_masks"])
         reference_path = args.output / (case["name"] + ".png")
         reference.save(str(reference_path))
@@ -121,6 +149,9 @@ def main():
                                              args.upstream / "anylabeling/views/labeling/shape.py",
                                              args.upstream / "anylabeling/views/labeling/utils/colormap.py"]},
               "palette_cases": len(actual_palette), "cases": rows, "errors": errors,
+              "native_runtime": json.loads((cpp / "qt-runtime.json").read_text()),
+              "reference_qt_version": QtCore.qVersion(),
+              "probe_sha256": hashlib.sha256(args.probe.read_bytes()).hexdigest(),
               "verdict": "PASS" if not errors else "FAIL"}
     (args.output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))

@@ -66,6 +66,7 @@ set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
 set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
 set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
+set(AICORE_OPENPCDET_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/openpcdet)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -118,6 +119,10 @@ file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.c
 file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
     ${AICORE_SAM3D_SRC_DIR}/*.hpp ${AICORE_SAM3D_SRC_DIR}/*.h)
+# OpenPCDet keeps the upstream OpenPCDet-GGML subdirectory layout
+# (models/ ops/ extensions/), so its sources are globbed recursively.
+file(GLOB_RECURSE AICORE_OPENPCDET_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_OPENPCDET_SRC_DIR}/*.cpp)
 file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
     ${AICORE_TRELLIS_SRC_DIR}/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
@@ -163,6 +168,9 @@ endif()
 if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
     message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_OPENPCDET_SRC_DIR}/capi.cpp)
+    message(FATAL_ERROR "AICore: missing OpenPCDet module at ${AICORE_OPENPCDET_SRC_DIR}")
+endif()
 
 option(MAP_ANYTHING_ENABLE_DUMP
        "Compile qMapAnything parity stage dumps (debug-only, increases runtime I/O)"
@@ -193,6 +201,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_GKD_SOURCES}
     ${AICORE_MAP_ANYTHING_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
+    ${AICORE_OPENPCDET_SOURCES}
     ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
     ${AICORE_API_HEADERS}
 )
@@ -314,6 +323,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
         ${AICORE_TASKS_SRC_DIR}/relation
         ${AICORE_SAM3D_SRC_DIR}
+        ${AICORE_OPENPCDET_SRC_DIR}
         ${EIGEN_INCLUDE_DIRS}
 )
 
@@ -383,6 +393,27 @@ if(AICore_CUDA_ENABLED)
     # SAM3D_USE_CUDA selects the device kernel over the Philox CPU path).
     target_sources(${PROJECT_NAME} PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
     target_compile_definitions(${PROJECT_NAME} PRIVATE SAM3D_USE_CUDA)
+    # OpenPCDet task-private CUDA extensions (upstream OpenPCDet-GGML
+    # src/extensions): GPU sparse rulebook generation, PillarVFE scatter and
+    # HeightCompression. AICORE_OPENPCDET_CUDA_EXT gates the task-side call
+    # sites; without CUDA the stock host paths compile and run unchanged
+    # (CPU/Vulkan behavior is byte-identical to the non-ext build). Every
+    # call site additionally re-checks the device at runtime.
+    # The three upstream sources compile as ONE translation unit
+    # (openpcdet_cuda_ext.cu includes them): in the monolithic libAICore
+    # link, separate units left HeightCompression/VFE launches failing with
+    # cudaErrorInvalidDeviceFunction despite byte-verified registration and
+    # fatbin contents (the same objects link and run standalone).
+    target_sources(${PROJECT_NAME} PRIVATE
+        ${AICORE_OPENPCDET_SRC_DIR}/extensions/openpcdet_cuda_ext.cu)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AICORE_OPENPCDET_CUDA_EXT=1)
+    # Whole-program per-arch compilation (no -rdc): every AICore .cu is a
+    # self-contained unit (no cross-TU device calls — a violation fails loudly
+    # at link time), and sparse_rulebook_cuda.cu's CUB device-level kernels
+    # fail to launch with cudaErrorInvalidDeviceFunction when compiled as
+    # relocatable device code. This matches how ggml's own CUB-consuming
+    # backend builds.
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
     # Static-link the CUDA runtime (cudart) on UNIX so libAICore.so has no
     # DT_NEEDED on libcudart.so.X and loads on machines without a CUDA toolkit.
     # This is the same strategy as the qSIBR plugin (see qSIBR/CMakeLists.txt).
@@ -395,7 +426,6 @@ if(AICore_CUDA_ENABLED)
     elseif(TARGET CUDA::cudart)
         target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
     endif()
-    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 endif()
 
 # ── SAM3D official native PBR assembly ──────────────────────
@@ -638,7 +668,8 @@ endif()
 
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
-    reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo llm)
+    openpcdet reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo
+    llm)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -661,6 +692,7 @@ if(AICore_BUILD_TESTS)
             ${AICORE_GKD_SOURCES}
             ${AICORE_LINGBOT_SOURCES}
             ${AICORE_REID_SOURCES}
+            ${AICORE_OPENPCDET_SOURCES}
             ${AICORE_SAM3D_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
@@ -697,6 +729,7 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
             $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_OPENPCDET_SRC_DIR}>
         )
         add_dependencies(AICore_test ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer)
         target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
@@ -727,12 +760,19 @@ if(AICore_BUILD_TESTS)
         endif()
         target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
         if(AICore_CUDA_ENABLED)
-            # Same compile-definition contract as libAICore: the white-box
+            # Same compile-definition contract as libAICore: the whitebox
             # sam3d probes (stage bisect against upstream condition dumps)
             # need the PyTorch-compatible CUDA normal RNG so a fixed-conditions
             # replay generates the same seed noise as the production session.
             target_sources(AICore_test PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
             target_compile_definitions(AICore_test PUBLIC SAM3D_USE_CUDA)
+            # OpenPCDet task-side CUDA extension (same single translation unit
+            # as libAICore): the whitebox deterministic sparse-conv gates
+            # (方案 C, test_openpcdet_det_sparse_conv) drive the CUDA kernel
+            # directly and the model sources take their CUDA-ext branches.
+            target_sources(AICore_test PRIVATE
+                ${AICORE_OPENPCDET_SRC_DIR}/extensions/openpcdet_cuda_ext.cu)
+            target_compile_definitions(AICore_test PUBLIC AICORE_OPENPCDET_CUDA_EXT=1)
             if(TARGET CUDA::cudart)
                 target_link_libraries(AICore_test PUBLIC CUDA::cudart)
             endif()
@@ -804,7 +844,8 @@ set_target_properties(test_ocr_runtime PROPERTIES
 # tests/CMakeLists.txt that already applies the layout function).
 cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
 if(TARGET aicore-fast-tests)
-    # 无模型图契约使用同一 OCR interpreter target，避免另建推理实现。
+    # The model-free graph contract reuses the same OCR interpreter target
+    # instead of adding a second inference implementation.
     add_dependencies(aicore-fast-tests test_ocr_runtime)
     add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
     set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")

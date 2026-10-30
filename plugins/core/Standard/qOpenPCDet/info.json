@@ -1,0 +1,13 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "OpenPCDet 3D Detect",
+  "icon": ":/CC/plugin/qOpenPCDet/images/qOpenPCDet.svg",
+  "description": "LiDAR point cloud 3D object detection (PointPillars / SECOND, KITTI & nuScenes checkpoints) via native GGML inference on CPU / CUDA / Vulkan.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/download/OpenPCDet-GGUF/" },
+    { "text": "OpenPCDet-GGML: https://github.com/Asher-1/OpenPCDet-GGML" }
+  ]
+}

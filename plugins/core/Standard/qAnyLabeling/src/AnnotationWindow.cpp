@@ -55,7 +55,9 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QPainter>
 #include <QPainterPath>
+#include <QPixmap>
 #include <QPalette>
 #include <QPlainTextEdit>
 #include <QPointer>
@@ -63,6 +65,7 @@
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QScopedValueRollback>
 #include <QScreen>
 #include <QScrollArea>
 #include <QSet>
@@ -156,6 +159,41 @@ bool acceptsImageDrop(const QMimeData* mime) {
 
 QString iconPath(const QString& name) {
     return QStringLiteral(":/CC/plugin/qAnyLabeling/images/") + name;
+}
+
+// UserRole remains the image path; annotation review is an independent fact.
+constexpr int kAnnotationCheckedRole = Qt::UserRole + 1;
+
+QJsonValue normalizedChecked(const QJsonValue& value) {
+    if (value.isString() && value.toString() == QStringLiteral("failed"))
+        return value;
+    return QJsonValue(value.isBool() && value.toBool());
+}
+
+bool annotationReviewed(const QListWidgetItem* item) {
+    const QJsonValue checked =
+            normalizedChecked(QJsonValue::fromVariant(item->data(kAnnotationCheckedRole)));
+    return checked == QJsonValue(true) || checked == QJsonValue("failed");
+}
+
+void setFileReviewStatus(QListWidgetItem* item, const QJsonValue& value) {
+    const QJsonValue checked = normalizedChecked(value);
+    item->setData(kAnnotationCheckedRole, checked.toVariant());
+    const bool passed = checked == QJsonValue(true);
+    const bool failed = checked == QJsonValue("failed");
+    item->setToolTip(item->data(Qt::UserRole).toString() + QLatin1Char('\n') +
+                     (failed ? QObject::tr("Check Failed")
+                             : passed ? QObject::tr("Check Passed")
+                                      : QObject::tr("Unchecked")));
+    QPixmap icon(12, 12);
+    icon.fill(Qt::transparent);
+    QPainter painter(&icon);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(failed ? "#DE350B" : passed ? "#22A06B" : "#8C98A4"));
+    painter.drawEllipse(QRectF(1, 1, 10, 10));
+    painter.end();
+    item->setIcon(QIcon(icon));
 }
 
 QString quantization(const QString& filename) {
@@ -1484,6 +1522,7 @@ void AnnotationWindow::createUi() {
 
     m_checked = new QCheckBox(tr("Checked"), this);
     m_checked->setObjectName(QStringLiteral("AnnotationChecked"));
+    m_checked->setTristate(true);
     m_status = new QLabel(tr("Open an image or folder"), this);
     m_status->setObjectName(QStringLiteral("AnnotationStatus"));
     statusBar()->addWidget(m_status, 1);
@@ -1673,8 +1712,11 @@ void AnnotationWindow::createUi() {
                 m_document.insert(QStringLiteral("flags"), flags);
                 setDirty(true);
             });
-    connect(m_checked, &QCheckBox::toggled, this, [this]() {
-        if (!m_updating) setDirty(true);
+    connect(m_checked, &QCheckBox::stateChanged, this, [this](int state) {
+        if (!m_updating)
+            setAnnotationChecked(state == Qt::PartiallyChecked
+                                         ? QJsonValue("failed")
+                                         : QJsonValue(state == Qt::Checked));
     });
     connect(m_model, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &AnnotationWindow::refreshQuantizations);
@@ -3828,10 +3870,13 @@ void AnnotationWindow::applyTheme(const QString& mode) {
         if (source.open(QIODevice::ReadOnly))
             stylesheet = QString::fromUtf8(source.readAll());
     }
-    setStyleSheet(stylesheet);
-    // Removing QSS restores its saved palette. Apply the selected palette
-    // afterwards so switching dark -> light cannot restore stale dark colors.
+    // The source sets the palette before its application stylesheet, so Qt's
+    // stylesheet polish derives the effective widget roles from the QSS. Setting
+    // the palette afterwards would keep the declared colors and diverge from the
+    // source window.
+    setStyleSheet(QString());
     setPalette(palette);
+    setStyleSheet(stylesheet);
     if (m_canvas) {
         auto colors = m_canvas->palette();
         colors.setColor(QPalette::Window,
@@ -3865,8 +3910,9 @@ void AnnotationWindow::applyTheme(const QString& mode) {
                 box->setStyleSheet(styles.value("checkbox").toString());
     }
     for (auto* dialog : findChildren<QDialog*>()) {
-        dialog->setStyleSheet(stylesheet);
+        dialog->setStyleSheet(QString());
         dialog->setPalette(palette);
+        dialog->setStyleSheet(stylesheet);
     }
     if (m_adjustmentPanel) {
         m_adjustmentPanel->setStyleSheet(
@@ -4122,7 +4168,8 @@ void AnnotationWindow::createActions() {
                 if (!confirmSave()) return;
                 const int row = m_files->currentRow();
                 for (int i = row - 1; i >= 0; --i) {
-                    if (m_files->item(i)->checkState() != Qt::Checked) {
+                    if (!m_files->item(i)->isHidden() &&
+                        !annotationReviewed(m_files->item(i))) {
                         m_files->setCurrentRow(i);
                         return;
                     }
@@ -4136,7 +4183,8 @@ void AnnotationWindow::createActions() {
                 if (!confirmSave()) return;
                 const int row = m_files->currentRow();
                 for (int i = row + 1; i < m_files->count(); ++i) {
-                    if (m_files->item(i)->checkState() != Qt::Checked) {
+                    if (!m_files->item(i)->isHidden() &&
+                        !annotationReviewed(m_files->item(i))) {
                         m_files->setCurrentRow(i);
                         return;
                     }
@@ -4152,11 +4200,28 @@ void AnnotationWindow::createActions() {
     registerShortcut(toggleChecked, QStringLiteral("toggle_annotation_checked"),
                      tr("Edit"));
     connect(toggleChecked, &QAction::triggered, this,
-            [this]() { m_checked->setChecked(!m_checked->isChecked()); });
+            [this]() { setAnnotationChecked(true); });
     // The source exposes this through the window action/context set rather
     // than the File menu.  Register it on the workspace so the shortcut is
     // active whenever the annotation window owns focus.
     addAction(toggleChecked);
+    m_clearCheckedAction = new QAction(tr("Clear Check State"), this);
+    m_clearCheckedAction->setCheckable(true);
+    m_clearCheckedAction->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_U));
+    registerShortcut(m_clearCheckedAction,
+                     QStringLiteral("clear_annotation_checked"), tr("Edit"));
+    connect(m_clearCheckedAction, &QAction::triggered, this,
+            [this]() { setAnnotationChecked(false); });
+    addAction(m_clearCheckedAction);
+    m_failCheckedAction = new QAction(tr("Mark as Failed"), this);
+    m_failCheckedAction->setCheckable(true);
+    m_failCheckedAction->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_J));
+    registerShortcut(m_failCheckedAction,
+                     QStringLiteral("fail_annotation_checked"), tr("Edit"));
+    connect(m_failCheckedAction, &QAction::triggered, this,
+            [this]() { setAnnotationChecked(QStringLiteral("failed")); });
+    addAction(m_failCheckedAction);
+    syncAnnotationChecked();
     QAction* navigator = viewMenu->addAction(tr("Navigator"));
     navigator->setCheckable(true);
     navigator->setShortcut(QKeySequence(Qt::Key_F9));
@@ -5688,8 +5753,10 @@ void AnnotationWindow::createActions() {
                 connect(gidMenu, &QMenu::aboutToShow, this,
                         [this, gidMenu]() { populateGidFilterMenu(gidMenu); });
                 menu.addSeparator();
-                if (m_toggleCheckedAction)
-                    menu.addAction(m_toggleCheckedAction);
+                for (QAction* action : {m_clearCheckedAction,
+                                        m_toggleCheckedAction,
+                                        m_failCheckedAction})
+                    if (action) menu.addAction(action);
                 menu.addSeparator();
                 for (QAction* mode :
                      {polygonMode, createBrush, magicWandMode, rectangleMode,
@@ -5847,7 +5914,10 @@ void AnnotationWindow::updateActionState() {
     if (m_nextUncheckedAction) m_nextUncheckedAction->setEnabled(multipleFiles);
     if (m_previousUncheckedAction)
         m_previousUncheckedAction->setEnabled(multipleFiles);
-    if (m_toggleCheckedAction) m_toggleCheckedAction->setEnabled(imageLoaded);
+    for (QAction* action : {m_clearCheckedAction, m_toggleCheckedAction,
+                            m_failCheckedAction})
+        if (action) action->setEnabled(imageLoaded && !m_sidecarBlocked);
+    if (m_checked) m_checked->setEnabled(imageLoaded && !m_sidecarBlocked);
     if (m_saveAction)
         m_saveAction->setEnabled(imageLoaded && !m_sidecarBlocked);
     if (m_saveAsAction)
@@ -6060,7 +6130,7 @@ void AnnotationWindow::populateModels() {
         m_models.append(model);
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
-    // 本地属性 recipe 由 owning task 提供；无下载 URL，不代表已发布资产。
+    // Local attribute recipes come from the owning task; no URL means no published asset.
     for (int i = 0; i < aicore_attribute_preset_count(); ++i) {
         const auto* preset = aicore_attribute_preset_at(i);
         if (!preset) continue;
@@ -6083,7 +6153,7 @@ void AnnotationWindow::populateModels() {
             const QString filename = QString::fromUtf8(preset->rec_stem) +
                                      QLatin1Char('-') + quant +
                                      QStringLiteral(".gguf");
-            // 已发布文件由目录提供量化、URL 和 family；仅未发布时本地回退。
+            // Published files obtain quantization, URL and family from the catalog; local fallback is unpublished-only.
             if (aicore_ocr_model_by_filename(filename.toUtf8().constData()))
                 continue;
             Model model;
@@ -6580,15 +6650,7 @@ void AnnotationWindow::openFile(const QString& file) {
     m_redo.clear();
     m_undoAction->setEnabled(false);
     m_redoAction->setEnabled(false);
-    m_updating = true;
-    m_checked->setChecked(m_document.value(QStringLiteral("checked")).toBool());
-    m_updating = false;
-    for (int i = 0; i < m_files->count(); ++i) {
-        QListWidgetItem* item = m_files->item(i);
-        if (item->data(Qt::UserRole).toString() == m_imagePath)
-            item->setCheckState(m_checked->isChecked() ? Qt::Checked
-                                                       : Qt::Unchecked);
-    }
+    syncAnnotationChecked();
     updateFlags();
     updateTags();
     updateObjects();
@@ -6602,6 +6664,38 @@ void AnnotationWindow::openFile(const QString& file) {
     rememberRecentFile(file);
     ++m_sourceGeneration;
     emit annotationSourceChanged();
+}
+
+void AnnotationWindow::setAnnotationChecked(const QJsonValue& checked) {
+    if (m_imagePath.isEmpty() || m_image.isNull() || m_sidecarBlocked) return;
+    // This action saves even with auto-save disabled. Guard tag/brush commits
+    // inside the existing save owner against recursive or duplicate saves.
+    const QScopedValueRollback<bool> saving(m_autoSaveInProgress, true);
+    m_document.insert(QStringLiteral("checked"), normalizedChecked(checked));
+    syncAnnotationChecked();
+    setDirty(true);
+    saveDocument();
+}
+
+void AnnotationWindow::syncAnnotationChecked() {
+    const QJsonValue checked =
+            normalizedChecked(m_document.value(QStringLiteral("checked")));
+    const QSignalBlocker blocked(m_checked);
+    m_checked->setCheckState(checked == QJsonValue("failed")
+                                    ? Qt::PartiallyChecked
+                                    : checked == QJsonValue(true) ? Qt::Checked
+                                                                 : Qt::Unchecked);
+    for (const auto& entry :
+         {qMakePair(m_clearCheckedAction, QJsonValue(false)),
+          qMakePair(m_toggleCheckedAction, QJsonValue(true)),
+          qMakePair(m_failCheckedAction, QJsonValue("failed"))}) {
+        if (entry.first) entry.first->setChecked(checked == entry.second);
+    }
+    for (int i = 0; i < m_files->count(); ++i) {
+        QListWidgetItem* item = m_files->item(i);
+        if (item->data(Qt::UserRole).toString() == m_imagePath)
+            setFileReviewStatus(item, checked);
+    }
 }
 
 void AnnotationWindow::setDirty(bool dirty) {
@@ -6680,7 +6774,8 @@ bool AnnotationWindow::saveDocumentTo(const QString& sidecar) {
     } else {
         document.insert(QStringLiteral("imageData"), QJsonValue::Null);
     }
-    document.insert(QStringLiteral("checked"), m_checked->isChecked());
+    document.insert(QStringLiteral("checked"),
+                    normalizedChecked(m_document.value(QStringLiteral("checked"))));
     document.insert(QStringLiteral("imagePath"),
                     QDir(QFileInfo(sidecar).absolutePath())
                             .relativeFilePath(m_imagePath));
@@ -6703,6 +6798,7 @@ bool AnnotationWindow::saveDocumentTo(const QString& sidecar) {
     m_document = document;
     setDirty(false);
     updateFileStatus();
+    syncAnnotationChecked();
     m_status->setText(tr("Saved %1").arg(QFileInfo(sidecar).fileName()));
     return true;
 }
@@ -6743,7 +6839,7 @@ void AnnotationWindow::closeImage() {
     m_tagInput->clear();
     m_tagInput->hide();
     updateTags();
-    m_checked->setChecked(false);
+    syncAnnotationChecked();
     m_undo.clear();
     m_redo.clear();
     m_undoAction->setEnabled(false);
@@ -6782,10 +6878,7 @@ void AnnotationWindow::deleteLabelFile() {
     }
     m_document = QJsonObject();
     m_canvas->setShapes({});
-    {
-        const QSignalBlocker blocked(m_checked);
-        m_checked->setChecked(false);
-    }
+    syncAnnotationChecked();
     m_undo.clear();
     m_redo.clear();
     m_undoAction->setEnabled(false);
@@ -8931,20 +9024,22 @@ void AnnotationWindow::updateFileStatus() {
         const QString sidecar = candidates.first();
         item->setForeground(QFile::exists(sidecar) ? QColor(24, 130, 91)
                                                    : palette().text().color());
-        bool checked = false;
+        QJsonValue checked(false);
         // candidates.first() already resolves to the active output directory
         // when one is set, matching _refresh_uploaded_file_items.
         QFile input(sidecar);
         if (input.open(QIODevice::ReadOnly)) {
             const QJsonDocument document =
                     QJsonDocument::fromJson(input.readAll());
-            checked =
-                    document.isObject() &&
-                    document.object().value(QStringLiteral("checked")).toBool();
+            if (document.isObject())
+                checked = normalizedChecked(
+                        document.object().value(QStringLiteral("checked")));
         }
-        item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-        item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
+        item->setCheckState(QFileInfo::exists(sidecar) ? Qt::Checked
+                                                      : Qt::Unchecked);
+        setFileReviewStatus(item, checked);
     }
+    applyFileListCheckboxPolicy();
 }
 
 void AnnotationWindow::snapshot() {
@@ -11007,8 +11102,8 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
             snapshot();
             m_canvas->setShapes(shapes);
             m_canvas->setSelectedShapes(selected);
-            const QSignalBlocker blocked(m_checked);
-            m_checked->setChecked(false);
+            m_document.insert(QStringLiteral("checked"), false);
+            syncAnnotationChecked();
             updateObjects();
             setDirty(true);
         }
@@ -11067,9 +11162,9 @@ void AnnotationWindow::onInference(const AnnotationInference& result) {
         if (result.hasDescription)
             changes |= m_document.value(QStringLiteral("description"))
                                .toString() != result.description;
-        if (changes && m_checked->isChecked()) {
-            const QSignalBlocker blocked(m_checked);
-            m_checked->setChecked(false);
+        if (changes) {
+            m_document.insert(QStringLiteral("checked"), false);
+            syncAnnotationChecked();
         }
     }
     if (m_canvas->brushEditing()) m_canvas->setBrushEditing(false);

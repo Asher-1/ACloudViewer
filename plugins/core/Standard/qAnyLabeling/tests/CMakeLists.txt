@@ -88,6 +88,11 @@ cloudviewer_add_plugin_test(test_qanylabeling_plugin
 add_test(NAME test_qanylabeling_plugin
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_plugin)
+add_test(NAME test_qanylabeling_review_status
+    COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN> --review-only)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_review_status)
+set_tests_properties(test_qanylabeling_review_status PROPERTIES
+    TIMEOUT 60 LABELS "ui;regression")
 
 # Reflection-based probe that bypasses QPluginLoader metadata validation and
 # pins the toast placement end to end (open-time hidden, centered at 100
@@ -472,6 +477,20 @@ add_test(NAME test_qanylabeling_attribute_batch
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_batch)
 set_tests_properties(test_qanylabeling_attribute_batch PROPERTIES
+    TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
+
+# 复用真实插件宿主；schema 校验不加载模型，不跳过缺失入口。
+add_test(NAME test_qanylabeling_llm_batch_schema
+    COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN> --llm-schema)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_schema)
+set_tests_properties(test_qanylabeling_llm_batch_schema PROPERTIES
+    TIMEOUT 60 LABELS "contract;cvpluginapi")
+
+# 外部测试环境提供已固定 text/vision/projector 资产；不自动下载或跳过。
+add_test(NAME test_qanylabeling_llm_batch_models
+    COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN> --llm-model)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_models)
+set_tests_properties(test_qanylabeling_llm_batch_models PROPERTIES
     TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
 
 add_test(NAME test_qanylabeling_lightglue_bridge COMMAND test_qanylabeling_loma_bridge)

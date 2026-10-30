@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""真实公共 probe 的属性门回归；模型和 pinned source 参照由外部测试资产注入。"""
+"""Attribute gate regression for the real public probe; the model and pinned source reference are injected as external test assets."""
 import argparse
 import hashlib
 import json
@@ -18,7 +18,7 @@ class AttributeProbeContract(unittest.TestCase):
         identity = json.loads(identity_path.read_text())
         reference = Path(os.environ['AICORE_TEST_ATTRIBUTE_PROBABILITIES'])
         image = Path(os.environ['AICORE_TEST_ATTRIBUTE_IMAGE'])
-        self.assertEqual(identity['attributes']['Gender'], 'Male', '要求 pinned source 的 bus 输入')
+        self.assertEqual(identity['attributes']['Gender'], 'Male', 'requires the pinned source bus input')
         identity['attributes']['Gender'] = 'Female'
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'source.json'

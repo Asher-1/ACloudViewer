@@ -64,10 +64,20 @@ cli-anything-acloudviewer --mode headless plugin run ANIMATION \
 typed `KEY=VALUE` pairs through repeated `--option`. A shortcut is valid only
 when `ai schema TASK` lists the same uppercase key (for example `yolo-track`
 takes `--option VIDEO=...`, not `--image`); native parsers reject unknown
-keys. JSON literals preserve booleans, numbers, and arrays. The 17
+keys. JSON literals preserve booleans, numbers, and arrays. The current-source 19
 registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
 FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
-AnyLabeling, MapAnything, and SAM3D.
+AnyLabeling, LLM/VLM generation, MapAnything, SAM3D, and OpenPCDet.
+
+`llm` maps to the separate `LLM_GENERATE` command in qAnyLabeling, not an
+`ANYLABEL_INFER TASK`. Query `ai schema llm` to check that the chosen binary
+ships it. Text-only requests need `PROMPT` and `OUT_DIR` but no `IMAGE`;
+`SYSTEM`, `MAX_TOKENS` and `TEMPERATURE` are optional. Image requests process
+one image at a time with one context and use the public catalog's recommended
+projector when `MMPROJ` is unset. A text-only model rejects images; explicit
+empty image directories/lists do not silently turn into text requests.
+The batch manifest exports text, finish reason, token counts and valid task
+timings. Catalog assets are SHA-256/size checked; `DOWNLOAD` remains opt-in.
 
 ### Generic UI Drivers & Plugin Replay Automation (GUI)
 

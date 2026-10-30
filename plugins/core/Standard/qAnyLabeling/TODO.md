@@ -1,32 +1,337 @@
 # qAnyLabeling parity TODO
 
+## Fresh continuation (2026-10-29)
+
+### 编译阻塞与队列启动壳复验
+
+- [x] 新的编译复验启动壳真实失败于 `noclobber` 加 `exec 9>` 打开已有锁；
+  失败保留在 `plugin-build-check-queue-current-v1.log`。改为追加打开 `exec 9>>`
+  后，实际锁打开测试成功，非阻塞取锁仍被原 OCR 持有者拒绝。
+  原 LLM 和 OCR v4 后续壳的同类写法也已修正，仅退役并替换本会话未执行的
+  等待壳；原矩阵、原准备队列、其他会话进程和已有收据均不改动。
+- [x] 用户提供的 qOpenPCDet 硬错误来自旧 `test_openpcdet_helpers.cpp`；
+  当前目标使用 `test_openpcdet_dual_input.cpp` 和合法类嵌套类型别名。
+  `openpcdet-target-recompile-v2.log` 实际强制重编译全部 5 个目标对象、重新
+  链接，并通过 helper 与双 TU 的 2/2 CTest；此前 helpers 33/33 保留。
+  这只闭合该目标的编译问题，不是仓库 `make all` 验收。
+- [x] 独立原对象严格 LTO 重放在 `pythonruntime-odr-diagnostic-v1.log`
+  取得 QString custom/primary 和 ScalarContainer opaque/list 的真实 ODR RED。
+  私有 `BindingTypes.h` 组合既有声明，保留原 opaque、Python 接口和 LTO，
+  链接改为 `-Werror=odr`。真实双 TU 引用修改与 UTF-8 转换已 GREEN。
+- [x] qPythonRuntime 全 TU 强制重编译发现并修正两个 Qt/Python 宏边界：入口
+  首次 Qt 初始化前保存未定义 slots，和 cccorelib 模块展开与 Qt slots 冲突。
+  真实 `ecvDisplayTools.h` 回归已 RED→GREEN，模块展开使用局部 push/undef/pop。
+  `pythonruntime-plugin-odr-all-tu-v4.log` 全部 TU 重编译、严格 LTO 链接和双 TU
+  CTest 通过；保留 LTO/-Werror=odr、原 opaque，原 v1/v3 编译失败收据保留。
+  实际 harness 的 argv 正例退出 0、错误 argv 在原断言退出 1，QString 中文
+  名称真实往返通过；这不是无告警构建或所有 Python 脚本通过的声明。
+  最新 `plugin-targets-forced-recompile-v5.log` 再次强制重编译 helper 全 5 对象与
+  qPythonRuntime 全 TU 并链接；实际 link.txt 保留 -flto/-Werror=odr，随后 2/2
+  CTest 通过。新库的真实 argv 正/负例和 QString 诊断再次执行，原 Float32
+  脚本仍在第 23 行失败，`pythonruntime-real-scalar-after-forced-v5.json` 原值不变。
+- [ ] 原 `normal_distribution.py` 实际在第 23 行 Float32 精确断言失败。
+  当前真实 core 定义 `CV_CORE_LIB_USES_DOUBLE`，诊断记录 mu=1.1，而原测试
+  np.float32 期望为 1.100000023841858；与 ODR 类型转换定义冲突分开归因。
+  `pythonruntime-real-normal-distribution-v1.log` 和 `pythonruntime-real-scalar-v1.json`
+  保留该 FAIL 与原值，不改变原测试、core scalar 配置或把诊断视为门通过。
+- [x] 原 OCR v3/v4 已完整执行且均 FAIL；v4 原 168 场景为 161 PASS、7 FAIL、
+  0 SKIP、0 UNSTABLE。原 2×1×2/threads=0 不变，执行后 521 个名称身份复核
+  和旧收据保护通过；orientation 的 rc=0 仍被 failures=2 的结构化门拒绝。
+- [x] LLM 原生 schema、安装 HELP/MCP 两项和 22 项自动化契约通过；真实 CPU
+  text/repeat/two-image/rejection/error 批次退出 0。live RPC、完整原精度与
+  性能门仍未闭合，局部通过不替代 release 验收。
+- [x] Relate 启动缺陷的原 FAIL 保留；有效七路由 RED 后，三个获批 host 接线点
+  与有序 `0027-acv-cuda-add-gelu-epilogue.patch` 已实现。
+  `relate-gelu-candidate-cvos3vzk/receipt.json` 四链重放、两个 CUDA TU 编译/链接、
+  loader、三后端各 256 数值与全部七路由 GREEN；hint 实际融合、六路由正确回退。
+- [x] Relate host 独立编译/链接与真实消费者对照：`relate-host-consumer-potqw5g7`
+  完成 24 个组合后被串行守卫中止；新目录 `relate-host-consumer-k30cubhk` 用同一
+  快照完成余下 4 个。28 个 sample-0 组合全部 RAFO 字节一致，旧收据不覆盖。
+- [ ] Relate 原性能/独立真值门仍开放：本次 tiny-F16、small-F16、small-Q8、ViT-F16
+  的 Vulkan p95 比例分别 1.078470/1.063624/1.050964/1.091177，均超过原 1.05 门。
+  large-F32 仍缺失；局部 bracket 不等于三源 checkpoint、冻结 release 或平台验收。
+- [x] 原 OCR 七项已逐项提取失败指标与实际判定分支，见 `OCR_RELEASE_GATES.md`。
+  tiny-rec-Q8 stored 权重对照在门内但原 CUDA source 分支仍 FAIL；orientation
+  实际是两次 text equality FAIL，非 classifier 阈值错误；其余页/字段主要 WER，
+  tiny-labelled-F16 另有 Hmean/e2e CER 超门。没有修改原模型、脚本、GT 或阈值。
+- [ ] LLM live RPC 的正式 harness `methods` 实际返回 ConnectionRefusedError；
+  `info` 仅返回配置元数据，不证明连通。仍需启动/验证正确的 scoped GUI 服务。
+- [x] `qal-canvas-render-v12/report.json` 最终为 PASS、errors=[]；仅其既有
+  palette/render 范围成立。原 GL v13 日志是 Qt xcb 平台初始化失败，未到
+  framebuffer 比较，不计渲染成功。
+
+以下队列进度保留原观察时状态，已被上面的完整结果取代；不据旧待机条目重复执行。
+
+### Corresponding-module revalidation
+
+- [x] Re-run current-source cold configuration and the actual plugin's review
+  save/reopen/navigation test: `qal-config-current-v14.json` has no errors and
+  `qal-review-current-v14.log` passes. The existing model-free plugin workflow
+  test also exits zero in `qal-plugin-current-v14.log`.
+- [x] Generate fresh native Chat/VQA fixtures in `qal-chat-current-v15/` and pass
+  all six existing source comparators plus eight provider-comparator behavior
+  tests. All five recorded native artifact SHA values match after execution.
+  The v14 missing-artifact-directory launch failure is retained. This run uses
+  an isolated empty data root: local model inference is skipped, not qualified.
+- [x] Re-run the three native PPOCR document/rich/table tests and their three
+  current-source comparators in `qal-ppocr-current-v14/`. The original 123 table
+  cases and rich serialization/heading/paste/preview/height/style/dropdown/image
+  selection cases pass; all three native probe SHA values match before/after.
+- [ ] The native Chat/plugin logs retain offscreen limitations and inotify watch
+  failures. An independent `inotify_init1` succeeds but `inotify_add_watch` fails
+  with errno 28; disk free space is 244 GiB and watch limits are 65536/128.
+  No sysctl or other process is changed. File-monitoring and complete native
+  window/input acceptance are not established by these functional passes.
+- [ ] Original OCR v3 is executing scenario 133/168, Medium SROIE F32; 130-132
+  finish both repeats with rc=0, not a final numeric verdict. Keep v3 unchanged.
+  `run_ocr_v4_after_prepare_v1.sh` now waits for the already queued v4 snapshot,
+  then verifies its identities and runs the original real F32 consumer before
+  invoking the existing full-matrix launcher. Syntax is checked; execution
+  remains pending under the same lock, 18000 MiB RAM and GPU-idle admission.
+  LLM native compilation/models/RPC and the original GL/canvas queues still wait.
+  An in-progress integrity check re-verifies all 503 v3 snapshot names and the
+  protected original reports; this is not the pending after-run identity check.
+  No new production implementation, model, baseline or acceptance gate changes.
+
+The earlier observations below retain their original execution boundaries.
+
+- [x] Re-run Python backend/CLI/MCP regression: 209/209; focused integration
+  contracts: 22/22. OCR GT/thread-count and relation policy tests: 40 tests plus
+  67 subtests. Strict plugin boundary check passes. These are contract/policy
+  checks, not native compilation, checkpoint accuracy or release qualification.
+- [ ] Original OCR v3 now reaches 128/168 (tiny SROIE F16); the preceding F32
+  scenario finishes both repeats with rc=0. Final report and after-run identity
+  verification are still absent; original failures remain retained.
+- [ ] LLM real-plugin RED compilation and the scoped build/model queue remain
+  waiting. Current autogen metadata still reports 16; the pending local configure
+  requests 2, alongside -j2 compilation and an 18000 MiB memory admission check.
+  Actual generated metadata and native schema/model/RPC results remain unverified.
+- [ ] MemAvailable is about 34 GiB, swap used 5.9 GiB and OCR group RSS about
+  1.05 GiB. Other-session compilation is observed concurrently with frozen OCR
+  execution; this is not a controlled quiet performance window. This session
+  starts no additional compiler/model and does not stop others.
+- [x] RelateAnything current-source completeness was checked using actual git
+  identities, host diff and backend symbols; see
+  [RELATEANYTHING_SYNC.md](../../../../3rdparty/llama/RELATEANYTHING_SYNC.md)
+  for the owning record.
+  Current upstream 537f48f and historical 14c9744 have identical trees.
+- [ ] RelateAnything remains partial: DW7 is integrated, but upstream relation
+  host direct-bias/GELU hints and CUDA ADD/GELU fusion are not. Original consumer
+  performance violations and missing large-F32 remain open. A new port is not
+  authorized by the completeness question alone. The subsequent explicit user
+  approval now permits the bounded host and CUDA fusion follow-up.
+- [ ] That approved follow-up has only test code written: seven real CUDA trace
+  modes and 256 plain/hint cases. The isolated test-only compile/trace queue
+  waits under the original lock with 18000 MiB RAM/2048 MiB GPU admission.
+  Real RED, host/patch implementation and GREEN are still pending; the original
+  runtime/probe are not overwritten. Both Python test launchers pass syntax checks.
+- [ ] Latest original OCR observation reaches 130/168 (small SROIE F32); tiny
+  SROIE F16/Q8 finish both repeats with rc=0. Final matrix/identity-after remains
+  absent. RAM remains about 34 GiB available, OCR group RSS about 1.10 GiB.
+
 ## Active continuation (2026-10-28)
 
-当前上游 HEAD 为 `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`；下面旧
-`745f6c35` 章节仅保留历史来源。完整上游对齐仍未完成。本轮用户选择先复验
-证据，暂不实施新增审核三态。
+The current upstream HEAD is `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`; the
+older `745f6c35` sections below retain historical provenance only. Complete
+upstream alignment remains open. The user first chose evidence re-verification
+and then authorized only the existing render-difference fix; three-state review
+and the new canvas modes remained deferred at that point.
 
-- [x] 删除 OCR picker 两 preset 私有白名单，已发布 rec 的全部量化/URL
-  来自公共 catalog，family 来自 preset；仅未发布文件保留 local F32 fallback。
-  `ocr-picker-catalog-red-v1.log` 实际 RED，修后两项 GREEN；带原 F32 attribute
-  资产的 `ocr-picker-catalog-suite-v3.log` 38/38，无 skip。
-- [x] 对最新上游执行真实 config comparator；
-  `upstream-cd26942-config-red-v2.json` 为 FAIL：缺两审核动作、默认配置不同、
-  九项 palette 差异、四项 panel 样式差异。系统 Python 缺 PyQt6 的初次错误
-  保留；后续使用现存上游环境执行，不修改或模拟 reference。
-- [x] 最新 LabelFile 路径/像素优先级 8 例、RAM 展示/过滤 16 例及 qOCR sibling
-  两项复验通过；模型无关 capi 契约 40/40。广泛 capi 80 项的缺资产失败与
-  16 skipped 保留；补齐原 source reference 后 attribute F32 E2E 单项通过。
-- [ ] `upstream-cd26942-render-v1/report.json` 实际 FAIL：19 项错误，含三项
-  polygon geometry-only 像素差异和 16 项文本绘制超原界。保留原容差，待定位根因。
-- [ ] 补齐 `checked=false/true/"failed"` 的载入、即刻保存、动作/列表同步及
-  未审核导航；当前 `toBool()` 会丢失 failed。先写真实保存/重开回归取 RED。
-- [ ] 对齐上游 review/checked 搜索、默认禁用 rectangle wheel editing、
-  image-tags 默认可见与新增 canvas display/measurement 行为；旧 suite 不覆盖它们。
-- [ ] 在外部编译结束后的安静主机上完成当前正式 LLM 全 12 行原协议 A/B；
-  `llm-current-full-preflight.log` 仅离线 catalog/input 校验与命令展开，非推理。
-  `llm-external-build-wait-v1.log` 曾三次无 compiler，随后新外部编译已启动；
-  不在竞争负载下采样，也不终止用户的其他工作。
+### Original-matrix follow-up
+
+- [x] Four more existing current-source comparisons pass:
+  `qal-v11-{cuboid,document,shape_batch,tagging}.json`.
+- [x] Verify the four recorded Chat v10 artifact checksums after execution;
+  `identity-after.json` matches `identity-before.json` within that scope.
+- [ ] Complete CPU release is still FAIL in `cpu-full-quiet-v4/report.json`:
+  all 12 correctness/stability rows pass, but 500M F16 describe decode p50
+  regresses 5.59%; 451 snapshot names verify before/after. Host trace includes
+  busy clangd, so fully quiet/code-cause claims remain unproved. Old FAILs stay.
+- [x] Collect original OCR v2 full168: 39 PASS, 129 FAIL, no skips; all 503
+  execution names verify before/after and protected old reports are unchanged.
+  Early private-probe crashes are localized to a stale tensor ABI (data offset
+  0xf8 vs 0x258), not independently diagnosed model accuracy.
+- [x] Rebuild the existing OCR private consumer at -j4. The DW bias contract
+  passes; `ocr-real-model-abi-green-v2.log` also executes the real F32 rec graph,
+  with max_diff=0.000007, argmax match and slot reuse. This is one fixture only.
+- [ ] Original OCR v3 replay retains developer 2x1x2/threads=0 and all four
+  references; X-AnyLabeling resolves to the clean original 745f6c35 clone, not
+  the current UI revision. All 48 models, 241 input assets and 503 execution names
+  verify before sampling. The private consumer loads its model but skips backend
+  discovery because its executable directory lacks the frozen module aliases.
+  Preserve v3; a new v4 preparer adds only internal aliases to the same frozen
+  module bytes, with real-model preflight required before another full replay.
+- [x] Re-verify the three existing PPOCR comparators: pipeline, rich editor and
+  table pass; all three native probe SHA values match before/after in v11.
+- [x] Pointcloud camera/cuboid/gestures/camera_render/dataset pass in v11;
+  correct the build-local wrong-target launcher and re-run view/colors/mesh in
+  v12: 214/32864/96 cases PASS. Original v11 launch failures remain unchanged.
+- [ ] Pointcloud GL v12 reproduces a LIBFFI_BASE_7.0 symbol failure while loading
+  the installed swrast driver, before any framebuffer comparison. A process-local
+  system-libffi preload replay is queued after the OCR matrix. No driver
+  installation, Qt switch or exact-pixel threshold change is made.
+- [ ] The user chose original matrices first; new rendering/input test expansion
+  is deferred. Complete window/native/independent GT/source-speed gates stay open.
+
+### Approved LLM automation and resource-bounded follow-up
+
+- [x] User approved separate `LLM_GENERATE` over the public LLM C ABI and existing
+  batch/schema/CLI/RPC/MCP chain, without changing ABI/models/original gates.
+- [x] Six actual Python discovery tests go RED to GREEN after one registry row;
+  `llm-harness-regression-v3.log` then passes all 209 backend/CLI/MCP tests.
+- [ ] Real native registration/schema RED is queued in
+  `llm-native-schema-red-v1.log`; the test selects the actual plugin command and
+  keeps attribute coverage. Real L3 HELP and MCP schema REDs now reproduce the
+  absent binary command. Adapter source, plugin/CMake registration, RPC whitelist
+  and the 19th integration row are written; 22 focused contracts plus the strict
+  plugin boundary pass. The -j2 scoped build and real CPU text/two-image/error
+  checks wait under the same lock with an 18000 MiB admission check. Compilation,
+  installed-binary/model and live RPC qualification remain pending; Python/source
+  checks are not complete automation.
+- [ ] OCR v3 last observed at 119/168; final report and after-run verification
+  remain pending. Tiny F16 `val_img_59.jpg` has detector matches 3/2 despite
+  shared `NOW` text; Q8 fixed-GT `val_img_337.jpg` adds `SpoOn`/`SOup` for
+  `Spoon`/`Soup`, two word edits. Arithmetic cause remains unproved; keep every
+  original case-sensitive GT/IoU/numeric/performance/baseline failure.
+- [ ] Heavy tasks remain serial under the original lock. MemAvailable observed
+  22-23 GiB, swap used 6.3-6.4 GiB and full OCR process-group RSS about 1.16 GiB.
+  Schema-test-only compilation uses -j1 with a post-lock 12000 MiB admission
+  check and no active compiler; default later builds stay -j4 and total <=6.
+  Admission checks do not guarantee no OOM. Other sessions and old receipts stay.
+
+### Later authorized continuation: fresh scoped results
+
+- [x] Engineering prose in `3rdparty/`, `core/AICore/` and this plugin is English.
+  Real language payloads, localization resources and frozen receipts stay intact.
+- [x] The current-source main config comparator is PASS in
+  `build_app/Testing/upstream-cd26942-config-green-v8.json`; original 15-error
+  receipts below are retained. Three-state review/save/navigation/search and the
+  Run/OCR document-owner reset are implemented and exercised, not merely defaults.
+- [x] Reproduce and fix the dark-to-light palette restore in the workspace and
+  its dialogs. `qal-chat-theme-diagnostic-v3.log` is the real RED;
+  `qal-chat-theme-green-v4.log` passes the complete Chat test with unchanged colors.
+- [x] User-approved Chat provider comparison keeps every upstream provider exact
+  and separately checks the complete `local` extension. Eight real comparator
+  behavior tests go RED to GREEN, including missing/invalid local rejection, in
+  `qal-chat-provider-gate-{red-v1,green-v2}.log`.
+- [x] User-approved new-sidecar version alignment uses the single
+  `annotationFormatVersion()` owner: new documents are 4.2.1, existing explicit
+  4.1.3 metadata is retained. `qal-chat-version-red-v1.log` retains the real RED;
+  `qal-version-consumers-build-v2.log` rebuilds the plugin and all its test targets
+  at `-j4`; `qal-suite-version-v9.log` passes 39/39 with the original F32 assets.
+- [x] Fresh native fixtures/screenshots in `qal-chat-upstream-current-v10/` pass
+  all six existing Chat/VQA source comparators, including ShareGPT import/export,
+  model/provider config, messages, panel constraints and live light/dark QSS.
+- [ ] Complete full-window pixel/font/IME/DPI/Markdown/code/math qualification,
+  original OCR independent-accuracy/performance gates and native platforms.
+- [ ] LLM release remains FAIL. v4 `Testing/cpu-capital-isolated-v3/report.json`
+  runs the original 3x2x10/threads=4 and passes both correctness/stability rows,
+  but Q8 capital e2e p95 regresses 12.66% (187.389 -> 211.106 ms). All 451 snapshot
+  names pass before/after SHA checks; an external OpenPCDet benchmark overlapped
+  sampling, so a fully quiet performance window is not established. The earlier
+  F16 +8.77% and all complete three-backend FAILs remain unchanged.
+
+The checklist below records earlier continuation states and original receipts;
+its historical unchecked config/review items are superseded only within the
+fresh scoped results above, not promoted to complete upstream/release closure.
+
+- [x] Remove the OCR picker's two private preset allowlists. All published rec
+  quantizations/URLs come from the public catalog and families from presets;
+  only unpublished files keep the local F32 fallback.
+  `ocr-picker-catalog-red-v1.log` records real RED; two items went GREEN after
+  the fix. With original F32 attribute assets,
+  `ocr-picker-catalog-suite-v3.log` is 38/38 with no skips.
+- [x] Run the real config comparator against current upstream.
+  `upstream-cd26942-config-red-v2.json` FAILs: two missing review actions,
+  different defaults, nine palette differences and four panel-style differences.
+  The initial system-Python missing-PyQt6 error is retained; subsequent execution
+  uses the existing upstream environment without altering or simulating reference.
+- [x] Re-verify the latest LabelFile path/pixel priority 8 cases, RAM
+  display/filter 16 cases and two qOCR sibling items; model-independent capi
+  contracts pass 40/40. Retain the missing-asset failure and 16 skips of the broad
+  80-item capi run; supplying the original source reference passes the single
+  attribute F32 E2E item.
+- [x] User-authorized render sub-gate RED->GREEN: reproduce the original 36
+  cases/19 errors, then 27 RED errors after adding 8 anchor, edge,
+  display-toggle, prompt and multi-label-order cases. The shared Canvas owner
+  fixes the polygon first point, merged caption and leader/background/text order.
+  Qt5.10.1, Qt5.15.2 and Qt6.5.3
+  `upstream-cd26942-render-{qt510,qt515,qt6}-green-v6/report.json` each pass
+  44/44, with exact pixels for the original 18 geometry-only cases and every
+  original tolerance retained. Real metrics localize the six initial Qt5.10
+  attributes FAILs to offscreen 100-DPI fonts; AA_Use96Dpi is set only in the
+  probe to restore the comparator's original protocol, without changing
+  production fonts or gates. Three canvas interaction regressions pass 1/1 each;
+  official QANYLABELING_PLUGIN/probe/canvas rebuilt in one -j4 queue and strict
+  boundary PASSes. Original FAIL and intermediate DPI failures remain; this is
+  not a full-window pass.
+- [x] Close the main config sub-gate with `upstream-cd26942-config-green-v8.json`
+  and fresh `qal-config-current-v14.json`. The original v6 FAIL with 15 errors
+  (defaults, two review actions, nine palette and four panel QSS items) remains;
+  render success alone was never promoted to a config pass.
+- [x] Complete loading, immediate saving, action/list synchronization and
+  unreviewed navigation for `checked=false/true/"failed"`. The original `toBool()`
+  loss went RED to GREEN; `qal-review-current-v14.log` freshly re-verifies the
+  actual plugin's failed/pass/clear save/reopen and unchecked navigation.
+- [x] Align review/checked search and the upstream rectangle-wheel/image-tags
+  defaults within the previously approved config scope and its original tests.
+- [ ] New canvas display/measurement behavior remains separate from that config
+  sub-gate; the existing checks do not establish its complete source parity.
+- [x] Execute and verify `llm-current-full-cuda-v1/report.json`: original 12 rows
+  at 3x2x10, threads=4; candidate 12 PASS, but four original baseline upstream
+  text FAILs plus cache execution-identity veto produce overall FAIL. This
+  checkbox marks execution/forensics only. Before-library SHA is `2c7cee1b…`;
+  only cache is reported changed during execution, and after identity was not
+  persisted. `llm-current-full-cuda-v1-host-v2.log` also records external
+  compilation re-entry, not complete controlled speed qualification.
+- [x] Complete v4 official LLM CPU/Vulkan execution and forensics for all 12
+  original-protocol rows; both overall verdicts FAIL, with original gates intact.
+  The shared-candidate abort below is pre-snapshot history, not v4's current
+  status. After CUDA, current library mtime=13:08:11 and SHA `d11d2dcc…` differ
+  from CUDA's candidate; later identities must not be mixed. CPU/Vulkan `--list`
+  each verified 10 models/projectors and one input, not inference results. After
+  the external compiler exited and current hashes matched twice,
+  `llm-current-full-cpu-v2/` measured further runtime-library changes to
+  `9e23f7fb…` and `922a68a5…`; only this side's runner received SIGINT for lost
+  identity. Repeated rc=0 for both sides' first three rows, the fourth-row
+  interruption logs and probe outputs remain; no complete report, Vulkan never
+  started. Another process subsequently ran `AICore bench_openpcdet_perf -j6`
+  in the shared build; this side neither terminated nor overwrote it, and runner
+  sources also changed. Isolate candidate or coordinate shared writers before
+  re-verification; original baseline/models/protocol/gates stay unchanged.
+
+- [x] User-authorized independent candidate snapshot: v4 freezes 262 sources,
+  451 copies/aliases and 249 unique files. Main probe/reference loader and all
+  copy SHA re-checks pass. Retain original v1/v2 preparation failures, stale v3
+  catalog's 33 empty-digest failures and partial copies; only rebuild the catalog
+  tool with `-j4`, then real `--json` returns 0. No models, digests, original
+  gates or frozen baseline changed.
+- [x] Collect v4 three-backend serial queue under the original complete protocol:
+  CUDA/Vulkan/CPU each have 12 candidate correctness/stability PASS rows without
+  skips; all three overall reports FAIL. Completed forensics is not completed
+  qualification. `Testing/{cuda,vulkan,cpu}-full-v1/report.{json,md}` live in
+  v4. CUDA retains four original baseline failures and one performance alarm;
+  Vulkan has eight and CPU five performance alarms. All snapshot SHA re-checks
+  pass before/after each backend and after this round; execution identities are
+  unchanged. Original host logs still record external compilers overlapping
+  sampling; CPU alarms are not isolated re-test results. v4 runtime `54d0db4d…`,
+  manifest `c0d03d46…`, report revision `660a39c2…` do not inherit earlier
+  a624587d/CUDA identities. Original logs, gates and all FAILs remain; see release
+  ledger for details.
+- [ ] Isolate v4 three-backend performance-failure re-tests in a window without
+  other compilation/inference, using original 3x2x10, threads=4 and original
+  baseline/assets; no baseline replacement or relaxed thresholds. First wait for
+  external Bazel/PCL. After official plugin build exit, CPU capital F16/Q8 rows
+  were re-tested under the original protocol: candidate correctness/stability
+  2 PASS, but `cpu-capital-isolated-v2/report.json` overall FAIL: F16 e2e p95
+  +8.77% (154.422 -> 167.962 ms). Original decode p50 +8.13% did not trigger
+  again; old complete FAIL remains. Host observation shows no additional compiler
+  but is not a full trace; other failures still need re-testing.
+- [x] Existing shared rich-text image/link/underline/list fidelity regression:
+  real Qt5.10.1/Qt6.5.3 rich targets check-built and re-run 1/1 each;
+  `qt510-rich-continuation-v4.log`, `qt6-rich-continuation-v3.log`. This proves
+  only that local shared-owner contract, not complete Markdown/code/math,
+  full-window or native-platform gates below.
 
 - [x] Reproduce fractional Qt5 event loss and navigator border hit-testing,
   then verify the shared helper and real canvas consumer RED -> GREEN.
@@ -57,18 +362,20 @@ Focused Qt5.15 rows pass 6/6 (`continuation-formal-qt-focused-v1.log`); the
 Qt5.10.1/Qt6.5.3 SDK matrices rebuild and pass 7/7 each with the SDK's own
 runtime pinned (`continuation-qt510-{ctest-v1,runtime-v2}.log` records the
 host-Qt5.15 mismatch diagnostic; `continuation-qt6-ctest-runtime-v1.log`).
-此前 picker 的 `continuation-ocr-picker-green-v1.log` 和
-`continuation-qany-ctest-v2.log` 是历史通过，但单 F32 测试已经过期，不能证明
-已发布全家族支持。把 source/v5/v6 catalog 行称为 validation-only 并隐藏量化
-是错误判断，已由上方公共 catalog 集合回归纠正；历史日志仍保留。
+The earlier picker passes in `continuation-ocr-picker-green-v1.log` and
+`continuation-qany-ctest-v2.log` are historical; their single-F32 test is obsolete
+and does not prove complete published-family support. Calling source/v5/v6
+catalog rows validation-only and hiding quantizations was incorrect, corrected by
+the public catalog set regression above; historical logs remain.
 Re-verified in that earlier scope: C ABI coverage 913/913,
 strict plugin boundary, capi 40/40, runner 123, cmake contracts 23, CLI
 L1/L2/L5 197, installed-plugin L3 17. The label-only cvpluginapi rerun keeps
 `test_qanylabeling_attribute_batch` failing without its asset environment
 (`continuation-cvpluginapi-ctest-v1.log`); the same row passes inside the
-environmented full suite. Linux 当前证据仅覆盖构建/契约/schema/局部 relocation，
-不能称为全部 native qualification 完成；完整 installer、clean-machine、L4/live/UI
-与 Windows/macOS install/relocation/loader、Apple Metal 仍开放。
+environmented full suite. Current Linux evidence covers only build/contracts/
+schema/partial relocation, not complete native qualification. Complete installer,
+clean-machine, L4/live/UI, Windows/macOS install/relocation/loader and Apple Metal
+remain open.
 The historical sections below retain their original scope and failures.
 
 Upstream synchronization (2026-10-17): ACloudViewer
@@ -659,113 +966,154 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   architecture branch + catalog rows/digests/probe, R2 plugin sidecar
   fields. The ram digests join `asset_digests.h` together with their
   catalog rows so no digest is published without a consumer.
-  当前核查更正：上述“softmax 分类 ABI 足够表达 PULC”的历史假设不成立。
-  PULC 是独立 Sigmoid 属性组，按原 YAML 执行严格阈值/组内 argmax；原 source
-  返回携带 attributes 的全图 rectangle（不是检测到的目标框），replace=True。
-  不得将其替换为单类别 flags 或仅 sidecar。原图已复用现有 ONNX lowering
-  隔离转换 F32/F16/Q8，并执行 CPU 原生 ggml 数据面：F32/F16 的输出及全部
-  属性选择通过候选门，Q8 person/vehicle 最大误差 0.020849/0.048914 超过
-  预先声明的 0.02 候选门，即便属性选择相同也保持 FAIL。收据位于
-  `build_app/Testing/g8-pulc-native-graphs/native-cpu/report.json`；这份历史
-  OCR test adapter 收据不能证明公共 task/API/catalog 或完整数据集/release 资格。CUDA/Vulkan 各六行后续执行完成，F32/F16 均通过候选门，
-  Q8 两行均失败。独立同存储权重 ONNX 归因见同目录
-  `stored-attribution/report.json`：Q8 原权重量化误差 0.02084890/0.04891500，
-  三后端相对同权重参照最大附加误差 ≤1.55e-6；原精度门及失败不变。
-  `precision-sensitivity/report.json` 后续隔离候选仅把 person 1 个、vehicle 2 个
-  kernel 保留 F16，仍分别有 1601536/1568768 个 Q8 元素，三后端各六行候选门
-  通过（Q8 误差约 0.01444/0.00667）。这是固定单图选择的存储候选，原模型
-  未替换，untouched holdout、公共 ABI、catalog 和 release 门继续开放。
-  冻结候选后 `holdout-cpu/report.json` 执行 11 张未参与选择的真实图片，
-  F32/F16 44/44 通过，Q8 仅 4/22 通过，总 48/66、FAIL；person/vehicle 最大
-  误差 0.0855134/0.0764870。原门与权重 SHA 不变，逐输出/属性及同存储误差
-  保留；不能用校准单图 GREEN 宣称泛化，这些图片亦无属性 dataset GT。
-  后续真实公共 `attribute` task/C ABI 已落地；公共多属性结果独立持有，原始概率
-  完整保留，严格 threshold/argmax 仍在 owning task 中。图执行 owner 已提升到
-  `common/paddle_graph`，OCR/table 共用；feed/fetch metadata 专项 RED→GREEN。
-  person/vehicle F32/F16 公共 ABI 在 CPU/CUDA/Vulkan 的数值、属性、stride、结果
-  所有权和 shutdown 后 live context 存活通过。`pulc-public-holdout-{cpu,cuda,vulkan}/`
-  三份各 48/66、FAIL（F32/F16 44/44，Q8 4/22），原门、候选 SHA 和失败不变。
-  公共本地 F32 recipe/cache API、qAnyLabeling picker 和 worker 已接通，CPU/CUDA/Vulkan
-  真实基础 Run 的全图 attributes、replace、保存、模型切换、stale 拒收、teardown 通过。
-  维护中的 F32 C ABI E2E 与基础 table E2E 三后端通过；table 未配置 layout page。
-  缺失本地模型明确提示 cache 路径，不尝试虚构下载；检测 confidence 不影响属性阈值。
-  公共 probe 追加 pinned source identity/全部属性门，数值通过但属性失配的真实负例
-  RED→GREEN。common runner local-only catalog 前置检查专项已修复，123 tests 通过。
-  初次六行 CPU 收据因 json0/json1 双来源与裸指标歧义为 0/6 FAIL；旧收据保留，
-  配置完整 json0 路径回归 RED→GREEN。新 `attribute-common-runner-*-pathfix/report.json`
-  三后端各 4/6：F32/F16 通过，Q8 原 0.02 门两行仍 FAIL，不替换资产或降低门限。
-  现有 `ANYLABEL_INFER` 支持 attribute TASK/schema/local recipe/cache；真实隔离插件
-  CPU/CUDA/Vulkan 的两模型/两图、confidence 不改变属性、缺失模型不下载及错误 manifest
-  通过，GPU 收据为 `shared-owner-acceptance/attribute-batch-{cuda,vulkan}-v2/receipt.json`。
-  正式模块/消费者重建仍等待原 OCR 全量队列完整结束，不把隔离批处理称为 release。
-  `shared-owner-acceptance/attribute-ui-lifecycle-{cpu,cuda,vulkan}-v1/` 新增真实窗口验收
-  三后端通过：两图 Auto Run、在途取消/不调度下一图、取消后重跑、源图/模型 stale、
-  无效模型的真实 worker 错误恢复、推理中销毁窗口。源码/消费者/模型前后 SHA 不变，
-  未修改生产逻辑；不是 live frame、跨平台 installer、正式库或 release 门通过。
-  仍缺已发布 catalog/digest、独立属性 dataset GT、完整 live/cancel/UI 自动化和 release A/B。
-  标准 manifest/正式 runtime 在原 OCR 长队列结束前保持，不把本地接入称为发布闭合。
-  后续 conv112 graph 的同 SHA、960 主输入、原 3×2×10 release A/B：CUDA 总 PASS，
-  CPU p95 74.480 → 85.560 ms（+14.88%）总 FAIL；Vulkan 第三次候选 source p95
-  8.16 ms 对 2.666369 ms，原双门 FAIL 保留。Vulkan 同协议尾部复验已结束，candidate
-  `[0,0,1]` / baseline `[1,0,0]` 总 FAIL；candidate attempt 3、baseline attempt 1 实为
-  外部 GPU 活动导致的 preflight timeout，各只有 1/2 fixture，不是测得的 source-speed FAIL。
-  成功进程不补齐其 GPU 资格；baseline veto、首轮原性能 FAIL 和旧收据均保留。
-  最新 `conv112-release-vulkan-preflight-recheck-v2/report.json` 两侧各 `[1,1,1]`，总 FAIL。
-  candidate attempt 1 fixture 0 的 GPU/source 审计合格，p95 5.31 对 2.105774 ms 超原
-  5%/3 ms 双门；其余采样另有 preflight timeout、GPU/source 审计失败或 fixture 不全。
-  末次单 log 5.35/7.80 对 baseline 4.30/5.03 ms 不具完整 A/B 资格，不把全部 FAIL 归为污染。
-  真实 NVTX 范围 current/frozen CPU 通过，measured CUDA 主 consumer 选择正/负例
-  RED→GREEN，恢复后的 3 项回归再次通过。完整 raw CPU 两侧各 12/12 正确性/稳定性，
-  5 场景/6 项性能 FAIL。`llm-cpu-attribution-resume-v2.json` 审计 12 行/720 次 measured：
-  原产物身份、输入/输出可比性、逐进程样本完整均通过；六项原失败保留，六测试 RED→GREEN。
-  Haswell 编译/ISA/OpenMP 相同；llama/mtmd 源文件 232/69 全相同，CPU 69 文件仅 DW bias
-  分支不同，不能据此断言整个调用链或性能相同。冻结原 3×2×10 A/A 的 256M Q8 单行
-  `llm-cpu-frozen-aa-resume-v1/` PASS，仅为诊断，不替换原 baseline。完整 post-AA CPU A/B
-  已结束：两侧各 12/12 正确且稳定，三项原性能 FAIL：500M newspaper Q8/F16 decode p50
-  +11.08%/+6.60%，256M newspaper Q8 e2e p95 +5.20%。
-  `llm-cpu-complete-post-aa-attribution-v1.json` 的 720 measured 样本/产物/编译参数审计通过，
-  原三项 FAIL 和旧六项 FAIL 均保留，尚非 CPU release PASS。
-  `llm-cpu-complete-flags-closure-v3.json` 扩展底层源码审计，scheduler/alloc/threading 字节相同；
-  Haswell/ggml-base flags 相同，但 AICore 的 AVX2/frounding-math/宏与直接依赖闭包不同。
-  分模块审计两项负例 RED→GREEN、共 8/8；差异尚无性能因果证明。非特权 CPU 采样被本机
-  perf paranoid=4 拒绝，未调整系统权限。后续 `llm-flags-{control,frozenopts}-ab-v2/report-cpu.json`
-  两轮各三行，原冻结 baseline/3×2×10，共 360 measured；两侧正确稳定、产物 unchanged。
-  current 链接闭包补编 llm/paddle_graph/attribute 三 TU，仅改 CXX_FLAGS、不改宏/includes。
-  control 五项性能 FAIL，冻结 flags 的 500M Q8/F16 decode p50 仍 +8.65%/+6.11%、两项 FAIL。
-  两份 attribution 审计、46 项前后保护 PASS，装配/原 baseline 保护三行为 RED→GREEN。
-  换 flags 未关闭原门，不改生产 flags，不把局部诊断称为完整 release 或因果修复。
-  隔离 builder 的 shell `\$ORIGIN` 转义缺陷另经真实旁置 `.so` RED→GREEN，分析器/
-  装配 10 项和 baseline 保护两项 PASS；`llm-origin-probe-v3/standalone-cpu.json` 在无
-  LD_LIBRARY_PATH 时真实 CPU 推理 PASS，仅为独立加载资格，不覆盖原 v2 收据。
-  原 OCR 两后端 168 场景现已全部结束、仍 FAIL；Vulkan 执行身份 unchanged，七个失败
-  场景涉及 tiny Q8 rec/label/XFUND/orientation、tiny F16 label 及 public/heldout en Q8。
-  `passes_source_gt_gate=0` 是 candidate 相对 source 的 GT 指标 delta 超过 0.005，
-  不是 source 自身质量 veto；CER 改善不能抵消 WER 回退。tiny F16 label 的 hmean/e2e
-  CER/e2e WER delta 为 0.005540/0.006178/0.009804；tiny Q8 label 的 WER/e2e WER
-  为 0.009804，XFUND Q8 WER 为 0.018738，public/heldout en Q8 WER 为
-  0.006834/0.006208，均保留 FAIL。完整数值与历史错误归因纠正在 `OCR_RELEASE_GATES.md`。
-  orientation 的两次失败均为文本一致性断言，不是 angle/score/rotation 断言；wrapper
-  rc=0 不绕过 failures=2。tiny Q8 rec 四 fixture 完整、stored max_diff=1.317e-5，
-  但 benchmark 分支仍因原 source max_diff/argmax 拒绝，不能把非 release audit=0 单独
-  解释为其 rc=1 原因；量化诊断/benchmark gate 的不一致尚未修改，原 FAIL 保留。
-  CUDA 身份变化 veto 保留。`owned-validation-continuum/` 的正式重建、三项契约与
-  三后端 attribute e2e/batch/UI、table、pool 现已全部 rc=0；pool CPU 40/40、
-  CUDA/Vulkan 各 80/80、零失败。正式库 SHA `7b5b28b7...`，冻结库及标准 manifest
-  保护通过；complete=true 仅为所列步骤结束，all_six_tasks_complete=false。
-  table 真实 demo/OCR 消费者通过不覆盖日志明确未配置的可选 layout 页组合。
-  正式 Vulkan `conv112-release-formal-vulkan-v3/report.json` 已结束、总 FAIL：candidate
-  `[0,0,1]` / 原冻结 baseline `[0,1,0]`，每进程 2/2 fixture，主输入 audits 全合格。
-  baseline attempt 2 p95 6.43 对 source 3.277795 ms；candidate attempt 3 p50 5.76 对
-  source 2.430157 ms，绝对差 3.152205 / 3.329843 ms，均超原 5%/3 ms 双门。
-  不归为 preflight timeout；成功进程和聚合字段不抵消失败进程，产物/模型保护通过。
-  后续 loader 取证确认 v3/v4 串侧：当前 `.so` 被当作测试导入 baseline，runner
-  resolve symlink 又跳回当前 probe；原冻结 ggml 不含当前 probe 的 DW bias API。
-  相邻 module/resolved 路径真实 RED 保留；最终仅复制各侧原 probe 字节与 owner modules，
-  `conv112-original-consumer-green-v3.log` 的真实 CPU 加载通过，不重建/补符号到冻结库。
-  v5 `conv112-release-formal-vulkan-v5-original-owner/report.json` candidate `[0,0,0]` /
-  baseline `[0,0,1]`、每进程 2/2 fixture、主输入 audits 合格，仍总 FAIL：baseline 第三
-  进程 p95 5.39 对 source 2.225544 ms，绝对差 3.164456 ms，原双门/baseline veto 保留。
-  原 baseline probe SHA `0be29828...` 未变，v3/v4 不称为合格原 baseline A/B。
+  Current correction: the historical assumption that a softmax classification ABI
+  can express PULC is false. PULC uses independent Sigmoid attribute groups with
+  strict thresholds/group argmax from original YAML. Source returns a full-image
+  rectangle carrying attributes (not a detected object box), replace=True;
+  neither single-category flags nor sidecars alone may replace this contract.
+  Original graphs reused existing ONNX lowering for isolated F32/F16/Q8 conversion
+  and native CPU ggml execution. F32/F16 outputs and all attribute selections pass
+  candidate gates; Q8 person/vehicle max errors 0.020849/0.048914 exceed the
+  predeclared 0.02 candidate gate and remain FAIL even when attributes agree.
+  Receipt: `build_app/Testing/g8-pulc-native-graphs/native-cpu/report.json`.
+  This historical OCR test-adapter receipt does not qualify public
+  task/API/catalog or complete dataset/release. Subsequent CUDA/Vulkan six-row
+  runs pass F32/F16 candidate gates while both Q8 rows fail. Independent
+  same-stored-weight ONNX attribution in `stored-attribution/report.json` reports
+  original Q8 weight errors 0.02084890/0.04891500 and maximum added execution
+  error <=1.55e-6 across three backends; original gates and failures stay intact.
+  Later isolated `precision-sensitivity/report.json` keeps 1 person and 2 vehicle
+  kernels in F16, retaining 1601536/1568768 Q8 elements. Six candidate rows per
+  backend pass (Q8 errors about 0.01444/0.00667). This single-image-selected storage
+  candidate does not replace original models; untouched holdout, public ABI,
+  catalog and release gates remain open. After freezing it, `holdout-cpu/report.json`
+  runs 11 real images excluded from selection: F32/F16 44/44, Q8 only 4/22,
+  overall 48/66 FAIL; person/vehicle max errors 0.0855134/0.0764870. Original gates
+  and weight SHA remain; per-output/attribute/same-storage errors are retained.
+  Calibration-image GREEN does not prove generalization; these images have no
+  attribute dataset GT either.
+  The real public `attribute` task/C ABI subsequently landed with independently
+  owned multi-attribute results and complete raw probabilities; strict
+  threshold/argmax stays task-owned. Graph execution moved to `common/paddle_graph`
+  shared by OCR/table; feed/fetch metadata went RED->GREEN. Person/vehicle F32/F16
+  public ABI passes numeric, attribute, stride, result ownership and live-context
+  survival after shutdown on CPU/CUDA/Vulkan. Three
+  `pulc-public-holdout-{cpu,cuda,vulkan}/` receipts each remain 48/66 FAIL
+  (F32/F16 44/44, Q8 4/22), with original gates/candidate SHA/failures unchanged.
+  Public local F32 recipe/cache API, qAnyLabeling picker and worker are connected;
+  real basic Run full-image attributes, replace, saving, model switching, stale
+  rejection and teardown pass on CPU/CUDA/Vulkan. Maintained F32 C ABI E2E and
+  basic table E2E pass on all three; table has no configured layout page. Missing
+  local models report cache paths without fabricated downloads; detection
+  confidence does not affect attribute thresholds. Public probe added pinned
+  source identity/all-attribute gates; a numerically passing attribute-mismatch
+  negative case went RED->GREEN. Common runner's local-only catalog precondition
+  was fixed with 123 tests passing. Initial six-row CPU receipt is 0/6 FAIL from
+  json0/json1 dual-source/bare-metric ambiguity; retain old receipt. Complete json0
+  path configuration went RED->GREEN. New
+  `attribute-common-runner-*-pathfix/report.json` is 4/6 per backend: F32/F16 pass,
+  both Q8 rows still FAIL original 0.02 gate; no asset replacement or relaxed gate.
+  Existing `ANYLABEL_INFER` supports attribute TASK/schema/local recipe/cache;
+  real isolated-plugin two-model/two-image, confidence-independent attributes,
+  missing-model/no-download and invalid-manifest checks pass CPU/CUDA/Vulkan.
+  GPU receipts: `shared-owner-acceptance/attribute-batch-{cuda,vulkan}-v2/receipt.json`.
+  Official module/consumer rebuild still awaited the original full OCR queue;
+  isolated batch success is not release.
+  New real-window `shared-owner-acceptance/attribute-ui-lifecycle-{cpu,cuda,vulkan}-v1/`
+  passes on all three: two-image Auto Run, in-flight cancel/no-next-image,
+  rerun after cancel, source/model stale, real invalid-model worker recovery and
+  window destruction during inference. Source/consumer/model SHA remain unchanged;
+  no production logic change. This is not live-frame, cross-platform installer,
+  official-library or release qualification. Published catalog/digests, independent
+  attribute dataset GT, complete live/cancel/UI automation and release A/B remain
+  absent. Standard manifest/official runtime stayed intact until the original OCR
+  queue ended; local integration does not close publication.
+  Later conv112 graph same-SHA/960-main-input/original 3x2x10 release A/B:
+  CUDA overall PASS; CPU p95 74.480 -> 85.560 ms (+14.88%) overall FAIL; Vulkan
+  third candidate source p95 8.16 versus 2.666369 ms retains original dual-gate FAIL.
+  Same-protocol Vulkan tail re-test completed candidate `[0,0,1]` / baseline
+  `[1,0,0]` overall FAIL. Candidate attempt 3/baseline attempt 1 actually hit
+  external-GPU preflight timeouts, each with only 1/2 fixtures, not measured
+  source-speed FAILs. Successful processes do not qualify failed processes;
+  baseline veto, original first-round performance FAIL and old receipts remain.
+  Latest `conv112-release-vulkan-preflight-recheck-v2/report.json`: both sides
+  `[1,1,1]`, overall FAIL. Candidate attempt 1 fixture 0 GPU/source audit qualifies,
+  p95 5.31 versus 2.105774 ms exceeds original 5%/3 ms; other sampling has
+  preflight timeouts, failed GPU/source audits or incomplete fixtures. Final single
+  log 5.35/7.80 versus baseline 4.30/5.03 ms is not complete A/B qualification;
+  not all FAILs are attributed to contamination.
+  Real current/frozen CPU NVTX ranges pass; measured-CUDA main-consumer selection
+  positive/negative cases went RED->GREEN, and three resumed regressions pass.
+  Complete raw CPU is 12/12 correct/stable per side with five scenarios/six
+  performance FAILs. `llm-cpu-attribution-resume-v2.json` audits 12 rows/720 measured
+  runs: original artifact identity, comparable inputs/outputs and complete
+  per-process samples pass; retain six original failures, six tests RED->GREEN.
+  Haswell compilation/ISA/OpenMP agree; 232/69 llama/mtmd sources are identical,
+  only DW bias differs among 69 CPU files. This does not prove whole-chain or
+  performance equality. Original frozen 3x2x10 single-row 256M Q8 A/A
+  `llm-cpu-frozen-aa-resume-v1/` PASS is diagnosis only, not a baseline replacement.
+  Complete post-AA CPU A/B finished 12/12 correct/stable per side, retaining three
+  performance FAILs: 500M newspaper Q8/F16 decode p50 +11.08%/+6.60%, 256M
+  newspaper Q8 e2e p95 +5.20%. `llm-cpu-complete-post-aa-attribution-v1.json`
+  audits 720 samples/artifacts/compiler flags successfully; original three and old
+  six FAILs remain, not CPU release PASS.
+  `llm-cpu-complete-flags-closure-v3.json` extends source audit:
+  scheduler/alloc/threading bytes and Haswell/ggml-base flags match; AICore
+  AVX2/frounding-math/macros/direct dependency closure differ. Two per-module
+  negative cases went RED->GREEN, total 8/8; no performance causality proven.
+  Host perf paranoid=4 rejects unprivileged CPU sampling; system permissions were
+  not changed. Later `llm-flags-{control,frozenopts}-ab-v2/report-cpu.json` has
+  two three-row rounds, original frozen baseline/3x2x10, total 360 measured runs;
+  both sides correct/stable, artifacts unchanged. Same-current-link-closure rebuild
+  of llm/paddle_graph/attribute TUs changes only CXX_FLAGS, not macros/includes.
+  Control retains five performance FAILs; frozen flags retain two 500M Q8/F16
+  decode p50 FAILs +8.65%/+6.11%. Both attribution audits and 46 before/after
+  protections PASS; three assembly/baseline protection behaviors RED->GREEN.
+  Flags changes did not close original gates; production flags stay intact and
+  partial diagnosis is not complete release or causal repair. Isolated builder's
+  shell `\$ORIGIN` escaping defect separately went really RED->GREEN with a
+  side-loaded `.so`; 10 analyzer/assembly and two baseline protections PASS.
+  `llm-origin-probe-v3/standalone-cpu.json` passes real CPU inference without
+  LD_LIBRARY_PATH, qualifying independent loading only, not replacing v2 receipts.
+  Original OCR 168-scenario runs on both backends finished, still FAIL. Vulkan
+  execution identity unchanged; seven failures cover tiny Q8
+  rec/label/XFUND/orientation, tiny F16 label, public/heldout en Q8.
+  `passes_source_gt_gate=0` means candidate-source GT delta exceeds 0.005, not source
+  quality veto; CER improvements do not offset WER regressions. Tiny F16 label
+  hmean/e2e CER/e2e WER deltas are 0.005540/0.006178/0.009804; tiny Q8 label
+  WER/e2e WER 0.009804, XFUND Q8 WER 0.018738, public/heldout en Q8 WER
+  0.006834/0.006208; all FAILs remain. Complete metrics and correction of historical
+  attribution are in `OCR_RELEASE_GATES.md`. Both orientation failures are text
+  equality, not angle/score/rotation; wrapper rc=0 does not bypass failures=2.
+  Tiny Q8 rec four fixtures complete, stored max_diff=1.317e-5, but benchmark
+  still rejects original source max_diff/argmax; non-release audit=0 alone does not
+  explain rc=1. Quantization diagnostic/benchmark gate inconsistency remains
+  unchanged with original FAIL. CUDA identity-change veto remains.
+  `owned-validation-continuum/` official rebuild, three contracts and three-backend
+  attribute e2e/batch/UI, table, pool now all rc=0; pool CPU 40/40, CUDA/Vulkan
+  80/80 each, zero failures. Official-library SHA `7b5b28b7...`, frozen-library and
+  standard-manifest protection pass; complete=true marks listed steps only,
+  all_six_tasks_complete=false. Real table demo/OCR passes do not cover explicitly
+  unconfigured optional layout-page composition.
+  Official Vulkan `conv112-release-formal-vulkan-v3/report.json` finished overall
+  FAIL: candidate `[0,0,1]` / original frozen baseline `[0,1,0]`, 2/2 fixtures per
+  process, all main-input audits qualified. Baseline attempt 2 p95 6.43 versus
+  source 3.277795 ms; candidate attempt 3 p50 5.76 versus source 2.430157 ms,
+  absolute differences 3.152205 / 3.329843 ms, both exceed original 5%/3 ms.
+  Not preflight timeouts; successful processes/aggregate fields do not offset
+  failures, artifact/model protections pass. Later loader forensics confirm v3/v4
+  cross-side loading: current `.so` imported as test baseline and runner symlink
+  resolution returned current probe; original frozen ggml lacks current probe's
+  DW bias API. Adjacent-module/resolved-path real REDs remain. Finally only original
+  probe bytes and owner modules per side are copied;
+  `conv112-original-consumer-green-v3.log` passes real CPU loading without frozen
+  rebuild/symbol insertion. v5
+  `conv112-release-formal-vulkan-v5-original-owner/report.json` has candidate
+  `[0,0,0]` / baseline `[0,0,1]`, 2/2 fixtures per process, main audits qualified,
+  still overall FAIL: baseline third-process p95 5.39 versus source 2.225544 ms,
+  absolute difference 3.164456 ms; original dual gate/baseline veto remain.
+  Original baseline probe SHA `0be29828...` unchanged; v3/v4 are not called qualified
+  original-baseline A/B.
   The initial `llm-raw-formal-ab-v1/report-cpu.json` remains INCOMPLETE:
   rc=77 because its independent source tools were unavailable. The later
   `llm-raw-formal-cpu-ref-v2/report-cpu.json` completes both sides' 3x2x10
@@ -773,89 +1121,117 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   (+6.7794%, +6.606 ms). Selected CUDA `llm-raw-formal-cuda-ref-v3/report-cuda.json`
   passes three rows at revision `e659cd3b`, not the original full release.
   Independent source tools do not replace the frozen performance baseline.
-  `owned-yolo-formal-lifecycle-v1/` 的正式公共生命周期三后端 PASS；
-  `yolo-owner-formal-oracle-cuda-v1.log` 的当前正式 CUDA module owner oracle rc=0。
-  原独立 checkpoint Q8 0.02 门不由这些 PASS 撤销。
-  orientation 同存储权重 exporter 的真实负例 RED→GREEN，新增 native 方法前 OCR owner 套件 75 PASS；
-  额外 native 原文本门三后端均实际 FAIL。`orientation-stored-{cpu,cuda}-v1/`
-  及 `orientation-native-{cpu-red-v2,cuda-red-v1,vulkan-red-v1}.log` 定位到倒置
-  word_1（index=1）：独立 source=LNIO，存储 Q8/native=LNIOF，重复两次一致，
-  .9 门下 native-stored 文本无附加失配；不把 threshold=1 的未旋转文本与 .9 真值比较。
-  仅此 fixture 的存储归因不证明全部页面或 release 通过，原文本 FAIL 保留。
-  完整 raw CUDA candidate 12/12、冻结 baseline 四行文本 FAIL，
-  500m newspaper F16 e2e p95 +5.71% 使总门 FAIL。四份 measured profile 首轮 JPEG
-  解码失败；补齐 Qt plugin 路径后的插入在任务开始前被外部 GPU 负载拒绝，OCR 已恢复。
-  `owned-measured-profile-pluginfix-wait/status.json` 自动等待空闲再串行采集，不触发正式重建。
-  此轮随后四份 probe 均成功，四份 routes 因每范围 0 个 kernel 节点仍 FAIL（同线程 API
-  各 522）；本机 Nsight 默认 graph 粒度不采集 graph 节点。后续
-  `owned-measured-profile-nodefix-wait/` 的四份 node 重采 probe/routes 8/8 PASS，256M
-  的 40 范围均有主 consumer kernel/同线程 API；恢复真实回归 4/4 PASS，收据为
-  `llm-measured-nodefix-resume-v1.log`。旧失败与 profiling-only 边界保留，生产 Graphs
-  不关闭。`owned-measured-500m-nodefix-wait/` 的对应 500M 补采也已结束：四份
-  probe/routes 8/8 PASS，额外 40 measured 范围通过同一真实回归；原外部 GPU 拒绝
-  保留、OCR 已恢复。F16 current/frozen 主 GEMM h1688/s1688 可见；插桩时延不进入
-  release，不混用模型资格或撤销原 CPU/CUDA FAIL。
-  0019 pool AVG 隔离 80 GREEN；正式重建前 CPU 40/40、Vulkan 80/80 PASS，CUDA 80/27 FAIL。
-  YOLO26 独立 GGUF→checkpoint 参数注入复验核验 204 映射，Q8 分数误差仍 0.14595002，
-  超原 0.02 门；不替换原资产，不将权重量化归因写成全部执行误差或 release 闭合。
-  公共 CPU mode 1 的 `yolo-quantization-execution-cpu-resume-v3.json` 进一步保留 Q8 同
-  权重附加误差 0.02269834、独立 checkpoint 总误差 0.12325168；原 0.02 门仍 FAIL。
-  后端选择/独立误差记录真实测试 RED→GREEN，三测试通过；GPU 六行
-  `yolo-quantization-execution-{cuda,vulkan}-resume-v4.json` 已完成：F32/F16 PASS；Q8
-  CUDA 同权重误差 0.18532050、总误差 0.18347186、缺四框，Vulkan 0.00550228/0.15145230
-  且五框匹配，两者原总门仍 FAIL，均十次稳定、资产前后 SHA 不变。不能把 CUDA 缺框
-  当作只有存储误差。当前源码两 GPU 都 host 展开 Q8 为 F16。空档 scope 收据已结束：
-  `owned-yolo-q8-optrace-llm-scope-v1/coordinator-2/llm-cuda-arithmetic-scope.log` 11/11 PASS，
-  全部 0 changed elements；不替代 LLM 原文本/p95 门。初次 optrace 装配退出 77 保留；
-  模块旁 executable 的 `owned-yolo-q8-optrace-resume-v2/coordinator-1/` 两项完成
-  162/162、0 null，CPU→CUDA 首超诊断 op61，Vulkan→CUDA op149，均 rc=1，不是公共库资格。
-  新公共 ABI 生命周期 `owned-yolo-q8-public-lifecycle-v1/`：CUDA 冷 Q8 五框，切换
-  F32/F16 后 Q8 一框，再建 context 仍一框；每 context 十二轮稳定，Vulkan PASS。
-  禁用 IGEMM 的同测试 PASS，取得缓存路径 RED。维护 CUDA 计划未消费 task 已写入的
-  plan_owner_id；有序 `0020-acv-cuda-igemm-plan-owner.patch` 补 owner 检查和 NHWC 失效处理，
-  仅 CUDA/combined，原正式树只读 apply --check 通过。`yolo-igemm-owner-candidate-v1/`
-  的四链正反向/幂等重放与单 TU 编译已通过；原链接缺 80 个对象，正从 verified combined
-  replay 和 pinned llama parent 完整重建隔离 CUDA backend。继承原 ISA/Graphs/算术选项，
-  构建成功，最终 receipt 的 module SHA `4b6ad3c8...` 与保护 unchanged 已核实；同二进制
-  oracle SHA `900a4a2f...` 已装配 RED/GREEN。`owned-yolo-igemm-owner-green-v1/coordinator-3/`
-  已完成真实 oracle RED rc=1→GREEN rc=0，CUDA/Vulkan 公共模型切换/再建 context 生命周期
-  PASS；后续 `owned-llm-flags-attribution-v2/coordinator-1/` 同一 CPU 生命周期亦 PASS，
-  三后端齐全。前两次插入拒绝及恢复收据保留。`yolo-quantization-execution-cuda-ownerfix-v5.json`
-  的 Q8 五框匹配、十次稳定，同权重执行附加分数误差为 0.0021265149，独立 checkpoint
-  总误差 0.1480765343 仍超原 0.02 门、FAIL；资产/runtime 前后 SHA unchanged，不将编排
-  成功称为精度 PASS。隔离模块含 0019 但不替代 pool 正式门，不改模型/原门/正式或冻结
-  产物，所有原失败仍保留。
-  本次源码检查：913/913 C ABI、strict plugin boundary、17 source-owner 契约、123 runner
-  测试及 L1/L2/L5 197 项通过；公共属性错误参照负例复跑 PASS，输入 unchanged，见
-  `shared-owner-acceptance/attribute-probe-resume-v3/`。这些不替代正式消费者或 release。
-  冻结 release CPU F32 三进程五框匹配且稳定，但分数误差均为 0.1101961732，正常
-  执行后被原精度门拒绝；不是 loader/新 attention API 缺失，性能 veto 不绕过。
-  全部 Q8 单 tensor 临时 F16 恢复方案均未过原门；最佳 `op.109.w` 最大分数误差
-  0.03684449196 仍 FAIL。`yolo-q8-single-tensor-sensitivity-resume-v1.json` 保留每轮
-  Q8 baseline 恢复与资产前后 SHA；固定单图诊断不写模型、不代替原生/留出/release。
-  指定 tensor 恢复/未知名称拒绝两真实测试 RED→GREEN；三个 `op.109.w` 配对
-  `op.110.w/op.107.w/op.20.w` 的误差 0.04792762/0.08504459/0.08508769 仍 FAIL。
-  用户选择仅使用原冻结基线，原 release veto 保持，不新建替代基线。
-  Linux 原构建 L3 schema 16 PASS/1 FAIL 保留。实际配置为
-  PLUGIN_STANDARD_QMAPANYTHING=OFF；原队列全部结束后正常启用并构建消费者，
-  `mapanything-consumer-{configure,build}-v1.log` 成功，
-  `automation-l3-schema-formal-green-v1.log` 现为 17/17 PASS，无 skip；
-  不代表跨平台 installer 或 packaged GUI L4。PA100K 官方归档 SHA 固定为
-  `65e2ab37519aacf307c8c0ce04c6ab8edac3b4199e0448d4de625cfd60cd5cc0`，
-  `pulc-pa100k-gt-v1/` 已提取 val/test 各 10000 张及 26 维 GT，未消费训练集。
-  下载/旧路径覆盖拒绝/GT 准备/路径穿越负例及公共 CPU 两图原始三量化回归通过；
-  `pulc-pa100k-val-cpu-v1/report.json` 已完成 val 10000 图原始三量化：F32 10000/10000
-  PASS、max 3.93391e-6；F16 9969/10000，max 0.00992972 未超概率门，但 31 图属性
-  失配仍 FAIL；Q8 2707/10000、max 0.27434349 仍 FAIL。source/模型/runtime/GT 前后
-  SHA unchanged，逐图与逐属性 GT 计数保留，不以个别属性改善抵消回退或修改原门。
-  `pulc-pa100k-test-cpu-resume-v2/report.json` 的独立 test 10000 图亦完成：F32
-  10000/10000 PASS；F16 9955/10000，45 图属性失配；Q8 2497/10000，max 0.34178510
-  仍 FAIL。两 split 20000 图/60000 行完整且全稳定，收据审计四测试 RED→GREEN；
-  Q8 原概率失败分别 7275/7480 图，存储误差失败数相同，最大同权重执行附加误差
-  为 3.40e-6/3.87e-6。全部逐属性 GT 计数保留，不校准、训练、替换资产或事后改门。
-  首次 loader 失败保留；数据集诊断不代表正式/三后端/release 性能资格。
-  VeRi 由用户自行申请后提供，vehicle dataset GT 仍开放。
-  RAM 当前由独立 `tagging` task 持有，不沿用旧 YOLO 分支计划。
+  Official public lifecycle `owned-yolo-formal-lifecycle-v1/` PASSes all three
+  backends; `yolo-owner-formal-oracle-cuda-v1.log` current official CUDA module
+  owner oracle rc=0. These passes do not withdraw original independent-checkpoint
+  Q8 0.02 gate. Orientation same-stored-weight exporter real negative case went
+  RED->GREEN; OCR owner suite was 75 PASS before new native method. Additional
+  native original text gates actually FAIL on three backends.
+  `orientation-stored-{cpu,cuda}-v1/` and
+  `orientation-native-{cpu-red-v2,cuda-red-v1,vulkan-red-v1}.log` localize inverted
+  word_1 (index=1): independent source=LNIO, stored Q8/native=LNIOF, two repetitions
+  agree, native-stored adds no text mismatch at .9 gate. Unrotated threshold=1 text
+  is not compared with .9 truth. This fixture's storage attribution does not prove
+  all-page or release acceptance; original text FAIL remains.
+  Complete raw CUDA candidate is 12/12, frozen baseline four text rows FAIL, and
+  500m newspaper F16 e2e p95 +5.71% makes overall FAIL. Initial four measured
+  profiles failed JPEG decoding; after Qt plugin path fix, external GPU load
+  rejected insertion before task start and OCR was restored.
+  `owned-measured-profile-pluginfix-wait/status.json` automatically waits for idle
+  then samples serially without official rebuild. Subsequently four probes succeed,
+  four routes still FAIL with 0 kernel nodes per range (522 same-thread APIs each);
+  host Nsight default graph granularity does not capture nodes. Later four
+  node re-sampling probes/routes in `owned-measured-profile-nodefix-wait/` are
+  8/8 PASS, all 40 256M ranges have main-consumer kernel/same-thread API; resumed
+  real regression 4/4 PASS in `llm-measured-nodefix-resume-v1.log`. Retain old
+  failures and profiling-only boundary, without disabling production Graphs.
+  Corresponding 500M re-sampling in `owned-measured-500m-nodefix-wait/` finished:
+  four probes/routes 8/8 PASS, another 40 measured ranges pass same real regression.
+  Original external-GPU rejection remains and OCR restored. F16 current/frozen
+  main GEMM h1688/s1688 is visible; instrumented latency never enters release,
+  qualifies other models or withdraws original CPU/CUDA FAILs.
+  Isolated 0019 pool AVG 80 GREEN; pre-official-rebuild CPU 40/40 and Vulkan 80/80
+  PASS, CUDA 80/27 FAIL. Independent YOLO26 GGUF->checkpoint injection verifies
+  204 mappings; Q8 score error remains 0.14595002 above original 0.02. Original
+  assets stay; weight-quantization attribution is neither all execution error nor
+  release closure. Public CPU mode 1
+  `yolo-quantization-execution-cpu-resume-v3.json` retains Q8 same-weight added
+  error 0.02269834, independent-checkpoint total 0.12325168, original 0.02 FAIL.
+  Backend-selection/independent-error-recording real tests RED->GREEN, three pass.
+  Six GPU rows in `yolo-quantization-execution-{cuda,vulkan}-resume-v4.json`
+  complete F32/F16 PASS; Q8 CUDA same-weight error 0.18532050, total 0.18347186,
+  four missing boxes; Vulkan 0.00550228/0.15145230 with five matching boxes.
+  Both original overall gates FAIL, ten repetitions stable, asset SHA unchanged.
+  Missing CUDA boxes are not storage-only error. Current sources expand Q8 to F16
+  on host for both GPUs. Idle-slot scope receipt
+  `owned-yolo-q8-optrace-llm-scope-v1/coordinator-2/llm-cuda-arithmetic-scope.log`
+  finished 11/11 PASS, 0 changed elements; not original LLM text/p95 qualification.
+  First optrace assembly exit 77 remains; module-adjacent executable
+  `owned-yolo-q8-optrace-resume-v2/coordinator-1/` completes two items 162/162,
+  0 null, first diagnostic exceedance CPU->CUDA op61, Vulkan->CUDA op149, both
+  rc=1, not public-library qualification.
+  New public ABI lifecycle `owned-yolo-q8-public-lifecycle-v1/`: CUDA cold Q8 five
+  boxes, Q8 one box after F32/F16 switching, still one after context recreation;
+  twelve stable rounds per context, Vulkan PASS. Same test with IGEMM disabled
+  PASSes, producing cache-path RED. Maintained CUDA plans never consumed task's
+  plan_owner_id; ordered `0020-acv-cuda-igemm-plan-owner.patch` adds owner checks
+  and NHWC invalidation, CUDA/combined only; original official tree read-only
+  apply --check passes. `yolo-igemm-owner-candidate-v1/` four-chain
+  forward/reverse/idempotent replay and single-TU compilation pass. Original link
+  lacked 80 objects; full isolated CUDA backend rebuild from verified combined
+  replay/pinned llama parent inherits original ISA/Graphs/arithmetic. Build succeeds,
+  final module SHA `4b6ad3c8...` and unchanged protection verified; same oracle
+  SHA `900a4a2f...` assembled RED/GREEN.
+  `owned-yolo-igemm-owner-green-v1/coordinator-3/` completes real oracle RED rc=1
+  -> GREEN rc=0, CUDA/Vulkan public model-switch/context-recreation PASS; later
+  identical CPU lifecycle in `owned-llm-flags-attribution-v2/coordinator-1/` PASSes,
+  covering three backends. First two rejected insertions and restoration remain.
+  `yolo-quantization-execution-cuda-ownerfix-v5.json`: Q8 five boxes match, ten
+  stable repetitions, added same-weight score error 0.0021265149, independent
+  checkpoint total 0.1480765343 still exceeds original 0.02, FAIL. Asset/runtime SHA
+  unchanged; orchestration success is not accuracy PASS. Isolated module includes
+  0019 but never replaces official pool gate; models/original gates/official or
+  frozen artifacts untouched, all original failures retained.
+  This round's source checks pass 913/913 C ABI, strict plugin boundary,
+  17 source-owner contracts, 123 runner tests and 197 L1/L2/L5 items. Public
+  attribute incorrect-reference negative re-run PASS, inputs unchanged:
+  `shared-owner-acceptance/attribute-probe-resume-v3/`; not official-consumer or
+  release qualification. Frozen release CPU F32 three processes have five stable
+  matching boxes but score error 0.1101961732 each; original accuracy gate rejects
+  normal execution, not loader/missing attention API, and performance veto stands.
+  No Q8 single-tensor transient F16 restoration passes original gate; best
+  `op.109.w` max score error 0.03684449196 still FAIL.
+  `yolo-q8-single-tensor-sensitivity-resume-v1.json` retains per-round Q8 baseline
+  restoration/asset SHA; fixed single-image diagnosis writes no model and does not
+  replace native/holdout/release. Specified tensor restoration/unknown-name rejection
+  two real tests RED->GREEN; three `op.109.w` pairings
+  `op.110.w/op.107.w/op.20.w` errors 0.04792762/0.08504459/0.08508769 still FAIL.
+  User chose original frozen baseline only; original release veto remains, no new
+  substitute baseline. Original Linux L3 schema 16 PASS/1 FAIL remains. Actual
+  PLUGIN_STANDARD_QMAPANYTHING=OFF; after original queue completion normal
+  enable/build succeeds in `mapanything-consumer-{configure,build}-v1.log`.
+  `automation-l3-schema-formal-green-v1.log` now 17/17 PASS, no skips, not
+  cross-platform installer/packaged GUI L4. Official PA100K archive SHA pinned:
+  `65e2ab37519aacf307c8c0ce04c6ab8edac3b4199e0448d4de625cfd60cd5cc0`.
+  `pulc-pa100k-gt-v1/` extracted 10000 val/10000 test images and 26-dimensional GT,
+  without training-set consumption. Download/old-path-overwrite rejection/GT
+  preparation/path-traversal negative and public CPU two-image raw-three-quantization
+  regressions pass. `pulc-pa100k-val-cpu-v1/report.json` completes 10000 val images:
+  F32 10000/10000 PASS, max 3.93391e-6; F16 9969/10000, max 0.00992972 passes
+  probability gate but 31 attribute-mismatch images still FAIL; Q8 2707/10000,
+  max 0.27434349 still FAIL. Source/model/runtime/GT SHA unchanged; per-image/
+  per-attribute GT counts remain; individual attribute improvements do not offset
+  regressions or alter gates. Independent 10000-image test
+  `pulc-pa100k-test-cpu-resume-v2/report.json` also completes: F32 10000/10000 PASS,
+  F16 9955/10000 with 45 attribute-mismatch images, Q8 2497/10000 max 0.34178510
+  still FAIL. Two splits 20000 images/60000 rows complete/stable; four receipt
+  audit tests RED->GREEN. Original Q8 probability failures 7275/7480 images equal
+  storage-error failure counts; max added same-weight execution error
+  3.40e-6/3.87e-6. All per-attribute GT counts remain, no calibration/training/
+  asset replacement/post-hoc gates. First loader failure remains; dataset diagnosis
+  is not official/three-backend/release performance qualification. User must apply
+  for VeRi access; vehicle dataset GT stays open. RAM is now owned by independent
+  `tagging` task, not the old YOLO-branch plan.
 - [ ] Other detection/pose/lane architectures: `damo_yolo`, `gold_yolo`,
   `yolo_nas`, `yolov6`, `yolov6_face`, `yolov7`, `yolov9`, `yolov10`,
   `yolo12`, `yolox`, `rtdetr`, `rtdetrv2`, `u_rtdetr`, `dfine`,
@@ -883,8 +1259,9 @@ cpp} (namespace aicore::img); facedetect keeps a using-shim header (its
   whole-body 133-point skeletons stay exact-weights-unsupported);
   `yolov8_obb` -> OBB role; `grounding_*` -> WORLD/YOLOE
   open-vocabulary roles; `yolov8_cls`/`internimage_cls` -> CLASSIFY role
-  (RAM covers the multi-label tagging use case). `pulc_attribute` 由后续公共
-  attribute task 表达独立 Sigmoid 属性组，不能映射为 CLASSIFY 单类别 flags。
+  (RAM covers the multi-label tagging use case). The later public attribute task
+  expresses `pulc_attribute` as independent Sigmoid attribute groups; it cannot
+  map to single-category CLASSIFY flags.
   Every enabled mapping must cite its catalog row;
   unmatched official entries keep their names disabled with TODOs,
   and `clrnet` stays exact-weights-unsupported until a polyline typed

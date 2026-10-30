@@ -183,64 +183,136 @@ void drawRotationDirection(QPainter& painter,
     painter.restore();
 }
 
-// Label coordinates are in device pixels; attribute coordinates follow the
-// image transform, matching the upstream Canvas painting contract.
-void drawAnnotationLabel(QPainter& painter,
-                         const AnnotationShape& shape,
-                         const QString& text,
-                         const QColor& color,
-                         int pointSize) {
-    if (text.isEmpty() || shape.points.isEmpty()) return;
+// Export and interaction share device-pixel layout; draw all leaders before labels.
+// Scratch is O(visible labels), anchor lookup O(total points); no pairwise collision pass.
+void drawAnnotationLabels(
+        QPainter& painter,
+        const AnnotationCanvas& canvas,
+        const QVector<AnnotationShape>& shapes,
+        const AnnotationCanvas::VisualizationOptions& options,
+        const QRect& bounds,
+        int excludedIndex = -1) {
+    if (!options.showLabels && !options.showTexts) return;
+    struct Label {
+        QColor color;
+        QRect box;
+        QPoint textPosition;
+        QString text;
+        QPolygonF leader;
+    };
+    QVector<Label> labels;
+    labels.reserve(shapes.size());
     const QTransform transform = painter.transform();
     painter.save();
     painter.setOpacity(1.0);
     painter.resetTransform();
-    painter.setFont(
-            QFont(QStringLiteral("Arial"),
-                  annotationConfig::value("canvas/label_font_size").toInt()));
+    painter.setFont(QFont(
+            QStringLiteral("Arial"),
+            annotationConfig::value("canvas/label_font_size").toInt()));
     const QFontMetrics metrics(painter.font());
-    const int width = metrics.tightBoundingRect(text).width() + 8;
-    const int height = metrics.height() + 4;
-    QPointF anchor = transform.map(shape.points.first());
-    if (shape.type == QStringLiteral("circle")) {
-        anchor -= QPointF(width / 2.0, height / 2.0);
-    } else if (shape.type == QStringLiteral("point") ||
-               shape.type == QStringLiteral("line") ||
-               shape.type == QStringLiteral("linestrip")) {
-        anchor += QPointF(pointSize, -15);
-    } else {
-        anchor =
-                transform.map(QPolygonF(shape.points).boundingRect().topLeft());
+    for (int index = 0; index < shapes.size(); ++index) {
+        const auto& shape = shapes[index];
+        if (index == excludedIndex || !shape.visible || shape.points.isEmpty() ||
+            shape.label == QStringLiteral("AUTOLABEL_OBJECT") ||
+            shape.label == QStringLiteral("AUTOLABEL_ADD") ||
+            shape.label == QStringLiteral("AUTOLABEL_REMOVE"))
+            continue;
+        QStringList fields;
+        if (options.showLabels) {
+            QString title = shape.label;
+            const auto group = shape.extra.value(QStringLiteral("group_id"));
+            if (group.isDouble()) {
+                title += QStringLiteral(" (%1)").arg(group.toInt());
+                title = title.trimmed();
+            }
+            if (!title.isEmpty()) fields.append(title);
+            const auto score = shape.extra.value(QStringLiteral("score"));
+            if (options.showScores && score.isDouble())
+                fields.append(QString::number(score.toDouble(), 'f', 2));
+        }
+        const QString description =
+                shape.extra.value(QStringLiteral("description")).toString();
+        if (options.showTexts && !description.isEmpty())
+            fields.append(description);
+        const QString text = fields.join(QStringLiteral(" · "));
+        if (text.isEmpty()) continue;
+        const int width = metrics.tightBoundingRect(text).width() + 8;
+        const int height = metrics.height() + 4;
+        Label label;
+        label.text = text;
+        label.color = canvas.shapeColor(shape);
+        if (shape.type == QStringLiteral("rectangle") ||
+            shape.type == QStringLiteral("rotation")) {
+            QPointF point = transform.map(shapeBounds(shape).topLeft());
+            if (shape.type == QStringLiteral("rectangle"))
+                point.ry() -= height;
+            label.box = QRect(int(point.x()), int(point.y()), width, height);
+            label.textPosition =
+                    QPoint(int(point.x() + 4),
+                           int(point.y() + height - 2 - metrics.descent()));
+        } else if (shape.type == QStringLiteral("polygon") ||
+                   shape.type == QStringLiteral("quadrilateral") ||
+                   shape.type == QStringLiteral("cuboid") ||
+                   shape.type == QStringLiteral("circle") ||
+                   shape.type == QStringLiteral("line") ||
+                   shape.type == QStringLiteral("linestrip") ||
+                   shape.type == QStringLiteral("point")) {
+            QPointF anchor = *std::min_element(
+                    shape.points.cbegin(), shape.points.cend(),
+                    [](const QPointF& a, const QPointF& b) {
+                        return a.y() < b.y() ||
+                               (a.y() == b.y() && a.x() < b.x());
+                    });
+            if (shape.type == QStringLiteral("circle")) {
+                if (shape.points.size() < 2) continue;
+                anchor = shape.points[0] -
+                         QPointF(0, QLineF(shape.points[0], shape.points[1])
+                                            .length());
+            }
+            const QPointF point = transform.map(anchor);
+            double left = point.x() + 24;
+            if (left + width > bounds.right())
+                left = point.x() - 24 - width;
+            double top = point.y() - 24 - height;
+            if (top < bounds.top()) top = point.y() + 24;
+            left = std::max(double(bounds.left()),
+                            std::min(left, double(bounds.right() - width + 1)));
+            top = std::max(double(bounds.top()),
+                           std::min(top, double(bounds.bottom() - height + 1)));
+            label.box = QRect(int(left), int(top), width, height);
+            label.textPosition =
+                    QPoint(label.box.left() + 4,
+                           label.box.bottom() + 1 - 2 - metrics.descent());
+            const int endX = point.x() <= label.box.center().x()
+                                     ? label.box.left()
+                                     : label.box.right();
+            const QPointF end(endX, label.box.center().y());
+            const QPointF elbow(end.x() +
+                                        (endX == label.box.left() ? -8 : 8),
+                                end.y());
+            label.leader << point << elbow << end;
+        } else {
+            continue;
+        }
+        labels.append(label);
     }
-    const QRect box(int(anchor.x()), int(anchor.y()), width, height);
-    painter.fillRect(box, color);
-    painter.setPen(Qt::black);
-    painter.drawText(
-            QPoint(box.x() + 4, box.y() + height - 2 - metrics.descent()),
-            text);
-    painter.restore();
-}
-
-void drawAnnotationDescription(QPainter& painter,
-                               const AnnotationShape& shape,
-                               double scale) {
-    const QString text =
-            shape.extra.value(QStringLiteral("description")).toString();
-    if (text.isEmpty() || shape.points.isEmpty()) return;
-    painter.save();
-    painter.setOpacity(1.0);
-    painter.setFont(QFont(QStringLiteral("Arial"),
-                          std::max(6, int(std::nearbyint(8.0 / scale)))));
-    const QFontMetrics metrics(painter.font());
-    const QRectF bounds = shapeBounds(shape);
-    const QRect box(int(bounds.x()), int(bounds.y() - metrics.height() - 4),
-                    metrics.tightBoundingRect(text).width() + 8,
-                    metrics.height() + 4);
-    painter.fillRect(box, QColor(QStringLiteral("#007BFF")));
-    painter.setPen(Qt::white);
-    painter.drawText(QPoint(int(bounds.x() + 4),
-                            int(bounds.y() - 2 - metrics.descent())),
-                     text);
+    for (const auto& label : labels) {
+        if (label.leader.isEmpty()) continue;
+        QColor color = label.color;
+        color.setAlphaF(0.5);
+        QPen pen(color, 1, Qt::DashLine);
+        pen.setCosmetic(true);
+        painter.setPen(pen);
+        painter.drawPolyline(label.leader);
+    }
+    painter.setPen(Qt::NoPen);
+    for (const auto& label : labels) {
+        painter.setBrush(label.color);
+        painter.drawRoundedRect(QRectF(label.box), 4.0, 4.0);
+    }
+    painter.setPen(QPen(Qt::black, 8, Qt::SolidLine));
+    for (const auto& label : labels)
+        painter.drawText(label.textPosition, label.text);
     painter.restore();
 }
 
@@ -1158,7 +1230,6 @@ QImage AnnotationCanvas::renderVisualizationImage(
         if (shape.points.isEmpty()) continue;
         if (options.showShapes &&
             (shape.type == QStringLiteral("point") ||
-             shape.type == QStringLiteral("polygon") ||
              shape.type == QStringLiteral("quadrilateral") ||
              shape.type == QStringLiteral("line") ||
              shape.type == QStringLiteral("linestrip"))) {
@@ -1178,28 +1249,12 @@ QImage AnnotationCanvas::renderVisualizationImage(
         if (options.showShapes || options.showDegrees)
             drawRotationDirection(painter, shape, 1.0, m_shapePointSize,
                                   options.showDegrees);
-        const QJsonValue score = shape.extra.value(QStringLiteral("score"));
-        QString caption;
-        if (options.showTexts) drawAnnotationDescription(painter, shape, 1.0);
-        if (options.showLabels && !shape.label.isEmpty()) {
-            if (!caption.isEmpty()) caption += QLatin1Char(' ');
-            const QJsonValue group =
-                    shape.extra.value(QStringLiteral("group_id"));
-            if (group.isDouble())
-                caption += QStringLiteral("id:%1 ").arg(group.toInt());
-            caption += shape.label;
-        }
-        if (options.showLabels && options.showScores && score.isDouble()) {
-            if (!caption.isEmpty()) caption += QLatin1Char(' ');
-            caption += QString::number(score.toDouble(), 'f', 2);
-        }
-        if (!caption.isEmpty())
-            drawAnnotationLabel(painter, shape, caption,
-                                effectiveLineColor(shape, false),
-                                m_shapePointSize);
-        if (options.showAttributes)
-            drawAnnotationAttributes(painter, shape, 1.0, m_shapePointSize);
     }
+    drawAnnotationLabels(painter, *this, shapes, options, result.rect());
+    if (options.showAttributes)
+        for (const auto& shape : shapes)
+            if (shape.visible)
+                drawAnnotationAttributes(painter, shape, 1.0, m_shapePointSize);
     painter.end();
     return result;
 }
@@ -1736,7 +1791,9 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             }
             if (!selected && shape.mask.isNull() &&
                 (shape.type == QStringLiteral("point") ||
-                 shape.type == QStringLiteral("polygon") ||
+                 (shape.type == QStringLiteral("polygon") &&
+                  (isInProgress ||
+                   (index == m_hoverShape && m_hoverVertex == 0))) ||
                  shape.type == QStringLiteral("quadrilateral") ||
                  shape.type == QStringLiteral("line") ||
                  shape.type == QStringLiteral("linestrip"))) {
@@ -1797,29 +1854,17 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
         if (m_showShapes || m_showDegrees)
             drawRotationDirection(painter, shape, m_scale, m_shapePointSize,
                                   m_showDegrees);
-        if (shape.points.isEmpty()) continue;
-        const QJsonValue score = shape.extra.value(QStringLiteral("score"));
-        QString caption;
-        if (m_showTexts) drawAnnotationDescription(painter, shape, m_scale);
-        if (m_showLabels && !shape.label.isEmpty()) {
-            if (!caption.isEmpty()) caption += QLatin1Char(' ');
-            const QJsonValue group =
-                    shape.extra.value(QStringLiteral("group_id"));
-            if (group.isDouble())
-                caption += QStringLiteral("id:%1 ").arg(group.toInt());
-            caption += shape.label;
-        }
-        if (m_showLabels && m_showScores && score.isDouble()) {
-            if (!caption.isEmpty()) caption += QLatin1Char(' ');
-            caption += QString::number(score.toDouble(), 'f', 2);
-        }
-        if (!caption.isEmpty())
-            drawAnnotationLabel(painter, shape, caption,
-                                effectiveLineColor(shape, false),
-                                m_shapePointSize);
-        if (m_showAttributes)
-            drawAnnotationAttributes(painter, shape, m_scale, m_shapePointSize);
     }
+    QRect labelBounds = visibleRegion().boundingRect();
+    if (labelBounds.isEmpty()) labelBounds = rect();
+    drawAnnotationLabels(painter, *this, m_shapes, visualizationOptions(),
+                         labelBounds, m_brushEditing ? m_brushTarget : -1);
+    if (m_showAttributes)
+        for (int index = 0; index < m_shapes.size(); ++index)
+            if (m_shapes[index].visible &&
+                !(m_brushEditing && index == m_brushTarget))
+                drawAnnotationAttributes(painter, m_shapes[index], m_scale,
+                                         m_shapePointSize);
     // RelateAnything edges: curved arrow from the subject box centre to the
     // object box centre, coloured by the subject, with a predicate chip.
     if (m_showShapes && !m_relations.isEmpty()) {

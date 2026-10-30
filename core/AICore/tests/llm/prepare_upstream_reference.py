@@ -55,8 +55,8 @@ def production_backends(build: Path) -> dict[str, str]:
     values: dict[str, str] = {}
     if cache.is_file():
         for line in cache.read_text(encoding="utf-8", errors="ignore").splitlines():
-            # 编译器、架构及算术开关共同决定参照行为；仅复制 backend
-            # 开关会让 CMake 从宿主重新选工具链，破坏受控对比。
+            # Compiler, architecture and arithmetic switches jointly determine reference behavior;
+            # copying only backend switches lets CMake reselect host toolchains and invalidates controlled comparison.
             m = re.match(r"^(GGML_CUDA|GGML_VULKAN|CMAKE_CUDA_ARCHITECTURES|"
                          r"CMAKE_CUDA_COMPILER|GGML_CUDA_FAST_MATH|"
                          r"GGML_CUDA_GRAPHS|GGML_CPU_ALL_VARIANTS|GGML_NATIVE|GGML_BACKEND_DL|"
@@ -78,7 +78,7 @@ def main() -> int:
                              "framework-references/llama-upstream)")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     parser.add_argument("--backend", choices=("production", "cpu"), default="production",
-                        help="参照设备范围；cpu 保留生产 ISA/算术，但不构建 GPU 工具链")
+                        help="Reference device scope; cpu retains production ISA/arithmetic without building GPU toolchains")
     args = parser.parse_args()
 
     revision, digest = pinned()
@@ -107,15 +107,15 @@ def main() -> int:
 
     backends = production_backends(args.build)
     if args.backend == "cpu":
-        # 只缩小参照设备范围，不改变选中设备的 CPU ISA/算术或生产构建。
+        # Narrow only reference device scope, preserving selected CPU ISA/arithmetic and production builds.
         backends.update(GGML_CUDA="OFF", GGML_VULKAN="OFF")
     on = lambda key: backends.get(key, "OFF").upper() in ("ON", "1", "TRUE")
     configure = [
         "cmake", "-S", str(src), "-B", str(out / "build"),
         "-DCMAKE_BUILD_TYPE=Release", "-DGGML_NATIVE=ON",
-        # pristine 缺少生产补丁中的 compiler-feature guard，旧 GCC 无法
-        # 编译 BF16/AMX 全变体。参照只构建当前宿主的 CPU 指令集，并
-        # 复制显式 ISA 开关；生产包的全变体部署契约仍独立验证。
+        # Pristine lacks the production compiler-feature guard; old GCC cannot
+        # build all BF16/AMX variants. Build only the current host's CPU ISA for the reference and
+        # copy explicit ISA switches; qualify production all-variant deployment independently.
         "-DGGML_CPU_ALL_VARIANTS=OFF",
         "-DLLAMA_BUILD_TESTS=OFF", "-DLLAMA_BUILD_EXAMPLES=OFF",
         "-DLLAMA_BUILD_SERVER=OFF", "-DLLAMA_OPENSSL=OFF",

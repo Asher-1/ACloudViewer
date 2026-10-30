@@ -1,4 +1,4 @@
-// 输出真实 CUDA 算术逐元素位模式；由 runner 对照 pristine llama 与冻结 baseline。
+// Emit real CUDA arithmetic bit patterns per element; the runner compares pristine llama and the frozen baseline.
 #include "ggml.h"
 #include "ggml-backend.h"
 #include <cmath>

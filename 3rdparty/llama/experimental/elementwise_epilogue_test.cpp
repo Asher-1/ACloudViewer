@@ -1,4 +1,4 @@
-// 显式 epilogue 必须保持独立 ADD/GELU 的算术及可观察的中间输出。
+// Explicit epilogues must preserve separate ADD/GELU arithmetic and observable intermediate outputs.
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -15,11 +15,11 @@ struct Output {
 
 static Output run(ggml_backend_t backend, ggml_backend_t cpu, int width, int rows, bool hint,
                   bool observe_add, bool multiple_users, bool strided,
-                  bool equal_bias) {
+                  bool equal_bias, bool nonadjacent = false) {
     Output result;
     ggml_context* ctx = ggml_init({2 * 1024 * 1024, nullptr, true});
     if (!ctx) return result;
-    // 峰值约 5×width×rows×4 字节；仅保留当前 case 的结果。
+    // Peak scratch is about 5*width*rows*4 bytes; retain only the current case's results.
     const int stride = width + (strided ? 7 : 0);
     ggml_tensor* storage = ggml_new_tensor_1d(ctx, GGML_TYPE_F32,
                                             stride * rows + 3);
@@ -43,15 +43,22 @@ static Output run(ggml_backend_t backend, ggml_backend_t cpu, int width, int row
         ggml_set_output(final);
         if (observe_add) ggml_set_output(add);
         ggml_cgraph* graph = ggml_new_graph(ctx);
+        if (nonadjacent) {
+            // 一个独立且可观察的节点隔开 ADD/GELU；路由必须保留原执行顺序。
+            ggml_build_forward_expand(graph, add);
+            auto* intervening = ggml_sqr(ctx, bias);
+            ggml_set_output(intervening);
+            ggml_build_forward_expand(graph, intervening);
+        }
         ggml_build_forward_expand(graph, final);
-        // 同一个 backend 的前后对比，不把 CPU/GPU 差异当作融合误差。
+        // Compare before/after on the same backend; CPU/GPU differences are not fusion errors.
         ggml_backend_t backends[] = {backend, cpu};
         ggml_backend_sched_t sched = ggml_backend_sched_new(
                 backends, nullptr, backend == cpu ? 1 : 2,
                 GGML_DEFAULT_GRAPH_SIZE, false, true);
         if (!sched) goto cleanup;
-        // scheduler 要求末尾 CPU。显式指派目标设备，避免小张量默认
-        // 留在 CPU 而得到并未执行 Vulkan 融合的假阳性。
+        // The scheduler requires CPU last. Assign the target device explicitly so
+        // small tensors cannot remain on CPU and falsely qualify Vulkan fusion.
         ggml_backend_sched_set_tensor_backend(sched, storage, backend);
         ggml_backend_sched_set_tensor_backend(sched, bias, backend);
         for (int i = 0; i < ggml_graph_n_nodes(graph); ++i)
@@ -65,8 +72,8 @@ static Output run(ggml_backend_t backend, ggml_backend_t cpu, int width, int row
                 offsets[i] = (int(i % 23) - 11) / 8.0f;
             result.valid = true;
             for (int repeat = 0; repeat < 3; ++repeat) {
-                // gallocr 可在最后一次使用后复用输入 view 的存储；每次
-                // forward 都重新提交 caller 输入，不把复用后的数据当新帧。
+                // gallocr may reuse input-view storage after its last use; resubmit caller
+                // input on every forward rather than treating reused storage as a new frame.
                 ggml_backend_tensor_set(storage, data.data(), 0,
                                          data.size() * sizeof(float));
                 ggml_backend_tensor_set(bias, offsets.data(), 0,
@@ -103,7 +110,12 @@ cleanup:
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) return 2;
+    if (argc != 3 && argc != 4) return 2;
+    const char* mode = argc == 4 ? argv[3] : nullptr;
+    if (mode && std::strcmp(mode, "plain") && std::strcmp(mode, "hint") &&
+        std::strcmp(mode, "observable") && std::strcmp(mode, "users") &&
+        std::strcmp(mode, "strided") && std::strcmp(mode, "equal-bias") &&
+        std::strcmp(mode, "nonadjacent")) return 2;
     ggml_backend_load_all_from_path(argv[1]);
     ggml_backend_t backend = ggml_backend_init_by_name(argv[2], nullptr);
     if (!backend) return 1;
@@ -111,6 +123,22 @@ int main(int argc, char** argv) {
                         GGML_BACKEND_DEVICE_TYPE_CPU;
     ggml_backend_t cpu = is_cpu ? backend : ggml_backend_init_by_name("CPU", nullptr);
     if (!cpu) { ggml_backend_free(backend); return 1; }
+    if (mode) {
+        // 真实 trace 只执行选定图，不能把无 hint 和有 hint 的 kernel 混进同一收据。
+        const Output result = run(backend, cpu, 128, 17,
+                std::strcmp(mode, "plain") != 0,
+                std::strcmp(mode, "observable") == 0,
+                std::strcmp(mode, "users") == 0,
+                std::strcmp(mode, "strided") == 0,
+                std::strcmp(mode, "equal-bias") == 0,
+                std::strcmp(mode, "nonadjacent") == 0);
+        std::printf("{\"mode\":\"%s\",\"backend\":\"%s\",\"pass\":%s}\n", mode,
+                ggml_backend_dev_name(ggml_backend_get_device(backend)),
+                result.valid ? "true" : "false");
+        if (cpu != backend) ggml_backend_free(cpu);
+        ggml_backend_free(backend);
+        return result.valid ? 0 : 1;
+    }
     bool pass = true;
     int cases = 0;
     for (int width : {1, 31, 128, 512})
@@ -118,23 +146,37 @@ int main(int argc, char** argv) {
             for (bool observe_add : {false, true})
                 for (bool multiple_users : {false, true})
                     for (bool strided : {false, true})
-                        for (bool equal_bias : {false, true}) {
-                            const Output plain = run(backend, cpu, width, rows, false,
-                                    observe_add, multiple_users, strided, equal_bias);
-                            const Output fused = run(backend, cpu, width, rows, true,
-                                    observe_add, multiple_users, strided, equal_bias);
-                            const bool same = plain.valid && fused.valid &&
-                                    plain.final.size() == fused.final.size() &&
-                                    std::memcmp(plain.final.data(), fused.final.data(),
-                                                plain.final.size() * sizeof(float)) == 0 &&
-                                    plain.add == fused.add;
-                            pass &= same;
-                            ++cases;
-                            if (!same)
-                                std::fprintf(stderr, "epilogue mismatch: %d,%d output=%d users=%d stride=%d bias=%d\n",
-                                             width, rows, observe_add, multiple_users,
-                                             strided, equal_bias);
-                        }
+                        for (bool equal_bias : {false, true})
+                            for (bool nonadjacent : {false, true}) {
+                                const Output plain =
+                                        run(backend, cpu, width, rows, false,
+                                            observe_add, multiple_users,
+                                            strided, equal_bias, nonadjacent);
+                                const Output fused =
+                                        run(backend, cpu, width, rows, true,
+                                            observe_add, multiple_users,
+                                            strided, equal_bias, nonadjacent);
+                                const bool same =
+                                        plain.valid && fused.valid &&
+                                        plain.final.size() ==
+                                                fused.final.size() &&
+                                        std::memcmp(plain.final.data(),
+                                                    fused.final.data(),
+                                                    plain.final.size() *
+                                                            sizeof(float)) ==
+                                                0 &&
+                                        plain.add == fused.add;
+                                pass &= same;
+                                ++cases;
+                                if (!same)
+                                    std::fprintf(stderr,
+                                                 "epilogue mismatch: %d,%d "
+                                                 "output=%d users=%d stride=%d "
+                                                 "bias=%d nonadjacent=%d\n",
+                                                 width, rows, observe_add,
+                                                 multiple_users, strided,
+                                                 equal_bias, nonadjacent);
+                            }
     if (cpu != backend) ggml_backend_free(cpu);
     ggml_backend_free(backend);
     std::printf("{\"cases\":%d,\"pass\":%s}\n", cases, pass ? "true" : "false");

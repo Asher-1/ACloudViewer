@@ -1,6 +1,6 @@
-// UI defaults from X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935
+// UI defaults from X-AnyLabeling-GGML cd26942a007b6ce7bd521de801a6cfd455d7fd9b
 // anylabeling/configs/xanylabeling_config.yaml; GPL-3.0-only, see UPSTREAM-LICENSE.
-// Source SHA-256: c381fbe561aa81691203bcbd345dbf675b08618f3d8f6adb6a7087fd3b8c4bb0
+// Source SHA-256: ed02a11bcbc28751f91703a8652df9a9671806f6e4d2ba72e26bd4e48e9797c6
 R"json(
 {
   "language": "en_US",
@@ -132,7 +132,7 @@ R"json(
     "double_click_edit_label": true,
     "num_backups": 10,
     "wheel_rectangle_editing": {
-      "enable": true,
+      "enable": false,
       "adjust_step": 2.0,
       "scale_step": 0.05
     },
@@ -212,6 +212,8 @@ R"json(
     "open_next_unchecked": "Ctrl+Shift+D",
     "open_prev_unchecked": "Ctrl+Shift+A",
     "toggle_annotation_checked": "Ctrl+Alt+K",
+    "clear_annotation_checked": "Ctrl+Alt+U",
+    "fail_annotation_checked": "Ctrl+Alt+J",
     "zoom_in": [
       "Ctrl++"
     ],

@@ -98,7 +98,7 @@ borrowed pixels + width/height + row stride + channel format
 | `sam3_capi.h` | SAM3 segmentation and tracking |
 | `sam3d_capi.h` | SAM 3D Objects image-to-3D generation (Gaussian PLY + FlexiCubes mesh) |
 | `tagging_capi.h` | RAM/RAM++ tags, logits and scores; Tag2Text captions |
-| `attribute_capi.h` | 本地 PULC person/vehicle 多属性：只读 stride-aware 图像、完整 Sigmoid 概率、独立持有的 typed 属性与全图几何、公共 timing/cancel/shutdown；本地 F32 recipe/cache 不等于已发布 catalog 或 release 资格 |
+| `attribute_capi.h` | Local PULC person/vehicle multi-attribute: read-only stride-aware image, complete Sigmoid probabilities, independently owned typed attributes and full-image geometry, common timing/cancel/shutdown; a local F32 recipe/cache is not a published catalog nor a release qualification |
 | `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
 | `trellis_capi.h` | TRELLIS image-to-3D generation |
 | `yolo_capi.h` | YOLO detection, segment, pose, OBB, semantic, classify, depth, and prompts |
@@ -129,17 +129,23 @@ core/AICore/
 A new task is added to the existing `AICore` target in
 `core/AICore/CMakeLists.txt`. Do not create a task-specific shared library.
 
-`common/paddle_graph` 是 OCR、table 与 attribute 共享的 Qt-free 图解释器 owner；
-OCR 的 CTC 与专属预处理仍在 OCR task，属性 threshold/argmax 和模型 source 身份
-仍在 attribute context。公共 `aicore_attribute_preset_at` 只描述本地 F32 recipe，
-`aicore_attribute_model_cache_dir` 沿共享 `CLOUDVIEWER_DATA_ROOT` 返回
-`extract/attribute_models`，不创建目录或下载文件。未发布文件不进入下载 catalog。
-真实 C ABI 测试接受 `AICORE_TEST_ATTRIBUTE_{PERSON,VEHICLE}_{GGUF,REFERENCE}`、
-`AICORE_TEST_ATTRIBUTE_IMAGE` 和 `AICORE_TEST_DEVICE`；参照是 build-local 生成的
-pinned source 输出，不提交模型 logits/真值到源目录。缺少模型或参照明确失败。
-三后端冻结 11 图公共留出仍各 48/66、FAIL，数值/属性门与 Q8 失败完整保留；
-当前仅隔离候选验收，正式构建和完整 release 状态见
-[llama 验证收据](../../3rdparty/llama/README.md#current-gate-status)。
+`common/paddle_graph` is the Qt-free graph-interpreter owner shared by OCR,
+table and attribute; OCR's CTC and its dedicated preprocessing stay in the OCR
+task, while the attribute threshold/argmax and the model source identity stay in
+the attribute context. The public `aicore_attribute_preset_at` describes local
+F32 recipes only, and `aicore_attribute_model_cache_dir` returns
+`extract/attribute_models` under the shared `CLOUDVIEWER_DATA_ROOT` without
+creating directories or downloading files. Unpublished files never enter the
+download catalog. The real C ABI test accepts
+`AICORE_TEST_ATTRIBUTE_{PERSON,VEHICLE}_{GGUF,REFERENCE}`,
+`AICORE_TEST_ATTRIBUTE_IMAGE` and `AICORE_TEST_DEVICE`; the reference is a
+build-local pinned source output, and model logits/truth files are not committed
+into the source tree. A missing model or reference fails explicitly.
+The frozen three-backend 11-image common margin remains 48/66 and FAIL on each
+backend, and the numeric/attribute gates together with the Q8 failures are kept
+in full; only an isolated candidate has been accepted so far, and the official
+build and complete release status are in the
+[llama validation receipts](../../3rdparty/llama/README.md#current-gate-status).
 
 ## Runtime Artifacts
 
@@ -173,8 +179,8 @@ cmake --build build_app --target AICore aicore-contract-tests -j4
 
 Use only `AICore_*` public options. Internal `GGML_*` cache entries are derived
 by `cmake/AICoreOptions.cmake`; do not pass them as user configuration.
-统一库编译所有公共 task 契约。task-specific plugin 开关仅控制 Qt 消费者，
-不从 AICore 删除 task 契约。
+The unified library compiles every public task contract. Task-specific plugin
+switches control Qt consumers only and never remove a task contract from AICore.
 
 ggml is an ExternalProject. Persistent modifications are ordered unified diff
 patches in `3rdparty/llama/llama-patches/manifest.yaml`. Extracted sources under any

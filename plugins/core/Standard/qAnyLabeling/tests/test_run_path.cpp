@@ -726,18 +726,19 @@ int runAttribute(QMainWindow* window,
                  const QTemporaryDir& work,
                  const QString& root,
                  const QString& device) {
-    // 只在临时数据根目录装配本地 recipe；不能修改共享模型缓存。
+    // Stage the local recipes only inside a temporary data root; the shared
+    // model cache must not be modified.
     QTemporaryDir localRoot;
-    if (!check(localRoot.isValid(), "多属性临时数据根目录")) return 1;
+    if (!check(localRoot.isValid(), "Temporary attribute data root")) return 1;
     qputenv("CLOUDVIEWER_DATA_ROOT", localRoot.path().toUtf8());
     const QString image = work.filePath("bus.jpg");
     const QString sidecar = work.filePath("bus.json");
     const QString other = work.filePath("other.jpg");
     if (!check(QFile::copy(root + "objects_detection_data/images/bus.jpg", image) &&
-               QFile::copy(image, other), "复制多属性真实输入")) return 1;
+               QFile::copy(image, other), "Copy the real attribute input")) return 1;
     QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, image));
     if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "公共本地 person recipe 必须出现在 picker")) return 1;
+               "The public local person recipe must appear in the picker")) return 1;
     auto* backend = window->findChild<QComboBox*>("AnnotationBackend");
     int deviceIndex = -1;
     for (int i = 0; backend && i < backend->count(); ++i)
@@ -745,31 +746,31 @@ int runAttribute(QMainWindow* window,
             deviceIndex = i;
             break;
         }
-    if (!check(deviceIndex >= 0, "多属性真实 backend 枚举")) return 1;
+    if (!check(deviceIndex >= 0, "Real attribute backend enumeration")) return 1;
     backend->setCurrentIndex(deviceIndex);
     QString status;
     const QString directory = localRoot.path() + "/extract/attribute_models";
     if (!check(runAndWait(window, &status, nullptr) &&
                status.contains(directory + "/pulc-person-f32.gguf") &&
-               !status.contains("Downloading"), "缺失本地模型必须给出路径且不下载")) return 1;
+               !status.contains("Downloading"), "A missing local model must report its path and must not download")) return 1;
     QDir().mkpath(directory);
     if (!check(QFile::link(QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
                           directory + "/pulc-person-f32.gguf") &&
                QFile::link(QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_VEHICLE_GGUF")),
-                          directory + "/pulc-vehicle-f32.gguf"), "装配真实本地权重")) return 1;
+                          directory + "/pulc-vehicle-f32.gguf"), "Stage the real local weights")) return 1;
     auto* run = window->findChild<QPushButton*>("AnnotationRunModel");
     bool ignoresConfidence = false;
     for (auto* spin : window->findChildren<QDoubleSpinBox*>())
         ignoresConfidence |= !spin->isEnabled() && spin->toolTip().contains("built-in thresholds");
-    if (!check(run && ignoresConfidence, "多属性使用 task 阈值，不能误用检测 confidence")) return 1;
+    if (!check(run && ignoresConfidence, "Attributes use the task thresholds and must not misuse detection confidence")) return 1;
     for (const QString& family : {QStringLiteral("person"), QStringLiteral("vehicle"),
                                   QStringLiteral("person")}) {
         if (!check(selectModel(window, family == "person" ? "PULC Person (local F32)"
                                                           : "PULC Vehicle (local F32)",
-                               "pulc-" + family + "-f32.gguf"), "切换属性模型")) return 1;
+                               "pulc-" + family + "-f32.gguf"), "Switch the attribute model")) return 1;
         backend->setCurrentIndex(deviceIndex);
         if (!check(runAndWait(window, &status, nullptr) && run->isEnabled() &&
-                   status.contains(device, Qt::CaseInsensitive), "多属性完成并释放 UI")) return 1;
+                   status.contains(device, Qt::CaseInsensitive), "The attribute run completes and releases the UI")) return 1;
         const auto document = readJson(sidecar);
         const auto shapes = document["shapes"].toArray();
         const auto shape = shapes.isEmpty() ? QJsonObject{} : shapes[0].toObject();
@@ -780,37 +781,38 @@ int runAttribute(QMainWindow* window,
                    (family == "person" ? attributes["Gender"] == "Male" && attributes["Direction"] == "Back"
                                         : attributes["Color"] == "white" && attributes["Type"] == "truck") &&
                    document["tags"].toArray().isEmpty() && document["flags"].toObject().isEmpty(),
-                   "全图 attributes 保存且 replace，不得变成 flags/tags 或累加框")) return 1;
+                   "Full-image attributes are saved and replace, and must not become flags/tags or append boxes")) return 1;
     }
     const auto before = readJson(sidecar);
     QTimer::singleShot(0, window, [=]() {
         QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, other));
     });
     auto* statusLabel = window->findChild<QLabel*>("AnnotationStatus");
-    // openImage 会先更新状态；必须等真实 worker 的 stale 完成通知，不把加载进度当完成。
+    // openImage updates the status first; wait for the real worker's stale
+    // completion notice instead of treating load progress as completion.
     if (!check(runAndWait(window, &status, nullptr) && statusLabel &&
                waitFor([&]() { return statusLabel->text().contains("changed"); }, 120000) &&
                readJson(sidecar) == before && !QFileInfo::exists(work.filePath("other.json")),
-               "stale 属性结果不能写入原图或新图")) return 1;
+               "A stale attribute result must not be written to the original or the new image")) return 1;
     QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, image));
     const auto beforeModelSwitch = readJson(sidecar);
     run->click();
     if (!check(statusLabel->text().startsWith("Running"),
-               "切换模型前必须已提交真实属性推理")) return 1;
+               "Real attribute inference must already be submitted before switching models")) return 1;
     if (!check(selectModel(window, "PULC Vehicle (local F32)", "pulc-vehicle-f32.gguf"),
-               "推理期间切换属性模型")) return 1;
+               "Switch the attribute model during inference")) return 1;
     backend->setCurrentIndex(deviceIndex);
     if (!check(waitFor([&]() { return statusLabel->text().contains("changed"); }, 120000) &&
                readJson(sidecar) == beforeModelSwitch,
-               "旧模型结果不得覆盖当前文档")) return 1;
+               "The old model's result must not overwrite the current document")) return 1;
     if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "恢复 person 模型")) return 1;
+               "Restore the person model")) return 1;
     backend->setCurrentIndex(deviceIndex);
 
     QAction* autoRun = nullptr;
     for (auto* action : window->findChildren<QAction*>())
         if (action->property("qAnyToolbarId").toString() == "auto_run") autoRun = action;
-    if (!check(autoRun, "真实 Auto Run 入口")) return 1;
+    if (!check(autoRun, "Real Auto Run entry point")) return 1;
     const auto launchBatch = [&]() {
         bool selected = false;
         QTimer::singleShot(0, window, [&]() {
@@ -828,58 +830,59 @@ int runAttribute(QMainWindow* window,
     };
     const auto beforeCancel = readJson(sidecar);
     if (!check(launchBatch() && statusLabel->text().startsWith("Running"),
-               "取消前已提交首图真实批量推理")) return 1;
+               "The first image's real batch inference is submitted before cancelling")) return 1;
     auto* progress = window->findChild<QProgressDialog*>("AnnotationBatchProgress");
     auto* cancel = progress ? progress->findChild<QPushButton*>() : nullptr;
-    if (!check(cancel, "真实批处理取消按钮")) return 1;
+    if (!check(cancel, "Real batch cancel button")) return 1;
     cancel->click();
     if (!check(waitFor([&]() { return statusLabel->text().contains("cancelled"); }, 120000) &&
                readJson(sidecar) == beforeCancel && !QFileInfo::exists(work.filePath("other.json")),
-               "取消丢弃在途结果且不调度第二图")) return 1;
+               "Cancelling discards the in-flight result and does not schedule the second image")) return 1;
     if (!check(launchBatch() && waitFor([&]() {
                    return statusLabel->text().contains("Auto Run completed (2 images)");
-               }, 120000), "取消后可重新执行完整两图批处理")) return 1;
+               }, 120000), "The full two-image batch can run again after cancelling")) return 1;
     for (const QString& name : {QStringLiteral("bus"), QStringLiteral("other")}) {
         const auto document = readJson(work.filePath(name + ".json"));
         const auto shapes = document["shapes"].toArray();
         if (!check(shapes.size() == 1 && shapes[0].toObject()["label"] == "person" &&
                    shapes[0].toObject()["attributes"].toObject().size() == 21 &&
                    document["imagePath"].toString() == name + ".jpg",
-                   "每图保存独立 attributes 和源图身份，不能累加框")) return 1;
+                   "Each image saves its own attributes and source identity and must not append boxes")) return 1;
     }
 
-    // 模型文件存在但无效：必须走真实 worker 错误路径，而非 cache 缺失前置检查。
+    // The model file exists but is invalid: this must go through the real
+    // worker error path, not a cache-missing precondition check.
     if (!check(selectModel(window, "PULC Vehicle (local F32)", "pulc-vehicle-f32.gguf"),
-               "错误测试前切换 context")) return 1;
+               "Switch the context before the error test")) return 1;
     backend->setCurrentIndex(deviceIndex);
-    if (!check(runAndWait(window, &status, nullptr), "创建真实 vehicle context")) return 1;
+    if (!check(runAndWait(window, &status, nullptr), "Create the real vehicle context")) return 1;
     const auto beforeError = readJson(work.filePath("other.json"));
     const QString personPath = directory + "/pulc-person-f32.gguf";
-    if (!check(QFile::rename(personPath, personPath + ".saved"), "暂存临时 recipe 链接")) return 1;
+    if (!check(QFile::rename(personPath, personPath + ".saved"), "Park the temporary recipe link")) return 1;
     {
         QFile corrupt(personPath);
-        if (!check(corrupt.open(QIODevice::WriteOnly), "创建临时无效模型")) return 1;
+        if (!check(corrupt.open(QIODevice::WriteOnly), "Create the temporary invalid model")) return 1;
         corrupt.write("invalid GGUF");
     }
     if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "选择无效本地模型")) return 1;
+               "Select the invalid local model")) return 1;
     backend->setCurrentIndex(deviceIndex);
     if (!check(runAndWait(window, &status, nullptr) && !status.isEmpty() &&
                !status.contains("attributes:") && !status.contains("Downloading") &&
                readJson(work.filePath("other.json")) == beforeError,
-               "真实模型加载失败释放在途状态且不写文档")) return 1;
+               "A real model load failure releases the in-flight state and writes no document")) return 1;
     if (!check(QFile::remove(personPath) && QFile::rename(personPath + ".saved", personPath) &&
                runAndWait(window, &status, nullptr) && status.contains("attributes:"),
-               "worker 错误后可恢复真实属性推理")) return 1;
+               "Real attribute inference can recover after a worker error")) return 1;
 
     const auto beforeClose = readJson(work.filePath("other.json"));
     QPointer<QMainWindow> lifetime(window);
     run->click();
-    if (!check(statusLabel->text().startsWith("Running"), "销毁前已提交真实推理")) return 1;
+    if (!check(statusLabel->text().startsWith("Running"), "Real inference is submitted before teardown")) return 1;
     window->close();
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     if (!check(lifetime.isNull() && readJson(work.filePath("other.json")) == beforeClose,
-               "在途销毁等待 worker 退出，不能保存延迟结果")) return 1;
+               "In-flight teardown waits for the worker to exit and must not save the late result")) return 1;
     std::fprintf(stdout, "attribute %s: picker/local-error/replace/attributes/save/switch/source-stale/model-stale/batch-cancel/restart/worker-error/inflight-teardown PASS\n",
                  device.toUtf8().constData());
     return 0;

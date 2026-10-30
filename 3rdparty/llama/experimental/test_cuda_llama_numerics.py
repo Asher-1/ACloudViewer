@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LLM 节点逐位匹配 pristine；非 LLM 节点逐位保持冻结 baseline。"""
+"""LLM nodes match pristine bitwise; non-LLM nodes retain the frozen baseline bitwise."""
 import argparse
 import hashlib
 import json
@@ -32,12 +32,12 @@ def collect(probe, directory, fresh=False):
             continue
         row = json.loads(line)
         if row['id'] in rows:
-            raise RuntimeError('重复结果行: ' + row['id'])
+            raise RuntimeError('Duplicate result row: ' + row['id'])
         rows[row['id']] = row['bits']
     if rows.keys() != LLAMA_ROWS | OTHER_ROWS:
-        raise RuntimeError('结果缺行或含未知行: ' + str(rows.keys()))
+        raise RuntimeError('Missing or unknown result rows: ' + str(rows.keys()))
     if any(not bits for bits in rows.values()):
-        raise RuntimeError('结果不能为空')
+        raise RuntimeError('Results must not be empty')
     modules = {}
     for path in directory.glob('*ggml*'):
         if path.is_file() and not path.name.endswith(('.a', '.lib')):
@@ -55,8 +55,8 @@ def main():
     args = parser.parse_args()
     try:
         candidate, candidate_meta = collect(args.probe.resolve(), args.candidate)
-        # reference 按行隔离，candidate 则在同一 backend 依次切换相同 shape，
-        # 同时验证 CUDA Graph 缓存不会沿用另一任务的命名算术路由。
+        # Isolate reference rows; the candidate switches identical shapes on one backend,
+        # also verifying that CUDA graph caches do not reuse another task's named arithmetic route.
         upstream, upstream_meta = collect(args.probe.resolve(), args.upstream, fresh=True)
         baseline, baseline_meta = collect(args.probe.resolve(), args.baseline, fresh=True)
     except (RuntimeError, subprocess.TimeoutExpired, ValueError) as error:

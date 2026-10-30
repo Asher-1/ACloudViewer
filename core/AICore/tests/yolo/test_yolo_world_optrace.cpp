@@ -107,7 +107,8 @@ yolo::Session* make_session(const char* gguf,
                             const yolo::LetterboxInfo& info) {
     yolo::SessionOptions opts;
     if (const char* mode = std::getenv("AICORE_TEST_YOLO_ATTENTION_ACCUMULATION")) {
-        // 测试桥接显式选项；生产会话不读取环境变量。
+        // The test bridges an explicit option; production sessions never read
+        // environment variables.
         if (std::strcmp(mode, "0") == 0)
             opts.attention_accumulation = AICORE_YOLO_ATTENTION_UPSTREAM;
         else if (std::strcmp(mode, "1") == 0)
@@ -131,7 +132,8 @@ yolo::Session* make_session(const char* gguf,
     return s;
 }
 
-// 仅保存当前一层的真实源；在该层完成、下一层复用 scratch 之前捕获。
+// Keeps only the current layer's real sources; captured after that layer
+// completes and before the next layer reuses the scratch buffer.
 struct ReplayCapture {
     ggml_tensor* node = nullptr;
     std::vector<uint8_t> bytes[3];
@@ -157,14 +159,17 @@ bool capture_replay(ggml_tensor* tensor, bool ask, void* opaque) {
     return capture.valid;
 }
 
-// 诊断而非发布门：固定真实层输入及权重，区分误差传播与该层新增误差。
-// oracle 的 O(N*OC*OH*OW*IC*KH*KW) 乘加来自卷积定义，不调用 ggml 卷积。
+// Diagnostic, not a release gate: pins the layer's real inputs and weights to
+// separate propagated error from error this layer adds.
+// The oracle's O(N*OC*OH*OW*IC*KH*KW) multiply-adds follow the convolution
+// definition and never call a ggml convolution.
 bool replay_conv(yolo::Session* session, size_t index,
                  yolo::Session* source_session, const ReplayCapture& capture) {
     if (index >= session->op_values.size() || !session->backend.gpu) return false;
     ggml_tensor* node = session->op_values[index];
     if (!node || node->op != GGML_OP_CONV_2D || !node->src[0] || !node->src[1]) return false;
-    // 跨 GPU replay 固定 reference 的同一份输入，避免将上游传播误差算作该层误差。
+    // A cross-GPU replay pins the reference's own inputs so propagated
+    // upstream error is not attributed to this layer.
     ggml_tensor* source_node = node;
     if (source_session) {
         if (index >= source_session->op_values.size()) return false;
@@ -196,7 +201,8 @@ bool replay_conv(yolo::Session* session, size_t index,
     auto* buffer = ggml_backend_alloc_ctx_tensors(ctx, session->backend.gpu);
     if (!buffer) { ggml_free(ctx); return false; }
     for (int i = 0; i < 3; ++i) if (sources[i]) {
-        // 使用计算时的快照；整图结束后的中间 cast 可能已被 allocator 复用。
+        // Use the snapshot taken during compute; an intermediate cast may
+        // already have been reused by the allocator after the full graph ends.
         if (capture.bytes[i].size() != ggml_nbytes(sources[i])) {
             ggml_backend_buffer_free(buffer); ggml_free(ctx); return false;
         }
@@ -269,8 +275,10 @@ ggml_tensor* select_matmul(yolo::Session* session, size_t ordinal) {
     return nullptr;
 }
 
-// 固定计算时的真实输入；逐元素 double dot 区分累加精度与上游误差。
-// O(batch*M*N*K) 来自矩阵乘法定义，输出快照最多 8M 个元素（32 MiB）。
+// Pins the real inputs seen during compute; an element-wise double dot product
+// separates accumulation precision from upstream error.
+// O(batch*M*N*K) follows the matrix-multiplication definition; the output
+// snapshot holds at most 8M elements (32 MiB).
 bool replay_matmul(yolo::Session* session, size_t ordinal, const ReplayCapture& capture) {
     auto* node = select_matmul(session, ordinal);
     if (!node || !capture.valid || !session->backend.gpu || !capture.node ||
@@ -439,7 +447,7 @@ int main() {
         installed = installed && install(gpu, candidate_capture);
         if (cross) installed = installed && install(reference, reference_capture);
         if (!installed) {
-            std::fprintf(stderr, "[replay] 无法捕获真实层输入，禁止输出数值结论\n");
+            std::fprintf(stderr, "[replay] cannot capture the real layer inputs; no numeric conclusion is allowed\n");
             yolo::free_session(reference);
             yolo::free_session(gpu);
             return 1;
@@ -460,7 +468,8 @@ int main() {
         const bool cross = std::getenv("AICORE_TEST_YOLO_REPLAY_REFERENCE_INPUT") != nullptr;
         const auto& capture = cross ? reference_capture : candidate_capture;
         valid &= capture.valid;
-        // op0 的已知 image cast 是生命周期回归断言：必须消费原始 image 的精确 half 转换。
+        // op0's known image cast is a lifetime regression assertion: it must
+        // consume the exact half conversion of the original image.
         if (valid && !replay_mm && index == 0) {
             const auto& captured = capture.values[1];
             valid = captured.size() == canvas.size();
@@ -469,7 +478,7 @@ int main() {
                     ? ggml_fp16_to_fp32(ggml_fp32_to_fp16(canvas[i])) : canvas[i];
                 valid &= captured[i] == expected;
             }
-            if (!valid) std::fprintf(stderr, "[replay] image 输入已失效，不具备 oracle 比较资格\n");
+            if (!valid) std::fprintf(stderr, "[replay] the image input is stale; it does not qualify for oracle comparison\n");
         }
         valid = valid && (replay_mm ? replay_matmul(gpu, static_cast<size_t>(index), capture) :
             replay_conv(gpu, static_cast<size_t>(index), cross ? reference : nullptr, capture));
@@ -551,7 +560,7 @@ int main() {
     std::printf("[optrace] compared %zu/%zu ops (%zu null)\n", n_compared,
                 n_ops, n_null);
     if (first_bad < 0) {
-        std::printf("[optrace] 未超出诊断阈值；不表示逐位相等或独立精度门通过\n");
+        std::printf("[optrace] within the diagnostic threshold; this is not bitwise equality or an independent accuracy gate\n");
     } else {
         std::printf("[optrace] FIRST DIVERGENCE at user-op %d (%s)\n",
                     first_bad, reference->model.ops[first_bad].type.c_str());

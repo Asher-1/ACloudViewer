@@ -5,7 +5,7 @@ diff --git a/include/ggml.h b/include/ggml.h
              enum ggml_op_hint    hint);
      GGML_API enum ggml_op_hint ggml_mul_mat_get_hint(const struct ggml_tensor * a);
  
-+    // 优化注解，不改变 ADD 的数学定义；未融合 backend 保留独立 GELU。
++    // Optimization hint only: preserve ADD semantics and separate GELU on unfused backends.
 +    #define GGML_EPILOGUE_GELU 0x1
 +    GGML_API void ggml_elementwise_set_epilogue_hint(struct ggml_tensor * a, int32_t epilogue);
 +    GGML_API int32_t ggml_elementwise_get_epilogue_hint(const struct ggml_tensor * a);

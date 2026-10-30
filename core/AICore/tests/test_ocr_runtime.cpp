@@ -132,7 +132,8 @@ std::string argmaxSignature(const float* probs, int timeSteps, int vocab) {
     return signature;
 }
 
-// 捕获 direct DW 的 bias 漏消费或重复消费，以及独立 ADD 未消除的回归。
+// Catches a missing or duplicated bias consumption in direct DW, and a
+// regression where the separate ADD is not eliminated.
 int testDirectDwBias(const char* moduleDir, const char* deviceName) {
     ggml_backend_load_all_from_path(moduleDir);
     auto* device = ggml_backend_dev_by_name(deviceName);

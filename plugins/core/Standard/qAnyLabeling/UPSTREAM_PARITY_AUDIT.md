@@ -11,36 +11,228 @@ contracts. A focused pass does not establish complete upstream parity.
 - **Open**: no equivalent implementation or qualification is complete.
 - **Matches upstream absence**: upstream has no registered workflow; do not invent one and claim parity.
 
-## Current assessment (2026-10-28)
+## Fresh observation (2026-10-29)
 
-本轮实际比较的上游为 `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`。
-开头的 `745f6c35` 是历史 audit baseline，并非当前全部模块已对齐的证明。
-ACloudViewer HEAD 为 `a624587d7af8f6b11c44339de55cdc0f8b85d860`，工作树 dirty。
+### 队列实际结果补充
 
-`build_app/Testing/upstream-cd26942-config-red-v2.json` 实跑 FAIL：缺
-`clear_annotation_checked`、`fail_annotation_checked`，defaults 与当前 YAML
-不同，九项 palette 和四项 panel 样式不同。已核实 source 的 `checked` 支持
-`false/true/"failed"`，review/checked 属性搜索、rectangle wheel 默认禁用、
-image-tags 默认展示及新 canvas 模式仍需对齐；本地文件搜索现在仅做名称子串。
-用户本轮选择先复验证据，未实施新增三态或以复制 defaults 掩盖行为缺口。
+原 OCR v3/v4 已完整执行，v4 原 168 场景为 161 PASS、7 FAIL、0 SKIP；
+原 developer 2×1×2/threads=0、48 模型、241 输入不变。执行后 521 个名称身份
+复核和旧收据保护通过，orientation 的 rc=0 不绕过 failures=2 的结构化门。
+LLM 原生 schema、安装 HELP/MCP 两项、22 项契约和真实 CPU text/repeat/
+two-image/rejection/error 批次已有通过收据；live RPC 与原 release 门仍开放。
+`qal-canvas-render-v12/report.json` 的既有范围为 PASS、errors=[]，原 GL v13
+却失败于 Qt xcb 平台初始化，未执行 framebuffer 比较。所有历史 FAIL 保留。
 
-OCR picker 发布全集回归已 RED→GREEN：按公共 preset 的 rec filename 集合
-逐项比较，保留 catalog F32/F16/Q8_0 与下载元数据、无重复，缺 catalog 才 local
-F32 fallback。`ocr-picker-catalog-red-v1.log` 复现被白名单隐藏的量化；修后
-`ocr-picker-catalog-green-v2.log` 两项通过，原 attribute F32 资产环境下
-`ocr-picker-catalog-suite-v3.log` 38/38。旧单 F32 测试过期，旧 38/38 不证明
-发布全集覆盖。发布事实、picker 投影与独立精度/release 资格仍是三个契约。
+qOpenPCDet helper 已在 `openpcdet-target-recompile-v2.log` 强制重编译 5 个对象、
+重新链接并通过 CTest。qPythonRuntime 已取得严格 ODR RED，统一入口和双 TU
+实际引用/UTF-8/Qt 消费头回归已 GREEN；完整插件全 TU 重编译和严格 LTO 链接
+通过，真实 argv/QString 路径通过。最新 `plugin-targets-forced-recompile-v5.log`
+再次强制重编译 helper 全 5 对象及 qPythonRuntime 全 TU，严格 -flto/-Werror=odr
+链接和随后 2/2 CTest 通过。新库真实 argv 正/负例与 QString 诊断再次执行。
+原 normal_distribution 的 Float32 断言与当前 double core 不一致而再次失败，
+保留 FAIL，不称全部 Python 回归通过。
+Relate 已从有效七路由 RED 到候选 GREEN：两个 CUDA TU 编译/链接、四链重放、
+三后端各 256 数值和七路由均通过；新 host 单体库另行编译/链接，28 个
+sample-0 真消费者组合 RAFO 字节一致。两份消费者收据保留四项 Vulkan p95
+超过原 1.05 门和 large-F32 缺失，不称独立 checkpoint/冻结 release 验收闭合。
+原 OCR 七项失败已核对实际指标与原判定分支：图级 Q8 的 stored 对照通过不
+清除 source 概率失败；orientation 两个 FAIL 来自 text equality，不是方向
+阈值判定；页/字段的 WER 与 F16 检测/完整流水线门仍 FAIL。未改变任何原门。
+正式 harness 的 RPC `methods` 当前连接被拒绝；`info` 元数据不算 live RPC
+成功。具体收据和剩余门由 `TODO.md`、`OCR_RELEASE_GATES.md` 与 Relate owner 持有。
 
-对同一 `cd26942a` 的额外实测：`upstream-cd26942-document-v1.json` 的
-LabelFile 路径/像素优先级 8 例通过，`upstream-cd26942-tagging-v1.json`
-的 4585 bilingual labels / 16 展示与过滤例通过，不覆盖审核三态或推理质量。
-`upstream-cd26942-render-v1/report.json` 的 36 绘制例总 FAIL，19 项错误：
-包括三项 polygon geometry-only 像素不等，以及 16 项文本/颜色/位置超原界。
-原一像素字体容差和数值界未改；不得把 geometry、字体、新 canvas 模式混为全窗口通过。
-`ocr-picker-sibling-qocr-v1.log` 两项通过；`evidence-continuation-capi-contract-v2.log`
-40/40 模型无关契约通过。未注入完整资产的广泛 capi 运行保留为诊断：
-80 项中 16 skipped、attribute E2E 一项缺资产失败；补齐原 source reference 的
-`evidence-continuation-attribute-v3.log` 单项通过，不追写整套为 80/80。
+以下文字保留较早观察时边界，旧待机进度已被上述实际结果取代。
+
+The corresponding-module continuation freshly re-runs the actual plugin's main
+config, review save/reopen/navigation and existing model-free workspace test:
+`qal-config-current-v14.json`, `qal-review-current-v14.log` and
+`qal-plugin-current-v14.log` pass within those scopes. The old 15-error config
+and missing review implementation entries are historical, not current defects.
+Fresh native `qal-chat-current-v15/` fixtures pass all six existing Chat/VQA
+source comparators and eight provider-comparator behavior tests; five recorded
+artifact SHA values match after execution. Its isolated empty data root skips
+local generation, so no model result is claimed. The failed v14 artifact-directory
+launch is retained. Three native PPOCR tests and three source comparators in
+`qal-ppocr-current-v14/` also pass, with all three native SHA values unchanged.
+The original table 123 cases and rich-editor bounds are retained.
+
+Offscreen-QPA limitations and inotify watch failures remain in the native logs.
+A separate syscall probe reproduces successful inotify initialization followed
+by `inotify_add_watch` errno 28, while disk has 244 GiB free; no sysctl or other
+process is changed. These passes do not qualify native file monitoring or the
+complete window. Original OCR v3 is now executing 133/168, Medium SROIE F32,
+with no final report/after identity. The already queued v4 preparation now has
+`run_ocr_v4_after_prepare_v1.sh` as its serial follow-up: verify snapshot, require
+the original real F32 consumer to pass, then invoke the unchanged original full
+matrix launcher. Only syntax is checked so far; 18000 MiB RAM, GPU-idle and the
+original lock still gate execution. LLM native and GL/canvas queues still wait.
+No new production port, model, threshold, baseline or old FAIL is changed.
+
+The earlier observation below retains its original execution boundary.
+The original OCR v3 matrix is still running at 128/168; final results and
+identity-after verification remain pending. Python backend/CLI/MCP tests pass
+209/209, integration source contracts 22/22, OCR/relation policy tests 40 plus
+67 subtests, and strict plugin boundaries pass. Native LLM build/models/RPC,
+GL/canvas and v4 preparation still wait; none is promoted to a complete PASS.
+Current autogen parallelism remains 16 until the queued configure applies and
+verifies the requested limit of 2. Available memory is about 34 GiB with 5.9 GiB
+swap used and OCR group RSS about 1.05 GiB. External compilation overlaps OCR;
+this session starts no competing compiler/model or claims of quiet performance.
+
+The user's RelateAnything completeness question was checked against actual
+local Git trees and generated/runtime backend symbols. DW7 is integrated, but
+host direct-bias/GELU hints and CUDA ADD/GELU fusion are still absent. See the
+[owning synchronization record](../../../../3rdparty/llama/RELATEANYTHING_SYNC.md).
+No newly expanded host/backend port or gate relaxation is performed.
+The subsequent user approval authorizes the bounded host/CUDA-fusion follow-up;
+only seven trace modes/256 numeric test cases and an isolated test-only queue
+are written so far. Real RED and production changes still wait for the original
+lock. Latest OCR observation is 130/168 with no final verdict; original source,
+model, numeric/performance and baseline gates remain unchanged.
+
+## Latest authorized scoped continuation (2026-10-28)
+
+Against current upstream `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`, main config
+now passes in `upstream-cd26942-config-green-v8.json`. Three-state review,
+immediate saving/search/navigation and inference review invalidation have real
+plugin coverage. The dark-to-light workspace/dialog palette restore went
+RED to GREEN without altering expected colors. The full registered suite is
+39/39 after rebuilding all plugin/test consumers at `-j4`, recorded in
+`qal-suite-version-v9.log`; original asset-less and earlier 34/39 failures stay.
+
+The user approved two additional bounded changes: retain the local AICore
+provider, check every source provider exactly and validate all five local
+fields separately; align new documents with source version 4.2.1 through
+`annotationFormatVersion()`, while preserving existing explicit 4.1.3 fields.
+The provider comparator's eight real behavior cases pass, including rejection
+of a missing local provider that the old whole-table comparison accepted.
+The actual new-import version regression also went RED to GREEN.
+`qal-chat-upstream-current-v10/` contains fresh native fixtures/screenshots and
+six passing existing Chat/VQA source comparisons for config, layout, messages,
+ShareGPT export/import and VQA workflow/QSS. Earlier v6 config/import failures
+remain retained. None is a complete full-window pixel/font/IME/DPI or native
+platform gate; `complete_upstream_parity` remains **false**.
+
+Original LLM/OCR numeric, performance and frozen-baseline failures remain owned
+by `OCR_RELEASE_GATES.md`, including CPU v3 Q8 p95 +12.66% and the earlier F16
++8.77%. Snapshot SHA equality does not establish a quiet host: an external
+OpenPCDet benchmark overlapped the v3 measurement.
+
+Four more existing current-source comparators pass in
+`build_app/Testing/qal-v11-{cuboid,document,shape_batch,tagging}.json`.
+`qal-chat-upstream-current-v10/identity-after.json` verifies the four recorded
+artifacts against their before-run checksums; it is not a transitive loader
+claim. The user chose the original matrices first and deferred new
+Markdown/code/math and window-input test expansion. The full CPU v4 replay is
+12/12 correctness/stability but overall FAIL: 500M F16 describe decode p50
++5.59%. OCR v2 full168 finishes with 39 PASS/129 FAIL/no skips and unchanged
+503-name/protected-report checks; the stale private tensor ABI (0xf8 vs 0x258)
+is a consumer defect, not a model-quality diagnosis. The existing consumer has
+been rebuilt at -j4; DW bias and the real F32 rec fixture pass (max_diff=0.000007,
+argmax match and slot reuse). V3 now uses the clean original 745f6c35 OCR
+reference; its private probe loads models but skips Vulkan discovery because
+its executable-directory module aliases were omitted. V3 remains unchanged;
+a new v4 preparer repairs only the snapshot's internal module layout.
+
+The existing PPOCR pipeline/rich/table comparisons all pass with the three
+recorded native probe SHA values matching before/after. Pointcloud has five v11
+passes and three corrected-launcher v12 passes (view214/colors32864/mesh96).
+Render v12 still fails before capture with libLLVM-12's unresolved
+ffi_type_sint32@LIBFFI_BASE_7.0; a process-local system-libffi replay is queued.
+No package, Qt renderer, original pixel gate, model or baseline is changed.
+All full-window, original accuracy/performance, baseline-veto and native-platform
+gaps remain open; complete_upstream_parity remains false.
+
+### Approved LLM entry and memory-bounded execution
+
+The user approved a separate `LLM_GENERATE` native adapter over the existing
+public LLM C ABI and batch/schema/CLI/RPC/MCP flow; this is not an annotation
+TASK or a new inference runtime. Python registry/backend/CLI/MCP discovery went
+six real RED to six GREEN, and `llm-harness-regression-v3.log` passes 209/209
+across those three test files. Later actual native HELP and MCP schema calls
+both fail on the missing binary command. The adapter source, plugin/CMake
+registration, RPC whitelist and integration row are now written; 22 focused
+source/registry/tool contracts and the strict plugin boundary pass. Compilation,
+real model batching and live RPC verification still wait: the -j2 scoped queue
+requires at least 18000 MiB available after taking the same lock. Native tests
+include text/repeat, two row-padded RGB images, text-model image rejection and
+corrupt-image stop/manifest behavior, with missing real assets failing.
+No native or complete automation PASS is claimed.
+
+Original OCR v3 remains in progress, last observed at 119/168. Its tiny F16
+report identifies `val_img_59.jpg`: source/native detector matches 3/2, with
+`NOW` recognized on both sides but different polygons. Q8 fixed-GT recognition
+on `val_img_337.jpg` introduces `SpoOn`/`SOup` for `Spoon`/`Soup`; this accounts
+for two word edits and is not detector failure. Common source/native errors
+must not be confused with these added errors. Original case-sensitive GT, IoU,
+metrics, assets and baseline are retained; arithmetic cause is not established.
+
+Recent MemAvailable is 22-23 GiB, swap usage 6.3-6.4 GiB, OCR process-group RSS
+about 1.16 GiB. The -j1 schema-test build waits on the original lock and checks
+memory/compiler activity after acquiring it. Heavy builds/inference remain
+serial; other sessions are not stopped. GL/canvas and v4 preparation still wait;
+original/full-window/native-platform acceptance remains open. Details and
+receipts stay in `OCR_RELEASE_GATES.md`.
+
+## Current assessment (2026-10-28; earlier continuation record)
+
+The upstream actually compared in this round is
+`cd26942a007b6ce7bd521de801a6cfd455d7fd9b`. The `745f6c35` named at the top is
+the historical audit baseline and is not proof that every module is currently
+aligned. The first re-verification observed ACloudViewer HEAD
+`a624587d7af8f6b11c44339de55cdc0f8b85d860` with a dirty work tree; the later v4
+snapshot and this round's render fix observed `660a39c2…`. Different identities
+are not merged into one build.
+
+`build_app/Testing/upstream-cd26942-config-red-v2.json` really ran FAIL:
+`clear_annotation_checked` and `fail_annotation_checked` were missing, the
+defaults differed from the current YAML, and nine palette plus four panel styles
+differed. The source `checked` field was verified to support
+`false/true/"failed"`; review/checked attribute search, the rectangle wheel
+disabled by default, image tags shown by default and the new canvas modes still
+need alignment, and local file search currently only matches name substrings.
+The user first chose re-verification evidence and then authorized only the fix
+for the existing render differences; the new tri-state and the new canvas modes
+remained deferred, and the behavior gap was not masked by copying defaults.
+
+The OCR picker published-set regression went RED->GREEN: it compares the public
+presets' rec filename set item by item, keeps catalog F32/F16/Q8_0 together with
+the download metadata and no duplicates, and falls back to a local F32 only when
+the catalog is missing. `ocr-picker-catalog-red-v1.log` reproduces the
+quantizations hidden by the allowlist; after the fix
+`ocr-picker-catalog-green-v2.log` passes both items, and with the original
+attribute F32 assets present `ocr-picker-catalog-suite-v3.log` is 38/38. The old
+single-F32 test is obsolete, and the old 38/38 does not prove published-set
+coverage. Publication facts, the picker projection and independent
+accuracy/release qualification remain three separate contracts.
+
+Additional real measurements against the same `cd26942a`:
+`upstream-cd26942-document-v1.json` passes its 8 LabelFile path/pixel-priority
+cases, and `upstream-cd26942-tagging-v1.json` passes its 4585 bilingual labels
+and 16 presentation/filter cases; neither covers the review tri-state or
+inference quality. `upstream-cd26942-render-v1/report.json` is an overall FAIL
+over its 36 drawing cases with 19 errors: three polygon geometry-only pixel
+inequalities plus 16 text/color/position results beyond the original bounds. The
+original one-pixel font tolerance and numeric bounds are unchanged; geometry,
+fonts and the new canvas modes must not be conflated into a full-window pass.
+The associated source diff is kept in
+`upstream-cd26942-render-source-diff-v1.log`: the new `Shape.paint` does not draw
+the first point for a closed polygon that is neither selected nor highlighted,
+and the difference image localizes to that first point as well, while the local
+export still draws that marker unconditionally. The new canvas merges label,
+group id, score and description into `car (4) · 0.87 · description` and changes
+the anchor/edge-avoidance and leader line, while the local code still uses the
+old separated description and `id:4 car 0.87`. These confirmed rule gaps cannot
+be attributed to Qt major/font metrics alone; no fix was implemented at that
+time. The fix was authorized later and its evidence follows, and the original
+render FAIL is retained.
+`ocr-picker-sibling-qocr-v1.log` passes both items;
+`evidence-continuation-capi-contract-v2.log` passes 40/40 model-independent
+contracts. The broad capi run without complete assets injected is kept as
+diagnosis only: 16 of 80 items skipped and one attribute E2E failure from a
+missing asset; after supplying the original source reference,
+`evidence-continuation-attribute-v3.log` passes that single item, which is not
+back-written as 80/80 for the whole suite.
 
 `complete_upstream_parity` remains **false**. The public local LLM/VLM task,
 optional projector, catalog and worker exist; PULC person/vehicle also have a
@@ -53,6 +245,71 @@ not certify complete window layouts, IME/DPI, old-Qt Markdown import or native
 Windows/macOS packages. Runtime-copy/install tests cover DLL/alias naming and
 failure propagation, not those platforms' loader/SDK/device behavior.
 
+The continued complete CUDA receipt `llm-current-full-cuda-v1/report.json` ran
+the original 12 rows as 3x2x10 with threads=4; the candidate is 12 PASS, but the
+original frozen baseline FAILs four text rows and there is also a cache
+execution-identity veto, so the overall verdict is FAIL. The before library is
+`2c7cee1b…` and the runner did not save the after identity; only the cache change
+is reported, and the earlier library-identity difference must not be attributed
+to a library swap during sampling. After CUDA finished, the current library was
+updated again to `d11d2dcc…` (mtime 13:08:11), so later matrices must not inherit
+that CUDA candidate. The continued CPU/Vulkan offline preflight completed; during
+the CPU `llm-current-full-cpu-v2/` run the library changed again to `9e23f7fb…`
+and `922a68a5…`, only this side's runner was aborted, the original logs/outputs
+are retained, there is no complete report, and Vulkan was never started. Another
+process was then confirmed to be building in the shared tree
+(`AICore bench_openpcdet_perf -j6`) and the runner sources had also been
+modified. This side did not terminate that build or change the inference
+sources; a later run needs an isolated candidate or coordination with the
+writer. Complete SHA values and boundaries are in the release ledger.
+
+The user then authorized an independent verification snapshot: v4's 262 sources
+and 451 copy names were re-checked against the main probe/reference loader; only
+after refreshing the stale catalog binary with `-j4` did the real `--json` return
+0, and the original preparation/empty-summary failures are retained. The v4
+runtime is `54d0db4d…` and the manifest is `c0d03d46…`, with HEAD observed as
+`660a39c2…`, so earlier report identities cannot be inherited. The serial queue
+of the original complete protocol has now been executed on all three backends:
+CUDA/Vulkan/CPU each pass candidate correctness/stability on 12 rows with no
+skips, but all three overall verdicts are FAIL; CUDA has four original-baseline
+row failures plus one performance alarm, Vulkan eight and CPU five performance
+alarms. All three execution identities are unchanged, and the SHA re-check of
+all 451 copy names passes. The original host logs still show external
+compilation overlapping with sampling; a snapshot is not a load lock, and the
+CPU alarms require an isolated re-measurement under the original protocol.
+The existing shared rich-text export/reopen fidelity regression was re-run 1/1 on
+the real Qt5.10.1/Qt6.5.3 rich targets; it covers only images, links, underline
+and lists and does not prove complete Markdown/code/math or full-window
+alignment. An environment snapshot is not release, upstream-UI or new OpenPCDet
+qualification; the previously deferred new behavior was still not implemented in
+that round. New evidence details and the remaining gates are in the release
+ledger.
+
+The render sub-gate that the user later authorized has now gone RED->GREEN: the
+original 36 cases reproduced 19 errors, and after adding eight
+anchor/edge/display-toggle/prompt/multi-label-order cases there were 27 RED
+items; the shared Canvas owner fixes the closed-polygon first point, the merged
+caption and the leader/background/text order. The real Qt5.10.1/Qt5.15.2/Qt6.5.3
+`upstream-cd26942-render-{qt510,qt515,qt6}-green-v6/report.json` are each 44/44
+PASS, the original 18 geometry-only cases are exactly equal, and every original
+tolerance is retained. The six attribute failures on the first Qt5.10 run were
+localized by real metrics to offscreen 100 DPI; the original 96-DPI protocol was
+restored in the test probe only, with no change to production fonts or
+attributes. The official plugin and the probe/canvas targets were rebuilt, the
+three canvas interaction regressions are 1/1 each, and the strict plugin boundary
+check PASSes. After rebuilding the real plugin,
+`upstream-cd26942-config-after-render-v6.json` still FAILs (15 items); the review
+tri-state, the new modes, the complete window and the native platforms are not
+promoted to done by a drawing sub-gate.
+
+After the build exited, the v4 CPU capital F16/Q8 rows were re-measured under the
+original release protocol: correctness/stability are 2 PASS, but the overall
+verdict is FAIL: F16 e2e p95 154.422 -> 167.962 ms (+8.77%). The original decode
+p50 +8.13% did not trigger again; the old complete FAIL is not withdrawn. The
+observation window had no additional compiler activity but was not a full trace;
+the remaining failures still need an isolated re-measurement under the original
+protocol. See `cpu-capital-isolated-v2/report.json` and the release ledger.
+
 The original LLM CPU performance, full CUDA text, YOLO Q8 checkpoint, OCR GT
 and Vulkan original-baseline veto remain open. See the latest assessment in
 [OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md) and the llama evidence index.
@@ -60,9 +317,12 @@ Keep both ledgers until their original acceptance surfaces are closed.
 
 ## What the original twelve F32 files represent
 
-以下 local/unpublished 表是发布前的历史来源记录。当前公开 OCR catalog 共
-48 行，2026-10-25 的 36 新文件与一 replacement 发布事实见 release ledger。
-本轮不重新上传或替换；当前 picker 已覆盖发布 rec 集合，原数值/速度 FAIL 不变。
+The local/unpublished table below is a historical source record from before
+publication. The current public OCR catalog has 48 rows; the publication facts
+for the 36 new files and the one replacement from 2026-10-25 are in the release
+ledger. This round does not re-upload or replace anything; the current picker
+already covers the published rec set, and the original numeric/speed FAILs are
+unchanged.
 
 These are local source-ONNX conversion outputs, separate from the twelve already
 published OCR text/layout files:
@@ -128,7 +388,7 @@ preserved in the release ledger; it does not close current stricter revalidation
 | Source F16/Q8_0 | Original ONNX/Paddle truth; no upstream GGML quantization contract | Failed old candidates retained; v17 Small F16/v19 Tiny Q8 have separate graph/page evidence | Partial | Remaining page combinations/XFUND/performance; disclose mixed storage |
 | Orientation | Source crops, BGR, `use_angle_cls`, strict `score > 0.9` rotation | Optional public cls ABI, batch/threshold/angle/selected-region results | Aligned within scope | Quantized release and full-window visuals |
 | Dedicated OCR window | `views/labeling/ppocr/*`, `ppocr_dialog.py`, PDF/layout/table/formula/API/remote service | Separate 1560x920 window, minimum 1200x760, sidebar 240; async API, JSON/JSONL, favorites/search/status, upload, discovery, remote image cache, block editing, JSON/Markdown/ZIP, table editor; Qt5/mock/plugin tests | Partial | Native PDF, formula/rich-text details, complete visual/interaction states |
-| Composite presets | Source detector/recognizer/cls/dictionary/defaults | Eight AICore presets；published rec picker 集合回归及 38 项 suite 通过 | Partial | 全 det/rec/cls 量化组合、source defaults、独立精度与完整窗口验收 |
+| Composite presets | Source detector/recognizer/cls/dictionary/defaults | Eight AICore presets; the published rec picker set regression and the 38-item suite pass | Partial | All det/rec/cls quantization combinations, source defaults, independent accuracy and complete-window acceptance |
 | KIE | Entity/link import/export; no active automatic SER/RE registration | Empty IDs, directional links and coordinates aligned; ABI retains KIE fields and rejects nonempty model option | Matches upstream absence | Add automatic flow only if upstream registers one |
 | OCR accuracy | Independent original framework and real pages | Original and stored-weight source comparison, 50 receipts; failures retained | Partial | All pages/backends/controlled A/B; graph pass cannot cover page failure |
 | Point-cloud 3D data | Cuboid/segmentation sidecars, KITTI/DATUMARO/Sly | C++ sidecars, class workspace, three ZIP formats, transactional preview/rollback, 87 gestures | Aligned within scope | Full windows and native cross-platform events |
@@ -143,7 +403,7 @@ preserved in the release ledger; it does not close current stricter revalidation
 | Other exact local families | `florence2_large_ft`, `grounding_dino_api`, four Grounding-DINO/SAM combinations, InternImage | No complete qualification for these exact registered checkpoints | Open | Exact model task/ABI/catalog/digest/defaults/numeric/performance/UI |
 | DEIMv2/DINOv3 | S/M DINOv3 and HGNetv2-N official checkpoints | Other detection semantics exist, not these exact checkpoints | Open | Conversion/publication/catalog/manifest/backend gates |
 | Other exact families | DAMO/Gold/YOLO-NAS, YOLO6/7/9/10/12/YOLOX, RT-DETR/v2/u_rtdetr/DFINE/RIO, RTMDet pose, UPN, CLRNet, DWPose and YOLO5/11 combinations | Some semantics/different checkpoints only; no exact consumer for all lanes/whole-body/tracking/SAHI/SAM/RAM combinations | Open | Record exact checkpoints vs substitutes; never silently substitute |
-| Defaults/theme/resources | Shortcuts/palette/panels/themes/icons/RAM presentation | 旧 anchor 的局部证据；当前 cd26942 config comparator 实际 FAIL | Partial | 审核三态、搜索、defaults/palette/panel 新差异及 full-window font/DPI/Qt6/platform packaging |
+| Defaults/theme/resources | Shortcuts/palette/panels/themes/icons/RAM presentation | Current cd26942 main config and tri-state review pass, freshly re-run in v14; old config FAIL retained | Partial | New canvas display/measurement modes, full-window font/DPI/Qt6/platform packaging and native file-monitoring acceptance |
 | RAM resources | GGUF embeds English tags; Chinese mapping remains separate | `resources/ram/*` is presentation mapping embedded in RCC; no source-path lookup | Aligned within scope | Use a public API if future GGUFs provide Chinese mapping, then remove fallback |
 | Linux relocation | Plugin/RCC/RPATH/Unicode prefix | `qanylabeling-resource-install.json` passed actual install block/RPATH removal/relocation | Partial | Complete current package inspection/clean-machine/release profile |
 | Windows/macOS packages | Native installer/DMG/update workflows | No current native qAnyLabeling package/build/relocation receipt | Open | Native configure/build/install/relocate/start/resource checks |

@@ -6,7 +6,7 @@ diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vul
  }
  
 +#ifdef DW_F16
-+// 用整数执行 IEEE F16 round-to-nearest-even，保留中间精度边界。
++// Implement IEEE F16 round-to-nearest-even with integers to preserve intermediate precision boundaries.
 +float dw_round_f16(float value) {
 +    uint bits = floatBitsToUint(value);
 +    uint sign = (bits >> 16) & 0x8000u;
@@ -36,10 +36,10 @@ diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vul
 @@ -104,7 +129,12 @@
          conv_2d_dw_cwhn(idx);
  #endif
-     // 保留 F16/F32 卷积写出舍入，bias 是下一步独立加法。
+     // Preserve F16/F32 convolution write-out rounding; bias is a separate subsequent addition.
 -    precise FLOAT_TYPE rounded = FLOAT_TYPE(D_TYPE(result));
 +#ifdef DW_F16
-+    // 整数 RNE 保留独立写 F16 后再 ADD 的精度边界。
++    // Integer RNE preserves the precision boundary between separate F16 write-out and ADD.
 +    precise FLOAT_TYPE rounded = p.has_bias != 0 ? dw_round_f16(result) : result;
 +#else
 +    precise FLOAT_TYPE rounded = result;

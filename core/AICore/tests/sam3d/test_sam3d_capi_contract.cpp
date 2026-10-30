@@ -123,10 +123,10 @@ int main() {
           "voxel_count(NULL) == 0");
     check(aicore_sam3d_result_pbr_texture_width(nullptr) == 0 &&
                   aicore_sam3d_result_pbr_texture_height(nullptr) == 0,
-          "空结果没有 PBR texture 尺寸");
+          "Empty results must not report PBR texture sizes");
     check(aicore_sam3d_result_pbr_texture_rgba(nullptr) == nullptr &&
                   aicore_sam3d_result_pbr_uv(nullptr) == nullptr,
-          "空结果没有借用的 PBR texture/UV 存储");
+          "Empty results must not borrow PBR texture/UV storage");
     aicore_pipeline_timings timings{};
     check(aicore_sam3d_last_pipeline_timings(nullptr, &timings) == -1,
           "timings(NULL ctx) rejected");

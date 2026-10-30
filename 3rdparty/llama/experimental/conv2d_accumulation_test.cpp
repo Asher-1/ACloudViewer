@@ -1,4 +1,4 @@
-// F16 输入/输出不允许块间 F16 累加抹去最终可表达的小量；独立手算抵消序列。
+// F16 input/output must not lose representable residuals through inter-block F16 accumulation; independently derived cancellation sequence.
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -35,7 +35,7 @@ static bool run(ggml_backend_t backend, int channels, int output_channels, int k
         std::vector<ggml_fp16_t> actual(ggml_nelements(y));
         ggml_backend_tensor_get(y, actual.data(), 0, actual.size() * sizeof(ggml_fp16_t));
         for (size_t i = 0; i < actual.size(); ++i) {
-            // ±1024 恰好抵消，其余 (C-2) 个 1/4 的和在 F32 和 F16 中均可精确表达。
+            // +/-1024 cancel exactly; the remaining (C-2) quarters sum exactly in F32 and F16.
             const int oc = (i / (17 * 15)) % output_channels;
             const float expected = (oc % 2 ? -1 : 1) * (channels - 2) * 0.25f;
             const auto expected_half = ggml_fp32_to_fp16(expected);
@@ -52,8 +52,8 @@ static bool run(ggml_backend_t backend, int channels, int output_channels, int k
     return valid;
 }
 
-// 该测试捕获 F16 写出截断、tie 舍入错误，以及融合 epilogue 提前窄化。
-// 1.5 * (1 + 2^-10) 恰在两个 half 的中点；偶数尾数应选 1.501953125。
+// Detect F16 write-out truncation, incorrect tie rounding and premature fused-epilogue narrowing.
+// 1.5 * (1 + 2^-10) is halfway between halves; the even mantissa selects 1.501953125.
 static bool run_rounding(ggml_backend_t backend, bool fused) {
     auto* ctx = ggml_init({1024 * 1024, nullptr, true});
     if (!ctx) return false;
@@ -90,7 +90,7 @@ static bool run_rounding(ggml_backend_t backend, bool fused) {
             const double sign = oc % 2 ? -1.0 : 1.0;
             float expected = float(sign * (oc % 4 < 2 ? 1.501953125 : 1.5029296875));
             if (fused) {
-                // 独立 double 解析式，只在最终输出处执行 canonical F16 舍入。
+                // Independent double formula; canonical F16 rounding occurs only at final output.
                 double value = sign * (oc % 4 < 2 ? 1.5 : 1.5009765625) * 1.0009765625 + bias[oc];
                 expected = float(value / (1.0 + std::exp(-value)));
             }

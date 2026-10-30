@@ -36,7 +36,19 @@ fixtures = {
                  "chat-model-geometry-native.json")
 }
 defaults = json.loads(fixtures["chat-config-defaults-native.json"].read_text())
-assert defaults["providers"] == constants["DEFAULT_PROVIDERS_DATA"]
+upstream_providers = constants["DEFAULT_PROVIDERS_DATA"]
+local_provider = {
+    "api_address": "aicore://llm",
+    "api_key": "",
+    "api_docs_url": None,
+    "api_key_url": None,
+    "model_docs_url": None,
+}
+assert "local" not in upstream_providers
+assert set(defaults["providers"]) == set(upstream_providers) | {"local"}
+for name, expected in upstream_providers.items():
+    assert defaults["providers"][name] == expected, name
+assert defaults["providers"]["local"] == local_provider
 assert defaults["models"] == dict(
     settings=constants["DEFAULT_SETTINGS"],
     models_data={},
@@ -244,8 +256,11 @@ assert [positioned.x, positioned.y, positioned.w, positioned.h] == [
     ("popup_x", "popup_y", "popup_width", "popup_height")], geometry
 receipt = dict(
     verdict="PASS",
+    local_provider_checks=sorted(local_provider),
+    upstream_provider_checks=sorted(upstream_providers),
     comparisons=[
-        "exact_default_providers", "exact_default_models",
+        "exact_upstream_default_providers", "exact_local_provider_extension",
+        "exact_default_models",
         "source_save_model_selection", "unknown_fields_and_nullable_parameters",
         "source_popup_search", "source_popup_favorite_persistence",
         "source_model_refresh_tracker_and_cache_decisions",

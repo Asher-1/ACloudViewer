@@ -258,7 +258,7 @@ bool OcrProgram::parse(const std::string& json, std::string* error) {
                 attrMap[a["name"].asString()] = a.get("value", Json::Value());
         }
         entry.attrs = std::move(attrMap);
-        // IO 身份来自真实拓扑，不将默认名称或上一份 program 当当前输入。
+        // Derive IO identity from actual topology, not default names or the previous program.
         if (entry.type == "feed" && entry.outputs.size() == 1)
             feedInput = entry.outputs.front();
         if (entry.type == "fetch" && entry.inputs.size() == 1 &&
@@ -2167,7 +2167,7 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                                 ? bias : ggml_reshape_1d(ctx, bias, x->ne[2]);
                         result = ggml_conv_2d_dw_direct_bias(
                                 ctx, w, x, channelBias, s0, s1, p0, p1, d0, d1);
-                        // 此路径已经消费 bias，末尾不能再发出独立 ADD。
+                        // This path already consumes bias; do not emit a second separate ADD at the end.
                         bias = nullptr;
                     } else {
                         result = ggml_conv_2d_dw_direct(ctx, w, x, s0, s1, p0, p1,

@@ -33,7 +33,8 @@ CONSUMER_DIRS = [
 
 
 def code_only(text):
-    # 保留 token 间隔，去掉字符串及注释；文档中的类型或示例不是声明/调用。
+    # Keep token spacing and strip strings and comments; a type or example in
+    # documentation is not a declaration or a call.
     return re.sub(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
                   ' ', text)
 

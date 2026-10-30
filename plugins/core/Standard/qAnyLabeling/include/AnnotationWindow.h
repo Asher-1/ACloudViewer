@@ -118,6 +118,8 @@ private:
     void updateRecentMenu();
     void rememberRecentFile(const QString& file);
     void refreshFileList();
+    void setAnnotationChecked(const QJsonValue& checked);
+    void syncAnnotationChecked();
     bool saveDocument();
     bool saveDocumentTo(const QString& sidecar);
     void saveDocumentAs();
@@ -338,6 +340,8 @@ private:
     QAction* m_deleteLabelFileAction = nullptr;
     QAction* m_autoRunAction = nullptr;
     QAction* m_toggleCheckedAction = nullptr;
+    QAction* m_clearCheckedAction = nullptr;
+    QAction* m_failCheckedAction = nullptr;
     QAction* m_nextAction = nullptr;
     QAction* m_previousAction = nullptr;
     QAction* m_nextUncheckedAction = nullptr;

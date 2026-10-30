@@ -193,7 +193,7 @@ enum {
     AICORE_OCR_POST_TIMING_RESULT_ASSEMBLY = 1u << 3,
     AICORE_OCR_POST_TIMING_OUTPUT_READBACK = 1u << 4,
     AICORE_OCR_POST_TIMING_INPUT_UPLOAD = 1u << 5,
-    /** 独立图计算时间；用于定位 det 与 rec 的最大执行热点。 */
+    /** Separate graph-compute timing to locate det/rec execution hotspots. */
     AICORE_OCR_POST_TIMING_DET_GRAPH_COMPUTE = 1u << 6,
     AICORE_OCR_POST_TIMING_REC_GRAPH_COMPUTE = 1u << 7,
 };
@@ -209,9 +209,9 @@ typedef struct aicore_ocr_post_timing_breakdown {
     double output_readback_ms;
     /** Host-to-device graph-input transfer; excludes graph compute. */
     double input_upload_ms;
-    /** DBNet 图计算时间；不包含传输或后处理。v2 追加字段。 */
+    /** DBNet graph-compute time, excluding transfers and postprocessing. Added in v2. */
     double det_graph_compute_ms;
-    /** 所有 SVTR rec 图计算时间；不包含传输或 CTC。v2 追加字段。 */
+    /** All SVTR rec graph-compute time, excluding transfers and CTC. Added in v2. */
     double rec_graph_compute_ms;
 } aicore_ocr_post_timing_breakdown;
 

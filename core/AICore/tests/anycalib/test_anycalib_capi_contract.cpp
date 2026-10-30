@@ -1,4 +1,5 @@
-// AnyCalib 公共 ABI 的无模型契约：目录查找、分配释放与错误输出所有权。
+// AnyCalib public-ABI model-free contract: catalog lookup, allocation release
+// and error-output ownership.
 #include "aicore/anycalib_capi.h"
 #include "tests/common/test_macros.hpp"
 

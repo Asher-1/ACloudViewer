@@ -13,7 +13,7 @@
 
 // Default for newly created sidecars at the pinned X-AnyLabeling baseline.
 // The normal editor preserves explicit version fields in existing sidecars.
-inline QString annotationFormatVersion() { return QStringLiteral("4.1.3"); }
+inline QString annotationFormatVersion() { return QStringLiteral("4.2.1"); }
 
 struct AnnotationDocument {
     QImage image;

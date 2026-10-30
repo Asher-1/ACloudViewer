@@ -50,7 +50,8 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
             "LIGHTGLUE_MATCH",  "FREESPLATTER_RECONSTRUCT",
             "TRELLIS_GENERATE", "LINGBOT_MAP_RECONSTRUCT",
             "ANYLABEL_INFER",   "MAP_ANYTHING_RECONSTRUCT",
-            "SAM3D_GENERATE"};
+            "SAM3D_GENERATE",   "OPENPCDET_DETECT",
+            "LLM_GENERATE"};
     if (!kCommands.contains(command)) {
         QJsonArray allowed;
         QStringList sorted = kCommands.values();

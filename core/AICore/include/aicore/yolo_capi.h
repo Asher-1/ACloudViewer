@@ -38,22 +38,22 @@ AICORE_CAPI int aicore_yolo_abi_version(void);
 typedef struct aicore_yolo_ctx aicore_yolo_ctx;
 typedef struct aicore_yolo_options aicore_yolo_options;
 
-/** PSA 两处矩阵乘的累加模式；不改变权重、激活或输出的存储类型。 */
+/** Accumulation mode for the two PSA matrix products; preserves weight, activation and output storage types. */
 typedef enum aicore_yolo_attention_accumulation {
     AICORE_YOLO_ATTENTION_UPSTREAM = 0,
     AICORE_YOLO_ATTENTION_F32 = 1
 } aicore_yolo_attention_accumulation;
 
-/** 设置加载时复制的累加模式（默认 UPSTREAM）。
- *  成功返回 0；NULL 或非法模式返回 -1，且不覆盖最后有效值。
- *  F32 请求仅作用于 PSA 的两处矩阵乘，不表示全图均采用 F32 运算。 */
+/** Set the accumulation mode copied at load time (default UPSTREAM).
+ *  Return 0 on success; NULL or invalid modes return -1 without replacing the last valid value.
+ *  The F32 request applies only to the two PSA matrix products, not the entire graph. */
 AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
         aicore_yolo_options* opts, int mode);
-/** 返回已配置模式；NULL 返回 -1。 */
+/** Return the configured mode; NULL returns -1. */
 AICORE_CAPI int aicore_yolo_options_get_attention_accumulation(
         const aicore_yolo_options* opts);
-/** 返回已加载会话的配置模式；NULL 或无模型的 context 返回 -1。
- *  这是配置请求，不保证每个后端采用相同的 operand 算术路径。 */
+/** Return the loaded session's configured mode; NULL or a context without a model returns -1.
+ *  This is a configuration request, not a guarantee of identical operand arithmetic across backends. */
 AICORE_CAPI int aicore_yolo_context_attention_accumulation(
         const aicore_yolo_ctx* ctx);
 

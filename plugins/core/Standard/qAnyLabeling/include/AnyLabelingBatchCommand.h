@@ -207,7 +207,7 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
     static ecvAICoreBatch::ModelSource source(const QString& taskName,
                                               const QString& path) {
         const QByteArray name = QFileInfo(path).fileName().toUtf8();
-        // 本地 recipe 没有 published URL/digest；不能退到 YOLO catalog 或虚构下载。
+        // Local recipes have no published URL/digest; never fall back to the YOLO catalog or invent downloads.
         if (taskName == QLatin1String("attribute")) return {};
         if (taskName.startsWith("depth"))
             return ecvAICoreBatch::familySource(AICORE_MODEL_FAMILY_DEPTH,

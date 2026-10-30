@@ -1144,11 +1144,12 @@ class ValidateAllTests(unittest.TestCase):
             try:
                 assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
             except ValueError as error:
-                self.fail('本地-only task 不应要求虚构下载 catalog：' + str(error))
+                self.fail('A local-only task must not require a fictitious download catalog: ' + str(error))
             self.assertEqual(assets, [])
             assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute', 'depth'})
             self.assertEqual([str(asset.relative_path) for asset in assets], ['da3_models/model.gguf'])
-            # 任一非 local_only 场景或空 task 不得豁免已发布 catalog 责任。
+            # No non-local_only scenario and no empty task may waive the
+            # published-catalog obligation.
             manifest['scenarios'].append({'id': 'must-publish', 'task': 'attribute',
                                           'model_glob': 'da3_models/model.gguf'})
             with self.assertRaisesRegex(ValueError, 'no assets for tasks: attribute'):
@@ -1559,7 +1560,7 @@ class ValidateAllTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("yolo_reference", source)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        self.assertTrue(hasattr(module, "runtime_library"), "缺少跨平台运行库解析")
+        self.assertTrue(hasattr(module, "runtime_library"), "Missing cross-platform runtime library resolution")
         for name, folder in (("libAICore.so", "bin"), ("libAICore.dylib", "bin"),
                              ("AICore.dll", "bin/Release")):
             with tempfile.TemporaryDirectory() as directory:
@@ -1577,7 +1578,7 @@ class ValidateAllTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("yolo_reference", source)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        self.assertTrue(hasattr(module, "source_identity"), "缺少参照源码审计")
+        self.assertTrue(hasattr(module, "source_identity"), "Missing reference source audit")
         revision = "a" * 40
         responses = [revision.encode(), b"", b" m cpp_ggml/third_party/ggml\n",
                      b" submodule-revision\n", b"submodule diff"]

@@ -80,9 +80,11 @@ AICORE_BATCH_COMMANDS = (
     ("lingbot-map", "LINGBOT_MAP_RECONSTRUCT",
      "qLingbotMap/include/LingbotMapBatchCommand.h"),
     ("anylabel", "ANYLABEL_INFER", "qAnyLabeling/include/AnyLabelingBatchCommand.h"),
+    ("llm", "LLM_GENERATE", "qAnyLabeling/include/LLMBatchCommand.h"),
     ("map-anything", "MAP_ANYTHING_RECONSTRUCT",
      "qMapAnything/include/MapAnythingReconstructCommand.h"),
     ("sam3d", "SAM3D_GENERATE", "qSAM3D/include/Sam3dGenerateCommand.h"),
+    ("openpcdet", "OPENPCDET_DETECT", "qOpenPCDet/include/OpenPCDetBatchCommand.h"),
 )
 
 
@@ -3977,6 +3979,23 @@ class TestLevel5_MCPServer:
             "task", "options"}
         assert by_name["run_plugin_command"].inputSchema["required"] == [
             "command"]
+
+    @_needs_mcp
+    @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not available")
+    def test_level5_llm_native_schema(self, monkeypatch):
+        """真实 MCP schema 路径；不模拟原生 schema 或加载模型。"""
+        import asyncio
+        from cli_anything.acloudviewer import mcp_server
+        from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
+        monkeypatch.setenv("ACV_BINARY", BINARY_PATH)
+        backend = ACloudViewerBackend(mode="headless")
+        monkeypatch.setattr(mcp_server, "_get_backend", lambda: backend)
+        content = asyncio.run(mcp_server.call_tool("get_ai_schema", {"task": "llm"}))
+        schema = json.loads(content[0].text)
+        assert schema.get("schema") == "acloudviewer.aicore.batch/1", schema
+        assert schema["keyword"] == "LLM_GENERATE"
+        assert {"PROMPT", "MMPROJ", "MAX_TOKENS"} <= {
+            row["key"] for row in schema["options"]}
 
     @_needs_mcp
     def test_level5_documented_tool_counts_match_server(self):

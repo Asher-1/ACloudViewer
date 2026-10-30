@@ -1909,7 +1909,7 @@ aicore_ocr_result* aicore_ocr_run(aicore_ocr_ctx* ctx,
     result->postTimings.result_assembly_ms = std::max(0.0, resultAssemblyMs);
     result->postTimings.output_readback_ms = outputReadbackMs;
     result->postTimings.input_upload_ms = inputUploadMs;
-    // 将总 inference 拆回两个图，避免仅凭总数猜测应优化 det 还是 rec。
+    // Split inference timing by graph to identify det/rec hotspots instead of guessing from totals.
     result->postTimings.det_graph_compute_ms = detInferenceMs;
     result->postTimings.rec_graph_compute_ms = recTimings.inferenceMs;
     return result;

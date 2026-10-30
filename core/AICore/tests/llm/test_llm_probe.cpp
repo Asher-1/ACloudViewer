@@ -135,8 +135,9 @@ std::string run_upstream(const Args& a,
     const QString tool = dir +
                          (vision ? "/llama-mtmd-cli" : "/llama-completion") +
                          suffix;
-    // dlopen 失败在 Release 工具中可能只让设备消失；必须先核实同名
-    // backend 可用，不能把空输出误报成模型数值分叉。
+    // A dlopen failure in a Release tool can merely remove the device; first
+    // confirm that the same-named backend is available so empty output is not
+    // misreported as a model numeric divergence.
     if (device != "CPU") {
         process.start(tool, {"--list-devices"});
         if (!process.waitForFinished(60000) ||
@@ -261,7 +262,8 @@ int main(int argc, char** argv) {
         }
     }
 
-    // 可选诊断使用调用方显式提供的 NVTX 库；普通 probe 无 SDK 编译/链接依赖。
+    // The optional diagnostic uses the NVTX library the caller provides
+    // explicitly; an ordinary probe has no SDK compile or link dependency.
 #ifdef Q_OS_WIN
     using NvtxPush = int (__stdcall *)(const char*);
     using NvtxPop = int (__stdcall *)();
@@ -284,7 +286,7 @@ int main(int argc, char** argv) {
         QFile file(path);
         QCryptographicHash hash(QCryptographicHash::Sha256);
         if (!nvtxPush || !nvtxPop || !file.open(QIODevice::ReadOnly) || !hash.addData(&file)) {
-            std::fprintf(stderr, "NVTX 诊断库无法加载或缺少 range API：%s\n", a.profile_nvtx.c_str());
+            std::fprintf(stderr, "NVTX diagnostic library cannot be loaded or lacks the range API: %s\n", a.profile_nvtx.c_str());
             return 1;
         }
         nvtxDigest = QString::fromLatin1(hash.result().toHex());
@@ -352,9 +354,11 @@ int main(int argc, char** argv) {
             bool rangeStarted = false;
             if (measured && nvtxPush) {
                 const QString name = QStringLiteral("aicore/llm/measured/%1").arg(i - a.warmups);
-                // 动态 NVTX 的返回值不证明 profiler 已采集；本机 Nsight
-                // 在真实记录范围时也返回 -1。每次 push 都必须配对 pop，
-                // 真实采集数量/持续时间由 Nsight 事件表验证，不能由返回值推断。
+                // A dynamic NVTX return value does not prove the profiler
+                // collected anything; local Nsight also returns -1 while it is
+                // really recording ranges. Every push must be paired with a
+                // pop, and the real collected count/duration is verified from
+                // the Nsight event table rather than inferred from the return.
                 nvtxPush(name.toUtf8().constData());
                 rangeStarted = true;
                 measuredRanges.append(name);
@@ -362,7 +366,8 @@ int main(int argc, char** argv) {
             const std::clock_t cpu_start = std::clock();
             const int rc = aicore_llm_generate(ctx, &request, &r);
             const double cpu_ms = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
-            // generate 是同步公共调用；即使失败也先关闭范围，不标记 warmup/recreate/cancel。
+            // generate is a synchronous public call; close the range even on
+            // failure, without marking warmup/recreate/cancel.
             if (rangeStarted) nvtxPop();
             if (rc != 0 || !r) {
                 fail(std::string("generate rc=") + std::to_string(rc) + ": " +
@@ -496,8 +501,10 @@ int main(int argc, char** argv) {
     report["prefill_p50_ms"] = percentile(prefill, 0.5);
     report["decode_p50_ms"] = percentile(decode, 0.5);
     report["decode_tokens_per_s_p50"] = percentile(decode_tps, 0.5);
-    // 保留 measured 顺序以定位尾部；warmup、重建与生命周期调用不混入样本。
-    // process_cpu 是本进程各线程的 CPU 时间总和，不是 GPU event 时间。
+    // Keep the measured order so tails can be located; warmup, recreation and
+    // lifecycle calls never enter the samples.
+    // process_cpu is the sum of this process's thread CPU time, not GPU event
+    // time.
     const auto samples = [](const std::vector<double>& values) {
         QJsonArray array;
         for (double value : values) array.append(value);
@@ -511,7 +518,8 @@ int main(int argc, char** argv) {
     report["warmups"] = a.warmups;
     if (nvtxPush) {
         report["profiling_only"] = true;
-        // 这是已发出的成对范围数，不是独立的 profiler 采集证明。
+        // This is the number of emitted paired ranges, not independent proof
+        // of profiler collection.
         report["measured_nvtx_ranges"] = measuredRanges.size();
         report["measured_nvtx_names"] = measuredRanges;
         report["nvtx_library_sha256"] = nvtxDigest;

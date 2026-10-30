@@ -6,6 +6,7 @@ target_sources(${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationChat.cpp
         ${CMAKE_CURRENT_LIST_DIR}/ChatServiceClient.cpp
         ${CMAKE_CURRENT_LIST_DIR}/LocalChatEngine.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/LLMBatchCommand.cpp
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationDocument.cpp
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationShapeBatch.cpp
         ${CMAKE_CURRENT_LIST_DIR}/AnnotationShapeManager.cpp

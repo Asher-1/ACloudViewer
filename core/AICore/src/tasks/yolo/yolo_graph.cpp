@@ -101,8 +101,8 @@ struct GraphBuilder {
                               ggml_tensor* out) {
         if (ggml_tensor* b = w(prefix, "b")) {
             const ggml_type output_type = out->type;
-            // GGUF bias 保持 F32；先窄化 bias 会使 -2048 + 2048.25 错变成 0。
-            // ADD 在 F32 中消费原值，再恢复原输出 dtype，不改变后续激活的存储契约。
+            // Keep GGUF bias in F32; narrowing it first incorrectly turns -2048 + 2048.25 into zero.
+            // ADD consumes original values in F32, then restores output dtype without changing subsequent activation storage.
             if (b->type == GGML_TYPE_F32 && output_type == GGML_TYPE_F16)
                 out = ggml_cast(gctx, out, GGML_TYPE_F32);
             else if (b->type != out->type)
@@ -197,8 +197,8 @@ struct GraphBuilder {
             }
             if (!depthwise && w4d->type == GGML_TYPE_F32 &&
                 x->type == GGML_TYPE_F32) {
-                // ggml_conv_2d 无条件以 F16 im2col 为 matmul 左操作数，
-                // 连 F32 权重也会窄化。显式 F32 lowering 保留原模型算术。
+                // ggml_conv_2d unconditionally uses F16 im2col as the left matmul operand,
+                // narrowing even F32 weights. Explicit F32 lowering preserves model arithmetic.
                 out = conv2d_matmul(
                         ggml_reshape_2d(gctx, w4d,
                                          w4d->ne[0] * w4d->ne[1] * w4d->ne[2],
@@ -255,7 +255,7 @@ struct GraphBuilder {
                                          : wT;
     }
 
-    // F32/Q8 卷积共享 F32 im2col；权重在 matmul 左侧决定 dot 类型。
+    // F32/Q8 convolution shares F32 im2col; left-side matmul weights determine the dot type.
     // Quantized conv: ggml_conv_2d would build mul_mat(F16 im2col, Q8 kernel)
     // which asserts on CPU (src1 must be F32 or the kernel dtype). Mirror
     // llama.cpp instead: mul_mat(Q8 kernel [K,OC], F32 im2col) — src1 F32
@@ -278,11 +278,11 @@ struct GraphBuilder {
         ggml_tensor* dst = ggml_mul_mat(
                 gctx, wT, ggml_reshape_2d(gctx, im2, im2->ne[0], P));
         if (wT->type == GGML_TYPE_F32) {
-            // F32 模型的卷积输入不能由 TF32/F16 代替。
+            // Do not substitute TF32/F16 for F32-model convolution inputs.
             ggml_mul_mat_set_prec(dst, GGML_PREC_F32);
             if (use_direct_conv && !cuda_backend) {
-                // Vulkan 的 PREC_F32 只约束累加器，coopmat 仍会窄化
-                // 操作数。显式 strict hint 才保留 F32 输入与输出。
+                // Vulkan PREC_F32 constrains only accumulators; coopmat still narrows
+                // operands. An explicit strict hint preserves F32 inputs and outputs.
                 ggml_mul_mat_set_hint(dst, GGML_HINT_STRICT_F32);
             }
         }
@@ -386,7 +386,7 @@ struct GraphBuilder {
         ggml_tensor* kT = ggml_cont(gctx, ggml_permute(gctx, k, 1, 0, 2, 3));
         ggml_tensor* scores = ggml_mul_mat(gctx, kT, qT);
         if (attention_accumulation == AICORE_YOLO_ATTENTION_F32) {
-            // 仅请求累加精度；输入和输出的存储类型保持原图契约。
+            // Request accumulation precision only; input/output storage types retain the graph contract.
             GGML_ASSERT(ggml_prec_set_acc(scores, GGML_PREC_F32));
         }
         ggml_tensor* attn = ggml_soft_max(gctx, scores);
@@ -1113,7 +1113,7 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     // versa) and the data flow must follow the actual device.
     ggml_tensor* graph_input = input;
     if (s->backend.is_cuda && meta.dtype != "f32") {
-        // 非 F32 模型保留既有 F16 igemm 路径。
+        // Non-F32 models retain the existing F16 igemm path.
         graph_input = ggml_cast(gctx, input, GGML_TYPE_F16);
         if (graph_text) graph_text = ggml_cast(gctx, graph_text, GGML_TYPE_F16);
     } else if (s->backend.is_vulkan && (meta.dtype == "f16" || s->q8_direct)) {
@@ -1551,7 +1551,7 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
 //   CPU    — semantic q8 models: expand to f16 once. The generic Q8 path
 //            dynamically quantizes activations and fell below the external
 //            semantic reference gate; other CPU tasks retain native Q8.
-//   CUDA   — F32 权重保持原精度；q8 models expand to f16 once on the host.
+//   CUDA   — F32 weights retain original precision; q8 models expand to f16 once on the host.
 //            The CUDA Q8 conv path
 //            also expands every weight into a per-conv f16 plan, so retaining
 //            the compressed device tensor only adds device memory and a

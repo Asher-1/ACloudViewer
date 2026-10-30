@@ -17,20 +17,37 @@ patches:
   - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
     note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
   - file: 0013-acv-elementwise-epilogue.patch
-    note: "显式 ADD/GELU epilogue：完整单消费者融合域、最终输出偏移和输入分配依赖；CPU/CUDA 保留独立计算，必须通过逐位及模型回归。"
+    note: "Explicit ADD/GELU epilogue requires a complete single-consumer fusion domain, final output offsets and input-allocation dependencies; CPU retains separate computation and the CUDA consumer is registered at the end. Require bitwise and model regression."
   - file: 0014-acv-depthwise-bias-api-cpu.patch
   - file: 0014-acv-depthwise-bias-cuda.patch
   - file: 0014-acv-depthwise-bias-vulkan.patch
-    note: "DW 写出舍入后加 F32 bias；覆盖通道、batch、F16 舍入与非对齐 bias view。"
+    note: "Add F32 bias after DW write-out rounding; cover channels, batches, F16 rounding and unaligned bias views."
   - file: 0015-acv-llama-cuda-numerics.patch
-    note: "LLM 与非 LLM 逐位作用域回归；CUDA Graph 命名语义独立缓存。"
+    note: "Bitwise scoped LLM and non-LLM regression; cache CUDA graph naming semantics independently."
   - file: 0016-acv-vulkan-dw-bias-rounding.patch
-    note: "Vulkan F16 中间存储舍入显式化；保持独立 ADD 的算术。"
+    note: "Make Vulkan F16 intermediate-storage rounding explicit; preserve separate ADD arithmetic."
   - file: 0017-acv-vulkan-pool2d-dispatch.patch
-    note: "F16 POOL_2D 的 workgroup 与 local-size 元数据一致；独立 sentinel/oracle 和真实 YOLO 门验证。"
+    note: "Keep F16 POOL_2D workgroup and local-size metadata consistent; verify independent sentinels/oracles and real YOLO gates."
   - file: 0018-acv-vulkan-dw-debug-bias.patch
-    note: "DW 结果检查器的 CPU clone 复制 bias 输入，保持诊断与实际计算语义一致。"
+    note: "The DW result checker's CPU clone copies bias inputs, keeping diagnostic and actual computation semantics consistent."
   - file: 0019-acv-cuda-pool2d-average.patch
-    note: "AVG 在 F32 中先求和再 RNE 除面积；scalar/warp 独立 oracle 和真实消费者门必需。"
+    note: "AVG sums in F32 before RNE division by area; require independent scalar/warp oracles and real-consumer gates."
   - file: 0020-acv-cuda-igemm-plan-owner.patch
-    note: "读取 task 的单调计划身份，防止同地址/形状跨模型复用旧权重；公共 ABI 模型切换及原精度/性能门必需。"
+    note: "Read the task's monotonic plan identity to prevent stale weights at reused addresses/shapes across models; require public-ABI model-switch and original accuracy/performance gates."
+  - file: 0021-acv-openpcdet-igemm-f32.patch
+    note: "OpenPCDet nodes named opcpd_conv permit WMMA TF32 igemm for F32 convolution; other F32 tasks retain strict fp32 fallback. Gate detection per box against the upstream OpenPCDet-GGML CUDA baseline using the same tensor-core arithmetic."
+  - file: 0022-acv-openpcdet-tf32-conv2d.patch
+    note: "Route opcpd_conv F32 convolution from WMMA igemm to the bitwise port of upstream OpenPCDet-GGML dispatch (Winograd/TF32 implicit GEMM/FMA); f16/q8 and other F32 task routes remain unchanged."
+  - file: 0023-acv-openpcdet-sparse-ext.patch
+    note: "OpenPCDet-GGML fused sparse convolution: sparse_gather (zero-fill row -1) plus sparse_scatter_add(_n) (kernel-group chunked scatter-add, folded bias, no concat). Only OpenPCDet CUDA-ext compact graphs emit these nodes; append operators to the enum, retaining existing op IDs and CPU/Vulkan behavior."
+  - file: 0024-acv-cuda-depthwise7.patch
+  - file: 0024-acv-vulkan-depthwise7.patch
+    note: "RelateAnything 14c9744 DW7 specialization preserves four descriptors, actual view offsets, separate bias ADD and original fallbacks. Upstream acceptance does not replace this repository's numeric/performance gates."
+  - file: 0024-acv-openpcdet-bn-fold-relu.patch
+    note: "OpenPCDet-GGML fused BN-fold+ReLU operator (relu(x*scale+bias), CUDA float4 fast path and CPU scalar fallback). Only OpenPCDet CUDA-ext graphs (bev_backbone g_bn_fuse_relu) emit it; append the operator to the enum without changing CPU/Vulkan behavior."
+  - file: 0025-acv-cuda-perf-op-profiler.patch
+    note: "Port upstream OpenPCDet-GGML per-op CUDA event timing byte-for-byte (GGML_CUDA_PERF_OP=1, disabled by default); diagnostics only, with no arithmetic or graph-semantic changes. Rows are comparable to the upstream per-op table."
+  - file: 0026-acv-openpcdet-deconv-gemm.patch
+    note: "Byte-for-byte port of the OpenPCDet-GGML phase-decomposed transposed-convolution GEMM path (gather_phase + cuBLAS sgemm + scatter_phase; TF32 follows the handle math mode, and the GGML_CUDA_DISABLE_DECONV_GEMM debug gate is ported as well). Only F32 deblock nodes tagged opcpd_deconv take this path; f16 (SAM3) and every other task keep their existing routing, and CPU/Vulkan are untouched."
+  - file: 0027-acv-cuda-add-gelu-epilogue.patch
+    note: "显式 F32 行 bias ADD/GELU 写出；保留原算术、融合开关、可观察/多消费者/非相邻/布局及危险别名回退，原数值和性能门不变。"

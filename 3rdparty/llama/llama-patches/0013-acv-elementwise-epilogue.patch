@@ -5,7 +5,7 @@ diff --git a/include/ggml.h b/include/ggml.h
              enum ggml_op_hint    hint);
      GGML_API enum ggml_op_hint ggml_mul_mat_get_hint(const struct ggml_tensor * a);
  
-+    // 优化注解，不改变 ADD 的数学定义；未融合 backend 保留独立 GELU。
++    // Optimization hint only: preserve ADD semantics and separate GELU on unfused backends.
 +    #define GGML_EPILOGUE_GELU 0x1
 +    GGML_API void ggml_elementwise_set_epilogue_hint(struct ggml_tensor * a, int32_t epilogue);
 +    GGML_API int32_t ggml_elementwise_get_epilogue_hint(const struct ggml_tensor * a);
@@ -61,7 +61,7 @@ diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
      vk_subbuffer src2_buf = use_src2 ? ggml_vk_tensor_subbuffer(ctx, src2, true) : vk_subbuffer{};
      vk_subbuffer src3_buf = use_src3 ? ggml_vk_tensor_subbuffer(ctx, src3, true) : vk_subbuffer{};
 -    vk_subbuffer dst_buf = ggml_vk_tensor_subbuffer(ctx, dst, true);
-+    // descriptor 与偏移量必须同时指向最终输出。
++    // The descriptor and offset must both reference the final output.
 +    ggml_tensor * write_dst = dst_out ? dst_out : dst;
 +    vk_subbuffer dst_buf = ggml_vk_tensor_subbuffer(ctx, write_dst, true);
  
@@ -93,7 +93,7 @@ diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
      }
  }
  
-+// 只有完整融合域才能跳过 ADD；OUTPUT、多消费者、非相邻路径均回退。
++// Skip ADD only for a complete fusion domain; OUTPUT, multiple consumers and nonadjacent nodes fall back.
 +static bool ggml_vk_can_fuse_add_gelu(const ggml_backend_vk_context * ctx,
 +                                    const ggml_cgraph * graph, int i) {
 +    if (ctx->device->disable_fusion || i + 1 >= graph->n_nodes) return false;
@@ -143,7 +143,7 @@ diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
          };
  
 +        if (ggml_vk_can_fuse_add_gelu(ctx, graph, first_unused)) {
-+            // ADD 输入直到 GELU 的最终写出才可复用，避免 bias/output 别名竞争。
++            // Keep ADD inputs live until final GELU write-out to prevent bias/output alias races.
 +            add_pattern_alloc_deps({GGML_OP_ADD, GGML_OP_UNARY}, first_unused + 1);
 +            if (keep_pattern({GGML_OP_ADD, GGML_OP_UNARY})) continue;
 +        }

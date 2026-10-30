@@ -223,6 +223,22 @@ constexpr const char* kLingbotMapUniversitySkyMasksExtractDir =
 constexpr const char* kLingbotMapUniversitySkyMasksSha256 =
         "fccfd832ea675d7b29708c80ed37504c1f5d1f5e6ab19bf8eb3cbf620498324e";
 
+// OpenPCDet detection sample (qOpenPCDet): one raw KITTI LiDAR frame
+// (kitti_000008.bin, 17238 x 4), its PointRCNN pre-sampled 16384 x 4
+// variant, one nuScenes 5-feature sweep (n015 scene) and the two
+// multi-modal scene bundles (scene_caddn single-camera, scene_bevfusion
+// 6-camera). The zip keeps a top-level "openpcdet_test_data" group
+// directory, so the dataset lands UNDER the extract group of the same
+// name (mirroring the LingBot-Map / MapAnything grouped layout).
+constexpr const char* kOpenPCDetZipName = "openpcdet_test_data.zip";
+constexpr const char* kOpenPCDetExtractDir = "openpcdet_test_data";
+constexpr const char* kOpenPCDetGroupDir = "openpcdet_test_data";
+constexpr const char* kOpenPCDetDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "OpenPCDet-GGUF/openpcdet_test_data.zip";
+constexpr const char* kOpenPCDetSha256 =
+        "f1f185a385ddd0b440ed5699be47169eb89b7a0107e29fd26e33ed81a07939dd";
+
 }  // namespace
 
 // ----------------------------------------------------------------------------
@@ -574,6 +590,15 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                      ecvAssetIntegrity::PinnedDigest(zipName)},
                     QString::fromLatin1(kMapAnythingTestGroupDir)};
         }
+        case Dataset::OpenPCDetSample:
+            return {kind,
+                    QStringLiteral("OpenPCDet detection sample"),
+                    QString::fromLatin1(kOpenPCDetZipName),
+                    QString::fromLatin1(kOpenPCDetExtractDir),
+                    QString::fromLatin1(kOpenPCDetDownloadUrl),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kOpenPCDetSha256)},
+                    QString::fromLatin1(kOpenPCDetGroupDir)};
     }
     Q_UNREACHABLE();
     return {};
@@ -712,6 +737,20 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
             // A MapAnything scene bundle is complete when its multi-view
             // image sequence is present.
             extractedComplete = !getMapAnythingSceneImages(extract).isEmpty();
+            break;
+        case Dataset::OpenPCDetSample:
+            // Complete when the three LiDAR inputs the panels fill are all
+            // present (the scene bundles ride along in the same archive).
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("kitti_000008.bin"))
+                             .isEmpty() &&
+                    !findDatasetFile(
+                             kind,
+                             QStringLiteral("kitti_000008_sampled16384.bin"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind,
+                                     QStringLiteral("nuscenes_n015_lidar.bin"))
+                             .isEmpty();
             break;
     }
     return extractedComplete;

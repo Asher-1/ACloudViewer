@@ -52,6 +52,10 @@ if(BUILD_TESTING)
     target_link_libraries(llama_depthwise_bias_test PRIVATE 3rdparty_llama)
     add_test(NAME llama_cpu_depthwise_bias
         COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" CPU)
+    add_executable(llama_depthwise7_test depthwise7_test.cpp)
+    target_link_libraries(llama_depthwise7_test PRIVATE 3rdparty_llama)
+    add_test(NAME llama_cpu_depthwise7
+        COMMAND llama_depthwise7_test "${GGML_MODULE_DIR}" CPU matrix -)
     add_executable(llama_pool2d_test pool2d_test.cpp)
     target_link_libraries(llama_pool2d_test PRIVATE 3rdparty_llama)
     add_test(NAME llama_cpu_pool2d
@@ -90,9 +94,28 @@ if(BUILD_TESTING)
         add_test(NAME llama_cuda_depthwise_bias
             COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" CUDA0)
         set_tests_properties(llama_cuda_depthwise_bias PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_cuda_depthwise7
+            COMMAND llama_depthwise7_test "${GGML_MODULE_DIR}" CUDA0 matrix -)
+        set_tests_properties(llama_cuda_depthwise7 PROPERTIES RESOURCE_LOCK gpu)
+        find_program(LLAMA_NSYS_EXECUTABLE nsys)
+        if(LLAMA_NSYS_EXECUTABLE)
+            add_test(NAME llama_cuda_depthwise7_routes
+                COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test_cuda_dw7_routes.py
+                    --probe $<TARGET_FILE:llama_depthwise7_test> --modules "${GGML_MODULE_DIR}"
+                    --output ${CMAKE_BINARY_DIR}/Testing/dw7-cuda-routes)
+            set_tests_properties(llama_cuda_depthwise7_routes PROPERTIES RESOURCE_LOCK gpu)
+        endif()
         add_test(NAME llama_cuda_elementwise_epilogue
             COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" CUDA0)
         set_tests_properties(llama_cuda_elementwise_epilogue PROPERTIES RESOURCE_LOCK gpu)
+        # 缺少 nsys 或真实 CUDA 路由证据即失败；不以数值相同冒充融合已执行。
+        add_test(NAME llama_cuda_add_gelu_routes
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test_cuda_add_gelu_routes.py
+                --probe $<TARGET_FILE:llama_elementwise_epilogue_test>
+                --modules "${GGML_MODULE_DIR}"
+                --output ${CMAKE_BINARY_DIR}/Testing/add-gelu-cuda-routes)
+        set_tests_properties(llama_cuda_add_gelu_routes PROPERTIES
+            RESOURCE_LOCK gpu TIMEOUT 300 LABELS "ggml;contract")
         add_test(NAME llama_cuda_runtime_smoke COMMAND llama_runtime_smoke cuda)
         set_tests_properties(llama_cuda_runtime_smoke PROPERTIES RESOURCE_LOCK gpu)
         add_executable(llama_cuda_matmul_stride_test cuda_matmul_stride_test.cpp)
@@ -113,7 +136,7 @@ if(BUILD_TESTING)
         set_tests_properties(llama_vulkan_pool2d PROPERTIES RESOURCE_LOCK gpu)
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
            CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
-            # 真正的 checker clone 数值回归；仅覆盖 Linux x86 host/F32 路径。
+            # Real checker-clone numeric regression; covers Linux x86 host/F32 paths only.
             add_test(NAME llama_vulkan_dw_debug_clone
                 COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_LIST_DIR}/test_vulkan_dw_debug_clone.py
@@ -125,6 +148,16 @@ if(BUILD_TESTING)
         add_test(NAME llama_vulkan_depthwise_bias
             COMMAND llama_depthwise_bias_test "${GGML_MODULE_DIR}" Vulkan0)
         set_tests_properties(llama_vulkan_depthwise_bias PROPERTIES RESOURCE_LOCK gpu)
+        add_test(NAME llama_vulkan_depthwise7
+            COMMAND llama_depthwise7_test "${GGML_MODULE_DIR}" Vulkan0 matrix -)
+        set_tests_properties(llama_vulkan_depthwise7 PROPERTIES RESOURCE_LOCK gpu)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+            # Reuse actual backend compile/link arguments; compile test objects only in isolation.
+            add_test(NAME llama_vulkan_depthwise7_routes
+                COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test_vulkan_dw7_routes.py
+                    --build ${CMAKE_BINARY_DIR} --output ${CMAKE_BINARY_DIR}/Testing/dw7-vulkan-routes)
+            set_tests_properties(llama_vulkan_depthwise7_routes PROPERTIES RESOURCE_LOCK gpu)
+        endif()
         add_test(NAME llama_vulkan_elementwise_epilogue
             COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" Vulkan0)
         set_tests_properties(llama_vulkan_elementwise_epilogue PROPERTIES RESOURCE_LOCK gpu)

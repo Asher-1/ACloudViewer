@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--rec-source", type=Path)
     parser.add_argument("--rec-source-sha256")
     parser.add_argument("--rec-weights", type=Path,
-                        help="额外诊断同 GGUF 存储权重，不替换独立 source 文本真值")
+                        help="Additionally diagnose the same GGUF stored weights without replacing independent source text truth")
     parser.add_argument("--dictionary", type=Path)
     parser.add_argument("--dictionary-sha256")
     parser.add_argument("--provider", choices=("cpu", "cuda"), default="cpu")
@@ -36,7 +36,7 @@ def main():
         raise SystemExit("classifier source digest mismatch")
     has_rec = bool(args.rec_source)
     if args.rec_weights and not has_rec:
-        parser.error("存储诊断必须同时提供 pinned recognizer source 与 dictionary")
+        parser.error("Stored-weight diagnostics require both pinned recognizer source and dictionary")
     if any((args.rec_source, args.rec_source_sha256, args.dictionary,
             args.dictionary_sha256)) and not all((args.rec_source,
             args.rec_source_sha256, args.dictionary, args.dictionary_sha256)):
@@ -107,7 +107,7 @@ def main():
                 if (rounded.shape != predictions.shape or not np.isfinite(rounded).all()
                         or not np.isfinite(predictions).all()):
                     raise SystemExit("stored-weight recognizer has invalid output")
-                # 逐批诊断，不积存 raw head；tiny 六条 40×6906 输出及 float64 差值峰值约 40 MiB。
+                # Diagnose batches without accumulating raw heads; six tiny 40x6906 outputs plus float64 differences peak at about 40 MiB.
                 stored_max_diff = max(stored_max_diff, float(
                     np.abs(rounded.astype(np.float64) - predictions).max()))
                 source_ids, stored_ids = predictions.argmax(-1), rounded.argmax(-1)
@@ -142,7 +142,7 @@ def main():
             "source_argmax_match": matching_steps / total_steps,
             "source_text_mismatch_indices": [i for i, (row, text) in enumerate(zip(rows, stored_texts))
                                              if row["text"] != text],
-            "scope": "存储误差诊断；原 rows 仍为独立 source 真值，不替代原文本门"}
+            "scope": "Stored-weight error diagnostic; original rows remain independent source truth, not a replacement for the original text gate"}
     (args.output / "orientation.json").write_text(json.dumps(reference, indent=2) + "\n")
 
 

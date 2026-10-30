@@ -1,4 +1,4 @@
-// YOLO F32 模型不能在通用卷积 lowering 中静默量化成 F16。
+// Generic convolution lowering must not silently quantize YOLO F32 models to F16.
 #include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
@@ -57,7 +57,7 @@ int run(bool depthwise, const char* device, int size) {
     std::unique_ptr<yolo::Session, decltype(&yolo::free_session)> session(
             yolo::create_session(path, device, options), &yolo::free_session);
     CHECK(session);
-    // 相同权重跨 canvas 重建，输入含大量不可由 F16 表达的数。
+    // Rebuild the canvas with the same weights and inputs not representable in F16.
     for (int width : {32, 16, 32}) {
         CHECK(yolo::session_ensure_canvas(session.get(), width, 32));
         const int plane = width * 32;
@@ -71,7 +71,7 @@ int run(bool depthwise, const char* device, int size) {
                                 actual.size() * sizeof(float));
         float error = 0;
         for (int i = 0; i < int(actual.size()); ++i) {
-            // 独立的 NCHW 卷积解析式；不调用 ggml 或生产 helper。
+            // Independent analytical NCHW convolution; no ggml or production helper.
             const int oc = i / plane, x = i % width, y = (i % plane) / width;
             double sum = 0;
             const int channels = depthwise ? 1 : 3;
@@ -97,8 +97,8 @@ int run(bool depthwise, const char* device, int size) {
     return 0;
 }
 
-// F16 卷积图仍须消费 GGUF 中原样保存的 F32 bias，不能先窄化 bias 再 ADD。
-// 若生产 lowering 将 ±2048.25 舍入为 ±2048，这个单点解析式会从 ±0.25 变成 0。
+// F16 convolution must consume the GGUF's original F32 bias without narrowing before ADD.
+// Rounding ±2048.25 to ±2048 in production lowering changes this analytical result from ±0.25 to 0.
 int run_f16_bias(const char* device) {
     QTemporaryDir temp;
     CHECK(temp.isValid());
@@ -165,8 +165,9 @@ int run_f16_bias(const char* device) {
     return 0;
 }
 
-// 固定 tensor 地址/形状，模拟 context 销毁后地址被新模型复用；不同 owner 必须重新暂存权重。
-// 此解析式只证明 CUDA 缓存身份，不代表真实 checkpoint 精度或性能资格。
+// Fixed tensor addresses/shapes simulate reuse by a new model after context destruction;
+// different owners must restage weights. This proves CUDA cache identity only, not
+// real-checkpoint accuracy or performance qualification.
 int run_f16_plan_owner(const char* device) {
     auto backend = yolo::init_backend_ctx(1, device);
     if (!backend.is_cuda) {

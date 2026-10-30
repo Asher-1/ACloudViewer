@@ -1,4 +1,4 @@
-// Vulkan 结果检查器的 CPU clone 必须保留真实 DW 节点的可选 bias。
+// The Vulkan result checker's CPU clone must preserve optional bias on real DW nodes.
 #include "ggml-vulkan-common.h"
 #include "ggml-cpu.h"
 
@@ -34,7 +34,7 @@ static bool run(float bias_scale) {
     float actual[4];
     ggml_backend_tensor_get(output, actual, 0, sizeof(actual));
     valid &= std::memcmp(actual, expected, sizeof(expected)) == 0;
-    // 调用真正的检查器，不复制其分支或用替身替代 clone；此处消费 host buffer 路径。
+    // Call the real checker, without copying branches or substituting its clone; exercise the host-buffer path.
     ggml_backend_vk_context checker{};
     ggml_vk_check_results_0(&checker, graph, ggml_graph_n_nodes(graph) - 1);
     valid &= comp_result && comp_size == sizeof(expected);

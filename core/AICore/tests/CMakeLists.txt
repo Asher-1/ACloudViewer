@@ -848,6 +848,33 @@ endif()
 # guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
 aicore_add_yolo_capi_test(test_yolo_capi_contract LABELS capi)
 
+# ---------------------------------------------------------------------------
+# OpenPCDet (LiDAR 3D detection) — see tests/openpcdet/bench_openpcdet_perf.cpp
+# for the manual real-asset perf/accuracy probe.
+# ---------------------------------------------------------------------------
+aicore_add_capi_test(test_openpcdet_capi_contract openpcdet)
+
+# 方案 C deterministic focal sparse-conv gates
+# (see src/tasks/openpcdet/DETERMINISTIC_FOCAL_DESIGN.md §4 门禁 1): the CUDA
+# kernel and the CPU std::fma core must be BYTE-identical, the ggml mul_mat
+# control within 2e-6, and det_expf within 2e-6 of a double exp. Labels "gpu"
+# only when CUDA is enabled (the GPU leg is the point); the CPU-only build
+# keeps the ggml-control + det_expf gates in the fast tier.
+if(AICore_CUDA_ENABLED)
+    aicore_add_whitebox_test(test_openpcdet_det_sparse_conv openpcdet
+        LABELS "whitebox;gpu")
+else()
+    aicore_add_whitebox_test(test_openpcdet_det_sparse_conv openpcdet
+        LABELS "whitebox")
+endif()
+
+# Manual perf/accuracy probe (needs a local GGUF + a KITTI-format .bin sweep;
+# invoked by the validation runner with pinned assets).
+add_executable(bench_openpcdet_perf openpcdet/bench_openpcdet_perf.cpp)
+target_link_libraries(bench_openpcdet_perf PRIVATE AICore)
+_aicore_capi_link(bench_openpcdet_perf)
+_aicore_test_common(bench_openpcdet_perf NO_CTEST)
+
 # YOLOE visual-prompt (SAVPE) model-tier test (needs a savpe-converted
 # yoloe GGUF + prompt image; skips with 77 without
 # AICORE_TEST_YOLO_SAVPE_* assets — see test_yolo_capi_savpe.cpp).

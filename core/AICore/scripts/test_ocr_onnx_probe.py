@@ -331,10 +331,10 @@ class ProviderContractTests(unittest.TestCase):
 
 
 @unittest.skipUnless(os.environ.get("AICORE_TEST_ORIENTATION_ASSETS"),
-                     "需要显式指定真实 OCR 资产与独立 source 环境")
+                     "Explicit real OCR assets and independent source environment are required")
 class OrientationStoredTruthTests(unittest.TestCase):
     def test_stored_recognition_is_separate_from_original_truth(self):
-        # 捕获缺陷：忽略存储权重，或用量化文本覆盖独立 source 的原文本门。
+        # Detect ignored stored weights or quantized text overwriting the original independent source-text gate.
         assets = Path(os.environ["AICORE_TEST_ORIENTATION_ASSETS"])
         dictionary = Path(os.environ["AICORE_TEST_ORIENTATION_DICTIONARY"])
         python = os.environ["AICORE_TEST_ORIENTATION_PYTHON"]
@@ -361,22 +361,22 @@ class OrientationStoredTruthTests(unittest.TestCase):
                                        capture_output=True, text=True)
             self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
             report = json.loads((stored / "orientation.json").read_text())
-            self.assertEqual(report["rows"], truth["rows"], "独立真值被诊断覆盖")
+            self.assertEqual(report["rows"], truth["rows"], "Diagnostics overwrote independent truth")
             self.assertEqual(report["image_sha256"], truth["image_sha256"])
             diagnostic = report["rec_stored_weights"]
             self.assertEqual(diagnostic["container_sha256"], before[str(weights)])
             self.assertGreater(diagnostic["storage_elements"]["Q8_0"], 0)
             self.assertEqual(diagnostic["provider"][0], "CPUExecutionProvider")
             self.assertEqual(len(diagnostic["texts"]), 10)
-            self.assertGreater(diagnostic["source_max_diff"], 0, "未消费实际量化权重")
+            self.assertGreater(diagnostic["source_max_diff"], 0, "Actual quantized weights were not consumed")
             self.assertTrue(all(isinstance(text, str) for text in diagnostic["texts"]))
             self.assertNotIn("rec_stored_weights", truth)
         self.assertEqual({str(path): sha(path) for path in paths}, before)
 
     @unittest.skipUnless(os.environ.get("AICORE_TEST_ORIENTATION_RUNTIME"),
-                         "native 归因需要显式指定正式 runtime 与 fixture")
+                         "Native attribution requires explicit formal runtime and fixture")
     def test_native_orientation_preserves_original_text_gate(self):
-        # 原准确性门保持 RED 时也输出逐行诊断；不能将诊断完成称为任务通过。
+        # Emit row diagnostics even while original accuracy gates remain RED; diagnostic completion is not task qualification.
         import ctypes as c
         import numpy as np
         import cv2
@@ -461,9 +461,9 @@ class OrientationStoredTruthTests(unittest.TestCase):
             original_text_mismatches=original_mismatches, stored_text_mismatches=stored_mismatches,
             original_gate_pass=not original_mismatches, artifacts_before=before,
             artifacts_after=after, artifacts_unchanged=before == after,
-            scope="逐行存储/执行归因；保留原独立 source 文本门，不是 release 性能"), ensure_ascii=False), flush=True)
+            scope="Per-row storage/execution attribution; retains the original independent source-text gate, not release performance"), ensure_ascii=False), flush=True)
         self.assertEqual(after, before)
-        self.assertEqual(original_mismatches, [], "原独立 source 文本门仍 FAIL")
+        self.assertEqual(original_mismatches, [], "The original independent source-text gate still FAILs")
 
 
 if __name__ == "__main__":

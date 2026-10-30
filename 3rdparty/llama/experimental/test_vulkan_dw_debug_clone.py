@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""隔离编译并执行真实 Vulkan checker，保留 source-owner 的对象和运行库。"""
+"""Compile and execute the real Vulkan checker in isolation, preserving source-owner objects and runtime libraries."""
 import argparse
 import hashlib
 import json

@@ -1,0 +1,17 @@
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -1097,7 +1097,13 @@
+     // OCR recognition convolutions; the env remains a local diagnostic gate.
+     const bool ocr_rec_direct = strncmp(dst->name, "ocr_rec_direct_conv",
+                                         strlen("ocr_rec_direct_conv")) == 0;
+-    if (use_f32 && !ocr_rec_direct &&
++    // OpenPCDet conv marker: detector graphs opt their F32 convolutions into
++    // the TF32 igemm route by node name. The upstream OpenPCDet-GGML engine
++    // runs tensor-core conv arithmetic on CUDA too, so per-node opt-in keeps
++    // every other F32 task on the strict fp32 fallback while detector parity
++    // is judged against the upstream CUDA baselines.
++    const bool opcpd_direct = strncmp(dst->name, "opcpd_conv", 10) == 0;
++    if (use_f32 && !ocr_rec_direct && !opcpd_direct &&
+         !igemm_env_enabled("GGML_CUDA_IGEMM_F32_TF32")) return false;
+     // TF32 tensor-core mma exists on Ampere and newer; f16 WMMA on Volta+.
+     const int min_cc = use_f32 ? 800 : 700;

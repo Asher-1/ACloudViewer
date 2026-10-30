@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""审计必须统计真实导出与调用，不能让注释或字符串伪造覆盖率。"""
+"""The audit must count real exports and calls; comments or strings must not fake coverage."""
 import importlib.util
 from pathlib import Path
 import tempfile
@@ -33,7 +33,7 @@ class CoverageAuditTests(unittest.TestCase):
 AICORE_CAPI const struct aicore_sample_result *
 aicore_sample_run(const char *path);
 typedef void (*aicore_sample_callback)(const char *);
-int aicore_internal(void);  // 不属于公共导出
+int aicore_internal(void);  // not a public export
 """, "")
         self.assertEqual(api, {"aicore_sample_run"})
 

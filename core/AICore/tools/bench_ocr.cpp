@@ -147,14 +147,14 @@ int main(int argc, char** argv) {
         inputUpload.push_back(postTm.input_upload_ms);
         detGraphCompute.push_back(postTm.det_graph_compute_ms);
         recGraphCompute.push_back(postTm.rec_graph_compute_ms);
-        // CPU 所有的后处理子阶段互斥；与 postprocess_ms 的差值为图边界
-        // （上传、回读及尚未插桩的 host 工作），不能伪造为某个已知子阶段。
+        // CPU-owned postprocessing substages are disjoint; the postprocess_ms residual covers graph boundaries
+        // (upload, readback and uninstrumented host work), not a fabricated known substage.
         const double covered = postTm.db_boxes_ms + postTm.crop_resize_pack_ms +
                                postTm.ctc_decode_ms + postTm.result_assembly_ms;
         postCpuCovered.push_back(covered);
         postGraphBoundary.push_back(std::max(0.0, tm.postprocess_ms - covered));
-        // 故意使用任务内部 e2e 计时，避免 result release 与 benchmark 输出
-        // 落入该守恒检查。
+        // Use task-internal e2e timing to exclude result release and benchmark output
+        // from this conservation check.
         timingGap.push_back(tm.e2e_ms - tm.preprocess_ms - tm.inference_ms -
                             tm.postprocess_ms);
         boxes = aicore_ocr_box_count(r);

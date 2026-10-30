@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""同像素/画布下的官方 PyTorch checkpoint 锚点，不用 CPU backend 替代真值。"""
+"""Official PyTorch checkpoint truth with identical pixels/canvas, not a CPU-backend substitute."""
 from __future__ import annotations
 
 import argparse
@@ -31,7 +31,7 @@ def digest(path):
 
 
 def runtime_library(build):
-    """只选择指定构建目录的运行库，不回退到宿主已安装版本。"""
+    """Select runtime libraries only from the specified build, with no host-install fallback."""
     for directory in (build / "bin", build / "bin/Release"):
         for name in ("libAICore.so", "libAICore.dylib", "AICore.dll"):
             path = directory / name
@@ -41,14 +41,14 @@ def runtime_library(build):
 
 
 def source_identity(source, expected_revision):
-    """审计实际消费的 Python 源码；未被 PyTorch 消费的 ggml diff 只记录。"""
+    """Audit consumed Python sources; record ggml diffs not consumed by PyTorch separately."""
     git = ["git", "-C", str(source)]
     revision = subprocess.check_output(git + ["rev-parse", "HEAD"]).decode().strip()
     if revision != expected_revision:
         raise RuntimeError("official source revision mismatch")
     consumed = subprocess.check_output(
         git + ["status", "--porcelain", "--untracked-files=all", "--", "ultralytics"])
-    # Python 的缓存不是源码；新加的 .py/.yaml 同样能够改变加载行为，必须拒绝。
+    # Python caches are not sources; added .py/.yaml files can change loading behavior and must also be rejected.
     changes = [line for line in consumed.decode().splitlines()
                if "__pycache__/" not in line and not line.endswith((".pyc", ".pyo"))]
     if changes:
@@ -70,7 +70,7 @@ def overlap(a, b):
 
 
 def compare(reference, candidate):
-    """O(R×C)：小规模检测框按同类 IoU 匹配，保留每框误差以免平均掩盖回归。"""
+    """O(R*C): match small detection sets by same-class IoU, preserving per-box errors that averages could hide."""
     used = set()
     rows = []
     for index, expected in enumerate(reference):
@@ -118,7 +118,7 @@ def bind(library):
     for name, (result, arguments) in signatures.items():
         symbol = getattr(library, "aicore_yolo_" + name)
         symbol.restype, symbol.argtypes = result, arguments
-    # 冻结的旧库只能验证原模式；不能把缺少新接口当作 mode 1 已生效。
+    # Frozen old libraries validate the original mode only; a missing API does not mean mode 1 took effect.
     for name, arguments in (
             ('options_set_attention_accumulation', [c.c_void_p, c.c_int]),
             ('context_attention_accumulation', [c.c_void_p])):
@@ -192,10 +192,10 @@ def main():
     parser.add_argument("--backend", choices=("cpu", "cuda", "vulkan"), required=True)
     parser.add_argument("--size", type=int, default=640)
     parser.add_argument("--attention-accumulation", type=int, choices=(0, 1), default=0,
-                        help="PSA 累加请求：0 保持 upstream，1 请求 F32；存储类型不变")
+                        help="PSA accumulation request: 0 retains upstream, 1 requests F32; storage types are unchanged")
     parser.add_argument("--confidence", type=float, default=0.25)
     parser.add_argument("--canonical-canvas", action="store_true",
-                        help="诊断：双方读取同一官方 LetterBox uint8 canvas，隔离 resize 差异")
+                        help="Diagnostic: both sides consume the same official LetterBox uint8 canvas, isolating resize differences")
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--repeats", type=int, default=3)
@@ -229,8 +229,8 @@ def main():
     if args.canonical_canvas:
         from ultralytics.data.augment import LetterBox
         rgb = LetterBox(args.size, auto=True, stride=32)(image=rgb)
-    # 同一解码像素；AICore 的 LetterBox 使用 auto=True（按 stride 缩减
-    # padding），input_size 不会把非方形图强制变成方形。官方也须 rect=True。
+    # Identical decoded pixels; AICore LetterBox uses auto=True (stride-reduced
+    # padding), so input_size does not force non-square images square. Official inference also requires rect=True.
     model = YOLO(str(args.checkpoint))
     official = model.predict(
         source=rgb[:, :, ::-1].copy(), imgsz=args.size, rect=True,
@@ -265,7 +265,7 @@ def main():
                    "e2e_p50_ms": float(np.percentile(times, 50)),
                    "e2e_p95_ms": float(np.percentile(times, 95)),
                    "official_detections": reference, "candidate_detections": candidate})
-    # 沿用已有检测误差界限，并逐框约束；不以平均分抵消单框错误。
+    # Retain existing detection-error bounds per box; averages must not cancel individual box errors.
     report["pass"] = (report["stable"] and report["unmatched_reference"] == 0 and
                       report["unmatched_candidate"] == 0 and
                       report["maximum_score_error"] <= (0.005 if quant == "f32" else 0.02) and

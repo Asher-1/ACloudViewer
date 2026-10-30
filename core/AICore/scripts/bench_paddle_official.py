@@ -36,7 +36,7 @@ def emit_recognition_row(result):
 
 
 def emit_text_rows(results):
-    """按 bench_ocr 的 TEXT 协议输出最后一次的官方结果。"""
+    """Print the last official result using the bench_ocr TEXT protocol."""
     row = 0
     for result in results:
         texts = result.get("rec_texts", [])

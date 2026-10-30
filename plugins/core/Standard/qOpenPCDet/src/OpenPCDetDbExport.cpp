@@ -10,13 +10,17 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 
+#include <QDebug>
 #include <QFileInfo>
 
 
 ccHObject* BuildDetectionGroup(
         const OpenPCDetRunResult& result,
         const QString& modelTag) {
-    if (result.detections.isEmpty()) return nullptr;
+    if (result.detections.isEmpty()) {
+        qDebug() << "[OpenPCDet] BuildDetectionGroup: empty detections";
+        return nullptr;
+    }
 
     const QString groupName =
             QStringLiteral("OpenPCDet detections (%1)").arg(modelTag);
@@ -91,6 +95,8 @@ ccHObject* BuildDetectionGroup(
                          static_cast<double>(d.heading));
         group->addChild(box);
     }
+    qDebug() << "[OpenPCDet] BuildDetectionGroup:"
+             << result.detections.size() << "box(es) for" << modelTag;
     return group;
 }
 
@@ -135,6 +141,8 @@ ccPointCloud* BuildAnnotatedCloud(
         }
     }
     if (tintedOut) *tintedOut = tinted;
+    qDebug() << "[OpenPCDet] BuildAnnotatedCloud:" << tinted << "of"
+             << annotated->size() << "point(s) tinted (" << modelTag << ")";
 
     annotated->setName(
             QStringLiteral("OpenPCDet annotated (%1)").arg(modelTag));

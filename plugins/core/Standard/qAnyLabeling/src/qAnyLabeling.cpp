@@ -13,6 +13,7 @@
 
 #include "AnnotationWindow.h"
 #include "AnyLabelingBatchCommand.h"
+#include "LLMBatchCommand.h"
 
 qAnyLabeling::qAnyLabeling(QObject* parent)
     : QObject(parent),
@@ -66,4 +67,6 @@ void qAnyLabeling::registerCommands(ccCommandLineInterface* cmd) {
     }
     cmd->registerCommand(
             ccCommandLineInterface::Command::Shared(new CommandAnyLabelInfer));
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandLLMGenerate));
 }

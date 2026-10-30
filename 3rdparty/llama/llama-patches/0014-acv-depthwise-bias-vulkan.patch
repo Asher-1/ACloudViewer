@@ -119,7 +119,7 @@ diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vul
          conv_2d_dw_cwhn(idx);
  #endif
 -    dst_data[idx] = D_TYPE(result);
-+    // 保留 F16/F32 卷积写出舍入，bias 是下一步独立加法。
++    // Preserve F16/F32 convolution write-out rounding; bias is a separate subsequent addition.
 +    precise FLOAT_TYPE rounded = FLOAT_TYPE(D_TYPE(result));
 +#ifdef WHCN
 +    uint c = (idx / (p.dst_w * p.dst_h)) % p.channels;

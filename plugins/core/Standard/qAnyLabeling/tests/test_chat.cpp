@@ -40,6 +40,7 @@
 #include <QSlider>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QStyle>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTcpServer>
@@ -486,7 +487,8 @@ int main(int argc, char** argv) {
     saved.setValue("qAnyLabeling/chat/providers/ollama/address",
                    settings.baseUrl.toString());
     saved.setValue("qAnyLabeling/chat/providers/ollama/model", settings.model);
-    QJsonObject document{{"imagePath", "first.png"},
+    QJsonObject document{{"version", "4.1.3"},
+                         {"imagePath", "first.png"},
                          {"imageWidth", 80},
                          {"imageHeight", 60},
                          {"shapes", QJsonArray()},
@@ -643,7 +645,8 @@ int main(int argc, char** argv) {
             values.value("Choice") == "green" &&
             values.value("Multi").toArray() == QJsonArray{"road"} &&
             values.value("Unknown") == "preserve");
-    REQUIRE(readJson(sidecar.fileName()).value("vendor") == "keep");
+    REQUIRE(readJson(sidecar.fileName()).value("vendor") == "keep" &&
+            readJson(sidecar.fileName()).value("version") == "4.1.3");
     const auto beforeVqaClear = readJson(sidecar.fileName());
     const auto clearVqa = [&](QMessageBox::StandardButton answer) {
         bool defaultNo = false;
@@ -758,7 +761,20 @@ int main(int argc, char** argv) {
     for (const auto& mode : {QStringLiteral("dark"), QStringLiteral("light")}) {
         auto* action = window->findChild<QAction*>("AnnotationTheme_" + mode);
         REQUIRE(action);
+        auto* modal = QApplication::activeModalWidget();
+        std::fprintf(stderr,
+                     "VQA theme action %s: enabled=%d checked=%d modal=%s "
+                     "workspace_enabled=%d\n",
+                     qPrintable(mode), action->isEnabled(), action->isChecked(),
+                     modal ? qPrintable(modal->objectName()) : "none",
+                     window->isEnabled());
+        bool themeTriggered = false;
+        const auto themeConnection = QObject::connect(
+                action, &QAction::triggered, action,
+                [&themeTriggered]() { themeTriggered = true; });
         action->trigger();
+        QObject::disconnect(themeConnection);
+        REQUIRE(themeTriggered);
         QCoreApplication::processEvents();
         auto* imageContainer = vqa->findChild<QWidget*>("VQAImageContainer");
         auto* filename = vqa->findChild<QLabel*>("VQAFilename");
@@ -770,10 +786,15 @@ int main(int argc, char** argv) {
                 exportButton->width() / 2, 5);
         std::fprintf(
                 stderr,
-                "VQA theme %s: surface=%s text=%s export=%s workspace=%s\n",
+                "VQA theme %s: surface=%s text=%s export=%s workspace=%s "
+                "application=%s standard=%s stylesheet_empty=%d\n",
                 qPrintable(mode), qPrintable(surface.name()),
                 qPrintable(text.name()), qPrintable(exportColor.name()),
-                qPrintable(window->palette().color(QPalette::Window).name()));
+                qPrintable(window->palette().color(QPalette::Window).name()),
+                qPrintable(QApplication::palette().color(QPalette::Window).name()),
+                qPrintable(QApplication::style()->standardPalette()
+                                   .color(QPalette::Window).name()),
+                window->styleSheet().isEmpty());
         REQUIRE(surface == QColor(mode == "dark" ? "#2c2c2e" : "#F9F9F9") &&
                 text == QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f") &&
                 exportColor == QColor("#10b981"));
@@ -2273,7 +2294,9 @@ int main(int argc, char** argv) {
     REQUIRE(chat->findChild<QLabel*>("ChatStatus")
                     ->text()
                     .contains("Successfully imported 2") &&
-            anchorDocument.value("version") == "4.1.3" &&
+            anchorDocument.value("version") == "4.2.1" &&
+            addedDocument.value("version") == "4.2.1" &&
+            readJson(sidecar.fileName()).value("version") == "4.1.3" &&
             !anchorDocument.contains("vendor") &&
             anchorDocument.value("flags").toObject().isEmpty() &&
             addedDocument.value("imagePath") == "added.png" &&

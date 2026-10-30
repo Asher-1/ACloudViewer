@@ -374,7 +374,7 @@ int main(int argc, char** argv) {
                             {double(image.width()), double(image.height())}, {0, double(image.height())}} ||
                         !result.replaceShapes || result.hasFlags || result.hasTags || !expected ||
                         (forwards && attributes != firstAttributes)) {
-                        std::fprintf(stderr, "多属性 worker 的全图几何、属性或 replace 契约失败\n");
+                        std::fprintf(stderr, "Multi-attribute worker failed its full-image geometry, attribute or replace contract\n");
                         exitCode = 1;
                         app.quit();
                         return;

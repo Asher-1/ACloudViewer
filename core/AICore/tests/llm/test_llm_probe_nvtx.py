@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""真实 probe/Nsight：仅 measured forward 发 NVTX 区间，生命周期调用不得混入。"""
+"""Real probe/Nsight: NVTX ranges cover measured forwards only, never lifecycle calls."""
 import argparse
 from contextlib import nullcontext
 import hashlib
@@ -14,7 +14,7 @@ import unittest
 
 
 def sha256_file(path):
-    # 哈希缓冲固定为 1 MiB，不把整个模型或 profile 数据库读入内存。
+    # Hash with a fixed 1 MiB buffer, never loading whole models/profile databases into memory.
     result = hashlib.sha256()
     with Path(path).open('rb') as stream:
         for block in iter(lambda: stream.read(1 << 20), b''):
@@ -60,7 +60,7 @@ class MeasuredRangesTest(unittest.TestCase):
                 names = [row.get('text') or strings[row['textId']] for row in measured]
                 self.assertEqual(sorted(names), ['aicore/llm/measured/0', 'aicore/llm/measured/1'])
                 self.assertTrue(all(row['end'] > row['start'] for row in measured), measured)
-                # 错过 pop 会把 recreate/cancel 包进范围；仅检查数量捕捉不到这种污染。
+                # A missing pop includes recreate/cancel in the range; counts alone cannot detect this contamination.
                 by_name = dict(zip(names, measured))
                 for index, elapsed_ms in enumerate(result['e2e_samples_ms']):
                     event = by_name[f'aicore/llm/measured/{index}']
@@ -72,7 +72,7 @@ class MeasuredRangesTest(unittest.TestCase):
 
 class MeasuredCudaSelectionTest(unittest.TestCase):
     def make_fixture(self, folder, missing_range=False):
-        # 瞬态 SQLite 字面事件：同时间 reference kernel 和范围外 load 都不能混入。
+        # Transient SQLite events: exclude simultaneous reference kernels and out-of-range loads.
         database = folder / 'events.sqlite'
         pid, child = 101 << 24, 202 << 24
         with sqlite3.connect(database) as db:
@@ -106,7 +106,7 @@ class MeasuredCudaSelectionTest(unittest.TestCase):
 
     def analyze(self, database, report, output):
         if not args.analyzer:
-            self.skipTest('未提供 --analyzer，未执行 measured CUDA 选择验证')
+            self.skipTest('No --analyzer supplied; measured CUDA selection was not qualified')
         return subprocess.run([sys.executable, str(args.analyzer), '--database', str(database),
             '--measured-probe', str(report), '--output', str(output)], capture_output=True, text=True)
 
@@ -140,7 +140,7 @@ class MeasuredCudaSelectionTest(unittest.TestCase):
 class RealCudaMeasuredRangesTest(unittest.TestCase):
     def test_each_real_vlm_range_has_main_consumer_kernel_and_api(self):
         if not args.cuda_profile_root:
-            self.skipTest('未提供真实 CUDA profile，未验证 graph 节点采集资格')
+            self.skipTest('No real CUDA profile supplied; graph-node capture was not qualified')
         self.assertIsNotNone(args.analyzer)
         with tempfile.TemporaryDirectory(dir=args.output_parent) as directory:
             for side in ('current', 'frozen'):
@@ -179,11 +179,11 @@ if __name__ == '__main__':
     p.add_argument('--nsys', type=Path, required=True)
     p.add_argument('--output-parent', type=Path, required=True)
     p.add_argument('--artifact-dir', type=Path,
-                   help='保留真实 probe/trace 收据；目录必须尚不存在，防止覆盖旧失败')
+                   help='Preserve real probe/trace receipts; the output directory must not exist, protecting old failures')
     p.add_argument('--analyzer', type=Path,
-                   help='显式 CUDA profile 分析器；同时运行瞬态事件选择回归测试')
-    p.add_argument('--cuda-profile-root', type=Path, help='四份真实 CUDA measured trace 的 current/frozen 父目录')
+                   help='Explicit CUDA profile analyzer; also run transient-event selection regression')
+    p.add_argument('--cuda-profile-root', type=Path, help='Current/frozen parent directory of four real measured CUDA traces')
     p.add_argument('--cuda-profile-suffix', choices=('pluginfix', 'nodefix', '500m-nodefix'),
-                   default='pluginfix', help='显式选择256M或500M收据；不混用模型范围资格')
+                   default='pluginfix', help='Select 256M or 500M receipts explicitly; never mix model qualification scopes')
     args = p.parse_args()
     unittest.main(argv=['test_llm_probe_nvtx'])

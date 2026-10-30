@@ -6,7 +6,7 @@ diff --git a/include/ggml.h b/include/ggml.h
              int                  d1); // dilation dimension 1
  
 +
-+    // bias: 连续 F32 [C]；保持 direct DW 写出舍入后独立 ADD 的顺序。
++    // bias: contiguous F32 [C]; preserve direct DW write-out rounding followed by separate ADD.
 +    GGML_API struct ggml_tensor * ggml_conv_2d_dw_direct_bias(
 +            struct ggml_context * ctx,
 +            struct ggml_tensor * a, struct ggml_tensor * b, struct ggml_tensor * bias,

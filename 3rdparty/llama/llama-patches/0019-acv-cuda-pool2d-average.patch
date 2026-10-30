@@ -20,8 +20,8 @@ diff --git a/src/ggml-cuda/pool2d.cu b/src/ggml-cuda/pool2d.cu
              }
          }
      }
-+    // 先求和后归一化，避免逐元素缩放使可精确抵消的窗口留下残差。
-+    // 显式 RNE 除法在 fast-math 构建下仍只引入一次最终舍入。
++    // Sum before normalization; per-element scaling can leave residuals in exactly cancelling windows.
++    // Explicit RNE division adds only one final rounding even in fast-math builds.
 +    if (op == GGML_OP_POOL_AVG) res = __fdiv_rn(res, float(kh * kw));
      o_ptr[cur_oh * ow + cur_ow] = ggml_cuda_cast<To>(res);
 @@ -79,8 +81,7 @@

@@ -1,4 +1,4 @@
-// POOL_2D 必须覆盖完整输出域；超过一个 workgroup 后不能留下未写元素。
+// POOL_2D must write the complete output domain, including beyond one workgroup.
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -31,7 +31,7 @@ static bool run(ggml_backend_t backend, ggml_type type, ggml_op_pool op,
     } else ggml_backend_tensor_set(input, pixels.data(), 0, pixels.size() * sizeof(float));
     bool valid = true;
     for (int repeat = 0; repeat < 3; ++repeat) {
-        // 用非零 sentinel 证明每次都写出完整域，不依赖新分配缓冲区碰巧为零。
+        // Nonzero sentinels prove complete writes on every run, independent of fresh-buffer contents.
         ggml_backend_tensor_memset(output, 0x55, 0, ggml_nbytes(output));
         valid &= ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
         std::vector<float> actual(ggml_nelements(output));
@@ -40,7 +40,7 @@ static bool run(ggml_backend_t backend, ggml_type type, ggml_op_pool op,
             ggml_backend_tensor_get(output, half.data(), 0, half.size() * sizeof(ggml_fp16_t));
             ggml_fp16_to_fp32_row(half.data(), actual.data(), half.size());
         } else ggml_backend_tensor_get(output, actual.data(), 0, actual.size() * sizeof(float));
-        // O(outputs * kernel^2)：独立枚举窗口，验证 padding 和跨通道/batch 地址。
+        // O(outputs * kernel^2): enumerate independent windows to verify padding and channel/batch addressing.
         for (size_t i = 0; i < actual.size(); ++i) {
             const int plane = output->ne[0] * output->ne[1];
             const int nc = i / plane, x = i % output->ne[0];
@@ -54,7 +54,7 @@ static bool run(ggml_backend_t backend, ggml_type type, ggml_op_pool op,
             }
             if (op == GGML_OP_POOL_AVG) expected /= float(kernel * kernel);
             if (type == GGML_TYPE_F16) expected = ggml_fp16_to_fp32(ggml_fp32_to_fp16(expected));
-            // AVG 的除法和乘倒数允许两次 F32 舍入；MAX/F16 仍要求逐位一致。
+            // AVG division and reciprocal multiplication allow two F32 roundings; MAX/F16 still require bitwise equality.
             const float tolerance = op == GGML_OP_POOL_AVG && type == GGML_TYPE_F32
                     ? 2 * std::numeric_limits<float>::epsilon() * std::max(1.0f, std::abs(expected))
                     : 0.0f;
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
         if (cpu && type == GGML_TYPE_F16) continue;
         for (ggml_op_pool op : {GGML_OP_POOL_MAX, GGML_OP_POOL_AVG})
-        // 7/9 同时覆盖 CUDA 的 warp 分派，防止只修小窗口的 scalar 路径。
+        // Sizes 7/9 cover CUDA warp dispatch as well as the scalar path for small windows.
         for (int channels : {1, 32}) for (int kernel : {1, 3, 5, 7, 9}) for (int stride : {1, 2}) {
             ++cases;
             errors += !run(backend, type, op, 17, 15, channels, kernel, stride);

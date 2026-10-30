@@ -92,6 +92,12 @@ cli-anything-acloudviewer --json --mode headless ai run ocr \
   --image ./scan-1.png --image ./scan-2.png --out-dir ./ocr-out \
   --option LANG=en --option SAVE_VIS=true
 
+# LLM_GENERATE requires a build with the qAnyLabeling generation command
+cli-anything-acloudviewer --json --mode headless ai schema llm
+cli-anything-acloudviewer --json --mode headless ai run llm \
+  --model qwen2.5-0.5b-instruct-q8_0.gguf --out-dir ./llm-out \
+  --option 'PROMPT=What is the capital of France?' --option MAX_TOKENS=32
+
 # Generic passthrough for ordinary/third-party plugin commands
 cli-anything-acloudviewer --mode headless plugin run ANIMATION \
   --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
@@ -167,8 +173,8 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 | Level | Tests | Dependencies |
 |-------|-------|-------------|
 | 1 | C++ plugin source/build, AICore batch headers, RPC whitelist, ownership boundary | cmake (optional) |
-| 2 | CLI commands plus exact 17-task AICore registry and generic plugin passthrough | `cli-anything-acloudviewer` |
-| 3 | Installed-binary processing plus machine-readable schema discovery for all 17 AICore commands | `ACloudViewer binary` |
+| 2 | CLI commands plus exact current-source 19-task AICore registry and generic plugin passthrough | `cli-anything-acloudviewer` |
+| 3 | Installed-binary processing plus machine-readable schema discovery for the current-source 19 AICore commands | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
 | 5 | MCP tools, including `list_ai_tasks`, `get_ai_schema`, `run_ai_batch`, and `run_plugin_command` | `mcp` Python package |
 

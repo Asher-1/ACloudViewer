@@ -5,7 +5,7 @@ diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
      void * nhwc_input  = nullptr;
      void * nhwc_output = nullptr;
      void * nhwc_weight = nullptr;
-+    // 地址和形状可在 context 销毁后复用；task 的单调身份区分不同模型权重。
++    // Addresses and shapes may be reused after context destruction; monotonic task identity distinguishes model weights.
 +    uint64_t owner_id = 0;
      // Full (input, dst, kernel) geometry snapshot. The cache is keyed by the
      // dst POINTER, and byte sizes alone cannot distinguish two convs that a
@@ -31,7 +31,7 @@ diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
 @@ -1131,5 +1137,7 @@ static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
              // buffers only after every queued kernel has retired.
              cudaStreamSynchronize(ctx.stream());
-+            // 在释放 owning plan 前移除它发布的布局副本，禁止陈旧指针继续命中。
++            // Remove published layout copies before releasing their owning plan; stale pointers must not remain cache hits.
 +            g_nhwc_copies.erase(dst);
              g_igemm_plans.erase(it);
              plan = igemm_create_plan(dst, ctx.stream());

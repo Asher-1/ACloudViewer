@@ -49,6 +49,7 @@ inference tasks with one shared ggml runtime (including RelateAnything).
 | **qRAM** | `PLUGIN_STANDARD_QRAM` | [docs/guides/plugins/qRAM.md](../docs/guides/plugins/qRAM.md) | [qRAM/README.md](core/Standard/qRAM/README.md) |
 | **qRelateAnything** | `PLUGIN_STANDARD_QRELATEANYTHING` | [docs/guides/plugins/qRelateAnything.md](../docs/guides/plugins/qRelateAnything.md) | [qRelateAnything/README.md](core/Standard/qRelateAnything/README.md) |
 | **qMapAnything** | `PLUGIN_STANDARD_QMAPANYTHING` | — | [qMapAnything/README.md](core/Standard/qMapAnything/README.md) |
+| **qOpenPCDet** | `PLUGIN_STANDARD_QOPENPCDET` | — | [qOpenPCDet/README.md](core/Standard/qOpenPCDet/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -75,6 +76,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QRELATEANYTHING=ON \
       -DPLUGIN_STANDARD_QANYLABELING=ON \
       -DPLUGIN_STANDARD_QMAPANYTHING=ON \
+      -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

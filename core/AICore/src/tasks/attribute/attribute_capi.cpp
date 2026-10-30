@@ -36,7 +36,7 @@ struct Recipe {
     std::vector<Group> groups;
 };
 
-// 顺序、严格阈值与组内 argmax 对应 pinned source 的 PULC 配置，不能用 softmax 替换。
+// Preserve pinned PULC order, strict thresholds and group argmax; no softmax.
 const Recipe recipes[] = {
     {{sizeof(aicore_attribute_preset_entry), AICORE_ATTRIBUTE_ABI_VERSION,
       "pulc-person-f32.gguf", "PULC Person (local F32)", "person",
@@ -115,20 +115,20 @@ AICORE_CAPI aicore_attribute_ctx* aicore_attribute_create(const aicore_attribute
         ctx = std::make_unique<aicore_attribute_ctx>();
         if (!options || options->struct_size < sizeof(*options) ||
             options->abi_version != AICORE_ATTRIBUTE_ABI_VERSION)
-            throw std::runtime_error("attribute: 无效 options ABI");
+            throw std::runtime_error("attribute: invalid options ABI");
         if (!options->model_path || !*options->model_path)
-            throw std::runtime_error("attribute: 需要本地模型文件");
+            throw std::runtime_error("attribute: local model file required");
         ctx->weights = std::make_unique<aicore::paddle::OcrWeights>();
         if (!ctx->weights->load(options->model_path, &ctx->error))
             throw std::runtime_error(ctx->error);
         const int key = gguf_find_key(ctx->weights->gguf, "ocr.source.sha256");
         if (key < 0 || gguf_get_kv_type(ctx->weights->gguf, key) != GGUF_TYPE_STRING ||
             ctx->weights->role != "cls")
-            throw std::runtime_error("attribute: 缺少 source 身份或分类图契约");
+            throw std::runtime_error("attribute: missing source identity or classification graph contract");
         const char* source = gguf_get_val_str(ctx->weights->gguf, key);
         for (const auto& recipe : recipes)
             if (std::strcmp(source, recipe.preset.source_sha256) == 0) ctx->recipe = &recipe;
-        if (!ctx->recipe) throw std::runtime_error("attribute: 未支持的属性模型 source");
+        if (!ctx->recipe) throw std::runtime_error("attribute: unsupported attribute model source");
         const auto shape = ctx->weights->program.staticShapes.find(ctx->weights->program.feedInput);
         std::string shapeInfo = ctx->weights->program.feedInput;
         if (shape != ctx->weights->program.staticShapes.end())
@@ -138,7 +138,7 @@ AICORE_CAPI aicore_attribute_ctx* aicore_attribute_create(const aicore_attribute
             shape->second[2] <= 0 || shape->second[2] > 4096 ||
             shape->second[3] <= 0 || shape->second[3] > 4096 ||
             shape->second[2] * shape->second[3] > 4 * 1024 * 1024)
-            throw std::runtime_error("attribute: 无效 NCHW 输入几何 " + shapeInfo);
+            throw std::runtime_error("attribute: invalid NCHW input geometry " + shapeInfo);
         ctx->height = static_cast<int>(shape->second[2]);
         ctx->width = static_cast<int>(shape->second[3]);
         ctx->primary = aicore::runtime::acquire_backend_lease(
@@ -152,7 +152,7 @@ AICORE_CAPI aicore_attribute_ctx* aicore_attribute_create(const aicore_attribute
             ctx->primary.is_cpu() ? nullptr : ctx->primary.handle(), ctx->cpu.handle(), true);
         auto build = aicore::paddle::execBuildOptions(ctx->plan);
         ctx->graphContext = ggml_init({64 * 1024 * 1024, nullptr, true});
-        if (!ctx->graphContext) throw std::runtime_error("attribute: 图元数据分配失败");
+        if (!ctx->graphContext) throw std::runtime_error("attribute: graph metadata allocation failed");
         ctx->input = ggml_new_tensor_4d(ctx->graphContext, GGML_TYPE_F32, ctx->width, ctx->height, 3, 1);
         ggml_set_name(ctx->input, ctx->weights->program.feedInput.c_str());
         ggml_set_input(ctx->input);
@@ -162,7 +162,7 @@ AICORE_CAPI aicore_attribute_ctx* aicore_attribute_create(const aicore_attribute
         ctx->fold = ctx->weights->foldPool();
         if (!ctx->output || ctx->output->type != GGML_TYPE_F32 ||
             ggml_nelements(ctx->output) != static_cast<int64_t>(ctx->recipe->preset.probability_count))
-            throw std::runtime_error("attribute: 属性输出形状不匹配：" + ctx->error);
+            throw std::runtime_error("attribute: attribute output shape mismatch: " + ctx->error);
         if (!aicore::paddle::prepareGraph(*ctx->weights, ctx->graphContext, ctx->plan,
                 {ctx->output}, &ctx->graph, ctx->execution, ctx->error))
             throw std::runtime_error(ctx->error);
@@ -173,7 +173,7 @@ AICORE_CAPI aicore_attribute_ctx* aicore_attribute_create(const aicore_attribute
         ctx->graph = nullptr;
     } catch (...) {
         if (!ctx) return nullptr;
-        ctx->error = "attribute: 未知加载错误";
+        ctx->error = "attribute: unknown load error";
         ctx->graph = nullptr;
     }
     return ctx.release();
@@ -196,13 +196,13 @@ AICORE_CAPI int aicore_attribute_run(aicore_attribute_ctx* ctx,
     try {
         const auto begin = Clock::now();
         if (!ctx->ready() || !image || !output)
-            throw std::runtime_error("attribute: context、输入或输出不可用");
-        if (aicore_cancel_requested()) throw std::runtime_error("attribute: 已取消");
+            throw std::runtime_error("attribute: context, input or output unavailable");
+        if (aicore_cancel_requested()) throw std::runtime_error("attribute: cancelled");
         aicore::img::Image view;
         if (!aicore::img::image_from_view(*image, view))
-            throw std::runtime_error("attribute: 无效图像 stride/format");
+            throw std::runtime_error("attribute: invalid image stride/format");
         const size_t count = static_cast<size_t>(ctx->width) * ctx->height;
-        // 固定源模型输入：一个 8U RGB 临时图与一个 NCHW F32 图，共约 15 bytes/pixel。
+        // Fixed source-model input: 8U RGB plus NCHW F32 scratch, about 15 bytes/pixel.
         std::vector<uint8_t> resized(count * 3);
         std::vector<float> pixels(count * 3);
         aicore::img::cv_resize_linear_u8(view, resized.data(), ctx->width, ctx->height, 3);
@@ -221,17 +221,17 @@ AICORE_CAPI int aicore_attribute_run(aicore_attribute_ctx* ctx,
             ggml_backend_tensor_get(ctx->output, result->probabilities.data(), 0,
                                     result->probabilities.size() * sizeof(float));
         }
-        if (aicore_cancel_requested()) throw std::runtime_error("attribute: 已取消");
+        if (aicore_cancel_requested()) throw std::runtime_error("attribute: cancelled");
         const auto computed = Clock::now();
         for (float value : result->probabilities)
             if (!std::isfinite(value) || value < 0 || value > 1)
-                throw std::runtime_error("attribute: 无效属性概率");
+                throw std::runtime_error("attribute: invalid attribute probability");
         size_t offset = 0;
         for (const auto& group : ctx->recipe->groups) {
             const bool binary = group.threshold >= 0;
             const size_t width = binary ? 1 : group.labels.size();
             if (offset + width > result->probabilities.size())
-                throw std::runtime_error("attribute: 属性分组越界");
+                throw std::runtime_error("attribute: attribute group out of bounds");
             size_t selected = 0;
             if (binary) selected = result->probabilities[offset] > group.threshold ? 0 : 1;
             else for (size_t i = 1; i < width; ++i)
@@ -242,7 +242,7 @@ AICORE_CAPI int aicore_attribute_run(aicore_attribute_ctx* ctx,
                 binary && selected == 1 ? 1.f - probability : probability, static_cast<int32_t>(index)});
             offset += width;
         }
-        if (offset != result->probabilities.size()) throw std::runtime_error("attribute: 属性概率未完整消费");
+        if (offset != result->probabilities.size()) throw std::runtime_error("attribute: attribute probabilities not fully consumed");
         result->result = {sizeof(aicore_attribute_result), AICORE_ATTRIBUTE_ABI_VERSION,
             ctx->recipe->preset.label, image->width, image->height, result->attributes.data(),
             result->attributes.size(), result->probabilities.data(), result->probabilities.size(), result.get()};
@@ -255,7 +255,7 @@ AICORE_CAPI int aicore_attribute_run(aicore_attribute_ctx* ctx,
         *output = &result.release()->result;
         return 0;
     } catch (const std::exception& e) { ctx->error = e.what(); }
-      catch (...) { ctx->error = "attribute: 未知推理错误"; }
+      catch (...) { ctx->error = "attribute: unknown inference error"; }
     return -1;
 }
 

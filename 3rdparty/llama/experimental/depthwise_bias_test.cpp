@@ -1,4 +1,4 @@
-// DW 卷积的 src[2] 必须在写出时加 bias，且不改变独立 ADD 的算术。
+// DW src[2] supplies bias at write-out without changing separate ADD arithmetic.
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -37,7 +37,7 @@ static bool run(ggml_backend_t backend, ggml_backend_t cpu, int kernel_size,
             : ggml_view_4d(ctx, weight_storage, kernel_size, kernel_size, 1, channels,
                     kernel_size * wt, kernel_size * kernel_size * wt,
                     kernel_size * kernel_size * wt, prefix * wt);
-    // ne[2] 是单例；CPU CWHN 契约以该 stride 表示通道间隔。
+    // ne[2] is singleton; the CPU CWHN contract uses this stride for channel spacing.
     if (cwhn) weights->nb[2] = wt;
     ggml_tensor* pixels = cwhn
             ? ggml_permute(ctx, ggml_view_4d(ctx, pixel_storage, channels, 17, 15, 2,
@@ -45,7 +45,7 @@ static bool run(ggml_backend_t backend, ggml_backend_t cpu, int kernel_size,
                     prefix * xt), 2, 0, 1, 3)
             : ggml_view_4d(ctx, pixel_storage, 17, 15, channels, 2,
                     17 * xt, 17 * 15 * xt, 17 * 15 * channels * xt, prefix * xt);
-    // 非对齐 view 能捕获 Vulkan 忽略 descriptor 内偏移的问题。
+    // Unaligned views detect ignored descriptor offsets in Vulkan.
     ggml_tensor* bias_storage = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, channels + 1);
     ggml_tensor* bias = ggml_view_1d(ctx, bias_storage, channels, sizeof(float));
     ggml_set_input(weight_storage);
@@ -60,16 +60,16 @@ static bool run(ggml_backend_t backend, ggml_backend_t cpu, int kernel_size,
                 ctx, weights, pixels, bias, stride, stride,
                 dilation * (kernel_size / 2), dilation * (kernel_size / 2), dilation, dilation);
     } else {
-        // CPU ADD 要求元素连续；布局转换只拷贝位，不改变卷积舍入。
+        // CPU ADD requires contiguous elements; layout conversion copies bits without changing convolution rounding.
         if (!ggml_is_contiguous(convolution)) convolution = ggml_cont(ctx, convolution);
         final = ggml_add(ctx, convolution, ggml_reshape_4d(ctx, bias, 1, 1, channels, 1));
     }
     if (!ggml_backend_supports_op(backend, final)) {
-        std::fprintf(stderr, "请求的后端不支持本测试的计算路径\n");
+        std::fprintf(stderr, "The requested backend does not support this test's computation path\n");
         ggml_free(ctx);
         return false;
     }
-    // ADD 的输出是 WHCN；将 CWHN 候选转成同一逻辑元素顺序再比较。
+    // ADD outputs WHCN; reorder the CWHN candidate to identical logical element order before comparison.
     if (!ggml_is_contiguous(final)) final = ggml_cont(ctx, final);
     ggml_set_output(final);
     ggml_cgraph* graph = ggml_new_graph(ctx);
@@ -110,7 +110,7 @@ static bool run(ggml_backend_t backend, ggml_backend_t cpu, int kernel_size,
             }
             for (float value : output) valid &= std::isfinite(value);
             if (input_type == GGML_TYPE_F16 && kernel_size == 1 && stride == 1 && repeat == 0) {
-                // 单点卷积的独立舍入 oracle；用于定位“卷积先写 F16，再 ADD”。
+                // Independent scalar-convolution rounding oracle: convolution writes F16 before ADD.
                 for (size_t i = 0; i < output.size(); ++i) {
                     const size_t channel = (i / (17 * 15)) % channels;
                     const size_t pixel_index = cwhn
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
     if (!cpu || !backend) return 1;
     int errors = 0;
     for (ggml_type input_type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
-    // 当前 CPU DW 只支持 F32 输入；F16 权重仍纳入 CPU 矩阵。
+    // CPU DW currently supports only F32 input; include F16 weights in the CPU matrix.
     if (backend == cpu && input_type == GGML_TYPE_F16) continue;
     for (ggml_type weight_type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
     if (input_type == GGML_TYPE_F16 && weight_type != GGML_TYPE_F16) continue;
