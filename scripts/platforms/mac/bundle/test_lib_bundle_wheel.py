@@ -269,20 +269,24 @@ class CMakePackagingTest(unittest.TestCase):
                 f'set(Python3_EXECUTABLE "{sys.executable}")\n'
                 f'set(PYTHON_PACKAGE_DST_DIR "{root.as_posix()}")\n'
                 "add_custom_target(python-package)\n" + block)
-            for apple in ("ON", "OFF"):
-                build = root / ("build " + apple)
+            # project() derives APPLE from the target system, overriding -DAPPLE.
+            for system in ("Darwin", "Linux"):
+                build = root / ("build " + system)
                 subprocess.run(["cmake", "-S", str(root), "-B", str(build),
-                                "-G", "Unix Makefiles", f"-DAPPLE={apple}"],
+                                "-G", "Unix Makefiles", f"-DCMAKE_SYSTEM_NAME={system}"],
                                check=True, capture_output=True, text=True)
                 for tag in ("macosx_11_0_arm64", "macosx_14_0_arm64"):
                     env = dict(os.environ, TEST_PLATFORM_TAG=tag, MACOSX_DEPLOYMENT_TARGET="11.0")
                     result = subprocess.run(["cmake", "--build", str(build), "--target", "pip-package"],
                                             env=env, capture_output=True, text=True)
-                    should_fail = apple == "ON" and tag == "macosx_14_0_arm64"
+                    should_fail = system == "Darwin" and tag == "macosx_14_0_arm64"
                     self.assertEqual(result.returncode != 0, should_fail,
                                      result.stdout + result.stderr)
                     if should_fail:
                         self.assertNotIn("pip wheel created at", result.stdout)
+                    else:
+                        self.assertIn("pip wheel created at", result.stdout)
+                        self.assertEqual("satisfies macOS" in result.stderr, system == "Darwin")
 
 
 if __name__ == "__main__":

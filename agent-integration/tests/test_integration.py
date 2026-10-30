@@ -690,6 +690,7 @@ class TestLevel1_CppPlugin:
         script = script.replace("/tmp/macos-", str(tmp_path / "macos-"))
         # Keep the workflow's shell/options; stub only expensive external work.
         stubs = ("source() { :; }\nccache() { echo cache-stats; }\n"
+                 "print_ccache_key_inputs() { echo cache-key-inputs; }\n"
                  "python() { :; }\npip() { :; }\ncmake() { :; }\n"
                  "brew() { :; }\n"
                  "build_gui_app() { return 23; }\n"
@@ -705,6 +706,7 @@ class TestLevel1_CppPlugin:
         recorded = Path(env["GITHUB_ENV"]).read_text() if Path(env["GITHUB_ENV"]).exists() else ""
         assert "DEVEL_PKG_NAME=" not in recorded and "PIP_PKG_NAME=" not in recorded
         if step_name.startswith("Config and build"):
+            assert "cache-key-inputs" in result.stdout
             assert "cache-stats" in result.stdout  # EXIT stats survive failure.
 
     @pytest.mark.parametrize("drift", ["extra", "missing"])
