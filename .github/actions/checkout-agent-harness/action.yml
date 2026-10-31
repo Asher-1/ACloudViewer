@@ -1,0 +1,17 @@
+name: Checkout paired agent harness
+description: Keep CLI, MCP, and native batch contracts paired with this source revision.
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: Asher-1/CLI-Anything
+        # This revision exposes exactly the native batch commands in this branch.
+        # Upgrade together with registry, whitelist, and installed-schema gates.
+        ref: deb805086583a51e76e7a1346e17fd954ff5c493
+        path: _cli-anything
+        sparse-checkout: |
+          acloudviewer/agent-harness
+    - name: Record harness revision
+      shell: bash
+      run: git -C _cli-anything rev-parse HEAD

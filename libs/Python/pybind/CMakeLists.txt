@@ -274,6 +274,7 @@ add_custom_target(python-package
         "-DBUILD_BIN_PATH=${BUILD_BIN_PATH}"
         "-DCUSTOM_BUILD_TYPE=${CUSTOM_BUILD_TYPE}"
         "-DCONDA_PREFIX=${CONDA_PREFIX}"
+        "-DOpenMP_libomp_LIBRARY=${OpenMP_libomp_LIBRARY}"
         -DBUILD_WITH_CONDA=${BUILD_WITH_CONDA}
         -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
@@ -311,11 +312,21 @@ add_custom_target(python-package
         )
 
 # Use `make pip-package` to create the pip package in the build directory
+set(PIP_PACKAGE_CHECKS)
+if(APPLE)
+    # bdist_wheel only warns when a bundled Mach-O raises the platform tag
+    # above MACOSX_DEPLOYMENT_TARGET; fail instead of shipping that wheel.
+    set(PIP_PACKAGE_CHECKS COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/scripts/platforms/mac/bundle/lib_bundle_wheel.py
+        --check_wheel pip_package)
+endif()
 add_custom_target(pip-package
         COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+        ${PIP_PACKAGE_CHECKS}
         COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
         DEPENDS python-package
+        VERBATIM
         )
 
 # Use `make install-pip-package` to install pip wheel package to the current

@@ -223,7 +223,13 @@ set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/platforms/${PACK_SCRIPTS}
 
 if (APPLE)
     set(DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer")
-    execute_process(COMMAND python ${PACKAGE_TOOL} ${DEST_PATH} 
+    set(_mac_wheel_bundle_args ${PACKAGE_TOOL} ${DEST_PATH})
+    # The libomp our libraries linked; it must win over torch/lib's
+    # same-named copy (macOS 14.0 minimum) reachable from libtorch_cpu.
+    if(OpenMP_libomp_LIBRARY)
+        list(APPEND _mac_wheel_bundle_args --openmp_library ${OpenMP_libomp_LIBRARY})
+    endif()
+    execute_process(COMMAND python ${_mac_wheel_bundle_args}
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
                     RESULT_VARIABLE _mac_wheel_bundle_result)
     # The bundler raises when an @rpath dependency cannot be resolved

@@ -209,6 +209,16 @@ endfunction()
 
 # CMake arguments for configuring ExternalProjects. Use the second _hidden
 # version by default.
+set(ExternalProject_CODEQL_CMAKE_ARGS)
+if(DEFINED CLOUDVIEWER_CODEQL_OPTIMIZATION)
+    # Forward policy only for scans; normal builds retain upstream arguments and default optimization.
+    get_filename_component(codeql_compiler_policy
+        "${CloudViewer_3RDPARTY_DIR}/../.github/codeql/compiler-policy.cmake" ABSOLUTE)
+    set(ExternalProject_CODEQL_CMAKE_ARGS
+        "-DCLOUDVIEWER_CODEQL_OPTIMIZATION=${CLOUDVIEWER_CODEQL_OPTIMIZATION}"
+        "-DCMAKE_PROJECT_INCLUDE=${codeql_compiler_policy}"
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+endif()
 set(ExternalProject_CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -234,6 +244,7 @@ set(ExternalProject_CMAKE_ARGS
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        ${ExternalProject_CODEQL_CMAKE_ARGS}
         )
 
 # Keep 3rd party symbols hidden from CloudViewer user code. Do not use if 3rd party

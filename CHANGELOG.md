@@ -10,6 +10,21 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - Windows: falls back to dynamic CUDA::cudart (no static cudart in MSVC CRT model)
     - CI: AICore_USE_CUDA=ON automatically when building with CUDA_MODULE flag
 - CI: add DT_NEEDED regression guard for libAICore.so (VerifyNoDynamicCuda.cmake)
+- CI: CodeQL keeps the existing build scope and security-extended queries,
+  stops on compilation failures, and uses O1 code generation with Release
+  macros retained; manual O3 runs provide a same-revision baseline. Preserve
+  build timing and compilation inventories, and skip disk cleanup when an
+  80 GiB free-space budget is already available. Vendored dependency targets
+  are compiled before tracer initialization, so extraction covers first-party
+  translation units only; the complete build and query suite are unchanged.
+- Fix VTK LOD compilation with system VTK: include vtkWeakPointer.h directly.
+- Fix complete CodeQL builds with VTK 9.1: only use chart matrix padding on
+  VTK 9.2+, preserving the existing gutter and borders on older versions.
+- Fix octree constant linkage at low optimization levels: use C++17 constexpr
+  storage for subdivision limits and the invalid-cell sentinel; add a regression
+  test that requires their addresses to resolve.
+- Fix pinned Filament libpng on modern Apple SDKs: select math.h instead of
+  the classic Mac fp.h without disabling floating-point PNG support.
 - CI: compiler cache storage overhaul — all pools moved off the GitHub
   actions cache onto persistent release assets (cloudViewer_downloads,
   tag ci-ccache, per-cell names overwritten in place with --clobber):

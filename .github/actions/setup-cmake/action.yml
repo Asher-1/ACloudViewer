@@ -9,7 +9,16 @@ runs:
     - name: Verify CMake version
       shell: pwsh
       run: |
-        $cmakeVersion = ((& cmake --version | Select-Object -First 1) -split '\s+')[-1]
-        if ($cmakeVersion -ne '3.31.8') {
-          throw "Expected CMake 3.31.8, got $cmakeVersion"
+        # Multiple installations must resolve to one executable, not a path array.
+        $cmakeBin = (Get-Command cmake -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+        $cmakeOutput = & $cmakeBin --version
+        if ($LASTEXITCODE -ne 0) {
+          throw "CMake version command failed: $cmakeBin"
         }
+        $cmakeVersion = (($cmakeOutput | Select-Object -First 1) -split '\s+')[-1]
+        if ($cmakeVersion -ne '3.31.8') {
+          throw "Expected CMake 3.31.8, got $cmakeVersion from $cmakeBin"
+        }
+        # Login shells can replace GITHUB_PATH; retain the same verified executable.
+        "Verified CMake executable: $cmakeBin"
+        "CLOUDVIEWER_CMAKE_BIN=$cmakeBin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

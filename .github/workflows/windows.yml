@@ -172,6 +172,122 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Check build diagnostics contracts
+        if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          $fixture = Join-Path $env:RUNNER_TEMP 'diagnostics-contract'
+          $env:RUNNER_TEMP = Join-Path $fixture 'evidence'
+          $env:GITHUB_STEP_SUMMARY = Join-Path $fixture 'summary.md'
+          $fixtureBuild = Join-Path $fixture 'build'
+          New-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP, (Join-Path $fixtureBuild 'child') | Out-Null
+          Push-Location $fixtureBuild
+          try {
+            'root-CPU' | Set-Content '.ninja_log'
+            'child-CPU' | Set-Content 'child/.ninja_log'
+            $global:fixtureCode = 7
+            $global:fixtureThrow = $false
+            function global:cmake {
+              $global:capturedArgs = @($args)
+              $global:LASTEXITCODE = $global:fixtureCode
+              if ($global:fixtureThrow) { throw 'fixture-command-error' }
+              'fixture-output'
+            }
+            $output = Invoke-CMakeStage -Name 'fixture-CPU' -CMakeArgs @('--build', 'path with spaces')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or
+                $global:capturedArgs.Count -ne 2 -or $global:capturedArgs[1] -ne 'path with spaces') {
+              throw 'CMake diagnostics wrapper changed output, arguments or exit code'
+            }
+            $timingPath = Join-Path $env:RUNNER_TEMP 'build-timings.jsonl'
+            $timing = Get-Content $timingPath | ConvertFrom-Json
+            if ($timing.exit_code -ne 7 -or $timing.seconds -lt 0 -or
+                $timing.arguments[1] -ne 'path with spaces' -or $timing.build_directory -ne $fixtureBuild) {
+              throw 'Stage timing is not bound to the command and build directory'
+            }
+            'root-CUDA' | Set-Content '.ninja_log'
+            'child-CUDA' | Set-Content 'child/.ninja_log'
+            $global:fixtureCode = 0
+            $output = Invoke-CMakeStage -Name 'fixture-CUDA' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 0 -or $output -ne 'fixture-output') { throw 'Successful exit code was changed' }
+            foreach ($pass in @('CPU', 'CUDA')) {
+              $snapshot = Join-Path $env:RUNNER_TEMP "ninja-fixture-$pass"
+              if ((Get-Content (Join-Path $snapshot '.ninja_log')) -ne "root-$pass" -or
+                  (Get-Content (Join-Path $snapshot 'child/.ninja_log')) -ne "child-$pass") {
+                throw 'CPU/CUDA pass root or child graph snapshot is missing'
+              }
+            }
+            function global:Invoke-SccacheFixture {
+              $global:statsCalls++
+              $global:LASTEXITCODE = $global:statsCode
+              $global:statsFixture
+            }
+            $env:SCCACHE_PATH = 'Invoke-SccacheFixture'
+            $env:CLOUDVIEWER_COMPILER_LAUNCHER = 'fixture-launcher'
+            $global:statsCalls = 0
+            $global:statsCode = 0
+            $global:statsFixture = '{"stats":{"compile_requests":3,"cache_hits":{"counts":{"C/C++":2},"adv_counts":{"c++ [msvc]":2}},"cache_misses":{"counts":{"CUDA":3,"PTX":1},"adv_counts":{"cuda [nvcc]":3,"ptx [ptxas]":1}},"cache_errors":{"counts":{},"adv_counts":{}}}}'
+            $global:LASTEXITCODE = 9
+            $report = (Write-SccacheStats -Label 'fixture' 6>&1) -join "`n"
+            if ($LASTEXITCODE -ne 9 -or $report -notmatch '\| C/C\+\+ \| 2 \| 0 \| 0 \|' -or
+                $report -notmatch '\| CUDA \| 0 \| 3 \| 0 \|' -or $report -notmatch '\| PTX \| 0 \| 1 \| 0 \|' -or
+                $report -notmatch '\| cuda \[nvcc\] \| 0 \| 3 \| 0 \|' -or
+                $report -notmatch '\| c\+\+ \[msvc\] \| 2 \| 0 \| 0 \|' -or $report -notmatch '2 hits, 4 misses, 0 errors' -or
+                (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $global:statsFixture -or
+                (Get-Content $env:GITHUB_STEP_SUMMARY -Raw) -notmatch 'cannot be used as a source-file hit rate or an end-to-end speedup ratio') {
+              throw 'sccache categories, raw response, performance claim boundary or exit-code preservation failed'
+            }
+            foreach ($empty in @('{"stats":{"compile_requests":0}}', '{"stats":{"compile_requests":3,"cache_hits":{"counts":{}},"cache_misses":{"counts":{}},"cache_errors":{"counts":{}}}}')) {
+              $global:statsFixture = $empty
+              $report = (Write-SccacheStats -Label 'empty' 6>&1) -join "`n"
+              if ($LASTEXITCODE -ne 9 -or $report -match '::notice' -or $report -match 'skipped') { throw 'Empty stats were incorrectly reported' }
+            }
+            foreach ($invalid in @('{invalid', '{}', '{"stats":{"compile_requests":3}}')) {
+              $global:statsFixture = $invalid
+              $report = (Write-SccacheStats -Label 'invalid' 6>&1) -join "`n"
+              if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped' -or $report -match '::notice' -or
+                  (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $invalid) {
+                throw 'Invalid stats were not preserved or changed the exit code'
+              }
+            }
+            $global:statsCode = 5
+            $report = (Write-SccacheStats -Label 'failed-stats' 6>&1) -join "`n"
+            if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped') { throw 'Stats command failure overwrote the upstream exit code' }
+            $global:statsCode = 0
+            $global:statsFixture = '{"stats":{"compile_requests":0}}'
+            $global:fixtureCode = 17
+            $global:fixtureThrow = $true
+            $thrown = $false
+            try { Invoke-CMakeStage -Name 'exception' -CMakeArgs @('--build', '.') }
+            catch { if ($_ -notmatch 'fixture-command-error') { throw }; $thrown = $true }
+            $lastTiming = Get-Content $timingPath | Select-Object -Last 1 | ConvertFrom-Json
+            if (-not $thrown -or $LASTEXITCODE -ne 17 -or $null -ne $lastTiming.exit_code) {
+              throw 'Diagnostics overwrote the original exception or exit code'
+            }
+            $global:fixtureThrow = $false
+            $global:fixtureCode = 7
+            $beforeCalls = $global:statsCalls
+            $env:RUNNER_TEMP = Join-Path $fixtureBuild '.ninja_log'
+            $output = Invoke-CMakeStage -Name 'failed-write' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or $global:statsCalls -ne ($beforeCalls + 1)) {
+              throw 'Diagnostics write failure affected the build or prevented cache stats collection'
+            }
+            $env:RUNNER_TEMP = ''
+            $env:GITHUB_STEP_SUMMARY = ''
+            $global:fixtureNative = (Get-Process -Id $PID).Path
+            function global:cmake { & $global:fixtureNative -NoProfile -Command "Write-Output 'native-output'; exit 7" }
+            $PSNativeCommandUseErrorActionPreference = $false
+            $output = Invoke-CMakeStage -Name 'native-exit' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'native-output') { throw 'Native process exit code or output was changed' }
+            $PSNativeCommandUseErrorActionPreference = $true
+            $thrown = $false
+            try { Invoke-CMakeStage -Name 'native-exception' -CMakeArgs @('--build', '.') | Out-Null }
+            catch [System.Management.Automation.NativeCommandExitException] { $thrown = $true }
+            if (-not $thrown -or $LASTEXITCODE -ne 7) { throw 'Native exception exit code was overwritten' }
+          } finally { Pop-Location }
+          $global:LASTEXITCODE = 0
+          Write-Host 'Build diagnostics contracts passed (files, categories, exceptions, write failures, native exit codes)'
+
       - name: Set up sccache binary (warm runs only)
         # Compile cache is an optimization overlay: cache keys are content-
         # addressed (compiler hash + full command line + preprocessed input),
@@ -223,12 +339,14 @@ jobs:
           path: ${{ runner.temp }}\sccache
       - name: Enable sccache launcher
         # Only wire the launcher when the binary actually came up;
-        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX_COMPILER_LAUNCHER
+        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER
         # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
         # SCCACHE_CACHE_SIZE is only a ceiling well above the working set;
         # the pool size itself is bounded by the job-scoped trim before
         # save. SCCACHE_POOL_T0 marks the restore boundary for that trim.
-        # CUDA (nvcc) caching is intentionally not enabled.
+        # CUDA (nvcc) caching is included: see the gate evidence recorded at
+        # the forwarding site in util/ci_utils.ps1. Both caps were exercised
+        # unchanged under that gate, with zero CUDA misses in the warm rounds.
         # SCCACHE_IDLE_TIMEOUT must exceed the packaging time after the last
         # compile (installer + import checks ran 11-12 min past it, run 39994107226);
         # at the 600 s default the server self-exits, and every --show-stats
@@ -429,17 +547,22 @@ jobs:
         continue-on-error: true
         run: |
           & $env:SCCACHE_PATH --show-stats
-          try {
-            $s = (& $env:SCCACHE_PATH --show-stats --stats-format=json | ConvertFrom-Json).stats
-            $sum = { param($c) $t = 0L; foreach ($p in $c.counts.PSObject.Properties) { $t += [long]$p.Value }; $t }
-            $h = & $sum $s.cache_hits; $m = & $sum $s.cache_misses; $e = & $sum $s.cache_errors
-            if ($s.compile_requests -gt 0) {
-              $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $h / [math]::Max(1, $h + $m + $e)), $h, $m, $e, $s.compile_requests
-              Write-Host "::notice title=sccache stats - app cuda${{ matrix.BUILD_CUDA_MODULE }}::$line"
-              "### sccache stats (app cuda${{ matrix.BUILD_CUDA_MODULE }})`n`n$line" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-            }
-          } catch { Write-Host "[cache] stats report skipped: $_" }
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          Write-SccacheStats -Label "app cuda${{ matrix.BUILD_CUDA_MODULE }}"
           & $env:SCCACHE_PATH --stop-server
+      - name: Upload build profiling evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-profile-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: |
+            ${{ runner.temp }}\build-timings.jsonl
+            ${{ runner.temp }}\sccache-*.json
+            ${{ runner.temp }}\ninja-*
+            ${{ env.SRC_DIR }}\build\**\.ninja_log
+          include-hidden-files: true
+          if-no-files-found: ignore
       - name: Trim sccache pool to this job's working set
         # Same semantics as DuckDB's ccache-action `evict-old-files: job` and
         # Godot's purge_cache.py: drop every entry this job did not touch so
@@ -566,12 +689,7 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Checkout CLI-Anything (agent harness)
-        uses: actions/checkout@v4
-        with:
-          repository: Asher-1/CLI-Anything
-          path: _cli-anything
-          sparse-checkout: |
-            acloudviewer/agent-harness
+        uses: ./.github/actions/checkout-agent-harness
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
@@ -874,8 +992,9 @@ jobs:
           path: ${{ runner.temp }}\sccache
       - name: Enable sccache launcher
         # util/ci_utils.ps1 Build-PipPackage forwards it as
-        # CMAKE_C/CXX_COMPILER_LAUNCHER when this env var is set.
-        # CUDA (nvcc) caching is intentionally not enabled initially.
+        # CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is included; the gate evidence is recorded at
+        # the forwarding site in util/ci_utils.ps1.
         # SCCACHE_IDLE_TIMEOUT=36000 keeps the daemon alive past packaging so
         # the in-step stats are real numbers (see the app-matrix job for the
         # full 600 s default autopsy). The explicit --start-server also
@@ -965,16 +1084,8 @@ jobs:
           & $env:SCCACHE_PATH --show-stats
           # Publish the live daemon's stats before stopping it (see the app
           # matrix job "Stop sccache server").
-          try {
-            $s = (& $env:SCCACHE_PATH --show-stats --stats-format=json | ConvertFrom-Json).stats
-            $sum = { param($c) $t = 0L; foreach ($p in $c.counts.PSObject.Properties) { $t += [long]$p.Value }; $t }
-            $h = & $sum $s.cache_hits; $m = & $sum $s.cache_misses; $e = & $sum $s.cache_errors
-            if ($s.compile_requests -gt 0) {
-              $line = "{0:N2}% - {1} hits, {2} misses, {3} errors ({4} compile requests)" -f (100.0 * $h / [math]::Max(1, $h + $m + $e)), $h, $m, $e, $s.compile_requests
-              Write-Host "::notice title=sccache stats - wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }}::$line"
-              "### sccache stats (wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }})`n`n$line" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-            }
-          } catch { Write-Host "[cache] stats report skipped: $_" }
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          Write-SccacheStats -Label "wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }}"
           & $env:SCCACHE_PATH --stop-server 2>$null
           $global:LASTEXITCODE = 0
           if ('${{ steps.build.outcome }}' -ne 'success') {
@@ -987,6 +1098,19 @@ jobs:
           $stale | Remove-Item -Force -ErrorAction SilentlyContinue
           $kept = ($all | Measure-Object -Property Length -Sum).Sum - ($stale | Measure-Object -Property Length -Sum).Sum
           Write-Host ("[cache] trimmed {0} untouched entries; pool = {1} files, {2:N2} GB" -f @($stale).Count, (@($all).Count - @($stale).Count), ($kept / 1GB))
+      - name: Upload build profiling evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-wheel-profile-py${{ matrix.python_version }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: |
+            ${{ runner.temp }}\build-timings.jsonl
+            ${{ runner.temp }}\sccache-*.json
+            ${{ runner.temp }}\ninja-*
+            ${{ env.SRC_DIR }}\build\**\.ninja_log
+          include-hidden-files: true
+          if-no-files-found: ignore
       - name: Save sccache pool (stash)
         # Same save policy as the app job: any run that reached the build.
         if: ${{ always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && contains(fromJSON('["success","failure","cancelled"]'), steps.build.outcome) }}

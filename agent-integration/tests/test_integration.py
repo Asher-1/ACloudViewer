@@ -90,6 +90,16 @@ AICORE_BATCH_COMMANDS = (
 )
 
 
+def _assert_aicore_registry(rows) -> None:
+    actual = {(row["name"], row["command"]) for row in rows}
+    expected = {(task, command) for task, command, _ in AICORE_BATCH_COMMANDS}
+    # Sort only diagnostics to keep cross-platform failure reports deterministic.
+    assert actual == expected, (
+        "CLI/native batch contract mismatch; use the paired harness revision in "
+        ".github/actions/checkout-agent-harness/action.yml. "
+        f"Missing: {sorted(expected - actual)}; unexpected: {sorted(actual - expected)}")
+
+
 def _read_repo_text(path: Path) -> str:
     """Read repository sources as UTF-8.
 
@@ -313,11 +323,401 @@ def _find_cloud_id(result) -> int | None:
 # Level 1: C++ Source Verification
 # ═══════════════════════════════════════════════════════════════════════════
 
+class TestLevel1_CodeQL:
+    """Verify scan policy, real sub-build commands and failure propagation without a full app build."""
+
+    @pytest.mark.parametrize("source", [
+        ".github/codeql/compiler-policy.cmake", ".github/workflows/codeql.yml",
+        ".github/workflows/agent-integration.yml", "3rdparty/find_dependencies.cmake",
+        "3rdparty/PoissonRecon/PoissonRecon.cmake", "agent-integration/tests/test_integration.py"])
+    def test_level1_codeql_engineering_text_is_english(self, source):
+        text = _read_repo_text(REPO_ROOT / source)
+        assert re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U000323af]", text) is None, (
+            f"Engineering comments and diagnostic text must be English: {source}")
+
+    def test_level1_codeql_workflow_contract(self):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
+        cpp = source.split("  analyze-cpp:\n", 1)[1]
+        configure = cpp.split("      - name: Configure CMake\n", 1)[1]
+        configure = configure.split("      - name:", 1)[0]
+        for option in ("PLUGIN_IO_QLAS", "PLUGIN_IO_QCORE", "PLUGIN_IO_QMESH",
+                       "PLUGIN_STANDARD_QCSF", "PLUGIN_STANDARD_QM3C2",
+                       "PLUGIN_STANDARD_QPCL", "PLUGIN_STANDARD_QPCV",
+                       "PLUGIN_STANDARD_QPOISSON_RECON",
+                       "PLUGIN_STANDARD_QRANSAC_SD",
+                       "PLUGIN_STANDARD_QHOUGH_NORMALS", "USE_VTK_BACKEND"):
+            assert f"-D{option}=ON" in configure
+        assert '"-DCLOUDVIEWER_CODEQL_OPTIMIZATION=${CPP_OPTIMIZATION}"' in configure
+        assert "compiler-policy.cmake" in configure
+        assert source.count("queries: security-extended") == 2
+        assert "build-mode: manual" in cpp
+        assert cpp.index("- name: Configure CMake") < cpp.index("- name: Initialize CodeQL")
+        build = cpp.split("      - name: Build\n", 1)[1].split("      - name:", 1)[0]
+        assert "set -euo pipefail" in build and "|| true" not in build
+        assert '--target' not in build and 'cmake --build build --parallel "$PARALLEL_JOBS"' in build
+        assert "build/**/compile_commands.json" in cpp
+        assert "codeql_databases/cpp/log/" in cpp
+        extra_options = re.search(r"CODEQL_ACTION_EXTRA_OPTIONS: >-\n\s*(\{.*\})", cpp)[1]
+        extra_options = extra_options.replace("${{ github.workspace }}", "/fixture")
+        assert json.loads(extra_options) == {"database": {"run-queries": [
+            "--evaluator-log=/fixture/codeql-evidence/evaluator.jsonl", "--evaluator-log-minify"]}}
+        assert "generate log-summary" in cpp and "overall predicates text" in cpp
+        assert cpp.index("- name: Sample C++ analysis resources") < cpp.index("- name: Perform CodeQL Analysis")
+        summarize = cpp.split("      - name: Summarize C++ evaluator performance\n", 1)[1]
+        summarize = summarize.split("      - name:", 1)[0]
+        assert "if: always()" in summarize and "analysis-resources.stop" in summarize
+        assert 'CODEQL_BIN: ${{ steps.init-cpp.outputs.codeql-path }}' in summarize
+        poisson = _read_repo_text(REPO_ROOT / "3rdparty/PoissonRecon/PoissonRecon.cmake")
+        assert "${ExternalProject_CODEQL_CMAKE_ARGS}" in poisson
+        agent = _read_repo_text(REPO_ROOT / ".github/workflows/agent-integration.yml")
+        for path in (".github/workflows/codeql.yml", ".github/codeql/**",
+                     "3rdparty/find_dependencies.cmake", "3rdparty/PoissonRecon/**"):
+            assert agent.count(f"- '{path}'") == 2
+
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The workflow uses Linux time and Bash")
+    @pytest.mark.parametrize("optimization,build_status,actual", [
+        ("O1", 0, "O1"), ("O3", 0, "O3"), ("O1", 3, "O1"),
+        ("O1", 0, "O3"), ("O1", 0, None)])
+    def test_level1_codeql_build_gate(self, tmp_path, optimization, build_status, actual):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
+        cpp = source.split("  analyze-cpp:\n", 1)[1]
+        build = cpp.split("      - name: Build\n", 1)[1].split("      - name:", 1)[0]
+        script = build.split("        run: |\n", 1)[1]
+        script = "\n".join(line[10:] for line in script.splitlines())
+        (tmp_path / "build").mkdir()
+        (tmp_path / "codeql-evidence").mkdir()
+        rows = [] if actual is None else [{"file": "probe.cpp", "arguments": [
+            "/usr/bin/c++", f"-{actual}", "-DNDEBUG", "-c", "probe.cpp"]}]
+        (tmp_path / "build/compile_commands.json").write_text(json.dumps(rows))
+        tools = tmp_path / "tools"
+        tools.mkdir()
+        cmake = tools / "cmake"
+        cmake.write_text(f"#!/bin/sh\necho build-fixture\nexit {build_status}\n")
+        cmake.chmod(0o755)
+        summary = tmp_path / "summary"
+        env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH'],
+                   CPP_OPTIMIZATION=optimization, PARALLEL_JOBS="2", GITHUB_STEP_SUMMARY=str(summary))
+        result = subprocess.run(["bash", "-c", script], cwd=tmp_path, env=env,
+                                capture_output=True, text=True, timeout=30)
+        success = build_status == 0 and actual == optimization
+        assert (result.returncode == 0) == success, result.stdout + result.stderr
+        assert summary.exists() == success
+        if success:
+            assert (tmp_path / "codeql-evidence/compiler-policy.json").exists()
+
+    @pytest.mark.skipif(platform.system() != "Linux", reason="Resource sampling reads Linux procfs")
+    def test_level1_codeql_resource_sampling(self, tmp_path):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
+        sampler = source.split("      - name: Sample C++ analysis resources\n", 1)[1]
+        sampler = sampler.split("      - name:", 1)[0].split("        run: |\n", 1)[1]
+        script = "\n".join(line[10:] for line in sampler.splitlines())
+        # Replace the wait, not procfs data; take a real sample and exit using the workflow's stop marker.
+        tools = tmp_path / "tools"
+        tools.mkdir()
+        sleep = tools / "sleep"
+        sleep.write_text("#!/bin/sh\ntouch codeql-evidence/analysis-resources.stop\n")
+        sleep.chmod(0o755)
+        result = subprocess.run(["bash", "-c", script + "\nwait"], cwd=tmp_path,
+                                env=dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"]),
+                                capture_output=True, text=True, timeout=10)
+        assert result.returncode == 0, result.stderr
+        log = (tmp_path / "codeql-evidence/analysis-resources.log").read_text()
+        assert log.count("UTC ") == 1
+        assert "MemAvailable:" in log and "pgmajfault " in log and "cpu " in log
+        assert "cmdline" not in script and "/environ" not in script
+
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The workflow summarizer uses Bash")
+    @pytest.mark.parametrize("evaluator,cli_status", [(False, 0), (True, 0), (True, 2)])
+    def test_level1_codeql_evaluator_summary(self, tmp_path, evaluator, cli_status):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/codeql.yml")
+        summarize = source.split("      - name: Summarize C++ evaluator performance\n", 1)[1]
+        summarize = summarize.split("      - name:", 1)[0].split("        run: |\n", 1)[1]
+        script = "\n".join(line[10:] for line in summarize.splitlines()
+                           if line.startswith("          ") or not line.strip())
+        evidence = tmp_path / "codeql-evidence"
+        evidence.mkdir()
+        if evaluator:
+            (evidence / "evaluator.jsonl").write_text("fixture\n")
+        cli = tmp_path / "codeql"
+        cli.write_text('#!/bin/sh\n'
+                       'test "$1" = generate && test "$2" = log-summary && test "$4" = --utc || exit 3\n'
+                       'printf "%s\\n" "$3" >> calls\n'
+                       f'exit {cli_status}\n')
+        cli.chmod(0o755)
+        result = subprocess.run(["bash", "-c", script], cwd=tmp_path,
+                                env=dict(os.environ, CODEQL_BIN=str(cli)),
+                                capture_output=True, text=True, timeout=10)
+        assert (result.returncode == 0) == (not evaluator or cli_status == 0)
+        assert (evidence / "analysis-resources.stop").exists()
+        calls = (tmp_path / "calls").read_text().splitlines() if evaluator else []
+        expected = ["--format=overall", "--format=predicates", "--format=text"]
+        assert calls == (expected if evaluator and cli_status == 0 else expected[:1] if evaluator else [])
+        if evaluator:
+            assert (evidence / "evaluator.jsonl").read_text() == "fixture\n"
+
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The scan policy supports Linux only")
+    @pytest.mark.parametrize("optimization,build_type", [
+        (None, "Release"), ("O1", "Release"), ("O3", "Release"), ("O1", "")])
+    def test_level1_codeql_subproject_commands(self, tmp_path, optimization, build_type):
+        import shlex
+
+        cmake = shutil.which("cmake")
+        assert cmake is not None, "Linux CI must execute the real CMake regression"
+        source = tmp_path / "source with spaces"
+        source.mkdir()
+        policy = source / ".github/codeql/compiler-policy.cmake"
+        policy.parent.mkdir(parents=True)
+        shutil.copyfile(REPO_ROOT / ".github/codeql/compiler-policy.cmake", policy)
+        (source / "3rdparty").mkdir()
+        shared = _read_repo_text(REPO_ROOT / "3rdparty/find_dependencies.cmake")
+        shared = shared.split("# CMake arguments for configuring ExternalProjects.", 1)[1]
+        shared = shared.split("# pkg_config_3rdparty_library(name ...)", 1)[0]
+        shared = "# CMake arguments for configuring ExternalProjects." + shared
+        (source / "shared.cmake").write_text(shared, encoding="utf-8")
+        code = ("#if !defined(NDEBUG) || !defined(__OPTIMIZE__)\n#error lost scan macros\n"
+                "#endif\nint probe(void) { return 7; }\n")
+        (source / "c.c").write_text(code, encoding="utf-8")
+        (source / "cpp.cpp").write_text(code, encoding="utf-8")
+        for name in ("nested", "child"):
+            directory = source / name
+            directory.mkdir()
+            (directory / "probe.cpp").write_text(code, encoding="utf-8")
+            project = "project(child C CXX)\n" if name == "child" else ""
+            (directory / "CMakeLists.txt").write_text(
+                "cmake_minimum_required(VERSION 3.19)\n" + project +
+                'set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")\n'
+                'if(DEFINED CLOUDVIEWER_CODEQL_OPTIMIZATION)\n'
+                '    set(CMAKE_CXX_COMPILER_LAUNCHER "false")\n'
+                'endif()\n'
+                'add_library(part STATIC probe.cpp)\n'
+                'target_compile_options(part PRIVATE -funroll-loops -ffast-math)\n',
+                encoding="utf-8")
+        (source / "CMakeLists.txt").write_text('''cmake_minimum_required(VERSION 3.19)
+project(scan_fixture C CXX)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CloudViewer_3RDPARTY_DIR "${CMAKE_SOURCE_DIR}/3rdparty")
+set(CloudViewer_INSTALL_LIB_DIR lib)
+include(shared.cmake)
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+if(DEFINED CLOUDVIEWER_CODEQL_OPTIMIZATION)
+    set(CMAKE_C_COMPILER_LAUNCHER "false")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "false")
+endif()
+add_library(cpart OBJECT c.c)
+add_library(top STATIC cpp.cpp)
+add_library(header_only INTERFACE)
+add_library(imported STATIC IMPORTED)
+add_custom_target(utility ALL)
+add_subdirectory(nested)
+include(ExternalProject)
+ExternalProject_Add(ext_child
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/child"
+    BINARY_DIR "${CMAKE_BINARY_DIR}/child-build"
+    DOWNLOAD_COMMAND "" UPDATE_COMMAND "" INSTALL_COMMAND ""
+    CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden})
+''', encoding="utf-8")
+        binary = tmp_path / "build with spaces"
+        args = [cmake, "-S", str(source), "-B", str(binary),
+                "-G", "Unix Makefiles", f"-DCMAKE_BUILD_TYPE={build_type}",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
+        if optimization:
+            args += [f"-DCLOUDVIEWER_CODEQL_OPTIMIZATION={optimization}",
+                     f"-DCMAKE_PROJECT_INCLUDE={policy}"]
+        result = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stdout + result.stderr
+        result = subprocess.run([cmake, "--build", str(binary), "--parallel", "2"],
+                                capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stdout + result.stderr
+        inventories = [binary / "compile_commands.json"]
+        if optimization:
+            inventories.append(binary / "child-build/compile_commands.json")
+        expected = f"-{optimization or 'O3'}"
+        for inventory in inventories:
+            rows = json.loads(inventory.read_text(encoding="utf-8"))
+            assert len(rows) == (3 if inventory.parent == binary else 1)
+            for row in rows:
+                tokens = shlex.split(row["command"])
+                levels = [token for token in tokens if re.fullmatch(r"-O[0-3sg]|-Ofast", token)]
+                assert levels[-1] == expected, row
+                assert "-DNDEBUG" in tokens
+                if row["file"].endswith("probe.cpp"):
+                    assert "-ffast-math" in tokens and "-funroll-loops" in tokens
+        command = _read_repo_text(binary / "ext_child-prefix/tmp/ext_child-cfgcmd.txt")
+        assert ("CMAKE_PROJECT_INCLUDE" in command) == bool(optimization)
+        assert ("CLOUDVIEWER_CODEQL_OPTIMIZATION" in command) == bool(optimization)
+        if optimization:
+            # Reconfiguring the same build tree must not duplicate target options.
+            before = (binary / "compile_commands.json").read_bytes()
+            subprocess.run(args, capture_output=True, text=True, timeout=60, check=True)
+            assert (binary / "compile_commands.json").read_bytes() == before
+            # Real compilation failures must propagate instead of leaving a false successful baseline.
+            (source / "cpp.cpp").write_text("#error forced failure\n", encoding="utf-8")
+            failed = subprocess.run([cmake, "--build", str(binary), "--parallel", "2"],
+                                    capture_output=True, text=True, timeout=60)
+            assert failed.returncode != 0 and "forced failure" in failed.stderr
+
+    @pytest.mark.skipif(platform.system() != "Linux", reason="The scan policy supports Linux only")
+    @pytest.mark.parametrize("optimization,build_type", [("O2", "Release"), ("O1", "Debug")])
+    def test_level1_codeql_invalid_policy_rejected(self, tmp_path, optimization, build_type):
+        cmake = shutil.which("cmake")
+        assert cmake is not None
+        (tmp_path / "CMakeLists.txt").write_text(
+            "cmake_minimum_required(VERSION 3.19)\nproject(probe CXX)\n", encoding="utf-8")
+        result = subprocess.run([
+            cmake, "-S", str(tmp_path), "-B", str(tmp_path / "build"),
+            f"-DCMAKE_BUILD_TYPE={build_type}",
+            f"-DCLOUDVIEWER_CODEQL_OPTIMIZATION={optimization}",
+            f"-DCMAKE_PROJECT_INCLUDE={REPO_ROOT / '.github/codeql/compiler-policy.cmake'}"],
+            capture_output=True, text=True, timeout=60)
+        assert result.returncode != 0 and "CodeQL" in result.stderr
+
+
 class TestLevel1_CppPlugin:
     """Verify C++ plugin source structure without needing a build."""
 
     def test_level1_plugin_cpp_exists(self):
         assert PLUGIN_CPP.exists()
+
+    def test_level1_ci_harness_revision_is_paired(self):
+        action = REPO_ROOT / ".github/actions/checkout-agent-harness/action.yml"
+        text = _read_repo_text(action)
+        assert re.search(r"^        ref: [0-9a-f]{40}$", text, re.MULTILINE)
+        consumers = {"agent-integration.yml", "ubuntu.yml", "ubuntu-cuda.yml",
+                     "macos.yml", "windows.yml"}
+        workflows = list((REPO_ROOT / ".github/workflows").glob("*.yml"))
+        assert consumers <= {workflow.name for workflow in workflows}
+        for workflow in workflows:
+            source = _read_repo_text(workflow)
+            assert "repository: Asher-1/CLI-Anything" not in source, workflow
+            if workflow.name in consumers:
+                assert source.count("uses: ./.github/actions/checkout-agent-harness") == 1
+
+    def test_level1_ci_macos_cache_wiring(self):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/macos.yml")
+        saves = re.findall(
+            r"^      - name: Save compiler cache \(stash\)\n(.*?)(?=^      - name:|\Z)",
+            source, re.MULTILINE | re.DOTALL)
+        assert len(saves) == 2
+        for save in saves:
+            # The cache directory is hidden; artifact uploads otherwise omit it.
+            assert "include-hidden-files: true" in save
+            assert "compression-level: 0" in save
+            assert "path: ${{ env.CCACHE_DIR }}" in save
+            assert "!cancelled()" in save
+        assert source.count("ccache -M 10G") == 2
+        assert source.count("ccache -z") == 2
+        assert source.count("trap 'ccache -s' EXIT") == 2
+
+    def test_level1_ci_cmake_pin_is_retained(self):
+        setup = _read_repo_text(REPO_ROOT / ".github/actions/setup-cmake/action.yml")
+        source = _read_repo_text(REPO_ROOT / "util/ci_utils.sh")
+        assert "Get-Command cmake -CommandType Application" in setup
+        assert "CLOUDVIEWER_CMAKE_BIN=$cmakeBin" in setup
+        assert "$env:GITHUB_ENV" in setup
+        assert '[[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]' in source
+        assert 'export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"' in source
+        workflow = _read_repo_text(REPO_ROOT / ".github/workflows/agent-integration.yml")
+        assert workflow.count("- '.github/actions/setup-cmake/**'") == 2
+        assert workflow.count("- '.github/workflows/macos.yml'") == 2
+
+    def test_level1_ci_cmake_regression_cannot_skip_in_ci(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("CI", "true")
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        with pytest.raises(pytest.fail.Exception, match="CI must execute"):
+            self.test_level1_ci_cmake_path_is_single_executable(tmp_path, "3.31.8", 0)
+
+    @pytest.mark.parametrize("version,exit_code", [
+        ("3.31.8", 0), ("3.31.7", 0), ("3.31.8", 7)])
+    def test_level1_ci_cmake_path_is_single_executable(self, tmp_path, version, exit_code):
+        pwsh = shutil.which("pwsh")
+        if pwsh is None:
+            if os.environ.get("CI") == "true":
+                pytest.fail("CI must execute the PowerShell action regression")
+            pytest.skip("PowerShell is unavailable locally")
+        setup = _read_repo_text(REPO_ROOT / ".github/actions/setup-cmake/action.yml")
+        # Execute the action itself, not a reimplementation of its resolution.
+        script = "\n".join(line[8:] for line in setup.split("      run: |\n", 1)[1].splitlines())
+        paths = [tmp_path / "preferred tools", tmp_path / "shadow tools"]
+        executables = []
+        for directory, candidate_version, candidate_exit in (
+                (paths[0], version, exit_code), (paths[1], "3.31.8", 0)):
+            directory.mkdir()
+            executable = directory / ("cmake.cmd" if IS_WINDOWS else "cmake")
+            if IS_WINDOWS:
+                text = (f"@echo off\necho cmake version {candidate_version}\n"
+                        f"exit /b {candidate_exit}\n")
+            else:
+                text = (f"#!/bin/sh\nprintf 'cmake version {candidate_version}\\n'\n"
+                        f"exit {candidate_exit}\n")
+            executable.write_text(text, encoding="utf-8")
+            executable.chmod(0o755)
+            executables.append(executable)
+        github_env = tmp_path / "github env"
+        env = dict(os.environ, GITHUB_ENV=str(github_env))
+        env["PATH"] = os.pathsep.join([str(path) for path in paths] + [env["PATH"]])
+        result = subprocess.run(
+            [pwsh, "-NoLogo", "-NoProfile", "-NonInteractive",
+             "-Command", script], env=env, capture_output=True, text=True, timeout=30)
+        recorded = github_env.read_text(encoding="utf-8-sig") if github_env.exists() else ""
+        if version == "3.31.8" and exit_code == 0:
+            assert result.returncode == 0, result.stdout + result.stderr
+            assert recorded.splitlines() == [f"CLOUDVIEWER_CMAKE_BIN={executables[0]}"]
+        else:
+            # A valid shadow must not hide a bad selected executable.
+            assert result.returncode != 0, result.stdout + result.stderr
+            assert "CLOUDVIEWER_CMAKE_BIN=" not in recorded
+
+    @pytest.mark.skipif(IS_WINDOWS, reason="Requires a Unix login shell")
+    @pytest.mark.parametrize("job,step_name", [
+        ("MacOS", "Config and build APP"),
+        ("build-wheel", "Config and build Wheel"),
+        ("build-wheel", "Install dependencies")])
+    def test_level1_ci_macos_failure_propagates(self, tmp_path, job, step_name):
+        source = _read_repo_text(REPO_ROOT / ".github/workflows/macos.yml")
+        job_source = source.split(f"  {job}:\n", 1)[1]
+        step = job_source.split(f"      - name: {step_name}\n", 1)[1]
+        step = step.split("      - name:", 1)[0]
+        assert "shell: bash -l {0}" in step
+        script = step.split("        run: |\n", 1)[1]
+        script = "\n".join(line[10:] for line in script.splitlines())
+        script = re.sub(r"\$\{\{.*?\}\}", "ci-placeholder", script)
+        script = script.replace("/tmp/macos-", str(tmp_path / "macos-"))
+        # Keep the workflow's shell/options; stub only expensive external work.
+        stubs = ("source() { :; }\nccache() { echo cache-stats; }\n"
+                 "print_ccache_key_inputs() { echo cache-key-inputs; }\n"
+                 "python() { :; }\npip() { :; }\ncmake() { :; }\n"
+                 "brew() { :; }\n"
+                 "build_gui_app() { return 23; }\n"
+                 "build_mac_wheel() { return 23; }\n"
+                 "install_python_dependencies() { return 23; }\n")
+        step_file = tmp_path / "step.sh"
+        step_file.write_text(stubs + script, encoding="utf-8")
+        env = dict(os.environ, CONDA_PREFIX=str(tmp_path), PKG_CONFIG_PATH="",
+                   GITHUB_ENV=str(tmp_path / "github-env"))
+        result = subprocess.run(["bash", "-l", str(step_file)], cwd=tmp_path,
+                                env=env, capture_output=True, text=True, timeout=30)
+        assert result.returncode == 23, result.stdout + result.stderr
+        recorded = Path(env["GITHUB_ENV"]).read_text() if Path(env["GITHUB_ENV"]).exists() else ""
+        assert "DEVEL_PKG_NAME=" not in recorded and "PIP_PKG_NAME=" not in recorded
+        if step_name.startswith("Config and build"):
+            assert "cache-key-inputs" in result.stdout
+            assert "cache-stats" in result.stdout  # EXIT stats survive failure.
+
+    @pytest.mark.parametrize("drift", ["extra", "missing"])
+    def test_level1_registry_drift_is_rejected(self, drift):
+        rows = [{"name": task, "command": command}
+                for task, command, _ in AICORE_BATCH_COMMANDS]
+        _assert_aicore_registry(rows)
+        if drift == "extra":
+            rows += [{"name": "llm", "command": "LLM_GENERATE"},
+                     {"name": "openpcdet", "command": "OPENPCDET_DETECT"}]
+        else:
+            rows.pop()
+        with pytest.raises(AssertionError, match="CLI/native batch contract mismatch"):
+            _assert_aicore_registry(rows)
 
     def test_level1_plugin_h_exists(self):
         assert PLUGIN_H.exists()
@@ -736,17 +1136,19 @@ class TestLevel2_CLIHarness:
         assert "ai" in r.stdout
         assert "plugin" in r.stdout
 
+    def test_level2_mcp_entrypoint_help(self):
+        r = subprocess.run(["cli-anything-acloudviewer-mcp", "--help"],
+                           capture_output=True, text=True, timeout=10)
+        assert r.returncode == 0, r.stderr
+        assert "--mode" in r.stdout and "--rpc-url" in r.stdout
+
     def test_level2_aicore_registry_complete(self):
         r = subprocess.run(
             ["cli-anything-acloudviewer", "--json", "--mode", "headless",
              "ai", "list"],
             capture_output=True, text=True, timeout=10)
         assert r.returncode == 0, r.stderr
-        rows = json.loads(r.stdout)
-        actual = {(row["name"], row["command"]) for row in rows}
-        expected = {(task, command)
-                    for task, command, _ in AICORE_BATCH_COMMANDS}
-        assert actual == expected
+        _assert_aicore_registry(json.loads(r.stdout))
 
     @pytest.mark.parametrize("command", [
         ["ai", "--help"],

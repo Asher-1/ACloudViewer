@@ -26,6 +26,17 @@ else
     set -euo pipefail
 fi
 
+# Keep the verified CI executable ahead of login-shell/Homebrew PATH changes.
+# Local builds without setup-cmake retain their existing tool selection.
+if [[ -n "${CLOUDVIEWER_CMAKE_BIN:-}" ]]; then
+    if [[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]; then
+        echo "Fixed CMake executable is unavailable: $CLOUDVIEWER_CMAKE_BIN" >&2
+        return 1 2>/dev/null || exit 1
+    fi
+    export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"
+    hash -r
+fi
+
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
 UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS
@@ -390,6 +401,42 @@ install_python_dependencies() {
         echo "Purge pip cache"
         python -m pip cache purge 2>/dev/null || true
     fi
+}
+
+# Normalize the selected Xcode path without changing toolchains, then print
+# the common ccache key inputs. Different image versions need not ship the
+# same compiler bytes: keep full digests so a miss can be attributed honestly.
+print_ccache_key_inputs() {
+    local compiler developer_dir digest metadata tool
+    local -a stat_fmt tools
+    if [[ "$(uname -s)" == Darwin ]]; then
+        developer_dir="${DEVELOPER_DIR:-$(xcode-select -p)}"
+        if [[ -d "$developer_dir/Contents/Developer" ]]; then
+            developer_dir="$developer_dir/Contents/Developer"
+        fi
+        developer_dir="$(cd "$developer_dir" && pwd -P)" || return 1
+        export DEVELOPER_DIR="$developer_dir"
+        stat_fmt=(-L -f 'mtime=%m size=%z')
+        tools=(cc c++)
+    else
+        stat_fmt=(-L -c 'mtime=%Y size=%s')
+        tools=(cc)
+    fi
+    echo "ccache key inputs: $(ccache --version | head -1)"
+    echo "  config: $(ccache -k compiler_check) sloppiness=$(ccache -k sloppiness)"
+    echo "  os: $(sw_vers -productVersion 2>/dev/null || uname -r) image=${ImageVersion:-unknown}"
+    for tool in "${tools[@]}"; do
+        if [[ "$(uname -s)" == Darwin ]]; then
+            compiler="$(xcrun -f "$tool")" || return 1
+        else
+            compiler="$(command -v "$tool")" || return 1
+        fi
+        metadata="$(stat "${stat_fmt[@]}" "$compiler")" || return 1
+        digest="$(shasum -a 256 "$compiler")" || return 1
+        echo "  compiler: $compiler $metadata sha256=${digest%% *}"
+        "$compiler" --version || return 1
+    done
+    echo "  env: $(env | grep -E '^(LANG|LC_[A-Z]+|DEVELOPER_DIR|MACOSX_DEPLOYMENT_TARGET)=' | sort | tr '\n' ' ')"
 }
 
 build_mac_wheel() {
