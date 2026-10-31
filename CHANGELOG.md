@@ -14,7 +14,9 @@ v3.9.5-Beta (Asher) - 08/04/2026
   stops on compilation failures, and uses O1 code generation with Release
   macros retained; manual O3 runs provide a same-revision baseline. Preserve
   build timing and compilation inventories, and skip disk cleanup when an
-  80 GiB free-space budget is already available.
+  80 GiB free-space budget is already available. Vendored dependency targets
+  are compiled before tracer initialization, so extraction covers first-party
+  translation units only; the complete build and query suite are unchanged.
 - Fix VTK LOD compilation with system VTK: include vtkWeakPointer.h directly.
 - Fix complete CodeQL builds with VTK 9.1: only use chart matrix padding on
   VTK 9.2+, preserving the existing gutter and borders on older versions.

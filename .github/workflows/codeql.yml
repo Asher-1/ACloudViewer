@@ -293,6 +293,25 @@ jobs:
             c++ --version
           } > ../codeql-evidence/environment.txt
 
+      # Vendored sources are filtered from SARIF, yet tracing them cost about 23% of
+      # extractor CPU and 30% of imported TRAP. Build them before the tracer starts;
+      # first-party sources still include their headers, so used declarations are extracted.
+      - name: Build vendored dependencies before tracing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t targets < <(cmake --build build --target help |
+            sed -nE 's/^\.\.\. ((ext_|3rdparty_)[A-Za-z0-9_+-]+|poisson_recon_lib)$/\1/p' |
+            grep -v '_autogen$')
+          if (( ${#targets[@]} == 0 )); then
+            echo "No vendored dependency targets found" >&2
+            exit 1
+          fi
+          printf '%s\n' "${targets[@]}" > codeql-evidence/untraced-targets.txt
+          /usr/bin/time -v -o codeql-evidence/untraced-build-time.txt \
+            cmake --build build --parallel "$PARALLEL_JOBS" --target "${targets[@]}" \
+            2>&1 | tee codeql-evidence/untraced-build.log
+
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.
       - name: Initialize CodeQL
         id: init-cpp
