@@ -399,9 +399,8 @@ AICORE_CAPI void aicore_yolo_options_free(aicore_yolo_options* opts) {
 
 AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
         aicore_yolo_options* opts, int mode) {
-    if (opts == nullptr ||
-        (mode != AICORE_YOLO_ATTENTION_UPSTREAM &&
-         mode != AICORE_YOLO_ATTENTION_F32))
+    if (opts == nullptr || (mode != AICORE_YOLO_ATTENTION_UPSTREAM &&
+                            mode != AICORE_YOLO_ATTENTION_F32))
         return -1;
     opts->attention_accumulation =
             static_cast<aicore_yolo_attention_accumulation>(mode);
@@ -410,7 +409,8 @@ AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
 
 AICORE_CAPI int aicore_yolo_options_get_attention_accumulation(
         const aicore_yolo_options* opts) {
-    return opts != nullptr ? static_cast<int>(opts->attention_accumulation) : -1;
+    return opts != nullptr ? static_cast<int>(opts->attention_accumulation)
+                           : -1;
 }
 
 AICORE_CAPI int aicore_yolo_context_attention_accumulation(

@@ -13,35 +13,50 @@ contracts. A focused pass does not establish complete upstream parity.
 
 ## Fresh observation (2026-10-29)
 
-### 队列实际结果补充
+### Actual queue results
 
-原 OCR v3/v4 已完整执行，v4 原 168 场景为 161 PASS、7 FAIL、0 SKIP；
-原 developer 2×1×2/threads=0、48 模型、241 输入不变。执行后 521 个名称身份
-复核和旧收据保护通过，orientation 的 rc=0 不绕过 failures=2 的结构化门。
-LLM 原生 schema、安装 HELP/MCP 两项、22 项契约和真实 CPU text/repeat/
-two-image/rejection/error 批次已有通过收据；live RPC 与原 release 门仍开放。
-`qal-canvas-render-v12/report.json` 的既有范围为 PASS、errors=[]，原 GL v13
-却失败于 Qt xcb 平台初始化，未执行 framebuffer 比较。所有历史 FAIL 保留。
+Original OCR v3/v4 completed. v4's original 168 scenarios give 161 PASS,
+7 FAIL, 0 SKIP; developer 2×1×2/threads=0, 48 models and 241 inputs are unchanged.
+After-run 521-name identity verification and old-receipt protection pass;
+orientation rc=0 does not bypass the structured failures=2 gate. Passing receipts
+exist for LLM native schema, two installed HELP/MCP checks, 22 contracts and
+real CPU text/repeat/two-image/rejection/error batches; live RPC and original
+release gates remain open. `qal-canvas-render-v12/report.json` is PASS,
+errors=[] in its existing scope. Original GL v13 fails Qt xcb initialization
+before framebuffer comparison. All historical FAILs remain.
 
-qOpenPCDet helper 已在 `openpcdet-target-recompile-v2.log` 强制重编译 5 个对象、
-重新链接并通过 CTest。qPythonRuntime 已取得严格 ODR RED，统一入口和双 TU
-实际引用/UTF-8/Qt 消费头回归已 GREEN；完整插件全 TU 重编译和严格 LTO 链接
-通过，真实 argv/QString 路径通过。最新 `plugin-targets-forced-recompile-v5.log`
-再次强制重编译 helper 全 5 对象及 qPythonRuntime 全 TU，严格 -flto/-Werror=odr
-链接和随后 2/2 CTest 通过。新库真实 argv 正/负例与 QString 诊断再次执行。
-原 normal_distribution 的 Float32 断言与当前 double core 不一致而再次失败，
-保留 FAIL，不称全部 Python 回归通过。
-Relate 已从有效七路由 RED 到候选 GREEN：两个 CUDA TU 编译/链接、四链重放、
-三后端各 256 数值和七路由均通过；新 host 单体库另行编译/链接，28 个
-sample-0 真消费者组合 RAFO 字节一致。两份消费者收据保留四项 Vulkan p95
-超过原 1.05 门和 large-F32 缺失，不称独立 checkpoint/冻结 release 验收闭合。
-原 OCR 七项失败已核对实际指标与原判定分支：图级 Q8 的 stored 对照通过不
-清除 source 概率失败；orientation 两个 FAIL 来自 text equality，不是方向
-阈值判定；页/字段的 WER 与 F16 检测/完整流水线门仍 FAIL。未改变任何原门。
-正式 harness 的 RPC `methods` 当前连接被拒绝；`info` 元数据不算 live RPC
-成功。具体收据和剩余门由 `TODO.md`、`OCR_RELEASE_GATES.md` 与 Relate owner 持有。
+`openpcdet-target-recompile-v2.log` forces all 5 qOpenPCDet helper objects to
+recompile/relink and passes CTest. qPythonRuntime has strict ODR RED and GREEN
+for unified entry, real dual-TU references, UTF-8 and Qt consumer headers;
+all-plugin-TU rebuild/strict-LTO link and real argv/QString pass.
+`plugin-targets-forced-recompile-v5.log` repeats all 5 helper objects and all
+qPythonRuntime TUs, retains -flto/-Werror=odr and passes subsequent 2/2 CTest.
+New-library argv positive/negative and QString diagnostics were rerun.
+Original normal_distribution exact Float32 assertions failed again before
+changes; logs remain. The user then approved only this fixture correction:
+identify ScalarType at an independent ScalarField boundary and convert NumPy
+expectations exactly, without tolerance. The real script exits 0 (v6), followed
+by 2/2 CTest. Core config/API/model gates remain unchanged; only this current
+Double-build path is demonstrated.
+Relate progressed from valid seven-route RED to candidate GREEN: two CUDA TU
+builds/links, four-chain replay, 256 numeric cases per backend and all seven
+routes pass. An independent monolithic host library was built/linked; all 28
+sample-0 real-consumer combinations are RAFO byte-identical. Both receipts
+retain four Vulkan p95 failures above 1.05 and missing large-F32; independent
+checkpoint/frozen-release acceptance is not closed.
+The seven original OCR failures were checked against real metrics/branches:
+graph Q8 stored comparison does not clear source-probability failure;
+orientation's two failures are text equality, not rotation thresholds.
+Page/field WER and F16 detection/full-pipeline gates remain FAIL; no original
+gate changed. Formal RPC harness `methods` is connection-refused; `info`
+metadata is not live RPC success. Default registry remains 18 entries and
+rejects llm; explicit workspace harness native HELP returns LLM_GENERATE,
+batch/1 and 18 options. No global installation changed; source schema does
+not clear default-package/live-RPC gaps. Remaining gates are owned by
+`TODO.md`, `OCR_RELEASE_GATES.md` and Relate.
 
-以下文字保留较早观察时边界，旧待机进度已被上述实际结果取代。
+Earlier observations below retain their original boundary; actual results
+above supersede stale waiting progress.
 
 The corresponding-module continuation freshly re-runs the actual plugin's main
 config, review save/reopen/navigation and existing model-free workspace test:
@@ -91,6 +106,50 @@ lock. Latest OCR observation is 130/168 with no final verdict; original source,
 model, numeric/performance and baseline gates remain unchanged.
 
 ## Latest authorized scoped continuation (2026-10-28)
+
+### Executable registry inventory (stage 0)
+
+`core/AICore/tools/upstream_inventory.py` extracts the pinned
+`cd26942a007b6ce7bd521de801a6cfd455d7fd9b` registry from Git objects without
+executing upstream code: 204 active `models.yaml` rows over 91 loader families.
+Unregistered YAML files and loader-only families are listed separately and are
+not active defaults. The pinned llama archive `707616fe` (SHA-256 verified) adds
+162 architectures, converter roles/classes, tool directories with their CMake
+conditions, server routes and registered mtmd sources.
+
+With `--manifest`, a row is consumed only when one validation scenario consumes
+every URL checkpoint of that row through assets pinned by exact URL and SHA-256.
+File-name matches, mirrors and digest-less pins never bind. A URL alias binds
+only when its downloaded bytes equal a pinned asset; the PP-OCR classifier
+`v0.2.2` alias was re-downloaded and matched `cf443393...` (582663 bytes).
+The receipt `upstream-inventory-v4-manifest-aliases.json` is **PARTIAL**:
+6/204 rows (PP-OCRv4, Japanese, PP-OCRv5 and PP-OCRv6 Tiny/Small/Medium) have
+an exact-checkpoint scenario; 195 rows have no pinned source checkpoint; Florence-2,
+Grounding-DINO API and the remote server have no URL checkpoint. Several
+OCR source pins still name the historical `745f6c35` audit revision; their URL and
+digest are the identity. A consumed checkpoint is not a passed numeric gate,
+default-option check, UI path or release verdict. The current llama owner build
+produces `libllama`/`libmtmd` only; common, tools, server and video input are
+not built. The current catalog dump also has 200/670 rows on mutable
+`resolve/main` URLs and 480 rows without a declared size.
+
+The subsequent fail-closed receipt `upstream-inventory-v5-declarations.json`
+corrects the v4 binding scope: `input_ids` alone only declares dependencies.
+Its 6 matching checkpoint declarations do not prove an executable inference
+consumer; all 204 inference-consumer qualifications remain unverified. The tool
+now separates `declared_consumer` from `consumer` and requires local byte/size
+verification before using an alias. Negative tests reject a fabricated digest,
+corrupt alias bytes and dependency-only consumer claims. v4 remains retained;
+its 6/204 count is not execution evidence.
+
+`upstream-inventory-v6-inputs.json` rebinds the inventory to the current owning
+manifest after adding the four original Chinese-word/book input dependencies.
+It remains **PARTIAL**, with 204 active rows, 91 families, 162 architectures
+and all 204 inference-consumer qualifications unverified. The fresh inventory
+suite is 31/31; input completeness and exact checkpoint declarations do not
+clear model-family execution, default, license, UI or release gates. The original
+seven OCR failures have passing new mixed-precision subset candidates, but the
+parallel full matrix and original release vetoes remain open; see the OCR ledger.
 
 Against current upstream `cd26942a007b6ce7bd521de801a6cfd455d7fd9b`, main config
 now passes in `upstream-cd26942-config-green-v8.json`. Three-state review,

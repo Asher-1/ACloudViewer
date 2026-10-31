@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include "../model.h"
@@ -24,10 +31,14 @@ struct second : model {
     dense_center_cache center_cache;
     sparse_graph_cache sparse_cache;
 
-    bool load(const std::string & gguf_path, const std::string & device, int n_threads) override;
-    bool forward(const float * points, int32_t n_points, int32_t point_dim,
-                 std::vector<detection> & detections,
-                 const tap_sink & sink = {}) override;
+    bool load(const std::string& gguf_path,
+              const std::string& device,
+              int n_threads) override;
+    bool forward(const float* points,
+                 int32_t n_points,
+                 int32_t point_dim,
+                 std::vector<detection>& detections,
+                 const tap_sink& sink = {}) override;
 };
 
-} // namespace openpcdet
+}  // namespace openpcdet

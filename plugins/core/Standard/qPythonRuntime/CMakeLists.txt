@@ -39,9 +39,7 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
 
   if(PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EMBEDDED_MODULES)
-    if (WIN32) # fix duplicated defined issues in windows
-      target_link_options(${PROJECT_NAME} PUBLIC "/force:multiple")
-    endif ()
+    # Shared converter declarations resolve ODR mismatches; duplicate symbols must fail linking.
     embed_cvcorelib_in(${PROJECT_NAME})
     embed_pycc_in(${PROJECT_NAME})
     # When embedding pycc, we need to link Qt OpenGL libraries
@@ -53,13 +51,7 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
   endif()
 
   target_link_libraries(${PROJECT_NAME} pybind11::embed)
-  set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON CXX_VISIBILITY_PRESET hidden)
-  
-  # Suppress ODR (One Definition Rule) warnings from pybind11 template instantiations
-  # These warnings are common with pybind11 and typically don't indicate real issues
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9.0")
-    target_link_options(${PROJECT_NAME} PRIVATE -Wno-odr)
-  endif()
+  qpythonruntime_configure_bindings(${PROJECT_NAME})
 
   add_subdirectory(tests)
   add_subdirectory(docs)

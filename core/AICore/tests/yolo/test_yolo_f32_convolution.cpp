@@ -1,4 +1,12 @@
-// Generic convolution lowering must not silently quantize YOLO F32 models to F16.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Generic convolution lowering must not silently quantize YOLO F32 models to
+// F16.
 #include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
@@ -11,7 +19,13 @@
 #include "gguf.h"
 #include "tasks/yolo/yolo_graph.hpp"
 
-#define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL %d: %s\n", __LINE__, #x); return 1; } } while (0)
+#define CHECK(x)                                                 \
+    do {                                                         \
+        if (!(x)) {                                              \
+            std::fprintf(stderr, "FAIL %d: %s\n", __LINE__, #x); \
+            return 1;                                            \
+        }                                                        \
+    } while (0)
 
 int run(bool depthwise, const char* device, int size) {
     QTemporaryDir temp;
@@ -20,13 +34,15 @@ int run(bool depthwise, const char* device, int size) {
     ggml_context* weights = ggml_init({1024 * 1024, nullptr, false});
     CHECK(weights);
     const int output_channels = depthwise ? 3 : size == 1 ? 1 : 16;
-    ggml_tensor* kernel = ggml_new_tensor_4d(weights, GGML_TYPE_F32, size, size,
-                                            depthwise ? 1 : 3, output_channels);
+    ggml_tensor* kernel =
+            ggml_new_tensor_4d(weights, GGML_TYPE_F32, size, size,
+                               depthwise ? 1 : 3, output_channels);
     ggml_set_name(kernel, "op.0.w");
     std::vector<float> coefficients(ggml_nelements(kernel));
     for (size_t i = 0; i < coefficients.size(); ++i)
         coefficients[i] = float((int(i * 29 % 127) - 63) / 97.0);
-    std::copy(coefficients.begin(), coefficients.end(), static_cast<float*>(kernel->data));
+    std::copy(coefficients.begin(), coefficients.end(),
+              static_cast<float*>(kernel->data));
     gguf_context* file = gguf_init_empty();
     CHECK(file);
     gguf_set_val_str(file, "yolo.task", "classify");
@@ -57,7 +73,8 @@ int run(bool depthwise, const char* device, int size) {
     std::unique_ptr<yolo::Session, decltype(&yolo::free_session)> session(
             yolo::create_session(path, device, options), &yolo::free_session);
     CHECK(session);
-    // Rebuild the canvas with the same weights and inputs not representable in F16.
+    // Rebuild the canvas with the same weights and inputs not representable in
+    // F16.
     for (int width : {32, 16, 32}) {
         CHECK(yolo::session_ensure_canvas(session.get(), width, 32));
         const int plane = width * 32;
@@ -71,7 +88,8 @@ int run(bool depthwise, const char* device, int size) {
                                 actual.size() * sizeof(float));
         float error = 0;
         for (int i = 0; i < int(actual.size()); ++i) {
-            // Independent analytical NCHW convolution; no ggml or production helper.
+            // Independent analytical NCHW convolution; no ggml or production
+            // helper.
             const int oc = i / plane, x = i % width, y = (i % plane) / width;
             double sum = 0;
             const int channels = depthwise ? 1 : 3;
@@ -80,10 +98,14 @@ int run(bool depthwise, const char* device, int size) {
                     for (int kx = 0; kx < size; ++kx) {
                         const int sx = x + kx - size / 2;
                         const int sy = y + ky - size / 2;
-                        if (sx < 0 || sx >= width || sy < 0 || sy >= 32) continue;
+                        if (sx < 0 || sx >= width || sy < 0 || sy >= 32)
+                            continue;
                         const int channel = depthwise ? oc : ic;
-                        const size_t wi = ((oc * channels + ic) * size + ky) * size + kx;
-                        sum += double(pixels[channel * plane + sy * width + sx]) * coefficients[wi];
+                        const size_t wi =
+                                ((oc * channels + ic) * size + ky) * size + kx;
+                        sum += double(pixels[channel * plane + sy * width +
+                                             sx]) *
+                               coefficients[wi];
                     }
                 }
             }
@@ -91,14 +113,16 @@ int run(bool depthwise, const char* device, int size) {
             error = std::max(error, std::abs(actual[i] - expected));
         }
         std::printf("F32 %s k=%d canvas=%dx32 max_error=%.9g\n",
-                     depthwise ? "depthwise" : "convolution", size, width, error);
+                    depthwise ? "depthwise" : "convolution", size, width,
+                    error);
         CHECK(error < 2e-6f);
     }
     return 0;
 }
 
-// F16 convolution must consume the GGUF's original F32 bias without narrowing before ADD.
-// Rounding ±2048.25 to ±2048 in production lowering changes this analytical result from ±0.25 to 0.
+// F16 convolution must consume the GGUF's original F32 bias without narrowing
+// before ADD. Rounding ±2048.25 to ±2048 in production lowering changes this
+// analytical result from ±0.25 to 0.
 int run_f16_bias(const char* device) {
     QTemporaryDir temp;
     CHECK(temp.isValid());
@@ -106,7 +130,8 @@ int run_f16_bias(const char* device) {
     auto* weights = ggml_init({1024 * 1024, nullptr, false});
     CHECK(weights);
     constexpr int channels = 16;
-    auto* kernel = ggml_new_tensor_4d(weights, GGML_TYPE_F16, 1, 1, 3, channels);
+    auto* kernel =
+            ggml_new_tensor_4d(weights, GGML_TYPE_F16, 1, 1, 3, channels);
     auto* bias = ggml_new_tensor_1d(weights, GGML_TYPE_F32, channels);
     ggml_set_name(kernel, "op.0.w");
     ggml_set_name(bias, "op.0.b");
@@ -152,11 +177,14 @@ int run_f16_bias(const char* device) {
         CHECK(yolo::session_run(session.get(), pixels.data()));
         std::vector<float> actual(plane * channels);
         CHECK(session->output->type == GGML_TYPE_F32);
-        ggml_backend_tensor_get(session->output, actual.data(), 0, actual.size() * sizeof(float));
+        ggml_backend_tensor_get(session->output, actual.data(), 0,
+                                actual.size() * sizeof(float));
         for (size_t i = 0; i < actual.size(); ++i) {
             const float expected = (i / plane) % 2 ? -0.25f : 0.25f;
             if (actual[i] != expected) {
-                std::fprintf(stderr, "F16 weight/F32 bias device=%s canvas=%dx32 index=%zu actual=%.9g expected=%.9g\n",
+                std::fprintf(stderr,
+                             "F16 weight/F32 bias device=%s canvas=%dx32 "
+                             "index=%zu actual=%.9g expected=%.9g\n",
                              device, width, i, actual[i], expected);
                 return 1;
             }
@@ -165,9 +193,9 @@ int run_f16_bias(const char* device) {
     return 0;
 }
 
-// Fixed tensor addresses/shapes simulate reuse by a new model after context destruction;
-// different owners must restage weights. This proves CUDA cache identity only, not
-// real-checkpoint accuracy or performance qualification.
+// Fixed tensor addresses/shapes simulate reuse by a new model after context
+// destruction; different owners must restage weights. This proves CUDA cache
+// identity only, not real-checkpoint accuracy or performance qualification.
 int run_f16_plan_owner(const char* device) {
     auto backend = yolo::init_backend_ctx(1, device);
     if (!backend.is_cuda) {
@@ -178,32 +206,43 @@ int run_f16_plan_owner(const char* device) {
             ggml_init({1024 * 1024, nullptr, true}), &ggml_free);
     CHECK(context);
     constexpr int width = 16, channels = 16;
-    auto* weights = ggml_new_tensor_4d(context.get(), GGML_TYPE_F16, 1, 1, 3, channels);
-    auto* input = ggml_new_tensor_4d(context.get(), GGML_TYPE_F16, width, width, 3, 1);
-    auto* output = ggml_conv_2d_direct(context.get(), weights, input, 1, 1, 0, 0, 1, 1);
+    auto* weights =
+            ggml_new_tensor_4d(context.get(), GGML_TYPE_F16, 1, 1, 3, channels);
+    auto* input = ggml_new_tensor_4d(context.get(), GGML_TYPE_F16, width, width,
+                                     3, 1);
+    auto* output = ggml_conv_2d_direct(context.get(), weights, input, 1, 1, 0,
+                                       0, 1, 1);
     CHECK(output && output->type == GGML_TYPE_F16);
     auto* graph = ggml_new_graph(context.get());
     ggml_build_forward_expand(graph, output);
-    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)> buffer(
-            ggml_backend_alloc_ctx_tensors(context.get(), backend.gpu), &ggml_backend_buffer_free);
+    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
+            buffer(ggml_backend_alloc_ctx_tensors(context.get(), backend.gpu),
+                   &ggml_backend_buffer_free);
     CHECK(buffer);
     std::vector<ggml_fp16_t> pixels(width * width * 3, ggml_fp32_to_fp16(1.0f));
-    ggml_backend_tensor_set(input, pixels.data(), 0, pixels.size() * sizeof(ggml_fp16_t));
-    std::vector<ggml_fp16_t> coefficients(channels * 3), actual(width * width * channels);
+    ggml_backend_tensor_set(input, pixels.data(), 0,
+                            pixels.size() * sizeof(ggml_fp16_t));
+    std::vector<ggml_fp16_t> coefficients(channels * 3),
+            actual(width * width * channels);
     for (uint64_t owner : {uint64_t(101), uint64_t(102), uint64_t(103)}) {
         const float weight = owner == 101 ? 1.0f : owner == 102 ? 2.0f : -1.0f;
-        std::fill(coefficients.begin(), coefficients.end(), ggml_fp32_to_fp16(weight));
+        std::fill(coefficients.begin(), coefficients.end(),
+                  ggml_fp32_to_fp16(weight));
         ggml_backend_tensor_set(weights, coefficients.data(), 0,
                                 coefficients.size() * sizeof(ggml_fp16_t));
         std::memcpy(&output->op_params[8], &owner, sizeof(owner));
-        CHECK(ggml_backend_graph_compute(backend.gpu, graph) == GGML_STATUS_SUCCESS);
+        CHECK(ggml_backend_graph_compute(backend.gpu, graph) ==
+              GGML_STATUS_SUCCESS);
         ggml_backend_synchronize(backend.gpu);
-        ggml_backend_tensor_get(output, actual.data(), 0, actual.size() * sizeof(ggml_fp16_t));
+        ggml_backend_tensor_get(output, actual.data(), 0,
+                                actual.size() * sizeof(ggml_fp16_t));
         for (const auto value : actual) {
             const float expected = 3.0f * weight;
             if (ggml_fp16_to_fp32(value) != expected) {
-                std::fprintf(stderr, "plan owner=%llu actual=%.9g expected=%.9g\n",
-                             static_cast<unsigned long long>(owner), ggml_fp16_to_fp32(value), expected);
+                std::fprintf(stderr,
+                             "plan owner=%llu actual=%.9g expected=%.9g\n",
+                             static_cast<unsigned long long>(owner),
+                             ggml_fp16_to_fp32(value), expected);
                 return 1;
             }
         }

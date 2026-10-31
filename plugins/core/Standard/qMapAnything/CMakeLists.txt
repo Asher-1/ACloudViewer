@@ -25,7 +25,7 @@ if( PLUGIN_STANDARD_QMAPANYTHING )
 
     # Link to libAICore.so — ggml is PRIVATE inside AICore, not needed here
     target_link_libraries(${PROJECT_NAME} AICore)
-    target_link_libraries(${PROJECT_NAME} Eigen3::Eigen)
+    target_link_libraries(${PROJECT_NAME} 3rdparty_eigen3)
     target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Concurrent)
 
     if(BUILD_UNIT_TESTS)

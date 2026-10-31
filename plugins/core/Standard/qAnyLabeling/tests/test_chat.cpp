@@ -204,9 +204,9 @@ int main(int argc, char** argv) {
             local.maxTokens = 256;
             done = 0;
             streamed.clear();
-            QMetaObject::Connection stop = QObject::connect(
-                    &client, &ChatServiceClient::textReceived,
-                    [&](const QString&) { client.cancel(); });
+            QMetaObject::Connection stop =
+                    QObject::connect(&client, &ChatServiceClient::textReceived,
+                                     [&](const QString&) { client.cancel(); });
             client.complete(local, QJsonArray{QJsonObject{
                                            {"role", "user"},
                                            {"content",
@@ -234,8 +234,9 @@ int main(int argc, char** argv) {
             while (drain.elapsed() < 1500)
                 QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
         } else {
-            std::puts("local provider generation: catalog model not cached, "
-                      "skipped");
+            std::puts(
+                    "local provider generation: catalog model not cached, "
+                    "skipped");
         }
         local.model = "SmolVLM-500M-Instruct-Q8_0.gguf";
         if (LocalChatEngine::missingAssets(local.model, &missing, &error) &&
@@ -256,8 +257,7 @@ int main(int argc, char** argv) {
             done = 0;
             client.complete(local, QJsonArray{message});
             REQUIRE(waitLong([&]() { return done == 1; }));
-            REQUIRE(finalError.isEmpty() &&
-                    text.toLower().contains("red"));
+            REQUIRE(finalError.isEmpty() && text.toLower().contains("red"));
             // A text-only model rejects images with a typed error.
             local.model = "qwen2.5-0.5b-instruct-q8_0.gguf";
             done = 0;
@@ -791,9 +791,12 @@ int main(int argc, char** argv) {
                 qPrintable(mode), qPrintable(surface.name()),
                 qPrintable(text.name()), qPrintable(exportColor.name()),
                 qPrintable(window->palette().color(QPalette::Window).name()),
-                qPrintable(QApplication::palette().color(QPalette::Window).name()),
-                qPrintable(QApplication::style()->standardPalette()
-                                   .color(QPalette::Window).name()),
+                qPrintable(
+                        QApplication::palette().color(QPalette::Window).name()),
+                qPrintable(QApplication::style()
+                                   ->standardPalette()
+                                   .color(QPalette::Window)
+                                   .name()),
                 window->styleSheet().isEmpty());
         REQUIRE(surface == QColor(mode == "dark" ? "#2c2c2e" : "#F9F9F9") &&
                 text == QColor(mode == "dark" ? "#f5f5f7" : "#1d1d1f") &&

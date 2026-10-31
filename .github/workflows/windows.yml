@@ -397,6 +397,15 @@ jobs:
           }
           
           Write-Host "C++ unit tests passed successfully."
+      - name: Run qPythonRuntime native tests
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\util\ci_utils.ps1
+          $buildDir = Join-Path $env:SRC_DIR "build"
+          $dllDir = Join-Path $buildDir "bin\${{ matrix.CONFIG }}"
+          $env:PATH = "$dllDir;$env:PATH"
+          Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config "${{ matrix.CONFIG }}"
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in
         # the UI). if: always() + continue-on-error: upload even when the build
@@ -680,6 +689,8 @@ jobs:
           # Run integration tests; a missing binary must fail, not skip
           $env:ACV_REQUIRE_BINARY = "1"
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$env:ACV_BINARY"
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
           # Cleanup

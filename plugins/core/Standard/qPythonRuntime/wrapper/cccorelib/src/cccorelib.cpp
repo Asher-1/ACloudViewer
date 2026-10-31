@@ -332,6 +332,9 @@ void define_cccorelib(py::module &m)
     // SquareMatrix
 }
 
+// Python module initialization uses a slots identifier; mask Qt's macro only here.
+#pragma push_macro("slots")
+#undef slots
 #ifdef USE_EMBEDDED_MODULES
 #include <algorithm>
 #include <pybind11/embed.h>
@@ -345,3 +348,4 @@ PYBIND11_MODULE(cccorelib, m)
     define_cccorelib(m);
 }
 #endif
+#pragma pop_macro("slots")

@@ -7,13 +7,12 @@
 
 #include "OpenPCDetWorker.h"
 
+#include <QtCompat.h>
+#include <ecvPointCloud.h>
+
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
-
-#include <QtCompat.h>
-
-#include <ecvPointCloud.h>
 
 #ifdef AICore_ENABLED
 #include "aicore/openpcdet_capi.h"
@@ -68,8 +67,8 @@ bool fillResult(aicore_openpcdet_ctx* ctx,
         out.heading = d.heading;
         out.score = d.score;
         out.label = d.label;
-        out.className = OpenPCDetHelpers::className(d.label,
-                                                    geometry.num_class);
+        out.className =
+                OpenPCDetHelpers::className(d.label, geometry.num_class);
         result.detections.append(out);
     }
 
@@ -149,8 +148,7 @@ bool OpenPCDetWorker::runInference() {
                                         m_settings.device.toUtf8().constData());
     aicore_openpcdet_options_set_threads(opts, m_settings.threads);
     if (m_settings.scoreThresh > 0.0f) {
-        aicore_openpcdet_options_set_score_thresh(opts,
-                                                  m_settings.scoreThresh);
+        aicore_openpcdet_options_set_score_thresh(opts, m_settings.scoreThresh);
         emit logMessage(tr("[OpenPCDet] Score threshold override: %1")
                                 .arg(m_settings.scoreThresh, 0, 'f', 2));
     }
@@ -173,8 +171,9 @@ bool OpenPCDetWorker::runInference() {
             m_settings.modelPath.toUtf8().constData(), opts);
     aicore_openpcdet_options_free(opts);
     if (!m_pendingCtx || !aicore_openpcdet_is_ready(m_pendingCtx)) {
-        const char* err = m_pendingCtx ? aicore_openpcdet_last_error(m_pendingCtx)
-                                       : "context allocation failed";
+        const char* err = m_pendingCtx
+                                  ? aicore_openpcdet_last_error(m_pendingCtx)
+                                  : "context allocation failed";
         emit logMessage(tr("[OpenPCDet] Model load failed: %1")
                                 .arg(err ? QString::fromUtf8(err)
                                          : tr("unknown error")));
@@ -190,18 +189,17 @@ bool OpenPCDetWorker::runInference() {
         emit logMessage(tr("[OpenPCDet] Cannot read the model geometry."));
         return false;
     }
-    emit logMessage(
-            tr("[OpenPCDet] Model ready: arch=%1, classes=%2, "
-               "point features=%3, grid=%4x%5x%6, voxel=(%7, %8, %9)")
-                    .arg(QString::fromUtf8(geometry.arch))
-                    .arg(geometry.num_class)
-                    .arg(geometry.num_point_features)
-                    .arg(geometry.grid_size_x)
-                    .arg(geometry.grid_size_y)
-                    .arg(geometry.grid_size_z)
-                    .arg(geometry.voxel_size_x, 0, 'f', 2)
-                    .arg(geometry.voxel_size_y, 0, 'f', 2)
-                    .arg(geometry.voxel_size_z, 0, 'f', 2));
+    emit logMessage(tr("[OpenPCDet] Model ready: arch=%1, classes=%2, "
+                       "point features=%3, grid=%4x%5x%6, voxel=(%7, %8, %9)")
+                            .arg(QString::fromUtf8(geometry.arch))
+                            .arg(geometry.num_class)
+                            .arg(geometry.num_point_features)
+                            .arg(geometry.grid_size_x)
+                            .arg(geometry.grid_size_y)
+                            .arg(geometry.grid_size_z)
+                            .arg(geometry.voxel_size_x, 0, 'f', 2)
+                            .arg(geometry.voxel_size_y, 0, 'f', 2)
+                            .arg(geometry.voxel_size_z, 0, 'f', 2));
     emit progressUpdate(1, 4);
 
     // ---- Input routing: scene dir / point file / active cloud -------------
@@ -232,22 +230,24 @@ bool OpenPCDetWorker::runInference() {
             return false;
         }
         havePoints = true;
-        emit logMessage(tr("[OpenPCDet] Loaded %1 point(s) from %2")
-                                .arg(nPoints)
-                                .arg(QFileInfo(m_settings.pointsFile)
-                                             .fileName()));
+        emit logMessage(
+                tr("[OpenPCDet] Loaded %1 point(s) from %2")
+                        .arg(nPoints)
+                        .arg(QFileInfo(m_settings.pointsFile).fileName()));
     } else if (m_cloud && m_cloud->size() > 0) {
         if (geometry.num_point_features >= 4 &&
             !cloudHasIntensityField(m_cloud)) {
-            emit logMessage(tr("[OpenPCDet] No intensity scalar field found — "
-                               "the 4th point feature is filled with 0."));
+            emit logMessage(
+                    tr("[OpenPCDet] No intensity scalar field found — "
+                       "the 4th point feature is filled with 0."));
         }
         if (geometry.num_point_features == 5) {
             // nuScenes checkpoints expect [x, y, z, intensity, ring/velocity];
             // the ring/velocity channel is not carried by ccPointCloud scalar
             // fields, so it is zero-filled.
-            emit logMessage(tr("[OpenPCDet] 5-feature (nuScenes) model: the "
-                               "5th point feature is filled with 0."));
+            emit logMessage(
+                    tr("[OpenPCDet] 5-feature (nuScenes) model: the "
+                       "5th point feature is filled with 0."));
         }
         if (!extractCloudPoints(m_cloud, geometry.num_point_features, &points,
                                 &nPoints, &error)) {
@@ -257,8 +257,9 @@ bool OpenPCDetWorker::runInference() {
         havePoints = true;
     }
     if (!havePoints && !sceneRun) {
-        emit logMessage(tr("[OpenPCDet] Select a non-empty point cloud or a "
-                           "point file first."));
+        emit logMessage(
+                tr("[OpenPCDet] Select a non-empty point cloud or a "
+                   "point file first."));
         return false;
     }
     if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
@@ -270,13 +271,12 @@ bool OpenPCDetWorker::runInference() {
     OpenPCDetRunResult result;
     result.modelPath = m_settings.modelPath;
     result.sourceLabel =
-            sceneRun
-                    ? QFileInfo(m_settings.sceneDir).fileName()
-                    : (!m_settings.pointsFile.isEmpty()
-                               ? QFileInfo(m_settings.pointsFile)
-                                         .completeBaseName()
-                               : (m_cloud ? m_cloud->getName()
-                                          : QStringLiteral("input")));
+            sceneRun ? QFileInfo(m_settings.sceneDir).fileName()
+                     : (!m_settings.pointsFile.isEmpty()
+                                ? QFileInfo(m_settings.pointsFile)
+                                          .completeBaseName()
+                                : (m_cloud ? m_cloud->getName()
+                                           : QStringLiteral("input")));
     if (sceneRun) {
         // Owned scene buffers come from aicore_openpcdet_load_scene_dir; the
         // point buffer (when available) stays caller-owned.
@@ -286,32 +286,30 @@ bool OpenPCDetWorker::runInference() {
                     m_settings.sceneDir.toUtf8().constData(), &scene,
                     &sceneError) != 0) {
             emit logMessage(tr("[OpenPCDet] Scene load failed: %1")
-                                    .arg(sceneError ? QString::fromUtf8(
-                                                            sceneError)
-                                                    : tr("unknown error")));
+                                    .arg(sceneError
+                                                 ? QString::fromUtf8(sceneError)
+                                                 : tr("unknown error")));
             aicore_openpcdet_free_buffer(sceneError);
             return false;
         }
         if (havePoints) {
             scene.points = points.data();
             scene.n_points = static_cast<int32_t>(nPoints);
-            scene.point_dim = static_cast<int32_t>(
-                    geometry.num_point_features);
+            scene.point_dim = static_cast<int32_t>(geometry.num_point_features);
         }
-        emit logMessage(
-                tr("[OpenPCDet] Scene ready: %1 camera(s), %2x%3x%4")
-                        .arg(scene.num_cameras)
-                        .arg(scene.image_height)
-                        .arg(scene.image_width)
-                        .arg(scene.image_channels));
+        emit logMessage(tr("[OpenPCDet] Scene ready: %1 camera(s), %2x%3x%4")
+                                .arg(scene.num_cameras)
+                                .arg(scene.image_height)
+                                .arg(scene.image_width)
+                                .arg(scene.image_channels));
         if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
             aicore_openpcdet_free_scene(&scene);
             emit logMessage(tr("[OpenPCDet] Cancelled before inference."));
             return false;
         }
         emit progressUpdate(3, 4);
-        const bool ok = detectSceneBuffer(m_pendingCtx, &scene, &result,
-                                          &error);
+        const bool ok =
+                detectSceneBuffer(m_pendingCtx, &scene, &result, &error);
         result.sceneDir = m_settings.sceneDir;
         aicore_openpcdet_free_scene(&scene);
         if (!ok) {
@@ -326,13 +324,12 @@ bool OpenPCDetWorker::runInference() {
             return false;
         }
     }
-    emit logMessage(
-            tr("[OpenPCDet] %1 box(es) from %2 point(s) in %3 ms "
-               "(device=%4)")
-                    .arg(result.detections.size())
-                    .arg(result.numPoints)
-                    .arg(result.runtimeMs, 0, 'f', 1)
-                    .arg(result.resolvedDevice));
+    emit logMessage(tr("[OpenPCDet] %1 box(es) from %2 point(s) in %3 ms "
+                       "(device=%4)")
+                            .arg(result.detections.size())
+                            .arg(result.numPoints)
+                            .arg(result.runtimeMs, 0, 'f', 1)
+                            .arg(result.resolvedDevice));
     emit progressUpdate(4, 4);
     emit resultReady(result);
     return true;
@@ -486,8 +483,7 @@ bool OpenPCDetWorker::extractCloudPoints(ccPointCloud* cloud,
     }
 
     const unsigned n = cloud->size();
-    outPoints->assign(static_cast<size_t>(n) *
-                              static_cast<size_t>(expectedDim),
+    outPoints->assign(static_cast<size_t>(n) * static_cast<size_t>(expectedDim),
                       0.0f);
     for (unsigned i = 0; i < n; ++i) {
         const CCVector3* p = cloud->getPoint(i);

@@ -13,10 +13,8 @@
 #include <QDebug>
 #include <QFileInfo>
 
-
-ccHObject* BuildDetectionGroup(
-        const OpenPCDetRunResult& result,
-        const QString& modelTag) {
+ccHObject* BuildDetectionGroup(const OpenPCDetRunResult& result,
+                               const QString& modelTag) {
     if (result.detections.isEmpty()) {
         qDebug() << "[OpenPCDet] BuildDetectionGroup: empty detections";
         return nullptr;
@@ -60,12 +58,10 @@ ccHObject* BuildDetectionGroup(
             continue;
         }
         for (int idx : wire) {
-            vertices->addPoint(CCVector3(static_cast<PointCoordinateType>(
-                                                 corners[3 * idx + 0]),
-                                         static_cast<PointCoordinateType>(
-                                                 corners[3 * idx + 1]),
-                                         static_cast<PointCoordinateType>(
-                                                 corners[3 * idx + 2])));
+            vertices->addPoint(CCVector3(
+                    static_cast<PointCoordinateType>(corners[3 * idx + 0]),
+                    static_cast<PointCoordinateType>(corners[3 * idx + 1]),
+                    static_cast<PointCoordinateType>(corners[3 * idx + 2])));
         }
 
         auto* box = new ccPolyline(vertices);
@@ -85,27 +81,25 @@ ccHObject* BuildDetectionGroup(
                          static_cast<qlonglong>(d.label));
         box->setMetaData(QStringLiteral("OpenPCDet/Score"),
                          static_cast<double>(d.score));
-        box->setMetaData(
-                QStringLiteral("OpenPCDet/Size"),
-                QStringLiteral("[%1,%2,%3]")
-                        .arg(d.dx, 0, 'f', 3)
-                        .arg(d.dy, 0, 'f', 3)
-                        .arg(d.dz, 0, 'f', 3));
+        box->setMetaData(QStringLiteral("OpenPCDet/Size"),
+                         QStringLiteral("[%1,%2,%3]")
+                                 .arg(d.dx, 0, 'f', 3)
+                                 .arg(d.dy, 0, 'f', 3)
+                                 .arg(d.dz, 0, 'f', 3));
         box->setMetaData(QStringLiteral("OpenPCDet/Heading"),
                          static_cast<double>(d.heading));
         group->addChild(box);
     }
-    qDebug() << "[OpenPCDet] BuildDetectionGroup:"
-             << result.detections.size() << "box(es) for" << modelTag;
+    qDebug() << "[OpenPCDet] BuildDetectionGroup:" << result.detections.size()
+             << "box(es) for" << modelTag;
     return group;
 }
 
-ccPointCloud* BuildAnnotatedCloud(
-        ccPointCloud* source,
-        const OpenPCDetRunResult& result,
-        const QString& modelTag,
-        unsigned* tintedOut,
-        QString* error) {
+ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
+                                  const OpenPCDetRunResult& result,
+                                  const QString& modelTag,
+                                  unsigned* tintedOut,
+                                  QString* error) {
     if (!source || result.detections.isEmpty()) {
         if (error) *error = QStringLiteral("empty source or detections");
         return nullptr;

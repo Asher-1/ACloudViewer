@@ -1,9 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // BaseBEVBackbone — the 2D backbone for PointPillar/SECOND/CenterPoint
 // (pcdet/models/backbones_2d/base_bev_backbone.py).
 //
 // Layout: a sequence of "levels". Each level is
 //     ZeroPad2d(1) -> Conv2d(stride, k=3, bias=False) -> BN -> ReLU
-//                  -> (layer_nums) x (Conv2d(k=3, pad=1, bias=False) -> BN -> ReLU)
+//                  -> (layer_nums) x (Conv2d(k=3, pad=1, bias=False) -> BN ->
+//                  ReLU)
 // followed by an upsampling "deblock" per level:
 //     ConvTranspose2d(stride, bias=False) -> BN -> ReLU
 // Final: concat all deblock outputs along the channel dim.
@@ -21,18 +29,18 @@
 //   broadcast over the channel dim (ne[2]).
 #pragma once
 
-#include "../gguf_loader.h"
-#include "../model.h"
-
 #include <string>
 #include <vector>
+
+#include "../gguf_loader.h"
+#include "../model.h"
 
 namespace openpcdet {
 
 struct conv_bn_block_weights {
-    ggml_tensor * conv_w    = nullptr;  // [KW, KH, IC, OC]
-    ggml_tensor * bn_scale  = nullptr;  // [OC]
-    ggml_tensor * bn_bias   = nullptr;  // [OC]
+    ggml_tensor *conv_w = nullptr;    // [KW, KH, IC, OC]
+    ggml_tensor *bn_scale = nullptr;  // [OC]
+    ggml_tensor *bn_bias = nullptr;   // [OC]
 };
 
 struct bev_backbone_weights {
@@ -46,32 +54,46 @@ struct bev_backbone_weights {
 
 // Reusable dense blocks for detector heads. They intentionally compose public
 // GGML operations instead of adding operations to the GGML submodule.
-ggml_tensor * build_conv_bn_relu(ggml_context * ctx,
-                                 const conv_bn_block_weights & weights,
-                                 ggml_tensor * input, int stride, int padding);
-ggml_tensor * build_conv_bn_relu_dilated(ggml_context * ctx,
-                                         const conv_bn_block_weights & weights,
-                                         ggml_tensor * input, int stride,
-                                         int padding, int dilation);
-ggml_tensor * build_conv_bias(ggml_context * ctx, ggml_tensor * weight,
-                              ggml_tensor * bias, ggml_tensor * input,
-                              int stride, int padding);
-ggml_tensor * build_conv_bias_dilated(ggml_context * ctx, ggml_tensor * weight,
-                                      ggml_tensor * bias, ggml_tensor * input,
-                                      int stride, int padding, int dilation);
+ggml_tensor *build_conv_bn_relu(ggml_context *ctx,
+                                const conv_bn_block_weights &weights,
+                                ggml_tensor *input,
+                                int stride,
+                                int padding);
+ggml_tensor *build_conv_bn_relu_dilated(ggml_context *ctx,
+                                        const conv_bn_block_weights &weights,
+                                        ggml_tensor *input,
+                                        int stride,
+                                        int padding,
+                                        int dilation);
+ggml_tensor *build_conv_bias(ggml_context *ctx,
+                             ggml_tensor *weight,
+                             ggml_tensor *bias,
+                             ggml_tensor *input,
+                             int stride,
+                             int padding);
+ggml_tensor *build_conv_bias_dilated(ggml_context *ctx,
+                                     ggml_tensor *weight,
+                                     ggml_tensor *bias,
+                                     ggml_tensor *input,
+                                     int stride,
+                                     int padding,
+                                     int dilation);
 
-bool load_bev_backbone_weights(model_file & file, const hparams & hp,
-                               bev_backbone_weights & w, std::string & err);
+bool load_bev_backbone_weights(model_file &file,
+                               const hparams &hp,
+                               bev_backbone_weights &w,
+                               std::string &err);
 
 // Build the backbone forward subgraph in `ctx`. `spatial` is the input BEV
 // tensor [nx, ny, C_in, N=1] (ggml ne order). Returns the output tensor
 // [nx_full, ny_full, num_bev_features, N] (concatenated deblock outputs at
 // the upsampled resolution). All intermediate taps are emitted via `tap`.
-ggml_tensor * build_bev_backbone_graph(ggml_context * ctx,
-                                       const bev_backbone_weights & w,
-                                       const hparams & hp,
-                                       ggml_tensor * spatial,
-                                       std::vector<ggml_tensor *> * taps = nullptr);
+ggml_tensor *build_bev_backbone_graph(
+        ggml_context *ctx,
+        const bev_backbone_weights &w,
+        const hparams &hp,
+        ggml_tensor *spatial,
+        std::vector<ggml_tensor *> *taps = nullptr);
 
 // Patch-count (OW*OH*N) ceiling for the ggml_conv_2d_direct fast path. The CPU
 // direct conv batches patches through a fixed 16MB work buffer and currently
@@ -89,4 +111,4 @@ void set_conv_direct_max_patches(int64_t max_patches);
 void set_bn_fuse_relu(bool enable);
 #endif
 
-} // namespace openpcdet
+}  // namespace openpcdet

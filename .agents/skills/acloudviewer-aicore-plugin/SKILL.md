@@ -10,6 +10,20 @@ current public headers, CMake, task catalogs, ggml patch manifest, validation
 reports, and tests are the executable source of truth. This skill is the
 integration gate, not a replacement for those owners.
 
+## Engineering Text Language
+
+- Use English for all new or modified engineering text in repository files:
+  source comments, documentation, diagnostic messages, CMake descriptions,
+  tests, and temporary validation scripts. Conversation language does not
+  change this file policy; temporary probes have no language exemption.
+- Preserve genuine Unicode test/input data and existing localized resources.
+  Prefer language-appropriate Unicode escapes for new test literals without
+  changing their runtime content. Source escapes must decode to real Unicode
+  and NUL characters, not literal backslash sequences. Do not translate payloads
+  to pass a text scan.
+- Wording cleanup must not rewrite historical reports, frozen models or
+  baselines, or numeric/performance acceptance gates.
+
 ## Read the Right Detail
 
 - [validation-gates.md](references/validation-gates.md): manifest schema,
@@ -104,6 +118,40 @@ Model-specific code remains task-private; Qt-free generic runtime helpers belong
 in AICore common code; Qt-aware reuse belongs in shared plugin API.
 
 ## Worker and UI Contract
+
+Plugin inference and download messages go to the application's existing
+console through `CVLog` / `aicore_inference_log::log`. No plugin-local log
+widget, nested log scroll area, or duplicate history buffer is permitted;
+absence of `std::cout` does not prove compliance. Keep input/sample actions and
+run/cancel/stage/progress visible at the supported minimum window size; scroll
+configuration only. A recoverable sample-cache miss starts shared preparation,
+not Error logging (GUI-thread `CVLog::Error` can open a modal dialog). Report
+real download/integrity/extraction failures, and discard results after closure.
+
+| Tempting shortcut | Required action |
+|---|---|
+| Keep or share a private log widget | Delete it; route messages to the existing application console |
+| Silence modal errors globally or change verbosity | Reject. Start shared preparation on a recoverable cache miss without Error logging; preserve Error for real failures |
+| Shrink a fixed-height whole-page scroll | Reject. Fix input/actions/progress outside the configuration scroll; verify their visible geometry |
+| Certify a first download using a warm cache or local demo | Reject. Cold evidence requires a previously absent root, one real shared ZIP download and verified extracted-member autofill; warm reuse is a separate test |
+| Hide the horizontal scrollbar to disguise clipped fields | Reject. Measure minimum widths, make fields shrink or reflow, and verify zero horizontal overflow with every field accessible |
+| Add plugin-private archive download or extraction | Reject. Call the existing repository's ensureDatasetReady and consume its datasetReady signal |
+
+If the sample cache is absent, call shared preparation: absence is not a failed
+operation and must not open an Error dialog. If transport, digest verification
+or extraction fails, keep the application's genuine Error path. An absent cache
+is not a reason to ask users to dismiss an Error dialog before downloading.
+
+For a narrow form, catalog text belongs in the combo popup; its longest label
+must not force the form's minimum width. Keep full options and their identities,
+shorten redundant labels or reflow rows, and test actual viewport/field geometry.
+Changing scrollbar visibility alone does not fix clipping.
+
+Closing or rejecting detaches the sample consumer. Reopening restores enabled
+actions from current busy/running state; it must not retain a disabled button
+from a completed preparation or accept results into a still-closed window.
+
+Deadline pressure does not waive any of these constraints.
 
 Contexts are created and destroyed on the worker thread. Results carry source
 identity and generation; stale results are discarded before DB/UI mutation.
@@ -252,6 +300,8 @@ clock or from different model/input/quantization rows.
 
 ## Review Checklist
 
+- [ ] New or modified engineering text is English, including comments and
+      temporary scripts; genuine Unicode payloads and historical evidence remain intact.
 - [ ] Change classified as existing consumer, model variant, new task, or pipeline.
 - [ ] One owner exists for model, cache, device, timing, error, and UI facts.
 - [ ] No plugin private ggml/task include, catalog source, downloader

@@ -1,10 +1,17 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "../model.h"
+#pragma once
 
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "../model.h"
 
 namespace openpcdet::ext {
 
@@ -14,16 +21,16 @@ namespace openpcdet::ext {
 // `heatmap` contains logits. Regression fields are shared across classes within
 // a head, matching OpenPCDet CenterHead.
 struct center_head_view {
-    const float * heatmap = nullptr;
-    const float * center = nullptr;
-    const float * center_z = nullptr;
-    const float * dimensions = nullptr;
-    const float * rotation = nullptr; // [cos, sin]
-    const float * velocity = nullptr; // optional [vx, vy]
-    const float * iou = nullptr;      // optional raw IoU logits, one per row
+    const float* heatmap = nullptr;
+    const float* center = nullptr;
+    const float* center_z = nullptr;
+    const float* dimensions = nullptr;
+    const float* rotation = nullptr;  // [cos, sin]
+    const float* velocity = nullptr;  // optional [vx, vy]
+    const float* iou = nullptr;       // optional raw IoU logits, one per row
     // Optional sparse coordinates [active_count, 3] = batch,y,x. When set,
     // decoding uses these rows instead of a dense height*width grid.
-    const int32_t * coordinates = nullptr;
+    const int32_t* coordinates = nullptr;
     int active_count = 0;
     int height = 0;
     int width = 0;
@@ -31,7 +38,7 @@ struct center_head_view {
     bool heatmap_is_probability = false;
     bool dimensions_are_linear = false;
     bool whc_layout = false;
-    std::vector<int32_t> class_mapping; // zero-based global class ids
+    std::vector<int32_t> class_mapping;  // zero-based global class ids
 };
 
 struct center_decode_params {
@@ -52,9 +59,9 @@ struct center_decode_params {
     std::vector<int32_t> class_nms_post_maxsizes;
 };
 
-bool decode_center_head(const center_head_view & head,
-                        const center_decode_params & params,
-                        std::vector<detection> & output,
-                        std::string & error);
+bool decode_center_head(const center_head_view& head,
+                        const center_decode_params& params,
+                        std::vector<detection>& output,
+                        std::string& error);
 
-} // namespace openpcdet::ext
+}  // namespace openpcdet::ext

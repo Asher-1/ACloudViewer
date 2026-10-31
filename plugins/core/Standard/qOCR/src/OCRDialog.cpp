@@ -379,8 +379,8 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
             this, &OCRDialog::showRunResult);
     connect(m_saveAllButton, &QPushButton::clicked, this,
             &OCRDialog::exportAllTables);
-    connect(m_preset, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int index) {
+    connect(m_preset, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int index) {
                 // Keep the language combo (test-data chooser) consistent with
                 // the selected recipe's recognition family.
                 const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(index);
@@ -436,13 +436,15 @@ QString OCRDialog::detFileName() const {
     // the only user-facing axis. The DB detector is script-agnostic.
     const aicore_ocr_preset_entry* p = currentPreset();
     return QStringLiteral("%1-%2.gguf")
-            .arg(QString::fromUtf8(p->det_stem), m_quant->currentData().toString());
+            .arg(QString::fromUtf8(p->det_stem),
+                 m_quant->currentData().toString());
 }
 
 QString OCRDialog::recFileName() const {
     const aicore_ocr_preset_entry* p = currentPreset();
     return QStringLiteral("%1-%2.gguf")
-            .arg(QString::fromUtf8(p->rec_stem), m_quant->currentData().toString());
+            .arg(QString::fromUtf8(p->rec_stem),
+                 m_quant->currentData().toString());
 }
 
 QString OCRDialog::layoutFileName() const {

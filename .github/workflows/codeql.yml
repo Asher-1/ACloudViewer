@@ -254,6 +254,7 @@ jobs:
             -DPLUGIN_STANDARD_QANYLABELING=OFF \
             -DPLUGIN_STANDARD_QMAPANYTHING=OFF \
             -DPLUGIN_STANDARD_QOPENPCDET=OFF \
+            -DPLUGIN_STANDARD_QINSTANTMESH=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

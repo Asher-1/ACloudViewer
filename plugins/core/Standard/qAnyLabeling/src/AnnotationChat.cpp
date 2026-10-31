@@ -1016,8 +1016,8 @@ public:
         provider = new QComboBox(this);
         provider->setObjectName(QStringLiteral("ChatProvider"));
         // "local" runs the AICore llm task in-process (aicore://llm).
-        const QStringList names{"custom", "anthropic", "deepseek",
-                                "google", "local",     "ollama",
+        const QStringList names{"custom", "anthropic",  "deepseek",
+                                "google", "local",      "ollama",
                                 "openai", "openrouter", "qwen"};
         const auto defaults = AnnotationChatConfig::defaultProviders();
         for (const auto& name : names)

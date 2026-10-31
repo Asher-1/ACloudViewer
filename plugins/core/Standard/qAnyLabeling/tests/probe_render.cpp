@@ -74,14 +74,19 @@ int main(int argc, char** argv) {
                 {"pixel_size", QFontInfo(font).pixelSize()},
                 {"family", QFontInfo(font).family()},
                 {"height", metrics.height()},
-                {"text_width", metrics.tightBoundingRect("occluded: True").width()}});
+                {"text_width",
+                 metrics.tightBoundingRect("occluded: True").width()}});
     }
     QFile runtime(output.filePath(QStringLiteral("qt-runtime.json")));
     if (!runtime.open(QIODevice::WriteOnly)) return 1;
-    runtime.write(QJsonDocument(QJsonObject{
-            {"qt_version", QString::fromLatin1(qVersion())},
-            {"logical_dpi", app.primaryScreen()->logicalDotsPerInch()},
-            {"use_96_dpi", QApplication::testAttribute(Qt::AA_Use96Dpi)},
-            {"fonts", fonts}}).toJson());
+    runtime.write(
+            QJsonDocument(
+                    QJsonObject{{"qt_version", QString::fromLatin1(qVersion())},
+                                {"logical_dpi",
+                                 app.primaryScreen()->logicalDotsPerInch()},
+                                {"use_96_dpi",
+                                 QApplication::testAttribute(Qt::AA_Use96Dpi)},
+                                {"fonts", fonts}})
+                    .toJson());
     return 0;
 }

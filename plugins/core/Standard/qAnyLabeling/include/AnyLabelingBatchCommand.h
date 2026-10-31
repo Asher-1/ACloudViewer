@@ -169,9 +169,10 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
     static QString cacheDir(const QString& taskName) {
         namespace B = ecvAICoreBatch;
         if (taskName == QLatin1String("attribute"))
-            return B::takeCString(aicore_attribute_model_cache_dir(), [](void* p) {
-                aicore_attribute_free_buffer(static_cast<char*>(p));
-            });
+            return B::takeCString(
+                    aicore_attribute_model_cache_dir(), [](void* p) {
+                        aicore_attribute_free_buffer(static_cast<char*>(p));
+                    });
         if (taskName.startsWith("depth"))
             return B::takeCString(aicore_depth_model_cache_dir(),
                                   aicore_depth_free_buffer);
@@ -207,7 +208,8 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
     static ecvAICoreBatch::ModelSource source(const QString& taskName,
                                               const QString& path) {
         const QByteArray name = QFileInfo(path).fileName().toUtf8();
-        // Local recipes have no published URL/digest; never fall back to the YOLO catalog or invent downloads.
+        // Local recipes have no published URL/digest; never fall back to the
+        // YOLO catalog or invent downloads.
         if (taskName == QLatin1String("attribute")) return {};
         if (taskName.startsWith("depth"))
             return ecvAICoreBatch::familySource(AICORE_MODEL_FAMILY_DEPTH,
@@ -263,7 +265,8 @@ struct CommandAnyLabelInfer : public ccCommandLineInterface::Command {
         if (taskName == QLatin1String("attribute")) {
             for (int i = 0; i < aicore_attribute_preset_count(); ++i) {
                 const auto* e = aicore_attribute_preset_at(i);
-                if (e) append(e->filename, e->display_name, nullptr, "attribute");
+                if (e)
+                    append(e->filename, e->display_name, nullptr, "attribute");
             }
         } else if (taskName.startsWith("rfdetr")) {
             for (int i = 0; i < aicore_rfdetr_model_count(); ++i) {

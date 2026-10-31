@@ -14,7 +14,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
@@ -155,6 +154,7 @@ protected:
     /** Esc intercept: confirm before closing when a task is running. */
     void keyPressEvent(QKeyEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void reject() override;
 
 private:
     enum class PendingAction { None, Run };
@@ -173,7 +173,8 @@ private:
     void startDownload(const OpenPCDetModelEntry& model);
     /** Update the scene preview of \p panel (empty path or unreadable
      *  payload clears the preview). */
-    void refreshScenePreview(OpenPCDetTaskPanel* panel, const QString& sceneDir);
+    void refreshScenePreview(OpenPCDetTaskPanel* panel,
+                             const QString& sceneDir);
     /** Fill the shared detection result table + summary label. */
     void updateResultTable(const OpenPCDetRunResult& result);
 
@@ -214,7 +215,6 @@ private:
     QPushButton* m_exportCsvBtn = nullptr;
     QTableWidget* m_resultTable = nullptr;
     QLabel* m_summaryLabel = nullptr;
-    QPlainTextEdit* m_log = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_progress = nullptr;
 

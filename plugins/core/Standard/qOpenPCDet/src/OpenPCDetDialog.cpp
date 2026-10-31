@@ -8,6 +8,9 @@
 #include "OpenPCDetDialog.h"
 
 #include <cvFileDialog.h>
+#include <ecvPluginDbNaming.h>
+#include <ecvPointCloud.h>
+#include <ecvScalarField.h>
 
 #include <QCloseEvent>
 #include <QDir>
@@ -15,10 +18,12 @@
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QScrollArea>
 #include <QSettings>
 #include <QShowEvent>
 #include <QSizePolicy>
@@ -26,15 +31,9 @@
 #include <QStackedWidget>
 #include <QTextStream>
 #include <QVBoxLayout>
-
-#include "QtCompat.h"
-
-#include <ecvPluginDbNaming.h>
-#include <ecvPointCloud.h>
-#include <ecvScalarField.h>
-
 #include <vector>
 
+#include "QtCompat.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -54,9 +53,10 @@ constexpr int kTaskStackIndexRole = Qt::UserRole + 10;
 // checkpoints. Order inside each group follows the AICore catalog.
 enum CheckpointGroup { GroupKitti = 0, GroupNuScenes = 1, GroupScene = 2 };
 
-CheckpointGroup groupForCheckpoint(const OpenPCDetHelpers::OpenPCDetCheckpoint& cp) {
-    if (OpenPCDetHelpers::inputKindForFilename(
-                cp.stem + QStringLiteral(".f16.gguf")) ==
+CheckpointGroup groupForCheckpoint(
+        const OpenPCDetHelpers::OpenPCDetCheckpoint& cp) {
+    if (OpenPCDetHelpers::inputKindForFilename(cp.stem +
+                                               QStringLiteral(".f16.gguf")) ==
         OpenPCDetHelpers::InputKind::Scene) {
         return GroupScene;
     }
@@ -106,11 +106,9 @@ OpenPCDetDialog::OpenPCDetDialog(QWidget* parent) : QDialog(parent) {
     setupUi();
     populatePanels();
     loadSettings();
-    // Content-driven minimum (font / DPI aware) instead of hard-coded
-    // pixels, so the dialog adapts to any platform and screen resolution.
-    const QSize hint = minimumSizeHint();
-    setMinimumSize(ecvAICoreUi::dpiScaled(hint.width()),
-                   ecvAICoreUi::dpiScaled(hint.height()));
+    // The configuration body scrolls; do not DPI-scale Qt's already scaled
+    // hint.
+    resize(ecvAICoreUi::dpiScaled(960), ecvAICoreUi::dpiScaled(600));
 }
 
 OpenPCDetDialog::~OpenPCDetDialog() { saveSettings(); }
@@ -179,10 +177,9 @@ void OpenPCDetDialog::setupUi() {
     // ---- Shared detection result table ------------------------------------
     m_resultTable = new QTableWidget(this);
     m_resultTable->setColumnCount(9);
-    m_resultTable->setHorizontalHeaderLabels({tr("Class"), tr("Score"),
-                                              tr("X"), tr("Y"), tr("Z"),
-                                              tr("Dx"), tr("Dy"), tr("Dz"),
-                                              tr("Heading")});
+    m_resultTable->setHorizontalHeaderLabels(
+            {tr("Class"), tr("Score"), tr("X"), tr("Y"), tr("Z"), tr("Dx"),
+             tr("Dy"), tr("Dz"), tr("Heading")});
     m_resultTable->verticalHeader()->setVisible(false);
     m_resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_resultTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -193,13 +190,6 @@ void OpenPCDetDialog::setupUi() {
                "confidence, box center (x,y,z), size (dx,dy,dz) and yaw"));
     rootLayout->addWidget(m_resultTable);
 
-    // ---- Log --------------------------------------------------------------
-    m_log = new QPlainTextEdit(this);
-    m_log->setReadOnly(true);
-    m_log->setMaximumHeight(ecvAICoreUi::dpiScaled(110));
-    m_log->setPlaceholderText(tr("Inference log"));
-    rootLayout->addWidget(m_log);
-
     // ---- Summary ----------------------------------------------------------
     m_summaryLabel = new QLabel(this);
     m_summaryLabel->setWordWrap(true);
@@ -208,8 +198,7 @@ void OpenPCDetDialog::setupUi() {
     rootLayout->addWidget(m_summaryLabel);
 
     // ---- Progress section -------------------------------------------------
-    ecvAICoreUi::setupProgressSection(rootLayout, m_downloadLabel,
-                                      m_progress);
+    ecvAICoreUi::setupProgressSection(rootLayout, m_downloadLabel, m_progress);
 
     // ---- Shared action row ------------------------------------------------
     auto* actionRow = new QHBoxLayout;
@@ -242,8 +231,8 @@ void OpenPCDetDialog::setupUi() {
                     m_progress->setValue(
                             static_cast<int>(received * 100 / total));
                     m_downloadLabel->setText(
-                            ecvModelDownloader::formatDownloadProgress(
-                                    received, total));
+                            ecvModelDownloader::formatDownloadProgress(received,
+                                                                       total));
                 }
             });
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -279,11 +268,17 @@ void OpenPCDetDialog::setupUi() {
 }
 
 void OpenPCDetDialog::populatePanels() {
-    const QVector<OpenPCDetHelpers::OpenPCDetCheckpoint> checkpoints =
-            OpenPCDetHelpers::catalogCheckpoints();
-    const QStringList groupTitles = {
-            tr("KITTI point cloud"), tr("nuScenes point cloud"),
-            tr("Multi-modal scene")};
+    QVector<OpenPCDetHelpers::OpenPCDetCheckpoint> checkpoints;
+    const auto catalog = OpenPCDetHelpers::catalogCheckpoints();
+    // Three fixed groups: O(n), preserving catalog order within each group.
+    // Interleaved catalog rows must not produce repeated navigation headers.
+    for (int group = GroupKitti; group <= GroupScene; ++group)
+        for (const auto& checkpoint : catalog)
+            if (int(groupForCheckpoint(checkpoint)) == group)
+                checkpoints.append(checkpoint);
+    const QStringList groupTitles = {tr("KITTI point cloud"),
+                                     tr("nuScenes point cloud"),
+                                     tr("Multi-modal scene")};
 
     auto addSectionHeader = [this](const QString& title) {
         auto* header = new QListWidgetItem(title, m_taskList);
@@ -318,6 +313,10 @@ void OpenPCDetDialog::populatePanels() {
         // the right (scene panels only).
         auto* contentRow = new QHBoxLayout;
         contentRow->setSpacing(ecvAICoreUi::hSpacing());
+        auto* inputRow = new QHBoxLayout;
+        inputRow->setSpacing(ecvAICoreUi::hSpacing());
+        auto* inputCol = new QVBoxLayout;
+        inputCol->setSpacing(ecvAICoreUi::tightVSpacing());
         auto* configCol = new QVBoxLayout;
         configCol->setSpacing(ecvAICoreUi::vSpacing());
 
@@ -327,11 +326,15 @@ void OpenPCDetDialog::populatePanels() {
         quantRow->setSpacing(ecvAICoreUi::hSpacing());
         quantRow->addWidget(ecvAICoreUi::makeLabel(tr("Quantization:")));
         panel.quantCombo = new QComboBox(panel.tab);
+        // Keep full checkpoint labels in the popup without widening the form.
+        panel.quantCombo->setSizeAdjustPolicy(
+                QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        panel.quantCombo->setMinimumContentsLength(8);
         panel.quantCombo->setSizePolicy(QSizePolicy::Expanding,
                                         QSizePolicy::Fixed);
         for (const OpenPCDetModelEntry& e : cp.quants) {
-            panel.quantCombo->addItem(
-                    OpenPCDetHelpers::modelDisplayLabel(e), e.filename);
+            panel.quantCombo->addItem(OpenPCDetHelpers::modelDisplayLabel(e),
+                                      e.filename);
         }
         // The published f16 rows carry the "(recommended)" marker — the
         // shared selection policy picks it as the default (defaultIndex is
@@ -373,8 +376,9 @@ void OpenPCDetDialog::populatePanels() {
         panel.nms->setDecimals(2);
         panel.nms->setValue(0.0);
         panel.nms->setSpecialValueText(tr("model"));
-        panel.nms->setToolTip(tr("Rotated NMS IoU override; 0 follows the "
-                                 "GGUF-declared value"));
+        panel.nms->setToolTip(
+                tr("Rotated NMS IoU override; 0 follows the "
+                   "GGUF-declared value"));
         ecvAICoreUi::setCompactDoubleSpin(panel.nms);
         thresholdLayout->addWidget(panel.nms);
         thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("Max boxes:")));
@@ -382,8 +386,9 @@ void OpenPCDetDialog::populatePanels() {
         panel.maxBoxes->setRange(0, 500);
         panel.maxBoxes->setValue(0);
         panel.maxBoxes->setSpecialValueText(tr("model"));
-        panel.maxBoxes->setToolTip(tr("Maximum returned boxes; 0 follows "
-                                      "the GGUF-declared value"));
+        panel.maxBoxes->setToolTip(
+                tr("Maximum returned boxes; 0 follows "
+                   "the GGUF-declared value"));
         ecvAICoreUi::setCompactSpin(panel.maxBoxes);
         thresholdLayout->addWidget(panel.maxBoxes);
         thresholdLayout->addStretch();
@@ -400,15 +405,13 @@ void OpenPCDetDialog::populatePanels() {
                 tr("Optional — overrides the checkpoint selection"));
         customRow->addWidget(panel.customModelPath, 1);
         auto* browseCustomBtn =
-                ecvAICoreUi::makeBrowseBtn(tr("Browse…"),
-                                           panel.customModelRow);
+                ecvAICoreUi::makeBrowseBtn(tr("Browse…"), panel.customModelRow);
         connect(browseCustomBtn, &QPushButton::clicked, this,
                 [this]() { onBrowseCustomModel(); });
         customRow->addWidget(browseCustomBtn);
         configCol->addWidget(panel.customModelRow);
 
-        const bool scenePanel =
-                group == GroupScene;
+        const bool scenePanel = group == GroupScene;
 
         // Active cloud row (every panel: point inputs and the LiDAR branch
         // of scene runs share it).
@@ -421,7 +424,7 @@ void OpenPCDetDialog::populatePanels() {
                 tr("Select a point cloud in the DB tree, then reopen this "
                    "dialog"));
         cloudRow->addWidget(panel.cloudPath, 1);
-        configCol->addLayout(cloudRow);
+        inputCol->addLayout(cloudRow);
 
         // Optional raw point file (takes precedence over the active cloud).
         panel.pointsFileRow = new QWidget(panel.tab);
@@ -434,8 +437,7 @@ void OpenPCDetDialog::populatePanels() {
                 tr("Optional KITTI .bin / ASCII .txt — overrides the cloud"));
         pointsRow->addWidget(panel.pointsFileEdit, 1);
         auto* browsePointsBtn =
-                ecvAICoreUi::makeBrowseBtn(tr("Browse…"),
-                                           panel.pointsFileRow);
+                ecvAICoreUi::makeBrowseBtn(tr("Browse…"), panel.pointsFileRow);
         connect(browsePointsBtn, &QPushButton::clicked, this, [this]() {
             OpenPCDetTaskPanel* active = currentPanel();
             if (!active) return;
@@ -453,7 +455,7 @@ void OpenPCDetDialog::populatePanels() {
                                  QStringLiteral("lastPointsDir"), path);
         });
         pointsRow->addWidget(browsePointsBtn);
-        configCol->addWidget(panel.pointsFileRow);
+        inputCol->addWidget(panel.pointsFileRow);
 
         // Scene rows (multi-modal panels only).
         panel.sceneDirRow = new QWidget(panel.tab);
@@ -486,7 +488,7 @@ void OpenPCDetDialog::populatePanels() {
                                  QStringLiteral("lastSceneDir"), path);
         });
         sceneRow->addWidget(browseSceneBtn);
-        configCol->addWidget(panel.sceneDirRow);
+        inputCol->addWidget(panel.sceneDirRow);
 
         // LiDAR branch point source of a scene run: the active cloud or an
         // extra point file (BEVFusion requires points; CaDDN ignores them).
@@ -500,9 +502,8 @@ void OpenPCDetDialog::populatePanels() {
                 tr("LiDAR .bin for the fusion branch (required by BEVFusion "
                    "and the focal VoxelRCNN, ignored by CaDDN)"));
         scenePointsRow->addWidget(panel.scenePointsFileEdit, 1);
-        auto* browseScenePointsBtn =
-                ecvAICoreUi::makeBrowseBtn(tr("Browse…"),
-                                           panel.scenePointsFileRow);
+        auto* browseScenePointsBtn = ecvAICoreUi::makeBrowseBtn(
+                tr("Browse…"), panel.scenePointsFileRow);
         connect(browseScenePointsBtn, &QPushButton::clicked, this, [this]() {
             OpenPCDetTaskPanel* active = currentPanel();
             if (!active) return;
@@ -520,11 +521,12 @@ void OpenPCDetDialog::populatePanels() {
                                  QStringLiteral("lastPointsDir"), path);
         });
         scenePointsRow->addWidget(browseScenePointsBtn);
-        configCol->addWidget(panel.scenePointsFileRow);
+        inputCol->addWidget(panel.scenePointsFileRow);
         panel.scenePointsFileRow->setVisible(scenePanel);
         panel.sceneDirRow->setVisible(scenePanel);
         panel.pointsFileRow->setVisible(!scenePanel);
 
+        inputRow->addLayout(inputCol, 1);
         configCol->addStretch();
         contentRow->addLayout(configCol, 1);
 
@@ -548,9 +550,19 @@ void OpenPCDetDialog::populatePanels() {
                     QStringLiteral("color: palette(mid); font-size: 11px;"));
             previewCol->addWidget(previewHint);
             previewCol->addStretch();
-            contentRow->addLayout(previewCol);
+            inputRow->addLayout(previewCol);
         }
-        layout->addLayout(contentRow);
+        layout->addLayout(inputRow);
+        auto* configPage = new QWidget(panel.tab);
+        auto* configLayout = new QVBoxLayout(configPage);
+        configLayout->setContentsMargins(0, 0, 0, 0);
+        configLayout->addLayout(contentRow);
+        auto* configScroll = new QScrollArea(panel.tab);
+        configScroll->setWidgetResizable(true);
+        configScroll->setFrameShape(QFrame::NoFrame);
+        configScroll->setWidget(configPage);
+        configScroll->setMinimumHeight(ecvAICoreUi::dpiScaled(80));
+        layout->addWidget(configScroll, 1);
 
         // Action row: add-to-DB + Run / Cancel (per panel, like qYOLO).
         auto* panelActionRow = new QHBoxLayout;
@@ -561,7 +573,8 @@ void OpenPCDetDialog::populatePanels() {
         panel.addBoxesCheck->setToolTip(
                 tr("Write the detections as per-class colored wireframe "
                    "polylines into the DB tree"));
-        panelActionRow->addWidget(panel.addBoxesCheck);
+        auto* outputRow = new QHBoxLayout;
+        outputRow->addWidget(panel.addBoxesCheck);
         panel.annotatedCheck =
                 new QCheckBox(tr("Export annotated cloud"), panel.tab);
         panel.annotatedCheck->setChecked(true);
@@ -569,7 +582,9 @@ void OpenPCDetDialog::populatePanels() {
                 tr("Export a copy of the source point cloud into the DB "
                    "tree with in-box points tinted by detection class "
                    "color (matches the OpenPCDet Python demo styling)"));
-        panelActionRow->addWidget(panel.annotatedCheck);
+        outputRow->addWidget(panel.annotatedCheck);
+        outputRow->addStretch();
+        layout->addLayout(outputRow);
         panelActionRow->addStretch();
         panel.testDataBtn = ecvAICoreUi::makeSampleDataBtn(panel.tab);
         panel.testDataBtn->setToolTip(
@@ -624,8 +639,9 @@ int OpenPCDetDialog::taskListIdealWidth() const {
     int textWidth = 0;
     const QFontMetrics metrics(m_taskList->font());
     for (int i = 0; i < m_taskList->count(); ++i) {
-        textWidth = qMax(textWidth,
-                         metrics.horizontalAdvance(m_taskList->item(i)->text()));
+        textWidth =
+                qMax(textWidth,
+                     metrics.horizontalAdvance(m_taskList->item(i)->text()));
     }
     return textWidth + ecvAICoreUi::dpiScaled(36);
 }
@@ -634,14 +650,19 @@ void OpenPCDetDialog::applyTaskListDefaultWidth() {
     if (!m_bodySplitter || !m_taskList) return;
     const int total = m_bodySplitter->width();
     if (total <= 0) return;
-    const int listWidth =
-            qBound(ecvAICoreUi::dpiScaled(120), taskListIdealWidth(),
-                   total / 2);
+    const int listWidth = qBound(ecvAICoreUi::dpiScaled(120),
+                                 taskListIdealWidth(), total / 2);
     m_bodySplitter->setSizes({listWidth, total - listWidth});
 }
 
 void OpenPCDetDialog::showEvent(QShowEvent* event) {
     QDialog::showEvent(event);
+    for (const auto& panel : m_panels)
+        panel.testDataBtn->setEnabled(!m_testDataBusy && !m_taskRunning);
+    if (!m_testDataBusy && !m_taskRunning && !m_downloadInProgress) {
+        m_progress->hide();
+        m_downloadLabel->hide();
+    }
     // First-show allocation of the splitter panes (a user-restored splitter
     // state wins).
     if (!m_splitterSized) {
@@ -675,15 +696,13 @@ void OpenPCDetDialog::loadSettings() {
             if (idx >= 0) panel.quantCombo->setCurrentIndex(idx);
         }
         panel.score->setValue(
-                settings.value(QStringLiteral("score/") + key, 0.0)
-                        .toDouble());
-        panel.nms->setValue(settings.value(QStringLiteral("nms/") + key, 0.0)
-                                    .toDouble());
+                settings.value(QStringLiteral("score/") + key, 0.0).toDouble());
+        panel.nms->setValue(
+                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble());
         panel.maxBoxes->setValue(
                 settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt());
         panel.pointsFileEdit->setText(
-                settings.value(QStringLiteral("pointsFile/") + key)
-                        .toString());
+                settings.value(QStringLiteral("pointsFile/") + key).toString());
         panel.sceneDirEdit->setText(
                 settings.value(QStringLiteral("sceneDir/") + key).toString());
         panel.scenePointsFileEdit->setText(
@@ -711,11 +730,35 @@ void OpenPCDetDialog::loadSettings() {
         m_bodySplitter->restoreState(splitterState)) {
         m_splitterRestored = true;
     }
-    const int activeRow = settings.value(QStringLiteral("activeRow"), -1).toInt();
+    QString activeCheckpoint =
+            settings.value(QStringLiteral("activeCheckpoint")).toString();
+    const int activeRow =
+            settings.value(QStringLiteral("activeRow"), -1).toInt();
     settings.endGroup();
-    if (activeRow >= 0 && activeRow < m_taskList->count() &&
-        m_taskList->item(activeRow)->data(kTaskStackIndexRole).isValid()) {
-        m_taskList->setCurrentRow(activeRow);
+    // Migrate the legacy interleaved row index to the stable catalog identity.
+    if (activeCheckpoint.isEmpty() && activeRow >= 0) {
+        int row = 0, lastGroup = -1;
+        for (const auto& checkpoint : OpenPCDetHelpers::catalogCheckpoints()) {
+            const int group = int(groupForCheckpoint(checkpoint));
+            if (group != lastGroup) {
+                ++row;
+                lastGroup = group;
+            }
+            if (row == activeRow) {
+                activeCheckpoint = checkpoint.stem;
+                break;
+            }
+            ++row;
+        }
+    }
+    for (int row = 0; row < m_taskList->count(); ++row) {
+        const QVariant page = m_taskList->item(row)->data(kTaskStackIndexRole);
+        if (page.isValid() && page.toInt() >= 0 &&
+            page.toInt() < m_panels.size() &&
+            m_panels[page.toInt()].checkpoint == activeCheckpoint) {
+            m_taskList->setCurrentRow(row);
+            break;
+        }
     }
 }
 
@@ -760,6 +803,9 @@ void OpenPCDetDialog::saveSettings() const {
                           m_bodySplitter->saveState());
     }
     settings.setValue(QStringLiteral("activeRow"), m_taskList->currentRow());
+    if (const auto* panel = currentPanel())
+        settings.setValue(QStringLiteral("activeCheckpoint"),
+                          panel->checkpoint);
     settings.endGroup();
 }
 
@@ -777,8 +823,7 @@ OpenPCDetTaskPanel* OpenPCDetDialog::currentPanel() const {
 OpenPCDetTaskPanel* OpenPCDetDialog::panelForFilename(
         const QString& filename) const {
     for (const OpenPCDetTaskPanel& panel : m_panels) {
-        if (panel.quantCombo &&
-            panel.quantCombo->findData(filename) >= 0) {
+        if (panel.quantCombo && panel.quantCombo->findData(filename) >= 0) {
             return const_cast<OpenPCDetTaskPanel*>(&panel);
         }
     }
@@ -792,14 +837,18 @@ void OpenPCDetDialog::refreshModelList() {
     const QVector<OpenPCDetHelpers::OpenPCDetCheckpoint> checkpoints =
             OpenPCDetHelpers::catalogCheckpoints();
     if (checkpoints.size() != m_panels.size()) return;
-    for (int i = 0; i < m_panels.size(); ++i) {
-        OpenPCDetTaskPanel& panel = m_panels[i];
+    QHash<QString, const OpenPCDetHelpers::OpenPCDetCheckpoint*> byCheckpoint;
+    for (const auto& checkpoint : checkpoints)
+        byCheckpoint.insert(checkpoint.stem, &checkpoint);
+    for (OpenPCDetTaskPanel& panel : m_panels) {
+        const auto found = byCheckpoint.constFind(panel.checkpoint);
+        if (found == byCheckpoint.constEnd()) continue;
         const QString keep = panel.quantCombo->currentData().toString();
         panel.quantCombo->blockSignals(true);
         panel.quantCombo->clear();
-        for (const OpenPCDetModelEntry& e : checkpoints[i].quants) {
-            panel.quantCombo->addItem(
-                    OpenPCDetHelpers::modelDisplayLabel(e), e.filename);
+        for (const OpenPCDetModelEntry& e : found.value()->quants) {
+            panel.quantCombo->addItem(OpenPCDetHelpers::modelDisplayLabel(e),
+                                      e.filename);
         }
         ecvAICoreUi::selectModelRow(panel.quantCombo, keep, -1);
         panel.quantCombo->blockSignals(false);
@@ -821,7 +870,8 @@ void OpenPCDetDialog::refreshScenePreview(OpenPCDetTaskPanel* panel,
     QString error;
     if (!sceneDir.isEmpty() &&
         OpenPCDetHelpers::readScenePreview(sceneDir, &preview, &error)) {
-        panel->previewLabel->setPreviewImage(preview, ecvAICoreUi::previewSize());
+        panel->previewLabel->setPreviewImage(preview,
+                                             ecvAICoreUi::previewSize());
     } else {
         panel->previewLabel->clearPreview();
         if (!sceneDir.isEmpty() && !error.isEmpty()) {
@@ -834,8 +884,8 @@ bool OpenPCDetDialog::ensureModelAvailable(PendingAction action) {
     OpenPCDetTaskPanel* panel = currentPanel();
     if (!panel) return false;
     // Custom GGUF override: only an existing file is accepted.
-    const QString custom =
-            panel->customModelPath ? panel->customModelPath->text().trimmed()
+    const QString custom = panel->customModelPath
+                                   ? panel->customModelPath->text().trimmed()
                                    : QString();
     if (!custom.isEmpty()) {
         if (!QFileInfo::exists(custom)) {
@@ -871,8 +921,8 @@ void OpenPCDetDialog::startDownload(const OpenPCDetModelEntry& model) {
         return;
     }
     QDir().mkpath(OpenPCDetHelpers::modelCacheDir());
-    const QString dest = OpenPCDetHelpers::modelCacheDir() +
-                         QDir::separator() + model.filename;
+    const QString dest = OpenPCDetHelpers::modelCacheDir() + QDir::separator() +
+                         model.filename;
     if (QFile::exists(dest)) {
         appendLog(tr("[OpenPCDet] Model already present: %1").arg(dest));
         return;
@@ -895,15 +945,15 @@ void OpenPCDetDialog::startDownload(const OpenPCDetModelEntry& model) {
 void OpenPCDetDialog::onEnsureModel() {
     OpenPCDetTaskPanel* panel = currentPanel();
     if (!panel) return;
-    const QString custom =
-            panel->customModelPath ? panel->customModelPath->text().trimmed()
+    const QString custom = panel->customModelPath
+                                   ? panel->customModelPath->text().trimmed()
                                    : QString();
     if (!custom.isEmpty()) {
-        appendLog(QFileInfo::exists(custom)
-                          ? tr("[OpenPCDet] Custom model present: %1")
-                                    .arg(custom)
-                          : tr("[OpenPCDet] Custom GGUF not found: %1")
-                                    .arg(custom));
+        appendLog(
+                QFileInfo::exists(custom)
+                        ? tr("[OpenPCDet] Custom model present: %1").arg(custom)
+                        : tr("[OpenPCDet] Custom GGUF not found: %1")
+                                  .arg(custom));
         return;
     }
     const QString filename = panel->modelFilename();
@@ -954,13 +1004,13 @@ void OpenPCDetDialog::onUseTestData() {
             break;
         }
     }
-    // The bundle may already be cached: try the immediate fill before
-    // queueing any download (same contract as the qYOLO sample flow).
-    if (fillTestDataPanel(panelIndex)) return;
-    if (m_testDataBusy ||
+    // Readiness owns cache probes, verified archive reuse and cold preparation.
+    // A cache miss is recoverable, not a detection error.
+    if (m_taskRunning || m_downloadInProgress || m_testDataBusy ||
         ecvTestDataRepository::instance().isDownloadInProgress()) {
-        appendLog(tr("[Test data] Wait for the current test-data download "
-                     "to finish first."));
+        appendLog(
+                tr("[Test data] Wait for the current test-data download "
+                   "to finish first."));
         return;
     }
     const auto kind = ecvTestDataRepository::Dataset::OpenPCDetSample;
@@ -993,8 +1043,8 @@ void OpenPCDetDialog::onTestDataLog(const QString& message) {
     if (m_testDataBusy) appendLog(message);
 }
 
-void OpenPCDetDialog::onTestDataReady(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void OpenPCDetDialog::onTestDataReady(bool success,
+                                      ecvTestDataRepository::Dataset kind) {
     if (kind != ecvTestDataRepository::Dataset::OpenPCDetSample) return;
     if (!m_testDataBusy) return;  // a foreign chain we did not start
     m_testDataBusy = false;
@@ -1008,8 +1058,9 @@ void OpenPCDetDialog::onTestDataReady(
     const int panelIndex = m_pendingTestDataPanel;
     m_pendingTestDataPanel = -1;
     if (!success) {
-        appendLog(tr("[Error] Test-data preparation failed (download / "
-                     "SHA-256 verification / extraction)."));
+        appendLog(
+                tr("[Error] Test-data preparation failed (download / "
+                   "SHA-256 verification / extraction)."));
         return;
     }
     fillTestDataPanel(panelIndex);
@@ -1047,18 +1098,18 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
     // Same showcase cloud for every panel: the KITTI 000008 frame lands in
     // the DB tree and gets selected, so the active-cloud Run path works
     // without touching the point file again.
-    loadSampleCloudIntoDb(
-            ecvTestDataRepository::findDatasetFile(
-                    ecvTestDataRepository::Dataset::OpenPCDetSample,
-                    QStringLiteral("kitti_000008.bin")));
+    loadSampleCloudIntoDb(ecvTestDataRepository::findDatasetFile(
+            ecvTestDataRepository::Dataset::OpenPCDetSample,
+            QStringLiteral("kitti_000008.bin")));
     return true;
 }
 
 void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
     if (!m_app) return;  // no DB tree (tests / headless)
     if (binPath.isEmpty()) {
-        appendLog(tr("[Error] Sample frame kitti_000008.bin not found in "
-                     "the test-data cache."));
+        appendLog(
+                tr("[Error] Sample frame kitti_000008.bin not found in "
+                   "the test-data cache."));
         return;
     }
     QFile file(binPath);
@@ -1075,8 +1126,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
     std::vector<float> points;
     int count = 0;
     QString error;
-    if (!OpenPCDetHelpers::parsePointsBin(bytes, 4, &points, &count,
-                                          &error)) {
+    if (!OpenPCDetHelpers::parsePointsBin(bytes, 4, &points, &count, &error)) {
         appendLog(tr("[Error] Sample frame parse failed: %1").arg(error));
         return;
     }
@@ -1090,17 +1140,15 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
     }
     for (int i = 0; i < count; ++i) {
         const float* row = points.data() + static_cast<size_t>(i) * 4;
-        cloud->addPoint(CCVector3(
-                static_cast<PointCoordinateType>(row[0]),
-                static_cast<PointCoordinateType>(row[1]),
-                static_cast<PointCoordinateType>(row[2])));
+        cloud->addPoint(CCVector3(static_cast<PointCoordinateType>(row[0]),
+                                  static_cast<PointCoordinateType>(row[1]),
+                                  static_cast<PointCoordinateType>(row[2])));
     }
     auto* intensity = new ccScalarField("intensity");
     bool sfAdded = false;
     if (intensity->reserveSafe(static_cast<unsigned>(count))) {
         for (int i = 0; i < count; ++i) {
-            intensity->addElement(
-                    points[static_cast<size_t>(i) * 4 + 3]);
+            intensity->addElement(points[static_cast<size_t>(i) * 4 + 3]);
         }
         intensity->computeMinAndMax();
         sfAdded = cloud->addScalarField(intensity) >= 0;
@@ -1159,8 +1207,9 @@ void OpenPCDetDialog::onRun() {
                     OpenPCDetHelpers::InputKind::Scene &&
             panel->customModelPath->text().trimmed().isEmpty();
     if (sceneRun && panel->sceneDirEdit->text().trimmed().isEmpty()) {
-        appendLog(tr("[Error] Select a scene directory first (images + "
-                     "calibration)."));
+        appendLog(
+                tr("[Error] Select a scene directory first (images + "
+                   "calibration)."));
         return;
     }
     if (!sceneRun) {
@@ -1168,8 +1217,9 @@ void OpenPCDetDialog::onRun() {
                 !panel->pointsFileEdit->text().trimmed().isEmpty() ||
                 !panel->scenePointsFileEdit->text().trimmed().isEmpty();
         if (!hasFile && (m_cloud == nullptr || m_cloud->size() == 0)) {
-            appendLog(tr("[Error] Select a non-empty point cloud in the DB "
-                         "tree or a point file first."));
+            appendLog(
+                    tr("[Error] Select a non-empty point cloud in the DB "
+                       "tree or a point file first."));
             return;
         }
     }
@@ -1197,25 +1247,21 @@ void OpenPCDetDialog::showDetectionSummary(const OpenPCDetRunResult& result) {
                                                           result.numClass))
                          .arg(kv.second);
     }
-    QString prefix = result.fromScene
-                             ? tr("<b>%1 box(es)</b> from scene %2 (%3 "
-                                  "camera(s)) — %4")
-                                       .arg(result.detections.size())
-                                       .arg(QFileInfo(result.sceneDir)
-                                                    .fileName())
-                                       .arg(result.numCameras)
-                                       .arg(parts.isEmpty()
-                                                    ? tr("no detections")
-                                                    : parts.join(
-                                                            QStringLiteral(
-                                                                    ", ")))
-                             : tr("<b>%1 box(es)</b> — %2")
-                                       .arg(result.detections.size())
-                                       .arg(parts.isEmpty()
-                                                    ? tr("no detections")
-                                                    : parts.join(
-                                                            QStringLiteral(
-                                                                    ", ")));
+    QString prefix =
+            result.fromScene
+                    ? tr("<b>%1 box(es)</b> from scene %2 (%3 "
+                         "camera(s)) — %4")
+                              .arg(result.detections.size())
+                              .arg(QFileInfo(result.sceneDir).fileName())
+                              .arg(result.numCameras)
+                              .arg(parts.isEmpty()
+                                           ? tr("no detections")
+                                           : parts.join(QStringLiteral(", ")))
+                    : tr("<b>%1 box(es)</b> — %2")
+                              .arg(result.detections.size())
+                              .arg(parts.isEmpty()
+                                           ? tr("no detections")
+                                           : parts.join(QStringLiteral(", ")));
     m_summaryLabel->setText(prefix);
     m_summaryLabel->setVisible(true);
 }
@@ -1226,7 +1272,8 @@ void OpenPCDetDialog::updateResultTable(const OpenPCDetRunResult& result) {
     for (int i = 0; i < result.detections.size(); ++i) {
         const OpenPCDetDetection& d = result.detections[i];
         const QStringList cells = {
-                d.className, QStringLiteral("%1").arg(d.score, 0, 'f', 3),
+                d.className,
+                QStringLiteral("%1").arg(d.score, 0, 'f', 3),
                 QStringLiteral("%1").arg(d.x, 0, 'f', 3),
                 QStringLiteral("%1").arg(d.y, 0, 'f', 3),
                 QStringLiteral("%1").arg(d.z, 0, 'f', 3),
@@ -1236,8 +1283,7 @@ void OpenPCDetDialog::updateResultTable(const OpenPCDetRunResult& result) {
                 QStringLiteral("%1").arg(d.heading, 0, 'f', 3)};
         for (int c = 0; c < cells.size() && c < m_resultTable->columnCount();
              ++c) {
-            m_resultTable->setItem(
-                    i, c, new QTableWidgetItem(cells.at(c)));
+            m_resultTable->setItem(i, c, new QTableWidgetItem(cells.at(c)));
         }
     }
     m_resultTable->resizeColumnsToContents();
@@ -1246,9 +1292,9 @@ void OpenPCDetDialog::updateResultTable(const OpenPCDetRunResult& result) {
 void OpenPCDetDialog::onExportCsv() {
     if (m_lastResult.detections.isEmpty()) return;
     QSettings settings;
-    const QString lastDir = ecvPS::browseDir(
-            settings, QStringLiteral("qOpenPCDet"),
-            QStringLiteral("lastCsvDir"), QDir::homePath());
+    const QString lastDir =
+            ecvPS::browseDir(settings, QStringLiteral("qOpenPCDet"),
+                             QStringLiteral("lastCsvDir"), QDir::homePath());
     QString path = cvFileDialog::getSaveFileName(
             this, tr("Export detections CSV"),
             QDir(lastDir).filePath(
@@ -1282,7 +1328,6 @@ void OpenPCDetDialog::appendLog(const QString& msg) {
 #ifdef AICore_ENABLED
     aicore_inference_log::log(msg);
 #endif
-    if (m_log) m_log->appendPlainText(msg);
 }
 
 void OpenPCDetDialog::setProgress(int current, int total) {
@@ -1322,9 +1367,20 @@ void OpenPCDetDialog::closeEvent(QCloseEvent* event) {
             return;
         }
     }
+    m_testDataBusy = false;
+    m_pendingTestDataPanel = -1;
+    m_pendingActionAfterDownload = PendingAction::None;
     onCancel();
     saveSettings();
     event->accept();
+}
+
+void OpenPCDetDialog::reject() {
+    m_testDataBusy = false;
+    m_pendingTestDataPanel = -1;
+    m_pendingActionAfterDownload = PendingAction::None;
+    onCancel();
+    QDialog::reject();
 }
 
 void OpenPCDetDialog::keyPressEvent(QKeyEvent* event) {

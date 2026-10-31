@@ -1,7 +1,9 @@
 # Vulkan migration candidate; production promotion requires all-task gates.
 patches:
   - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
   - file: 0005-acv-vulkan-operators.patch
+    note: "At the current pin, InstantMesh LRM instantmesh_lrm_convt_ retains pristine transposed-convolution dispatch; Synth single-row F16 instantmesh_sdf_matmul_ retains original GEMM reduction, not swapped-operand matvec. Other nodes and CPU/CUDA/Metal remain unchanged. Remove after an official node-compatibility replacement; require frozen per-output absolute/compatibility gates, clean replay, original consumers and same-host performance regression checks."
   - file: 0008-acv-vulkan-q4-k-copy-route.patch
   - file: 0009-acv-vulkan-pattern-short-circuit.patch
     note: "Short-circuit failed fusion-pattern matches without changing graph ordering, alias dependencies or supported fusions; model performance qualification remains required."

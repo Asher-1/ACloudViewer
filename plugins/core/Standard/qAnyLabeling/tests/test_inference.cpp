@@ -361,20 +361,41 @@ int main(int argc, char** argv) {
                 }
                 if (task == QStringLiteral("attribute")) {
                     const auto shape = result.shapes.value(0);
-                    const auto attributes = shape.extra.value(QStringLiteral("attributes")).toObject();
+                    const auto attributes =
+                            shape.extra.value(QStringLiteral("attributes"))
+                                    .toObject();
                     const bool person = shape.label == QStringLiteral("person");
-                    const bool expected = person
-                        ? attributes.size() == 21 && attributes.value(QStringLiteral("Gender")) == QStringLiteral("Male") &&
-                          attributes.value(QStringLiteral("Direction")) == QStringLiteral("Back")
-                        : shape.label == QStringLiteral("vehicle") && attributes.size() == 2 &&
-                          attributes.value(QStringLiteral("Color")) == QStringLiteral("white") &&
-                          attributes.value(QStringLiteral("Type")) == QStringLiteral("truck");
-                    if (result.shapes.size() != 1 || shape.type != QStringLiteral("rectangle") ||
-                        shape.points != QVector<QPointF>{{0, 0}, {double(image.width()), 0},
-                            {double(image.width()), double(image.height())}, {0, double(image.height())}} ||
-                        !result.replaceShapes || result.hasFlags || result.hasTags || !expected ||
+                    const bool expected =
+                            person ? attributes.size() == 21 &&
+                                             attributes.value(QStringLiteral(
+                                                     "Gender")) ==
+                                                     QStringLiteral("Male") &&
+                                             attributes.value(QStringLiteral(
+                                                     "Direction")) ==
+                                                     QStringLiteral("Back")
+                                   : shape.label == QStringLiteral("vehicle") &&
+                                             attributes.size() == 2 &&
+                                             attributes.value(
+                                                     QStringLiteral("Color")) ==
+                                                     QStringLiteral("white") &&
+                                             attributes.value(
+                                                     QStringLiteral("Type")) ==
+                                                     QStringLiteral("truck");
+                    if (result.shapes.size() != 1 ||
+                        shape.type != QStringLiteral("rectangle") ||
+                        shape.points !=
+                                QVector<QPointF>{{0, 0},
+                                                 {double(image.width()), 0},
+                                                 {double(image.width()),
+                                                  double(image.height())},
+                                                 {0, double(image.height())}} ||
+                        !result.replaceShapes || result.hasFlags ||
+                        result.hasTags || !expected ||
                         (forwards && attributes != firstAttributes)) {
-                        std::fprintf(stderr, "Multi-attribute worker failed its full-image geometry, attribute or replace contract\n");
+                        std::fprintf(
+                                stderr,
+                                "Multi-attribute worker failed its full-image "
+                                "geometry, attribute or replace contract\n");
                         exitCode = 1;
                         app.quit();
                         return;

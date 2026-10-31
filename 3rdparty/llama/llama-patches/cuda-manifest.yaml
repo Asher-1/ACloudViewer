@@ -1,6 +1,7 @@
 # CUDA migration candidate; not enabled in the production dependency entry.
 patches:
   - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
   - file: 0002-acv-cuda-operators.patch
   - file: 0003-acv-cuda-dispatch-api.patch
   - file: 0004-acv-cuda-attention-linkage.patch
@@ -33,4 +34,4 @@ patches:
   - file: 0026-acv-openpcdet-deconv-gemm.patch
     note: "Byte-for-byte port of the OpenPCDet-GGML phase-decomposed transposed-convolution GEMM path (gather_phase + cuBLAS sgemm + scatter_phase; TF32 follows the handle math mode, and the GGML_CUDA_DISABLE_DECONV_GEMM debug gate is ported as well). Only F32 deblock nodes tagged opcpd_deconv take this path; f16 (SAM3) and every other task keep their existing routing, and CPU/Vulkan are untouched."
   - file: 0027-acv-cuda-add-gelu-epilogue.patch
-    note: "显式 F32 行 bias ADD/GELU 写出；保留原算术、融合开关、可观察/多消费者/非相邻/布局及危险别名回退，原数值和性能门不变。"
+    note: "Explicit F32 row-bias ADD/GELU write-out; preserve original arithmetic, fusion switches, and fallbacks for observable outputs, multiple consumers, non-adjacent nodes, layout constraints and unsafe aliasing. Original numeric and performance gates remain unchanged."

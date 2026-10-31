@@ -1,16 +1,23 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "bev_backbone.h"
-#include "../gguf_loader.h"
+#pragma once
 
 #include <string>
 #include <vector>
 
+#include "../gguf_loader.h"
+#include "bev_backbone.h"
+
 namespace openpcdet {
 
 struct conv_bias_weights {
-    ggml_tensor * weight = nullptr;
-    ggml_tensor * bias = nullptr;
+    ggml_tensor *weight = nullptr;
+    ggml_tensor *bias = nullptr;
 };
 
 struct dense_head_sequence_weights {
@@ -32,17 +39,21 @@ struct anchor_multi_weights {
 };
 
 struct anchor_multi_single_outputs {
-    ggml_tensor * classification = nullptr;
+    ggml_tensor *classification = nullptr;
     std::vector<ggml_tensor *> regression;
-    ggml_tensor * box = nullptr;
-    ggml_tensor * direction = nullptr;
+    ggml_tensor *box = nullptr;
+    ggml_tensor *direction = nullptr;
 };
 
-bool load_anchor_multi_weights(model_file & file, const hparams & hp,
-                               anchor_multi_weights & weights, std::string & error);
+bool load_anchor_multi_weights(model_file &file,
+                               const hparams &hp,
+                               anchor_multi_weights &weights,
+                               std::string &error);
 
 std::vector<anchor_multi_single_outputs> build_anchor_multi_graph(
-    ggml_context * ctx, const anchor_multi_weights & weights,
-    const hparams & hp, ggml_tensor * spatial_2d);
+        ggml_context *ctx,
+        const anchor_multi_weights &weights,
+        const hparams &hp,
+        ggml_tensor *spatial_2d);
 
-} // namespace openpcdet
+}  // namespace openpcdet

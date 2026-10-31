@@ -21,8 +21,21 @@
 
 static int failures = 0;
 
-int main() {
+int main(int argc, char** argv) {
     AICORE_CHECK(aicore_openpcdet_abi_version() >= 1);
+
+    // Explicit real-model error propagation; no inference or asset skipping.
+    if (argc == 2) {
+        auto* unavailable = aicore_openpcdet_options_new();
+        aicore_openpcdet_options_set_device(unavailable, "cuda:999999");
+        auto* ctx = aicore_openpcdet_load_opts(argv[1], unavailable);
+        AICORE_CHECK(ctx != nullptr);
+        AICORE_CHECK(aicore_openpcdet_is_ready(ctx) == 0);
+        const char* error = aicore_openpcdet_last_error(ctx);
+        AICORE_CHECK(error && std::strstr(error, "cuda:999999"));
+        aicore_openpcdet_free(ctx);
+        aicore_openpcdet_options_free(unavailable);
+    }
 
     // Null-safe teardown / lifecycle.
     aicore_openpcdet_free(nullptr);
@@ -36,7 +49,8 @@ int main() {
     AICORE_CHECK(aicore_openpcdet_geometry_of(nullptr, nullptr) == -1);
     AICORE_CHECK(aicore_openpcdet_detection_count(nullptr) == -1);
     AICORE_CHECK(aicore_openpcdet_detection_at(nullptr, 0, nullptr) == -1);
-    AICORE_CHECK(aicore_openpcdet_last_pipeline_timings(nullptr, nullptr) == -1);
+    AICORE_CHECK(aicore_openpcdet_last_pipeline_timings(nullptr, nullptr) ==
+                 -1);
     AICORE_CHECK(aicore_openpcdet_detect_points(nullptr, nullptr, 0, 0) == -1);
     AICORE_CHECK(aicore_openpcdet_info_json(nullptr) == nullptr);
     AICORE_CHECK(aicore_openpcdet_context_device(nullptr) != nullptr);
@@ -59,10 +73,10 @@ int main() {
     aicore_openpcdet_options_set_max_boxes(opts, 33);
     aicore_openpcdet_options_set_dump_taps_dir(opts, nullptr);  // disable
     // NaN threshold overrides must be ignored (keep GGUF defaults).
-    aicore_openpcdet_options_set_score_thresh(opts,
-                                              std::numeric_limits<float>::quiet_NaN());
-    aicore_openpcdet_options_set_nms_thresh(opts,
-                                            std::numeric_limits<float>::quiet_NaN());
+    aicore_openpcdet_options_set_score_thresh(
+            opts, std::numeric_limits<float>::quiet_NaN());
+    aicore_openpcdet_options_set_nms_thresh(
+            opts, std::numeric_limits<float>::quiet_NaN());
     aicore_openpcdet_options_set_max_boxes(opts, 0);
     aicore_openpcdet_options_free(opts);
 
@@ -100,14 +114,16 @@ int main() {
         AICORE_CHECK(e != nullptr);
         AICORE_CHECK(e->filename != nullptr && e->filename[0] != '\0');
         AICORE_CHECK(e->download_url != nullptr &&
-                     std::strncmp(e->download_url, base, std::strlen(base)) == 0);
+                     std::strncmp(e->download_url, base, std::strlen(base)) ==
+                             0);
         AICORE_CHECK(std::strstr(e->download_url, e->filename) != nullptr);
         AICORE_CHECK(e->display_name != nullptr);
         AICORE_CHECK(e->quant_note != nullptr);
         AICORE_CHECK(e->family_note != nullptr);
         AICORE_CHECK(e->license_note != nullptr);
         const std::string name = e->filename;
-        AICORE_CHECK(name.size() > 5 && name.substr(name.size() - 5) == ".gguf");
+        AICORE_CHECK(name.size() > 5 &&
+                     name.substr(name.size() - 5) == ".gguf");
     }
     AICORE_CHECK(aicore_openpcdet_model_at(-1) == nullptr);
     AICORE_CHECK(aicore_openpcdet_model_at(aicore_openpcdet_model_count()) ==
@@ -132,8 +148,8 @@ int main() {
     aicore_openpcdet_free_scene(nullptr);  // NULL-safe
     aicore_openpcdet_free_scene(&scene);   // empty scene is safe to release
     char* scene_error = nullptr;
-    AICORE_CHECK(aicore_openpcdet_load_scene_dir("no_such_scene_dir",
-                                                 &scene, &scene_error) == -1);
+    AICORE_CHECK(aicore_openpcdet_load_scene_dir("no_such_scene_dir", &scene,
+                                                 &scene_error) == -1);
     AICORE_CHECK(scene_error != nullptr && scene_error[0] != '\0');
     aicore_openpcdet_free_buffer(scene_error);
     // A stale ABI version must be rejected outright.

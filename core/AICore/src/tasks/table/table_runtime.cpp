@@ -316,9 +316,10 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
         encInput_ = ggml_new_tensor_4d(encCtx_, GGML_TYPE_F32, padSize_,
                                        padSize_, 3, 1);
         ggml_set_input(encInput_);
-        const paddle::OcrBuildOptions options = paddle::execBuildOptions(encPlan_);
+        const paddle::OcrBuildOptions options =
+                paddle::execBuildOptions(encPlan_);
         encOutput_ = paddle::buildGraph(encCtx_, encoder_, encInput_, &error,
-                                     nullptr, nullptr, &options);
+                                        nullptr, nullptr, &options);
         if (!encOutput_) {
             if (error.empty()) error = "table: encoder graph build failed";
             release();
@@ -333,7 +334,7 @@ bool TableStructureModel::runEncoder(ggml_backend_t gpu,
             return false;
         }
         if (!paddle::prepareGraph(encoder_, encCtx_, encPlan_, {encOutput_},
-                               &encGraph_, encExec_, error)) {
+                                  &encGraph_, encExec_, error)) {
             release();
             return false;
         }

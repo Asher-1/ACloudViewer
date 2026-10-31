@@ -26,51 +26,161 @@ that can be removed while its release/GT/platform failures remain unresolved.
 
 ## 2026-10-29: current execution observation
 
-### 原完整矩阵最终结果
+### Authorized closure continuation: English gates and full-input preflight
+
+`build_anylabeling_closure_stage1_v1/parallel-english-v2/` completes both
+original SROIE Q8 rows: **2 PASS**, 0 FAIL/SKIP/UNSTABLE, two processes with
+original developer 2x1x2/threads=0. Both original published-weight rows were
+reproduced as RED. The finish receipt has no foreign-work samples, verifies
+the unchanged original report, and remains `release_qualified=false`.
+`comparison.json` binds the unchanged original manifest, reference and gates,
+runner SHA, old/new assets and actual GGUF storage types.
+
+- Public 000-049 fixed-region/e2e WER degradation changes from
+  0.006833713 / 0.008936394 to -0.005431926 / -0.000350447.
+- Held-out 050-099 fixed-region/e2e WER degradation changes from
+  0.006207675 / 0.006583898 to -0.003197893 / -0.005079007.
+- Only recognizer `d336e48f...` is replaced in this isolated cohort by replay
+  `695bdcbb...`; detector `cab74270...` is unchanged. The new recognizer is
+  3,787,968 bytes with 43.397868% Q8, 43.865417% F16 and 12.736715% F32
+  parameters. This is a mixed-precision candidate, not pure Q8, speedup,
+  compression or publication qualification. Historical policy-selection
+  limitations remain disclosed.
+
+The parallel original-168 experiment `parallel-full-v1/` is still executing,
+with newly observed detector failures caused by a missing second accuracy
+image, not by changing those detector weights. Its export log identifies
+`ppocr_testdata/test_files/book.jpg`; the first fixture completes with source
+max error approximately 3.14e-5. This entire prefix is retained and cannot be
+accepted as complete accuracy. No running directory or frozen manifest is edited.
+
+`book-input-provenance-v1.json` verifies the missing image against the original
+probe and unchanged pinned ZIP: SHA `782cc71a2730020ea8da815de3e40a964b7f150c183d1f8c01dd211de9dcbcc4`,
+256,618 bytes. It is now an extracted-member dependency in the owning manifest.
+The common runner additionally validates explicit image/extra-image/crop-page
+inputs before `--list` or inference. The real `full-input-preflight-red-v1/`
+check rejects all 15 missing-book consumers without inference. The new
+`parallel-full-v2/` has preflight exit 0 with exactly 168 original scenarios,
+48 models, four model overrides and 517 individually verified input files;
+its supplemental inputs match original probe SHAs and their retained ZIP.
+It is queued on the existing lock after v1, not a completed full matrix.
+
+The current common-runner suite is **154/154**, inventory tests **31/31**,
+source-identity tests **9/9**, and report-provenance tests **9/9**. The new
+hardlink negative test completed RED-to-GREEN: candidate files cannot alias
+shared or frozen model inodes. Provenance tests use explicitly labelled
+metadata-only fixtures and do not provide any model-accuracy evidence.
+All old receipts, published GGUFs, catalog/defaults, original seven FAILs and
+release/source-speed/backend vetoes remain. No build, upload or commit is
+claimed by these tests; qPythonRuntime native and full Ubuntu gates remain open.
+
+### Authorized closure: isolated Tiny candidates and input recovery
+
+`build_anylabeling_closure_stage1_v1/parallel-tiny-v2/` records a new
+original-weight RED and candidate experiment using the frozen v4 manifest,
+probes and adjacent libraries. The unchanged original recognizer/orientation
+rows still FAIL. The candidate cohort is **5/5 PASS**, 0 FAIL/SKIP/UNSTABLE,
+with the original developer 2x1x2/threads=0 protocol, four recognition fixtures,
+50 labelled scenes, XFUND and ten upright/rotated words. All frozen snapshot
+and protected-receipt hashes were rechecked; no foreign build/compute activity
+was observed. `comparison.json` preserves each old/new model identity and metric.
+The original 168-row FAIL report is unchanged.
+
+- Tiny detector F16 replay SHA `804a564a...`: the only tensor change from the
+  published `094971f2...` file is `ocr.conv2d_112.w_0`, F16 to original F32.
+  Labelled Hmean degradation becomes 0; e2e CER/WER become 0.001765225 /
+  0.004901961, within the unchanged 0.005 limits. A separate single-kernel
+  diagnostic on eight training images also measures this tensor's storage
+  sensitivity; no held-out input was used to revise the policy in this round.
+- Tiny Q8 detector/recognizer replays are `fa5f6f6e...` / `f9e6c37...`, not the
+  published `d1379d1a...` / `cbe2c4d3...` files. Recognizer source max error
+  falls from 0.890249522 to 0.002042413, with all four fixtures complete and
+  exact argmax; native/stored-weight max error is 0.000012696. XFUND WER
+  degradation becomes 0.000275558. Orientation text equality now has failures=0.
+  Their Q8 parameter shares are only 0.239026% / 0.579451%; the recognizer is
+  84.467820% F32. They are explicit historical mixed-policy replays, not pure Q8
+  or compression/speedup evidence; the earlier selection bias remains in DATA_CARD.
+- v1 is retained as 4 PASS / 1 FAIL: three Chinese word fixtures were missing
+  from its isolated extraction tree. Their bytes were subsequently checked
+  against the original report and the unchanged pinned public ZIP. The current
+  owning manifest now pins those three members; frozen manifests were not edited.
+  A real empty-directory test also exposed the runner refusing offline extraction
+  from a verified retained ZIP. The shared runner now restores missing/corrupt
+  members without network access and still rejects a corrupt archive. The real
+  extraction receipt is `word-cold-extract-v2/receipt.json`; it is not a cold
+  network-download or UI acceptance claim.
+- English Q8 repair `695bdcbb...` replays byte-identically from the pinned original
+  Paddle program/parameters and original vocabulary, with independently exported
+  topology. Its two original SROIE gates remain a separate pending cohort.
+
+These are positive subset results, not complete 168-row, CUDA/CPU, performance,
+new-build, publication, cold-download or release qualification. The catalog,
+shared model cache, old GGUFs, original thresholds and historical FAILs are unchanged.
+
+### Final result of the original full matrix
 
 `build_ocr_validation_snapshot_20261028_v4/Testing/full-vulkan-v2/report.md`
-最终为 FAIL：168 场景，161 PASS、7 FAIL、0 SKIP、0 UNSTABLE；原 48 模型、
-241 输入和 developer 2×1×2/threads=0 协议不变。运行后 521 个执行名称身份
-验证和旧收据保护通过。原 v3 的 FAIL/发现路径缺陷收据不改写。
+finishes FAIL: 168 scenarios, 161 PASS, 7 FAIL, 0 SKIP, 0 UNSTABLE.
+Original 48 models, 241 inputs and developer 2×1×2/threads=0 remain unchanged.
+After-run 521-name identity verification and old-receipt protection pass.
+Original v3 FAIL/path-defect receipts are not rewritten.
 
-失败场景为 tiny-rec-onnx-q8_0、tiny-labelled-scenes-f16/q8_0、
-tiny-xfund-zh-recognition-q8_0、tiny-orientation-q8_0、public-en-SROIE-q8_0、
-heldout-en-SROIE-050-099-q8_0。orientation 两次 rc=0，但 failures=2 违反
-原 failures==0 结构化门，其余六场景两次 rc=1。完整执行不等于精度门通过；
-七项算术根因仍待原始 probe 数据调查，不放宽 GT、阈值或移除模型。
+Failing scenarios: tiny-rec-onnx-q8_0, tiny-labelled-scenes-f16/q8_0,
+tiny-xfund-zh-recognition-q8_0, tiny-orientation-q8_0, public-en-SROIE-q8_0,
+heldout-en-SROIE-050-099-q8_0. orientation has rc=0 twice, but failures=2
+violates the original structured failures==0 gate. The other six have rc=1
+twice. Full execution is not accuracy acceptance; all seven arithmetic causes
+still require original-probe investigation, without relaxing GT/thresholds or removing models.
 
-### 原七项 FAIL 的指标归因补充
+### Metric attribution for the seven original failures
 
-以下直接读取同一冻结 v4 `report.json` 与其 `probes/ocr/` 原输出，不改历史
-报告。所有 labelled/region 的退化上界仍为 0.005；指标现象不是已证实的算子
-根因，不能用改善的 CER 遮蔽 WER FAIL。
+These observations read the same frozen v4 `report.json` and original
+`probes/ocr/` outputs without changing historical reports. All labelled/region
+degradation limits remain 0.005. Metric symptoms are not proven operator causes;
+improved CER cannot hide WER FAIL.
 
-| 原失败场景 | 已核对的失败量 | 已排除/仍开放的边界 |
+| Original failing scenario | Verified failure | Excluded/open boundaries |
 |---|---|---|
-| tiny-rec-onnx-Q8 | 原 source max_diff=0.890249522、argmax=0.975；四 fixture 仅 1 被 probe 判通过 | stored_max_diff=1.31726265e-5、stored_argmax=1、4/4 完整；不是缺输出或 backend 缺席。冻结 wrapper 的独立 CUDA benchmark 分支仍以原 source <0.001/exact argmax 拒绝，不能静默取消该原门 |
-| tiny-labelled-F16 | Hmean delta=0.005540166、e2e CER delta=0.006178288、e2e WER delta=0.009803922 | 固定 GT 区域 CER/WER delta=0；须追踪检测/完整流水线差异 |
-| tiny-labelled-Q8 | e2e WER delta=0.009803922、固定区域 WER delta=0.009803922 | Hmean delta=0、CER delta=-0.003530450，改善不清除 WER 失败 |
-| tiny-XFUND-zh-Q8 | WER delta=0.018737944 | CER delta=0.001646330 在门内；固定字段识别仍须定位具体 token 差异 |
-| tiny-orientation-Q8 | failures=2，原 `test_ocr_orientation.cpp:95` 两次 text equality FAIL | 原 `.log` 没有 classifier 概率/旋转阈值 FAIL；不能把它误归为两个方向决策失败。wrapper rc=0 仍被结构化 failures==0 门拒绝 |
-| public-en-SROIE-000–049-Q8 | 固定区域 WER delta=0.006833713、e2e WER delta=0.008936394 | CER delta=0.001270946 在门内；模型/GT 不改 |
-| heldout-en-SROIE-050–099-Q8 | 固定区域 WER delta=0.006207675、e2e WER delta=0.006583898 | CER delta=0.000734420、Hmean delta=-0.000751945；仍为独立 held-out FAIL，不能用于调参 |
+| tiny-rec-onnx-Q8 | source max_diff=0.890249522, argmax=0.975; only 1 of four fixtures passes | stored_max_diff=1.31726265e-5, stored_argmax=1, 4/4 complete: not missing output/backend. The frozen independent CUDA benchmark still rejects via source <0.001/exact argmax; do not remove that original gate |
+| tiny-labelled-F16 | Hmean delta=0.005540166, e2e CER delta=0.006178288, e2e WER delta=0.009803922 | Fixed GT-region CER/WER delta=0; trace detection/full-pipeline differences |
+| tiny-labelled-Q8 | e2e WER delta=0.009803922, fixed-region WER delta=0.009803922 | Hmean delta=0, CER delta=-0.003530450; improvement does not clear WER failure |
+| tiny-XFUND-zh-Q8 | WER delta=0.018737944 | CER delta=0.001646330 is within bounds; identify fixed-field token differences |
+| tiny-orientation-Q8 | failures=2, two text-equality FAILs at `test_ocr_orientation.cpp:95` | No classifier-probability/rotation-threshold FAIL in `.log`; not two direction-decision failures. rc=0 remains rejected by structured failures==0 |
+| public-en-SROIE-000–049-Q8 | Fixed-region WER delta=0.006833713, e2e WER delta=0.008936394 | CER delta=0.001270946 within bounds; model/GT unchanged |
+| heldout-en-SROIE-050–099-Q8 | Fixed-region WER delta=0.006207675, e2e WER delta=0.006583898 | CER delta=0.000734420, Hmean delta=-0.000751945; independent held-out FAIL, not tuning data |
 
-图级原输出为 `probes/ocr/ppocrv6-tiny-rec-onnx-q8_0/ocr-ppocrv6-tiny-rec-onnx-q8_0.json`；
-方向失败日志为 `probes/ocr/ppocrv6-tiny-orientation-q8_0/ocr-ppocrv6-tiny-orientation-q8_0.log`。
-冻结 `core/AICore/scripts/run_ocr_onnx_probe.py` 的量化诊断与 benchmark source 检查
-是两个实际分支：同存储权重一致性通过不清除后者的原独立精度失败。此次没有
-修改 wrapper、模型、阈值、source pin 或用 developer timing 作为性能资格。
+Original graph output:
+`probes/ocr/ppocrv6-tiny-rec-onnx-q8_0/ocr-ppocrv6-tiny-rec-onnx-q8_0.json`.
+Orientation failure log:
+`probes/ocr/ppocrv6-tiny-orientation-q8_0/ocr-ppocrv6-tiny-orientation-q8_0.log`.
+The frozen `core/AICore/scripts/run_ocr_onnx_probe.py` quantization diagnostic
+and benchmark source check are separate branches. Stored-weight consistency
+does not clear the original independent-accuracy failure. No wrapper/model/
+threshold/source pin changed; developer timing is not performance qualification.
 
-Relate 后续独立候选已完成 CUDA 编译/链接、三后端各 256 数值和七路由 GREEN；
-host 独立链接及 28 个同权重消费者字节对照完成，但四项 Vulkan p95 原门 FAIL、
-large-F32 缺失和三源/冻结 release 门仍开放，详见 Relate owning record。
+The independent Relate candidate completed CUDA build/link, 256 numeric
+cases per backend and seven-route GREEN. Independent host linking and 28
+same-weight consumer byte comparisons completed; four original Vulkan p95
+FAILs, missing large-F32 and three-source/frozen-release gates remain open.
+See the Relate owning record.
 
-LLM scoped native schema/HELP/MCP/CPU text、repeat、two-image 与拒绝/错误路径
-已有通过收据，仍为 release_qualified=false；live RPC 和原冻结 baseline/
-性能 FAIL 均不由这些局部结果清除。既有 Canvas v12 报告 PASS，原 GL v13
-启动失败于 Qt xcb 依赖，未执行 framebuffer 门；完整原生窗口验收仍开放。
+The user later approved only the old `normal_distribution.py` exact ScalarType
+expectation correction. The real Double-build script exits 0 in
+`pythonruntime-normal-scalar-green-v6.log`. Old Float32 FAIL remains; core
+config/API/LTO/opaque and inference gates are unchanged. This neither affects
+these OCR failures nor substitutes for a real Float-core matrix.
 
-以下保留较早的执行中观察，旧待机进度已被上述最终结果取代。
+LLM scoped native schema/HELP/MCP/CPU text/repeat/two-image/rejection/error
+paths have passing receipts but release_qualified=false. Default installed
+registry still has 18 entries and rejects llm; explicit workspace harness
+native HELP succeeds. Default packages were not updated. RPC methods is
+connection-refused; info metadata is not connectivity. These scoped results
+clear neither live RPC nor frozen-baseline/performance FAILs. Existing Canvas
+v12 reports PASS; original GL v13 fails Qt xcb startup before framebuffer
+qualification. Full native-window acceptance remains open.
+
+Earlier in-progress observations below are retained; these final results
+supersede stale waiting progress.
 
 The corresponding-module continuation re-verifies current main config and
 three-state review in `qal-config-current-v14.json` and

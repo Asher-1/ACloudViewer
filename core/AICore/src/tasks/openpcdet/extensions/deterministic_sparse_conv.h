@@ -1,7 +1,14 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 // Deterministic focal sparse convolution — the single shared numeric core of
-// 方案 C (see ../DETERMINISTIC_FOCAL_DESIGN.md).
+// Option C (see ../DETERMINISTIC_FOCAL_DESIGN.md).
 //
 // Why: the focal conv_imp sigmoid feeds a hard 0.5 threshold, and ~2945 sites
 // sit within 3e-5 of it, so the ~2e-7 ggml mul_mat reduction-order noise flips
@@ -15,12 +22,12 @@
 // conv each), gated by hparams::focal_deterministic in voxelrcnn.cpp. Every
 // other model keeps the stock ggml mul_mat path untouched.
 
-#include "sparse_ops.h"
-
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
+
+#include "sparse_ops.h"
 
 #ifndef __CUDACC__
 #include <cmath>
@@ -51,9 +58,9 @@ inline float det_expf(float x) {
     // k = round(x*log2e) <= 126 must hold so 2^k * (1 + exp(r)) < FLT_MAX).
     if (x > 87.0f) return 0x1.fffffep+127f;  // ~FLT_MAX: 1/(1+this) rounds to 1
     if (x < -87.0f) return 0.0f;
-    constexpr float kInvLn2 = 0x1.715476p+0f;      // 1.4426950216293335
-    constexpr float kLn2Hi  = 0x1.62e400p-1f;      // 6.93145751953125e-1
-    constexpr float kLn2Lo  = 0x1.7f7d1cp-20f;     // 1.4286067653e-6
+    constexpr float kInvLn2 = 0x1.715476p+0f;  // 1.4426950216293335
+    constexpr float kLn2Hi = 0x1.62e400p-1f;   // 6.93145751953125e-1
+    constexpr float kLn2Lo = 0x1.7f7d1cp-20f;  // 1.4286067653e-6
     const float biased = det_fma(x, kInvLn2, x >= 0.0f ? 0.5f : -0.5f);
     const int k = static_cast<int>(biased);
     const float kf = static_cast<float>(k);
@@ -62,8 +69,8 @@ inline float det_expf(float x) {
     // exp(r) = 1 + r + r^2/2 + r^3 * q(r), q = 1/6 + r/24 + r^2/120 + r^3/720.
     constexpr float kC720 = 1.38888889e-3f;
     constexpr float kC120 = 8.33333333e-3f;
-    constexpr float kC24  = 4.16666667e-2f;
-    constexpr float kC6   = 1.66666667e-1f;
+    constexpr float kC24 = 4.16666667e-2f;
+    constexpr float kC6 = 1.66666667e-1f;
     constexpr float kHalf = 0.5f;
     float q = det_fma(r, kC720, kC120);
     q = det_fma(r, q, kC24);
@@ -94,17 +101,23 @@ inline float det_relu(float v) { return v > 0.0f ? v : 0.0f; }
 // o*(K*C_in) + r, exactly what ggml_backend_tensor_get yields for the fused
 // sparse weight tensor), which also makes the c-inner walk contiguous.
 template <typename FMA>
-inline float det_sparse_conv_cell(const float * feat, int C_in,
-                                  const int32_t * idx_row, const float * W,
-                                  float bias_o, int o, int C_out, int K,
+inline float det_sparse_conv_cell(const float* feat,
+                                  int C_in,
+                                  const int32_t* idx_row,
+                                  const float* W,
+                                  float bias_o,
+                                  int o,
+                                  int C_out,
+                                  int K,
                                   FMA fma) {
     float acc = bias_o;
     for (int k = 0; k < K; ++k) {
         const int r = idx_row[k];
-        if (r < 0) continue;  // zero padding: skip (never touches the accumulator)
-        const float * row = feat + static_cast<size_t>(r) * C_in;
-        const float * w = W + static_cast<size_t>(o) * (K * C_in) +
-                          static_cast<size_t>(k) * C_in;
+        if (r < 0)
+            continue;  // zero padding: skip (never touches the accumulator)
+        const float* row = feat + static_cast<size_t>(r) * C_in;
+        const float* w = W + static_cast<size_t>(o) * (K * C_in) +
+                         static_cast<size_t>(k) * C_in;
         for (int c = 0; c < C_in; ++c) acc = fma(row[c], w[c], acc);
     }
     return acc;
@@ -115,35 +128,44 @@ inline float det_sparse_conv_cell(const float * feat, int C_in,
 // with std::fma; the CUDA kernel in openpcdet_cuda_ext.cu implements the same
 // order per thread with fmaf.
 template <typename FMA>
-inline void det_sparse_conv_rows(const float * feat, int C_in,
-                                 const int32_t * idx,  // [n_out, K], -1 = empty
-                                 const float * W,      // [K*C_in, C_out]
-                                 const float * bias,   // [C_out]
-                                 float * out,          // [n_out, C_out]
-                                 int n_out, int C_out, int K, FMA fma) {
+inline void det_sparse_conv_rows(const float* feat,
+                                 int C_in,
+                                 const int32_t* idx,  // [n_out, K], -1 = empty
+                                 const float* W,      // [K*C_in, C_out]
+                                 const float* bias,   // [C_out]
+                                 float* out,          // [n_out, C_out]
+                                 int n_out,
+                                 int C_out,
+                                 int K,
+                                 FMA fma) {
     for (int v = 0; v < n_out; ++v)
         for (int o = 0; o < C_out; ++o)
-            out[static_cast<size_t>(v) * C_out + o] =
-                det_sparse_conv_cell(feat, C_in, idx + static_cast<size_t>(v) * K,
-                                     W, bias[o], o, C_out, K, fma);
+            out[static_cast<size_t>(v) * C_out + o] = det_sparse_conv_cell(
+                    feat, C_in, idx + static_cast<size_t>(v) * K, W, bias[o], o,
+                    C_out, K, fma);
 }
 
 // CPU deterministic sparse conv (std::fma instantiation). Parallelizes ONLY
 // across disjoint output cells, so the per-cell reduction order is independent
 // of thread scheduling — results are bit-identical to a serial run and to the
 // CUDA kernel.
-void det_sparse_conv_cpu(const float * feat, int C_in,
-                         const int32_t * idx, const float * W,
-                         const float * bias, float * out,
-                         int n_out, int C_out, int K);
+void det_sparse_conv_cpu(const float* feat,
+                         int C_in,
+                         const int32_t* idx,
+                         const float* W,
+                         const float* bias,
+                         float* out,
+                         int n_out,
+                         int C_out,
+                         int K);
 
 // Expand the rulebook into the [n_out, K] row-major neighbor table the
 // deterministic kernels consume (-1 = no neighbor). map.indices is already
 // stored [output_row, kernel] (see sparse_ops.cpp build_sparse_indice_map),
 // so this is a pure data move with a shape sanity check.
-bool det_expand_neighbor_rows(const ext::sparse_indice_map & map,
-                              std::vector<int32_t> & neighbor_rows,
-                              std::string & error);
+bool det_expand_neighbor_rows(const ext::sparse_indice_map& map,
+                              std::vector<int32_t>& neighbor_rows,
+                              std::string& error);
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
 // CUDA deterministic sparse conv: stages the host inputs onto the device,
@@ -151,13 +173,19 @@ bool det_expand_neighbor_rows(const ext::sparse_indice_map & map,
 // and copies the result back. Synchronous w.r.t. the host on return.
 //   features       [in_rows, C_in]
 //   neighbor_rows  [n_out, K], -1 = empty
-//   weights        [C_out, K*C_in] o-major (ggml native)   bias [C_out] or nullptr
-//   out            [n_out, C_out]
-bool det_sparse_conv_cuda(const float * features_host, int in_rows,
-                          int in_channels, const int32_t * neighbor_rows_host,
-                          const float * weights_host, const float * bias_host,
-                          float * out_host, int n_out, int out_channels,
-                          int kernel_volume, std::string & error);
+//   weights        [C_out, K*C_in] o-major (ggml native)   bias [C_out] or
+//   nullptr out            [n_out, C_out]
+bool det_sparse_conv_cuda(const float* features_host,
+                          int in_rows,
+                          int in_channels,
+                          const int32_t* neighbor_rows_host,
+                          const float* weights_host,
+                          const float* bias_host,
+                          float* out_host,
+                          int n_out,
+                          int out_channels,
+                          int kernel_volume,
+                          std::string& error);
 #endif
 
 }  // namespace openpcdet::det

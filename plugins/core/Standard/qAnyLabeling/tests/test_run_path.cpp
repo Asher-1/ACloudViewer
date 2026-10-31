@@ -734,54 +734,86 @@ int runAttribute(QMainWindow* window,
     const QString image = work.filePath("bus.jpg");
     const QString sidecar = work.filePath("bus.json");
     const QString other = work.filePath("other.jpg");
-    if (!check(QFile::copy(root + "objects_detection_data/images/bus.jpg", image) &&
-               QFile::copy(image, other), "Copy the real attribute input")) return 1;
+    if (!check(QFile::copy(root + "objects_detection_data/images/bus.jpg",
+                           image) &&
+                       QFile::copy(image, other),
+               "Copy the real attribute input"))
+        return 1;
     QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, image));
-    if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "The public local person recipe must appear in the picker")) return 1;
+    if (!check(selectModel(window, "PULC Person (local F32)",
+                           "pulc-person-f32.gguf"),
+               "The public local person recipe must appear in the picker"))
+        return 1;
     auto* backend = window->findChild<QComboBox*>("AnnotationBackend");
     int deviceIndex = -1;
     for (int i = 0; backend && i < backend->count(); ++i)
-        if (backend->itemData(i).toString().contains(device, Qt::CaseInsensitive)) {
+        if (backend->itemData(i).toString().contains(device,
+                                                     Qt::CaseInsensitive)) {
             deviceIndex = i;
             break;
         }
-    if (!check(deviceIndex >= 0, "Real attribute backend enumeration")) return 1;
+    if (!check(deviceIndex >= 0, "Real attribute backend enumeration"))
+        return 1;
     backend->setCurrentIndex(deviceIndex);
     QString status;
     const QString directory = localRoot.path() + "/extract/attribute_models";
     if (!check(runAndWait(window, &status, nullptr) &&
-               status.contains(directory + "/pulc-person-f32.gguf") &&
-               !status.contains("Downloading"), "A missing local model must report its path and must not download")) return 1;
+                       status.contains(directory + "/pulc-person-f32.gguf") &&
+                       !status.contains("Downloading"),
+               "A missing local model must report its path and must not "
+               "download"))
+        return 1;
     QDir().mkpath(directory);
-    if (!check(QFile::link(QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
-                          directory + "/pulc-person-f32.gguf") &&
-               QFile::link(QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_VEHICLE_GGUF")),
-                          directory + "/pulc-vehicle-f32.gguf"), "Stage the real local weights")) return 1;
+    if (!check(QFile::link(QString::fromLocal8Bit(qgetenv(
+                                   "AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
+                           directory + "/pulc-person-f32.gguf") &&
+                       QFile::link(
+                               QString::fromLocal8Bit(qgetenv(
+                                       "AICORE_TEST_ATTRIBUTE_VEHICLE_GGUF")),
+                               directory + "/pulc-vehicle-f32.gguf"),
+               "Stage the real local weights"))
+        return 1;
     auto* run = window->findChild<QPushButton*>("AnnotationRunModel");
     bool ignoresConfidence = false;
     for (auto* spin : window->findChildren<QDoubleSpinBox*>())
-        ignoresConfidence |= !spin->isEnabled() && spin->toolTip().contains("built-in thresholds");
-    if (!check(run && ignoresConfidence, "Attributes use the task thresholds and must not misuse detection confidence")) return 1;
-    for (const QString& family : {QStringLiteral("person"), QStringLiteral("vehicle"),
-                                  QStringLiteral("person")}) {
-        if (!check(selectModel(window, family == "person" ? "PULC Person (local F32)"
-                                                          : "PULC Vehicle (local F32)",
-                               "pulc-" + family + "-f32.gguf"), "Switch the attribute model")) return 1;
+        ignoresConfidence |= !spin->isEnabled() &&
+                             spin->toolTip().contains("built-in thresholds");
+    if (!check(run && ignoresConfidence,
+               "Attributes use the task thresholds and must not misuse "
+               "detection confidence"))
+        return 1;
+    for (const QString& family :
+         {QStringLiteral("person"), QStringLiteral("vehicle"),
+          QStringLiteral("person")}) {
+        if (!check(selectModel(window,
+                               family == "person" ? "PULC Person (local F32)"
+                                                  : "PULC Vehicle (local F32)",
+                               "pulc-" + family + "-f32.gguf"),
+                   "Switch the attribute model"))
+            return 1;
         backend->setCurrentIndex(deviceIndex);
         if (!check(runAndWait(window, &status, nullptr) && run->isEnabled() &&
-                   status.contains(device, Qt::CaseInsensitive), "The attribute run completes and releases the UI")) return 1;
+                           status.contains(device, Qt::CaseInsensitive),
+                   "The attribute run completes and releases the UI"))
+            return 1;
         const auto document = readJson(sidecar);
         const auto shapes = document["shapes"].toArray();
-        const auto shape = shapes.isEmpty() ? QJsonObject{} : shapes[0].toObject();
+        const auto shape =
+                shapes.isEmpty() ? QJsonObject{} : shapes[0].toObject();
         const auto attributes = shape["attributes"].toObject();
         if (!check(shapes.size() == 1 && shape["label"] == family &&
-                   shape["shape_type"] == "rectangle" &&
-                   attributes.size() == (family == "person" ? 21 : 2) &&
-                   (family == "person" ? attributes["Gender"] == "Male" && attributes["Direction"] == "Back"
-                                        : attributes["Color"] == "white" && attributes["Type"] == "truck") &&
-                   document["tags"].toArray().isEmpty() && document["flags"].toObject().isEmpty(),
-                   "Full-image attributes are saved and replace, and must not become flags/tags or append boxes")) return 1;
+                           shape["shape_type"] == "rectangle" &&
+                           attributes.size() == (family == "person" ? 21 : 2) &&
+                           (family == "person"
+                                    ? attributes["Gender"] == "Male" &&
+                                              attributes["Direction"] == "Back"
+                                    : attributes["Color"] == "white" &&
+                                              attributes["Type"] == "truck") &&
+                           document["tags"].toArray().isEmpty() &&
+                           document["flags"].toObject().isEmpty(),
+                   "Full-image attributes are saved and replace, and must not "
+                   "become flags/tags or append boxes"))
+            return 1;
     }
     const auto before = readJson(sidecar);
     QTimer::singleShot(0, window, [=]() {
@@ -791,34 +823,59 @@ int runAttribute(QMainWindow* window,
     // openImage updates the status first; wait for the real worker's stale
     // completion notice instead of treating load progress as completion.
     if (!check(runAndWait(window, &status, nullptr) && statusLabel &&
-               waitFor([&]() { return statusLabel->text().contains("changed"); }, 120000) &&
-               readJson(sidecar) == before && !QFileInfo::exists(work.filePath("other.json")),
-               "A stale attribute result must not be written to the original or the new image")) return 1;
+                       waitFor(
+                               [&]() {
+                                   return statusLabel->text().contains(
+                                           "changed");
+                               },
+                               120000) &&
+                       readJson(sidecar) == before &&
+                       !QFileInfo::exists(work.filePath("other.json")),
+               "A stale attribute result must not be written to the original "
+               "or the new image"))
+        return 1;
     QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, image));
     const auto beforeModelSwitch = readJson(sidecar);
     run->click();
     if (!check(statusLabel->text().startsWith("Running"),
-               "Real attribute inference must already be submitted before switching models")) return 1;
-    if (!check(selectModel(window, "PULC Vehicle (local F32)", "pulc-vehicle-f32.gguf"),
-               "Switch the attribute model during inference")) return 1;
+               "Real attribute inference must already be submitted before "
+               "switching models"))
+        return 1;
+    if (!check(selectModel(window, "PULC Vehicle (local F32)",
+                           "pulc-vehicle-f32.gguf"),
+               "Switch the attribute model during inference"))
+        return 1;
     backend->setCurrentIndex(deviceIndex);
-    if (!check(waitFor([&]() { return statusLabel->text().contains("changed"); }, 120000) &&
-               readJson(sidecar) == beforeModelSwitch,
-               "The old model's result must not overwrite the current document")) return 1;
-    if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "Restore the person model")) return 1;
+    if (!check(waitFor(
+                       [&]() {
+                           return statusLabel->text().contains("changed");
+                       },
+                       120000) &&
+                       readJson(sidecar) == beforeModelSwitch,
+               "The old model's result must not overwrite the current "
+               "document"))
+        return 1;
+    if (!check(selectModel(window, "PULC Person (local F32)",
+                           "pulc-person-f32.gguf"),
+               "Restore the person model"))
+        return 1;
     backend->setCurrentIndex(deviceIndex);
 
     QAction* autoRun = nullptr;
     for (auto* action : window->findChildren<QAction*>())
-        if (action->property("qAnyToolbarId").toString() == "auto_run") autoRun = action;
+        if (action->property("qAnyToolbarId").toString() == "auto_run")
+            autoRun = action;
     if (!check(autoRun, "Real Auto Run entry point")) return 1;
     const auto launchBatch = [&]() {
         bool selected = false;
         QTimer::singleShot(0, window, [&]() {
-            auto* range = window->findChild<QDialog*>("AnnotationBatchRangeDialog");
-            auto* from = range ? range->findChild<QSpinBox*>("AnnotationBatchFrom") : nullptr;
-            auto* to = range ? range->findChild<QSpinBox*>("AnnotationBatchTo") : nullptr;
+            auto* range =
+                    window->findChild<QDialog*>("AnnotationBatchRangeDialog");
+            auto* from =
+                    range ? range->findChild<QSpinBox*>("AnnotationBatchFrom")
+                          : nullptr;
+            auto* to = range ? range->findChild<QSpinBox*>("AnnotationBatchTo")
+                             : nullptr;
             if (!from || !to) return;
             from->setValue(1);
             to->setValue(2);
@@ -830,60 +887,107 @@ int runAttribute(QMainWindow* window,
     };
     const auto beforeCancel = readJson(sidecar);
     if (!check(launchBatch() && statusLabel->text().startsWith("Running"),
-               "The first image's real batch inference is submitted before cancelling")) return 1;
-    auto* progress = window->findChild<QProgressDialog*>("AnnotationBatchProgress");
+               "The first image's real batch inference is submitted before "
+               "cancelling"))
+        return 1;
+    auto* progress =
+            window->findChild<QProgressDialog*>("AnnotationBatchProgress");
     auto* cancel = progress ? progress->findChild<QPushButton*>() : nullptr;
     if (!check(cancel, "Real batch cancel button")) return 1;
     cancel->click();
-    if (!check(waitFor([&]() { return statusLabel->text().contains("cancelled"); }, 120000) &&
-               readJson(sidecar) == beforeCancel && !QFileInfo::exists(work.filePath("other.json")),
-               "Cancelling discards the in-flight result and does not schedule the second image")) return 1;
-    if (!check(launchBatch() && waitFor([&]() {
-                   return statusLabel->text().contains("Auto Run completed (2 images)");
-               }, 120000), "The full two-image batch can run again after cancelling")) return 1;
-    for (const QString& name : {QStringLiteral("bus"), QStringLiteral("other")}) {
+    if (!check(waitFor(
+                       [&]() {
+                           return statusLabel->text().contains("cancelled");
+                       },
+                       120000) &&
+                       readJson(sidecar) == beforeCancel &&
+                       !QFileInfo::exists(work.filePath("other.json")),
+               "Cancelling discards the in-flight result and does not schedule "
+               "the second image"))
+        return 1;
+    if (!check(launchBatch() &&
+                       waitFor(
+                               [&]() {
+                                   return statusLabel->text().contains(
+                                           "Auto Run completed (2 images)");
+                               },
+                               120000),
+               "The full two-image batch can run again after cancelling"))
+        return 1;
+    for (const QString& name :
+         {QStringLiteral("bus"), QStringLiteral("other")}) {
         const auto document = readJson(work.filePath(name + ".json"));
         const auto shapes = document["shapes"].toArray();
-        if (!check(shapes.size() == 1 && shapes[0].toObject()["label"] == "person" &&
-                   shapes[0].toObject()["attributes"].toObject().size() == 21 &&
-                   document["imagePath"].toString() == name + ".jpg",
-                   "Each image saves its own attributes and source identity and must not append boxes")) return 1;
+        if (!check(shapes.size() == 1 &&
+                           shapes[0].toObject()["label"] == "person" &&
+                           shapes[0].toObject()["attributes"]
+                                           .toObject()
+                                           .size() == 21 &&
+                           document["imagePath"].toString() == name + ".jpg",
+                   "Each image saves its own attributes and source identity "
+                   "and must not append boxes"))
+            return 1;
     }
 
     // The model file exists but is invalid: this must go through the real
     // worker error path, not a cache-missing precondition check.
-    if (!check(selectModel(window, "PULC Vehicle (local F32)", "pulc-vehicle-f32.gguf"),
-               "Switch the context before the error test")) return 1;
+    if (!check(selectModel(window, "PULC Vehicle (local F32)",
+                           "pulc-vehicle-f32.gguf"),
+               "Switch the context before the error test"))
+        return 1;
     backend->setCurrentIndex(deviceIndex);
-    if (!check(runAndWait(window, &status, nullptr), "Create the real vehicle context")) return 1;
+    if (!check(runAndWait(window, &status, nullptr),
+               "Create the real vehicle context"))
+        return 1;
     const auto beforeError = readJson(work.filePath("other.json"));
     const QString personPath = directory + "/pulc-person-f32.gguf";
-    if (!check(QFile::rename(personPath, personPath + ".saved"), "Park the temporary recipe link")) return 1;
+    if (!check(QFile::rename(personPath, personPath + ".saved"),
+               "Park the temporary recipe link"))
+        return 1;
     {
         QFile corrupt(personPath);
-        if (!check(corrupt.open(QIODevice::WriteOnly), "Create the temporary invalid model")) return 1;
+        if (!check(corrupt.open(QIODevice::WriteOnly),
+                   "Create the temporary invalid model"))
+            return 1;
         corrupt.write("invalid GGUF");
     }
-    if (!check(selectModel(window, "PULC Person (local F32)", "pulc-person-f32.gguf"),
-               "Select the invalid local model")) return 1;
+    if (!check(selectModel(window, "PULC Person (local F32)",
+                           "pulc-person-f32.gguf"),
+               "Select the invalid local model"))
+        return 1;
     backend->setCurrentIndex(deviceIndex);
     if (!check(runAndWait(window, &status, nullptr) && !status.isEmpty() &&
-               !status.contains("attributes:") && !status.contains("Downloading") &&
-               readJson(work.filePath("other.json")) == beforeError,
-               "A real model load failure releases the in-flight state and writes no document")) return 1;
-    if (!check(QFile::remove(personPath) && QFile::rename(personPath + ".saved", personPath) &&
-               runAndWait(window, &status, nullptr) && status.contains("attributes:"),
-               "Real attribute inference can recover after a worker error")) return 1;
+                       !status.contains("attributes:") &&
+                       !status.contains("Downloading") &&
+                       readJson(work.filePath("other.json")) == beforeError,
+               "A real model load failure releases the in-flight state and "
+               "writes no document"))
+        return 1;
+    if (!check(QFile::remove(personPath) &&
+                       QFile::rename(personPath + ".saved", personPath) &&
+                       runAndWait(window, &status, nullptr) &&
+                       status.contains("attributes:"),
+               "Real attribute inference can recover after a worker error"))
+        return 1;
 
     const auto beforeClose = readJson(work.filePath("other.json"));
     QPointer<QMainWindow> lifetime(window);
     run->click();
-    if (!check(statusLabel->text().startsWith("Running"), "Real inference is submitted before teardown")) return 1;
+    if (!check(statusLabel->text().startsWith("Running"),
+               "Real inference is submitted before teardown"))
+        return 1;
     window->close();
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    if (!check(lifetime.isNull() && readJson(work.filePath("other.json")) == beforeClose,
-               "In-flight teardown waits for the worker to exit and must not save the late result")) return 1;
-    std::fprintf(stdout, "attribute %s: picker/local-error/replace/attributes/save/switch/source-stale/model-stale/batch-cancel/restart/worker-error/inflight-teardown PASS\n",
+    if (!check(lifetime.isNull() &&
+                       readJson(work.filePath("other.json")) == beforeClose,
+               "In-flight teardown waits for the worker to exit and must not "
+               "save the late result"))
+        return 1;
+    std::fprintf(stdout,
+                 "attribute %s: "
+                 "picker/local-error/replace/attributes/save/switch/"
+                 "source-stale/model-stale/batch-cancel/restart/worker-error/"
+                 "inflight-teardown PASS\n",
                  device.toUtf8().constData());
     return 0;
 }
@@ -899,8 +1003,11 @@ int main(int argc, char** argv) {
     const bool classifierOnly =
             argc == 3 && QByteArray(argv[2]) == "--classifier";
     const bool ocrOnly = argc >= 3 && QByteArray(argv[2]) == "--ocr";
-    const bool attributeOnly = argc >= 3 && QByteArray(argv[2]) == "--attribute";
-    if (argc >= 3 && !taggedOnly && !classifierOnly && !ocrOnly && !attributeOnly) return 2;
+    const bool attributeOnly =
+            argc >= 3 && QByteArray(argv[2]) == "--attribute";
+    if (argc >= 3 && !taggedOnly && !classifierOnly && !ocrOnly &&
+        !attributeOnly)
+        return 2;
     QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
     QCoreApplication::setApplicationName(QStringLiteral("qAnyLabelingRunPath"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
@@ -915,10 +1022,16 @@ int main(int argc, char** argv) {
     const QString horse =
             root + QStringLiteral("relate_datasets/demo_images/horse.jpg");
     const QStringList required =
-            attributeOnly ? QStringList{QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
-                                        QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_VEHICLE_GGUF")),
-                                        root + "objects_detection_data/images/bus.jpg"}
-            : ocrOnly ? QStringList{root + "ocr_models/ppocr-det-ch-q8_0.gguf",
+            attributeOnly
+                    ? QStringList{QString::fromLocal8Bit(qgetenv(
+                                          "AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
+                                  QString::fromLocal8Bit(
+                                          qgetenv("AICORE_TEST_ATTRIBUTE_"
+                                                  "VEHICLE_GGUF")),
+                                  root + "objects_detection_data/images/"
+                                         "bus.jpg"}
+            : ocrOnly
+                    ? QStringList{root + "ocr_models/ppocr-det-ch-q8_0.gguf",
                                   root + "ocr_models/ppocr-rec-en-q8_0.gguf",
                                   root + "ocr_models/pplcnet-layout-q8_0.gguf",
                                   root + "ppocr_testdata/scenes/ppocrv4_en.jpg"}
@@ -940,9 +1053,13 @@ int main(int argc, char** argv) {
         if (!QFileInfo::exists(needed)) {
             std::fprintf(
                     stderr, "%s: missing %s\n",
-                    taggedOnly || classifierOnly || ocrOnly || attributeOnly ? "FAIL" : "SKIP",
+                    taggedOnly || classifierOnly || ocrOnly || attributeOnly
+                            ? "FAIL"
+                            : "SKIP",
                     needed.toLocal8Bit().constData());
-            return taggedOnly || classifierOnly || ocrOnly || attributeOnly ? 1 : 77;
+            return taggedOnly || classifierOnly || ocrOnly || attributeOnly
+                           ? 1
+                           : 77;
         }
     }
 
@@ -967,7 +1084,8 @@ int main(int argc, char** argv) {
                                    : QStringLiteral("cpu"));
     if (attributeOnly)
         return runAttribute(window, workDir, root,
-                            argc == 4 ? QString::fromLocal8Bit(argv[3]) : QStringLiteral("cpu"));
+                            argc == 4 ? QString::fromLocal8Bit(argv[3])
+                                      : QStringLiteral("cpu"));
     if (classifierOnly) return runClassifier(window, workDir, root);
     if (ocrOnly)
         return runOcr(window, workDir, root,

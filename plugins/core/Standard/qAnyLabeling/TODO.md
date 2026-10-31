@@ -2,65 +2,84 @@
 
 ## Fresh continuation (2026-10-29)
 
-### 编译阻塞与队列启动壳复验
+### Compilation blockers and queue-launcher revalidation
 
-- [x] 新的编译复验启动壳真实失败于 `noclobber` 加 `exec 9>` 打开已有锁；
-  失败保留在 `plugin-build-check-queue-current-v1.log`。改为追加打开 `exec 9>>`
-  后，实际锁打开测试成功，非阻塞取锁仍被原 OCR 持有者拒绝。
-  原 LLM 和 OCR v4 后续壳的同类写法也已修正，仅退役并替换本会话未执行的
-  等待壳；原矩阵、原准备队列、其他会话进程和已有收据均不改动。
-- [x] 用户提供的 qOpenPCDet 硬错误来自旧 `test_openpcdet_helpers.cpp`；
-  当前目标使用 `test_openpcdet_dual_input.cpp` 和合法类嵌套类型别名。
-  `openpcdet-target-recompile-v2.log` 实际强制重编译全部 5 个目标对象、重新
-  链接，并通过 helper 与双 TU 的 2/2 CTest；此前 helpers 33/33 保留。
-  这只闭合该目标的编译问题，不是仓库 `make all` 验收。
-- [x] 独立原对象严格 LTO 重放在 `pythonruntime-odr-diagnostic-v1.log`
-  取得 QString custom/primary 和 ScalarContainer opaque/list 的真实 ODR RED。
-  私有 `BindingTypes.h` 组合既有声明，保留原 opaque、Python 接口和 LTO，
-  链接改为 `-Werror=odr`。真实双 TU 引用修改与 UTF-8 转换已 GREEN。
-- [x] qPythonRuntime 全 TU 强制重编译发现并修正两个 Qt/Python 宏边界：入口
-  首次 Qt 初始化前保存未定义 slots，和 cccorelib 模块展开与 Qt slots 冲突。
-  真实 `ecvDisplayTools.h` 回归已 RED→GREEN，模块展开使用局部 push/undef/pop。
-  `pythonruntime-plugin-odr-all-tu-v4.log` 全部 TU 重编译、严格 LTO 链接和双 TU
-  CTest 通过；保留 LTO/-Werror=odr、原 opaque，原 v1/v3 编译失败收据保留。
-  实际 harness 的 argv 正例退出 0、错误 argv 在原断言退出 1，QString 中文
-  名称真实往返通过；这不是无告警构建或所有 Python 脚本通过的声明。
-  最新 `plugin-targets-forced-recompile-v5.log` 再次强制重编译 helper 全 5 对象与
-  qPythonRuntime 全 TU 并链接；实际 link.txt 保留 -flto/-Werror=odr，随后 2/2
-  CTest 通过。新库的真实 argv 正/负例和 QString 诊断再次执行，原 Float32
-  脚本仍在第 23 行失败，`pythonruntime-real-scalar-after-forced-v5.json` 原值不变。
-- [ ] 原 `normal_distribution.py` 实际在第 23 行 Float32 精确断言失败。
-  当前真实 core 定义 `CV_CORE_LIB_USES_DOUBLE`，诊断记录 mu=1.1，而原测试
-  np.float32 期望为 1.100000023841858；与 ODR 类型转换定义冲突分开归因。
-  `pythonruntime-real-normal-distribution-v1.log` 和 `pythonruntime-real-scalar-v1.json`
-  保留该 FAIL 与原值，不改变原测试、core scalar 配置或把诊断视为门通过。
-- [x] 原 OCR v3/v4 已完整执行且均 FAIL；v4 原 168 场景为 161 PASS、7 FAIL、
-  0 SKIP、0 UNSTABLE。原 2×1×2/threads=0 不变，执行后 521 个名称身份复核
-  和旧收据保护通过；orientation 的 rc=0 仍被 failures=2 的结构化门拒绝。
-- [x] LLM 原生 schema、安装 HELP/MCP 两项和 22 项自动化契约通过；真实 CPU
-  text/repeat/two-image/rejection/error 批次退出 0。live RPC、完整原精度与
-  性能门仍未闭合，局部通过不替代 release 验收。
-- [x] Relate 启动缺陷的原 FAIL 保留；有效七路由 RED 后，三个获批 host 接线点
-  与有序 `0027-acv-cuda-add-gelu-epilogue.patch` 已实现。
-  `relate-gelu-candidate-cvos3vzk/receipt.json` 四链重放、两个 CUDA TU 编译/链接、
-  loader、三后端各 256 数值与全部七路由 GREEN；hint 实际融合、六路由正确回退。
-- [x] Relate host 独立编译/链接与真实消费者对照：`relate-host-consumer-potqw5g7`
-  完成 24 个组合后被串行守卫中止；新目录 `relate-host-consumer-k30cubhk` 用同一
-  快照完成余下 4 个。28 个 sample-0 组合全部 RAFO 字节一致，旧收据不覆盖。
-- [ ] Relate 原性能/独立真值门仍开放：本次 tiny-F16、small-F16、small-Q8、ViT-F16
-  的 Vulkan p95 比例分别 1.078470/1.063624/1.050964/1.091177，均超过原 1.05 门。
-  large-F32 仍缺失；局部 bracket 不等于三源 checkpoint、冻结 release 或平台验收。
-- [x] 原 OCR 七项已逐项提取失败指标与实际判定分支，见 `OCR_RELEASE_GATES.md`。
-  tiny-rec-Q8 stored 权重对照在门内但原 CUDA source 分支仍 FAIL；orientation
-  实际是两次 text equality FAIL，非 classifier 阈值错误；其余页/字段主要 WER，
-  tiny-labelled-F16 另有 Hmean/e2e CER 超门。没有修改原模型、脚本、GT 或阈值。
-- [ ] LLM live RPC 的正式 harness `methods` 实际返回 ConnectionRefusedError；
-  `info` 仅返回配置元数据，不证明连通。仍需启动/验证正确的 scoped GUI 服务。
-- [x] `qal-canvas-render-v12/report.json` 最终为 PASS、errors=[]；仅其既有
-  palette/render 范围成立。原 GL v13 日志是 Qt xcb 平台初始化失败，未到
-  framebuffer 比较，不计渲染成功。
+- [x] The compilation-check launcher failed when `noclobber` combined with
+  `exec 9>` opened an existing lock. Preserve `plugin-build-check-queue-current-v1.log`.
+  Appending via `exec 9>>` passes the real lock-open check; the original OCR
+  owner still rejects nonblocking acquisition. Equivalent LLM/OCR v4 follow-up
+  launchers were corrected; only this session's unexecuted waiters were replaced.
+  Original matrices, preparation queues, other sessions and receipts are unchanged.
+- [x] The reported qOpenPCDet hard error came from old `test_openpcdet_helpers.cpp`.
+  The current target uses `test_openpcdet_dual_input.cpp` and valid nested aliases.
+  `openpcdet-target-recompile-v2.log` forces all 5 target objects to recompile,
+  relinks and passes helper/dual-TU 2/2 CTest; prior helpers 33/33 is retained.
+  This closes that target's compilation issue, not repository `make all` acceptance.
+- [x] Independent strict-LTO replay of original objects produced real ODR RED
+  for QString custom/primary and ScalarContainer opaque/list in
+  `pythonruntime-odr-diagnostic-v1.log`. Private `BindingTypes.h` combines existing
+  declarations while retaining opaque types, Python API and LTO. Linking uses
+  `-Werror=odr`; real dual-TU reference mutation and UTF-8 conversion are GREEN.
+- [x] Forced recompilation of all qPythonRuntime TUs found two Qt/Python macro
+  boundaries: saving undefined slots before initial Qt inclusion and cccorelib
+  module expansion conflicting with Qt slots. The real `ecvDisplayTools.h`
+  regression went RED→GREEN with local push/undef/pop around module expansion.
+  `pythonruntime-plugin-odr-all-tu-v4.log` passes all-TU recompilation, strict
+  LTO linking and dual-TU CTest; LTO/-Werror=odr/opaque and v1/v3 failures remain.
+  Real harness argv success exits 0; bad argv exits 1 at the original assertion.
+  Chinese QString names round-trip. This is not a warning-free build or a claim
+  that every Python script passes. `plugin-targets-forced-recompile-v5.log`
+  forces all 5 helper objects and all qPythonRuntime TUs to rebuild/relink;
+  link.txt retains -flto/-Werror=odr, followed by 2/2 CTest. Real argv positive/
+  negative and QString diagnostics were rerun. The original Float32 script
+  still fails at line 23; `pythonruntime-real-scalar-after-forced-v5.json` is unchanged.
+- [x] Original `normal_distribution.py` failed its exact Float32 assertion at
+  line 23: core defines `CV_CORE_LIB_USES_DOUBLE`, mu=1.1, original np.float32
+  expectation 1.100000023841858. Logs/values remain; the user later approved
+  only this fixture correction. An independent `ScalarField` input identifies
+  float/double, then NumPy generates exact typed expectations; no self-derived
+  distribution expectation or tolerance. The new script exits 0 in
+  `pythonruntime-normal-scalar-green-v6.log`, followed by 2/2 CTest. Only this
+  Double build is verified, not real Float/native-platform matrices. Core config,
+  Python API, LTO/opaque, models and original inference gates are unchanged.
+- [x] Original OCR v3/v4 both completed with FAIL; v4 has 168 scenarios:
+  161 PASS, 7 FAIL, 0 SKIP, 0 UNSTABLE. Original 2×1×2/threads=0 remains.
+  After-run 521-name identity and receipt protection pass; orientation rc=0
+  is still rejected by the structured failures=2 gate.
+- [x] LLM native schema, two installed HELP/MCP checks and 22 automation
+  contracts pass; real CPU text/repeat/two-image/rejection/error batches exit 0.
+  Live RPC and full original accuracy/performance remain open, not replaced by scoped passes.
+- [x] Preserve Relate launcher FAIL. After valid seven-route RED, implement the
+  three approved host connections and ordered `0027-acv-cuda-add-gelu-epilogue.patch`.
+  `relate-gelu-candidate-cvos3vzk/receipt.json` passes four-chain replay, two CUDA
+  TU builds/links, loader, 256 numeric cases per backend and all seven routes.
+  Hints fuse; six routes correctly fall back.
+- [x] Independent Relate host build/link and real consumers:
+  `relate-host-consumer-potqw5g7` finishes 24 combinations before the serial guard
+  stops it; `relate-host-consumer-k30cubhk` finishes the remaining 4 using the
+  same snapshot. All 28 sample-0 combinations are RAFO byte-identical; old receipts remain.
+- [ ] Original Relate speed/independent-truth gates remain open. tiny-F16,
+  small-F16, small-Q8, ViT-F16 Vulkan p95 ratios are
+  1.078470/1.063624/1.050964/1.091177, all above 1.05. large-F32 remains absent;
+  scoped brackets do not qualify three-source checkpoints, frozen release or platforms.
+- [x] Extract all seven original OCR failure metrics and actual branches;
+  see `OCR_RELEASE_GATES.md`. tiny-rec-Q8 stored-weight comparison passes,
+  but original CUDA source still FAILs. orientation has two text-equality
+  failures, not classifier-threshold errors. Other page/field failures mainly
+  concern WER; tiny-labelled-F16 also exceeds Hmean/e2e CER bounds.
+  Original models, scripts, GT and thresholds are unchanged.
+- [ ] Formal LLM live RPC harness `methods` returns ConnectionRefusedError;
+  `info` is configuration metadata, not connectivity. The scoped GUI service
+  still needs startup/verification. Default CLI registry has 18 entries and
+  rejects llm. Explicit in-process workspace harness use gets real `build_app`
+  llm HELP with 18 options, LLM_GENERATE and batch/1. Source/native schema
+  success does not update default packages; no machine-global installation changed.
+- [x] `qal-canvas-render-v12/report.json` finishes PASS, errors=[], only for
+  existing palette/render scope. Original GL v13 fails Qt xcb initialization
+  before framebuffer comparison, not rendering success.
 
-以下队列进度保留原观察时状态，已被上面的完整结果取代；不据旧待机条目重复执行。
+Earlier queue states below are retained as historical observations, superseded
+by these full results; do not re-execute stale waiting entries.
 
 ### Corresponding-module revalidation
 

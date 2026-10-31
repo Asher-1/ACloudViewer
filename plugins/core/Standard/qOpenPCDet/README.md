@@ -58,7 +58,7 @@ quantizations = 54 models:
 | `kitti_pointrcnn_iou` | SECOND + PointRCNN + IoU head | KITTI (3, 4-dim) |
 | `kitti_pvrcnn` | SECOND + PV-RCNN head | KITTI (3, 4-dim) |
 | `kitti_voxelrcnn_car` | VoxelResBackBone / VoxelRCNN | KITTI (1, 4-dim) |
-| `kitti_voxelrcnn_focal_multimodal` | VoxelResBackBone + focal sparse conv | KITTI (3, 4-dim) |
+| `kitti_voxelrcnn_focal_multimodal` * | VoxelResBackBone + focal sparse conv | KITTI (3, 4-dim) |
 | `kitti_parta2_anchor` | SECOND + Part-A2 head | KITTI (3, 4-dim) |
 | `kitti_caddn` * | CaDDN monocular (image + calibration) | KITTI (3, 4-dim) |
 | `nuscenes_pointpillar_multihead` | PointPillar / AnchorHeadMulti | nuScenes (10, 5-dim) |
@@ -70,11 +70,12 @@ quantizations = 54 models:
 | `nuscenes_transfusion_lidar` | Transformer fusion (lidar pass) | nuScenes (10, 5-dim) |
 | `nuscenes_bevfusion` * | BEVFusion multi-modal (6-camera scene) | nuScenes (10, 5-dim) |
 
-\* Multi-modal checkpoints (`kitti_caddn`, `nuscenes_bevfusion`) consume
-camera images through `aicore_openpcdet_detect_scene` /
-`aicore_openpcdet_load_scene_dir`: their panels in the dialog take a scene
-directory (CaDDN: one image + calibration; BEVFusion: a 6-camera scene plus
-the LiDAR branch), while the point-cloud workflow covers the 16 LiDAR-only
+\* Multi-modal checkpoints (`kitti_caddn`, `kitti_voxelrcnn_focal_multimodal`,
+`nuscenes_bevfusion`) consume camera images through
+`aicore_openpcdet_detect_scene` / `aicore_openpcdet_load_scene_dir`: their
+panels take a scene directory (CaDDN and focal VoxelRCNN: one image +
+calibration; BEVFusion: a 6-camera scene). Focal VoxelRCNN and BEVFusion also
+require the LiDAR branch. The point-cloud workflow covers 15 LiDAR-only
 checkpoints. The scene checkpoints are additionally exercised by the
 validation runner (`openpcdet-caddn-scene`, `openpcdet-bevfusion-scene`).
 
@@ -85,10 +86,10 @@ Apache-2.0 (OpenPCDet).
 ## Usage
 
 The dialog follows the qYOLO task-panel layout: a global Device/Threads row,
-a left-hand grouped checkpoint list (**KITTI point cloud** — 9 checkpoints,
-**nuScenes point cloud** — 7 checkpoints, **Multi-modal scene** — 2
+a left-hand grouped checkpoint list (**KITTI point cloud** — 8 checkpoints,
+**nuScenes point cloud** — 7 checkpoints, **Multi-modal scene** — 3
 checkpoints) driving one panel per checkpoint, a shared detection result
-table (class / score / center / size / heading), log and CSV export.
+table (class / score / center / size / heading), application console and CSV export.
 
 1. Pick a checkpoint in the left list and a quantization (`f32` / `f16` /
    `q8_0`, default = the recommended F16 row) inside the panel; thresholds
@@ -114,6 +115,13 @@ table (class / score / center / size / heading), log and CSV export.
 5. **Export CSV** writes `x,y,z,dx,dy,dz,heading,score,label` (KITTI LiDAR
    frame)
 
+Inference/download logs use the application's existing console, without a
+plugin-local log panel. Inputs and run/cancel/sample/progress stay visible while
+configuration scrolls without horizontal field clipping. Long catalog labels
+remain readable in the combo popup rather than widening the configuration.
+Navigation shows each dataset/scene group once; active checkpoint identity and
+quantization remain stable across regrouping and refresh.
+
 ### Use test data
 
 Every checkpoint panel carries the shared teal **Try sample data** button
@@ -134,7 +142,21 @@ The raw `kitti_000008.bin` frame is additionally loaded into the DB tree as
 the `KITTI 000008 (sample)` point cloud (x, y, z + the `intensity` scalar
 field — the inverse of the worker's cloud input path) and selected, so the
 active-cloud Run path works without touching the point file again. Missing
-bundle members log an error line instead of filling partial paths.
+bundle members log an error line instead of filling partial paths. A cold cache
+miss starts shared preparation without emitting an Error; real download,
+integrity and extraction failures retain their error behavior. Closed/rejected
+windows discard late sample results and recover their controls when reopened.
+
+The model-free dialog test covers console routing, all 18 panel geometries at
+800x480, 800x600 and 1024x768, fixed input/actions/progress and closure.
+Explicit real cold-cache validation (the data root must not exist yet) also
+verifies the retained ZIP and automatic input fill for all 18 checkpoints:
+
+```sh
+QT_QPA_PLATFORM=xcb <build>/bin/plugin_test/test_qopenpcdet_dialog --sample-cache <new-absolute-data-root>
+```
+
+This is sample/UI workflow evidence, not model accuracy or release performance.
 
 ### Point features
 
@@ -163,7 +185,7 @@ Inputs: KITTI `.bin` (raw float32 rows, width from the model geometry or
 `POINT_DIM`) and ASCII `.txt` (`x y z [i]` per line). Outputs per item:
 `<stem>_detections.json` plus the shared
 `acloudviewer.aicore.batch/1` manifest. `LIST_MODELS 1` prints the 54-model
-catalog with cache state (the plugin's detect commands apply to the 16
+catalog with cache state (the plugin's detect commands apply to the 15
 LiDAR-only checkpoints).
 
 ## References

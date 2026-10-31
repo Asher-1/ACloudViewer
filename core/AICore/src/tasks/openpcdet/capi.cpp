@@ -48,8 +48,8 @@ using aicore::capi::json_escape;
 
 namespace {
 
-std::unique_ptr<openpcdet::model> create_engine_model(
-        const std::string& path, std::string& error) {
+std::unique_ptr<openpcdet::model> create_engine_model(const std::string& path,
+                                                      std::string& error) {
     openpcdet::model_file probe;
     if (!probe.open(path, /*with_data=*/false)) {
         error = probe.error;
@@ -78,7 +78,8 @@ std::unique_ptr<openpcdet::model> create_engine_model(
         case openpcdet::arch_kind::bevfusion:
             return std::make_unique<openpcdet::bevfusion>();
         default:
-            error = "unsupported GGUF architecture: the published OpenPCDet-GGUF "
+            error = "unsupported GGUF architecture: the published "
+                    "OpenPCDet-GGUF "
                     "release inventory is enabled; focal_former3d/fastpillars "
                     "have no published assets";
             return nullptr;
@@ -87,18 +88,30 @@ std::unique_ptr<openpcdet::model> create_engine_model(
 
 const char* arch_string(const openpcdet::hparams& hp) {
     switch (hp.arch) {
-        case openpcdet::arch_kind::pointpillar: return "openpcdet.pointpillar";
-        case openpcdet::arch_kind::second: return "openpcdet.second";
-        case openpcdet::arch_kind::voxel_detector: return "openpcdet.voxel";
-        case openpcdet::arch_kind::voxelnext: return "openpcdet.voxelnext";
-        case openpcdet::arch_kind::pointrcnn: return "openpcdet.pointrcnn";
-        case openpcdet::arch_kind::pvrcnn: return "openpcdet.pvrcnn";
-        case openpcdet::arch_kind::voxelrcnn: return "openpcdet.voxelrcnn";
-        case openpcdet::arch_kind::transfusion: return "openpcdet.transfusion";
-        case openpcdet::arch_kind::parta2: return "openpcdet.parta2";
-        case openpcdet::arch_kind::caddn: return "openpcdet.caddn";
-        case openpcdet::arch_kind::bevfusion: return "openpcdet.bevfusion";
-        default: return "openpcdet.unknown";
+        case openpcdet::arch_kind::pointpillar:
+            return "openpcdet.pointpillar";
+        case openpcdet::arch_kind::second:
+            return "openpcdet.second";
+        case openpcdet::arch_kind::voxel_detector:
+            return "openpcdet.voxel";
+        case openpcdet::arch_kind::voxelnext:
+            return "openpcdet.voxelnext";
+        case openpcdet::arch_kind::pointrcnn:
+            return "openpcdet.pointrcnn";
+        case openpcdet::arch_kind::pvrcnn:
+            return "openpcdet.pvrcnn";
+        case openpcdet::arch_kind::voxelrcnn:
+            return "openpcdet.voxelrcnn";
+        case openpcdet::arch_kind::transfusion:
+            return "openpcdet.transfusion";
+        case openpcdet::arch_kind::parta2:
+            return "openpcdet.parta2";
+        case openpcdet::arch_kind::caddn:
+            return "openpcdet.caddn";
+        case openpcdet::arch_kind::bevfusion:
+            return "openpcdet.bevfusion";
+        default:
+            return "openpcdet.unknown";
     }
 }
 
@@ -112,8 +125,10 @@ namespace {
 struct dir_tap_sink {
     std::string dir;
     explicit dir_tap_sink(std::string d) : dir(std::move(d)) {}
-    void operator()(const std::string& name, const float* data,
-                    int64_t n_rows, int64_t n_cols) const {
+    void operator()(const std::string& name,
+                    const float* data,
+                    int64_t n_rows,
+                    int64_t n_cols) const {
         if (dir.empty()) return;
         std::error_code ec;
         std::filesystem::create_directories(dir, ec);
@@ -124,11 +139,10 @@ struct dir_tap_sink {
         }
         FILE* f = std::fopen((dir + "/" + fname + ".f32").c_str(), "wb");
         if (f == nullptr) return;
-        std::fwrite(data, sizeof(float),
-                    static_cast<size_t>(n_rows * n_cols), f);
+        std::fwrite(data, sizeof(float), static_cast<size_t>(n_rows * n_cols),
+                    f);
         std::fclose(f);
-        FILE* m =
-                std::fopen((dir + "/" + fname + ".meta.json").c_str(), "w");
+        FILE* m = std::fopen((dir + "/" + fname + ".meta.json").c_str(), "w");
         if (m != nullptr) {
             std::fprintf(m,
                          "{\"name\":\"%s\",\"n_rows\":%lld,\"n_cols\":%lld}\n",
@@ -155,7 +169,7 @@ struct aicore_openpcdet_options {
 struct aicore_openpcdet_ctx {
     std::unique_ptr<openpcdet::model> engine;
     std::string model_path;
-    std::string device;    // backend-resolved device name
+    std::string device;  // backend-resolved device name
     int32_t threads = 0;
     std::string last_error;
 
@@ -185,8 +199,7 @@ AICORE_CAPI aicore_openpcdet_options* aicore_openpcdet_options_new(void) {
     return new (std::nothrow) aicore_openpcdet_options{};
 }
 
-AICORE_CAPI void aicore_openpcdet_options_free(
-        aicore_openpcdet_options* opts) {
+AICORE_CAPI void aicore_openpcdet_options_free(aicore_openpcdet_options* opts) {
     delete opts;
 }
 
@@ -238,10 +251,9 @@ AICORE_CAPI aicore_openpcdet_ctx* aicore_openpcdet_load_opts(
     if (ctx == nullptr) return nullptr;
     ctx->model_path = gguf_path;
     ctx->threads = opts ? opts->common.threads : 0;
-    ctx->score_thresh = opts && opts->score_thresh_set ? opts->score_thresh
-                                                       : 0.0f;
-    ctx->nms_thresh =
-            opts && opts->nms_thresh_set ? opts->nms_thresh : 0.0f;
+    ctx->score_thresh =
+            opts && opts->score_thresh_set ? opts->score_thresh : 0.0f;
+    ctx->nms_thresh = opts && opts->nms_thresh_set ? opts->nms_thresh : 0.0f;
     ctx->max_boxes = opts && opts->max_boxes_set ? opts->max_boxes : 0;
     ctx->dump_taps_dir = opts ? opts->dump_taps_dir : std::string();
     try {
@@ -275,11 +287,15 @@ AICORE_CAPI aicore_openpcdet_ctx* aicore_openpcdet_load_opts(
     return ctx;
 }
 
-AICORE_CAPI void aicore_openpcdet_free(aicore_openpcdet_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_openpcdet_free(aicore_openpcdet_ctx* ctx) {
+    delete ctx;
+}
 
 AICORE_CAPI int aicore_openpcdet_is_ready(const aicore_openpcdet_ctx* ctx) {
     return ctx && ctx->engine && ctx->engine->be.be &&
-           ctx->engine->error.empty() ? 1 : 0;
+                           ctx->engine->error.empty()
+                   ? 1
+                   : 0;
 }
 
 AICORE_CAPI const char* aicore_openpcdet_last_error(
@@ -293,8 +309,8 @@ AICORE_CAPI void aicore_openpcdet_free_buffer(void* p) { free(p); }
 // Geometry
 // ---------------------------------------------------------------------------
 
-AICORE_CAPI int aicore_openpcdet_geometry_of(
-        const aicore_openpcdet_ctx* ctx, aicore_openpcdet_geometry* out) {
+AICORE_CAPI int aicore_openpcdet_geometry_of(const aicore_openpcdet_ctx* ctx,
+                                             aicore_openpcdet_geometry* out) {
     if (ctx == nullptr || out == nullptr || !ctx->engine) return -1;
     const openpcdet::hparams& hp = ctx->engine->file.hp;
     if (hp.point_cloud_range.size() < 6 || hp.voxel_size.size() < 3 ||
@@ -313,7 +329,8 @@ AICORE_CAPI int aicore_openpcdet_geometry_of(
     out->voxel_size_x = hp.voxel_size[0];
     out->voxel_size_y = hp.voxel_size[1];
     out->voxel_size_z = hp.voxel_size[2];
-    for (int i = 0; i < 6; ++i) out->point_cloud_range[i] = hp.point_cloud_range[i];
+    for (int i = 0; i < 6; ++i)
+        out->point_cloud_range[i] = hp.point_cloud_range[i];
     std::snprintf(out->arch, sizeof(out->arch), "%s", arch_string(hp));
     return 0;
 }
@@ -354,7 +371,8 @@ AICORE_CAPI int aicore_openpcdet_detect_points(aicore_openpcdet_ctx* ctx,
                                        d.heading, d.score, d.label});
         }
     } catch (const std::exception& e) {
-        ctx->last_error = std::string("openpcdet inference failed: ") + e.what();
+        ctx->last_error =
+                std::string("openpcdet inference failed: ") + e.what();
         return -1;
     } catch (...) {
         ctx->last_error = "openpcdet inference failed: unknown exception";
@@ -383,8 +401,8 @@ AICORE_CAPI int aicore_openpcdet_detect_scene(
         ctx->last_error = "no loaded model";
         return -1;
     }
-    if (scene == nullptr || scene->abi_version !=
-                                    AICORE_OPENPCDET_SCENE_ABI_VERSION) {
+    if (scene == nullptr ||
+        scene->abi_version != AICORE_OPENPCDET_SCENE_ABI_VERSION) {
         ctx->last_error = "invalid or unsupported scene struct";
         return -1;
     }
@@ -433,8 +451,8 @@ AICORE_CAPI int aicore_openpcdet_detect_scene(
                                        d.heading, d.score, d.label});
         }
     } catch (const std::exception& e) {
-        ctx->last_error = std::string("openpcdet scene inference failed: ") +
-                          e.what();
+        ctx->last_error =
+                std::string("openpcdet scene inference failed: ") + e.what();
         return -1;
     } catch (...) {
         ctx->last_error = "openpcdet scene inference failed: unknown exception";

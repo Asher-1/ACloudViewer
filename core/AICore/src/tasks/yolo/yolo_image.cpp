@@ -7,11 +7,11 @@
 
 #include "tasks/yolo/yolo_image.hpp"
 
-#include "common/image_utils.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+
+#include "common/image_utils.hpp"
 
 #if defined(_OPENMP)
 #include <omp.h>
@@ -89,8 +89,8 @@ void letterbox_image(const Image& img,
     const int canvas_w = new_w + left + right;
     const int canvas_h = new_h + top + bottom;
 
-    info = LetterboxInfo{static_cast<float>(r), left, top, new_w, new_h,
-                         canvas_w, canvas_h};
+    info = LetterboxInfo{
+            static_cast<float>(r), left, top, new_w, new_h, canvas_w, canvas_h};
 
     const size_t plane = (size_t)canvas_w * canvas_h;
     out.resize(3 * plane);
@@ -109,15 +109,17 @@ void letterbox_image(const Image& img,
         }
     }
 
-    // OpenCV 8U uses 11-bit fixed-point coefficients and two-stage vertical truncation;
-    // floating-point bilinear + 0.5 changes input pixels. Reuse the shared owner and actual stride.
+    // OpenCV 8U uses 11-bit fixed-point coefficients and two-stage vertical
+    // truncation; floating-point bilinear + 0.5 changes input pixels. Reuse the
+    // shared owner and actual stride.
     aicore::img::Image source;
     source.width = img.w;
     source.height = img.h;
     source.borrowed_data = img.rgb;
-    source.row_stride_bytes = img.row_stride_bytes != 0
-                                      ? img.row_stride_bytes
-                                      : static_cast<size_t>(img.w) * img.channels;
+    source.row_stride_bytes =
+            img.row_stride_bytes != 0
+                    ? img.row_stride_bytes
+                    : static_cast<size_t>(img.w) * img.channels;
     source.channels = img.channels;
     source.bgr = img.bgr;
     // Scratch uses 3*new_w*new_h bytes (about 0.88 MiB at 640x480).

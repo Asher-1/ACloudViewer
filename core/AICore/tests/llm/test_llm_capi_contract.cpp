@@ -64,8 +64,7 @@ int main() {
                 const auto* proj =
                         aicore_llm_model_by_filename(e->mmproj_filename);
                 AICORE_CHECK(proj && proj->role == AICORE_LLM_ROLE_MMPROJ);
-                AICORE_CHECK(proj &&
-                             std::strcmp(proj->family, e->family) == 0);
+                AICORE_CHECK(proj && std::strcmp(proj->family, e->family) == 0);
             }
         } else {
             AICORE_CHECK(e->role == AICORE_LLM_ROLE_MMPROJ);
@@ -87,7 +86,8 @@ int main() {
     const auto request = aicore_llm_default_request();
     AICORE_CHECK(opts.struct_size == sizeof(opts) &&
                  opts.abi_version == AICORE_LLM_ABI_VERSION);
-    AICORE_CHECK(opts.flash_attn == -1 && std::strcmp(opts.device, "auto") == 0);
+    AICORE_CHECK(opts.flash_attn == -1 &&
+                 std::strcmp(opts.device, "auto") == 0);
     AICORE_CHECK(request.struct_size == sizeof(request) &&
                  request.max_tokens == 512 && request.temperature == 0.f);
 

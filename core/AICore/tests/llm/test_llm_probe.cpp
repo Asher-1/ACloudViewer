@@ -18,12 +18,12 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
-#include <QLibrary>
 #include <QFileInfo>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLibrary>
 #include <QProcess>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -44,7 +44,7 @@ namespace {
 
 struct Args {
     std::string model, mmproj, device = "auto", prompt, system, image,
-            upstream_dir, json_out, profile_nvtx;
+                               upstream_dir, json_out, profile_nvtx;
     bool upstream_requested = false;
     int max_tokens = 64, repeats = 3, warmups = 1, threads = 0;
     std::string contains;  // optional case-insensitive answer gate
@@ -95,16 +95,17 @@ std::string run_upstream(const Args& a,
                          const std::string& image_png,
                          std::string* error) {
     const bool vision = !a.image.empty();
-    QStringList args{"-m", QString::fromStdString(a.model), "-p",
-                     QString::fromStdString(a.prompt), "--temp", "0", "-n",
-                     QString::number(a.max_tokens), "--no-warmup"};
+    QStringList args{"-m",         QString::fromStdString(a.model),
+                     "-p",         QString::fromStdString(a.prompt),
+                     "--temp",     "0",
+                     "-n",         QString::number(a.max_tokens),
+                     "--no-warmup"};
     if (device == "CPU")
         args << "-dev" << "none" << "-ngl" << "0";
     else
         args << "-dev" << QString::fromStdString(device) << "-ngl" << "99";
     if (a.threads > 0) args << "-t" << QString::number(a.threads);
-    if (!a.system.empty())
-        args << "-sys" << QString::fromStdString(a.system);
+    if (!a.system.empty()) args << "-sys" << QString::fromStdString(a.system);
     QProcess process;
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     // The runner points the loader at the patched production ggml, whose op
@@ -113,8 +114,8 @@ std::string run_upstream(const Args& a,
     const QString dir = QString::fromStdString(a.upstream_dir);
     for (const char* var : {"LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "PATH"}) {
         const QString old = env.value(var);
-        env.insert(var, old.isEmpty() ? dir
-                                      : dir + QDir::listSeparator() + old);
+        env.insert(var,
+                   old.isEmpty() ? dir : dir + QDir::listSeparator() + old);
     }
     const QString marker = "<<<AICORE-UPSTREAM-RESPONSE>>>";
     if (vision) {
@@ -132,9 +133,8 @@ std::string run_upstream(const Args& a,
 #else
     const QString suffix;
 #endif
-    const QString tool = dir +
-                         (vision ? "/llama-mtmd-cli" : "/llama-completion") +
-                         suffix;
+    const QString tool =
+            dir + (vision ? "/llama-mtmd-cli" : "/llama-completion") + suffix;
     // A dlopen failure in a Release tool can merely remove the device; first
     // confirm that the same-named backend is available so empty output is not
     // misreported as a model numeric divergence.
@@ -149,7 +149,8 @@ std::string run_upstream(const Args& a,
         }
         const QByteArray devices = process.readAllStandardOutput() +
                                    process.readAllStandardError();
-        if (!devices.contains((QString::fromStdString(device) + ":").toUtf8())) {
+        if (!devices.contains(
+                    (QString::fromStdString(device) + ":").toUtf8())) {
             *error = "upstream device unavailable: " + device + "; " +
                      devices.right(400).toStdString();
             return {};
@@ -199,23 +200,35 @@ int main(int argc, char** argv) {
             }
             return argv[++i];
         };
-        if (k == "--model") a.model = next();
-        else if (k == "--mmproj") a.mmproj = next();
-        else if (k == "--device") a.device = next();
-        else if (k == "--prompt") a.prompt = next();
-        else if (k == "--system") a.system = next();
-        else if (k == "--image") a.image = next();
-        else if (k == "--max-tokens") a.max_tokens = std::stoi(next());
-        else if (k == "--repeats") a.repeats = std::stoi(next());
-        else if (k == "--warmups") a.warmups = std::stoi(next());
-        else if (k == "--threads") a.threads = std::stoi(next());
+        if (k == "--model")
+            a.model = next();
+        else if (k == "--mmproj")
+            a.mmproj = next();
+        else if (k == "--device")
+            a.device = next();
+        else if (k == "--prompt")
+            a.prompt = next();
+        else if (k == "--system")
+            a.system = next();
+        else if (k == "--image")
+            a.image = next();
+        else if (k == "--max-tokens")
+            a.max_tokens = std::stoi(next());
+        else if (k == "--repeats")
+            a.repeats = std::stoi(next());
+        else if (k == "--warmups")
+            a.warmups = std::stoi(next());
+        else if (k == "--threads")
+            a.threads = std::stoi(next());
         else if (k == "--upstream-dir") {
             a.upstream_dir = next();
             a.upstream_requested = true;
-        }
-        else if (k == "--contains") a.contains = next();
-        else if (k == "--json-out") a.json_out = next();
-        else if (k == "--profile-nvtx") a.profile_nvtx = next();
+        } else if (k == "--contains")
+            a.contains = next();
+        else if (k == "--json-out")
+            a.json_out = next();
+        else if (k == "--profile-nvtx")
+            a.profile_nvtx = next();
         else {
             std::fprintf(stderr, "unknown argument %s\n", k.c_str());
             return 2;
@@ -251,9 +264,9 @@ int main(int argc, char** argv) {
     // An unconfigured {reference:llama_upstream} expands to "": skip, never
     // pass silently (the runner counts the skip against the gate).
     if (a.upstream_requested) {
-        const QString tool = QString::fromStdString(a.upstream_dir) +
-                             (a.image.empty() ? "/llama-completion"
-                                              : "/llama-mtmd-cli");
+        const QString tool =
+                QString::fromStdString(a.upstream_dir) +
+                (a.image.empty() ? "/llama-completion" : "/llama-mtmd-cli");
         if (a.upstream_dir.empty() ||
             !(QFileInfo::exists(tool) || QFileInfo::exists(tool + ".exe"))) {
             std::fprintf(stderr, "upstream reference unavailable: %s\n",
@@ -265,8 +278,8 @@ int main(int argc, char** argv) {
     // The optional diagnostic uses the NVTX library the caller provides
     // explicitly; an ordinary probe has no SDK compile or link dependency.
 #ifdef Q_OS_WIN
-    using NvtxPush = int (__stdcall *)(const char*);
-    using NvtxPop = int (__stdcall *)();
+    using NvtxPush = int(__stdcall*)(const char*);
+    using NvtxPop = int(__stdcall*)();
 #else
     using NvtxPush = int (*)(const char*);
     using NvtxPop = int (*)();
@@ -280,13 +293,18 @@ int main(int argc, char** argv) {
         const QString path = QString::fromStdString(a.profile_nvtx);
         nvtx.setFileName(path);
         if (nvtx.load()) {
-            nvtxPush = reinterpret_cast<NvtxPush>(nvtx.resolve("nvtxRangePushA"));
+            nvtxPush =
+                    reinterpret_cast<NvtxPush>(nvtx.resolve("nvtxRangePushA"));
             nvtxPop = reinterpret_cast<NvtxPop>(nvtx.resolve("nvtxRangePop"));
         }
         QFile file(path);
         QCryptographicHash hash(QCryptographicHash::Sha256);
-        if (!nvtxPush || !nvtxPop || !file.open(QIODevice::ReadOnly) || !hash.addData(&file)) {
-            std::fprintf(stderr, "NVTX diagnostic library cannot be loaded or lacks the range API: %s\n", a.profile_nvtx.c_str());
+        if (!nvtxPush || !nvtxPop || !file.open(QIODevice::ReadOnly) ||
+            !hash.addData(&file)) {
+            std::fprintf(stderr,
+                         "NVTX diagnostic library cannot be loaded or lacks "
+                         "the range API: %s\n",
+                         a.profile_nvtx.c_str());
             return 1;
         }
         nvtxDigest = QString::fromLatin1(hash.result().toHex());
@@ -353,7 +371,8 @@ int main(int argc, char** argv) {
             const bool measured = round == 0 && i >= a.warmups;
             bool rangeStarted = false;
             if (measured && nvtxPush) {
-                const QString name = QStringLiteral("aicore/llm/measured/%1").arg(i - a.warmups);
+                const QString name = QStringLiteral("aicore/llm/measured/%1")
+                                             .arg(i - a.warmups);
                 // A dynamic NVTX return value does not prove the profiler
                 // collected anything; local Nsight also returns -1 while it is
                 // really recording ranges. Every push must be paired with a
@@ -365,7 +384,8 @@ int main(int argc, char** argv) {
             }
             const std::clock_t cpu_start = std::clock();
             const int rc = aicore_llm_generate(ctx, &request, &r);
-            const double cpu_ms = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
+            const double cpu_ms =
+                    1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
             // generate is a synchronous public call; close the range even on
             // failure, without marking warmup/recreate/cancel.
             if (rangeStarted) nvtxPop();
@@ -462,8 +482,8 @@ int main(int argc, char** argv) {
             size_t b = 0;
             while (b < s.size() && (s[b] == ' ' || s[b] == '\n')) ++b;
             size_t e = s.size();
-            while (e > b && (s[e - 1] == ' ' || s[e - 1] == '\n' ||
-                             s[e - 1] == '\r'))
+            while (e > b &&
+                   (s[e - 1] == ' ' || s[e - 1] == '\n' || s[e - 1] == '\r'))
                 --e;
             return s.substr(b, e - b);
         };
@@ -528,7 +548,8 @@ int main(int argc, char** argv) {
     report["pass"] = failures.isEmpty();
     // Exactly one sink: the runner merges stdout JSON lines and the report
     // file, and a metric present in both would resolve as ambiguous.
-    const QByteArray json = QJsonDocument(report).toJson(QJsonDocument::Compact);
+    const QByteArray json =
+            QJsonDocument(report).toJson(QJsonDocument::Compact);
     if (!a.json_out.empty()) {
         std::ofstream(a.json_out, std::ios::binary)
                 .write(json.constData(), json.size());

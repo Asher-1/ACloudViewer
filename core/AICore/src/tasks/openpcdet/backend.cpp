@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // AICore adaptation of OpenPCDet-GGML's engine backend bundle. See backend.h.
 #include "backend.h"
 
@@ -11,19 +18,21 @@
 
 namespace openpcdet {
 
-bool engine_backend::init(const std::string & device_req, int n_threads) {
+bool engine_backend::init(const std::string& device_req, int n_threads) {
     release();
 
     ggml_common::load_backends_once();
 
-    const std::string want = ggml_common::to_lower(
-        device_req.empty() ? "auto" : device_req);
+    const std::string want =
+            ggml_common::to_lower(device_req.empty() ? "auto" : device_req);
 
     if (want != "cpu") {
-        ggml_common::GpuBackendGroup group = ggml_common::resolve_gpu_group(want);
+        ggml_common::GpuBackendGroup group =
+                ggml_common::resolve_gpu_group(want);
         if (group.primary()) {
             aicore::runtime::BackendLease lease =
-                aicore::runtime::adopt_backend_lease(group.gpus[0], group.names[0], n_threads);
+                    aicore::runtime::adopt_backend_lease(
+                            group.gpus[0], group.names[0], n_threads);
             group.gpus[0] = nullptr;
             group.release();
             if (lease) {
@@ -40,7 +49,8 @@ bool engine_backend::init(const std::string & device_req, int n_threads) {
 
     if (!be) {
         std::string cpu_error;
-        cpu_lease_ = aicore::runtime::acquire_backend_lease("cpu", n_threads, &cpu_error);
+        cpu_lease_ = aicore::runtime::acquire_backend_lease("cpu", n_threads,
+                                                            &cpu_error);
         be = cpu_lease_.handle();
         if (!be) {
             error = "cpu backend init failed: " + cpu_error;
@@ -66,7 +76,10 @@ bool engine_backend::init(const std::string & device_req, int n_threads) {
 }
 
 void engine_backend::release() {
-    if (galloc) { ggml_gallocr_free(galloc); galloc = nullptr; }
+    if (galloc) {
+        ggml_gallocr_free(galloc);
+        galloc = nullptr;
+    }
     be = nullptr;
     gpu_lease_.reset();
     cpu_lease_.reset();
@@ -82,13 +95,13 @@ bool engine_backend::is_cuda() const {
     // Backend names are "CUDA0", "Vulkan0", "CPU" — match the upstream
     // engine's prefix checks (the resolved lease device string is the same
     // ggml backend name, but stay independent of its case/registry).
-    const char * name = be ? ggml_backend_name(be) : nullptr;
+    const char* name = be ? ggml_backend_name(be) : nullptr;
     return name && strncmp(name, "CUDA", 4) == 0;
 }
 
 bool engine_backend::is_vulkan() const {
-    const char * name = be ? ggml_backend_name(be) : nullptr;
+    const char* name = be ? ggml_backend_name(be) : nullptr;
     return name && strncmp(name, "Vulkan", 6) == 0;
 }
 
-} // namespace openpcdet
+}  // namespace openpcdet

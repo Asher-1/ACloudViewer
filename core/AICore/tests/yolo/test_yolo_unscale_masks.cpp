@@ -136,11 +136,11 @@ int runOpenCvLetterboxCase() {
     // Independent cv2.INTER_LINEAR reference: 3x2 RGB -> 5x3; the middle row
     // contains half-integers.
     const uint8_t source[] = {10, 20, 30, 40, 50, 60, 70, 80, 90,
-                             11, 21, 31, 41, 51, 61, 71, 81, 91};
-    const uint8_t expected[] = {
-            10, 20, 30, 22, 32, 42, 40, 50, 60, 58, 68, 78, 70, 80, 90,
-            11, 21, 31, 22, 32, 42, 41, 51, 61, 59, 69, 79, 71, 81, 91,
-            11, 21, 31, 23, 33, 43, 41, 51, 61, 59, 69, 79, 71, 81, 91};
+                              11, 21, 31, 41, 51, 61, 71, 81, 91};
+    const uint8_t expected[] = {10, 20, 30, 22, 32, 42, 40, 50, 60, 58, 68, 78,
+                                70, 80, 90, 11, 21, 31, 22, 32, 42, 41, 51, 61,
+                                59, 69, 79, 71, 81, 91, 11, 21, 31, 23, 33, 43,
+                                41, 51, 61, 59, 69, 79, 71, 81, 91};
     yolo::LetterboxInfo info;
     std::vector<float> canvas;
     yolo::letterbox_image(yolo::Image{3, 2, source}, 5, info, canvas);
@@ -151,9 +151,9 @@ int runOpenCvLetterboxCase() {
     for (int c = 0; c < 3; ++c) {
         for (int y = 0; y < 5; ++y) {
             for (int x = 0; x < 5; ++x) {
-                const uint8_t value = y == 0 || y == 4
-                                              ? 114
-                                              : expected[((y - 1) * 5 + x) * 3 + c];
+                const uint8_t value =
+                        y == 0 || y == 4 ? 114
+                                         : expected[((y - 1) * 5 + x) * 3 + c];
                 CHECK(canvas[c * 25 + y * 5 + x] == value / 255.0f);
             }
         }

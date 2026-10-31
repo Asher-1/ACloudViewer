@@ -24,7 +24,8 @@
 #endif
 
 qOpenPCDet::qOpenPCDet(QObject* parent)
-    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qOpenPCDet/info.json") {
+    : QObject(parent),
+      ccStdPluginInterface(":/CC/plugin/qOpenPCDet/info.json") {
     ecvPS::registerSettingsGroup(QStringLiteral("qOpenPCDet"));
     qRegisterMetaType<OpenPCDetRunResult>("OpenPCDetRunResult");
     qRegisterMetaType<OpenPCDetDialog::Settings>("OpenPCDetDialog::Settings");
@@ -198,20 +199,17 @@ void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
 void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
     if (!m_app || result.detections.isEmpty()) return;
 
-    const QString modelTag =
-            ecvPluginDbNaming::modelTagFromFilename(
-                    m_currentSettings.modelPath);
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            m_currentSettings.modelPath);
     const QString groupName = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("OpenPCDet detections (%1)").arg(modelTag),
-            m_app);
+            QStringLiteral("OpenPCDet detections (%1)").arg(modelTag), m_app);
     m_dialog->appendLog(tr("[OpenPCDet] Building wireframe group for %1 "
                            "box(es) (model %2).")
                                 .arg(result.detections.size())
                                 .arg(modelTag));
     ccHObject* group = BuildDetectionGroup(result, modelTag);
     if (!group) {
-        m_dialog->appendLog(
-                tr("[Error] Wireframe group build failed."));
+        m_dialog->appendLog(tr("[Error] Wireframe group build failed."));
         return;
     }
     // makeUnique renamed the top group; keep the tree name consistent.
@@ -235,9 +233,8 @@ void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
                    "no point-cloud source (file-only or pointless scene)."));
         return;
     }
-    const QString modelTag =
-            ecvPluginDbNaming::modelTagFromFilename(
-                    m_currentSettings.modelPath);
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            m_currentSettings.modelPath);
     m_dialog->appendLog(tr("[OpenPCDet] Building annotated cloud from '%1' "
                            "(%2 point(s), model %3).")
                                 .arg(source->getName())
@@ -248,8 +245,8 @@ void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
     ccPointCloud* annotated =
             BuildAnnotatedCloud(source, result, modelTag, &tinted, &error);
     if (!annotated) {
-        m_dialog->appendLog(tr("[Error] Annotated-cloud export failed: %1.")
-                                    .arg(error));
+        m_dialog->appendLog(
+                tr("[Error] Annotated-cloud export failed: %1.").arg(error));
         return;
     }
     const QString cloudName = ecvPluginDbNaming::makeUnique(

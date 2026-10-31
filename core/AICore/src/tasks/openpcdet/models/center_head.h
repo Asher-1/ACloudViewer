@@ -1,17 +1,24 @@
-#pragma once
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "bev_backbone.h"
-#include "../gguf_loader.h"
+#pragma once
 
 #include <string>
 #include <vector>
+
+#include "../gguf_loader.h"
+#include "bev_backbone.h"
 
 namespace openpcdet {
 
 struct center_sequence_weights {
     std::vector<conv_bn_block_weights> middle;
-    ggml_tensor * output_weight = nullptr;
-    ggml_tensor * output_bias = nullptr;
+    ggml_tensor* output_weight = nullptr;
+    ggml_tensor* output_bias = nullptr;
 };
 
 struct center_single_weights {
@@ -29,19 +36,23 @@ struct center_head_weights {
 };
 
 struct center_single_outputs {
-    ggml_tensor * heatmap = nullptr;
-    ggml_tensor * center = nullptr;
-    ggml_tensor * center_z = nullptr;
-    ggml_tensor * dimensions = nullptr;
-    ggml_tensor * rotation = nullptr;
-    ggml_tensor * velocity = nullptr;
+    ggml_tensor* heatmap = nullptr;
+    ggml_tensor* center = nullptr;
+    ggml_tensor* center_z = nullptr;
+    ggml_tensor* dimensions = nullptr;
+    ggml_tensor* rotation = nullptr;
+    ggml_tensor* velocity = nullptr;
 };
 
-bool load_center_head_weights(model_file & file, const hparams & hp,
-                              center_head_weights & weights, std::string & error);
+bool load_center_head_weights(model_file& file,
+                              const hparams& hp,
+                              center_head_weights& weights,
+                              std::string& error);
 
 std::vector<center_single_outputs> build_center_head_graph(
-    ggml_context * ctx, const center_head_weights & weights,
-    const hparams & hp, ggml_tensor * spatial_2d);
+        ggml_context* ctx,
+        const center_head_weights& weights,
+        const hparams& hp,
+        ggml_tensor* spatial_2d);
 
-} // namespace openpcdet
+}  // namespace openpcdet

@@ -21,7 +21,7 @@
 #define SMOLVLM_500M                                                      \
     "https://huggingface.co/ggml-org/SmolVLM-500M-Instruct-GGUF/resolve/" \
     "72e986006ef53e37cdd3f6d4241c90b0f01df376/"
-#define QWEN25_05B                                                     \
+#define QWEN25_05B                                                    \
     "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/" \
     "9217f5db79a29953eb74d5343926648285ec7e67/"
 
@@ -48,8 +48,8 @@ const aicore_llm_model_entry kCatalog[] = {
          103769856},
         {"mmproj-SmolVLM-256M-Instruct-f16.gguf",
          SMOLVLM_256M "mmproj-SmolVLM-256M-Instruct-f16.gguf",
-         "SmolVLM 256M projector (F16)", "smolvlm-256m",
-         AICORE_LLM_ROLE_MMPROJ, "f16", nullptr,
+         "SmolVLM 256M projector (F16)", "smolvlm-256m", AICORE_LLM_ROLE_MMPROJ,
+         "f16", nullptr,
          "0802360aca1748f112ea510b8ff277c65b1361c8ef30ed89b83c9c7a60d08e96",
          190031616},
         {"SmolVLM-500M-Instruct-Q8_0.gguf",
@@ -73,8 +73,8 @@ const aicore_llm_model_entry kCatalog[] = {
          108783360},
         {"mmproj-SmolVLM-500M-Instruct-f16.gguf",
          SMOLVLM_500M "mmproj-SmolVLM-500M-Instruct-f16.gguf",
-         "SmolVLM 500M projector (F16)", "smolvlm-500m",
-         AICORE_LLM_ROLE_MMPROJ, "f16", nullptr,
+         "SmolVLM 500M projector (F16)", "smolvlm-500m", AICORE_LLM_ROLE_MMPROJ,
+         "f16", nullptr,
          "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6",
          199468800},
         {"qwen2.5-0.5b-instruct-q8_0.gguf",

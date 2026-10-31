@@ -183,15 +183,15 @@ void drawRotationDirection(QPainter& painter,
     painter.restore();
 }
 
-// Export and interaction share device-pixel layout; draw all leaders before labels.
-// Scratch is O(visible labels), anchor lookup O(total points); no pairwise collision pass.
-void drawAnnotationLabels(
-        QPainter& painter,
-        const AnnotationCanvas& canvas,
-        const QVector<AnnotationShape>& shapes,
-        const AnnotationCanvas::VisualizationOptions& options,
-        const QRect& bounds,
-        int excludedIndex = -1) {
+// Export and interaction share device-pixel layout; draw all leaders before
+// labels. Scratch is O(visible labels), anchor lookup O(total points); no
+// pairwise collision pass.
+void drawAnnotationLabels(QPainter& painter,
+                          const AnnotationCanvas& canvas,
+                          const QVector<AnnotationShape>& shapes,
+                          const AnnotationCanvas::VisualizationOptions& options,
+                          const QRect& bounds,
+                          int excludedIndex = -1) {
     if (!options.showLabels && !options.showTexts) return;
     struct Label {
         QColor color;
@@ -206,13 +206,14 @@ void drawAnnotationLabels(
     painter.save();
     painter.setOpacity(1.0);
     painter.resetTransform();
-    painter.setFont(QFont(
-            QStringLiteral("Arial"),
-            annotationConfig::value("canvas/label_font_size").toInt()));
+    painter.setFont(
+            QFont(QStringLiteral("Arial"),
+                  annotationConfig::value("canvas/label_font_size").toInt()));
     const QFontMetrics metrics(painter.font());
     for (int index = 0; index < shapes.size(); ++index) {
         const auto& shape = shapes[index];
-        if (index == excludedIndex || !shape.visible || shape.points.isEmpty() ||
+        if (index == excludedIndex || !shape.visible ||
+            shape.points.isEmpty() ||
             shape.label == QStringLiteral("AUTOLABEL_OBJECT") ||
             shape.label == QStringLiteral("AUTOLABEL_ADD") ||
             shape.label == QStringLiteral("AUTOLABEL_REMOVE"))
@@ -244,8 +245,7 @@ void drawAnnotationLabels(
         if (shape.type == QStringLiteral("rectangle") ||
             shape.type == QStringLiteral("rotation")) {
             QPointF point = transform.map(shapeBounds(shape).topLeft());
-            if (shape.type == QStringLiteral("rectangle"))
-                point.ry() -= height;
+            if (shape.type == QStringLiteral("rectangle")) point.ry() -= height;
             label.box = QRect(int(point.x()), int(point.y()), width, height);
             label.textPosition =
                     QPoint(int(point.x() + 4),
@@ -271,8 +271,7 @@ void drawAnnotationLabels(
             }
             const QPointF point = transform.map(anchor);
             double left = point.x() + 24;
-            if (left + width > bounds.right())
-                left = point.x() - 24 - width;
+            if (left + width > bounds.right()) left = point.x() - 24 - width;
             double top = point.y() - 24 - height;
             if (top < bounds.top()) top = point.y() + 24;
             left = std::max(double(bounds.left()),
@@ -287,8 +286,7 @@ void drawAnnotationLabels(
                                      ? label.box.left()
                                      : label.box.right();
             const QPointF end(endX, label.box.center().y());
-            const QPointF elbow(end.x() +
-                                        (endX == label.box.left() ? -8 : 8),
+            const QPointF elbow(end.x() + (endX == label.box.left() ? -8 : 8),
                                 end.y());
             label.leader << point << elbow << end;
         } else {

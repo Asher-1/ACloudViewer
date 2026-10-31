@@ -673,6 +673,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QSPIRULA=ON"
                 "-DPLUGIN_STANDARD_QMAPANYTHING=ON"
                 "-DPLUGIN_STANDARD_QOPENPCDET=ON"
+                "-DPLUGIN_STANDARD_QINSTANTMESH=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
@@ -1065,6 +1066,39 @@ run_python_tests() {
     return $pytest_result
 }
 
+# Run optional plugin gates; an enabled plugin may not silently omit registrations.
+run_qpythonruntime_tests() {
+    local build_dir="${1:-build}"
+    local scope="${2:-all}"
+    local cache="${build_dir}/CMakeCache.txt"
+    if [[ ! -f "$cache" ]]; then
+        echo "qPythonRuntime: CMake cache not found at $cache" >&2
+        return 1
+    fi
+    if ! grep -Eq '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$' "$cache" ||
+       ! grep -Eq '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$' "$cache" ||
+       ! grep -Eq '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$' "$cache"; then
+        echo "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
+        return 0
+    fi
+    local pattern='^test_qpythonruntime_'
+    if [[ "$scope" == native ]]; then
+        pattern='^test_qpythonruntime_(binding_types|plugin_loading)$'
+    fi
+    local listing
+    listing=$(ctest --test-dir "$build_dir" -C Release --show-only=json-v1 -R "$pattern") || return $?
+    printf '%s' "$listing" | "${PYTHON_EXECUTABLE:-python3}" -c '
+import json, sys
+required = {"test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading"}
+if sys.argv[1] != "native":
+    required.add("test_qpythonruntime_binding_contracts")
+missing = required - {test["name"] for test in json.load(sys.stdin)["tests"]}
+if missing:
+    sys.exit("qPythonRuntime: missing CTest registrations: " + ", ".join(sorted(missing)))
+' "$scope" || return $?
+    ctest --test-dir "$build_dir" -C Release -R "$pattern" --no-tests=error --output-on-failure -j1
+}
+
 # Run C++ unit tests
 # Usage: run_cpp_unit_tests
 # Should be run from the build directory
@@ -1107,6 +1141,7 @@ run_cpp_unit_tests() {
         return $test_result
     fi
     echo ""
+    run_qpythonruntime_tests . native || { local result=$?; popd; return "$result"; }
     popd # build directory
 }
 

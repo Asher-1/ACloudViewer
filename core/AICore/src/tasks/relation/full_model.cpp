@@ -1081,7 +1081,8 @@ struct FullModel::Impl : TensorLoader {
         }
         y = ln(ctx, x, p + ".norm3");
         auto *ffn1 = affine(ctx, y, p + (last ? ".ffn.0" : ".linear1"));
-        // 显式标记 bias ADD；后端只在完整、安全的域中合并写出。
+        // Explicitly mark the bias ADD; fuse writes only within a complete,
+        // safe backend domain.
         ggml_elementwise_set_epilogue_hint(ffn1, GGML_EPILOGUE_GELU);
         y = affine(ctx, ggml_gelu_erf(ctx, ffn1),
                    p + (last ? ".ffn.3" : ".linear2"));
@@ -1929,11 +1930,12 @@ struct FullModel::Impl : TensorLoader {
         // channels-contiguous view of the token-major input.
         auto *spatial =
                 ggml_permute(ctx, ggml_reshape_3d(ctx, x, C, w, h), 2, 0, 1, 3);
-        // bias 仍在卷积写出舍入后相加，减少一次全激活广播 ADD。
+        // Add bias after convolution write rounding, eliminating one
+        // full-activation broadcast ADD.
         auto *dw = ggml_conv_2d_dw_direct_bias(
                 ctx, packed_convs.kernels.at(p + ".depthwise_conv.weight"),
-                spatial, as_f32(ctx, t(p + ".depthwise_conv.bias")),
-                1, 1, 3, 3, 1, 1);
+                spatial, as_f32(ctx, t(p + ".depthwise_conv.bias")), 1, 1, 3, 3,
+                1, 1);
         auto *y = ggml_view_2d(ctx, dw, C, hw, C * sizeof(float), 0);
         y = ggml_norm(ctx, y, eps);
         y = linear(

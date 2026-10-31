@@ -754,6 +754,285 @@ target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC}/../src
 aicore_apply_compile_definitions(cmp_sam3_vit_stages)
 cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_vit_stages)
 aicore_add_capi_test(test_trellis_capi_contract trellis)
+aicore_add_capi_test(test_instantmesh_capi_contract instantmesh)
+target_link_libraries(test_instantmesh_capi_contract PRIVATE Qt::Core Qt::Gui)
+
+add_executable(test_image_png test_image_png.cpp
+    ${AICORE_COMMON_SRC_DIR}/image_utils.cpp ${AICORE_COMMON_SRC_DIR}/capi_utils.cpp)
+target_include_directories(test_image_png PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_image_png PRIVATE Qt::Core Qt::Gui Threads::Threads)
+_aicore_test_common(test_image_png)
+set_tests_properties(test_image_png PROPERTIES LABELS "capi;image;export")
+
+# Scheduler needs no backend/weights; this white-box target compiles real Qt-free production sources without ggml.
+add_executable(test_instantmesh_scheduler instantmesh/test_instantmesh_scheduler.cpp
+    ../src/tasks/instantmesh/scheduler.cpp)
+_aicore_test_common(test_instantmesh_scheduler NO_CTEST)
+target_link_libraries(test_instantmesh_scheduler PRIVATE Qt::Core)
+set(AICORE_INSTANTMESH_SCHEDULER_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference/scheduler"
+    CACHE PATH "Transient pinned diffusers scheduler reference directory")
+add_test(NAME test_instantmesh_scheduler COMMAND test_instantmesh_scheduler
+    "${AICORE_INSTANTMESH_SCHEDULER_REFERENCE}")
+set_tests_properties(test_instantmesh_scheduler PROPERTIES LABELS "instantmesh;numeric;reference"
+    SKIP_RETURN_CODE 77)
+if(AICORE_TEST_ENV_EXTRA)
+    set_tests_properties(test_instantmesh_scheduler PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+endif()
+
+# Tests compile real component sources; the single ExternalProject still owns ggml.
+add_executable(test_instantmesh_components instantmesh/test_instantmesh_components.cpp
+    ../src/tasks/instantmesh/clip_vision.cpp ../src/tasks/instantmesh/vae.cpp
+    ../src/tasks/instantmesh/unet.cpp ../src/tasks/instantmesh/gguf_io.cpp
+    ../src/tasks/instantmesh/dino.cpp ../src/tasks/instantmesh/lrm_transformer.cpp
+    ../src/tasks/instantmesh/synthesizer.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp
+    ${AICORE_COMMON_SRC_DIR}/runtime_capi.cpp
+    ${AICORE_COMMON_SRC_DIR}/backend_capi.cpp)
+target_include_directories(test_instantmesh_components PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_instantmesh_components PRIVATE
+    ${GGML_DEPENDENCY_TARGET} CVCoreLib Qt::Core ${CMAKE_DL_LIBS})
+_aicore_test_common(test_instantmesh_components NO_CTEST)
+# ELF section collection isolates real private preprocessing without exporting test-only APIs or linking a second task runtime.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_executable(test_instantmesh_preprocessing instantmesh/test_instantmesh_preprocessing.cpp
+        ${AICORE_COMMON_SRC_DIR}/image_utils.cpp ${AICORE_COMMON_SRC_DIR}/capi_utils.cpp)
+    target_include_directories(test_instantmesh_preprocessing PRIVATE
+        ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+    target_compile_options(test_instantmesh_preprocessing PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(test_instantmesh_preprocessing PRIVATE -Wl,--gc-sections)
+    target_link_libraries(test_instantmesh_preprocessing PRIVATE ${GGML_DEPENDENCY_TARGET} CVCoreLib Qt::Core Qt::Gui ${CMAKE_DL_LIBS})
+    _aicore_test_common(test_instantmesh_preprocessing)
+    set_tests_properties(test_instantmesh_preprocessing PROPERTIES LABELS "instantmesh;numeric;preprocess")
+    set(AICORE_INSTANTMESH_E2E_REFERENCE "${CMAKE_BINARY_DIR}/reference/full-official-f32-v1/e2e/T"
+        CACHE PATH "Transient authenticated independent 75-step diffusion reference directory")
+    add_test(NAME test_instantmesh_noise_reference COMMAND test_instantmesh_preprocessing
+        noise-reference "${AICORE_INSTANTMESH_E2E_REFERENCE}")
+    set_tests_properties(test_instantmesh_noise_reference PROPERTIES
+        LABELS "instantmesh;numeric;reference" SKIP_RETURN_CODE 77)
+    add_dependencies(test_instantmesh_components test_instantmesh_preprocessing)
+endif()
+foreach(_im_backend cpu backend)
+    if(_im_backend STREQUAL "cpu")
+        set(_im_device cpu)
+    else()
+        set(_im_device "${AICORE_TEST_DEVICE}")
+    endif()
+    add_test(NAME test_instantmesh_synthesizer_load_${_im_backend}
+        COMMAND test_instantmesh_components synth-load-contract "${_im_device}")
+    add_test(NAME test_instantmesh_synthesizer_layout_${_im_backend}
+        COMMAND test_instantmesh_components synth-layout-contract "${_im_device}")
+    set_tests_properties(test_instantmesh_synthesizer_load_${_im_backend}
+        PROPERTIES LABELS "instantmesh;contract;model-load" RESOURCE_LOCK gpu)
+    set_tests_properties(test_instantmesh_synthesizer_layout_${_im_backend}
+        PROPERTIES LABELS "instantmesh;numeric;layout" RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_synthesizer_load_${_im_backend}
+            test_instantmesh_synthesizer_layout_${_im_backend}
+            PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
+
+# Constant oracles exercise real dino_encode to isolate patch-embedding accuracy independently of model outputs.
+add_executable(test_instantmesh_dino_convolution instantmesh/test_instantmesh_dino_convolution.cpp
+    ../src/tasks/instantmesh/gguf_io.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+target_include_directories(test_instantmesh_dino_convolution PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_instantmesh_dino_convolution PRIVATE
+    ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
+_aicore_test_common(test_instantmesh_dino_convolution NO_CTEST)
+add_test(NAME test_instantmesh_dino_convolution_cpu COMMAND test_instantmesh_dino_convolution cpu)
+add_test(NAME test_instantmesh_dino_convolution_backend COMMAND test_instantmesh_dino_convolution "${AICORE_TEST_DEVICE}")
+set_tests_properties(test_instantmesh_dino_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
+set_tests_properties(test_instantmesh_dino_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
+if(AICORE_TEST_ENV_EXTRA)
+    set_tests_properties(test_instantmesh_dino_convolution_cpu test_instantmesh_dino_convolution_backend
+        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+endif()
+
+# Model-free independent double convolution oracles cover real VAE F32/mixed-im2col paths.
+add_executable(test_instantmesh_vae_convolution instantmesh/test_instantmesh_vae_convolution.cpp
+    ../src/tasks/instantmesh/gguf_io.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+target_include_directories(test_instantmesh_vae_convolution PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_instantmesh_vae_convolution PRIVATE
+    ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
+_aicore_test_common(test_instantmesh_vae_convolution NO_CTEST)
+add_test(NAME test_instantmesh_vae_convolution_cpu COMMAND test_instantmesh_vae_convolution cpu)
+add_test(NAME test_instantmesh_vae_convolution_backend COMMAND test_instantmesh_vae_convolution "${AICORE_TEST_DEVICE}")
+set_tests_properties(test_instantmesh_vae_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
+set_tests_properties(test_instantmesh_vae_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
+if(AICORE_TEST_ENV_EXTRA)
+    set_tests_properties(test_instantmesh_vae_convolution_cpu test_instantmesh_vae_convolution_backend
+        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+endif()
+# The same independent convolution oracle compiles real UNet helpers, without copied expectations or a new ggml owner.
+add_executable(test_instantmesh_unet_convolution instantmesh/test_instantmesh_vae_convolution.cpp
+    ../src/tasks/instantmesh/gguf_io.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+target_compile_definitions(test_instantmesh_unet_convolution PRIVATE AICORE_TEST_UNET_CONV=1)
+target_include_directories(test_instantmesh_unet_convolution PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_instantmesh_unet_convolution PRIVATE
+    ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
+_aicore_test_common(test_instantmesh_unet_convolution NO_CTEST)
+add_test(NAME test_instantmesh_unet_convolution_cpu COMMAND test_instantmesh_unet_convolution cpu)
+add_test(NAME test_instantmesh_unet_convolution_backend COMMAND test_instantmesh_unet_convolution "${AICORE_TEST_DEVICE}")
+set_tests_properties(test_instantmesh_unet_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
+set_tests_properties(test_instantmesh_unet_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
+if(AICORE_TEST_ENV_EXTRA)
+    set_tests_properties(test_instantmesh_unet_convolution_cpu test_instantmesh_unet_convolution_backend
+        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+endif()
+# Manual node-level diagnostics; no asset-dependent default CTest or second validation runner.
+add_executable(test_instantmesh_vae_stages instantmesh/test_instantmesh_vae_stages.cpp
+    ../src/tasks/instantmesh/gguf_io.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+target_include_directories(test_instantmesh_vae_stages PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
+target_link_libraries(test_instantmesh_vae_stages PRIVATE
+    ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
+_aicore_test_common(test_instantmesh_vae_stages NO_CTEST)
+foreach(_im_vae_stage encode decode)
+    add_test(NAME test_instantmesh_vae_allocation_failure_${_im_vae_stage}
+        COMMAND test_instantmesh_vae_stages allocation-failure
+        "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/zero123pp_vae_f16.gguf" "${_im_vae_stage}")
+    set_tests_properties(test_instantmesh_vae_allocation_failure_${_im_vae_stage} PROPERTIES
+        LABELS "instantmesh;contract;model" SKIP_RETURN_CODE 77 ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_vae_allocation_failure_${_im_vae_stage}
+        test_instantmesh_vae_stages)
+endforeach()
+foreach(_im_parking_model zero123pp_cond_f32 zero123pp_vae_f16 dino_q8)
+    add_test(NAME test_instantmesh_weights_parking_${_im_parking_model}
+        COMMAND test_instantmesh_vae_stages weights-parking "${AICORE_TEST_DEVICE}"
+        "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_parking_model}.gguf")
+    set_tests_properties(test_instantmesh_weights_parking_${_im_parking_model} PROPERTIES
+        LABELS "instantmesh;contract;model;gpu" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu
+        ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_weights_parking_${_im_parking_model}
+        test_instantmesh_vae_stages)
+endforeach()
+set(AICORE_INSTANTMESH_COMPONENT_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference"
+    CACHE PATH "Transient pinned CLIP/VAE/UNet component reference root")
+foreach(_im_component clip vae unet)
+    if(_im_component STREQUAL "clip")
+        set(_im_model zero123pp_cond_f32.gguf)
+        set(_im_ref clip_vision)
+    elseif(_im_component STREQUAL "vae")
+        set(_im_model zero123pp_vae_f32.gguf)
+        set(_im_ref vae)
+    else()
+        set(_im_model zero123pp_unet_f16.gguf)
+        set(_im_ref unet)
+    endif()
+    add_test(NAME test_instantmesh_${_im_component}_reference COMMAND test_instantmesh_components
+        "${_im_component}" "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_model}"
+        "${AICORE_INSTANTMESH_COMPONENT_REFERENCE}/${_im_ref}" "${AICORE_TEST_DEVICE}" 4)
+    set_tests_properties(test_instantmesh_${_im_component}_reference PROPERTIES
+        LABELS "instantmesh;numeric;reference;model" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_${_im_component}_reference PROPERTIES
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
+set(AICORE_INSTANTMESH_GEOMETRY_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference/geometry-components-v3"
+    CACHE PATH "Transient pinned four-image DINO/LRM reference root")
+set(AICORE_INSTANTMESH_GEOMETRY_BASELINE "${CMAKE_BINARY_DIR}/instantmesh_reference/geometry-baseline-authenticated"
+    CACHE PATH "Authenticated frozen upstream DINO/LRM output root")
+foreach(_im_component dino lrm)
+    if(_im_component STREQUAL "dino")
+        set(_im_stem dino)
+    else()
+        set(_im_stem lrm_transformer)
+    endif()
+    foreach(_im_quant f32 f16 q8)
+        add_test(NAME test_instantmesh_${_im_component}_${_im_quant}_reference COMMAND test_instantmesh_components
+            "${_im_component}" "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_stem}_${_im_quant}.gguf"
+            "${AICORE_INSTANTMESH_GEOMETRY_REFERENCE}" "${AICORE_TEST_DEVICE}" 4
+            "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validation_manifest.json" "${AICORE_INSTANTMESH_GEOMETRY_BASELINE}")
+        set_tests_properties(test_instantmesh_${_im_component}_${_im_quant}_reference PROPERTIES
+            LABELS "instantmesh;numeric;reference;model" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+        if(AICORE_TEST_ENV_EXTRA)
+            set_tests_properties(test_instantmesh_${_im_component}_${_im_quant}_reference PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+        endif()
+    endforeach()
+endforeach()
+set(AICORE_INSTANTMESH_SYNTH_REFERENCE "${CMAKE_BINARY_DIR}/reference/synth-grid8-v1"
+    CACHE PATH "Transient pinned four-image Synthesizer reference root")
+set(AICORE_INSTANTMESH_SYNTH_BASELINE "${CMAKE_BINARY_DIR}/reference/synth-baseline-grid8-v1"
+    CACHE PATH "Authenticated original Synthesizer baseline root")
+set(AICORE_INSTANTMESH_WEIGHT_REFERENCE "${CMAKE_BINARY_DIR}/reference/weight-quantization-reference-v1"
+    CACHE PATH "Independent correct corner-major same-weight reference root")
+foreach(_im_quant f32 f16 q8)
+    foreach(_im_backend cpu backend)
+        if(_im_backend STREQUAL "cpu")
+            set(_im_device cpu)
+        else()
+            set(_im_device "${AICORE_TEST_DEVICE}")
+        endif()
+        add_test(NAME test_instantmesh_synth_${_im_quant}_reference_${_im_backend}
+            COMMAND test_instantmesh_components synth
+                "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/synthesizer_${_im_quant}.gguf"
+                "${AICORE_INSTANTMESH_SYNTH_REFERENCE}" "${_im_device}" 4
+                "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validation_manifest.json" "${AICORE_INSTANTMESH_SYNTH_BASELINE}"
+                "${AICORE_INSTANTMESH_GEOMETRY_REFERENCE}" "${AICORE_INSTANTMESH_WEIGHT_REFERENCE}")
+        set_tests_properties(test_instantmesh_synth_${_im_quant}_reference_${_im_backend}
+            PROPERTIES LABELS "instantmesh;numeric;reference;model" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+        if(AICORE_TEST_ENV_EXTRA)
+            set_tests_properties(test_instantmesh_synth_${_im_quant}_reference_${_im_backend}
+                PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+        endif()
+    endforeach()
+endforeach()
+
+add_executable(test_instantmesh_c_header instantmesh/test_instantmesh_c_header.c)
+set_target_properties(test_instantmesh_c_header PROPERTIES
+    C_STANDARD 11 C_STANDARD_REQUIRED ON LINKER_LANGUAGE CXX)
+target_link_libraries(test_instantmesh_c_header PRIVATE AICore)
+_aicore_capi_link(test_instantmesh_c_header)
+_aicore_test_common(test_instantmesh_c_header)
+set_tests_properties(test_instantmesh_c_header PROPERTIES LABELS "capi;instantmesh")
+
+add_executable(test_instantmesh_lifecycle instantmesh/test_instantmesh_lifecycle.cpp)
+target_link_libraries(test_instantmesh_lifecycle PRIVATE AICore)
+_aicore_capi_link(test_instantmesh_lifecycle)
+_aicore_test_common(test_instantmesh_lifecycle NO_CTEST)
+add_test(NAME test_instantmesh_lifecycle COMMAND test_instantmesh_lifecycle
+    "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}")
+set_tests_properties(test_instantmesh_lifecycle PROPERTIES
+    LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+add_test(NAME test_instantmesh_full_lifecycle COMMAND test_instantmesh_lifecycle
+    "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" full)
+add_test(NAME test_instantmesh_no_cfg_lifecycle COMMAND test_instantmesh_lifecycle
+    "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" full guidance1)
+add_test(NAME test_instantmesh_timing_boundary COMMAND test_instantmesh_lifecycle
+    "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" timing)
+foreach(_im_rmbg_quant f32 f16 q8)
+    add_test(NAME test_instantmesh_rmbg_${_im_rmbg_quant} COMMAND test_instantmesh_lifecycle
+        "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" rmbg "rmbg_${_im_rmbg_quant}.gguf")
+    set_tests_properties(test_instantmesh_rmbg_${_im_rmbg_quant} PROPERTIES
+        LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_rmbg_${_im_rmbg_quant} PROPERTIES
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
+set_tests_properties(test_instantmesh_full_lifecycle test_instantmesh_no_cfg_lifecycle
+    test_instantmesh_timing_boundary PROPERTIES
+    LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+if(AICORE_TEST_ENV_EXTRA)
+    set_tests_properties(test_instantmesh_lifecycle test_instantmesh_full_lifecycle
+        test_instantmesh_no_cfg_lifecycle test_instantmesh_timing_boundary
+        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+endif()
 
 # SAM 3D C API contract test (model-free) plus the real-asset acceptance
 # probe consumed by the aicore-validate-all runner.
@@ -854,8 +1133,8 @@ aicore_add_yolo_capi_test(test_yolo_capi_contract LABELS capi)
 # ---------------------------------------------------------------------------
 aicore_add_capi_test(test_openpcdet_capi_contract openpcdet)
 
-# 方案 C deterministic focal sparse-conv gates
-# (see src/tasks/openpcdet/DETERMINISTIC_FOCAL_DESIGN.md §4 门禁 1): the CUDA
+# Option C deterministic focal sparse-conv gates
+# (see src/tasks/openpcdet/DETERMINISTIC_FOCAL_DESIGN.md section 4, gate 1): the CUDA
 # kernel and the CPU std::fma core must be BYTE-identical, the ggml mul_mat
 # control within 2e-6, and det_expf within 2e-6 of a double exp. Labels "gpu"
 # only when CUDA is enabled (the GPU leg is the point); the CPU-only build
@@ -1184,6 +1463,11 @@ add_executable(test_catalog_dump_urls catalog_dump_urls.cpp)
 target_link_libraries(test_catalog_dump_urls PRIVATE AICore)
 _aicore_capi_link(test_catalog_dump_urls)
 _aicore_test_common(test_catalog_dump_urls)
+add_dependencies(test_instantmesh_capi_contract test_catalog_dump_urls)
+add_test(NAME test_instantmesh_catalog_consistency COMMAND test_instantmesh_capi_contract
+    "$<TARGET_FILE:test_catalog_dump_urls>")
+set_tests_properties(test_instantmesh_catalog_consistency PROPERTIES LABELS "capi;instantmesh;catalog"
+    ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
 if(NOT MSVC)
     target_compile_options(test_catalog_dump_urls PRIVATE -fPIC)
     target_link_options(test_catalog_dump_urls PRIVATE "-no-pie")
@@ -1260,7 +1544,8 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         test_yolo_capi_performance
         test_yolo_text_model_validation
         test_yolo_capi_parity)
-    list(APPEND _aicore_validation_targets bench_sam3d_backend_acceptance)
+    list(APPEND _aicore_validation_targets bench_sam3d_backend_acceptance
+        test_instantmesh_components test_instantmesh_scheduler)
     # bench_rfdetr_perf is only generated when the whitebox library exists
     # (AICore_BUILD_WHITEBOX_TESTS); drop it from the dependency list
     # otherwise so the gate is still runnable from a plain build.
@@ -1317,11 +1602,62 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/common/test_capi_coverage_audit.py)
     set_tests_properties(test_capi_coverage_audit PROPERTIES LABELS "fast;validation")
 
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_test(NAME test_aicore_linux_cuda_bundle
+            COMMAND ${Python3_EXECUTABLE} -m pytest -q
+                ${CMAKE_SOURCE_DIR}/agent-integration/tests/test_bundle_cuda_runtime.py)
+        set_tests_properties(test_aicore_linux_cuda_bundle PROPERTIES
+            LABELS "fast;validation;packaging" TIMEOUT 120)
+    endif()
+
     add_test(NAME test_aicore_validation_runner
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
         LABELS "fast;validation")
+
+    add_test(NAME test_upstream_inventory
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/test_upstream_inventory.py)
+    set_tests_properties(test_upstream_inventory PROPERTIES
+        LABELS "fast;validation;upstream" TIMEOUT 120)
+
+    add_test(NAME test_instantmesh_reference_contract COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py)
+    set_tests_properties(test_instantmesh_reference_contract PROPERTIES
+        LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
+        ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_SCHEDULER_BINARY=$<TARGET_FILE:test_instantmesh_scheduler>;AICORE_TEST_SCHEDULER_REFERENCE=${AICORE_INSTANTMESH_SCHEDULER_REFERENCE}")
+    # Real binaries consumed by Python subprocesses also enter the automatically derived tier build closure.
+    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_reference_contract
+        test_instantmesh_scheduler)
+    if(TARGET test_instantmesh_preprocessing)
+        add_test(NAME test_instantmesh_preprocess_reference_contract COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --preprocess)
+        set_tests_properties(test_instantmesh_preprocess_reference_contract PROPERTIES
+            LABELS "instantmesh;reference;validation"
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_PREPROCESS_BINARY=$<TARGET_FILE:test_instantmesh_preprocessing>")
+        set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_preprocess_reference_contract test_instantmesh_preprocessing)
+    endif()
+    add_test(NAME test_instantmesh_component_reference_contract COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --components)
+    set_tests_properties(test_instantmesh_component_reference_contract PROPERTIES
+        LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
+        ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_COMPONENT_REFERENCE=${AICORE_INSTANTMESH_COMPONENT_REFERENCE}")
+    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_component_reference_contract
+        test_instantmesh_components)
+
+    add_test(NAME test_instantmesh_geometry_reference_contract COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --geometry)
+    set_tests_properties(test_instantmesh_geometry_reference_contract PROPERTIES
+        LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
+        ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_GEOMETRY_REFERENCE=${AICORE_INSTANTMESH_GEOMETRY_REFERENCE};AICORE_TEST_GEOMETRY_BASELINE=${AICORE_INSTANTMESH_GEOMETRY_BASELINE}")
+    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_geometry_reference_contract test_instantmesh_components)
+add_test(NAME test_instantmesh_synth_reference_contract COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --synth)
+set_tests_properties(test_instantmesh_synth_reference_contract PROPERTIES
+        LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
+        ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_SYNTH_REFERENCE=${AICORE_INSTANTMESH_SYNTH_REFERENCE};AICORE_TEST_SYNTH_BASELINE=${AICORE_INSTANTMESH_SYNTH_BASELINE};AICORE_TEST_WEIGHT_REFERENCE=${AICORE_INSTANTMESH_WEIGHT_REFERENCE};AICORE_TEST_GEOMETRY_REFERENCE=${AICORE_INSTANTMESH_GEOMETRY_REFERENCE}")
+set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_contract test_instantmesh_components)
 
     add_test(NAME test_attribute_probe_contract
         COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}

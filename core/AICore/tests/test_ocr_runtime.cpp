@@ -140,105 +140,131 @@ int testDirectDwBias(const char* moduleDir, const char* deviceName) {
     if (!device) return 77;
     ggml_backend_t backend = ggml_backend_dev_init(device, nullptr);
     if (!backend) return 1;
-    const bool cpu = ggml_backend_dev_type(device) == GGML_BACKEND_DEVICE_TYPE_CPU;
-    const float pixels[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    const bool cpu =
+            ggml_backend_dev_type(device) == GGML_BACKEND_DEVICE_TYPE_CPU;
+    const float pixels[] = {1, 2,  3,  4,  5,  6,  7,  8,
+                            9, 10, 11, 12, 13, 14, 15, 16};
     const float filter[] = {2, -1};
     const float bias[] = {3, -7};
-    const float expected[] = {5, 7, 9, 11, -12, -13, -14, -15,
+    const float expected[] = {5,  7,  9,  11, -12, -13, -14, -15,
                               21, 23, 25, 27, -20, -21, -22, -23};
-    const float unbiased[] = {2, 4, 6, 8, -5, -6, -7, -8,
+    const float unbiased[] = {2,  4,  6,  8,  -5,  -6,  -7,  -8,
                               18, 20, 22, 24, -13, -14, -15, -16};
     int errors = 0;
     for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
         if (cpu && type == GGML_TYPE_F16) continue;
-        for (bool recDirect : {false, true}) for (bool hasBias : {false, true}) {
-            aicore::ocr::OcrWeights weights;
-            weights.meta = ggml_init({2 * 1024 * 1024, nullptr, true});
-            if (!weights.meta) { ++errors; continue; }
-            weights.resetFoldPool();
-            auto* ctx = weights.meta;
-            auto* input = ggml_new_tensor_4d(ctx, type, 2, 2, 2, 2);
-            auto* w = ggml_new_tensor_4d(ctx, type, 1, 1, 1, 2);
-            auto* b = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 2);
-            weights.tensors["ocr.weight"] = w;
-            weights.tensors["ocr.bias"] = b;
-            weights.program.feedInput = "x";
-            weights.program.fetchOutput = "out";
-            weights.program.varRanks = {{"x", 4}, {"weight", 4}, {"bias", 1}, {"out", 4}};
-            aicore::ocr::GraphOp op;
-            op.type = "depthwise_conv2d";
-            op.inputs = {{"Input", {"x"}}, {"Filter", {"weight"}}};
-            if (hasBias) op.inputs.push_back({"Bias", {"bias"}});
-            op.outputs = {"out"};
-            for (const char* key : {"strides", "dilations"}) {
-                op.attrs[key].append(1);
-                op.attrs[key].append(1);
-            }
-            op.attrs["paddings"].append(0);
-            op.attrs["paddings"].append(0);
-            op.attrs["groups"] = 2;
-            aicore::ocr::GraphOp feed, fetch;
-            feed.type = "feed";
-            feed.outputs = {"x"};
-            fetch.type = "fetch";
-            fetch.inputs = {{"X", {"out"}}};
-            fetch.outputs = {"fetch"};
-            weights.program.ops = {feed, op, fetch};
-            aicore::ocr::OcrBuildOptions options;
-            options.gpu_rec_direct_conv = recDirect;
-            options.gpu_dw_direct_conv = !recDirect;
-            std::string error;
-            auto* result = aicore::ocr::buildGraph(ctx, weights, input, &error,
-                                                   nullptr, nullptr, &options);
-            if (!result) {
-                std::fprintf(stderr, "DW graph failed: %s\n", error.c_str());
-                ++errors;
-                continue;
-            }
-            auto* graph = ggml_new_graph(ctx);
-            ggml_build_forward_expand(graph, result);
-            int dw = 0, adds = 0;
-            for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
-                auto* node = ggml_graph_node(graph, i);
-                dw += node->op == GGML_OP_CONV_2D_DW;
-                adds += node->op == GGML_OP_ADD;
-            }
-            if (dw != 1 || adds != 0 || result->src[2] != (hasBias ? b : nullptr)) {
-                std::fprintf(stderr, "DW bias dispatch contract: dw=%d add=%d bias=%d rec=%d\n",
-                             dw, adds, hasBias, recDirect);
-                ++errors;
-            }
-            ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
-            if (!buffer) { ++errors; continue; }
-            const auto set = [](ggml_tensor* t, const float* data, size_t n) {
-                if (t->type == GGML_TYPE_F16) {
-                    std::vector<ggml_fp16_t> half(n);
-                    ggml_fp32_to_fp16_row(data, half.data(), n);
-                    ggml_backend_tensor_set(t, half.data(), 0, n * sizeof(ggml_fp16_t));
-                } else ggml_backend_tensor_set(t, data, 0, n * sizeof(float));
-            };
-            set(input, pixels, 16);
-            set(w, filter, 2);
-            set(b, bias, 2);
-            for (int repeat = 0; repeat < 3; ++repeat) {
-                if (ggml_backend_graph_compute(backend, graph) != GGML_STATUS_SUCCESS) {
+        for (bool recDirect : {false, true})
+            for (bool hasBias : {false, true}) {
+                aicore::ocr::OcrWeights weights;
+                weights.meta = ggml_init({2 * 1024 * 1024, nullptr, true});
+                if (!weights.meta) {
                     ++errors;
-                    break;
+                    continue;
                 }
-                float actual[16];
-                if (type == GGML_TYPE_F16) {
-                    ggml_fp16_t half[16];
-                    ggml_backend_tensor_get(result, half, 0, sizeof(half));
-                    ggml_fp16_to_fp32_row(half, actual, 16);
-                } else ggml_backend_tensor_get(result, actual, 0, sizeof(actual));
-                if (std::memcmp(actual, hasBias ? expected : unbiased, sizeof(actual)) != 0) {
-                    std::fprintf(stderr, "DW bias numeric contract failed: type=%s bias=%d rec=%d repeat=%d\n",
-                                 ggml_type_name(type), hasBias, recDirect, repeat);
+                weights.resetFoldPool();
+                auto* ctx = weights.meta;
+                auto* input = ggml_new_tensor_4d(ctx, type, 2, 2, 2, 2);
+                auto* w = ggml_new_tensor_4d(ctx, type, 1, 1, 1, 2);
+                auto* b = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 2);
+                weights.tensors["ocr.weight"] = w;
+                weights.tensors["ocr.bias"] = b;
+                weights.program.feedInput = "x";
+                weights.program.fetchOutput = "out";
+                weights.program.varRanks = {
+                        {"x", 4}, {"weight", 4}, {"bias", 1}, {"out", 4}};
+                aicore::ocr::GraphOp op;
+                op.type = "depthwise_conv2d";
+                op.inputs = {{"Input", {"x"}}, {"Filter", {"weight"}}};
+                if (hasBias) op.inputs.push_back({"Bias", {"bias"}});
+                op.outputs = {"out"};
+                for (const char* key : {"strides", "dilations"}) {
+                    op.attrs[key].append(1);
+                    op.attrs[key].append(1);
+                }
+                op.attrs["paddings"].append(0);
+                op.attrs["paddings"].append(0);
+                op.attrs["groups"] = 2;
+                aicore::ocr::GraphOp feed, fetch;
+                feed.type = "feed";
+                feed.outputs = {"x"};
+                fetch.type = "fetch";
+                fetch.inputs = {{"X", {"out"}}};
+                fetch.outputs = {"fetch"};
+                weights.program.ops = {feed, op, fetch};
+                aicore::ocr::OcrBuildOptions options;
+                options.gpu_rec_direct_conv = recDirect;
+                options.gpu_dw_direct_conv = !recDirect;
+                std::string error;
+                auto* result =
+                        aicore::ocr::buildGraph(ctx, weights, input, &error,
+                                                nullptr, nullptr, &options);
+                if (!result) {
+                    std::fprintf(stderr, "DW graph failed: %s\n",
+                                 error.c_str());
+                    ++errors;
+                    continue;
+                }
+                auto* graph = ggml_new_graph(ctx);
+                ggml_build_forward_expand(graph, result);
+                int dw = 0, adds = 0;
+                for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+                    auto* node = ggml_graph_node(graph, i);
+                    dw += node->op == GGML_OP_CONV_2D_DW;
+                    adds += node->op == GGML_OP_ADD;
+                }
+                if (dw != 1 || adds != 0 ||
+                    result->src[2] != (hasBias ? b : nullptr)) {
+                    std::fprintf(stderr,
+                                 "DW bias dispatch contract: dw=%d add=%d "
+                                 "bias=%d rec=%d\n",
+                                 dw, adds, hasBias, recDirect);
                     ++errors;
                 }
+                ggml_backend_buffer_t buffer =
+                        ggml_backend_alloc_ctx_tensors(ctx, backend);
+                if (!buffer) {
+                    ++errors;
+                    continue;
+                }
+                const auto set = [](ggml_tensor* t, const float* data,
+                                    size_t n) {
+                    if (t->type == GGML_TYPE_F16) {
+                        std::vector<ggml_fp16_t> half(n);
+                        ggml_fp32_to_fp16_row(data, half.data(), n);
+                        ggml_backend_tensor_set(t, half.data(), 0,
+                                                n * sizeof(ggml_fp16_t));
+                    } else
+                        ggml_backend_tensor_set(t, data, 0, n * sizeof(float));
+                };
+                set(input, pixels, 16);
+                set(w, filter, 2);
+                set(b, bias, 2);
+                for (int repeat = 0; repeat < 3; ++repeat) {
+                    if (ggml_backend_graph_compute(backend, graph) !=
+                        GGML_STATUS_SUCCESS) {
+                        ++errors;
+                        break;
+                    }
+                    float actual[16];
+                    if (type == GGML_TYPE_F16) {
+                        ggml_fp16_t half[16];
+                        ggml_backend_tensor_get(result, half, 0, sizeof(half));
+                        ggml_fp16_to_fp32_row(half, actual, 16);
+                    } else
+                        ggml_backend_tensor_get(result, actual, 0,
+                                                sizeof(actual));
+                    if (std::memcmp(actual, hasBias ? expected : unbiased,
+                                    sizeof(actual)) != 0) {
+                        std::fprintf(stderr,
+                                     "DW bias numeric contract failed: type=%s "
+                                     "bias=%d rec=%d repeat=%d\n",
+                                     ggml_type_name(type), hasBias, recDirect,
+                                     repeat);
+                        ++errors;
+                    }
+                }
+                ggml_backend_buffer_free(buffer);
             }
-            ggml_backend_buffer_free(buffer);
-        }
     }
     ggml_backend_free(backend);
     std::printf("OCR direct DW bias: %s\n", errors == 0 ? "PASS" : "FAIL");
@@ -252,14 +278,22 @@ int main(int argc, char** argv) {
         aicore::ocr::OcrProgram program;
         std::string error;
         for (const char* input : {"pixels", "x"}) {
-            const std::string json = std::string("{\"ops\":[") +
-                "{\"type\":\"feed\",\"inputs\":[],\"outputs\":[{\"args\":[\"" + input +
-                "\"]}],\"attrs\":[]},{\"type\":\"fetch\",\"inputs\":[{\"param\":\"X\","
-                "\"args\":[\"probabilities\"]}],\"outputs\":[{\"args\":[\"__fetch\"]}],\"attrs\":[]}]}";
+            const std::string json =
+                    std::string("{\"ops\":[") +
+                    "{\"type\":\"feed\",\"inputs\":[],\"outputs\":[{\"args\":["
+                    "\"" +
+                    input +
+                    "\"]}],\"attrs\":[]},{\"type\":\"fetch\",\"inputs\":[{"
+                    "\"param\":\"X\","
+                    "\"args\":[\"probabilities\"]}],\"outputs\":[{\"args\":[\"_"
+                    "_fetch\"]}],\"attrs\":[]}]}";
             if (!program.parse(json, &error) || program.feedInput != input ||
                 program.fetchOutput != "probabilities") {
-                std::fprintf(stderr, "program IO contract: feed='%s' fetch='%s' expected='%s'\n",
-                             program.feedInput.c_str(), program.fetchOutput.c_str(), input);
+                std::fprintf(stderr,
+                             "program IO contract: feed='%s' fetch='%s' "
+                             "expected='%s'\n",
+                             program.feedInput.c_str(),
+                             program.fetchOutput.c_str(), input);
                 return 1;
             }
         }

@@ -11,6 +11,8 @@
 // onto the public llama/mtmd C API, so greedy output is comparable token for
 // token with the upstream tools on the same revision, model and prompt.
 
+#include "aicore/llm_capi.h"
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -24,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "aicore/llm_capi.h"
 #include "aicore/runtime_capi.h"
 #include "common/data_root_util.hpp"
 #include "common/ggml_backend_utils.hpp"
@@ -107,7 +108,7 @@ size_t complete_utf8_prefix(const std::string& text, size_t end) {
            (static_cast<unsigned char>(text[lead]) & 0xC0) == 0x80)
         --lead;
     const unsigned char ch = static_cast<unsigned char>(text[lead]);
-    const size_t need = ch < 0x80                ? 1
+    const size_t need = ch < 0x80             ? 1
                         : (ch & 0xE0) == 0xC0 ? 2
                         : (ch & 0xF0) == 0xE0 ? 3
                         : (ch & 0xF8) == 0xF0 ? 4
@@ -269,9 +270,8 @@ int generate(aicore_llm_ctx& ctx,
     if (request.stop_count && !request.stop_sequences)
         throw std::runtime_error("stop_count set without stop_sequences");
     if (!std::isfinite(request.temperature) || request.temperature < 0 ||
-        (request.temperature > 0 &&
-         (!std::isfinite(request.top_p) || request.top_p <= 0 ||
-          request.top_p > 1)))
+        (request.temperature > 0 && (!std::isfinite(request.top_p) ||
+                                     request.top_p <= 0 || request.top_p > 1)))
         throw std::runtime_error("invalid temperature/top_p");
     const uint32_t n_ctx = llama_n_ctx(ctx.lctx);
     if (request.max_tokens == 0 || request.max_tokens > n_ctx)
@@ -329,27 +329,26 @@ int generate(aicore_llm_ctx& ctx,
                         dst[x * 3 + c] =
                                 row[x * view.channels + view.channel_index(c)];
             }
-            bitmaps.emplace_back(mtmd_bitmap_init(uint32_t(view.width),
-                                                  uint32_t(view.height),
-                                                  rgb.data()));
+            bitmaps.emplace_back(mtmd_bitmap_init(
+                    uint32_t(view.width), uint32_t(view.height), rgb.data()));
             if (!bitmaps.back())
                 throw std::runtime_error("failed to create image bitmap");
             bitmap_ptrs.push_back(bitmaps.back().get());
         }
         chunks.reset(mtmd_input_chunks_init());
         mtmd_input_text text{prompt.c_str(), prompt.size(), true, true};
-        const int32_t rc = mtmd_tokenize(ctx.mctx, chunks.get(), &text,
-                                         bitmap_ptrs.data(),
-                                         bitmap_ptrs.size());
+        const int32_t rc =
+                mtmd_tokenize(ctx.mctx, chunks.get(), &text, bitmap_ptrs.data(),
+                              bitmap_ptrs.size());
         if (rc != 0)
             throw std::runtime_error("mtmd_tokenize failed (" +
                                      std::to_string(rc) + ")");
         out.public_result.prompt_tokens =
                 uint32_t(mtmd_helper_get_n_tokens(chunks.get()));
     } else {
-        int32_t n = -llama_tokenize(vocab, prompt.c_str(),
-                                    int32_t(prompt.size()), nullptr, 0, true,
-                                    true);
+        int32_t n =
+                -llama_tokenize(vocab, prompt.c_str(), int32_t(prompt.size()),
+                                nullptr, 0, true, true);
         text_tokens.resize(size_t(std::max(n, 0)));
         if (n <= 0 ||
             llama_tokenize(vocab, prompt.c_str(), int32_t(prompt.size()),
@@ -379,8 +378,8 @@ int generate(aicore_llm_ctx& ctx,
             throw std::runtime_error("prompt exceeds the context size");
         for (size_t at = 0; at < text_tokens.size() && !cancelled;
              at += size_t(n_batch)) {
-            const int32_t n = int32_t(
-                    std::min(text_tokens.size() - at, size_t(n_batch)));
+            const int32_t n =
+                    int32_t(std::min(text_tokens.size() - at, size_t(n_batch)));
             const int32_t rc = llama_decode(
                     ctx.lctx, llama_batch_get_one(text_tokens.data() + at, n));
             if (rc != 0) {
@@ -438,9 +437,8 @@ int generate(aicore_llm_ctx& ctx,
             break;
         }
         out.tokens.push_back(token);
-        const int32_t n = llama_token_to_piece(vocab, token, piece,
-                                               int32_t(sizeof(piece)), 0,
-                                               false);
+        const int32_t n = llama_token_to_piece(
+                vocab, token, piece, int32_t(sizeof(piece)), 0, false);
         if (n < 0) throw std::runtime_error("token detokenization failed");
         const size_t before = out.text.size();
         out.text.append(piece, size_t(n));
@@ -473,7 +471,8 @@ int generate(aicore_llm_ctx& ctx,
         }
         ++n_past;
     }
-    if (cancelled) finish = AICORE_LLM_FINISH_CANCELLED;
+    if (cancelled)
+        finish = AICORE_LLM_FINISH_CANCELLED;
     else
         stream_upto(out.text.size());
     const auto decoded = Clock::now();

@@ -74,13 +74,15 @@ QStringList quantSuffixes() {
             QStringLiteral("q8_0")};
 }
 
-bool buildModelFilename(const QString& checkpoint, const QString& quant,
+bool buildModelFilename(const QString& checkpoint,
+                        const QString& quant,
                         QString* out) {
     if (checkpoint.isEmpty() || !quantSuffixes().contains(quant)) {
         return false;
     }
-    if (out) *out = checkpoint + QStringLiteral(".") + quant +
-                    QStringLiteral(".gguf");
+    if (out)
+        *out = checkpoint + QStringLiteral(".") + quant +
+               QStringLiteral(".gguf");
     return true;
 }
 
@@ -91,11 +93,12 @@ InputKind inputKindForFilename(const QString& filename) {
     // conv consumes concatenated image+voxel features; the AICore engine
     // rejects a points-only detect call for it, models/voxelrcnn.cpp).
     return filename.startsWith(QStringLiteral("kitti_caddn.")) ||
-                   filename.startsWith(QStringLiteral("nuscenes_bevfusion.")) ||
-                   filename.startsWith(
-                       QStringLiteral("kitti_voxelrcnn_focal_multimodal."))
-           ? InputKind::Scene
-           : InputKind::Points;
+                           filename.startsWith(
+                                   QStringLiteral("nuscenes_bevfusion.")) ||
+                           filename.startsWith(QStringLiteral(
+                                   "kitti_voxelrcnn_focal_multimodal."))
+                   ? InputKind::Scene
+                   : InputKind::Points;
 }
 
 QVector<OpenPCDetCheckpoint> catalogCheckpoints() {
@@ -117,8 +120,7 @@ QVector<OpenPCDetCheckpoint> catalogCheckpoints() {
             // Strip the " — <quant note>" tail so the checkpoint label
             // stays quant-agnostic.
             const int sep = e.displayName.indexOf(kDisplaySep);
-            cp.displayName = sep > 0 ? e.displayName.left(sep)
-                                     : e.displayName;
+            cp.displayName = sep > 0 ? e.displayName.left(sep) : e.displayName;
             cp.familyNote = e.familyNote;
             out.append(cp);
         }
@@ -182,16 +184,16 @@ OpenPCDetClassColor classColor(int32_t label, int numClass) {
     // nuScenes devkit palette (1-indexed label = row index + 1 in the
     // OpenPCDet label convention: 1=car .. 10=traffic_cone).
     static constexpr unsigned char kNuScenes[10][3] = {
-            {255, 158, 0},   // car
-            {255, 99, 71},   // truck
-            {233, 150, 70},  // construction_vehicle
-            {255, 69, 0},    // bus
-            {255, 140, 0},   // trailer
-            {112, 128, 144}, // barrier
-            {255, 61, 99},   // motorcycle
-            {220, 20, 60},   // bicycle
-            {0, 0, 230},     // pedestrian
-            {0, 0, 110},     // traffic_cone
+            {255, 158, 0},    // car
+            {255, 99, 71},    // truck
+            {233, 150, 70},   // construction_vehicle
+            {255, 69, 0},     // bus
+            {255, 140, 0},    // trailer
+            {112, 128, 144},  // barrier
+            {255, 61, 99},    // motorcycle
+            {220, 20, 60},    // bicycle
+            {0, 0, 230},      // pedestrian
+            {0, 0, 110},      // traffic_cone
     };
     // Common KITTI demo colors.
     static constexpr unsigned char kKitti[3][3] = {
@@ -201,7 +203,7 @@ OpenPCDetClassColor classColor(int32_t label, int numClass) {
     };
     // Deterministic fallback cycle.
     static constexpr unsigned char kCycle[6][3] = {
-            {255, 204, 0}, {80, 200, 255}, {170, 255, 80},
+            {255, 204, 0},   {80, 200, 255},  {170, 255, 80},
             {255, 105, 180}, {200, 160, 255}, {255, 130, 60},
     };
     OpenPCDetClassColor c;
@@ -285,9 +287,8 @@ bool parsePointsBin(const QByteArray& bytes,
         return fail(QStringLiteral("Empty .bin file"));
     }
     if (bytes.size() % floatBytes != 0) {
-        return fail(QStringLiteral(
-                            ".bin size (%1 B) is not a multiple of %2 "
-                            "float32 features (%3 B)")
+        return fail(QStringLiteral(".bin size (%1 B) is not a multiple of %2 "
+                                   "float32 features (%3 B)")
                             .arg(bytes.size())
                             .arg(pointDim)
                             .arg(floatBytes));
@@ -329,20 +330,20 @@ bool parsePointsTxt(const QString& text,
         ++lineNo;
         const QString line = rawLine.trimmed();
         if (line.isEmpty() || line.startsWith(QLatin1Char('#'))) continue;
-        const QStringList tokens = line.split(kWhitespace, QtCompat::SkipEmptyParts);
+        const QStringList tokens =
+                line.split(kWhitespace, QtCompat::SkipEmptyParts);
         if (tokens.size() < 3) {
-            return fail(QStringLiteral(
-                                "Line %1: expected 'x y z [i]', got '%2'")
-                                .arg(lineNo)
-                                .arg(line));
+            return fail(
+                    QStringLiteral("Line %1: expected 'x y z [i]', got '%2'")
+                            .arg(lineNo)
+                            .arg(line));
         }
         for (int f = 0; f < pointDim; ++f) {
             if (f < tokens.size()) {
                 bool ok = false;
                 const float v = tokens.at(f).toFloat(&ok);
                 if (!ok) {
-                    return fail(QStringLiteral(
-                                        "Line %1: '%2' is not a number")
+                    return fail(QStringLiteral("Line %1: '%2' is not a number")
                                         .arg(lineNo)
                                         .arg(tokens.at(f)));
                 }
@@ -397,9 +398,8 @@ QImage sceneCameraPreview(const float* images,
         camera < 0 || camera >= numCameras) {
         return QImage();
     }
-    const int usedChannels = (channels == 1 || channels == 3 || channels == 4)
-                                     ? channels
-                                     : 0;
+    const int usedChannels =
+            (channels == 1 || channels == 3 || channels == 4) ? channels : 0;
     if (usedChannels == 0) return QImage();
     QImage image(width, height, QImage::Format_RGB888);
     const float* frame =
@@ -410,8 +410,8 @@ QImage sceneCameraPreview(const float* images,
             const float* px =
                     frame + (static_cast<size_t>(y) * width + x) * channels;
             const auto clamp8 = [](float v) {
-                return static_cast<uchar>(
-                        qBound(0.0f, v * 255.0f, 255.0f) + 0.5f);
+                return static_cast<uchar>(qBound(0.0f, v * 255.0f, 255.0f) +
+                                          0.5f);
             };
             if (usedChannels == 1) {
                 const uchar g = clamp8(px[0]);
@@ -473,8 +473,8 @@ bool readScenePreview(const QString& sceneDir, QImage* out, QString* error) {
     grab("image_width", &width);
     grab("image_channels", &channels);
     if (numCameras <= 0 || height <= 0 || width <= 0 || channels <= 0) {
-        return fail(QStringLiteral("Incomplete scene.json in %1")
-                            .arg(sceneDir));
+        return fail(
+                QStringLiteral("Incomplete scene.json in %1").arg(sceneDir));
     }
     QFile images(QDir(sceneDir).filePath(QStringLiteral("images.bin")));
     if (!images.open(QIODevice::ReadOnly)) {
@@ -484,8 +484,8 @@ bool readScenePreview(const QString& sceneDir, QImage* out, QString* error) {
             static_cast<qint64>(height) * width * channels * sizeof(float);
     const QByteArray frame = images.read(frameBytes);
     if (frame.size() < frameBytes) {
-        return fail(QStringLiteral("images.bin is truncated in %1")
-                            .arg(sceneDir));
+        return fail(
+                QStringLiteral("images.bin is truncated in %1").arg(sceneDir));
     }
     QImage preview = sceneCameraPreview(
             reinterpret_cast<const float*>(frame.constData()), numCameras,
@@ -541,9 +541,8 @@ bool resolveTestDataPaths(const QString& bundleRoot,
     };
     if (out) *out = OpenPCDetTestDataFiles{};
     if (bundleRoot.isEmpty() || !QDir(bundleRoot).exists()) {
-        return fail(
-                QStringLiteral("Test-data bundle not extracted: %1")
-                        .arg(bundleRoot));
+        return fail(QStringLiteral("Test-data bundle not extracted: %1")
+                            .arg(bundleRoot));
     }
     const OpenPCDetTestDataFiles files = testDataFilesForCheckpoint(checkpoint);
     if (files.pointsFile.isEmpty() && files.sceneDirName.isEmpty()) {

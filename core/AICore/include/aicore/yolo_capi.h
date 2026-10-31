@@ -38,22 +38,25 @@ AICORE_CAPI int aicore_yolo_abi_version(void);
 typedef struct aicore_yolo_ctx aicore_yolo_ctx;
 typedef struct aicore_yolo_options aicore_yolo_options;
 
-/** Accumulation mode for the two PSA matrix products; preserves weight, activation and output storage types. */
+/** Accumulation mode for the two PSA matrix products; preserves weight,
+ * activation and output storage types. */
 typedef enum aicore_yolo_attention_accumulation {
     AICORE_YOLO_ATTENTION_UPSTREAM = 0,
     AICORE_YOLO_ATTENTION_F32 = 1
 } aicore_yolo_attention_accumulation;
 
 /** Set the accumulation mode copied at load time (default UPSTREAM).
- *  Return 0 on success; NULL or invalid modes return -1 without replacing the last valid value.
- *  The F32 request applies only to the two PSA matrix products, not the entire graph. */
+ *  Return 0 on success; NULL or invalid modes return -1 without replacing the
+ * last valid value. The F32 request applies only to the two PSA matrix
+ * products, not the entire graph. */
 AICORE_CAPI int aicore_yolo_options_set_attention_accumulation(
         aicore_yolo_options* opts, int mode);
 /** Return the configured mode; NULL returns -1. */
 AICORE_CAPI int aicore_yolo_options_get_attention_accumulation(
         const aicore_yolo_options* opts);
-/** Return the loaded session's configured mode; NULL or a context without a model returns -1.
- *  This is a configuration request, not a guarantee of identical operand arithmetic across backends. */
+/** Return the loaded session's configured mode; NULL or a context without a
+ * model returns -1. This is a configuration request, not a guarantee of
+ * identical operand arithmetic across backends. */
 AICORE_CAPI int aicore_yolo_context_attention_accumulation(
         const aicore_yolo_ctx* ctx);
 

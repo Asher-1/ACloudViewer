@@ -61,12 +61,10 @@ struct CommandOpenPCDetDetect : public ccCommandLineInterface::Command {
             *error = QStringLiteral("Cannot open point file: %1").arg(path);
             return false;
         }
-        const QString suffix =
-                QFileInfo(path).suffix().toLower();
+        const QString suffix = QFileInfo(path).suffix().toLower();
         if (suffix == QLatin1String("bin")) {
             return OpenPCDetHelpers::parsePointsBin(file.readAll(), pointDim,
-                                                    outPoints, outCount,
-                                                    error);
+                                                    outPoints, outCount, error);
         }
         return OpenPCDetHelpers::parsePointsTxt(
                 QString::fromUtf8(file.readAll()), pointDim, outPoints,
@@ -112,9 +110,8 @@ struct CommandOpenPCDetDetect : public ccCommandLineInterface::Command {
 
         QString error;
         std::vector<B::Item> items;
-        if (!B::collectItems(
-                    s.args, &items, &error,
-                    {"*.bin", "*.pts", "*.xyz", "*.txt"})) {
+        if (!B::collectItems(s.args, &items, &error,
+                             {"*.bin", "*.pts", "*.xyz", "*.txt"})) {
             return cmd.error(error);
         }
 
@@ -138,8 +135,8 @@ struct CommandOpenPCDetDetect : public ccCommandLineInterface::Command {
                                             s.device.toUtf8().constData());
         aicore_openpcdet_options_set_threads(opts, s.threads);
         if (settings.scoreThresh > 0.0f) {
-            aicore_openpcdet_options_set_score_thresh(
-                    opts, settings.scoreThresh);
+            aicore_openpcdet_options_set_score_thresh(opts,
+                                                      settings.scoreThresh);
         }
         if (settings.nmsThresh > 0.0f) {
             aicore_openpcdet_options_set_nms_thresh(opts, settings.nmsThresh);
@@ -192,44 +189,50 @@ struct CommandOpenPCDetDetect : public ccCommandLineInterface::Command {
                     }
                     OpenPCDetRunResult result;
                     if (!OpenPCDetWorker::detectBuffer(ctx, points.data(),
-                                                       count, pointDim,
-                                                       &result, &err)) {
+                                                       count, pointDim, &result,
+                                                       &err)) {
                         return false;
                     }
                     result.modelPath = settings.modelPath;
                     QJsonArray detections;
                     for (const OpenPCDetDetection& d : result.detections) {
                         detections.append(
-                                QJsonObject{
-                                        {"class_id", d.label},
-                                        {"class_name", d.className},
-                                        {"score", d.score},
-                                        {"center",
-                                         QJsonArray{d.x, d.y, d.z}},
-                                        {"size",
-                                         QJsonArray{d.dx, d.dy, d.dz}},
-                                        {"heading", d.heading}});
+                                QJsonObject{{"class_id", d.label},
+                                            {"class_name", d.className},
+                                            {"score", d.score},
+                                            {"center",
+                                             QJsonArray {
+                                                 d.x,
+                                                 d.y,
+                                                 d.z
+                                             }},
+                                            {"size",
+                                             QJsonArray {
+                                                 d.dx,
+                                                 d.dy,
+                                                 d.dz
+                                             }},
+                                            { "heading",
+                                              d.heading }});
                     }
-                    const QString jsonPath =
-                            B::outPath(s, item.stem,
-                                       QStringLiteral("_detections.json"));
+                    const QString jsonPath = B::outPath(
+                            s, item.stem, QStringLiteral("_detections.json"));
                     if (!B::saveJson(
-                                QJsonObject{
-                                        {"input", item.path},
-                                        {"model", result.modelPath},
-                                        {"num_points", result.numPoints},
-                                        {"point_dim", result.pointDim},
-                                        {"bbox_format",
-                                         "center(x,y,z),size(dx,dy,dz),"
-                                         "heading"},
-                                        {"detections", detections}},
+                                QJsonObject{{"input", item.path},
+                                            {"model", result.modelPath},
+                                            {"num_points", result.numPoints},
+                                            {"point_dim", result.pointDim},
+                                            {"bbox_format",
+                                             "center(x,y,z),size(dx,dy,dz),"
+                                             "heading"},
+                                            { "detections",
+                                              detections }},
                                 jsonPath, &err)) {
                         return false;
                     }
-                    QJsonObject outputs{{"detections", jsonPath}};
+                    QJsonObject outputs{{ "detections", jsonPath }};
                     aicore_pipeline_timings t = B::emptyTimings();
-                    if (aicore_openpcdet_last_pipeline_timings(ctx, &t) ==
-                        0) {
+                    if (aicore_openpcdet_last_pipeline_timings(ctx, &t) == 0) {
                         rec["timings"] = B::timingsJson(t);
                     }
                     rec["points"] = result.numPoints;

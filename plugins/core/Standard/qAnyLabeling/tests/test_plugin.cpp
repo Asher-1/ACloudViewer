@@ -50,8 +50,8 @@
 #include <QPluginLoader>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QSettings>
 #include <QSet>
+#include <QSettings>
 #include <QSlider>
 #include <QSpinBox>
 #include <QSplitter>
@@ -70,7 +70,8 @@ namespace {
 bool reviewStatusRoundTrip(QMainWindow* window) {
     const auto action = [window](const char* id) -> QAction* {
         for (auto* item : window->findChildren<QAction*>())
-            if (item->property("qAnyShortcutId").toString() == QLatin1String(id))
+            if (item->property("qAnyShortcutId").toString() ==
+                QLatin1String(id))
                 return item;
         return nullptr;
     };
@@ -84,10 +85,12 @@ bool reviewStatusRoundTrip(QMainWindow* window) {
         if (!image.save(directory.filePath(name))) return false;
     const auto write = [](const QString& path, const QJsonValue& status) {
         QFile file(path);
-        const auto bytes = QJsonDocument(QJsonObject{
-                {"checked", status}, {"shapes", QJsonArray()},
-                {"custom", "preserve"}}).toJson();
-        return file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size();
+        const auto bytes = QJsonDocument(QJsonObject{{"checked", status},
+                                                     {"shapes", QJsonArray()},
+                                                     {"custom", "preserve"}})
+                                   .toJson();
+        return file.open(QIODevice::WriteOnly) &&
+               file.write(bytes) == bytes.size();
     };
     const auto read = [](const QString& path) {
         QFile file(path);
@@ -96,14 +99,17 @@ bool reviewStatusRoundTrip(QMainWindow* window) {
     };
     if (!write(sidecarPath, "failed") ||
         !write(directory.filePath("b.json"), true) ||
-        !write(directory.filePath("c.json"), "failed")) return false;
-    if (!QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, imagePath)))
+        !write(directory.filePath("c.json"), "failed"))
+        return false;
+    if (!QMetaObject::invokeMethod(window, "openImage",
+                                   Q_ARG(QString, imagePath)))
         return false;
     auto* save = action("save");
     if (!save || !save->isEnabled()) return false;
     save->trigger();
     if (read(sidecarPath).value("checked") != QJsonValue("failed")) {
-        std::fprintf(stderr, "Review regression: save changed failed into a boolean\n");
+        std::fprintf(stderr,
+                     "Review regression: save changed failed into a boolean\n");
         return false;
     }
     auto* passed = action("toggle_annotation_checked");
@@ -120,12 +126,16 @@ bool reviewStatusRoundTrip(QMainWindow* window) {
         if (json.value("checked") != transition.second ||
             json.value("custom") != QJsonValue("preserve") ||
             window->windowTitle().endsWith(" *")) {
-            std::fprintf(stderr, "Review regression: status action did not save atomically\n");
+            std::fprintf(stderr,
+                         "Review regression: status action did not save "
+                         "atomically\n");
             return false;
         }
-        QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, imagePath));
+        QMetaObject::invokeMethod(window, "openImage",
+                                  Q_ARG(QString, imagePath));
         if (!transition.first->isChecked() ||
-            passed->isChecked() + failed->isChecked() + cleared->isChecked() != 1)
+            passed->isChecked() + failed->isChecked() + cleared->isChecked() !=
+                    1)
             return false;
         auto* item = files->currentItem();
         if (!item || item->checkState() != Qt::Checked) return false;
@@ -133,12 +143,17 @@ bool reviewStatusRoundTrip(QMainWindow* window) {
     passed->trigger();
     next->trigger();
     if (!files->currentItem() || files->currentItem()->text() != "d.png") {
-        std::fprintf(stderr, "Review regression: unchecked navigation included a reviewed file\n");
+        std::fprintf(stderr,
+                     "Review regression: unchecked navigation included a "
+                     "reviewed file\n");
         return false;
     }
     if (files->item(0)->checkState() != Qt::Checked ||
-        files->item(3)->checkState() != Qt::Unchecked) return false;
-    std::puts("Review failed/pass/clear save-reopen and unchecked navigation: PASS");
+        files->item(3)->checkState() != Qt::Unchecked)
+        return false;
+    std::puts(
+            "Review failed/pass/clear save-reopen and unchecked navigation: "
+            "PASS");
     return true;
 }
 }  // namespace
@@ -655,12 +670,15 @@ int main(int argc, char** argv) {
     auto* ocrDirection = window->findChild<QCheckBox*>(
             QStringLiteral("AnnotationOcrAngleClassifier"));
     if (!ocrDirection || !ocrDirection->isChecked()) {
-        std::fprintf(stderr, "OCR orientation classifier missing or not enabled by default\n");
+        std::fprintf(stderr,
+                     "OCR orientation classifier missing or not enabled by "
+                     "default\n");
         return 1;
     }
-    // The public catalog defines the file set; the real picker must not omit published quantizations, mix
-    // recipes or duplicate files. Unpublished recipes retain only local F32 fallback.
-    // O(P*C): preset/catalog tables are small and bounded; enumerate independently to verify the UI projection.
+    // The public catalog defines the file set; the real picker must not omit
+    // published quantizations, mix recipes or duplicate files. Unpublished
+    // recipes retain only local F32 fallback. O(P*C): preset/catalog tables are
+    // small and bounded; enumerate independently to verify the UI projection.
     for (int pi = 0; pi < aicore_ocr_preset_count(); ++pi) {
         const auto* preset = aicore_ocr_preset_at(pi);
         if (!preset || !preset->display_name || !preset->rec_stem) return 1;
@@ -669,7 +687,8 @@ int main(int argc, char** argv) {
         for (int ci = 0; ci < aicore_ocr_model_count(); ++ci) {
             const auto* entry = aicore_ocr_model_at(ci);
             if (!entry || !entry->filename || !entry->role ||
-                qstrcmp(entry->role, "rec") != 0) continue;
+                qstrcmp(entry->role, "rec") != 0)
+                continue;
             if (aicore_ocr_preset_by_rec_filename(entry->filename) == preset)
                 expectedFiles.insert(QString::fromUtf8(entry->filename));
         }
@@ -677,7 +696,8 @@ int main(int argc, char** argv) {
             expectedFiles.insert(QString::fromUtf8(preset->rec_stem) +
                                  QStringLiteral("-f32.gguf"));
         if (models->findText(family) < 0) {
-            std::fprintf(stderr, "Missing OCR recipe family: %s\n", qPrintable(family));
+            std::fprintf(stderr, "Missing OCR recipe family: %s\n",
+                         qPrintable(family));
             return 1;
         }
         models->setCurrentText(family);
@@ -686,11 +706,12 @@ int main(int argc, char** argv) {
             actualFiles.insert(quantization->itemData(qi).toString());
         if (!ocrDirection->isVisible() || actualFiles != expectedFiles ||
             actualFiles.size() != quantization->count()) {
-            std::fprintf(stderr,
-                         "OCR catalog/picker mismatch: %s actual=%s expected=%s\n",
-                         qPrintable(family),
-                         qPrintable(QStringList(actualFiles.values()).join(',')),
-                         qPrintable(QStringList(expectedFiles.values()).join(',')));
+            std::fprintf(
+                    stderr,
+                    "OCR catalog/picker mismatch: %s actual=%s expected=%s\n",
+                    qPrintable(family),
+                    qPrintable(QStringList(actualFiles.values()).join(',')),
+                    qPrintable(QStringList(expectedFiles.values()).join(',')));
             return 1;
         }
     }

@@ -41,17 +41,26 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
     if (command.startsWith(QLatin1Char('-'))) command.remove(0, 1);
     // This boundary intentionally exposes inference/export commands only.
     // Arbitrary argv remains process.run_cli's separate, explicit contract.
-    static const QSet<QString> kCommands = {
-            "RMBG_REMOVE",      "DEEPLSD_LINES",
-            "RFDETR_DETECT",    "YOLO_PREDICT",
-            "YOLO_TRACK",       "DA3_DEPTH",
-            "FACE_DETECT",      "GKD_KEYPOINTS",
-            "OCR_RECOGNIZE",    "SAM3_SEGMENT",
-            "LIGHTGLUE_MATCH",  "FREESPLATTER_RECONSTRUCT",
-            "TRELLIS_GENERATE", "LINGBOT_MAP_RECONSTRUCT",
-            "ANYLABEL_INFER",   "MAP_ANYTHING_RECONSTRUCT",
-            "SAM3D_GENERATE",   "OPENPCDET_DETECT",
-            "LLM_GENERATE"};
+    static const QSet<QString> kCommands = {"RMBG_REMOVE",
+                                            "DEEPLSD_LINES",
+                                            "RFDETR_DETECT",
+                                            "YOLO_PREDICT",
+                                            "YOLO_TRACK",
+                                            "DA3_DEPTH",
+                                            "FACE_DETECT",
+                                            "GKD_KEYPOINTS",
+                                            "OCR_RECOGNIZE",
+                                            "SAM3_SEGMENT",
+                                            "LIGHTGLUE_MATCH",
+                                            "FREESPLATTER_RECONSTRUCT",
+                                            "TRELLIS_GENERATE",
+                                            "INSTANTMESH_GENERATE",
+                                            "LINGBOT_MAP_RECONSTRUCT",
+                                            "ANYLABEL_INFER",
+                                            "MAP_ANYTHING_RECONSTRUCT",
+                                            "SAM3D_GENERATE",
+                                            "OPENPCDET_DETECT",
+                                            "LLM_GENERATE"};
     if (!kCommands.contains(command)) {
         QJsonArray allowed;
         QStringList sorted = kCommands.values();

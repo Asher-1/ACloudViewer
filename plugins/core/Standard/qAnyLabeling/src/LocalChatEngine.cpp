@@ -99,8 +99,8 @@ bool convert(const QJsonArray& input,
                                 "only.");
                         return false;
                     }
-                    QImage image = QImage::fromData(
-                            QByteArray::fromBase64(url.mid(comma + 1).toLatin1()));
+                    QImage image = QImage::fromData(QByteArray::fromBase64(
+                            url.mid(comma + 1).toLatin1()));
                     if (image.isNull()) {
                         *error = QObject::tr("Unable to decode image.");
                         return false;
@@ -228,9 +228,8 @@ private:
         if (!job->alive) return 1;  // client cancel stops at the next token
         if (job->callbacks.delta) {
             const QString delta = QString::fromUtf8(chunk, int(bytes));
-            self->first->post(self->second, [job, delta]() {
-                job->callbacks.delta(delta);
-            });
+            self->first->post(self->second,
+                              [job, delta]() { job->callbacks.delta(delta); });
         }
         return 0;
     }
@@ -252,8 +251,8 @@ private:
                              mmproj = job->mmproj.toUtf8();
             auto options = aicore_llm_default_options();
             options.model_path = model.constData();
-            options.mmproj_path = mmproj.isEmpty() ? nullptr
-                                                   : mmproj.constData();
+            options.mmproj_path =
+                    mmproj.isEmpty() ? nullptr : mmproj.constData();
             options.device = "auto";
             aicore_llm_ctx* ctx = aicore_llm_create(&options);
             if (!aicore_llm_ready(ctx)) {
@@ -329,15 +328,16 @@ QJsonArray models() {
         if (entry->mmproj_filename) {
             const auto* projector =
                     aicore_llm_model_by_filename(entry->mmproj_filename);
-            downloaded = downloaded && projector &&
-                         verified(dir.filePath(projector->filename), *projector);
+            downloaded =
+                    downloaded && projector &&
+                    verified(dir.filePath(projector->filename), *projector);
         }
-        list.append(QJsonObject{
-                {"id", QString::fromUtf8(entry->filename)},
-                {"name", QString::fromUtf8(entry->display_name)},
-                {"vision", entry->mmproj_filename != nullptr},
-                {"downloaded", downloaded},
-                {"owned_by", "aicore"}});
+        list.append(
+                QJsonObject{{"id", QString::fromUtf8(entry->filename)},
+                            {"name", QString::fromUtf8(entry->display_name)},
+                            {"vision", entry->mmproj_filename != nullptr},
+                            {"downloaded", downloaded},
+                            {"owned_by", "aicore"}});
     }
     return list;
 }

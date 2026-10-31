@@ -175,6 +175,11 @@ jobs:
           path: /tmp/macos-build.log
           if-no-files-found: ignore
 
+      - name: qPythonRuntime native binding contracts
+        run: |
+          source util/ci_utils.sh
+          run_qpythonruntime_tests build native
+
       - name: Upload ACloudViewer app to GitHub artifacts
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
@@ -305,6 +310,10 @@ jobs:
       - name: Install agent harness
         run: |
           pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+      - name: qPythonRuntime installed binding contracts
+        run: |
+          python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$ACV_BINARY"
 
       - name: Level 3 — Headless processing tests
         env:

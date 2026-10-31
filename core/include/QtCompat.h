@@ -1363,7 +1363,8 @@ inline void qtCompatSetMarkdown(QTextDocument& document, const QString& text) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     document.setMarkdown(text);
 #else
-    // 共享导出可能返回保真 HTML；普通 Markdown 仍保持旧版的纯文本边界。
+    // Shared export may return faithful HTML; ordinary Markdown retains the
+    // legacy plain-text boundary.
     if (Qt::mightBeRichText(text))
         document.setHtml(text);
     else
@@ -1372,8 +1373,9 @@ inline void qtCompatSetMarkdown(QTextDocument& document, const QString& text) {
 }
 
 inline QString qtCompatToMarkdown(const QTextDocument& document) {
-    // 图像、链接、下划线、删除线和列表不能在共享导出时丢失。
-    // HTML 是 Markdown 的保真边界；旧 Qt 的完整 Markdown 导入仍未实现。
+    // Shared export must preserve images, links, underline, strikeout and
+    // lists. HTML is Markdown's fidelity boundary; full Markdown import on
+    // older Qt remains unimplemented.
     bool preserveHtml = false;
     for (auto block = document.begin(); block.isValid(); block = block.next()) {
         preserveHtml |= block.textList() != nullptr;

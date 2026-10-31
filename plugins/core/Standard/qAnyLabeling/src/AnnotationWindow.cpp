@@ -57,8 +57,8 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPixmap>
 #include <QPalette>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QPolygonF>
@@ -108,8 +108,8 @@
 #include "VideoMaskImport.h"
 #include "VideoSegmentExporter.h"
 #include "VideoTab.h"
-#include "aicore/backend_capi.h"
 #include "aicore/attribute_capi.h"
+#include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/facedetect_capi.h"
@@ -171,8 +171,8 @@ QJsonValue normalizedChecked(const QJsonValue& value) {
 }
 
 bool annotationReviewed(const QListWidgetItem* item) {
-    const QJsonValue checked =
-            normalizedChecked(QJsonValue::fromVariant(item->data(kAnnotationCheckedRole)));
+    const QJsonValue checked = normalizedChecked(
+            QJsonValue::fromVariant(item->data(kAnnotationCheckedRole)));
     return checked == QJsonValue(true) || checked == QJsonValue("failed");
 }
 
@@ -182,15 +182,17 @@ void setFileReviewStatus(QListWidgetItem* item, const QJsonValue& value) {
     const bool passed = checked == QJsonValue(true);
     const bool failed = checked == QJsonValue("failed");
     item->setToolTip(item->data(Qt::UserRole).toString() + QLatin1Char('\n') +
-                     (failed ? QObject::tr("Check Failed")
-                             : passed ? QObject::tr("Check Passed")
-                                      : QObject::tr("Unchecked")));
+                     (failed   ? QObject::tr("Check Failed")
+                      : passed ? QObject::tr("Check Passed")
+                               : QObject::tr("Unchecked")));
     QPixmap icon(12, 12);
     icon.fill(Qt::transparent);
     QPainter painter(&icon);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(failed ? "#DE350B" : passed ? "#22A06B" : "#8C98A4"));
+    painter.setBrush(QColor(failed   ? "#DE350B"
+                            : passed ? "#22A06B"
+                                     : "#8C98A4"));
     painter.drawEllipse(QRectF(1, 1, 10, 10));
     painter.end();
     item->setIcon(QIcon(icon));
@@ -3871,9 +3873,9 @@ void AnnotationWindow::applyTheme(const QString& mode) {
             stylesheet = QString::fromUtf8(source.readAll());
     }
     // The source sets the palette before its application stylesheet, so Qt's
-    // stylesheet polish derives the effective widget roles from the QSS. Setting
-    // the palette afterwards would keep the declared colors and diverge from the
-    // source window.
+    // stylesheet polish derives the effective widget roles from the QSS.
+    // Setting the palette afterwards would keep the declared colors and diverge
+    // from the source window.
     setStyleSheet(QString());
     setPalette(palette);
     setStyleSheet(stylesheet);
@@ -4161,35 +4163,35 @@ void AnnotationWindow::createActions() {
                 if (row + 1 < m_files->count()) m_files->setCurrentRow(row + 1);
             });
     m_nextAction = nextAction;
-    QAction* previousUncheckedAction = addCommand(
-            tr("Prev Unchecked Image"), QStringLiteral("prev.png"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_A),
-            QStringLiteral("open_prev_unchecked"), [this]() {
-                if (!confirmSave()) return;
-                const int row = m_files->currentRow();
-                for (int i = row - 1; i >= 0; --i) {
-                    if (!m_files->item(i)->isHidden() &&
-                        !annotationReviewed(m_files->item(i))) {
-                        m_files->setCurrentRow(i);
-                        return;
-                    }
-                }
-            });
+    QAction* previousUncheckedAction =
+            addCommand(tr("Prev Unchecked Image"), QStringLiteral("prev.png"),
+                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_A),
+                       QStringLiteral("open_prev_unchecked"), [this]() {
+                           if (!confirmSave()) return;
+                           const int row = m_files->currentRow();
+                           for (int i = row - 1; i >= 0; --i) {
+                               if (!m_files->item(i)->isHidden() &&
+                                   !annotationReviewed(m_files->item(i))) {
+                                   m_files->setCurrentRow(i);
+                                   return;
+                               }
+                           }
+                       });
     m_previousUncheckedAction = previousUncheckedAction;
-    QAction* nextUncheckedAction = addCommand(
-            tr("Next Unchecked Image"), QStringLiteral("next.png"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_D),
-            QStringLiteral("open_next_unchecked"), [this]() {
-                if (!confirmSave()) return;
-                const int row = m_files->currentRow();
-                for (int i = row + 1; i < m_files->count(); ++i) {
-                    if (!m_files->item(i)->isHidden() &&
-                        !annotationReviewed(m_files->item(i))) {
-                        m_files->setCurrentRow(i);
-                        return;
-                    }
-                }
-            });
+    QAction* nextUncheckedAction =
+            addCommand(tr("Next Unchecked Image"), QStringLiteral("next.png"),
+                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_D),
+                       QStringLiteral("open_next_unchecked"), [this]() {
+                           if (!confirmSave()) return;
+                           const int row = m_files->currentRow();
+                           for (int i = row + 1; i < m_files->count(); ++i) {
+                               if (!m_files->item(i)->isHidden() &&
+                                   !annotationReviewed(m_files->item(i))) {
+                                   m_files->setCurrentRow(i);
+                                   return;
+                               }
+                           }
+                       });
     m_nextUncheckedAction = nextUncheckedAction;
     QAction* toggleChecked =
             new QAction(QIcon(iconPath(QStringLiteral("checkmark.svg"))),
@@ -4207,7 +4209,8 @@ void AnnotationWindow::createActions() {
     addAction(toggleChecked);
     m_clearCheckedAction = new QAction(tr("Clear Check State"), this);
     m_clearCheckedAction->setCheckable(true);
-    m_clearCheckedAction->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_U));
+    m_clearCheckedAction->setShortcut(
+            QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_U));
     registerShortcut(m_clearCheckedAction,
                      QStringLiteral("clear_annotation_checked"), tr("Edit"));
     connect(m_clearCheckedAction, &QAction::triggered, this,
@@ -4215,7 +4218,8 @@ void AnnotationWindow::createActions() {
     addAction(m_clearCheckedAction);
     m_failCheckedAction = new QAction(tr("Mark as Failed"), this);
     m_failCheckedAction->setCheckable(true);
-    m_failCheckedAction->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_J));
+    m_failCheckedAction->setShortcut(
+            QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_J));
     registerShortcut(m_failCheckedAction,
                      QStringLiteral("fail_annotation_checked"), tr("Edit"));
     connect(m_failCheckedAction, &QAction::triggered, this,
@@ -5753,9 +5757,9 @@ void AnnotationWindow::createActions() {
                 connect(gidMenu, &QMenu::aboutToShow, this,
                         [this, gidMenu]() { populateGidFilterMenu(gidMenu); });
                 menu.addSeparator();
-                for (QAction* action : {m_clearCheckedAction,
-                                        m_toggleCheckedAction,
-                                        m_failCheckedAction})
+                for (QAction* action :
+                     {m_clearCheckedAction, m_toggleCheckedAction,
+                      m_failCheckedAction})
                     if (action) menu.addAction(action);
                 menu.addSeparator();
                 for (QAction* mode :
@@ -5914,8 +5918,8 @@ void AnnotationWindow::updateActionState() {
     if (m_nextUncheckedAction) m_nextUncheckedAction->setEnabled(multipleFiles);
     if (m_previousUncheckedAction)
         m_previousUncheckedAction->setEnabled(multipleFiles);
-    for (QAction* action : {m_clearCheckedAction, m_toggleCheckedAction,
-                            m_failCheckedAction})
+    for (QAction* action :
+         {m_clearCheckedAction, m_toggleCheckedAction, m_failCheckedAction})
         if (action) action->setEnabled(imageLoaded && !m_sidecarBlocked);
     if (m_checked) m_checked->setEnabled(imageLoaded && !m_sidecarBlocked);
     if (m_saveAction)
@@ -6113,8 +6117,7 @@ void AnnotationWindow::populateModels() {
                                  QString::fromUtf8(entry->filename));
         }
         if (QString::fromLatin1(entry->role) != QStringLiteral("rec")) continue;
-        const auto* preset =
-                aicore_ocr_preset_by_rec_filename(entry->filename);
+        const auto* preset = aicore_ocr_preset_by_rec_filename(entry->filename);
         Model model;
         model.filename = QString::fromUtf8(entry->filename);
         model.url = QString::fromUtf8(entry->download_url ? entry->download_url
@@ -6124,13 +6127,14 @@ void AnnotationWindow::populateModels() {
         model.family =
                 preset ? QString::fromUtf8(preset->display_name)
                        : QStringLiteral("PP-OCRv4 (%1)")
-                             .arg(QString::fromUtf8(entry->language
-                                                            ? entry->language
-                                                            : "ch"));
+                                 .arg(QString::fromUtf8(
+                                         entry->language ? entry->language
+                                                         : "ch"));
         m_models.append(model);
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
-    // Local attribute recipes come from the owning task; no URL means no published asset.
+    // Local attribute recipes come from the owning task; no URL means no
+    // published asset.
     for (int i = 0; i < aicore_attribute_preset_count(); ++i) {
         const auto* preset = aicore_attribute_preset_at(i);
         if (!preset) continue;
@@ -6153,7 +6157,8 @@ void AnnotationWindow::populateModels() {
             const QString filename = QString::fromUtf8(preset->rec_stem) +
                                      QLatin1Char('-') + quant +
                                      QStringLiteral(".gguf");
-            // Published files obtain quantization, URL and family from the catalog; local fallback is unpublished-only.
+            // Published files obtain quantization, URL and family from the
+            // catalog; local fallback is unpublished-only.
             if (aicore_ocr_model_by_filename(filename.toUtf8().constData()))
                 continue;
             Model model;
@@ -6682,9 +6687,9 @@ void AnnotationWindow::syncAnnotationChecked() {
             normalizedChecked(m_document.value(QStringLiteral("checked")));
     const QSignalBlocker blocked(m_checked);
     m_checked->setCheckState(checked == QJsonValue("failed")
-                                    ? Qt::PartiallyChecked
-                                    : checked == QJsonValue(true) ? Qt::Checked
-                                                                 : Qt::Unchecked);
+                                     ? Qt::PartiallyChecked
+                             : checked == QJsonValue(true) ? Qt::Checked
+                                                           : Qt::Unchecked);
     for (const auto& entry :
          {qMakePair(m_clearCheckedAction, QJsonValue(false)),
           qMakePair(m_toggleCheckedAction, QJsonValue(true)),
@@ -6774,8 +6779,9 @@ bool AnnotationWindow::saveDocumentTo(const QString& sidecar) {
     } else {
         document.insert(QStringLiteral("imageData"), QJsonValue::Null);
     }
-    document.insert(QStringLiteral("checked"),
-                    normalizedChecked(m_document.value(QStringLiteral("checked"))));
+    document.insert(
+            QStringLiteral("checked"),
+            normalizedChecked(m_document.value(QStringLiteral("checked"))));
     document.insert(QStringLiteral("imagePath"),
                     QDir(QFileInfo(sidecar).absolutePath())
                             .relativeFilePath(m_imagePath));
@@ -8886,10 +8892,11 @@ void AnnotationWindow::updateTags() {
         item->setBackground(color);
         item->setForeground(color.lightness() > 150 ? QColor(Qt::black)
                                                     : QColor(Qt::white));
-        item->setSizeHint(QSize(
-                std::min(240,
-                         QTCOMPAT_FONTMETRICS_WIDTH(fontMetrics(), item->text()) + 26),
-                28));
+        item->setSizeHint(
+                QSize(std::min(240, QTCOMPAT_FONTMETRICS_WIDTH(fontMetrics(),
+                                                               item->text()) +
+                                            26),
+                      28));
     }
 }
 
@@ -9036,7 +9043,7 @@ void AnnotationWindow::updateFileStatus() {
                         document.object().value(QStringLiteral("checked")));
         }
         item->setCheckState(QFileInfo::exists(sidecar) ? Qt::Checked
-                                                      : Qt::Unchecked);
+                                                       : Qt::Unchecked);
         setFileReviewStatus(item, checked);
     }
     applyFileListCheckboxPolicy();
@@ -10393,19 +10400,19 @@ void AnnotationWindow::runDetection() {
                          found->task == QStringLiteral("ram-caption");
     const bool relate = found->task == QStringLiteral("relate");
     const bool attribute = found->task == QStringLiteral("attribute");
-    char* cache = attribute ? aicore_attribute_model_cache_dir()
+    char* cache = attribute    ? aicore_attribute_model_cache_dir()
                   : depthModel ? aicore_depth_model_cache_dir()
-                  : deeplsd  ? aicore_deeplsd_model_cache_dir()
-                  : aliked   ? aicore_aliked_model_cache_dir()
-                  : sam      ? aicore_sam3_model_cache_dir()
-                  : rfdetr   ? aicore_rfdetr_model_cache_dir()
-                  : rmbg     ? aicore_rmbg_model_cache_dir()
-                  : gkd      ? aicore_gkd_model_cache_dir()
-                  : face     ? aicore_facedetect_model_cache_dir()
-                  : ocr      ? aicore_ocr_model_cache_dir()
-                  : tagging  ? aicore_tagging_model_cache_dir()
-                  : relate   ? aicore_relation_model_cache_dir()
-                             : aicore_yolo_model_cache_dir();
+                  : deeplsd    ? aicore_deeplsd_model_cache_dir()
+                  : aliked     ? aicore_aliked_model_cache_dir()
+                  : sam        ? aicore_sam3_model_cache_dir()
+                  : rfdetr     ? aicore_rfdetr_model_cache_dir()
+                  : rmbg       ? aicore_rmbg_model_cache_dir()
+                  : gkd        ? aicore_gkd_model_cache_dir()
+                  : face       ? aicore_facedetect_model_cache_dir()
+                  : ocr        ? aicore_ocr_model_cache_dir()
+                  : tagging    ? aicore_tagging_model_cache_dir()
+                  : relate     ? aicore_relation_model_cache_dir()
+                               : aicore_yolo_model_cache_dir();
     if (!cache) {
         m_status->setText(tr("Model cache is unavailable"));
         return;
@@ -10665,7 +10672,8 @@ void AnnotationWindow::runDetection() {
     }
     if (found->url.isEmpty()) {
         m_status->setText(
-                attribute ? tr("Place the converted attribute model in %1").arg(path)
+                attribute ? tr("Place the converted attribute model in %1")
+                                    .arg(path)
                 : ocr ? tr("Place the converted OCR model in %1").arg(path)
                       : tr("Model download URL is unavailable"));
         return;

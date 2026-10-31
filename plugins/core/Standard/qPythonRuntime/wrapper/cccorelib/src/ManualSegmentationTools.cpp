@@ -14,6 +14,8 @@
 #include <Polyline.h>
 #include <SimpleMesh.h>
 
+#include "wrappers.h"
+
 namespace py = pybind11;
 using namespace pybind11::literals;
 
@@ -48,11 +50,17 @@ void define_ManualSegmentationTools(py::module &cccorelib)
                         &ManualSegmentationTools::isPointInsidePoly),
                     "P"_a,
                     "polyVertices"_a)
-        .def_static("isPointInsidePoly",
-                    (bool (*)(const CCVector2 &, const std::vector<CCVector2> &))(
-                        &ManualSegmentationTools::isPointInsidePoly),
-                    "P"_a,
-                    "polyVertices"_a)
+        .def_static(
+            "isPointInsidePoly",
+            [](const CCVector2 &point, py::handle vertices)
+            {
+                return PyCC::WithContainer<std::vector<CCVector2>>(
+                    vertices,
+                    [&](const auto &points)
+                    { return ManualSegmentationTools::isPointInsidePoly(point, points); });
+            },
+            "P"_a,
+            "polyVertices"_a)
 
         .def_static("segmentMesh",
                     &ManualSegmentationTools::segmentMesh,

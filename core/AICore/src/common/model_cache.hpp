@@ -54,6 +54,10 @@ inline std::string trellis_model_cache_dir() {
     return extract_model_dir("trellis_models");
 }
 
+inline std::string instantmesh_model_cache_dir() {
+    return extract_model_dir("instantmesh_models");
+}
+
 inline std::string sam3_model_cache_dir() {
     return extract_model_dir("sam3_models");
 }

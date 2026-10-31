@@ -93,8 +93,7 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "truncated or misaligned points file\n");
         return 2;
     }
-    const int32_t n_points =
-            static_cast<int32_t>(points.size() / point_dim);
+    const int32_t n_points = static_cast<int32_t>(points.size() / point_dim);
 
     aicore_openpcdet_options* opts = aicore_openpcdet_options_new();
     aicore_openpcdet_options_set_device(opts, device);
@@ -115,8 +114,8 @@ int main(int argc, char** argv) {
     const bool use_scene = scene_dir != nullptr;
     if (use_scene) {
         char* scene_error = nullptr;
-        if (aicore_openpcdet_load_scene_dir(scene_dir, &scene,
-                                            &scene_error) != 0) {
+        if (aicore_openpcdet_load_scene_dir(scene_dir, &scene, &scene_error) !=
+            0) {
             std::fprintf(stderr, "scene load failed: %s\n",
                          scene_error != nullptr ? scene_error : "?");
             aicore_openpcdet_free_buffer(scene_error);
@@ -129,10 +128,10 @@ int main(int argc, char** argv) {
     }
 
     for (int i = 0; i < warmups; ++i) {
-        const int warmed = use_scene
-                ? aicore_openpcdet_detect_scene(ctx, &scene)
-                : aicore_openpcdet_detect_points(ctx, points.data(), n_points,
-                                                 point_dim);
+        const int warmed =
+                use_scene ? aicore_openpcdet_detect_scene(ctx, &scene)
+                          : aicore_openpcdet_detect_points(ctx, points.data(),
+                                                           n_points, point_dim);
         if (warmed < 0) {
             std::fprintf(stderr, "warmup detect failed: %s\n",
                          aicore_openpcdet_last_error(ctx));
@@ -148,10 +147,10 @@ int main(int argc, char** argv) {
     bool stable = true;
     for (int i = 0; i < iters; ++i) {
         const auto start = std::chrono::steady_clock::now();
-        const int count = use_scene
-                ? aicore_openpcdet_detect_scene(ctx, &scene)
-                : aicore_openpcdet_detect_points(ctx, points.data(), n_points,
-                                                 point_dim);
+        const int count =
+                use_scene ? aicore_openpcdet_detect_scene(ctx, &scene)
+                          : aicore_openpcdet_detect_points(ctx, points.data(),
+                                                           n_points, point_dim);
         const double ms = std::chrono::duration<double, std::milli>(
                                   std::chrono::steady_clock::now() - start)
                                   .count();
@@ -207,19 +206,20 @@ int main(int argc, char** argv) {
             "\"num_points\":%d,\"inference_ms\":%.6f,\"e2e_ms\":%.6f,"
             "\"detection_count\":%d,\"per_class\":[",
             aicore_openpcdet_context_device(ctx), argv[1], geo.arch,
-            use_scene ? "true" : "false", n_points,
-            median_of(e2e_ms), median_of(e2e_ms), last_count);
+            use_scene ? "true" : "false", n_points, median_of(e2e_ms),
+            median_of(e2e_ms), last_count);
     for (size_t i = 0; i < per_class.size(); ++i) {
         std::printf("%s%d", i ? "," : "", per_class[i]);
     }
     std::printf("],\"first_box\":[");
-    for (int i = 0; i < 8; ++i) std::printf("%s%.7g", i ? "," : "", first_box[i]);
-    std::printf("],\"count_stable\":%s,\"hash_stable\":%s,"
-                "\"output_hash\":\"%016llx\"}\n",
-                stable ? "true" : "false", hash_stable ? "true" : "false",
-                static_cast<unsigned long long>(hashes.empty()
-                                                        ? 0
-                                                        : hashes.front()));
+    for (int i = 0; i < 8; ++i)
+        std::printf("%s%.7g", i ? "," : "", first_box[i]);
+    std::printf(
+            "],\"count_stable\":%s,\"hash_stable\":%s,"
+            "\"output_hash\":\"%016llx\"}\n",
+            stable ? "true" : "false", hash_stable ? "true" : "false",
+            static_cast<unsigned long long>(hashes.empty() ? 0
+                                                           : hashes.front()));
 
     if (use_scene) aicore_openpcdet_free_scene(&scene);
     aicore_openpcdet_free(ctx);

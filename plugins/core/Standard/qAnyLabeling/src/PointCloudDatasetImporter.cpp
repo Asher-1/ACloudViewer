@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloudDatasetImporter.h"
-#include "QtCompat.h"
 
 #include <zlib.h>
 
@@ -24,6 +23,8 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+
+#include "QtCompat.h"
 
 #ifdef Q_OS_WIN
 #include <io.h>
@@ -1213,7 +1214,7 @@ bool preparePointCloudDatasetImport(
     QSet<QString> importedNames;
     for (const auto& frame : imported.frames) importedNames.insert(frame.name);
     const QSet<QString> exportedNames =
-                qtCompatQSetFromVector(names.toVector());
+            qtCompatQSetFromVector(names.toVector());
     const bool exact = importedNames == exportedNames;
     QMap<QString, QVector<int>> byName;
     QSet<QString> protectedPaths{resolvedPath(archivePath)};

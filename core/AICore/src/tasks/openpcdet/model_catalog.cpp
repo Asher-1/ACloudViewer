@@ -26,8 +26,7 @@ struct ModelVariant {
 };
 
 static constexpr ModelVariant kVariants[] = {
-        {"kitti_pointpillar",
-         "OpenPCDet KITTI PointPillars",
+        {"kitti_pointpillar", "OpenPCDet KITTI PointPillars",
          "PointPillar / AnchorHeadSingle, KITTI (3 classes, 4-dim points)"},
         {"nuscenes_pointpillar_multihead",
          "OpenPCDet nuScenes PointPillars Multihead",
@@ -38,47 +37,35 @@ static constexpr ModelVariant kVariants[] = {
         {"nuscenes_centerpoint_voxel0075",
          "OpenPCDet nuScenes CenterPoint (Voxel 0.075m)",
          "SECOND voxel / CenterHead, nuScenes (10 classes, 5-dim points)"},
-        {"second_7862",
-         "OpenPCDet KITTI SECOND",
+        {"second_7862", "OpenPCDet KITTI SECOND",
          "SECOND / VoxelBackBone8x sparse, KITTI (3 classes, 4-dim points)"},
-        {"kitti_second_iou",
-         "OpenPCDet KITTI SECOND-IoU",
+        {"kitti_second_iou", "OpenPCDet KITTI SECOND-IoU",
          "SECOND + SECONDHead RoI refinement, KITTI (3 classes, 4-dim points)"},
-        {"nuscenes_second_multihead",
-         "OpenPCDet nuScenes SECOND Multihead",
+        {"nuscenes_second_multihead", "OpenPCDet nuScenes SECOND Multihead",
          "SECOND residual / AnchorHeadMulti, nuScenes (10 classes, 5-dim)"},
-        {"kitti_pointrcnn",
-         "OpenPCDet KITTI PointRCNN",
+        {"kitti_pointrcnn", "OpenPCDet KITTI PointRCNN",
          "PointRCNN / PointNet++ RPN + RCNN, KITTI (3 classes, 4-dim points)"},
-        {"kitti_pointrcnn_iou",
-         "OpenPCDet KITTI PointRCNN-IoU",
+        {"kitti_pointrcnn_iou", "OpenPCDet KITTI PointRCNN-IoU",
          "PointRCNN + IoU head refinement, KITTI (3 classes, 4-dim points)"},
-        {"kitti_pvrcnn",
-         "OpenPCDet KITTI PV-RCNN",
+        {"kitti_pvrcnn", "OpenPCDet KITTI PV-RCNN",
          "PV-RCNN / voxel sparse + point branch + RCNN, KITTI (3 classes)"},
-        {"kitti_voxelrcnn_car",
-         "OpenPCDet KITTI Voxel-RCNN (Car)",
+        {"kitti_voxelrcnn_car", "OpenPCDet KITTI Voxel-RCNN (Car)",
          "Voxel-RCNN / sparse backbone + voxel RoI, KITTI (car class)"},
         {"kitti_voxelrcnn_focal_multimodal",
          "OpenPCDet KITTI Voxel-RCNN Focal Multimodal",
          "Voxel-RCNN focal sparse multimodal fusion, KITTI (3 classes)"},
-        {"kitti_parta2_anchor",
-         "OpenPCDet KITTI Part-A2",
+        {"kitti_parta2_anchor", "OpenPCDet KITTI Part-A2",
          "Part-A2 / sparse backbone + part-aware refine, KITTI (3 classes)"},
-        {"kitti_caddn",
-         "OpenPCDet KITTI CaDDN",
+        {"kitti_caddn", "OpenPCDet KITTI CaDDN",
          "CaDDN / gridded LiDAR feature + 2D decode, KITTI (3 classes)"},
-        {"nuscenes_transfusion_lidar",
-         "OpenPCDet nuScenes TransFusion (LiDAR)",
+        {"nuscenes_transfusion_lidar", "OpenPCDet nuScenes TransFusion (LiDAR)",
          "TransFusion / sparse transformer decoder, nuScenes (5-dim points)"},
-        {"nuscenes_voxelnext",
-         "OpenPCDet nuScenes VoxelNeXt",
+        {"nuscenes_voxelnext", "OpenPCDet nuScenes VoxelNeXt",
          "VoxelNeXt / voxel-centric sparse head, nuScenes (5-dim points)"},
         {"nuscenes_voxelnext_doubleflip",
          "OpenPCDet nuScenes VoxelNeXt Double-Flip",
          "VoxelNeXt double-flip TTA inference, nuScenes (5-dim points)"},
-        {"nuscenes_bevfusion",
-         "OpenPCDet nuScenes BEVFusion (LiDAR)",
+        {"nuscenes_bevfusion", "OpenPCDet nuScenes BEVFusion (LiDAR)",
          "BEVFusion / multi-branch pillar fusion, nuScenes (5-dim points)"},
 };
 
@@ -137,8 +124,8 @@ static std::vector<ModelRow> buildModels() {
 static const std::vector<ModelRow> kModels = buildModels();
 
 static aicore_openpcdet_model_entry toEntry(const ModelRow& row) {
-    return {row.filename, row.download_url, row.display_name,
-            row.quant_note, row.family_note, row.license_note};
+    return {row.filename,   row.download_url, row.display_name,
+            row.quant_note, row.family_note,  row.license_note};
 }
 
 }  // namespace

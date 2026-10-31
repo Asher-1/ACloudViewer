@@ -77,6 +77,8 @@ AICORE_BATCH_COMMANDS = (
     ("freesplatter", "FREESPLATTER_RECONSTRUCT",
      "qFreeSplatter/include/FreeSplatterBatchCommand.h"),
     ("trellis", "TRELLIS_GENERATE", "qTrellis/include/TrellisBatchCommand.h"),
+    ("instantmesh", "INSTANTMESH_GENERATE",
+     "qInstantMesh/include/InstantMeshBatchCommand.h"),
     ("lingbot-map", "LINGBOT_MAP_RECONSTRUCT",
      "qLingbotMap/include/LingbotMapBatchCommand.h"),
     ("anylabel", "ANYLABEL_INFER", "qAnyLabeling/include/AnyLabelingBatchCommand.h"),
@@ -178,7 +180,7 @@ HAS_BINARY = BINARY_PATH is not None
 # ── CLI harness detection ────────────────────────────────────────────────
 
 def _check_cli_available() -> bool:
-    """仅检测安装入口；已安装但损坏的 CLI 由实际测试报 FAIL，不能伪装缺依赖。"""
+    """Detect installation entry points only; tests must fail for broken installed CLIs, not report missing dependencies."""
     return shutil.which("cli-anything-acloudviewer") is not None
 
 
@@ -632,7 +634,7 @@ class TestLevel1_CppPlugin:
         assert server["command"] == "cli-anything-acloudviewer-mcp"
 
     def test_level1_installed_broken_cli_is_not_classified_as_missing(self, monkeypatch):
-        # 安装入口存在但执行失败是回归，不是缺依赖；不能让整层 CLI 测试跳过。
+        # An installed entry point that fails is a regression, not a missing dependency; do not skip the CLI layer.
         monkeypatch.setattr(shutil, "which", lambda name: "/installed/cli-anything-acloudviewer")
         monkeypatch.setattr(subprocess, "run", lambda command, **kwargs:
                             subprocess.CompletedProcess(command, 1, b"", b"broken CLI"))
@@ -640,7 +642,7 @@ class TestLevel1_CppPlugin:
 
     @pytest.mark.parametrize("macos,suffix", [(False, "so"), (True, "dylib")])
     def test_level1_existing_prefixed_plugin_avoids_rebuild(self, tmp_path, monkeypatch, macos, suffix):
-        # 只隔离外部构建操作；真实路径存在性/大小判断仍执行原入口。
+        # Isolate only external builds; real path-existence/size checks still use the original entry point.
         (tmp_path / "CMakeCache.txt").write_text("configured")
         plugin = tmp_path / "bin/plugins" / f"libQJSON_RPC_PLUGIN.{suffix}"
         plugin.parent.mkdir(parents=True)
@@ -650,7 +652,7 @@ class TestLevel1_CppPlugin:
         monkeypatch.setattr(sys.modules[__name__], "IS_MACOS", macos)
 
         def reject_build(*args, **kwargs):
-            pytest.fail("已有带 lib 前缀的平台插件不得触发重建")
+            pytest.fail("Existing platform plugins with a lib prefix must not trigger a rebuild")
 
         monkeypatch.setattr(subprocess, "run", reject_build)
         self.test_level1_plugin_builds()
@@ -3816,10 +3818,155 @@ class TestLevel4_RPCAICoreBatch:
         assert schema["keyword"] == command, task
         assert "RESULT_JSON" in {option["key"] for option in schema["options"]}
 
+    @pytest.mark.parametrize("value", [4, 4294967297, 7.5, False, "4", [4, 7.5, True, "4"]])
+    def test_level4_aicore_batch_scalar_options(self, value):
+        """JSON integer/double/bool/string scalars and flat arrays must reach a real HELP child."""
+        from cli_anything.acloudviewer.utils.rpc_client import ACloudViewerRPCClient
+
+        client = ACloudViewerRPCClient(RPC_URL)
+        try:
+            result = client.aicore_batch(
+                "INSTANTMESH_GENERATE", {"HELP": True, "THREADS": value}, timeout_ms=60000)
+        finally:
+            client.close()
+        assert result["exit_code"] == 0, result
+        assert result["manifest"]["keyword"] == "INSTANTMESH_GENERATE"
+        assert result["manifest"]["schema"] == "acloudviewer.aicore.batch/1"
+
+    @pytest.mark.parametrize("value", [None, {}, [], [None], [[1]], [{}]])
+    def test_level4_aicore_batch_rejects_non_scalar_options(self, value):
+        """Accepting integer variants must not permit null, objects or nested/empty arrays."""
+        from cli_anything.acloudviewer.utils.rpc_client import ACloudViewerRPCClient, RPCError
+
+        client = ACloudViewerRPCClient(RPC_URL)
+        try:
+            with pytest.raises(RPCError) as error:
+                client.aicore_batch(
+                    "INSTANTMESH_GENERATE", {"HELP": True, "THREADS": value}, timeout_ms=60000)
+        finally:
+            client.close()
+        assert error.value.code == -32602
+        assert error.value.data["option"] == "THREADS"
+        assert _rpc_call("ping", timeout=5) == "pong"
+
+    @pytest.mark.parametrize("query", ["HELP", "LIST_MODELS"])
+    def test_level4_instantmesh_queries_skip_generation_validation(self, query):
+        """HELP/catalog need no OUT_DIR; invalid generation parameters must not block queries."""
+        result = _rpc_call("aicore.batch", {
+            "command": "INSTANTMESH_GENERATE",
+            "options": {query: True, "SEED": "-1"}, "timeout_ms": 60000}, timeout=90)
+        assert result["exit_code"] == 0, result
+        manifest = result["manifest"]
+        if query == "HELP":
+            assert manifest["schema"] == "acloudviewer.aicore.batch/1"
+            assert manifest["keyword"] == "INSTANTMESH_GENERATE"
+        else:
+            assert manifest["task"] == "instantmesh" and len(manifest["models"]) == 14
+
+    @pytest.mark.parametrize("seed", ["-1", "18446744073709551616"])
+    def test_level4_instantmesh_invalid_seed_before_model_load(self, seed, tmp_path):
+        """Real RPC children must retain native seed validation before model downloads or loading."""
+        with ws_connect(RPC_URL, open_timeout=5) as ws:
+            ws.send(json.dumps({"jsonrpc": "2.0", "id": 1,
+                                "method": "aicore.batch", "params": {
+                "command": "INSTANTMESH_GENERATE", "timeout_ms": 60000,
+                "options": {"IMAGE": str(tmp_path / "missing.png"),
+                            "OUT_DIR": str(tmp_path / "out"), "SEED": seed}}}))
+            reply = json.loads(ws.recv(timeout=90))
+        assert reply["error"]["code"] == 3, reply
+        data = reply["error"]["data"]
+        assert data["command"] == "INSTANTMESH_GENERATE" and data["exit_code"] != 0
+        assert "SEED expects an unsigned 64-bit integer" in (
+            data["stdout"] + data["stderr"]), data
+        assert not (tmp_path / "out").exists(), "Invalid arguments must not start the output workflow"
+
     def test_level4_aicore_batch_rejects_non_aicore_command(self):
         with pytest.raises(RuntimeError):
             _rpc_call("aicore.batch", {"command": "SS", "options": {}},
                       timeout=10)
+
+    @pytest.mark.skipif(not os.environ.get("ACV_INSTANTMESH_REAL_IMAGE"),
+                        reason="Explicit real InstantMesh input is required")
+    def test_level4_instantmesh_real_default_textured_chain(self, tmp_path, record_property):
+        import hashlib
+        import threading
+        import time
+        from cli_anything.acloudviewer.utils.rpc_client import ACloudViewerRPCClient
+
+        assert _REQUIRE_BINARY, "Real installed-child acceptance requires ACV_REQUIRE_BINARY=1"
+        image = Path(os.environ["ACV_INSTANTMESH_REAL_IMAGE"])
+        assert image.is_file(), image
+        digest = hashlib.sha256(image.read_bytes()).hexdigest()
+        assert digest == "db468bad8a04f1474a8d68140c07501b013b3ec6124b911fb7852675d64c05ee"
+        device = os.environ.get("AICORE_TEST_DEVICE", "cuda")
+        result_json = tmp_path / "result.json"
+        options = {"IMAGE": str(image), "OUT_DIR": str(tmp_path / "out"),
+                   "RESULT_JSON": str(result_json), "DEVICE": device, "THREADS": 4}
+        record_property("rpc_request", json.dumps({"method": "aicore.batch", "options": options}))
+        record_property("input_sha256", digest)
+        outcome = {}
+        client = ACloudViewerRPCClient(RPC_URL)
+
+        def generate():
+            try:
+                outcome["response"] = client.aicore_batch(
+                    "INSTANTMESH_GENERATE", options, result_json=str(result_json), timeout_ms=7200000)
+            except Exception as error:
+                outcome["error"] = str(error)
+                if getattr(error, "data", None) is not None:
+                    outcome["data"] = error.data
+            finally:
+                client.close()
+                (tmp_path / "rpc-response.json").write_text(json.dumps(outcome, indent=2))
+
+        worker = threading.Thread(target=generate, daemon=True)
+        worker.start()
+        latencies = []
+        deadline = time.monotonic() + 7260
+        try:
+            while worker.is_alive():
+                assert time.monotonic() < deadline, "Real RPC child exceeded its deadline"
+                started = time.monotonic()
+                assert _rpc_call("ping", timeout=5) == "pong"
+                elapsed = time.monotonic() - started
+                if worker.is_alive():
+                    latencies.append(elapsed)
+                time.sleep(1)
+        finally:
+            client.close()
+            worker.join(timeout=30)
+        assert not worker.is_alive(), "Harness RPC client did not finish"
+        assert "error" not in outcome, outcome
+        assert outcome["response"]["exit_code"] == 0, outcome
+        assert latencies and max(latencies) < 1.0, latencies
+        record_property("concurrent_ping_max_ms", max(latencies) * 1000)
+        manifest = json.loads(result_json.read_text())
+        assert manifest["schema"] == "acloudviewer.aicore.batch/1"
+        assert manifest["task"] == "instantmesh" and manifest["command"] == "INSTANTMESH_GENERATE"
+        assert manifest["ok"] == 1 and manifest["failed"] == 0 and manifest["total"] == 1
+        assert manifest["quantization"] == "f16" and manifest["preset"] == "Full multi-view (recommended)"
+        assert not {"PRESET", "QUANT", "STEPS", "SEED", "GRID_RES", "TEXTURE_RES"}.intersection(manifest["options"])
+        item = manifest["items"][0]
+        expected_backend = {"cuda": "CUDA", "vulkan": "Vulkan", "metal": "Metal", "cpu": "CPU"}[device]
+        assert item["backend"].casefold().startswith(expected_backend.casefold()), item
+        assert item["status"] == "ok" and item["multiview"] and item["has_texture"]
+        assert item["vertices"] > 0 and item["triangles"] > 0
+        assert item["timings"]["e2e_ms"] == item["runtime_ms"] > 0
+        assert item["load_ms"] > 0 and item["export_ms"] > 0
+        assert set(item["outputs"]) == {"glb", "material", "mesh", "preview", "texture"}
+        for path in item["outputs"].values():
+            assert Path(path).is_file() and Path(path).stat().st_size > 0, path
+        model_digests = {}
+        for path in manifest["models"]:
+            hasher = hashlib.sha256()
+            with Path(path).open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    hasher.update(chunk)
+            model_digests[Path(path).name] = hasher.hexdigest()
+        assert len(model_digests) == 6
+        record_property("model_sha256", json.dumps(model_digests, sort_keys=True))
+        record_property("accuracy_scope", "Real installed RPC chain only; independent full accuracy and controlled performance are not accepted")
+        assert _rpc_call("ping", timeout=5) == "pong"
 
 
 @pytest.mark.skipif(
@@ -3983,7 +4130,7 @@ class TestLevel5_MCPServer:
     @_needs_mcp
     @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not available")
     def test_level5_llm_native_schema(self, monkeypatch):
-        """真实 MCP schema 路径；不模拟原生 schema 或加载模型。"""
+        """Real MCP schema path; no simulated native schema or model loading."""
         import asyncio
         from cli_anything.acloudviewer import mcp_server
         from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
@@ -3996,6 +4143,24 @@ class TestLevel5_MCPServer:
         assert schema["keyword"] == "LLM_GENERATE"
         assert {"PROMPT", "MMPROJ", "MAX_TOKENS"} <= {
             row["key"] for row in schema["options"]}
+
+    @_needs_mcp
+    @pytest.mark.skipif(not HAS_BINARY, reason="ACloudViewer binary not available")
+    def test_level5_instantmesh_native_schema(self, monkeypatch):
+        """Generic MCP get_ai_schema must consume the real InstantMesh native plugin schema."""
+        import asyncio
+        from cli_anything.acloudviewer import mcp_server
+        from cli_anything.acloudviewer.utils.acloudviewer_backend import ACloudViewerBackend
+        monkeypatch.setenv("ACV_BINARY", BINARY_PATH)
+        backend = ACloudViewerBackend(mode="headless")
+        monkeypatch.setattr(mcp_server, "_get_backend", lambda: backend)
+        content = asyncio.run(mcp_server.call_tool("get_ai_schema", {"task": "instantmesh"}))
+        schema = json.loads(content[0].text)
+        assert schema.get("schema") == "acloudviewer.aicore.batch/1", schema
+        assert schema["keyword"] == "INSTANTMESH_GENERATE"
+        assert {"IMAGE", "OUT_DIR", "PRESET", "QUANT", "RMBG_MODEL", "SEED",
+                "STEPS", "TEXTURE", "TEXTURE_RES", "RESULT_JSON"} <= {
+                    row["key"] for row in schema["options"]}
 
     @_needs_mcp
     def test_level5_documented_tool_counts_match_server(self):

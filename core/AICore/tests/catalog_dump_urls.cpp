@@ -26,6 +26,7 @@
 #include "aicore/asset_digests.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/gkd_capi.h"
+#include "aicore/instantmesh_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/llm_capi.h"
 #include "aicore/loma_capi.h"
@@ -82,13 +83,15 @@ void emitAsset(const char* task,
                const char* folder,
                const char* filename,
                const char* url,
-               long long size_bytes = 0) {
+               long long size_bytes = 0,
+               const char* catalog_digest = nullptr) {
     if (filename == nullptr || url == nullptr) return;
     if (!g_json) {
         std::printf("%s\n", url);
         return;
     }
-    const char* digest = aicore::AssetDigestForFile(filename);
+    const char* digest = catalog_digest ? catalog_digest
+                                        : aicore::AssetDigestForFile(filename);
     if (digest == nullptr) g_complete = false;
     const std::string relative = std::string(folder) + "/" + filename;
     std::printf(
@@ -149,7 +152,8 @@ void emitRuntimeCatalogs() {
     }
     for (int i = 0; i < aicore_rfdetr_model_count(); ++i) {
         const aicore_rfdetr_model_entry* e = aicore_rfdetr_model_at(i);
-        if (e) emitAsset("rfdetr", "rfdetr_models", e->filename, e->download_url);
+        if (e)
+            emitAsset("rfdetr", "rfdetr_models", e->filename, e->download_url);
     }
     for (int i = 0; i < aicore_openpcdet_model_count(); ++i) {
         const aicore_openpcdet_model_entry* e = aicore_openpcdet_model_at(i);
@@ -195,6 +199,14 @@ void emitRuntimeCatalogs() {
         if (e && !(e->role && std::strcmp(e->role, "rmbg") == 0))
             emitAsset("trellis", "trellis_models", e->filename, e->download_url,
                       static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_instantmesh_model_count(); ++i) {
+        const aicore_instantmesh_model_entry* e =
+                aicore_instantmesh_model_at(i);
+        if (e)
+            emitAsset("instantmesh", "instantmesh_models", e->filename,
+                      e->download_url, static_cast<long long>(e->size_bytes),
+                      e->sha256);
     }
     const int yolo_count = aicore_yolo_model_count(AICORE_YOLO_ROLE_ANY);
     for (int i = 0; i < yolo_count; ++i) {

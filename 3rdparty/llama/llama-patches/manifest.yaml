@@ -1,6 +1,7 @@
 # CPU migration experiment only. Not the production GPU patch chain.
 patches:
   - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
   - file: 0013-acv-elementwise-hint-api.patch
     note: "Keep the same graph annotation API across backends; CPU retains separate ADD/GELU fallback."
   - file: 0014-acv-depthwise-bias-api-cpu.patch

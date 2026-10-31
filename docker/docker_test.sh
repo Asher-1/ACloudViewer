@@ -155,6 +155,8 @@ cpp_test_only() {
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
      && cd build \
      && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && source ../util/ci_utils.sh \
+     && run_qpythonruntime_tests . native \
      && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
      && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
      && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
@@ -213,6 +215,8 @@ cpp_python_command_tools_test() {
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
      && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && source ../util/ci_utils.sh \
+     && run_qpythonruntime_tests . native \
      && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
      && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
      && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \

@@ -37,7 +37,8 @@ struct Asset {
 };
 /** Model file plus its projector, filtered to the ones still to download.
  *  Returns false (with error) when the id is not a catalog chat model. */
-bool missingAssets(const QString& model, QVector<Asset>* missing,
+bool missingAssets(const QString& model,
+                   QVector<Asset>* missing,
                    QString* error);
 
 struct Callbacks {

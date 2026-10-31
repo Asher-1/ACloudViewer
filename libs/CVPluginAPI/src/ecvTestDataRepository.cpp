@@ -12,6 +12,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QImageReader>
 #include <algorithm>
 #include <functional>
 
@@ -596,8 +597,7 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kOpenPCDetZipName),
                     QString::fromLatin1(kOpenPCDetExtractDir),
                     QString::fromLatin1(kOpenPCDetDownloadUrl),
-                    {QCryptographicHash::Sha256,
-                     QByteArray(kOpenPCDetSha256)},
+                    {QCryptographicHash::Sha256, QByteArray(kOpenPCDetSha256)},
                     QString::fromLatin1(kOpenPCDetGroupDir)};
     }
     Q_UNREACHABLE();
@@ -680,10 +680,17 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
             }
             break;
         }
-        case Dataset::Image2Mesh:
+        case Dataset::Image2Mesh: {
             // The main single-image-to-3D samples live in examples_images/.
-            extractedComplete = !getImage2MeshImages(extract).isEmpty();
+            // Extensions do not prove valid contents; corrupt caches must
+            // continue through verified ZIP/download recovery.
+            const auto images = getImage2MeshImages(extract);
+            extractedComplete = std::any_of(
+                    images.cbegin(), images.cend(), [](const QString& path) {
+                        return !QImageReader(path).read().isNull();
+                    });
             break;
+        }
         case Dataset::SAM3:
             // Both the segmentation images and the tracking videos must be
             // present for the qSAM3 sample-data flow to work.

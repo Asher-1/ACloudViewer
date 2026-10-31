@@ -8,6 +8,10 @@
 // serialization, class-name mapping, box wireframe geometry, catalog
 // mirror). No GGUF model required.
 
+#include <ecvPluginDbNaming.h>
+#include <ecvPointCloud.h>
+#include <ecvPolyline.h>
+#include <ecvScalarField.h>
 #include <gtest/gtest.h>
 
 #include <QCoreApplication>
@@ -17,23 +21,15 @@
 #include <QImage>
 #include <QRegularExpression>
 #include <QTemporaryDir>
-
 #include <cmath>
-#include <set>
-
 #include <cstring>
 #include <random>
-
-#include <ecvScalarField.h>
-#include <ecvPointCloud.h>
-#include <ecvPolyline.h>
+#include <set>
 
 #include "OpenPCDetDbExport.h"
 #include "OpenPCDetModelCatalog.h"
 #include "OpenPCDetWorker.h"
 #include "ecvTestDataRepository.h"
-
-#include <ecvPluginDbNaming.h>
 
 namespace {
 
@@ -66,15 +62,15 @@ TEST(OpenPCDetHelpers, ParsePointsBinBadSize) {
     int count = 0;
     QString error;
     // 7 bytes can never be a whole number of float32 features.
-    EXPECT_FALSE(OpenPCDetHelpers::parsePointsBin(
-            QByteArray(7, '\0'), 4, &points, &count, &error));
+    EXPECT_FALSE(OpenPCDetHelpers::parsePointsBin(QByteArray(7, '\0'), 4,
+                                                  &points, &count, &error));
     EXPECT_FALSE(error.isEmpty());
     // Empty file is rejected.
     EXPECT_FALSE(OpenPCDetHelpers::parsePointsBin(QByteArray(), 4, &points,
                                                   &count, &error));
     // Invalid dim is rejected.
-    EXPECT_FALSE(OpenPCDetHelpers::parsePointsBin(
-            QByteArray(16, '\0'), 0, &points, &count, &error));
+    EXPECT_FALSE(OpenPCDetHelpers::parsePointsBin(QByteArray(16, '\0'), 0,
+                                                  &points, &count, &error));
 }
 
 TEST(OpenPCDetHelpers, ParsePointsTxtBasicAndPadding) {
@@ -114,16 +110,15 @@ TEST(OpenPCDetHelpers, ParsePointsTxtMalformed) {
     int count = 0;
     QString error;
     // Fewer than 3 values is rejected.
-    EXPECT_FALSE(OpenPCDetHelpers::parsePointsTxt(
-            QStringLiteral("1 2\n"), 4, &points, &count, &error));
+    EXPECT_FALSE(OpenPCDetHelpers::parsePointsTxt(QStringLiteral("1 2\n"), 4,
+                                                  &points, &count, &error));
     EXPECT_TRUE(error.contains(QStringLiteral("Line 1")));
     // Non-numeric token is rejected.
-    EXPECT_FALSE(OpenPCDetHelpers::parsePointsTxt(
-            QStringLiteral("1 2 abc 4\n"), 4, &points, &count, &error));
+    EXPECT_FALSE(OpenPCDetHelpers::parsePointsTxt(QStringLiteral("1 2 abc 4\n"),
+                                                  4, &points, &count, &error));
     // No points at all is rejected.
     EXPECT_FALSE(OpenPCDetHelpers::parsePointsTxt(
-            QStringLiteral("# only a comment\n"), 4, &points, &count,
-            &error));
+            QStringLiteral("# only a comment\n"), 4, &points, &count, &error));
 }
 
 TEST(OpenPCDetHelpers, ClassNameKittiMapping) {
@@ -139,8 +134,7 @@ TEST(OpenPCDetHelpers, ClassNameGenericFallback) {
     // Non-KITTI layouts (e.g. nuScenes, 10 classes) have no name table in
     // the C API, so labels stay generic.
     EXPECT_EQ(OpenPCDetHelpers::className(1, 10), QStringLiteral("class 1"));
-    EXPECT_EQ(OpenPCDetHelpers::className(10, 10),
-              QStringLiteral("class 10"));
+    EXPECT_EQ(OpenPCDetHelpers::className(10, 10), QStringLiteral("class 10"));
 }
 
 TEST(OpenPCDetHelpers, PerClassCounts) {
@@ -290,8 +284,7 @@ TEST(OpenPCDetHelpers, QuantSuffixesMatchCatalogOrder) {
 TEST(OpenPCDetHelpers, BuildModelFilename) {
     QString out;
     ASSERT_TRUE(OpenPCDetHelpers::buildModelFilename(
-            QStringLiteral("kitti_pointpillar"), QStringLiteral("f16"),
-            &out));
+            QStringLiteral("kitti_pointpillar"), QStringLiteral("f16"), &out));
     EXPECT_EQ(out, QStringLiteral("kitti_pointpillar.f16.gguf"));
 
     // Every checkpoint stem x quant combination must exist in the catalog.
@@ -299,8 +292,8 @@ TEST(OpenPCDetHelpers, BuildModelFilename) {
             OpenPCDetHelpers::catalogCheckpoints();
     for (const OpenPCDetHelpers::OpenPCDetCheckpoint& cp : checkpoints) {
         for (const QString& quant : OpenPCDetHelpers::quantSuffixes()) {
-            ASSERT_TRUE(OpenPCDetHelpers::buildModelFilename(cp.stem, quant,
-                                                             &out));
+            ASSERT_TRUE(
+                    OpenPCDetHelpers::buildModelFilename(cp.stem, quant, &out));
             OpenPCDetModelEntry entry;
             EXPECT_TRUE(OpenPCDetHelpers::findModelByFilename(out, &entry))
                     << "missing catalog row " << out.toStdString();
@@ -310,8 +303,7 @@ TEST(OpenPCDetHelpers, BuildModelFilename) {
     EXPECT_FALSE(OpenPCDetHelpers::buildModelFilename(
             QString(), QStringLiteral("f16"), &out));
     EXPECT_FALSE(OpenPCDetHelpers::buildModelFilename(
-            QStringLiteral("kitti_pointpillar"), QStringLiteral("q4_k"),
-            &out));
+            QStringLiteral("kitti_pointpillar"), QStringLiteral("q4_k"), &out));
 }
 
 TEST(OpenPCDetHelpers, InputKindRouting) {
@@ -322,8 +314,8 @@ TEST(OpenPCDetHelpers, InputKindRouting) {
     EXPECT_EQ(OpenPCDetHelpers::inputKindForFilename(
                       QStringLiteral("nuscenes_bevfusion.q8_0.gguf")),
               OpenPCDetHelpers::InputKind::Scene);
-    EXPECT_EQ(OpenPCDetHelpers::inputKindForFilename(
-                      QStringLiteral("kitti_voxelrcnn_focal_multimodal.q8_0.gguf")),
+    EXPECT_EQ(OpenPCDetHelpers::inputKindForFilename(QStringLiteral(
+                      "kitti_voxelrcnn_focal_multimodal.q8_0.gguf")),
               OpenPCDetHelpers::InputKind::Scene);
     // All LiDAR-only checkpoints (a sample of each family) route to the
     // point path.
@@ -363,10 +355,9 @@ TEST(OpenPCDetHelpers, CatalogCheckpointsGrouping) {
 
         // Input-kind + dataset grouping (dataset follows the family note,
         // matching the dialog's task-list sections).
-        const bool isScene =
-                OpenPCDetHelpers::inputKindForFilename(
-                        cp.stem + QStringLiteral(".f16.gguf")) ==
-                OpenPCDetHelpers::InputKind::Scene;
+        const bool isScene = OpenPCDetHelpers::inputKindForFilename(
+                                     cp.stem + QStringLiteral(".f16.gguf")) ==
+                             OpenPCDetHelpers::InputKind::Scene;
         if (isScene) {
             sceneCount += 1;
         } else if (cp.familyNote.contains(QStringLiteral("KITTI"))) {
@@ -382,10 +373,10 @@ TEST(OpenPCDetHelpers, CatalogCheckpointsGrouping) {
                     << e.filename.toStdString();
         }
     }
-    EXPECT_EQ(kittiCount, 8);    // 8 KITTI LiDAR-only checkpoints
-    EXPECT_EQ(nuScenesCount, 7); // 7 nuScenes LiDAR checkpoints
-    EXPECT_EQ(sceneCount, 3);    // kitti_caddn + nuscenes_bevfusion +
-                                 // kitti_voxelrcnn_focal_multimodal
+    EXPECT_EQ(kittiCount, 8);     // 8 KITTI LiDAR-only checkpoints
+    EXPECT_EQ(nuScenesCount, 7);  // 7 nuScenes LiDAR checkpoints
+    EXPECT_EQ(sceneCount, 3);     // kitti_caddn + nuscenes_bevfusion +
+                                  // kitti_voxelrcnn_focal_multimodal
     // The default catalog row's checkpoint owns the recommended f16 model.
     const int defaultIdx = OpenPCDetHelpers::catalogDefaultIndex();
     const QVector<OpenPCDetModelEntry> all = OpenPCDetHelpers::catalogModels();
@@ -400,11 +391,11 @@ TEST(OpenPCDetHelpers, CatalogCheckpointsGrouping) {
 TEST(OpenPCDetHelpers, SceneCameraPreviewConversion) {
     // One 1x2 RGB frame, camera 0 of a 2-camera payload (NHWC).
     const float frames[2 * 1 * 2 * 3] = {
-            0.0f, 0.5f, 1.0f,  1.0f, 0.0f, 0.25f,  // camera 0: two pixels
-            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f,   // camera 1: black
+            0.0f, 0.5f, 1.0f, 1.0f, 0.0f, 0.25f,  // camera 0: two pixels
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,   // camera 1: black
     };
-    const QImage img = OpenPCDetHelpers::sceneCameraPreview(frames, 2, 1, 2,
-                                                            3, 0);
+    const QImage img =
+            OpenPCDetHelpers::sceneCameraPreview(frames, 2, 1, 2, 3, 0);
     ASSERT_FALSE(img.isNull());
     EXPECT_EQ(img.width(), 2);
     EXPECT_EQ(img.height(), 1);
@@ -420,8 +411,8 @@ TEST(OpenPCDetHelpers, SceneCameraPreviewConversion) {
 
     // Grayscale payload expands to gray RGB.
     const float gray[1 * 1 * 1] = {0.5f};
-    const QImage gimg = OpenPCDetHelpers::sceneCameraPreview(gray, 1, 1, 1,
-                                                             1, 0);
+    const QImage gimg =
+            OpenPCDetHelpers::sceneCameraPreview(gray, 1, 1, 1, 1, 0);
     ASSERT_FALSE(gimg.isNull());
     const QRgb gp = gimg.pixel(0, 0);
     EXPECT_EQ(qRed(gp), qGreen(gp));
@@ -443,8 +434,9 @@ TEST(OpenPCDetHelpers, ReadScenePreviewFromDirectory) {
     {
         QFile json(QDir(dir.path()).filePath(QStringLiteral("scene.json")));
         ASSERT_TRUE(json.open(QIODevice::WriteOnly | QIODevice::Text));
-        json.write("{\"num_cameras\": 2, \"image_height\": 1, "
-                   "\"image_width\": 2, \"image_channels\": 3}");
+        json.write(
+                "{\"num_cameras\": 2, \"image_height\": 1, "
+                "\"image_width\": 2, \"image_channels\": 3}");
         json.close();
         QFile images(QDir(dir.path()).filePath(QStringLiteral("images.bin")));
         ASSERT_TRUE(images.open(QIODevice::WriteOnly));
@@ -453,8 +445,8 @@ TEST(OpenPCDetHelpers, ReadScenePreviewFromDirectory) {
     }
     QImage preview;
     QString error;
-    EXPECT_TRUE(OpenPCDetHelpers::readScenePreview(dir.path(), &preview,
-                                                   &error));
+    EXPECT_TRUE(
+            OpenPCDetHelpers::readScenePreview(dir.path(), &preview, &error));
     EXPECT_TRUE(error.isEmpty());
     EXPECT_EQ(preview.width(), 2);
     EXPECT_EQ(preview.height(), 1);
@@ -482,8 +474,7 @@ TEST(OpenPCDetHelpers, CatalogMirror) {
     for (const OpenPCDetModelEntry& e : all) {
         EXPECT_FALSE(e.filename.isEmpty());
         EXPECT_TRUE(e.downloadUrl.startsWith(QStringLiteral("https://")));
-        EXPECT_TRUE(e.downloadUrl.contains(
-                QStringLiteral("OpenPCDet-GGUF")));
+        EXPECT_TRUE(e.downloadUrl.contains(QStringLiteral("OpenPCDet-GGUF")));
         EXPECT_FALSE(e.displayName.isEmpty());
     }
 
@@ -565,9 +556,8 @@ TEST(OpenPCDetTestData, MappingPointPanels) {
         EXPECT_TRUE(files.scenePointsFile.isEmpty()) << stem.toStdString();
     }
     // ...the PointRCNN checkpoints their pre-sampled 16384-point variant...
-    for (const QString& stem :
-         {QStringLiteral("kitti_pointrcnn"),
-          QStringLiteral("kitti_pointrcnn_iou")}) {
+    for (const QString& stem : {QStringLiteral("kitti_pointrcnn"),
+                                QStringLiteral("kitti_pointrcnn_iou")}) {
         const OpenPCDetHelpers::OpenPCDetTestDataFiles files =
                 OpenPCDetHelpers::testDataFilesForCheckpoint(stem);
         EXPECT_EQ(files.pointsFile, QLatin1String(kKittiSampled))
@@ -676,8 +666,7 @@ TEST(OpenPCDetTestData, ResolveErrorsOnMissingMember) {
 
     error.clear();
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
-            dir.path(), QStringLiteral("nuscenes_voxelnext"), &files,
-            &error));
+            dir.path(), QStringLiteral("nuscenes_voxelnext"), &files, &error));
     EXPECT_TRUE(error.contains(QLatin1String(kNuscenesSweep)))
             << error.toStdString();
     error.clear();
@@ -709,7 +698,8 @@ TEST(OpenPCDetTestData, ResolveFillsAbsolutePaths) {
     OpenPCDetHelpers::OpenPCDetTestDataFiles files;
     ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
             root, QStringLiteral("kitti_pointrcnn"), &files, nullptr));
-    EXPECT_EQ(files.pointsFile, QDir(root).filePath(QLatin1String(kKittiSampled)));
+    EXPECT_EQ(files.pointsFile,
+              QDir(root).filePath(QLatin1String(kKittiSampled)));
 
     ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
             root, QStringLiteral("nuscenes_bevfusion"), &files, nullptr));
@@ -747,10 +737,9 @@ TEST(OpenPCDetTestData, RepositoryMetadataAndLayout) {
     EXPECT_EQ(info.extractDirName, QStringLiteral("openpcdet_test_data"));
     EXPECT_EQ(info.extractGroupName, QStringLiteral("openpcdet_test_data"));
     EXPECT_EQ(info.downloadUrl,
-              QStringLiteral(
-                      "https://github.com/Asher-1/cloudViewer_downloads/"
-                      "releases/download/OpenPCDet-GGUF/"
-                      "openpcdet_test_data.zip"));
+              QStringLiteral("https://github.com/Asher-1/cloudViewer_downloads/"
+                             "releases/download/OpenPCDet-GGUF/"
+                             "openpcdet_test_data.zip"));
     EXPECT_EQ(QString::fromLatin1(info.anchor.digestHex),
               QStringLiteral("f1f185a385ddd0b440ed5699be47169eb89b7a0107e29"
                              "fd26e33ed81a07939dd"));
@@ -760,11 +749,10 @@ TEST(OpenPCDetTestData, RepositoryMetadataAndLayout) {
     EXPECT_EQ(ecvTestDataRepository::zipPath(kind),
               QDir(ecvTestDataRepository::downloadDir())
                       .filePath(QStringLiteral("openpcdet_test_data.zip")));
-    EXPECT_EQ(
-            ecvTestDataRepository::extractPath(kind),
-            QDir(QDir(ecvTestDataRepository::extractDir())
-                         .filePath(QStringLiteral("openpcdet_test_data")))
-                    .filePath(QStringLiteral("openpcdet_test_data")));
+    EXPECT_EQ(ecvTestDataRepository::extractPath(kind),
+              QDir(QDir(ecvTestDataRepository::extractDir())
+                           .filePath(QStringLiteral("openpcdet_test_data")))
+                      .filePath(QStringLiteral("openpcdet_test_data")));
 
     // Nothing extracted in the scratch root: unavailable, and the member
     // lookup comes back empty.
@@ -813,13 +801,23 @@ OpenPCDetRunResult makeTwoBoxResult() {
     r.runtimeMs = 12.5;
     r.resolvedDevice = QStringLiteral("cpu");
     OpenPCDetDetection car;
-    car.x = 0.f; car.y = 0.f; car.z = 1.f;
-    car.dx = 4.f; car.dy = 2.f; car.dz = 2.f; car.heading = 0.f;
-    car.score = 0.97f; car.label = 1;
+    car.x = 0.f;
+    car.y = 0.f;
+    car.z = 1.f;
+    car.dx = 4.f;
+    car.dy = 2.f;
+    car.dz = 2.f;
+    car.heading = 0.f;
+    car.score = 0.97f;
+    car.label = 1;
     car.className = QStringLiteral("Car");
     OpenPCDetDetection ped = car;
-    ped.x = 10.f; ped.y = 0.f; ped.dx = 1.f; ped.dy = 1.f;
-    ped.score = 0.55f; ped.label = 2;
+    ped.x = 10.f;
+    ped.y = 0.f;
+    ped.dx = 1.f;
+    ped.dy = 1.f;
+    ped.score = 0.55f;
+    ped.label = 2;
     ped.className = QStringLiteral("Pedestrian");
     r.detections = {car, ped};
     return r;
@@ -849,8 +847,8 @@ TEST(OpenPCDetDualInput, FileAndDbTreeBuffersAreBitIdentical) {
     const QByteArray bytes = reader.readAll();
     reader.close();
     ASSERT_FALSE(bytes.isEmpty());
-    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(
-            bytes, 4, &fileBuffer, &fileCount, &error))
+    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &fileBuffer,
+                                                 &fileCount, &error))
             << error.toStdString();
 
     // Path 2 — DB-tree input: the same points as a ccPointCloud with an
@@ -858,8 +856,8 @@ TEST(OpenPCDetDualInput, FileAndDbTreeBuffersAreBitIdentical) {
     ccPointCloud cloud(QStringLiteral("dbtree"));
     ASSERT_TRUE(cloud.reserve(n));
     for (int i = 0; i < n; ++i) {
-        cloud.addPoint(CCVector3(pts[i * 4 + 0], pts[i * 4 + 1],
-                                 pts[i * 4 + 2]));
+        cloud.addPoint(
+                CCVector3(pts[i * 4 + 0], pts[i * 4 + 1], pts[i * 4 + 2]));
     }
     auto* intensity = new ccScalarField("intensity");
     ASSERT_TRUE(intensity->reserveSafe(static_cast<unsigned>(n)));
@@ -871,8 +869,8 @@ TEST(OpenPCDetDualInput, FileAndDbTreeBuffersAreBitIdentical) {
 
     std::vector<float> cloudBuffer;
     int cloudCount = 0;
-    ASSERT_TRUE(OpenPCDetWorker::extractCloudPoints(
-            &cloud, 4, &cloudBuffer, &cloudCount, &error))
+    ASSERT_TRUE(OpenPCDetWorker::extractCloudPoints(&cloud, 4, &cloudBuffer,
+                                                    &cloudCount, &error))
             << error.toStdString();
 
     ASSERT_EQ(fileCount, n);
@@ -903,10 +901,9 @@ TEST(OpenPCDetDualInput, DbExportWireframeMetadata) {
     for (unsigned i = 0; i < 2; ++i) {
         const OpenPCDetDetection& d = result.detections[i];
         auto* box = static_cast<ccPolyline*>(group->getChild(i));
-        EXPECT_EQ(box->getName(),
-                  QStringLiteral("%1 %2")
-                          .arg(d.className)
-                          .arg(d.score, 0, 'f', 2));
+        EXPECT_EQ(box->getName(), QStringLiteral("%1 %2")
+                                          .arg(d.className)
+                                          .arg(d.score, 0, 'f', 2));
         EXPECT_EQ(box->size(), wire.size());
         const OpenPCDetHelpers::OpenPCDetClassColor cls =
                 OpenPCDetHelpers::classColor(d.label, result.numClass);
@@ -936,23 +933,22 @@ TEST(OpenPCDetDualInput, DbExportAnnotatedCloudMetadataAndTint) {
     const int n = 8;
     ASSERT_TRUE(source.reserve(n));
     const CCVector3 pts[n] = {
-            {0.5f, 0.2f, 1.0f},    // in car
-            {30.f, 30.f, 0.f},     // outside
-            {10.2f, 0.1f, 1.0f},   // in pedestrian
-            {-20.f, 5.f, 0.f},     // outside
-            {25.f, -25.f, 0.f},    // outside
-            {0.1f, 40.f, 0.f},     // outside
-            {-40.f, -0.5f, 0.f},   // outside
-            {12.f, 12.f, 12.f},    // outside
+            {0.5f, 0.2f, 1.0f},   // in car
+            {30.f, 30.f, 0.f},    // outside
+            {10.2f, 0.1f, 1.0f},  // in pedestrian
+            {-20.f, 5.f, 0.f},    // outside
+            {25.f, -25.f, 0.f},   // outside
+            {0.1f, 40.f, 0.f},    // outside
+            {-40.f, -0.5f, 0.f},  // outside
+            {12.f, 12.f, 12.f},   // outside
     };
     for (int i = 0; i < n; ++i) source.addPoint(pts[i]);
 
     const OpenPCDetRunResult result = makeTwoBoxResult();
     unsigned tinted = 0;
     QString error;
-    ccPointCloud* annotated =
-            BuildAnnotatedCloud(&source, result, QStringLiteral("pp"),
-                                &tinted, &error);
+    ccPointCloud* annotated = BuildAnnotatedCloud(
+            &source, result, QStringLiteral("pp"), &tinted, &error);
     ASSERT_NE(annotated, nullptr) << error.toStdString();
     EXPECT_EQ(annotated->size(), n);
     EXPECT_EQ(tinted, 2u);
@@ -1008,11 +1004,11 @@ TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
     // sample-data download populate). Skip — do not fail — when the
     // machine has not populated them.
     const QString extractRoot = ecvTestDataRepository::extractDir();
-    const QString model = extractRoot +
-                          QStringLiteral("/openpcdet_models/"
-                                         "kitti_pointpillar.f32.gguf");
-    const QString bin = extractRoot +
-                        QStringLiteral("/openpcdet_inputs/kitti_000008.bin");
+    const QString model = extractRoot + QStringLiteral(
+                                                "/openpcdet_models/"
+                                                "kitti_pointpillar.f32.gguf");
+    const QString bin =
+            extractRoot + QStringLiteral("/openpcdet_inputs/kitti_000008.bin");
     if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
         GTEST_SKIP() << "OpenPCDet assets not cached under "
                      << extractRoot.toStdString();
@@ -1050,8 +1046,8 @@ TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
 
     // ---- Run the real worker: once with the DB-tree cloud, once with
     // the raw file, mirroring the two GUI input paths. ----
-    auto runWorker = [&](const OpenPCDetWorker::Settings& ws,
-                         ccPointCloud* src, OpenPCDetRunResult* out) {
+    auto runWorker = [&](const OpenPCDetWorker::Settings& ws, ccPointCloud* src,
+                         OpenPCDetRunResult* out) {
         OpenPCDetWorker worker(ws, src);
         ResultCatcher catcher;
         QObject::connect(&worker, &OpenPCDetWorker::resultReady, &catcher,
@@ -1120,8 +1116,7 @@ TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
                   static_cast<qlonglong>(d.label))
                 << "box " << i;
         const double score =
-                box->getMetaData(QStringLiteral("OpenPCDet/Score"))
-                        .toDouble();
+                box->getMetaData(QStringLiteral("OpenPCDet/Score")).toDouble();
         EXPECT_GT(score, 0.0) << "box " << i;
         EXPECT_LE(score, 1.0) << "box " << i;
         const OpenPCDetHelpers::OpenPCDetClassColor cls =
@@ -1134,15 +1129,14 @@ TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
 
     unsigned tinted = 0;
     error.clear();
-    ccPointCloud* annotated = BuildAnnotatedCloud(&cloud, cloudResult,
-                                                  modelTag, &tinted, &error);
+    ccPointCloud* annotated =
+            BuildAnnotatedCloud(&cloud, cloudResult, modelTag, &tinted, &error);
     ASSERT_NE(annotated, nullptr) << error.toStdString();
     EXPECT_EQ(annotated->size(), cloud.size());
     EXPECT_GT(tinted, 0u)
             << "real detections must tint at least one LiDAR point";
-    EXPECT_EQ(
-            annotated->getMetaData(QStringLiteral("OpenPCDet/TintedPoints")),
-            static_cast<qlonglong>(tinted));
+    EXPECT_EQ(annotated->getMetaData(QStringLiteral("OpenPCDet/TintedPoints")),
+              static_cast<qlonglong>(tinted));
     EXPECT_TRUE(annotated->hasColors());
     EXPECT_EQ(annotated->getMetaData(QStringLiteral("OpenPCDet/Model")),
               QFileInfo(model).fileName())

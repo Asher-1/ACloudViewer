@@ -570,7 +570,8 @@ int main(int argc, char** argv) {
                 ++colors[sideColors.pixel(x, y)];
         for (auto it = colors.cbegin(); it != colors.cend(); ++it)
             if (it.value() > 10)
-                std::fprintf(stderr, "Color %08x: %d pixels\n", unsigned(it.key()), it.value());
+                std::fprintf(stderr, "Color %08x: %d pixels\n",
+                             unsigned(it.key()), it.value());
     }
     REQUIRE(semanticColorPixels > 0);
     auto* cropAction = window.findChild<QAction*>("PointCloudCropDepth");
@@ -1116,9 +1117,11 @@ int main(int argc, char** argv) {
         QApplication::sendEvent(handle, &release);
         if (cameraPanel->geometry() != QRect(208, 8, 424, 316)) {
             const auto geometry = cameraPanel->geometry();
-            std::fprintf(stderr, "Camera drag: %d,%d %dx%d; screen delta %.3f,%.3f\n",
-                         geometry.x(), geometry.y(), geometry.width(), geometry.height(),
-                         moveScreen.x() - pressScreen.x(), moveScreen.y() - pressScreen.y());
+            std::fprintf(stderr,
+                         "Camera drag: %d,%d %dx%d; screen delta %.3f,%.3f\n",
+                         geometry.x(), geometry.y(), geometry.width(),
+                         geometry.height(), moveScreen.x() - pressScreen.x(),
+                         moveScreen.y() - pressScreen.y());
         }
         REQUIRE(cameraPanel->geometry() == QRect(208, 8, 424, 316));
         REQUIRE(handle->pos() == QPoint(0, 300));
@@ -1318,7 +1321,8 @@ int main(int argc, char** argv) {
     const double fittedScale = cameraView->transform().m11();
     const QPointF cameraMouse(40, 40);
     QWheelEvent zoom = wheelEvent(
-            cameraMouse, cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()), 120);
+            cameraMouse,
+            cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()), 120);
     QApplication::sendEvent(cameraView->viewport(), &zoom);
     REQUIRE(std::abs(cameraView->transform().m11() / fittedScale - 1.2) < 1e-8);
     REQUIRE(projectedPixel(32, 32) == cameraFrame.rgb[0]);
@@ -1328,7 +1332,9 @@ int main(int argc, char** argv) {
     REQUIRE(std::abs(cameraView->transform().m11() - fittedScale) < 1e-8);
     const auto wheelCamera = [&](int delta) {
         QWheelEvent event = wheelEvent(
-                cameraMouse, cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()), delta);
+                cameraMouse,
+                cameraView->viewport()->mapToGlobal(cameraMouse.toPoint()),
+                delta);
         QApplication::sendEvent(cameraView->viewport(), &event);
     };
     for (int i = 0; i < 60; ++i) wheelCamera(120);

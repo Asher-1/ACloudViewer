@@ -39,6 +39,12 @@ public:
     explicit DeviceTaskLock(const char* device)
         : locked_(device != nullptr && aicore_device_task_lock(device) == 0) {}
 
+    /** Use the caller's token to interrupt queue waits; own unlock permission
+     * only after successful acquisition. */
+    DeviceTaskLock(const char* device, const aicore_cancel_token* token)
+        : locked_(device != nullptr &&
+                  aicore_device_task_lock_cancelable(device, token) == 0) {}
+
     ~DeviceTaskLock() {
         if (locked_) {
             aicore_device_task_unlock();

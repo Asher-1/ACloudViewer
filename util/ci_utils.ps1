@@ -516,6 +516,7 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_QSPIRULA=ON",
         "-DPLUGIN_STANDARD_QMAPANYTHING=ON",
         "-DPLUGIN_STANDARD_QOPENPCDET=ON",
+        "-DPLUGIN_STANDARD_QINSTANTMESH=ON",
         "-DPLUGIN_PYTHON=ON",
         "-DBUILD_PYTHON_MODULE=ON",
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
@@ -983,6 +984,30 @@ function Run-PythonTests {
     return $pytestResult
 }
 
+function Run-QPythonRuntimeNativeTests {
+    param ([string]$BuildDir, [string]$Config = "Release")
+    $cache = Join-Path $BuildDir "CMakeCache.txt"
+    if (-not (Test-Path $cache)) {
+        throw "qPythonRuntime: CMake cache not found at $cache"
+    }
+    $settings = Get-Content $cache
+    if (-not ($settings -match '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$') -or
+        -not ($settings -match '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$') -or
+        -not ($settings -match '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$')) {
+        Write-Host "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
+        return
+    }
+    $pattern = '^test_qpythonruntime_(binding_types|plugin_loading)$'
+    $listing = & ctest --test-dir $BuildDir -C $Config --show-only=json-v1 -R $pattern
+    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: cannot enumerate CTest registrations" }
+    $names = (($listing -join "`n") | ConvertFrom-Json).tests.name
+    foreach ($name in @("test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading")) {
+        if ($name -notin $names) { throw "qPythonRuntime: missing CTest registration: $name" }
+    }
+    & ctest --test-dir $BuildDir -C $Config -R $pattern --no-tests=error --output-on-failure -j1
+    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: native CTest gate failed" }
+}
+
 function Run-CppUnitTests {
     param (
         [Parameter(Mandatory=$false)]
@@ -1054,7 +1079,9 @@ function Run-CppUnitTests {
     }
     
     Pop-Location
-    
+    if ($testResult -eq 0) {
+        Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config $Config
+    }
     return $testResult
 }
 

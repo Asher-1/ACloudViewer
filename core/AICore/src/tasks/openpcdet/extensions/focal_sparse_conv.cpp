@@ -1,6 +1,11 @@
-#include "focal_sparse_conv.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "deterministic_sparse_conv.h"
+#include "focal_sparse_conv.h"
 
 #include <algorithm>
 #include <cmath>
@@ -8,6 +13,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <numeric>
+
+#include "deterministic_sparse_conv.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -16,7 +23,7 @@ namespace openpcdet::ext {
 
 namespace {
 
-// 方案 C: the split importance sigmoid uses the shared deterministic
+// Option C: the split importance sigmoid uses the shared deterministic
 // det_sigmoid (extensions/deterministic_sparse_conv.h) instead of glibc
 // std::exp, so the host-side split/threshold stage is bit-identical no matter
 // which backend produced the conv_imp importance map (and would stay identical
@@ -44,13 +51,13 @@ struct map_cache {
     std::vector<map_cache_entry> entries;  // FIFO, bounded
 };
 
-map_cache & cached_maps() {
+map_cache &cached_maps() {
     static map_cache cache;
     return cache;
 }
 
-uint64_t hash_bytes(const void * data, size_t size, uint64_t seed) {
-    const auto * bytes = static_cast<const uint8_t *>(data);
+uint64_t hash_bytes(const void *data, size_t size, uint64_t seed) {
+    const auto *bytes = static_cast<const uint8_t *>(data);
     uint64_t h = seed;
     for (size_t i = 0; i < size; ++i) {
         h ^= bytes[i];
@@ -59,10 +66,10 @@ uint64_t hash_bytes(const void * data, size_t size, uint64_t seed) {
     return h;
 }
 
-uint64_t params_hash(const sparse_conv_params & params) {
+uint64_t params_hash(const sparse_conv_params &params) {
     uint64_t h = 1469598103934665603ull;
-    for (const auto & values : {params.kernel_size, params.stride,
-                                params.padding, params.dilation}) {
+    for (const auto &values :
+         {params.kernel_size, params.stride, params.padding, params.dilation}) {
         h = hash_bytes(values.data(), values.size() * sizeof(int32_t), h);
     }
     h = hash_bytes(&params.submanifold, sizeof(bool), h);
@@ -70,41 +77,47 @@ uint64_t params_hash(const sparse_conv_params & params) {
     return h;
 }
 
-bool params_equal(const sparse_conv_params & a, const sparse_conv_params & b) {
+bool params_equal(const sparse_conv_params &a, const sparse_conv_params &b) {
     return a.kernel_size == b.kernel_size && a.stride == b.stride &&
            a.padding == b.padding && a.dilation == b.dilation &&
            a.submanifold == b.submanifold && a.transposed == b.transposed;
 }
 
-// Linearized spconv coordinate (batch omitted): z * y_max * x_max + y * x_max + x.
-inline int64_t linearized_coord(const int32_t * coord, int64_t y_max, int64_t x_max) {
+// Linearized spconv coordinate (batch omitted): z * y_max * x_max + y * x_max +
+// x.
+inline int64_t linearized_coord(const int32_t *coord,
+                                int64_t y_max,
+                                int64_t x_max) {
     // Mixed-radix key mirrored from PyTorch check_repeat:
     //   z * (y.max * x.max) + y * x.max + x.
-    // y_max / x_max are the max over the coordinate set, so this (intentionally)
-    // mirrors Py exactly, including any theoretical collisions.
+    // y_max / x_max are the max over the coordinate set, so this
+    // (intentionally) mirrors Py exactly, including any theoretical collisions.
     return static_cast<int64_t>(coord[1]) * y_max * x_max +
-           static_cast<int64_t>(coord[2]) * x_max + static_cast<int64_t>(coord[3]);
+           static_cast<int64_t>(coord[2]) * x_max +
+           static_cast<int64_t>(coord[3]);
 }
 
-} // namespace
+}  // namespace
 
-bool build_sparse_indice_map_cached(const sparse_tensor & input,
-                                    const sparse_conv_params & params,
-                                    sparse_indice_map & map,
-                                    std::string & error) {
+bool build_sparse_indice_map_cached(const sparse_tensor &input,
+                                    const sparse_conv_params &params,
+                                    sparse_indice_map &map,
+                                    std::string &error) {
     uint64_t hash = params_hash(params);
     hash = hash_bytes(input.spatial_shape.data(),
                       input.spatial_shape.size() * sizeof(int32_t), hash);
     hash = hash_bytes(input.coordinates.data(),
                       input.coordinates.size() * sizeof(int32_t), hash);
 
-    map_cache & cache = cached_maps();
+    map_cache &cache = cached_maps();
     for (auto it = cache.entries.begin(); it != cache.entries.end(); ++it) {
         if (it->hash != hash || it->coordinates != input.coordinates ||
             it->spatial_shape != input.spatial_shape ||
-            !params_equal(it->params, params)) continue;
+            !params_equal(it->params, params))
+            continue;
         map = it->map;
-        if (it != cache.entries.begin()) std::rotate(cache.entries.begin(), it, it + 1);
+        if (it != cache.entries.begin())
+            std::rotate(cache.entries.begin(), it, it + 1);
         return true;
     }
 
@@ -122,21 +135,26 @@ bool build_sparse_indice_map_cached(const sparse_tensor & input,
     return true;
 }
 
-std::vector<float> streamed_sparse_conv_weight(const std::vector<float> & weights,
-                                               int kernel_volume, int in_channels,
-                                               int out_channels) {
+std::vector<float> streamed_sparse_conv_weight(
+        const std::vector<float> &weights,
+        int kernel_volume,
+        int in_channels,
+        int out_channels) {
     // The GGUF stores a sparse conv weight as a dense [K*Cin, Cout] matrix
     // (ne[0]=K*Cin, ne[1]=Cout). Row-major indexing data[(k*Cin+c)*Cout+o] is
     // exactly the [K, Cin, Cout] layout ext::sparse_convolution expects, so the
     // buffer is passed through unchanged.
-    (void) kernel_volume; (void) in_channels; (void) out_channels;
+    (void)kernel_volume;
+    (void)in_channels;
+    (void)out_channels;
     return weights;
 }
 
 std::vector<std::array<int32_t, 3>> focal_kernel_offsets(int kernel_size) {
     const int half = kernel_size / 2;
     std::vector<std::array<int32_t, 3>> offsets;
-    offsets.reserve(static_cast<size_t>(kernel_size) * kernel_size * kernel_size);
+    offsets.reserve(static_cast<size_t>(kernel_size) * kernel_size *
+                    kernel_size);
     for (int z = -half; z <= half; ++z)
         for (int y = -half; y <= half; ++y)
             for (int x = -half; x <= half; ++x) {
@@ -146,12 +164,14 @@ std::vector<std::array<int32_t, 3>> focal_kernel_offsets(int kernel_size) {
     return offsets;
 }
 
-void focal_check_repeat(const std::vector<float> & features,
-                        const std::vector<int32_t> & coordinates, int channels,
-                        bool flip_first, const std::vector<float> * features_add,
-                        std::vector<float> & out_features,
-                        std::vector<int32_t> & out_coordinates,
-                        std::vector<float> * out_add) {
+void focal_check_repeat(const std::vector<float> &features,
+                        const std::vector<int32_t> &coordinates,
+                        int channels,
+                        bool flip_first,
+                        const std::vector<float> *features_add,
+                        std::vector<float> &out_features,
+                        std::vector<int32_t> &out_coordinates,
+                        std::vector<float> *out_add) {
     const int64_t n = static_cast<int64_t>(coordinates.size()) / 4;
     out_features.clear();
     out_coordinates.clear();
@@ -176,7 +196,7 @@ void focal_check_repeat(const std::vector<float> & features,
     for (int64_t i = 0; i < n; ++i) {
         const int64_t key = linearized_coord(&coordinates[i * 4], y_max, x_max);
         packed[static_cast<size_t>(i)] =
-            (static_cast<uint64_t>(key) << 32) | static_cast<uint32_t>(i);
+                (static_cast<uint64_t>(key) << 32) | static_cast<uint32_t>(i);
     }
     radix_sort_u64(packed);
 
@@ -199,79 +219,94 @@ void focal_check_repeat(const std::vector<float> & features,
     out_features.assign(static_cast<size_t>(uniq) * channels, 0.0f);
     if (out_add) out_add->assign(static_cast<size_t>(uniq), 0.0f);
     auto row_of = [&](int64_t index) {
-        return static_cast<int64_t>(packed[static_cast<size_t>(index)] & 0xFFFFFFFFull);
+        return static_cast<int64_t>(packed[static_cast<size_t>(index)] &
+                                    0xFFFFFFFFull);
     };
-    // Each unique group writes disjoint output rows, so the merge can run in
-    // parallel without changing any accumulation order inside a group.
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+// Each unique group writes disjoint output rows, so the merge can run in
+// parallel without changing any accumulation order inside a group.
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t u = 0; u < uniq; ++u) {
         // PyTorch flips the sorted sequence before unique_consecutive, so the
         // output order is the reversed (descending-key) group order.
         const int64_t gu = flip_first ? (uniq - 1 - u) : u;
         const int64_t begin = group_first[static_cast<size_t>(gu)];
-        const int64_t end = (gu + 1 < uniq) ? group_first[static_cast<size_t>(gu + 1)] : n;
+        const int64_t end =
+                (gu + 1 < uniq) ? group_first[static_cast<size_t>(gu + 1)] : n;
         const int64_t first = row_of(begin);
         const int64_t last = row_of(end - 1);
         const int64_t coord_row = flip_first ? first : last;
         std::copy_n(&coordinates[coord_row * 4], 4, &out_coordinates[u * 4]);
-        float * feat = &out_features[static_cast<size_t>(u) * channels];
+        float *feat = &out_features[static_cast<size_t>(u) * channels];
         if (flip_first) {
             for (int64_t r = end - 1; r >= begin; --r) {
                 const int64_t src = row_of(r);
                 for (int c = 0; c < channels; ++c)
-                    feat[c] += features[static_cast<size_t>(src) * channels + c];
+                    feat[c] +=
+                            features[static_cast<size_t>(src) * channels + c];
             }
             if (out_add) {
                 float sum = 0.0f;
                 for (int64_t r = end - 1; r >= begin; --r)
                     sum += (*features_add)[static_cast<size_t>(row_of(r))];
-                (*out_add)[static_cast<size_t>(u)] = sum / static_cast<float>(end - begin);
+                (*out_add)[static_cast<size_t>(u)] =
+                        sum / static_cast<float>(end - begin);
             }
         } else {
             for (int64_t r = begin; r < end; ++r) {
                 const int64_t src = row_of(r);
                 for (int c = 0; c < channels; ++c)
-                    feat[c] += features[static_cast<size_t>(src) * channels + c];
+                    feat[c] +=
+                            features[static_cast<size_t>(src) * channels + c];
             }
             if (out_add) {
                 float sum = 0.0f;
                 for (int64_t r = begin; r < end; ++r)
                     sum += (*features_add)[static_cast<size_t>(row_of(r))];
-                (*out_add)[static_cast<size_t>(u)] = sum / static_cast<float>(end - begin);
+                (*out_add)[static_cast<size_t>(u)] =
+                        sum / static_cast<float>(end - begin);
             }
         }
     }
 }
 
-bool focal_split_voxels(const std::vector<float> & features,
-                        const std::vector<int32_t> & coordinates, int channels,
-                        const std::vector<float> & imps,
-                        int kernel_volume, int kernel_size,
-                        const std::vector<std::array<int32_t, 3>> & kernel_offsets,
-                        const std::vector<int32_t> & spatial_shape,
-                        bool mask_multi, bool topk, float threshold,
-                        std::vector<float> & fore_features,
-                        std::vector<int32_t> & fore_coordinates,
-                        std::vector<float> & back_features,
-                        std::vector<int32_t> & back_coordinates,
-                        std::vector<float> & mask_kernel_fore,
-                        std::string & error) {
+bool focal_split_voxels(
+        const std::vector<float> &features,
+        const std::vector<int32_t> &coordinates,
+        int channels,
+        const std::vector<float> &imps,
+        int kernel_volume,
+        int kernel_size,
+        const std::vector<std::array<int32_t, 3>> &kernel_offsets,
+        const std::vector<int32_t> &spatial_shape,
+        bool mask_multi,
+        bool topk,
+        float threshold,
+        std::vector<float> &fore_features,
+        std::vector<int32_t> &fore_coordinates,
+        std::vector<float> &back_features,
+        std::vector<int32_t> &back_coordinates,
+        std::vector<float> &mask_kernel_fore,
+        std::string &error) {
     const int64_t n = static_cast<int64_t>(coordinates.size()) / 4;
-    const int off_count = kernel_volume - 1;  // kernel neighbors excluding center
+    const int off_count =
+            kernel_volume - 1;  // kernel neighbors excluding center
     if (off_count != static_cast<int>(kernel_offsets.size())) {
-        error = "focal kernel offset count mismatch"; return false;
+        error = "focal kernel offset count mismatch";
+        return false;
     }
     if (static_cast<int>(imps.size()) != n * kernel_volume) {
-        error = "focal importance map shape mismatch"; return false;
+        error = "focal importance map shape mismatch";
+        return false;
     }
 
     // mask_voxel / mask_kernel (sigmoid).
     std::vector<float> mask_voxel(n), mask_kernel(n * off_count);
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < n; ++i) {
         mask_voxel[i] = sigmoidf(imps[i * kernel_volume + (kernel_volume - 1)]);
         for (int k = 0; k < off_count; ++k)
-            mask_kernel[i * off_count + k] = sigmoidf(imps[i * kernel_volume + k]);
+            mask_kernel[i * off_count + k] =
+                    sigmoidf(imps[i * kernel_volume + k]);
     }
 
     // Foreground/background partition.
@@ -285,38 +320,43 @@ bool focal_split_voxels(const std::vector<float> & features,
         std::vector<uint64_t> packed(static_cast<size_t>(n));
         for (int64_t i = 0; i < n; ++i) {
             uint32_t bits;
-            std::memcpy(&bits, &mask_voxel[static_cast<size_t>(i)], sizeof(bits));
+            std::memcpy(&bits, &mask_voxel[static_cast<size_t>(i)],
+                        sizeof(bits));
             packed[static_cast<size_t>(i)] =
-                (static_cast<uint64_t>(0xFFFFFFFFu - bits) << 32) |
-                static_cast<uint32_t>(i);
+                    (static_cast<uint64_t>(0xFFFFFFFFu - bits) << 32) |
+                    static_cast<uint32_t>(i);
         }
         radix_sort_u64(packed);
         const int64_t cut = static_cast<int64_t>(n * threshold);
         idx_fore.resize(static_cast<size_t>(cut));
         idx_back.resize(static_cast<size_t>(n - cut));
         for (int64_t i = 0; i < cut; ++i)
-            idx_fore[static_cast<size_t>(i)] =
-                static_cast<int64_t>(packed[static_cast<size_t>(i)] & 0xFFFFFFFFull);
+            idx_fore[static_cast<size_t>(i)] = static_cast<int64_t>(
+                    packed[static_cast<size_t>(i)] & 0xFFFFFFFFull);
         for (int64_t i = cut; i < n; ++i)
-            idx_back[static_cast<size_t>(i - cut)] =
-                static_cast<int64_t>(packed[static_cast<size_t>(i)] & 0xFFFFFFFFull);
+            idx_back[static_cast<size_t>(i - cut)] = static_cast<int64_t>(
+                    packed[static_cast<size_t>(i)] & 0xFFFFFFFFull);
     } else {
         for (int64_t i = 0; i < n; ++i) {
-            if (mask_voxel[i] > threshold) idx_fore.push_back(i);
-            else idx_back.push_back(i);
+            if (mask_voxel[i] > threshold)
+                idx_fore.push_back(i);
+            else
+                idx_back.push_back(i);
         }
     }
 
     const int64_t fcount = static_cast<int64_t>(idx_fore.size());
-    // features_fore = features_ori[idx_fore] (optionally multiplied by mask_voxel).
+    // features_fore = features_ori[idx_fore] (optionally multiplied by
+    // mask_voxel).
     fore_features.assign(static_cast<size_t>(fcount) * channels, 0.0f);
     fore_coordinates.assign(static_cast<size_t>(fcount) * 4, 0);
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
         const float mult = mask_multi ? mask_voxel[src] : 1.0f;
         for (int c = 0; c < channels; ++c)
-            fore_features[i * channels + c] = features[src * channels + c] * mult;
+            fore_features[i * channels + c] =
+                    features[src * channels + c] * mult;
         std::copy_n(&coordinates[src * 4], 4, &fore_coordinates[i * 4]);
     }
 
@@ -324,18 +364,18 @@ bool focal_split_voxels(const std::vector<float> & features,
     // selection can run in parallel: count per row, prefix-sum the offsets,
     // then fill the output at disjoint offsets.
     std::vector<int64_t> sel_offsets(static_cast<size_t>(fcount) + 1, 0);
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
-        const int32_t * base = &coordinates[src * 4];
+        const int32_t *base = &coordinates[src * 4];
         int64_t count = 0;
         for (int k = 0; k < off_count; ++k) {
             if (mask_kernel[src * off_count + k] < threshold) continue;
             const int32_t z = base[1] + kernel_offsets[k][0];
             const int32_t y = base[2] + kernel_offsets[k][1];
             const int32_t x = base[3] + kernel_offsets[k][2];
-            if (z > 0 && y > 0 && x > 0 &&
-                z < spatial_shape[0] && y < spatial_shape[1] && x < spatial_shape[2])
+            if (z > 0 && y > 0 && x > 0 && z < spatial_shape[0] &&
+                y < spatial_shape[1] && x < spatial_shape[2])
                 ++count;
         }
         sel_offsets[static_cast<size_t>(i)] = count;
@@ -352,40 +392,47 @@ bool focal_split_voxels(const std::vector<float> & features,
     const int64_t mcount = running;
     std::vector<std::array<int32_t, 3>> sel_coords(static_cast<size_t>(mcount));
     std::vector<float> sel_mask(static_cast<size_t>(mcount));
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
-        const int32_t * base = &coordinates[src * 4];
+        const int32_t *base = &coordinates[src * 4];
         int64_t out = sel_offsets[static_cast<size_t>(i)];
         for (int k = 0; k < off_count; ++k) {
             if (mask_kernel[src * off_count + k] < threshold) continue;
             const int32_t z = base[1] + kernel_offsets[k][0];
             const int32_t y = base[2] + kernel_offsets[k][1];
             const int32_t x = base[3] + kernel_offsets[k][2];
-            if (z > 0 && y > 0 && x > 0 &&
-                z < spatial_shape[0] && y < spatial_shape[1] && x < spatial_shape[2]) {
+            if (z > 0 && y > 0 && x > 0 && z < spatial_shape[0] &&
+                y < spatial_shape[1] && x < spatial_shape[2]) {
                 if (out >= mcount) {
                     // Unreachable: offsets are the exclusive prefix sum of the
                     // same per-row counts used here.
-                    std::fprintf(stderr, "focal split expansion out of range: %lld >= %lld\n",
-                                 (long long) out, (long long) mcount);
+                    std::fprintf(stderr,
+                                 "focal split expansion out of range: %lld >= "
+                                 "%lld\n",
+                                 (long long)out, (long long)mcount);
                     std::abort();
                 }
                 sel_coords[static_cast<size_t>(out)] = {z, y, x};
-                sel_mask[static_cast<size_t>(out)] = mask_kernel[src * off_count + k];
+                sel_mask[static_cast<size_t>(out)] =
+                        mask_kernel[src * off_count + k];
                 ++out;
             }
         }
     }
-    // features_fore_cat = [fore; zeros(M)], coords_cat = [fore; b+sel], mask = [ones; sel].
-    std::vector<float> cat_feat(static_cast<size_t>(fcount + mcount) * channels, 0.0f);
+    // features_fore_cat = [fore; zeros(M)], coords_cat = [fore; b+sel], mask =
+    // [ones; sel].
+    std::vector<float> cat_feat(static_cast<size_t>(fcount + mcount) * channels,
+                                0.0f);
     std::vector<int32_t> cat_coord(static_cast<size_t>(fcount + mcount) * 4, 0);
     std::vector<float> cat_mask(static_cast<size_t>(fcount + mcount), 1.0f);
     std::copy(fore_features.begin(), fore_features.end(), cat_feat.begin());
-    std::copy(fore_coordinates.begin(), fore_coordinates.end(), cat_coord.begin());
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    std::copy(fore_coordinates.begin(), fore_coordinates.end(),
+              cat_coord.begin());
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < mcount; ++i) {
-        const int32_t b = fore_coordinates[0];  // batch id is constant for this element
+        const int32_t b =
+                fore_coordinates[0];  // batch id is constant for this element
         cat_coord[(fcount + i) * 4 + 0] = b;
         cat_coord[(fcount + i) * 4 + 1] = sel_coords[static_cast<size_t>(i)][0];
         cat_coord[(fcount + i) * 4 + 2] = sel_coords[static_cast<size_t>(i)][1];
@@ -400,28 +447,31 @@ bool focal_split_voxels(const std::vector<float> & features,
     const int64_t bcount = static_cast<int64_t>(idx_back.size());
     back_features.assign(static_cast<size_t>(bcount) * channels, 0.0f);
     back_coordinates.assign(static_cast<size_t>(bcount) * 4, 0);
-    #pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
     for (int64_t i = 0; i < bcount; ++i) {
         const int64_t src = idx_back[i];
-        std::copy_n(&features[src * channels], channels, &back_features[i * channels]);
+        std::copy_n(&features[src * channels], channels,
+                    &back_features[i * channels]);
         std::copy_n(&coordinates[src * 4], 4, &back_coordinates[i * 4]);
     }
     return true;
 }
 
-bool focal_combine_out(const std::vector<float> & fore_features,
-                       const std::vector<int32_t> & fore_coordinates,
-                       const std::vector<float> & back_features,
-                       const std::vector<int32_t> & back_coordinates,
-                       int channels, int batch_size,
-                       std::vector<float> & features,
-                       std::vector<int32_t> & coordinates,
-                       std::string & error) {
+bool focal_combine_out(const std::vector<float> &fore_features,
+                       const std::vector<int32_t> &fore_coordinates,
+                       const std::vector<float> &back_features,
+                       const std::vector<int32_t> &back_coordinates,
+                       int channels,
+                       int batch_size,
+                       std::vector<float> &features,
+                       std::vector<int32_t> &coordinates,
+                       std::string &error) {
     const int64_t nf = static_cast<int64_t>(fore_coordinates.size()) / 4;
     const int64_t nb = static_cast<int64_t>(back_coordinates.size()) / 4;
     std::vector<int32_t> all_coord(static_cast<size_t>(nf + nb) * 4, 0);
     std::vector<float> all_feat(static_cast<size_t>(nf + nb) * channels, 0.0f);
-    std::copy(fore_coordinates.begin(), fore_coordinates.end(), all_coord.begin());
+    std::copy(fore_coordinates.begin(), fore_coordinates.end(),
+              all_coord.begin());
     std::copy(back_coordinates.begin(), back_coordinates.end(),
               all_coord.begin() + static_cast<int64_t>(nf) * 4);
     std::copy(fore_features.begin(), fore_features.end(), all_feat.begin());
@@ -442,17 +492,18 @@ bool focal_combine_out(const std::vector<float> & fore_features,
         for (int64_t i = 0; i < nf + nb; ++i) {
             if (all_coord[i * 4] == b) {
                 std::copy_n(&all_coord[i * 4], 4, std::back_inserter(b_coord));
-                std::copy_n(&all_feat[i * channels], channels, std::back_inserter(b_feat));
+                std::copy_n(&all_feat[i * channels], channels,
+                            std::back_inserter(b_feat));
             }
         }
         std::vector<int32_t> o_coord;
         std::vector<float> o_feat;
-        focal_check_repeat(b_feat, b_coord, channels, false, nullptr,
-                           o_feat, o_coord, nullptr);
+        focal_check_repeat(b_feat, b_coord, channels, false, nullptr, o_feat,
+                           o_coord, nullptr);
         coordinates.insert(coordinates.end(), o_coord.begin(), o_coord.end());
         features.insert(features.end(), o_feat.begin(), o_feat.end());
     }
     return true;
 }
 
-} // namespace openpcdet::ext
+}  // namespace openpcdet::ext

@@ -28,7 +28,6 @@ add_subdirectory( qFreeSplatter )
 add_subdirectory( qLightGlue )
 add_subdirectory( qDeepLSD )
 add_subdirectory( qRFDetr )
-add_subdirectory( qOpenPCDet )
 add_subdirectory( qRMBG )
 add_subdirectory( qYOLO )
 add_subdirectory( qSAM3 )
@@ -42,6 +41,8 @@ add_subdirectory( qLingbotMap )
 add_subdirectory( qAnyLabeling )
 add_subdirectory( qSpirula )
 add_subdirectory( qMapAnything )
+add_subdirectory( qOpenPCDet )
+add_subdirectory( qInstantMesh )
 
 #plugins integrated as submodules
 set( submod_plugins

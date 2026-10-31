@@ -37,13 +37,14 @@ Q_DECLARE_METATYPE(OpenPCDetDetection)
 
 /** Result envelope of one OpenPCDet inference. */
 struct OpenPCDetRunResult {
-    QString sourceLabel;    ///< cloud name / input file stem / scene dir name
+    QString sourceLabel;  ///< cloud name / input file stem / scene dir name
     QString modelPath;
-    QString resolvedDevice; ///< backend-resolved device (may differ from request)
+    QString resolvedDevice;  ///< backend-resolved device (may differ from
+                             ///< request)
     double runtimeMs = 0.0;
     int numPoints = 0;
-    int pointDim = 0;       ///< point feature count handed to the engine
-    int numClass = 0;       ///< class count declared by the model geometry
+    int pointDim = 0;  ///< point feature count handed to the engine
+    int numClass = 0;  ///< class count declared by the model geometry
     QVector<OpenPCDetDetection> detections;
     uint32_t timingValidFields = 0;
     double inferenceMs = 0.0;
@@ -51,9 +52,9 @@ struct OpenPCDetRunResult {
     double postprocessMs = 0.0;
     double e2eMs = 0.0;
     // ---- multi-modal scene runs (detect_scene) ----
-    bool fromScene = false; ///< true when the run went through detect_scene
-    QString sceneDir;       ///< scene directory (empty on point-only runs)
-    int numCameras = 0;     ///< camera count of the loaded scene
+    bool fromScene = false;  ///< true when the run went through detect_scene
+    QString sceneDir;        ///< scene directory (empty on point-only runs)
+    int numCameras = 0;      ///< camera count of the loaded scene
 };
 
 Q_DECLARE_METATYPE(OpenPCDetRunResult)
@@ -103,14 +104,16 @@ QStringList quantSuffixes();
  *  ("kitti_pointpillar" + "f16" -> "kitti_pointpillar.f16.gguf"). Returns
  *  false on an empty stem or a quant not listed by quantSuffixes(). Pure
  *  mapping — unit tested without AICore. */
-bool buildModelFilename(const QString& checkpoint, const QString& quant,
+bool buildModelFilename(const QString& checkpoint,
+                        const QString& quant,
                         QString* out);
 
 /** One detector checkpoint (18 published) with its three quantized
  *  catalog rows. */
 struct OpenPCDetCheckpoint {
-    QString stem;        ///< "kitti_pointpillar", ...
-    QString displayName; ///< display name of any quantized row, quant note stripped
+    QString stem;         ///< "kitti_pointpillar", ...
+    QString displayName;  ///< display name of any quantized row, quant note
+                          ///< stripped
     QString familyNote;
     QVector<OpenPCDetModelEntry> quants;  ///< f32 / f16 / q8_0 rows
 };

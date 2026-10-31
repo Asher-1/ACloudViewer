@@ -25,7 +25,180 @@ sys.modules[SPEC.name] = VALIDATE_ALL
 SPEC.loader.exec_module(VALIDATE_ALL)
 
 
+class CandidateAssetsTests(unittest.TestCase):
+    def setUp(self):
+        self.assertTrue(callable(getattr(VALIDATE_ALL, "apply_candidate_assets", None)),
+                        "Explicit isolated candidate assets are not implemented")
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.path = self.root / "ocr_models/tiny-q8_0.gguf"
+        self.path.parent.mkdir()
+        self.path.write_bytes(b"candidate bytes")
+        self.original = VALIDATE_ALL.ModelAsset(
+            "ocr", VALIDATE_ALL.PurePosixPath("ocr_models/tiny-q8_0.gguf"),
+            "https://example.org/original.gguf", "a" * 64, 99)
+        self.row = {"relative_path": "ocr_models/tiny-q8_0.gguf", "original_sha256": "a" * 64,
+                    "sha256": hashlib.sha256(b"candidate bytes").hexdigest(), "size_bytes": 15}
+
+    def apply(self, rows):
+        return VALIDATE_ALL.apply_candidate_assets([self.original], rows, self.root)
+
+    def test_explicit_candidate_keeps_the_original_catalog_unchanged(self):
+        catalog = self.apply([self.row])
+        self.assertEqual(catalog[0].sha256, self.row["sha256"])
+        self.assertEqual(catalog[0].size_bytes, 15)
+        self.assertEqual(catalog[0].url, self.path.as_uri())
+        self.assertEqual(self.original.sha256, "a" * 64)
+        self.assertEqual(self.original.url, "https://example.org/original.gguf")
+        summary, failures = VALIDATE_ALL.ensure_model_assets(
+            catalog, self.root, offline=True, timeout=1, retries=1, jobs=1)
+        self.assertEqual(failures, [])
+        self.assertEqual(summary["downloaded"], 0)
+        self.assertEqual(summary["verified_cached"], 1)
+
+    def test_wrong_original_identity_never_accepts_a_candidate(self):
+        with self.assertRaisesRegex(ValueError, "original SHA-256"):
+            self.apply([dict(self.row, original_sha256="b" * 64)])
+
+    def test_duplicate_and_unknown_overrides_fail_closed(self):
+        for rows in [[self.row, self.row], [dict(self.row, relative_path="ocr_models/other.gguf")]]:
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                self.apply(rows)
+
+    def test_corrupt_or_truncated_candidate_is_rejected_before_execution(self):
+        for contents in [b"wrong same size", b"truncated"]:
+            self.path.write_bytes(contents)
+            with self.subTest(contents=contents), self.assertRaisesRegex(ValueError, "candidate asset"):
+                self.apply([self.row])
+
+    def test_missing_and_symlinked_candidate_are_rejected(self):
+        self.path.unlink()
+        with self.assertRaises(ValueError):
+            self.apply([self.row])
+        other = self.root / "shared.gguf"
+        other.write_bytes(b"candidate bytes")
+        self.path.symlink_to(other)
+        with self.assertRaisesRegex(ValueError, "isolated"):
+            self.apply([self.row])
+
+    def test_hardlinked_candidate_cannot_alias_shared_or_frozen_model_bytes(self):
+        shared = self.root / "shared.gguf"
+        shared.write_bytes(self.path.read_bytes())
+        self.path.unlink()
+        os.link(shared, self.path)
+        self.assertEqual(self.path.stat().st_ino, shared.stat().st_ino)
+        with self.assertRaisesRegex(ValueError, "isolated"):
+            self.apply([self.row])
+        self.assertEqual(shared.read_bytes(), b"candidate bytes")
+
+    def test_invalid_digest_size_or_destination_is_rejected(self):
+        for key, value in [("sha256", ""), ("sha256", "A" * 64),
+                           ("size_bytes", 0), ("size_bytes", True),
+                           ("relative_path", "../ocr_models/tiny-q8_0.gguf")]:
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                self.apply([dict(self.row, **{key: value})])
+
+
+class CandidateCliTests(unittest.TestCase):
+    def test_candidate_assets_require_offline_developer_without_runtime_ab(self):
+        with tempfile.TemporaryDirectory() as directory:
+            common = ["--candidate-assets", str(Path(directory) / "candidates.json"),
+                      "--assets", str(Path(directory) / "extract")]
+            for flags in [[], ["--offline", "--profile", "release"],
+                          ["--offline", "--baseline-build", directory]]:
+                with self.subTest(flags=flags):
+                    result = subprocess.run([sys.executable, str(MODULE_PATH), *common, *flags],
+                                            capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("candidate assets require", result.stderr)
+
+    def test_candidate_assets_never_use_the_public_cache(self):
+        result = subprocess.run(
+            [sys.executable, str(MODULE_PATH), "--offline", "--candidate-assets", "candidates.json",
+             "--assets", str(Path.home() / "cloudViewer_data/extract")], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("isolated", result.stderr)
+
+
 class ValidateAllTests(unittest.TestCase):
+    def test_ocr_multi_fixture_commands_pin_every_consumed_image(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        failures = []
+        for scenario in manifest["scenarios"]:
+            if scenario["task"] != "ocr" or not any(
+                    str(value).endswith("run_ocr_onnx_probe.py") for value in scenario.get("args", [])):
+                continue
+            inputs = VALIDATE_ALL.parse_input_assets(manifest, {"ocr"}, {scenario["id"]})
+            pinned = {str(asset.relative_path) for asset in inputs if not asset.archive}
+            pinned.update(str(path) for asset in inputs for path, _, _ in asset.extracted_files)
+            args = scenario["args"]
+            for index, value in enumerate(args[:-1]):
+                if value in ("--image", "--extra-image", "--extra-crop"):
+                    image = args[index + 1]
+                    if not image.startswith("{assets}/"):
+                        continue
+                    relative = image[len("{assets}/"):]
+                    orientation = "--role" in args and args[args.index("--role") + 1] == "orientation"
+                    if (relative not in pinned and not (orientation and any(
+                            name.startswith(relative.rstrip("/") + "/") for name in pinned))):
+                        failures.append((scenario["id"], image))
+        self.maxDiff = None
+        self.assertEqual(failures, [], "Extra accuracy inputs must be pinned, not supplied by a warm cache")
+
+    def test_ocr_explicit_input_preflight_rejects_missing_extra_fixture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            primary = Path(directory) / "primary.jpg"
+            primary.write_bytes(b"metadata-only primary fixture")
+            extra = Path(directory) / "book.jpg"
+            spec = SimpleNamespace(key="ocr/det/f32", command=(
+                "python", "run_ocr_onnx_probe.py", "--image", str(primary), "--extra-image", str(extra)))
+            self.assertTrue(callable(getattr(VALIDATE_ALL, "ocr_probe_input_failures", None)),
+                            "OCR explicit input preflight is missing")
+            failures = VALIDATE_ALL.ocr_probe_input_failures([spec])
+            self.assertEqual(len(failures), 1)
+            self.assertIn("book.jpg", failures[0])
+            extra.write_bytes(b"metadata-only extra fixture")
+            self.assertEqual(VALIDATE_ALL.ocr_probe_input_failures([spec]), [])
+
+    def test_ocr_input_paths_include_extra_crop_page_and_equals_options(self):
+        self.assertTrue(callable(getattr(VALIDATE_ALL, "ocr_probe_input_paths", None)),
+                        "OCR explicit input enumeration is missing")
+        paths = VALIDATE_ALL.ocr_probe_input_paths((
+            "python", "run_ocr_onnx_probe.py", "--image=primary.jpg", "--extra-image", "extra.jpg",
+            "--extra-crop", "crop-page.jpg", "0", "0", "1", "0", "1", "1", "0", "1",
+            "--report", "generated.json"))
+        self.assertEqual(paths, [Path("primary.jpg"), Path("extra.jpg"), Path("crop-page.jpg")])
+        self.assertEqual(VALIDATE_ALL.ocr_probe_input_paths(("other-tool", "--image", "custom")), [])
+
+    def test_ocr_orientation_input_preflight_requires_its_word_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            words = Path(directory) / "words"
+            spec = SimpleNamespace(key="ocr/orientation/f32", command=(
+                "python", "run_ocr_onnx_probe.py", "--role", "orientation", "--image", str(words)))
+            self.assertTrue(callable(getattr(VALIDATE_ALL, "ocr_probe_input_failures", None)))
+            self.assertTrue(VALIDATE_ALL.ocr_probe_input_failures([spec]))
+            words.mkdir()
+            self.assertEqual(VALIDATE_ALL.ocr_probe_input_failures([spec]), [])
+
+    def test_ocr_extra_word_images_are_resolved_as_verified_archive_dependencies(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        inputs = VALIDATE_ALL.parse_input_assets(manifest, {"ocr"}, {"ppocrv6-tiny-rec-onnx-q8_0"})
+        members = {str(path): (digest, size) for asset in inputs
+                   for path, digest, size in asset.extracted_files}
+        expected = {
+            "ppocr_testdata/imgs_words_ch/word_1.jpg":
+                ("05921c624274eedbfc1208d12eba5b06acbdd1291d1b1a2129770199f430d6ae", 12474),
+            "ppocr_testdata/imgs_words_ch/word_2.jpg":
+                ("2e42555e7e699d05b929c189d2870c1775dd0fbb20a5cf3fd00912e2da2a164f", 6114),
+            "ppocr_testdata/imgs_words_ch/word_3.jpg":
+                ("ede4de4a2fd37d70ef2005279ceaa5c31e3cf8bdb66d4b95bd450811b7e238f7", 7937),
+        }
+        for name, pin in expected.items():
+            with self.subTest(member=name):
+                self.assertEqual(members.get(name), pin,
+                                 "An empty cache would omit an original probability fixture")
+
     def test_facedetect_bnkps_default_and_quantized_catalog_rows_have_consumers(self):
         manifest = VALIDATE_ALL.load_manifest(
             MODULE_PATH.with_name("validation_manifest.json"))
@@ -1253,6 +1426,48 @@ class ValidateAllTests(unittest.TestCase):
             self.assertEqual(summary["downloaded"], 1)
             self.assertEqual((root / "extract/images/input.jpg").read_bytes(),
                              payload)
+
+    def test_offline_retained_archive_restores_missing_or_corrupt_members(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "download/fixture.zip"
+            archive_path.parent.mkdir()
+            payload = b"original pinned image"
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr("images/input.jpg", payload)
+            archive_bytes = archive_path.read_bytes()
+            asset = VALIDATE_ALL.InputAsset(
+                "fixture", frozenset({"ocr"}), VALIDATE_ALL.PurePosixPath("fixture.zip"),
+                "https://invalid.example/no-network-allowed.zip",
+                hashlib.sha256(archive_bytes).hexdigest(), len(archive_bytes), True,
+                ((VALIDATE_ALL.PurePosixPath("images/input.jpg"),
+                  hashlib.sha256(payload).hexdigest(), len(payload)),))
+            for initial in [None, b"damaged extraction"]:
+                target = root / "extract/images/input.jpg"
+                if initial is not None:
+                    target.write_bytes(initial)
+                summary, failures = VALIDATE_ALL.ensure_input_assets(
+                    [asset], root / "extract", offline=True, timeout=1, retries=1, jobs=1)
+                self.assertEqual(failures, [])
+                self.assertEqual(summary["downloaded"], 0)
+                self.assertEqual(target.read_bytes(), payload)
+                self.assertEqual(archive_path.read_bytes(), archive_bytes)
+
+    def test_offline_corrupt_retained_archive_is_not_used_for_extraction(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "download/fixture.zip"
+            archive_path.parent.mkdir()
+            archive_path.write_bytes(b"not a valid archive")
+            asset = VALIDATE_ALL.InputAsset(
+                "fixture", frozenset({"ocr"}), VALIDATE_ALL.PurePosixPath("fixture.zip"),
+                "https://invalid.example/no-network-allowed.zip", "a" * 64, 0, True,
+                ((VALIDATE_ALL.PurePosixPath("images/input.jpg"), "b" * 64, 2),))
+            summary, failures = VALIDATE_ALL.ensure_input_assets(
+                [asset], root / "extract", offline=True, timeout=1, retries=1, jobs=1)
+            self.assertTrue(failures)
+            self.assertEqual(summary["downloaded"], 0)
+            self.assertFalse((root / "extract/images/input.jpg").exists())
 
     def test_tar_fixture_extracts_only_pinned_regular_members(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -2653,6 +2868,261 @@ class ValidateAllTests(unittest.TestCase):
             attempt = VALIDATE_ALL.run_attempt(spec, args)
             self.assertEqual(attempt.returncode, 127)
             self.assertIn("cannot execute probe", attempt.output_tail)
+
+
+class InstantMeshProbeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        path = MODULE_PATH.parents[1] / "src/tasks/instantmesh/tools/instantmesh_backend_ab.py"
+        spec = importlib.util.spec_from_file_location("instantmesh_probe", path)
+        cls.probe = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.probe)
+
+    def expand_instantmesh(self, full):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        names = [f"{stem}_{quant}.gguf" for stem in ("dino", "lrm_transformer", "synthesizer")
+                 for quant in ("f32", "f16", "q8")]
+        names += ["zero123pp_cond_f32.gguf"] + [f"zero123pp_{stem}_{quant}.gguf"
+                   for stem in ("unet", "vae") for quant in ("f32", "f16")]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            models = root / "assets/instantmesh_models"
+            models.mkdir(parents=True)
+            for name in names:
+                (models / name).write_bytes(b"consumer expansion only, never loaded")
+            args = ValidateAllTests.relation_args(root / "assets", root, full)
+            args.tasks = "instantmesh"
+            expanded, diagnostics = VALIDATE_ALL.expand_specs(manifest, args, root / "reports")
+            specs = [spec for spec in expanded if "--preset" in spec.command]
+            consumers = {}
+            for spec in specs:
+                command = spec.command
+                preset = command[command.index("--preset") + 1]
+                quant = command[command.index("--quant") + 1]
+                consumers[spec.scenario_id] = {Path(path).name for path in
+                    self.probe.build_paths(str(models), preset, quant) if path}
+        return names, specs, diagnostics, consumers
+
+    def test_full_matrix_consumes_fourteen_models_in_six_real_chains(self):
+        names, specs, diagnostics, consumers = self.expand_instantmesh(True)
+        self.assertEqual({spec.scenario_id for spec in specs},
+                         {f"instantmesh-{preset}-{quant}" for preset in ("geometry", "full")
+                          for quant in ("f32", "f16", "q8")})
+        self.assertEqual(set().union(*consumers.values()), set(names))
+        for spec in specs:
+            self.assertEqual({path.name for path in spec.model_paths}, consumers[spec.scenario_id])
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        self.assertIn("zero123pp_unet_f16.gguf", consumers["instantmesh-full-q8"])
+        self.assertNotIn("zero123pp_unet_q8.gguf", consumers["instantmesh-full-q8"])
+
+    def test_light_matrix_exercises_full_q8_and_shared_sampling_protocol(self):
+        _, specs, _, _ = self.expand_instantmesh(False)
+        self.assertIn("instantmesh-full-q8", {spec.scenario_id for spec in specs})
+        for spec in specs:
+            command = spec.command
+            self.assertEqual(command[command.index("--warmups") + 1], "1")
+            self.assertEqual(command[command.index("--iterations") + 1], "1")
+            self.assertFalse(command[command.index("--lib") + 1].endswith(".so"))
+
+    def test_scheduler_component_preserves_all_original_numeric_gates(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        row = next((row for row in manifest["scenarios"]
+                    if row["id"] == "instantmesh-scheduler-reference"), None)
+        self.assertIsNotNone(row, "Scheduler must use the same shared runner")
+        accuracy = row["accuracy"]
+        metrics = {"timesteps_max_abs": 0.0, "sigmas_max_abs": 0.0,
+                   "add_noise_max_abs": 0.0, "scale_input_max_abs": 0.0,
+                   "walk75_max_abs": 0.0}
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(accuracy, metrics, "cpu"), [])
+        for name, limit in (("timesteps_max_abs", 1e-6), ("sigmas_max_abs", 1e-6),
+                            ("add_noise_max_abs", 1e-5), ("scale_input_max_abs", 1e-5),
+                            ("walk75_max_abs", 1e-4)):
+            bad = dict(metrics, **{name: limit})
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(accuracy, bad, "cpu"), name)
+        self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(accuracy, {}, "cpu"))
+
+    def test_clip_and_vae_components_preserve_original_absolute_gates(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        for component, metrics, limits in (
+                ("clip", {"reference_authenticated": 1, "clip_max_abs": 0, "clip_rmse": 0},
+                 (("clip_max_abs", 1e-3),)),
+                ("vae", {"reference_authenticated": 1, "vae_encode_max_abs": 0,
+                         "vae_decode_max_abs": 0, "vae_encode_rmse": 0, "vae_decode_rmse": 0},
+                 (("vae_encode_max_abs", 5e-4), ("vae_decode_max_abs", 5e-3)))):
+            row = next((row for row in manifest["scenarios"]
+                        if row["id"] == f"instantmesh-{component}-reference"), None)
+            self.assertIsNotNone(row, "Original component gates must use the shared runner")
+            gate = row["accuracy"]
+            self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, "cpu"), [])
+            for key, limit in limits:
+                self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, dict(metrics, **{key: limit}), "cpu"))
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, dict(metrics, reference_authenticated=0), "cpu"))
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, {}, "cpu"))
+
+    def test_unet_reference_preserves_f16_original_gate_and_required_errors(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        row = next((row for row in manifest["scenarios"]
+                    if row["id"] == "instantmesh-unet-reference"), None)
+        self.assertIsNotNone(row, "Original UNet RefOnly gates must use the shared runner")
+        gate = row["accuracy"]
+        valid = {"reference_authenticated": 1, "unet_max_abs": 0.349,
+                 "unet_rmse": 0.01, "unet_mean_abs": 0.009}
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, valid, "cpu"), [])
+        for invalid in (dict(valid, unet_max_abs=0.35),
+                        dict(valid, reference_authenticated=0),
+                        {key: value for key, value in valid.items() if key != "unet_rmse"}, {}):
+            self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, invalid, "cpu"))
+        self.assertEqual(row["args"][0], "unet")
+        self.assertIn("zero123pp_unet_f16.gguf", row["args"][1])
+
+    def test_geometry_components_gate_every_view_and_plane_without_averaging(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        for component, parts in (("dino", 6), ("lrm", 3)):
+            row = next((item for item in manifest["scenarios"]
+                        if item["id"] == f"instantmesh-{component}-reference"), None)
+            self.assertIsNotNone(row, "Four-image components must use the existing shared runner")
+            gate = row["accuracy"]
+            metrics = {key: 0 for key in gate["require_metrics"]}
+            metrics.update(reference_authenticated=1, frozen_limits_authenticated=1)
+            self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, metrics, "cpu"), [])
+            for scenario in ("blue_cat", "cute_horse", "fox", "robot"):
+                for part in range(parts):
+                    prefix = f'{scenario}_{component}_{"view" if component == "dino" else "plane"}{part}'
+                    for metric in ("max_abs_ratio", "rmse_ratio", "added_max_abs_ratio", "added_rmse_ratio"):
+                        name = prefix + "_" + metric
+                        self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, dict(metrics, **{name: 1.001}), "cpu"), name)
+                    for metric in ("max_abs", "rmse", "sign_changes", "added_max_abs", "upstream_max_abs"):
+                        name = prefix + "_" + metric
+                        missing = {key: value for key, value in metrics.items() if key != name}
+                        self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, missing, "cpu"), name)
+            self.assertIn("{reference:instantmesh_geometry}", row["args"])
+            self.assertIn("{reference:instantmesh_geometry_baseline}", row["args"])
+
+    def test_geometry_numeric_limits_are_fixed_in_manifest_before_candidate(self):
+        manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
+        limits = manifest.get("instantmesh_geometry_component_accuracy", {})
+        self.assertTrue(limits.get("locked_before_candidate_component_sampling"))
+        self.assertEqual(len(limits["cases"]), 24)
+        self.assertEqual(limits["missing_baseline_backends"], ["cuda", "metal"])
+        for key, case in limits["cases"].items():
+            for metric, value in case["absolute_bounds"].items():
+                self.assertAlmostEqual(value, 1.10 * case["upstream_errors"][metric] + 1e-5)
+                self.assertAlmostEqual(case["added_error_bounds"][metric], 0.10 * case["upstream_errors"][metric] + 1e-5)
+                self.assertGreater(value, 0)
+
+    def test_no_independent_reference_cannot_pass_full_accuracy_gate(self):
+        _, specs, _, _ = self.expand_instantmesh(True)
+        for spec in specs:
+            with self.subTest(scenario=spec.scenario_id):
+                metrics, _ = VALIDATE_ALL.parse_output(
+                    '{"independent_reference_complete":0,"total_ms":10}', "generic",
+                    Path("/nonexistent/instantmesh-probe.json"),
+                    VALIDATE_ALL.gate_metric_names(spec.accuracy))
+                failures = VALIDATE_ALL.evaluate_accuracy_gate(spec.accuracy, metrics, "cpu")
+                self.assertTrue(failures)
+                self.assertTrue(any("independent_reference_complete" in failure for failure in failures))
+
+    def test_public_timing_bits_not_progress_callback_define_measurements(self):
+        # Unexecuted serialization must not be marked valid even with nonzero storage; E2E is not a stage sum.
+        value = SimpleNamespace(abi_version=1, valid_fields=19,
+                                preprocess_ms=2.0, inference_ms=7.0,
+                                postprocess_ms=800.0, serialization_ms=900.0,
+                                e2e_ms=10.0)
+        self.assertEqual(self.probe.public_timings(value),
+                         {"preprocess_ms": 2.0, "inference_ms": 7.0, "e2e_ms": 10.0})
+        value.valid_fields = 1
+        with self.assertRaisesRegex(ValueError, "inference.*e2e"):
+            self.probe.public_timings(value)
+        value.valid_fields = 19
+        value.inference_ms = float("nan")
+        with self.assertRaisesRegex(ValueError, "inference_ms"):
+            self.probe.public_timings(value)
+        value.inference_ms = 7.0
+        value.abi_version = 99
+        with self.assertRaisesRegex(ValueError, "ABI"):
+            self.probe.public_timings(value)
+
+    def test_explicit_backend_cannot_report_cpu_fallback_as_gpu_success(self):
+        self.probe.validate_backend("auto", "CPU")
+        self.probe.validate_backend("vulkan:1", "Vulkan1")
+        self.probe.validate_backend("cuda", "CUDA0")
+        for requested, actual in (("vulkan", "CPU"), ("cuda", "Vulkan0"),
+                                  ("vulkan:1", "Vulkan0"), ("auto", "")):
+            with self.subTest(requested=requested, actual=actual):
+                with self.assertRaises(ValueError):
+                    self.probe.validate_backend(requested, actual)
+
+    def test_diffusion_output_metrics_preserve_unscale_nchw_and_each_view(self):
+        import numpy as np
+
+        latents = np.array([0.0, 1.5, -0.75], dtype=np.float32)
+        decoder_input = latents / np.float32(0.75) + np.float32(0.22)
+        decoded = np.zeros((3, 960, 640), dtype=np.float32)
+        expected = np.full((960, 640, 3), 128, dtype=np.uint8)
+        metrics = self.probe.diffusion_output_metrics(decoder_input, latents, decoded, expected)
+        self.assertEqual(metrics["decoder_input_max_abs"], 0)
+        self.assertLess(metrics["final_latents_max_abs"], 1e-6)
+        self.assertEqual(metrics["view0_rgb_max_abs_bytes"], 0)
+        decoded[1, 321, 1] = np.float32(0.25)
+        metrics = self.probe.diffusion_output_metrics(decoder_input, latents, decoded, expected)
+        # round-half-up(0.7 * 255) is 179; the unmodified pixel is 128.
+        self.assertEqual(metrics["view2_rgb_max_abs_bytes"], 51)
+        self.assertGreater(metrics["view2_rgb_rmse_bytes"], 0)
+        for view in (0, 1, 3, 4, 5):
+            self.assertEqual(metrics[f"view{view}_rgb_max_abs_bytes"], 0)
+        self.assertEqual(metrics["independent_reference_complete"], 0)
+        self.assertEqual(metrics["accuracy_status"], "INCOMPLETE")
+
+    def test_diffusion_output_metrics_reject_shape_and_nonfinite_data(self):
+        import numpy as np
+
+        latent = np.zeros(3, dtype=np.float32)
+        decoded = np.zeros((3, 960, 640), dtype=np.float32)
+        expected = np.zeros((960, 640, 3), dtype=np.uint8)
+        for actual in (np.zeros((960, 640, 3)), np.full((3, 960, 640), np.nan)):
+            with self.assertRaises(ValueError):
+                self.probe.diffusion_output_metrics(latent, latent, actual, expected)
+        with self.assertRaises(ValueError):
+            self.probe.diffusion_output_metrics(np.array([np.nan] * 3), latent, decoded, expected)
+        with self.assertRaises(ValueError):
+            self.probe.diffusion_output_metrics(latent, latent, decoded, expected[:320])
+
+    def test_hot_forward_summary_keeps_raw_samples_and_separate_load_cost(self):
+        rows = [{"preprocess_ms": 1.0, "inference_ms": v, "e2e_ms": v + 2.0}
+                for v in (10.0, 20.0, 30.0)]
+        summary = self.probe.summarize_timings(rows)
+        self.assertEqual(summary["inference_samples_ms"], [10.0, 20.0, 30.0])
+        self.assertEqual(summary["inference_p50_ms"], 20.0)
+        self.assertEqual(summary["inference_p95_ms"], 29.0)
+        self.assertEqual(summary["total_ms"], 22.0)
+        self.assertNotIn("load_ms", summary)
+        with self.assertRaises(ValueError):
+            self.probe.summarize_timings([])
+
+    def test_library_argument_resolves_build_or_exact_path_and_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "bin").mkdir()
+            filename = ("AICore.dll" if os.name == "nt" else
+                        "libAICore.dylib" if sys.platform == "darwin" else "libAICore.so")
+            library = root / "bin" / filename
+            library.write_bytes(b"path resolution only, never loaded")
+            self.assertEqual(self.probe.resolve_library(root), library.resolve())
+            self.assertEqual(self.probe.resolve_library(library), library.resolve())
+            with self.assertRaises(FileNotFoundError):
+                self.probe.resolve_library(root / "absent")
+
+    def test_cli_rejects_invalid_sampling_and_seed_before_loading(self):
+        script = MODULE_PATH.parents[1] / "src/tasks/instantmesh/tools/instantmesh_backend_ab.py"
+        for option, value in (("--warmups", "-1"), ("--iterations", "0"),
+                              ("--seed", "-1"), ("--seed", "18446744073709551616")):
+            result = subprocess.run([sys.executable, str(script), "--models", "absent",
+                                     "--image", "absent", "--lib", "absent", option, value],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn(option.removeprefix("--"), result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

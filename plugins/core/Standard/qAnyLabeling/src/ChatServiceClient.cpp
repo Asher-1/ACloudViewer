@@ -8,9 +8,9 @@
 #include "ChatServiceClient.h"
 
 // aicore-boundary: remote-inference-transport
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QDir>
 #include <QJsonDocument>
 #include <QMimeDatabase>
 #include <QNetworkReply>
@@ -149,10 +149,9 @@ void ChatServiceClient::completeLocal(const Settings& settings,
         emit finished(text, error);
     };
     m_text.clear();
-    m_localId = LocalChatEngine::submit(settings.model.trimmed(), messages,
-                                        settings.temperature,
-                                        settings.maxTokens, this,
-                                        std::move(callbacks));
+    m_localId = LocalChatEngine::submit(
+            settings.model.trimmed(), messages, settings.temperature,
+            settings.maxTokens, this, std::move(callbacks));
 }
 
 // Missing catalog files download one at a time through the shared verified
@@ -169,9 +168,9 @@ void ChatServiceClient::downloadNext(const Settings& settings,
             [this, name](qint64 received, qint64 total) {
                 emit statusChanged(
                         tr("Downloading %1: %2")
-                                .arg(name, ecvModelDownloader::
-                                                   formatDownloadProgress(
-                                                           received, total)));
+                                .arg(name,
+                                     ecvModelDownloader::formatDownloadProgress(
+                                             received, total)));
             });
     connect(download, &ecvModelDownloader::finished, this,
             [this, download, settings, messages, stream, name](bool ok,

@@ -209,9 +209,11 @@ typedef struct aicore_ocr_post_timing_breakdown {
     double output_readback_ms;
     /** Host-to-device graph-input transfer; excludes graph compute. */
     double input_upload_ms;
-    /** DBNet graph-compute time, excluding transfers and postprocessing. Added in v2. */
+    /** DBNet graph-compute time, excluding transfers and postprocessing. Added
+     * in v2. */
     double det_graph_compute_ms;
-    /** All SVTR rec graph-compute time, excluding transfers and CTC. Added in v2. */
+    /** All SVTR rec graph-compute time, excluding transfers and CTC. Added in
+     * v2. */
     double rec_graph_compute_ms;
 } aicore_ocr_post_timing_breakdown;
 

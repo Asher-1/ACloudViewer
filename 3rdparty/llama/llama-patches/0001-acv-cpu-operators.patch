@@ -512,7 +512,7 @@ diff --git a/src/ggml-cpu/ggml-cpu.c b/src/ggml-cpu/ggml-cpu.c
 index ab82e3d6c04395b702ccbf3a9ac3e954d8d8cfcf..0036693baf3218fdfa4c8f1a29f0faa38f8065be 100644
 --- a/src/ggml-cpu/ggml-cpu.c
 +++ b/src/ggml-cpu/ggml-cpu.c
-@@ -1305,17 +1305,87 @@ void ggml_compute_forward_mul_mat(
+@@ -1305,17 +1305,88 @@ void ggml_compute_forward_mul_mat(
  
      const bool src1_cont = ggml_is_contiguous(src1);
  
@@ -527,7 +527,8 @@ index ab82e3d6c04395b702ccbf3a9ac3e954d8d8cfcf..0036693baf3218fdfa4c8f1a29f0faa3
 +     * thread utilization on small N strictly dominate the actual FMA work.
 +     * Folding the 16 windows into a single N=1616 call gives 4-5x speedup on
 +     * those shapes (see git log for measurements). */
-+    if (!params->use_ref && src1_cont && strcmp(dst->name, "relateanything_matmul") != 0) {
++    if (!params->use_ref && src1_cont && strcmp(dst->name, "relateanything_matmul") != 0 &&
++        strncmp(dst->name, "instantmesh_cpu_matmul_", sizeof("instantmesh_cpu_matmul_") - 1) != 0) {
 +        const size_t ts_src0 = ggml_type_size(src0->type);
 +        const size_t ts_src1 = ggml_type_size(src1->type);
 +        const size_t ts_dst  = ggml_type_size(dst->type);
@@ -604,12 +605,13 @@ index ab82e3d6c04395b702ccbf3a9ac3e954d8d8cfcf..0036693baf3218fdfa4c8f1a29f0faa3
                                       src0->type,
                                       src1->type,
                                       dst->type))
-@@ -1384,20 +1454,68 @@ UseGgmlGemm1:;
+@@ -1384,20 +1455,69 @@ UseGgmlGemm1:;
      ggml_barrier(params->threadpool);
  
  #if GGML_USE_LLAMAFILE
 -    if (!params->use_ref && src1->type != vec_dot_type) {
-+    if (!params->use_ref && src1->type != vec_dot_type && strcmp(dst->name, "relateanything_matmul") != 0) {
++    if (!params->use_ref && src1->type != vec_dot_type && strcmp(dst->name, "relateanything_matmul") != 0 &&
++        strncmp(dst->name, "instantmesh_cpu_matmul_", sizeof("instantmesh_cpu_matmul_") - 1) != 0) {
          const void* wdata = (src1->type == vec_dot_type) ? src1->data : params->wdata;
          const size_t row_size = ggml_row_size(vec_dot_type, ne10);
 +        const size_t ts_src0 = ggml_type_size(src0->type);

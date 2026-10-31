@@ -87,16 +87,14 @@ static std::vector<ModelRow> buildModels() {
             std::string filename = std::string(variant.stem) + "-" +
                                    kQuantSuffixes[qi] + ".gguf";
             std::string url = std::string(kDownloadBase) + filename;
-            std::string display = std::string(variant.family) + " " +
-                                   variant.label +
-                                   (std::string(variant.language) == "ch"
-                                            ? " (Chinese) "
-                                    : std::string(variant.language) == "en"
-                                            ? " (English) "
-                                    : std::string(variant.language) == "ja"
-                                            ? " (Japanese) "
-                                            : " (CDLA document regions) ") +
-                                   kQuantNotes[qi];
+            std::string display =
+                    std::string(variant.family) + " " + variant.label +
+                    (std::string(variant.language) == "ch"   ? " (Chinese) "
+                     : std::string(variant.language) == "en" ? " (English) "
+                     : std::string(variant.language) == "ja"
+                             ? " (Japanese) "
+                             : " (CDLA document regions) ") +
+                    kQuantNotes[qi];
             rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
                             dupString(display.c_str()), dupString(variant.role),
                             dupString(variant.language)});

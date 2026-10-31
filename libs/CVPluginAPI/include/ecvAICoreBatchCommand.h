@@ -467,7 +467,8 @@ inline Prep prepare(ccCommandLineInterface& cmd,
                     const QString& task,
                     const QString& summary,
                     const std::vector<const OptionTable*>& taskTables,
-                    Session* s) {
+                    Session* s,
+                    const std::function<void(Args&)>& validateArgs = {}) {
     s->keyword = keyword;
     s->task = task;
     std::vector<const OptionTable*> tables{&commonOptions()};
@@ -509,6 +510,16 @@ inline Prep prepare(ccCommandLineInterface& cmd,
             return Prep::Failed;
         }
         return Prep::Run;  // catalog query: no OUT_DIR needed
+    }
+    // Validate task arguments before filesystem side effects; HELP/catalog
+    // queries do not require task arguments. Existing consumers without a
+    // callback retain their original preparation flow.
+    if (validateArgs) {
+        validateArgs(s->args);
+        if (!s->args.ok()) {
+            cmd.error(s->args.error());
+            return Prep::Failed;
+        }
     }
     s->outDir = s->args.str("OUT_DIR");
     if (s->outDir.isEmpty()) {

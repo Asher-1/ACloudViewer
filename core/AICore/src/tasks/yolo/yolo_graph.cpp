@@ -101,15 +101,18 @@ struct GraphBuilder {
                               ggml_tensor* out) {
         if (ggml_tensor* b = w(prefix, "b")) {
             const ggml_type output_type = out->type;
-            // Keep GGUF bias in F32; narrowing it first incorrectly turns -2048 + 2048.25 into zero.
-            // ADD consumes original values in F32, then restores output dtype without changing subsequent activation storage.
+            // Keep GGUF bias in F32; narrowing it first incorrectly turns -2048
+            // + 2048.25 into zero. ADD consumes original values in F32, then
+            // restores output dtype without changing subsequent activation
+            // storage.
             if (b->type == GGML_TYPE_F32 && output_type == GGML_TYPE_F16)
                 out = ggml_cast(gctx, out, GGML_TYPE_F32);
             else if (b->type != out->type)
                 b = ggml_cast(gctx, b, out->type);
             out = ggml_add(gctx, out,
                            ggml_reshape_4d(gctx, b, 1, 1, b->ne[0], 1));
-            if (out->type != output_type) out = ggml_cast(gctx, out, output_type);
+            if (out->type != output_type)
+                out = ggml_cast(gctx, out, output_type);
         }
         auto act = op.sparams.find("act");
         if (act != op.sparams.end() && act->second == "silu") {
@@ -136,7 +139,8 @@ struct GraphBuilder {
                 (wT->type == GGML_TYPE_F32 || wT->type == GGML_TYPE_F16);
         ggml_tensor* out;
         if (((use_direct_conv && wT->type != GGML_TYPE_F32) ||
-             (depthwise && x->type == GGML_TYPE_F32)) && direct_types) {
+             (depthwise && x->type == GGML_TYPE_F32)) &&
+            direct_types) {
             // CUDA/Vulkan f16 (or f32/f32) fast path: the patched direct conv
             // op skips the im2col materialization entirely (CUDA: tensor-core
             // mma throughput; Vulkan: fused shader).
@@ -179,9 +183,9 @@ struct GraphBuilder {
                         (int)op.ai("d", 0), (int)op.ai("d", 1));
             } else {
                 out = conv2d_matmul(wT, kernel4d(op, wT), x, (int)op.ai("s", 0),
-                               (int)op.ai("s", 1), (int)op.ai("p", 0),
-                               (int)op.ai("p", 1), (int)op.ai("d", 0),
-                               (int)op.ai("d", 1));
+                                    (int)op.ai("s", 1), (int)op.ai("p", 0),
+                                    (int)op.ai("p", 1), (int)op.ai("d", 0),
+                                    (int)op.ai("d", 1));
             }
         } else {
             ggml_tensor* w4d = kernel4d(op, wT);
@@ -197,12 +201,13 @@ struct GraphBuilder {
             }
             if (!depthwise && w4d->type == GGML_TYPE_F32 &&
                 x->type == GGML_TYPE_F32) {
-                // ggml_conv_2d unconditionally uses F16 im2col as the left matmul operand,
-                // narrowing even F32 weights. Explicit F32 lowering preserves model arithmetic.
+                // ggml_conv_2d unconditionally uses F16 im2col as the left
+                // matmul operand, narrowing even F32 weights. Explicit F32
+                // lowering preserves model arithmetic.
                 out = conv2d_matmul(
                         ggml_reshape_2d(gctx, w4d,
-                                         w4d->ne[0] * w4d->ne[1] * w4d->ne[2],
-                                         w4d->ne[3]),
+                                        w4d->ne[0] * w4d->ne[1] * w4d->ne[2],
+                                        w4d->ne[3]),
                         w4d, x, (int)op.ai("s", 0), (int)op.ai("s", 1),
                         (int)op.ai("p", 0), (int)op.ai("p", 1),
                         (int)op.ai("d", 0), (int)op.ai("d", 1));
@@ -255,22 +260,22 @@ struct GraphBuilder {
                                          : wT;
     }
 
-    // F32/Q8 convolution shares F32 im2col; left-side matmul weights determine the dot type.
-    // Quantized conv: ggml_conv_2d would build mul_mat(F16 im2col, Q8 kernel)
-    // which asserts on CPU (src1 must be F32 or the kernel dtype). Mirror
-    // llama.cpp instead: mul_mat(Q8 kernel [K,OC], F32 im2col) — src1 F32
-    // gets dynamically quantized to the kernel's vec_dot type. w4d only
-    // lends KH/KW/IC shape metadata to im2col; mul_mat consumes wT itself so
-    // quant blocks stay contiguous.
+    // F32/Q8 convolution shares F32 im2col; left-side matmul weights determine
+    // the dot type. Quantized conv: ggml_conv_2d would build mul_mat(F16
+    // im2col, Q8 kernel) which asserts on CPU (src1 must be F32 or the kernel
+    // dtype). Mirror llama.cpp instead: mul_mat(Q8 kernel [K,OC], F32 im2col) —
+    // src1 F32 gets dynamically quantized to the kernel's vec_dot type. w4d
+    // only lends KH/KW/IC shape metadata to im2col; mul_mat consumes wT itself
+    // so quant blocks stay contiguous.
     ggml_tensor* conv2d_matmul(ggml_tensor* wT,
-                          ggml_tensor* w4d,
-                          ggml_tensor* x,
-                          int s0,
-                          int s1,
-                          int p0,
-                          int p1,
-                          int d0,
-                          int d1) {
+                               ggml_tensor* w4d,
+                               ggml_tensor* x,
+                               int s0,
+                               int s1,
+                               int p0,
+                               int p1,
+                               int d0,
+                               int d1) {
         ggml_tensor* im2 =
                 ggml_im2col(gctx, w4d, x, s0, s1, p0, p1, d0, d1, true,
                             GGML_TYPE_F32);  // [K, OW, OH, N]
@@ -281,8 +286,9 @@ struct GraphBuilder {
             // Do not substitute TF32/F16 for F32-model convolution inputs.
             ggml_mul_mat_set_prec(dst, GGML_PREC_F32);
             if (use_direct_conv && !cuda_backend) {
-                // Vulkan PREC_F32 constrains only accumulators; coopmat still narrows
-                // operands. An explicit strict hint preserves F32 inputs and outputs.
+                // Vulkan PREC_F32 constrains only accumulators; coopmat still
+                // narrows operands. An explicit strict hint preserves F32
+                // inputs and outputs.
                 ggml_mul_mat_set_hint(dst, GGML_HINT_STRICT_F32);
             }
         }
@@ -329,7 +335,8 @@ struct GraphBuilder {
                     wT->type == x->type &&
                     (wT->type == GGML_TYPE_F32 || wT->type == GGML_TYPE_F16);
             if (((use_direct_conv && wT->type != GGML_TYPE_F32) ||
-                 (k > 1 && x->type == GGML_TYPE_F32)) && direct_types) {
+                 (k > 1 && x->type == GGML_TYPE_F32)) &&
+                direct_types) {
                 out = k > 1 ? ggml_conv_2d_dw_direct(gctx, wT, x, 1, 1,
                                                      (int)(k / 2), (int)(k / 2),
                                                      1, 1)
@@ -338,8 +345,8 @@ struct GraphBuilder {
             } else if (k == 1 && wT->type == GGML_TYPE_F32 &&
                        x->type == GGML_TYPE_F32) {
                 out = conv2d_matmul(
-                        ggml_reshape_2d(gctx, wT, wT->ne[2], wT->ne[3]),
-                        wT, x, 1, 1, 0, 0, 1, 1);
+                        ggml_reshape_2d(gctx, wT, wT->ne[2], wT->ne[3]), wT, x,
+                        1, 1, 0, 0, 1, 1);
             } else {
                 out = k > 1 ? ggml_conv_2d_dw(gctx, dw_kernel(wT), x, 1, 1,
                                               (int)(k / 2), (int)(k / 2), 1, 1)
@@ -386,7 +393,8 @@ struct GraphBuilder {
         ggml_tensor* kT = ggml_cont(gctx, ggml_permute(gctx, k, 1, 0, 2, 3));
         ggml_tensor* scores = ggml_mul_mat(gctx, kT, qT);
         if (attention_accumulation == AICORE_YOLO_ATTENTION_F32) {
-            // Request accumulation precision only; input/output storage types retain the graph contract.
+            // Request accumulation precision only; input/output storage types
+            // retain the graph contract.
             GGML_ASSERT(ggml_prec_set_acc(scores, GGML_PREC_F32));
         }
         ggml_tensor* attn = ggml_soft_max(gctx, scores);
@@ -1551,7 +1559,8 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
 //   CPU    — semantic q8 models: expand to f16 once. The generic Q8 path
 //            dynamically quantizes activations and fell below the external
 //            semantic reference gate; other CPU tasks retain native Q8.
-//   CUDA   — F32 weights retain original precision; q8 models expand to f16 once on the host.
+//   CUDA   — F32 weights retain original precision; q8 models expand to f16
+//   once on the host.
 //            The CUDA Q8 conv path
 //            also expands every weight into a per-conv f16 plan, so retaining
 //            the compressed device tensor only adds device memory and a

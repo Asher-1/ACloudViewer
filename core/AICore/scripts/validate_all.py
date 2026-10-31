@@ -506,6 +506,38 @@ def parse_input_assets(manifest: dict[str, Any], selected: set[str],
     return assets
 
 
+def ocr_probe_input_paths(command: tuple[str, ...] | list[str]) -> list[Path]:
+    """Enumerate explicit OCR accuracy inputs, including every extra crop page."""
+    if not any(Path(value).name == "run_ocr_onnx_probe.py" for value in command):
+        return []
+    paths = []
+    for index, value in enumerate(command):
+        option, separator, inline = value.partition("=")
+        if option not in {"--image", "--extra-image", "--extra-crop"}:
+            continue
+        if separator:
+            path = inline
+        elif index + 1 < len(command):
+            path = command[index + 1]
+        else:
+            raise ValueError(f"OCR input option has no path: {option}")
+        paths.append(Path(path))
+    return paths
+
+
+def ocr_probe_input_failures(specs: list[RunSpec]) -> list[str]:
+    """Reject missing explicit fixtures before --list or any inference executes."""
+    failures = []
+    for spec in specs:
+        command = spec.command
+        orientation = "--role" in command and command[command.index("--role") + 1] == "orientation"
+        for path in ocr_probe_input_paths(command):
+            valid = path.is_dir() if orientation else path.is_file()
+            if not valid:
+                failures.append(f"{spec.key}: OCR accuracy input missing: {path}")
+    return failures
+
+
 def sha256_file(path: Path) -> str:
     stat = path.stat()
     cache_key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns)
@@ -533,6 +565,41 @@ def verify_asset(asset: ModelAsset | InputAsset, root: Path) -> tuple[bool, str]
     except OSError as error:
         return False, str(error)
     return True, "verified"
+
+
+def apply_candidate_assets(catalog: list[ModelAsset], rows: list[dict[str, Any]],
+                           root: Path) -> list[ModelAsset]:
+    """Validate isolated conversion candidates without changing public catalog bytes."""
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("candidate assets must be a nonempty list")
+    originals = {str(asset.relative_path): asset for asset in catalog}
+    replacements: dict[str, ModelAsset] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("invalid candidate asset row")
+        relative = row.get("relative_path")
+        if not isinstance(relative, str) or relative not in originals:
+            raise ValueError(f"unknown candidate asset destination: {relative}")
+        if relative in replacements:
+            raise ValueError(f"duplicate candidate asset: {relative}")
+        original = originals[relative]
+        if row.get("original_sha256") != original.sha256:
+            raise ValueError(f"candidate original SHA-256 mismatch: {relative}")
+        digest, size = row.get("sha256"), row.get("size_bytes")
+        if (not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                or type(size) is not int or size <= 0):
+            raise ValueError(f"invalid candidate asset digest or size: {relative}")
+        path = original.destination(root)
+        if (path.is_symlink()
+                or path.resolve() != root.resolve().joinpath(*original.relative_path.parts)
+                or (path.is_file() and path.stat().st_nlink != 1)):
+            raise ValueError(f"candidate asset must be an isolated regular file: {relative}")
+        candidate = ModelAsset(original.task, original.relative_path, path.resolve().as_uri(), digest, size)
+        valid, reason = verify_asset(candidate, root)
+        if not valid:
+            raise ValueError(f"candidate asset {relative}: {reason}")
+        replacements[relative] = candidate
+    return [replacements.get(str(asset.relative_path), asset) for asset in catalog]
 
 
 def download_asset(asset: ModelAsset | InputAsset, root: Path, timeout: int,
@@ -742,13 +809,11 @@ def ensure_input_assets(assets: list[InputAsset], root: Path, *, offline: bool,
         valid, reason = verify_asset(asset, archive_root)
         if not valid:
             continue
-        extracted, extract_reason = verify_extracted_input(asset, root)
+        extracted, _ = verify_extracted_input(asset, root)
         if extracted:
             continue
-        if offline:
-            failures.append(f"{asset.relative_path}: {extract_reason} (offline mode)")
-            archive_summary["unavailable"].append(str(asset.relative_path))
-            continue
+        # Offline forbids network access, not recovery from verified local
+        # archives. verify_asset above must succeed before any extraction.
         try:
             extract_input_archive(asset, asset.destination(archive_root), root)
             print(f"[input-extract] OK {asset.relative_path}", flush=True)
@@ -2467,6 +2532,8 @@ def parse_args() -> argparse.Namespace:
                                 Path.home() / "cloudViewer_data"))
                                 / "extract"))))
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--candidate-assets", type=Path,
+                        help="Isolated candidate identity rows; offline developer diagnostics only")
     parser.add_argument("--catalog-binary", type=Path,
                         help="override test_catalog_dump_urls executable")
     parser.add_argument("--backend", default="cuda")
@@ -2590,6 +2657,14 @@ def parse_args() -> argparse.Namespace:
     args.manifest = args.manifest.resolve()
     if args.catalog_binary:
         args.catalog_binary = args.catalog_binary.resolve()
+    if args.candidate_assets:
+        if not args.offline or args.profile != "developer" or args.baseline or args.baseline_build:
+            parser.error("candidate assets require offline developer mode without runtime A/B")
+        public_roots = [Path.home() / "cloudViewer_data/extract",
+                        Path(os.environ.get("CLOUDVIEWER_DATA_ROOT", Path.home() / "cloudViewer_data")) / "extract"]
+        if any(args.assets == root.resolve() or root.resolve() in args.assets.parents for root in public_roots):
+            parser.error("candidate assets require an isolated extract root outside the public cache")
+        args.candidate_assets = args.candidate_assets.resolve()
     args.output = args.output.resolve()
     if args.baseline_build:
         args.baseline_build = args.baseline_build.resolve()
@@ -2639,11 +2714,19 @@ def main() -> int:
                   "capability matches the baseline.", file=sys.stderr)
             return 1
     manifest_identity: dict[str, Any] = {}
+    candidate_assets_identity: dict[str, Any] = {}
     manifest = select_scenarios(load_manifest(args.manifest, identity=manifest_identity), args.scenarios)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     selected = selected_tasks(manifest, args.tasks)
     try:
         catalog = load_model_catalog(args, manifest, selected)
+        if args.candidate_assets:
+            candidate_bytes = args.candidate_assets.read_bytes()
+            candidate_rows = json.loads(candidate_bytes)
+            catalog = apply_candidate_assets(catalog, candidate_rows, args.assets)
+            candidate_assets_identity = {"path": str(args.candidate_assets),
+                                         "sha256": hashlib.sha256(candidate_bytes).hexdigest(),
+                                         "rows": candidate_rows, "release_qualified": False}
         if args.profile == "release":
             contract_failures = release_manifest_accuracy_contract_failures(
                 manifest, args, selected, catalog)
@@ -2663,6 +2746,7 @@ def main() -> int:
             input_catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
             jobs=args.download_jobs)
+        input_failures.extend(ocr_probe_input_failures(specs))
     except (OSError, RuntimeError, ValueError) as error:
         print(f"validation cache preflight failed: {error}", file=sys.stderr)
         return 1
@@ -2864,6 +2948,7 @@ def main() -> int:
         "model_cache": cache_summary,
         "input_cache": input_summary,
         "manifest": manifest_identity,
+        "candidate_assets": candidate_assets_identity,
         "execution_artifacts": {"before": artifact_snapshots,
             "unchanged": not artifact_failures,
             "scope": "selected command files, runner, build AICore/ggml libraries and CMake cache; not a transitive loader trace"},

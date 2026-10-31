@@ -88,6 +88,11 @@ bool image_from_rgb(const uint8_t* rgb, int width, int height, Image& out);
 // keeps it alive for the full inference call.
 bool image_from_view(const aicore_image_view& view, Image& out);
 
+// Encode top-first pixels to an in-memory PNG, preserving RGBA/BGRA alpha.
+// Honors the caller's row stride. Invalid input leaves `out` unchanged.
+// Qt image plugins and encoded storage remain inside the private implementation.
+bool encode_png(const aicore_image_view& view, std::vector<uint8_t>& out);
+
 // OpenCV-aligned (cv2.resize INTER_LINEAR, 11-bit fixed point) bilinear
 // resample of a strided source view into a tightly packed `dw`x`dh`x`cn`
 // destination. Bit-exact with the OpenCV 8U path (coefficients, border

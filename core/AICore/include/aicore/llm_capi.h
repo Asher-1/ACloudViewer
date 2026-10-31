@@ -49,9 +49,9 @@ typedef struct aicore_llm_options {
     const char* mmproj_path; /**< projector GGUF; NULL/"" = text-only */
     const char* device; /**< auto, cpu, cuda, cuda:1, vulkan, vulkan:1, metal */
     int32_t threads;    /**< <=0 selects the runtime CPU default */
-    uint32_t context_tokens; /**< KV size; 0 = min(model train ctx, 4096) */
-    uint32_t batch_tokens;   /**< logical prefill batch; 0 = 512 */
-    int32_t flash_attn;      /**< -1 auto (llama default), 0 off, 1 on */
+    uint32_t context_tokens;  /**< KV size; 0 = min(model train ctx, 4096) */
+    uint32_t batch_tokens;    /**< logical prefill batch; 0 = 512 */
+    int32_t flash_attn;       /**< -1 auto (llama default), 0 off, 1 on */
     int32_t image_max_tokens; /**< 0 = projector metadata default */
 } aicore_llm_options;
 
@@ -118,9 +118,9 @@ typedef struct aicore_llm_model_entry {
     const char* filename;
     const char* download_url; /**< revision-pinned resolver URL */
     const char* display_name;
-    const char* family;       /**< pairs a model with its projector */
-    int32_t role;             /**< aicore_llm_model_role */
-    const char* quantization; /**< q8_0, f16, ... */
+    const char* family;          /**< pairs a model with its projector */
+    int32_t role;                /**< aicore_llm_model_role */
+    const char* quantization;    /**< q8_0, f16, ... */
     const char* mmproj_filename; /**< recommended projector for vision
                                       models; NULL for text-only/projectors */
     const char* sha256;
@@ -131,7 +131,8 @@ AICORE_CAPI aicore_llm_options aicore_llm_default_options(void);
 AICORE_CAPI aicore_llm_request aicore_llm_default_request(void);
 /** Returns an error context on load failure; inspect ready/last_error. A
  *  projector that does not match the text model fails the load. */
-AICORE_CAPI aicore_llm_ctx* aicore_llm_create(const aicore_llm_options* options);
+AICORE_CAPI aicore_llm_ctx* aicore_llm_create(
+        const aicore_llm_options* options);
 AICORE_CAPI void aicore_llm_free(aicore_llm_ctx* ctx);
 AICORE_CAPI int aicore_llm_ready(const aicore_llm_ctx* ctx);
 AICORE_CAPI const char* aicore_llm_last_error(const aicore_llm_ctx* ctx);

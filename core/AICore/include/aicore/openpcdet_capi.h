@@ -93,7 +93,7 @@ typedef struct aicore_openpcdet_geometry {
     int32_t num_point_features;  // expected point dim (4 = x,y,z,intensity)
     int32_t grid_size_x;         // BEV/voxel grid x
     int32_t grid_size_y;
-    int32_t grid_size_z;         // 1 for pillar models
+    int32_t grid_size_z;  // 1 for pillar models
     int32_t max_points_per_voxel;
     int32_t max_voxels;
     int32_t num_class;
@@ -106,16 +106,16 @@ typedef struct aicore_openpcdet_geometry {
 
 /** Fills \p out with the loaded model's geometry. Returns 0 on success,
  *  -1 on invalid arguments. */
-AICORE_CAPI int aicore_openpcdet_geometry_of(
-        const aicore_openpcdet_ctx* ctx, aicore_openpcdet_geometry* out);
+AICORE_CAPI int aicore_openpcdet_geometry_of(const aicore_openpcdet_ctx* ctx,
+                                             aicore_openpcdet_geometry* out);
 
 /** One detected 3D box (LiDAR frame). */
 typedef struct aicore_openpcdet_detection {
-    float x, y, z;    // box center
-    float dx, dy, dz; // box size
-    float heading;    // box yaw
+    float x, y, z;     // box center
+    float dx, dy, dz;  // box size
+    float heading;     // box yaw
     float score;
-    int32_t label;    // 1-indexed class (OpenPCDet convention)
+    int32_t label;  // 1-indexed class (OpenPCDet convention)
 } aicore_openpcdet_detection;
 
 /** Typed hot-path detection on a borrowed, caller-owned row-major point
@@ -123,11 +123,10 @@ typedef struct aicore_openpcdet_detection {
  *  num_point_features). Populates the internal detection store; read records
  *  with aicore_openpcdet_detection_count / _at. Returns the detection count
  *  (>= 0) on success and -1 on failure (see last_error). */
-AICORE_CAPI int aicore_openpcdet_detect_points(
-        aicore_openpcdet_ctx* ctx,
-        const float* points,
-        int32_t n_points,
-        int32_t point_dim);
+AICORE_CAPI int aicore_openpcdet_detect_points(aicore_openpcdet_ctx* ctx,
+                                               const float* points,
+                                               int32_t n_points,
+                                               int32_t point_dim);
 
 /** One multi-modal inference scene (BEVFusion). Every buffer is borrowed,
  *  caller-owned and stays valid for the duration of the detect_scene call.
@@ -161,9 +160,9 @@ typedef struct aicore_openpcdet_scene {
  *  \p out owns the decoded buffers; release them with
  *  aicore_openpcdet_free_scene. Returns 0 on success and -1 on failure
  *  (error text in \p error when non-NULL). */
-AICORE_CAPI int aicore_openpcdet_load_scene_dir(
-        const char* scene_dir, aicore_openpcdet_scene* out,
-        char** error);
+AICORE_CAPI int aicore_openpcdet_load_scene_dir(const char* scene_dir,
+                                                aicore_openpcdet_scene* out,
+                                                char** error);
 
 /** Releases scene buffers produced by aicore_openpcdet_load_scene_dir. Safe
  *  on NULL. */

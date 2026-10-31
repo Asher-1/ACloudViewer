@@ -14,6 +14,7 @@
 #   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
 #   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
 #   src/tasks/trellis/    — TRELLIS image-to-3D generation
+#   src/tasks/instantmesh/ — InstantMesh image-to-3D mesh (InstantMesh-GGML port)
 #   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
 #   src/tasks/map_anything/ — universal feed-forward metric 3D reconstruction
 #                           (map-anything-ggml cpp_ggml port: VGGT-Omega / VGGT /
@@ -62,6 +63,7 @@ set(AICORE_TABLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
+set(AICORE_INSTANTMESH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/instantmesh)
 set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
 set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
@@ -127,6 +129,8 @@ file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
     ${AICORE_TRELLIS_SRC_DIR}/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg/*.cpp)
+file(GLOB AICORE_INSTANTMESH_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_INSTANTMESH_SRC_DIR}/*.cpp)
 file(GLOB AICORE_API_HEADERS CONFIGURE_DEPENDS ${AICORE_INC_DIR}/aicore/*.h)
 
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
@@ -165,6 +169,9 @@ endif()
 if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/xatlas.cpp)
     message(FATAL_ERROR "AICore: missing TRELLIS third_party (xatlas) at ${AICORE_TRELLIS_SRC_DIR}/third_party")
 endif()
+if(NOT EXISTS ${AICORE_INSTANTMESH_SRC_DIR}/instantmesh_pipeline.cpp)
+    message(FATAL_ERROR "AICore: missing InstantMesh module at ${AICORE_INSTANTMESH_SRC_DIR}")
+endif()
 if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
     message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
 endif()
@@ -194,6 +201,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_ANYCALIB_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
+    ${AICORE_INSTANTMESH_SOURCES}
     ${AICORE_RELATION_SOURCES}
     ${AICORE_TAGGING_SOURCES}
     ${AICORE_LLM_SOURCES}
@@ -316,6 +324,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_YOLO_SRC_DIR}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
+        ${AICORE_INSTANTMESH_SRC_DIR}
         ${AICORE_GKD_SRC_DIR}
         ${AICORE_MAP_ANYTHING_SRC_DIR}
         ${AICORE_LINGBOT_SRC_DIR}
@@ -668,7 +677,7 @@ endif()
 
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
-    openpcdet reid rfdetr rmbg sam3 sam3d tagging relation table trellis yolo
+    openpcdet reid rfdetr rmbg sam3 sam3d tagging relation table trellis instantmesh yolo
     llm)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
@@ -687,6 +696,7 @@ if(AICore_BUILD_TESTS)
             ${AICORE_YOLO_SOURCES}
             ${AICORE_SAM3_SOURCES}
             ${AICORE_TRELLIS_SOURCES}
+            ${AICORE_INSTANTMESH_SOURCES}
             ${AICORE_RELATION_SOURCES}
             ${AICORE_TAGGING_SOURCES}
             ${AICORE_GKD_SOURCES}
@@ -768,7 +778,7 @@ if(AICore_BUILD_TESTS)
             target_compile_definitions(AICore_test PUBLIC SAM3D_USE_CUDA)
             # OpenPCDet task-side CUDA extension (same single translation unit
             # as libAICore): the whitebox deterministic sparse-conv gates
-            # (方案 C, test_openpcdet_det_sparse_conv) drive the CUDA kernel
+            # (Option C, test_openpcdet_det_sparse_conv) drive the CUDA kernel
             # directly and the model sources take their CUDA-ext branches.
             target_sources(AICore_test PRIVATE
                 ${AICORE_OPENPCDET_SRC_DIR}/extensions/openpcdet_cuda_ext.cu)

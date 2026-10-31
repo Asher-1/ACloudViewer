@@ -7,6 +7,7 @@
 
 #include "common/image_utils.hpp"
 
+#include <QBuffer>
 #include <QImage>
 #include <algorithm>
 #include <atomic>
@@ -113,6 +114,38 @@ bool image_from_view(const aicore_image_view& view, Image& out) {
     result.channels = static_cast<int>(channels);
     result.bgr = bgr;
     out = std::move(result);
+    return true;
+}
+
+bool encode_png(const aicore_image_view& view, std::vector<uint8_t>& out) {
+    Image src;
+    if (!image_from_view(view, src) ||
+        view.row_stride_bytes > size_t(std::numeric_limits<int>::max()) ||
+        size_t(view.height) >
+                std::numeric_limits<size_t>::max() / view.row_stride_bytes)
+        return false;
+    // O(width * height). One RGBA working image (16 MiB at 2048 square)
+    // accepts unaligned/padded caller rows without exposing Qt across the ABI.
+    QImage image(view.width, view.height, QImage::Format_RGBA8888);
+    if (image.isNull()) return false;
+    for (int y = 0; y < view.height; ++y) {
+        const uint8_t* row = src.row(y);
+        uint8_t* dst = image.scanLine(y);
+        for (int x = 0; x < view.width; ++x) {
+            const uint8_t* pixel = row + size_t(x) * src.channels;
+            dst[4 * size_t(x)] = pixel[src.channel_index(0)];
+            dst[4 * size_t(x) + 1] = pixel[src.channel_index(1)];
+            dst[4 * size_t(x) + 2] = pixel[src.channel_index(2)];
+            dst[4 * size_t(x) + 3] = src.channels == 4 ? pixel[3] : 255;
+        }
+    }
+    QByteArray encoded;
+    QBuffer buffer(&encoded);
+    if (!buffer.open(QIODevice::WriteOnly) || !image.save(&buffer, "PNG"))
+        return false;
+    const auto* bytes = reinterpret_cast<const uint8_t*>(encoded.constData());
+    std::vector<uint8_t> result(bytes, bytes + encoded.size());
+    out.swap(result);
     return true;
 }
 

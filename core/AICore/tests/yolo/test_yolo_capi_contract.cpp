@@ -43,16 +43,23 @@ int main() {
     // and the getters must report the values we set.
     aicore_yolo_options* opts = aicore_yolo_options_new();
     AICORE_CHECK(opts != nullptr);
-    AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) == AICORE_YOLO_ATTENTION_UPSTREAM);
-    for (int mode : {AICORE_YOLO_ATTENTION_F32, AICORE_YOLO_ATTENTION_UPSTREAM, AICORE_YOLO_ATTENTION_F32}) {
-        AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(opts, mode) == 0);
-        AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) == mode);
+    AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) ==
+                 AICORE_YOLO_ATTENTION_UPSTREAM);
+    for (int mode : {AICORE_YOLO_ATTENTION_F32, AICORE_YOLO_ATTENTION_UPSTREAM,
+                     AICORE_YOLO_ATTENTION_F32}) {
+        AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(opts,
+                                                                    mode) == 0);
+        AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) ==
+                     mode);
     }
     for (int invalid : {-1, 2, std::numeric_limits<int>::max()}) {
-        AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(opts, invalid) == -1);
-        AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) == AICORE_YOLO_ATTENTION_F32);
+        AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(
+                             opts, invalid) == -1);
+        AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(opts) ==
+                     AICORE_YOLO_ATTENTION_F32);
     }
-    AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(nullptr, AICORE_YOLO_ATTENTION_F32) == -1);
+    AICORE_CHECK(aicore_yolo_options_set_attention_accumulation(
+                         nullptr, AICORE_YOLO_ATTENTION_F32) == -1);
     AICORE_CHECK(aicore_yolo_options_get_attention_accumulation(nullptr) == -1);
     AICORE_CHECK(aicore_yolo_context_attention_accumulation(nullptr) == -1);
     aicore_yolo_options_set_device(opts, "cpu");

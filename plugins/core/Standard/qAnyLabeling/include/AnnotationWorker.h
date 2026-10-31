@@ -82,7 +82,7 @@ private:
         Depth,
         DeepLSD,
         ALIKED,
-        Ram,            // Recognize Anything Model (image-level tagging)
+        Ram,             // Recognize Anything Model (image-level tagging)
         RelateAnything,  // Scene relation inference (object + relation edges)
         Attribute
     };

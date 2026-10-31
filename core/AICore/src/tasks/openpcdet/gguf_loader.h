@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // GGUF model file for OpenPCDet architectures: metadata, hyperparameters,
 // tensor access. Written by scripts/convert_<arch>.py.
 //
@@ -48,53 +55,54 @@ struct hparams {
     arch_kind arch = arch_kind::unknown;
 
     // --- dataset / voxel grid ---
-    std::vector<float> point_cloud_range;   // [x0,y0,z0,x1,y1,z1]
-    std::vector<float> voxel_size;          // [vx,vy,vz]
-    std::vector<int32_t> grid_size;         // [nx,ny,nz]  (nx along x)
+    std::vector<float> point_cloud_range;  // [x0,y0,z0,x1,y1,z1]
+    std::vector<float> voxel_size;         // [vx,vy,vz]
+    std::vector<int32_t> grid_size;        // [nx,ny,nz]  (nx along x)
     int32_t max_points_per_voxel = 32;
-    int32_t max_voxels           = 16000;
+    int32_t max_voxels = 16000;
 
     // --- point features ---
-    int32_t num_point_features   = 4;       // x,y,z,intensity for kitti
-    bool    use_absolute_xyz     = true;
-    bool    with_distance        = false;
+    int32_t num_point_features = 4;  // x,y,z,intensity for kitti
+    bool use_absolute_xyz = true;
+    bool with_distance = false;
 
     // --- VFE (PillarVFE) ---
     std::vector<int32_t> vfe_num_filters;  // e.g. [64]
-    bool    vfe_use_norm           = true;
-    bool    vfe_dynamic            = false;
-    bool    sparse_residual        = false;
+    bool vfe_use_norm = true;
+    bool vfe_dynamic = false;
+    bool sparse_residual = false;
     std::vector<int32_t> sparse_channels;
     std::vector<int32_t> sparse_kernel_sizes;
-    int32_t sparse_out_channels    = 128;
+    int32_t sparse_out_channels = 128;
 
     // --- map_to_bev (PointPillarScatter) ---
-    int32_t num_bev_features       = 64;
+    int32_t num_bev_features = 64;
 
     // --- backbone_2d (BaseBEVBackbone) ---
-    std::vector<int32_t> bb_layer_nums;       // per level
+    std::vector<int32_t> bb_layer_nums;  // per level
     std::vector<int32_t> bb_layer_strides;
     std::vector<int32_t> bb_num_filters;
-    std::vector<float>   bb_upsample_strides;
+    std::vector<float> bb_upsample_strides;
     std::vector<int32_t> bb_num_upsample_filters;
     std::vector<int32_t> bb_deblock_transpose;
 
     // --- dense_head (AnchorHeadSingle) ---
-    int32_t num_class              = 3;
-    dense_head_kind head_kind      = dense_head_kind::anchor_single;
-    int32_t num_dir_bins           = 2;
-    bool    use_direction_classifier = true;
-    int32_t code_size              = 7;
+    int32_t num_class = 3;
+    dense_head_kind head_kind = dense_head_kind::anchor_single;
+    int32_t num_dir_bins = 2;
+    bool use_direction_classifier = true;
+    int32_t code_size = 7;
     // anchor generator: per-anchor-set config
-    std::vector<std::vector<std::vector<float>>> anchor_sizes;        // [set][size_idx][3]
-    std::vector<std::vector<float>>              anchor_rotations;    // [set][rot_idx]
-    std::vector<std::vector<float>>              anchor_bottom_heights; // [set][h_idx]
-    std::vector<int32_t>                         feature_map_strides;
-    std::vector<int32_t>                         anchor_align_center;  // [set], 0 or 1
-    float dir_offset              = 0.0f;
-    float dir_limit_offset        = 0.0f;
-    bool  encode_angle_by_sincos  = false;
-    bool  multi_class_nms         = false;
+    std::vector<std::vector<std::vector<float>>>
+            anchor_sizes;                              // [set][size_idx][3]
+    std::vector<std::vector<float>> anchor_rotations;  // [set][rot_idx]
+    std::vector<std::vector<float>> anchor_bottom_heights;  // [set][h_idx]
+    std::vector<int32_t> feature_map_strides;
+    std::vector<int32_t> anchor_align_center;  // [set], 0 or 1
+    float dir_offset = 0.0f;
+    float dir_limit_offset = 0.0f;
+    bool encode_angle_by_sincos = false;
+    bool multi_class_nms = false;
 
     // AnchorHeadMulti metadata. All flattened arrays are grouped by head.
     int32_t multi_num_heads = 0;
@@ -169,13 +177,13 @@ struct hparams {
     std::string caddn_depth_mode;
 
     // --- post-processing ---
-    float  score_thresh           = 0.1f;
-    float  nms_thresh             = 0.01f;
-    int    nms_pre_maxsize        = 4096;
-    int    max_boxes              = 100;
+    float score_thresh = 0.1f;
+    float nms_thresh = 0.01f;
+    int nms_pre_maxsize = 4096;
+    int max_boxes = 100;
 
     // --- numerical ---
-    float  bn_eps                 = 1e-3f;   // OpenPCDet BN default
+    float bn_eps = 1e-3f;  // OpenPCDet BN default
 
     // PointNet2 and two-stage RoI metadata.
     int32_t sample_points = 0;
@@ -234,20 +242,20 @@ struct hparams {
     std::vector<int32_t> point_head_reg_fc;
 
     // --- focal / multimodal (Focal VoxelRCNN) ---
-    bool    focal_multimodal      = false;
-    int32_t focal_kernel_size     = 3;
-    int32_t focal_image_channel   = 16;
-    bool    focal_topk            = true;
-    float   focal_threshold       = 0.5f;
-    bool    focal_mask_multi      = false;
-    bool    focal_skip_mask_kernel = false;
-    // 方案 C (DETERMINISTIC_FOCAL_DESIGN.md): run the whole focal chain
+    bool focal_multimodal = false;
+    int32_t focal_kernel_size = 3;
+    int32_t focal_image_channel = 16;
+    bool focal_topk = true;
+    float focal_threshold = 0.5f;
+    bool focal_mask_multi = false;
+    bool focal_skip_mask_kernel = false;
+    // Option C (DETERMINISTIC_FOCAL_DESIGN.md): run the whole focal chain
     // (conv_imp + main conv of every FocalSparseConv) through the shared
     // deterministic sparse-conv core instead of ggml mul_mat, so CPU/CUDA/
     // Vulkan agree bit-for-bit. Focal models default to true (set by the
     // loader); a GGUF "focal.deterministic" key can override. Other models
     // never read this field.
-    bool    focal_deterministic   = false;
+    bool focal_deterministic = false;
 
     // --- FastPillars backbone ---
     int32_t fastpillar_base_channels = 64;
@@ -258,30 +266,29 @@ struct hparams {
         // sum over sets of (|rot| * |size| * |height|)
         int32_t n = 0;
         for (size_t s = 0; s < anchor_sizes.size(); s++) {
-            n += (int32_t) (anchor_rotations[s].size() *
-                            anchor_sizes[s].size() *
-                            anchor_bottom_heights[s].size());
+            n += (int32_t)(anchor_rotations[s].size() * anchor_sizes[s].size() *
+                           anchor_bottom_heights[s].size());
         }
         return n;
     }
 };
 
 struct model_file {
-    gguf_context * guf = nullptr;
-    ggml_context * ctx = nullptr;   // tensor metadata; tensor data iff with_data
-    hparams        hp{};
-    std::string    error;
+    gguf_context *guf = nullptr;
+    ggml_context *ctx = nullptr;  // tensor metadata; tensor data iff with_data
+    hparams hp{};
+    std::string error;
 
     model_file() = default;
     model_file(const model_file &) = delete;
-    model_file & operator=(const model_file &) = delete;
+    model_file &operator=(const model_file &) = delete;
     ~model_file() { close(); }
 
-    bool open(const std::string & path, bool with_data);
+    bool open(const std::string &path, bool with_data);
     void close();
 
-    ggml_tensor * tensor(const char * name) const;   // nullptr if absent
-    ggml_tensor * require(const char * name);         // sets error if absent
+    ggml_tensor *tensor(const char *name) const;  // nullptr if absent
+    ggml_tensor *require(const char *name);       // sets error if absent
 };
 
-} // namespace openpcdet
+}  // namespace openpcdet

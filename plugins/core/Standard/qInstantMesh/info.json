@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "InstantMesh Image to 3D",
+  "icon": ":/CC/plugin/qInstantMesh/images/qInstantMesh.svg",
+  "description": "InstantMesh image-to-3D mesh generation (Zero123++ multi-view diffusion + FlexiCubes geometry + baked texture atlas) via native GGML inference, with optional RMBG-2.0 background removal.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "InstantMesh-GGML: https://github.com/Asher-1/InstantMesh-GGML" },
+    { "text": "InstantMesh: https://github.com/TencentARC/InstantMesh" },
+    { "text": "Models (HF): https://huggingface.co/Asher-1/InstantMesh-GUFF" }
+  ]
+}

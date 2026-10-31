@@ -365,6 +365,10 @@ jobs:
         run: |
           pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
+      - name: qPythonRuntime installed binding contracts
+        run: |
+          python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$ACV_BINARY"
+
       - name: Verify qSIBR plugin has no hard CUDA runtime dependency
         # This job runs on a plain GitHub runner (no CUDA toolkit installed),
         # i.e. exactly the target deployment environment. If libQSIBR_PLUGIN.so

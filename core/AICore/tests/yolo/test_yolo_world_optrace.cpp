@@ -106,7 +106,8 @@ yolo::Session* make_session(const char* gguf,
                             int nc,
                             const yolo::LetterboxInfo& info) {
     yolo::SessionOptions opts;
-    if (const char* mode = std::getenv("AICORE_TEST_YOLO_ATTENTION_ACCUMULATION")) {
+    if (const char* mode =
+                std::getenv("AICORE_TEST_YOLO_ATTENTION_ACCUMULATION")) {
         // The test bridges an explicit option; production sessions never read
         // environment variables.
         if (std::strcmp(mode, "0") == 0)
@@ -146,14 +147,16 @@ bool capture_replay(ggml_tensor* tensor, bool ask, void* opaque) {
     if (ask) return tensor == capture.node;
     if (tensor != capture.node) return true;
     capture.valid = true;
-    for (int i = 0; i < 3; ++i) if (tensor->src[i]) {
-        auto* source = tensor->src[i];
-        capture.valid &= ggml_is_contiguous(source);
-        capture.values[i] = to_f32(source);
-        capture.valid &= !capture.values[i].empty();
-        capture.bytes[i].resize(ggml_nbytes(source));
-        ggml_backend_tensor_get(source, capture.bytes[i].data(), 0, capture.bytes[i].size());
-    }
+    for (int i = 0; i < 3; ++i)
+        if (tensor->src[i]) {
+            auto* source = tensor->src[i];
+            capture.valid &= ggml_is_contiguous(source);
+            capture.values[i] = to_f32(source);
+            capture.valid &= !capture.values[i].empty();
+            capture.bytes[i].resize(ggml_nbytes(source));
+            ggml_backend_tensor_get(source, capture.bytes[i].data(), 0,
+                                    capture.bytes[i].size());
+        }
     capture.output = to_f32(tensor);
     capture.valid &= !capture.output.empty();
     return capture.valid;
@@ -163,23 +166,30 @@ bool capture_replay(ggml_tensor* tensor, bool ask, void* opaque) {
 // separate propagated error from error this layer adds.
 // The oracle's O(N*OC*OH*OW*IC*KH*KW) multiply-adds follow the convolution
 // definition and never call a ggml convolution.
-bool replay_conv(yolo::Session* session, size_t index,
-                 yolo::Session* source_session, const ReplayCapture& capture) {
-    if (index >= session->op_values.size() || !session->backend.gpu) return false;
+bool replay_conv(yolo::Session* session,
+                 size_t index,
+                 yolo::Session* source_session,
+                 const ReplayCapture& capture) {
+    if (index >= session->op_values.size() || !session->backend.gpu)
+        return false;
     ggml_tensor* node = session->op_values[index];
-    if (!node || node->op != GGML_OP_CONV_2D || !node->src[0] || !node->src[1]) return false;
+    if (!node || node->op != GGML_OP_CONV_2D || !node->src[0] || !node->src[1])
+        return false;
     // A cross-GPU replay pins the reference's own inputs so propagated
     // upstream error is not attributed to this layer.
     ggml_tensor* source_node = node;
     if (source_session) {
         if (index >= source_session->op_values.size()) return false;
         source_node = source_session->op_values[index];
-        if (!source_node || source_node->op != node->op || source_node->type != node->type ||
+        if (!source_node || source_node->op != node->op ||
+            source_node->type != node->type ||
             !ggml_are_same_shape(source_node, node) ||
-            std::memcmp(source_node->op_params, node->op_params, 8 * sizeof(int32_t)) != 0)
+            std::memcmp(source_node->op_params, node->op_params,
+                        8 * sizeof(int32_t)) != 0)
             return false;
     }
-    ggml_tensor* original[] = {source_node->src[0], source_node->src[1], source_node->src[2]};
+    ggml_tensor* original[] = {source_node->src[0], source_node->src[1],
+                               source_node->src[2]};
     if (!capture.valid || capture.node != source_node) return false;
     const auto& w = capture.values[0];
     const auto& x = capture.values[1];
@@ -188,27 +198,41 @@ bool replay_conv(yolo::Session* session, size_t index,
     auto* ctx = ggml_init({1024 * 1024, nullptr, true});
     if (!ctx) return false;
     ggml_tensor* sources[3] = {};
-    for (int i = 0; i < 3; ++i) if (original[i]) sources[i] = ggml_dup_tensor(ctx, original[i]);
+    for (int i = 0; i < 3; ++i)
+        if (original[i]) sources[i] = ggml_dup_tensor(ctx, original[i]);
     int params[6];
     for (int i = 0; i < 6; ++i) params[i] = node->op_params[i];
     const bool fused = node->op_params[7] == 1;
-    auto* out = fused ? ggml_conv_2d_direct_bias_silu(ctx, sources[0], sources[1], sources[2],
-            params[0], params[1], params[2], params[3], params[4], params[5]) :
-            ggml_conv_2d_direct(ctx, sources[0], sources[1], params[0], params[1],
-                               params[2], params[3], params[4], params[5]);
+    auto* out = fused ? ggml_conv_2d_direct_bias_silu(
+                                ctx, sources[0], sources[1], sources[2],
+                                params[0], params[1], params[2], params[3],
+                                params[4], params[5])
+                      : ggml_conv_2d_direct(ctx, sources[0], sources[1],
+                                            params[0], params[1], params[2],
+                                            params[3], params[4], params[5]);
     auto* graph = ggml_new_graph(ctx);
     ggml_build_forward_expand(graph, out);
     auto* buffer = ggml_backend_alloc_ctx_tensors(ctx, session->backend.gpu);
-    if (!buffer) { ggml_free(ctx); return false; }
-    for (int i = 0; i < 3; ++i) if (sources[i]) {
-        // Use the snapshot taken during compute; an intermediate cast may
-        // already have been reused by the allocator after the full graph ends.
-        if (capture.bytes[i].size() != ggml_nbytes(sources[i])) {
-            ggml_backend_buffer_free(buffer); ggml_free(ctx); return false;
-        }
-        ggml_backend_tensor_set(sources[i], capture.bytes[i].data(), 0, capture.bytes[i].size());
+    if (!buffer) {
+        ggml_free(ctx);
+        return false;
     }
-    const bool computed = ggml_backend_graph_compute(session->backend.gpu, graph) == GGML_STATUS_SUCCESS;
+    for (int i = 0; i < 3; ++i)
+        if (sources[i]) {
+            // Use the snapshot taken during compute; an intermediate cast may
+            // already have been reused by the allocator after the full graph
+            // ends.
+            if (capture.bytes[i].size() != ggml_nbytes(sources[i])) {
+                ggml_backend_buffer_free(buffer);
+                ggml_free(ctx);
+                return false;
+            }
+            ggml_backend_tensor_set(sources[i], capture.bytes[i].data(), 0,
+                                    capture.bytes[i].size());
+        }
+    const bool computed =
+            ggml_backend_graph_compute(session->backend.gpu, graph) ==
+            GGML_STATUS_SUCCESS;
     const auto actual = computed ? to_f32(out) : std::vector<float>{};
     bool valid = !actual.empty() && actual.size() == original_output.size();
     double squared = 0, reference_squared = 0;
@@ -217,26 +241,33 @@ bool replay_conv(yolo::Session* session, size_t index,
     size_t worst = 0;
     float worst_expected = 0;
     const int64_t kw = original[0]->ne[0], kh = original[0]->ne[1];
-    const int64_t iw = original[1]->ne[0], ih = original[1]->ne[1], ic = original[1]->ne[2];
+    const int64_t iw = original[1]->ne[0], ih = original[1]->ne[1],
+                  ic = original[1]->ne[2];
     const int64_t ow = out->ne[0], oh = out->ne[1], oc = out->ne[2];
     for (size_t i = 0; valid && i < actual.size(); ++i) {
         const int64_t px = i % ow, py = (i / ow) % oh;
-        const int64_t channel = (i / (ow * oh)) % oc, batch = i / (ow * oh * oc);
+        const int64_t channel = (i / (ow * oh)) % oc,
+                      batch = i / (ow * oh * oc);
         double sum = 0;
-        for (int64_t c = 0; c < ic; ++c) for (int64_t ky = 0; ky < kh; ++ky)
-        for (int64_t kx = 0; kx < kw; ++kx) {
-            const int64_t sx = px * params[0] - params[2] + kx * params[4];
-            const int64_t sy = py * params[1] - params[3] + ky * params[5];
-            if (sx >= 0 && sx < iw && sy >= 0 && sy < ih)
-                sum += double(x[((batch * ic + c) * ih + sy) * iw + sx]) *
-                       w[((channel * ic + c) * kh + ky) * kw + kx];
-        }
+        for (int64_t c = 0; c < ic; ++c)
+            for (int64_t ky = 0; ky < kh; ++ky)
+                for (int64_t kx = 0; kx < kw; ++kx) {
+                    const int64_t sx =
+                            px * params[0] - params[2] + kx * params[4];
+                    const int64_t sy =
+                            py * params[1] - params[3] + ky * params[5];
+                    if (sx >= 0 && sx < iw && sy >= 0 && sy < ih)
+                        sum += double(x[((batch * ic + c) * ih + sy) * iw +
+                                        sx]) *
+                               w[((channel * ic + c) * kh + ky) * kw + kx];
+                }
         if (fused) {
             sum += bias[channel];
             sum /= 1.0 + std::exp(-sum);
         }
         float expected = float(sum);
-        if (out->type == GGML_TYPE_F16) expected = ggml_fp16_to_fp32(ggml_fp32_to_fp16(expected));
+        if (out->type == GGML_TYPE_F16)
+            expected = ggml_fp16_to_fp32(ggml_fp32_to_fp16(expected));
         const float error = std::abs(actual[i] - expected);
         valid &= std::isfinite(actual[i]) && std::isfinite(expected);
         squared += double(error) * error;
@@ -246,22 +277,37 @@ bool replay_conv(yolo::Session* session, size_t index,
         candidate_better += error < reference_error;
         reference_better += reference_error < error;
         equal_outputs += actual[i] == original_output[i];
-        if (error > maximum) { maximum = error; worst = i; worst_expected = expected; }
-        repeat_error = std::max(repeat_error, std::abs(actual[i] - original_output[i]));
+        if (error > maximum) {
+            maximum = error;
+            worst = i;
+            worst_expected = expected;
+        }
+        repeat_error = std::max(repeat_error,
+                                std::abs(actual[i] - original_output[i]));
     }
-    std::printf("[replay] input_origin=%s op=%zu W=%s X=%s Y=%s fused=%d kernel=%lldx%lld IC=%lld OC=%lld "
-                "n=%zu oracle_max=%.9g oracle_rms=%.9g comparison_max=%.9g worst=%zu actual=%.9g expected=%.9g valid=%d\n",
-                source_session ? "reference" : "candidate", index,
-                ggml_type_name(original[0]->type), ggml_type_name(original[1]->type),
-                ggml_type_name(out->type), fused, (long long)kw, (long long)kh,
-                (long long)ic, (long long)oc, actual.size(), maximum,
-                actual.empty() ? 0 : std::sqrt(squared / actual.size()), repeat_error,
-                worst, actual.empty() ? 0 : actual[worst], worst_expected, valid);
+    std::printf(
+            "[replay] input_origin=%s op=%zu W=%s X=%s Y=%s fused=%d "
+            "kernel=%lldx%lld IC=%lld OC=%lld "
+            "n=%zu oracle_max=%.9g oracle_rms=%.9g comparison_max=%.9g "
+            "worst=%zu actual=%.9g expected=%.9g valid=%d\n",
+            source_session ? "reference" : "candidate", index,
+            ggml_type_name(original[0]->type),
+            ggml_type_name(original[1]->type), ggml_type_name(out->type), fused,
+            (long long)kw, (long long)kh, (long long)ic, (long long)oc,
+            actual.size(), maximum,
+            actual.empty() ? 0 : std::sqrt(squared / actual.size()),
+            repeat_error, worst, actual.empty() ? 0 : actual[worst],
+            worst_expected, valid);
     if (source_session)
-        std::printf("[replay] reference_oracle_max=%.9g reference_oracle_rms=%.9g "
-                    "candidate_better=%zu reference_better=%zu equal_outputs=%zu/%zu\n",
-                    reference_maximum, actual.empty() ? 0 : std::sqrt(reference_squared / actual.size()),
-                    candidate_better, reference_better, equal_outputs, actual.size());
+        std::printf(
+                "[replay] reference_oracle_max=%.9g reference_oracle_rms=%.9g "
+                "candidate_better=%zu reference_better=%zu "
+                "equal_outputs=%zu/%zu\n",
+                reference_maximum,
+                actual.empty() ? 0
+                               : std::sqrt(reference_squared / actual.size()),
+                candidate_better, reference_better, equal_outputs,
+                actual.size());
     ggml_backend_buffer_free(buffer);
     ggml_free(ctx);
     return valid;
@@ -279,32 +325,44 @@ ggml_tensor* select_matmul(yolo::Session* session, size_t ordinal) {
 // separates accumulation precision from upstream error.
 // O(batch*M*N*K) follows the matrix-multiplication definition; the output
 // snapshot holds at most 8M elements (32 MiB).
-bool replay_matmul(yolo::Session* session, size_t ordinal, const ReplayCapture& capture) {
+bool replay_matmul(yolo::Session* session,
+                   size_t ordinal,
+                   const ReplayCapture& capture) {
     auto* node = select_matmul(session, ordinal);
     if (!node || !capture.valid || !session->backend.gpu || !capture.node ||
-        capture.node->op != GGML_OP_MUL_MAT || !ggml_are_same_shape(node, capture.node) ||
-        node->type != GGML_TYPE_F32 || capture.output.size() > 8 * 1024 * 1024) return false;
+        capture.node->op != GGML_OP_MUL_MAT ||
+        !ggml_are_same_shape(node, capture.node) ||
+        node->type != GGML_TYPE_F32 || capture.output.size() > 8 * 1024 * 1024)
+        return false;
     auto* a = capture.node->src[0];
     auto* b = capture.node->src[1];
     if (!a || !b || !ggml_are_same_shape(a, node->src[0]) ||
-        !ggml_are_same_shape(b, node->src[1]) || a->type != node->src[0]->type ||
-        b->type != node->src[1]->type || b->ne[2] % a->ne[2] || b->ne[3] % a->ne[3]) return false;
+        !ggml_are_same_shape(b, node->src[1]) ||
+        a->type != node->src[0]->type || b->type != node->src[1]->type ||
+        b->ne[2] % a->ne[2] || b->ne[3] % a->ne[3])
+        return false;
     const int64_t K = a->ne[0], M = a->ne[1], N = b->ne[1];
     std::vector<float> expected(capture.output.size());
     float reference_max = 0;
     for (size_t i = 0; i < expected.size(); ++i) {
         const int64_t m = i % M, n = (i / M) % N;
-        const int64_t batch2 = (i / (M * N)) % b->ne[2], batch3 = i / (M * N * b->ne[2]);
-        const int64_t a2 = batch2 / (b->ne[2] / a->ne[2]), a3 = batch3 / (b->ne[3] / a->ne[3]);
+        const int64_t batch2 = (i / (M * N)) % b->ne[2],
+                      batch3 = i / (M * N * b->ne[2]);
+        const int64_t a2 = batch2 / (b->ne[2] / a->ne[2]),
+                      a3 = batch3 / (b->ne[3] / a->ne[3]);
         const size_t ai = ((a3 * a->ne[2] + a2) * M + m) * K;
         const size_t bi = ((batch3 * b->ne[2] + batch2) * N + n) * K;
-        if (ai + K > capture.values[0].size() || bi + K > capture.values[1].size()) return false;
+        if (ai + K > capture.values[0].size() ||
+            bi + K > capture.values[1].size())
+            return false;
         double sum = 0;
         for (int64_t k = 0; k < K; ++k)
-            sum += double(capture.values[0][ai + k]) * capture.values[1][bi + k];
+            sum += double(capture.values[0][ai + k]) *
+                   capture.values[1][bi + k];
         expected[i] = float(sum);
         if (!std::isfinite(expected[i])) return false;
-        reference_max = std::max(reference_max, std::abs(capture.output[i] - expected[i]));
+        reference_max = std::max(reference_max,
+                                 std::abs(capture.output[i] - expected[i]));
     }
     bool all_valid = true;
     for (bool f32 : {false, true}) {
@@ -315,7 +373,8 @@ bool replay_matmul(yolo::Session* session, size_t ordinal, const ReplayCapture& 
         ggml_set_name(ac, a->name);
         ggml_set_name(bc, b->name);
         auto* out = ggml_mul_mat(ctx, ac, bc);
-        std::memcpy(out->op_params, capture.node->op_params, sizeof(out->op_params));
+        std::memcpy(out->op_params, capture.node->op_params,
+                    sizeof(out->op_params));
         ggml_set_name(out, capture.node->name);
         if (f32 && !ggml_prec_set_acc(out, GGML_PREC_F32)) {
             ggml_free(ctx);
@@ -323,37 +382,55 @@ bool replay_matmul(yolo::Session* session, size_t ordinal, const ReplayCapture& 
         }
         auto* graph = ggml_new_graph(ctx);
         ggml_build_forward_expand(graph, out);
-        auto* buffer = ggml_backend_alloc_ctx_tensors(ctx, session->backend.gpu);
-        if (!buffer) { ggml_free(ctx); return false; }
-        ggml_backend_tensor_set(ac, capture.bytes[0].data(), 0, capture.bytes[0].size());
-        ggml_backend_tensor_set(bc, capture.bytes[1].data(), 0, capture.bytes[1].size());
-        std::vector<float> poison(expected.size(), std::numeric_limits<float>::quiet_NaN());
+        auto* buffer =
+                ggml_backend_alloc_ctx_tensors(ctx, session->backend.gpu);
+        if (!buffer) {
+            ggml_free(ctx);
+            return false;
+        }
+        ggml_backend_tensor_set(ac, capture.bytes[0].data(), 0,
+                                capture.bytes[0].size());
+        ggml_backend_tensor_set(bc, capture.bytes[1].data(), 0,
+                                capture.bytes[1].size());
+        std::vector<float> poison(expected.size(),
+                                  std::numeric_limits<float>::quiet_NaN());
         std::vector<float> first;
         float maximum = 0, comparison = 0, repeat_error = 0;
         double squared = 0;
         bool valid = true;
         for (int repeat = 0; repeat < 3; ++repeat) {
-            ggml_backend_tensor_set(out, poison.data(), 0, poison.size() * sizeof(float));
-            valid &= ggml_backend_graph_compute(session->backend.gpu, graph) == GGML_STATUS_SUCCESS;
+            ggml_backend_tensor_set(out, poison.data(), 0,
+                                    poison.size() * sizeof(float));
+            valid &= ggml_backend_graph_compute(session->backend.gpu, graph) ==
+                     GGML_STATUS_SUCCESS;
             const auto actual = valid ? to_f32(out) : std::vector<float>{};
             valid &= actual.size() == expected.size();
             for (size_t i = 0; valid && i < actual.size(); ++i) {
                 valid &= std::isfinite(actual[i]);
                 const float error = std::abs(actual[i] - expected[i]);
                 maximum = std::max(maximum, error);
-                comparison = std::max(comparison, std::abs(actual[i] - capture.output[i]));
-                if (repeat == 0) squared += double(error) * error;
-                else repeat_error = std::max(repeat_error, std::abs(actual[i] - first[i]));
+                comparison = std::max(comparison,
+                                      std::abs(actual[i] - capture.output[i]));
+                if (repeat == 0)
+                    squared += double(error) * error;
+                else
+                    repeat_error = std::max(repeat_error,
+                                            std::abs(actual[i] - first[i]));
             }
             if (repeat == 0) first = actual;
         }
         valid &= repeat_error == 0;
-        std::printf("[matmul-replay] ordinal=%zu precision=%s A=%s B=%s K=%lld M=%lld N=%lld "
-                    "n=%zu oracle_max=%.9g oracle_rms=%.9g reference_oracle_max=%.9g "
-                    "comparison_max=%.9g repeat_error=%.9g valid=%d\n", ordinal, f32 ? "f32" : "default",
-                    ggml_type_name(a->type), ggml_type_name(b->type), (long long)K, (long long)M, (long long)N,
-                    expected.size(), maximum, std::sqrt(squared / expected.size()), reference_max,
-                    comparison, repeat_error, valid);
+        std::printf(
+                "[matmul-replay] ordinal=%zu precision=%s A=%s B=%s K=%lld "
+                "M=%lld N=%lld "
+                "n=%zu oracle_max=%.9g oracle_rms=%.9g "
+                "reference_oracle_max=%.9g "
+                "comparison_max=%.9g repeat_error=%.9g valid=%d\n",
+                ordinal, f32 ? "f32" : "default", ggml_type_name(a->type),
+                ggml_type_name(b->type), (long long)K, (long long)M,
+                (long long)N, expected.size(), maximum,
+                std::sqrt(squared / expected.size()), reference_max, comparison,
+                repeat_error, valid);
         all_valid &= valid;
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
@@ -370,10 +447,13 @@ int main() {
     const char* text_model = std::getenv("AICORE_TEST_YOLO_TEXT_MODEL");
     const char* device_env = std::getenv("AICORE_TEST_YOLO_PARITY_DEVICE");
     const std::string gpu_device = device_env != nullptr ? device_env : "cuda";
-    const char* reference_env = std::getenv("AICORE_TEST_YOLO_REFERENCE_DEVICE");
+    const char* reference_env =
+            std::getenv("AICORE_TEST_YOLO_REFERENCE_DEVICE");
     const std::string reference_device = reference_env ? reference_env : "cpu";
-    std::printf("[optrace] reference=%s candidate=%s; parity diagnostic, not independent truth\n",
-                reference_device.c_str(), gpu_device.c_str());
+    std::printf(
+            "[optrace] reference=%s candidate=%s; parity diagnostic, not "
+            "independent truth\n",
+            reference_device.c_str(), gpu_device.c_str());
     if (gguf == nullptr || image == nullptr) {
         std::printf("[optrace] skipped: AICORE_TEST_YOLO_GGUF/IMAGE needed\n");
         return 77;
@@ -410,7 +490,8 @@ int main() {
         }
     }
 
-    yolo::Session* reference = make_session(gguf, reference_device.c_str(), embed, nc, info);
+    yolo::Session* reference =
+            make_session(gguf, reference_device.c_str(), embed, nc, info);
     yolo::Session* gpu =
             make_session(gguf, gpu_device.c_str(), embed, nc, info);
     if (reference == nullptr || gpu == nullptr) {
@@ -434,20 +515,31 @@ int main() {
         char* end = nullptr;
         const long index = std::strtol(replay, &end, 10);
         bool installed = end != replay && *end == '\0' && index >= 0;
-        const bool cross = std::getenv("AICORE_TEST_YOLO_REPLAY_REFERENCE_INPUT") != nullptr;
+        const bool cross =
+                std::getenv("AICORE_TEST_YOLO_REPLAY_REFERENCE_INPUT") !=
+                nullptr;
         auto install = [&](yolo::Session* session, ReplayCapture& capture) {
             if (!installed || !session->backend.sched) return false;
-            if (replay_mm) capture.node = select_matmul(session, static_cast<size_t>(index));
+            if (replay_mm)
+                capture.node =
+                        select_matmul(session, static_cast<size_t>(index));
             else if (static_cast<size_t>(index) < session->op_values.size())
                 capture.node = session->op_values[index];
-            if (!capture.node || capture.node->op != (replay_mm ? GGML_OP_MUL_MAT : GGML_OP_CONV_2D)) return false;
-            ggml_backend_sched_set_eval_callback(session->backend.sched, capture_replay, &capture);
+            if (!capture.node ||
+                capture.node->op !=
+                        (replay_mm ? GGML_OP_MUL_MAT : GGML_OP_CONV_2D))
+                return false;
+            ggml_backend_sched_set_eval_callback(session->backend.sched,
+                                                 capture_replay, &capture);
             return true;
         };
         installed = installed && install(gpu, candidate_capture);
-        if (cross) installed = installed && install(reference, reference_capture);
+        if (cross)
+            installed = installed && install(reference, reference_capture);
         if (!installed) {
-            std::fprintf(stderr, "[replay] cannot capture the real layer inputs; no numeric conclusion is allowed\n");
+            std::fprintf(stderr,
+                         "[replay] cannot capture the real layer inputs; no "
+                         "numeric conclusion is allowed\n");
             yolo::free_session(reference);
             yolo::free_session(gpu);
             return 1;
@@ -465,7 +557,9 @@ int main() {
         char* end = nullptr;
         const long index = std::strtol(replay, &end, 10);
         bool valid = end != replay && *end == '\0' && index >= 0;
-        const bool cross = std::getenv("AICORE_TEST_YOLO_REPLAY_REFERENCE_INPUT") != nullptr;
+        const bool cross =
+                std::getenv("AICORE_TEST_YOLO_REPLAY_REFERENCE_INPUT") !=
+                nullptr;
         const auto& capture = cross ? reference_capture : candidate_capture;
         valid &= capture.valid;
         // op0's known image cast is a lifetime regression assertion: it must
@@ -474,16 +568,29 @@ int main() {
             const auto& captured = capture.values[1];
             valid = captured.size() == canvas.size();
             for (size_t i = 0; valid && i < captured.size(); ++i) {
-                const float expected = capture.node->src[1]->type == GGML_TYPE_F16
-                    ? ggml_fp16_to_fp32(ggml_fp32_to_fp16(canvas[i])) : canvas[i];
+                const float expected =
+                        capture.node->src[1]->type == GGML_TYPE_F16
+                                ? ggml_fp16_to_fp32(
+                                          ggml_fp32_to_fp16(canvas[i]))
+                                : canvas[i];
                 valid &= captured[i] == expected;
             }
-            if (!valid) std::fprintf(stderr, "[replay] the image input is stale; it does not qualify for oracle comparison\n");
+            if (!valid)
+                std::fprintf(stderr,
+                             "[replay] the image input is stale; it does not "
+                             "qualify for oracle comparison\n");
         }
-        valid = valid && (replay_mm ? replay_matmul(gpu, static_cast<size_t>(index), capture) :
-            replay_conv(gpu, static_cast<size_t>(index), cross ? reference : nullptr, capture));
-        if (reference->backend.sched) ggml_backend_sched_set_eval_callback(reference->backend.sched, nullptr, nullptr);
-        if (gpu->backend.sched) ggml_backend_sched_set_eval_callback(gpu->backend.sched, nullptr, nullptr);
+        valid = valid &&
+                (replay_mm ? replay_matmul(gpu, static_cast<size_t>(index),
+                                           capture)
+                           : replay_conv(gpu, static_cast<size_t>(index),
+                                         cross ? reference : nullptr, capture));
+        if (reference->backend.sched)
+            ggml_backend_sched_set_eval_callback(reference->backend.sched,
+                                                 nullptr, nullptr);
+        if (gpu->backend.sched)
+            ggml_backend_sched_set_eval_callback(gpu->backend.sched, nullptr,
+                                                 nullptr);
         yolo::free_session(reference);
         yolo::free_session(gpu);
         return valid ? 0 : 1;
@@ -527,7 +634,8 @@ int main() {
             std::printf(
                     "[optrace] op %zu (%s): element count differs "
                     "(%zu vs %zu)\n",
-                    i, reference->model.ops[i].type.c_str(), ha.size(), hb.size());
+                    i, reference->model.ops[i].type.c_str(), ha.size(),
+                    hb.size());
             if (first_bad < 0) first_bad = (int)i;
             continue;
         }
@@ -560,7 +668,9 @@ int main() {
     std::printf("[optrace] compared %zu/%zu ops (%zu null)\n", n_compared,
                 n_ops, n_null);
     if (first_bad < 0) {
-        std::printf("[optrace] within the diagnostic threshold; this is not bitwise equality or an independent accuracy gate\n");
+        std::printf(
+                "[optrace] within the diagnostic threshold; this is not "
+                "bitwise equality or an independent accuracy gate\n");
     } else {
         std::printf("[optrace] FIRST DIVERGENCE at user-op %d (%s)\n",
                     first_bad, reference->model.ops[first_bad].type.c_str());
@@ -633,7 +743,8 @@ int main() {
     describe("gpu proto f32", gpu->output_proto);
     if (gpu->output_proto != nullptr && gpu->output_proto->src[0] != nullptr)
         describe("gpu proto f16", gpu->output_proto->src[0]);
-    if (reference->output_proto != nullptr && reference->output_proto->src[0] != nullptr)
+    if (reference->output_proto != nullptr &&
+        reference->output_proto->src[0] != nullptr)
         describe("reference source", reference->output_proto->src[0]);
     describe("reference output", reference->output);
     describe("gpu output", gpu->output);

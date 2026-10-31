@@ -1,31 +1,42 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // AnyCalib public-ABI model-free contract: catalog lookup, allocation release
 // and error-output ownership.
-#include "aicore/anycalib_capi.h"
-#include "tests/common/test_macros.hpp"
-
 #include <cstring>
 #include <filesystem>
 #include <string>
+
+#include "aicore/anycalib_capi.h"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
 int main() {
     AICORE_CHECK(aicore_anycalib_abi_version() == 1);
     AICORE_CHECK(aicore_anycalib_model_by_filename(nullptr) == nullptr);
-    AICORE_CHECK(aicore_anycalib_model_by_filename("not-a-model.gguf") == nullptr);
+    AICORE_CHECK(aicore_anycalib_model_by_filename("not-a-model.gguf") ==
+                 nullptr);
     AICORE_CHECK(aicore_anycalib_model_at(-1) == nullptr);
-    AICORE_CHECK(aicore_anycalib_model_at(aicore_anycalib_model_count()) == nullptr);
+    AICORE_CHECK(aicore_anycalib_model_at(aicore_anycalib_model_count()) ==
+                 nullptr);
     AICORE_CHECK(aicore_anycalib_model_count() > 0);
     for (int i = 0; i < aicore_anycalib_model_count(); ++i) {
         const auto* entry = aicore_anycalib_model_at(i);
         AICORE_CHECK(entry != nullptr && entry->filename != nullptr);
         if (entry && entry->filename)
-            AICORE_CHECK(aicore_anycalib_model_by_filename(entry->filename) == entry);
+            AICORE_CHECK(aicore_anycalib_model_by_filename(entry->filename) ==
+                         entry);
     }
     char* cache = aicore_anycalib_model_cache_dir();
     AICORE_CHECK(cache != nullptr);
     if (cache) {
-        AICORE_CHECK(std::filesystem::path(cache).filename() == "anycalib_models");
+        AICORE_CHECK(std::filesystem::path(cache).filename() ==
+                     "anycalib_models");
         aicore_anycalib_free_buffer(cache);
     }
     aicore_anycalib_options_set_threads(nullptr, 2);
@@ -41,7 +52,8 @@ int main() {
     float* rays = reinterpret_cast<float*>(1);
     float* tangent = reinterpret_cast<float*>(1);
     int32_t count = 99;
-    AICORE_CHECK(aicore_anycalib_run(ctx, nullptr, &rays, &tangent, &count) < 0);
+    AICORE_CHECK(aicore_anycalib_run(ctx, nullptr, &rays, &tangent, &count) <
+                 0);
     AICORE_CHECK(rays == nullptr && tangent == nullptr && count == 0);
     aicore_anycalib_free(ctx);
     aicore_anycalib_shutdown();

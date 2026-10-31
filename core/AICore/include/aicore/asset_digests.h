@@ -210,6 +210,22 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"rmbg_f16.gguf", "50aaf0c7570df97b3767909394d9a63c93effe9f01dc863b17fa69d5f76eb8e3" },
         {"rmbg_f32.gguf", "73fa93582743128e392b6e5b6be821e5b67361dcd5a5c0deca0ae4077e4c0ddd" },
         {"rmbg_q8.gguf", "a2f432614d91057614c59745d40a1770b1a84455f5f853174629b05fc7c8e079" },
+
+        // InstantMesh (Asher-1/InstantMesh-GUFF Hugging Face LFS oids)
+        {"instantmesh_models/dino_f16.gguf", "ab09647993c954e9281a595a410839e60012f75cc44b5272a6a399d5610dd88f" },
+        {"instantmesh_models/dino_q8.gguf", "d36498038695ca9f15a261a1720ba3b345d8e7fd93659533f242c9f353969b03" },
+        {"instantmesh_models/dino_f32.gguf", "388248c31e86620065abd3716ce1cd24737d009f0645fbdb3dd78c78eb7cfe85" },
+        {"instantmesh_models/lrm_transformer_f16.gguf", "f49a3fa0b12e831bc77644b4386fe0dab9ca961cd99df83b0a3f0bd5a7d9fdea" },
+        {"instantmesh_models/lrm_transformer_q8.gguf", "3e0b458c43bd51fd62e5d3131ef7f1e36c5da3b8056952fe433b52012705d1a3" },
+        {"instantmesh_models/lrm_transformer_f32.gguf", "6a644ce6c4e99fa9e78fe39b71c649a86646465bd06e3045782a980056c9b03f" },
+        {"instantmesh_models/synthesizer_f16.gguf", "712ac79db8c56ac0c69bb283b76adf267ea5220fad7befef812ce1f8fc283521" },
+        {"instantmesh_models/synthesizer_q8.gguf", "e1419a06dbadb2be4d50ae7aece54c5aefc09a30ad5c44452e34bbff8ece691b" },
+        {"instantmesh_models/synthesizer_f32.gguf", "b6396e6fd1f78f1ab2f167e41678e6e3ce3f13e97171ea75c514b4ac1edfc39d" },
+        {"instantmesh_models/zero123pp_cond_f32.gguf", "1c810da58151c627d88c19e38eb605634a73c681cc8f669a5e25a87cc94ec128" },
+        {"instantmesh_models/zero123pp_unet_f16.gguf", "983602d7bfd802083627a32895f266a96e5363d609a7d8b763bcd4e977295222" },
+        {"instantmesh_models/zero123pp_unet_f32.gguf", "f07135c6474498c21796cd7baade1b5681f77c420321a74a8d3c67f541371d3e" },
+        {"instantmesh_models/zero123pp_vae_f16.gguf", "b91feec6ab803d9b7a19d1b21b6ad9ad1220e575d1def4f94bf0ddb39306baa1" },
+        {"instantmesh_models/zero123pp_vae_f32.gguf", "6399f42fdf2280d518d46b5e0f6723ca9b5b4571d86abef0e5ad2c84d67218f4" },
         // OpenPCDet phase-1 release (OpenPCDet-GGUF). The q8_0 rows of
         // kitti_pointpillar / nuscenes_pointpillar_multihead are byte-identical
         // to their f16 counterparts in the published release, so the digests

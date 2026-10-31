@@ -22,9 +22,9 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
 #else
     namespace B = ecvAICoreBatch;
     B::Session session;
-    const auto prep = B::prepare(cmd, COMMAND_LLM_GENERATE, "llm",
-                                "Local LLM/VLM text generation", {&options()},
-                                &session);
+    const auto prep =
+            B::prepare(cmd, COMMAND_LLM_GENERATE, "llm",
+                       "Local LLM/VLM text generation", {&options()}, &session);
     if (prep != B::Prep::Run) return prep == B::Prep::Done;
     auto& args = session.args;
     const QString cache = B::takeCString(aicore_llm_model_cache_dir(),
@@ -39,7 +39,8 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
             rows.push_back({name, QString::fromUtf8(entry->display_name),
                             QString::fromUtf8(entry->download_url),
                             QDir(cache).filePath(name),
-                            entry->role == AICORE_LLM_ROLE_MODEL ? "model" : "mmproj"});
+                            entry->role == AICORE_LLM_ROLE_MODEL ? "model"
+                                                                 : "mmproj"});
         }
         return B::listModels(cmd, session, rows);
     }
@@ -48,7 +49,8 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
     const QByteArray system = args.str("SYSTEM").toUtf8();
     if (prompt.trimmed().isEmpty()) return cmd.error("PROMPT is required");
     auto request = aicore_llm_default_request();
-    const int maxTokens = args.toInt("MAX_TOKENS", static_cast<int>(request.max_tokens));
+    const int maxTokens =
+            args.toInt("MAX_TOKENS", static_cast<int>(request.max_tokens));
     const float temperature = args.toFloat("TEMPERATURE", request.temperature);
     args.toBool("RECURSIVE", false);
     if (!args.ok()) return cmd.error(args.error());
@@ -58,7 +60,8 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
     request.max_tokens = static_cast<uint32_t>(maxTokens);
     request.temperature = temperature;
 
-    const bool imagesRequested = args.has("IMAGE") || args.has("INPUT_DIR") || args.has("INPUT_LIST");
+    const bool imagesRequested = args.has("IMAGE") || args.has("INPUT_DIR") ||
+                                 args.has("INPUT_LIST");
     std::vector<B::Item> inputs;
     QString error;
     if (imagesRequested) {
@@ -66,29 +69,37 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
     } else {
         inputs.push_back({QString(), QStringLiteral("response")});
     }
-    const auto* defaultModel = aicore_llm_model_at(aicore_llm_model_default_index());
-    const QString model = B::resolveModelPath(args.str("MODEL"), cache,
-        defaultModel ? QString::fromUtf8(defaultModel->filename) : QString());
+    const auto* defaultModel =
+            aicore_llm_model_at(aicore_llm_model_default_index());
+    const QString model = B::resolveModelPath(
+            args.str("MODEL"), cache,
+            defaultModel ? QString::fromUtf8(defaultModel->filename)
+                         : QString());
     auto entryFor = [](const QString& path) {
         const QByteArray name = QFileInfo(path).fileName().toUtf8();
         return aicore_llm_model_by_filename(name.constData());
     };
-    // 元数据来自公共 catalog；校验流式读取，不复制整份 GGUF，也不写原资产收据。
+    // Metadata comes from the public catalog; stream validation without copying
+    // the GGUF or writing original asset receipts.
     auto ensureAsset = [&](const QString& path, int role) {
         const auto* entry = entryFor(path);
         if (entry && entry->role != role) {
             error = QStringLiteral("Wrong LLM asset role: %1").arg(path);
             return false;
         }
-        const B::ModelSource source = entry
-            ? B::ModelSource{QString::fromUtf8(entry->download_url), QString::fromLatin1(entry->sha256)}
-            : B::ModelSource{};
-        if (!B::ensureModel(cmd, path, source, session.download, &error)) return false;
+        const B::ModelSource source =
+                entry ? B::ModelSource{QString::fromUtf8(entry->download_url),
+                                       QString::fromLatin1(entry->sha256)}
+                      : B::ModelSource{};
+        if (!B::ensureModel(cmd, path, source, session.download, &error))
+            return false;
         if (entry) {
             if (QFileInfo(path).size() != entry->size_bytes ||
                 !ecvAssetIntegrity::verifyNow(path,
-                    {QCryptographicHash::Sha256, QByteArray(entry->sha256)})) {
-                error = QStringLiteral("LLM asset SHA-256/size mismatch: %1").arg(path);
+                                              {QCryptographicHash::Sha256,
+                                               QByteArray(entry->sha256)})) {
+                error = QStringLiteral("LLM asset SHA-256/size mismatch: %1")
+                                .arg(path);
                 return false;
             }
         } else if (!ecvAssetIntegrity::passesCheapChecks(path, 0, true)) {
@@ -99,29 +110,41 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
     };
     if (!ensureAsset(model, AICORE_LLM_ROLE_MODEL)) return cmd.error(error);
     const auto* modelEntry = entryFor(model);
-    const QString recommended = imagesRequested && modelEntry && modelEntry->mmproj_filename
-        ? QString::fromUtf8(modelEntry->mmproj_filename) : QString();
-    const QString projectorToken = args.has("MMPROJ") ? args.str("MMPROJ") : recommended;
-    const QString projector = projectorToken.isEmpty() ? QString()
-        : B::resolveModelPath(projectorToken, cache);
+    const QString recommended =
+            imagesRequested && modelEntry && modelEntry->mmproj_filename
+                    ? QString::fromUtf8(modelEntry->mmproj_filename)
+                    : QString();
+    const QString projectorToken =
+            args.has("MMPROJ") ? args.str("MMPROJ") : recommended;
+    const QString projector =
+            projectorToken.isEmpty()
+                    ? QString()
+                    : B::resolveModelPath(projectorToken, cache);
     if (imagesRequested && projector.isEmpty())
-        return cmd.error("Selected LLM model does not accept images without MMPROJ");
-    if (!projector.isEmpty() && !ensureAsset(projector, AICORE_LLM_ROLE_MMPROJ)) return cmd.error(error);
+        return cmd.error(
+                "Selected LLM model does not accept images without MMPROJ");
+    if (!projector.isEmpty() && !ensureAsset(projector, AICORE_LLM_ROLE_MMPROJ))
+        return cmd.error(error);
 
     auto deviceLock = ecvAICoreRuntime::makeDeviceTaskLock(session.device);
-    if (!deviceLock.isLocked()) return cmd.error("Cannot acquire LLM device task lock");
+    if (!deviceLock.isLocked())
+        return cmd.error("Cannot acquire LLM device task lock");
     auto config = aicore_llm_default_options();
-    const QByteArray modelBytes = model.toUtf8(), projectorBytes = projector.toUtf8();
+    const QByteArray modelBytes = model.toUtf8(),
+                     projectorBytes = projector.toUtf8();
     const QByteArray device = session.device.toUtf8();
     config.model_path = modelBytes.constData();
-    config.mmproj_path = projector.isEmpty() ? nullptr : projectorBytes.constData();
+    config.mmproj_path =
+            projector.isEmpty() ? nullptr : projectorBytes.constData();
     config.device = device.constData();
     config.threads = session.threads;
-    // 只驻留一个 context；先释放结果与 context，再释放 runtime guard。
+    // Retain one context; release results and the context before the runtime
+    // guard.
     std::unique_ptr<aicore_llm_ctx, decltype(&aicore_llm_free)> context(
-        aicore_llm_create(&config), aicore_llm_free);
+            aicore_llm_create(&config), aicore_llm_free);
     if (!aicore_llm_ready(context.get()))
-        return cmd.error(QString::fromUtf8(aicore_llm_last_error(context.get())));
+        return cmd.error(
+                QString::fromUtf8(aicore_llm_last_error(context.get())));
     if (imagesRequested && !aicore_llm_supports_vision(context.get()))
         return cmd.error("Selected LLM model does not accept images");
     std::vector<aicore_llm_message> messages;
@@ -132,49 +155,64 @@ bool CommandLLMGenerate::process(ccCommandLineInterface& cmd) {
     B::Manifest manifest(session);
     manifest.set("model", model);
     manifest.set("mmproj", projector);
-    manifest.set("resolved_device", QString::fromUtf8(aicore_llm_context_device(context.get())));
+    manifest.set("resolved_device",
+                 QString::fromUtf8(aicore_llm_context_device(context.get())));
     manifest.set("max_tokens", maxTokens);
     manifest.set("temperature", temperature);
-    B::runBatch(cmd, session, inputs, manifest,
-        [&](const B::Item& input, QJsonObject& record, QString& why) {
-            // 按项解码；跨 ABI 驻留一个 RGB 图，转换时可暂占原图 + RGB，像素不随项数累积。
-            QImage image;
-            aicore_image_view view{};
-            auto current = request;
-            if (!input.path.isEmpty()) {
-                image = B::loadImage(input.path, QImage::Format_RGB888, &why);
-                if (image.isNull()) return false;
-                view = ecvAICoreRuntime::makeImageView(image);
-                current.images = &view;
-                current.image_count = 1;
-                record["input"] = input.path;
-            }
-            aicore_llm_result* output = nullptr;
-            const int rc = aicore_llm_generate(context.get(), &current, &output);
-            std::unique_ptr<aicore_llm_result, decltype(&aicore_llm_result_free)> result(
-                output, aicore_llm_result_free);
-            if (!result) {
-                why = QString::fromUtf8(aicore_llm_last_error(context.get()));
-                return false;
-            }
-            if (result->text_bytes > static_cast<size_t>(std::numeric_limits<int>::max())) {
-                why = "LLM text exceeds Qt export size";
-                return false;
-            }
-            record["text"] = QString::fromUtf8(result->text, static_cast<int>(result->text_bytes));
-            record["finish_reason"] = static_cast<int>(result->finish_reason);
-            record["prompt_tokens"] = static_cast<int>(result->prompt_tokens);
-            record["generated_tokens"] = static_cast<int>(result->generated_tokens);
-            record["prefill_ms"] = result->prefill_ms;
-            record["decode_ms"] = result->decode_ms;
-            record["timings"] = B::timingsJson(result->timings);
-            if (rc != 0 || result->finish_reason == AICORE_LLM_FINISH_CANCELLED) {
-                why = rc == 1 ? QStringLiteral("LLM generation cancelled")
-                              : QString::fromUtf8(aicore_llm_last_error(context.get()));
-                return false;
-            }
-            return true;
-        });
+    B::runBatch(
+            cmd, session, inputs, manifest,
+            [&](const B::Item& input, QJsonObject& record, QString& why) {
+                // Decode one item at a time; retain one RGB image across the
+                // ABI. Conversion may temporarily retain the source plus RGB,
+                // not all items.
+                QImage image;
+                aicore_image_view view{};
+                auto current = request;
+                if (!input.path.isEmpty()) {
+                    image = B::loadImage(input.path, QImage::Format_RGB888,
+                                         &why);
+                    if (image.isNull()) return false;
+                    view = ecvAICoreRuntime::makeImageView(image);
+                    current.images = &view;
+                    current.image_count = 1;
+                    record["input"] = input.path;
+                }
+                aicore_llm_result* output = nullptr;
+                const int rc =
+                        aicore_llm_generate(context.get(), &current, &output);
+                std::unique_ptr<aicore_llm_result,
+                                decltype(&aicore_llm_result_free)>
+                        result(output, aicore_llm_result_free);
+                if (!result) {
+                    why = QString::fromUtf8(
+                            aicore_llm_last_error(context.get()));
+                    return false;
+                }
+                if (result->text_bytes >
+                    static_cast<size_t>(std::numeric_limits<int>::max())) {
+                    why = "LLM text exceeds Qt export size";
+                    return false;
+                }
+                record["text"] = QString::fromUtf8(
+                        result->text, static_cast<int>(result->text_bytes));
+                record["finish_reason"] =
+                        static_cast<int>(result->finish_reason);
+                record["prompt_tokens"] =
+                        static_cast<int>(result->prompt_tokens);
+                record["generated_tokens"] =
+                        static_cast<int>(result->generated_tokens);
+                record["prefill_ms"] = result->prefill_ms;
+                record["decode_ms"] = result->decode_ms;
+                record["timings"] = B::timingsJson(result->timings);
+                if (rc != 0 ||
+                    result->finish_reason == AICORE_LLM_FINISH_CANCELLED) {
+                    why = rc == 1 ? QStringLiteral("LLM generation cancelled")
+                                  : QString::fromUtf8(aicore_llm_last_error(
+                                            context.get()));
+                    return false;
+                }
+                return true;
+            });
     return B::finish(cmd, session, manifest);
 #endif
 }

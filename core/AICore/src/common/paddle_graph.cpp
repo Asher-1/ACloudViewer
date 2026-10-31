@@ -258,7 +258,8 @@ bool OcrProgram::parse(const std::string& json, std::string* error) {
                 attrMap[a["name"].asString()] = a.get("value", Json::Value());
         }
         entry.attrs = std::move(attrMap);
-        // Derive IO identity from actual topology, not default names or the previous program.
+        // Derive IO identity from actual topology, not default names or the
+        // previous program.
         if (entry.type == "feed" && entry.outputs.size() == 1)
             feedInput = entry.outputs.front();
         if (entry.type == "fetch" && entry.inputs.size() == 1 &&
@@ -2162,16 +2163,20 @@ ggml_tensor* buildGraph(ggml_context* ctx,
                     // so its direct 3x3 evaluation preserves the graph
                     // result while avoiding the K^2*OH*OW*C*N im2col buffer.
                     if (bias && bias->type == GGML_TYPE_F32 &&
-                        ggml_is_contiguous(bias) && ggml_nelements(bias) == x->ne[2]) {
-                        ggml_tensor* channelBias = ggml_n_dims(bias) == 1
-                                ? bias : ggml_reshape_1d(ctx, bias, x->ne[2]);
+                        ggml_is_contiguous(bias) &&
+                        ggml_nelements(bias) == x->ne[2]) {
+                        ggml_tensor* channelBias =
+                                ggml_n_dims(bias) == 1
+                                        ? bias
+                                        : ggml_reshape_1d(ctx, bias, x->ne[2]);
                         result = ggml_conv_2d_dw_direct_bias(
                                 ctx, w, x, channelBias, s0, s1, p0, p1, d0, d1);
-                        // This path already consumes bias; do not emit a second separate ADD at the end.
+                        // This path already consumes bias; do not emit a second
+                        // separate ADD at the end.
                         bias = nullptr;
                     } else {
-                        result = ggml_conv_2d_dw_direct(ctx, w, x, s0, s1, p0, p1,
-                                                        d0, d1);
+                        result = ggml_conv_2d_dw_direct(ctx, w, x, s0, s1, p0,
+                                                        p1, d0, d1);
                     }
                 } else if (im2colBytes > kMaxIm2colBytes) {
                     std::vector<ggml_tensor*> parts;
