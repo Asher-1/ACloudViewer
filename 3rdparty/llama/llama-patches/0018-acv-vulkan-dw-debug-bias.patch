@@ -1,0 +1,12 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-debug.cpp b/src/ggml-vulkan/ggml-vulkan-debug.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-debug.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-debug.cpp
+@@ -1300,7 +1300,8 @@
+             const int32_t p1 = tensor->op_params[3];
+             const int32_t d0 = tensor->op_params[4];
+             const int32_t d1 = tensor->op_params[5];
+             tensor_clone = ggml_conv_2d_dw_direct(ggml_ctx, src_clone[0], src_clone[1], s0, s1, p0, p1, d0, d1);
++            tensor_clone->src[2] = src_clone[2];
+         } else if (tensor->op == GGML_OP_CONV_TRANSPOSE_2D) {
+             const int32_t s = tensor->op_params[0];
+             tensor_clone = ggml_conv_transpose_2d_p0(ggml_ctx, src_clone[0], src_clone[1], s);

@@ -31,7 +31,7 @@
 
 #include "util/cuda.h"
 
-#include <cuda_runtime.h>
+#include "util/cuda_to_hip.h"
 
 #include <algorithm>
 #include <iostream>
@@ -72,16 +72,21 @@ void SetBestCudaDevice(const int gpu_index) {
     if (gpu_index >= 0) {
         selected_gpu_index = gpu_index;
     } else {
-        std::vector<cudaDeviceProp> all_devices(num_cuda_devices);
+        std::vector<std::pair<cudaDeviceProp, int>> all_devices;
+        all_devices.reserve(num_cuda_devices);
         for (int device_id = 0; device_id < num_cuda_devices; ++device_id) {
-            cudaGetDeviceProperties(&all_devices[device_id], device_id);
+            cudaDeviceProp device;
+            CUDA_SAFE_CALL(cudaGetDeviceProperties(&device, device_id));
+            all_devices.emplace_back(device, device_id);
         }
-        std::sort(all_devices.begin(), all_devices.end(), CompareCudaDevice);
-        CUDA_SAFE_CALL(
-                cudaChooseDevice(&selected_gpu_index, all_devices.data()));
+        std::sort(all_devices.begin(), all_devices.end(),
+                  [](const auto& lhs, const auto& rhs) {
+                      return CompareCudaDevice(lhs.first, rhs.first);
+                  });
+        selected_gpu_index = all_devices.front().second;
         VLOG(2) << "Found " << num_cuda_devices << " CUDA device(s), "
                 << "selected device " << selected_gpu_index << " with name "
-                << all_devices[selected_gpu_index].name;
+                << all_devices.front().first.name;
     }
 
     CHECK_GE(selected_gpu_index, 0);

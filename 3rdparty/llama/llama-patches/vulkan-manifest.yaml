@@ -1,0 +1,26 @@
+# Vulkan migration candidate; production promotion requires all-task gates.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
+  - file: 0005-acv-vulkan-operators.patch
+    note: "At the current pin, InstantMesh LRM instantmesh_lrm_convt_ retains pristine transposed-convolution dispatch; Synth single-row F16 instantmesh_sdf_matmul_ retains original GEMM reduction, not swapped-operand matvec. Other nodes and CPU/CUDA/Metal remain unchanged. Remove after an official node-compatibility replacement; require frozen per-output absolute/compatibility gates, clean replay, original consumers and same-host performance regression checks."
+  - file: 0008-acv-vulkan-q4-k-copy-route.patch
+  - file: 0009-acv-vulkan-pattern-short-circuit.patch
+    note: "Short-circuit failed fusion-pattern matches without changing graph ordering, alias dependencies or supported fusions; model performance qualification remains required."
+  - file: 0010-acv-vulkan-dependency-metadata.patch
+    note: "Cache source and view-base metadata within one optimizer call; retain every direct and alias dependency. Requires predicate, graph-order and model regression."
+  - file: 0012-acv-vulkan-im2col-spatial-blocks.patch
+    note: "Repartition low-channel image gathers without changing convolution arithmetic; require exact im2col and model-output regression."
+  - file: 0013-acv-elementwise-epilogue.patch
+    note: "Explicit ADD/GELU fusion preserves final output offsets and allocation dependencies; ineligible nodes remain separate."
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+  - file: 0014-acv-depthwise-bias-vulkan.patch
+    note: "Add F32 bias after DW write-out rounding; preserve actual offsets for all four descriptors."
+  - file: 0016-acv-vulkan-dw-bias-rounding.patch
+    note: "Round F16 intermediate results with integer RNE; require independent scalar truth and bitwise ADD, WHCN/CWHN and offset regression."
+  - file: 0017-acv-vulkan-pool2d-dispatch.patch
+    note: "F16 POOL_2D uses explicit local-size specialization; dispatch inputs are workgroup counts. Require full-domain sentinel and independent window-oracle regression."
+  - file: 0018-acv-vulkan-dw-debug-bias.patch
+    note: "The result checker's DW CPU clone preserves optional bias; test the real checker with positive, negative and absent bias."
+  - file: 0024-acv-vulkan-depthwise7.patch
+    note: "RelateAnything 14c9744 CWHN DW7 specialization preserves actual offsets for all four descriptors and original fallbacks; original numeric/performance gates remain unchanged."

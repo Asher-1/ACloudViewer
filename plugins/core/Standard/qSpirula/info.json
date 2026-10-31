@@ -1,0 +1,25 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "Spirula Studio",
+  "icon": ":/CC/plugin/qSpirula/images/icon_128.png",
+  "description": "Official Spirula Studio 3D Gaussian Splatting trainer, integrated at the process boundary as a standalone GPLv3 executable. Launch the full upstream GUI (training, editing, rendering, meshing), then import the trained splat.ply or mesh.ply into the ACloudViewer DB tree. The executable is built by BUILD_SPIRULA (ExternalProject, SPIRULA_TAG) and carries no source patches, so upstream sync is a tag bump plus smoke tests.",
+  "authors": [
+    {
+      "name": "Spirula Studio (harry7557558)"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "Spirula Studio: https://github.com/harry7557558/spirula-studio"
+    },
+    {
+      "text": "License: GPLv3 (aggregated standalone component)"
+    }
+  ]
+}

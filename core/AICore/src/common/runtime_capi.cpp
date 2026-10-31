@@ -20,6 +20,38 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "common/ggml_backend_registry.hpp"
+#include "common/runtime_cleanup.hpp"
+
+namespace aicore {
+namespace runtime {
+namespace {
+
+std::mutex g_cleanup_mutex;
+std::vector<CleanupFn> g_cleanups;
+
+}  // namespace
+
+void register_cleanup(CleanupFn cleanup) {
+    if (cleanup == nullptr) return;
+    std::lock_guard<std::mutex> lock(g_cleanup_mutex);
+    if (std::find(g_cleanups.begin(), g_cleanups.end(), cleanup) ==
+        g_cleanups.end()) {
+        g_cleanups.push_back(cleanup);
+    }
+}
+
+void run_cleanups() {
+    std::vector<CleanupFn> cleanups;
+    {
+        std::lock_guard<std::mutex> lock(g_cleanup_mutex);
+        cleanups = g_cleanups;
+    }
+    for (CleanupFn cleanup : cleanups) cleanup();
+}
+
+}  // namespace runtime
+}  // namespace aicore
 
 namespace {
 
@@ -54,7 +86,9 @@ std::string device_queue_key(const char* device) {
         }
         if (request == "auto" || request == "gpu") request = "cpu";
     }
-    if (request == "mtl") request = "metal";
+    if (request == "mtl" || request == "mtl0" || request == "mtl:0") {
+        request = "metal";
+    }
     for (const char* family : {"cuda", "vulkan", "metal"}) {
         const std::string name(family);
         if (request == name + ":0" || request == name + "0") {
@@ -81,6 +115,23 @@ std::shared_ptr<std::mutex> device_queue(const char* device) {
 }
 
 }  // namespace
+
+AICORE_CAPI void aicore_runtime_shutdown(void) {
+    aicore::runtime::run_cleanups();
+    {
+        std::lock_guard<std::mutex> lock(g_device_queues_mutex);
+        for (auto it = g_device_queues.begin(); it != g_device_queues.end();) {
+            if (it->second.use_count() == 1) {
+                it = g_device_queues.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    // Backend registration is process-wide, while leases are context-owned.
+    // Reclaim only expired leases so concurrent live contexts remain valid.
+    aicore::runtime::purge_inactive_backend_leases();
+}
 
 struct aicore_cancel_token {
     std::atomic<bool> requested{false};

@@ -48,21 +48,43 @@ if ($env:CONDA_EXE) {
 
 Write-Host "Initializing conda..."
 (& $env:CONDA_EXE "shell.powershell" "hook") | Out-String | Invoke-Expression
-$existingEnv = conda env list | Select-String "^$env:ENV_NAME\s"
 conda config --set always_yes yes
-if ($existingEnv) {
-    Write-Host "env $env:ENV_NAME exists and start to remove..."
-    conda env remove -n $env:ENV_NAME
+
+# Reuse the environment pre-created by CI (setup-miniconda from the same env
+# file) when its Python version matches; otherwise remove and recreate. The
+# CI workflow used to pay for two full env installs per job (~10-20 min).
+$envReuse = $false
+if (conda env list | Select-String "^$env:ENV_NAME\s") {
+    # conda activate is a hook function and does NOT set $LASTEXITCODE, so
+    # verify activation via CONDA_PREFIX instead of the exit code.
+    conda activate $env:ENV_NAME
+    $expectedPrefix = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
+    if ($env:CONDA_PREFIX -and ($env:CONDA_PREFIX -ieq $expectedPrefix)) {
+        $currentPy = python --version
+        if ($currentPy -match $env:PYTHON_VERSION) {
+            Write-Host "Reusing existing conda env '$env:ENV_NAME' ($currentPy)"
+            $envReuse = $true
+        } else {
+            Write-Host "env $env:ENV_NAME has $currentPy but Python $env:PYTHON_VERSION requested; recreating..."
+            conda deactivate
+            conda env remove -n $env:ENV_NAME
+        }
+    } else {
+        Write-Host "Failed to activate existing env $env:ENV_NAME; recreating..."
+        conda env remove -n $env:ENV_NAME
+    }
 }
 
-Write-Host "conda env create and activate..."
-$env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
+if (-not $envReuse) {
+    Write-Host "conda env create and activate..."
+    $env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
 
-Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
-(Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
+    Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
+    (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.10", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
 
-conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
-conda activate $env:ENV_NAME
+    conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
+    conda activate $env:ENV_NAME
+}
 
 $pythonPath = Get-Command python | Select-Object -ExpandProperty Source
 $pythonVersion = python --version
@@ -96,6 +118,12 @@ if ($env:ONLY_BUILD_CUDA -eq "ON") {
     Write-Host "Start to build GUI package with CUDA only..."
     Write-Host ""
     $env:BUILD_CUDA_MODULE = "ON"
+    # CI speed: this lane never runs tests.exe, and with the ggml CUDA backend
+    # disabled the AICore binaries are identical to the CPU lane's (contract
+    # tests run there), so building ~119 AICore test binaries plus tests.exe
+    # here adds hours with zero coverage gain.
+    $env:CI_BUILD_UNIT_TESTS = "OFF"
+    $env:CI_AICORE_BUILD_TESTS = "OFF"
     # ggml CUDA backend (with_aicore_cuda) is disabled in CI: it hard-links
     # cuBLAS whose major version must match the build CUDA toolkit, and the
     # bundled runtime raises the target-machine driver floor. Keep CloudViewer
@@ -140,6 +168,21 @@ if ($env:IGNORE_TEST -ne "ON") {
             exit $LASTEXITCODE
         }
     }
+}
+
+# Print sccache stats while the daemon is still alive: it is spawned inside
+# this step's process tree, its stats are in-memory, and GitHub Actions
+# runners terminate that tree on step exit — the workflow-level stats step
+# and the action post-run summary therefore always report 0 requests on
+# Windows (measured: run 38918190501). Additionally, with the default
+# SCCACHE_IDLE_TIMEOUT of 600 s the daemon self-exits during the ~11 min
+# packaging window after the last compile (runs 39904120017/39944134589/
+# 39994107226 all printed a fresh 0-request server here too), so windows.yml
+# now sets SCCACHE_IDLE_TIMEOUT=36000 — these numbers are the real tally of
+# the run and the authoritative hit/miss signal for the release-asset pool.
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_COMPILER_LAUNCHER)) {
+    Write-Host "=== sccache stats (in-step, daemon alive) ==="
+    & $env:CLOUDVIEWER_COMPILER_LAUNCHER --show-stats
 }
 
 Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"

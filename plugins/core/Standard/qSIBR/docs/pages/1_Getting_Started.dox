@@ -92,7 +92,7 @@ Our default interactive viewer has a main view running the algorithm and a top v
 - Visual Studio 2019 (https://visualstudio.microsoft.com/).
 - Cmake 3.16+,(https://cmake.org/).
 - 7zip should be installed (https://www.7-zip.org/download.html).
-- Python 3.8+ should be installed and configured in the PATH (https://www.python.org/downloads/).
+- Python 3.10+ should be installed and configured in the PATH (https://www.python.org/downloads/).
 - PIL (pip install pillow, in an admin command if needed: https://pypi.org/project/Pillow/) might be needed for some preprocess scripts.
 - ImageMagick (https://imagemagick.org/script/download.php).
 - Doxygen 1.8.17+ should be installed and configured in the PATH for generating the documentation (http://www.doxygen.nl/download.html).

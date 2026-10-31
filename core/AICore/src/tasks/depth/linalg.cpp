@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "linalg.hpp"
+#include "tasks/depth/linalg.hpp"
 
 #include <cmath>
 #include <cstring>

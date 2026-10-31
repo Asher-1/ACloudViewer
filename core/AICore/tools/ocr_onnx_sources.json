@@ -1,0 +1,128 @@
+{
+  "source_release": "CVHub520/X-AnyLabeling pinned per-asset releases",
+  "assets": [
+    {
+      "name": "ch_ppocr_mobile_v2.0_cls_infer.onnx",
+      "sha256": "cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+      "bytes": 582663,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ch_ppocr_mobile_v2.0_cls_infer.onnx",
+      "role": "cls"
+    },
+    {
+      "name": "ppocrv5_mobile_det_infer.onnx",
+      "sha256": "ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
+      "bytes": 4768564,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv5_mobile_det_infer.onnx",
+      "role": "det"
+    },
+    {
+      "name": "ppocrv5_mobile_rec_infer.onnx",
+      "sha256": "821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
+      "bytes": 16525530,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv5_mobile_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/ppocrv5_dict.txt",
+        "sha256": "d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b",
+        "bytes": 74012
+      }
+    },
+    {
+      "name": "ppocrv6_medium_det_infer.onnx",
+      "sha256": "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
+      "bytes": 62032837,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_medium_det_infer.onnx",
+      "role": "det"
+    },
+    {
+      "name": "ppocrv6_medium_rec_infer.onnx",
+      "sha256": "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
+      "bytes": 76554979,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_medium_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/ppocrv6_dict.txt",
+        "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d",
+        "bytes": 74947
+      }
+    },
+    {
+      "name": "ppocrv6_small_det_infer.onnx",
+      "sha256": "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
+      "bytes": 9880512,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_small_det_infer.onnx",
+      "role": "det"
+    },
+    {
+      "name": "ppocrv6_small_rec_infer.onnx",
+      "sha256": "5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
+      "bytes": 21159378,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_small_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/ppocrv6_dict.txt",
+        "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d",
+        "bytes": 74947
+      }
+    },
+    {
+      "name": "ppocrv6_tiny_det_infer.onnx",
+      "sha256": "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
+      "bytes": 1780590,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_tiny_det_infer.onnx",
+      "role": "det"
+    },
+    {
+      "name": "ppocrv6_tiny_rec_infer.onnx",
+      "sha256": "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
+      "bytes": 4462639,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_tiny_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/ppocrv6_tiny_dict.txt",
+        "sha256": "c5cbe34ef40c29c4df07ed012bf96569cb69a2d2a01a07027e9f13cb832bd9cd",
+        "bytes": 27156
+      }
+    },
+    {
+      "name": "ch_PP-OCRv4_det_infer.onnx",
+      "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
+      "bytes": 4745517,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v0.2.2/ch_PP-OCRv4_det_infer.onnx",
+      "role": "det"
+    },
+    {
+      "name": "ch_PP-OCRv4_rec_infer.onnx",
+      "sha256": "a41b9e79b60be6314ab0db1a0920b1650a710489020e2de2b452821f4b5adec9",
+      "bytes": 10831559,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v0.2.2/ch_PP-OCRv4_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/ppocr_keys_v1.txt",
+        "sha256": "28b2362ad4ab2dc38769aa72feb535e3a9ddb3fd2a7585a05920e6393b1dc7f7",
+        "bytes": 26249
+      }
+    },
+    {
+      "name": "japan_PP-OCRv3_rec_infer.onnx",
+      "sha256": "f38bc0cef411ffb75483b37b8005f9400e4b60a0afd44ff777861737695f52e2",
+      "bytes": 10090359,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.4.0/japan_PP-OCRv3_rec_infer.onnx",
+      "role": "rec",
+      "dictionary": {
+        "path": "anylabeling/services/auto_labeling/configs/ppocr/japan_dict.txt",
+        "sha256": "1dcfcb41eec90576a945b3084f22ade11ced506e24f14879245b071698f308e8",
+        "bytes": 17332
+      }
+    }
+  ],
+  "upstream_commit": "745f6c355f94cddb06f6965b3a4118f82033e935",
+  "identical_source_aliases": [
+    {
+      "name": "ch_ppocr_mobile_v2.0_cls_infer.onnx",
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v0.2.2/ch_ppocr_mobile_v2.0_cls_infer.onnx",
+      "sha256": "cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+      "bytes": 582663
+    }
+  ]
+}

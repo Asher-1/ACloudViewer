@@ -1,0 +1,37 @@
+# CUDA migration candidate; not enabled in the production dependency entry.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
+  - file: 0002-acv-cuda-operators.patch
+  - file: 0003-acv-cuda-dispatch-api.patch
+  - file: 0004-acv-cuda-attention-linkage.patch
+  - file: 0006-acv-cuda-native-output-stride.patch
+  - file: 0007-acv-sam3d-allocation-size.patch
+  - file: 0011-acv-cuda-im2col-spatial-blocks.patch
+  - file: 0013-acv-elementwise-hint-api.patch
+    note: "Keep the same graph annotation API across backends; CUDA's explicit ADD/GELU consumer is registered at the end of this chain."
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+  - file: 0014-acv-depthwise-bias-cuda.patch
+    note: "Add F32 channel bias after DW write-out rounding; require bitwise equality with separate ADD."
+  - file: 0015-acv-llama-cuda-numerics.patch
+    note: "Restore pinned upstream LLM GEMM/SiLU arithmetic; graph keys include naming semantics and non-LLM routes remain unchanged."
+  - file: 0019-acv-cuda-pool2d-average.patch
+    note: "AVG sums in F32 before RNE division by area; require independent scalar/warp oracles and real-consumer gates."
+  - file: 0020-acv-cuda-igemm-plan-owner.patch
+    note: "Read the task's monotonic plan identity to prevent stale weights at reused addresses/shapes across models; require public-ABI model-switch and original accuracy/performance gates."
+  - file: 0021-acv-openpcdet-igemm-f32.patch
+    note: "OpenPCDet nodes named opcpd_conv permit WMMA TF32 igemm for F32 convolution; other F32 tasks retain strict fp32 fallback. Gate detection per box against the upstream OpenPCDet-GGML CUDA baseline using the same tensor-core arithmetic."
+  - file: 0022-acv-openpcdet-tf32-conv2d.patch
+    note: "Route opcpd_conv F32 convolution from WMMA igemm to the bitwise port of upstream OpenPCDet-GGML dispatch (Winograd/TF32 implicit GEMM/FMA); f16/q8 and other F32 task routes remain unchanged."
+  - file: 0023-acv-openpcdet-sparse-ext.patch
+    note: "OpenPCDet-GGML fused sparse convolution: sparse_gather (zero-fill row -1) plus sparse_scatter_add(_n) (kernel-group chunked scatter-add, folded bias, no concat). Only OpenPCDet CUDA-ext compact graphs emit these nodes; append operators to the enum, retaining existing op IDs and CPU/Vulkan behavior."
+  - file: 0024-acv-cuda-depthwise7.patch
+    note: "RelateAnything 14c9744 CWHN 7x7 input-register reuse preserves tap order, separate bias ADD and all ineligible original routes. Original numeric/performance gates remain unchanged."
+  - file: 0024-acv-openpcdet-bn-fold-relu.patch
+    note: "OpenPCDet-GGML fused BN-fold+ReLU operator (relu(x*scale+bias), CUDA float4 fast path and CPU scalar fallback). Only OpenPCDet CUDA-ext graphs (bev_backbone g_bn_fuse_relu) emit it; append the operator to the enum without changing CPU/Vulkan behavior."
+  - file: 0025-acv-cuda-perf-op-profiler.patch
+    note: "Port upstream OpenPCDet-GGML per-op CUDA event timing byte-for-byte (GGML_CUDA_PERF_OP=1, disabled by default); diagnostics only, with no arithmetic or graph-semantic changes. Rows are comparable to the upstream per-op table."
+  - file: 0026-acv-openpcdet-deconv-gemm.patch
+    note: "Byte-for-byte port of the OpenPCDet-GGML phase-decomposed transposed-convolution GEMM path (gather_phase + cuBLAS sgemm + scatter_phase; TF32 follows the handle math mode, and the GGML_CUDA_DISABLE_DECONV_GEMM debug gate is ported as well). Only F32 deblock nodes tagged opcpd_deconv take this path; f16 (SAM3) and every other task keep their existing routing, and CPU/Vulkan are untouched."
+  - file: 0027-acv-cuda-add-gelu-epilogue.patch
+    note: "Explicit F32 row-bias ADD/GELU write-out; preserve original arithmetic, fusion switches, and fallbacks for observable outputs, multiple consumers, non-adjacent nodes, layout constraints and unsafe aliasing. Original numeric and performance gates remain unchanged."

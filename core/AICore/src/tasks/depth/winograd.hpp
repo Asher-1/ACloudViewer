@@ -4,13 +4,10 @@
 // Winograd convolution for the DPT head's 3x3 stride-1 convs.
 //
 // Implemented as a CPU custom op (ggml_custom_4d) with an AVX-512 winograd-domain
-// multiply. The algorithm/inner kernel is selectable via the DA_WINO env var:
-//   "f2"  : F(2x2,3x3), per-tile GEMV (original CPU-opt #4 path)
-//   "f2b" : F(2x2,3x3), blocked GEMM over a block of tiles  <-- default
-//           (parity-identical to f2, but reuses each U-row across the block ->
-//           ~5% faster head on BASE, ~22% on GIANT)
-//   "f4"  : F(4x4,3x3), 4x fewer mults vs direct, blocked GEMM. Less accurate
-//           (1/6,1/24 fractions); passes parity but is not faster than f2b.
+// multiply. Only the F(2x2,3x3) blocked-GEMM variant ships: it reuses each U-row
+// across a block of tiles (~5% faster head on BASE, ~22% on GIANT) and is
+// parity-identical to the per-tile GEMV. The historical DA_WINO env selector
+// (f2/f2b/f4) was A/B scaffolding and is removed.
 //
 // Tensor layout (ggml ne, fastest dim first):
 //   x : [W, H, IC, N]    input feature map (F32)

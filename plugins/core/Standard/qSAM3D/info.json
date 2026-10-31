@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "SAM 3D Objects Image to 3D",
+  "icon": ":/CC/plugin/qSAM3D/images/qSAM3D.svg",
+  "description": "SAM 3D Objects single-image 3D generation (Gaussian PLY + FlexiCubes mesh) via native GGML inference, with optional RMBG background removal for the object mask.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "sam-3d-objects-ggml: local C++/ggml runtime" },
+    { "text": "SAM 3D Objects: https://github.com/facebookresearch/sam-3d-objects" },
+    { "text": "Models (HF mirror): https://huggingface.co/Asher-1/SAM_3D_OBJECTS_GGUF" }
+  ]
+}

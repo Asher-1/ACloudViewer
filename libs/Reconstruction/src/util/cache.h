@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <future>
+#include <limits>
 #include <list>
 #include <memory>
 #include <shared_mutex>
@@ -331,6 +332,11 @@ MemoryConstrainedLRUCache<key_t, value_t>::MemoryConstrainedLRUCache(
 template <typename key_t, typename value_t>
 size_t MemoryConstrainedLRUCache<key_t, value_t>::NumElems() const {
     return elems_map_.size();
+}
+
+template <typename key_t, typename value_t>
+size_t MemoryConstrainedLRUCache<key_t, value_t>::MaxNumElems() const {
+    return std::numeric_limits<size_t>::max();
 }
 
 template <typename key_t, typename value_t>

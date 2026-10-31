@@ -1,0 +1,265 @@
+{
+  "candidate_revision": "707616feb5f379e99ff7442680a55b4a1704c7c9",
+  "source_tree_sha256": {
+    "baseline": "12a14f1789d786a1223ed2ef112e6db2ae6e20e092d952ad251a780d339b08c7",
+    "patched": "e504bb4a881524e8bd727220890386bb11b8d6a149e26fa5e1d2edcd1c4f98e6",
+    "upstream_ggml": "947acd170a0d93068436d0f3fcb00ed521212b7b762f1f8e6644c9771c6e1d75"
+  },
+  "production_dependency_changed": false,
+  "source_inventory": {
+    "counts": {
+      "conflict": 24,
+      "merged": 34,
+      "added": 60,
+      "upstream_deleted": 1
+    },
+    "conflict_blocks": 78,
+    "deleted_upstream_files": [
+      "src/ggml-metal/ggml-metal.metal"
+    ]
+  },
+  "cpu_resolutions": [
+    "CMakeLists.txt",
+    "src/ggml.c",
+    "src/ggml-cpu/ggml-cpu.c"
+  ],
+  "aicore_syntax": {
+    "checked": 234,
+    "failed": 0
+  },
+  "aicore_recompiled": {
+    "translation_units": 239,
+    "failed": 0,
+    "cuda_translation_units": 5
+  },
+  "contract_tier": {
+    "tests": 36,
+    "failed": 0,
+    "skipped": 0,
+    "rebuilt_executables": 33,
+    "rebuilt_translation_units": 72
+  },
+  "loader_trace_verified": true,
+  "local_vlm_model_inference_executed": false,
+  "all_task_model_regression_executed": false,
+  "cuda_vulkan_metal_candidate_kernels_validated": false,
+  "catalog_identity": "47725354e1bf7ba2ef2907e8a109b227ab4b5ecb223de2c8761c1ee5cadd854e",
+  "manifest_sha256": "c289a1594a02f10196506b14d2fb2d62d1447d3a1aace05359b0031552172555",
+  "model_scope": {
+    "tasks": 22,
+    "catalog_rows": 556,
+    "f16_rows": 170,
+    "q8_0_rows": 155,
+    "q8_rows": 10,
+    "unknown_filename_rows": 8,
+    "conservative_selected_rows": 343,
+    "conservative_unique_files": 323,
+    "cache_file_presence_rows": 315,
+    "without_static_consumer": 0,
+    "filename_unknown_tensor_types": [
+      {
+        "relative_path": "da3_models/depth-anything-nested-metric.gguf",
+        "tensor_counts": {
+          "F32": 406
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/buffalo_l.gguf",
+        "tensor_counts": {
+          "F32": 808,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/buffalo_m.gguf",
+        "tensor_counts": {
+          "F32": 807,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/buffalo_s.gguf",
+        "tensor_counts": {
+          "F32": 710,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/buffalo_sc.gguf",
+        "tensor_counts": {
+          "F32": 263,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/antelopev2.gguf",
+        "tensor_counts": {
+          "F32": 747,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/yunet-sface.gguf",
+        "tensor_counts": {
+          "F32": 285,
+          "F16": 1
+        },
+        "general.file_type": null
+      },
+      {
+        "relative_path": "facedetect_models/landmarks-2d106-1k3d68.gguf",
+        "tensor_counts": {
+          "F32": 434,
+          "F16": 2
+        },
+        "general.file_type": null
+      }
+    ]
+  },
+  "source_archive_sha256": "a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759",
+  "aicore_sha256": "2eaa9f01587189aa1db64e98cdd72d99c8f43c6b55b2959d37de270b7f5cef52",
+  "status": "CPU_EXPERIMENT_ONLY_GPU_REBASE_AND_MODEL_GATES_OPEN",
+  "checked_in_input_sha256": {
+    "experimental/patches/0001-acv-cpu-operators.patch": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8",
+    "experimental/patches/manifest.yaml": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126",
+    "experimental/CMakeLists.txt": "21cfe7deac073e556c78344dfc99f8a1fb7d761079e7a49818305e41c2657795",
+    "experimental/runner-quantization-fix.patch": "4cb7b2d2246aa28d1c6d8b1732ef3aa134353f1793cf6aef343c48a7245dff56"
+  },
+  "remaining_backend_rebase": {
+    "conflicted_files": 21,
+    "conflict_blocks": 73,
+    "upstream_deleted_files": [
+      "src/ggml-metal/ggml-metal.metal"
+    ],
+    "files": [
+      {
+        "file": "src/ggml-cuda/CMakeLists.txt",
+        "status": "conflict",
+        "conflicts": 4
+      },
+      {
+        "file": "src/ggml-cuda/binbcast.cu",
+        "status": "conflict",
+        "conflicts": 2
+      },
+      {
+        "file": "src/ggml-cuda/common.cuh",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-cuda/conv2d-dw.cu",
+        "status": "conflict",
+        "conflicts": 5
+      },
+      {
+        "file": "src/ggml-cuda/conv2d.cu",
+        "status": "conflict",
+        "conflicts": 2
+      },
+      {
+        "file": "src/ggml-cuda/fattn-tile.cuh",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-cuda/fattn.cu",
+        "status": "conflict",
+        "conflicts": 3
+      },
+      {
+        "file": "src/ggml-cuda/ggml-cuda.cu",
+        "status": "conflict",
+        "conflicts": 10
+      },
+      {
+        "file": "src/ggml-cuda/norm.cu",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-cuda/pool2d.cu",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-cuda/scale.cu",
+        "status": "conflict",
+        "conflicts": 5
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal-context.h",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal-context.m",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal-device.cpp",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal-device.h",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal-ops.cpp",
+        "status": "conflict",
+        "conflicts": 3
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal.cpp",
+        "status": "conflict",
+        "conflicts": 1
+      },
+      {
+        "file": "src/ggml-metal/ggml-metal.metal",
+        "status": "upstream_deleted",
+        "conflicts": 0
+      },
+      {
+        "file": "src/ggml-vulkan/ggml-vulkan.cpp",
+        "status": "conflict",
+        "conflicts": 23
+      },
+      {
+        "file": "src/ggml-vulkan/vulkan-shaders/conv2d_mm.comp",
+        "status": "conflict",
+        "conflicts": 4
+      },
+      {
+        "file": "src/ggml-vulkan/vulkan-shaders/pool2d.comp",
+        "status": "conflict",
+        "conflicts": 2
+      },
+      {
+        "file": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "status": "conflict",
+        "conflicts": 1
+      }
+    ]
+  },
+  "installed_cpu_experiment": {
+    "clean_build_and_install_exit": 0,
+    "patch_replay_and_idempotence_verified": true,
+    "contract_tests": 36,
+    "contract_failures": 0,
+    "contract_skips": 0,
+    "all_runtime_libraries_from_install": true,
+    "source_tree": "llama.cpp parent with patched embedded ggml",
+    "gpu_backends_enabled": false
+  },
+  "working_tree_head_at_receipt": "d244541ba",
+  "raw_receipt_directory": "build_llama_migration_nxgOqD"
+}

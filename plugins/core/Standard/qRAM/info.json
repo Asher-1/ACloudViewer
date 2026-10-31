@@ -1,0 +1,7 @@
+{
+ "type":"Standard", "core":true, "name":"Recognize Anything (RAM++)",
+ "icon":":/CC/plugin/qRAM/images/qRAM.svg",
+ "description":"RAM / RAM++ image tagging and Tag2Text captioning through AICore, with image batches, camera/video, reusable model caches and exports.",
+ "authors":[{"name":"ACloudViewer Contributors"}], "maintainers":[{"name":"ACloudViewer Team"}],
+ "references":[{"text":"Recognize Anything GGML: https://github.com/Asher-1/recognize-anything-ggml"},{"text":"Models: https://huggingface.co/Asher-1/RAM_GGUF"}]
+}

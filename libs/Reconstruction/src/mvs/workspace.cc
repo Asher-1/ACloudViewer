@@ -73,24 +73,29 @@ void Workspace::Load(const std::vector<std::string>& image_names) {
     const size_t width = model_.images.at(image_idx).GetWidth();
     const size_t height = model_.images.at(image_idx).GetHeight();
 
-    // Read and rescale bitmap
+    // Read and rescale bitmap. Upstream parity (#3857): resize whenever the
+    // stored dimensions differ from the model, not only when max_image_size
+    // is set.
     bitmaps_[image_idx].reset(new Bitmap());
     bitmaps_[image_idx]->Read(GetBitmapPath(image_idx), options_.image_as_rgb);
-    if (options_.max_image_size > 0) {
+    if (bitmaps_[image_idx]->Width() != static_cast<int>(width) ||
+        bitmaps_[image_idx]->Height() != static_cast<int>(height)) {
       bitmaps_[image_idx]->Rescale((int)width, (int)height);
     }
 
     // Read and rescale depth map
     depth_maps_[image_idx].reset(new DepthMap());
     depth_maps_[image_idx]->Read(GetDepthMapPath(image_idx));
-    if (options_.max_image_size > 0) {
+    if (depth_maps_[image_idx]->GetWidth() != width ||
+        depth_maps_[image_idx]->GetHeight() != height) {
       depth_maps_[image_idx]->Downsize(width, height);
     }
 
     // Read and rescale normal map
     normal_maps_[image_idx].reset(new NormalMap());
     normal_maps_[image_idx]->Read(GetNormalMapPath(image_idx));
-    if (options_.max_image_size > 0) {
+    if (normal_maps_[image_idx]->GetWidth() != width ||
+        normal_maps_[image_idx]->GetHeight() != height) {
       normal_maps_[image_idx]->Downsize(width, height);
     }
 
@@ -202,7 +207,14 @@ CachedWorkspace::CachedWorkspace(const Options& options)
              [](const int) { return std::make_shared<CachedImage>(); }) {}
 
 const Bitmap& CachedWorkspace::GetBitmap(const int image_idx) {
-  auto cached_image = cache_.Get(image_idx);
+  // Upstream parity (#4154): the LRU cache itself is not thread-safe, so
+  // guard Get/UpdateNumBytes with cache_mutex_ while the per-image mutex
+  // serializes the actual load.
+  std::shared_ptr<CachedImage> cached_image;
+  {
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    cached_image = cache_.Get(image_idx);
+  }
   std::lock_guard<std::mutex> lock(cached_image->mutex);
   if (!cached_image->bitmap) {
     cached_image->bitmap = std::make_unique<Bitmap>();
@@ -212,13 +224,21 @@ const Bitmap& CachedWorkspace::GetBitmap(const int image_idx) {
                                    model_.images.at(image_idx).GetHeight());
     }
     cached_image->num_bytes += cached_image->bitmap->NumBytes();
-    cache_.UpdateNumBytes(image_idx);
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    // Handle the case where another thread has already evicted the image.
+    if (cache_.Exists(image_idx)) {
+      cache_.UpdateNumBytes(image_idx);
+    }
   }
   return *cached_image->bitmap;
 }
 
 const DepthMap& CachedWorkspace::GetDepthMap(const int image_idx) {
-  auto cached_image = cache_.Get(image_idx);
+  std::shared_ptr<CachedImage> cached_image;
+  {
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    cached_image = cache_.Get(image_idx);
+  }
   std::lock_guard<std::mutex> lock(cached_image->mutex);
   if (!cached_image->depth_map) {
     cached_image->depth_map = std::make_unique<DepthMap>();
@@ -228,13 +248,21 @@ const DepthMap& CachedWorkspace::GetDepthMap(const int image_idx) {
                                         model_.images.at(image_idx).GetHeight());
     }
     cached_image->num_bytes += cached_image->depth_map->GetNumBytes();
-    cache_.UpdateNumBytes(image_idx);
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    // Handle the case where another thread has already evicted the image.
+    if (cache_.Exists(image_idx)) {
+      cache_.UpdateNumBytes(image_idx);
+    }
   }
   return *cached_image->depth_map;
 }
 
 const NormalMap& CachedWorkspace::GetNormalMap(const int image_idx) {
-  auto cached_image = cache_.Get(image_idx);
+  std::shared_ptr<CachedImage> cached_image;
+  {
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    cached_image = cache_.Get(image_idx);
+  }
   std::lock_guard<std::mutex> lock(cached_image->mutex);
   if (!cached_image->normal_map) {
     cached_image->normal_map = std::make_unique<NormalMap>();
@@ -245,7 +273,11 @@ const NormalMap& CachedWorkspace::GetNormalMap(const int image_idx) {
           model_.images.at(image_idx).GetHeight());
     }
     cached_image->num_bytes += cached_image->normal_map->GetNumBytes();
-    cache_.UpdateNumBytes(image_idx);
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    // Handle the case where another thread has already evicted the image.
+    if (cache_.Exists(image_idx)) {
+      cache_.UpdateNumBytes(image_idx);
+    }
   }
   return *cached_image->normal_map;
 }
@@ -255,20 +287,28 @@ const ConsistencyGraph* CachedWorkspace::GetConsistencyGraph(
   if (!HasConsistencyGraph(image_idx)) {
     return nullptr;
   }
-  auto cached_image = cache_.Get(image_idx);
+  std::shared_ptr<CachedImage> cached_image;
+  {
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    cached_image = cache_.Get(image_idx);
+  }
   std::lock_guard<std::mutex> lock(cached_image->mutex);
   if (!cached_image->consistency_graph) {
     cached_image->consistency_graph = std::make_unique<ConsistencyGraph>();
     cached_image->consistency_graph->Read(GetConsistencyGraphPath(image_idx));
     cached_image->num_bytes += cached_image->consistency_graph->GetNumBytes();
-    cache_.UpdateNumBytes(image_idx);
+    std::lock_guard<std::mutex> cache_lock(cache_mutex_);
+    if (cache_.Exists(image_idx)) {
+      cache_.UpdateNumBytes(image_idx);
+    }
   }
   return cached_image->consistency_graph.get();
 }
 
 void ImportPMVSWorkspace(const Workspace& workspace,
                          const std::string& option_name) {
-  const std::string& workspace_path = workspace.GetOptions().workspace_path;
+  const std::filesystem::path& workspace_path =
+      workspace.GetOptions().workspace_path;
   const std::string& stereo_folder = workspace.GetOptions().stereo_folder;
 
   CreateDirIfNotExists(JoinPaths(workspace_path, stereo_folder));

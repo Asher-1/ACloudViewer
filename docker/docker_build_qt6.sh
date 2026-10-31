@@ -52,7 +52,7 @@ Build dependencies:
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CMAKE_VERSION=cmake-3.29.2-linux-x86_64
+CMAKE_VERSION=cmake-3.31.8-linux-x86_64
 CUDA_VERSION=12.6.3-cudnn
 CUDA_VERSION_LATEST=12.6.3-cudnn
 UBUNTU_JAMMY=22.04
@@ -498,4 +498,3 @@ function main() {
 if [ "$0" = "$BASH_SOURCE" ]; then
     main "$@"
 fi
-

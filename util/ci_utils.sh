@@ -1,15 +1,40 @@
 #!/usr/bin/env bash
-# Detect if script is being sourced (for VS Code terminal compatibility)
+# Strict-mode handling:
+# - Executed directly: enable strict mode.
+# - Sourced by an INTERACTIVE shell (VS Code terminal): relax strict mode so a
+#   failed command cannot close the terminal.
+# - Sourced by a NON-interactive script (docker/build_*.sh, CI run blocks):
+#   leave the caller's shell options untouched. The old unconditional
+#   `set +e +u +o pipefail` here silently disabled the strict mode declared by
+#   sourcing scripts (e.g. `set -euo pipefail` in docker/build_cloudviewer_whl.sh),
+#   which let a failed wheel build continue and ship broken wheels.
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    # Script is being sourced - disable strict mode to prevent terminal crash
     _CI_UTILS_SOURCED=1
-    set +e  # Don't exit on error when sourced
-    set +u  # Don't exit on unset variables when sourced
-    set +o pipefail  # Don't exit on pipe failures when sourced
+    case $- in
+        *i*)
+            set +e # Don't exit on error in an interactive terminal
+            set +u # Don't exit on unset variables in an interactive terminal
+            set +o pipefail # Don't exit on pipe failures in an interactive terminal
+            ;;
+        *)
+            : # Sourced by a script: preserve the caller's shell options
+            ;;
+    esac
 else
     # Script is being executed - enable strict mode
     _CI_UTILS_SOURCED=0
     set -euo pipefail
+fi
+
+# Keep the verified CI executable ahead of login-shell/Homebrew PATH changes.
+# Local builds without setup-cmake retain their existing tool selection.
+if [[ -n "${CLOUDVIEWER_CMAKE_BIN:-}" ]]; then
+    if [[ ! -x "$CLOUDVIEWER_CMAKE_BIN" ]]; then
+        echo "Fixed CMake executable is unavailable: $CLOUDVIEWER_CMAKE_BIN" >&2
+        return 1 2>/dev/null || exit 1
+    fi
+    export PATH="$(dirname "$CLOUDVIEWER_CMAKE_BIN"):$PATH"
+    hash -r
 fi
 
 # The following environment variables are required:
@@ -378,6 +403,42 @@ install_python_dependencies() {
     fi
 }
 
+# Normalize the selected Xcode path without changing toolchains, then print
+# the common ccache key inputs. Different image versions need not ship the
+# same compiler bytes: keep full digests so a miss can be attributed honestly.
+print_ccache_key_inputs() {
+    local compiler developer_dir digest metadata tool
+    local -a stat_fmt tools
+    if [[ "$(uname -s)" == Darwin ]]; then
+        developer_dir="${DEVELOPER_DIR:-$(xcode-select -p)}"
+        if [[ -d "$developer_dir/Contents/Developer" ]]; then
+            developer_dir="$developer_dir/Contents/Developer"
+        fi
+        developer_dir="$(cd "$developer_dir" && pwd -P)" || return 1
+        export DEVELOPER_DIR="$developer_dir"
+        stat_fmt=(-L -f 'mtime=%m size=%z')
+        tools=(cc c++)
+    else
+        stat_fmt=(-L -c 'mtime=%Y size=%s')
+        tools=(cc)
+    fi
+    echo "ccache key inputs: $(ccache --version | head -1)"
+    echo "  config: $(ccache -k compiler_check) sloppiness=$(ccache -k sloppiness)"
+    echo "  os: $(sw_vers -productVersion 2>/dev/null || uname -r) image=${ImageVersion:-unknown}"
+    for tool in "${tools[@]}"; do
+        if [[ "$(uname -s)" == Darwin ]]; then
+            compiler="$(xcrun -f "$tool")" || return 1
+        else
+            compiler="$(command -v "$tool")" || return 1
+        fi
+        metadata="$(stat "${stat_fmt[@]}" "$compiler")" || return 1
+        digest="$(shasum -a 256 "$compiler")" || return 1
+        echo "  compiler: $compiler $metadata sha256=${digest%% *}"
+        "$compiler" --version || return 1
+    done
+    echo "  env: $(env | grep -E '^(LANG|LC_[A-Z]+|DEVELOPER_DIR|MACOSX_DEPLOYMENT_TARGET)=' | sort | tr '\n' ' ')"
+}
+
 build_mac_wheel() {
     echo "Building CloudViewer wheel"
     options="$(echo "$@" | tr ' ' '|')"
@@ -645,6 +706,21 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QFACEDETECT=ON"
                 "-DPLUGIN_STANDARD_QFREESPLATTER=ON"
                 "-DPLUGIN_STANDARD_QLIGHTGLUE=ON"
+                "-DPLUGIN_STANDARD_QRFDETR=ON"
+                "-DPLUGIN_STANDARD_QRMBG=ON"
+                "-DPLUGIN_STANDARD_QYOLO=ON"
+                "-DPLUGIN_STANDARD_QSAM3=ON"
+                "-DPLUGIN_STANDARD_QTRELLIS=ON"
+                "-DPLUGIN_STANDARD_QGKD=ON"
+                "-DPLUGIN_STANDARD_QOCR=ON"
+                "-DPLUGIN_STANDARD_QLINGBOTMAP=ON"
+                "-DPLUGIN_STANDARD_QSAM3D=ON"
+                "-DPLUGIN_STANDARD_QANYLABELING=ON"
+                "-DBUILD_SPIRULA=ON"
+                "-DPLUGIN_STANDARD_QSPIRULA=ON"
+                "-DPLUGIN_STANDARD_QMAPANYTHING=ON"
+                "-DPLUGIN_STANDARD_QOPENPCDET=ON"
+                "-DPLUGIN_STANDARD_QINSTANTMESH=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
@@ -654,6 +730,9 @@ build_gui_app() {
     )
     
     set -x # Echo commands on
+    if [[ "ninja_graph_check" =~ ^($options)$ ]]; then
+        check_ninja_build_graph "$(cd .. && pwd)" "${cmakeGuiOptions[@]}"
+    fi
     echo
     echo Running cmake "${cmakeGuiOptions[@]}" ..
     cmake "${cmakeGuiOptions[@]}" ..
@@ -667,6 +746,37 @@ build_gui_app() {
     ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
     popd                                           # PWD=ACloudViewer
+}
+
+# check_ninja_build_graph <source_dir> <cmake options...>
+#
+# Configures <source_dir>/build_ninja_check with Ninja Multi-Config (the
+# Windows CI generator) and the given options, checks the build graph with
+# util/check_ninja_graph.py, then deletes the tree. Ninja rejects a link input
+# that is missing and produced by no rule before it builds anything, while Make
+# never checks it, so the Make build alone cannot catch this. Only configures:
+# nothing is compiled. Problems in Windows-only branches still need a Windows
+# configure.
+check_ninja_build_graph() {
+    local source_dir="$1"
+    shift
+    local graph_dir="${source_dir}/build_ninja_check"
+    local status=0
+
+    echo "Checking the Ninja build graph in ${graph_dir}..."
+    rm -rf "${graph_dir}"
+    # Both configurations: some link paths carry a $<CONFIG:Debug> suffix.
+    # Besides the default target, the CI also builds these two explicitly.
+    if ! cmake -S "${source_dir}" -B "${graph_dir}" -G "Ninja Multi-Config" \
+            "$@" "-DCMAKE_CONFIGURATION_TYPES=Release;Debug"; then
+        echo "Ninja Multi-Config configure failed"
+        status=1
+    elif ! python "${source_dir}/util/check_ninja_graph.py" "${graph_dir}" \
+            --target aicore-contract-tests --target install; then
+        status=1
+    fi
+    rm -rf "${graph_dir}"
+    return "${status}"
 }
 
 build_pip_package() {
@@ -782,7 +892,19 @@ build_pip_package() {
     echo "Packaging CloudViewer CPU pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make pip-package for cpu"
-    mv lib/python_package/pip_package/cloudviewer*.whl . # save CPU wheel
+    # Fail loudly if the CPU pass did not produce a wheel. Without the CPU
+    # wheel, the later CUDA wheel cannot bundle the cloudViewer/cpu fallback
+    # bindings and imports fail on GPU-less machines (the two-pass scheme
+    # reuses the CPU pass artifacts; see make_python_package.cmake).
+    _cpu_wheels=(lib/python_package/pip_package/cloudviewer*.whl)
+    if [ ! -f "${_cpu_wheels[0]}" ]; then
+        echo "ERROR: 'make pip-package' produced no wheel (expected" \
+             "lib/python_package/pip_package/cloudviewer*.whl)." >&2
+        echo "Inspect the make output above for the root cause (compile error or" \
+             "third-party download failure)." >&2
+        exit 1
+    fi
+    mv -v "${_cpu_wheels[@]}" . # save CPU wheel
 
     if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
         echo
@@ -816,7 +938,15 @@ build_pip_package() {
     echo "Packaging CloudViewer full pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make CloudViewer full pip package"
-    mv cloudviewer*.whl lib/python_package/pip_package/ # restore CPU wheel
+    # The CUDA wheel must contain cloudViewer/cpu/pybind*.so (runtime fallback
+    # for GPU-less machines); make_python_package.cmake enforces the staging
+    # side. Restoring the CPU wheel keeps both variants in pip_package.
+    _saved_wheels=(cloudviewer*.whl)
+    if [ -f "${_saved_wheels[0]}" ]; then
+        mv -v "${_saved_wheels[@]}" lib/python_package/pip_package/ # restore CPU wheel
+    else
+        echo "WARNING: no CPU wheel was saved to restore into pip_package." >&2
+    fi
     popd                                           # PWD=ACloudViewer
 }
 
@@ -956,7 +1086,11 @@ run_python_tests() {
     echo "======================================================================"
     echo "Running Python Unit Tests"
     echo "======================================================================"
-    python -m pytest -v "${pytest_args[@]}"
+    # Fixed seed: identical order on every run, so a failing test can be
+    # reproduced locally with the same command (matches the windows.yml
+    # --randomly-seed=42). Without it a crash mid-suite leaves only the
+    # random-order progress dots in the log.
+    python -m pytest -v --randomly-seed=42 "${pytest_args[@]}"
     pytest_result=$?
     
     echo ""
@@ -979,6 +1113,39 @@ run_python_tests() {
     return $pytest_result
 }
 
+# Run optional plugin gates; an enabled plugin may not silently omit registrations.
+run_qpythonruntime_tests() {
+    local build_dir="${1:-build}"
+    local scope="${2:-all}"
+    local cache="${build_dir}/CMakeCache.txt"
+    if [[ ! -f "$cache" ]]; then
+        echo "qPythonRuntime: CMake cache not found at $cache" >&2
+        return 1
+    fi
+    if ! grep -Eq '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$' "$cache" ||
+       ! grep -Eq '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$' "$cache" ||
+       ! grep -Eq '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$' "$cache"; then
+        echo "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
+        return 0
+    fi
+    local pattern='^test_qpythonruntime_'
+    if [[ "$scope" == native ]]; then
+        pattern='^test_qpythonruntime_(binding_types|plugin_loading)$'
+    fi
+    local listing
+    listing=$(ctest --test-dir "$build_dir" -C Release --show-only=json-v1 -R "$pattern") || return $?
+    printf '%s' "$listing" | "${PYTHON_EXECUTABLE:-python3}" -c '
+import json, sys
+required = {"test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading"}
+if sys.argv[1] != "native":
+    required.add("test_qpythonruntime_binding_contracts")
+missing = required - {test["name"] for test in json.load(sys.stdin)["tests"]}
+if missing:
+    sys.exit("qPythonRuntime: missing CTest registrations: " + ", ".join(sorted(missing)))
+' "$scope" || return $?
+    ctest --test-dir "$build_dir" -C Release -R "$pattern" --no-tests=error --output-on-failure -j1
+}
+
 # Run C++ unit tests
 # Usage: run_cpp_unit_tests
 # Should be run from the build directory
@@ -989,8 +1156,8 @@ run_cpp_unit_tests() {
     
     pushd build
     # Check if tests executable exists
-    if [ ! -f "./bin/tests" ]; then
-        echo "Error: tests executable not found at ./bin/tests"
+    if [ ! -f "./bin/cloudviewer_test/tests" ]; then
+        echo "Error: tests executable not found at ./bin/cloudviewer_test/tests"
         echo "Please build with -DBUILD_UNIT_TESTS=ON"
         return 1
     fi
@@ -1002,11 +1169,11 @@ run_cpp_unit_tests() {
     fi
     
     echo "Test flags: $unitTestFlags"
-    echo "Tip: Run './bin/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
+    echo "Tip: Run './bin/cloudviewer_test/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
     echo ""
     
     # Run the tests
-    ./bin/tests $unitTestFlags
+    ./bin/cloudviewer_test/tests $unitTestFlags
     test_result=$?
     
     echo ""
@@ -1021,6 +1188,7 @@ run_cpp_unit_tests() {
         return $test_result
     fi
     echo ""
+    run_qpythonruntime_tests . native || { local result=$?; popd; return "$result"; }
     popd # build directory
 }
 

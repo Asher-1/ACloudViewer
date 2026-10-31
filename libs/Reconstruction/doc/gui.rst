@@ -5,13 +5,18 @@ Graphical User Interface
 
 The graphical user interface of COLMAP provides access to most of the available
 functionality and visualizes the reconstruction process in "real-time". To start
-the GUI, you can run the pre-built packages (Windows: `COLMAP.bat`, Mac:
-`COLMAP.app`), execute ``colmap gui`` if you installed COLMAP or execute
-``./src/exe/colmap gui`` from the CMake build folder. The GUI application
+the GUI, you can run the pre-built packages (Windows: ``COLMAP.bat``, Mac:
+``COLMAP.app``), execute ``colmap gui`` if you installed COLMAP or execute
+``./src/colmap/exe/colmap gui`` from the CMake build folder. The GUI application
 requires an attached display with at least OpenGL 3.2 support. Registered images
 are visualized in red and reconstructed points in their average point color
 extracted from the images. The viewer can also visualize dense point clouds
 produced from Multi-View Stereo.
+
+For lightweight, read-only inspection of binary sparse models in a web browser,
+see the :doc:`3D Viewer <viewer>`. It provides the same core model-view controls
+and visual conventions as the native viewer, but not the GUI's reconstruction,
+editing, dense visualization, or advanced rendering functionality.
 
 
 Model Viewer Controls

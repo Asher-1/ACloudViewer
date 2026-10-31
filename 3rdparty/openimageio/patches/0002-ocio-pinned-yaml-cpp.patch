@@ -1,0 +1,177 @@
+# ACloudViewer patches 0002+0003 for OpenImageIO 3.1.17.0: pin the repo-
+# resolved yaml-cpp 0.9.0 through the OpenColorIO sub-build (windows wheel
+# LNK2001), originally two patches, merged into one numbered file.
+#
+# The Sep-18 windows-wheel CI failed at the pybind link with
+#
+#   oiio_static_closure.lib(OCIOYaml.obj) : error LNK2001:
+#     YAML::FpToString(float, unsigned __int64)
+#     YAML::FpToString(double, unsigned __int64)
+#     YAML::Emitter::Write(char const*, unsigned __int64)
+#   pybind.cp312-win_amd64.pyd : fatal error LNK1120: 3 unresolved externals
+#
+# i.e. OCIOYaml.cpp was compiled against yaml-cpp 0.9.x headers (the first
+# release shipping Emitter::Write(const char*, size_t) and the public
+# yaml-cpp/fptostring.h used by the inline WriteStreamable tail; fptostring.h
+# entered upstream master in Nov 2024, 0.8.0 is from Jan 2023) while the
+# closure merged the OIIO-resolved 0.8.0 archive. OCIO is a static archive and
+# performs no link-time symbol resolution, so the drift only exploded at the
+# pybind link, hours after configure.
+#
+# Fix, two layers:
+#
+#   src/cmake/build_yaml-cpp.cmake
+#       Pin the OIIO local yaml-cpp build to the 0.9.0 release, so headers,
+#       refind, OCIO pins and the closure archive are all the same release
+#       and the merged archive carries the complete 0.9.x symbol set. This
+#       collapses the version distance itself instead of hardening search
+#       paths. yaml-cpp 0.9.0 keeps C++11 ABI/source compatibility with
+#       0.8.0 ("exposing new method Emitter::Write(const char*, size_t)"),
+#       every consumer here requires >= 0.8.0 with no upper bound, and the
+#       CI failure itself proves OCIO 2.5.1's OCIOYaml.cpp compiles cleanly
+#       against 0.9.x headers. Upstream tag layout: 0.9.0 reuses the
+#       historical "yaml-cpp-" prefix ("yaml-cpp-0.9.0"); a bare "0.9.0" tag
+#       does not exist, so GIT_TAG pins the full tag name and GIT_COMMIT the
+#       tag's commit (0001's checkout guard verifies the match).
+#
+#   src/cmake/ocio_subbuild_project_include.cmake
+#       repair 3 (OCIO_PINNED_YAML_CPP): append an enforcement tail to
+#       Findyaml-cpp.cmake and prepend one to Installyaml-cpp.cmake. The
+#       tail reads the OIIO pins back from the cache and forces them onto
+#       the yaml-cpp::yaml-cpp target. Installyaml-cpp.cmake declares
+#       yaml-cpp FOUND from the pins and returns before its ext clone, so
+#       the empty-GIT_TAG default-branch clone 0001 guards can no longer
+#       even start. Without pins (consumer scope) the guards stay silent,
+#       so OCIO's installed config keeps working for plain consumers. The
+#       prepend block also re-asserts INTERFACE_COMPILE_DEFINITIONS
+#       "YAML_CPP_STATIC_DEFINE" (yaml-cpp #1339): without it the MSVC
+#       headers fall back to dllimport and every yaml call becomes an
+#       unresolved __imp_ symbol against the static pinned archive.
+#       The former emitter.h "fptostring" canary that FATALed any 0.9.x
+#       header is intentionally absent: after the 0.9.0 pin a 0.9.x header
+#       is the sanctioned state rather than drift.
+#
+#   src/cmake/dependency_utils.cmake
+#       default every local-dep sub-build to CMAKE_MESSAGE_LOG_LEVEL=STATUS
+#       (was ERROR): the fixup confirmations must be visible in CI logs.
+#
+# Acceptance: applies cleanly on a fresh tree after 0001; the fixup is
+# idempotent (marker-scoped); the apply script's post-apply verification
+# checks both the fixup marker and the 0.9.0 build version.
+
+diff --git a/src/cmake/build_yaml-cpp.cmake b/src/cmake/build_yaml-cpp.cmake
+index ba55e2a..f4bd1c2 100644
+--- a/src/cmake/build_yaml-cpp.cmake
++++ b/src/cmake/build_yaml-cpp.cmake
+@@ -6,10 +6,10 @@
+ # yaml-cpp by hand!
+ ######################################################################
+ 
+-set_cache (yaml-cpp_BUILD_VERSION 0.8.0 "yaml-cpp version for local builds")
++set_cache (yaml-cpp_BUILD_VERSION 0.9.0 "yaml-cpp version for local builds")
+ set (yaml-cpp_GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp")
+-set (yaml-cpp_GIT_TAG "${yaml-cpp_BUILD_VERSION}") # NB: versions earlier than 0.8.0 had a "yaml-cpp-" prefix
+-set (yaml-cpp_GIT_COMMIT "f7320141120f720aecc4c32be25586e7da9eb978")
++set (yaml-cpp_GIT_TAG "yaml-cpp-0.9.0") # NB: the 0.9.0 release reuses the historical "yaml-cpp-" tag prefix; a bare "0.9.0" tag does not exist upstream
++set (yaml-cpp_GIT_COMMIT "56e3bb550c91fd7005566f19c079cb7a503223cf")
+ 
+ set_cache (yaml-cpp_BUILD_SHARED_LIBS OFF
+            DOC "Should a local yaml-cpp build, if necessary, build shared libraries" ADVANCED)
+diff --git a/src/cmake/dependency_utils.cmake b/src/cmake/dependency_utils.cmake
+index b5c92c9..dad0f4b 100644
+--- a/src/cmake/dependency_utils.cmake
++++ b/src/cmake/dependency_utils.cmake
+@@ -722,7 +722,7 @@ macro (build_dependency_with_cmake pkgname)
+                                 )
+     else ()
+         set (_pkg_cmake_verbose -DCMAKE_VERBOSE_MAKEFILE=OFF
+-                                -DCMAKE_MESSAGE_LOG_LEVEL=ERROR
++                                -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
+                                 -DCMAKE_RULE_MESSAGES=OFF
+                                 -Wno-dev
+                                 )
+diff --git a/src/cmake/ocio_subbuild_project_include.cmake b/src/cmake/ocio_subbuild_project_include.cmake
+index b120869..31a4393 100644
+--- a/src/cmake/ocio_subbuild_project_include.cmake
++++ b/src/cmake/ocio_subbuild_project_include.cmake
+@@ -94,3 +94,80 @@ if(EXISTS "${_ocio_install_mod}")
+         endif()
+     endif()
+ endif()
++
++set(_ocio_pin_install_block "")
++foreach(_ocio_pin_line IN ITEMS
++        "# --- OCIO_PINNED_YAML_CPP (ACloudViewer patch 0002) ---"
++        "get_property(_ocio_pin_include CACHE yaml-cpp_INCLUDE_DIR PROPERTY VALUE)"
++        "get_property(_ocio_pin_library CACHE yaml-cpp_LIBRARY PROPERTY VALUE)"
++        "if(_ocio_pin_include AND NOT _ocio_pin_include MATCHES \"NOTFOUND$\""
++        "        AND _ocio_pin_library AND NOT _ocio_pin_library MATCHES \"NOTFOUND$\""
++        "        AND EXISTS \"\${_ocio_pin_include}/yaml-cpp/yaml.h\""
++        "        AND EXISTS \"\${_ocio_pin_library}\")"
++        "    set(yaml-cpp_FOUND TRUE)"
++        "    set(yaml-cpp_INCLUDE_DIR \"\${_ocio_pin_include}\")"
++        "    set(yaml-cpp_LIBRARY \"\${_ocio_pin_library}\")"
++        "    if(NOT TARGET yaml-cpp::yaml-cpp)"
++        "        add_library(yaml-cpp::yaml-cpp UNKNOWN IMPORTED GLOBAL)"
++        "    endif()"
++        "    set_target_properties(yaml-cpp::yaml-cpp PROPERTIES"
++        "        IMPORTED_LOCATION \"\${_ocio_pin_library}\""
++        "        INTERFACE_INCLUDE_DIRECTORIES \"\${_ocio_pin_include}\")"
++        "    # yaml-cpp #1339: static consumers need YAML_CPP_STATIC_DEFINE, or"
++        "    # the MSVC headers fall back to dllimport (__imp_ symbols) while"
++        "    # the pins point at a static archive - LNK2019 for every yaml call."
++        "    set_property(TARGET yaml-cpp::yaml-cpp APPEND PROPERTY"
++        "        INTERFACE_COMPILE_DEFINITIONS \"YAML_CPP_STATIC_DEFINE\")"
++        "    return()"
++        "endif()")
++    string(CONCAT _ocio_pin_install_block "${_ocio_pin_install_block}" "${_ocio_pin_line}" "\n")
++endforeach()
++
++# 3. OCIO_PINNED_YAML_CPP: whatever route the yaml-cpp resolution takes below
++#    (config find, module fallback, or the Installyaml-cpp ext build), the
++#    yaml-cpp::yaml-cpp target must end up on the OIIO-pinned artifacts
++#    handed over as -D yaml-cpp_INCLUDE_DIR / yaml-cpp_LIBRARY cache entries.
++#    (the yaml-cpp BUILD_VERSION 0.9.0 pin in src/cmake/build_yaml-cpp.cmake
++#    below carries the same 0.9.0 symbol set as the closure archive, so the
++#    former 0.9.x emitter canary is intentionally unnecessary.)
++set(_ocio_pin_find_block "")
++foreach(_ocio_pin_line IN ITEMS
++        "# --- OCIO_PINNED_YAML_CPP (ACloudViewer patch 0002) ---"
++        "get_property(_ocio_pin_include CACHE yaml-cpp_INCLUDE_DIR PROPERTY VALUE)"
++        "get_property(_ocio_pin_library CACHE yaml-cpp_LIBRARY PROPERTY VALUE)"
++        "if(_ocio_pin_include AND NOT _ocio_pin_include MATCHES \"NOTFOUND$\")"
++        "    set(yaml-cpp_INCLUDE_DIR \"\${_ocio_pin_include}\")"
++        "endif()"
++        "if(_ocio_pin_library AND NOT _ocio_pin_library MATCHES \"NOTFOUND$\")"
++        "    set(yaml-cpp_LIBRARY \"\${_ocio_pin_library}\")"
++        "endif()"
++        "if(TARGET yaml-cpp::yaml-cpp AND yaml-cpp_INCLUDE_DIR AND yaml-cpp_LIBRARY"
++        "        AND NOT yaml-cpp_INCLUDE_DIR MATCHES \"NOTFOUND$\""
++        "        AND NOT yaml-cpp_LIBRARY MATCHES \"NOTFOUND$\")"
++        "    set_target_properties(yaml-cpp::yaml-cpp PROPERTIES"
++        "        IMPORTED_LOCATION \"\${_ocio_pin_library}\""
++        "        INTERFACE_INCLUDE_DIRECTORIES \"\${_ocio_pin_include}\")"
++        "endif()")
++    string(CONCAT _ocio_pin_find_block "${_ocio_pin_find_block}" "${_ocio_pin_line}" "\n")
++endforeach()
++
++set(_ocio_find_mod "${_ocio_root}/share/cmake/modules/Findyaml-cpp.cmake")
++if(EXISTS "${_ocio_find_mod}")
++    file(READ "${_ocio_find_mod}" _ocio_yaml_src)
++    if(NOT _ocio_yaml_src MATCHES "OCIO_PINNED_YAML_CPP")
++        file(APPEND "${_ocio_find_mod}" "${_ocio_pin_find_block}")
++        message(STATUS
++            "OCIO sub-build fixup: Findyaml-cpp.cmake pinned-target guard applied (OCIO_PINNED_YAML_CPP)")
++    endif()
++endif()
++
++set(_ocio_install_mod "${_ocio_root}/share/cmake/modules/install/Installyaml-cpp.cmake")
++if(EXISTS "${_ocio_install_mod}")
++    file(READ "${_ocio_install_mod}" _ocio_inst_src)
++    if(NOT _ocio_inst_src MATCHES "OCIO_PINNED_YAML_CPP")
++        file(WRITE "${_ocio_install_mod}"
++            "${_ocio_pin_install_block}${_ocio_inst_src}")
++        message(STATUS
++            "OCIO sub-build fixup: Installyaml-cpp.cmake pinned-target guard applied (OCIO_PINNED_YAML_CPP)")
++    endif()
++endif()

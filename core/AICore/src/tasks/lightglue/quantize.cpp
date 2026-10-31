@@ -15,7 +15,8 @@
 #include <string>
 #include <vector>
 
-#include "types.hpp"
+#include "common/gguf_file_io.hpp"
+#include "tasks/lightglue/types.hpp"
 
 namespace aicore {
 namespace lightglue {
@@ -97,10 +98,12 @@ bool quantize_model(const std::string &input_gguf,
     }
 
     ggml_context *input_context = nullptr;
-    gguf_init_params input_params{/*no_alloc=*/false, /*ctx=*/&input_context};
-    gguf_context *input = gguf_init_from_file(input_gguf.c_str(), input_params);
+    std::string open_error;
+    gguf_context *input = ggml_common::open_gguf_file(
+            input_gguf, /*no_alloc=*/false, &input_context,
+            "lightglue_quantize", &open_error);
     if (input == nullptr || input_context == nullptr) {
-        SetError(error, "failed to open input GGUF: " + input_gguf);
+        SetError(error, open_error);
         if (input != nullptr) gguf_free(input);
         if (input_context != nullptr) ggml_free(input_context);
         return false;

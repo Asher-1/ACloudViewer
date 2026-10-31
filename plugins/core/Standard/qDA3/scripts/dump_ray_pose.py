@@ -37,7 +37,10 @@ def load_ray_field(path, Hy, Wx):
 
 def main():
     os.makedirs("dumps", exist_ok=True)
-    sys.path.insert(0, "/tmp/da3-src/src")
+    da3_src = os.environ.get("DA3_SRC", "")
+    if not da3_src:
+        raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
+    sys.path.insert(0, da3_src)
     import depth_anything_3.utils.ray_utils as RU
     from depth_anything_3.utils.geometry import affine_inverse
 

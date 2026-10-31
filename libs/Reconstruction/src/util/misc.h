@@ -8,12 +8,16 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "util/endian.h"
+#include "util/file.h"
 #include "util/logging.h"
 #include "util/string.h"
 
@@ -24,65 +28,36 @@ namespace colmap {
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
 
-enum class CopyType { COPY, HARD_LINK, SOFT_LINK };
+// Upstream parity (d3ccaf35 util/misc.h): log headings for pipeline stages.
+#ifndef LOG_HEADING1
+#define LOG_HEADING1(message) LOG(INFO) << "=== " << (message) << " ===";
+#endif  // LOG_HEADING1
 
-// Append trailing slash to string if it does not yet end with a slash.
-std::string EnsureTrailingSlash(const std::string& str);
-
-// Check whether file name has the file extension (case insensitive).
-bool HasFileExtension(const std::string& file_name, const std::string& ext);
-
-// Split the path into its root and extension, for example,
-// "dir/file.jpg" into "dir/file" and ".jpg".
-void SplitFileExtension(const std::string& path,
-                        std::string* root,
-                        std::string* ext);
-
-// Copy or link file from source to destination path
-void FileCopy(const std::string& src_path,
-              const std::string& dst_path,
-              CopyType type = CopyType::COPY);
-
-// Check if the path points to an existing directory.
-bool ExistsFile(const std::string& path);
-
-// Check if the path points to an existing directory.
-bool ExistsDir(const std::string& path);
-
-// Check if the path points to an existing file or directory.
-bool ExistsPath(const std::string& path);
-
-// Create the directory if it does not exist.
-void CreateDirIfNotExists(const std::string& path);
-
-// Extract the base name of a path, e.g., "image.jpg" for "/dir/image.jpg".
-std::string GetPathBaseName(const std::string& path);
-
-// Get the path of the parent directory for the given path.
-std::string GetParentDir(const std::string& path);
-
-// Get the relative path between from and to. Both the from and to paths must
-// exist.
-std::string GetRelativePath(const std::string& from, const std::string& to);
+#ifndef LOG_HEADING2
+#define LOG_HEADING2(message) LOG(INFO) << "--- " << (message) << " ---";
+#endif  // LOG_HEADING2
 
 // Join multiple paths into one path.
+// NOTE (fork): legacy string-join helper kept for the string-domain callers
+// inside this library (exe tools, controllers, mvs internals). The
+// reconstruction UI layer (app/reconstruction) must NOT use it - that layer
+// is fs::path-native (operator/) and is gated by
+// app/reconstruction/check_fs_path_hygiene.sh. New core code should prefer
+// std::filesystem::path operator/ as well.
 template <typename... T>
 std::string JoinPaths(T const&... paths);
 
 // Return list of files in directory.
-std::vector<std::string> GetFileList(const std::string& path);
+std::vector<std::string> GetFileList(const std::filesystem::path& path);
 
-// Return list of files, recursively in all sub-directories.
-std::vector<std::string> GetRecursiveFileList(const std::string& path);
-
+// GetRecursiveFileList/GetDirList moved to util/file.h (upstream parity,
+// returning std::filesystem::path); the recursive-directory variant below is
+// a fork-only extension.
 // Return list of directories, recursively in all sub-directories.
-std::vector<std::string> GetDirList(const std::string& path);
-
-// Return list of directories, recursively in all sub-directories.
-std::vector<std::string> GetRecursiveDirList(const std::string& path);
+std::vector<std::string> GetRecursiveDirList(const std::filesystem::path& path);
 
 // Get the size in bytes of a file.
-size_t GetFileSize(const std::string& path);
+size_t GetFileSize(const std::filesystem::path& path);
 
 // Print first-order heading with over- and underscores to `std::cout`.
 void PrintHeading1(const std::string& heading);
@@ -107,27 +82,53 @@ std::string VectorToCSV(const std::vector<T>& values);
 
 // Read contiguous binary blob from file.
 template <typename T>
-void ReadBinaryBlob(const std::string& path, std::vector<T>* data);
+void ReadBinaryBlob(const std::filesystem::path& path, std::vector<T>* data);
 
 // Write contiguous binary blob to file.
 template <typename T>
-void WriteBinaryBlob(const std::string& path, const std::vector<T>& data);
+void WriteBinaryBlob(const std::filesystem::path& path,
+                     const std::vector<T>& data);
 
-// Read each line of a text file into a separate element. Empty lines are
-// ignored and leading/trailing whitespace is removed.
-std::vector<std::string> ReadTextFileLines(const std::string& path);
+// ReadTextFileLines moved to util/file.{h,cc} (upstream parity).
 
 // Remove an argument from the list of command-line arguments.
 void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);
+
+// Creates a deep copy of the managed object, or returns nullptr when the
+// input is empty (upstream parity; used by the feature option shells to
+// give the shared_ptr option groups value semantics).
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
 
+template <typename T>
+std::shared_ptr<T> CloneSharedPtr(const std::shared_ptr<T>& ptr) {
+    if (ptr) {
+        return std::make_shared<T>(*ptr);
+    }
+    return nullptr;
+}
+
+template <typename T>
+std::string JoinPathString(T const& path) {
+    if constexpr (std::is_same_v<std::decay_t<T>, std::filesystem::path>) {
+        return path.string();
+    } else {
+        // Preserve the historical boost behavior: joining with an absolute
+        // path argument appends rather than resets (std::filesystem differs).
+        return boost::filesystem::path(path).string();
+    }
+}
+
 template <typename... T>
 std::string JoinPaths(T const&... paths) {
     boost::filesystem::path result;
-    int unpack[]{0, (result = result / boost::filesystem::path(paths), 0)...};
+    int unpack[]{0, (result = result /
+                              boost::filesystem::path(JoinPathString(paths)),
+                     0)...};
     static_cast<void>(unpack);
     return result.string();
 }
@@ -148,15 +149,23 @@ bool VectorContainsDuplicateValues(const std::vector<T>& vector) {
 
 template <typename T>
 std::string VectorToCSV(const std::vector<T>& values) {
-    std::string string;
-    for (const T value : values) {
-        string += std::to_string(value) + ", ";
+    // Upstream parity (d3ccaf35 util/misc.h): stream formatting with full
+    // precision instead of std::to_string's fixed 6-decimal representation.
+    if (values.empty()) {
+        return "";
     }
-    return string.substr(0, string.length() - 2);
+    std::ostringstream stream;
+    SetFullPrecTextStream(stream);
+    for (const T& value : values) {
+        stream << value << ", ";
+    }
+    std::string buf = stream.str();
+    buf.resize(buf.size() - 2);
+    return buf;
 }
 
 template <typename T>
-void ReadBinaryBlob(const std::string& path, std::vector<T>* data) {
+void ReadBinaryBlob(const std::filesystem::path& path, std::vector<T>* data) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     CHECK(file.is_open()) << path;
     file.seekg(0, std::ios::end);
@@ -168,7 +177,8 @@ void ReadBinaryBlob(const std::string& path, std::vector<T>* data) {
 }
 
 template <typename T>
-void WriteBinaryBlob(const std::string& path, const std::vector<T>& data) {
+void WriteBinaryBlob(const std::filesystem::path& path,
+                     const std::vector<T>& data) {
     std::ofstream file(path, std::ios::binary);
     CHECK(file.is_open()) << path;
     WriteBinaryLittleEndian<T>(&file, data);

@@ -2,16 +2,16 @@
 # Centralized minimum CMake version requirements for all subprojects
 
 # Main project minimum version
-set(CLOUDVIEWER_CMAKE_MINIMUM_VERSION "3.19" CACHE STRING "Minimum CMake version for main project")
+set(CLOUDVIEWER_CMAKE_MINIMUM_VERSION "3.24" CACHE STRING "Minimum CMake version for main project")
 
 # Subproject minimum version
-set(CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION "3.10" CACHE STRING "Minimum CMake version for subprojects")
+set(CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION "3.24" CACHE STRING "Minimum CMake version for subprojects")
 
 # Plugin minimum version
-set(CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION "3.10" CACHE STRING "Minimum CMake version for plugins")
+set(CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION "3.24" CACHE STRING "Minimum CMake version for plugins")
 
 # Third-party library minimum version
-set(CLOUDVIEWER_THIRDPARTY_CMAKE_MINIMUM_VERSION "3.10" CACHE STRING "Minimum CMake version for third-party libraries")
+set(CLOUDVIEWER_THIRDPARTY_CMAKE_MINIMUM_VERSION "3.24" CACHE STRING "Minimum CMake version for third-party libraries")
 
 # Macro: set cmake_minimum_required for subprojects
 macro(set_subproject_cmake_minimum_required)

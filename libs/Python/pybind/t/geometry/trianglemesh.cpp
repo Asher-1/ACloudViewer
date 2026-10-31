@@ -1150,7 +1150,7 @@ the sampled surface points of the first mesh to the second mesh and vice versa.
 The F-Score at the fixed threshold radius is the harmonic mean of the Precision
 and Recall. Recall is the percentage of surface points from the first mesh that
 have the second mesh within the threshold radius, while Precision is the
-percentage of sampled points from the second mesh that have the first mesh 
+percentage of sampled points from the second mesh that have the first mesh
 surface within the threshold radius.
 
 .. math::

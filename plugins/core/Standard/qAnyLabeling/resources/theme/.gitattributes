@@ -1,0 +1,2 @@
+# Generated upstream QSS retains its exact whitespace for source comparison.
+dark.qss whitespace=-blank-at-eol,-blank-at-eof

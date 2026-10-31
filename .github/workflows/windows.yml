@@ -15,6 +15,16 @@ on:
         description: "Set to OFF for Release wheels"
         required: false
         default: "ON"
+      cold_build:
+        description: "Disable compile cache for end-to-end cold-build verification"
+        required: false
+        default: "false"
+
+  # Weekly cold-build gate: the full workflow runs with the compile cache
+  # disabled (COLD_BUILD=true), keeping the from-scratch end-to-end path
+  # exercised so cache hits can never rot the no-cache build.
+  schedule:
+    - cron: '0 3 * * 1'
 
   push:
     branches:
@@ -54,6 +64,10 @@ jobs:
       fail-fast: true
       matrix:
         python_version: ['3.12']
+        # Debug matrix entries are kept intentionally (devel-release smoke +
+        # future Debug-config testing); they run the env-setup steps only —
+        # the build steps are conditioned on Release (build_win_app.ps1 is
+        # Release-only) and do not affect any job's 6h wall time.
         BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
         BUILD_CUDA_MODULE: [ON, OFF]
@@ -66,6 +80,16 @@ jobs:
           - STATIC_RUNTIME: OFF
     env:
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
+      # Ninja Multi-Config drives cl.exe directly (no MSBuild vcxproj
+      # overhead) while keeping the VS-style bin/<Config>/ layout, the
+      # per-config output-dir properties and the --config Release build
+      # commands used by the scripts and the workflow test step. Requires the
+      # MSVC environment from the msvc-dev-cmd step below.
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
+      # Cold-build gate: releases, the weekly schedule and an explicit
+      # workflow_dispatch run WITHOUT the compile cache so the shipped
+      # artifacts stay reproducible from clean sources.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -108,6 +132,13 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # NOTE: do not trim CMAKE_CUDA_ARCHITECTURES here for CI speed. The CUDA
+      # installer is a distribution artifact (main-devel / release): dropping
+      # any -real arch breaks that GPU class outright (e.g. no sm_80 SASS and
+      # compute_86 PTX cannot JIT backwards onto A100), and relying on PTX JIT
+      # for newer GPUs changes first-run behavior. Compatibility of shipped
+      # artifacts is non-negotiable; build time is addressed elsewhere.
+
       - name: Install Vulkan SDK
         shell: powershell
         run: |
@@ -123,7 +154,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
@@ -133,6 +164,211 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      - name: Set up MSVC environment
+        # Ninja generators need cl.exe / INCLUDE / LIB from vcvarsall; this
+        # exports them through GITHUB_ENV so the build step inherits them.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Check build diagnostics contracts
+        if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          $fixture = Join-Path $env:RUNNER_TEMP 'diagnostics-contract'
+          $env:RUNNER_TEMP = Join-Path $fixture 'evidence'
+          $env:GITHUB_STEP_SUMMARY = Join-Path $fixture 'summary.md'
+          $fixtureBuild = Join-Path $fixture 'build'
+          New-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP, (Join-Path $fixtureBuild 'child') | Out-Null
+          Push-Location $fixtureBuild
+          try {
+            'root-CPU' | Set-Content '.ninja_log'
+            'child-CPU' | Set-Content 'child/.ninja_log'
+            $global:fixtureCode = 7
+            $global:fixtureThrow = $false
+            function global:cmake {
+              $global:capturedArgs = @($args)
+              $global:LASTEXITCODE = $global:fixtureCode
+              if ($global:fixtureThrow) { throw 'fixture-command-error' }
+              'fixture-output'
+            }
+            $output = Invoke-CMakeStage -Name 'fixture-CPU' -CMakeArgs @('--build', 'path with spaces')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or
+                $global:capturedArgs.Count -ne 2 -or $global:capturedArgs[1] -ne 'path with spaces') {
+              throw 'CMake diagnostics wrapper changed output, arguments or exit code'
+            }
+            $timingPath = Join-Path $env:RUNNER_TEMP 'build-timings.jsonl'
+            $timing = Get-Content $timingPath | ConvertFrom-Json
+            if ($timing.exit_code -ne 7 -or $timing.seconds -lt 0 -or
+                $timing.arguments[1] -ne 'path with spaces' -or $timing.build_directory -ne $fixtureBuild) {
+              throw 'Stage timing is not bound to the command and build directory'
+            }
+            'root-CUDA' | Set-Content '.ninja_log'
+            'child-CUDA' | Set-Content 'child/.ninja_log'
+            $global:fixtureCode = 0
+            $output = Invoke-CMakeStage -Name 'fixture-CUDA' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 0 -or $output -ne 'fixture-output') { throw 'Successful exit code was changed' }
+            foreach ($pass in @('CPU', 'CUDA')) {
+              $snapshot = Join-Path $env:RUNNER_TEMP "ninja-fixture-$pass"
+              if ((Get-Content (Join-Path $snapshot '.ninja_log')) -ne "root-$pass" -or
+                  (Get-Content (Join-Path $snapshot 'child/.ninja_log')) -ne "child-$pass") {
+                throw 'CPU/CUDA pass root or child graph snapshot is missing'
+              }
+            }
+            function global:Invoke-SccacheFixture {
+              $global:statsCalls++
+              $global:LASTEXITCODE = $global:statsCode
+              $global:statsFixture
+            }
+            $env:SCCACHE_PATH = 'Invoke-SccacheFixture'
+            $env:CLOUDVIEWER_COMPILER_LAUNCHER = 'fixture-launcher'
+            $global:statsCalls = 0
+            $global:statsCode = 0
+            $global:statsFixture = '{"stats":{"compile_requests":3,"cache_hits":{"counts":{"C/C++":2},"adv_counts":{"c++ [msvc]":2}},"cache_misses":{"counts":{"CUDA":3,"PTX":1},"adv_counts":{"cuda [nvcc]":3,"ptx [ptxas]":1}},"cache_errors":{"counts":{},"adv_counts":{}}}}'
+            $global:LASTEXITCODE = 9
+            $report = (Write-SccacheStats -Label 'fixture' 6>&1) -join "`n"
+            if ($LASTEXITCODE -ne 9 -or $report -notmatch '\| C/C\+\+ \| 2 \| 0 \| 0 \|' -or
+                $report -notmatch '\| CUDA \| 0 \| 3 \| 0 \|' -or $report -notmatch '\| PTX \| 0 \| 1 \| 0 \|' -or
+                $report -notmatch '\| cuda \[nvcc\] \| 0 \| 3 \| 0 \|' -or
+                $report -notmatch '\| c\+\+ \[msvc\] \| 2 \| 0 \| 0 \|' -or $report -notmatch '2 hits, 4 misses, 0 errors' -or
+                (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $global:statsFixture -or
+                (Get-Content $env:GITHUB_STEP_SUMMARY -Raw) -notmatch 'cannot be used as a source-file hit rate or an end-to-end speedup ratio') {
+              throw 'sccache categories, raw response, performance claim boundary or exit-code preservation failed'
+            }
+            foreach ($empty in @('{"stats":{"compile_requests":0}}', '{"stats":{"compile_requests":3,"cache_hits":{"counts":{}},"cache_misses":{"counts":{}},"cache_errors":{"counts":{}}}}')) {
+              $global:statsFixture = $empty
+              $report = (Write-SccacheStats -Label 'empty' 6>&1) -join "`n"
+              if ($LASTEXITCODE -ne 9 -or $report -match '::notice' -or $report -match 'skipped') { throw 'Empty stats were incorrectly reported' }
+            }
+            foreach ($invalid in @('{invalid', '{}', '{"stats":{"compile_requests":3}}')) {
+              $global:statsFixture = $invalid
+              $report = (Write-SccacheStats -Label 'invalid' 6>&1) -join "`n"
+              if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped' -or $report -match '::notice' -or
+                  (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $invalid) {
+                throw 'Invalid stats were not preserved or changed the exit code'
+              }
+            }
+            $global:statsCode = 5
+            $report = (Write-SccacheStats -Label 'failed-stats' 6>&1) -join "`n"
+            if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped') { throw 'Stats command failure overwrote the upstream exit code' }
+            $global:statsCode = 0
+            $global:statsFixture = '{"stats":{"compile_requests":0}}'
+            $global:fixtureCode = 17
+            $global:fixtureThrow = $true
+            $thrown = $false
+            try { Invoke-CMakeStage -Name 'exception' -CMakeArgs @('--build', '.') }
+            catch { if ($_ -notmatch 'fixture-command-error') { throw }; $thrown = $true }
+            $lastTiming = Get-Content $timingPath | Select-Object -Last 1 | ConvertFrom-Json
+            if (-not $thrown -or $LASTEXITCODE -ne 17 -or $null -ne $lastTiming.exit_code) {
+              throw 'Diagnostics overwrote the original exception or exit code'
+            }
+            $global:fixtureThrow = $false
+            $global:fixtureCode = 7
+            $beforeCalls = $global:statsCalls
+            $env:RUNNER_TEMP = Join-Path $fixtureBuild '.ninja_log'
+            $output = Invoke-CMakeStage -Name 'failed-write' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or $global:statsCalls -ne ($beforeCalls + 1)) {
+              throw 'Diagnostics write failure affected the build or prevented cache stats collection'
+            }
+            $env:RUNNER_TEMP = ''
+            $env:GITHUB_STEP_SUMMARY = ''
+            $global:fixtureNative = (Get-Process -Id $PID).Path
+            function global:cmake { & $global:fixtureNative -NoProfile -Command "Write-Output 'native-output'; exit 7" }
+            $PSNativeCommandUseErrorActionPreference = $false
+            $output = Invoke-CMakeStage -Name 'native-exit' -CMakeArgs @('--build', '.')
+            if ($LASTEXITCODE -ne 7 -or $output -ne 'native-output') { throw 'Native process exit code or output was changed' }
+            $PSNativeCommandUseErrorActionPreference = $true
+            $thrown = $false
+            try { Invoke-CMakeStage -Name 'native-exception' -CMakeArgs @('--build', '.') | Out-Null }
+            catch [System.Management.Automation.NativeCommandExitException] { $thrown = $true }
+            if (-not $thrown -or $LASTEXITCODE -ne 7) { throw 'Native exception exit code was overwritten' }
+          } finally { Pop-Location }
+          $global:LASTEXITCODE = 0
+          Write-Host 'Build diagnostics contracts passed (files, categories, exceptions, write failures, native exit codes)'
+
+      - name: Set up sccache binary (warm runs only)
+        # Compile cache is an optimization overlay: cache keys are content-
+        # addressed (compiler hash + full command line + preprocessed input),
+        # so any source/header/flag/third-party-version change misses and
+        # recompiles for real. Infra failures degrade to a vanilla build via
+        # continue-on-error + the outcome check below (cache never gates CI).
+        # The action is used ONLY to install the binary. Its ghac backend is
+        # intentionally NOT enabled (no SCCACHE_GHA_ENABLED): one cache entry
+        # per compiled object flooded the 10 GB repo quota (12,640 entries /
+        # 5.76 GB from run 39601603983 alone) and evicted other workflows'
+        # caches, and when the object pool went cold every compile blocked on
+        # per-object ghac lookups/uploads during the 2026-10-21 Actions
+        # incident, stretching that run from ~2.5 h to 6.03 h. A local disk
+        # pool persisted as ONE artifact per cell (stash, below) is immune
+        # to both.
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          # Pin the sccache binary: the action without a version pulls the
+          # latest release, and 0.19.0 (published 2026-10-24T10:25Z) fixed
+          # #2740 "include validation in the preprocessor cache" — the exact
+          # bug that made rounds 2-4 (0.18.0) miss every MSVC compile while
+          # the pool grew. A silent bump to 0.20+ would re-shuffle the key
+          # space and cost one full-cold round per cell.
+          version: "v0.19.0"
+          # Its post step queries --show-stats after "Stop sccache server",
+          # i.e. a fresh empty daemon, and annotated every warm round as
+          # "0% - 0 hits" (run 40235417998: real rate 95.67-98.97 %). The
+          # stop step below reports the live daemon's numbers instead.
+          disable_annotations: "true"
+      - name: Restore sccache pool (stash)
+        # apache/infrastructure-actions/stash — the artifact-backed cache
+        # Apache Arrow uses for its Windows MSVC ccache: no 10 GB repo quota
+        # (actions/cache) and no 2 GiB per-file limit (release assets), free
+        # for public repos, no secrets (fork PRs work); lookup order is this
+        # run -> this branch -> PR base / default branch.
+        # The previous release-asset backend forced SCCACHE_CACHE_SIZE=1900M
+        # under the 2 GiB asset limit, below the ~4 GB working set of one
+        # build: every pool sat at the cap and LRU thrashed (rounds 6 -> 8 on
+        # the SAME image 20261022.344 / MSVC 14.44.35207 and identical C++
+        # sources fell from 62.15 % to 5.89 % hits).
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && matrix.CONFIG == 'Release'
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: ${{ runner.temp }}\sccache
+      - name: Enable sccache launcher
+        # Only wire the launcher when the binary actually came up;
+        # util/ci_utils.ps1 forwards it as CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER
+        # (ExternalProject_CMAKE_ARGS propagates it to VTK/OpenCV/COLMAP).
+        # SCCACHE_CACHE_SIZE is only a ceiling well above the working set;
+        # the pool size itself is bounded by the job-scoped trim before
+        # save. SCCACHE_POOL_T0 marks the restore boundary for that trim.
+        # CUDA (nvcc) caching is included: see the gate evidence recorded at
+        # the forwarding site in util/ci_utils.ps1. Both caps were exercised
+        # unchanged under that gate, with zero CUDA misses in the warm rounds.
+        # SCCACHE_IDLE_TIMEOUT must exceed the packaging time after the last
+        # compile (installer + import checks ran 11-12 min past it, run 39994107226);
+        # at the 600 s default the server self-exits, and every --show-stats
+        # afterwards (in-step AND workflow-level) lazily spawns a fresh server
+        # reporting 0 requests — which masked the real hit/miss numbers of
+        # three consecutive ~5.7 h warm rounds.
+        # The explicit --start-server removes the lazy-start race between the
+        # first parallel cl.exe wrappers and proves right here that the
+        # restored pool is visible to the daemon (cache location + size).
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\sccache" | Out-Null
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=10G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_POOL_T0=$((Get-Date).ToUniversalTime().Ticks)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
+          $env:SCCACHE_CACHE_SIZE = "10G"
+          $env:SCCACHE_IDLE_TIMEOUT = "36000"
+          & $env:SCCACHE_PATH --start-server
+          & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
 
       - name: Install dependencies
         # deploy QtIFW for installer and deploy 3rdparty_downloads.zip for fast building on windows
@@ -158,7 +394,15 @@ jobs:
           $ErrorActionPreference = 'Stop'
 
       - name: Build ACloudViewer App
+        id: build
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
+        # Cached builds stop at 330 min so the stop + stash save steps still
+        # fit the 360 min job cap: a near-cold build (round 8 cudaON compiled
+        # for 338 min) killed by the cap would save nothing, and every later
+        # round would start cold again. A timed-out build saves its partial
+        # pool and the next round resumes from it. Uncached builds keep the
+        # job cap (weekly cold gate, release).
+        timeout-minutes: ${{ (env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success') && 330 || 360 }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -239,7 +483,7 @@ jobs:
           }
           
           # Check if test executable exists
-          $testExe = Join-Path $buildDir "bin\${{ matrix.CONFIG }}\tests.exe"
+          $testExe = Join-Path $buildDir "bin\cloudviewer_test\${{ matrix.CONFIG }}\tests.exe"
           if (-not (Test-Path $testExe)) {
             Write-Error "Test executable not found: $testExe"
             Write-Host "Current directory: $(Get-Location)"
@@ -255,6 +499,12 @@ jobs:
           Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
           Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           
+          # tests.exe lives under bin\cloudviewer_test\ but the shared DLLs are
+          # centralized in bin\<CONFIG>\; Windows has no RPATH, so prepend the
+          # DLL directory before launching.
+          $dllDir = Join-Path $buildDir "bin\${{ matrix.CONFIG }}"
+          $env:PATH = "$dllDir;$env:PATH"
+          
           # Run the tests
           & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
           $testResult = $LASTEXITCODE
@@ -265,6 +515,15 @@ jobs:
           }
           
           Write-Host "C++ unit tests passed successfully."
+      - name: Run qPythonRuntime native tests
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\util\ci_utils.ps1
+          $buildDir = Join-Path $env:SRC_DIR "build"
+          $dllDir = Join-Path $buildDir "bin\${{ matrix.CONFIG }}"
+          $env:PATH = "$dllDir;$env:PATH"
+          Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config "${{ matrix.CONFIG }}"
       - name: Upload build log
         # Persist the full build log (GitHub truncates very long step logs in
         # the UI). if: always() + continue-on-error: upload even when the build
@@ -276,6 +535,71 @@ jobs:
           name: windows-build-log-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
           path: ${{ runner.temp }}\windows-build.log
           if-no-files-found: ignore
+      - name: Stop sccache server
+        # Flush the daemon's pending cache writes before the job ends so the
+        # save step below tars a complete pool. The stats are kept only in
+        # the daemon's memory, so this is the last point where they are
+        # real (SCCACHE_IDLE_TIMEOUT=36000 keeps it alive past packaging);
+        # they are published here as the job's notice and summary. A
+        # 0-request daemon is a freshly spawned one (build never started or
+        # daemon died) and is not reported. Never gates the job.
+        if: always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        run: |
+          & $env:SCCACHE_PATH --show-stats
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          Write-SccacheStats -Label "app cuda${{ matrix.BUILD_CUDA_MODULE }}"
+          & $env:SCCACHE_PATH --stop-server
+      - name: Upload build profiling evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-profile-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: |
+            ${{ runner.temp }}\build-timings.jsonl
+            ${{ runner.temp }}\sccache-*.json
+            ${{ runner.temp }}\ninja-*
+            ${{ env.SRC_DIR }}\build\**\.ninja_log
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - name: Trim sccache pool to this job's working set
+        # Same semantics as DuckDB's ccache-action `evict-old-files: job` and
+        # Godot's purge_cache.py: drop every entry this job did not touch so
+        # the saved pool equals the build's working set and never reaches
+        # SCCACHE_CACHE_SIZE (no in-build eviction, no stale growth).
+        # sccache refreshes an entry's mtime on every hit
+        # (lru_disk_cache::get_file -> set_file_times), so mtime < T0 means
+        # unused. Only after a successful build: a failed build never reached
+        # part of its working set, and those entries must survive.
+        if: ${{ !cancelled() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          & $env:SCCACHE_PATH --stop-server 2>$null
+          $global:LASTEXITCODE = 0
+          $t0 = [long]$env:SCCACHE_POOL_T0
+          $all = Get-ChildItem "${{ runner.temp }}\sccache" -Recurse -File
+          $stale = $all | Where-Object { $_.LastWriteTimeUtc.Ticks -lt $t0 }
+          $stale | Remove-Item -Force -ErrorAction SilentlyContinue
+          $kept = ($all | Measure-Object -Property Length -Sum).Sum - ($stale | Measure-Object -Property Length -Sum).Sum
+          Write-Host ("[cache] trimmed {0} untouched entries; pool = {1} files, {2:N2} GB" -f @($stale).Count, (@($all).Count - @($stale).Count), ($kept / 1GB))
+      - name: Save sccache pool (stash)
+        # One artifact per cell and branch; overwrite replaces it within this
+        # run, newer runs win on restore. compression-level 0: sccache
+        # entries are already zstd-compressed.
+        # Saved whenever the build step ran — also when it failed, timed out
+        # or was cancelled by a newer push (concurrency on main): the pool is
+        # then the restored pool plus everything compiled so far, a superset
+        # that only makes the next round warmer.
+        if: ${{ always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && contains(fromJSON('["success","failure","cancelled"]'), steps.build.outcome) }}
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: ${{ runner.temp }}\sccache
+          retention-days: 14
+          compression-level: 0
+          if-no-files-found: ignore
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -284,7 +608,10 @@ jobs:
           path: ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }}
           if-no-files-found: error
       - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
+        # PACKAGE_INSTALLER_NAME is only produced by the Release build step;
+        # Debug matrix jobs must skip this or the gh upload runs with an empty
+        # path (and fails the job, cascading via fail-fast).
+        if: ${{ github.ref == 'refs/heads/main' && matrix.CONFIG == 'Release' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -292,7 +619,7 @@ jobs:
           gh release view main-devel
       - name: Public App Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && matrix.CONFIG == 'Release'
         with:
           fail_on_unmatched_files: false
           generate_release_notes: false
@@ -351,7 +678,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Set up Python environment (conda, same as build)
         uses: conda-incubator/setup-miniconda@v3
@@ -362,12 +689,7 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Checkout CLI-Anything (agent harness)
-        uses: actions/checkout@v4
-        with:
-          repository: Asher-1/CLI-Anything
-          path: _cli-anything
-          sparse-checkout: |
-            acloudviewer/agent-harness
+        uses: ./.github/actions/checkout-agent-harness
 
       - name: Download ACloudViewer installer
         uses: actions/download-artifact@v4
@@ -482,8 +804,11 @@ jobs:
             exit 1
           }
 
-          # Run integration tests
+          # Run integration tests; a missing binary must fail, not skip
+          $env:ACV_REQUIRE_BINARY = "1"
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$env:ACV_BINARY"
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
           # Cleanup
@@ -523,6 +848,17 @@ jobs:
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      # Ninja Multi-Config, same as the app matrix job: the CMAKE_C/CXX
+      # COMPILER_LAUNCHER (sccache) is ONLY honored by Makefile/Ninja
+      # generators — a Visual Studio generator routes compiles through
+      # MSBuild, silently ignores the launcher, and the wheel job therefore
+      # compiled the whole double pass with 0 sccache requests (job summary
+      # all-zero stats in run 39088510659) and hit the 6h runner limit.
+      CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
+      # Cold-build gate, same expression as the app matrix job: releases, the
+      # weekly schedule and an explicit workflow_dispatch run WITHOUT the
+      # compile cache so the shipped artifacts stay reproducible.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -532,6 +868,14 @@ jobs:
           } else {
             echo "DEVELOPER_BUILD=$env:DEVELOPER_BUILD" >> $env:GITHUB_ENV
           }
+
+      - name: Set up MSVC environment
+        # Ninja generators need cl.exe / INCLUDE / LIB from vcvarsall; the
+        # app matrix job wires the same step for its Ninja Multi-Config
+        # build. Without it the NMC wheel build cannot find a compiler.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Install CUDA
         uses: Jimver/cuda-toolkit@v0.2.23
@@ -591,6 +935,85 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
           auto-activate-base: true
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      - name: Set up sccache binary (warm runs only)
+        # Same contract as the app matrix job above: the action installs the
+        # binary only; the ghac backend stays disabled (see the app job for
+        # the thrashing incident that justified the local disk pool).
+        # This job is the one that hits the 6h runner limit (the CPU pass
+        # alone compiles ~3.5h of C++ without cache), so the launcher matters
+        # most here.
+        if: env.COLD_BUILD != 'true'
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          # Pin the sccache binary: the action without a version pulls the
+          # latest release, and 0.19.0 (published 2026-10-24T10:25Z) fixed
+          # #2740 "include validation in the preprocessor cache" — the exact
+          # bug that made rounds 2-4 (0.18.0) miss every MSVC compile while
+          # the pool grew. A silent bump to 0.20+ would re-shuffle the key
+          # space and cost one full-cold round per cell.
+          version: "v0.19.0"
+          # See the app matrix job: the post step would annotate a fresh
+          # empty daemon as "0% - 0 hits"; the trim step reports instead.
+          disable_annotations: "true"
+      - name: Restore sccache pool (stash)
+        # Same stash backend as the app matrix job (see there for why the
+        # release-asset pool thrashed).
+        id: stash-wheel
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}
+          path: ${{ runner.temp }}\sccache
+      - name: Seed sccache pool from the app pools (CUDA app)
+        # Cold-start seed only: the wheel's two passes (CUDA + CPU) compile
+        # nearly the same 3rdparty/core object set as the two app jobs. A
+        # cold wheel run (~353-400 min) exceeds the 360 min job cap and
+        # could never save its own pool — a chicken-and-egg deadlock. The
+        # pools merge into one directory (content-addressed names carry
+        # identical content); the job-scoped trim before save drops the
+        # entries this job did not use.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && steps.stash-wheel.outputs.stash-hit != 'true'
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-app-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: ${{ runner.temp }}\sccache
+      - name: Seed sccache pool from the app pools (CPU app)
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && steps.stash-wheel.outputs.stash-hit != 'true' && matrix.BUILD_CUDA_MODULE == 'ON'
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-app-cudaOFF
+          path: ${{ runner.temp }}\sccache
+      - name: Enable sccache launcher
+        # util/ci_utils.ps1 Build-PipPackage forwards it as
+        # CMAKE_C/CXX/CUDA_COMPILER_LAUNCHER when this env var is set.
+        # CUDA (nvcc) caching is included; the gate evidence is recorded at
+        # the forwarding site in util/ci_utils.ps1.
+        # SCCACHE_IDLE_TIMEOUT=36000 keeps the daemon alive past packaging so
+        # the in-step stats are real numbers (see the app-matrix job for the
+        # full 600 s default autopsy). The explicit --start-server also
+        # verifies the restored pool is visible to the daemon. 20G is a
+        # ceiling for the two-pass (CUDA + CPU) working set; the pool size is
+        # bounded by the job-scoped trim before save.
+        if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\sccache" | Out-Null
+          echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=20G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_POOL_T0=$((Get-Date).ToUniversalTime().Ticks)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
+          $env:SCCACHE_CACHE_SIZE = "20G"
+          $env:SCCACHE_IDLE_TIMEOUT = "36000"
+          & $env:SCCACHE_PATH --start-server
+          & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}
@@ -609,6 +1032,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
 
       - name: Config and Building
+        id: build
+        # Same 330 min cached-build budget as the app job (see there).
+        timeout-minutes: ${{ (env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success') && 330 || 360 }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -647,6 +1073,55 @@ jobs:
           path: ${{ runner.temp }}\windows-wheel-build.log
           if-no-files-found: ignore
       
+      - name: Trim sccache pool to this job's working set
+        # See the app matrix job: keep only entries this job touched, and
+        # only after a successful build. Also seals the seeded app entries
+        # the wheel never used out of its own pool. The daemon is stopped
+        # whenever the build ran, so a partial pool is flushed before save.
+        if: ${{ always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && contains(fromJSON('["success","failure","cancelled"]'), steps.build.outcome) }}
+        continue-on-error: true
+        run: |
+          & $env:SCCACHE_PATH --show-stats
+          # Publish the live daemon's stats before stopping it (see the app
+          # matrix job "Stop sccache server").
+          . "${{ env.SRC_DIR }}\util\ci_utils.ps1"
+          Write-SccacheStats -Label "wheel py${{ matrix.python_version }} cuda${{ matrix.BUILD_CUDA_MODULE }}"
+          & $env:SCCACHE_PATH --stop-server 2>$null
+          $global:LASTEXITCODE = 0
+          if ('${{ steps.build.outcome }}' -ne 'success') {
+            Write-Host "[cache] build ${{ steps.build.outcome }}; keeping the untrimmed pool"
+            exit 0
+          }
+          $t0 = [long]$env:SCCACHE_POOL_T0
+          $all = Get-ChildItem "${{ runner.temp }}\sccache" -Recurse -File
+          $stale = $all | Where-Object { $_.LastWriteTimeUtc.Ticks -lt $t0 }
+          $stale | Remove-Item -Force -ErrorAction SilentlyContinue
+          $kept = ($all | Measure-Object -Property Length -Sum).Sum - ($stale | Measure-Object -Property Length -Sum).Sum
+          Write-Host ("[cache] trimmed {0} untouched entries; pool = {1} files, {2:N2} GB" -f @($stale).Count, (@($all).Count - @($stale).Count), ($kept / 1GB))
+      - name: Upload build profiling evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-wheel-profile-py${{ matrix.python_version }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: |
+            ${{ runner.temp }}\build-timings.jsonl
+            ${{ runner.temp }}\sccache-*.json
+            ${{ runner.temp }}\ninja-*
+            ${{ env.SRC_DIR }}\build\**\.ninja_log
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - name: Save sccache pool (stash)
+        # Same save policy as the app job: any run that reached the build.
+        if: ${{ always() && env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success' && contains(fromJSON('["success","failure","cancelled"]'), steps.build.outcome) }}
+        continue-on-error: true
+        uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+        with:
+          key: sccache-win-wheel-cuda${{ matrix.BUILD_CUDA_MODULE }}-py${{ matrix.python_version }}
+          path: ${{ runner.temp }}\sccache
+          retention-days: 14
+          compression-level: 0
+          if-no-files-found: ignore
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -680,6 +1155,12 @@ jobs:
     permissions:
       contents: read
     runs-on: windows-2022
+    # Hard cap well below the 6h runner limit: the 4fddd764b run wedged for
+    # ~6h after a C++-side abort in the python suite (faulthandler dumped,
+    # the pipeline never released) and burned a full runner. The suite
+    # itself completes in ~6min on Ubuntu; 60min leaves generous headroom
+    # for the slower Windows host while reclaiming the runner on a wedge.
+    timeout-minutes: 60
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -738,6 +1219,20 @@ jobs:
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
       - name: Run Python unit tests (CPU)
+        env:
+          # Unbuffered stdout: the 4fddd764b Test-wheel crash (Fatal Python
+          # error: Aborted in test_parity_batches.py) printed only buffered
+          # progress dots - the verbose per-test lines that name the failing
+          # test stayed in the stdio buffer and were lost when the abort
+          # wedged the pipeline for the remaining ~6h (Ubuntu's
+          # run_python_tests passes -v and the same suite passes in ~6min).
+          PYTHONUNBUFFERED: '1'
+          # Forensics gate for test_database_management_surface (the Windows
+          # abort diagnosed via test_parity_batches.py): set the repository
+          # variable ACV_WINDOWS_DB_DIAG=1 (repo Settings -> Variables) to run
+          # that test with its step-level stderr markers on; default 0 keeps
+          # it skipped per the upstream verification boundary.
+          ACV_WINDOWS_DB_DIAG: ${{ vars.ACV_WINDOWS_DB_DIAG || '0' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
@@ -745,9 +1240,11 @@ jobs:
           echo "Installing test dependencies..."
           python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CPU)..."
-          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          # -v + fixed seed (parity with run_python_tests' -v): verbose lines
+          # name every test, the fixed seed makes any failure locally
+          # reproducible.
+          python -m pytest -v --randomly-seed=42 python/test/ --ignore python/test/ml_ops/
           deactivate
       - name: Test Python package (CUDA)
         env:
@@ -766,6 +1263,16 @@ jobs:
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
       - name: Run Python unit tests (CUDA)
+        env:
+          # Same forensics as the CPU step above (unbuffered verbose lines
+          # name the failing test when a C++ extension aborts mid-run).
+          PYTHONUNBUFFERED: '1'
+          # Forensics gate for test_database_management_surface (the Windows
+          # abort diagnosed via test_parity_batches.py): set the repository
+          # variable ACV_WINDOWS_DB_DIAG=1 (repo Settings -> Variables) to run
+          # that test with its step-level stderr markers on; default 0 keeps
+          # it skipped per the upstream verification boundary.
+          ACV_WINDOWS_DB_DIAG: ${{ vars.ACV_WINDOWS_DB_DIAG || '0' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
@@ -773,7 +1280,6 @@ jobs:
           python -V
           python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CUDA)..."
-          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          python -m pytest -v --randomly-seed=42 python/test/ --ignore python/test/ml_ops/
           deactivate

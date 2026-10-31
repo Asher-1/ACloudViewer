@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "facedetect.h"
+#include "tasks/facedetect/facedetect.h"
 
 #include <cmath>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "image_io.hpp"
-#include "model.hpp"
+#include "tasks/facedetect/image_io.hpp"
+#include "tasks/facedetect/model.hpp"
 
 #define FACEDETECT_VERSION "0.0.1"
 

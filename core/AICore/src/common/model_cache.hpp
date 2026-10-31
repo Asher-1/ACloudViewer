@@ -1,6 +1,7 @@
 #pragma once
 
-#include "data_root_util.hpp"
+#include "common/data_root_util.hpp"
+
 
 namespace aicore {
 
@@ -27,6 +28,56 @@ inline std::string aliked_model_cache_dir() {
 
 inline std::string facedetect_model_cache_dir() {
     return extract_model_dir("facedetect_models");
+}
+
+inline std::string rfdetr_model_cache_dir() {
+    return extract_model_dir("rfdetr_models");
+}
+
+inline std::string rmbg_model_cache_dir() {
+    return extract_model_dir("rmbg_models");
+}
+
+inline std::string ocr_model_cache_dir() {
+    return extract_model_dir("ocr_models");
+}
+
+inline std::string yolo_model_cache_dir() {
+    return extract_model_dir("yolo_models");
+}
+
+inline std::string openpcdet_model_cache_dir() {
+    return extract_model_dir("openpcdet_models");
+}
+
+inline std::string trellis_model_cache_dir() {
+    return extract_model_dir("trellis_models");
+}
+
+inline std::string instantmesh_model_cache_dir() {
+    return extract_model_dir("instantmesh_models");
+}
+
+inline std::string sam3_model_cache_dir() {
+    return extract_model_dir("sam3_models");
+}
+inline std::string loma_model_cache_dir() {
+    return extract_model_dir("loma_models");
+}
+inline std::string lingbot_model_cache_dir() {
+    return extract_model_dir("lingbot_models");
+}
+
+inline std::string gkd_model_cache_dir() {
+    return extract_model_dir("gkd_models");
+}
+
+inline std::string map_anything_model_cache_dir() {
+    return extract_model_dir("map_anything_models");
+}
+
+inline std::string anycalib_model_cache_dir() {
+    return extract_model_dir("anycalib_models");
 }
 
 }  // namespace aicore

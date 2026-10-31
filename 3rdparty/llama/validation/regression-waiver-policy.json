@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "approved_on": "2026-10-22",
+  "catalog_sha256": "47725354e1bf7ba2ef2907e8a109b227ab4b5ecb223de2c8761c1ee5cadd854e",
+  "validation_manifest_sha256": "07b8f4d97b79a26e2258f0cdab1438824cb5a974ecc6d9f46815f8a14f19145f",
+  "excluded_tasks": [
+    "sam3d",
+    "trellis",
+    "map_anything",
+    "lingbot"
+  ],
+  "excluded_model_globs": {
+    "sam3": [
+      "sam3-*.gguf",
+      "*hiera_large*.gguf"
+    ],
+    "tagging": [
+      "*-f32.gguf"
+    ],
+    "yolo": [
+      "yolov8l-*.gguf",
+      "yolov8x-*.gguf",
+      "yolo26l-*.gguf",
+      "yolo26x-*.gguf",
+      "reid-yolo26l-*.gguf",
+      "reid-yolo26x-*.gguf",
+      "yoloe-26l-*.gguf",
+      "yoloe-26x-*.gguf"
+    ],
+    "reid": [
+      "reid-yolo26l-*.gguf",
+      "reid-yolo26x-*.gguf",
+      "yolo26l-cls-*.gguf",
+      "yolo26x-cls-*.gguf"
+    ],
+    "relation": [
+      "*convnext-large-*.gguf"
+    ]
+  },
+  "scope_counts": {
+    "catalog_rows": 556,
+    "selected_rows": 344,
+    "selected_unique_files": 326,
+    "waived_rows": 212,
+    "waived_unique_files": 200,
+    "selected_tasks": 18
+  },
+  "acceptance": "Waived entries are user-accepted compatibility assumptions, not accuracy or performance passes. Every selected row and consuming scenario requires CUDA and Vulkan numerical, stability, and controlled same-host performance validation. OCR is not waived: original-source raw-head probability and argmax differences are diagnostic under the later user acceptance; real-page quality, CUDA/Vulkan source-speed, stability, exact provenance and release-download gates remain mandatory.",
+  "inference_executed": false
+}

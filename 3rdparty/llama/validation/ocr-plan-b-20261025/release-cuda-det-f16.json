@@ -1,0 +1,231 @@
+{
+  "model_sha256": "82517e16120a186cc85123272286a5f35e9ede4b4d272fc2e7d5b7148879550d",
+  "input_sha256": "0e9bedae1dc5c6c248f08222c002ecd0cf8027b02b86a69ab82a0639f2a65060",
+  "reference_sha256": "4ebf682711f8fd49732ce281041efb004fb9b472d5cf58becc9909384da61eb7",
+  "source_pins_sha256": "df696ac73dff9f9752614d204883076add8329770d52da60012f414f08083abd",
+  "source_files": {
+    "program": "2ad68ed2768fe6c41166a5bc64680cc9f445390acb6528da449a4db2f7b90e14",
+    "parameters": "49ee815e30cff43cb1057d33bf0d94193e4d4f1ae28451cad15b40be830df915"
+  },
+  "backend": "Cuda",
+  "role": "det",
+  "exit_code": 0,
+  "scope": "one original Paddle graph tensor; page accuracy is a separate gate",
+  "sampling": {
+    "warmups": 2,
+    "runs": 10,
+    "threads": 4
+  },
+  "source_benchmark_sha256": "5e14ec6d56147313fae89ae0fe64433e995c256d1b0e68f3967ad3f07883d664",
+  "distribution_identity_sha256": "be8e69602d570ca35bb905233e117e8fe7ac939e2970ed937adcc90297f5a2d6",
+  "accuracy_reference": "original Paddle CUDA",
+  "source_cuda_fixture_comparison": {
+    "max_diff": 1.7583370208740234e-05,
+    "mean_diff": 1.1765913898144576e-08
+  },
+  "source_cuda_report_sha256": "fe5b34a0cb09ca2379d6558751bfe445045b2c0ccc0f5abc550f48fb3cabd28f",
+  "source_gpu_environment": {
+    "anyio": "4.15.1",
+    "astor": "0.8.1",
+    "autocommand": "2.2.2",
+    "backports-tarfile": "1.2.0",
+    "certifi": "2026.10.18",
+    "decorator": "5.3.1",
+    "h11": "0.16.0",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "idna": "3.20",
+    "importlib-metadata": "8.0.0",
+    "inflect": "7.3.1",
+    "jaraco-collections": "5.1.0",
+    "jaraco-context": "5.3.0",
+    "jaraco-functools": "4.0.1",
+    "jaraco-text": "3.12.1",
+    "more-itertools": "10.3.0",
+    "networkx": "3.6.1",
+    "numpy": "1.24.4",
+    "nvidia-cublas-cu11": "11.11.3.6",
+    "nvidia-cuda-cupti-cu11": "11.8.87",
+    "nvidia-cuda-nvrtc-cu11": "11.8.89",
+    "nvidia-cuda-runtime-cu11": "11.8.89",
+    "nvidia-cudnn-cu11": "8.9.6.50",
+    "nvidia-cufft-cu11": "10.9.0.58",
+    "nvidia-curand-cu11": "10.3.0.86",
+    "nvidia-cusolver-cu11": "11.4.1.48",
+    "nvidia-cusparse-cu11": "11.7.5.86",
+    "nvidia-nccl-cu11": "2.19.3",
+    "nvidia-nvtx-cu11": "11.8.86",
+    "opt-einsum": "3.3.0",
+    "packaging": "24.2",
+    "paddlepaddle-gpu": "3.0.0",
+    "pillow": "13.0.0",
+    "pip": "24.0",
+    "platformdirs": "4.2.2",
+    "protobuf": "7.36.2",
+    "setuptools": "79.0.1",
+    "tomli": "2.0.1",
+    "typeguard": "4.3.0",
+    "typing-extensions": "4.16.0",
+    "wheel": "0.45.1",
+    "zipp": "3.19.2"
+  },
+  "source_gpu_distribution_candidates": {
+    "anyio": [
+      "4.15.1"
+    ],
+    "astor": [
+      "0.8.1"
+    ],
+    "autocommand": [
+      "2.2.2"
+    ],
+    "backports-tarfile": [
+      "1.2.0"
+    ],
+    "certifi": [
+      "2026.10.18"
+    ],
+    "decorator": [
+      "5.3.1"
+    ],
+    "h11": [
+      "0.16.0"
+    ],
+    "httpcore": [
+      "1.0.9"
+    ],
+    "httpx": [
+      "0.28.1"
+    ],
+    "idna": [
+      "3.20"
+    ],
+    "importlib-metadata": [
+      "8.0.0"
+    ],
+    "inflect": [
+      "7.3.1"
+    ],
+    "jaraco-collections": [
+      "5.1.0"
+    ],
+    "jaraco-context": [
+      "5.3.0"
+    ],
+    "jaraco-functools": [
+      "4.0.1"
+    ],
+    "jaraco-text": [
+      "3.12.1"
+    ],
+    "more-itertools": [
+      "10.3.0"
+    ],
+    "networkx": [
+      "3.6.1"
+    ],
+    "numpy": [
+      "1.24.4"
+    ],
+    "nvidia-cublas-cu11": [
+      "11.11.3.6"
+    ],
+    "nvidia-cuda-cupti-cu11": [
+      "11.8.87"
+    ],
+    "nvidia-cuda-nvrtc-cu11": [
+      "11.8.89"
+    ],
+    "nvidia-cuda-runtime-cu11": [
+      "11.8.89"
+    ],
+    "nvidia-cudnn-cu11": [
+      "8.9.6.50"
+    ],
+    "nvidia-cufft-cu11": [
+      "10.9.0.58"
+    ],
+    "nvidia-curand-cu11": [
+      "10.3.0.86"
+    ],
+    "nvidia-cusolver-cu11": [
+      "11.4.1.48"
+    ],
+    "nvidia-cusparse-cu11": [
+      "11.7.5.86"
+    ],
+    "nvidia-nccl-cu11": [
+      "2.19.3"
+    ],
+    "nvidia-nvtx-cu11": [
+      "11.8.86"
+    ],
+    "opt-einsum": [
+      "3.3.0"
+    ],
+    "packaging": [
+      "24.2"
+    ],
+    "paddlepaddle-gpu": [
+      "3.0.0"
+    ],
+    "pillow": [
+      "13.0.0"
+    ],
+    "pip": [
+      "24.0"
+    ],
+    "platformdirs": [
+      "4.2.2"
+    ],
+    "protobuf": [
+      "7.36.2"
+    ],
+    "setuptools": [
+      "79.0.1"
+    ],
+    "tomli": [
+      "2.0.1"
+    ],
+    "typeguard": [
+      "4.3.0"
+    ],
+    "typing-extensions": [
+      "4.12.2",
+      "4.16.0"
+    ],
+    "wheel": [
+      "0.45.1"
+    ],
+    "zipp": [
+      "3.19.2"
+    ]
+  },
+  "task": "det",
+  "max_diff": 0.06162950396537781,
+  "mean_diff": 4.742811694888225e-05,
+  "p50_ms": 8.21,
+  "p95_ms": 9.52,
+  "native_outputs_complete": 1,
+  "native_raw_threshold_exit_diagnostic": 0,
+  "output_sha256": "0ac697acf8e07d6114c48f65344161a47003445c938bf3d63c5b675da1fd0ea9",
+  "probability_path": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-cuda-det-f16.probabilities.npy",
+  "native_cpu_comparison": "separate diagnostic; not a GPU release gate",
+  "gpu_audit_pass": 1,
+  "gpu_audit_archive": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-cuda-det-f16.native.gpu.d/9e69c86254584d298c714733cae54f4c.json",
+  "gpu_sampled_process_peak_mib": 290.0,
+  "source_gpu_max_diff": 0.06162950396537781,
+  "source_gpu_mean_diff": 4.742811694888225e-05,
+  "source_gpu_audit_pass": 1,
+  "source_gpu_audit_archive": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-cuda-det-f16.source-cuda.gpu.d/6a08ab21d6594eda886826698c2b2bf7.json",
+  "source_gpu_sampled_process_peak_mib": 204.0,
+  "source_p50_ms": 5.825542961247265,
+  "source_p95_ms": 6.563625996932387,
+  "source_performance_pass": 1,
+  "source_performance_qualified": 1,
+  "source_performance_gate": {
+    "threshold_pct": 5,
+    "absolute_noise_floor_ms": 3
+  },
+  "graph_throughput_hz": 121.80267965895248
+}

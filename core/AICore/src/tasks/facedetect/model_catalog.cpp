@@ -22,6 +22,11 @@ struct ModelRow {
     const char* quant_note;
     const char* license_note;
     int detector_capable;
+    // Detector interaction defaults (upstream scrfd/yunet yaml values);
+    // 0 for N/A on landmark-only rows.
+    float conf_threshold;
+    float iou_threshold;
+    int input_size;
 };
 
 static constexpr ModelRow kModels[] = {
@@ -30,44 +35,57 @@ static constexpr ModelRow kModels[] = {
          "qFaceDetect/buffalo_l.gguf",
          "Buffalo L (recommended)",
          "F16 — primary pack (SCRFD + ArcFace 512-d)",
-         "Non-commercial (insightface)", 1},
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
         {"buffalo_m.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/buffalo_m.gguf",
          "Buffalo M", "F16 — medium SCRFD + ArcFace 512-d",
-         "Non-commercial (insightface)", 1},
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
         {"buffalo_s.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/buffalo_s.gguf",
          "Buffalo S", "F16 — smallest buffalo pack",
-         "Non-commercial (insightface)", 1},
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
         {"buffalo_sc.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/buffalo_sc.gguf",
          "Buffalo SC", "F16 — compact det_500m + MobileFaceNet",
-         "Non-commercial (insightface)", 1},
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
+        {"scrfd_10g_bnkps-f32.gguf",
+         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+         "qFaceDetect/scrfd_10g_bnkps-f32.gguf",
+         "SCRFD 10G BKPS (detector only)",
+         "F32 — standalone scrfd_10g_bnkps, 5-point landmarks (no recognizer)",
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
+        {"scrfd_10g_bnkps-f16.gguf",
+         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+         "qFaceDetect/scrfd_10g_bnkps-f16.gguf",
+         "SCRFD 10G BKPS F16 (detector only)",
+         "F16 — half-size standalone scrfd_10g_bnkps (no recognizer)",
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
         {"antelopev2.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/antelopev2.gguf",
          "AntelopeV2", "F16 — SCRFD-10G + ArcFace R100 (highest accuracy)",
-         "Non-commercial (insightface)", 1},
+         "Non-commercial (insightface)", 1, 0.5f, 0.4f, 640},
         {"yunet-sface.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/yunet-sface.gguf",
          "YuNet + SFace (commercial-friendly)",
          "F16 — YuNet detector + SFace 128-d (Apache-2.0)",
-         "Apache-2.0 — commercial use OK", 1},
+         "Apache-2.0 — commercial use OK", 1, 0.6f, 0.3f, 160},
         {"landmarks-2d106-1k3d68.gguf",
          "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
          "qFaceDetect/landmarks-2d106-1k3d68.gguf",
          "Dense landmarks only",
          "F16 — 106-pt 2D + 68-pt 3D heads (needs separate detector)",
-         "Non-commercial; not for live detect", 0},
+         "Non-commercial; not for live detect", 0, 0.0f, 0.0f, 0},
 };
 
 static aicore_facedetect_model_entry to_entry(const ModelRow& row) {
-    return {row.filename,   row.download_url, row.display_name,
-            row.quant_note, row.license_note, row.detector_capable};
+    return {row.filename,       row.download_url,  row.display_name,
+            row.quant_note,     row.license_note,  row.detector_capable,
+            row.conf_threshold, row.iou_threshold, row.input_size};
 }
 
 static int detector_index_map(int detector_index) {
@@ -131,14 +149,8 @@ AICORE_CAPI int aicore_facedetect_landmark_model_count(void) {
 
 AICORE_CAPI const aicore_facedetect_model_entry*
 aicore_facedetect_landmark_model_at(int index) {
-    int seen = -1;
-    for (size_t i = 0; i < sizeof(kModels) / sizeof(kModels[0]); ++i) {
-        if (kModels[i].detector_capable) continue;
-        if (seen == index)
-            return aicore_facedetect_model_at(static_cast<int>(i));
-        ++seen;
-    }
-    return nullptr;
+    const int mapped = landmark_index_map(index);
+    return mapped < 0 ? nullptr : aicore_facedetect_model_at(mapped);
 }
 
 AICORE_CAPI const aicore_facedetect_model_entry*

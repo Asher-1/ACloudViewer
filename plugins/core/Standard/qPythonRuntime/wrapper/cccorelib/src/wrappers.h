@@ -13,9 +13,11 @@
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -69,6 +71,30 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, CCShareableHolder<T>);
 
 namespace PyCC
 {
+// Preserve legacy list results using pybind11's existing STL conversion.
+// The local converter does not change the globally opaque reference contract.
+template <class Container> py::list CopyToPythonList(const Container &values)
+{
+    using Converter = py::detail::list_caster<Container, typename Container::value_type>;
+    auto result = Converter::cast(values, py::return_value_policy::copy, py::handle());
+    if (!result)
+        throw py::error_already_set();
+    return py::reinterpret_steal<py::list>(result);
+}
+
+// Borrow an opaque input; convert only legacy sequences owned for this call.
+// Shared by polygon and Delaunay consumers without changing global type casters.
+template <class Container, class Function>
+decltype(auto) WithContainer(py::handle values, Function &&function)
+{
+    if (py::isinstance<Container>(values))
+        return std::forward<Function>(function)(values.cast<const Container &>());
+    py::detail::list_caster<Container, typename Container::value_type> converted;
+    if (!converted.load(values, true))
+        throw py::type_error("Expected a bound container or a compatible sequence");
+    return std::forward<Function>(function)(static_cast<const Container &>(converted));
+}
+
 inline void NoOpDelete(void *) {}
 
 template <class T> py::array_t<T> SpanAsNumpyArray(T *data, py::array::ShapeContainer shape)

@@ -1,0 +1,15 @@
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1494,7 +1494,10 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const gg
+ 
+     GGML_TENSOR_BINARY_OP_LOCALS
+ 
+-    const int64_t ldc = nb1 / sizeof(float);
++    // cuBLAS leading dimensions count output elements, not bytes. SAM3's
++    // mul_mat_cast can write directly to F16; dividing its stride by four
++    // halves ldc and makes GEMM_EX reject parameter 16 (or overlap rows).
++    const int64_t ldc = nb1 / ggml_element_size(dst);
+     const int64_t ne_dst = ggml_nelements(dst);
+     cudaStream_t main_stream = ctx.stream();
+     cublasHandle_t cublas_h = ctx.cublas_handle();

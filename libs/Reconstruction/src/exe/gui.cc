@@ -35,7 +35,7 @@
 
 #include "FileIO.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 #include "util/version.h"
 
 #ifdef AICore_ENABLED
@@ -60,7 +60,9 @@ int RunGraphicalUserInterface(int argc, char** argv) {
   if (argc > 1) {
     options.AddDefaultOption("import_path", &import_path);
     options.AddAllOptions();
-    options.Parse(argc, argv);
+    if (!options.Parse(argc, argv)) {
+      return EXIT_FAILURE;
+    }
   }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
@@ -99,7 +101,7 @@ int RunGraphicalUserInterface(int argc, char** argv) {
 
   QApplication app(argc, argv);
 
-  MainWindow main_window(options);
+  MainWindow main_window(std::move(options));
   main_window.show();
 
   if (!import_path.empty()) {
@@ -117,7 +119,9 @@ int RunProjectGenerator(int argc, char** argv) {
   OptionManager options;
   options.AddRequiredOption("output_path", &output_path);
   options.AddDefaultOption("quality", &quality, "{low, medium, high, extreme}");
-  options.Parse(argc, argv);
+  if (!options.Parse(argc, argv)) {
+    return EXIT_FAILURE;
+  }
 
   OptionManager output_options;
   output_options.AddAllOptions();

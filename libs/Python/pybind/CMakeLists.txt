@@ -28,7 +28,36 @@ if (BUILD_RECONSTRUCTION)
     target_include_directories(pybind PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/lib)
+    if (DEFINED ACV_COLMAP_ENGINE_MACROS AND ACV_COLMAP_ENGINE_MACROS)
+        target_compile_definitions(pybind PRIVATE ${ACV_COLMAP_ENGINE_MACROS})
+    endif ()
     add_subdirectory(reconstruction)
+
+    # ABI parity has two different boundaries in this single extension:
+    # normal pybind sources exchange Eigen-bearing CloudViewer types with
+    # libraries built using the fork-wide EIGEN_MAX_ALIGN_BYTES=0 setting,
+    # while reconstruction sources exchange COLMAP types with libColmapLib,
+    # whose subtree deliberately removes that setting. Removing the macro
+    # from the whole pybind target makes e.g. io::rpc::SetMeshData interpret
+    # std::map<string, Eigen::Vector4f> with a different node layout and free
+    # an invalid pointer. Keep the CloudViewer ABI globally and undefine the
+    # macro only for reconstruction binding translation units.
+    if (MSVC)
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "/UEIGEN_MAX_ALIGN_BYTES")
+    else ()
+        set(_ACV_PYBIND_EIGEN_UNDEFINE "-UEIGEN_MAX_ALIGN_BYTES")
+    endif ()
+    get_target_property(_ACV_PYBIND_SOURCES pybind SOURCES)
+    foreach (_ACV_PYBIND_SOURCE IN LISTS _ACV_PYBIND_SOURCES)
+        if (_ACV_PYBIND_SOURCE MATCHES "[/\\\\]reconstruction[/\\\\].*\\.cpp$")
+            set_property(SOURCE "${_ACV_PYBIND_SOURCE}" APPEND PROPERTY
+                         COMPILE_OPTIONS "${_ACV_PYBIND_EIGEN_UNDEFINE}")
+        endif ()
+    endforeach ()
+    unset(_ACV_PYBIND_EIGEN_UNDEFINE)
+    unset(_ACV_PYBIND_SOURCES)
+    unset(_ACV_PYBIND_SOURCE)
+
     # Some fixes for the Glog library.
     target_compile_definitions(pybind PRIVATE -DGLOG_NO_ABBREVIATED_SEVERITIES)
     target_compile_definitions(pybind PRIVATE -DGOOGLE_GLOG_DLL_DECL=)
@@ -227,8 +256,8 @@ endif()
 if(AICore_ENABLED AND TARGET AICore)
     list(APPEND PYTHON_PACKAGE_DEPENDS AICore)
 endif()
-if(TARGET ext_ggml)
-    list(APPEND PYTHON_PACKAGE_DEPENDS ext_ggml)
+if(TARGET "${GGML_EXTERNAL_TARGET}")
+    list(APPEND PYTHON_PACKAGE_DEPENDS ${GGML_EXTERNAL_TARGET})
 endif()
 # Contract tests run separately in CI (util/ci_utils.*); do not gate wheel
 # packaging on ctest — parallel make + jobserver caused macOS wheel failures.
@@ -245,6 +274,7 @@ add_custom_target(python-package
         "-DBUILD_BIN_PATH=${BUILD_BIN_PATH}"
         "-DCUSTOM_BUILD_TYPE=${CUSTOM_BUILD_TYPE}"
         "-DCONDA_PREFIX=${CONDA_PREFIX}"
+        "-DOpenMP_libomp_LIBRARY=${OpenMP_libomp_LIBRARY}"
         -DBUILD_WITH_CONDA=${BUILD_WITH_CONDA}
         -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
@@ -282,11 +312,21 @@ add_custom_target(python-package
         )
 
 # Use `make pip-package` to create the pip package in the build directory
+set(PIP_PACKAGE_CHECKS)
+if(APPLE)
+    # bdist_wheel only warns when a bundled Mach-O raises the platform tag
+    # above MACOSX_DEPLOYMENT_TARGET; fail instead of shipping that wheel.
+    set(PIP_PACKAGE_CHECKS COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/scripts/platforms/mac/bundle/lib_bundle_wheel.py
+        --check_wheel pip_package)
+endif()
 add_custom_target(pip-package
         COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+        ${PIP_PACKAGE_CHECKS}
         COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
         DEPENDS python-package
+        VERBATIM
         )
 
 # Use `make install-pip-package` to install pip wheel package to the current

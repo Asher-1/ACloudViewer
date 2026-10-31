@@ -1,20 +1,29 @@
 import os
+import json
+from pathlib import Path
+import shutil
 import subprocess
-import platform
+import tempfile
 
 abspath = os.path.dirname(os.path.abspath(__file__))
 
 
-def assert_command_runs(*cmd):
-    if platform.system() == 'Darwin':
-        cmd = ['open', '-a'] + [cmd[0]] + ["--args"] + list(cmd[1:])
-    completed_proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if completed_proc.returncode == 125:
-         pytest.skip("test skipped")
-    elif completed_proc.returncode != 0:
-        print(f"ACloudViewer exited with return code: {completed_proc.returncode}")
-        print(completed_proc.stdout.decode())
-        assert False, "ACloudViewer did not execute successfully"
+def assert_command_runs(binary, silent, command, *args):
+    # Share the real binding test toolchain; macOS open must not return a false success.
+    assert silent == "-SILENT"
+    cli = shutil.which("cli-anything-acloudviewer")
+    assert cli is not None, "cli-anything-acloudviewer is required"
+    with tempfile.TemporaryDirectory() as config:
+        env = dict(os.environ, ACV_BINARY=str(Path(binary).resolve()),
+                   QT_QPA_PLATFORM="offscreen", PYTHONDONTWRITEBYTECODE="1",
+                   XDG_CONFIG_HOME=config)
+        completed = subprocess.run(
+            [cli, "--json", "--mode", "headless", "plugin", "run",
+             command.lstrip("-")] + ["--arg=" + str(arg) for arg in args],
+            env=env, capture_output=True, text=True, timeout=180,
+        )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert json.loads(completed.stdout)["exit_code"] == 0, completed.stdout
 
 
 def test_cloud_sampling(acloudviewer_exe):

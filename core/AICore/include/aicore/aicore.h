@@ -17,7 +17,7 @@
  *   tests/<cap>/                  ABI tests; optional private white-box tests
  *
  * Naming rules (all modules follow the same pattern):
- *   C API:     aicore_<cap>_<verb>   e.g. aicore_depth_load,
+ *   C API:     aicore_<cap>_<verb>   e.g. aicore_depth_load_opts,
  * aicore_gaussian_run Context:   aicore_<cap>_ctx C++ NS:    aicore::<cap>
  *   Export:    AICORE_CAPI (C) / AICORE_CXX_API (C++ classes)
  *
@@ -31,6 +31,7 @@
  */
 
 #include "aicore/aliked_capi.h"
+#include "aicore/attribute_capi.h"
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
@@ -38,4 +39,26 @@
 #include "aicore/export.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/gaussian_capi.h"
+#include "aicore/gkd_capi.h"
+#include "aicore/image_view.h"
+// NOTE: inference_log.h is intentionally NOT umbrella-included: it depends
+// on <CVLog.h> (libs-layer logging), which lean capi test targets and other
+// non-CVLog consumers do not have on their include path. Include it
+// directly where CVLog is available (plugins, app-side code).
 #include "aicore/lightglue_capi.h"
+#include "aicore/lingbot_capi.h"
+#include "aicore/llm_capi.h"
+#include "aicore/loma_capi.h"
+#include "aicore/model_catalog_capi.h"
+#include "aicore/pipeline_timing.h"
+#include "aicore/reid_capi.h"
+#include "aicore/relation_capi.h"
+#include "aicore/rfdetr_capi.h"
+#include "aicore/rmbg_capi.h"
+#include "aicore/runtime_capi.h"
+#include "aicore/runtime_raii.h"
+#include "aicore/sam3_capi.h"
+#include "aicore/sam3d_capi.h"
+#include "aicore/tagging_capi.h"
+#include "aicore/trellis_capi.h"
+#include "aicore/yolo_capi.h"

@@ -31,7 +31,25 @@
 
 #include "util/version.h"
 
+#include <stdexcept>
+
 namespace colmap {
+
+int MakeDatabaseVersionNumber(int major, int minor, int patch, int revision) {
+  // Component bounds keep 100 migration slots between consecutive releases.
+  if (minor >= 100 || patch >= 100 || revision >= 100) {
+    throw std::invalid_argument(
+        "Version components must be smaller than 100.");
+  }
+  return major * 1000000 + minor * 10000 + patch * 100 + revision;
+}
+
+int GetDatabaseVersionNumber() {
+  return MakeDatabaseVersionNumber(COLMAP_VERSION_MAJOR,
+                                   COLMAP_VERSION_MINOR,
+                                   COLMAP_VERSION_PATCH,
+                                   COLMAP_DATABASE_SCHEMA_REVISION);
+}
 
 std::string GetVersionInfo() {
   return StringPrintf("COLMAP %s", COLMAP_VERSION.c_str());

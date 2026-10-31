@@ -11,6 +11,7 @@
 
 #include <ecvWaveform.h>
 
+#include "../../cccorelib/src/wrappers.h"
 #include "../casters.h"
 
 namespace py = pybind11;
@@ -53,12 +54,26 @@ void define_ccWaveform(py::module &m)
             {
                 std::vector<double> values;
                 self.decodeSamples(values, descriptor, dataStorage);
-                return values;
+                return PyCC::CopyToPythonList(values);
             },
             "descriptor"_a,
             "dataStorage"_a)
         .def("toASCII", &ccWaveform::toASCII, "filename"_a, "descriptor"_a, "dataStorage"_a)
-        .def_static("ToASCII", &ccWaveform::ToASCII, "filename"_a, "values"_a, "samplingRate_ps"_a)
+        .def_static(
+            "ToASCII",
+            [](const QString &filename, py::handle values, uint32_t samplingRate_ps)
+            {
+                // Reuse STL sequence conversion locally without redefining opaque casters.
+                // Validate and consume lists, tuples, NumPy arrays and generators before writing.
+                py::detail::list_caster<std::vector<double>, double> converted;
+                if (!converted.load(values, true))
+                    throw py::type_error("values must be a sequence of numbers");
+                auto &samples = static_cast<std::vector<double> &>(converted);
+                return ccWaveform::ToASCII(filename, samples, samplingRate_ps);
+            },
+            "filename"_a,
+            "values"_a,
+            "samplingRate_ps"_a)
         .def("getSamplePos", &ccWaveform::getSamplePos, "i"_a, "getSamplePos"_a, "descriptor"_a)
         .def("byteCount", &ccWaveform::byteCount)
         .def("dataOffset", &ccWaveform::dataOffset)
@@ -93,7 +108,7 @@ void define_ccWaveform(py::module &m)
              {
                  std::vector<double> values;
                  self.decodeSamples(values);
-                 return values;
+                 return PyCC::CopyToPythonList(values);
              })
         .def("toASCII", &ccWaveformProxy::toASCII, "filename"_a)
         .def("getSamplePos", &ccWaveformProxy::getSamplePos, "i"_a, "getSamplePos"_a)

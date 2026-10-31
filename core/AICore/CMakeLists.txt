@@ -7,25 +7,42 @@
 #   src/tasks/aliked/     — ALIKED feature extraction
 #   src/tasks/deeplsd/    — DeepLSD line extraction
 #   src/tasks/facedetect/ — face detection, alignment, embedding
+#   src/tasks/rfdetr/     — RF-DETR object detection / segmentation
+#   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
+#   src/tasks/ocr/        — PP-OCR text detection/recognition catalog (runtime gates pending)
+#   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
+#   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
+#   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
+#   src/tasks/trellis/    — TRELLIS image-to-3D generation
+#   src/tasks/instantmesh/ — InstantMesh image-to-3D mesh (InstantMesh-GGML port)
+#   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
+#   src/tasks/map_anything/ — universal feed-forward metric 3D reconstruction
+#                           (map-anything-ggml cpp_ggml port: VGGT-Omega / VGGT /
+#                            Pi3 / Pi3X / MapAnything / DUSt3R)
+#   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
+#   src/tasks/loma/       — LoMa feature extraction and matching
+#   src/tasks/reid/       — appearance embeddings for multi-object tracking
+#   src/tasks/anycalib/   — AnyCalib single-image intrinsics (catalog; runtime gates pending)
+#   src/tasks/llm/        — local chat LLM / VLM over the pinned llama.cpp (libllama + libmtmd)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
 # Exports: all public headers under include/aicore/
-# Depends: 3rdparty_ggml (PRIVATE build dep), CVCoreLib, Qt::Core + Qt::Gui
+# Depends: GGML_DEPENDENCY_TARGET (PRIVATE build dep), CVCoreLib, Qt::Core + Qt::Gui
 
 if(NOT AICore_ENABLED)
     message(STATUS "AICore module is disabled (set AICore_ENABLED=ON to enable)")
     return()
 endif()
 
-if(NOT TARGET 3rdparty_ggml)
-    message(WARNING "AICore: 3rdparty_ggml not available. Enable AICore_ENABLED in CMake.")
+if(NOT TARGET "${GGML_DEPENDENCY_TARGET}")
+    message(WARNING "AICore: inference dependency not available. Enable AICore_ENABLED in CMake.")
     set(AICore_ENABLED OFF CACHE BOOL "" FORCE)
     return()
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect"
+    DESCRIPTION "Unified AI inference core for ACloudViewer inference tasks"
     LANGUAGES CXX
 )
 
@@ -35,9 +52,23 @@ set(AICORE_TASKS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks)
 set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/depth)
 set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gaussian)
 set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lightglue)
+set(AICORE_LOMA_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/loma)
 set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/deeplsd)
 set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
 set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
+set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
+set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
+set(AICORE_OCR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr)
+set(AICORE_TABLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table)
+set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
+set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
+set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
+set(AICORE_INSTANTMESH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/instantmesh)
+set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
+set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
+set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
+set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
+set(AICORE_OPENPCDET_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/openpcdet)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -57,18 +88,50 @@ if(NOT EXISTS ${AICORE_LIGHTGLUE_SRC_DIR}/matcher.cpp)
     return()
 endif()
 
-file(GLOB AICORE_COMMON_SOURCES ${AICORE_COMMON_SRC_DIR}/*.cpp)
-file(GLOB AICORE_COMMON_HEADERS ${AICORE_COMMON_SRC_DIR}/*.hpp)
-file(GLOB DEPTH_SOURCES ${AICORE_DEPTH_SRC_DIR}/*.cpp)
-file(GLOB DEPTH_HEADERS ${AICORE_DEPTH_SRC_DIR}/*.hpp)
-file(GLOB GAUSSIAN_SOURCES ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
-file(GLOB GAUSSIAN_HEADERS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
-file(GLOB LIGHTGLUE_SOURCES ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
-file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
-file(GLOB AICORE_DEEPLSD_SOURCES ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
-file(GLOB AICORE_ALIKED_SOURCES ${AICORE_ALIKED_SRC_DIR}/*.cpp)
-file(GLOB AICORE_FACEDETECT_SOURCES ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
-file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
+file(GLOB AICORE_COMMON_SOURCES CONFIGURE_DEPENDS ${AICORE_COMMON_SRC_DIR}/*.cpp)
+file(GLOB AICORE_COMMON_HEADERS CONFIGURE_DEPENDS ${AICORE_COMMON_SRC_DIR}/*.hpp)
+file(GLOB DEPTH_SOURCES CONFIGURE_DEPENDS ${AICORE_DEPTH_SRC_DIR}/*.cpp)
+file(GLOB DEPTH_HEADERS CONFIGURE_DEPENDS ${AICORE_DEPTH_SRC_DIR}/*.hpp)
+file(GLOB GAUSSIAN_SOURCES CONFIGURE_DEPENDS ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
+file(GLOB GAUSSIAN_HEADERS CONFIGURE_DEPENDS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
+file(GLOB LIGHTGLUE_SOURCES CONFIGURE_DEPENDS ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
+file(GLOB LIGHTGLUE_HEADERS CONFIGURE_DEPENDS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
+file(GLOB AICORE_LOMA_SOURCES CONFIGURE_DEPENDS ${AICORE_LOMA_SRC_DIR}/*.cpp)
+file(GLOB AICORE_DEEPLSD_SOURCES CONFIGURE_DEPENDS ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_ALIKED_SOURCES CONFIGURE_DEPENDS ${AICORE_ALIKED_SRC_DIR}/*.cpp)
+file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
+file(GLOB AICORE_OCR_SOURCES CONFIGURE_DEPENDS ${AICORE_OCR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_TABLE_SOURCES CONFIGURE_DEPENDS ${AICORE_TABLE_SRC_DIR}/*.cpp)
+file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
+set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
+file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
+set(AICORE_ANYCALIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/anycalib)
+file(GLOB AICORE_ANYCALIB_SOURCES CONFIGURE_DEPENDS ${AICORE_ANYCALIB_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RELATION_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/relation/*.cpp)
+file(GLOB AICORE_TAGGING_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/tagging/*.cpp)
+file(GLOB AICORE_LLM_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/llm/*.cpp)
+file(GLOB AICORE_ATTRIBUTE_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/attribute/*.cpp)
+file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/*.cpp)
+file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
+    ${AICORE_SAM3D_SRC_DIR}/*.hpp ${AICORE_SAM3D_SRC_DIR}/*.h)
+# OpenPCDet keeps the upstream OpenPCDet-GGML subdirectory layout
+# (models/ ops/ extensions/), so its sources are globbed recursively.
+file(GLOB_RECURSE AICORE_OPENPCDET_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_OPENPCDET_SRC_DIR}/*.cpp)
+file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_TRELLIS_SRC_DIR}/*.cpp
+    ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
+    ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg/*.cpp)
+file(GLOB AICORE_INSTANTMESH_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_INSTANTMESH_SRC_DIR}/*.cpp)
+file(GLOB AICORE_API_HEADERS CONFIGURE_DEPENDS ${AICORE_INC_DIR}/aicore/*.h)
 
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
     message(FATAL_ERROR "AICore: missing DeepLSD module at ${AICORE_DEEPLSD_SRC_DIR}")
@@ -79,27 +142,130 @@ endif()
 if(NOT EXISTS ${AICORE_FACEDETECT_SRC_DIR}/model.cpp)
     message(FATAL_ERROR "AICore: missing FaceDetect module at ${AICORE_FACEDETECT_SRC_DIR}")
 endif()
-
-# JPEG: FaceDetect decodes JPEG via the bundled libjpeg-turbo only. Never
-# call find_package(JPEG) here — that searches a system-installed JPEG, whose
-# headers (/usr/include/jpeglib.h) and ABI may mismatch the vendored build.
-# 3rdparty_jpeg (created by 3rdparty/find_dependencies.cmake) carries both the
-# include dirs and the static lib, and is linked below.
-if(NOT TARGET 3rdparty_jpeg)
-    message(FATAL_ERROR "AICore requires the 3rdparty_jpeg target (bundled libjpeg-turbo); "
-                        "3rdparty/find_dependencies.cmake must run before core/AICore")
+if(NOT EXISTS ${AICORE_RFDETR_SRC_DIR}/rfdetr_model.cpp)
+    message(FATAL_ERROR "AICore: missing RF-DETR module at ${AICORE_RFDETR_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_RMBG_SRC_DIR}/rmbg_graph.cpp)
+    message(FATAL_ERROR "AICore: missing RMBG module at ${AICORE_RMBG_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_YOLO_SRC_DIR}/yolo_graph.cpp)
+    message(FATAL_ERROR "AICore: missing YOLO module at ${AICORE_YOLO_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_GKD_SRC_DIR}/gkd_graph.cpp)
+    message(FATAL_ERROR "AICore: missing GKD module at ${AICORE_GKD_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp)
+    message(FATAL_ERROR "AICore: missing MapAnything module at ${AICORE_MAP_ANYTHING_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
+    message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp)
+    message(FATAL_ERROR "AICore: missing LingBot-Map module at ${AICORE_LINGBOT_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/trellis2.cpp)
+    message(FATAL_ERROR "AICore: missing TRELLIS module at ${AICORE_TRELLIS_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/xatlas.cpp)
+    message(FATAL_ERROR "AICore: missing TRELLIS third_party (xatlas) at ${AICORE_TRELLIS_SRC_DIR}/third_party")
+endif()
+if(NOT EXISTS ${AICORE_INSTANTMESH_SRC_DIR}/instantmesh_pipeline.cpp)
+    message(FATAL_ERROR "AICore: missing InstantMesh module at ${AICORE_INSTANTMESH_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
+    message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_OPENPCDET_SRC_DIR}/capi.cpp)
+    message(FATAL_ERROR "AICore: missing OpenPCDet module at ${AICORE_OPENPCDET_SRC_DIR}")
+endif()
+
+option(MAP_ANYTHING_ENABLE_DUMP
+       "Compile qMapAnything parity stage dumps (debug-only, increases runtime I/O)"
+       OFF)
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
     ${GAUSSIAN_SOURCES} ${GAUSSIAN_HEADERS}
     ${LIGHTGLUE_SOURCES} ${LIGHTGLUE_HEADERS}
+    ${AICORE_LOMA_SOURCES}
     ${AICORE_DEEPLSD_SOURCES}
     ${AICORE_ALIKED_SOURCES}
     ${AICORE_FACEDETECT_SOURCES}
+    ${AICORE_RFDETR_SOURCES}
+    ${AICORE_RMBG_SOURCES}
+    ${AICORE_OCR_SOURCES}
+    ${AICORE_TABLE_SOURCES}
+    ${AICORE_YOLO_SOURCES}
+    ${AICORE_REID_SOURCES}
+    ${AICORE_ANYCALIB_SOURCES}
+    ${AICORE_SAM3_SOURCES}
+    ${AICORE_TRELLIS_SOURCES}
+    ${AICORE_INSTANTMESH_SOURCES}
+    ${AICORE_RELATION_SOURCES}
+    ${AICORE_TAGGING_SOURCES}
+    ${AICORE_LLM_SOURCES}
+    ${AICORE_ATTRIBUTE_SOURCES}
+    ${AICORE_GKD_SOURCES}
+    ${AICORE_MAP_ANYTHING_SOURCES}
+    ${AICORE_LINGBOT_SOURCES}
+    ${AICORE_OPENPCDET_SOURCES}
+    ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
     ${AICORE_API_HEADERS}
 )
+
+# LingBot host-side floating-point parity: the reference implementation
+# (upstream cpp_ggml) compiles WITHOUT -march (x86-64 baseline, no FMA),
+# while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to this tree. With
+# contraction enabled GCC fuses `a*b+c` into vfmadd inside the DINO
+# positional-table interpolation and the Pillow resample kernels, and the
+# resulting 1-ULP drift propagates through all 24 transformer blocks into
+# visibly different depth/pose output. Disabling contraction on the
+# lingbot TUs restores the reference bit-exact contract; ggml kernels are
+# unaffected (they are compiled in the dependency project without -march).
+set_source_files_properties(
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_capi.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_skyseg.cpp
+    ${AICORE_LINGBOT_SRC_DIR}/lingbot_gguf_loader.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# MapAnything host-side floating-point parity: the reference implementation
+# (upstream map-anything-ggml cpp_ggml) compiles WITHOUT -march (x86-64
+# baseline, no FMA), while CMakeFindSSE adds -march=x86-64-v3 (AVX2+FMA) to
+# this tree. With contraction enabled GCC fuses `a*b+c` into vfmadd inside
+# the graph-builder's host-side float math (RoPE cos/sin tables, mean/std
+# staging, DPT resample weight math), drifting 1-ULP through the 24
+# transformer blocks and visibly changing depth/pose output versus the
+# upstream parity feeds. Disabling contraction on the map_anything TUs
+# restores the reference bit-exact contract; ggml kernels are unaffected
+# (they are compiled in the dependency project without -march).
+set_source_files_properties(
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_capi.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_gguf_loader.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_image_io.cpp
+    PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# OCR det/rec geometry parity: ocr_rec_crop.cpp and ocr_db_postprocess.cpp
+# port cv2.minAreaRect / contourArea / arcLength / warpPerspective(
+# INTER_CUBIC) from OpenCV's x86-64 baseline build and the Clipper offset
+# pyclipper ships, neither of which fuses a*b+c. A fused rotatingCalipers /
+# perspective-matrix product moves box corners by 1 ULP (628 of the 720 rec
+# crop golden boxes with -ffp-contract=fast) and flips cubic table cells, so
+# these TUs keep separate roundings (tests/ocr/test_ocr_rec_crop and
+# test_ocr_db_postprocess compare bytes). MSVC does not contract without
+# /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_OCR_SRC_DIR}/ocr_rec_crop.cpp
+        ${AICORE_OCR_SRC_DIR}/ocr_db_postprocess.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
+if(MAP_ANYTHING_ENABLE_DUMP)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MAP_ANYTHING_ENABLE_DUMP)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     POSITION_INDEPENDENT_CODE ON
@@ -138,24 +304,49 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${AICORE_INC_DIR}>
         $<INSTALL_INTERFACE:include/AICore>
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${AICORE_COMMON_SRC_DIR}
         ${AICORE_TASKS_SRC_DIR}
         ${AICORE_DEPTH_SRC_DIR}
         ${AICORE_GAUSSIAN_SRC_DIR}
         ${AICORE_LIGHTGLUE_SRC_DIR}
+        ${AICORE_LOMA_SRC_DIR}
         ${AICORE_DEEPLSD_SRC_DIR}
         ${AICORE_ALIKED_SRC_DIR}
         ${AICORE_ALIKED_SRC_DIR}/cuda
         ${AICORE_ALIKED_SRC_DIR}/vulkan
         ${AICORE_ALIKED_SRC_DIR}/include
         ${AICORE_FACEDETECT_SRC_DIR}
+        ${AICORE_RFDETR_SRC_DIR}
+        ${AICORE_RMBG_SRC_DIR}
+        ${AICORE_OCR_SRC_DIR}
+        ${AICORE_TABLE_SRC_DIR}
+        ${AICORE_YOLO_SRC_DIR}
+        ${AICORE_SAM3_SRC_DIR}
+        ${AICORE_TRELLIS_SRC_DIR}
+        ${AICORE_INSTANTMESH_SRC_DIR}
+        ${AICORE_GKD_SRC_DIR}
+        ${AICORE_MAP_ANYTHING_SRC_DIR}
+        ${AICORE_LINGBOT_SRC_DIR}
+        ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
+        ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
+        ${AICORE_TASKS_SRC_DIR}/relation
+        ${AICORE_SAM3D_SRC_DIR}
+        ${AICORE_OPENPCDET_SRC_DIR}
+        ${EIGEN_INCLUDE_DIRS}
 )
 
-add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
+add_dependencies(${PROJECT_NAME} ${GGML_DEPENDENCY_TARGET})
+add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-# JPEG comes exclusively from the project-internal 3rdparty_jpeg (libjpeg-turbo)
-# target — no system JPEG is ever searched or linked.
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml PRIVATE 3rdparty_jpeg)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer 3rdparty_jsoncpp)
+if(MSVC)
+    # UTF-8 source & execution character sets: AICore sources carry Unicode
+    # literals (em-dashes in UI strings, the multilingual-bridge docs) — match
+    # the GCC/Clang default parsing instead of the host code page (C4819).
+    target_compile_options(AICore PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
+endif()
+
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     if(MSVC)
@@ -164,6 +355,16 @@ if(OpenMP_CXX_FOUND)
         # built-in /openmp:experimental enables them (no optional LLVM
         # component required), so the ALIKED SIMD/collapse kernels keep their
         # full performance on Windows instead of being disabled.
+        #
+        # The dependency owner links OpenMP::OpenMP_CXX on its interface,
+        # propagating /openmp. Strip it here first — /openmp:experimental
+        # subsumes standard /openmp, and having both triggers MSVC D9025.
+        get_target_property(_ggml_omp ${GGML_DEPENDENCY_TARGET} INTERFACE_LINK_LIBRARIES)
+        if(_ggml_omp MATCHES "OpenMP::OpenMP_CXX")
+            list(REMOVE_ITEM _ggml_omp "OpenMP::OpenMP_CXX")
+            set_target_properties(${GGML_DEPENDENCY_TARGET} PROPERTIES
+                INTERFACE_LINK_LIBRARIES "${_ggml_omp}")
+        endif()
         target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
     else()
         target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
@@ -183,7 +384,6 @@ if(GGML_DYNAMIC_BACKENDS AND UNIX AND NOT APPLE AND NOT MSVC)
     add_library(AICore_capi_link INTERFACE)
     target_link_options(AICore_capi_link INTERFACE "-Wl,--allow-shlib-undefined")
 endif()
-target_compile_definitions(${PROJECT_NAME} PRIVATE FACEDETECT_HAVE_LIBJPEG=1)
 if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PRIVATE ${GGML_INCLUDE_DIRS})
 endif()
@@ -197,6 +397,32 @@ aicore_apply_compile_definitions(${PROJECT_NAME})
 
 if(AICore_CUDA_ENABLED)
     target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/cuda/aliked_cuda.cu)
+    # PyTorch-2.5.1-compatible CUDA normal RNG for the sam3d samplers
+    # (same compile-definition contract as the source sam3dggml build:
+    # SAM3D_USE_CUDA selects the device kernel over the Philox CPU path).
+    target_sources(${PROJECT_NAME} PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SAM3D_USE_CUDA)
+    # OpenPCDet task-private CUDA extensions (upstream OpenPCDet-GGML
+    # src/extensions): GPU sparse rulebook generation, PillarVFE scatter and
+    # HeightCompression. AICORE_OPENPCDET_CUDA_EXT gates the task-side call
+    # sites; without CUDA the stock host paths compile and run unchanged
+    # (CPU/Vulkan behavior is byte-identical to the non-ext build). Every
+    # call site additionally re-checks the device at runtime.
+    # The three upstream sources compile as ONE translation unit
+    # (openpcdet_cuda_ext.cu includes them): in the monolithic libAICore
+    # link, separate units left HeightCompression/VFE launches failing with
+    # cudaErrorInvalidDeviceFunction despite byte-verified registration and
+    # fatbin contents (the same objects link and run standalone).
+    target_sources(${PROJECT_NAME} PRIVATE
+        ${AICORE_OPENPCDET_SRC_DIR}/extensions/openpcdet_cuda_ext.cu)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AICORE_OPENPCDET_CUDA_EXT=1)
+    # Whole-program per-arch compilation (no -rdc): every AICore .cu is a
+    # self-contained unit (no cross-TU device calls — a violation fails loudly
+    # at link time), and sparse_rulebook_cuda.cu's CUB device-level kernels
+    # fail to launch with cudaErrorInvalidDeviceFunction when compiled as
+    # relocatable device code. This matches how ggml's own CUB-consuming
+    # backend builds.
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
     # Static-link the CUDA runtime (cudart) on UNIX so libAICore.so has no
     # DT_NEEDED on libcudart.so.X and loads on machines without a CUDA toolkit.
     # This is the same strategy as the qSIBR plugin (see qSIBR/CMakeLists.txt).
@@ -209,15 +435,68 @@ if(AICore_CUDA_ENABLED)
     elseif(TARGET CUDA::cudart)
         target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
     endif()
-    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 endif()
+
+# ── SAM3D official native PBR assembly ──────────────────────
+# Upstream sam-3d-objects-ggml assemble_official_pbr_cuda chain (CUDA-only):
+# VTK quadric simplify (0.95) → 1000-view nvdiffrast visibility → CPU min-cut
+# filter → pymeshfix TMesh repair (GPL) → xatlas UV → angle-weighted normals
+# → 100-view mip-splatting Gaussian render → nvdiffrast 2500-step Adam/TV
+# texture bake → Telea inpaint → Y-up GLB.
+# License isolation mirrors upstream: nvdiffrast (NVIDIA, non-commercial) and
+# pymeshfix TMesh (GPL-3.0-or-commercial) are never fetched or linked without
+# an explicit acknowledgment option; the mip-splatting rasterizer (Inria
+# non-commercial) and the MIT xatlas snapshot are vendored but also compiled
+# only under this gate. The default AICore build is untouched.
+# The task-owned wiring (vendored third-party builds, missing-module
+# diagnostics, pipeline source list) lives in src/tasks/sam3d/cmake/pbr.cmake
+# (mirroring this module's core/AICore/cmake/ convention); the switch and its
+# license acknowledgments are declared in cmake/AICoreOptions.cmake (before
+# find_dependencies, so the bundled OpenCV build wires its photo module from
+# the same switch). The CUDA-backend requirement is the only cross-module
+# linkage kept here.
+if(AICore_USE_SAM3D_PBR)
+    if(NOT AICore_CUDA_ENABLED)
+        message(
+            FATAL_ERROR
+                "AICore: AICore_USE_SAM3D_PBR requires AICore_USE_CUDA=ON: the official PBR chain is CUDA-only (same as upstream SAM3D_GGML_NATIVE_PBR). The auto-enable only fires with CUDA already ON, so this value was set explicitly — set AICore_USE_SAM3D_PBR=OFF to keep a CUDA-less build."
+        )
+    endif()
+    include(${AICORE_SAM3D_SRC_DIR}/cmake/pbr.cmake)
+    aicore_sam3d_wire_pbr(${PROJECT_NAME} ${AICORE_SAM3D_SRC_DIR})
+endif()
+
 if(AICore_VULKAN_ENABLED)
     target_sources(${PROJECT_NAME} PRIVATE
         ${AICORE_ALIKED_SRC_DIR}/vulkan/vulkan_aliked_dispatch.cpp)
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${AICORE_ALIKED_SRC_DIR}/vulkan)
 endif()
-# Vulkan ALIKED custom compute: 3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch
+
+# ── Trellis CuMesh GPU chart clustering ──────────────────────
+# Upstream trellis2cpp third_party/cumesh_glue integration (JeffreyXiang/
+# CuMesh, MIT, vendored under src/tasks/trellis/third_party/CuMesh): GPU
+# normal-cone chart clustering feeds xatlas' faceMaterialData as hard chart
+# boundaries for the UV-atlas GLB bake (mesh_export.cpp's UnwrapMode::Auto).
+# Upstream facts (trellis-ggml CMakeLists.txt, "CuMesh GPU mesh processing"):
+# TRELLIS2_CUMESH defaults ON and CuMesh "links libtorch internally; exposes
+# a torch-free C API through cumesh_glue.h" — the libtorch dependency is
+# inherent to the vendored CuMesh core (ATen tensor plumbing plus the
+# pybind-layer dtype aliases in hash/hash.cu), not an ACloudViewer addition.
+# AICore mirrors the upstream default (ON) but degrades gracefully — with a
+# loud warning per missing prerequisite, instead of upstream's silent
+# disable or a hard configure failure:
+#   CUDA off | libtorch missing | Python headers missing
+#     → chart clustering off; mesh_export falls back to simple_unwrap.
+# Point CUMESH_TORCH_DIR at the directory containing TorchConfig.cmake
+# (e.g. <conda-env>/lib/python3.*/site-packages/torch/share/cmake/Torch).
+# Task-owned wiring (graceful guard ladder, vendored SHARED build against
+# libtorch/libpython, hash.cu torch version gate) lives in
+# src/tasks/trellis/cmake/cumesh.cmake; the AICore_USE_CUMESH switch and
+# CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
+include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
+aicore_trellis_wire_cumesh(${PROJECT_NAME} ${AICORE_TRELLIS_SRC_DIR})
+# Vulkan ALIKED custom compute: 3rdparty/llama/llama-patches/0005-acv-vulkan-operators.patch
 # (AICORE_VULKAN_ALIKED when AICore_VULKAN_ENABLED — see AICoreCompileDefinitions.cmake)
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
@@ -243,6 +522,11 @@ if(TARGET CVCoreLib)
 else()
     message(FATAL_ERROR "AICore requires CVCoreLib (CVTools for cross-platform paths)")
 endif()
+# xatlas (trellis GLB export) uses std::thread for parallel charting.
+find_package(Threads REQUIRED)
+if(Threads_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+endif()
 
 if(TARGET Qt::Core AND TARGET Qt::Gui)
     target_link_libraries(${PROJECT_NAME} PUBLIC Qt::Core Qt::Gui)
@@ -252,9 +536,14 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE AICore_BUILD AICore_SHARED
+    PRIVATE TRELLIS2_HAVE_RMBG=1
     INTERFACE AICore_SHARED
     PUBLIC AICore_ENABLED
 )
+# SAM3 C++ symbols are implementation details.  The diagnostics that need
+# them are built into a test-only target (see tests/CMakeLists.txt), keeping
+# libAICore's ABI limited to the documented C API.
+target_compile_definitions(${PROJECT_NAME} PRIVATE SAM3_BUILD)
 if(MSVC)
     # M_PI and other math constants (pose.cpp, tests); same as CloudViewerSetGlobalProperties.cmake
     target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
@@ -277,8 +566,8 @@ else()
             set_source_files_properties(${AICORE_DEPTH_SRC_DIR}/winograd.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
             set_source_files_properties(
-                ${AICORE_FACEDETECT_SRC_DIR}/winograd.cpp
-                ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
+                ${AICORE_COMMON_SRC_DIR}/winograd.cpp
+                ${AICORE_COMMON_SRC_DIR}/blocked_conv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
     endif()
@@ -386,6 +675,12 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
     install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallGgmlBackends.cmake")
 endif()
 
+set(_aicore_enabled_task_names
+    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
+    openpcdet reid rfdetr rmbg sam3 sam3d tagging relation table trellis instantmesh yolo
+    llm)
+list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
+
 if(AICore_BUILD_TESTS)
     if(AICore_BUILD_WHITEBOX_TESTS)
         set(AICORE_TEST_SOURCES
@@ -393,7 +688,22 @@ if(AICore_BUILD_TESTS)
             ${DEPTH_SOURCES}
             ${GAUSSIAN_SOURCES}
             ${LIGHTGLUE_SOURCES}
+            ${AICORE_LOMA_SOURCES}
             ${AICORE_FACEDETECT_SOURCES}
+            ${AICORE_RFDETR_SOURCES}
+            ${AICORE_RMBG_SOURCES}
+            ${AICORE_OCR_SOURCES}
+            ${AICORE_YOLO_SOURCES}
+            ${AICORE_SAM3_SOURCES}
+            ${AICORE_TRELLIS_SOURCES}
+            ${AICORE_INSTANTMESH_SOURCES}
+            ${AICORE_RELATION_SOURCES}
+            ${AICORE_TAGGING_SOURCES}
+            ${AICORE_GKD_SOURCES}
+            ${AICORE_LINGBOT_SOURCES}
+            ${AICORE_REID_SOURCES}
+            ${AICORE_OPENPCDET_SOURCES}
+            ${AICORE_SAM3D_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -411,15 +721,29 @@ if(AICore_BUILD_TESTS)
         )
         target_include_directories(AICore_test PUBLIC
             $<BUILD_INTERFACE:${AICORE_INC_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
             $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TASKS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_LOMA_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_FACEDETECT_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RFDETR_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_YOLO_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_SAM3_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_GKD_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_LINGBOT_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
+            $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_OPENPCDET_SRC_DIR}>
         )
-        add_dependencies(AICore_test 3rdparty_ggml)
-        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
+        add_dependencies(AICore_test ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer)
+        target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
+        target_link_libraries(AICore_test PUBLIC ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
         endif()
@@ -431,13 +755,38 @@ if(AICore_BUILD_TESTS)
         find_package(OpenMP)
         if(OpenMP_CXX_FOUND)
             if(MSVC)
-                # Same as AICore: enable SIMD/collapse via /openmp:experimental.
+                # Same as AICore: strip inherited /openmp from the owner target
+                # to avoid D9025 before adding /openmp:experimental.
+                get_target_property(_ggml_omp_t ${GGML_DEPENDENCY_TARGET} INTERFACE_LINK_LIBRARIES)
+                if(_ggml_omp_t MATCHES "OpenMP::OpenMP_CXX")
+                    list(REMOVE_ITEM _ggml_omp_t "OpenMP::OpenMP_CXX")
+                    set_target_properties(${GGML_DEPENDENCY_TARGET} PROPERTIES
+                        INTERFACE_LINK_LIBRARIES "${_ggml_omp_t}")
+                endif()
                 target_compile_options(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
             else()
                 target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
             endif()
         endif()
         target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
+        if(AICore_CUDA_ENABLED)
+            # Same compile-definition contract as libAICore: the whitebox
+            # sam3d probes (stage bisect against upstream condition dumps)
+            # need the PyTorch-compatible CUDA normal RNG so a fixed-conditions
+            # replay generates the same seed noise as the production session.
+            target_sources(AICore_test PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
+            target_compile_definitions(AICore_test PUBLIC SAM3D_USE_CUDA)
+            # OpenPCDet task-side CUDA extension (same single translation unit
+            # as libAICore): the whitebox deterministic sparse-conv gates
+            # (Option C, test_openpcdet_det_sparse_conv) drive the CUDA kernel
+            # directly and the model sources take their CUDA-ext branches.
+            target_sources(AICore_test PRIVATE
+                ${AICORE_OPENPCDET_SRC_DIR}/extensions/openpcdet_cuda_ext.cu)
+            target_compile_definitions(AICore_test PUBLIC AICORE_OPENPCDET_CUDA_EXT=1)
+            if(TARGET CUDA::cudart)
+                target_link_libraries(AICore_test PUBLIC CUDA::cudart)
+            endif()
+        endif()
         aicore_apply_compile_definitions(AICore_test)
         if(MSVC)
             target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
@@ -448,15 +797,121 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect, ggml linked once")
+message(STATUS "AICore (SHARED): tasks=${_aicore_enabled_tasks_csv}; ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
+
+# End-to-end OCR benchmark (det+rec per image, p50/p95); the official
+# PaddleOCR counterpart lives in scripts/bench_paddle_official.py.
+add_executable(bench_ocr tools/bench_ocr.cpp)
+target_link_libraries(bench_ocr PRIVATE AICore)
+
+# Headless table reconstruction driver (OCR + table, one JSON line per
+# image); scripts/run_table_gt_matrix.py scores its HTML against GT.
+add_executable(bench_table tools/bench_table.cpp)
+target_link_libraries(bench_table PRIVATE AICore)
+
+add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
+    src/tasks/ocr/ocr_runtime.cpp
+    src/common/paddle_graph.cpp
+    # Winograd conv custom op (routed by the CPU-session graph build).
+    src/common/winograd.cpp
+    # Blocked-layout island ops (routed by the CPU-session graph build).
+    src/common/blocked_conv.cpp
+    # Backend discovery helpers referenced by the probe (dynamic-loader
+    # backend registration lives in the env bridge).
+    src/common/ggml_env_bridge.cpp)
+target_include_directories(test_ocr_runtime PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
+    ${JSONCPP_INCLUDE_DIRS})
+# The probe is deliberately independent of the AICore shared library: the
+# ocr interpreter sources are compiled into this target directly, so the
+# parity ctest stays runnable while unrelated task sources (e.g. the sam3d
+# vendor migration) break the main-library closure.
+target_link_libraries(test_ocr_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
+aicore_apply_compile_definitions(test_ocr_runtime)
+
+# AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
+# Runtime golden fixtures shipped in the anycalib release. Sources are
+# compiled into the target like the OCR probe so the parity ctest stays
+# runnable while unrelated task sources break the main-library closure.
+add_executable(anycalib_parity_probe tests/anycalib/anycalib_parity_probe.cpp)
+target_include_directories(anycalib_parity_probe PRIVATE ${AICORE_INC_DIR})
+target_link_libraries(anycalib_parity_probe PRIVATE AICore)
+set_target_properties(anycalib_parity_probe PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
+set_target_properties(test_ocr_runtime PROPERTIES
+    POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+    # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
+    # libAICore.so; without $ORIGIN the DL loader cannot resolve them and
+    # every device except the caller's own registrations disappears.
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN")
+# Layout the probe under bin/aicore_tests/ together with the ggml backend
+# copies (batch C test-layout fix; the probe does not go through the
+# tests/CMakeLists.txt that already applies the layout function).
+cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
+if(TARGET aicore-fast-tests)
+    # The model-free graph contract reuses the same OCR interpreter target
+    # instead of adding a second inference implementation.
+    add_dependencies(aicore-fast-tests test_ocr_runtime)
+    add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
+    set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")
+    add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
+        --dw-bias-contract CPU "${GGML_MODULE_DIR}")
+    set_tests_properties(test_ocr_dw_bias_cpu PROPERTIES LABELS "ocr;ggml"
+        SKIP_RETURN_CODE 77)
+    if(AICore_CUDA_ENABLED)
+        add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
+            --dw-bias-contract CUDA0 "${GGML_MODULE_DIR}")
+        set_tests_properties(test_ocr_dw_bias_cuda PROPERTIES LABELS "ocr;ggml;gpu"
+            SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    endif()
+    if(AICore_VULKAN_ENABLED)
+        add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
+            --dw-bias-contract Vulkan0 "${GGML_MODULE_DIR}")
+        set_tests_properties(test_ocr_dw_bias_vulkan PROPERTIES LABELS "ocr;ggml;gpu"
+            SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    endif()
+endif()
+
+# Table-structure parity probe: the SLANet encoder runs on the OCR
+# interpreter, so it compiles the same closure plus the table runtime.
+add_executable(test_table_runtime tests/test_table_runtime.cpp
+    src/tasks/table/table_runtime.cpp
+    src/tasks/ocr/ocr_runtime.cpp
+    src/common/paddle_graph.cpp
+    src/common/winograd.cpp
+    src/common/blocked_conv.cpp
+    src/common/ggml_env_bridge.cpp)
+target_include_directories(test_table_runtime PRIVATE
+    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
+    ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(test_table_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
+aicore_apply_compile_definitions(test_table_runtime)
+set_target_properties(test_table_runtime PROPERTIES
+    POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN")
+cloudviewer_set_aicore_test_runtime_layout(test_table_runtime)
+# The probe_ocr_* / probe_table CTests (tests/CMakeLists.txt, labels
+# capi;model) run these binaries, but tests/ is configured before they
+# exist, so the label-derived tier DEPENDS cannot see them: attach here.
+if(TARGET aicore-model-tests)
+    add_dependencies(aicore-model-tests test_ocr_runtime test_table_runtime)
+endif()
+if(TARGET aicore-contract-tests AND AICORE_TEST_ENABLE_MODEL_TESTS)
+    add_dependencies(aicore-contract-tests test_ocr_runtime test_table_runtime)
+endif()
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()
 set_target_properties(aicore_gguf_quantize PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
     FOLDER "core/tools")
 if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         string(REPLACE ";" "|" _quantize_gpu_pipe "${GGML_GPU_BACKEND_MODULE_FILES}")
@@ -484,4 +939,23 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         add_custom_command(TARGET aicore_gguf_quantize POST_BUILD
             COMMAND ${CMAKE_COMMAND} ${_quantize_backend_copy_args}
         )
+endif()
+
+# ReID validation probe (tools/reid_validate.py drives it against PyTorch /
+# ONNX Runtime baselines; NOT a ctest — needs a classify GGUF):
+#   reid_probe --gguf <file> [--device cuda|vulkan|cpu] [--output file.json]
+add_executable(reid_probe tools/reid_probe.cpp)
+target_link_libraries(reid_probe PRIVATE AICore)
+if(TARGET AICore_capi_link)
+    target_link_libraries(reid_probe PRIVATE AICore_capi_link)
+endif()
+# The probe includes <QImage>: match the capi-test PIC/no-PIE setup, required
+# by Qt builds with -reduce-relocations.
+set_target_properties(reid_probe PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
+    FOLDER "core/tools")
+if(NOT MSVC)
+    target_compile_options(reid_probe PRIVATE -fPIC)
+    target_link_options(reid_probe PRIVATE "-no-pie")
 endif()

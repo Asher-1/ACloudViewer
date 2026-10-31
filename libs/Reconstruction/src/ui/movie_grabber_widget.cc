@@ -31,8 +31,8 @@
 
 #include "ui/movie_grabber_widget.h"
 
-#include "base/pose.h"
-#include "base/projection.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
 #include "ui/model_viewer_widget.h"
 
 namespace colmap {

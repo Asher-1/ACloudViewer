@@ -67,11 +67,11 @@ OpenGLContextManager::OpenGLContextManager(int opengl_major_version,
       Qt::BlockingQueuedConnection);
 }
 
-void OpenGLContextManager::MakeCurrent() {
+bool OpenGLContextManager::MakeCurrent() {
   current_thread_ = QThread::currentThread();
   make_current_action_->trigger();
   context_.makeCurrent(&surface_);
-  CHECK(context_.isValid()) << "Could not make current valid OpenGL context";
+  return context_.isValid();
 }
 
 bool OpenGLContextManager::HasOpenGL() {

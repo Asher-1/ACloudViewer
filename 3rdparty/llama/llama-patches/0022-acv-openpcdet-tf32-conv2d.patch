@@ -1,0 +1,1723 @@
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -2,7 +2,10 @@
+ #include "convert.cuh"
+ #include "mma.cuh"
+ 
++#include <algorithm>
++#include <chrono>
+ #include <cinttypes>
++#include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
+ #include <memory>
+@@ -1264,9 +1267,1709 @@
+     return cudaPeekAtLastError() == cudaSuccess;
+ }
+ 
++// -------------------------------------------------------------------------
++// Upstream OpenPCDet-GGML conv dispatch, ported verbatim (kernel bodies,
++// launch configs and env gates byte-identical) so detector convs named
++// "opcpd_conv" reproduce the upstream CUDA baselines operation-for-operation:
++// winograd F(2x2,3x3), the TF32 implicit-GEMM kernels (conv_tf32_bits
++// operand rounding, 8x8 spatial x 16-oc tiles, m16n8k8 mma accumulation
++// order, ldg no-s_w variants), the stride-2 f16/TF32 kernels and the fused
++// FMA fallback. The nested namespace keeps every upstream symbol local;
++// nothing outside this block changes arithmetic.
++// -------------------------------------------------------------------------
++namespace opcpd_exact {
++
++struct conv_params {
++    const int64_t IW, IH;
++    const int64_t OW, OH;
++    const int64_t KW, KH;
++    const int64_t ST_X, ST_Y;
++    const int64_t PD_X, PD_Y;
++    const int64_t DL_X, DL_Y;
++    const int64_t IC, OC;
++    const int64_t B;
++    const int64_t TOTAL;
++};
++
++struct kernel_bounds {
++    int64_t y_min, y_max;
++    int64_t x_min, x_max;
++};
++
++__device__ __forceinline__ int64_t max64(int64_t a, int64_t b) {
++    return (a > b) ? a : b;
++}
++
++__device__ __forceinline__ int64_t min64(int64_t a, int64_t b) {
++    return (a < b) ? a : b;
++}
++
++__device__ __forceinline__ kernel_bounds calculate_kernel_bounds(int64_t out_x, int64_t out_y, const conv_params & P) {
++    kernel_bounds bounds;
++    bounds.y_min = max64(0, (P.PD_Y - out_y * P.ST_Y + P.DL_Y - 1) / P.DL_Y);
++    bounds.y_max = min64(P.KH, (P.IH + P.PD_Y - out_y * P.ST_Y + P.DL_Y - 1) / P.DL_Y);
++    bounds.x_min = max64(0, (P.PD_X - out_x * P.ST_X + P.DL_X - 1) / P.DL_X);
++    bounds.x_max = min64(P.KW, (P.IW + P.PD_X - out_x * P.ST_X + P.DL_X - 1) / P.DL_X);
++    return bounds;
++}
++
++__device__ __forceinline__ int calculate_input_coord(int64_t out_coord,
++                                                     int64_t kern_coord,
++                                                     int64_t stride,
++                                                     int64_t dilation,
++                                                     int64_t padding) {
++    return out_coord * stride + kern_coord * dilation - padding;
++}
++
++struct whcn_layout {
++    __device__ static int64_t input_index(int64_t n, int64_t c, int64_t y, int64_t x, const conv_params & P) {
++        return n * (P.IC * P.IW * P.IH) + c * P.IW * P.IH + y * P.IW + x;
++    }
++
++    __device__ static int64_t kernel_index(int64_t c_out, int64_t c_in, int64_t ky, int64_t kx, const conv_params & P) {
++        return c_out * (P.IC * P.KH * P.KW) + c_in * (P.KH * P.KW) + ky * P.KW + kx;
++    }
++
++    __device__ static int64_t output_index(int64_t n, int64_t c, int64_t y, int64_t x, const conv_params & P) {
++        return n * (P.OC * P.OW * P.OH) + c * P.OW * P.OH + y * P.OW + x;
++    }
++
++    __device__ static void unpack_indices(int64_t             global_idx,
++                                          const conv_params & P,
++                                          int64_t &           n,
++                                          int64_t &           c,
++                                          int64_t &           out_y,
++                                          int64_t &           out_x) {
++        out_x = global_idx % P.OW;
++        out_y = (global_idx / P.OW) % P.OH;
++        c     = (global_idx / (P.OW * P.OH)) % P.OC;
++        n     = global_idx / (P.OW * P.OH * P.OC);
++    }
++};
++
++template <typename T, typename Layout>
++static __global__ void conv2d_kernel(const float * __restrict__ input,
++                                     const T * __restrict__ kernel,
++                                     float * __restrict__ output,
++                                     const conv_params P) {
++    const int64_t global_idx = blockIdx.x * blockDim.x + threadIdx.x;
++
++    if (global_idx >= P.TOTAL) {
++        return;
++    }
++
++    int64_t n, c_out, out_y, out_x;
++    Layout::unpack_indices(global_idx, P, n, c_out, out_y, out_x);
++
++    float acc = 0.0f;
++
++    for (int64_t c_in = 0; c_in < P.IC; ++c_in) {
++        kernel_bounds bounds = calculate_kernel_bounds(out_x, out_y, P);
++
++        for (int64_t ky = bounds.y_min; ky < bounds.y_max; ++ky) {
++            const int64_t in_y = calculate_input_coord(out_y, ky, P.ST_Y, P.DL_Y, P.PD_Y);
++
++            for (int64_t kx = bounds.x_min; kx < bounds.x_max; ++kx) {
++                const int64_t in_x = calculate_input_coord(out_x, kx, P.ST_X, P.DL_X, P.PD_X);
++
++                const float input_val = input[Layout::input_index(n, c_in, in_y, in_x, P)];
++                const T kernel_val = kernel[Layout::kernel_index(c_out, c_in, ky, kx, P)];
++                acc += (input_val * ggml_cuda_cast<float>(kernel_val));
++            }
++        }
++    }
++
++    // [N, OC, OH, OW]
++    output[Layout::output_index(n, c_out, out_y, out_x, P)] = acc;
++}
++
++template <typename T>
++static void conv2d_cuda(const float * X_D, const T * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
++    const int blocks = (P.TOTAL + CUDA_CONV2D_BLOCK_SIZE - 1) / CUDA_CONV2D_BLOCK_SIZE;
++    conv2d_kernel<T, whcn_layout><<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, st>>>(X_D, K_D, Y_D, P);
++}
++
++static void conv2d_cuda_f16(const float * X_D, const half * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
++    conv2d_cuda<half>(X_D, K_D, Y_D, P, st);
++}
++
++static void conv2d_cuda_f32(const float * X_D, const float * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
++    conv2d_cuda<float>(X_D, K_D, Y_D, P, st);
++}
++
++// ---------------------------------------------------------------------------
++// Fused direct conv kernel (f32, stride ST, dilation 1, batch 1). Each block
++// computes a TX x TY output tile for BOC output channels; the input patch and
++// a kernel chunk are staged in shared memory and IC is tiled in CHUNK steps.
++// KW/KH/ST are compile-time so the inner taps fully unroll. This avoids the
++// im2col gather entirely and is several times faster than im2col+GEMM for the
++// SECOND-style backbone convs.
++// ---------------------------------------------------------------------------
++
++// In-kernel weight accessors so the same fused direct-conv kernel can consume
++// f32, f16, or q8_0 conv weights. q8_0 is dequantized exactly like ggml
++// (v = d * qs[i], QK8_0 = 32 blocks). Input activations stay f32; only weights
++// are dequantized, which is more accurate than ggml_conv_2d's f16 im2col path.
++struct q8_0_w { half d; int8_t qs[32]; };
++__device__ __forceinline__ float conv_w(const float   * K, int li) { return K[li]; }
++__device__ __forceinline__ float conv_w(const half    * K, int li) { return __half2float(K[li]); }
++__device__ __forceinline__ float conv_w(const q8_0_w  * K, int li) {
++    const int b = li >> 5, r = li & 31;
++    return (float) K[b].qs[r] * __half2float(K[b].d);
++}
++
++template <int KW, int KH, int ST, int DL, int TX, int TY, int BOC, int CHUNK, typename W>
++__global__ void conv2d_fast_s1(const float * __restrict__ X,
++                               const W * __restrict__ K,
++                               float * __restrict__ Y,
++                               int IW, int IH, int OW, int OH,
++                               int IC, int OC, int PD) {
++    const int tx = threadIdx.x, ty = threadIdx.y, tid = ty * TX + tx;
++    const int ow = blockIdx.x * TX, oh = blockIdx.y * TY;
++    const int ocb = blockIdx.z * BOC;
++    const int IWp = TX * ST + (KW - 1) * DL;
++    const int IHp = TY * ST + (KH - 1) * DL;
++    const int area = IWp * IHp;
++    constexpr int kwkh = KW * KH;
++
++    extern __shared__ float smem[];
++    float * s_in = smem;                     // [CHUNK * area] (channel-major)
++    float * s_w  = smem + CHUNK * area;      // [kwkh * CHUNK * BOC]
++
++    float acc[BOC];
++    for (int i = 0; i < BOC; i++) acc[i] = 0.0f;
++
++    const int gx = ow + tx, gy = oh + ty;
++    const bool write = (gx < OW) && (gy < OH);
++
++    for (int ic0 = 0; ic0 < IC; ic0 += CHUNK) {
++        const int cch = min(CHUNK, IC - ic0);
++        // Load input patch chunk (channel-major) into shared memory.
++        for (int i = tid; i < area * CHUNK; i += TX * TY) {
++            const int c = i / area, l = i % area;
++            const int ix = l % IWp, iy = l / IWp;
++            const int gx0 = ow * ST + ix - PD, gy0 = oh * ST + iy - PD;
++            float v = 0.0f;
++            if (c < cch && gx0 >= 0 && gx0 < IW && gy0 >= 0 && gy0 < IH)
++                v = X[(ic0 + c) * IW * IH + gy0 * IW + gx0];
++            s_in[c * area + l] = v;
++        }
++        // Load kernel chunk into shared memory.
++        for (int i = tid; i < kwkh * CHUNK * BOC; i += TX * TY) {
++            const int c = i / (kwkh * BOC);
++            const int r = i % (kwkh * BOC);
++            const int oc = r / kwkh, kk = r % kwkh;
++            const int kx = kk % KW, ky = kk / KW;
++            s_w[i] = (c < cch && ocb + oc < OC)
++                ? conv_w(K, ((ocb + oc) * IC + ic0 + c) * kwkh + ky * KW + kx)
++                : 0.0f;
++        }
++        __syncthreads();
++        if (write) {
++            for (int c = 0; c < cch; c++) {
++                const float * sp = s_in + c * area;
++                // Hoist this thread's KW*KH input taps into registers once, then
++                // reuse them across all BOC output channels. This cuts the number
++                // of per-thread input shared-memory reads from BOC*kwkh down to
++                // kwkh (the per-thread input reads are banked; weight reads are a
++                // broadcast across the block and stay cheap).
++                float xv[KW * KH];
++                #pragma unroll
++                for (int ky = 0; ky < KH; ky++) {
++                    const float * spr = sp + (ty * ST + ky * DL) * IWp;
++                    #pragma unroll
++                    for (int kx = 0; kx < KW; kx++) xv[ky * KW + kx] = spr[tx * ST + kx * DL];
++                }
++                #pragma unroll
++                for (int oc = 0; oc < BOC; oc++) {
++                    const float * wk = s_w + (c * BOC + oc) * kwkh;
++                    float a = 0.0f;
++                    #pragma unroll
++                    for (int k = 0; k < kwkh; k++) a += xv[k] * wk[k];
++                    acc[oc] += a;
++                }
++            }
++        }
++        __syncthreads();
++    }
++    if (write) {
++        for (int oc = 0; oc < BOC; oc++)
++            if (ocb + oc < OC) Y[(ocb + oc) * OW * OH + gy * OW + gx] = acc[oc];
++    }
++}
++
++// im2col writing the patch matrix in column-major [M, K] layout, i.e. element
++// (m, k) at col[m + k*M] == col[k*M + m]. M = OW*OH spatial, K = KW*KH*IC.
++template <int KW, int KH>
++__global__ void conv2d_im2col(const float * __restrict__ X,
++                              float * __restrict__ col,
++                              int IW, int IH, int OW, int OH,
++                              int IC, int ST, int DL, int PD) {
++    const int64_t M = (int64_t) OW * OH;
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    const int64_t total = M * (int64_t) KW * KH * IC;
++    if (idx >= total) return;
++    const int k = (int)(idx / M);
++    const int m = (int)(idx % M);
++    const int ic = k / (KW * KH);
++    const int kk = k % (KW * KH);
++    const int kx = kk % KW, ky = kk / KW;
++    const int ox = m % OW, oy = m / OW;
++    const int ix = ox * ST + kx * DL - PD, iy = oy * ST + ky * DL - PD;
++    float v = 0.0f;
++    if (ix >= 0 && ix < IW && iy >= 0 && iy < IH)
++        v = X[(int64_t) ic * IW * IH + (int64_t) iy * IW + ix];
++    col[idx] = v;
++}
++
++// ---------------------------------------------------------------------------
++// TF32 tensor-core implicit-GEMM conv (KW=KH=3, stride 1, dilation 1, pad 1,
++// batch 1, f32 weights/activations). Each warp computes a 16 (spatial, 4x4)
++// x 8 (output channel) tile with mma.sync.aligned.m16n8k8.row.col.f32.tf32.
++// K reduces over input channels in chunks of 8 and over the 9 taps. The
++// on-the-fly im2col avoids materializing the (potentially hundreds of MB)
++// im2col matrix, so tensor cores are used without cuBLAS' im2col overhead.
++// ---------------------------------------------------------------------------
++__device__ __forceinline__ unsigned int conv_tf32_bits(float x) {
++    // Round fp32 -> TF32 (10-bit mantissa, round-to-nearest-even approx).
++    unsigned int u = __float_as_uint(x);
++    u = (u + 0x1000u) & 0xFFFFE000u;
++    return u;
++}
++
++// ---------------------------------------------------------------------------
++// 8x8-spatial-tile x 16-oc TF32 implicit-GEMM conv (3x3 stride-1 pad-1 f32).
++// 8 warps/block; each warp computes one 4x4 (16 px) m16n8k8 tile for 8 oc.
++// Using a 16-oc block keeps the weight shared buffer small (9*8*16) so ~6
++// blocks fit per SM -> full occupancy to hide MMA latency, while the larger
++// 8x8 footprint (10x10) cuts halo redundancy vs 4x4 tiles. Weight shared is
++// only 4.6KB. Same MMA fragment mapping as the validated single-warp kernel.
++// ---------------------------------------------------------------------------
++__global__ void conv2d_tf32_s1_3x3_8x8(const float * __restrict__ X,
++                                       const float * __restrict__ K,
++                                       float * __restrict__ Y,
++                                       int IW, int IH, int OW, int OH,
++                                       int IC, int OC) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    // 8x8 spatial x 16 oc per block, 8 warps/block, ILP=1.
++    // Each warp computes one 16-px m16n8k8 tile for 8 oc. Keeping the weight
++    // shared buffer small (9*8*16=4.6KB) lets ~6 blocks fit per SM -> full
++    // occupancy (48 warps/SM) which was measured fastest on sm_86.
++    __shared__ float s_in[8 * 100];           // [c][iy*10+ix], 8 channels x 10x10
++    __shared__ float s_w[9 * 8 * 16];         // [tap][c][oc], 16 oc
++
++    const int tid = threadIdx.x;              // 256 threads = 8 warps
++    const int warp = tid >> 5;
++    const int lane = tid & 31;
++    const int ox0 = blockIdx.x * 8, oy0 = blockIdx.y * 8;
++    const int oc0 = blockIdx.z * 16;
++
++    const int m_tile = warp >> 1;             // 0..3 (which 4x4 sub-tile)
++    const int oc_grp = warp & 1;              // 0..1 (which 8-oc group)
++    const int stx = (m_tile & 1) * 4, sty = (m_tile >> 1) * 4;
++
++    const int groupID = lane / 4;             // 0..7 (pixel row-group / local oc)
++    const int pA      = groupID;
++    const int pyA     = pA / 4, pxA = pA % 4;
++    const int c4      = lane % 4;             // 0..3
++
++    unsigned int a[4], b[2];
++    float c[4] = {0.0f, 0.0f, 0.0f, 0.0f};
++
++    for (int ic0 = 0; ic0 < IC; ic0 += 8) {
++        const int cch = min(8, IC - ic0);
++        for (int i = tid; i < 8 * 100; i += blockDim.x) {
++            const int c = i / 100, l = i % 100, iy = l / 10, ix = l % 10;
++            const int gx = ox0 - 1 + ix, gy = oy0 - 1 + iy;   // pad 1
++            float v = 0.0f;
++            if (c < cch && gx >= 0 && gx < IW && gy >= 0 && gy < IH)
++                v = X[(ic0 + c) * IW * IH + gy * IW + gx];
++            s_in[i] = v;
++        }
++        for (int i = tid; i < 9 * 8 * 16; i += blockDim.x) {
++            const int tap = i / (8 * 16);
++            const int r = i % (8 * 16);
++            const int c = r / 16, oc = r % 16;
++            const int ky = tap / 3, kx = tap % 3;
++            const int goc = oc0 + oc;
++            s_w[i] = (c < cch && goc < OC)
++                ? K[(goc * IC + ic0 + c) * 9 + ky * 3 + kx]
++                : 0.0f;
++        }
++        __syncthreads();
++
++        #pragma unroll
++        for (int tap = 0; tap < 9; tap++) {
++            const int kx = tap % 3, ky = tap / 3;
++            const int base = (sty + pyA + ky) * 10 + (stx + pxA + kx);
++            a[0] = conv_tf32_bits(s_in[c4 * 100 + base]);
++            a[1] = conv_tf32_bits(s_in[c4 * 100 + base + 20]);
++            a[2] = conv_tf32_bits(s_in[(c4 + 4) * 100 + base]);
++            a[3] = conv_tf32_bits(s_in[(c4 + 4) * 100 + base + 20]);
++            b[0] = conv_tf32_bits(s_w[(tap * 8 + c4) * 16 + (oc_grp * 8 + groupID)]);
++            b[1] = conv_tf32_bits(s_w[(tap * 8 + (c4 + 4)) * 16 + (oc_grp * 8 + groupID)]);
++
++            asm volatile(
++                "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
++                "{%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};\n"
++                : "+f"(c[0]), "+f"(c[1]), "+f"(c[2]), "+f"(c[3])
++                : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]),
++                  "r"(b[0]), "r"(b[1]));
++        }
++        __syncthreads();
++    }
++
++    const int ox = ox0 + stx + pxA, oy = oy0 + sty + pyA;
++    const int oc_a = oc0 + oc_grp * 8 + 2 * c4, oc_b = oc0 + oc_grp * 8 + 2 * c4 + 1;
++    if (ox < OW && oy < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + oy * OW + ox] = c[0];
++        if (oc_b < OC) Y[oc_b * OH * OW + oy * OW + ox] = c[1];
++    }
++    const int oy2 = oy + 2;
++    if (ox < OW && oy2 < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + oy2 * OW + ox] = c[2];
++        if (oc_b < OC) Y[oc_b * OH * OW + oy2 * OW + ox] = c[3];
++    }
++#else
++    // No TF32 tensor-core instructions below sm_75: empty stub.
++    // The host checks ggml_cuda_info().devices[].cc at runtime and never
++    // launches this kernel on such devices.
++    (void) X; (void) K; (void) Y;
++    (void) IW; (void) IH; (void) OW; (void) OH; (void) IC; (void) OC;
++#endif // __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++}
++
++// ---------------------------------------------------------------------------
++// No-s_w variant of the TF32 implicit-GEMM 3x3 pad-1 conv: the B (weight)
++// fragments are read straight from global memory instead of staging the
++// whole ZB-oc weight slice in shared memory. Weights (<= a few MB) stay
++// L2-resident, so each b fragment is a hit; dropping the weight shared
++// buffer leaves only the 3.2KB input patch, which restores 6 blocks/SM
++// occupancy even at ZB=64 (the 18.4KB s_w of conv2d_tf32_s1_3x3_8x8_z<64>
++// capped residency at 4 blocks/SM, which made the fused 64->2304
++// CenterHead conv slower than the 16-oc kernel despite 4x fewer input
++// re-reads). Measured L2 traffic is small (weights are re-read per block,
++// ~39MB for the fused conv, but fully L2-hit).
++// ---------------------------------------------------------------------------
++template <int ZB>
++__global__ void conv2d_tf32_s1_3x3_8x8_ldg(const float * __restrict__ X,
++                                           const float * __restrict__ K,
++                                           float * __restrict__ Y,
++                                           int IW, int IH, int OW, int OH,
++                                           int IC, int OC) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    __shared__ float s_in[8 * 100];           // [c][iy*10+ix], 8 channels x 10x10
++
++    const int tid = threadIdx.x;              // 256 threads = 8 warps
++    const int warp = tid >> 5;
++    const int lane = tid & 31;
++    const int ox0 = blockIdx.x * 8, oy0 = blockIdx.y * 8;
++    const int oc0 = blockIdx.z * ZB;
++
++    const int m_tile = warp >> 1;             // 0..3 (which 4x4 sub-tile)
++    const int oc_grp = warp & 1;              // 0..1 (which ZB/2-oc group)
++    const int stx = (m_tile & 1) * 4, sty = (m_tile >> 1) * 4;
++
++    const int groupID = lane / 4;             // 0..7 (M-row / local oc)
++    const int pA      = groupID;
++    const int pyA     = pA / 4, pxA = pA % 4;
++    const int c4      = lane % 4;             // 0..3 (K-col / channel)
++
++    unsigned int a[4], b[2];
++    float c[ZB / 2] = {};
++
++    for (int ic0 = 0; ic0 < IC; ic0 += 8) {
++        const int cch = min(8, IC - ic0);
++        for (int i = tid; i < 8 * 100; i += blockDim.x) {
++            const int c = i / 100, l = i % 100, iy = l / 10, ix = l % 10;
++            const int gx = ox0 - 1 + ix, gy = oy0 - 1 + iy;   // pad 1
++            float v = 0.0f;
++            if (c < cch && gx >= 0 && gx < IW && gy >= 0 && gy < IH)
++                v = X[(ic0 + c) * IW * IH + gy * IW + gx];
++            s_in[i] = v;
++        }
++        __syncthreads();
++
++        #pragma unroll
++        for (int tap = 0; tap < 9; tap++) {
++            const int kx = tap % 3, ky = tap / 3;
++            const int base = (sty + pyA + ky) * 10 + (stx + pxA + kx);
++            a[0] = conv_tf32_bits(s_in[c4 * 100 + base]);
++            a[1] = conv_tf32_bits(s_in[c4 * 100 + base + 20]);
++            a[2] = conv_tf32_bits(s_in[(c4 + 4) * 100 + base]);
++            a[3] = conv_tf32_bits(s_in[(c4 + 4) * 100 + base + 20]);
++            #pragma unroll
++            for (int j = 0; j < ZB / 16; j++) {
++                const int goc = oc0 + oc_grp * (ZB / 2) + j * 8 + groupID;
++                // B fragment straight from L2-resident weights (per-lane
++                // addresses are (goc*IC + ic0 + c4)*9 + tap). Only the last
++                // z-block can have goc >= OC; guard the read with a select.
++                const bool ok = goc < OC;
++                b[0] = ok ? conv_tf32_bits(K[(goc * IC + ic0 + c4) * 9 + tap]) : 0u;
++                b[1] = ok ? conv_tf32_bits(K[(goc * IC + ic0 + c4 + 4) * 9 + tap]) : 0u;
++                asm volatile(
++                    "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
++                    "{%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};\n"
++                    : "+f"(c[j*4 + 0]), "+f"(c[j*4 + 1]),
++                      "+f"(c[j*4 + 2]), "+f"(c[j*4 + 3])
++                    : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]),
++                      "r"(b[0]), "r"(b[1]));
++            }
++        }
++        __syncthreads();
++    }
++
++    const int ox = ox0 + stx + pxA, oy = oy0 + sty + pyA;
++    const int oy2 = oy + 2;
++    #pragma unroll
++    for (int j = 0; j < ZB / 16; j++) {
++        const int oc_a = oc0 + oc_grp * (ZB / 2) + j * 8 + 2 * c4;
++        const int oc_b = oc_a + 1;
++        if (ox < OW && oy < OH) {
++            if (oc_a < OC) Y[oc_a * OH * OW + oy * OW + ox] = c[j*4 + 0];
++            if (oc_b < OC) Y[oc_b * OH * OW + oy * OW + ox] = c[j*4 + 1];
++        }
++        if (ox < OW && oy2 < OH) {
++            if (oc_a < OC) Y[oc_a * OH * OW + oy2 * OW + ox] = c[j*4 + 2];
++            if (oc_b < OC) Y[oc_b * OH * OW + oy2 * OW + ox] = c[j*4 + 3];
++        }
++    }
++#else
++    // No TF32 tensor-core instructions below sm_75: empty stub.
++    (void) X; (void) K; (void) Y;
++    (void) IW; (void) IH; (void) OW; (void) OH; (void) IC; (void) OC;
++#endif // __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++}
++
++// ---------------------------------------------------------------------------
++// Stride-2 variant of the TF32 tensor-core implicit-GEMM 3x3 pad-1 conv.
++// Output (ox,oy) reads input at (2*ox+kx-1, 2*oy+ky-1) for kx,ky in {0,1,2},
++// so an 8x8 output tile needs a 17x17 input region (rx,ry in [0,17)). The
++// MMA register-to-pixel mapping is identical to conv2d_tf32_s1_3x3_8x8; only
++// the shared-memory spatial stride changes from 1 to 2 (tap offset 2*k, and
++// the +2 output-row step of the m16n8k8 A-fragment becomes +4 input rows).
++// Previously stride-2 3x3 f32 convs fell back to the FMA conv2d_fast_s1 path;
++// this kernel lets them use tensor cores too (same TF32 accuracy class).
++// ---------------------------------------------------------------------------
++__global__ void conv2d_tf32_s2_3x3_8x8(const float * __restrict__ X,
++                                       const float * __restrict__ K,
++                                       float * __restrict__ Y,
++                                       int IW, int IH, int OW, int OH,
++                                       int IC, int OC) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    // 8x8 spatial x 16 oc per block, 8 warps/block (256 threads).
++    constexpr int SH  = 17;    // input shared row pitch (2*8+1)
++    constexpr int SH2 = 17 * 17;// [c] channel pitch (one channel plane)
++    __shared__ float s_in[8 * SH2];   // [c][ry*SH+rx]
++    __shared__ float s_w[9 * 8 * 16]; // [tap][c][oc]
++
++    const int tid = threadIdx.x;              // 256 threads = 8 warps
++    const int warp = tid >> 5;
++    const int lane = tid & 31;
++    const int ox0 = blockIdx.x * 8, oy0 = blockIdx.y * 8;
++    const int oc0 = blockIdx.z * 16;
++    const int inp_x0 = 2 * ox0 - 1, inp_y0 = 2 * oy0 - 1;
++
++    const int m_tile = warp >> 1;             // 0..3 (which 4x4 sub-tile)
++    const int oc_grp = warp & 1;              // 0..1 (which 8-oc group)
++    const int stx = (m_tile & 1) * 4, sty = (m_tile >> 1) * 4;
++
++    const int groupID = lane / 4;             // 0..7 (M-row / local oc)
++    const int pA      = groupID;
++    const int pyA     = pA / 4, pxA = pA % 4;
++    const int c4      = lane % 4;             // 0..3 (K-col / channel)
++
++    unsigned int a[4], b[2];
++    float c[4] = {0.0f, 0.0f, 0.0f, 0.0f};
++
++    for (int ic0 = 0; ic0 < IC; ic0 += 8) {
++        const int cch = min(8, IC - ic0);
++        for (int i = tid; i < 8 * SH2; i += blockDim.x) {
++            const int c = i / SH2, l = i % SH2, ry = l / SH, rx = l % SH;
++            const int gx = inp_x0 + rx, gy = inp_y0 + ry;
++            float v = 0.0f;
++            if (c < cch && gx >= 0 && gx < IW && gy >= 0 && gy < IH)
++                v = X[(ic0 + c) * IW * IH + gy * IW + gx];
++            s_in[i] = v;
++        }
++        for (int i = tid; i < 9 * 8 * 16; i += blockDim.x) {
++            const int tap = i / (8 * 16);
++            const int r = i % (8 * 16);
++            const int c = r / 16, oc = r % 16;
++            const int ky = tap / 3, kx = tap % 3;
++            const int goc = oc0 + oc;
++            s_w[i] = (c < cch && goc < OC)
++                ? K[(goc * IC + ic0 + c) * 9 + ky * 3 + kx]
++                : 0.0f;
++        }
++        __syncthreads();
++
++        #pragma unroll
++        for (int tap = 0; tap < 9; tap++) {
++            const int kx = tap % 3, ky = tap / 3;
++            // stride-2 input rel coords: rx = 2*(stx+pxA)+kx, ry = 2*(sty+pyA)+ky.
++            const int base = (2 * (sty + pyA) + ky) * SH + (2 * (stx + pxA) + kx);
++            a[0] = conv_tf32_bits(s_in[c4 * SH2 + base]);
++            a[1] = conv_tf32_bits(s_in[c4 * SH2 + base + 4 * SH]); // +2 out rows -> +4 in rows
++            a[2] = conv_tf32_bits(s_in[(c4 + 4) * SH2 + base]);
++            a[3] = conv_tf32_bits(s_in[(c4 + 4) * SH2 + base + 4 * SH]);
++            b[0] = conv_tf32_bits(s_w[(tap * 8 + c4) * 16 + (oc_grp * 8 + groupID)]);
++            b[1] = conv_tf32_bits(s_w[(tap * 8 + (c4 + 4)) * 16 + (oc_grp * 8 + groupID)]);
++
++            asm volatile(
++                "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
++                "{%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};\n"
++                : "+f"(c[0]), "+f"(c[1]), "+f"(c[2]), "+f"(c[3])
++                : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]),
++                  "r"(b[0]), "r"(b[1]));
++        }
++        __syncthreads();
++    }
++
++    const int ox = ox0 + stx + pxA, oy = oy0 + sty + pyA;
++    const int oc_a = oc0 + oc_grp * 8 + 2 * c4, oc_b = oc0 + oc_grp * 8 + 2 * c4 + 1;
++    if (ox < OW && oy < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + oy * OW + ox] = c[0];
++        if (oc_b < OC) Y[oc_b * OH * OW + oy * OW + ox] = c[1];
++    }
++    const int oy2 = oy + 2;
++    if (ox < OW && oy2 < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + oy2 * OW + ox] = c[2];
++        if (oc_b < OC) Y[oc_b * OH * OW + oy2 * OW + ox] = c[3];
++    }
++#else
++    // No TF32 tensor-core instructions below sm_75: empty stub.
++    // The host checks ggml_cuda_info().devices[].cc at runtime and never
++    // launches this kernel on such devices.
++    (void) X; (void) K; (void) Y;
++    (void) IW; (void) IH; (void) OW; (void) OH; (void) IC; (void) OC;
++#endif // __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++}
++
++// ---------------------------------------------------------------------------
++// f16 tensor-core variant of the stride-2 3x3 pad-1 implicit-GEMM conv: the
++// tile/fragment mapping is identical to conv2d_tf32_s2_3x3_8x8, but the mma
++// operands are rounded to f16 (11-bit mantissa - the same fast-mode accuracy
++// class as the TF32 kernels' 10-bit rounding) so the tensor pipe runs at the
++// 2x f16 rate, which is the entire measured gap to the cuDNN f16 NHWC xmma
++// path for these shapes. The A fragment reads packed half2 channel pairs
++// straight from an f16 [px][pair] patch stage; the B fragment reads a
++// pre-converted [tap][oc][IC2] f16 weight matrix (IC2 = IC rounded up to an
++// even channel count, zero-filled, so every B load is an aligned 32-bit read
++// and tail channels contribute exact zeros).
++// ---------------------------------------------------------------------------
++__global__ void conv_w_to_f16_tap(const float * __restrict__ k,
++                                  __half * __restrict__ wf,
++                                  int IC, int IC2, int OC) {
++    const int64_t total = (int64_t) OC * IC2 * 9;
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= total) return;
++    const int tap = (int) (idx / ((int64_t) OC * IC2));
++    const int r   = (int) (idx % ((int64_t) OC * IC2));
++    const int ic  = r % IC2;
++    const int oc  = r / IC2;
++    // ggml kernel layout [KW, KH, IC, OC]: kx + 3*(ky + 3*(ic + IC*oc)); the
++    // flattened tap index is kx + 3*ky.
++    float v = 0.0f;
++    if (ic < IC) v = k[((size_t) oc * IC + ic) * 9 + tap];
++    wf[idx] = __float2half(v);
++}
++
++__global__ void conv2d_f16_s2_3x3_8x8(const float * __restrict__ X,
++                                      const __half * __restrict__ Wf,
++                                      float * __restrict__ Y,
++                                      int IW, int IH, int OW, int OH,
++                                      int IC, int OC) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    constexpr int SH  = 17;              // input shared row pitch (2*8+1)
++    constexpr int SPP = 4;               // channel pairs per 8-channel chunk
++    __shared__ __half2 s_in[SH * SH * SPP];   // [ry*SH+rx][pair]
++
++    const int tid = threadIdx.x;              // 256 threads = 8 warps
++    const int warp = tid >> 5;
++    const int lane = tid & 31;
++    const int ox0 = blockIdx.x * 8, oy0 = blockIdx.y * 8;
++    const int oc0 = blockIdx.z * 16;
++    const int inp_x0 = 2 * ox0 - 1, inp_y0 = 2 * oy0 - 1;
++
++    const int m_tile = warp >> 1;             // 0..3 (which 4x4 sub-tile)
++    const int oc_grp = warp & 1;              // 0..1 (which 8-oc group)
++    const int stx = (m_tile & 1) * 4, sty = (m_tile >> 1) * 4;
++
++    const int groupID = lane / 4;             // 0..7 (M-row / local oc)
++    const int pA      = groupID;
++    const int pyA     = pA / 4, pxA = pA % 4;
++    const int c4      = lane % 4;             // 0..3 (K-col channel pair)
++
++    unsigned int a[2], b[1];
++    float c[4] = {0.0f, 0.0f, 0.0f, 0.0f};
++
++    for (int ic0 = 0; ic0 < IC; ic0 += 8) {
++        const int cch = min(8, IC - ic0);
++        for (int i = tid; i < SH * SH * SPP; i += blockDim.x) {
++            const int px = i / SPP, pr = i % SPP;
++            const int rx = px % SH, ry = px / SH;
++            const int gx = inp_x0 + rx, gy = inp_y0 + ry;
++            const int c = 2 * pr;
++            const bool inside = gx >= 0 && gx < IW && gy >= 0 && gy < IH;
++            float v0 = 0.0f, v1 = 0.0f;
++            if (inside && c < cch)     v0 = X[(ic0 + c) * IW * IH + (size_t) gy * IW + gx];
++            if (inside && c + 1 < cch) v1 = X[(ic0 + c + 1) * IW * IH + (size_t) gy * IW + gx];
++            s_in[i] = __halves2half2(__float2half(v0), __float2half(v1));
++        }
++        __syncthreads();
++
++        #pragma unroll
++        for (int tap = 0; tap < 9; tap++) {
++            const int kx = tap % 3, ky = tap / 3;
++            // stride-2 input rel coords; row g+8 is +2 output rows = +4 input rows.
++            const int rx = 2 * (stx + pxA) + kx, ry = 2 * (sty + pyA) + ky;
++            a[0] = *(const unsigned int *) &s_in[(ry * SH + rx) * SPP + c4];
++            a[1] = *(const unsigned int *) &s_in[((ry + 4) * SH + rx) * SPP + c4];
++            const int goc = oc0 + oc_grp * 8 + groupID;
++            // Wf is zero-padded to even IC2, so a pair straddling the IC tail
++            // still multiplies exact zeros; only the oc tail needs a guard.
++            b[0] = (goc < OC)
++                ? *(const unsigned int *) &Wf[((size_t) tap * OC + goc) * ((IC + 1) & ~1) + ic0 + 2 * c4]
++                : 0u;
++            asm volatile(
++                "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
++                "{%0,%1,%2,%3}, {%4,%5}, {%6}, {%0,%1,%2,%3};\n"
++                : "+f"(c[0]), "+f"(c[1]), "+f"(c[2]), "+f"(c[3])
++                : "r"(a[0]), "r"(a[1]), "r"(b[0]));
++        }
++        __syncthreads();
++    }
++
++    const int ox = ox0 + stx + pxA, oy = oy0 + sty + pyA;
++    const int oc_a = oc0 + oc_grp * 8 + 2 * c4, oc_b = oc_a + 1;
++    if (ox < OW && oy < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + (size_t) oy * OW + ox] = c[0];
++        if (oc_b < OC) Y[oc_b * OH * OW + (size_t) oy * OW + ox] = c[1];
++    }
++    const int oy2 = oy + 2;
++    if (ox < OW && oy2 < OH) {
++        if (oc_a < OC) Y[oc_a * OH * OW + (size_t) oy2 * OW + ox] = c[2];
++        if (oc_b < OC) Y[oc_b * OH * OW + (size_t) oy2 * OW + ox] = c[3];
++    }
++#else
++    (void) X; (void) Wf; (void) Y;
++    (void) IW; (void) IH; (void) OW; (void) OH; (void) IC; (void) OC;
++#endif // __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++}
++
++// ---------------------------------------------------------------------------
++// Fused Winograd F(2x2,3x3) f32 conv (stride 1, pad 1, dilation 1, batch 1):
++// input transform, the 16 position-wise GEMMs and the inverse transform run
++// in ONE kernel with the operands consumed from registers/shared memory, so
++// there is no V/M staging traffic at all. A direct TF32 implicit-GEMM cannot
++// reach cuDNN-class latency for the SECOND-style 3x3 stride-1 BEV convs: e.g.
++// 128x128 IC128 OC256 is 77 GFLOP, already at the RTX 3060 TF32 ceiling,
++// while the Winograd transform cuts the work to 16 position-MACs per 2x2 tile
++// (4 per output channel) vs 9 for direct conv - a 2.25x algorithmic reduction
++// no tiling can recover. The nsys evidence that motivated this path: cuDNN
++// runs the same convs on its ampere_scudnn_winograd_* kernels; the earlier
++// three-pass (transform -> cuBLAS batched GEMM -> inverse) version of this
++// path measured 4x slower than cuDNN per conv on the mid-size 128x128 class
++// because the staging traffic and the k=64 batched GEMM dominated.
++//
++// Block = 4x4 output tiles (8x8 output px) x 32 output channels, 128 threads:
++//   - the 10x10xC input patch of the block is staged in shared memory in
++//     IC chunks of 32 (guard zeros implement the pad-1 semantics exactly);
++//   - each warp owns one 8-wide oc chunk and loops the 16 transform positions;
++//     for every (position, k-step of 8 channels) the lane derives its four
++//     A-fragment values directly from the staged patch (a +-1 combination of
++//     four patch elements), reads the two B values from the L2-resident
++//     transformed weights and issues one mma.m16n8k8.tf32;
++//   - the lane-side inverse transform is the same +-1 combination as the
++//     removed three-pass output kernel, applied to the 16 per-position
++//     accumulators, and the 32x8x8 result tile is staged through shared
++//     memory for fully coalesced global writes.
++// The transform matrices are the Toom-Cook F(2,3) form (B^T rows
++// (1,0,-1,0) (0,1,1,0) (0,-1,1,0) (0,-1,0,1), G rows (1,0,0) (0.5,0.5,0.5)
++// (0.5,-0.5,0.5) (0,0,1), A^T rows (1,1,1,0) (0,1,-1,1)), verified to machine
++// precision against the direct conv by tests/test_conv2d. All transform
++// arithmetic is exact +-1/0.5; the only rounding is the TF32 mma operands -
++// the same accuracy class as the direct TF32 kernels. Strict mode
++// (OPCPD_CONV_TF32=0) never reaches this path; OPCPD_CONV_WINO=0 selects the
++// direct TF32 implicit-GEMM kernels.
++// ---------------------------------------------------------------------------
++
++// Transformed weights U[16][OC][IC]: U[p][oc][ic] = (G g G^T)[i][j] with
++// p = i*4 + j. Recomputed per call (~13us) so there is no cross-frame
++// weight-content cache to invalidate.
++__global__ void wino_weight_transform(const float * __restrict__ k,
++                                      __half * __restrict__ U,
++                                      int IC, int IC2, int OC) {
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= (int64_t) OC * IC2) return;
++    const int ic = (int) (idx % IC2);
++    const int oc = (int) (idx / IC2);
++    // ggml kernel layout [KW, KH, IC, OC]: kx + 3*(ky + 3*(ic + IC*oc)).
++    const float * g = k + ((size_t) oc * IC + ic) * 9;
++
++    // u = G g (4x3 rows over ky); G rows select / half-average filter rows.
++    const float u00 = g[0],                       u01 = g[1],                       u02 = g[2];
++    const float u10 = 0.5f * (g[0] + g[3] + g[6]), u11 = 0.5f * (g[1] + g[4] + g[7]), u12 = 0.5f * (g[2] + g[5] + g[8]);
++    const float u20 = 0.5f * (g[0] - g[3] + g[6]), u21 = 0.5f * (g[1] - g[4] + g[7]), u22 = 0.5f * (g[2] - g[5] + g[8]);
++    const float u30 = g[6],                       u31 = g[7],                       u32 = g[8];
++
++    // U = u G^T: G^T column weights (1,0,0) (0.5,0.5,0.5) (0.5,-0.5,0.5) (0,0,1)
++    // make the j=3 combination the kx=2 column of u. Stored as f16 (11-bit
++    // mantissa, the fast-mode accuracy class; the mma accumulates in f32) and
++    // zero-padded to even IC2 so every B-fragment load is an aligned 32-bit
++    // read and IC-tail pairs contribute exact zeros.
++    if (ic >= IC) {
++        U[(size_t) oc * IC2 + ic] = __float2half(0.0f);
++        return;
++    }
++    __half * Uc = U + (size_t) oc * IC2 + ic;
++    const int64_t stride = (int64_t) OC * IC2;
++    Uc[ 0 * stride] = __float2half(u00);
++    Uc[ 1 * stride] = __float2half(0.5f * (u00 + u01 + u02));
++    Uc[ 2 * stride] = __float2half(0.5f * (u00 - u01 + u02));
++    Uc[ 3 * stride] = __float2half(u02);
++    Uc[ 4 * stride] = __float2half(u10);
++    Uc[ 5 * stride] = __float2half(0.5f * (u10 + u11 + u12));
++    Uc[ 6 * stride] = __float2half(0.5f * (u10 - u11 + u12));
++    Uc[ 7 * stride] = __float2half(u12);
++    Uc[ 8 * stride] = __float2half(u20);
++    Uc[ 9 * stride] = __float2half(0.5f * (u20 + u21 + u22));
++    Uc[10 * stride] = __float2half(0.5f * (u20 - u21 + u22));
++    Uc[11 * stride] = __float2half(u22);
++    Uc[12 * stride] = __float2half(u30);
++    Uc[13 * stride] = __float2half(0.5f * (u30 + u31 + u32));
++    Uc[14 * stride] = __float2half(0.5f * (u30 - u31 + u32));
++    Uc[15 * stride] = __float2half(u32);
++}
++
++// V[i][j] for position p = i*4+j at one (tile, channel): the row combination
++// r_i[l] = +-d[k1][l] +- d[k2][l] followed by the column combination
++// V = +-r_i[a] +- r_i[b]; four patch loads, exact +-1 arithmetic.
++__device__ __forceinline__ float wino_v(int p, const float * prow,
++                                        int r0, int x0) {
++    const int i = p >> 2, j = p & 3;
++    int k1, k2; float s1, s2;   // r_i[l] = s1*d[k1][l] + s2*d[k2][l]
++    if (i == 0)      { k1 = 0; k2 = 2; s1 = 1.f;  s2 = -1.f; }
++    else if (i == 1) { k1 = 1; k2 = 2; s1 = 1.f;  s2 = 1.f; }
++    else if (i == 2) { k1 = 2; k2 = 1; s1 = 1.f;  s2 = -1.f; }
++    else             { k1 = 3; k2 = 1; s1 = 1.f;  s2 = -1.f; }
++    int a, b; float sa, sb;     // V[i][j] = sa*r_i[a] + sb*r_i[b]
++    if (j == 0)      { a = 0; b = 2; sa = 1.f;  sb = -1.f; }
++    else if (j == 1) { a = 1; b = 2; sa = 1.f;  sb = 1.f; }
++    else if (j == 2) { a = 2; b = 1; sa = 1.f;  sb = -1.f; }
++    else             { a = 3; b = 1; sa = 1.f;  sb = -1.f; }
++    // prow rows are (r0 + ky), columns (x0 + kx); d[ky][kx] lives there.
++    const float va = s1 * prow[(r0 + k1) * 10 + x0 + a]
++                   + s2 * prow[(r0 + k2) * 10 + x0 + a];
++    const float vb = s1 * prow[(r0 + k1) * 10 + x0 + b]
++                   + s2 * prow[(r0 + k2) * 10 + x0 + b];
++    return sa * va + sb * vb;
++}
++
++constexpr int WINO_BLOCK_TILES = 4;   // 4x4 tiles -> 8x8 output px per block
++constexpr int WINO_OC_CHUNK = 32;     // oc per block (one 8-wide chunk per warp)
++constexpr int WINO_IC_CHUNK = 16;     // channels staged per shared-memory load
++
++// __launch_bounds__ pins 4 blocks/SM: the unrolled V transform otherwise
++// pushes the kernel to 255 registers (2 blocks/SM), which starves the mma
++// loop's L2 loads for B fragments.
++__global__ void __launch_bounds__(128, 3) wino_fused_s1_3x3(
++    const float * __restrict__ x, const __half * __restrict__ U,
++    float * __restrict__ y, int W, int H, int IC, int IC2, int OC,
++    int TH, int TW) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    const int th0 = blockIdx.y * WINO_BLOCK_TILES;   // tile-row origin
++    const int tw0 = blockIdx.x * WINO_BLOCK_TILES;   // tile-col origin
++    const int py0 = th0 * 2;                         // output row origin
++    const int px0 = tw0 * 2;                         // output col origin
++    const int oc0 = blockIdx.z * WINO_OC_CHUNK;
++    const int tid = threadIdx.x;
++    const int warp = tid >> 5;
++    const int groupID = (tid & 31) >> 2;             // mma row group (0..7)
++    const int c4 = tid & 3;                          // mma k column (0..3)
++
++    extern __shared__ float smem[];
++    float * patch = smem;                            // [WINO_IC_CHUNK][10][10]
++    float * ystage = smem + WINO_IC_CHUNK * 100;     // [WINO_OC_CHUNK][8][8]
++    // The transform-domain V values ([16 pos][16 tiles][8 pairs] per IC chunk)
++    // alias the ystage region: V is live during the mma loop, ystage during
++    // the inverse transform - disjoint phases, no extra shared memory.
++    __half2 * s_V = (__half2 *) ystage;
++
++    // Warp w owns oc = oc0 + w*8 + {0..7}; its 16 per-position accumulators
++    // (mma C fragments) live in registers across the IC chunks.
++    float acc[16][4];
++    #pragma unroll
++    for (int p = 0; p < 16; ++p) {
++        acc[p][0] = acc[p][1] = acc[p][2] = acc[p][3] = 0.0f;
++    }
++    const int oc = oc0 + warp * 8 + groupID;         // this lane's fragment column
++    const bool oc_ok = oc < OC;
++
++    for (int c0 = 0; c0 < IC; c0 += WINO_IC_CHUNK) {
++        const int ccount = min(WINO_IC_CHUNK, IC - c0);
++        for (int idx = tid; idx < WINO_IC_CHUNK * 100; idx += 128) {
++            const int c = idx / 100, rem = idx % 100, yy = rem / 10, xx = rem % 10;
++            const int gy = py0 - 1 + yy, gx = px0 - 1 + xx;
++            float v = 0.0f;
++            if (c < ccount && gy >= 0 && gy < H && gx >= 0 && gx < W)
++                v = x[(size_t)(c0 + c) * W * H + (size_t) gy * W + gx];
++            patch[c * 100 + yy * 10 + xx] = v;
++        }
++        __syncthreads();
++        // Batch-precompute this chunk's V values into registers (each is a +-1
++        // combination of four patch elements, ~2 adds per value), then park
++        // them in shared memory as packed half2 channel pairs. The mma loop
++        // below then issues pure tensor-core work: the first fused variant
++        // derived its A fragments on the fly inside the mma loop (~40 issue
++        // slots per mma) and starved the tensor pipe; staging V once per block
++        // amortizes the transform over the whole oc range instead.
++        __half2 vreg[16];               // 16p x 16t x 8 pairs / 128 threads
++        #pragma unroll
++        for (int k = 0; k < 16; ++k) {
++            const int i = tid + k * 128;
++            const int p = i / 128, rem = i % 128;
++            const int t = rem / 8, pr = rem % 8;
++            const int r0 = 2 * (t / 4), x0 = 2 * (t % 4);
++            const float * pc0 = patch + (2 * pr) * 100;
++            vreg[k] = __halves2half2(
++                __float2half(wino_v(p, pc0, r0, x0)),
++                __float2half(wino_v(p, pc0 + 100, r0, x0)));
++        }
++        __syncthreads();                // patch reads done before the alias write
++        #pragma unroll
++        for (int k = 0; k < 16; ++k) {
++            const int i = tid + k * 128;
++            const int p = i / 128, rem = i % 128;
++            const int t = rem / 8, pr = rem % 8;
++            s_V[(p * 16 + t) * 8 + pr] = vreg[k];
++        }
++        __syncthreads();
++        // The outer p loop MUST be unrolled: with a runtime p the acc[p][*]
++        // C-fragment accumulators become a dynamically-indexed array, which
++        // the compiler materializes in local memory (REG:255 STACK:80) and
++        // every mma read-modify-write then round-trips local storage.
++        #pragma unroll
++        for (int p = 0; p < 16; ++p) {
++            #pragma unroll
++            for (int ks = 0; ks < WINO_IC_CHUNK / 8; ++ks) {
++                // A fragment: rows are local tiles g and g+8, k columns are the
++                // packed channel pairs 4*ks + c4. B: U[p][oc][c + 2*c4..+1] is
++                // one aligned half2; the IC2 zero padding makes IC-tail pairs
++                // exact zeros, so only the oc tail needs a guard.
++                const unsigned A0 = *(const unsigned *) &s_V[(p * 16 + groupID) * 8 + ks * 4 + c4];
++                const unsigned A1 = *(const unsigned *) &s_V[(p * 16 + groupID + 8) * 8 + ks * 4 + c4];
++                const int c = c0 + ks * 8;
++                const unsigned B0 = oc_ok
++                    ? *(const unsigned *) &U[((size_t) p * OC + oc) * IC2 + c + 2 * c4]
++                    : 0u;
++                asm volatile(
++                    "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
++                    "{%0,%1,%2,%3}, {%4,%5}, {%6}, {%0,%1,%2,%3};\n"
++                    : "+f"(acc[p][0]), "+f"(acc[p][1]), "+f"(acc[p][2]), "+f"(acc[p][3])
++                    : "r"(A0), "r"(A1), "r"(B0));
++            }
++        }
++        __syncthreads();
++    }
++
++    // Lane-side inverse transform: for each of its two tiles (g, g+8) and its
++    // two oc (2c4, 2c4+1), the four outputs are the +-1 combination of the 16
++    // position accumulators (same formulas as the removed three-pass output
++    // kernel).
++    #pragma unroll
++    for (int half = 0; half < 2; ++half) {
++        const int t = groupID + half * 8;
++        const int th_l = t / 4, tw_l = t % 4;
++        const int py = 2 * th_l, px = 2 * tw_l;
++        // The C fragment gives the lane two tiles (rows g, g+8) x two oc
++        // (cols 2c4, 2c4+1) = four (tile, oc) pairs; each pair runs its own
++        // inverse and its four outputs share the oc, differing only in the
++        // spatial (a, b) quadrant of the 2x2 output.
++        #pragma unroll
++        for (int ocb = 0; ocb < 2; ++ocb) {
++            const int ocp = half * 2 + ocb;   // acc column per (tile, oc) pair
++            const int oc_l = warp * 8 + 2 * c4 + ocb;
++            float m[16];
++            #pragma unroll
++            for (int p = 0; p < 16; ++p) m[p] = acc[p][ocp];
++            const float c00 = m[ 0] + m[ 1] + m[ 2];
++            const float c01 = m[ 4] + m[ 5] + m[ 6];
++            const float c02 = m[ 8] + m[ 9] + m[10];
++            const float c03 = m[12] + m[13] + m[14];
++            const float c10 = m[ 1] - m[ 2] + m[ 3];
++            const float c11 = m[ 5] - m[ 6] + m[ 7];
++            const float c12 = m[ 9] - m[10] + m[11];
++            const float c13 = m[13] - m[14] + m[15];
++            ystage[oc_l * 64 + py * 8 + px] = c00 + c01 + c02;
++            ystage[oc_l * 64 + py * 8 + px + 1] = c10 + c11 + c12;
++            ystage[oc_l * 64 + (py + 1) * 8 + px] = c01 - c02 + c03;
++            ystage[oc_l * 64 + (py + 1) * 8 + px + 1] = c11 - c12 + c13;
++        }
++    }
++    __syncthreads();
++    for (int idx = tid; idx < WINO_OC_CHUNK * 64; idx += 128) {
++        const int oc_l = idx / 64, rem = idx % 64, py = rem / 8, px = rem % 8;
++        const int oc = oc0 + oc_l, gy = py0 + py, gx = px0 + px;
++        if (oc < OC && gy < H && gx < W)
++            y[(size_t) oc * W * H + (size_t) gy * W + gx] = ystage[idx];
++    }
++#else
++    // Placeholder body for pre-Ampere compilation passes; the host side never
++    // launches this kernel on devices below cc 8.0 (see the conv dispatcher).
++#endif
++}
++
++// ---------------------------------------------------------------------------
++// Three-pass F(2x2,3x3) path (the default): input transform -> 16-batch TF32
++// cuBLAS GEMM -> inverse transform. Keeping the stages separate gives pure
++// tensor-core mma in the GEMM and pure streaming in the transforms; it beats
++// the fused kernel below because the fused variant's per-mma on-the-fly A
++// transform costs ~128 scalar ops and starves the tensor cores. Its remaining
++// cost is the V/M staging traffic, which mid-size maps cannot fully amortize
++// (see PENDING_IMPLEMENTATIONS.md for the batched-precompute design that
++// closes that gap).
++// ---------------------------------------------------------------------------
++
++__global__ void wino_input_transform(const float * __restrict__ x,
++                                     __half * __restrict__ V,
++                                     int W, int H, int IC, int TH, int TW) {
++    const int64_t T   = (int64_t) TH * TW;
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= (int64_t) IC * T) return;
++    const int64_t c = idx / T;
++    const int64_t t = idx % T;
++    const int iy0 = 2 * (int) (t / TW) - 1;
++    const int ix0 = 2 * (int) (t % TW) - 1;
++
++    float d[4][4];
++    #pragma unroll
++    for (int k = 0; k < 4; ++k) {
++        #pragma unroll
++        for (int l = 0; l < 4; ++l) {
++            const int y = iy0 + k, xx = ix0 + l;
++            // Out-of-range taps are the pad-1 zeros; every output pixel the
++            // tile produces still lies inside the image.
++            d[k][l] = (y >= 0 && y < H && xx >= 0 && xx < W)
++                ? x[(size_t) c * W * H + (size_t) y * W + xx] : 0.0f;
++        }
++    }
++
++    // V = B^T d B for F(2x2,3x3): r[i] are the B^T row combinations of d,
++    // V[i][j] the B-column combinations of r[i]. All +-1, so exact. The B^T
++    // rows are (1,0,-1,0) (0,1,1,0) (0,-1,1,0) (0,-1,0,1) - a Toom-Cook
++    // F(2,3) form verified against the direct conv by tests/test_conv2d.
++    const float r0[4] = {d[0][0] - d[2][0], d[0][1] - d[2][1], d[0][2] - d[2][2], d[0][3] - d[2][3]};
++    const float r1[4] = {d[1][0] + d[2][0], d[1][1] + d[2][1], d[1][2] + d[2][2], d[1][3] + d[2][3]};
++    const float r2[4] = {d[2][0] - d[1][0], d[2][1] - d[1][1], d[2][2] - d[1][2], d[2][3] - d[1][3]};
++    const float r3[4] = {d[3][0] - d[1][0], d[3][1] - d[1][1], d[3][2] - d[1][2], d[3][3] - d[1][3]};
++
++    // V layout [16][IC][T]: lane-adjacent threads share c and step t, so each
++    // of the 16 position stores is a fully coalesced warp write. V stages as
++    // f16 (11-bit effective mantissa, the fast-mode accuracy class shared by
++    // the TF32 kernels and cuDNN's own f16 winograd path).
++    __half * Vp = V + c * T + t;
++    const int64_t stride = (int64_t) IC * T;
++    Vp[ 0 * stride] = __float2half(r0[0] - r0[2]);
++    Vp[ 1 * stride] = __float2half(r0[1] + r0[2]);
++    Vp[ 2 * stride] = __float2half(r0[2] - r0[1]);
++    Vp[ 3 * stride] = __float2half(r0[3] - r0[1]);
++    Vp[ 4 * stride] = __float2half(r1[0] - r1[2]);
++    Vp[ 5 * stride] = __float2half(r1[1] + r1[2]);
++    Vp[ 6 * stride] = __float2half(r1[2] - r1[1]);
++    Vp[ 7 * stride] = __float2half(r1[3] - r1[1]);
++    Vp[ 8 * stride] = __float2half(r2[0] - r2[2]);
++    Vp[ 9 * stride] = __float2half(r2[1] + r2[2]);
++    Vp[10 * stride] = __float2half(r2[2] - r2[1]);
++    Vp[11 * stride] = __float2half(r2[3] - r2[1]);
++    Vp[12 * stride] = __float2half(r3[0] - r3[2]);
++    Vp[13 * stride] = __float2half(r3[1] + r3[2]);
++    Vp[14 * stride] = __float2half(r3[2] - r3[1]);
++    Vp[15 * stride] = __float2half(r3[3] - r3[1]);
++}
++
++// Sliced weights U'[16][occ][IC2] for the batched-GEMM B operand, stored
++// ic-fastest (so a B fragment is one aligned half2 load) and zero-padded to
++// even IC2 (IC-tail channel pairs multiply exact zeros).
++__global__ void wino_weight_transform_3p(const float * __restrict__ k,
++                                         __half * __restrict__ U,
++                                         int IC, int IC2, int oc0, int occ) {
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= (int64_t) occ * IC2) return;
++    const int ic = (int) (idx % IC2);
++    const int ol = (int) (idx / IC2);
++    const int oc = oc0 + ol;
++    if (ic >= IC) {
++        U[(size_t) ol * IC2 + ic] = __float2half(0.0f);
++        return;
++    }
++    // ggml kernel layout [KW, KH, IC, OC]: kx + 3*(ky + 3*(ic + IC*oc)).
++    const float * g = k + ((size_t) oc * IC + ic) * 9;
++
++    // u = G g (4x3 rows over ky); G rows select / half-average filter rows.
++    const float u00 = g[0],                       u01 = g[1],                       u02 = g[2];
++    const float u10 = 0.5f * (g[0] + g[3] + g[6]), u11 = 0.5f * (g[1] + g[4] + g[7]), u12 = 0.5f * (g[2] + g[5] + g[8]);
++    const float u20 = 0.5f * (g[0] - g[3] + g[6]), u21 = 0.5f * (g[1] - g[4] + g[7]), u22 = 0.5f * (g[2] - g[5] + g[8]);
++    const float u30 = g[6],                       u31 = g[7],                       u32 = g[8];
++
++    // U = u G^T: G^T column weights make the j=3 combination the kx=2 column.
++    __half * Uc = U + (size_t) ol * IC2 + ic;
++    const int64_t stride = (int64_t) occ * IC2;
++    Uc[ 0 * stride] = __float2half(u00);
++    Uc[ 1 * stride] = __float2half(0.5f * (u00 + u01 + u02));
++    Uc[ 2 * stride] = __float2half(0.5f * (u00 - u01 + u02));
++    Uc[ 3 * stride] = __float2half(u02);
++    Uc[ 4 * stride] = __float2half(u10);
++    Uc[ 5 * stride] = __float2half(0.5f * (u10 + u11 + u12));
++    Uc[ 6 * stride] = __float2half(0.5f * (u10 - u11 + u12));
++    Uc[ 7 * stride] = __float2half(u12);
++    Uc[ 8 * stride] = __float2half(u20);
++    Uc[ 9 * stride] = __float2half(0.5f * (u20 + u21 + u22));
++    Uc[10 * stride] = __float2half(0.5f * (u20 - u21 + u22));
++    Uc[11 * stride] = __float2half(u22);
++    Uc[12 * stride] = __float2half(u30);
++    Uc[13 * stride] = __float2half(0.5f * (u30 + u31 + u32));
++    Uc[14 * stride] = __float2half(0.5f * (u30 - u31 + u32));
++    Uc[15 * stride] = __float2half(u32);
++}
++
++// Inverse transform M [16][occ][T] (col-major [T x occ] GEMM output) -> y
++// [OC,H,W]; lane-adjacent threads (same oc, adjacent t) read each position
++// slab coalesced and write two consecutive output rows.
++__global__ void wino_output_transform(const float * __restrict__ M,
++                                      float * __restrict__ y,
++                                      int OW, int OH, int occ, int TH, int TW) {
++    const int64_t T   = (int64_t) TH * TW;
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= (int64_t) occ * T) return;
++    const int oc = (int) (idx / T);
++    const int t  = (int) (idx % T);
++    const int th = t / TW, tw = t % TW;
++
++    const float * Mo = M + (size_t) oc * T;
++    float m[16];
++    #pragma unroll
++    for (int p = 0; p < 16; ++p) m[p] = Mo[(size_t) p * occ * T + t];
++
++    // Y = A^T M A with A^T rows (1,1,1,0) (0,1,-1,1): the column combinations
++    // c0/c1 act on A^T's columns, then the row combination is applied twice.
++    const float c00 = m[ 0] + m[ 1] + m[ 2];
++    const float c01 = m[ 4] + m[ 5] + m[ 6];
++    const float c02 = m[ 8] + m[ 9] + m[10];
++    const float c03 = m[12] + m[13] + m[14];
++    const float c10 = m[ 1] - m[ 2] + m[ 3];
++    const float c11 = m[ 5] - m[ 6] + m[ 7];
++    const float c12 = m[ 9] - m[10] + m[11];
++    const float c13 = m[13] - m[14] + m[15];
++    const float y00 = c00 + c01 + c02;
++    const float y01 = c10 + c11 + c12;
++    const float y10 = c01 - c02 + c03;
++    const float y11 = c11 - c12 + c13;
++
++    const int oy = 2 * th, ox = 2 * tw;
++    float * yo = y + (size_t) oc * OW * OH;
++    if (oy < OH) {
++        if (ox < OW)         yo[(size_t) oy * OW + ox]       = y00;
++        if (ox + 1 < OW)     yo[(size_t) oy * OW + ox + 1]   = y01;
++    }
++    if (oy + 1 < OH) {
++        if (ox < OW)         yo[(size_t) (oy + 1) * OW + ox]     = y10;
++        if (ox + 1 < OW)     yo[(size_t) (oy + 1) * OW + ox + 1] = y11;
++    }
++}
++
++namespace {
++struct conv_devbuf {
++    void * p = nullptr;
++    size_t n = 0;
++    ~conv_devbuf() { if (p) cudaFree(p); }
++    bool alloc(size_t b) {
++        if (p && b <= n) return true;
++        if (p) cudaFree(p), p = nullptr;
++        n = b;
++        return cudaMalloc(&p, n) == cudaSuccess;
++    }
++};
++
++// Fused F(2x2,3x3) host driver (OPCPD_CONV_WINO_FUSED=1): transform the
++// weights once per call (no cross-frame weight-content cache) and launch the
++// single fused kernel. Returns false (the caller falls through) on
++// allocation failure.
++static bool run_wino_conv_fused(const float * X_D, const float * K_D, float * Y_D,
++                                int W, int H, int IC, int OC, cudaStream_t st) {
++    const int TH = (H + 1) / 2, TW = (W + 1) / 2;
++    const int IC2 = (IC + 1) & ~1;
++    static thread_local conv_devbuf U;
++    if (!U.alloc((size_t) 16 * OC * IC2 * sizeof(__half))) return false;
++    {
++        const int64_t total = (int64_t) OC * IC2;
++        wino_weight_transform<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++            K_D, (__half *) U.p, IC, IC2, OC);
++    }
++    dim3 grid((TW + 3) / 4, (TH + 3) / 4,
++              (OC + WINO_OC_CHUNK - 1) / WINO_OC_CHUNK);
++    const int smem = WINO_IC_CHUNK * 100 * (int) sizeof(float)
++                   + WINO_OC_CHUNK * 64 * (int) sizeof(float);
++    wino_fused_s1_3x3<<<grid, 128, smem, st>>>(X_D, (const __half *) U.p, Y_D,
++                                               W, H, IC, IC2, OC, TH, TW);
++    return true;
++}
++
++// ---------------------------------------------------------------------------
++// Batched f16 tensor-core GEMM for the Winograd domain: one position per
++// grid.z block-column computes M[p][occ][T] = U'[p][occ][IC2] x V[p][IC][T]^T
++// as 64x64 output tiles. Each 64x64x64 k chunk is staged once in shared
++// memory (A as half2 [m][c-pair] with an 18-half2 pitch - coprime to the 32
++// banks, so the transform writes are conflict-free; B as half2 [n][k-pair]),
++// then the k loop is pure mma.m16n8k8 f16 with f32 accumulate - 16 registers
++// of accumulator per lane. cuBLAS runs the same thin batched shapes on a
++// FP32 SIMT kernel (ampere_sgemm_128x128_nt, ~2 TFLOPS); this kernel follows
++// the f16-s2 conv kernel's measured ~6 TFLOPS mma structure instead.
++// ---------------------------------------------------------------------------
++__global__ void __launch_bounds__(256) wino_gemm_f16(
++    const __half * __restrict__ V, const __half * __restrict__ U,
++    float * __restrict__ M, int T, int IC, int IC2, int occ) {
++#if __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++    constexpr int MT = 64, NT = 64, KC = 64;   // tile dims (k chunk = 64)
++    // Pitches cover KC/2 half2 pairs plus pad: AP=36 makes the mma A-fragment
++    // reads (bank = 4*g + c4) conflict-free; BP=34 keeps B reads 2-way.
++    constexpr int AP = 36;                     // A pitch in half2 [m][c-pair]
++    constexpr int BP = 34;                     // B pitch in half2 [n][k-pair]
++    __shared__ __half2 s_A[MT * AP];           // [m][c-pair]
++    __shared__ __half2 s_B[NT * BP];           // [n][k-pair]
++
++    const int tid = threadIdx.x;               // 256 threads = 8 warps
++    const int warp = tid >> 5;
++    const int lane = tid & 31;
++    const int groupID = lane >> 2;             // mma row group (0..7)
++    const int c4 = lane & 3;                   // mma k column (0..3)
++    const int p = blockIdx.z;
++    const int m0 = blockIdx.x * MT;
++
++    // Warp w covers m-tile (w >> 1) x the n strip ((w & 1) * 32): four mma
++    // n-tiles, 4 C fragments = 16 accumulator registers per lane.
++    const int mt = warp >> 1;
++    const int ns = (warp & 1) * 4;             // first n-tile of the strip
++
++    float acc[4][4] = {};
++    for (int k0 = 0; k0 < IC; k0 += KC) {
++        const int kc = min(KC, IC - k0);
++        // Stage A: thread (c2, m) packs V[p][2c2][m] + V[p][2c2+1][m].
++        for (int i = tid; i < MT * (KC / 2); i += blockDim.x) {
++            const int c2 = i / MT, m = i % MT;
++            const int gm = m0 + m, c = 2 * c2;
++            float v0 = 0.0f, v1 = 0.0f;
++            if (gm < T && c < kc)     v0 = V[(int64_t) p * IC * T + (int64_t)(k0 + c) * T + gm];
++            if (gm < T && c + 1 < kc) v1 = V[(int64_t) p * IC * T + (int64_t)(k0 + c + 1) * T + gm];
++            s_A[m * AP + c2] = __halves2half2(__float2half(v0), __float2half(v1));
++        }
++        // Stage B: U'[n][k] is ic-fastest, so a thread grabs one aligned u32.
++        const __half * Up = U + (int64_t) p * occ * IC2;
++        for (int i = tid; i < NT * (KC / 2); i += blockDim.x) {
++            const int n = i / (KC / 2), k2 = i % (KC / 2);
++            const int k = 2 * k2;
++            unsigned w = 0u;
++            if (n < occ && k < kc) {
++                // zero-padded IC2 keeps the pair read in range; a pair
++                // straddling kc multiplies exact zeros on the A side.
++                w = *(const unsigned *) &Up[(int64_t) n * IC2 + k0 + k];
++            }
++            s_B[n * BP + k2] = *reinterpret_cast<const __half2 *>(&w);
++        }
++        __syncthreads();
++
++        #pragma unroll
++        for (int ks = 0; ks < KC / 8; ++ks) {
++            // A fragment rows are local rows g and g+8 (m = m0 + mt*16 + g).
++            const unsigned A0 = *(const unsigned *) &s_A[(mt * 16 + groupID) * AP + ks * 4 + c4];
++            const unsigned A1 = *(const unsigned *) &s_A[(mt * 16 + groupID + 8) * AP + ks * 4 + c4];
++            #pragma unroll
++            for (int j = 0; j < 4; ++j) {
++                const unsigned B0 = *(const unsigned *) &s_B[((ns + j) * 8 + groupID) * BP + ks * 4 + c4];
++                asm volatile(
++                    "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
++                    "{%0,%1,%2,%3}, {%4,%5}, {%6}, {%0,%1,%2,%3};\n"
++                    : "+f"(acc[j][0]), "+f"(acc[j][1]), "+f"(acc[j][2]), "+f"(acc[j][3])
++                    : "r"(A0), "r"(A1), "r"(B0));
++            }
++        }
++        __syncthreads();
++    }
++
++    // M [16][occ][T] (col-major [T x occ], element (oc, m) at oc*T + m):
++    // fragment rows are m = m0 + mt*16 + {g, g+8}, columns are oc pairs.
++    #pragma unroll
++    for (int j = 0; j < 4; ++j) {
++        const int oc_a = ns * 8 + j * 8 + 2 * c4;
++        const int oc_b = oc_a + 1;
++        const int m_a = m0 + mt * 16 + groupID;
++        const int m_b = m_a + 8;
++        float * Mp = M + (int64_t) p * occ * T;
++        if (oc_a < occ && m_a < T) Mp[(int64_t) oc_a * T + m_a] = acc[j][0];
++        if (oc_b < occ && m_a < T) Mp[(int64_t) oc_b * T + m_a] = acc[j][1];
++        if (oc_a < occ && m_b < T) Mp[(int64_t) oc_a * T + m_b] = acc[j][2];
++        if (oc_b < occ && m_b < T) Mp[(int64_t) oc_b * T + m_b] = acc[j][3];
++    }
++#else
++    (void) V; (void) U; (void) M;
++    (void) T; (void) IC; (void) IC2; (void) occ;
++#endif // __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE
++}
++
++// Three-pass F(2x2,3x3) host driver (the default): input transform, the
++// 16-position TF32 batched GEMM in oc chunks that keep the M staging under
++// ~128 MiB, inverse transform. Returns false (the caller falls through to the
++// direct kernels) on any workspace or cuBLAS failure.
++static bool run_wino_conv_3pass(const float * X_D, const float * K_D, float * Y_D,
++                                int W, int H, int IC, int OC,
++                                cudaStream_t st, cublasHandle_t handle) {
++    const int TH = (H + 1) / 2, TW = (W + 1) / 2;
++    const int64_t T = (int64_t) TH * TW;
++    const int IC2 = (IC + 1) & ~1;
++    // The custom GEMM consumes occ<=64 tiles; cuBLAS handled bigger chunks,
++    // but 64 keeps the M staging at 16 MB per chunk with no measured loss.
++    int chunk = (int) std::min<int64_t>(OC, 64);
++    static thread_local conv_devbuf V, M, U;
++    if (!V.alloc((size_t) 16 * IC * T * sizeof(__half)) ||
++        !M.alloc((size_t) 16 * chunk * T * sizeof(float)) ||
++        !U.alloc((size_t) 16 * chunk * IC2 * sizeof(__half))) return false;
++
++    {
++        const int64_t total = (int64_t) IC * T;
++        wino_input_transform<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++            X_D, (__half *) V.p, W, H, IC, TH, TW);
++    }
++    static const bool gemm_custom = [] {
++        const char * e = getenv("OPCPD_CONV_WINO_GEMM");
++        return e ? (e[0] != '0') : true;
++    }();
++    if (gemm_custom) {
++        for (int oc0 = 0; oc0 < OC; oc0 += chunk) {
++            const int occ = std::min(chunk, OC - oc0);
++            {
++                const int64_t total = (int64_t) occ * IC2;
++                wino_weight_transform_3p<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++                    K_D, (__half *) U.p, IC, IC2, oc0, occ);
++            }
++            wino_gemm_f16<<<dim3((int) ((T + 63) / 64), 1, 16), 256, 0, st>>>(
++                (const __half *) V.p, (const __half *) U.p,
++                (float *) M.p, T, IC, IC2, occ);
++            {
++                const int64_t total = (int64_t) occ * T;
++                wino_output_transform<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++                    (const float *) M.p, Y_D + (size_t) oc0 * W * H, W, H, occ, TH, TW);
++            }
++        }
++        return true;
++    }
++    // Fallback: cuBLAS on the same f16 operands. Its heuristic picks a weak
++    // kernel for these thin batched-strided shapes, which is why the custom
++    // GEMM above is the default; this path only exists as a safety net.
++    if (cublasSetStream(handle, st) != CUBLAS_STATUS_SUCCESS) return false;
++    const float alpha = 1.0f, beta = 0.0f;
++    for (int oc0 = 0; oc0 < OC; oc0 += chunk) {
++        const int occ = std::min(chunk, OC - oc0);
++        {
++            const int64_t total = (int64_t) occ * IC2;
++            wino_weight_transform_3p<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++                K_D, (__half *) U.p, IC, IC2, oc0, occ);
++        }
++        // M [16][occ][T] = U' * V: A = V (opN, col-major [T x IC], lda = T),
++        // B = U' col-major [IC2 x occ] (opN, ldb = IC2), C col-major
++        // [T x occ], ldc = T -> memory [occ][T].
++        if (cublasGemmStridedBatchedEx(handle,
++                CUBLAS_OP_N, CUBLAS_OP_N,
++                (int) T, occ, IC, &alpha,
++                V.p, CUDA_R_16F, (int) T, (int64_t) IC * T,
++                U.p, CUDA_R_16F, IC2, (int64_t) occ * IC2,
++                &beta,
++                M.p, CUDA_R_32F, (int) T, (int64_t) occ * T,
++                16, CUBLAS_COMPUTE_32F,
++                CUBLAS_GEMM_DEFAULT) != CUBLAS_STATUS_SUCCESS) return false;
++        {
++            const int64_t total = (int64_t) occ * T;
++            wino_output_transform<<<(int) ((total + 255) / 256), 256, 0, st>>>(
++                (const float *) M.p, Y_D + (size_t) oc0 * W * H, W, H, occ, TH, TW);
++        }
++    }
++    return true;
++}
++
++// Winograd dispatcher: the three-pass path is the measured default; the fused
++// kernel is an experiment behind OPCPD_CONV_WINO_FUSED=1 (its per-mma
++// on-the-fly A transform starves the tensor cores today; see the design note
++// in PENDING_IMPLEMENTATIONS.md for the batched-precompute variant).
++static bool run_wino_conv(const float * X_D, const float * K_D, float * Y_D,
++                          int W, int H, int IC, int OC,
++                          cudaStream_t st, cublasHandle_t handle) {
++    // 0 = never fused (default), 1 = auto, 2 = always fused. The v2 fused
++    // kernel (batch-precomputed smem V + f16 mma) measured parity with the
++    // three-pass path on RTX 3060 (465 vs 430 us/conv across the PP-MH conv
++    // mix) instead of the ~10x the issue-bandwidth model predicts, and GPU
++    // performance counters are permission-blocked on this host, so it stays
++    // an opt-in experiment until that gap is explained.
++    static const int fused = [] {
++        const char * e = getenv("OPCPD_CONV_WINO_FUSED");
++        if (!e) return 0;
++        return e[0] == '0' ? 0 : (e[0] == '1' ? 2 : 1);
++    }();
++    const int64_t T = (int64_t) ((H + 1) / 2) * ((W + 1) / 2);
++    if (fused == 2 || (fused == 1 && T >= 1024 && OC >= 32)) {
++        if (run_wino_conv_fused(X_D, K_D, Y_D, W, H, IC, OC, st)) return true;
++    }
++    return run_wino_conv_3pass(X_D, K_D, Y_D, W, H, IC, OC, st, handle);
++}
++
++}
++
++void op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input  = dst->src[1];
++    float *             K_D    = (float *) kernel->data;
++    const float *       X_D    = (const float *) input->data;
++    float *             Y_D    = (float *) dst->data;
++
++    GGML_ASSERT(ggml_is_contiguous(input));
++    GGML_ASSERT(ggml_is_contiguous(kernel));
++    GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32 ||
++                kernel->type == GGML_TYPE_Q8_0);
++
++    cudaStream_t st = ctx.stream();
++
++    const int32_t * p    = (const int32_t *) dst->op_params;
++    const int       ST_X = p[0];  // stride_x
++    const int       ST_Y = p[1];  // stride_y
++    const int       PD_X = p[2];  // padding_x
++    const int       PD_Y = p[3];  // padding_y
++    const int       DL_X = p[4];  // dilation_x
++    const int       DL_Y = p[5];  // dilation_y
++
++    // Packed-kernel direct conv (ggml_conv_2d_direct_packed): the kernel is
++    // the flattened [IC*KW*KH, OC] matrix (or [IC*KW*KH, OC, 1, N] after a
++    // concat fusion); KW/KH ride in op_params[6..7] since they no longer
++    // appear in the kernel shape. Plain direct convs leave both at 0 (the
++    // cwhn flag slot).
++    const bool packed = p[6] > 0;
++    GGML_ASSERT((p[6] == 0) == (p[7] == 0));
++
++    const int IW = input->ne[0];   // input_w
++    const int IH = input->ne[1];   // input_h
++    const int OW = dst->ne[0];     // output_w
++    const int OH = dst->ne[1];     // output_h
++    const int KW = packed ? p[6] : kernel->ne[0];  // kernel_w
++    const int KH = packed ? p[7] : kernel->ne[1];  // kernel_h
++    int IC = input->ne[2];   // input_channels
++    int OC = kernel->ne[3];  // ouptut_chanles
++    const int B  = input->ne[3];   // n_batches
++
++    if (packed) {
++        // same input channels, unpacked from the flattened kernel row
++        GGML_ASSERT(kernel->ne[0] == input->ne[2] * KW * KH);
++        IC = (int) (kernel->ne[0] / (KW * KH));
++        OC = (int) kernel->ne[1];
++        if (ggml_n_dims(kernel) >= 4) OC *= (int) kernel->ne[3];  // concat-fused
++    } else {
++        // same number of input channels
++        GGML_ASSERT(input->ne[2] == kernel->ne[2]);
++    }
++
++    const int64_t total  = B * OC * OH * OW;
++    conv_params   params = { IW, IH, OW, OH, KW, KH, ST_X, ST_Y, PD_X, PD_Y, DL_X, DL_Y, IC, OC, B, total };
++
++    bool cdbg = getenv("OPCPD_CONVDBG") != nullptr;
++    auto cdt0 = std::chrono::high_resolution_clock::now();
++    auto conv_report = [&](const char * path) {
++        if (!cdbg) return;
++        auto e = std::chrono::high_resolution_clock::now();
++        double ms = std::chrono::duration<double, std::milli>(e - cdt0).count();
++        fprintf(stderr, "[convdbg] %s IW=%d IH=%d IC=%d OC=%d KW=%d KH=%d ST=%d DL=%d ms=%.3f\n",
++                path, IW, IH, IC, OC, KW, KH, ST_X, DL_X, ms);
++    };
++
++
++    // ---- cuBLAS TF32 tensor-core path (im2col + GEMM) for 1x1/2x2/3x3 F32.
++    // ggml conv weight is row-major [OC, KW*KH*IC]; as a column-major [K,OC]
++    // matrix (ldb=K) it is exactly B[k][oc]=W[oc][k], so it feeds cuBLAS
++    // directly. With CUBLAS_TF32_TENSOR_OP_MATH this runs on tensor cores.
++    // Controlled by OPCPD_CONV_GEMM (default off). Only worthwhile once the
++    // GEMM is large enough to amortize the im2col + launch cost; for tiny 1x1
++    // convs the fused kernel wins.
++    static const bool conv_gemm = [] {
++        const char * e = getenv("OPCPD_CONV_GEMM");
++        return e ? (e[0] != '0') : false;
++    }();
++    if (conv_gemm && kernel->type == GGML_TYPE_F32 && B == 1 &&
++        KW == KH && (KW == 1 || KW == 2 || KW == 3) &&
++        ST_X == ST_Y && (ST_X == 1 || ST_X == 2) &&
++        DL_X == 1 && DL_Y == 1 && IC > 0 && OC > 0) {
++        const int64_t M = (int64_t) OW * OH;
++        const int64_t K = (int64_t) KW * KH * IC;
++        cublasHandle_t handle = ctx.cublas_handle();
++        CUBLAS_CHECK(cublasSetStream(handle, st));
++        static bool tf32_set = false;
++        if (!tf32_set) {
++            cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH);
++            tf32_set = true;
++        }
++        const float alpha = 1.0f, beta = 0.0f;
++        if (KW == 1) {
++            // pure matmul: C[M,OC] = X[M,IC] * K[IC,OC], no im2col needed.
++            CUBLAS_CHECK(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
++                                     (int) M, OC, IC, &alpha, X_D, (int) M,
++                                     K_D, IC, &beta, Y_D, (int) M));
++        } else {
++            static conv_devbuf col;
++            if (!col.alloc((size_t) M * K * sizeof(float))) {
++                conv_report("im2col-alloc-fail");
++                return;
++            }
++            const int threads = 256;
++            const int64_t total = M * K;
++            const int blocks = (int) ((total + threads - 1) / threads);
++            if (KW == 2)
++                conv2d_im2col<2, 2><<<blocks, threads, 0, st>>>(X_D, (float *) col.p, IW, IH, OW, OH, IC, ST_X, DL_X, PD_X);
++            else
++                conv2d_im2col<3, 3><<<blocks, threads, 0, st>>>(X_D, (float *) col.p, IW, IH, OW, OH, IC, ST_X, DL_X, PD_X);
++            CUBLAS_CHECK(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
++                                     (int) M, OC, (int) K, &alpha, (const float *) col.p, (int) M,
++                                     K_D, (int) K, &beta, Y_D, (int) M));
++        }
++        conv_report("cublas");
++        return;
++    }
++
++    // ---- TF32 tensor-core implicit-GEMM (3x3 stride-1 pad-1 f32, batch 1).
++    // Runtime-gated (OPCPD_CONV_TF32, default ON). Set OPCPD_CONV_TF32=0 to
++    // fall back to the safe fused FMA path. The TF32 tensor-core 8x8 kernel
++    // is validated for parity (mean best BEV IoU 0.988, 159/160 matched) and
++    // ~6% faster on PointPillar-MH (96ms vs 102ms full-pipeline).
++    static const bool conv_tf32 = [] {
++        const char * e = getenv("OPCPD_CONV_TF32");
++        return e ? (e[0] != '0') : true;
++    }();
++
++    // ---- Winograd F(2x2,3x3) TF32 path (3x3 stride-1 pad-1 f32, batch 1).
++    // Algorithmic 2.25x work reduction over the direct TF32 implicit-GEMM
++    // kernels below (see the kernel comments for the cuDNN evidence that
++    // motivated it). OC < 8 stays on the fast FMA path (the 16-lane oc block
++    // would waste 16/OC of the tensor-core work), and tiny inputs keep the
++    // direct kernels (fixed transform/GEMM overhead dominates). Runtime gate
++    // OPCPD_CONV_WINO (default ON); strict mode never reaches this path.
++    static const bool conv_wino = [] {
++        const char * e = getenv("OPCPD_CONV_WINO");
++        return e ? (e[0] != '0') : true;
++    }();
++    if (conv_wino && conv_tf32 &&
++        ggml_cuda_info().devices[ggml_cuda_get_device()].cc >= GGML_CUDA_CC_AMPERE &&
++        kernel->type == GGML_TYPE_F32 && B == 1 &&
++        KW == 3 && KH == 3 && ST_X == 1 && ST_Y == 1 &&
++        DL_X == 1 && DL_Y == 1 && PD_X == 1 && PD_Y == 1 &&
++        // Winograd's fixed 3-pass overhead needs map size to amortize (tiny
++        // maps stay on the direct kernels), and OC < 16 would dilute the f16
++        // GEMM's N dimension (those skinny head convs stay on the fused FMA
++        // path, which measured faster for them).
++        OC >= 16 && OW >= 16 && OH >= 16) {
++        if (run_wino_conv(X_D, K_D, Y_D, IW, IH, IC, OC, st, ctx.cublas_handle())) {
++            conv_report("wino");
++            return;
++        }
++        conv_report("wino-fallback");
++    }
++
++    if (conv_tf32 &&
++        ggml_cuda_info().devices[ggml_cuda_get_device()].cc >= GGML_CUDA_CC_AMPERE &&
++        kernel->type == GGML_TYPE_F32 && B == 1 &&
++        KW == 3 && KH == 3 && ST_X == 1 && ST_Y == 1 &&
++        DL_X == 1 && DL_Y == 1 && PD_X == 1 && PD_Y == 1) {
++        // Tiny-OC convs (CenterHead output heads: OC 1..3) fall through to
++        // the fast FMA path below (shared-input caching beats both the naive
++        // 1-thread-per-output kernel, which re-reads all IC x 9 taps from
++        // global for every output, and the 16-oc TF32 z-block, which wastes
++        // 16/OC lanes). Wider convs get the ldg z-blocked tensor-core kernel
++        // (B fragments read straight from L2-resident weights, so there is no
++        // weight shared buffer; __launch_bounds__ pins 6 blocks/SM so the
++        // 32-accumulator ZB=64 variant does not drop to 4 blocks/SM). ZB is
++        // picked by OC: OC > 1024 uses ZB=64 (input re-reads dominate: a
++        // fused 64->2304 CenterHead conv re-reads its patch 36x vs 72x at
++        // ZB=32), while 32..1024 uses ZB=32 (measured faster than ZB=64 for
++        // OC 128/256: fewer registers, same occupancy).
++        if (OC > 1024) {
++            dim3 grid((OW + 7) / 8, (OH + 7) / 8, (OC + 31) / 32);
++            conv2d_tf32_s1_3x3_8x8_ldg<32><<<grid, 256, 0, st>>>(X_D, K_D, Y_D, IW, IH, OW, OH, IC, OC);
++            conv_report("tf32-oc32-ldg");
++            return;
++        } else if (OC >= 32) {
++            dim3 grid((OW + 7) / 8, (OH + 7) / 8, (OC + 31) / 32);
++            conv2d_tf32_s1_3x3_8x8_ldg<32><<<grid, 256, 0, st>>>(X_D, K_D, Y_D, IW, IH, OW, OH, IC, OC);
++            conv_report("tf32-oc32-ldg");
++            return;
++        } else if (OC >= 8) {
++            dim3 grid((OW + 7) / 8, (OH + 7) / 8, (OC + 15) / 16);
++            conv2d_tf32_s1_3x3_8x8_ldg<16><<<grid, 256, 0, st>>>(X_D, K_D, Y_D, IW, IH, OW, OH, IC, OC);
++            conv_report("tf32-oc16-ldg");
++            return;
++        }
++        // OC < 8: fall through to the fast FMA path.
++    }
++
++    // ---- TF32 tensor-core implicit-GEMM (3x3 stride-2 pad-1 f32, batch 1).
++    // Same accuracy class as the stride-1 TF32 path (TF32 mantissa rounding),
++    // but lets the backbone's downsampling (stride-2) 3x3 f32 convs use tensor
++    // cores instead of falling back to the FMA conv2d_fast_s1 path. Runtime
++    // gate OPCPD_CONV_TF32_S2 (default ON) lets A/B benchmarking / correctness
++    // checks force the FMA fallback (set OPCPD_CONV_TF32_S2=0).
++    static const bool conv_tf32_s2 = [] {
++        const char * e = getenv("OPCPD_CONV_TF32_S2");
++        return e ? (e[0] != '0') : true;
++    }();
++    if (conv_tf32_s2 && conv_tf32 &&
++        ggml_cuda_info().devices[ggml_cuda_get_device()].cc >= GGML_CUDA_CC_AMPERE &&
++        kernel->type == GGML_TYPE_F32 && B == 1 &&
++        KW == 3 && KH == 3 && ST_X == 2 && ST_Y == 2 &&
++        DL_X == 1 && DL_Y == 1 && PD_X == 1 && PD_Y == 1) {
++        // f16 mma variant first (2x tensor rate; same fast-mode accuracy
++        // class). OPCPD_CONV_S2_F16=0 forces the TF32 kernel. The f16 weight
++        // matrix is re-derived per call (weights may be rewritten between
++        // runs); its workspace is a thread-local grow-only buffer.
++        static const bool s2_f16 = [] {
++            const char * e = getenv("OPCPD_CONV_S2_F16");
++            return e ? (e[0] != '0') : true;
++        }();
++        if (s2_f16) {
++            const int IC2 = (IC + 1) & ~1;
++            static thread_local conv_devbuf wbuf;
++            if (wbuf.alloc((size_t) 9 * OC * IC2 * sizeof(__half))) {
++                conv_w_to_f16_tap<<<(int) (((int64_t) OC * IC2 * 9 + 255) / 256), 256, 0, st>>>(
++                    K_D, (__half *) wbuf.p, IC, IC2, OC);
++                dim3 grid((OW + 7) / 8, (OH + 7) / 8, (OC + 15) / 16);
++                conv2d_f16_s2_3x3_8x8<<<grid, 256, 0, st>>>(
++                    X_D, (const __half *) wbuf.p, Y_D, IW, IH, OW, OH, IC, OC);
++                conv_report("f16-s2");
++                return;
++            }
++            conv_report("f16-s2-alloc-fail");
++        }
++        dim3 grid((OW + 7) / 8, (OH + 7) / 8, (OC + 15) / 16);
++        conv2d_tf32_s2_3x3_8x8<<<grid, 256, 0, st>>>(X_D, K_D, Y_D, IW, IH, OW, OH, IC, OC);
++        conv_report("tf32-s2");
++        return;
++    }
++
++    // Fast fused path: f32/f16/q8_0 weights (f16/q8 dequantized in-kernel),
++    // stride 1/2, dilation 1/2, single batch, 1x1/2x2/3x3.
++    const bool fast_ok = (kernel->type == GGML_TYPE_F32 ||
++                          kernel->type == GGML_TYPE_F16 ||
++                          kernel->type == GGML_TYPE_Q8_0) &&
++                         B == 1 &&
++                         (ST_X == 1 || ST_X == 2) && ST_X == ST_Y &&
++                         (DL_X == 1 || DL_X == 2) && DL_X == DL_Y &&
++                         (KW == KH && (KW == 1 || KW == 2 || KW == 3)) && IC > 0 && OC > 0;
++    if (fast_ok) {
++        constexpr int CHUNK = 8;
++        auto run_fast = [&](auto * Kw) {
++            auto launch = [&](auto boc_tag) {
++                constexpr int BOC = decltype(boc_tag)::value;
++                // Small-OC head convs (the separable CenterHead heads, OC<=8)
++                // waste BOC-16 accumulators and launch only (map/16)^2 blocks;
++                // a narrower BOC with an 8x8 output tile grows the grid 4x and
++                // keeps every acc[BOC] register in use. Wide convs keep the
++                // measured 16x16 (stride 1) / 8x8 (stride 2) tiles.
++                constexpr int TS = (BOC < 16) ? 8 : 16;
++                const int TX = (ST_X == 2) ? 8 : TS;
++                const int TY = (ST_Y == 2) ? 8 : TS;
++                const int IWp = TX * ST_X + (KW - 1) * DL_X;
++                const int IHp = TY * ST_Y + (KH - 1) * DL_Y;
++                const size_t smem = (size_t) (IWp * IHp * CHUNK +
++                                              KW * KH * CHUNK * BOC) * sizeof(float);
++                dim3 grid((OW + TX - 1) / TX, (OH + TY - 1) / TY, (OC + BOC - 1) / BOC);
++                dim3 block(TX, TY);
++                const int DL = DL_X;
++                if (KW == 1) {
++                    if (ST_X == 1)
++                        conv2d_fast_s1<1, 1, 1, 1, (BOC < 16 ? 8 : 16), (BOC < 16 ? 8 : 16), BOC, CHUNK>
++                            <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                    else
++                        conv2d_fast_s1<1, 1, 2, 1, 8, 8, BOC, CHUNK>
++                            <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                } else if (KW == 2) {
++                    if (ST_X == 1)
++                        conv2d_fast_s1<2, 2, 1, 1, (BOC < 16 ? 8 : 16), (BOC < 16 ? 8 : 16), BOC, CHUNK>
++                            <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                    else
++                        conv2d_fast_s1<2, 2, 2, 1, 8, 8, BOC, CHUNK>
++                            <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                } else {
++                    if (DL == 1) {
++                        if (ST_X == 1)
++                            conv2d_fast_s1<3, 3, 1, 1, (BOC < 16 ? 8 : 16), (BOC < 16 ? 8 : 16), BOC, CHUNK>
++                                <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                        else
++                            conv2d_fast_s1<3, 3, 2, 1, 8, 8, BOC, CHUNK>
++                                <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                    } else {
++                        if (ST_X == 1)
++                            conv2d_fast_s1<3, 3, 1, 2, (BOC < 16 ? 8 : 16), (BOC < 16 ? 8 : 16), BOC, CHUNK>
++                                <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                        else
++                            conv2d_fast_s1<3, 3, 2, 2, 8, 8, BOC, CHUNK>
++                                <<<grid, block, smem, st>>>(X_D, Kw, Y_D, IW, IH, OW, OH, IC, OC, PD_X);
++                    }
++                }
++            };
++            if (OC <= 4)
++                launch(std::integral_constant<int, 4>{});
++            else if (OC <= 8)
++                launch(std::integral_constant<int, 8>{});
++            else
++                launch(std::integral_constant<int, 16>{});
++        };
++        const char * fast_name = (OC <= 4) ? "fast-b4" : (OC <= 8) ? "fast-b8" : "fast";
++        if (kernel->type == GGML_TYPE_F16)
++            run_fast((const half *) K_D);
++        else if (kernel->type == GGML_TYPE_Q8_0)
++            run_fast((const q8_0_w *) K_D);
++        else
++            run_fast((const float *) K_D);
++        conv_report(fast_name);
++        return;
++    }
++
++    if (kernel->type == GGML_TYPE_F16) {
++        conv2d_cuda_f16(X_D, (half *) K_D, Y_D, params, st);
++    } else if (kernel->type == GGML_TYPE_F32) {
++        conv2d_cuda_f32(X_D, K_D, Y_D, params, st);
++    } else {
++        // q8_0 convs are routed here only when fast_ok holds (see bev_backbone
++        // gate); an unreachable generic q8 fallback is intentionally absent.
++        GGML_ABORT("conv2d: unsupported generic path for %s", ggml_type_name(kernel->type));
++    }
++    conv_report("generic");
++}
++} // namespace opcpd_exact
++
+ } // namespace
+ 
++// OpenPCDet detector F32 convs named "opcpd_conv" run the ported upstream
++// OpenPCDet-GGML dispatch above instead of the WMMA igemm route below: the
++// igemm reduction order drifts from the upstream CUDA baselines (kitti
++// mean_iou_bev 0.9892 vs the 0.999 gate), while the opcpd_exact chain
++// reproduces the upstream arithmetic operation-for-operation. f16/q8
++// opcpd convs keep the igemm route.
++static bool conv2d_opcpd_exact(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    if (strncmp(dst->name, "opcpd_conv", 10) != 0) return false;
++    if (dst->src[1]->type != GGML_TYPE_F32 || dst->src[0]->type != GGML_TYPE_F32 ||
++        dst->type != GGML_TYPE_F32) return false;
++    opcpd_exact::op_conv2d(ctx, dst);
++    // Keep the plain-conv epilogue contract: fused bias+SiLU when the
++    // graph attached a bias (opcpd detector convs carry none today; their
++    // BN-folded affine applies through separate ops).
++    bias_silu_cuda(dst, ctx.stream());
++    return true;
++}
++
+ static bool ggml_cuda_conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    if (conv2d_opcpd_exact(ctx, dst)) return true;
+     return conv2d_igemm(ctx, dst);
+ }
+ 

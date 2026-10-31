@@ -2,6 +2,7 @@ name: python_qt6
 channels:
   - conda-forge
 dependencies:
+  - cmake=3.31.8
   - python=3.13
   - ninja
   - pkg-config
@@ -17,6 +18,6 @@ dependencies:
   - libcurl=8.14.* # For curl support
   - nodejs  # jupyter
   - rust   # fix missing cargo when pip install pywinpty
-  - pip: # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
+  - pip: # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.10) wheel building
     # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
     - maturin==1.7.8

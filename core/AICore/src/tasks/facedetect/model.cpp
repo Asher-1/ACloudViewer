@@ -5,20 +5,20 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model.hpp"
+#include "tasks/facedetect/model.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-#include "align.hpp"
-#include "antispoof_graph.hpp"
-#include "arcface_graph.hpp"
-#include "backend.hpp"
-#include "common.hpp"
-#include "detect.hpp"
-#include "genderage_graph.hpp"
-#include "landmark_graph.hpp"
-#include "sface_graph.hpp"
+#include "tasks/facedetect/align.hpp"
+#include "tasks/facedetect/antispoof_graph.hpp"
+#include "tasks/facedetect/arcface_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/genderage_graph.hpp"
+#include "tasks/facedetect/landmark_graph.hpp"
+#include "tasks/facedetect/sface_graph.hpp"
 
 namespace fd {
 

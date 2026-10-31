@@ -1,133 +1,133 @@
 ---
 name: first-principles
-description: 强制从第一性原理出发进行问题拆解和代码设计，拒绝未经审视的"行业惯例"。适用于架构设计、算法选型、性能优化、pipeline 重构等需要深度思考的场景。触发词：第一性原理、从零设计、为什么要这样做、有没有更简单的方式、本质是什么。
+description: Forces problem decomposition and code design from first principles, rejecting unexamined "industry conventions". For architecture design, algorithm selection, performance optimization, pipeline refactoring and other scenarios requiring deep thinking. Trigger words: first principles, design from scratch, why is this done this way, is there a simpler way, what is the essence.
 ---
 
 # First Principles Thinking
 
-激活此技能后，禁止直接引用"最佳实践"或"行业标准"作为理由。所有设计决策必须从底层逻辑推导。
+When this skill is active, citing "best practices" or "industry standards" as a justification is forbidden. Every design decision must be derived from underlying logic.
 
-## 执行协议
+## Execution Protocol
 
-在编写任何代码前，**必须**先输出 `## 第一性原理分析` 块，完成三个阶段。
+Before writing any code, you **must** output a `## First Principles Analysis` block covering three phases.
 
 ---
 
-## 阶段一：解构 — 剥到骨头
+## Phase 1: Deconstruction — Strip to the bone
 
-### 1. 去形式化
+### 1. De-formalize
 
-剥离框架壳：忽略当前使用的框架约束（LangGraph 节点模式、Hydra 配置层级、Runnable 接口），只看信息流本身。
+Peel away the framework shell: ignore the constraints of the current framework (LangGraph node patterns, Hydra config hierarchy, Runnable interfaces) and look at the information flow itself.
 
-**自检问题**：
-- 如果没有这个框架，数据从 A 到 B 最短路径是什么？
-- 这个抽象层解决了什么实际问题？还是只是"大家都这么分层"？
+**Self-check questions**:
+- Without this framework, what is the shortest path for data from A to B?
+- What real problem does this abstraction layer solve? Or is it just "everyone layers it this way"?
 
-### 2. 寻找最小不可再分单元
+### 2. Find the smallest irreducible unit
 
-| 领域 | 最小单元示例 |
-|------|-------------|
-| 轨迹优化 | 单个 cost term 的梯度对轨迹点的影响 |
-| 数据 Pipeline | 一次 topic 读取 → 一次 parse → 一个 state 字段写入 |
-| VLM 调用 | 一组图片 + 一段 prompt → 一个结构化输出 |
-| 诊断分析 | 单帧 Init→HA→Output 三阶段 cost 变化 |
-| 配置系统 | 一个 key-value 映射到一个运行时行为 |
+| Domain | Smallest unit example |
+|--------|----------------------|
+| Trajectory optimization | Impact of a single cost term's gradient on trajectory points |
+| Data pipeline | One topic read → one parse → one state field write |
+| VLM call | One set of images + one prompt → one structured output |
+| Diagnostic analysis | Cost change across single-frame Init→HA→Output stages |
+| Config system | One key-value mapping to one runtime behavior |
 
-问自己：**这个函数/模块/节点，它的数学本质或信息论本质是什么？**
+Ask yourself: **what is the mathematical or information-theoretic essence of this function/module/node?**
 
-- cost 函数的本质 = 距离度量 + 权重 → 它真的需要那么多 wrapper 吗？
-- Pipeline 节点的本质 = `f(state) → state'` → 中间的 Runnable 抽象是必要的还是仪式性的？
-- 配置层级的本质 = 延迟绑定 → 三层 YAML merge 真的比一个 dataclass 默认值更清晰吗？
+- Essence of a cost function = distance metric + weight → does it really need all those wrappers?
+- Essence of a pipeline node = `f(state) → state'` → is the Runnable abstraction necessary or ceremonial?
+- Essence of config hierarchy = deferred binding → is a three-level YAML merge really clearer than dataclass defaults?
 
-### 3. 识别假设并攻击
+### 3. Identify assumptions and attack them
 
-列举所有"我们一直这样做"的隐含假设，尝试推翻：
+List every implicit "we've always done it this way" assumption and try to falsify it:
 
 ```
-假设清单模板：
-- [ ] "必须用 X 框架" — 真的吗？原始需求是什么？
-- [ ] "数据必须经过这些层" — 跳过哪层会怎样？
-- [ ] "这个抽象是必要的" — 只有一个实现的接口 = 过度抽象
-- [ ] "性能不是问题" — 测过吗？数据量扩大10x呢？
-- [ ] "这是安全相关的不能动" — 安全约束的边界在哪里？
+Assumption checklist template:
+- [ ] "Must use framework X" — really? What is the original requirement?
+- [ ] "Data must pass through these layers" — what happens if a layer is skipped?
+- [ ] "This abstraction is necessary" — an interface with a single implementation = over-abstraction
+- [ ] "Performance is not an issue" — have you measured? What about at 10x data volume?
+- [ ] "This is safety-critical, don't touch it" — where is the boundary of the safety constraint?
 ```
 
 ---
 
-## 阶段二：重构 — 从零推导
+## Phase 2: Reconstruction — Derive from zero
 
-### 1. 白板推导
+### 1. Whiteboard derivation
 
-假设你只有 Python 标准库和 numpy，**从零实现这个功能最少需要几行代码？**
+Assume you only have the Python standard library and numpy — **how many lines minimum does it take to implement this feature from scratch?**
 
-这个数字就是**复杂度基线**。实际方案与它的差距，每一行都必须有理由。
+That number is the **complexity baseline**. Every line by which the actual solution exceeds it must have a reason.
 
-### 2. 最小路径实现
+### 2. Minimal-path implementation
 
 ```
-从零方案 → 识别缺什么（并发？容错？可观测？） → 只引入解决实际缺口的依赖
+From-scratch solution → identify what's missing (concurrency? fault tolerance? observability?) → introduce only dependencies that solve a concrete gap
 ```
 
-规则：
-- 引入一个依赖 = 解决一个具名问题（不是"以后可能用到"）
-- 如果标准库 50 行能搞定，不引三方库
-- 如果一个 class 只有一个方法，用函数
+Rules:
+- Introducing a dependency = solving a named problem (not "might need it later")
+- If 50 lines of the standard library suffice, do not add a third-party library
+- If a class has only one method, use a function
 
-### 3. 权衡矩阵
+### 3. Trade-off matrix
 
-在确定方案前，**必须**输出对比表：
+Before finalizing a solution you **must** output a comparison table:
 
-| 维度 | 第一性原理方案 | 当前/传统方案 | 差异原因 |
-|------|---------------|-------------|---------|
-| 代码行数 | | | |
-| 依赖数量 | | | |
-| 内存占用 | | | |
-| 时间复杂度 | | | |
-| 可读性 | | | |
-| 可扩展性 | | | |
-| 安全边界影响 | | | |
+| Dimension | First-principles solution | Current/traditional solution | Reason for difference |
+|-----------|---------------------------|------------------------------|-----------------------|
+| Lines of code | | | |
+| Number of dependencies | | | |
+| Memory footprint | | | |
+| Time complexity | | | |
+| Readability | | | |
+| Extensibility | | | |
+| Safety boundary impact | | | |
 
-最后一行必须填写：**选择哪个方案，以及为什么当前的权衡是必要的（或不必要的）。**
-
----
-
-## 阶段三：实现 — 带约束落地
-
-完成前两个阶段后才进入编码。编码时遵循：
-
-1. **数据纯度优先**：函数尽可能无副作用，state 变更集中可追踪
-2. **内存意识**：大数据（proto、bag、图片）用生成器/流式处理，标注内存估算
-3. **算法复杂度标注**：非 O(n) 的逻辑必须注释 why
-4. **安全约束显式化**：涉及 AEB/planning 安全边界的逻辑，用 assert + 注释标明不可变条件
+The final row must state: **which solution is chosen, and why the current trade-off is (or is not) necessary.**
 
 ---
 
-## 触发规则
+## Phase 3: Implementation — Landing with constraints
 
-以下场景自动激活本 skill 的完整三阶段流程：
-- 新建模块/组件
-- 重构现有架构
-- 性能优化
-- cost 函数设计或调整
-- Pipeline 节点设计
-- 选型决策（库/框架/协议）
+Only after the first two phases do you start coding. While coding, follow:
 
-以下场景可简化为仅阶段一的 3 问自检（去形式化 + 最小单元 + 假设攻击）：
-- Bug fix（先理解 root cause 的本质）
-- 配置调整
-- 小范围 refactor
+1. **Data purity first**: functions as side-effect-free as possible; state changes centralized and traceable
+2. **Memory awareness**: large data (proto, bags, images) processed with generators/streaming; annotate memory estimates
+3. **Algorithmic complexity annotation**: any logic that is not O(n) must have a `why` comment
+4. **Explicit safety constraints**: logic touching AEB/planning safety boundaries must mark invariant conditions with assert + comments
 
 ---
 
-## 反模式检测
+## Trigger Rules
 
-输出中出现以下信号时，**必须停下来重新走阶段一**：
+The full three-phase flow activates automatically in these scenarios:
+- New module/component
+- Refactoring existing architecture
+- Performance optimization
+- Cost function design or tuning
+- Pipeline node design
+- Selection decisions (library/framework/protocol)
 
-| 信号 | 说明 |
-|------|------|
-| "这是行业标准" | 未解释为什么标准适用于当前场景 |
-| "一般都这样做" | 来源于习惯而非推导 |
-| "为了以后扩展" | YAGNI — 没有具名的扩展需求 |
-| "封装一下更好" | 只有一个调用方的封装 = 噪声 |
-| "加个配置项" | 真的需要运行时可变吗？ |
-| "参考了 XXX 项目" | 参考 ≠ 理由，需要解释为什么适用于此 |
+These scenarios may simplify to just the 3-question self-check of Phase 1 (de-formalize + smallest unit + assumption attack):
+- Bug fixes (understand the essence of the root cause first)
+- Config adjustments
+- Small-scale refactors
+
+---
+
+## Anti-pattern Detection
+
+When the output contains any of the following signals, **stop and re-run Phase 1**:
+
+| Signal | Explanation |
+|--------|-------------|
+| "This is the industry standard" | No explanation of why the standard fits the current scenario |
+| "This is how it's usually done" | Based on habit rather than derivation |
+| "For future extensibility" | YAGNI — no named extension requirement |
+| "Wrapping it is cleaner" | A wrapper with a single caller = noise |
+| "Add a config option" | Does it really need to be runtime-variable? |
+| "Reference project XXX" | Reference ≠ justification; explain why it applies here |

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qOpenPCDet">
+        <file>info.json</file>
+        <file>images/qOpenPCDet.svg</file>
+    </qresource>
+</RCC>

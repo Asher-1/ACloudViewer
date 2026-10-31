@@ -146,6 +146,8 @@
 		"openglsupport": "cpp",
 		"splines": "cpp"
 	},
+	"C_Cpp.intelliSenseEngine": "disabled",
+	"C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
 	"python.languageServer": "None",
 	"python-envs.defaultEnvManager": "ms-python.python:conda",
 	"python-envs.defaultPackageManager": "ms-python.python:conda",

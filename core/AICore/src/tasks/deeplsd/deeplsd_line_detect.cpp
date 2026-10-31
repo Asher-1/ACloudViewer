@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "deeplsd_line_detect.hpp"
+#include "tasks/deeplsd/deeplsd_line_detect.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <vector>
 
-#include "lsd.h"
+#include "tasks/deeplsd/lsd.h"
 
 namespace deeplsd {
 namespace {

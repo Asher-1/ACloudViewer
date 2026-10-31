@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-20T12:04:26.942934+00:00",
+  "status": "CPU_CMAKE_ENTRY_VERIFIED_GPU_MIGRATION_AND_MODEL_GATES_OPEN",
+  "production_source_owner": "3rdparty/ggml/ggml.cmake",
+  "candidate_source_owner": "3rdparty/llama/llama_cpp.cmake",
+  "checked_input_sha256": {
+    "3rdparty/llama/llama_cpp.cmake": "551b19fa5fa4d2005946e31573ec386f10d8933cb93356c06dd15cf57a1b3f04",
+    "3rdparty/ggml/ggml.cmake": "84939f38c69b9f00d6e45e19f88ab1b3819089e404ab2abb459254df8c5dae6e",
+    "3rdparty/ggml/ggml_runtime.cmake": "5ddfd5e015bb903c61af8e591df993dbb1322ed972919704cdbd3787a9d0d529",
+    "3rdparty/llama/experimental/CMakeLists.txt": "1b5e08a6f5e4a2fc1ad4c79c6088cc09992e2f1e7c7b551290a3516c93fb4ea1",
+    "3rdparty/llama/experimental/runtime_smoke.cpp": "b4074e077f96c4fe49427208789684636cf58183d37faddea4ab0cb5b9fad4bc",
+    "3rdparty/llama/experimental/test_cmake_contract.py": "26ed00c129662c6df7b15f9fb9a170f18bd22618ff7b223006fa22b1c3a5e59e",
+    "3rdparty/llama/experimental/patches/manifest.yaml": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126",
+    "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8"
+  },
+  "raw_directory": "build_llama_entry_fww_z_3z",
+  "source_archive_sha256": "a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759",
+  "build_and_install_exit": 0,
+  "patch_idempotence_exits": [
+    0,
+    0
+  ],
+  "configure_contract_methods": 5,
+  "runtime_smoke_exit": 0,
+  "baseline_configure_exports_equal": true,
+  "loader_trace_owned": true,
+  "aicore_contracts": {
+    "tests": 36,
+    "failures": 0,
+    "skips": 0,
+    "scope": "Previously recompiled CPU candidate AICore and contract executables run against the new installed dependencies",
+    "library_sha256": "2eaa9f01587189aa1db64e98cdd72d99c8f43c6b55b2959d37de270b7f5cef52"
+  },
+  "gpu_model_inference_executed": false,
+  "full_f16_q8_regression_executed": false,
+  "ocr_new_uploads": 0
+}

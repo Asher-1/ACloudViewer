@@ -306,7 +306,7 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                                               .arg(nearestSquareDist));
                     return true;
                 } else {
-                    CVLog::Print(
+                    CVLog::PrintDebug(
                             QString("[pointPicking] Octree: no point found "
                                     "(pickWidth=%1 perspective=%2 "
                                     "pixelSize=%3)")
@@ -321,7 +321,7 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
                         "back to the slow process...");
             }
         } else {
-            CVLog::Print(
+            CVLog::PrintDebug(
                     QString("[pointPicking] No octree, autoCompute=%1 size=%2")
                             .arg(autoComputeOctree)
                             .arg(size()));
@@ -329,11 +329,12 @@ bool ccGenericPointCloud::pointPicking(const CCVector2d& clickPos,
     }
 
     // otherwise we go 'brute force' (works quite well in fact?!)
-    CVLog::Print(QString("[pointPicking] Brute-force path, size=%1 pickW=%2 "
-                         "pickH=%3")
-                         .arg(size())
-                         .arg(pickWidth)
-                         .arg(pickHeight));
+    CVLog::PrintDebug(
+            QString("[pointPicking] Brute-force path, size=%1 pickW=%2 "
+                    "pickH=%3")
+                    .arg(size())
+                    .arg(pickWidth)
+                    .arg(pickHeight));
     nearestPointIndex = -1;
     nearestSquareDist = -1.0;
     {

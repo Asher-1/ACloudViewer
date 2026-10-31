@@ -1,0 +1,109 @@
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -15556,31 +15556,57 @@
+         return node->op == GGML_OP_NONE || node->op == GGML_OP_RESHAPE || node->op == GGML_OP_TRANSPOSE || node->op == GGML_OP_VIEW || node->op == GGML_OP_PERMUTE;
+     };
+ 
+-    auto const &is_src_of = [&is_empty](const ggml_tensor *dst, const ggml_tensor *src) -> bool {
+-        auto const &base = [](const ggml_tensor * tensor) {
+-            return tensor->view_src ? tensor->view_src : tensor;
+-        };
++    // This invocation never changes tensor sources or view storage. Build the
++    // dependency metadata once instead of resolving the same views in every
++    // look-ahead pair. Keep direct, read-after-write, write-after-read and shared
++    // storage dependencies identical to the uncached predicate.
++    struct dependency_info {
++        const ggml_tensor * base;
++        const ggml_tensor * sources[GGML_MAX_SRC];
++        const ggml_tensor * source_bases[GGML_MAX_SRC];
++        uint32_t n_sources;
++        bool empty;
++    };
++    auto const &base = [](const ggml_tensor * tensor) {
++        return tensor->view_src ? tensor->view_src : tensor;
++    };
++    std::vector<dependency_info> dependencies(graph->n_nodes);
++    for (int i = 0; i < graph->n_nodes; ++i) {
++        const ggml_tensor * node = graph->nodes[i];
++        dependency_info & info = dependencies[i];
++        info.base = base(node);
++        info.n_sources = 0;
++        info.empty = is_empty(node);
+         for (uint32_t s = 0; s < GGML_MAX_SRC; ++s) {
+-            if (dst->src[s] == src) {
++            if (node->src[s]) {
++                info.sources[info.n_sources] = node->src[s];
++                info.source_bases[info.n_sources++] = base(node->src[s]);
++            }
++        }
++    }
++    auto const &is_src_of = [&](int dst_idx, int src_idx) -> bool {
++        const dependency_info & dst = dependencies[dst_idx];
++        const dependency_info & src = dependencies[src_idx];
++        for (uint32_t s = 0; s < dst.n_sources; ++s) {
++            if (dst.sources[s] == graph->nodes[src_idx]) {
+                 return true;
+             }
+-            if (is_empty(dst) || is_empty(src)) {
+-                continue;
+-            }
+-            // A source view of dst may read storage written through a different view by src.
+-            if (dst->src[s] && base(dst->src[s]) == base(src)) {
+-                return true;
+-            }
+-            // Moving dst forward may overwrite storage still read through a view by src.
+-            if (src->src[s] && base(dst) == base(src->src[s])) {
+-                return true;
+-            }
+-        }
+-        // implicit dependency if they view the same tensor
+-        if (base(dst) == base(src)) {
+-            return true;
+-        }
+-        return false;
++        }
++        if (!dst.empty && !src.empty) {
++            for (uint32_t s = 0; s < dst.n_sources; ++s) {
++                // A source view of dst reads storage written through src.
++                if (dst.source_bases[s] == src.base) {
++                    return true;
++                }
++            }
++            for (uint32_t s = 0; s < src.n_sources; ++s) {
++                // Moving dst may overwrite storage still read through src.
++                if (dst.base == src.source_bases[s]) {
++                    return true;
++                }
++            }
++        }
++        return dst.base == src.base;
+     };
+ 
+     std::vector<ggml_tensor *> new_order;
+@@ -15749,7 +15775,7 @@
+             bool ok = true;
+             for (int c = first_unused; c < j; ++c) {
+                 if (!used[c] &&
+-                    is_src_of(graph->nodes[j], graph->nodes[c]) &&
++                    is_src_of(j, c) &&
+                     !(c == current_set.back() && graph->nodes[c]->op == GGML_OP_RMS_NORM && graph->nodes[j]->op == GGML_OP_MUL && empty_or_scheduled_between(c+1, j)) &&
+                     !(c == current_set.back() && graph->nodes[c]->op == GGML_OP_UNARY && graph->nodes[j]->op == GGML_OP_MUL && empty_or_scheduled_between(c+1, j)) &&
+                     !(j == c+1 && c == current_set.back() && graph->nodes[c]->op == GGML_OP_MUL_MAT && graph->nodes[j]->op == GGML_OP_ADD) &&
+@@ -15808,7 +15834,7 @@
+ 
+                         for (int c = rope_idx + 1; can_pull && c < set_rows_idx; ++c) {
+                             if (!used[c] && c != view_idx && !is_empty(graph->nodes[c]) &&
+-                                is_src_of(graph->nodes[set_rows_idx], graph->nodes[c])) {
++                                is_src_of(set_rows_idx, c)) {
+                                 can_pull = false;
+                             }
+                         }
+@@ -15902,7 +15928,7 @@
+                     bool c_in_current_set = std::find(current_set.begin(), current_set.end(), c) != current_set.end();
+                     // skip views whose srcs haven't been processed.
+                     if (!used[c] &&
+-                        is_src_of(graph->nodes[j], graph->nodes[c]) &&
++                        is_src_of(j, c) &&
+                         !c_in_current_set) {
+                         ok = false;
+                         break;

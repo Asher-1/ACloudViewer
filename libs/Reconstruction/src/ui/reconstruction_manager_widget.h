@@ -9,7 +9,7 @@
 
 #include <QtWidgets>
 
-#include "base/reconstruction_manager.h"
+#include "scene/reconstruction_manager.h"
 
 namespace colmap {
 

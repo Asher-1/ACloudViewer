@@ -102,8 +102,15 @@ install_glslc_from_source() {
         exit 1
     fi
 
+    # The CI images rebuild this on every focal run; ccache keeps it warm.
+    local launcher=()
+    if command -v ccache >/dev/null 2>&1; then
+        launcher=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
+    fi
+
     (cd "${source_dir}" && ./utils/git-sync-deps)
     "${cmake_bin}" -S "${source_dir}" -B "${build_dir}" -G Ninja \
+        "${launcher[@]}" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_SKIP_INSTALL_RULES=ON \
         -DSHADERC_SKIP_TESTS=ON \

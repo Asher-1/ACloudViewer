@@ -1,0 +1,10 @@
+# Metal migration validation only; macOS device/model acceptance is pending.
+# The parent is the same pinned llama.cpp archive as the CUDA/Vulkan candidates.
+patches:
+  - file: 0001-acv-cpu-operators.patch
+    note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
+  - file: 0007-acv-metal-operators.patch
+  - file: 0013-acv-elementwise-hint-api.patch
+    note: "Keeps the graph annotation API; Metal keeps separate ADD/GELU, and device acceptance still requires an Apple host."
+  - file: 0014-acv-depthwise-bias-api-cpu.patch
+    note: "Keeps the public ggml API; the DW bias path is a CPU fallback only and declares no Metal kernel support."

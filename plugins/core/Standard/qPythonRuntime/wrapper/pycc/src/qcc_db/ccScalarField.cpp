@@ -70,22 +70,8 @@ void define_ccScalarField(py::module &m)
         .def("getHistogram",
              [](const ccScalarField &sf)
              {
-                 // To keep the bindings manageable, we make this wrapper for
-                 // getHistogram returns the std::vector<unsigned> and not the
-                 // `Histogram` class that inherits from it.
-                 // Because if we were to return a `Histogram` instance, we would need to wrap
-                 // this class and use py::bind_vector, but doing seems to cause problems
-                 // about because the std::vector<unsigned> is bound multiple times.
-                 //
-                 // We could also not use py::bind_vector and write more .def in the Histogram
-                 // class but we chose not to.
-                 //
-                 // And as the Histogram class does not offer anything significant we just
-                 // return the vector directly and pybind will convert it to a list.
-                 const ccScalarField::Histogram &hist = sf.getHistogram();
-
-                 const std::vector<unsigned> bins = hist;
-                 return bins;
+                 // Return an independent histogram, not KDTree's opaque index container.
+                 return PyCC::CopyToPythonList(sf.getHistogram());
              })
         .def("mayHaveHiddenValues", &ccScalarField::mayHaveHiddenValues)
         .def("setModificationFlag", &ccScalarField::setModificationFlag, "state"_a)

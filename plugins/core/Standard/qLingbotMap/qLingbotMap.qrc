@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qLingbotMap">
+        <file>images/qLingbotMap.svg</file>
+        <file>info.json</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/CC/plugin/qOCR">
+        <file>info.json</file>
+        <file>images/qOCR.svg</file>
+    </qresource>
+</RCC>

@@ -23,6 +23,10 @@ set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
 
+# OIIO is delivered statically on every platform (see 3rdparty/openimageio):
+# the archives embed into the consuming binaries, so there is no OIIO runtime
+# deployment or payload verification in any installable component.
+
 function(replace_version_in_file file_path)
     # read contents
     file(READ "${file_path}" FILE_CONTENT)
@@ -142,6 +146,16 @@ if (UNIX AND NOT APPLE)
         USE_SOURCE_PERMISSIONS
     )
 
+    # Spirula Studio executable (BUILD_SPIRULA): 3rdparty/spirula installs it
+    # next to the main app; carry it into the deploy directory when present.
+    set(_spirula_src "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/spirula")
+    if(EXISTS "${_spirula_src}")
+        file(COPY "${_spirula_src}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+    unset(_spirula_src)
+
     # deploy SIBR plugin runtime assets (shaders, resources, config)
     foreach(_sibr_asset shaders sibr_resources)
         set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
@@ -234,6 +248,16 @@ elseif (WIN32)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
         )
+
+    # Spirula Studio executable (BUILD_SPIRULA): 3rdparty/spirula installs it
+    # next to the main app; carry it into the deploy directory when present.
+    set(_spirula_src "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/spirula.exe")
+    if(EXISTS "${_spirula_src}")
+        file(COPY "${_spirula_src}"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+    unset(_spirula_src)
 
     # deploy SIBR plugin runtime assets (shaders, resources, config)
     foreach(_sibr_asset shaders sibr_resources)

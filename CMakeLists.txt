@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.24)
 # If you're using Ubuntu 22.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.19+ is required to
-# allow linking with OBJECT libraries, to prevent erroneous -gencode option
-# deduplication with CUDA, and to simplify generator expressions for selecting
-# compile flags and setting global hardened link flags.
+# official repository https://apt.kitware.com/. CMake 3.24+ matches Open3D's
+# minimum and is required by the pinned FAISS dependency as well as CUDA native
+# architecture selection.
 
 # Suppress CMP0167 warning
 if (POLICY CMP0167)
@@ -93,6 +92,11 @@ endif()
 
 include(CMakeDependentOption)
 
+# Always emit compile_commands.json so clangd (and other C++ language
+# servers) work out of the box without needing
+# -DCMAKE_EXPORT_COMPILE_COMMANDS=ON.  This is pure metadata output — it
+# has no effect on compilation, linking or CI.
+option(CMAKE_EXPORT_COMPILE_COMMANDS "Generate compile_commands.json for clangd / language servers" OFF)
 # ACloudViewer build options
 option(BUILD_SHARED_LIBS "Build shared libraries"                               OFF)
 option(BUILD_EXAMPLES "Build CloudViewer example programs"                      ON )
@@ -102,6 +106,7 @@ option(BUILD_OPENCV "Build the opencv"                                          
 option(BUILD_PYTHON_MODULE "Build the python module"                            ON )
 option(BUILD_CUDA_MODULE "Build the CUDA module"                                OFF)
 option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"            ON )
+option(BUILD_SPIRULA "Build the Spirula Studio executable (ext_spirula, consumed by the qSpirula plugin)" OFF)
 option(BUILD_COMMON_CUDA_ARCHS "Build for common CUDA GPUs (for release)"       OFF)
 option(BUILD_CACHED_CUDA_MANAGER "Build the cached CUDA memory manager"         ON )
 option(BUILD_GUI "Builds CloudViewerApp GUI"                                    ON )
@@ -468,7 +473,7 @@ if (Python3_FOUND)
     set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
             "Deprecated path to the Python executable (for 3rdparty only)")
 
-    # fix always pybind.cpython-36m-x86_64-linux-gnu.so regardless given other python version(eg: python2.7, python3.8)
+    # fix always pybind.cpython-36m-x86_64-linux-gnu.so regardless given other python version(eg: python3.10, python3.13)
     include(FindPythonLibsNew)
     set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIRS} CACHE PATH
             "Deprecated path to the Python include dir (for pybind only)")
@@ -638,6 +643,21 @@ if (BUILD_CUDA_MODULE)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+    # On Windows nvcc has no OpenMP support, but CMake's FindOpenMP probes a
+    # CUDA component for every enabled language, so any subproject calling
+    # find_package(OpenMP REQUIRED) (faiss, qHoughNormals) hard-fails configure
+    # with "Could NOT find OpenMP_CUDA". No target in this project links
+    # OpenMP::OpenMP_CUDA, so preset the component results: FindOpenMP then
+    # skips its doomed probe, and the empty LIB_NAMES mirrors what the module
+    # itself records for MSVC (the OpenMP runtime is implicit in the compiler).
+    if(WIN32)
+        set(OpenMP_CUDA_FLAGS "-Xcompiler=/openmp" CACHE STRING
+            "CUDA compiler flags for OpenMP parallelization (preset: nvcc forwards /openmp to the MSVC host compiler)" FORCE)
+        set(OpenMP_CUDA_LIB_NAMES "" CACHE STRING
+            "CUDA compiler libraries for OpenMP parallelization (preset: empty, MSVC runtime is implicit)" FORCE)
+    endif()
+
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
         message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif ()
@@ -733,6 +753,23 @@ if (USE_SIMD)
         message(STATUS "AVX-512 enabled by user (ENABLE_AVX512=ON)")
     endif()
 
+    # ISA contract single source of truth: cmake/CMakeFindSSE.cmake emits
+    # -march=x86-64 (not v3/native) both into CMAKE_CXX_FLAGS above and into
+    # CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS, which libs/CMakeLists.txt and
+    # libs/CV_db/CMakeLists.txt re-inject as per-target PRIVATE options.
+    # Those per-target re-injections sort AFTER the global flags, so any
+    # -march carried there wins last--march-wins — emitting the baseline in
+    # BOTH places is what keeps every TU of every final binary (pybind.so,
+    # app, tests, 3rdparty consumers of hand-built archives like PoseLib)
+    # at one ISA. Do NOT re-add a competing -march tail here: a second flag
+    # source is a drift matrix (measured: deduplicating ColmapLib's PUBLIC
+    # propagation while this tail was the only other source let the v3
+    # re-injection win and 9 reconstruction tests segfaulted in
+    # poselib::relpose_5pt). Rationale for the baseline itself: upstream
+    # COLMAP and Open3D ship binaries compiled with the compiler default ISA
+    # and keep performance-critical paths in hand-written kernels, and the
+    # non-FMA codegen is required by the patch_match byte-parity evidence
+    # chain (P1-db-p). CUDA (nvcc) passes are untouched.
     message(STATUS "Enabling SIMD support")
     message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
 else ()
@@ -751,6 +788,34 @@ include(CMakeExternalLibs)
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
+
+# AICore's CUDA inference backend is independent of BUILD_CUDA_MODULE. The
+# llama/ggml backend can therefore be enabled while the application CUDA module
+# stays off; enable CUDA as a language as well so AICore-owned .cu sources are
+# compiled into libAICore.
+if(AICore_ENABLED AND AICore_CUDA_ENABLED AND NOT BUILD_CUDA_MODULE
+        AND NOT CMAKE_CUDA_COMPILER_LOADED)
+    if(NOT CMAKE_CUDA_COMPILER AND CUDAToolkit_NVCC_EXECUTABLE)
+        set(CMAKE_CUDA_COMPILER "${CUDAToolkit_NVCC_EXECUTABLE}")
+    endif()
+    if(NOT CMAKE_CUDA_COMPILER)
+        message(FATAL_ERROR
+            "AICore CUDA is enabled, but the root project cannot find nvcc. "
+            "Set CMAKE_CUDA_COMPILER or CUDAToolkit_ROOT.")
+    endif()
+
+    include(CloudViewerMakeCudaArchitectures)
+    cloudViewer_make_cuda_architectures(_AICORE_CUDA_ARCHITECTURES)
+    if(_AICORE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES "${_AICORE_CUDA_ARCHITECTURES}")
+    endif()
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    message(STATUS
+        "AICore CUDA language enabled independently of BUILD_CUDA_MODULE "
+        "(architectures: ${CMAKE_CUDA_ARCHITECTURES})")
+endif()
 
 # Default debug suffix for libraries.
 # Note: must put after include(3rdparty/find_dependencies.cmake)
@@ -915,6 +980,9 @@ if (APPLE)
     endif()
     set(LIBS_FOLDER_NAME "Frameworks")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/mac")
+    # Source-built external shared libraries are not visible to macdeployqt.
+    # PostInstall uses this location to place OIIO in every app bundle.
+    set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
 elseif (UNIX)
     set(MACHINE_NAME "ubuntu${UBUNTU_VERSION}")
     if (LINUX_AARCH64)
@@ -939,9 +1007,7 @@ elseif (WIN32)
     file(REAL_PATH "${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${CMAKE_BUILD_TYPE}" BINNARY_REAL_PATH)
     set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BINNARY_REAL_PATH})
 endif()
-if (NOT APPLE) 
-    message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
-endif()
+message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
 set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
 # Locate binarycreator at configure time so we can pass the full path to
@@ -1058,3 +1124,30 @@ endif()
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
 install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
+
+# Make compile_commands.json discoverable at the repo root so clangd (and
+# other C++ language servers) work out of the box on every platform, even
+# when the build dir name differs (build_app on Linux/Windows, build on
+# macOS). On Windows the .clangd CompilationDatabase: build_app covers the
+# common layout directly; on Linux/macOS a repo-root symlink bridges the
+# dir-name gap. The symlink is re-created on each configure so it always
+# points at the current build tree.
+if(CMAKE_EXPORT_COMPILE_COMMANDS AND NOT WIN32)
+    set(_cc_link "${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json")
+    if(IS_SYMLINK "${_cc_link}")
+        file(REMOVE "${_cc_link}")
+    endif()
+    if(NOT EXISTS "${_cc_link}")
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E create_symlink
+                    "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json"
+                    "${_cc_link}"
+            RESULT_VARIABLE _cc_link_result)
+        if(NOT _cc_link_result EQUAL 0)
+            message(WARNING
+                "Could not symlink compile_commands.json to the repo root; "
+                "point your C++ language server at "
+                "${CMAKE_CURRENT_BINARY_DIR} manually.")
+        endif()
+    endif()
+endif()

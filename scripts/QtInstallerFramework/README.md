@@ -100,33 +100,33 @@
 codesign --deep --force -s - --timestamp colmap.app
 codesign --deep --force -s - --timestamp ACloudViewer.app
 codesign --deep --force -s - --timestamp CloudViewer.app
-codesign --deep --force -s - --timestamp /Users/asher/develop/code/github/ACloudViewer/build_app/bin/CloudViewer.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/colmap/data/colmap.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/CloudViewer/data/CloudViewer.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/bin/colmap/colmap.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/bin/CloudViewer/CloudViewer.app
-codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app
-codesign --deep --force -s - --timestamp --entitlements /Users/asher/develop/code/github/ACloudViewer/app/Mac/ACloudViewer.entitlements /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
+codesign --deep --force -s - --timestamp ~/develop/code/github/ACloudViewer/build_app/bin/CloudViewer.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/deploy/packages/colmap/data/colmap.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/deploy/packages/CloudViewer/data/CloudViewer.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/bin/colmap/colmap.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/bin/CloudViewer/CloudViewer.app
+codesign --deep --force -s - --timestamp ~/cloudViewer_install/ACloudViewer/ACloudViewer.app
+codesign --deep --force -s - --timestamp --entitlements ~/develop/code/github/ACloudViewer/app/Mac/ACloudViewer.entitlements ~/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
 
 # for libtiff.*dylib
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/reset_libs_rpath.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/copy_macos_libs.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/fixup_macosx_libs.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
+~/develop/code/github/ACloudViewer/scripts/platforms/mac/reset_libs_rpath.sh ~/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
+~/develop/code/github/ACloudViewer/scripts/platforms/mac/copy_macos_libs.sh ~/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
+~/develop/code/github/ACloudViewer/scripts/platforms/mac/fixup_macosx_libs.sh ~/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
 
 # lib deploy
-otool -L /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer
-otool -l /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer | grep "path " | awk '{print $2}'
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/lib_bundle_app.py ACloudViewer /Users/asher/cloudViewer_install/ACloudViewer
+otool -L ~/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer
+otool -l ~/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer | grep "path " | awk '{print $2}'
+python ~/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/lib_bundle_app.py ACloudViewer ~/cloudViewer_install/ACloudViewer
 
 # sign apps
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer /Users/asher/cloudViewer_install/ACloudViewer
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py CloudViewer /Users/asher/cloudViewer_install/deploy/packages/CloudViewer/data
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py colmap /Users/asher/cloudViewer_install/deploy/packages/colmap/data
+python ~/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer ~/cloudViewer_install/ACloudViewer
+python ~/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer ~/cloudViewer_install/deploy/packages/ACloudViewer/data
+python ~/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py CloudViewer ~/cloudViewer_install/deploy/packages/CloudViewer/data
+python ~/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py colmap ~/cloudViewer_install/deploy/packages/colmap/data
 
 # validation
-codesign -dvv --strict /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
+codesign -dvv --strict ~/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
 # if resource fork, Finder information, or similar detritus not allowed then xattr -rc . and try again
 
 brew uninstall --ignore-dependencies gflags ; if still crash

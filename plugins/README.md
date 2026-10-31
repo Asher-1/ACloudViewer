@@ -26,7 +26,8 @@ When adding a new plugin, add a `README.md` in the plugin directory and register
 
 ## AI inference plugins (AICore)
 
-Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue with a single ggml copy.
+AICore-backed GUI plugins link **`libAICore.so`**, which bundles the enabled
+inference tasks with one shared ggml runtime (including RelateAnything).
 
 | Plugin | CMake option | User guide | README |
 |--------|--------------|------------|--------|
@@ -35,6 +36,20 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qFaceDetect** | `PLUGIN_STANDARD_QFACEDETECT` | [docs/guides/plugins/qFaceDetect.md](../docs/guides/plugins/qFaceDetect.md) | [qFaceDetect/README.md](core/Standard/qFaceDetect/README.md) |
 | **qLightGlue** | `PLUGIN_STANDARD_QLIGHTGLUE` | [docs/guides/plugins/qLightGlue.md](../docs/guides/plugins/qLightGlue.md) | [qLightGlue/README.md](core/Standard/qLightGlue/README.md) |
 | **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [docs/guides/plugins/qFreeSplatter.md](../docs/guides/plugins/qFreeSplatter.md) | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) |
+| **qRFDetr** | `PLUGIN_STANDARD_QRFDETR` | [docs/guides/plugins/qRFDetr.md](../docs/guides/plugins/qRFDetr.md) | [qRFDetr/README.md](core/Standard/qRFDetr/README.md) |
+| **qRMBG** | `PLUGIN_STANDARD_QRMBG` | [docs/guides/plugins/qRMBG.md](../docs/guides/plugins/qRMBG.md) | [qRMBG/README.md](core/Standard/qRMBG/README.md) |
+| **qYOLO** | `PLUGIN_STANDARD_QYOLO` | [docs/guides/plugins/qYOLO.md](../docs/guides/plugins/qYOLO.md) | [qYOLO/README.md](core/Standard/qYOLO/README.md) |
+| **qAnyLabeling** | `PLUGIN_STANDARD_QANYLABELING` | — | [qAnyLabeling/README.md](core/Standard/qAnyLabeling/README.md) |
+| **qSAM3** | `PLUGIN_STANDARD_QSAM3` | [docs/guides/plugins/qSAM3.md](../docs/guides/plugins/qSAM3.md) | [qSAM3/README.md](core/Standard/qSAM3/README.md) |
+| **qSAM3D** | `PLUGIN_STANDARD_QSAM3D` | — | [qSAM3D/README.md](core/Standard/qSAM3D/README.md) |
+| **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
+| **qSpirula** | `PLUGIN_STANDARD_QSPIRULA` | — | [qSpirula/README.md](core/Standard/qSpirula/README.md) |
+| **qGKD** | `PLUGIN_STANDARD_QGKD` | — | [qGKD/README.md](core/Standard/qGKD/README.md) |
+| **qLingbotMap** | `PLUGIN_STANDARD_QLINGBOTMAP` | — | [qLingbotMap/README.md](core/Standard/qLingbotMap/README.md) |
+| **qRAM** | `PLUGIN_STANDARD_QRAM` | [docs/guides/plugins/qRAM.md](../docs/guides/plugins/qRAM.md) | [qRAM/README.md](core/Standard/qRAM/README.md) |
+| **qRelateAnything** | `PLUGIN_STANDARD_QRELATEANYTHING` | [docs/guides/plugins/qRelateAnything.md](../docs/guides/plugins/qRelateAnything.md) | [qRelateAnything/README.md](core/Standard/qRelateAnything/README.md) |
+| **qMapAnything** | `PLUGIN_STANDARD_QMAPANYTHING` | — | [qMapAnything/README.md](core/Standard/qMapAnything/README.md) |
+| **qOpenPCDet** | `PLUGIN_STANDARD_QOPENPCDET` | — | [qOpenPCDet/README.md](core/Standard/qOpenPCDet/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -48,6 +63,21 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QSAM3D=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
+      -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
+      -DPLUGIN_STANDARD_QGKD=ON \
+      -DPLUGIN_STANDARD_QOCR=ON \
+      -DPLUGIN_STANDARD_QRAM=ON \
+      -DPLUGIN_STANDARD_QRELATEANYTHING=ON \
+      -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QMAPANYTHING=ON \
+      -DPLUGIN_STANDARD_QOPENPCDET=ON \
+      -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

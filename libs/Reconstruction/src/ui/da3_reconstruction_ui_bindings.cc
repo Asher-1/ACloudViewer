@@ -472,7 +472,7 @@ void DA3ReconstructionUiBindings::Install(
 
 void DA3ReconstructionUiBindings::UpdateHybridDenseHint(
     const DA3ReconstructionUiControls& controls,
-    const std::string& image_path) {
+    const std::filesystem::path& image_path) {
     if (!controls.da3_hybrid_hint_label) {
         return;
     }
@@ -519,7 +519,7 @@ void DA3ReconstructionUiBindings::UpdateHybridDenseHint(
 
 void DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(
     const DA3ReconstructionUiControls& controls,
-    const std::string& image_path) {
+    const std::filesystem::path& image_path) {
     if (controls.sparse_mode_cb) {
         QString sparse_tip = QObject::tr(
             "DA3 hybrid (recommended with DA3 stereo): enables the hybrid "

@@ -13,24 +13,29 @@
 #include <functional>
 
 #include "CVPluginAPI.h"
+#include "ecvAssetIntegrity.h"
 
 class ecvModelDownloader;
 
 /**
- * @brief Unified test data repository for reconstruction plugins.
+ * @brief Unified test data repository for application plugins.
  *
  * Provides a single source of truth for downloading, caching, and accessing
- * test datasets (Monstree, FriendsFaces, etc.) used by qFreeSplatter, qDA3,
- * qlightglue, and other reconstruction plugins.
+ * test datasets used by reconstruction and AI inference plugins.
  *
  * Directory structure:
  *   ~/cloudViewer_data/
  *     ├── download/          # Raw zip files
  *     │   ├── dataset_monstree.zip
- *     │   └── friends_faces.zip
+ *     │   ├── friends_faces.zip
+ *     │   └── objects_detection_data.zip
  *     └── extract/           # Extracted datasets
  *         ├── dataset_monstree/
- *         └── friends_faces/
+ *         ├── friends_faces/
+ *         ├── objects_detection_data/
+ *         └── lingbot_map_test_data/   # Grouped plugin datasets
+ *             ├── courthouse/
+ *             └── loop/
  */
 class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
     Q_OBJECT
@@ -38,19 +43,72 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,     ///< Monstree dataset for image-based reconstruction
-        FriendsFaces  ///< FriendsFaces video for face capture
+        Monstree,          ///< Monstree dataset for image-based reconstruction
+        FriendsFaces,      ///< FriendsFaces video for face capture
+        ObjectsDetection,  ///< Shared images/videos for AI inference plugins
+        Image2Mesh,        ///< Single-image-to-3D samples (qTrellis etc.)
+        SAM3,              ///< SAM3 segmentation images + tracking videos
+        GeneralKeypointDetection,  ///< Official GKDT demo images (qGKD)
+        LightGlueTestImages,  ///< Official LightGlue demo pair (qLightGlue)
+        Ppocr,  ///< Official PaddleOCR demo/test images (qOCR, qAnyLabeling)
+        LingbotMapCourthouse,  ///< LingBot-Map courthouse stream (outdoor)
+        LingbotMapLoop,        ///< LingBot-Map loop-closure stream (indoor)
+        LingbotMapOxford,      ///< LingBot-Map Oxford Spires stream (outdoor)
+        LingbotMapOxfordSkyMasks,  ///< Cached native sky masks for oxford
+        LingbotMapUniversity,      ///< LingBot-Map university stream (outdoor)
+        LingbotMapUniversitySkyMasks,  ///< Cached sky masks for university
+        /** LingBot-Map official long-model demo videos (single-file mp4
+         *  assets, no extraction): drive = N=1050 @ fps10 / auto kf=4,
+         *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
+         *  long_real campaign runs with the long-model GGUFs. */
+        LingbotMapDriveVideo,        ///< drive_frames.mp4 (long-model dataset)
+        LingbotMapLingboWorldVideo,  ///< lingbo_world_frames.mp4 (long model)
+        RAM,             ///< Official Recognize Anything demo/evaluation data
+        RelateAnything,  ///< Relation image and video demonstrations
+        /** MapAnything / VGGT official ETH3D benchmark scenes (qMapAnything;
+         *  multi-view reconstruction inputs). All 13 scene zips come from the
+         *  map_anything_vggt_test_data release and land UNDER the
+         *  "map_anything_test_data" group directory. */
+        MapAnythingCourtyard,     ///< courtyard scene (multi-view set)
+        MapAnythingDeliveryArea,  ///< delivery_area scene
+        MapAnythingElectro,       ///< electro scene
+        MapAnythingFacade,        ///< facade scene
+        MapAnythingKicker,        ///< kicker scene
+        MapAnythingMeadow,        ///< meadow scene
+        MapAnythingOffice,        ///< office scene
+        MapAnythingPipes,         ///< pipes scene
+        MapAnythingPlayground,    ///< playground scene
+        MapAnythingRelief,        ///< relief scene
+        MapAnythingRelief2,       ///< relief_2 scene
+        MapAnythingTerrace,       ///< terrace scene
+        MapAnythingTerrains,      ///< terrains scene
+        /** OpenPCDet detection sample (qOpenPCDet): one raw KITTI LiDAR
+         *  frame (plus its PointRCNN pre-sampled 16384-point variant), one
+         *  nuScenes 5-feature sweep and the two multi-modal scene bundles
+         *  (CaDDN single-camera / BEVFusion 6-camera) the panels map onto. */
+        OpenPCDetSample  ///< KITTI + nuScenes LiDAR frames and scene bundles
     };
 
     /** Dataset metadata. */
     struct DatasetInfo {
         Dataset kind;
-        QString displayName;     ///< Human-readable name
-        QString zipFileName;     ///< Name of the zip file
-        QString extractDirName;  ///< Directory name after extraction
-        QString downloadUrl;     ///< Remote URL
-        QString expectedMd5;     ///< Expected MD5 hash
-        qint64 expectedSize;     ///< Expected file size in bytes
+        QString displayName;               ///< Human-readable name
+        QString zipFileName;               ///< Name of the zip file
+        QString extractDirName;            ///< Directory name after extraction
+        QString downloadUrl;               ///< Remote URL
+        ecvAssetIntegrity::Anchor anchor;  ///< Content identity pinned in
+                                           ///< source; verified once at
+                                           ///< ingestion (streamed digest)
+                                           ///< and recorded in the
+                                           ///< <zip>.cvintegrity ledger —
+                                           ///< later access checks are
+                                           ///< stat-only.
+        /** Optional group subdirectory UNDER extract/ (e.g.
+         *  "lingbot_map_test_data"): datasets of one plugin family land in
+         *  extract/<group>/<extractDirName> instead of littering the
+         *  extract root shared with the model catalogs. Empty = extract
+         *  root (legacy single-dataset layout). */
+        QString extractGroupName;
     };
 
     /** Returns the singleton instance. */
@@ -59,34 +117,37 @@ public:
     /** Get metadata for a dataset. */
     static DatasetInfo getDatasetInfo(Dataset kind);
 
-    /** Returns the root data directory (~/cloudViewer_data). */
+    /** CLOUDVIEWER_DATA_ROOT, falling back to ~/cloudViewer_data. */
     static QString dataRoot();
 
-    /** Returns the download directory (~/cloudViewer_data/download). */
+    /** Returns the download directory below dataRoot(). */
     static QString downloadDir();
 
-    /** Returns the extract directory (~/cloudViewer_data/extract). */
+    /** Returns the extract directory below dataRoot(). */
     static QString extractDir();
 
     /** Returns the path where a dataset zip should be stored. */
     static QString zipPath(Dataset kind);
 
-    /** Returns the path where a dataset should be extracted. */
+    /** Returns the path where a dataset should be extracted. Datasets with
+     *  an extractGroupName land in extract/<group>/<extractDirName>. */
     static QString extractPath(Dataset kind);
 
-    /** Returns true if the dataset is extracted or a valid zip is cached. */
-    bool isDatasetAvailable(Dataset kind) const;
+    /** Find one uniquely named file below a dataset's extraction directory. */
+    static QString findDatasetFile(Dataset kind, const QString& fileName);
 
-    /**
-     * @brief Verify zip file integrity (size + MD5).
-     * @param zipPath Path to the zip file
-     * @param expectedMd5 Expected MD5 hash (empty = skip MD5 check)
-     * @param expectedMinSize Minimum expected file size (0 = skip size check)
-     * @return true if file exists, passes size check, and MD5 matches
-     */
-    static bool verifyZipIntegrity(const QString& zipPath,
-                                   const QString& expectedMd5,
-                                   qint64 expectedMinSize = 0);
+    /** True when the dataset is a single-file asset (the downloaded file
+     *  itself is the content; no zip extraction step). */
+    static bool isSingleFileDataset(Dataset kind);
+
+    /** List the sample images of a GeneralKeypointDetection bundle root
+     *  (the official GKDT demo images, sorted case-insensitively). */
+    static QStringList getGeneralKeypointDetectionImages(
+            const QString& bundleRoot);
+
+    /** Returns true if the dataset is extracted or a verified zip is
+     *  cached. */
+    bool isDatasetAvailable(Dataset kind) const;
 
     /**
      * @brief Start downloading a dataset.
@@ -107,6 +168,15 @@ public:
      * @return true if extraction succeeded
      */
     bool extractDataset(Dataset kind);
+
+    /** Single-call readiness chain owning the full download->extract state
+     *  machine: already-extracted -> datasetReady(true) immediately;
+     *  verified zip cached -> extract; otherwise -> download, then extract.
+     *  Exactly one datasetReady(ok, kind) is emitted per accepted call
+     *  (a refused call while another preparation is in flight emits
+     *  datasetReady(false)). This is the preferred consumer API — plugins
+     *  must not re-implement the download->extract ordering themselves. */
+    void ensureDatasetReady(Dataset kind);
 
     /**
      * @brief Extract a zip file to a target directory with callback progress.
@@ -143,6 +213,56 @@ public:
      */
     static QString findFriendsVideo(const QString& bundleRoot);
 
+    /**
+     * @brief Get the sample images from the Image2Mesh dataset.
+     * Scans <root>/examples_images for the main single-image-to-3D samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getImage2MeshImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample images from the SAM3 dataset.
+     * Scans <root>/images for segmentation samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSamImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the SAM 3D Objects scene images from the Image2Mesh bundle.
+     * Scans <root>/sam3d_images (the official sam-3d-objects demo scenes
+     * shipped inside image_to_mesh_data.zip; RGBA image.png with the object
+     * mask embedded as alpha).
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSam3dObjectImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample videos from the SAM3 dataset.
+     * Scans <root>/videos for tracking samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute video file paths
+     */
+    static QStringList getSamVideos(const QString& bundleRoot);
+
+    /** @brief List the stream frames of a LingBot-Map scene bundle root
+     *  (ordered 000000.png ... image sequence, sorted case-insensitively).
+     *  Used for both the scene image datasets and the sky-mask datasets.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getLingbotMapImages(const QString& bundleRoot);
+
+    /** @brief List the multi-view frames of a MapAnything scene bundle root
+     *  (recursive image scan, sorted case-insensitively — the WAI-format
+     *  scene zips keep their images in an inner directory).
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getMapAnythingSceneImages(const QString& bundleRoot);
+
 signals:
     /** Emitted during download with progress (0-100). */
     void downloadProgress(int percent, const QString& statusText);
@@ -160,6 +280,10 @@ signals:
      */
     void extractionFinished(bool success, Dataset kind);
 
+    /** Emitted by ensureDatasetReady() when the full download->extract
+     *  chain settles (success or failure). */
+    void datasetReady(bool success, Dataset kind);
+
 private slots:
     void onDownloaderProgress(qint64 received, qint64 total);
     void onDownloaderFinished(bool ok, const QString& destPath);
@@ -175,4 +299,16 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     Dataset m_currentDataset = Dataset::Monstree;
+
+    /** True when the extracted content is fully on disk (the first half of
+     *  isDatasetAvailable, WITHOUT the verified-zip fallback). */
+    bool isExtractedComplete(Dataset kind) const;
+    /** Central extractionFinished emitter: keeps the ensureDatasetReady
+     *  chain convergence in one place. */
+    void finishExtraction(Dataset kind, bool success);
+    /** ensureDatasetReady chain state (m_ensureKind valid only while
+     *  pending). Appended last: existing member offsets stay stable for
+     *  plugins compiled against the previous layout. */
+    bool m_ensurePending = false;
+    Dataset m_ensureKind = Dataset::Monstree;
 };

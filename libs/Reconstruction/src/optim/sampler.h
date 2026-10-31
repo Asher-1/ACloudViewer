@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
 #include <vector>
 
 #include "util/logging.h"
@@ -43,6 +44,14 @@ public:
     template <typename X_t, typename Y_t>
     void SampleXY(const X_t& X, const Y_t& Y, X_t* X_rand, Y_t* Y_rand);
 };
+
+template <typename T>
+struct is_randomized_sampler : std::false_type {};
+
+// Samplers with independent per-trial state may be copied once per worker.
+// Stateful sequence samplers remain serial unless they opt in explicitly.
+template <typename T>
+struct is_parallel_safe_sampler : std::false_type {};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation

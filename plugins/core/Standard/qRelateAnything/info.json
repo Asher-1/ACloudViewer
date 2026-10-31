@@ -1,0 +1,25 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "RelateAnything",
+  "icon": ":/CC/plugin/qRelateAnything/images/qRelateAnything.svg",
+  "description": "Scene relations for images, batches, videos and cameras through AICore.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "https://github.com/Asher-1/RelateAnything-GGML"
+    },
+    {
+      "text": "https://huggingface.co/Asher-1/relateanything-ggml-full"
+    }
+  ]
+}

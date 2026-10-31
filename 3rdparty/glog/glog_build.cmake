@@ -21,6 +21,9 @@ ExternalProject_Add(ext_glog
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            # Installed shared glog must resolve its own NEEDED libgflags:
+            # consumer RUNPATHs are non-transitive on Linux.
+            -DCMAKE_INSTALL_RPATH=$ORIGIN
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             DEPENDS ext_gflags)

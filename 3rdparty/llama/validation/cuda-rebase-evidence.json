@@ -1,0 +1,146 @@
+{
+  "status": "CUDA_SOURCE_REPLAY_LINUX_BUILD_AND_RELOCATION_ONLY_NO_MODEL_OR_PERFORMANCE_CLAIM",
+  "candidate_revision": "707616feb5f379e99ff7442680a55b4a1704c7c9",
+  "embedded_ggml_version": "0.27.0",
+  "production_dependency_changed": false,
+  "resolved_cuda_conflicted_files": 11,
+  "resolved_cuda_conflict_blocks": 35,
+  "ported_cuda_files": 70,
+  "checked_in_input_sha256": {
+    "migration-source.json": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2",
+    "experimental/patches/0001-acv-cpu-operators.patch": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8",
+    "experimental/patches/0002-acv-cuda-operators.patch": "a7fa3ef20e12b0eeb93927a130d8c7a365e806deacf5e9e3de9cb723793b81a1",
+    "experimental/patches/0003-acv-cuda-dispatch-api.patch": "59c0cb4657ff39668555502dea0a2e59c3857a9c8acd1bebfac01a2c5436593d",
+    "experimental/patches/0004-acv-cuda-attention-linkage.patch": "15ffbccf77e187c4327e04441d571fe219f9594d9dd625b83dced74485cfd2da",
+    "experimental/patches/cuda-manifest.yaml": "943c0104a3241a385a7269583629e362d5a07257f153de45f347fdf21e1fab76"
+  },
+  "patch_runner_sha256": "5fc6b6d67041001463d85075ca2a8d037b8b9ae71de412020687b10464bb6230",
+  "clean_replay": {
+    "replay": [
+      {
+        "command": [
+          "/home/ludahai/.pyenv/versions/3.11/bin/python3",
+          "3rdparty/ggml/patches/apply_ggml_patches.py",
+          "build_llama_gpu_5ukod7zf/cuda-final-replay-v3",
+          "3rdparty/llama/experimental/patches/cuda-manifest.yaml"
+        ],
+        "rc": 0,
+        "log": "build_llama_gpu_5ukod7zf/cuda-final-v3-replay-1.log"
+      },
+      {
+        "command": [
+          "/home/ludahai/.pyenv/versions/3.11/bin/python3",
+          "3rdparty/ggml/patches/apply_ggml_patches.py",
+          "build_llama_gpu_5ukod7zf/cuda-final-replay-v3",
+          "3rdparty/llama/experimental/patches/cuda-manifest.yaml"
+        ],
+        "rc": 0,
+        "log": "build_llama_gpu_5ukod7zf/cuda-final-v3-replay-2.log"
+      }
+    ],
+    "fresh_replay_tree_sha256": "ae70848e5228b7459a23c497fb4b806a91c215fe0ab4580570fe0e82fa4ed1d5",
+    "compiled_source_tree_sha256": "ae70848e5228b7459a23c497fb4b806a91c215fe0ab4580570fe0e82fa4ed1d5",
+    "equal": true,
+    "gpu_inference_executed": false
+  },
+  "build": {
+    "command": [
+      "cmake",
+      "--build",
+      "build_llama_gpu_5ukod7zf/cuda-build",
+      "--target",
+      "ggml-cuda",
+      "ggml-cpu",
+      "llama",
+      "mtmd",
+      "--parallel",
+      "3"
+    ],
+    "returncode": 0,
+    "log": "build_llama_gpu_5ukod7zf/cuda-linkage-final-build.log",
+    "log_sha256": "062decb0100cd6fd97652bb9c8f54f35e77ab7da62bb9a724ff8e91c78793bfc",
+    "artifact": "build_llama_gpu_5ukod7zf/cuda-build/bin/libggml-cuda.so",
+    "artifact_sha256": "fcab456c4c6eefa0748faaac526854a4f33db98a715e11fa1dce92a2d3d154d2",
+    "settings": {
+      "CMAKE_BUILD_TYPE:STRING": "Release",
+      "CMAKE_CUDA_ARCHITECTURES:UNINITIALIZED": "86",
+      "CMAKE_CUDA_COMPILER:STRING": "/usr/local/cuda/bin/nvcc",
+      "CMAKE_CXX_COMPILER:FILEPATH": "/usr/bin/c++",
+      "GGML_BACKEND_DL:BOOL": "ON",
+      "GGML_CPU:BOOL": "ON",
+      "GGML_CUDA:BOOL": "ON",
+      "GGML_CUDA_FAST_MATH:BOOL": "ON",
+      "GGML_CUDA_FA_ALL_QUANTS:BOOL": "OFF",
+      "GGML_CUDA_FORCE_MMQ:BOOL": "OFF",
+      "GGML_METAL:BOOL": "OFF",
+      "GGML_SAM3D_OPS:UNINITIALIZED": "ON",
+      "GGML_VULKAN:BOOL": "OFF",
+      "LLAMA_BUILD_MTMD:BOOL": "ON"
+    },
+    "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31"
+  },
+  "first_compile_failure": {
+    "log": "build_llama_gpu_5ukod7zf/cuda-build.log",
+    "log_sha256": "1a791444e68020d98819711c09bf89f95cb73c84e89a6cb2b13c09098a380df5",
+    "cause": "New upstream mmvf heuristic calls require owner-name propagation into downstream mmf routing; registered patch 0003 adapts declarations and all callers."
+  },
+  "remaining_backend_source_conflicts": {
+    "vulkan_files": 4,
+    "vulkan_blocks": 30,
+    "metal_files": 6,
+    "metal_blocks": 8,
+    "upstream_deleted_metal_shader": true
+  },
+  "gpu_model_inference_executed": false,
+  "all_task_model_regression_executed": false,
+  "controlled_performance_executed": false,
+  "local_llm_vlm_model_inference_executed": false,
+  "parent_llama_mtmd_cpu_build_status": "PASS_LINUX_BUILD_AND_RELOCATION_ONLY",
+  "verified_source_archive_sha256": "a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759",
+  "source_archive": "build_llama_migration_nxgOqD/llama-source.tar.gz",
+  "first_linkage_failure": {
+    "log": "build_llama_gpu_5ukod7zf/libggml-cuda.so.linkage.log",
+    "log_sha256": "59e7f6e571cd75e84ec9ed73df6a25c41c6a7ae60d079d3929abe1d61145a77b",
+    "module_sha256": "c7d31eb4589177907998f2bef8d8e5e8a8ac873d8b3ee48fafc734c83bfa2aa4",
+    "cause": "New global sparse mask helper was redeclared in SAM3D/RelateAnything precision namespaces; module compilation allowed two unresolved symbols. Patch 0004 supplies shared-helper forwarding and suppresses ADL ambiguity in template lookup."
+  },
+  "intermediate_compile_failure": {
+    "log": "build_llama_gpu_5ukod7zf/cuda-final-build.log",
+    "log_sha256": "2df11cb8b136e5d9e7c08e1f8da044124325107d0d78963886d4c0506b162b2b",
+    "returncode": 2,
+    "cause": "Unqualified dependent helper call found global and precision-namespace functions by ADL; final patch 0004 selects ordinary namespace lookup."
+  },
+  "dynamic_relocation": {
+    "checks": [
+      {
+        "module": "build_llama_gpu_5ukod7zf/cuda-build/bin/libggml-cuda.so",
+        "module_sha256": "fcab456c4c6eefa0748faaac526854a4f33db98a715e11fa1dce92a2d3d154d2",
+        "returncode": 0,
+        "log": "build_llama_gpu_5ukod7zf/libggml-cuda.so.final-linkage.log",
+        "log_sha256": "abb40418abde4506bbcb120f61cc8c0b928d2f06f6ddd8e47a338ce6341ce038"
+      },
+      {
+        "module": "build_llama_gpu_5ukod7zf/cuda-build/bin/libggml-cpu.so",
+        "module_sha256": "7ad83f73dfebbedd65e3dfb4762104faade275221a519b45f650f9e5282df4d6",
+        "returncode": 0,
+        "log": "build_llama_gpu_5ukod7zf/libggml-cpu.so.final-linkage.log",
+        "log_sha256": "b42a8948a196f46b892801c75ebf27ef05e76cd44990663b049899fb279c507a"
+      },
+      {
+        "module": "build_llama_gpu_5ukod7zf/cuda-build/bin/libllama.so",
+        "module_sha256": "593162b2212086c359de591e4ee8b93c0d85d92fb04a2cd3df446b95572ed9fb",
+        "returncode": 0,
+        "log": "build_llama_gpu_5ukod7zf/libllama.so.final-linkage.log",
+        "log_sha256": "9095e6079bce355823137a825f3be78d3705c2bd67b2b8f2eeeb064c60cf0796"
+      },
+      {
+        "module": "build_llama_gpu_5ukod7zf/cuda-build/bin/libmtmd.so",
+        "module_sha256": "b719b40d7369566869132a029c66378f1b7903f437021d9b87f1ecd23f865fa2",
+        "returncode": 0,
+        "log": "build_llama_gpu_5ukod7zf/libmtmd.so.final-linkage.log",
+        "log_sha256": "5e910aa618bd8a421284f2b462db9820acdeb7514e9a67935f60dffa2c9ec503"
+      }
+    ],
+    "scope": "Dynamic relocation/dependency resolution only; no model or GPU inference"
+  }
+}

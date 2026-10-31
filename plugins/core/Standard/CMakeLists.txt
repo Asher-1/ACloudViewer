@@ -1,3 +1,6 @@
+# Shared plugin-support libraries (base/) must be registered before any
+# consumer plugin so target_link_libraries can resolve their targets.
+add_subdirectory( base )
 
 add_subdirectory( qAnimation )
 add_subdirectory( q3DMASC )
@@ -24,6 +27,22 @@ add_subdirectory( qFaceDetect )
 add_subdirectory( qFreeSplatter )
 add_subdirectory( qLightGlue )
 add_subdirectory( qDeepLSD )
+add_subdirectory( qRFDetr )
+add_subdirectory( qRMBG )
+add_subdirectory( qYOLO )
+add_subdirectory( qSAM3 )
+add_subdirectory( qSAM3D )
+add_subdirectory( qTrellis )
+add_subdirectory( qGKD )
+add_subdirectory( qOCR )
+add_subdirectory( qRAM )
+add_subdirectory( qRelateAnything )
+add_subdirectory( qLingbotMap )
+add_subdirectory( qAnyLabeling )
+add_subdirectory( qSpirula )
+add_subdirectory( qMapAnything )
+add_subdirectory( qOpenPCDet )
+add_subdirectory( qInstantMesh )
 
 #plugins integrated as submodules
 set( submod_plugins

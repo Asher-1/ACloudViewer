@@ -68,7 +68,7 @@ void PrintHelp() {
     utility::LogInfo("    > OnlineSLAMRGBD [options]");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    [-V]");
-    utility::LogInfo("    [--dataset_path /path/to/dataset]"); 
+    utility::LogInfo("    [--dataset_path /path/to/dataset]");
     utility::LogInfo("                    - To use your own dataset, pass the path");
     utility::LogInfo("                      to the dataset root folder containing");
     utility::LogInfo("                      `image` and `depth` folder. If not");

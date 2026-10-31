@@ -89,7 +89,11 @@ void define_m3c2_plugin(py::module_ &m)
         .def_static("Compute", &ComputeWrapper, "dialog"_a, "allowsDialog"_a);
 }
 
+// Module initialization expands a slots identifier after all Qt consumers are included.
+#pragma push_macro("slots")
+#undef slots
 PYBIND11_MODULE(pym3c2, m)
 {
     define_m3c2_plugin(m);
 }
+#pragma pop_macro("slots")

@@ -35,7 +35,7 @@ Complete guide for building ACloudViewer from source code on Windows, Linux, and
 ### Core Build Dependencies
 
 **Required:**
-- **CMake** 3.19 or newer
+- **CMake** 3.24 or newer (CI and supported developer toolchains use 3.31.8)
 - **Python** 3.10+ (for build scripts)
 - **Qt** 5.12+ or Qt 6.2+
 - **C++17** compliant compiler
@@ -149,6 +149,7 @@ cmake --build . --config Release --target install
 | `AICore_OPENCL_TARGET_VERSION` | 200 | OpenCL host API target: 120, 200, or 300 |
 | `AICore_BUNDLE_CUDA_RUNTIME` | OFF | **`option()`** in `cmake/AICoreOptions.cmake`: redist CUDA runtime into installer; **requires `AICore_USE_CUDA=ON`**. Bundles `libcublas.so.*` (Linux) / cudart64_*.dll + cublas64_*.dll etc. (Windows) into `lib/cuda-runtime/` for **driver-only deployment** — required on both platforms since `libggml-cuda.so` always links cuBLAS. `ACloudViewer.sh` / `ACloudViewer.bat` auto-add this dir to `LD_LIBRARY_PATH` / `%PATH%`. |
 | `AICore_CPU_ALL_VARIANTS` | OFF | Build all ggml CPU ISA variants (`libggml-cpu-*.so`; compiler-adaptive; CI release/wheel default ON). Matches [llama.cpp release](https://github.com/ggml-org/llama.cpp/blob/master/.github/workflows/release.yml) flags: `-DGGML_BACKEND_DL=ON -DGGML_NATIVE=OFF -DGGML_CPU_ALL_VARIANTS=ON`. Older GCC (e.g. Ubuntu 20.04) skips BF16/AMX/VNNI variants automatically. |
+| `AICore_USE_SAM3D_PBR` | (auto) | **`option()`**: SAM3D official native PBR assembly (CUDA-only, mirrors upstream `SAM3D_GGML_NATIVE_PBR`): VTK quadric simplify → nvdiffrast visibility min-cut → pymeshfix repair → xatlas UV → 100-view mip-splatting render → 2500-step Adam/TV texture bake → Telea → Y-up GLB. **Default: auto-ON when `AICore_USE_CUDA=ON` and `PLUGIN_STANDARD_QSAM3D=ON`** (the plugin switch is pre-declared in `cmake/AICoreOptions.cmake` for this); an explicit `-DAICore_USE_SAM3D_PBR=ON/OFF` always wins. Requires the project-managed `3rdparty_vtk` (a prebuilt 9.3 archive is downloaded, VTK is built from source, or `USE_SYSTEM_VTK` opt-ins the system package) — when that target was never created the chain degrades with a warning (info_json reports `"pbr":false`, the plugin falls back to the backend-agnostic CPU projection bake); OpenCV `photo` is wired automatically from this switch on a bundled `BUILD_OPENCV=ON` build. All four third-party trees are **vendored** under `core/AICore/src/tasks/sam3d/pbr/third_party/` at pinned upstream commits (nvdiffrast `253ac4f`, pymeshfix `79adef9`) with their license texts — no configure-time network fetch. License-gated compile/link opt-ins `AICore_USE_SAM3D_PBR_NVDIFFRAST` (nvdiffrast, NVIDIA non-commercial) / `AICore_USE_SAM3D_PBR_MESHFIX` (pymeshfix TMesh, GPL-3.0) both default ON under this gate — never compiled or linked otherwise. qSAM3D exposes the result as its "Official PBR texture bake" option. |
 | `AICore_METAL_ENABLED` | (auto) | Read-only: ON when Metal backend was built |
 | `AICore_VULKAN_ENABLED` | (auto) | Read-only: ON when Vulkan backend was built |
 | `AICore_CUDA_ENABLED` | (auto) | Read-only: ON when CUDA backend was built |
@@ -226,9 +227,9 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qCork                   | PLUGIN_STANDARD_QCORK                    | OFF           | Mesh Boolean Operations: https://www.cloudcompare.org/doc/wiki/index.php/Cork_(plugin)
 | qCSF                    | PLUGIN_STANDARD_QCSF                     | OFF           | Automatic ground/non-ground classification: https://www.cloudcompare.org/doc/wiki/index.php/CSF_(plugin)
 | qFacets                 | PLUGIN_STANDARD_QFACETS                  | OFF           | Structural geology plugin: https://www.cloudcompare.org/doc/wiki/index.php/Facets_(plugin)
+| qG3Point                | PLUGIN_STANDARD_G3POINT                  | OFF           | Structural geology — discontinuity orientation analysis (G3Point)
 | qHoughNormals           | PLUGIN_STANDARD_QHOUGH_NORMALS           | OFF           | Normals computation: https://www.cloudcompare.org/doc/wiki/index.php/HoughNormals_(plugin)
 | qHPR                    | PLUGIN_STANDARD_QHPR                     | OFF           | Hidden Point Removal: https://www.cloudcompare.org/doc/wiki/index.php/Hidden_Point_Removal_(plugin)
-| qJSonRPCPlugin          | PLUGIN_STANDARD_QJSONRPC                 | OFF           | Json/RPC control plugin
 | qM3C2                   | PLUGIN_STANDARD_QM3C2                    | OFF           | Robust point cloud distances computation: https://www.cloudcompare.org/doc/wiki/index.php/M3C2_(plugin)
 | qMasonry                |                                          |               | Segmentation of masonry structures: https://www.cloudcompare.org/doc/wiki/index.php/Masonry_Segmentation_(plugin)
 |  - qAutoSeg             | PLUGIN_STANDARD_MASONRY_QAUTO_SEG        | OFF           |
@@ -241,14 +242,31 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qRANSAC_SD              | PLUGIN_STANDARD_QRANSAC_SD               | OFF           | Automatic RANSAC shape detection: https://www.cloudcompare.org/doc/wiki/index.php/RANSAC_Shape_Detection_(plugin)
 | qSRA                    | PLUGIN_STANDARD_QSRA                     | OFF           | Surface of Revolution Analysis: https://www.cloudcompare.org/doc/wiki/index.php/Surface_of_Revolution_Analysis_(plugin)
 | qTreeIso                | PLUGIN_STANDARD_QTREEISO                 | OFF           | Individual Tree Isolation: https://www.cloudcompare.org/doc/wiki/index.php/Treeiso_(plugin)
+| qVoxFall                | PLUGIN_STANDARD_QVOXFALL                 | OFF           | Rockfall simulation and analysis (voxel-based)
 | qPythonRuntime          | PLUGIN_PYTHON                            | OFF           | Python script runtime |
 | qJSonRPCPlugin          | PLUGIN_STANDARD_QJSONRPC                 | OFF           | JSON-RPC server for AI agent integration |
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers (**Linux/Windows**; CI and docs default **OFF on macOS**) |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
+| qGKD                    | PLUGIN_STANDARD_QGKD                     | OFF           | GKDT general keypoint detection — text / 1-shot visual / multimodal prompts, multi-object via YOLO-World ([README](plugins/core/Standard/qGKD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/gkd`). |
+| qLingbotMap             | PLUGIN_STANDARD_QLINGBOTMAP              | OFF           | LingBot-Map (GCT) streaming RGB-D 3D reconstruction from an ordered image sequence — per-frame depth/pose, fused colored point clouds, native sky masking ([README](plugins/core/Standard/qLingbotMap/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/lingbot`). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
 | qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/deeplsd`). |
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
+| qYOLO                   | PLUGIN_STANDARD_QYOLO                    | OFF           | YOLOv8/YOLO26 — detection, segmentation, metric depth, pose, OBB, classification + open-vocab prompts ([README](plugins/core/Standard/qYOLO/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/yolo`). |
+| qAnyLabeling            | PLUGIN_STANDARD_QANYLABELING             | OFF           | Native Qt X-AnyLabeling-compatible workspace with AICore DA3 depth, DeepLSD/ALIKED proposals, YOLO/RF-DETR/GKD/FaceDetect, SAM3 image and video tracking, exact-mask brush editing, and import/export sidecars ([README](plugins/core/Standard/qAnyLabeling/README.md)). Requires `AICore_ENABLED=ON`. |
+| qSAM3                   | PLUGIN_STANDARD_QSAM3                    | OFF           | SAM 2 / 2.1 / 3 promptable segmentation and video tracking ([README](plugins/core/Standard/qSAM3/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/sam3`). |
+| qSAM3D                  | PLUGIN_STANDARD_QSAM3D                   | OFF           | SAM 3D Objects — single image to Gaussian PLY / FlexiCubes mesh ([README](plugins/core/Standard/qSAM3D/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/sam3d`). |
+| qTrellis                | PLUGIN_STANDARD_QTRELLIS                 | OFF           | TRELLIS.2 — single image to PBR-textured mesh / GLB ([README](plugins/core/Standard/qTrellis/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/trellis`). |
+| qMapAnything            | PLUGIN_STANDARD_QMAPANYTHING             | OFF           | MapAnything family — universal feed-forward metric 3D reconstruction from multi-view image sets (VGGT-Omega / VGGT / Pi3 / Pi3X / MapAnything / DUSt3R) ([README](plugins/core/Standard/qMapAnything/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/map_anything`). |
+| qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR detection & instance masks with per-class allowlist ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
+| qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 background removal — transparent RGBA / alpha matte ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
+| qOpenPCDet              | PLUGIN_STANDARD_QOPENPCDET               | OFF           | OpenPCDet LiDAR point cloud 3D object detection (PointPillars / SECOND, KITTI & nuScenes GGUFs, CUDA/Vulkan/CPU) ([README](plugins/core/Standard/qOpenPCDet/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/openpcdet`). |
+| qInstantMesh            | PLUGIN_STANDARD_QINSTANTMESH             | OFF           | InstantMesh image-to-3D mesh/gaussian reconstruction (DINO + LRM + FlexiCubes, optional Zero123++ multi-view diffusion; f32/f16/q8_0 GGUFs, geometry-only or textured GLB) ([README](plugins/core/Standard/qInstantMesh/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/instantmesh`). |
+| qRAM                    | PLUGIN_STANDARD_QRAM                     | OFF           | Recognize Anything — RAM, RAM++, and Tag2Text image tagging/captions through all published F32/F16/Q8_0 GGUF models ([README](plugins/core/Standard/qRAM/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/tagging`). |
+| qRelateAnything | PLUGIN_STANDARD_QRELATEANYTHING | OFF | Scene relations for images/video, all 12 published relation/text GGUFs; public YOLO regions and shared cache ([README](plugins/core/Standard/qRelateAnything/README.md)). Requires `AICore_ENABLED=ON`. |
+| qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — **lives on the `qcalib` branch only** (one-click test data, ROS bag v2.0, BEV, LiDAR projection). Requires `BUILD_OPENCV=ON`. |
+| qSpirula                | PLUGIN_STANDARD_QSPIRULA                 | OFF           | Spirula Studio — official upstream 3DGS trainer as a standalone executable built by `-DBUILD_SPIRULA=ON` (`SPIRULA_TAG`, `SPIRULA_BACKEND=vulkan\|cuda`; process-boundary integration, launch + import, no AICore link) ([README](plugins/core/Standard/qSpirula/README.md)). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -259,13 +277,14 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 |       Plugin Name       |         CMake Option                     | Default Value | Description
 |-------------------------|------------------------------------------|---------------|-------------
 | qAdditionalIO           | PLUGIN_IO_QADDITIONAL                    | OFF           |
-| qCoreIO                 | PLUGIN_IO_QCORE                          | ON            |
+| qCoreIO                 | PLUGIN_IO_QCORE                          | OFF           |
 | qCSVMatrixIO            | PLUGIN_IO_QCSV_MATRIX                    | OFF           | Add support for CSV matrix files.
-| qDraco                  | PLUGIN_IO_QDRACO                         | OFF           | Add support force draco files
+| qDracoIO                | PLUGIN_IO_QDRACO                         | OFF           | Add support for Draco (.drc) files
 | qE57IO                  | PLUGIN_IO_QE57                           | OFF           | Add support for e57 files using **libE57**.
 | qFBXIO                  | PLUGIN_IO_QFBX                           | OFF           | Add support for AutoDesk FBX files using the official **FBX SDK**
-| qLASFWIO                | PLUGIN_IO_QLAS_FWF                       | OFF           | Windows only. Support for LAS/LAZ with and without waveform using LIBlas (***deprecated, consider using qLASIO instead***).
+| qLASFWFIO               | PLUGIN_IO_QLAS_FWF                       | OFF           | Windows only. Support for LAS/LAZ with and without waveform using LIBlas (***deprecated, consider using qLASIO instead***).
 | qLASIO                  | PLUGIN_IO_QLAS                           | OFF           | Support for LAS/LAZ with and without waveform (all platforms) using **LASZIP**.
+| qMeshIO                 | PLUGIN_IO_QMESH                          | OFF           | Additional mesh file formats (MeshIO driver).
 | qPDALIO                 | PLUGIN_IO_QPDAL                          | OFF           | Add support for LAS/LAZ files using PDAL (***deprecated, consider using qLASIO instead***).
 | qPhotoscanIO            | PLUGIN_IO_QPHOTOSCAN                     | OFF           |
 | qRDBIO                  | PLUGIN_IO_QRDB                           | OFF           | Add support for RDB.
@@ -328,13 +347,26 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QSAM3D=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QGKD=ON \
+      -DPLUGIN_STANDARD_QOCR=ON \
+      -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
+      -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QMAPANYTHING=ON \
+      -DPLUGIN_STANDARD_QOPENPCDET=ON \
+      -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       ..
 cmake --build . --config Release
 ```
 
-#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue) Build
+#### AICore Build (all AICore plugins: qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRAM + qSAM3 + qSAM3D + qYOLO + qTrellis + qRFDetr + qRMBG + qGKD + qLingbotMap + qOpenPCDet)
 
-Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RAM/RAM++/Tag2Text, SAM3, SAM 3D Objects, YOLO, Trellis, RF-DETR, RMBG, GKD, LingbotMap, and OpenPCDet) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -345,6 +377,21 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QSAM3D=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QGKD=ON \
+      -DPLUGIN_STANDARD_QOCR=ON \
+      -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
+      -DPLUGIN_STANDARD_QANYLABELING=ON \
+      -DPLUGIN_STANDARD_QRAM=ON \
+      -DPLUGIN_STANDARD_QRELATEANYTHING=ON \
+      -DPLUGIN_STANDARD_QMAPANYTHING=ON \
+      -DPLUGIN_STANDARD_QOPENPCDET=ON \
+      -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```
