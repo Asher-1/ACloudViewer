@@ -36,8 +36,8 @@ std::vector<float> preprocess(const img::Image& image,
     }
     using Table = std::vector<std::vector<std::pair<int, int32_t>>>;
     // MSVC requires an explicit capture even for constexpr locals when the
-        // lambda odr-uses them (GCC/Clang accept the implicit form).
-        const auto coefficients = [size, precision](int input_size) {
+    // lambda odr-uses them (GCC/Clang accept the implicit form).
+    const auto coefficients = [size, precision](int input_size) {
         Table table(size);
         const double scale = double(input_size) / size;
         const double support = std::max(1.0, scale);
