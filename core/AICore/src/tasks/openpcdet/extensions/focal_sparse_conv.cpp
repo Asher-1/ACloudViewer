@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <numeric>
 
 #include "deterministic_sparse_conv.h"
