@@ -8,6 +8,7 @@
 #include "focal_sparse_conv.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
